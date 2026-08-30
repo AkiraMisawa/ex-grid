@@ -1,116 +1,125 @@
-# フィルタパネルの契約 — Excel の挙動に合わせ、値の一覧は列が宣言し、取得は引く形で行う
+# The filter panel contract — Excel's behaviour, the value list is declared per column, and fetching is pull
 
-グリッドはフィルタ UI を自分で描く
-（[ADR-0002](./0002-filters-are-a-serializable-model-not-linq-expressions.md)）。その UI は
-**差し替え可能**にし（`IGridChrome`）、差し替え側に渡す `FilterPanelContext` を公開契約として
-固定する。挙動は **Excel に合わせる**。
+The grid paints the filter UI itself
+([ADR-0002](./0002-filters-are-a-serializable-model-not-linq-expressions.md)). That UI is
+**substitutable** (`IGridChrome`), and the `FilterPanelContext` handed to the substitute is a
+fixed public contract. The behaviour follows **Excel**.
 
 ```csharp
 public sealed record FilterPanelContext(
     ColumnInfo Column,
-    FilterSpec? Current,                    // その列に適用済みの条件
-    IReadOnlyList<FilterOperator> Allowed,  // その列の型で使える演算子。核が決める
-    FilterUiMode Mode,                      // ValueList / Condition / Both。列定義から
+    FilterSpec? Current,                    // the condition applied to this column
+    IReadOnlyList<FilterOperator> Allowed,  // operators available for this column's type; the core decides
+    FilterUiMode Mode,                      // ValueList / Condition / Both; from the column definition
     Func<Task<DistinctValues>> RequestDistinctValues,
     Action<FilterSpec?> Apply,              // OK
     Action Clear);
 ```
 
-## 決めたこと
+## What was decided
 
-### 1. 値の一覧を出せるかは、列定義で Consumer が宣言する（＋実行時の安全網）
+### 1. Whether a value list is offered is declared per column (with a runtime safety net)
 
-Excel のフィルタは 2 つのモードが同居している — **値のリスト**（チェックボックス）と
-**条件**（演算子＋値）。どちらも ADR-0002 の構造化モデルで表せる（前者は `IN`）。違うのは
-**データの要求**で、値のリストは**列の相異なる値をすべて列挙**する必要がある。
+Excel's filter has two modes side by side — a **list of values** (checkboxes) and a **condition**
+(operator plus value). Both are expressible in the structured model of ADR-0002 (the first as
+`IN`). What differs is **the data requirement**: a value list needs **every distinct value in the
+column enumerated**.
 
-そのコストは列の種類数に比例し、種類数は列によって桁が違う。`poke` の例で言えば Typology は
-6 種類ほどでチェックボックス向きだが、**PV は行数とほぼ同数**なので列挙自体が無意味になる。
+That cost is proportional to the column's cardinality, and cardinality differs by orders of
+magnitude between columns. A product-type column might have six values and suit checkboxes; a
+**price column has roughly as many distinct values as there are rows**, and enumerating it is
+meaningless.
 
-**グリッドは種類数を知る手段を持たない。** [ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)
-で押す形にしたため、自分で数えにいくこともできない。
+**The grid has no way to know the cardinality.** Since
+[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) made the interface push, it
+cannot go and count either.
 
-- **列定義で宣言する**（`FilterUiMode`）を基本とする。Consumer は自分のデータの性質を知っている。
-- **実行時に「多すぎる」と答えられる安全網を併設する。** 宣言が現実とずれることはある
-  （「120 ブック」のつもりが統合で 5 万になる等）。`DistinctValues` は値の一覧か
-  **TooMany** を返せる。パネルは条件モードに縮退し、**壊れずに済む**。
-- **縮退先は Excel と同じ「検索窓」。** Excel も一覧が大きいときは全部を並べず検索させる。
-  「値リストは出せません」ではなく「検索して絞ってください」になる。
+- **Declare it in the column definition** (`FilterUiMode`). The Consumer knows the shape of its
+  own data.
+- **Add a runtime safety net that can answer "too many".** Declarations drift from reality (a
+  column believed to hold 120 values grows to 50,000 after a merge). `DistinctValues` can return
+  either the values or **TooMany**, and the panel degrades to condition mode **without breaking**.
+- **The degraded form is Excel's own: a search box.** Excel likewise does not list everything when
+  the list is large; it lets you search. So the fallback is not "no value list available" but
+  "search to narrow it down".
 
-却下した案: **実行時に一覧を取ってみて件数で判断する** — PV 列で 100 万件を取得してから
-諦めることになる。
+Rejected: **fetch the list at runtime and decide from the count** — that means retrieving a
+million values from a price column before giving up.
 
-### 2. 値の一覧は他の列のフィルタを反映する。ただし自分の列のフィルタは除外する
+### 2. The value list reflects filters on other columns, but excludes the column's own
 
-Book をデスク A の 12 ブックに絞ったあと Currency のフィルタを開いたら、**デスク A に実際に
-ある通貨だけ**が並ぶ。フィルタは絞り込むための道具であり、**選んでも 0 件になる選択肢は
-道具として壊れている**。
+Narrow a book column to a desk's twelve books, then open the currency filter, and **only the
+currencies actually present on that desk** should be listed. A filter is a tool for narrowing, and
+**an option that yields zero rows is a broken tool**.
 
-**自分の列だけは除外する**のが要点。Typology で SWPX と SWPI にチェック済みの状態でもう一度
-その列を開いたとき、自列のフィルタも反映してしまうと SWPX と SWPI しか出てこず、**FEXP を
-後から足せない行き止まり**になる。Excel も自列を除外している。
+**Excluding the column's own filter is the crucial part.** With two product types already ticked,
+reopening that same column while honouring its own filter would list only those two — **a dead
+end from which the third can never be added back**. Excel excludes the column's own filter for the
+same reason.
 
-正確な契約は「**その列自身のフィルタを除く、適用済みの全フィルタを反映した相異なる値**」。
-Consumer はフィルタ状態を所有している（ADR-0001）ので、グリッドから渡す必要はない。
+The precise contract is "**the distinct values under all applied filters except this column's
+own**". The Consumer owns the filter state (ADR-0001), so the grid does not need to pass it.
 
-却下した案:
-- **連動しない（常にデータ全体）** — 安くキャッシュも効くが、絞り込むほど 0 件になる
-  選択肢が増える。「固定ドメインの列は全体が見えた方がよい」は一理あるが、それは
-  フィルタではなく参照情報の要求。
-- **列ごとに Consumer が選べる** — 同じグリッドで列によって挙動が変わり、ユーザが規則を
-  学習できない。
+Rejected:
+- **No cascading (always the whole dataset)** — cheap and cacheable, but the more you narrow, the
+  more zero-yield options appear. "For a fixed-domain column it is better to see everything" has
+  some merit, but that is a request for reference information, not for a filter.
+- **Per-column choice by the Consumer** — behaviour would vary by column within one grid and users
+  could not learn the rule.
 
-### 3. 適用は「OK」で。チェックのたびに適用しない
+### 3. Applied on OK, not on each checkbox
 
-Excel と同じ。押す形にした帰結として都合がよく、**1 チェックごとに Consumer 往復が
-発生しない**。キャンセルで破棄。開いている間の編集は確定前の状態であり、
-[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) の「確定前はグリッド、
-確定後は Consumer」がそのまま当てはまる。
+As in Excel. This suits the push interface — **there is no Consumer round trip per checkbox**.
+Cancel discards. While the panel is open the edits are uncommitted state, and
+[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)'s "uncommitted belongs to the
+grid, committed to the Consumer" applies unchanged.
 
-**パネルを開いている間、値の一覧は再取得しない。** 一覧が反映するのは*適用済み*の
-フィルタだけ。チェックを入れるたびに一覧が揺れると操作できない。
+**The value list is not re-fetched while the panel is open.** The list reflects only the
+*applied* filters; a list that shifts with every checkbox is unusable.
 
-列どうしの結合は **AND**。OR は列の中だけ（`IN` のリスト、またはカスタム条件の
-「A または B」）。
+Columns combine with **AND**. OR exists only within a column (an `IN` list, or "A or B" in a
+custom condition).
 
-### 4. 相異なる値の取得は「引く形」でよい
+### 4. Fetching distinct values is pull, deliberately
 
-`RequestDistinctValues` は `Task` を返す。**ADR-0001 で押す形にしたことと矛盾するように
-見えるが、意図的にそうする。**
+`RequestDistinctValues` returns a `Task`. **This looks like a contradiction with ADR-0001's push
+decision, and it is deliberate.**
 
-押す形を選んだ理由は**一貫性ではなく正しさ**だった。ADR-0001 が挙げた 4 つの理由を
-この取得に当てはめると:
+Push was chosen for **correctness, not for consistency**. Applying ADR-0001's four reasons to this
+particular fetch:
 
-| 引く形の問題 | 相異なる値の取得に当てはまるか |
+| Problem with pull | Does it apply here? |
 |---|---|
-| 上書き列のソートが静かに壊れる | **当てはまらない。** 一覧は並び順にも表示値にも影響しない |
-| キャッシュ無効化の仕組みが要る | **当てはまらない。** 古い一覧が出ても、選んだ結果は正しく反映される |
-| View State / Saved View が二重管理になる | **当てはまらない。** 一覧は保存対象ではない |
-| 状態管理ライブラリと噛み合わない | 当てはまるが、これは利便性の問題 |
+| Sorting an overridden column breaks quietly | **No.** The list affects neither ordering nor displayed values |
+| Cache invalidation machinery is needed | **No.** A stale list only offers a stale choice; the choice itself still applies correctly |
+| View State / Saved View becomes double-booked | **No.** The list is not persisted |
+| Does not mesh with state-management libraries | Yes, but that is convenience |
 
-線引き:
+The line:
 
-> **押す形にするのは、アプリの状態であるもの** — 表示されるもの、Overlay が効くもの、
-> Undo に乗るもの、保存されるもの。
-> **引く形でよいのは、一時的な UI データで、間違っても静かに壊れないもの。**
+> **Push is for application state** — what is displayed, what the Overlay affects, what enters
+> undo, what gets saved.
+> **Pull is fine for transient UI data that cannot break quietly when it is wrong.**
 
-押す形にすると、ポップオーバーを閉じれば消える一時データを Store に置くことになり、
-Fluxor の Consumer は不要なものを State に持ち続け、Undo 履歴にも混ざる。
+Making it push would put data that disappears when a popover closes into the store, so a Fluxor
+Consumer would carry it in State and mix it into undo history for no benefit.
 
 ## Consequences
 
-- **`FilterPanelContext` は公開 API になる。** ここに必要な情報が揃っていないと、差し替え側が
-  グリッドの内部を覗きに来る。MudBlazor の `MudDataGrid` では、Consumer がテンプレート列を
-  扱うために `RenderedColumns` を舐めて列の GUID をプロパティ名に対応付ける必要があった
-  — その失敗を避けるための契約である。列は GUID ではなく**意味のある識別子**で渡す。
-- **Consumer が一覧をキャッシュするなら、キーは（列, 他の列のフィルタ状態）**。列だけを
-  キーにすると古い一覧が出る。
-- **サーバ実装は「他の列の条件を適用した上での DISTINCT」になる。** 素の `DISTINCT` より
-  重いが、値リストを宣言した列（＝種類数が少ないと Consumer が判断した列）にしか
-  使われない。
-- **`Allowed`（使える演算子）を決めるのは核。** Chrome は選ぶだけで、演算子の意味は
-  決めない。だから Chrome を差し替えても振る舞いは変わらない。意味を定義するのは
-  `GridSource.From`（参照実装）と、それに合わせるサーバ実装の側
-  （[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)）。
-- **フィルタ適用後に Selection がどうなるかは未決。** 行が消えるため、選択が生き残るのか
-  失われるのかを決める必要がある。Selection モデルと合わせて扱う。
+- **`FilterPanelContext` is public API.** If it does not carry what a substitute needs, the
+  substitute will reach into grid internals. In MudBlazor's `MudDataGrid`, Consumers have to walk
+  `RenderedColumns` to map column GUIDs back to property names for template columns — this
+  contract exists to avoid that. Columns are identified by something meaningful, not by a GUID.
+- **If the Consumer caches the list, the key is (column, other columns' filter state).** Keying on
+  the column alone serves stale lists.
+- **A server implementation performs a DISTINCT with the other columns' conditions applied.**
+  Heavier than a plain `DISTINCT`, but only used on columns the Consumer declared as value-list
+  columns — that is, columns it judged to have low cardinality.
+- **The core decides `Allowed` (which operators exist).** Chrome only picks among them and never
+  decides what an operator means, which is why substituting Chrome cannot change behaviour. The
+  meaning is defined by `GridSource.From` (the reference implementation) and by server
+  implementations written to match
+  ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)).
+- **What happens to the Selection after a filter is applied** is settled in
+  [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md): it is
+  cleared, because rows disappear and positions shift.

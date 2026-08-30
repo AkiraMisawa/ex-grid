@@ -1,128 +1,138 @@
-# Action 列と Template 列を分ける。Space が中身に働きかけ、Enter は常に移動する
+# Action and Template columns are separate. Space engages the cell; Enter always moves
 
-セルに独自の中身を置く列を**2 種類**に分ける。
+Columns that put custom content in cells come in **two kinds**.
 
-| | 宣言のしかた | 描画コスト | キーボード |
+| | Declared as | Render cost | Keyboard |
 |---|---|---|---|
-| **Action 列** | 「この列のセルには操作が N 個ある」＋ アイコン/ラベルを Consumer が指定 | **素のマークアップ。境界を増やさない** | N=1 は Space で発火、N≧2 は Space で中に入る |
-| **Template 列** | 任意の `RenderFragment` | **セルがコンポーネントになる** | Space で中に入る |
+| **Action Column** | "cells in this column carry N actions", plus an icon or label from the Consumer | **plain markup; adds no boundary** | N=1 fires on Space; N≥2 enters the cell on Space |
+| **Template Column** | an arbitrary `RenderFragment` | **the cell becomes a component** | enters the cell on Space |
 
-分ける根拠は
-[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) の規則そのもの —
-**Chrome は描画、意味は核が決める**。「押したら何かが起きるボタンである」は意味なので核が
-持ち、アイコンの見た目は Consumer が渡す。
+The grounds for splitting them are the rule from
+[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) itself — **Chrome renders, the core
+decides meaning**. "Pressing this makes something happen" is meaning, so the core holds it; the
+icon's appearance comes from the Consumer.
 
-## 性能：高いのは境界の数であって、中身の複雑さではない
+## Performance: the cost is the number of boundaries, not the complexity of the content
 
-[ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) の実測で高かったのは
-**セルごとのコンポーネント境界 800 個**だった。
-
-```
-Action 列    行コンポーネントの中に <button> を素のマークアップで描く
-             → 新しい境界はゼロ。実機 1.90ms（800セル）の経路のまま
-
-Template 列  RenderFragment ＝ 実質コンポーネント
-             → 境界が増える。全列に指定すれば実機 92.0ms（2000セル・フリック）の世界へ
-```
-
-キー入力は核が捕捉フェーズで握っている（[ADR-0018](./0018-multiple-instances-must-be-independent.md)）
-ので、**セルごとのハンドラも要らない**。クリックも器で 1 つ受けて `data-` 属性から行と列を
-引けばよい（可視セルは 40 個程度なのでセルごとにハンドラを付けても致命的ではない。
-効くのはコンポーネント化の方だけ）。
-
-## キー操作 — 規則を 1 本にする
+What was expensive in the
+[ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) measurements was **800
+per-cell component boundaries**.
 
 ```
-Enter / Tab   ナビゲーション。【常に移動。何も発火しない】
-Space         そのセルの中身に働きかける
-Esc           抜ける
-F2            編集可能なセルで Caret モードに入る
+Action Column    a <button> painted as plain markup inside the row component
+                 → zero new boundaries. stays on the 1.90 ms (800 cells) path
+
+Template Column  a RenderFragment is effectively a component
+                 → boundaries increase. specified on every column, it heads toward
+                   the measured 92.0 ms (2000 cells, fling)
 ```
 
-**Space の意味は、セルの種類ごとに自然に決まる。**
+Key input is already captured by the core in the capture phase
+([ADR-0018](./0018-multiple-instances-must-be-independent.md)), so **no per-cell handler is
+needed** either. Clicks can be taken once on the root and resolved from `data-` attributes. (In
+fairness, around 40 visible cells means per-cell handlers would not be fatal — **it is the
+componentisation that costs**.)
 
-| セルの種類 | Space |
+## Keyboard — one rule
+
+```
+Enter / Tab   navigation. ALWAYS moves; never fires anything
+Space         engages with the cell's content
+Esc           leaves
+F2            enters Caret mode on an editable cell
+```
+
+**Space's meaning follows naturally from the kind of cell.**
+
+| Cell kind | Space |
 |---|---|
-| 編集可能 | Overwrite モードに入る（空白を打った扱い。ADR-0010） |
-| Action（操作 1 個） | **その操作を発火** |
-| Action（操作 複数） | セルの中に入る。矢印で選び、Space で発火、Esc で出る |
-| Template | セルの中に入る |
+| Editable | enter Overwrite mode (as if a space were typed; ADR-0010) |
+| Action (one action) | **fire it** |
+| Action (several) | enter the cell. Arrows to choose, Space to fire, Esc to leave |
+| Template | enter the cell |
 
-どれも「このセルの中身に働きかける」で説明でき、例外規則がない。Space は native な
-`<button>` の起動キーでもあるので、キーボード操作に慣れた指はもう覚えている。
+All of these read as "engage with this cell's content", with no exceptions to remember. Space is
+also the native activation key for a `<button>`, so keyboard users' fingers already know it.
 
-### なぜ Enter でも発火させないのか
+### Why Enter does not fire as well
 
-[ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md) で Enter は**選択範囲の中を列方向に
-巡回する**キーと決めた。Action 列で Enter が発火も兼ねると、**移動のつもりで連鎖する**。
-
-```
-削除アクションの列で Enter を押しながら下へ移動しようとする
-  → 1 行目を削除して下へ → 2 行目を削除して下へ → …
-```
-
-Enter は「移動のために連打するキー」なので事故が起きやすい。Web の慣習（ボタンは Enter でも
-動く）からは半分外れるが、**Enter による縦走査を失う方が、誤爆より軽い**。詳細を見る行を
-探して上下に動く場面は普通にある。
-
-却下した案:
-- **Enter と Space の両方で発火** — ボタンとしては自然だが、上記の連鎖リスク。
-- **Space は常に発火、Enter は破壊的でない操作のときだけ発火** — 事故は防げるが、
-  **操作ごとに Enter の意味が変わり**ユーザが予測できない。
-
-## 操作が複数あるときは、まず列を分けることを検討する
+[ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md) made Enter the key that cycles
+column-major inside the selection. If Enter also fired in an Action Column, **an attempt to move
+would chain.**
 
 ```
-[詳細] [複製] [削除]     ← Action 列を 3 本並べる
-
-→ 矢印キーの左右移動が、そのままボタン間の移動になる
-→ Space で発火。【モードに入る必要がない】
+Holding Enter to move down a column of delete actions
+  → delete row 1, move down → delete row 2, move down → …
 ```
 
-グリッドが元から持つ横方向のセル移動を再利用するので、**新しい概念がゼロでキーボードも最速**。
-欠点は細い列が並ぶこととヘッダが空になること。
+Enter is a key people hold down to move, so accidents are easy. It departs by half from the web
+convention (buttons also respond to Enter), but **losing vertical traversal with Enter is lighter
+than the misfire**. Hunting up and down a narrow column for the row to open is an ordinary thing
+to do.
 
-**2〜3 個ならまず列を分ける。それが嫌なら 1 セルに詰めてモード③**、という順序を推す。
+Rejected:
+- **Fire on both Enter and Space** — natural as a button, but the chaining risk above.
+- **Space always fires; Enter fires only for non-destructive actions** — the accident is
+  prevented, but **Enter's meaning varies per action** and users cannot predict it.
 
-## 「操作の数」は宣言されたものであって、推測しない
-
-N=1 と N≧2 で Space の意味が変わるが、**この N は Consumer が宣言した数**であり、Chrome が
-描いたマークアップの中の focusable を数えるのではない。
+## With several actions, consider separate columns first
 
 ```
-❌  Chrome のマークアップ内の focusable を数える
-      → MudBlazor 版と既定版で数が変わりうる = 振る舞いが実装依存
+[Open] [Copy] [Delete]     ← three Action Columns side by side
 
-✅  Consumer が宣言した操作の数を見る
-      → 核が知っている。Chrome が何を描こうと変わらない
+→ left/right arrow movement IS the movement between buttons
+→ Space fires. NO mode to enter
 ```
 
-ADR-0010 の「Chrome は意味を決めない」は守られる。
+It reuses the horizontal cell navigation the grid already has, so **no new concept and the fastest
+keyboard path**. The downsides are a row of narrow columns and empty headers.
 
-## Template 列に必ず伴う 4 つの規則
+**With two or three, split the columns first; if that is unacceptable, pack them into one cell and
+use the Interactive mode.**
 
-- **テンプレートは描画だけ。値のアクセサ（`Column.Get`）は必須。** テンプレート列にも
-  ソートとフィルタが要るため。**これは MudBlazor の `MudDataGrid` が実際に踏んだ穴**で、
-  Consumer が `RenderedColumns` を舐めて列の GUID をプロパティ名に対応付ける必要があった
-  （[ADR-0009](./0009-filter-panel-contract.md)）。値を持たない列（操作だけの列）は
-  **ソート不可・フィルタ不可として宣言する**。
-- **コピーはテンプレートを使わない。** `Column.Get` と書式を使う
-  （[ADR-0005](./0005-copy-refuses-rather-than-truncates.md)）。そうしないと**ボタンの HTML が
-  Excel に貼られる**。
-- **`####` はテンプレート列に適用しない**（[ADR-0016](./0016-column-width-and-overflow.md)）。
-  あふれ処理は値を描くセルの話。テンプレートの中身が収まるかは Consumer の責任。
-- **テンプレートは列定義に固定で持たせ、描画のたびに作らない。** 新しいラムダを作ると
-  `Column` が変わったように見え、**行のメモ化がすり抜ける**（ADR-0003 の
-  「デリゲートはフィールドにキャッシュする」と同じ罠）。
+## "How many actions" is declared, never inferred
+
+Space means something different at N=1 and N≥2, but **N is the number the Consumer declared**, not
+a count of focusable elements in whatever markup Chrome painted.
+
+```
+❌  count the focusables inside Chrome's markup
+      → the count can differ between the default and MudBlazor implementations
+        = behaviour depends on the implementation
+
+✅  read the number of actions the Consumer declared
+      → the core knows it. whatever Chrome paints, it does not change
+```
+
+ADR-0010's "Chrome does not decide meaning" is preserved.
+
+## Four rules that always accompany a Template Column
+
+- **A template is rendering only; the value accessor (`Column.Get`) is still required.** Template
+  columns still need sorting and filtering. **This is a hole MudBlazor's `MudDataGrid` actually
+  fell into** — Consumers had to walk `RenderedColumns` to map column GUIDs back to property names
+  ([ADR-0009](./0009-filter-panel-contract.md)). A column with no value (actions only) is
+  **declared unsortable and unfilterable**.
+- **Copy does not use the template.** It uses `Column.Get` and the format
+  ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)). Otherwise **a button's HTML ends up
+  pasted into Excel**.
+- **`####` does not apply to template columns**
+  ([ADR-0016](./0016-column-width-and-overflow.md)). Overflow handling is about cells that paint a
+  value; whether a template's content fits is the Consumer's responsibility.
+- **Hold the template on the column definition; do not construct it per render.** A new lambda
+  each time makes the `Column` look changed and **slips past row memoisation** — the same trap as
+  "cache delegates in a field" in ADR-0003.
 
 ## Consequences
 
-- **モードが 3 つになる。** 選択中 / Overwrite・Caret（編集）/ Interactive（セルの中）。
-  すべて捕捉フェーズのキー処理の上に乗る（ADR-0010）。
-- **Interactive モードはアクセシビリティの標準形。** ARIA の grid パターンは「グリッド全体が
-  1 つの Tab ストップで、セルに入る操作がある」形であり、それに一致する。
-- **詳細表示などの結果はグリッドの外で起きる。** 行の中に展開するのは不可
-  （[ADR-0013](./0013-fixed-row-height.md)、固定行高）。別ビューへ遷移するか、グループを
-  展開して行が増えるか。グリッドは「押された」と伝えるだけで、状態は Consumer が持つ。
-- **Action 列のヘッダは空になりがち。** 列メニュー（ADR-0010）の表示や幅の扱いを、
-  値のある列と同じにしてよいかは実装時に見直す。
+- **There are now three modes.** Selected / Overwrite–Caret (editing) / Interactive (inside a
+  cell). All of them ride on the capture-phase key handling (ADR-0010).
+- **Interactive is the accessible standard form.** The ARIA grid pattern is exactly "the grid is
+  one tab stop, with an operation to enter a cell", and this matches it.
+- **What a detail action opens happens outside the grid.** Expanding inside the row is not
+  possible ([ADR-0013](./0013-fixed-row-height.md), fixed row height). Either navigate to another
+  view, or expand a group so that rows increase. The grid only reports that it was pressed; the
+  Consumer holds the state.
+- **Action Column headers tend to be empty.** Whether the column menu (ADR-0010) and width
+  handling should be identical to a value-bearing column is worth revisiting during
+  implementation.

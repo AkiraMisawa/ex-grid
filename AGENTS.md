@@ -1,143 +1,176 @@
-# ExGrid — AI エージェント向けの手引き
+# ExGrid — guide for AI agents
 
-Blazor 向けの Excel ライクなグリッドコンポーネント。**まだ実装は無く、仕様が固まった段階**。
+An Excel-like grid component for Blazor. **The specification is settled; there is no
+implementation yet.**
 
-製品名は **ExGrid**（表示主体、いま仕様が固まったもの）と **ExSheet**（編集主体、将来）。
-`Ex` は Excel の操作感を名乗る接頭辞で、`ag-grid` の `ag` = "AGnostic" と同じ位置づけ。
-両方を 1 つのリポジトリで開発し、パッケージだけ分ける
-（[ADR-0019](docs/adr/0019-one-repository-many-packages.md)）。
+The products are **ExGrid** (display-oriented, the one that is specified) and **ExSheet**
+(edit-oriented, later). `Ex` is a prefix that names the claim — Excel-like operability — in the
+same position where `ag-grid` puts `ag` = "AGnostic". Both live in one repository and ship as
+separate packages ([ADR-0019](docs/adr/0019-one-repository-many-packages.md)).
 
-この文書には「知らないと必ず間違えること」だけを書く。仕様そのものは繰り返さない。
+This document holds only what you will get wrong without being told. It does not restate the
+specification.
 
-## 何より先に読むもの
+---
 
-| | 中身 |
+## Two rules that override convenience
+
+### 1. Everything committed to this repository is written in English
+
+Conversation with the user may be in any language. **Anything that lands in the repository —
+documents, ADRs, code, comments, commit messages, test names, UI strings — is English.**
+
+Domain terms stay as `CONTEXT.md` defines them (Focus, Anchor, Overlay, Window, Consumer,
+Chrome, Overwrite, Caret, …); do not translate those.
+
+### 2. JavaScript is allowlisted, not "minimised"
+
+JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
+shows the Blazor-side approach is too slow. There are currently **three** permitted uses:
+capture-phase `keydown`, reading/setting scroll offsets, and the clipboard.
+
+**Anything else needs a new ADR.** See
+[ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what
+deliberately stays out of JS (popovers, text measurement, focus, overlay geometry) so you do
+not re-derive it.
+
+---
+
+## Read these first
+
+| | Contents |
 |---|---|
-| `CONTEXT.md` | **用語集**。実装詳細は書かない。`_Avoid_` は「使ってはいけない言い換え」 |
-| `docs/adr/` | **決定と、その理由**。20 本。実装はここに従う |
-| `spikes/render-bench/README.md` | 描画性能の計測ハーネス（捨ててよい） |
+| `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
+| `docs/adr/` | **Decisions and their reasons.** 21 of them. The implementation follows these |
+| `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
-**規則:**
+**Rules:**
 
-- **挙動を変える前に、該当する ADR を読む。** 理由が書いてある。理由を知らずに変えると、
-  たいてい過去に却下した案へ戻る。
-- **決定を変えるなら ADR を書き換える。** 黙って実装だけ乖離させない。実際、ADR-0001 /
-  0003 / 0005 / 0008 は途中で書き換えてある。予測が外れた記録も残してある。
-- **新しい用語を作ったら `CONTEXT.md` に足す。** 用語集は実装の後追いではなく、先に決める。
+- **Read the relevant ADR before changing behaviour.** The reason is written down. Changing
+  something without knowing the reason usually walks back into an option that was already
+  rejected.
+- **If a decision changes, rewrite the ADR.** Do not let the implementation drift away from it
+  silently. ADR-0001 / 0003 / 0005 / 0008 were each rewritten mid-design, and the predictions
+  that turned out wrong are recorded as wrong.
+- **A new term goes into `CONTEXT.md`.** The glossary leads the implementation, it does not
+  trail it.
 
-## ツールチェーン
+## Toolchain
 
-**`dotnet` は PATH に無い。nix 管理。**
+**`dotnet` is not on `PATH`. It is managed by nix.**
 
 ```sh
 nix develop -c dotnet build ...
 nix develop -c dotnet test ...
-nix develop .#browser -c node ...   # ヘッドレス Chromium が要るとき
+nix develop .#browser -c node ...   # when a headless Chromium is needed
 ```
 
-- ターゲットは **net10.0**
-- **flake は git 管理下のファイルしか見ない。** 新しいファイルは `git add` しないと
-  ビルドから見えない（コミットは不要）
-- **指示なくコミット・プッシュしない**
+- Target framework is **net10.0**
+- **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
+  see it (committing is not required)
+- **Do not commit or push unless asked**
 
-## 言語
+## The spine of the design — how to decide when unsure
 
-**ドキュメントは日本語で書く。** ただし用語は英語のまま使う（Focus, Anchor, Overlay,
-Window, Consumer, Chrome, Cell State …）。`CONTEXT.md` がそう決めている理由は、日本語に
-訳すと区別が消えるものがあるため（`Overwrite` / `Caret` を「入力モード」「編集モード」と
-訳すと、どちらも「編集」に聞こえる）。
+The principles that run through all 21 ADRs. **A new decision that follows these will not
+collide with the existing ones.**
 
-## 設計の背骨 — 迷ったときの判断基準
+1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
+   risk numbers. Refuse, or show it unreadably, before producing something that looks
+   plausible but is not. (Copy is never truncated / paste never spills outside the selection /
+   selection is dropped when the order changes / a number that does not fit becomes `####`)
+2. **Immutable base plus a thin diff.** Layer on top; never rewrite in place. (Overlay,
+   selection painting, Row Identity)
+3. **The grid neither holds nor executes.** Not the data, not sorting, not filtering, not
+   grouping — all Consumer-side. The grid notifies.
+4. **Chrome renders and calls back; the core decides meaning.** Swapping Chrome must not change
+   behaviour.
+5. **Selection is cheap, so it is not capped. Caps belong on what cannot be executed.**
 
-ADR 20 本を貫いている原則。**新しい判断もこれに従うと、既存の決定と衝突しない。**
+## Traps that are hard to spot
 
-1. **静かに間違うより、できないと言う。** 金額とリスク数値を扱う部品である。中途半端に
-   正しく見える結果を出すくらいなら、拒否するか、読めない形で見せる。
-   （コピーを切り詰めない / 貼り付けを選択の外へ出さない / 並びが変われば選択を捨てる /
-   収まらない数値は `####`）
-2. **不変なベース ＋ 薄い差分。** 書き換えず、上に重ねる。（Overlay、選択の描画、Row Identity）
-3. **グリッドは持たない・実行しない。** データも、ソートも、フィルタも、グループ化も
-   Consumer 側。グリッドは通知するだけ。
-4. **Chrome（差し替え可能な UI）は描画とコールバックだけ。意味は核が決める。**
-   差し替えても振る舞いは変わらないこと。
-5. **選択は安いので制限しない。制限は「実行できないこと」の側に置く。**
-
-## 踏むと分かりにくい罠
-
-このセッションで実際に踏んだもの、および実測で分かったもの。**どれも「壊れても画面は
-正常に見える」型**なので、レビューでは気づけない。
+Things actually hit during this design, and things the measurements exposed. **All of them are
+the kind that still look correct on screen**, so review will not catch them.
 
 ### Blazor / Razor
 
-- **`ShouldRender()` は自前で書く。** Blazor の自動パラメータ変更検知は、値型・不変型しか
-  「変わっていない」と判定しない。`Row` のような可変な参照型は**参照が同じでも「変わった
-  かもしれない」**と扱われ、メモ化が効かない（実測で確認済み。ADR-0003）。
-- **パラメータに渡すデリゲートはフィールドにキャッシュする。** メソッドグループは描画の
-  たびに新しいインスタンスになり、`ShouldRender()` の比較を毎回すり抜ける。
-- **`StateHasChanged()` は描画を同期的に完走させうる。** その直前に設定したフィールドを
-  直後に読むと、`OnAfterRender` が既に走って null にしている場合がある（実際に
-  `NullReferenceException` を踏んだ）。ローカルに退避してから使う。
-- **名前の衝突が 2 件ある。** ルート名前空間と同名の Razor ページクラスは名前空間を隠す
-  （`Bench` 名前空間の `Bench.razor` → CS0426）。`RenderMode` という名前の enum は
-  `Microsoft.AspNetCore.Components.Web.RenderMode` と衝突する（`_Imports.razor` が
-  取り込んでいる）。
+- **Write `ShouldRender()` by hand.** Blazor's automatic parameter change detection only reports
+  "unchanged" for value/immutable types. A mutable reference type such as `Row` is treated as
+  "may have changed" **even when the reference is identical**, so memoisation does not happen
+  (measured; ADR-0003).
+- **Cache delegates passed as parameters in a field.** A method group creates a new instance on
+  every render and slips past the `ShouldRender()` comparison every time.
+- **`StateHasChanged()` can complete the render synchronously.** A field set just before it may
+  already have been cleared by `OnAfterRender` when you read it back — this produced a real
+  `NullReferenceException`. Copy to a local first.
+- **Two name collisions exist.** A Razor page class with the same name as the root namespace
+  shadows the namespace (`Bench.razor` in namespace `Bench` → CS0426). An enum named
+  `RenderMode` collides with `Microsoft.AspNetCore.Components.Web.RenderMode`, which
+  `_Imports.razor` pulls in.
 
-### この部品固有
+### Specific to this component
 
-- **行の高さは必ず C# のパラメータを通す。** CSS だけで変えると、仮想化の位置計算・選択
-  オーバーレイ・編集欄の座標が**少しずつずれる**（ADR-0013 / 0016）。
-- **キーの捕捉リスナは器（インスタンスのルート要素）に、捕捉フェーズで張る。**
-  `document` に張ると 1 ページ上の全グリッドが反応する。バブリングでは編集欄が先に
-  処理してしまい間に合わない（ADR-0010 / 0018）。
-- **CSS クラスは `ex-` 接頭辞。JS はモジュール化してインスタンスごとのハンドルを返す。**
-  `spikes/render-bench` は `.r` `.c` `.sel` と `window.bench` という**悪い例**をそのまま
-  使っている（捨てる前提なので許容）。製品コードに持ち込まないこと（ADR-0018）。
+- **Row height must go through a C# parameter.** Changing it in CSS alone makes the
+  virtualisation arithmetic, the selection overlay and the editor position **drift slightly
+  out of alignment** (ADR-0013 / 0016).
+- **The capture-phase key listener attaches to the instance root, not `document`.** On
+  `document`, every grid on the page reacts to every keystroke. The bubble phase is too late —
+  the editor has already handled the key (ADR-0010 / 0018).
+- **CSS classes take an `ex-` prefix; JS is a module returning per-instance handles.**
+  `spikes/render-bench` uses `.r` `.c` `.sel` and `window.bench` as a **bad example** on
+  purpose (it is disposable). Do not carry that into product code (ADR-0018).
 
-### 環境
+### Environment
 
-- **`pkill -f "Bench.Host"` は呼び出し元のシェルごと殺す。** 自分のコマンド行が
-  パターンに一致するため。ホストを止めるなら `fuser -k 5199/tcp`。
+- **`pkill -f "Bench.Host"` kills the calling shell**, because the pattern matches the shell's
+  own command line. Stop the spike host with `fuser -k 5199/tcp`.
 
-## テスト
+## Tests
 
-**3 層に分ける。ゲートは 1〜3 層すべて。ただし性能はゲートに入れない。**
+**Three layers. All three gate. Performance does not gate.**
 
-| 層 | 道具 | 対象 |
+| Layer | Tool | Covers |
 |---|---|---|
-| 1. 純粋ロジック | xUnit | 選択の矩形演算、Anchor/Focus、Enter/Tab の巡回、貼り付けの形状判定、コピーの拒否判定、あふれの判定、Auto 幅、並びの版 |
-| 2. コンポーネント | bUnit（ブラウザ不要） | 仮想化がどの行を描くか、**行メモ化が実際にスキップしているか**（描画回数を数える） |
-| 3. ブラウザ | CDP ドライバ | 捕捉フェーズのキー処理、クリップボード、Popover、複数インスタンスの独立性 |
+| 1. Pure logic | xUnit | Selection rectangle arithmetic, Anchor/Focus, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
+| 2. Component | bUnit (no browser) | Which rows get rendered, and **whether row memoisation actually skips** (count renders) |
+| 3. Browser | CDP driver | Capture-phase keys, clipboard, popovers, multiple-instance independence |
 
-**規則:**
+**Rules:**
 
-- **テスト名に ADR 番号を書く。** 失敗したときに「どの決定に違反したか」が分かる。
+- **Put the ADR number in the test name.** A failure then says which decision was violated.
   ```csharp
-  [Fact]  // ADR-0011: 並び順が変わったら選択を捨てる
+  [Fact]  // ADR-0011: selection is dropped when the sort order changes
   public void Selection_is_dropped_when_sort_changes() { … }
   ```
-- **ADR には具体例が散文で書いてある。** Enter/Tab の巡回図、貼り付けの形状表、あふれの
-  規則 — テストケースとしてほぼそのまま移せる。
-- **`GridSource.From` はフィルタとソートの意味論の参照実装**であり、その振る舞いが仕様
-  （ADR-0001）。null の並び順・大文字小文字・カルチャを網羅的に固定すること。
-- **性能は合否に使わない。** 環境で大きく振れる（同じ計測でヘッドレス最大 11.7ms、実機
-  19.7ms）。`spikes/render-bench` の結果 JSON を蓄積して傾向を見る。
+- **The ADRs already contain the cases in prose.** The Enter/Tab cycling diagram, the paste
+  shape table, the overflow rules — they transcribe almost directly.
+- **`GridSource.From` is the reference implementation of filter and sort semantics**, and its
+  behaviour is the specification (ADR-0001). Pin null ordering, case sensitivity and culture
+  exhaustively.
+- **Never gate on performance.** It swings with the environment — the same measurement gave a
+  maximum of 11.7 ms headless and 19.7 ms on real hardware. Accumulate the result JSON from
+  `spikes/render-bench` and watch the trend instead.
 
-## 性能について主張するときは、測ってから
+## Measure before claiming anything about performance
 
-このセッションで**2 回、予測が外れている**。どちらも ADR に「外れた」と記録してある。
+**Two predictions were wrong during this design.** Both are recorded as wrong in the ADRs.
 
-- 「セルのコンポーネント化は遅い」→ 条件の半分でしか成り立たず、逆転した（ADR-0003）
-- 「選択の CSS クラス方式はドラッグで重い」→ 中央値は軽く、効いたのは**一度に所属が変わる
-  行数**だった（ADR-0008）
+- "Making cells components is slow" → held only under half the conditions, and inverted under
+  the other half (ADR-0003)
+- "Painting selection with per-cell classes is heavy while dragging" → the median was light;
+  what mattered was **how many rows change membership at once** (ADR-0008)
 
-`spikes/render-bench` は生きている。**推論で断定せず、モードを足して測る。**
+`spikes/render-bench` still works. **Add a mode and measure rather than asserting from
+reasoning.**
 
-## やらないこと
+## Do not
 
-- **核に MudBlazor / Fluxor などの依存を入れない。** 連携は別パッケージ
-  （`ExGrid.MudBlazor` / `ExGrid.Fluxor`）に閉じる。同じリポジトリにあることと、依存が
-  混ざることは別。**プロジェクト参照の向きで構造的に守る**。Chrome 固有 API への依存も
-  ポップオーバーとクリップボードの 2 箇所に限る（ADR-0017 / 0018）。
-- **`CONTEXT.md` を仕様書やメモ帳にしない。** 用語集であり、それ以外は書かない。
-- **ADR を後から静かに書き換えない。** 変えるなら、何がどう変わったかを本文に残す
-  （ADR-0005 の「根拠は一度差し替わっている」が手本）。
+- **Do not add MudBlazor, Fluxor or similar dependencies to the core.** Integrations live in
+  separate packages (`ExGrid.MudBlazor`, `ExGrid.Fluxor`). Sharing a repository is not the same
+  as mixing dependencies — **enforce it structurally through project reference direction**.
+  Browser-specific API use is likewise confined to popovers and the clipboard
+  (ADR-0017 / 0018 / 0021).
+- **Do not turn `CONTEXT.md` into a specification or a scratchpad.** It is a glossary and
+  nothing else.
+- **Do not quietly rewrite an ADR.** When a decision changes, leave what changed and why in the
+  text (ADR-0005's "the rationale was replaced once" is the model).

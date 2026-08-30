@@ -1,287 +1,318 @@
 # ExGrid
 
-Blazor 向けの表形式 UI コンポーネント。Excel に近い操作感を、業務アプリの画面部品として
-再利用できる形で提供することを目指す。
+A tabular UI component for Blazor. The goal is Excel-like operability, packaged so it can be
+reused as a screen component inside line-of-business applications.
 
-名前は `ag-grid` の流儀に倣う — **接頭辞が製品の主張を名乗る**。`ag` が "AGnostic"
-（フレームワーク非依存）を名乗ったのと同じ位置に、`Ex` が **Excel の操作感**を置く。
-`ko-grid`（Knockout）や `ng-grid`（Angular）のように前提を名乗ると、その前提ごと古びる。
+The name follows the `ag-grid` convention — **the prefix states the product's claim**. Where
+`ag` stated "AGnostic" (framework independence), `Ex` states **Excel-like operability**. Naming
+a premise instead, as `ko-grid` (Knockout) and `ng-grid` (Angular) did, ages with the premise.
 
 ## Language
 
-### 製品の 2 系統
+### The two products
 
 **ExGrid**:
-大量の行を高速に**見せる**ことを主目的とするグリッド。データは外部が所有し、グリッドは
-それを映すだけ。仮想スクロール・列の固定・ソート・フィルタ・集計が主戦場。
-**いま仕様が固まっているのはこちら。**
-_Avoid_: DataGrid（一般名詞としては可だが製品を指すときは ExGrid）、テーブル、一覧、リストビュー
+A grid whose main purpose is to **show** large numbers of rows quickly. The data is owned
+elsewhere; the grid only reflects it. Virtual scrolling, pinned columns, sorting, filtering and
+aggregation are its territory. **This is the one that is specified.**
+_Avoid_: DataGrid (fine as a common noun, but the product is ExGrid), table, list, list view
 
 **ExSheet**:
-Excel の**編集操作**そのものの再現を主目的とするグリッド。グリッド自身が可変のセル
-モデルを所有し、フィルハンドル・行列の挿入削除・数式を持ちうる。**将来。**
-_Avoid_: Sheet（一般名詞としては可）、スプレッドシート、ワークシート、表計算
+A grid whose main purpose is to reproduce Excel's **editing** behaviour. It owns a mutable cell
+model of its own and may have a fill handle, row/column insertion and deletion, and formulas.
+**Future.**
+_Avoid_: Sheet (fine as a common noun), spreadsheet, worksheet
 
-> **数式はどこまで入るか。** 「数式」と呼ばれるものは 3 つに分かれ、**うち 2 つは ExGrid で
-> 既に可能**。
+> **How far do formulas go?** What people call "a formula" splits three ways, and **two of them
+> are already possible in ExGrid**.
 >
-> | | ExGrid | 手段 |
+> | | ExGrid | How |
 > |---|---|---|
-> | 計算列（PV × FX レートの円換算など） | **できる** | `Column` は行から値を取り出す**関数**を持つ。計算して返すだけ |
-> | 合計・小計行 | **できる** | **Row Kind** に「合計」がある。値は Consumer が計算する |
-> | ユーザが打つ `=A1+B2` | **できない** | 可変セルモデルと依存グラフの所有が要る。**ExSheet の領域** |
+> | Computed column (PV × FX rate converted to a reporting currency) | **Yes** | A `Column` holds a **function** that extracts the value from a row. Compute and return |
+> | Total / subtotal rows | **Yes** | **Row Kind** has "total". The Consumer computes the value |
+> | A user typing `=A1+B2` | **No** | Requires owning a mutable cell model and a dependency graph. **ExSheet's territory** |
 >
-> 最後の 1 つが入らないのは名前負けではなく設計上の帰結 — ExGrid はデータを所有しない
-> （[ADR-0001](./docs/adr/0001-consumer-pushes-the-window-grid-does-not-fetch.md)）。
-> 本物の Excel が隣にあるので、劣化した数式エンジンを再実装する理由もない
-> （コピーは生値を保って往復できる、[ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md)）。
+> The third one is absent by design, not because the name overreaches — ExGrid does not own the
+> data ([ADR-0001](./docs/adr/0001-consumer-pushes-the-window-grid-does-not-fetch.md)). And with
+> the real Excel sitting next to it, there is no reason to reimplement a worse formula engine
+> (copy round-trips with the raw value preserved,
+> [ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md)).
 
-> ExGrid と ExSheet を分ける唯一の根拠は **データ所有権**（外部を映すか、自分で持つか）と
-> **数式エンジンの有無**。仮想スクロール・選択・キーボード操作・クリップボードは
-> 両者で共通しうる。描画方式（DOM / Canvas）は分割の根拠ではない。
-> **セル編集の有無も分割の根拠ではない** — グリッドが編集の意図を伝えるだけで
-> データを所有しないなら、編集できる DataGrid は矛盾しない
-> （[ADR-0007](./docs/adr/0007-edits-are-an-overlay-owned-by-the-consumer.md)）。
-> Undo/Redo も同様に、編集があれば必要になるもので、データ所有権とは無関係。
+> The **only** grounds separating ExGrid from ExSheet are **data ownership** (reflecting
+> something external versus holding it) and **whether there is a formula engine**. Virtual
+> scrolling, selection, keyboard behaviour and the clipboard can be common to both. The
+> rendering technique (DOM / Canvas) is not grounds for the split.
+> **Neither is cell editing** — if the grid only reports the intent to edit and does not own the
+> data, an editable DataGrid is not a contradiction
+> ([ADR-0007](./docs/adr/0007-edits-are-an-overlay-owned-by-the-consumer.md)).
+> Undo/redo likewise follows from editing, and has nothing to do with data ownership.
 
-### 表示の構造
+### Display structure
 
 **Viewport**:
-グリッドが実際に描画している行×列の矩形範囲。データ全体ではなく、ここに入る量だけが
-描画コストを決める。
-_Avoid_: 可視領域、表示範囲、ウィンドウ
+The rectangle of rows × columns the grid is actually painting. Render cost is decided by what
+fits in here, not by the size of the data.
+_Avoid_: visible area, visible range, window
 
 **View State**:
-ユーザがその画面に対して行った、データではない設定 — 列幅・列順・固定列・ソート順・
-フィルタ条件。**シリアライズして外部に永続化できることが要件**（消費者側が個人設定
-として保存するため）。**自動で決まったものは含めない** — Auto 幅は保存されず、
-「Auto である」という意思だけが保存される
-（[ADR-0016](./docs/adr/0016-column-width-and-overflow.md)）。
-_Avoid_: レイアウト、設定、プリファレンス
+The non-data settings a user has applied to a screen — column widths, column order, pinned
+columns, sort order, filter conditions. **Being serialisable for external persistence is a
+requirement** (the Consumer stores it as a personal setting). **Anything decided automatically
+is excluded** — an Auto width is not persisted; only the intent "this column is Auto" is
+([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)).
+_Avoid_: layout, settings, preferences
 
 **Saved View**:
-名前を付けて保存された View State。ユーザが複数持ち、切り替えて使う。
-_Avoid_: プリセット、テンプレート
+A named View State. A user keeps several and switches between them.
+_Avoid_: preset, template
 
-### 消費者
+### The consumer side
 
 **Consumer**:
-このコンポーネントを画面に埋め込んで使うアプリケーション側。仕様はここから駆動される。
-_Avoid_: ホスト、利用者、クライアント（"ユーザ" は Consumer の先にいる人間を指す）
+The application that embeds this component in a screen. The specification is driven from here.
+_Avoid_: host, client (a "user" is the human beyond the Consumer)
 
 **Row Model**:
-Consumer が 1 行として渡してくるデータの形。
-_Avoid_: レコード、エンティティ、アイテム
+The shape of the data the Consumer hands over as one row.
+_Avoid_: record, entity, item
 
 **Row Identity**:
-その行が「同じ行か」を決める基準。グリッドは中身の書き換えではなく**同一性の変化**で
-再描画を判断するため、データが変わったら Data Source は**別のインスタンスを返す**か、
-行のバージョンを上げること。in-place の書き換えは画面に反映されない
-（[ADR-0003](./docs/adr/0003-cells-are-plain-markup-by-default-not-components.md)）。
-_Avoid_: キー、ID（Row Identity は「同じか」の判定基準であって、値そのものではない）
+The basis on which a row counts as "the same row". The grid decides whether to repaint from a
+**change of identity**, not from a rewrite of contents, so when data changes the Consumer must
+**return a different instance** or bump the row's version. An in-place rewrite does not reach the
+screen ([ADR-0003](./docs/adr/0003-cells-are-plain-markup-by-default-not-components.md)).
+_Avoid_: key, id (Row Identity is the test for sameness, not the value itself)
 
 **Placeholder**:
-まだ実データを描かない行。理由は 2 つあるが機構は 1 つ — Data Source からの取得待ちと、
-高速スクロール中の意図的な間引き
-（[ADR-0004](./docs/adr/0004-cap-the-cells-touched-per-frame.md)）。
-_Avoid_: スケルトン、ローディング行、ダミー行
+A row not yet painted with real data. Two reasons, one mechanism — waiting for data from the
+Consumer, and deliberate skipping during fast scrolling
+([ADR-0004](./docs/adr/0004-cap-the-cells-touched-per-frame.md)).
+_Avoid_: skeleton, loading row, dummy row
 
 **Range Request**:
-グリッドが「この範囲の行が要る」と Consumer に鳴らす通知。グリッドは待たないし、
-自分では取りに行かない。データが来るのは Consumer が新しい Window を渡したとき
-（[ADR-0001](./docs/adr/0001-consumer-pushes-the-window-grid-does-not-fetch.md)）。
-_Avoid_: フェッチ、リクエスト、ロード
-
-**Row Sequence Version**:
-行の**並び**を識別する版。値ではない。Consumer が押し込み、**変わったら選択が解除される**。
-同じ行集合で値だけ更新されたときは上げない — そうすることで、頻度の高い更新では選択が
-生き残る（[ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)）。
-_Avoid_: データ版、世代（`poke` の Feed version と紛れる。こちらは並びだけを指す）
-
-**Grid Source**:
-押す形の上に載る、同梱の便利層。手元の配列（`GridSource.From`）やサーバ問い合わせ
-（`GridSource.Fetch`）を包んで、窓の保持と範囲要求への応答を肩代わりする。
-**`GridSource.From` は Filter と Sort の意味論の参照実装**でもある — 「contains は
-大文字小文字を区別するか」「null は先頭か末尾か」をそこが定義し、サーバ側実装は
-それに合わせる。
-_Avoid_: データプロバイダ、リポジトリ、フィード（`poke` の Feed と紛れる）、
-データソース（引く形を連想させる）
+The notification the grid raises to say "I need rows in this range". The grid does not wait, and
+does not fetch anything itself. Data arrives when the Consumer hands over a new Window
+([ADR-0001](./docs/adr/0001-consumer-pushes-the-window-grid-does-not-fetch.md)).
+_Avoid_: fetch, request, load
 
 **Window**:
-Consumer が押し込む、連続した行の塊。Viewport より広く取る（先読み）。ページャを使う場合は
-1 ページが Window になる — **ページングは Range Request の駆動源が変わるだけ**
-（[ADR-0015](./docs/adr/0015-paging-is-another-driver-for-range-requests.md)）。
-_Avoid_: ページ、チャンク、バッチ（`poke` の Batch と紛れる）
+The contiguous block of rows the Consumer pushes in. Taken wider than the Viewport
+(read-ahead). With a pager, one page is the Window — **paging only changes what drives Range
+Requests** ([ADR-0015](./docs/adr/0015-paging-is-another-driver-for-range-requests.md)).
+_Avoid_: page, chunk, batch
+
+**Row Sequence Version**:
+A version identifying the **order** of rows — not their values. The Consumer pushes it, and
+**selection is cleared when it changes**. It is not bumped when only values change within the
+same set of rows, so selection survives the frequent kind of update
+([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+_Avoid_: data version, generation (this names the order only)
+
+**Grid Source**:
+The bundled convenience layer that sits on top of the push interface. It wraps an in-memory
+array (`GridSource.From`) or a server query (`GridSource.Fetch`) and takes over holding the
+Window and answering Range Requests.
+**`GridSource.From` is also the reference implementation of Filter and Sort semantics** — it
+defines whether `contains` is case-sensitive and whether nulls sort first or last, and
+server-side implementations match it.
+_Avoid_: data provider, repository, feed, data source (which suggests the grid pulls)
 
 **Query**:
-グリッドが Data Source に渡す問い合わせの全体 — どの範囲を、どの Filter で、どの Sort で。
-シリアライズ可能であることが要件
-（[ADR-0002](./docs/adr/0002-filters-are-a-serializable-model-not-linq-expressions.md)）。
-_Avoid_: リクエスト、条件、クライテリア
+The whole of what the grid asks for — which range, under which Filter, under which Sort. Being
+serialisable is a requirement
+([ADR-0002](./docs/adr/0002-filters-are-a-serializable-model-not-linq-expressions.md)).
+_Avoid_: request, criteria, conditions
+
+### Filtering
 
 **Filter**:
-`{列, 演算子, 値}` を AND/OR で組んだ構造化モデル。グリッドが意味を理解し、UI を描ける
-ことが条件。表現しきれない条件は **Opaque Filter** として並べて置く。
-_Avoid_: 絞り込み、述語、プレディケート
-
-**Filter UI Mode**:
-ある列のフィルタが「値のリスト」を出せるか、「条件」だけか、両方か。**列定義で Consumer が
-宣言する** — 値の種類数を知っているのは Consumer だけだから
-（[ADR-0009](./docs/adr/0009-filter-panel-contract.md)）。
-_Avoid_: フィルタ種別、フィルタタイプ
-
-**Chrome**:
-グリッド自身が描く UI のうち、差し替え可能な部分 — フィルタパネル、列メニュー、セルの
-編集欄、読み込み表示。**描画とコールバックだけを行い、意味は決めない**（どの演算子が
-使えるか、フィルタが何を意味するかは核が決める）。差し替えても振る舞いは変わらない。
-_Avoid_: テーマ、スキン（見た目だけを指す語と紛れる）、テンプレート
-
-**Cell Editor**:
-編集中のセルの上に浮かせる、ただ 1 つの入力欄。**行の中には置かない** — 行のメモ化が
-壊れるため（[ADR-0010](./docs/adr/0010-chrome-seams-column-menu-editor-loading.md)）。
-確定前のテキストを持つのはここ。
-_Avoid_: インプット、編集セル、エディタ
-
-**Overwrite / Caret**:
-セル**編集**の 2 つの状態（**Interactive** と合わせて全 3 モード）。**Overwrite** はセルを選んでいきなり打鍵して入った状態で、元の値は
-置き換わり、**矢印キーは確定して隣へ移動する**。**Caret** は F2 やダブルクリックで入った
-状態で、元の値が残り、**矢印キーは文字列の中のカーソルを動かす**。Excel と同じ区別で、
-これがないと「打って矢印で次へ」の連続入力が成立しない。
-_Avoid_: 入力モード / 編集モード（日本語だと両方「編集」に聞こえて区別が消える）
+A structured model of `{column, operator, value}` combined with AND/OR. The condition is that
+the grid understands it well enough to render UI for it. Anything the model cannot express goes
+alongside as an **Opaque Filter**.
+_Avoid_: predicate, narrowing
 
 **Opaque Filter**:
-Consumer だけが意味を知る条件。グリッドは UI を描かず、Data Source へ素通しする。
-_Avoid_: カスタムフィルタ（グリッドが描ける独自 UI と紛れる）
+A condition only the Consumer understands. The grid renders no UI for it and passes it straight
+through.
+_Avoid_: custom filter (confusable with grid-rendered custom UI)
 
-**Row Kind**:
-その行が何を表しているか — 明細 / グループ / 合計。**Cell State とは別物**で、あちらは
-セル単位の「値の状態」、こちらは行単位の「行の役割」。ピボット的なビューで
-グループ行と明細行を描き分け、展開・折りたたみの対象を決めるために要る
-（[ADR-0013](./docs/adr/0013-fixed-row-height.md)）。
-_Avoid_: 行タイプ、レベル、階層（Row Kind は階層の深さではなく役割）
+**Filter UI Mode**:
+Whether a column's filter can offer a list of values, only conditions, or both. **Declared by
+the Consumer in the column definition** — only the Consumer knows the cardinality
+([ADR-0009](./docs/adr/0009-filter-panel-contract.md)).
+_Avoid_: filter kind, filter type
 
-**Cell Metadata**:
-セルが持つ、値そのものではない付随情報。表示や装飾を左右するが、ソート・集計の対象では
-ない。実例：`poke` の as-of スタンプ（同じ行の FVA が intraday-1400、CVA が COB という
-ことが起きるため、行単位では表現できない）。
-**セルに格納するものではなく、(行, 列) から問い合わせるもの** — `poke` の as-of は
-(book × metric) から引ける関数であり、Consumer が答えられる。
-_Avoid_: 属性、タグ、アノテーション
+### Rendering and interaction
 
-**Overlay**:
-不変のベースに重ねる、疎な差分。上書きされた列だけを持ち、行の複製は持たない。
-リセットは**エントリの削除**で済む（元の値はベースにあるため保存不要）。
-`poke` の baseline ⊕ overlay と同じ形で、そちらは差分の由来がバッチ後の変化、
-こちらはユーザの編集。
-_Avoid_: 差分、パッチ、変更セット、ドラフト
+**Chrome**:
+The parts of the grid's own UI that can be substituted — the filter panel, the column menu, the
+cell editor, the loading indicator. **It renders and calls back; it does not decide meaning**
+(which operators exist, and what a filter means, are the core's). Substituting it does not change
+behaviour.
+_Avoid_: theme, skin (those name appearance only), template
 
-**Edit Intent**:
-ユーザが確定した編集を、グリッドが Consumer に伝える通知 —（行の同一性, 列, 新しい値）。
-グリッドは自分では何も変えない。画面が変わるのは Consumer が新しい行インスタンスを
-返したとき。
-_Avoid_: 変更イベント、コミット、更新
+**Cell Editor**:
+The single input floated over the cell being edited. **Never placed inside the row** — that
+breaks row memoisation
+([ADR-0010](./docs/adr/0010-chrome-seams-column-menu-editor-loading.md)). This is where
+uncommitted text lives.
+_Avoid_: input, editing cell
 
-**Selection**:
-ユーザが選んでいるセルの集合。**矩形のリスト**として持ち、座標は現在の並び順における
-**位置**であって行の同一性ではない（グリッドは Window の外の同一性を知らないため）。
-飛び地の複数選択を持つ。**並び順やフィルタが変わったら解除される**
-（[ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)）。
-**行はこれを知らない** — 描画はオーバーレイが担い、Row Identity に混ぜない
-（[ADR-0008](./docs/adr/0008-selection-is-painted-by-an-overlay.md)）。
-_Avoid_: ハイライト、アクティブセル（Selection の中の 1 点は **Focus**）
-
-**Focus**:
-キー操作の起点になっている 1 セル。範囲拡張の**可動側**の端。固定側の端は **Anchor**。
-Enter / Tab の巡回で動くのは Focus だけで、**範囲は選択されたまま残る**
-（[ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)）。
-常に見えている必要があり、Viewport の外へ出たらグリッドがスクロールする。
-_Avoid_: カーソル、現在セル、選択セル
-
-**Anchor**:
-範囲拡張の**固定側**の端。クリックと Ctrl+クリックで動く。飛び地があるとき、
-Shift+矢印が伸ばすのは **Anchor が属する範囲**。
-_Avoid_: 起点、基準セル
-
-**Column**:
-実行時オブジェクト。ヘッダの見た目だけでなく、**行から値を取り出す方法**と、型
-（フィルタ UI と既定の書式を決める）と、幅（`Auto | Fixed` ＋ `MinWidth` / `MaxWidth`）を
-自分で持つ。静的に並べた列も、データから生成した列（テナーラダーの各テナー）も、
-同じ Column であって区別しない。
-_Avoid_: フィールド、項目、カラム定義
-
-**Action Column**:
-セルに**宣言された操作**を置く列。アイコン/ラベルは Consumer が渡すが、「押したら発火する」
-という意味は核が持つ。**素のマークアップで描かれ、コンポーネント境界を増やさない**
-（[ADR-0020](./docs/adr/0020-action-and-template-columns.md)）。
-_Avoid_: ボタン列、コマンド列、操作列
-
-**Template Column**:
-セルの中身を Consumer が任意のマークアップで描く列。**セルがコンポーネントになるので
-コストが上がる** — 列単位のオプトインである理由。値のアクセサは**別途必須**（ソートと
-フィルタに要る）。
-_Avoid_: カスタム列、描画列
+**Overwrite / Caret**:
+The two states of cell **editing** (three modes in total, with **Interactive**). **Overwrite** is
+entered by typing straight onto a selected cell: the original value is replaced, and **the arrow
+keys commit and move to the neighbouring cell**. **Caret** is entered with F2 or a double click:
+the original value stays and **the arrow keys move the caret within the text**. The distinction
+is Excel's, and without it "type, arrow to the next cell" does not work as continuous entry.
+_Avoid_: input mode / edit mode (both read as "editing" and the distinction disappears)
 
 **Interactive**:
-セルの**中**に入っている状態。Action 列（操作が複数）や Template 列で、Space で入り
-Esc で出る。**Overwrite / Caret と並ぶ第 3 のモード**で、ARIA の grid パターンに一致する。
-_Avoid_: フォーカスモード、編集モード（Caret と紛れる）
-値が列幅に収まらない状態。**テキストは省略記号で切り、数値と日付は `####` にする** —
-切り詰められたテキストは切り詰められたと分かるが、切り詰められた数値は**別の正当な数値に
-見える**ため（[ADR-0016](./docs/adr/0016-column-width-and-overflow.md)）。
-_Avoid_: 溢れ、切り詰め、省略（省略は許される側の挙動を指す語なので、状態の名前にしない）
+The state of being **inside** a cell. Entered with Space and left with Esc, on an Action Column
+with several actions or on a Template Column. **The third mode alongside Overwrite / Caret**, and
+it matches the ARIA grid pattern.
+_Avoid_: focus mode, edit mode (confusable with Caret)
+
+**Cell State**:
+The generic vocabulary the grid understands for "this cell is in an unusual state" — normal /
+stale / missing / error / modified. The appearance belongs to the theme; any accompanying data
+(tooltip text, for instance) stays opaque and is rendered by the Consumer. **The Consumer's own
+vocabulary does not enter the grid**
+([ADR-0006](./docs/adr/0006-grid-owns-a-generic-cell-state-vocabulary.md)).
+_Avoid_: cell status, flag, decoration
+
+**Cell Metadata**:
+Information a cell carries that is not the value itself. It affects display and decoration but is
+never sorted or aggregated on. Example: an as-of stamp, where FVA and CVA in the *same row* can
+come from different batch runs, so it cannot be expressed per row.
+**It is not stored on the cell; it is asked for by (row, column)** — an as-of stamp is a function
+of (book × metric) and the Consumer can answer it.
+_Avoid_: attribute, tag, annotation
+
+**Overflow**:
+The state of a value not fitting the column width. **Text is cut with an ellipsis; numbers and
+dates become `####`** — truncated text is visibly truncated, whereas a truncated number **looks
+like a different, perfectly valid number**
+([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)).
+_Avoid_: truncation, ellipsis (that names the permitted behaviour, not the state)
+
+### Editing
+
+**Overlay**:
+A sparse diff laid over an immutable base. It holds only the overridden columns and never copies
+rows. Reset is **deleting an entry** (the original is still in the base, so nothing needs
+saving).
+_Avoid_: diff, patch, change set, draft
+
+**Edit Intent**:
+The notification the grid raises when a user commits an edit — (row identity, column, new value).
+The grid changes nothing itself. The screen changes when the Consumer returns new row instances.
+_Avoid_: change event, commit, update
+
+### Selection
+
+**Selection**:
+The set of cells a user has selected. Held as a **list of rectangles** whose coordinates are
+**positions in the current order**, not row identities (the grid does not know identities outside
+the Window). Disjoint multi-range selection is supported. **Cleared when the sort order or filter
+changes**
+([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+**Rows know nothing about it** — painting is done by an overlay, and it is never mixed into Row
+Identity ([ADR-0008](./docs/adr/0008-selection-is-painted-by-an-overlay.md)).
+_Avoid_: highlight, active cell (the single point inside a Selection is **Focus**)
+
+**Focus**:
+The one cell that keyboard operations start from. The **moving** end of range extension; the
+fixed end is the **Anchor**. Enter / Tab cycling moves only the Focus, and **the range stays
+selected** ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)). It must always
+be visible; if it leaves the Viewport the grid scrolls to it.
+_Avoid_: cursor, current cell, selected cell
+
+**Anchor**:
+The **fixed** end of range extension. Moved by a click and by Ctrl+click. When there are disjoint
+ranges, Shift+arrow extends **the range the Anchor belongs to**.
+_Avoid_: origin, base cell
+
+### Columns
+
+**Column**:
+A runtime object. Beyond the header's appearance it holds **how to extract the value from a
+row**, the type (which decides the filter UI and the default format), and the width
+(`Auto | Fixed` plus `MinWidth` / `MaxWidth`). A statically listed column and a column generated
+from data (each tenor of a tenor ladder) are the same Column, not distinguished.
+_Avoid_: field, column definition
+
+**Row Kind**:
+What a row represents — detail / group / total. **Distinct from Cell State**: that names the
+state of a value per cell, this names the role of a row. Needed to paint group rows differently
+from detail rows and to decide what expands and collapses in pivot-like views
+([ADR-0013](./docs/adr/0013-fixed-row-height.md)).
+_Avoid_: row type, level, hierarchy (Row Kind is the role, not the depth)
+
+**Action Column**:
+A column whose cells carry **declared actions**. The Consumer supplies the icon or label, but the
+meaning — "pressing this fires something" — belongs to the core. **Painted as plain markup and
+adds no component boundary**
+([ADR-0020](./docs/adr/0020-action-and-template-columns.md)).
+_Avoid_: button column, command column
+
+**Template Column**:
+A column whose cell contents the Consumer paints with arbitrary markup. **The cell becomes a
+component, so it costs more** — which is why it is opt-in per column. A value accessor is
+**still required** (sorting and filtering need it).
+_Avoid_: custom column, render column
 
 ## Flagged ambiguities
 
-- **「グリッド」単体では ExGrid / ExSheet のどちらか判別できない。** 曖昧なときは必ず
-  どちらかに寄せて呼ぶ。両方を指したいときは接頭辞で「Ex 系」と書く。総称の 1 語は
-  作らない（`ag-grid` にも総称は無い）。
-- **「ユーザ」は二重に使われうる** — このコンポーネントを組み込む開発者と、画面を触る
-  エンドユーザ。前者は **Consumer**、後者は **ユーザ** と呼び分ける。
+- **"Grid" on its own does not say whether ExGrid or ExSheet is meant.** When it is ambiguous,
+  always commit to one. To mean both, write "the Ex family". Do not invent a single umbrella
+  noun (`ag-grid` has none either).
+- **"User" gets used two ways** — the developer embedding this component, and the end user
+  touching the screen. The former is the **Consumer**; the latter is the **user**.
 
-## 例：Consumer 開発者とコンポーネント設計者の会話
+## Example: a conversation between a Consumer developer and the component designer
 
-> **Consumer 開発者**: poke のポジション画面に出したいんだけど、行は何を渡せばいい？
+> **Consumer developer**: I want this on our position screen. What do I hand over as rows?
 >
-> **設計者**: いま画面に出す **Window** を渡してください。グリッドは自分では取りに行きません。
-> 足りなければ **Range Request** で「この範囲が要る」と鳴らすので、そちらが次の Window を
-> 渡してください。
+> **Designer**: The **Window** you want on screen right now. The grid does not fetch anything. If
+> it needs more it raises a **Range Request** saying which range, and you hand over the next
+> Window.
 >
-> **Consumer 開発者**: 面倒じゃない？ 配列を渡すだけにしてよ。
+> **Consumer developer**: Isn't that a nuisance? Let me just pass an array.
 >
-> **設計者**: それなら `GridSource.From(rows)` を渡してください。窓の管理は同梱の
-> **Grid Source** が代わりにやります。サーバページングなら `GridSource.Fetch(...)`。
-> 状態管理ライブラリを使っていて全部自分で持ちたいときだけ、素の入口を使ってください。
+> **Designer**: Then pass `GridSource.From(rows)`. The bundled **Grid Source** manages the Window
+> for you. For server paging, `GridSource.Fetch(...)`. Use the bare interface only when you are
+> on a state-management library and want to hold everything yourself.
 >
-> **Consumer 開発者**: 列ヘッダのソートを押したら、並べ替えてくれる？
+> **Consumer developer**: If I click the sort in a column header, does it sort?
 >
-> **設計者**: **グリッドは並べ替えません。** 押されたことを通知するので、並べた結果を
-> Window として渡してください。上書きされた値があるときに正しく並べられるのは、
-> ベースと差分の両方を知っているそちらだけなので。
+> **Designer**: **The grid does not sort.** It tells you the header was clicked, and you hand
+> back the sorted result as a Window. When there are overridden values, you are the only one who
+> can order them correctly — you know both the base and the diff.
 >
-> **Consumer 開発者**: バッチが走って値が更新されたら、行オブジェクトの中身を書き換えれば
-> 画面も変わる？
+> **Consumer developer**: When the batch runs and values update, does rewriting the row objects
+> update the screen?
 >
-> **設計者**: **変わりません。** グリッドは **Row Identity** で判断していて、中身の
-> 書き換えは見ていません。別のインスタンスを返すか、行のバージョンを上げてください。
-> poke のベースラインはフィード版ごとに不変なスナップショットなので、そのまま乗ります。
+> **Designer**: **No.** The grid judges by **Row Identity** and does not look at rewritten
+> contents. Return different instances, or bump the row version. Snapshots that are immutable per
+> feed version fit this directly.
 >
-> **Consumer 開発者**: ユーザがセルを編集したら？
+> **Consumer developer**: And when a user edits a cell?
 >
-> **設計者**: **Edit Intent** を鳴らすだけで、グリッドは何も変えません。そちらが
-> **Overlay** に記録し、それを適用した新しい Window を渡してください。適用は同梱の
-> ヘルパを使ってください — 自前で書いて in-place に書き換えると、**セルの色だけ
-> 「変更済み」になって値が古いまま**という壊れ方をします。
+> **Designer**: The grid raises an **Edit Intent** and changes nothing. You record it in the
+> **Overlay** and hand back a new Window with it applied. Use the bundled helper to apply it —
+> hand-writing it and rewriting in place produces the failure where **the cell is coloured as
+> "modified" while the value is still the old one**.
 >
-> **Consumer 開発者**: 同じ行の中で、FVA はイントラデイ、CVA は COB みたいに鮮度が
-> ばらつく。これは行に持たせるの？
+> **Consumer developer**: Within one row, FVA can be intraday while CVA is close-of-business. Do
+> I put that on the row?
 >
-> **設計者**: 行には持ちません。**Cell Metadata** は (行, 列) から**問い合わせる**もので、
-> グリッドが必要なときに聞きにいきます。返すのは **Cell State**（正常/古い/欠損/エラー/
-> 変更あり）まで。「COB か intraday-1400 か」という時刻そのものは、付随データとして
-> ツールチップに載せてください。
+> **Designer**: Not on the row. **Cell Metadata** is **asked for** by (row, column), and the grid
+> asks when it needs it. What you return is a **Cell State** — normal / stale / missing / error /
+> modified. The timestamp itself goes in the accompanying data, on the tooltip.
 >
-> **Consumer 開発者**: 100万行あってもいける？
+> **Consumer developer**: Will it handle a million rows?
 >
-> **設計者**: 行数自体はグリッドに効きません — 描画コストは **Viewport** に入る量で決まり、
-> ソートもフィルタもグリッドはやらないので。効くのは**列数**です。可視 20 列なら余裕
-> ですが、50 列を横仮想化なしで並べると 60fps を割ります。
+> **Designer**: The row count itself does not reach the grid — render cost is decided by what
+> fits in the **Viewport**, and the grid neither sorts nor filters. What does reach it is the
+> **column** count. Twenty visible columns is comfortable; fifty without horizontal
+> virtualisation drops below 60fps.

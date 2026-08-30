@@ -1,80 +1,85 @@
-# ExGrid と ExSheet は 1 つのリポジトリに置き、パッケージだけ分ける
+# ExGrid and ExSheet live in one repository; only the packages are separate
 
-`ExGrid`（表示主体）と `ExSheet`（編集主体）、および連携パッケージは**同じリポジトリ**で
-開発する。**NuGet パッケージは分ける** — リポジトリの構造とパッケージの構造は別の話である。
+`ExGrid` (display-oriented), `ExSheet` (edit-oriented) and the integration packages are developed
+in **the same repository**. **The NuGet packages are separate** — repository structure and package
+structure are different questions.
 
 ```
-ex-grid/                      ← リポジトリ 1 つ
-├── CONTEXT.md                ← 用語集も 1 つ
+ex-grid/                      ← one repository
+├── CONTEXT.md                ← one glossary
 ├── AGENTS.md
-├── docs/adr/                 ← ADR も 1 つの連番
+├── docs/adr/                 ← one ADR sequence
 ├── src/
-│   ├── ExGrid/               → NuGet: ExGrid            （依存なし）
-│   ├── ExGrid.MudBlazor/     → NuGet: ExGrid.MudBlazor  （Chrome の実装）
-│   ├── ExGrid.Fluxor/        → NuGet: ExGrid.Fluxor     （押す形と Store の橋渡し）
-│   └── ExSheet/              → NuGet: ExSheet           （将来）
+│   ├── ExGrid/               → NuGet: ExGrid            (no dependencies)
+│   ├── ExGrid.MudBlazor/     → NuGet: ExGrid.MudBlazor  (a Chrome implementation)
+│   ├── ExGrid.Fluxor/        → NuGet: ExGrid.Fluxor     (push interface ↔ store)
+│   └── ExSheet/              → NuGet: ExSheet           (future)
 ├── tests/
-│   ├── ExGrid.Tests/         ← 純粋ロジック（xUnit）
-│   ├── ExGrid.Components/    ← コンポーネント（bUnit）
-│   └── ExGrid.Browser/       ← ブラウザ（CDP ドライバ）
-└── spikes/render-bench/      ← 描画性能の計測。捨ててよい
+│   ├── ExGrid.Tests/         ← pure logic (xUnit)
+│   ├── ExGrid.Components/    ← component (bUnit)
+│   └── ExGrid.Browser/       ← browser (CDP driver)
+└── spikes/render-bench/      ← render-cost measurement. disposable
 ```
 
-グリッドだけ欲しい Consumer は `ExGrid` だけを参照する。**そのためにリポジトリを分ける必要は
-ない。**
+A Consumer that only wants the grid references only `ExGrid`. **Splitting the repository is not
+needed for that.**
 
-## 理由
+## Reasons
 
-**共有される部分の方が圧倒的に多い。** 設計の初期に「共有カーネル / 完全に別 / 1 つ＋
-オプション」の 3 案を保留にしたが、その後の計測と設計で答えが出た。
-
-```
-共有   Viewport・仮想化・行メモ化・Column・Selection・Anchor/Focus
-       キーボード操作・クリップボード・Row Identity・Chrome の差し替え口
-       ADR で言えば 0002〜0006, 0008〜0014, 0016, 0018 —— ほぼ全部
-
-相違   データ所有権（ADR-0001）と数式エンジン
-```
-
-**用語集と ADR が既に両方をカバーしている。** `CONTEXT.md` は ExGrid と ExSheet を並べて
-定義し、行メモ化も選択モデルも ExSheet にそのまま効く。リポジトリを割れば、**用語集と ADR を
-分割するか複製する**ことになり、どちらも劣化する。
-
-**外部の消費者がまだいない。** 別リポジトリの利点は独立したリリース周期だが、それを強制する
-ものが存在しない。逆に、核を変えるたびにパッケージを公開して ExSheet 側を追随させるコストが
-先に来る。
-
-## ExSheet は ExGrid の兄弟か、Consumer か — 未決
-
-[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) は「グリッドは Edit Intent を
-出すだけ、確定した状態は Consumer が所有し、Overlay を適用した Window を押し込む」と定めた。
-**ExSheet はまさに「セルの可変モデルを所有する Consumer」である。**
+**Far more is shared than differs.** Early in the design, three options were left open — a shared
+kernel, two entirely separate products, or one product with the other as an option. The
+measurements and decisions since then answered it.
 
 ```
-ExSheet（セルモデル・数式エンジンを所有）
-   ↓ Window を押し込む / Edit Intent を受け取る
-ExGrid（描画・選択・キーボード）
+shared     Viewport, virtualisation, row memoisation, Column, Selection, Anchor/Focus,
+           keyboard behaviour, clipboard, Row Identity, the Chrome seams
+           in ADR terms: 0002–0006, 0008–0014, 0016, 0018, 0020 — nearly all of them
+
+differs    data ownership (ADR-0001) and the formula engine
 ```
 
-これが成立するなら、共有カーネルを別パッケージに切り出す必要すらない。**押す形にしたことが
-ここでも効く。** [ADR-0016](./0016-column-width-and-overflow.md) で入れた「フォーカス中セルの
-値の常時表示」は、そのまま数式バーになる。
+**The glossary and the ADRs already cover both.** `CONTEXT.md` defines ExGrid and ExSheet side by
+side, and row memoisation and the selection model apply to ExSheet unchanged. Splitting the
+repository would mean **splitting or duplicating the glossary and the ADRs**, and both degrade.
 
-摩擦もある。ExSheet の行挿入は `RowSequenceVersion` を上げるので、**行を挿すたびに選択が
-消える**（[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)）。
-Sheet としては厳しすぎるかもしれない。
+**There is no external consumer yet.** The advantage of separate repositories is independent
+release cadence, and nothing is forcing that. What would come first instead is the cost of
+publishing a package on every core change and making ExSheet follow it.
 
-**いま決めない。** ExGrid を作れば ExSheet が何を追加で必要とするかが具体的に見える。
+## Is ExSheet a sibling of ExGrid, or a Consumer of it? — open
+
+[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) established that the grid only
+reports an Edit Intent, and the Consumer owns the committed state and pushes back a Window with
+the Overlay applied. **ExSheet is precisely "a Consumer that owns a mutable cell model".**
+
+```
+ExSheet (owns the cell model and the formula engine)
+   ↓ pushes a Window / receives Edit Intents
+ExGrid (painting, selection, keyboard)
+```
+
+If that holds, there is no need to extract a shared kernel into a separate package at all. **This
+is another place the push interface pays off.** And the always-visible focused-cell value added in
+[ADR-0016](./0016-column-width-and-overflow.md) is a formula bar as it stands.
+
+There is friction. Inserting a row in ExSheet bumps the `RowSequenceVersion`, so **the selection
+would be cleared on every row insertion**
+([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)), which
+may be too aggressive for a sheet.
+
+**Do not decide now.** Building ExGrid will make what ExSheet additionally needs concrete.
 
 ## Consequences
 
-- **ADR の連番は 1 本。** ExSheet 固有の決定も同じ `docs/adr/` に積む。決定の多くは両方に
-  効くので、分けると相互参照だらけになる。
-- **CI は 1 回の実行で全部を検証する。** 核を変えたとき、ExSheet と連携パッケージが同時に
-  ビルドされる。別リポジトリなら気づくのが遅れる。
-- **`ExGrid` は依存を持たない。** MudBlazor も Fluxor も連携パッケージに閉じる
-  （[ADR-0017](./0017-target-chromium-browsers-only.md) / [ADR-0018](./0018-multiple-instances-must-be-independent.md)）。
-  同じリポジトリにあることと、依存が混ざることは別である。**プロジェクト参照の向きで
-  構造的に守る。**
-- **リポジトリ名は `ex-grid` のままでよい。** ExSheet を実際に作るときに、総称が要るかを
-  含めて考え直せる。総称の 1 語は現時点では作らない。
+- **One ADR sequence.** Decisions specific to ExSheet go into the same `docs/adr/`. Most decisions
+  affect both, and splitting them would produce a mesh of cross-references.
+- **CI verifies everything in one run.** When the core changes, ExSheet and the integration
+  packages build at the same time. Across repositories the breakage would be noticed later.
+- **`ExGrid` has no dependencies.** MudBlazor and Fluxor stay inside the integration packages
+  ([ADR-0017](./0017-target-chromium-browsers-only.md) /
+  [ADR-0018](./0018-multiple-instances-must-be-independent.md) /
+  [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)). Sharing a repository and mixing
+  dependencies are different things. **Enforce it structurally through project reference
+  direction.**
+- **The repository name stays `ex-grid`.** When ExSheet is actually built, whether an umbrella
+  name is wanted can be reconsidered then. No single umbrella noun is invented now.

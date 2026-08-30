@@ -1,156 +1,166 @@
-# 選択は位置空間の矩形として持ち、並びが変わったら捨てる
+# Selection is rectangles in position space, and is dropped when the order changes
 
-Selection は**矩形のリスト**として持つ。座標は現在の並び順における**位置**（行インデックス・
-列インデックス）であって、行の同一性ではない。**並び順やフィルタが変わったら選択は解除する。**
+Selection is held as a **list of rectangles**. The coordinates are **positions in the current
+order** (row index, column index), not row identities. **When the sort order or filter changes,
+the selection is cleared.**
 
-飛び地の複数選択（Ctrl+クリック）を持つ。**選択そのものに上限は設けない。**
+Disjoint multi-range selection (Ctrl+click) is supported. **There is no cap on selection itself.**
 
-## セルの集合では持てない
+## It cannot be held as a set of cells
 
-素朴には「選ばれたセルの一覧」だが、Ctrl+A で 100 万行 × 50 列 = 5,000 万個の座標になる。
-Excel と同じく矩形のリストで持つのが唯一現実的で、Ctrl+A は矩形 1 個で表せる。
+The naive form is a list of selected cells, but Ctrl+A over a million rows × 50 columns is 50
+million coordinates. A list of rectangles is the only workable form, as in Excel, and Ctrl+A is
+one rectangle.
 
-## なぜ位置なのか、そしてなぜ捨てるのか
+## Why positions, and why they are dropped
 
-[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) で押す形にしたため、
-グリッドが手元に持つのは Window（数十行）だけ。**「10 行目」が具体的にどのトレードなのかを
-グリッドは知らない**ので、同一性で持つことはそもそもできない。Ctrl+A を同一性で表そうと
-すれば 100 万件を列挙することになる。
+Since [ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) made the interface
+push, the grid holds only the Window (tens of rows). **The grid does not know which row "row 10"
+actually is**, so identities are not even available to hold. Expressing Ctrl+A by identity would
+mean enumerating a million of them.
 
-位置は、並びが変われば別のものを指す。
+Positions point at something different once the order changes.
 
 ```
-1. PV 降順で表示中。上から 10〜509 行目を選択（＝ PV の大きい 500 件）
-2. ユーザが Book 昇順に並べ替える
-3. 「10〜509 行目」は【まったく別の 500 トレード】を指す
+1. Displayed in descending price. Rows 10–509 are selected (the 500 largest)
+2. The user re-sorts ascending by book
+3. "Rows 10–509" now points at an ENTIRELY DIFFERENT 500 rows
 ```
 
-**危険なのは、選択の次に来る操作が一括ペーストだから**である
-（[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)）。並べ替えたあとに
-Excel から日付を貼ると、意図したのと違う 500 トレードに Mandatory break が入り、**画面は
-正常に見える**。[ADR-0005](./0005-copy-refuses-rather-than-truncates.md) の切り捨てや、
-ADR-0007 の「色だけ変わって値が古い」と同じ種類の壊れ方。
+**This is dangerous because the operation that follows a selection is a bulk paste**
+([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)). Re-sort, paste dates from
+Excel, and a different 500 rows get the value — **and the screen looks normal**. It is the same
+class of failure as the truncation in
+[ADR-0005](./0005-copy-refuses-rather-than-truncates.md) and the "colour changed, value stale"
+case in ADR-0007.
 
 ## Considered Options
 
-- **位置のまま維持する（画面上の同じ場所が選ばれ続ける）** — 却下。Excel の並べ替えに
-  近い挙動ではあるが、**Excel は全データを手元に持ち、ユーザは選択範囲全体を目で確認
-  できる**。100 万行のうち 500 行を選び、そのうち 40 行しか映らないこの部品とは前提が違う。
-  見えないものが黙って別のものに変わってはいけない。
-- **小さい選択は同一性で覚えて復元を試み、大きい選択は捨てる** — 却下。**上限の内と外で
-  同じ操作の結果が変わる**。ADR-0005 でコピーに上限を設けたときは「超えたら断る」という
-  一貫した答えにできたが、この案は「超えたら静かに挙動が変わる」になり、ユーザが規則を
-  学習できない。
+- **Keep positions as they are (the same place on screen stays selected)** — rejected. It
+  resembles how Excel behaves through a sort, but **Excel has all the data in front of the user,
+  who can see the whole selection**. This component shows 40 of the 500 rows selected out of a
+  million; the premises differ. Something invisible must not quietly become something else.
+- **Remember small selections by identity and try to restore them; drop large ones** — rejected.
+  **The same operation would produce different results either side of a threshold.** When
+  ADR-0005 capped copy, the answer stayed consistent ("past the cap, refuse"); this one would be
+  "past the cap, behave differently, quietly", which users cannot learn.
 
-**捨てることの代償は「並べ替えたら選び直し」という手数だけ**であり、失われるのは操作の
-手数であって正しさではない。
+**The price of dropping is a few keystrokes to reselect** — what is lost is convenience, not
+correctness.
 
-## Ctrl+A と選択の上限
+## Ctrl+A, and the absence of a cap
 
-**Ctrl+A はフィルタ後の全行 × 全表示列**を選ぶ。矩形 1 個なので、データを持っていなくても
-表現できる。非表示列は含めない（View State に従う）。
+**Ctrl+A selects every row after filtering, across every visible column.** It is one rectangle,
+so it can be expressed without holding the data. Hidden columns are excluded (View State
+decides).
 
-**選択そのものに上限は設けない。** 危険なのは選択ではなく次に来る操作であり、歯止めは
-操作の側に置く。
+**There is no cap on selection itself.** The danger is not the selection but the operation that
+follows, so the brake belongs on the operation.
 
-- コピー: [ADR-0005](./0005-copy-refuses-rather-than-truncates.md) で既に断る仕組みがある。
-- 一括ペースト: 100 万件の Override が何を意味するかを知っているのは Consumer だけなので、
-  確認を出すなら Consumer の役割。**グリッドが先回りして禁じない。**
+- Copy: [ADR-0005](./0005-copy-refuses-rather-than-truncates.md) already refuses past its cap.
+- Bulk paste: only the Consumer knows what a million overrides mean, so **confirmation is the
+  Consumer's job**. The grid does not pre-emptively forbid it.
 
-**選択に上限を設ける案は却下した。** 選べなければ「全選択 → コピー → 断られる →
-エクスポートへ」という ADR-0005 で設計済みの導線に入れなくなる。上限を 2 か所に置くと
-互いに矛盾する。
+**Capping the selection was rejected.** If it cannot be selected, the "select all → copy → get
+refused → export" path designed in ADR-0005 cannot be entered. Two caps in two places contradict
+each other.
 
-> **選択は安いので制限しない。制限は「実行できないこと」の側に置く。**
+> **Selection is cheap, so it is not capped. Caps belong on what cannot be executed.**
 
-## 飛び地の複数選択
+## Disjoint multi-range selection
 
-**持つ。** 表現も描画も安く（矩形が数個増えるだけ、
-[ADR-0008](./0008-selection-is-painted-by-an-overlay.md) のオーバーレイは範囲ごとに 1 枚）、
-高くつくのは操作の意味の方。挙動は Excel に合わせる。
+**Supported.** Representation and painting are cheap (a few more rectangles; the overlay in
+[ADR-0008](./0008-selection-is-painted-by-an-overlay.md) is one per range); the expense is in the
+meaning of the operations. Behaviour follows Excel.
 
-- **コピーは範囲の形が揃わなければ断る**（Excel も同じ制限をかけている）。ADR-0005 と
-  合わせて、コピーの拒否理由は 2 つになる — 大きすぎる／形が揃わない。**断るときに
-  どちらかを明示する。**
-- **飛び地への一括入力は許す**（値を打って Ctrl+Enter で選択中の全セルに入る）。これが
-  無いと飛び地選択の主用途が成立しない。
+- **Copy refuses when the ranges do not line up** (Excel imposes the same restriction). Together
+  with ADR-0005 there are two grounds for refusing a copy — too large, and misaligned shape.
+  **Say which one when refusing.**
+- **Bulk entry into disjoint ranges is allowed** (type a value and press Ctrl+Enter to fill every
+  selected cell). Without it the main use of disjoint selection does not work.
 
-主用途は what-if の「散らばった数本のトレードにまとめてブレークを付ける」。ヘッジ対象は
-隣り合っていないので、**散らばっている方が自然**。
+The main use is picking a handful of scattered rows and applying one value to all of them. The
+rows a user wants are rarely adjacent, so **scattered is the natural case**.
 
-却下した案:
-- **単一矩形のみ** — 上記の主用途を落とす。1 本ずつ繰り返すことになる。
-- **行単位の飛び地だけ許す** — コピーの形が常に揃うので拒否理由は増えないが、**規則を
-  ユーザに説明できない**。「行なら飛び地にできるがセル範囲はできない」はこの部品固有の
-  制限で、Excel から来た人が予測できない。
+Rejected:
+- **Single rectangle only** — drops that use; the user repeats the operation one row at a time.
+- **Disjoint whole rows only** — copy shapes would always line up so no new refusal reason
+  appears, but **the rule cannot be explained to a user**. "Rows can be disjoint but cell ranges
+  cannot" is a component-specific restriction that nobody arriving from Excel would predict.
 
-## データが差し替わったとき — 行の並びの版で判定する
+## When the data itself is replaced — decide by a row sequence version
 
-並び順もフィルタも変わっていないのに行の並びが変わることがある。`poke` のベースラインは
-数分〜1 時間ごとに更新されるので、**実際に起きる**。
+The order of rows can change while neither the sort nor the filter changed. A Consumer whose
+data refreshes every few minutes **will hit this**.
 
 ```
-ユーザ : 50 行を選択して作業中
-バッチ : 新しいフィード版が届き、トレードが 3 本増えて 1 本消えた
-       → フィルタも並び順も同じだが、位置が全部ずれた
-       → 選択は別のトレードを指している
+User  : 50 rows selected, mid-task
+Batch : a new feed version arrives; three rows added, one removed
+      → same filter, same sort, but every position shifted
+      → the selection points at different rows
 ```
 
-Consumer が **`RowSequenceVersion`**（行の**並び**を識別する版。値ではない）を押し込み、
-**それが変わったら選択・Anchor・Focus を捨てる。**
+The Consumer pushes a **`RowSequenceVersion`** — a version identifying the **order** of rows, not
+their values — and **selection, Anchor and Focus are dropped when it changes**.
 
-| 更新の中身 | 版 | 選択 |
+| What the update contained | Version | Selection |
 |---|---|---|
-| 同じトレード集合で評価値だけ更新 | **上げない** | **維持される** |
-| トレードが増減した / 並びが変わった | 上げる | 解除される |
+| same set of rows, values updated | **not bumped** | **survives** |
+| rows added or removed, order changed | bumped | cleared |
 
-`poke` の日中更新は大半が前者（トレードのブッキングは Murex 側で、日中にそう頻繁には
-起きない）なので、**頻度の高いケースでは選択が生き残る**。並びが実際に変わったときだけ
-解除され、そのときは選び直すのが正しい — 新しいトレードが選択に含まれるべきかは
-ユーザにしか判断できない。
+For the first Consumer, most intraday updates are the former (bookings happen in an upstream
+system and are not that frequent during the day), so **selection survives the frequent case**. It
+is cleared only when the order genuinely changed, and reselecting is then the correct thing —
+whether newly arrived rows should be part of the selection is a question only the user can
+answer.
 
-**グリッドは自力で検知できない。** Window（数十行）しか持たないので、行が増減したことも
-位置がずれたことも見えない。Consumer から受け取るのが唯一の解。
+**The grid cannot detect this on its own.** Holding only the Window, it can see neither that rows
+were added nor that positions shifted. Receiving it from the Consumer is the only solution.
 
-### なぜ「同じトレードを選び直す」対応付けをしないのか
+### Why there is no attempt to re-map to "the same rows"
 
-削除は連続性を壊さない — 選択の中で 1 行消えても、以降が繰り上がって矩形は 1 つのまま。
-**壊すのは挿入の方**である。
+Deletion does not break contiguity — remove one row inside a selection and everything after it
+shifts up, leaving one rectangle. **Insertion is what breaks it.**
 
 ```
-選択 100〜199（100 トレード）に 1 本挿入される
-  → 元の 100 トレードは 100〜149 と 151〜200 に分かれ、矩形が 2 つに割れる
-  → 範囲内に N 本挿入されれば、最大 N+1 個の矩形
+One row is inserted into a selection of 100–199 (100 rows)
+  → the original 100 rows now occupy 100–149 and 151–200: the rectangle splits in two
+  → N insertions inside the range give up to N+1 rectangles
 ```
 
-コストは 3 つ。
+Three costs:
 
-- **表現が崩れる。** 矩形を選んだのは Ctrl+A を 1 個で表せるからだった。100 万行の選択に
-  1,000 本が散らばって挿入されれば最大 1,001 個になり、「セルの集合では持てない」として
-  避けた形に近づく。
-- **描画の一定コストが失われる。** [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)
-  で「範囲ごとにオーバーレイ 1 枚」とし、実機で**セル数にも選択の大きさにも依存せず
-  1.2ms（最大 2.1ms）**を確認した。オーバーレイが 1,001 枚になればその性質は消える。
-- **対応付けのコストが選択サイズに比例する。** 全選択行を同一性に解決して位置を引き直す
-  ので、Ctrl+A なら 100 万回。それが更新のたびに走る。
+- **The representation degrades.** Rectangles were chosen so that Ctrl+A is one of them. A
+  million-row selection with a thousand insertions scattered through it becomes up to 1,001,
+  approaching the set-of-cells form that was rejected.
+- **The constant painting cost is lost.**
+  [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) settled on one overlay per range, and
+  confirmed on real hardware that it costs **1.2 ms (max 2.1 ms) independent of both cell count
+  and selection size**. At 1,001 overlays that property is gone.
+- **The re-mapping cost is proportional to the selection size.** Every selected row has to be
+  resolved to an identity and its new position looked up — a million times for Ctrl+A, on every
+  refresh.
 
-設計上の代償はさらに重い。**グリッドは対応付けができない**（同一性を知らない）ので
-Consumer に投げ、返してもらう往復が要る。
-[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) で「確定前の一時状態は
-グリッド、確定後は Consumer」と引いた線を、Selection がまたぐことになる。
+The design cost is heavier still. **The grid cannot do the mapping** (it does not know
+identities), so it would hand the selection to the Consumer and take it back, and Selection would
+cross the line
+[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) drew between "uncommitted belongs
+to the grid" and "committed belongs to the Consumer".
 
-**見直す条件:** 実運用でトレードの増減が頻繁で、選択が頻繁に消えて使いにくいと分かったら、
-上の 3 つのコストを払う判断として、対応付けを検討する。
+**When to revisit:** if in real use rows are added and removed often enough that selection keeps
+disappearing, consider re-mapping and pay the three costs above knowingly.
 
 ## Consequences
 
-- **Consumer が並び順やフィルタを変えたら、グリッドは選択を解除する。** 押す形では
-  Consumer が `Sorts` / `Filter` を渡してくるので、その変化を見て判断できる。
-- **Ctrl+↓ は最終行へ飛ぶ。** Excel は「空白でない塊の端」まで飛ぶが、この部品が扱うのは
-  クエリ結果で途中に空行がなく、塊の端を知るにはデータ全体が要る（グリッドは持っていない）。
-  最終行へ飛ぶのが唯一実装可能で、このドメインでは正しい。
-- **編集で選択が消えるかどうかは別問題。** 編集は並び順を変えないので選択は残る。ただし
-  上書きした値でソートされている場合、Consumer が並べ直せば選択は消える。
-- **一括ペーストは位置で表す。** グリッドは Window の外の行の同一性を知らないので、
-  編集の意図は「現在の並びで N〜M 行目のこの列」という形で渡し、Consumer が実際の行に
-  解決する（ADR-0007）。飛び地なら範囲が複数になるだけ。
+- **When the Consumer changes the sort or filter, the grid clears the selection.** In the push
+  form the Consumer passes `Sorts` / `Filter`, so the change is visible to the grid.
+- **Ctrl+Down jumps to the last row.** Excel jumps to the edge of a contiguous block, but this
+  component displays query results with no blank rows in the middle, and finding a block edge
+  would require the whole dataset (which the grid does not have). Jumping to the last row is the
+  only implementable behaviour and is correct for this kind of data.
+- **Whether editing clears the selection is a separate matter.** Editing does not change the
+  order, so the selection stays. If the sort is on an overridden column and the Consumer re-orders
+  the rows, it goes.
+- **Bulk paste is expressed positionally.** The grid does not know identities outside the Window,
+  so the edit intent takes the form "rows N–M of the current order, this column", and the Consumer
+  resolves it to actual rows (ADR-0007). Disjoint selection just makes it several ranges.

@@ -1,51 +1,60 @@
-# 1 フレームで触るセル数に上限を設ける — 横方向の仮想化と、高速スクロール中のプレースホルダ
+# Cap the number of cells touched per frame — horizontal virtualisation, and placeholders during fast scrolling
 
-グリッドは**横方向にも仮想化する**（画面外の列を DOM に置かない）。加えて、**高速スクロール
-中は実セルを描かず、プレースホルダ行を出して**スクロールが落ち着いてから中身を埋める。
-どちらも「1 フレームで触るセル数」を抑えるための同じ目的の手段で、片方だけでは足りない。
+The grid **virtualises horizontally as well** (columns outside the viewport are not in the DOM).
+In addition, **during fast scrolling it paints placeholder rows instead of real cells** and fills
+them in once scrolling settles. Both serve the same end — capping the cells touched per frame —
+and neither is sufficient alone.
 
-## 計測が示したこと
+## What the measurements showed
 
-実機計測（[ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) の表）で、
-**2000 セル（40 行 × 50 列）のフリックはどの描画方式でも 60fps を守れなかった**:
+On real hardware (the table in
+[ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)), **a fling over 2000
+cells (40 rows × 50 columns) could not hold 60fps in any rendering mode**:
 
-| 方式 | 2000セル・フリック |
+| Mode | 2000 cells, fling |
 |---|---|
-| 素マークアップ（抽象化なし） | 25.60ms ✗ |
-| 素マークアップ + アクセサ + メタデータ | 30.70ms ✗ |
-| 行を境界にコンポーネント化 | 32.80ms ✗ |
-| セルを境界にコンポーネント化 | 92.00ms ✗ |
+| Plain markup, no abstraction | 25.60 ms |
+| Plain markup + accessor + metadata | 30.70 ms |
+| Row as the boundary | 32.80 ms |
+| Cell as the boundary | 92.00 ms |
 
-一方 **800 セル（40×20）なら素マークアップ系はフリックでも 10.7〜12.2ms で収まる**。
-つまり境界は**描き方ではなくセル数**の側にある。
+By contrast, **at 800 cells (40×20) the plain-markup modes stay within 10.7–12.2 ms even during a
+fling**. The boundary is therefore in the **cell count**, not in how they are painted.
 
-そして**行を境界にするメモ化はフリックでは効かない** — 全行が入れ替わるため。
-ゆっくりスクロールでの 10 倍の改善は、この最悪ケースを何も助けない。
+And **row-level memoisation does not help during a fling**, because every row changes. The 10×
+improvement it gives during slow scrolling does nothing for this worst case.
 
 ## Considered Options
 
-- **横仮想化だけ入れる** — 不十分。50 列を可視 20 列に絞れば 2000 → 800 セルになり
-  フリックでも 12ms 前後に収まる見込みだが、余裕は 4ms しかない。行を増やす、行高を
-  詰める、条件付き書式を足す、といった現実的な変更で簡単に超える。
-- **高速スクロール中の間引きだけ入れる** — 不十分。列が多い画面では、**スクロールが
-  止まった後の 1 回**（全セルを実描画する必要がある）がそのまま 25〜33ms かかる。
-  止まった瞬間に一度カクつく。
-- **Canvas 描画に切り替える** — 現時点では却下。DOM の上限は見えたが、800 セル規模なら
-  DOM で足りることも同時に分かった。Canvas はテキスト選択・アクセシビリティ・
-  ブラウザ標準のスクロール挙動・セル内の任意コンテンツをすべて自前で作り直すことになり、
-  Excel 的な操作感の土台を失う。**この ADR の手当てで足りなくなったとき**に再検討する。
+- **Horizontal virtualisation alone** — insufficient. Narrowing 50 columns to 20 visible ones
+  takes 2000 cells down to 800 and should land around 12 ms even during a fling, but that leaves
+  only 4 ms of headroom. Adding rows, tightening the row height, or adding conditional formatting
+  would cross it again easily.
+- **Throttling during fast scrolling alone** — insufficient. On a wide screen, **the single frame
+  after scrolling stops** still has to paint every cell for real, and that costs the full
+  25–33 ms. The grid would stutter exactly once, at the moment it settles.
+- **Switch to Canvas rendering** — rejected for now. The measurements found the ceiling of DOM
+  rendering, but they equally found that DOM is sufficient at around 800 cells. Canvas means
+  rebuilding text selection, accessibility, native scrolling behaviour and arbitrary cell content
+  by hand, which gives up the foundation of Excel-like operability. Revisit **if the measures in
+  this ADR stop being enough**.
 
 ## Consequences
 
-- **列にも「見えている範囲」の概念が要る。** 縦の仮想化と同じ計算を横にもやる。固定列
-  （行キー列など）は仮想化の対象外として常に描く必要があり、実装が縦より面倒になる。
-- **プレースホルダは [ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)
-  と同じ機構になる。** サーバ側 Data Source では遠い窓の行はそもそも未取得で、
-  取得中はプレースホルダを出す必要がある。「高速スクロール中は中身を描かない」は
-  その仕組みの再利用であって、追加の概念ではない。**取得待ちと描画間引きを別物として
-  設計しないこと。**
-- **どのくらいの速度を「高速」と見なすかが調整項目になる。** 閾値が低すぎるとゆっくり
-  スクロールでも中身が消えてちらつき、高すぎると効かない。実測で決める。
-- **`poke` の列数が要件になる。** 40×20 は収まり 40×50 は収まらない、という境界が
-  分かったので、「PV・Greeks・XVA 内訳を横に何列並べるか」は性能に直結する仕様項目。
-  横仮想化を入れれば列数の上限は外れるが、**固定列を増やすと直接コストになる**。
+- **Columns need a notion of "what is visible" too.** The same arithmetic as the vertical
+  direction, applied horizontally. Pinned columns (a row-key column, for instance) are outside
+  virtualisation and always painted, which makes this fiddlier than the vertical case.
+- **Placeholders are the same mechanism as
+  [ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) already needs.** With a
+  server-side Consumer, rows for a distant Window have not been fetched at all and something must
+  be shown while they are in flight. "Do not paint contents during fast scrolling" reuses that
+  machinery rather than adding a concept. **Do not design fetch-waiting and render-throttling as
+  two different things.**
+- **What counts as "fast" becomes a tuning parameter.** Too low a threshold and contents blank out
+  during ordinary scrolling; too high and it never engages. Decide by measurement.
+- **The Consumer's column count becomes a specification concern.** 40×20 fits and 40×50 does not,
+  so how many columns are placed side by side has a direct performance consequence. Horizontal
+  virtualisation removes the ceiling on total columns, but **pinned columns cost directly**.
+- **Paging removes this worst case entirely on the screens that use it** — a pager has no fling,
+  so the full rebuild happens once per click and goes unnoticed
+  ([ADR-0015](./0015-paging-is-another-driver-for-range-requests.md)).

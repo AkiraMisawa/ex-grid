@@ -1,129 +1,134 @@
-# 編集はオーバーレイ。所有者は Consumer。グリッドは意図を伝えるだけ
+# Edits are an Overlay owned by the Consumer. The grid only reports the intent
 
-グリッドはセルを編集**できる**が、編集結果を**持たない**。ユーザが確定した編集は
-「意図」として Consumer に渡り、Consumer が**不変のベースに重ねる差分（Overlay）**として
-記録する。画面が変わるのは、Consumer の Data Source が新しい行インスタンスを返したとき。
+The grid **can** edit cells but does not **hold** the result. A committed edit goes to the
+Consumer as an "intent", and the Consumer records it as a **sparse diff laid over an immutable
+base (an Overlay)**. The screen changes when the Consumer returns new row instances.
 
 ```
 Scenario {
-    BaseSnapshotId : "abc123..."        ← 参照。トレードの実体は持たない
-    Overrides      : { T-4471 → { MandatoryBreak: 2031-06-15 } }   ← 変えた列だけ疎に
-    AddedTrades    : [ ... ]
+    BaseSnapshotId : "abc123..."        ← a reference; the rows themselves are not held
+    Overrides      : { R-4471 → { BreakDate: 2031-06-15 } }   ← only the changed columns, sparsely
+    AddedRows      : [ ... ]
 }
 ```
 
-**編集できることは Sheet の条件ではない。** `CONTEXT.md` の DataGrid / Sheet の分岐は
-**データ所有権と数式エンジンの有無**であり、編集の有無は入っていない。グリッドが意図を
-伝えるだけでデータを所有しないなら、編集できる DataGrid は矛盾しない。
+**Being editable is not what makes something a Sheet.** The split in `CONTEXT.md` is **data
+ownership and the presence of a formula engine**; editing is not among the criteria. If the grid
+only reports the intent and does not own the data, an editable DataGrid is not a contradiction.
 
-## 確定前と確定後で線を引く
+## The line is drawn at "committed"
 
-| | 誰が持つか | 例 |
+| | Held by | Examples |
 |---|---|---|
-| **確定前**（一時状態） | **グリッド** | 編集欄に打ちかけのテキスト、Selection、Focus、スクロール位置。保存も共有もされない |
-| **確定後** | **Consumer** | 「T-4471 にブレークが付いた」という事実。保存され（JSON ブロブ）、pricer と共有され、バックエンドに送られる |
+| **Uncommitted** (transient) | **the grid** | half-typed text in the editor, Selection, Focus, scroll position. Never saved, never shared |
+| **Committed** | **the Consumer** | the fact that a row now carries a break date. Saved (as a JSON blob), shared with other screens, sent to the backend |
 
-`poke` の docs では、シナリオは可変 SQLite に**シナリオドキュメント（JSON ブロブ）**として
-保存され、**トレードは poke と pricer の "共有" の関心事**とされている。保存され複数画面で
-共有されるものが、表示部品の内部状態に隠れていてはならない。
+For the first Consumer, the scenario is persisted as a document in a mutable store and rows are a
+concern **shared between two screens**. Something that is saved and shared across screens must not
+be hidden inside a display component's internal state.
 
-## Overlay は「Window を作る側」で適用する
+## The Overlay is applied on the side that builds the Window
 
-**Window を作るたびに適用されること。** ユーザが編集 → スクロールで画面外へ → 戻ると、
-Consumer はその範囲をもう一度取りに行く。サーバは Override を知らないので素の行が返る。
-適用が一度きりの後処理だと**編集が消える**。
+**It must be applied every time a Window is built.** A user edits, scrolls the row off screen,
+and comes back; the Consumer fetches that range again, and the server — which knows nothing of
+the override — returns the plain row. If application is a one-off post-processing step, **the
+edit disappears.**
 
 ```
-✅  Window を組み立てる過程に Overlay の適用が組み込まれている
-❌  出来上がった Window に、あとから誰かが Overlay を塗る
+✅  applying the Overlay is part of assembling the Window
+❌  someone paints the Overlay onto a finished Window afterwards
 ```
 
-グリッドは Window を受け取って描くだけで Overlay を知らない
-（[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)）。ベースと
-Override の両方を知っているのは Consumer だけなので、合成できるのも Consumer だけ。
-グリッドが行のコレクションを受け取る設計だったら、この合成はグリッドの仕事になっていた。
+The grid receives a Window and paints it; it knows nothing about the Overlay
+([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). Only the Consumer knows
+both the base and the override, so only the Consumer can compose them. Had the grid been designed
+to take a collection of rows, that composition would have been the grid's job.
 
-## Undo とリセット
+## Undo and reset
 
-- **リセットは実装が要らない。** Overlay がベースへの疎な差分なので、リセット＝
-  **エントリを削除**。元の値を保存しておく必要すらない（ベースが不変でそこにあるため）。
-  セル単位・行単位・シナリオ全体、どの粒度も同じ操作。トレードをコピーして書き換える
-  設計なら、リセットのために元の値を別途保持する必要があった。
-- **Undo スタックの所有者は Consumer。** グリッドは Ctrl+Z を転送するだけ。
-  理由は**スタックが 2 本あると操作順序が壊れる**こと — ユーザがダイアログで
-  トレードを追加し、次にグリッドでセルを編集した場合、グリッド自前のスタックは
-  前者を知らないため、Ctrl+Z の順序が現実と食い違う。両方を見ているのは Consumer だけ。
-- ただし **Undo スタックの実装自体はライブラリが同梱する**。所有と駆動は Consumer だが、
-  Consumer が自前で書かなくても済むようにする（ADR-0001 でクライアント側 Data Source
-  実装を同梱するのと同じ考え方）。これがないと「Excel 的な操作感」を謳いながら
-  Ctrl+Z が既定で無反応、という状態になる。
-- **編集欄の中の Ctrl+Z は別物。** 確定前の入力取り消しであり、シナリオ履歴とは無関係。
-  上の線引きがそのまま当てはまる。
+- **Reset needs no implementation.** Because the Overlay is a sparse diff over the base, reset is
+  **deleting an entry**. There is not even anything to save first — the original is in the
+  immutable base. Per cell, per row or for the whole scenario, it is the same operation. Had the
+  design copied rows and mutated the copies, the original values would have had to be kept
+  separately just to support reset.
+- **The Consumer owns the undo stack.** The grid only forwards Ctrl+Z. The reason is that **two
+  stacks break the ordering** — if a user adds a row through a dialog and then edits a cell in
+  the grid, a stack owned by the grid does not know about the first, so Ctrl+Z disagrees with
+  what actually happened. Only the Consumer sees both.
+- **The undo stack implementation is nevertheless bundled with the library.** Ownership and
+  driving are the Consumer's, but the Consumer should not have to write it (the same reasoning as
+  bundling `GridSource` in ADR-0001). Without it, a component claiming Excel-like operability
+  would ship with Ctrl+Z doing nothing by default.
+- **Ctrl+Z inside the editor is a different thing.** It undoes uncommitted typing and has nothing
+  to do with scenario history. The line above applies unchanged.
 
 ## Consequences
 
-- **1 セル編集の再描画コストはほぼゼロ。** 同一性が変わるのは 1 行だけなので、
-  [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) の行単位
-  メモ化により他の行はスキップされる。実測 1.90ms は 40 行ぶんの数字。
-- **編集された事実は Cell State「変更あり」で表示される**
-  （[ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)）。元の値は付随データ
-  としてツールチップに載せられる。
-- **provenance が 2 値では足りなくなる。** `poke` の docs は「実トレード / 生成トレード」の
-  2 源を前提にしているが、**既存トレードへの上書き**という第 3 の状態が出た。
-  `poke` 側のトレード DTO の provenance マーカーに反映が要る。
-- **上書きされた列でのソート・フィルタは、Consumer の責任として明示的に残る。** サーバは
-  Overlay を知らないため、素直にサーバ側でソートすると上書きされた行が誤った位置に来る。
-  **グリッドはこれを検知できないが、実行もしない** —
-  [ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) で押す形に
-  したため、並び順を決めるのは最初から Consumer である。Consumer が採りうる手は、
-  シナリオをサーバに渡して Overlay を踏まえて並べさせるか、その画面だけ
-  `GridSource.From` でクライアント側に載せて手元で並べるか。
-- **Overlay を適用するコードは 1 つでなければならず、その 1 つはライブラリが提供する。**
-  表示に使う実装と、プライシング時にサーバが使う実装が別々に書かれると、**画面の値と
-  価格計算に使われた値がずれうる**。Mandatory break は実効満期を変え CVA/FVA に効くので、
-  これは静かな計算違いになる。詳細は下記「編集が画面に出るまでの 3 つの環」。
+- **Repainting after a one-cell edit costs almost nothing.** Only one row's identity changes, so
+  row-level memoisation
+  ([ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)) skips the rest. The
+  measured 1.90 ms is the figure for all 40 rows.
+- **The fact that something was edited is shown through Cell State "modified"**
+  ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)). The original value can ride
+  along as accompanying data on the tooltip.
+- **A two-valued provenance marker stops being enough.** A Consumer that distinguishes "real" from
+  "generated" rows now has a third state — **an override on an existing row** — to represent.
+- **Sorting and filtering on an overridden column stays explicitly the Consumer's
+  responsibility.** The server does not know the Overlay, so sorting there naively puts overridden
+  rows in the wrong place. **The grid cannot detect this, but it also does not sort** — since
+  [ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) made the interface push,
+  ordering was the Consumer's from the start. The Consumer's options are to send the scenario to
+  the server so it can order with the Overlay applied, or to put that particular screen on
+  `GridSource.From` and order in memory.
+- **The code that applies the Overlay must be single, and that single implementation is provided
+  by the library.** If the implementation used for display and the one the server uses for
+  computation are written separately, **the value on screen and the value used in the computation
+  can diverge**. Where an edited field changes a downstream calculation, that is a silent
+  numerical error. Details below.
 
-## 編集が画面に出るまでの 3 つの環
+## The three links an edit passes through
 
-編集した値が画面に現れるには、独立した 3 つの条件が全部そろう必要がある。**自動なのは
-1 つ目だけで、残り 2 つは Consumer の実装に委ねられ、しかも破ったときに静かに壊れる。**
-
-```
-① State が変わった → コンポーネントが再描画される          ★自動
-     （Fluxor なら FluxorComponent が StateHasChanged を呼ぶ）
-
-② その Window の中身に Overlay が適用済みである            ★手動
-     忘れると: グリッドは再描画されるが中身が編集前のまま → 画面が変わらない
-
-③ 変わった行が【別インスタンス】になっている                ★手動
-     忘れると: 行の ShouldRender が「同じインスタンス」と判断してスキップ
-               → やはり画面が変わらない。②より原因が見えにくい
-```
-
-③は机上の話ではない。`spikes/render-bench` で `ShouldRender()` を書かず Blazor の自動判定に
-任せたときの失敗（可変な参照型は参照が同じでも「変わったかもしれない」と扱われる）と
-鏡写しの関係にある。
-
-### 最悪の壊れ方：色だけ変わって値が古い
-
-**Cell State は `Window` を経由しない。** Consumer は Overrides を直接引いて
-「このセルは変更済み」を返す（[ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)）。
-したがって②や③を破っても、**セルの背景色だけは「変更済み」に変わる**。
+For an edited value to appear on screen, three independent conditions must all hold. **Only the
+first is automatic; the other two are left to the Consumer's implementation, and breaking either
+fails quietly.**
 
 ```
-セルの背景 : 変更済みの色になっている ✓
-セルの値   : 編集前のまま             ✗
-プライシング: Overrides は正しいので新しい値が使われる
+1. State changed → the component re-renders                     ★automatic
+     (with Fluxor, FluxorComponent calls StateHasChanged)
+
+2. The Overlay has been applied to the contents of that Window  ★manual
+     If missed: the grid re-renders but the contents are pre-edit → the screen does not change
+
+3. The changed row is a DIFFERENT INSTANCE                      ★manual
+     If missed: the row's ShouldRender sees "same instance" and skips
+                → the screen does not change either, and the cause is harder to see than (2)
 ```
 
-ユーザは「入力が反映された」と認識し、実際の計算は別の値で走る。**画面とプライシング結果が
-食い違い、どちらも単独では正常に見える。**
+Point 3 is not hypothetical. It is the mirror image of the failure hit in
+`spikes/render-bench` when `ShouldRender()` was left to Blazor's automatic detection (a mutable
+reference type is treated as "may have changed" even when the reference is identical).
 
-### 対策
+### The worst failure: the colour changes and the value is stale
 
-- **Overlay の適用をライブラリが提供する。** 新しいインスタンスを返すことを実装で保証し、
-  Consumer に③を思い出させる必要をなくす。ADR 本文の「適用は 1 実装」を、
-  「その 1 実装はライブラリのもの」まで強める。
-- **開発時限定の検査を入れる。** 編集がコミットされたのに、続く描画で**行の同一性が
-  1 つも変わっていない**場合はコンソールに警告する。②と③の両方を捕まえられる。
-  本番ビルドでは無効化するのでコストはゼロ。
+**Cell State does not travel through the `Window`.** The Consumer answers "this cell is modified"
+by consulting the Overrides directly
+([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)). So even when 2 or 3 is broken,
+**the cell background alone turns to "modified"**.
+
+```
+Cell background : shows the "modified" colour  ✓
+Cell value      : still the pre-edit value     ✗
+Computation     : uses the new value, because the Overrides are correct
+```
+
+The user reads this as "my input was applied" while the actual computation runs on a different
+value. **The screen and the computed result disagree, and each looks normal on its own.**
+
+### Countermeasures
+
+- **The library provides the Overlay application.** Guarantee in the implementation that new
+  instances are returned, so the Consumer never has to remember point 3. This strengthens
+  "application is a single implementation" to "that single implementation is the library's".
+- **Add a development-time check.** When an edit is committed and **no row identity changes** in
+  the renders that follow, warn on the console. That catches both 2 and 3. Disabled in release
+  builds, so it costs nothing.

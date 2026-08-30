@@ -1,76 +1,85 @@
-# 選択範囲はオーバーレイで描く。セルの CSS クラスでは描かない
+# Selection is painted by an overlay, not by CSS classes on cells
 
-矩形選択・フォーカス枠・フィルハンドルは、**絶対配置のオーバーレイ要素**として行の上に
-重ねて描く。選択されたセルに CSS クラスを付ける方式は採らない。
+The selection rectangle, the focus outline and the fill handle are painted as **absolutely
+positioned overlay elements** layered over the rows. Putting a CSS class on selected cells is not
+used.
 
-## 計測
+## Measurements
 
-選択矩形（10 行 × 8 列）を 1 行ずつ下へドラッグ。スクロールは固定し、変化するのは選択だけ。
-行の描画方式は [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) で
-決めた行コンポーネント。1 描画あたり ms。
+A selection rectangle (10 rows × 8 columns) dragged down one row at a time. Scrolling is held
+fixed, so the only thing changing is the selection. Rows are painted with the row component
+settled in [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md). Milliseconds
+per render.
 
-**実機**（Windows / Chrome 151 / 32 コア / .NET 10 Release、AOT なし）、2000 セル（40×50）:
+**Real hardware** (Windows / Chrome 151 / 32 cores / .NET 10 Release, no AOT), 2000 cells (40×50):
 
-| 方式 | 中央値 | p95 | **最大** |
+| Approach | Median | p95 | **Max** |
 |---|---|---|---|
-| セルに CSS クラス | 2.80 | 3.40 | **19.70** ✗ 予算超過 |
-| **オーバーレイ** | 1.20 | 1.40 | **2.10** |
+| CSS class on cells | 2.80 | 3.40 | **19.70** ✗ over budget |
+| **Overlay** | 1.20 | 1.40 | **2.10** |
 
-中央値の差は 2.3 倍だが、**最大値は 9.4 倍**。そして 19.70ms は 60fps の 1 フレーム予算
-（16.6ms）を超えている。
+The medians differ by 2.3×, but **the maxima differ by 9.4×** — and 19.70 ms is past the 16.6 ms
+budget for a 60fps frame.
 
-参考（ヘッドレス Chromium。ソフトウェアレンダリングのため絶対値は当てにならない）:
+For reference (headless Chromium; software rendering, so the absolute values are not meaningful):
 
-| セル数 | 方式 | 中央値 | 最大 |
+| Cells | Approach | Median | Max |
 |---|---|---|---|
-| 800 | セルに CSS クラス | 1.20 | 6.00 |
-| 800 | オーバーレイ | 0.80 | 1.00 |
-| 2000 | セルに CSS クラス | 1.90 | 11.70 |
-| 2000 | オーバーレイ | 0.70 | 1.10 |
+| 800 | CSS class on cells | 1.20 | 6.00 |
+| 800 | Overlay | 0.80 | 1.00 |
+| 2000 | CSS class on cells | 1.90 | 11.70 |
+| 2000 | Overlay | 0.70 | 1.10 |
 
-実機の方がヘッドレスより**尾が長い**（最大 11.70 → 19.70）。
+Real hardware has a **longer tail** than headless (max 11.70 → 19.70).
 
-**当初の予測は外れた。** 「選択が動けば選択中の行が全部再描画されて重い」と予測したが、
-矩形を 1 行ずらしても**所属が変わるのは上端と下端の 2 行だけ**で、中間の行はメモ化が
-効き続ける。中央値の差は小さい。
+**The original prediction was wrong.** The prediction was "when the selection moves, every
+selected row repaints, so it is heavy". In fact, moving the rectangle down one row **changes
+membership for only the two rows at the edges**; memoisation keeps working for the rows in
+between. The difference in medians is small.
 
-**両者を分けるのは選択の大きさではなく、一度に所属が変わる行数**だった。それが最大値に
-出ている。
+**What separates the two approaches is not the size of the selection but how many rows change
+membership at once** — which is what the maxima show.
 
-| 操作 | 所属が変わる行数 | クラス方式 |
+| Operation | Rows changing membership | Class approach |
 |---|---|---|
-| 矢印キーで 1 行 | 2 行 | 軽い |
-| Shift+クリックで画面端まで | 可視行すべて | 全行再描画 |
-| Ctrl+A | 可視行すべて | 全行再描画 |
+| Arrow key, one row | 2 rows | light |
+| Shift+click to the edge of the screen | every visible row | full repaint |
+| Ctrl+A | every visible row | full repaint |
 
-Shift+クリックと Ctrl+A は Excel で最も頻繁に使われる選択操作であり、そこだけ全行再描画に
-なる UI は「もっさり」そのものになる。
+Shift+click and Ctrl+A are among the most frequently used selection operations in Excel, and a UI
+that repaints everything on exactly those is what "sluggish" means.
 
-**オーバーレイはセル数を増やしても最大値が伸びない** — 動かしているのが要素 1 個なので、
-セル数にも選択の大きさにも依存しない。実機で最大 2.10ms、ヘッドレスでも 800 / 2000 セルで
-1.00 / 1.10ms と平坦。
+**The overlay's maximum does not grow with cell count** — one element is being moved, so it
+depends on neither the number of cells nor the size of the selection. 2.10 ms maximum on real
+hardware; 1.00 / 1.10 ms flat at 800 / 2000 cells headless.
 
-## 性能以外の理由
+## The non-performance reason
 
-**選択状態を行のパラメータに入れずに済む。** クラス方式では、選択を見せるために選択範囲を
-行コンポーネントに渡す必要があり、
-[ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) の **Row Identity**
-に「データではないもの」が混ざる。「行が変わった」の意味に「選択が変わった」が紛れ込む。
+**Selection state never has to enter the row's parameters.** With the class approach, the
+selection range must be passed into the row component in order to be visible, which mixes
+something that is not data into the **Row Identity** of
+[ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md). "The row changed" would
+start to include "the selection changed".
 
-オーバーレイなら行は選択を知らない。**行 = データ、オーバーレイ = 選択**と関心が分かれる。
+With an overlay the row knows nothing about selection. **Row = data, overlay = selection**, and
+the concerns stay apart.
 
 ## Consequences
 
-- **幾何学的に表せる効果しか描けない。** 矩形の塗り・枠・フィルハンドルは可。
-  「選択されたセルだけ文字色を反転」は不可。
-- **塗りは半透明にする。** `rgba` で下のセルの文字を透かす。Excel の見た目もこれ。
-- **飛び地の複数選択は、範囲ごとに 1 枚。** 範囲がいくつもある操作は稀なので問題にならない。
-- **オーバーレイは行と同じ座標空間に置く。** スクロールの平行移動を行と共有させれば、
-  スクロール時に位置を計算し直す必要がない。
-- **横方向の仮想化と噛み合わせが要る。** 列が仮想化されると x 座標は累積列幅から求める
-  ことになる（[ADR-0004](./0004-cap-the-cells-touched-per-frame.md)）。レイアウトのために
-  どのみち必要な計算なので追加コストではないが、実装は連動する。
-- **実機の 800 セルは未計測。** 2000 セル（40×50）でのみ確認した。横仮想化
-  （[ADR-0004](./0004-cap-the-cells-touched-per-frame.md)）を入れれば実効セル数は 800 前後に
-  落ちるが、そこでの実機の尾は測っていない。オーバーレイはセル数に依存しないため、
-  結論は変わらない見込み。
+- **Only geometric effects can be painted.** Rectangle fill, outline and fill handle: yes.
+  "Invert the text colour of selected cells only": no.
+- **The fill is translucent.** `rgba`, so the cell text shows through. This is also what Excel
+  looks like.
+- **Disjoint multi-range selection means one overlay per range.** Operations with many ranges are
+  rare, so this does not become a problem.
+- **The overlay lives in the same coordinate space as the rows.** Sharing the scroll translation
+  with the rows means its position never has to be recomputed while scrolling.
+- **It has to mesh with horizontal virtualisation.** Once columns are virtualised the x
+  coordinate comes from cumulative column widths
+  ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)). That arithmetic is needed for layout
+  anyway, so it is not an added cost, but the implementations are coupled.
+- **800 cells was not measured on real hardware.** Only 2000 cells (40×50) was confirmed there.
+  With horizontal virtualisation
+  ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)) the effective cell count drops to
+  around 800, and the tail at that size has not been measured on real hardware. Since the overlay
+  does not depend on cell count, the conclusion is not expected to change.

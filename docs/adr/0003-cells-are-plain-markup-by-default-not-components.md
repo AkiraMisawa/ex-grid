@@ -1,68 +1,72 @@
-# メモ化の境界は行に置く。セルは素のマークアップ
+# The memoisation boundary sits at the row. Cells are plain markup
 
-グリッドは **1 行を 1 コンポーネント**として描き、その中の**セルは素のマークアップ**にする。
-行コンポーネントは `ShouldRender()` を自前で実装し、行の**同一性**が変わっていなければ
-再描画を丸ごと省く。セルを個別のコンポーネントにはしない。
+The grid paints **one row as one component**, and **the cells inside it as plain markup**. The
+row component implements `ShouldRender()` by hand and skips re-rendering entirely when the row's
+**identity** has not changed. Cells are not individual components.
 
-## 計測
+## Measurements
 
-`spikes/render-bench` を実機（Windows / Chrome 151 / 32 コア / .NET 10 Release、AOT なし）で
-実行。1 描画あたり ms（中央値）。`step` は 1 フレームで何行ぶんスクロールしたか
-＝ `1` がゆっくりスクロール（典型）、`50` がフリック（最悪）。
+`spikes/render-bench`, run on real hardware (Windows / Chrome 151 / 32 cores / .NET 10 Release,
+no AOT). Milliseconds per render, median. `step` is how many rows are scrolled per frame —
+`1` is slow scrolling (typical), `50` is a fling (worst case).
 
-| セル | step | `Direct` | `Accessor` | `AccessorMeta` | **`RowComponent`** | `Component` |
+| Cells | step | `Direct` | `Accessor` | `AccessorMeta` | **`RowComponent`** | `Component` |
 |---|---|---|---|---|---|---|
 | 800 | 1 | 10.00 | 10.40 | 11.70 | **1.90** | 6.10 |
-| 800 | 50 | 10.70 | 11.00 | 12.20 | 未計測 | 36.20 |
+| 800 | 50 | 10.70 | 11.00 | 12.20 | not measured | 36.20 |
 | 2000 | 1 | 23.90 | 24.60 | 28.20 | **2.80** | 14.90 |
 | 2000 | 50 | 25.60 | 26.40 | 30.70 | 32.80 | 92.00 |
 
-`Direct` = 抽象化なしの床（素マークアップ・フィールド直読み）、`Accessor` = + 列アクセサ、
-`AccessorMeta` = + セルごとのメタデータ問い合わせ、`RowComponent` = 行が境界、
-`Component` = セルが境界。
+`Direct` is the floor with no abstraction at all (plain markup, direct field access);
+`Accessor` adds a per-column value accessor; `AccessorMeta` adds a per-cell metadata lookup;
+`RowComponent` puts the boundary at the row; `Component` puts it at the cell.
 
-## なぜ境界の位置で 10 倍変わるのか
+## Why the position of the boundary changes this by 10×
 
-素のマークアップには「この行は変わっていない」を Blazor に伝える手段がない。親が毎回
-全行ぶんの描画ツリーを作り直して差分を取るので、**画面がほとんど変わらなくても
-コストは全セルぶん**かかる。コンポーネントはそこに境界を作り、変わっていなければ
-子の描画を丸ごと飛ばす。
+Plain markup gives Blazor no way to be told "this row has not changed". The parent rebuilds the
+render tree for every row and diffs it, so **the cost is paid for every cell even when almost
+nothing on screen changed**. A component creates a boundary there, and when nothing has changed
+the child's rendering is skipped wholesale.
 
-境界の**数**が効く。セルに置くと 800 個、行に置くと 40 個。ゆっくりスクロールでは
-どちらもよく効くが（39/40 行は不変）、フリックでは全部が変わって境界が無駄になり、
-オーバーヘッドだけが残る — セル境界が 92.00ms まで崩れるのはこれ。行境界なら
-オーバーヘッドが 1/20 なので、最悪ケースでも素マークアップ比 +7% で済む。
+**The number of boundaries is what matters.** At the cell it is 800; at the row it is 40. Both
+work well during slow scrolling (39 of 40 rows are unchanged), but during a fling everything
+changes, the boundaries buy nothing, and only their overhead remains — which is why the cell
+boundary collapses to 92.00 ms. At the row the overhead is one twentieth, so even the worst case
+is only +7% against plain markup.
 
 ## Considered Options
 
-- **セル = コンポーネント** — 却下。ゆっくりスクロールでは素マークアップより速い
-  （6.10 vs 11.70）が、フリックで 92.00ms まで崩れる。境界が 800 個は多すぎる。
-- **全部素のマークアップ** — 却下。最悪ケースでは最速だが、**典型ケースが 5〜10 倍遅い**。
-  ユーザが大半の時間を過ごすのは典型ケースの側。
-- **Blazor の自動パラメータ変更検知に任せる（`ShouldRender()` を書かない）** — 却下。
-  実際に試して**効かなかった**（step=1 / 800 セルで 10.30ms — 素マークアップより遅い）。
-  Blazor は値型・不変型のパラメータしか「変わっていない」と判定せず、`Row` のような
-  可変な参照型は**参照が同じでも「変わったかもしれない」**と扱う。安全側の設計であり、
-  回避するには自分で `ShouldRender()` を書くしかない。
+- **Cell as component** — rejected. It is faster than plain markup during slow scrolling
+  (6.10 vs 11.70) but collapses to 92.00 ms on a fling. 800 boundaries is too many.
+- **Plain markup everywhere** — rejected. It is fastest in the worst case but **5–10× slower in
+  the typical case**, and the typical case is where users spend their time.
+- **Rely on Blazor's automatic parameter change detection (write no `ShouldRender()`)** —
+  rejected after **trying it and finding it did not work** (10.30 ms at step=1 / 800 cells —
+  slower than plain markup). Blazor only reports "unchanged" for value and immutable-typed
+  parameters; a mutable reference type such as `Row` is treated as **"may have changed" even when
+  the reference is identical**. That is a deliberately safe design, and the only way around it is
+  to write `ShouldRender()` yourself.
 
 ## Consequences
 
-- **変更の合図は「中身の書き換え」ではなく「別インスタンス」になる。** `ShouldRender()` が
-  参照で比較する以上、Consumer が行オブジェクトを in-place に書き換えても再描画されない。
-  Data Source は、データが変わったら**別のインスタンスを返す**か、行にバージョンを持たせて
-  それを上げること。API 契約として明示する必要がある。
-  最初の Consumer である `poke` はベースラインが content-addressed な不変スナップショットで、
-  フィード版が変われば自然に別インスタンスになるため、この制約と衝突しない
-  （[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) が
-  「不変スナップショットだからページングが整合する」と書いたのと同じ性質）。
-- **API の抽象化そのものは安い。** 実行時 Column オブジェクトの値アクセサ（boxing 込み）が
-  +3〜4%、セルごとのメタデータ問い合わせを足しても +14〜18%。`CONTEXT.md` の
-  **Column** / **Cell Metadata** の設計は、この予算内に収まる。
-- **独自描画を指定した列は、その列だけコンポーネント化されて遅くなる。** Consumer に
-  明示する。全列に指定すれば `Component` 行の数字に近づく。
-- **行の高さが可変だと境界が壊れる。** 行が自分の高さを変えると仮想化の位置計算に
-  跳ね返る。固定行高を前提にするかどうかは未決。
-- **フリック時はこの決定では救えない。** 2000 セルのフリックは全モードで予算超過
-  （25〜33ms）。行境界はそこでは効かない（全行が変わるため）。別途
-  [ADR-0004](./0004-cap-the-cells-touched-per-frame.md) で扱う。
-- 数字は **AOT なしの Release IL** 実行。AOT で余裕が増える可能性はあるが未検証。
+- **The change signal becomes "a different instance", not "rewritten contents".** Because
+  `ShouldRender()` compares by reference, a Consumer that rewrites a row object in place gets no
+  repaint. When data changes, the Consumer must **return a different instance** or carry a version
+  on the row and bump it. This has to be stated in the API contract.
+  The first Consumer's baseline is a content-addressed immutable snapshot, so a new feed version
+  naturally produces new instances and the constraint does not bite
+  ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) relies on the same
+  property for paging consistency).
+- **The abstraction itself is cheap.** A runtime Column's value accessor (boxing included) costs
+  +3–4%, and adding a per-cell metadata lookup brings it to +14–18%. The **Column** and
+  **Cell Metadata** designs in `CONTEXT.md` fit inside that budget.
+- **A column with custom rendering becomes a component for that column and gets slower.** Say so
+  to the Consumer. Specifying it on every column approaches the `Component` row of the table
+  ([ADR-0020](./0020-action-and-template-columns.md)).
+- **Variable row height would break the boundary.** A row that decides its own height feeds back
+  into the virtualisation arithmetic. Settled in
+  [ADR-0013](./0013-fixed-row-height.md): the height is fixed.
+- **This decision does not rescue the fling case.** A fling over 2000 cells exceeds the budget in
+  every mode (25–33 ms), and the row boundary does not help there because every row changes.
+  Handled separately in [ADR-0004](./0004-cap-the-cells-touched-per-frame.md).
+- The numbers are from **Release IL without AOT**. AOT may widen the margin; untested.

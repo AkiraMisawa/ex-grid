@@ -1,122 +1,124 @@
-# コピーは、上限を超えたら黙って切り詰めず、断る
+# Copy refuses past its cap rather than quietly truncating
 
-クリップボードへコピーできる選択範囲には上限を設ける。**上限を超えたら、先頭 N 行を
-コピーするのではなく、コピーを実行せずエクスポートを案内する。**
+There is a cap on how large a selection can be copied to the clipboard. **Past the cap, the grid
+does not copy the first N rows — it does not copy at all, and points at export instead.**
 
-貼り付け（Ctrl+V）はこのコンポーネントの対象外 — DataGrid はデータを所有しないので
-書き戻す先がない。貼り付けは Sheet の機能。
+## Why not truncate
 
-## なぜ切り詰めないのか
+The first Consumer displays **position and risk figures**. The central use is a trader selecting
+rows, pasting into Excel, and aggregating there. If only the first thousand rows land and the
+warning is missed, **what was pasted looks like perfectly normal numbers with a total that is
+quietly too small**. There is nothing to notice.
 
-最初の Consumer が扱うのは**ポジションとリスクの数値**である。トレーダーが行を選択して
-Excel に貼り、そこで集計して数字を見る、という使い方が中心になる。ここで先頭 1000 行
-だけが貼られていて警告を見落とすと、**貼った先には一見正常な数字が並び、合計だけが
-静かに過小になる**。気づく手がかりがない。
+Failing silently in the direction of a smaller number is the worst failure this kind of tool can
+have, and a warning dialog does not prevent it (design on the assumption that warnings are
+missed). **Nothing happening** is the safe side to fall on.
 
-金額が減る方向に無言で壊れるのは、この種のツールで最悪の壊れ方であり、警告ダイアログ
-では防げない（警告は見落とされる前提で設計する）。**何も起きない**方が安全側に倒れる。
+## Why there is a cap — the rationale was replaced once
 
-## なぜ上限が要るのか — 根拠は一度差し替わっている
+**Originally the rationale was "because it cannot be done".**
 
-**当初の根拠は「できないから」だった。**
+1. **The grid does not have the data.**
+   [ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) put sorting, filtering
+   and fetching on the Consumer side, so the grid holds only the Window it has been pushed
+   (tens of rows).
+2. **The browser only permits a clipboard write immediately after a user action.** Querying a
+   server and writing after an `await` can be rejected because the user-activation context has
+   lapsed.
 
-1. **データを持っていない。** [ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)
-   でソート・フィルタ・取得をすべて Consumer 側に置いたため、グリッドが手元に持つのは
-   Consumer から押し込まれた現在の Window（数十行）だけ。
-2. **ブラウザがクリップボード書き込みをユーザ操作の直後にしか許さない。** サーバへ
-   問い合わせて `await` してから書き込むと、操作の文脈が切れて拒否されうる。
+**[ADR-0017](./0017-target-chromium-browsers-only.md) narrowed the target to Chrome and Edge,
+which dissolved point 2 and turned point 1 into "the Consumer can be asked for it".** The cap
+stays regardless. **Only its rationale changed.**
 
-**[ADR-0017](./0017-target-chromium-browsers-only.md) で Chrome / Edge に限定したため、
-2 は解消し、1 も「Consumer に依頼すれば取れる」に変わった。** それでも上限は残す。
-**根拠が入れ替わっただけである。**
+> **Current rationale: because it would be useless even if it worked.**
+> A million rows × 50 columns of TSV runs to hundreds of megabytes, which the receiving
+> application cannot handle.
 
-> **現在の根拠：載せても使い物にならないから。**
-> 100 万行 × 50 列の TSV は数百 MB になり、貼る側が処理できない。
+The cap is a **safety valve**, not a daily path — real selections are much smaller. And because
+the rationale moved from "cannot" to "pointless", **the cap can be set considerably higher.**
 
-上限は**安全弁**であって日常の経路ではない — 実運用の選択は通常もっと小さい。そして
-根拠が「できない」から「意味がない」に変わったぶん、**上限の数値はかなり高く置ける。**
-
-**断る方針そのものは、一度も変わっていない**（下記「なぜ切り詰めないのか」）。
+**The decision to refuse has never changed.**
 
 ## Considered Options
 
-- **上限までコピーして警告** — 却下。上記のとおり、静かな過小集計を生む。
-- **非同期で取りに行って、取れたらコピー** — 当初は却下したが、
-  [ADR-0017](./0017-target-chromium-browsers-only.md) で **Chrome 系に限定したので採る**。
-  Chrome は `ClipboardItem` の値に Promise を渡せ、ユーザ操作の文脈についても寛容なため
-  （Safari は直接の操作でしか許さず Promise で非同期にできない）、「選択範囲を取りに
-  行ってからクリップボードに書く」が成立する。
+- **Copy up to the cap and warn** — rejected, per "why not truncate" above.
+- **Fetch asynchronously, then copy** — rejected at first, **now adopted** following
+  [ADR-0017](./0017-target-chromium-browsers-only.md). Chrome accepts a promise as a
+  `ClipboardItem` value and is lenient about the user-activation context (Safari permits it only
+  under direct interaction and cannot do it asynchronously through a promise), so "ask for the
+  selection, then write to the clipboard" holds together.
 
-  **上限は残るが、根拠が変わる。**
+  The rows are requested from the Consumer, since the grid only holds the Window. That is the
+  second half of the line drawn in [ADR-0009](./0009-filter-panel-contract.md) — **push for
+  application state, pull is fine for transient UI data**. Rows destined for the clipboard are
+  stored nowhere and never enter undo history.
 
-  | | 上限の根拠 |
-  |---|---|
-  | 変更前 | データを持っていない ＋ 非同期にするとクリップボードに書けない |
-  | **変更後** | **載せても使い物にならないから** — 100 万行 × 50 列の TSV は数百 MB で、貼る側が処理できない |
+## Clipboard routes — no permission prompt on everyday operations
 
-  「できないから断る」から「載せても意味がないから断る」へ。**断る方針（切り詰めない）は
-  変わらないが、上限の数値はかなり高く置ける。**
+Browsers may ask for permission when the clipboard is touched **programmatically**. They do not
+ask when `event.clipboardData` is used inside a **`copy` / `paste` event** — the user pressing
+Ctrl+C or Ctrl+V is itself taken as the grant.
 
-  取得は Consumer に依頼する（グリッドは Window しか持たないため）。これは
-  [ADR-0009](./0009-filter-panel-contract.md) で引いた線 —
-  **押す形にするのはアプリの状態、引く形でよいのは一時的な UI データ** — の後者に当たる。
-  クリップボードに載せる行はどこにも保存されず、Undo にも乗らない。
-
-## クリップボードへの経路 — 日常操作で許可を求めない
-
-ブラウザはクリップボードを**プログラムから**触るときに許可を求めることがある。
-一方、**`copy` / `paste` イベントの中で `event.clipboardData` を使う分には求められない** —
-ユーザが Ctrl+C / Ctrl+V を押したこと自体が許可の表明とみなされるため。
-
-| | 許可の確認 | 手元にない行を取りに行けるか |
+| | Permission prompt | Can it fetch rows it does not hold? |
 |---|---|---|
-| `copy` イベント | **出ない** | **できない**（同期処理なので await できない） |
-| `navigator.clipboard.write()` | 出うる | できる（Promise 値、Chrome のみ） |
+| `copy` event | **No** | **No** (synchronous; nothing can be awaited) |
+| `navigator.clipboard.write()` | Possible | Yes (promise value, Chrome only) |
 
-上で「取りに行ってからコピーする」ことにした代償が、この許可ダイアログの可能性である。
-**選択の大きさで経路を切り替える。**
+The prompt is the price of "fetch, then copy" above. **Switch route by the size of the
+selection.**
 
-- **選択が手元の Window に収まっている → `copy` イベント経路。** 同期的に書けるので確認が
-  出ない。**圧倒的多数のコピーはここに入る**（見えている範囲かその周辺）。
-- **Window を超える → 非同期 API 経路。** Consumer に行を依頼してから書く。確認が出うるが、
-  これは元々例外的な操作。
+- **Selection fits inside the Window → the `copy` event route.** It can be written
+  synchronously, so no prompt appears. **The overwhelming majority of copies land here** (what is
+  on screen, or near it).
+- **Selection exceeds the Window → the asynchronous API route.** Ask the Consumer for the rows,
+  then write. A prompt may appear, but this was an exceptional operation to begin with.
 
-**2 形式（`text/plain` に表示書式、`text/html` に生値）はどちらの経路でも維持できる** —
-イベント経路では `event.clipboardData.setData()` を 2 回呼ぶ。
+**Both formats (display format in `text/plain`, raw value in `text/html`) survive either route** —
+on the event route, call `event.clipboardData.setData()` twice.
 
-却下した案:
-- **常に非同期 API** — 上限は高いが、日常操作のたびに確認が出うる。重い。
-- **常に `copy` イベント** — 確認は出ないが、コピーできるのが手元の Window に限られ、
-  上限を引き上げた意味が無くなる。
+Rejected:
+- **Always the asynchronous API** — the cap is higher, but a prompt can appear on every everyday
+  operation. Too heavy.
+- **Always the `copy` event** — no prompt, but copying is limited to the Window, which undoes the
+  point of raising the cap.
 
-## 貼り付けは `paste` イベントで受ける
+## Paste is received through the `paste` event
 
-**許可は要らない。** そして `paste` イベントからは **`text/html` も読める**。Excel はコピー時に
-HTML 形式も載せるので、**そちらを読めば型と精度が保たれる**（TSV のテキストだけを見るより
-正確）。上で「Excel は HTML を優先して読む」と書いた話の逆方向。
+**Paste is in scope.** (The first draft of this ADR said it was not, on the grounds that a
+display-only grid has nowhere to write back. That was superseded once editing entered scope —
+the grid reports an intent and the Consumer owns the data, so paste is coherent. See
+[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md).)
 
-貼り付けの形状規則は
-[ADR-0014](./0014-paste-shape-rules-and-selection-count.md)。
+**No permission is needed.** And the `paste` event can read **`text/html` as well**. Excel puts
+an HTML flavour on the clipboard when copying, so **reading that preserves type and precision**
+(more accurate than reading the TSV text alone) — the mirror image of the point below about
+Excel preferring HTML.
+
+The shape rules for paste are in
+[ADR-0014](./0014-paste-shape-rules-and-selection-count.md).
 
 ## Consequences
 
-- **選択モデルが前提になる。** 矩形範囲（アンカー＋フォーカス）、行全体・列全体、
-  Shift+矢印での拡張、Ctrl+A。コピーはその上に乗る機能でしかない。**選択モデル自体は
-  未設計** — 残っている中で最大の未着手領域。
-- **エクスポートという別機能が要る。** サーバ側でファイルを生成して落とす経路。これは
-  グリッドの機能ではなく Consumer の機能になるが、グリッドは「現在の Query」
-  （範囲・Filter・Sort・列順）を渡せる必要がある。
-- **ブラウザの既定のコピー動作を止める必要がある。** セルは `div` なので、放置すると
-  ブラウザ自身のテキスト選択がコピーされ、こちらの矩形選択と食い違う。グリッドを
-  フォーカス可能にしてキー入力を横取りする。
-- **コピーは現在の列順に従い、非表示列を含めない。** View State に依存する。
-- **クリップボードには 2 つの形式を同時に載せる** — `text/plain` に**表示している書式**、
-  `text/html` に**生の値**。Excel は HTML 形式を優先して読むため、Excel へは精度と型が
-  保たれたまま入り、テキストエディタへは見たままが入る。Excel 自身がこの方式を採っている。
+- **It presupposes the selection model** — rectangular ranges (anchor plus focus), whole rows and
+  columns, Shift+arrow extension, Ctrl+A. Copy is only a feature on top of it. Settled in
+  [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md) and
+  [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md).
+- **A separate export feature is required** — a path that generates a file server-side. That is a
+  Consumer feature rather than a grid feature, but the grid must be able to hand over the current
+  Query (range, Filter, Sort, column order).
+- **The browser's default copy behaviour has to be suppressed.** Cells are `div`s, so left alone
+  the browser's own text selection is what gets copied, which will not match the rectangular
+  selection. The grid is made focusable and intercepts the keys
+  ([ADR-0018](./0018-multiple-instances-must-be-independent.md) scopes that per instance).
+- **Copy follows the current column order and excludes hidden columns.** It depends on View State.
+- **Two formats go on the clipboard at once** — the **displayed format** in `text/plain`, the
+  **raw value** in `text/html`. Excel prefers the HTML flavour, so Excel receives precision and
+  type intact while a text editor receives what was on screen. Excel itself works this way.
 
-  片方だけにすると、どちらも金額が静かに壊れる方向のリスクを持つ。**表示書式だけ**にすると
-  小数以下が失われ、さらに**桁区切りがカルチャの罠**になる — ドイツ式の `1.234.567,89` を
-  ロケールの違う Excel に貼ると、文字列として扱われるか、**別の数値として解釈される**。
-  XVA の金額でこれが起きても画面上は正常に見える。**生の値だけ**にすると、日付が
-  `2031-06-15T00:00:00` のような形で出て人間には読めない。
-  実装はクリップボードに 2 形式を書くだけだが、**対象ブラウザの確認が要る**（未確認）。
+  Either format alone risks money breaking quietly. **Display format alone** loses the decimals,
+  and **the thousands separator becomes a locale trap** — German-style `1.234.567,89` pasted into
+  a differently-localised Excel is either treated as a string or **interpreted as a different
+  number**, and the screen looks normal either way. **Raw value alone** renders dates as
+  `2031-06-15T00:00:00`, which no one can read.
+  Writing two formats is confirmed available on the target browsers
+  ([ADR-0017](./0017-target-chromium-browsers-only.md)).

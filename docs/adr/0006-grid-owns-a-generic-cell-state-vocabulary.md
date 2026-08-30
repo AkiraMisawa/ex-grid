@@ -1,59 +1,63 @@
-# グリッドは汎用の Cell State 語彙を持つ。Consumer の語彙は取り込まない
+# The grid owns a generic Cell State vocabulary. The Consumer's vocabulary stays out
 
-グリッドは「このセルは通常と違う状態にある」ことを、**汎用の語彙**として理解する —
-正常 / 古い / 欠損 / エラー / 変更あり。見た目はテーマ側で決め、ツールチップ文言などの
-**付随データは不透明なまま** Consumer が描く。Consumer 固有の語彙（`poke` の as-of、
-staleness）はグリッドに入れない。
+The grid understands "this cell is in an unusual state" as a **generic vocabulary** — normal /
+stale / missing / error / modified. Appearance is decided by the theme, and **accompanying data
+such as tooltip text stays opaque** and is rendered by the Consumer. A Consumer's own vocabulary
+(as-of stamps, staleness) does not enter the grid.
 
-Cell State は [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) の
-**Cell Metadata** の仕組みに乗る — セルに格納せず、(行, 列) から問い合わせる。
+Cell State rides on the **Cell Metadata** mechanism from
+[ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) — not stored on the cell,
+but asked for by (row, column).
 
-## なぜ汎用語彙が正当化されたか
+## What justified a generic vocabulary
 
-由来がまったく違う 2 つの Consumer 要求が、同じ仕組みに着地したため。
+Two Consumer requirements with entirely different origins landed on the same mechanism.
 
-| Consumer | 表したいこと | 由来 |
+| Consumer | What it wants to convey | Origin |
 |---|---|---|
-| `poke` のポジション画面 | このセルの値は COB 時点で、隣は intraday-1400 | バッチの as-of スタンプ（(book × metric) 粒度） |
-| pricer の what-if 画面 | このセルはユーザが上書きした | シナリオの Overrides |
+| A position screen | this cell's value is as of close-of-business, the one next to it is intraday | a batch as-of stamp, at (book × metric) grain |
+| A what-if screen | this cell was overridden by the user | scenario Overrides |
 
-片方だけなら「その Consumer の都合」で済んだが、**2 つが独立に同じ形を要求した**。
-どちらも「値からは導けない、外から教えるしかない状態」であり、どちらも「見た目を
-変えて知らせたい」。汎用語彙を置く根拠として十分と判断する。
+One alone would have been "that Consumer's convenience". **Two arrived at the same shape
+independently.** Both are states that cannot be derived from the value and can only be supplied
+from outside, and both want to be signalled by changing appearance. That is enough to justify
+putting a vocabulary in the grid.
 
-## 値由来の装飾とは別物である
+## It is distinct from value-derived decoration
 
-混同しやすいので明示する。「セルの見た目を変える」には**由来の違う 3 つ**がある。
+Easy to conflate, so state it plainly. "Changing how a cell looks" has **three different
+origins**.
 
-| | 何から決まるか | 例 | どこが持つか |
+| | Decided by | Example | Held by |
 |---|---|---|---|
-| 書式 | 値 | 3桁区切り、小数2桁、日付形式 | **Column** |
-| 値由来の装飾 | 値 | 負なら赤、閾値超えは黄 | **Column**（ルール） |
-| **Cell State** | (行, 列) のメタデータ | 古い、欠損、エラー、変更あり | **Consumer に問い合わせ** |
+| Format | the value | thousands separators, two decimals, date format | **Column** |
+| Value-derived decoration | the value | red when negative, yellow above a threshold | **Column** (a rule) |
+| **Cell State** | (row, column) metadata | stale, missing, error, modified | **asked of the Consumer** |
 
-上 2 つは値を見れば決まるので、グリッドは特別な知識を要さず、列にルールを持たせれば
-足りる。この ADR が扱うのは 3 番目だけ。
+The first two are decided by looking at the value, so the grid needs no special knowledge and a
+rule on the column suffices. This ADR concerns only the third.
 
 ## Considered Options
 
-- **完全に不透明にして Consumer に全セルを描かせる** — 却下。「数値は右寄せ・桁区切り・
-  負数は括弧」まで Consumer が毎回書くことになり、Excel 的な操作感を謳う部品としては
-  本末転倒。加えて
-  [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) で独自描画は
-  列単位のコンポーネント化＝コスト増と決めたため、**性能面でも不利**。
-- **`poke` の語彙をそのまま持つ（as-of / staleness）** — 却下。DataGrid が特定の
-  Consumer に癒着する。`CONTEXT.md` で **Consumer** という語を立てたのは、まさにこれを
-  避けるため。
+- **Keep it entirely opaque and let the Consumer paint every cell** — rejected. The Consumer
+  would end up writing "numbers are right-aligned, thousands-separated, negatives in brackets"
+  every time, which is backwards for a component whose claim is Excel-like operability. It is
+  **also worse for performance**, because
+  [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) established that custom
+  rendering means componentising that column.
+- **Adopt the Consumer's vocabulary directly (as-of / staleness)** — rejected. It fuses the grid
+  to one Consumer. The term **Consumer** exists in `CONTEXT.md` precisely to avoid this.
 
 ## Consequences
 
-- **語彙の粒度を最初に決める必要がある。** 足りなければ後から足せるが、意味を変えるのは
-  破壊的変更。現時点の 5 値（正常 / 古い / 欠損 / エラー / 変更あり）は実例 2 件からの
-  帰納であり、3 つ目の Consumer が現れたら見直す。
-- **状態の「度合い」は表現しない。** `poke` は「COB か intraday-1400 か」を出し分けたい
-  かもしれないが、Cell State は「古い」までしか言わない。時刻そのものは付随データとして
-  ツールチップに載せる。
-- **コストは計測済みで問題ない。** セルごとのメタデータ問い合わせは素マークアップ比
-  +14〜18%、行単位メモ化を入れた実測 1.90ms（800セル）に含まれている。
-  問い合わせの実装は軽く保つこと（辞書引き 1 回程度。文字列生成やアロケーションを
-  させない）。描画のたびにセル数ぶん呼ばれる。
+- **The granularity of the vocabulary has to be decided up front.** Adding values later is easy;
+  changing what one means is a breaking change. The present five (normal / stale / missing /
+  error / modified) are induced from two cases, and should be revisited when a third Consumer
+  appears.
+- **Degree is not expressed.** A Consumer may want to distinguish close-of-business from a
+  particular intraday run, but Cell State says no more than "stale". The timestamp itself goes in
+  the accompanying data, on the tooltip.
+- **The cost is measured and acceptable.** A per-cell metadata lookup is +14–18% against plain
+  markup and is included in the measured 1.90 ms (800 cells) with row-level memoisation.
+  **Keep the lookup light** — roughly one dictionary probe, with no string building and no
+  allocation. It is called once per cell, on every render.

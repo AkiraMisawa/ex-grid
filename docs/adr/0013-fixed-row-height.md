@@ -1,85 +1,88 @@
-# 行の高さは固定。行内展開は持たず、ピボット的なビューは行の種別で支える
+# Row height is fixed. No in-row expansion; pivot-like views are supported through Row Kind
 
-すべての行は同じ高さにする。高さは **C# のパラメータ**（`RowHeight`）として渡され、
-Density のような設定はそこへ解決される。**CSS だけで行高を変えられてはいけない。**
+Every row has the same height. The height arrives as a **C# parameter** (`RowHeight`), and
+settings such as a density option resolve into it. **It must not be possible to change the row
+height from CSS alone.**
 
-## なぜ固定なのか
+## Why fixed
 
-これまでの決定のほぼ全部が、行高の上に乗っている。
-
-```
-仮想化の位置計算   位置        = 行番号 × 行高
-選択オーバーレイ   矩形の y    = (行番号 − 先頭行) × 行高   （ADR-0008）
-セル編集欄の位置   同じ座標系                              （ADR-0010）
-スクロールバー長   総行数 × 行高
-```
-
-固定ならすべてかけ算 1 回で済む。可変にすると「ある行がどこにあるか」を知るために**それより
-上の全行の高さを足す**必要が生じ、100 万行では累積和の索引のような仕組みが要る。
-
-さらに [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) の行メモ化と
-**正面から衝突する**。行が自分で高さを決めるなら、描画してみないと高さが分からない。ところ
-メモ化は「描かずに済ませる」仕組みなので、**高さを知るために描かねばならず、メモ化が効かなく
-なる**。
-
-**行高が C# を通らなければならない理由も同じ。** `Dense` を純粋な CSS クラスとして実装すると、
-CSS 上は 32px なのに C# は 24px だと思ったままになり、スクロール位置・選択枠・編集欄が
-**少しずつずれる** — 原因の見えにくい壊れ方をする
-（[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)）。
-
-## 失われるのは「行内展開」だけ。ピボットは失われない
-
-「展開」には別種のものがあり、固定行高が排除するのは片方だけである。
+Almost every decision so far rests on the row height.
 
 ```
-【グループ / ピボットの展開】← 固定行高で可能
-  ▼ BK001              120,450   ← グループ行（普通の行。高さは同じ）
-      ▼ SWPX            80,200   ← グループ行
-            T-4471      45,100   ← 明細行
-      ▶ SWPI            40,250   ← 折りたたみ中
+virtualisation position   position     = row index × row height
+selection overlay         rectangle y  = (row index − first row) × row height   (ADR-0008)
+cell editor position      same coordinate system                                (ADR-0010)
+scrollbar length          total rows × row height
+```
 
-  展開 = 【行が増える】。どの行も高さは変わらない
+Fixed, all of these are one multiplication. Variable, finding where a row sits requires **summing
+the heights of every row above it**, which at a million rows needs something like a prefix-sum
+index.
 
-【マスター・ディテールの行内展開】← 可変行高が要る
-  T-4471    45,100
+It also **collides head-on with the row memoisation** in
+[ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md). If a row decides its own
+height, the height is not known until it is rendered — but memoisation exists to avoid rendering,
+so **the height would force the render and memoisation would stop working.**
+
+**The reason the height must go through C# is the same.** Implementing a density option as a pure
+CSS class leaves CSS at 32px while C# still believes 24px, and the scroll position, selection
+outline and editor **drift slightly out of alignment** — a failure whose cause is hard to see
+([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)).
+
+## What is lost is in-row expansion. Pivots are not lost
+
+"Expansion" means two different things, and fixed row height rules out only one.
+
+```
+Group / pivot expansion — possible with fixed row height
+  ▼ Group A              120,450   ← a group row (an ordinary row; same height)
+      ▼ Subgroup          80,200   ← a group row
+            Detail        45,100   ← a detail row
+      ▶ Subgroup          40,250   ← collapsed
+
+  expansion = MORE ROWS. no row changes height
+
+Master-detail in-row expansion — needs variable row height
+  Detail    45,100
   ┌────────────────────────────┐
-  │ 行の【中】に別のグリッドや │  ← 行そのものが縦に伸びる
-  │ グラフが入る               │
+  │ another grid or a chart    │  ← the row itself grows taller
+  │ INSIDE the row             │
   └────────────────────────────┘
 ```
 
-Excel のピボットテーブルも行の高さは一定であり、**展開は行数の変化**であって高さの変化では
-ない。
+Excel's pivot tables also keep a constant row height; **expansion changes the number of rows**,
+not their height.
 
-そして最初の Consumer である `poke` は、**バケット形（IR デルタラダー、vol サーフェス）を
-「ドリルダウン専用ビュー」**と決めている。IR デルタラダーは「Deal × テナー」の 2D 行列 —
-それ自体がもう 1 つのグリッドなので、行の中に埋めるより別ビューへ遷移する方が自然である。
-**可変行高が必要になる唯一の理由が、Consumer 側の設計で既に消えている。**
+And the first Consumer has already decided that its bucketed drill-downs are **a dedicated
+drill-down view**. Those are two-dimensional matrices — grids in their own right — so navigating
+to a separate view is more natural than embedding them inside a row. **The one reason that would
+have required variable row height is already gone on the Consumer's side.**
 
-## ピボット的なビューに必要なものは、ほぼ揃っている
+## Pivot-like views need almost nothing new
 
-| ピボットが要求すること | 対応 |
+| What a pivot requires | Where it comes from |
 |---|---|
-| 列がデータから決まる（ある項目の値が列になる） | **Column は実行時オブジェクト**。静的な列とデータ由来の列を区別しない |
-| グループ化と集計を誰かが計算する | グリッドはソートもフィルタもしない（[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)）。**グループ化もしない** — Consumer が計算して Window に載せる |
-| 展開・折りたたみで行数が変わる | 並べ替えと同じ扱い。グリッドは通知するだけで、Consumer が新しい Window と `TotalCount` を返す |
-| グループ行と明細行の見た目を変える | **行の種別**（明細 / グループ / 合計）が要る。**未設計** |
+| Columns determined by data | **Column is a runtime object.** A statically listed column and a data-derived one are not distinguished |
+| Someone computes grouping and aggregation | The grid does not sort or filter
+  ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). **It does not group
+  either** — the Consumer computes it and puts it in the Window |
+| Expanding and collapsing changes the row count | Treated like a sort change. The grid notifies; the Consumer returns a new Window and `TotalCount` |
+| Group rows look different from detail rows | Needs a **Row Kind** (detail / group / total). **Not yet designed** |
 
-不足しているのは最後の 1 つだけで、行高とは無関係の話。描画と展開操作のためのもの。
-
-`poke` に限れば、バッチが `_ByTypology` / `_ByCurrencyTypology` / `_ByDeal` と集計レベル別に
-出しているので、グループ化の計算自体は既に上流にある。
+Only the last is missing, and it has nothing to do with row height — it is about painting and
+about what expands.
 
 ## Consequences
 
-- **行の種別を導入する必要がある**（明細 / グループ / 合計）。Cell State
-  （[ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)）とは別物 — あちらは
-  セル単位で「値の状態」を表すもの、こちらは行単位で「行の役割」を表すもの。混ぜないこと。
-- **展開・折りたたみは通知になる。** グリッドは行の階層も、展開したら何行増えるかも知らない。
-  Consumer が新しい Window を押し込む。
-- **行内展開が必要になったら、この ADR ごと見直しになる。** 部分的な追加では済まない
-  — 座標計算・メモ化・選択オーバーレイ・編集欄の位置がすべて可変高を前提に書き直される。
-- **セルの内容は 1 行に収まる前提。** 長いテキストは省略記号で切る。折り返して複数行に
-  する機能は持たない。
-- **`RowHeight` は公開パラメータであり、外部のスタイルシートから上書きできてはならない。**
-  CSS 変数として出力はするが、真実は C# 側にある。
+- **A Row Kind has to be introduced** (detail / group / total). It is distinct from Cell State
+  ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) — that names the state of a
+  value per cell; this names the role of a row. Do not conflate them.
+- **Expanding and collapsing become notifications.** The grid knows neither the row hierarchy nor
+  how many rows an expansion adds. The Consumer pushes a new Window.
+- **If in-row expansion is ever needed, this ADR is revisited whole.** It cannot be added
+  incrementally — the coordinate arithmetic, the memoisation, the selection overlay and the editor
+  position would all be rewritten against a variable height.
+- **Cell contents are assumed to fit on one line.** Long text is cut
+  ([ADR-0016](./0016-column-width-and-overflow.md)). There is no wrapping onto multiple lines.
+- **`RowHeight` is a public parameter and must not be overridable from an external stylesheet.**
+  It is emitted as a CSS variable, but the truth lives in C#.

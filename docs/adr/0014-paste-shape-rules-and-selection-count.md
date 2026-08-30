@@ -1,72 +1,76 @@
-# 貼り付けは選択範囲の外へはみ出さない。選択量はステータスに出す
+# Paste never spills outside the selection. The selection size is shown in the status area
 
-貼り付けは、コピー元の形と貼り付け先の選択範囲の形が合わないとき、**Excel の 4 規則のうち
-2 つだけ**を採る。
+When the shape of what was copied does not match the shape of the target selection, **only two of
+Excel's four rules are adopted.**
 
-| | Excel | 採用 |
+| | Excel | Adopted |
 |---|---|---|
-| **1×1 → 範囲**（1 セルをコピーして範囲に貼る） | 範囲全体が同じ値で埋まる | **採る** |
-| **倍数関係**（2 行をコピーして 6 行に貼る） | 3 回繰り返して埋まる | **採る** |
-| **範囲 → 1 セル**（3×2 をコピーして 1 セルに貼る） | 選択セルを左上として広がる。**選択の外へはみ出す** | **採らない。拒否する** |
-| **半端**（3 行をコピーして 5 行に貼る） | 拒否 | 拒否 |
+| **1×1 → range** (copy one cell, paste into a range) | the whole range fills with that value | **yes** |
+| **Multiple** (copy 2 rows, paste into 6) | repeats three times | **yes** |
+| **range → 1 cell** (copy 3×2, paste onto one cell) | expands from that cell as the top-left, **spilling outside the selection** | **no — refused** |
+| **Ragged** (copy 3 rows, paste into 5) | refused | refused |
 
-そして**現在の選択セル数を常時表示する**（Excel のステータスバーと同じ）。
+And **the current selected-cell count is displayed at all times** (as Excel does in its status
+bar).
 
-## なぜ「範囲 → 1 セル」を落とすのか
+## Why "range → 1 cell" is dropped
 
-ここまで一貫して「**選択したものだけが操作の対象**」を前提に設計してきた — コピーの上限
-（[ADR-0005](./0005-copy-refuses-rather-than-truncates.md)）、飛び地への一括入力、
-Enter の巡回が範囲から出ないこと（[ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)）。
-「範囲 → 1 セル」だけがこの前提を破り、**選んでいない行を書き換える**。
+Everything so far has been designed on the premise that **only what is selected is operated on** —
+the copy cap ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)), bulk entry into disjoint
+ranges, and Enter cycling that never leaves the range
+([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)). "Range → 1 cell" is the only one
+that breaks that premise and **writes to rows that were not selected**.
 
-しかも貼り付けの結果は Override として記録され、そのままプライシングに使われる
-（[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)）。10 行を選んだつもりで
-クリップボードに 500 行入っていたために 500 トレードにブレークが付く、というのは
-ADR-0005 で避けたのと同じ種類の事故であり、**画面は正常に見える**。
+And the result of a paste is recorded as an Overlay and used in downstream computation
+([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)). Selecting ten rows and having
+five hundred rows change because the clipboard held five hundred is the same class of accident
+ADR-0005 avoids, and **the screen looks normal**.
 
-Excel がこれを許すのは、全データが目の前にあってはみ出した部分も見えるからである。
-この部品では **Window の外へはみ出せてしまう**。
+Excel can allow it because all the data is in front of the user and the spill is visible. Here it
+can spill **outside the Window**.
 
-そして**ステータスに出した選択数と、実際に書き換わる数が食い違う**ことになる — 見せている
-数字が嘘になる。
+It also means **the count shown in the status area and the number of rows actually written would
+disagree** — the number on display would be a lie.
 
-代償は Excel と挙動が違うことだが、**拒否するので静かには壊れない。**
+The price is behaving differently from Excel, but **it refuses, so nothing breaks quietly.**
 
-## 選択数の表示
+## Showing the selection count
 
-`Ctrl+Shift+↓` は見た目には「下まで選ぶ」だけの操作だが、下は 100 万行先にありうる。
-**選んだ量が画面から分からない**のが、一括編集における最大の危険。
+Ctrl+Shift+Down looks like "select down to the bottom", but the bottom can be a million rows away.
+**Not being able to see how much is selected** is the central danger in bulk editing.
 
-**選択セル数はグリッドが自力で出せる** — 矩形の面積を足すだけで、データは要らない。
-合計や平均はデータが要るので出せない（出したければ Consumer の仕事。データを持っている
-のは Consumer だけ）。
+**The grid can produce the selected-cell count on its own** — it is the sum of rectangle areas and
+needs no data. Sums and averages cannot be produced (they need data; if they are wanted, that is
+the Consumer's job, since only the Consumer has it).
 
-## 見えていない行・読み込まれていない行も選択に含まれる
+## Rows that are invisible or not yet fetched are included in the selection
 
-列全体を選択すれば、選択の実体は「0 行目〜(TotalCount-1) 行目、その列」という矩形 1 個で
-あり、画面に映っていない行も、まだ読み込まれていない行も含まれる
-（[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)）。
-その状態で値を 1 つ貼れば全行が書き換わる。**意図した動作である。**
+Selecting a whole column makes the selection one rectangle covering rows 0 to `TotalCount - 1`,
+which includes rows not on screen and rows not yet fetched
+([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)). Pasting
+one value there rewrites every row. **This is intended.**
 
-コピーは断るのに貼り付けは通るのは、矛盾ではない。**必要なものが違う。**
+Copy refusing while paste goes through is not a contradiction. **What each needs is different.**
 
-| | グリッドに何が必要か | 可否 |
+| | What the grid needs | Possible? |
 |---|---|---|
-| コピー | 選択範囲の**値を集める** | 持っていないのでできない → 断る |
-| 貼り付け | 「N〜M 行目のこの列をこの値に」という**意図を書く** | 書ける → Consumer が解決する |
+| Copy | to **gather the values** of the selection | it does not have them → refuse |
+| Paste | to **write an intent**: "rows N–M, this column, this value" | it can → the Consumer resolves it |
 
-> **グリッドが断るのは「大きいから」ではなく「できないから」。**
+> **The grid refuses because it cannot, not because something is large.**
 
-歯止めは 3 段ある。**規模を見せる**（選択数の表示）、**確認する**（100 万件の Override が
-何を意味するかを知る Consumer の役割）、**戻せる**（一括ペーストは 1 つの Edit Intent なので
-Ctrl+Z 一回、ADR-0007）。
+There are three brakes: **show the scale** (the selection count), **confirm** (the Consumer's job,
+since only it knows what a million overrides mean), and **undo** (a bulk paste is one Edit Intent,
+so one Ctrl+Z, ADR-0007).
 
 ## Consequences
 
-- **拒否の理由が 3 つになった** — コピーが大きすぎる、飛び地の形が揃わない
-  （[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)）、
-  貼り付けの形が合わない。**断るときにどれかを明示する。**
-- **Excel から来たユーザは「範囲 → 1 セル」を試して拒否される。** メッセージで、貼り付け先を
-  同じ形に選び直せば通ることを伝える。
-- **選択数の表示場所は Chrome の一部になりうる。** ただし数を数えるのは核であり、Chrome は
-  表示するだけ（[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) の規則どおり）。
+- **There are now three grounds for refusing.** A copy that is too large, disjoint ranges whose
+  shapes do not line up
+  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)), and a
+  paste whose shape does not match. **Say which one when refusing.**
+- **Users arriving from Excel will try "range → 1 cell" and be refused.** The message should say
+  that reselecting a target of the same shape will work.
+- **The selection count display may live in Chrome.** Counting is the core's; displaying is
+  Chrome's, per the rule in
+  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).

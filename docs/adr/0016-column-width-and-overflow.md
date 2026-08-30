@@ -1,94 +1,104 @@
-# 列幅とあふれ — 数値は切り詰めず `####`。Auto の幅は保存しない
+# Column width and overflow — numbers are not truncated, they become `####`; Auto widths are not persisted
 
-列は `Width = Auto | Fixed(px)` と `MinWidth` / `MaxWidth` を持つ。**上限を超えて収まらない
-とき、テキストは省略記号で切り、数値と日付は `####` を表示する**（Excel と同じ）。
+A column carries `Width = Auto | Fixed(px)` together with `MinWidth` / `MaxWidth`. **When a value
+does not fit within the maximum, text is cut with an ellipsis and numbers and dates are shown as
+`####`** (as Excel does).
 
-## 切り詰めてよいものと、いけないもの
+## What may be truncated and what may not
 
 ```
-テキスト  「Counterparty Ho…」  → 切り詰められたと【見て分かる】       … 省略記号でよい
-数値      「1,234,5…」          → 桁が 3 つ少ない【正当な数値に見える】 … 危険
+Text      "Counterparty Ho…"   → visibly truncated                        … an ellipsis is fine
+Number    "1,234,5…"           → looks like a VALID number three digits short … dangerous
 ```
 
-トレーダーが桁を読み違える。これは
-[ADR-0005](./0005-copy-refuses-rather-than-truncates.md) のコピーの切り捨てや
-[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) の「色だけ変わって値が古い」
-と同じ、**静かに間違う**類である。
+A user misreads the magnitude. This is the same class of failure as the copy truncation in
+[ADR-0005](./0005-copy-refuses-rather-than-truncates.md) and the "colour changed, value stale"
+case in [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md): **quietly wrong**.
 
-Excel の `####` は、**読めないことを読めない形で見せる** — 中途半端に読ませない。この
-セッションで一貫して採ってきた原則そのものなので、そのまま採用する。
+Excel's `####` **shows unreadability in an unreadable form** — it refuses to be half-read. That is
+the principle used throughout this design, adopted as-is.
 
-却下した案:
-- **数値も省略記号で切る** — 表示の一貫性はあるが、別の数値に見える。
-- **収まらなければ自動で列幅を広げる** — 誤読は防げるが、ユーザが決めた幅を勝手に変える。
-  しかも列幅は View State であり Consumer が所有するため
-  （[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)）、グリッドが幅変更を
-  通知することになり、**本人の知らないうちに保存ビューが書き換わる**。
-- **書式を落とす**（桁区切りを外す、指数表記にする） — `1.23E+09` は金額として読みにくく、
-  桁区切りが消えること自体が別の誤読を招く。
+Rejected:
+- **Truncate numbers with an ellipsis too** — consistent presentation, but it looks like a
+  different number.
+- **Widen the column automatically when a value does not fit** — it prevents misreading, but
+  changes a width the user chose. And column widths are View State owned by the Consumer
+  ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)), so the grid would be
+  notifying width changes and **rewriting the user's saved view without their knowledge**.
+- **Drop the formatting** (remove thousands separators, use exponent notation) — `1.23E+09` is
+  unreadable as a monetary amount, and losing the thousands separator invites a different
+  misreading of its own.
 
-## `####` のとき、ユーザが正しい値を見る経路は 3 つ
+## Three ways to see the real value behind `####`
 
-- **フォーカス中のセルの完全な値を常時表示する。** Excel の数式バーと同じ役割で、置き場所は
-  [ADR-0014](./0014-paste-shape-rules-and-selection-count.md) で入れた選択数の表示欄。
-  Excel 使いは「セルが読めなければ数式バーを見る」を体で覚えているので学習が要らない。
-- **ホバーでツールチップ。** 値は Window にあるので追加の取得は不要。
-- **列を広げる。** ドラッグ、または列メニューの「幅を自動調整」。
+- **Show the focused cell's full value at all times.** The same role as Excel's formula bar, and
+  the place for it is the selection count display added in
+  [ADR-0014](./0014-paste-shape-rules-and-selection-count.md). Excel users already know to look
+  there when a cell is unreadable, so nothing has to be learned.
+- **A tooltip on hover.** The value is in the Window, so no extra fetch is needed.
+- **Widen the column.** By dragging, or through the column menu's "size to fit".
 
-`####` は表示だけなので、**そのセルを選んでコピーすれば正しい値が得られる**
-（ADR-0005 で `text/html` に生値を載せると決めた通り）。**スクリーンリーダーには `####` では
-なく実際の値を読ませる。**
+`####` is presentation only, so **selecting the cell and copying yields the correct value** (per
+ADR-0005, the raw value goes on the clipboard as `text/html`). **Screen readers are given the
+actual value, not `####`.**
 
-## Auto の幅は保存しない
+## Auto widths are not persisted
 
-| | 幅の決まり方 | View State に保存されるか |
+| | How the width is decided | Persisted in View State? |
 |---|---|---|
-| **Fixed** | ユーザがドラッグした値、または「幅を自動調整」の結果 | **される**（ユーザの意思） |
-| **Auto** | 内容から計算し `[MinWidth, MaxWidth]` に収める | **されない**（「Auto である」ことだけ保存） |
+| **Fixed** | dragged by the user, or the result of "size to fit" | **yes** (it is the user's intent) |
+| **Auto** | computed from content, clamped to `[MinWidth, MaxWidth]` | **no** (only the intent "this column is Auto") |
 
-この分け方が、上で却下した「自動で広げる」の問題を解く。**自動で決まった幅は保存しない**ので
-保存ビューが勝手に書き換わらず、保存されるのは意思だけ。
+This is what resolves the objection to "widen automatically" above. **A width decided
+automatically is not persisted**, so a saved view is never rewritten behind the user's back; what
+is persisted is the intent.
 
-**`MaxWidth` があるから `####` が意味を持つ。** 上限が無ければ列が無限に伸びるだけで、
-あふれという状態が発生しない。
+**`MaxWidth` is what gives `####` meaning.** Without an upper bound the column would simply keep
+growing and overflow would never occur.
 
-## Auto は伸びる方向にしか動かさない
+## Auto only ever grows
 
-押す形では **Auto は「読み込まれている行」からしか計算できない**
-（[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)）。スクロールして
-長い値が現れるたびに幅が上下すると、**列がガタガタ動く**。
+In the push form, **Auto can only be computed from the rows that have been fetched**
+([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). If the width moved up and
+down as longer values appeared while scrolling, **the columns would judder**.
 
 ```
-初期       : 最初の Window から計算
-スクロール : より長い値が現れた → 広げる（MaxWidth まで）
-             短い値しかない画面に来た → 【縮めない】
+initially  : computed from the first Window
+scrolling  : a longer value appears → widen (up to MaxWidth)
+             a screen with only short values → DO NOT narrow
 ```
 
-縮めないので振動しない。数画面スクロールすれば実質的に落ち着く。縮めたければユーザが
-「幅を自動調整」を明示的に押す（＝ その時点の内容で Fixed になる）。
+Not narrowing means it cannot oscillate, and after a few screens it settles in practice. To
+narrow, the user presses "size to fit" explicitly (which fixes the width at the content of that
+moment).
 
-**「幅を自動調整」は近似である。** 全行ではなく読み込み済みの行にしか合わせられない。
-[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) の列メニューに置く際、これを
-前提とする。真の自動調整が要るなら Consumer がサーバ側で最大幅を計算して渡すことになるが、
-現時点では過剰。
+**"Size to fit" is an approximation.** It can only fit the rows that have been fetched, not all of
+them. The column menu entry in
+[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) is written on that basis. A true fit
+would require the Consumer to compute the maximum width server-side and pass it in; that is
+overkill for now.
 
-## 列の増減と保存ビュー
+## Columns appearing and disappearing, and saved views
 
-データ由来の列（テナーラダー、ピボットの列）は実行時に増減する。**Column が実行時オブジェクト
-である**（`CONTEXT.md`）ので表現自体は問題ない。保存ビューとの噛み合わせだけ決めておく。
+Data-derived columns come and go at runtime. Representing them is not a problem — **Column is a
+runtime object** (`CONTEXT.md`). Only the interaction with saved views needs settling.
 
-- **保存ビューに無い列**（新しく現れた列）→ **既定幅で、表示状態で、末尾に置く。** 勝手に
-  隠さない — 隠すと新しい情報が黙って見えなくなる。
-- **保存ビューにあるが存在しない列** → **無視する。** エラーにしない。
+- **A column absent from the saved view** (newly appeared) → **default width, visible, placed at
+  the end.** Do not hide it — hiding makes new information silently disappear.
+- **A column present in the saved view but no longer existing** → **ignore it.** Not an error.
 
 ## Consequences
 
-- **`####` はセルの表示だけを変える。** 選択・コピー・編集・スクリーンリーダーはすべて実際の
-  値を扱う。
-- **フォーカス中セルの値の表示は Chrome の一部になりうる。** 値を出すのは核、描くのは Chrome
-  （ADR-0010 の規則どおり）。
-- **`MinWidth` はドラッグの下限でもある。** 列を潰して見えなくすることはできない。隠したい
-  場合は列メニューの「この列を隠す」を使う（意図が明確に記録され、保存ビューに載る）。
-- **`####` の判定には文字幅の測定が要る。** 等幅でない書体では、描画してみるまで収まるか
-  分からない。数値列は `font-variant-numeric: tabular-nums` を前提にして桁数から見積もる
-  （`spikes/render-bench` でも既にそうしている）。
+- **`####` changes only how the cell is painted.** Selection, copy, editing and screen readers all
+  deal with the real value.
+- **The focused-cell value display may live in Chrome.** Producing the value is the core's;
+  painting it is Chrome's (the rule in
+  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)).
+- **`MinWidth` is also the lower bound for dragging.** A column cannot be crushed until it
+  disappears. To hide one, use the column menu's "hide this column", which records the intent
+  clearly and goes into the saved view.
+- **Deciding `####` requires knowing the text width.** In a non-monospaced face, whether it fits
+  is not known until it is painted. Numeric columns assume
+  `font-variant-numeric: tabular-nums` and estimate from the digit count (as
+  `spikes/render-bench` already does) — which is also why this needs no measurement round-trip
+  through JavaScript ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).

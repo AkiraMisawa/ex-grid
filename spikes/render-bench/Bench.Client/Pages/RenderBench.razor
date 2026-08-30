@@ -6,28 +6,29 @@
 
 <PageTitle>cell-grid render bench</PageTitle>
 
-<h3>cell-grid — 描画コスト計測</h3>
+<h3>ExGrid — render cost</h3>
 <p class="muted">
-    行数ではなく <b>1 回の描画で触るセル数</b> がコストを決める、という仮説を測ります。
-    データはメモリ上に用意済みで、計測しているのは <b>描画だけ</b>です（取得・ソート・フィルタは含みません）。
+    Testing the hypothesis that cost is decided by <b>the number of cells touched per render</b>,
+    not by the row count. The data is already in memory and <b>only rendering</b> is measured
+    (fetching, sorting and filtering are excluded).
 </p>
 
 <div class="controls">
-    <label>可視行 <input type="number" @bind="VisibleRows" min="5" max="120" /></label>
-    <label>可視列 <input type="number" @bind="VisibleCols" min="1" max="80" /></label>
-    <label>1 回の移動行数 <input type="number" @bind="Step" min="1" max="200" /></label>
-    <label>試行回数 <input type="number" @bind="Iterations" min="20" max="2000" /></label>
-    <span class="cells">= @(VisibleRows * VisibleCols) セル/描画</span>
-    <button @onclick="RunAllAsync" disabled="@_running">@(_running ? "計測中…" : "5 モードを連続計測")</button>
-    <button @onclick="RunSelectionAsync" disabled="@_running">選択ドラッグを計測（行は固定）</button>
+    <label>Visible rows <input type="number" @bind="VisibleRows" min="5" max="120" /></label>
+    <label>Visible cols <input type="number" @bind="VisibleCols" min="1" max="80" /></label>
+    <label>Rows moved per step <input type="number" @bind="Step" min="1" max="200" /></label>
+    <label>Iterations <input type="number" @bind="Iterations" min="20" max="2000" /></label>
+    <span class="cells">= @(VisibleRows * VisibleCols) cells/render</span>
+    <button @onclick="RunAllAsync" disabled="@_running">@(_running ? "measuring…" : "Measure all 5 modes")</button>
+    <button @onclick="RunSelectionAsync" disabled="@_running">Measure selection drag (rows fixed)</button>
 </div>
 
 <div class="controls">
-    <span>プリセット:</span>
-    <button @onclick="() => Preset(40, 20, 1)" disabled="@_running">ゆっくりスクロール (40×20, 1行)</button>
-    <button @onclick="() => Preset(40, 20, 50)" disabled="@_running">フリック (40×20, 50行)</button>
-    <button @onclick="() => Preset(40, 50, 1)" disabled="@_running">poke 想定・横仮想化なし (40×50, 1行)</button>
-    <button @onclick="() => Preset(40, 50, 50)" disabled="@_running">poke 想定・横仮想化なし (40×50, 50行)</button>
+    <span>Presets:</span>
+    <button @onclick="() => Preset(40, 20, 1)" disabled="@_running">Slow scroll (40×20, 1 row)</button>
+    <button @onclick="() => Preset(40, 20, 50)" disabled="@_running">Fling (40×20, 50 rows)</button>
+    <button @onclick="() => Preset(40, 50, 1)" disabled="@_running">Wide, no horizontal virtualisation (40×50, 1 row)</button>
+    <button @onclick="() => Preset(40, 50, 50)" disabled="@_running">Wide, no horizontal virtualisation (40×50, 50 rows)</button>
 </div>
 
 @if (_error is not null)
@@ -37,12 +38,12 @@
 
 @if (_runs.Count > 0)
 {
-    <h4>結果（1 描画あたりのミリ秒）</h4>
+    <h4>Results (milliseconds per render)</h4>
     <table class="results">
         <thead>
             <tr>
-                <th>モード</th><th>何を足したか</th><th>セル</th>
-                <th>中央値</th><th>p95</th><th>最大</th><th>16.6ms 超過</th>
+                <th>Mode</th><th>What it adds</th><th>Cells</th>
+                <th>Median</th><th>p95</th><th>Max</th><th>Over 16.6ms</th>
             </tr>
         </thead>
         <tbody>
@@ -60,22 +61,22 @@
             }
         </tbody>
     </table>
-    <p class="muted">16.6ms = 60fps の 1 フレーム予算。<b>この数字は Blazor の描画ツリー差分 + DOM 反映まで</b>で、
-        ブラウザのレイアウト/ペイントは含みません（時計は DOM 反映で止まります）。端から端までのフレーム時間は
-        下の「手動スクロール」で測ってください。</p>
+    <p class="muted">16.6ms is one frame at 60fps. <b>These figures cover Blazor's render-tree diff and the
+        DOM update</b>; the browser's layout and paint are excluded (the clock stops at the DOM update).
+        For end-to-end frame time, use the manual scrolling measurement below.</p>
     <button @onclick="PostResultsAsync" disabled="@_posting">@_postLabel</button>
 }
 
-<h4>手動スクロール（体感の確認）</h4>
+<h4>Manual scrolling (how it feels)</h4>
 <div class="controls">
-    <button @onclick="StartFpsAsync">フレーム計測 開始</button>
-    <button @onclick="StopFpsAsync">停止して集計</button>
+    <button @onclick="StartFpsAsync">Start frame measurement</button>
+    <button @onclick="StopFpsAsync">Stop and summarise</button>
     @if (_manualStats is not null)
     {
-        <span>フレーム間隔 中央値 @_manualStats.P50.ToString("F1")ms / p95 @_manualStats.P95.ToString("F1")ms
-            （@_manualStats.OverBudgetPct.ToString("F0")% が 16.6ms 超）</span>
+        <span>Frame interval median @_manualStats.P50.ToString("F1")ms / p95 @_manualStats.P95.ToString("F1")ms
+            (@_manualStats.OverBudgetPct.ToString("F0")% over 16.6ms)</span>
     }
-    <span class="muted">モード:</span>
+    <span class="muted">Mode:</span>
     @foreach (var m in Enum.GetValues<CellRenderMode>())
     {
         var mm = m;
@@ -168,7 +169,7 @@
     private bool _running;
     private string? _error;
     private bool _posting;
-    private string _postLabel = "結果をサーバに保存";
+    private string _postLabel = "Save results to the server";
 
     private readonly List<RunResult> _runs = [];
     private Stats? _manualStats;
@@ -246,13 +247,13 @@
 
     private static string ModeNote(string mode) => mode switch
     {
-        nameof(CellRenderMode.Direct) => "抽象化なしの床",
-        nameof(CellRenderMode.Accessor) => "+ 列アクセサ（decimal が boxing される）",
-        nameof(CellRenderMode.AccessorMeta) => "+ セルごとのメタデータ問い合わせ",
-        "Sel:PerCellClass" => "選択をセルのCSSクラスで塗る（行のメモ化が無効化される）",
-        "Sel:Overlay" => "選択を絶対配置のオーバーレイ1枚で塗る（行は再描画されない）",
-        nameof(CellRenderMode.RowComponent) => "境界を行に置く（行=コンポーネント、セル=素マークアップ）",
-        nameof(CellRenderMode.Component) => "+ セルを Blazor コンポーネント化",
+        nameof(CellRenderMode.Direct) => "the floor, no abstraction",
+        nameof(CellRenderMode.Accessor) => "+ per-column accessor (boxes every decimal)",
+        nameof(CellRenderMode.AccessorMeta) => "+ per-cell metadata lookup",
+        "Sel:PerCellClass" => "selection painted with per-cell CSS classes (defeats row memoisation)",
+        "Sel:Overlay" => "selection painted with one absolutely positioned overlay (rows never repaint)",
+        nameof(CellRenderMode.RowComponent) => "boundary at the row (row = component, cells = plain markup)",
+        nameof(CellRenderMode.Component) => "+ every cell a Blazor component",
         _ => "",
     };
 
@@ -363,7 +364,7 @@
         _running = true;
         _error = null;
         _runs.Clear();
-        _postLabel = "結果をサーバに保存";
+        _postLabel = "Save results to the server";
         StateHasChanged();
         await Task.Delay(100);
 
@@ -449,11 +450,11 @@
                 Note = "cell-grid render spike: cost of the API shape, not of row count.",
             };
             var res = await Http.PostAsJsonAsync("api/results", report);
-            _postLabel = res.IsSuccessStatusCode ? "保存しました ✓" : $"失敗 ({(int)res.StatusCode})";
+            _postLabel = res.IsSuccessStatusCode ? "saved ✓" : $"failed ({(int)res.StatusCode})";
         }
         catch (Exception ex)
         {
-            _postLabel = $"失敗: {ex.Message}";
+            _postLabel = $"failed: {ex.Message}";
         }
         finally
         {

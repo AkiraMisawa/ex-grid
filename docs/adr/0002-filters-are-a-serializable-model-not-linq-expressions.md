@@ -1,33 +1,48 @@
-# フィルタは LINQ 式ではなく、シリアライズ可能な構造化モデルで表す
+# Filters are a serialisable structured model, not LINQ expressions
 
-グリッドが Data Source に渡すフィルタは、`{列, 演算子, 値}` を AND/OR で組んだ**構造化
-モデル**とする。`Expression<Func<TRow, bool>>` は採らない。ソートも同様に
-`{列, 昇順/降順}` のリスト。
+The filter the grid hands over is a **structured model** of `{column, operator, value}` combined
+with AND/OR. `Expression<Func<TRow, bool>>` is not used. Sort is likewise a list of
+`{column, ascending/descending}`.
 
-理由は 2 つ。**式ツリーは HTTP を越えられない** — クライアント側実装では完璧に動くのに、
-サーバ側実装に差し替えた瞬間に JSON にできず、[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)
-で確保した「差し替えられる口」が意味を失う。そして **Excel 的な操作感ではフィルタ UI を
-描くのはグリッド自身**であり、そのためにはグリッドがフィルタの意味を理解している必要が
-ある。
+Two reasons. **An expression tree cannot cross HTTP** — it works perfectly against an in-memory
+implementation and then, the moment the implementation is swapped for a server-side one, it
+cannot be turned into JSON, and the swappable seam that
+[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) exists to provide loses its
+point. And **with Excel-like operability the grid renders the filter UI itself**, which requires
+the grid to understand what a filter means.
+
+## Confirmed against a shipped library
+
+MudBlazor's `MudDataGrid` takes the pull shape and exposes `FilterDefinitions` / `SortDefinitions`
+to the `ServerData` callback. Users hit exactly the failure predicted here: the filter and sort
+delegates the grid produces are built for client-side LINQ-to-Objects evaluation, and using them
+against an Entity Framework queryable fails to translate. The discussion recording this is
+unanswered. The same source notes that for template columns the Consumer has to walk
+`RenderedColumns` to map column GUIDs back to property names — the Consumer reaching into grid
+internals, which is what happens when the grid owns state the Consumer needs to interpret.
 
 ## Considered Options
 
-- **`Expression<Func<TRow,bool>>`（LINQ）** — 却下。.NET で最初に思いつく形で、型安全かつ
-  クライアント側実装なら自然だが、シリアライズできない。
-- **Consumer 定義の不透明なオブジェクトを素通し** — 却下（ただし下記の逃げ道として部分採用）。
-  最も柔軟だが、グリッドが中身を知らないためフィルタ UI を描けず、Consumer が自前で
-  フィルタ画面を作ることになる。Excel 的な操作感の中核を Consumer に押し付けてしまう。
+- **`Expression<Func<TRow,bool>>` (LINQ)** — rejected. It is the first thing a .NET developer
+  reaches for, is type-safe, and is natural against an in-memory implementation. It is not
+  serialisable.
+- **Pass through an opaque Consumer-defined object** — rejected as the primary form, though
+  partially adopted as the escape hatch below. It is the most flexible, but the grid cannot render
+  filter UI for something whose contents it does not know, so the Consumer ends up building the
+  filter screen. That pushes the core of Excel-like operability onto the Consumer.
 
 ## Consequences
 
-- **モデルで表現しきれない条件のための逃げ道を併設する。** 構造化フィルタと並べて
-  「Consumer 定義の不透明な条件」を置ける。グリッドは前者だけ UI を描き、後者はそのまま
-  Data Source へ渡す。`poke` の「ネッティングセットが解決済みのものだけ」のような、
-  汎用モデルに載せる気の起きない条件を想定している。
-- **「この列の相異なる値をくれ」という問い合わせが Data Source に必要になる。** Excel の
-  フィルタは列の値をチェックボックスで並べるが、サーバ側にデータがあるとグリッドは
-  手元の Window しか持たず、一覧を作れない。この宿題は②を選んだ時点で発生する。
-- **演算子の集合が公開 API になる。** 後から演算子を増やすのは容易だが、意味を変えるのは
-  破壊的変更。
-- **グリッドは列の型を知る必要がある** — 数値フィルタとテキストフィルタと日付フィルタで
-  UI が違うため。列定義に型を明示させる（推論に頼らない）。
+- **There is an escape hatch alongside, for conditions the model cannot express.** An **Opaque
+  Filter** sits next to the structured filter. The grid renders UI only for the former and passes
+  the latter through untouched. It exists for conditions that no general model should carry.
+- **The Consumer needs to answer "give me the distinct values of this column".** Excel's filter
+  lists a column's values as checkboxes, but with the data server-side the grid only holds the
+  current Window and cannot build that list. This obligation follows directly from choosing a
+  model the grid understands; the contract for it is in
+  [ADR-0009](./0009-filter-panel-contract.md).
+- **The operator set becomes public API.** Adding operators later is easy; changing what one
+  means is a breaking change. The semantics are pinned by the reference implementation
+  (ADR-0001).
+- **The grid needs to know each column's type** — numeric, text and date filters have different
+  UI. The type is declared on the column definition rather than inferred.

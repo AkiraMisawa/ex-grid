@@ -1,81 +1,89 @@
-# 対象ブラウザは Chrome と Edge。両方が必須
+# The target browsers are Chrome and Edge. Both are required
 
-**Chrome と Edge の両方が必須要件**である。「Chromium 系ならたぶん動く」ではなく、
-**どちらも対象として検証する**。Safari と Firefox は対象外。
+**Chrome and Edge are both hard requirements** — not "any Chromium build will probably work", but
+**both are targets and both are verified**. Safari and Firefox are out of scope.
 
-最初の Consumer である `poke` は**認証済み・LAN・終日使う社内ツール**（poke ADR-0003）で
-あり、ブラウザは統制できる。不特定多数に配る Web サイトではない。
+The first Consumer is an **authenticated, LAN, all-day internal tool**, so the browser is
+controlled. This is not a site handed to the public.
 
-## これで解ける保留
+## What this unblocks
 
-対象ブラウザが決まらないために保留していたものが 3 つある。
+Three things were held open pending the browser decision.
 
-### 1. ポップオーバーの切り取り
+### 1. Popovers being clipped
 
-フィルタパネルと列メニュー（[ADR-0009](./0009-filter-panel-contract.md) /
-[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)）はグリッドの上に浮くが、
-グリッドの器は `overflow: auto` のスクロール器なので、中に置くと**器の端で切り取られる**
-（一番右の列のフィルタが特に厳しい）。
+The filter panel and column menu ([ADR-0009](./0009-filter-panel-contract.md) /
+[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) float above the grid, but the grid
+root is an `overflow: auto` scroll container, so placing them inside **clips them at its edge**
+(the filter on the rightmost column especially).
 
-**Popover API と CSS Anchor Positioning を使う。** 切り取りも重なり順もブラウザが面倒を
-見るので、`document.body` へポータルする必要がなく、**複数インスタンスでも座標と z-index が
-絡まない**（[ADR-0018](./0018-multiple-instances-must-be-independent.md)）。
+**Use the Popover API and CSS Anchor Positioning.** Clipping and stacking order are then the
+browser's problem, there is no need to portal to `document.body`, and **coordinates and z-index do
+not tangle across multiple instances**
+([ADR-0018](./0018-multiple-instances-must-be-independent.md)). It also keeps popovers off the
+JavaScript allowlist entirely ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
 
-却下した案:
-- **`document.body` へポータルする** — 切り取られないが、複数インスタンスで z-index と
-  クリック外し判定が絡み、座標を絶対位置で計算し直す必要がある。
-- **器の中に閉じ込める** — インスタンスには完全に閉じるが、パネルが端で切れる。
+Rejected:
+- **Portal to `document.body`** — not clipped, but z-index and outside-click detection tangle
+  across instances and the coordinates must be recomputed in absolute terms.
+- **Confine them inside the root** — fully contained per instance, but the panel is cut off at the
+  edge.
 
-### 2. クリップボードへの 2 形式書き込み
+### 2. Writing two clipboard formats
 
-[ADR-0005](./0005-copy-refuses-rather-than-truncates.md) で `text/plain` に表示書式、
-`text/html` に生値を同時に載せると決めた。Chrome は複数 MIME の `ClipboardItem` に対応する。
+[ADR-0005](./0005-copy-refuses-rather-than-truncates.md) puts the display format in `text/plain`
+and the raw value in `text/html` simultaneously. Chrome supports a `ClipboardItem` with multiple
+MIME types.
 
-### 3. コピー上限の根拠が変わる（ADR-0005 の再検討条件）
+### 3. The copy cap's rationale changes (ADR-0005's revisit condition)
 
-ADR-0005 は「非同期で取りに行ってからコピー」を**却下したが、「対象ブラウザが Chrome/Edge
-限定と確定すれば再検討の余地がある」**と明記していた。条件が満たされたので見直す。
+ADR-0005 **rejected "fetch asynchronously, then copy" but explicitly recorded that it was worth
+revisiting "if the target is confirmed to be Chrome/Edge only"**. The condition is met.
 
-Chrome では **`ClipboardItem` の値に Promise を渡せる**（解決を待ってから書ける）うえ、
-**ユーザ操作の文脈について寛容**である（Safari は直接の操作でしか許さず、Promise で
-非同期にできない）。したがって「選択範囲を取りに行ってからクリップボードに書く」が成立する。
+Chrome accepts **a promise as a `ClipboardItem` value** (it can wait for it before writing) and is
+**lenient about the user-activation context** (Safari permits it only under direct interaction and
+cannot go asynchronous through a promise). So "ask for the selection, then write to the clipboard"
+holds together.
 
-**上限そのものは残すが、根拠が変わる。**
+**The cap remains, but its rationale changes.**
 
-| | 上限の根拠 |
+| | Rationale for the cap |
 |---|---|
-| 変更前 | データを持っていない ＋ 非同期にするとクリップボードに書けない |
-| **変更後** | **載せても使い物にならないから** — 100 万行 × 50 列の TSV は数百 MB で、貼る側が処理できない |
+| Before | the data is not held **and** an asynchronous write cannot reach the clipboard |
+| **After** | **it would be useless even if it worked** — a million rows × 50 columns of TSV is hundreds of megabytes, which the receiving application cannot handle |
 
-**「できないから断る」から「載せても意味がないから断る」へ。** 断る方針
-（[ADR-0005](./0005-copy-refuses-rather-than-truncates.md)：切り詰めない）は変わらないが、
-**上限の数値はかなり高く置ける**。
+**From "refuse because it cannot be done" to "refuse because it would be pointless."** The
+decision to refuse (never truncate) is unchanged, but **the cap can be set considerably higher.**
 
-## 確認が要る 2 点（Edge 固有）
+## Two things to check, specific to Edge
 
-社内配布の Edge には、Chrome と同じ Chromium でありながら実務上の差がある。**どちらも
-この設計の要になっている機能に直接かかる**ので、実装前に確認する。
+An Edge deployed inside an organisation differs from Chrome in practice despite sharing Chromium.
+**Both of these bear directly on features this design depends on**, so settle them before
+implementation.
 
-- **配布されている Edge の最低バージョン。** 企業では更新ポリシーでバージョンが固定されて
-  いることがある。**CSS Anchor Positioning は比較的新しい機能**なので、古いバージョンが
-  混じっているとポップオーバーの位置決めが成立しない。駄目なら `document.body` への
-  ポータル（上で却下した案）へ落とすことになる。
-- **クリップボードに関する企業ポリシー。** Edge には情報漏洩対策としてクリップボード操作を
-  制限する管理設定がありうる。コピー（ADR-0005）はこの部品の中心機能なので、**制限が
-  かかっていないかを確認する**。かかっていれば、コピーではなくサーバ側エクスポートを
-  主経路にする設計変更が要る。
+- **The minimum Edge version deployed.** Update policy can pin versions in an enterprise. **CSS
+  Anchor Positioning is comparatively recent**, so if older versions are in the field the popover
+  positioning does not hold and the fallback is portalling to `document.body` (the option rejected
+  above).
+- **Enterprise clipboard policy.** Edge has managed settings that can restrict clipboard access
+  for data-loss prevention. Copy (ADR-0005) is central to this component, so **confirm no such
+  restriction is in force**. If there is one, the design changes to make server-side export the
+  primary path rather than copy.
 
-どちらも「動かなければ静かに劣化する」種類の問題ではなく、**動かなければ機能が丸ごと
-使えない**ので、早期に潰す。
+Neither of these degrades quietly — **if they do not work, the feature does not work at all** — so
+clear them early.
 
 ## Consequences
 
-- **Blazor WebAssembly という前提と整合する。** `poke` は standalone WASM（poke ADR-0003）で
-  あり、そもそも近代的なブラウザを要求している。
-- **対象外ブラウザで壊れたときの扱いを決めておく。** 静かに劣化させず、非対応である旨を
-  明示する。このコンポーネントの一貫した方針（静かに間違うより、できないと言う）に従う。
-- **検証は Chrome と Edge の両方で行う。** 片方だけで通しても要件を満たしたことにならない。
-- **この決定が覆ると、上の 3 つが同時に揺り戻る。** 汎用 OSS として配る話が出たら、
-  ポップオーバーとクリップボードから見直すことになる。
-- **Chrome 固有 API への依存は、この 2 箇所に閉じる。** それ以外は標準的な DOM と CSS で
-  書き、依存を広げない。
+- **It is consistent with the Blazor WebAssembly premise.** The first Consumer is a standalone
+  WASM client and already requires a modern browser.
+- **Decide what happens on an unsupported browser.** Do not degrade silently; state that it is
+  unsupported. This follows the component's standing principle — rather than be quietly wrong, say
+  it cannot be done.
+- **Verification runs on both Chrome and Edge.** Passing on one does not satisfy the requirement.
+- **If this decision is reversed, all three items above swing back.** If the component is ever
+  distributed as general-purpose open source, popovers and the clipboard are where the rework
+  starts.
+- **Browser-specific API use is confined to those two places.** Everything else is written against
+  standard DOM and CSS, and the JavaScript allowlist
+  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)) keeps it that way.

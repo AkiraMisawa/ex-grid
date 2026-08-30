@@ -1,78 +1,80 @@
-# 1 ページに複数のグリッドが並んでも、互いに干渉しない
+# Several grids on one page must not interfere with each other
 
-同じページに複数の ExGrid を配置するのは普通の使い方である。**グローバルに触る箇所を
-すべて器（インスタンスのルート要素）にスコープする。**
+Placing several ExGrid instances on the same page is ordinary usage. **Everything that touches
+something global is scoped to the root element of the instance.**
 
-## 大半は押す形のおかげで自動的に独立している
+## Most of it is independent already, thanks to push
 
-グリッドはほとんど状態を持たない
-（[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) /
-[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)）。Window もソートも
-フィルタも Consumer 側にあり、グリッドが持つのは Selection・Focus・スクロール位置・
-編集中のテキストだけで、**いずれもインスタンスごとの一時状態**。
+The grid holds almost no state
+([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) /
+[ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)). The Window, the sort and the
+filter are all Consumer-side, and what the grid holds is Selection, Focus, scroll position and
+uncommitted editor text — **all of it transient, per instance**.
 
-危険は**グローバルに触る 4 箇所**に集中する。
+The danger concentrates in **four places that touch something global**.
 
-## 1. キー入力の捕捉を器にスコープする（最重要）
+## 1. Scope the key capture to the root (most important)
 
-[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) で「核が捕捉フェーズでキーを
-先に見る」と決めた。**これを `document` に張ると、ページ上の全グリッドが全打鍵を受け取る。**
+[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) established that the core sees keys
+first, in the capture phase. **Attached to `document`, every grid on the page receives every
+keystroke.**
 
 ```
 ❌ document.addEventListener('keydown', handler, true)
-     → グリッド A で Ctrl+C したら、グリッド B もコピーしようとする
+     → Ctrl+C in grid A and grid B also tries to copy
 
 ✅ gridRootElement.addEventListener('keydown', handler, true)
-     → その器の中にフォーカスがあるときだけ発火
+     → fires only while focus is inside that root
 ```
 
-**器を `tabindex` でフォーカス可能にし、リスナはその器に張る。** どのグリッドがアクティブか
-は、ブラウザのフォーカスがそのまま答えになる。
+**Make the root focusable with `tabindex` and attach the listener there.** Which grid is active is
+then answered by the browser's focus.
 
-Ctrl+C（[ADR-0005](./0005-copy-refuses-rather-than-truncates.md)）、
-Ctrl+A（[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)）、
-Enter の巡回（[ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)）が**すべてこれに
-乗っている**ので、ここを誤ると全部が壊れる。
+Ctrl+C ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)), Ctrl+A
+([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) and the
+Enter cycling ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)) **all ride on this**,
+so getting it wrong breaks all of them.
 
-## 2. CSS のクラス名に接頭辞を付ける
+## 2. Prefix the CSS class names
 
-`spikes/render-bench` の CSS は `.r`（行）`.c`（セル）`.sel`（選択）`.window` `.scroller` と
-いう名前を使っている。**捨てる前提のスパイクだから許されるだけで、製品では論外**であり、
-ホストアプリの CSS と衝突する。`.ex-row` `.ex-cell` のように接頭辞を付ける。
+The CSS in `spikes/render-bench` uses `.r` (row), `.c` (cell), `.sel` (selection), `.window` and
+`.scroller`. **That is only acceptable because the spike is disposable; in product code it is
+untenable** and will collide with the host application's CSS. Prefix them, as `.ex-row` and
+`.ex-cell`.
 
-CSS 変数（`--ex-*`）は**器の要素に定義する**。`:root` に置くと 1 ページ 1 テーマになり、
-インスタンスごとに違う見た目にできない。
+CSS variables (`--ex-*`) are **defined on the root element**. Put them on `:root` and there is one
+theme per page, with no way to give instances different appearances.
 
-## 3. JS はモジュール化し、インスタンスごとのハンドルを返す
+## 3. Make the JavaScript a module returning per-instance handles
 
-スパイクの `window.bench = { _fps: null, ... }` は単一のグローバル状態で、2 つ目のグリッドが
-呼ぶと 1 つ目を壊す。**モジュールにし、器ごとのハンドルを返す**形にする。
+The spike's `window.bench = { _fps: null, ... }` is a single global, and a second grid calling it
+breaks the first. **Make it a module and return a handle per root.**
 
-## 4. ポップオーバーは器の外へ出さない
+## 4. Do not let popovers escape the root
 
-フィルタパネルと列メニューはグリッドの上に浮くが、器は `overflow: auto` のスクロール器なので
-中に置くと切り取られる。**Popover API と CSS Anchor Positioning を使う**
-（[ADR-0017](./0017-target-chromium-browsers-only.md) で Chrome 系に限定したので使える）。
-切り取りも重なり順もブラウザが面倒を見るため、`document.body` へポータルする必要がなく、
-**複数インスタンスで座標と z-index が絡まない**。
+The filter panel and column menu float above the grid, but the root is an `overflow: auto` scroll
+container, so placing them inside clips them. **Use the Popover API and CSS Anchor Positioning**
+(available because [ADR-0017](./0017-target-chromium-browsers-only.md) narrowed the target to
+Chrome and Edge). Clipping and stacking order become the browser's problem, there is no need to
+portal to `document.body`, and **coordinates and z-index do not tangle across instances**.
 
 ## Consequences
 
-- **選択オーバーレイと編集欄は、器と同じ座標空間に置く**
-  （[ADR-0008](./0008-selection-is-painted-by-an-overlay.md) /
-  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)）。ページ座標で計算すると
-  インスタンスごとにずれる。
-- **選択数とフォーカス中セルの値の表示は、どのグリッドのものかが分かる必要がある**
-  （[ADR-0014](./0014-paste-shape-rules-and-selection-count.md) /
-  [ADR-0016](./0016-column-width-and-overflow.md)）。グリッドの中に置くなら自明だが、
-  Consumer がアプリ共通のステータスバーに出すなら、**どのグリッドが対象かを Consumer が
-  解決する**。核は値を出すだけで、置き場所は決めない。
-- **Chrome の DI 登録（`AddExGridMudBlazor()`）は全インスタンス共通**だが、個別のグリッドで
-  上書きできる。登録されたものは読むだけで、インスタンスが書き換えない。
-- **Fluxor などで複数グリッドを使うなら、Consumer が Feature を分ける必要がある。** 2 つの
-  グリッドが同じ `State.Value.Window` を読めば同じものが出る。**押す形にしたことで、これは
-  Consumer 側の問題として素直に現れる** — グリッドが状態を隠し持っていて漏れる、という形に
-  ならない。
-- **フォーカスされていないグリッドは、キー操作に反応しない。** Selection の見た目は残るが
-  操作されない。複数グリッドで作業するとき、どちらが効いているかが分かる必要があるので、
-  **フォーカスの有無を視覚的に区別する**。
+- **The selection overlay and the cell editor live in the same coordinate space as the root**
+  ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md) /
+  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)). Computed in page coordinates
+  they would be displaced per instance.
+- **The selection count and focused-cell value displays must say which grid they belong to**
+  ([ADR-0014](./0014-paste-shape-rules-and-selection-count.md) /
+  [ADR-0016](./0016-column-width-and-overflow.md)). Inside the grid that is obvious; if the
+  Consumer puts them in an application-wide status bar, **the Consumer resolves which grid is
+  meant**. The core only produces the values and does not decide where they go.
+- **A DI registration for Chrome (`AddExGridMudBlazor()`) is shared by every instance**, but an
+  individual grid can override it. What is registered is read, never mutated by an instance.
+- **With Fluxor and several grids, the Consumer must separate the Features.** Two grids reading
+  the same `State.Value.Window` show the same thing. **Because the interface is push this surfaces
+  plainly as the Consumer's problem** — it does not take the form of the grid hiding state that
+  then leaks.
+- **A grid that does not have focus does not respond to keys.** The selection stays visible but is
+  not operated on. When working across several grids the user must be able to tell which one is
+  live, so **distinguish the focused state visually.**

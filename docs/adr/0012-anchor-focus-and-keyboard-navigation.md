@@ -1,101 +1,107 @@
-# Anchor / Focus とキー操作 — Enter と Tab は選択範囲の中を巡回する
+# Anchor / Focus and keyboard navigation — Enter and Tab cycle inside the selection
 
-選択は **Anchor**（固定端）と **Focus**（可動端）の 2 点で駆動する。キー操作は Excel に
-合わせる。**選択範囲があるとき、Enter と Tab は範囲の中だけを巡回し、範囲から出ない。**
+Selection is driven by two points: the **Anchor** (fixed end) and the **Focus** (moving end).
+Keyboard behaviour follows Excel. **When a range is selected, Enter and Tab cycle inside it and
+never leave it.**
 
-## Anchor と Focus
+## Anchor and Focus
 
-| | 意味 | 動くとき |
+| | Meaning | Moved by |
 |---|---|---|
-| **Anchor** | 範囲拡張の固定側の端 | クリック、Ctrl+クリック（新しい範囲の起点） |
-| **Focus** | キー操作の起点。範囲拡張の可動側の端 | 矢印、Shift+矢印、Enter / Tab の巡回 |
+| **Anchor** | the fixed end of range extension | click, Ctrl+click (the start of a new range) |
+| **Focus** | where keyboard operations start from; the moving end | arrows, Shift+arrow, Enter / Tab cycling |
 
-- **クリック** — Anchor = Focus = そのセル。選択は 1 セルに畳まれる
-- **Shift+クリック** — Anchor はそのまま、Focus をクリック先へ。範囲が張り直される
-- **Ctrl+クリック** — 新しい範囲を足す（[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)）。
-  Anchor と Focus は新しい範囲へ移る
-- **矢印** — 選択を 1 セルに畳んで移動
-- **Shift+矢印** — Anchor 固定のまま Focus を動かし、範囲を伸縮
-- **Ctrl+矢印** — 端へ飛ぶ（上下は最終行 / 先頭行、左右は最終列 / 先頭列）。Excel の
-  「空白でない塊の端」ではない — クエリ結果には空行がなく、塊の端を知るにはデータ全体が
-  要るため（ADR-0011）
-- **Shift+Ctrl+矢印** — 端まで範囲を拡張
-- **Ctrl+Space / Shift+Space** — 列全体 / 行全体を選択（Excel と同じ）
+- **Click** — Anchor = Focus = that cell. The selection collapses to one cell
+- **Shift+click** — Anchor stays; Focus moves to the clicked cell and the range is redrawn
+- **Ctrl+click** — adds a new range
+  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+  Anchor and Focus move to the new range
+- **Arrows** — collapse the selection to one cell and move
+- **Shift+arrow** — Anchor fixed, Focus moves, the range grows or shrinks
+- **Ctrl+arrow** — jump to the edge (last / first row vertically, last / first column
+  horizontally). Not Excel's "edge of the non-blank block" — query results have no blank rows,
+  and finding a block edge would require the whole dataset (ADR-0011)
+- **Shift+Ctrl+arrow** — extend the range to the edge
+- **Ctrl+Space / Shift+Space** — select the whole column / whole row (as in Excel)
 
-**飛び地があるときは、最後に作られた範囲が伸びる。** Shift+矢印も Shift+クリックも、
-Anchor が属する範囲だけを動かす。
+**With disjoint ranges, the most recently created one is the one that grows.** Both Shift+arrow
+and Shift+click move only the range the Anchor belongs to.
 
-## Enter と Tab の巡回
+## Enter and Tab cycling
 
 ```
-範囲 B2:D4 を選択、Focus は B2
+Range B2:D4 selected, Focus at B2
 
-Enter（列方向）               Tab（行方向）
+Enter (column-major)          Tab (row-major)
 
   B2 → B3 → B4 ┐              B2 → C2 → D2 ┐
   ┌─────────────┘              ┌────────────┘
   C2 → C3 → C4 ┐              B3 → C3 → D3 ┐
   ┌─────────────┘              ┌────────────┘
-  D2 → D3 → D4 ─→ B2 へ戻る    B4 → C4 → D4 ─→ B2 へ戻る
+  D2 → D3 → D4 ─→ back to B2   B4 → C4 → D4 ─→ back to B2
 ```
 
-**Enter は列方向、Tab は行方向。** 端で折り返し、最後まで行ったら先頭へ戻る。
-Shift+Enter / Shift+Tab は逆走。
+**Enter runs down columns, Tab runs across rows.** Both wrap at the edge and return to the start
+after the last cell. Shift+Enter and Shift+Tab run backwards.
 
-**巡回中も範囲は選択されたまま**で、動くのは Focus だけ。これがあるから「範囲を選んで
-おいて、ひたすら打ち込む」が成立する。
+**The range stays selected while cycling**; only the Focus moves. That is what makes "select a
+block and just keep typing" work.
 
-範囲がない（単一セル）ときは Enter で真下、Tab で右へ進み、選択がそれについていく。
+With no range (a single cell), Enter moves down and Tab moves right, and the selection follows.
 
-### なぜ巡回が要るのか
+### Why the cycling matters
 
-[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) で Overwrite / Caret の
-2 モードを入れたのは「打って矢印で次へ」を成立させるためだった。**その連続入力の受け皿が
-この巡回**であり、片方だけでは効果が出ない。
+The two editing modes in
+[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) exist to make "type, arrow to the
+next cell" work. **This cycling is what receives that continuous entry**; implementing only one of
+the two achieves nothing.
 
-そして**範囲の中に閉じ込めることは入力の安全装置でもある**。Mandatory break を 5 本の
-トレードに打ち込むとき、範囲を選んでおけば 5 回目の Enter で先頭に戻る。常に真下へ進む
-設計だと 6 本目へ Focus が移り、**気づかずに 6 本目を編集してしまう**。
+And **confining entry to the range is a safety device**. Filling five rows with a value works
+because, with the range selected, the fifth Enter returns to the top. A design that always moves
+down would put the Focus on a sixth row and **edit it without the user noticing**.
 
-却下した案:
-- **常に真下 / 右へ進み、範囲を無視する** — 実装は最小だが、打ち込みが範囲からはみ出す。
-- **Enter も Tab も同じ方向に巡回** — Excel 使いは両者を使い分けるので、片方が必ず期待と
-  ずれる。
+Rejected:
+- **Always move down / right, ignoring the range** — minimal to implement, but entry spills out of
+  the range.
+- **Cycle within the range but with Enter and Tab in the same direction** — Excel users
+  distinguish the two, so one of them is always going to feel wrong.
 
-## 列ヘッダのクリックは「並べ替え」
+## Clicking a column header sorts
 
-**データグリッドの慣習（クリック＝並べ替え）を採り、Excel の慣習（クリック＝列全体の選択）は
-採らない。** この部品は両方の期待を持つユーザに使われるが、**頻度で決める** — ポジション
-画面でまず行われるのは並べ替えとフィルタで、列全体の選択はその後にたまに来る。頻度の高い
-操作を 1 クリックに置く。
+**The data-grid convention (click = sort) is adopted; Excel's (click = select the whole column) is
+not.** This component is used by people carrying both expectations, so **the tie is broken by
+frequency** — what happens first on a data screen is sorting and filtering; selecting a whole
+column comes later and occasionally. The frequent operation gets the single click.
 
-列選択の経路は失われない。**3 つある。**
+Column selection is not lost. **There are three ways.**
 
-- **Ctrl+Space**（Excel と同じショートカット）
-- **Ctrl+Shift+↓** — 先頭行から端まで拡張すれば、実質その列全体
-- 行番号列の上の角をクリック（全体選択）
+- **Ctrl+Space** (Excel's own shortcut)
+- **Ctrl+Shift+Down** — extending from the first row to the edge is effectively the whole column
+- Clicking the corner above the row-number column (select all)
 
-却下した案:
-- **クリック＝列選択にし、並べ替えは列メニューから** — 並べ替えが 2 手になる。
-  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) で列メニューに入れた
-  「昇順/降順で並べ替え」が唯一の手段になり、使うたびにメニューを開くのは体感で重い。
-- **ヘッダを領域で分ける**（文字の部分は並べ替え、端の細い帯は列選択） — 両方 1 クリックに
-  なるが、当たり判定が細かく、帯の存在がユーザに発見されない。
+Rejected:
+- **Click = select the column, with sort in the column menu** — sorting becomes two steps. The
+  "sort ascending/descending" entries in the column menu
+  ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) would be the only route, and
+  opening a menu every time is noticeably heavy.
+- **Split the header into regions** (the text sorts, a thin strip selects) — both become single
+  clicks, but the hit target is fiddly and users never discover the strip.
 
 ## Consequences
 
-- **すべて [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) の捕捉フェーズの
-  キー処理に乗る。** 編集していないときの矢印・Enter・Tab は核が握る。編集中は
-  Overwrite / Caret のモードで矢印の扱いだけが変わり、Enter / Tab は常に核が処理する
-  （確定してから、この規則で Focus を動かす）。
-- **Focus は常に見えていなければならない。** 巡回や Ctrl+矢印で Focus が Viewport の外へ
-  出たら、グリッドはそこへスクロールする。
-- **Focus が Window の外へ出たら Range Request を鳴らす**
-  （[ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)）。範囲が Window
-  より縦に長いと巡回の途中で未取得の行に入る。その間 Focus のセルは Placeholder になる
-  ので、**データが来るまで編集を開始しない**。
-- **並び順やフィルタが変われば Anchor と Focus も破棄される**（ADR-0011 で選択ごと捨てる）。
-- **飛び地があるときの巡回順序は「範囲が作られた順」とする。** Excel も全範囲を巡回するが、
-  順序の細部は未確認。実装時に実機の Excel で突き合わせること。
-- **Tab で移動したあと Enter を押すと最初の列に戻る、という Excel の細かい挙動は採らない。**
-  実装コストに対して得るものが小さい。必要になったら足す。
+- **All of this rides on the capture-phase key handling in
+  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).** Outside editing, the arrows,
+  Enter and Tab belong to the core. While editing, only the arrows change hands according to
+  Overwrite / Caret; Enter and Tab are always the core's (commit, then move by these rules).
+- **The Focus must always be visible.** If cycling or Ctrl+arrow takes it out of the Viewport, the
+  grid scrolls to it.
+- **When the Focus leaves the Window, a Range Request is raised**
+  ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). A range taller than the
+  Window will move the Focus onto rows that have not been fetched. The Focus cell is a Placeholder
+  meanwhile, so **editing does not start until the data arrives**.
+- **A change of sort order or filter discards the Anchor and Focus too** (ADR-0011 drops the whole
+  selection).
+- **With disjoint ranges, cycling visits them in creation order.** Excel also cycles through all
+  ranges, but the exact ordering was not verified. Check against Excel during implementation.
+- **Excel's detail where Enter after a run of Tabs returns to the starting column is not
+  adopted.** The implementation cost outweighs the benefit. Add it if it turns out to be wanted.
