@@ -1,0 +1,463 @@
+@page "/"
+@using System.Diagnostics
+@using Bench.Client.Components
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>cell-grid render bench</PageTitle>
+
+<h3>cell-grid — 描画コスト計測</h3>
+<p class="muted">
+    行数ではなく <b>1 回の描画で触るセル数</b> がコストを決める、という仮説を測ります。
+    データはメモリ上に用意済みで、計測しているのは <b>描画だけ</b>です（取得・ソート・フィルタは含みません）。
+</p>
+
+<div class="controls">
+    <label>可視行 <input type="number" @bind="VisibleRows" min="5" max="120" /></label>
+    <label>可視列 <input type="number" @bind="VisibleCols" min="1" max="80" /></label>
+    <label>1 回の移動行数 <input type="number" @bind="Step" min="1" max="200" /></label>
+    <label>試行回数 <input type="number" @bind="Iterations" min="20" max="2000" /></label>
+    <span class="cells">= @(VisibleRows * VisibleCols) セル/描画</span>
+    <button @onclick="RunAllAsync" disabled="@_running">@(_running ? "計測中…" : "5 モードを連続計測")</button>
+    <button @onclick="RunSelectionAsync" disabled="@_running">選択ドラッグを計測（行は固定）</button>
+</div>
+
+<div class="controls">
+    <span>プリセット:</span>
+    <button @onclick="() => Preset(40, 20, 1)" disabled="@_running">ゆっくりスクロール (40×20, 1行)</button>
+    <button @onclick="() => Preset(40, 20, 50)" disabled="@_running">フリック (40×20, 50行)</button>
+    <button @onclick="() => Preset(40, 50, 1)" disabled="@_running">poke 想定・横仮想化なし (40×50, 1行)</button>
+    <button @onclick="() => Preset(40, 50, 50)" disabled="@_running">poke 想定・横仮想化なし (40×50, 50行)</button>
+</div>
+
+@if (_error is not null)
+{
+    <pre class="err-box">@_error</pre>
+}
+
+@if (_runs.Count > 0)
+{
+    <h4>結果（1 描画あたりのミリ秒）</h4>
+    <table class="results">
+        <thead>
+            <tr>
+                <th>モード</th><th>何を足したか</th><th>セル</th>
+                <th>中央値</th><th>p95</th><th>最大</th><th>16.6ms 超過</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in _runs)
+            {
+                <tr class="@(r.Render.P50 > 16.6 ? "bad" : r.Render.P95 > 16.6 ? "warn" : "ok")">
+                    <td><b>@r.Mode</b></td>
+                    <td class="muted">@ModeNote(r.Mode)</td>
+                    <td>@r.Cells</td>
+                    <td>@r.Render.P50.ToString("F2")</td>
+                    <td>@r.Render.P95.ToString("F2")</td>
+                    <td>@r.Render.Max.ToString("F2")</td>
+                    <td>@r.Render.OverBudgetPct.ToString("F1")%</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p class="muted">16.6ms = 60fps の 1 フレーム予算。<b>この数字は Blazor の描画ツリー差分 + DOM 反映まで</b>で、
+        ブラウザのレイアウト/ペイントは含みません（時計は DOM 反映で止まります）。端から端までのフレーム時間は
+        下の「手動スクロール」で測ってください。</p>
+    <button @onclick="PostResultsAsync" disabled="@_posting">@_postLabel</button>
+}
+
+<h4>手動スクロール（体感の確認）</h4>
+<div class="controls">
+    <button @onclick="StartFpsAsync">フレーム計測 開始</button>
+    <button @onclick="StopFpsAsync">停止して集計</button>
+    @if (_manualStats is not null)
+    {
+        <span>フレーム間隔 中央値 @_manualStats.P50.ToString("F1")ms / p95 @_manualStats.P95.ToString("F1")ms
+            （@_manualStats.OverBudgetPct.ToString("F0")% が 16.6ms 超）</span>
+    }
+    <span class="muted">モード:</span>
+    @foreach (var m in Enum.GetValues<CellRenderMode>())
+    {
+        var mm = m;
+        <button class="@(_mode == mm ? "sel" : null)" @onclick="() => _mode = mm" disabled="@_running">@mm</button>
+    }
+</div>
+
+<div class="scroller" @ref="_scrollerEl" @onscroll="OnScrollAsync">
+    <div class="spacer" style="height:@(TotalRows * RowHeight)px">
+        @* During a programmatic run scrollTop stays at 0, so offsetting the window by
+           _startRow would slide the rendered rows far below the visible area: Blazor
+           would do all the work while the browser skipped layout and paint, and the
+           operator would stare at a blank box. Pin the window to the top while running
+           so the rows being measured are actually on screen. *@
+        <div class="window" style="transform: translateY(@(_running ? 0 : _startRow * RowHeight)px)">
+            @for (var r = 0; r < VisibleRows; r++)
+            {
+                var row = _rows[(_startRow + r) % TotalRows];
+
+                if (_mode == CellRenderMode.RowComponent)
+                {
+                    <BenchRow @key="row.Id" RowData="row" Cols="_cols" VisibleCols="VisibleCols" Meta="_metaFn"
+                              SelFrom="@RowSelFrom(_startRow + r)" SelTo="@RowSelTo(_startRow + r)" />
+                }
+                else
+                {
+                <div class="r" @key="row.Id">
+                    <div class="c key">@row.Book</div>
+                    @switch (_mode)
+                    {
+                        case CellRenderMode.Direct:
+                            @for (var c = 0; c < VisibleCols; c++)
+                            {
+                                <div class="c num">@row.Values[c].ToString("N2")</div>
+                            }
+                            break;
+
+                        case CellRenderMode.Accessor:
+                            @for (var c = 0; c < VisibleCols; c++)
+                            {
+                                <div class="c num">@Fmt(_cols[c].Get(row))</div>
+                            }
+                            break;
+
+                        case CellRenderMode.AccessorMeta:
+                            @for (var c = 0; c < VisibleCols; c++)
+                            {
+                                var ci = c;
+                                <div class="@StateClass(Meta(row, ci))">@Fmt(_cols[ci].Get(row))</div>
+                            }
+                            break;
+
+                        case CellRenderMode.Component:
+                            @for (var c = 0; c < VisibleCols; c++)
+                            {
+                                var ci = c;
+                                <BenchCell Value="_cols[ci].Get(row)" State="Meta(row, ci)" />
+                            }
+                            break;
+                    }
+                </div>
+                }
+            }
+            @if (_selPaint == SelPaint.Overlay)
+            {
+                <div class="sel-overlay" style="@OverlayStyle()"></div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private const int TotalRows = 5000;
+    private const int MaxCols = 80;
+    private const int RowHeight = 24;
+    private const int CellWidth = 90;
+    private const int KeyColWidth = 90;
+
+    private int VisibleRows = 40;
+    private int VisibleCols = 20;
+    private int Step = 50;
+    private int Iterations = 200;
+
+    private Row[] _rows = [];
+    private Col[] _cols = [];
+    private Dictionary<(int Book, int Col), CellState> _meta = new();
+
+    private CellRenderMode _mode = CellRenderMode.Direct;
+    private int _startRow;
+    private bool _running;
+    private string? _error;
+    private bool _posting;
+    private string _postLabel = "結果をサーバに保存";
+
+    private readonly List<RunResult> _runs = [];
+    private Stats? _manualStats;
+    private TaskCompletionSource? _renderTcs;
+    private ElementReference _scrollerEl;
+    private Dictionary<string, object> _env = new();
+    // Cached: BenchRow only skips re-rendering if every parameter compares equal,
+    // and a method group creates a NEW delegate instance on each render.
+    private Func<Row, int, CellState>? _metaFn;
+
+    // Selection benchmark: a rectangle that slides down the grid one row per
+    // iteration, imitating a drag-select. Scroll position is held fixed so the
+    // ONLY thing changing is the selection.
+    private SelPaint _selPaint = SelPaint.None;
+    private int _selR0, _selR1 = 9;          // 10 rows tall
+    private const int SelC0 = 2, SelC1 = 9;  // 8 columns wide
+
+    protected override void OnInitialized()
+    {
+        _metaFn = Meta;
+        var rnd = new Random(42);
+        _rows = new Row[TotalRows];
+        for (var i = 0; i < TotalRows; i++)
+        {
+            var values = new decimal[MaxCols];
+            for (var c = 0; c < MaxCols; c++)
+                values[c] = (decimal)((rnd.NextDouble() - 0.5) * 2_000_000);
+
+            _rows[i] = new Row
+            {
+                Id = i,
+                BookId = i % 120,
+                Book = $"BK{i % 120:D3}",
+                Typology = Typologies[i % Typologies.Length],
+                Values = values,
+            };
+        }
+
+        _cols = new Col[MaxCols];
+        for (var c = 0; c < MaxCols; c++)
+        {
+            var ci = c;
+            _cols[c] = new Col { Header = $"M{ci}", Get = row => row.Values[ci] };
+        }
+
+        // Roughly poke-shaped metadata: as-of differs by (book, metric), so ~15% of
+        // (book, metric) pairs are stale. Looked up, never stored per cell.
+        for (var b = 0; b < 120; b++)
+            for (var c = 0; c < MaxCols; c++)
+                if (rnd.NextDouble() < 0.15)
+                    _meta[(b, c)] = CellState.Stale;
+    }
+
+    private static readonly string[] Typologies = ["SWPX", "SWPI", "SWPB", "FEXP", "OISW", "CAPF"];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var tcs = _renderTcs;
+        _renderTcs = null;
+        tcs?.TrySetResult();
+
+        if (firstRender)
+        {
+            try { _env = await JS.InvokeAsync<Dictionary<string, object>>("bench.env"); }
+            catch { /* spike: environment capture is best-effort */ }
+        }
+    }
+
+    private static string Fmt(object v) => CellFormat.Value(v);
+
+    private CellState Meta(Row row, int col) =>
+        _meta.TryGetValue((row.BookId, col), out var s) ? s : CellState.Normal;
+
+    private static string StateClass(CellState s) => CellFormat.Class(s);
+
+    private static string ModeNote(string mode) => mode switch
+    {
+        nameof(CellRenderMode.Direct) => "抽象化なしの床",
+        nameof(CellRenderMode.Accessor) => "+ 列アクセサ（decimal が boxing される）",
+        nameof(CellRenderMode.AccessorMeta) => "+ セルごとのメタデータ問い合わせ",
+        "Sel:PerCellClass" => "選択をセルのCSSクラスで塗る（行のメモ化が無効化される）",
+        "Sel:Overlay" => "選択を絶対配置のオーバーレイ1枚で塗る（行は再描画されない）",
+        nameof(CellRenderMode.RowComponent) => "境界を行に置く（行=コンポーネント、セル=素マークアップ）",
+        nameof(CellRenderMode.Component) => "+ セルを Blazor コンポーネント化",
+        _ => "",
+    };
+
+    private enum SelPaint { None, PerCellClass, Overlay }
+
+    // Per-cell-class painting: the row must be TOLD which of its cells are selected.
+    private int RowSelFrom(int absRow) =>
+        _selPaint == SelPaint.PerCellClass && absRow >= _selR0 && absRow <= _selR1 ? SelC0 : -1;
+
+    private int RowSelTo(int absRow) =>
+        _selPaint == SelPaint.PerCellClass && absRow >= _selR0 && absRow <= _selR1 ? SelC1 : -1;
+
+    // Overlay painting: pure geometry. The rows are never told anything.
+    private string OverlayStyle()
+    {
+        var top = (_selR0 - _startRow) * RowHeight;
+        var height = (_selR1 - _selR0 + 1) * RowHeight;
+        var left = KeyColWidth + SelC0 * CellWidth;
+        var width = (SelC1 - SelC0 + 1) * CellWidth;
+        return $"transform: translate({left}px, {top}px); width:{width}px; height:{height}px;";
+    }
+
+    private async Task RunSelectionAsync()
+    {
+        try
+        {
+            _running = true;
+            _error = null;
+            _runs.Clear();
+            _mode = CellRenderMode.RowComponent;   // the design we settled on
+            StateHasChanged();
+            await Task.Delay(100);
+
+            foreach (var paint in new[] { SelPaint.PerCellClass, SelPaint.Overlay })
+            {
+                _selPaint = paint;
+                _startRow = 0;
+
+                for (var w = 0; w < 5; w++) { _selR0 = w; _selR1 = w + 9; await RenderOnceAsync(); }
+                await Task.Delay(100);
+
+                var samples = new List<double>(Iterations);
+                for (var i = 0; i < Iterations; i++)
+                {
+                    var t0 = Stopwatch.GetTimestamp();
+                    // Scroll is FIXED. Only the selection rectangle moves.
+                    _selR0 = i % Math.Max(1, VisibleRows - 10);
+                    _selR1 = _selR0 + 9;
+                    await RenderOnceAsync();
+                    samples.Add((Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency);
+                    await Task.Delay(1);
+                }
+
+                _runs.Add(new RunResult
+                {
+                    Mode = paint == SelPaint.PerCellClass ? "Sel:PerCellClass" : "Sel:Overlay",
+                    VisibleRows = VisibleRows,
+                    VisibleCols = VisibleCols,
+                    Cells = VisibleRows * VisibleCols,
+                    Step = 0,
+                    Render = Stats.From(samples),
+                });
+                StateHasChanged();
+                await Task.Delay(150);
+            }
+
+            _selPaint = SelPaint.None;
+        }
+        catch (Exception ex) { _error = ex.ToString(); }
+        finally { _running = false; StateHasChanged(); }
+    }
+
+    private void Preset(int rows, int cols, int step)
+    {
+        VisibleRows = rows; VisibleCols = cols; Step = step;
+    }
+
+    private Task RenderOnceAsync()
+    {
+        // StateHasChanged() can drive the render — and therefore OnAfterRenderAsync,
+        // which nulls _renderTcs — synchronously, before this method returns. Reading
+        // the field afterwards then NREs. Hold the TCS in a local.
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _renderTcs = tcs;
+        StateHasChanged();
+        return tcs.Task;
+    }
+
+    private async Task RunAllAsync()
+    {
+        try
+        {
+            await RunAllCoreAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.ToString();
+        }
+        finally
+        {
+            _running = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RunAllCoreAsync()
+    {
+        _running = true;
+        _error = null;
+        _runs.Clear();
+        _postLabel = "結果をサーバに保存";
+        StateHasChanged();
+        await Task.Delay(100);
+
+        foreach (var mode in Enum.GetValues<CellRenderMode>())
+        {
+            _mode = mode;
+
+            // Warm up: first render of a mode pays JIT and initial DOM construction.
+            for (var w = 0; w < 5; w++)
+            {
+                _startRow = (_startRow + Step) % (TotalRows - VisibleRows);
+                await RenderOnceAsync();
+            }
+            await Task.Delay(100);
+
+            var samples = new List<double>(Iterations);
+            for (var i = 0; i < Iterations; i++)
+            {
+                var t0 = Stopwatch.GetTimestamp();
+                _startRow = (_startRow + Step) % (TotalRows - VisibleRows);
+                await RenderOnceAsync();
+                samples.Add((Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency);
+
+                // The render above can complete synchronously, so nothing would ever
+                // hand control back to the browser. Yield outside the timed region so
+                // each iteration starts from a laid-out page rather than accumulating
+                // unflushed DOM mutations.
+                await Task.Delay(1);
+            }
+
+            _runs.Add(new RunResult
+            {
+                Mode = mode.ToString(),
+                VisibleRows = VisibleRows,
+                VisibleCols = VisibleCols,
+                Cells = VisibleRows * VisibleCols,
+                Step = Step,
+                Render = Stats.From(samples),
+            });
+
+            StateHasChanged();
+            await Task.Delay(150);
+        }
+
+        _running = false;
+        StateHasChanged();
+    }
+
+    private async Task OnScrollAsync()
+    {
+        try
+        {
+            var top = await JS.InvokeAsync<double>("bench.scrollTop", _scrollerEl);
+            var start = Math.Clamp((int)(top / RowHeight), 0, TotalRows - VisibleRows);
+            if (start != _startRow) _startRow = start;
+        }
+        catch { /* spike */ }
+    }
+
+    private async Task StartFpsAsync()
+    {
+        _manualStats = null;
+        await JS.InvokeVoidAsync("bench.startFps");
+    }
+
+    private async Task StopFpsAsync()
+    {
+        var frames = await JS.InvokeAsync<double[]>("bench.stopFps");
+        _manualStats = frames is { Length: > 0 } ? Stats.From(frames) : null;
+    }
+
+    private async Task PostResultsAsync()
+    {
+        _posting = true;
+        try
+        {
+            var report = new Report
+            {
+                TimestampLocal = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                Environment = _env,
+                Runs = _runs,
+                ManualScrollFrames = _manualStats,
+                Note = "cell-grid render spike: cost of the API shape, not of row count.",
+            };
+            var res = await Http.PostAsJsonAsync("api/results", report);
+            _postLabel = res.IsSuccessStatusCode ? "保存しました ✓" : $"失敗 ({(int)res.StatusCode})";
+        }
+        catch (Exception ex)
+        {
+            _postLabel = $"失敗: {ex.Message}";
+        }
+        finally
+        {
+            _posting = false;
+        }
+    }
+}

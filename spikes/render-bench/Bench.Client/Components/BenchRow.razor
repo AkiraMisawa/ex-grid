@@ -1,0 +1,70 @@
+@* Row-level component: the memoisation boundary sits at the ROW, not the cell.
+   An unchanged row skips re-rendering entirely, while the cells inside stay plain
+   markup so a full rebuild does not pay per-cell component overhead — 40
+   boundaries instead of 800.
+
+   The skip does NOT come for free. Blazor's automatic parameter change detection
+   only reports "unchanged" for value/immutable-typed parameters; a mutable
+   reference type such as Row is always treated as "may have changed", even when
+   the reference is identical. So the boundary has to be enforced by hand in
+   ShouldRender().
+
+   Consequence worth carrying into the real design: identity, not mutation, is the
+   change signal. A Consumer that mutates a row object in place will not repaint —
+   it has to hand over a different instance, or bump Version.
+
+   SelFrom/SelTo exist to price the "paint selection with per-cell classes"
+   approach: selection is NOT part of the row's identity, so making it visible
+   this way forces it into the parameter set and defeats the memoisation on every
+   selection change. The overlay approach leaves these at -1 and never touches
+   the row at all. *@
+
+<div class="r">
+    <div class="c key">@RowData.Book</div>
+    @for (var c = 0; c < VisibleCols; c++)
+    {
+        var ci = c;
+        var sel = ci >= SelFrom && ci <= SelTo;
+        <div class="@(sel ? CellFormat.Class(Meta(RowData, ci)) + " sel" : CellFormat.Class(Meta(RowData, ci)))">@CellFormat.Value(Cols[ci].Get(RowData))</div>
+    }
+</div>
+
+@code {
+    [Parameter] public Row RowData { get; set; } = default!;
+    [Parameter] public Col[] Cols { get; set; } = [];
+    [Parameter] public int VisibleCols { get; set; }
+    [Parameter] public Func<Row, int, CellState> Meta { get; set; } = default!;
+    /// <summary>Bumped by the Consumer when a row's contents changed without changing identity.</summary>
+    [Parameter] public int Version { get; set; }
+    /// <summary>Selected column range within this row, or -1/-1 when selection is painted by an overlay.</summary>
+    [Parameter] public int SelFrom { get; set; } = -1;
+    [Parameter] public int SelTo { get; set; } = -1;
+
+    private Row? _renderedRow;
+    private Col[]? _renderedCols;
+    private int _renderedVisibleCols = -1;
+    private int _renderedVersion = -1;
+    private int _renderedSelFrom = -2;
+    private int _renderedSelTo = -2;
+
+    protected override bool ShouldRender()
+    {
+        if (ReferenceEquals(_renderedRow, RowData)
+            && ReferenceEquals(_renderedCols, Cols)
+            && _renderedVisibleCols == VisibleCols
+            && _renderedVersion == Version
+            && _renderedSelFrom == SelFrom
+            && _renderedSelTo == SelTo)
+        {
+            return false;
+        }
+
+        _renderedRow = RowData;
+        _renderedCols = Cols;
+        _renderedVisibleCols = VisibleCols;
+        _renderedVersion = Version;
+        _renderedSelFrom = SelFrom;
+        _renderedSelTo = SelTo;
+        return true;
+    }
+}

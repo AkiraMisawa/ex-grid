@@ -1,0 +1,173 @@
+html, body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
+    font-size: 13px;
+    color: #1a1a1a;
+    background: #fff;
+}
+
+.content { padding: 16px 20px 40px; }
+
+h3 { margin: 0 0 4px; }
+h4 { margin: 20px 0 6px; }
+.muted { color: #666; }
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin: 8px 0;
+    padding: 8px 10px;
+    background: #f6f7f9;
+    border: 1px solid #e3e5e8;
+    border-radius: 4px;
+}
+
+.controls label { display: flex; gap: 4px; align-items: center; }
+.controls input { width: 68px; padding: 2px 4px; }
+.controls .cells { font-weight: 600; }
+
+button {
+    padding: 4px 10px;
+    border: 1px solid #bcc0c4;
+    background: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+}
+button:disabled { opacity: .5; cursor: default; }
+
+table.results { border-collapse: collapse; margin: 6px 0; }
+table.results th, table.results td { border: 1px solid #ddd; padding: 3px 10px; text-align: right; }
+table.results th:first-child, table.results td:first-child,
+table.results th:nth-child(2), table.results td:nth-child(2) { text-align: left; }
+tr.ok   td { background: #f2fbf3; }
+tr.warn td { background: #fffaeb; }
+tr.bad  td { background: #fdf0f0; }
+
+/* ---- the grid under test ---- */
+
+.scroller {
+    height: 600px;
+    overflow: auto;
+    border: 1px solid #ccc;
+    position: relative;
+    contain: strict;
+}
+
+.spacer { position: relative; }
+
+.window {
+    position: absolute;
+    top: 0;
+    left: 0;
+    will-change: transform;
+}
+
+.r { display: flex; height: 24px; line-height: 24px; }
+
+.c {
+    flex: 0 0 90px;
+    width: 90px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    border-right: 1px solid #eee;
+    border-bottom: 1px solid #f4f4f4;
+    overflow: hidden;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.c.num { text-align: right; }
+
+.c.key {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #fafafa;
+    font-weight: 600;
+    text-align: left;
+}
+
+.c.stale   { color: #8a7a3a; background: #fffbe8; }
+.c.missing { color: #999; background: #f7f7f7; }
+.c.err     { color: #a33; background: #fdf0f0; }
+
+/* ---- template boot UI ---- */
+
+.loading-progress {
+    position: relative;
+    display: block;
+    width: 8rem;
+    height: 8rem;
+    margin: 20vh auto 1rem;
+}
+
+.loading-progress circle {
+    fill: none;
+    stroke: #e0e0e0;
+    stroke-width: 0.6rem;
+    transform-origin: 50% 50%;
+    transform: rotate(-90deg);
+}
+
+.loading-progress circle:last-child {
+    stroke: #1b6ec2;
+    stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+    transition: stroke-dasharray 0.05s ease-in-out;
+}
+
+.loading-progress-text {
+    position: absolute;
+    text-align: center;
+    inset: calc(20vh + 3.25rem) 0 auto 0;
+}
+
+.loading-progress-text:after {
+    content: var(--blazor-load-percentage-text, "Loading");
+}
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+.err-box {
+    background: #fdf0f0;
+    border: 1px solid #e0b4b4;
+    color: #7a2020;
+    padding: 8px 10px;
+    white-space: pre-wrap;
+    max-height: 260px;
+    overflow: auto;
+    font-size: 12px;
+}
+
+button.sel { background: #1b6ec2; color: #fff; border-color: #1b6ec2; }
+
+.c.sel { background: #d6e4ff; }
+
+.sel-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(60, 120, 220, .18);
+    border: 2px solid #3c78dc;
+    box-sizing: border-box;
+    pointer-events: none;
+    will-change: transform;
+}

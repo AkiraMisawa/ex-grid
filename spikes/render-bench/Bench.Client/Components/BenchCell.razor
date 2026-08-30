@@ -1,0 +1,20 @@
+@* Component-per-cell. This is the shape we suspect is the "mossari" trap:
+   one Blazor component instance per visible cell, each with parameter
+   diffing and a lifecycle. *@
+
+<div class="@CssClass">@Text</div>
+
+@code {
+    [Parameter] public object? Value { get; set; }
+    [Parameter] public CellState State { get; set; }
+
+    private string Text => Value is decimal d ? d.ToString("N2") : Value?.ToString() ?? "";
+
+    private string CssClass => State switch
+    {
+        CellState.Stale => "c num stale",
+        CellState.Missing => "c num missing",
+        CellState.Error => "c num err",
+        _ => "c num",
+    };
+}

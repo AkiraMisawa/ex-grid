@@ -1,0 +1,7 @@
+# .NET build output
+bin/
+obj/
+*.user
+*.suo
+
+# spikes/render-bench/results/*.json は残す — ADR-0003 / 0008 の計測エビデンス
