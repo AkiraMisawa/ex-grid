@@ -7,6 +7,40 @@ public class DateOperatorTests
     private static bool TradedOnMatches(object? tradedOn, FilterOperator op, object? value = null)
         => TradeColumns.Matches(new Trade(TradedOn: tradedOn), TradeColumns.FilterOn("TradedOn", new FilterClause(op, value)));
 
+    [Fact] // ADR-0023: DateTime compares by wall-clock ticks — Kind is not part of the value
+    public void DateTime_kind_does_not_affect_comparison()
+    {
+        Assert.True(TradedOnMatches(
+            new DateTime(2026, 8, 30, 9, 0, 0, DateTimeKind.Utc),
+            FilterOperator.Equals,
+            new DateTime(2026, 8, 30, 9, 0, 0, DateTimeKind.Local)));
+    }
+
+    [Fact] // ADR-0023: mixing date types ACROSS clauses is refused up front too
+    public void Mixed_date_types_across_clauses_are_refused_up_front()
+    {
+        var filter = TradeColumns.FilterOnAny("TradedOn",
+            new FilterClause(FilterOperator.Equals, new DateTime(2026, 8, 30)),
+            new FilterClause(FilterOperator.Equals, new DateOnly(2026, 1, 1)));
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => GridQueryEngine.Apply(Array.Empty<Trade>(), TradeColumns.All, filter, null));
+        Assert.Contains("TradedOn", ex.Message);
+        Assert.Contains("one date type per column", ex.Message);
+    }
+
+    [Fact] // ADR-0023: a mixed-type In list is refused up front, even over an empty row set
+    public void A_mixed_date_type_In_list_is_refused_up_front()
+    {
+        var filter = TradeColumns.FilterOn("TradedOn",
+            new FilterClause(FilterOperator.In,
+                Values: [new DateTime(2026, 8, 30), new DateOnly(2026, 1, 1)]));
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => GridQueryEngine.Apply(Array.Empty<Trade>(), TradeColumns.All, filter, null));
+        Assert.Contains("TradedOn", ex.Message);
+    }
+
     [Fact] // ADR-0023
     public void Ordering_operators_compare_chronologically()
     {

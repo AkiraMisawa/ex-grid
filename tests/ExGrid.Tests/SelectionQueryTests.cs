@@ -82,6 +82,17 @@ public class SelectionQueryTests
         Assert.Equal(GridSelection.Empty, GridSelection.Empty.Click(new(0, 0), Grid).ToggleRange(new(0, 0), Grid));
     }
 
+    [Fact] // ADR-0008: Ranges cannot be cast back to a mutable array — the selection stays immutable
+    public void Ranges_is_not_a_castable_mutable_array()
+    {
+        var extended = GridSelection.Empty.Click(new(0, 0), Grid).ExtendTo(new(2, 2), Grid);
+        Assert.IsNotType<SelectionRange[]>(extended.Ranges);
+
+        var toggled = extended.ToggleRange(new(5, 5), Grid).ToggleRange(new(1, 1), Grid);
+        Assert.IsNotType<SelectionRange[]>(toggled.Ranges);
+        Assert.IsNotType<List<SelectionRange>>(toggled.Ranges);
+    }
+
     [Fact] // ADR-0011: the empty selection selects nothing and counts nothing
     public void Empty_contains_nothing()
     {

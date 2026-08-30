@@ -52,6 +52,20 @@ public class NumberOperatorTests
             () => AmountMatches(1, FilterOperator.Equals, double.PositiveInfinity));
     }
 
+    [Fact] // ADR-0023: too small for decimal is refused too — never quietly flattened to zero
+    public void A_non_zero_value_that_would_flatten_to_zero_throws_naming_the_column()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => AmountMatches(1e-30, FilterOperator.Equals, 0));
+        Assert.Contains("Amount", ex.Message);
+        Assert.Throws<InvalidOperationException>(
+            () => AmountMatches(-1e-30, FilterOperator.Equals, 0));
+        Assert.Throws<InvalidOperationException>(
+            () => AmountMatches(1e-40f, FilterOperator.Equals, 0));
+
+        Assert.True(AmountMatches(0.0, FilterOperator.Equals, 0)); // a true zero is a value
+    }
+
     [Fact] // ADR-0023: finite but beyond decimal's range is refused the same way as NaN
     public void A_finite_number_beyond_the_representable_range_throws_naming_the_column()
     {

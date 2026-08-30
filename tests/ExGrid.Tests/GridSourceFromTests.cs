@@ -62,6 +62,24 @@ public class GridSourceFromTests
         Assert.Equal(version, source.RowSequenceVersion);
     }
 
+    [Fact] // ADR-0011: the filter is snapshotted too — a mutated filter must not be replayed
+    public void Mutating_the_callers_filter_does_not_leak_into_the_source()
+    {
+        var source = Bound();
+        var columns = new Dictionary<string, FilterSpec>
+        {
+            ["Book"] = new([new FilterClause(FilterOperator.Equals, "Rates")]),
+        };
+        source.OnFilterChanged(new GridFilter(columns));
+        Assert.Equal(2, source.TotalCount);
+
+        columns["Book"] = new FilterSpec([new FilterClause(FilterOperator.Equals, "Credit")]);
+        source.OnSortChanged([]); // an unrelated change must not replay the mutation
+
+        Assert.Equal(2, source.TotalCount); // still the Rates rows, not the mutated filter's
+        Assert.Equal(["Rates", "Rates"], source.Window.Select(t => t.Book));
+    }
+
     [Fact] // ADR-0001: From performs the sorting itself and repushes the Window
     public void A_sort_change_reorders_the_window()
     {
@@ -186,5 +204,30 @@ public class GridSourceFromTests
 
         source.OnSortChanged([new SortSpec("Amount", SortDirection.Ascending)]);
         Assert.Equal(1, raised);
+    }
+
+    [Fact] // ADR-0023: a byte-identical repush is a no-op — no recompute, no event, no render cycle
+    public void A_no_op_repush_raises_no_state_changed()
+    {
+        var source = Bound();
+        source.OnSortChanged([new SortSpec("Amount", SortDirection.Ascending)]);
+        var raised = 0;
+        source.StateChanged += () => raised++;
+
+        source.OnSortChanged([new SortSpec("Amount", SortDirection.Ascending)]); // same query again
+        source.OnFilterChanged(null); // filter was already null
+
+        Assert.Equal(0, raised);
+    }
+
+    [Fact] // ADR-0001: a malformed Range Request is refused; one beyond the data is legal and ignored
+    public void Range_requests_are_validated_but_may_exceed_the_data()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new RowRange(-1, 5));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new RowRange(0, 0));
+
+        var source = Bound();
+        source.OnRangeNeeded(new RowRange(1_000_000, 20)); // races with data updates; ignoring is the answer
+        Assert.Equal(Rows, source.Window);
     }
 }

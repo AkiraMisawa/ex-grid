@@ -222,7 +222,8 @@ _Avoid_: change event, commit, update
 The set of cells a user has selected. Held as a **list of rectangles** whose coordinates are
 **positions in the current order**, not row identities (the grid does not know identities outside
 the Window). Disjoint multi-range selection is supported. **Cleared when the Row Sequence Version
-changes** — a sort or filter change that leaves the visible sequence identical keeps it
+changes** — a sort or filter change that leaves the visible sequence identical keeps it — **and
+when the visible-column set changes** (the holder's own trigger; the version names row order only)
 ([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
 **Rows know nothing about it** — painting is done by an overlay, and it is never mixed into Row
 Identity ([ADR-0008](./docs/adr/0008-selection-is-painted-by-an-overlay.md)).

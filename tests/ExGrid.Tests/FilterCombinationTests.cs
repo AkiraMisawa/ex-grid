@@ -18,6 +18,19 @@ public class FilterCombinationTests
         Assert.False(TradeColumns.Matches(new Trade(Book: "Credit", Amount: 150), filter));
     }
 
+    [Fact] // ADR-0023: an unknown combinator is refused up front, even over an empty row set
+    public void An_unknown_combinator_is_refused_up_front()
+    {
+        var filter = new GridFilter(new Dictionary<string, FilterSpec>
+        {
+            ["Book"] = new([new FilterClause(FilterOperator.Equals, "Rates")], (FilterCombinator)7),
+        });
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => GridQueryEngine.Apply(Array.Empty<Trade>(), TradeColumns.All, filter, null));
+        Assert.Contains("Book", ex.Message);
+    }
+
     [Fact] // ADR-0009: Or exists only within a column
     public void Clauses_within_a_column_can_combine_with_or()
     {

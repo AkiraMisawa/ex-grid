@@ -82,6 +82,9 @@ public static class GridQueryEngine
             if (spec.Clauses is not { Count: > 0 })
                 throw new InvalidOperationException(
                     $"The filter on column '{column.Name}' has no clauses. Remove the column from the Filter instead.");
+            if (spec.Combinator is not (FilterCombinator.And or FilterCombinator.Or))
+                throw new InvalidOperationException(
+                    $"The filter on column '{column.Name}' has an unknown combinator ({(int)spec.Combinator}).");
 
             var clauses = new List<PreparedClause>(spec.Clauses.Count);
             foreach (var clause in spec.Clauses)
@@ -100,10 +103,44 @@ public static class GridQueryEngine
                 });
             }
 
+            if (column.Type == ColumnType.Date)
+                RequireOneDateType(column, clauses);
+
             prepared.Add(new PreparedColumn<TRow>(column, spec.Combinator, clauses));
         }
 
         return prepared;
+    }
+
+    /// <summary>
+    /// One date runtime type per column, across every clause and every In candidate,
+    /// checked up front like the rest of Prepare — otherwise the refusal would surface
+    /// only on the first row that compares against the odd operand (ADR-0023: a
+    /// malformed Query is refused even over an empty row set).
+    /// </summary>
+    private static void RequireOneDateType<TRow>(ColumnInfo<TRow> column, List<PreparedClause> clauses)
+    {
+        Type? seen = null;
+        foreach (var clause in clauses)
+        {
+            Check(clause.Operand);
+            if (clause.Operands is not null)
+            {
+                foreach (var operand in clause.Operands)
+                    Check(operand);
+            }
+        }
+
+        void Check(object? operand)
+        {
+            if (operand is null)
+                return;
+            var type = operand.GetType();
+            seen ??= type;
+            if (type != seen)
+                throw new InvalidOperationException(
+                    $"Column '{column.Name}' (Date): the filter mixes {seen.Name} and {type.Name}; one date type per column.");
+        }
     }
 
     private static PreparedClause PrepareIn<TRow>(ColumnInfo<TRow> column, FilterClause clause)
@@ -166,14 +203,14 @@ public static class GridQueryEngine
                 HashSet<decimal> set => set.Contains((decimal)cell),
                 HashSet<bool> set => set.Contains((bool)cell),
                 _ => clause.Operands!.Any(
-                    candidate => candidate is not null && AreEqual(column, cell, candidate)),
+                    candidate => candidate is not null && CompareCells(column, cell, candidate) == 0),
             },
-            FilterOperator.Equals => AreEqual(column, cell, clause.Operand!),
-            FilterOperator.NotEquals => !AreEqual(column, cell, clause.Operand!),
-            FilterOperator.GreaterThan => Compare(column, cell, clause.Operand!) > 0,
-            FilterOperator.GreaterThanOrEqual => Compare(column, cell, clause.Operand!) >= 0,
-            FilterOperator.LessThan => Compare(column, cell, clause.Operand!) < 0,
-            FilterOperator.LessThanOrEqual => Compare(column, cell, clause.Operand!) <= 0,
+            FilterOperator.Equals => CompareCells(column, cell, clause.Operand!) == 0,
+            FilterOperator.NotEquals => CompareCells(column, cell, clause.Operand!) != 0,
+            FilterOperator.GreaterThan => CompareCells(column, cell, clause.Operand!) > 0,
+            FilterOperator.GreaterThanOrEqual => CompareCells(column, cell, clause.Operand!) >= 0,
+            FilterOperator.LessThan => CompareCells(column, cell, clause.Operand!) < 0,
+            FilterOperator.LessThanOrEqual => CompareCells(column, cell, clause.Operand!) <= 0,
             FilterOperator.Contains => ((string)cell).Contains((string)clause.Operand!, StringComparison.OrdinalIgnoreCase),
             FilterOperator.DoesNotContain => !((string)cell).Contains((string)clause.Operand!, StringComparison.OrdinalIgnoreCase),
             FilterOperator.StartsWith => ((string)cell).StartsWith((string)clause.Operand!, StringComparison.OrdinalIgnoreCase),
@@ -181,25 +218,6 @@ public static class GridQueryEngine
             _ => throw new ArgumentOutOfRangeException(nameof(clause), clause.Operator, null),
         };
     }
-
-    private static bool AreEqual<TRow>(ColumnInfo<TRow> column, object cell, object operand)
-        => column.Type switch
-        {
-            ColumnType.Text => string.Equals((string)cell, (string)operand, StringComparison.OrdinalIgnoreCase),
-            ColumnType.Number => (decimal)cell == (decimal)operand,
-            ColumnType.Date => CompareDates(column.Name, cell, operand) == 0,
-            ColumnType.Boolean => (bool)cell == (bool)operand,
-            _ => throw new ArgumentOutOfRangeException(nameof(column), column.Type, null),
-        };
-
-    private static int Compare<TRow>(ColumnInfo<TRow> column, object cell, object operand)
-        => column.Type switch
-        {
-            // Only Number and Date allow ordering operators (ADR-0023).
-            ColumnType.Number => ((decimal)cell).CompareTo((decimal)operand),
-            ColumnType.Date => CompareDates(column.Name, cell, operand),
-            _ => throw new ArgumentOutOfRangeException(nameof(column), column.Type, null),
-        };
 
     private static void ValidateOperands<TRow>(ColumnInfo<TRow> column, FilterClause clause)
     {
@@ -231,67 +249,87 @@ public static class GridQueryEngine
         Dictionary<string, ColumnInfo<TRow>> columns,
         IReadOnlyList<SortSpec> sorts)
     {
-        IOrderedEnumerable<TRow>? ordered = null;
-        foreach (var spec in sorts)
+        // The whole Sorts list is validated before any row is touched, like Prepare: an
+        // out-of-range direction must not sort plausibly (refuse, do not coerce).
+        var levels = new (ColumnInfo<TRow> Column, SortDirection Direction)[sorts.Count];
+        for (var i = 0; i < sorts.Count; i++)
         {
-            var column = Resolve(columns, spec.Column);
-
-            // Always ThenBy: the direction lives inside the comparer, so the fixed
-            // Blank ordering is never inverted with it (ADR-0023).
-            var comparer = new CellComparer(column.Name, column.Type, spec.Direction);
-            var key = KeySelector(column);
-            ordered = ordered is null ? rows.OrderBy(key, comparer) : ordered.ThenBy(key, comparer);
+            var spec = sorts[i];
+            if (spec.Direction is not (SortDirection.Ascending or SortDirection.Descending))
+                throw new InvalidOperationException(
+                    $"Sort on column '{spec.Column}' has an unknown direction ({(int)spec.Direction}).");
+            levels[i] = (Resolve(columns, spec.Column), spec.Direction);
         }
 
-        return ordered!.ToList(); // sorts is non-empty; LINQ's OrderBy keeps ties stable (ADR-0023)
-    }
+        var buffer = rows.ToArray();
 
-    private static Func<TRow, object?> KeySelector<TRow>(ColumnInfo<TRow> column)
-    {
-        if (column.Type != ColumnType.Date)
-            return row => NormalizeCell(column, column.Value(row));
-
-        // One date runtime type per column, checked while the keys are extracted: LINQ
-        // computes every level's keys before comparing any, whereas a comparer runs only
-        // when the previous level ties — a refusal there would depend on the data it
-        // happens to sit next to (ADR-0023). Checking here also keeps the comparer
-        // exception-free, so LINQ never wraps a refusal in its own message.
-        Type? seen = null;
-        return row =>
+        // Keys are extracted eagerly for every row and every level by this code — not
+        // left to LINQ's buffering behaviour — so the one-date-type-per-column refusal
+        // fires for the same Query and data regardless of what ties with what
+        // (ADR-0023), and no comparer ever throws mid-sort.
+        var keys = new object?[levels.Length][];
+        for (var level = 0; level < levels.Length; level++)
         {
-            var cell = NormalizeCell(column, column.Value(row));
-            if (cell is not null)
+            var column = levels[level].Column;
+            var levelKeys = new object?[buffer.Length];
+            Type? seenDateType = null;
+            for (var i = 0; i < buffer.Length; i++)
             {
-                var type = cell.GetType();
-                seen ??= type;
-                if (type != seen)
-                    throw new InvalidOperationException(
-                        $"Column '{column.Name}' (Date) mixes {seen.Name} and {type.Name}; one date type per column.");
+                var cell = NormalizeCell(column, column.Value(buffer[i]));
+                if (column.Type == ColumnType.Date && cell is not null)
+                {
+                    var type = cell.GetType();
+                    seenDateType ??= type;
+                    if (type != seenDateType)
+                        throw new InvalidOperationException(
+                            $"Column '{column.Name}' (Date) mixes {seenDateType.Name} and {type.Name}; one date type per column.");
+                }
+                levelKeys[i] = cell;
             }
-            return cell;
-        };
-    }
-
-    private sealed class CellComparer(string columnName, ColumnType type, SortDirection direction) : IComparer<object?>
-    {
-        public int Compare(object? x, object? y)
-        {
-            // Blanks last in BOTH directions (ADR-0023): their ordering is fixed and
-            // deliberately outside the direction inversion below.
-            if (x is null || y is null)
-                return (x is null ? 1 : 0) - (y is null ? 1 : 0);
-
-            var result = type switch
-            {
-                ColumnType.Text => StringComparer.OrdinalIgnoreCase.Compare((string)x, (string)y),
-                ColumnType.Number => ((decimal)x).CompareTo((decimal)y),
-                ColumnType.Date => CompareDates(columnName, x, y),
-                ColumnType.Boolean => ((bool)x).CompareTo((bool)y),
-                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
-            };
-            return direction == SortDirection.Ascending ? result : -Math.Sign(result);
+            keys[level] = levelKeys;
         }
+
+        var indices = new int[buffer.Length];
+        for (var i = 0; i < indices.Length; i++)
+            indices[i] = i;
+        Array.Sort(indices, (a, b) =>
+        {
+            foreach (var ((column, direction), levelKeys) in levels.Zip(keys))
+            {
+                var result = CompareKeys(column, levelKeys[a], levelKeys[b], direction);
+                if (result != 0)
+                    return result;
+            }
+            return a - b; // Array.Sort is unstable; the original index keeps equal keys in input order (ADR-0023)
+        });
+
+        var sorted = new List<TRow>(buffer.Length);
+        foreach (var index in indices)
+            sorted.Add(buffer[index]);
+        return sorted;
     }
+
+    private static int CompareKeys<TRow>(ColumnInfo<TRow> column, object? x, object? y, SortDirection direction)
+    {
+        // Blanks last in BOTH directions (ADR-0023): their ordering is fixed and
+        // deliberately outside the direction inversion below.
+        if (x is null || y is null)
+            return (x is null ? 1 : 0) - (y is null ? 1 : 0);
+        var result = CompareCells(column, x, y);
+        return direction == SortDirection.Ascending ? result : -Math.Sign(result);
+    }
+
+    /// <summary>The one collation filter and sort share (ADR-0023) — every two-cell
+    /// comparison in the engine goes through here, so the two paths cannot drift.</summary>
+    private static int CompareCells<TRow>(ColumnInfo<TRow> column, object x, object y)
+        => column.Type switch
+        {
+            ColumnType.Text => StringComparer.OrdinalIgnoreCase.Compare((string)x, (string)y),
+            ColumnType.Number => ((decimal)x).CompareTo((decimal)y),
+            ColumnType.Date => CompareDates(column.Name, x, y),
+            ColumnType.Boolean => ((bool)x).CompareTo((bool)y),
+            _ => throw new ArgumentOutOfRangeException(nameof(column), column.Type, null),
+        };
 
     // ---- Value normalisation (declared type is the law — ADR-0002, ADR-0023) ----
 
@@ -333,7 +371,13 @@ public static class GridQueryEngine
     {
         try
         {
-            return (decimal)value;
+            var converted = (decimal)value;
+            // "Beyond decimal's range" includes the small direction (ADR-0023): a
+            // non-zero value that converts to 0m would silently pass Equals 0 and tie
+            // with true zeros — quietly flattened, on a grid that displays risk numbers.
+            if (converted == 0m && value != 0)
+                throw Mismatch(column, value, isOperand, "is too small in magnitude for a Number to represent");
+            return converted;
         }
         catch (OverflowException)
         {
@@ -347,7 +391,10 @@ public static class GridQueryEngine
         // ((decimal)(double)0.1f is 0.100000001490116) that break equality and ordering.
         try
         {
-            return (decimal)value;
+            var converted = (decimal)value;
+            if (converted == 0m && value != 0)
+                throw Mismatch(column, value, isOperand, "is too small in magnitude for a Number to represent");
+            return converted;
         }
         catch (OverflowException)
         {
@@ -355,6 +402,10 @@ public static class GridQueryEngine
         }
     }
 
+    // DateTime values compare by their wall-clock ticks; DateTimeKind is not part of the
+    // value, matching .NET's own DateTime comparison and what a SQL server does with the
+    // same data (ADR-0023). A Consumer mixing Utc- and Local-kinded values must
+    // normalise before handing them over.
     private static int CompareDates(string columnName, object x, object y)
         => x.GetType() == y.GetType()
             ? ((IComparable)x).CompareTo(y)

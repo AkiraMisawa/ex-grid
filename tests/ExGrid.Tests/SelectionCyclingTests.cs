@@ -180,6 +180,15 @@ public class SelectionCyclingTests
         Assert.Equal(new CellPosition(2, 1), extended.Focus);
     }
 
+    [Fact] // ADR-0012: an out-of-range CycleOrder is refused, never silently row-major
+    public void An_unknown_cycle_order_is_refused()
+    {
+        var selection = GridSelection.Empty.Click(new(1, 1), Grid);
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => selection.CycleFocus((CycleOrder)2, backward: false, Grid));
+    }
+
     [Fact] // ADR-0012: a detached Focus (after a toggle-off) enters the first range — or the last, going backward
     public void Detached_focus_enters_the_first_range()
     {

@@ -43,4 +43,11 @@ public class AllowedOperatorTests
             () => TradeColumns.Matches(new Trade(Cleared: true), filter));
         Assert.Contains("Cleared", ex.Message);
     }
+
+    [Fact] // ADR-0009: the allowlist the engine validates against cannot be mutated through a cast
+    public void The_allowlist_is_not_a_castable_mutable_array()
+    {
+        foreach (var type in Enum.GetValues<ColumnType>())
+            Assert.IsNotType<FilterOperator[]>(FilterOperators.AllowedFor(type));
+    }
 }

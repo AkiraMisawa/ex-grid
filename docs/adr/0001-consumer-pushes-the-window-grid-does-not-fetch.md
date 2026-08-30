@@ -64,6 +64,11 @@ The reasons only surfaced after editing was added to the scope.
 
 ## Consequences
 
+- **A Range Request names a non-empty range at non-negative positions** *(refined while
+  implementing)*: a negative or empty range is refused at construction, so every Grid Source
+  implementation faces the same, already-validated shape. A range **beyond the currently known
+  rows is legal** — requests race with data updates — and answering nothing is the correct
+  answer, as the reference implementation does.
 - **The Consumer carries more.** Holding the Window, answering range requests and expressing the
   loading state are now its job. **The bundled `GridSource`** takes that over, so for a small
   Consumer the ergonomics are unchanged from pull

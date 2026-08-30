@@ -159,6 +159,14 @@ public class SortSemanticsTests
         Assert.Contains("TradedOn", ex.Message);
     }
 
+    [Fact] // ADR-0023: an unknown direction must not sort plausibly — refused before any row
+    public void An_unknown_sort_direction_is_refused_up_front()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => Sort([], new SortSpec("Book", (SortDirection)2)));
+        Assert.Contains("Book", ex.Message);
+    }
+
     [Fact] // ADR-0023: refuse rather than guess
     public void Sorting_by_an_unknown_column_throws_naming_it()
     {

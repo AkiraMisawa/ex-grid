@@ -51,7 +51,15 @@ public sealed record GridSelection
                 throw new InvalidOperationException("Internal: the Focus range index must name a range containing the Focus (ADR-0012).");
         }
 
-        Ranges = ranges;
+        // Stored behind a read-only wrapper so no caller can cast Ranges back to the
+        // array and mutate a rectangle in place, past the invariant checks above (the
+        // FilterOperators pattern).
+        Ranges = ranges switch
+        {
+            SelectionRange[] array => Array.AsReadOnly(array),
+            List<SelectionRange> list => list.AsReadOnly(),
+            _ => ranges,
+        };
         _anchor = anchor;
         _focus = focus;
         _anchorDetached = anchorDetached;
@@ -231,6 +239,8 @@ public sealed record GridSelection
     /// </summary>
     public GridSelection CycleFocus(CycleOrder order, bool backward, GridExtent extent)
     {
+        if (order is not (CycleOrder.ColumnMajor or CycleOrder.RowMajor))
+            throw new ArgumentOutOfRangeException(nameof(order), order, null);
         if (IsDegenerate(extent))
             return Empty;
         if (IsEmpty)

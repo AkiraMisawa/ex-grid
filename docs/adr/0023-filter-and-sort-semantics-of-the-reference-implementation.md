@@ -71,11 +71,22 @@ inherit floating-point surprises. A value decimal cannot represent (NaN, infinit
 magnitude beyond decimal's range) is refused with an exception naming the column rather than
 quietly ordered somewhere — this grid displays money and risk numbers.
 
+*(Refined while implementing: "beyond decimal's range" includes the **small** direction. A
+non-zero float or double whose magnitude converts to zero decimal (below about 5e-29) is
+refused, not quietly flattened — a flattened value would match `Equals 0` and tie with true
+zeros in a sort, a plausible-looking wrong answer.)*
+
 **Booleans order false before true ascending** (Excel: FALSE < TRUE).
 
 **Date equality is exact value equality of what the accessor returned.** No implicit truncation
 to day granularity: two Queries that look equal must not mean different things. Day-granularity
 filtering belongs to the accessor (declare the column Date and return the date part).
+
+*(Refined while implementing: `DateTime` compares by its wall-clock ticks — `DateTimeKind` is
+not part of the value. This matches .NET's own `DateTime` comparison and what a SQL server does
+with the same data, so server-side implementations agree for free. A Consumer whose data mixes
+Utc- and Local-kinded values must normalise in the accessor; the grid cannot guess which
+instant a Kind was meant to name.)*
 
 **A mismatch between declared type and accessor value is refused.** An unknown column name in a
 Filter or Sorts, or an accessor returning text where the column is declared Number, throws an
