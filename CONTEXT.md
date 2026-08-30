@@ -221,8 +221,8 @@ _Avoid_: change event, commit, update
 **Selection**:
 The set of cells a user has selected. Held as a **list of rectangles** whose coordinates are
 **positions in the current order**, not row identities (the grid does not know identities outside
-the Window). Disjoint multi-range selection is supported. **Cleared when the sort order or filter
-changes**
+the Window). Disjoint multi-range selection is supported. **Cleared when the Row Sequence Version
+changes** — a sort or filter change that leaves the visible sequence identical keeps it
 ([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
 **Rows know nothing about it** — painting is done by an overlay, and it is never mixed into Row
 Identity ([ADR-0008](./docs/adr/0008-selection-is-painted-by-an-overlay.md)).
@@ -237,7 +237,9 @@ _Avoid_: cursor, current cell, selected cell
 
 **Anchor**:
 The **fixed** end of range extension. Moved by a click and by Ctrl+click. When there are disjoint
-ranges, Shift+arrow extends **the range the Anchor belongs to**.
+ranges, Shift+arrow extends **the range the Anchor belongs to**. After Ctrl+click deselects a
+cell, Anchor and Focus stand **detached** — on that cell, outside every range — and the next
+extension starts a new range ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)).
 _Avoid_: origin, base cell
 
 ### Columns

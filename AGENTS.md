@@ -41,7 +41,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 22 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 23 of them. The implementation follows these |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
 **Rules:**
@@ -75,7 +75,7 @@ nix develop .#browser -c node ...   # when a headless Chromium is needed
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 22 ADRs. **A new decision that follows these will not
+The principles that run through all 23 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and

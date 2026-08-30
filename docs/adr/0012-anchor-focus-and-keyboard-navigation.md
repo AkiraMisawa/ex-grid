@@ -8,24 +8,64 @@ never leave it.**
 
 | | Meaning | Moved by |
 |---|---|---|
-| **Anchor** | the fixed end of range extension | click, Ctrl+click (the start of a new range) |
+| **Anchor** | the fixed end of range extension | click, Ctrl+click (a new range — or a toggle-off, which detaches it) |
 | **Focus** | where keyboard operations start from; the moving end | arrows, Shift+arrow, Enter / Tab cycling |
 
 - **Click** — Anchor = Focus = that cell. The selection collapses to one cell
 - **Shift+click** — Anchor stays; Focus moves to the clicked cell and the range is redrawn
-- **Ctrl+click** — adds a new range
-  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
-  Anchor and Focus move to the new range
+- **Ctrl+click** — on an unselected cell, adds a new range
+  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md));
+  Anchor and Focus move to the new range. On a selected cell, **toggles it off** (see the
+  subsection below)
 - **Arrows** — collapse the selection to one cell and move
 - **Shift+arrow** — Anchor fixed, Focus moves, the range grows or shrinks
 - **Ctrl+arrow** — jump to the edge (last / first row vertically, last / first column
   horizontally). Not Excel's "edge of the non-blank block" — query results have no blank rows,
   and finding a block edge would require the whole dataset (ADR-0011)
 - **Shift+Ctrl+arrow** — extend the range to the edge
-- **Ctrl+Space / Shift+Space** — select the whole column / whole row (as in Excel)
+- **Ctrl+Space / Shift+Space** — select the whole column / whole row (as in Excel).
+  *(Refined while implementing: the growing range expands to full height / full width
+  keeping its column / row span, so a range spanning three columns becomes three whole
+  columns — Excel's behaviour. Anchor and Focus stay where they are.)*
 
 **With disjoint ranges, the most recently created one is the one that grows.** Both Shift+arrow
 and Shift+click move only the range the Anchor belongs to.
+
+### Ctrl+click on a selected cell toggles it off
+
+*(Added while implementing the selection model; the original text said only "adds a new
+range".)* **Ctrl+click on an already-selected cell deselects it, as Excel 365 does.** The
+cell is subtracted from **every** range containing it — a rectangle splits into at most
+four — and the cell is fully unselected afterwards.
+
+The counter-argument was representation cost: subtraction fragments the rectangle list,
+which reads like the degradation
+[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)
+refused when it rejected re-mapping through insertions. It does not hold here. ADR-0011's
+case was **data-driven** — a feed refresh could scatter a thousand insertions through a
+selection with no user action. A toggle costs a physical click, so the fragment count
+grows by at most three per **deliberate gesture** — the same order as Ctrl+click adding
+ranges — and cannot humanly reach the scale at which the one-overlay-per-range measurement
+([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) degrades.
+
+What tipped the decision was what append-only loses. A mis-click while assembling a
+scattered selection could not be corrected without starting over — and scattered is the
+natural case (ADR-0011). Holes could not be punched in a selection before a bulk fill
+(select all, exclude two rows, Ctrl+Enter). And the duplicate overlapping ranges that
+append-only accumulates would paint twice through the translucent overlay.
+
+After a toggle-off, Anchor and Focus stand **detached** — on the deselected cell, outside
+every range — as Excel behaves after a deselect. The detachment is **stored, never inferred
+from geometry**: the subtraction fragments make "which range is the Anchor's" unanswerable
+by coordinates. From the detached state:
+
+- Shift+arrow / Shift+click starts a **new** range (appended, so it is the one that grows)
+- Enter / Tab enters the first range at its first cell (backward: the last range at its
+  last cell)
+- Ctrl+Space / Shift+Space starts a new **whole-column / whole-row** range at the
+  detached cell (expanding an arbitrary subtraction fragment instead would select a
+  column the user never pointed at)
+- Toggling off the last selected cell leaves the empty selection
 
 ## Enter and Tab cycling
 
@@ -47,7 +87,15 @@ after the last cell. Shift+Enter and Shift+Tab run backwards.
 **The range stays selected while cycling**; only the Focus moves. That is what makes "select a
 block and just keep typing" work.
 
-With no range (a single cell), Enter moves down and Tab moves right, and the selection follows.
+With no range (a single cell), Enter moves down and Tab moves right, and the selection
+follows. *(Refined while implementing: at the last row / last column the Focus clamps and
+stays put, as at Excel's sheet edge — no wrap target is invented.)*
+
+*(Refined while implementing: cycling can park the Focus in a range the Anchor is not in.
+A Shift+arrow from there **re-anchors at the Focus and starts a new range** — redrawing
+the Anchor's range would bridge the two ranges into one block with a single keystroke,
+selecting cells the user never touched. Shift+click keeps the Anchor and redraws its
+range: its target is the absolute cell the user pointed at, not a step from the Focus.)*
 
 ### Why the cycling matters
 
@@ -99,8 +147,9 @@ Rejected:
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). A range taller than the
   Window will move the Focus onto rows that have not been fetched. The Focus cell is a Placeholder
   meanwhile, so **editing does not start until the data arrives**.
-- **A change of sort order or filter discards the Anchor and Focus too** (ADR-0011 drops the whole
-  selection).
+- **A change of the Row Sequence Version discards the Anchor and Focus too** (ADR-0011 drops
+  the whole selection; a change that leaves the visible sequence identical keeps it —
+  [ADR-0023](./0023-filter-and-sort-semantics-of-the-reference-implementation.md)).
 - **With disjoint ranges, cycling visits them in creation order.** Excel also cycles through all
   ranges, but the exact ordering was not verified. Check against Excel during implementation.
 - **Excel's detail where Enter after a run of Tabs returns to the starting column is not
