@@ -152,8 +152,14 @@ disappearing, consider re-mapping and pay the three costs above knowingly.
 
 ## Consequences
 
-- **When the Consumer changes the sort or filter, the grid clears the selection.** In the push
-  form the Consumer passes `Sorts` / `Filter`, so the change is visible to the grid.
+- **Selection is cleared when the Row Sequence Version changes — and the version names the
+  order, not the query.** In the push form the Consumer passes `Sorts` / `Filter`, so the change
+  is visible to the grid. *(Refined while implementing `GridSource.From`: this bullet originally
+  said "when the Consumer changes the sort or filter". A change that leaves the visible sequence
+  exactly as it was — re-applying the same sort, a filter that excludes nothing — does not bump
+  the version and keeps the selection, because there is no reorder to mis-map against
+  ([ADR-0023](./0023-filter-and-sort-semantics-of-the-reference-implementation.md)). Server-side
+  implementations follow the same rule.)*
 - **Ctrl+Down jumps to the last row.** Excel jumps to the edge of a contiguous block, but this
   component displays query results with no blank rows in the middle, and finding a block edge
   would require the whole dataset (which the grid does not have). Jumping to the last row is the

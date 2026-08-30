@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/ExGrid/ExGrid.csproj" />
+  <Project Path="tests/ExGrid.Tests/ExGrid.Tests.csproj" />
+</Solution>

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0 so the gating tests execute on the oldest supported runtime (ADR-0022). -->
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- xunit v3 / Microsoft.Testing.Platform: the test project is its own executable.
+         Chosen over the VSTest stack because VSTest's testhost re-resolves the runtime
+         through the nix store's symlinks and misses the combined net8 runtime. -->
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <!-- Lets `dotnet test` drive the executable instead of VSTest's testhost. -->
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+</Project>

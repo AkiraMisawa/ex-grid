@@ -142,6 +142,14 @@ the Consumer in the column definition** — only the Consumer knows the cardinal
 ([ADR-0009](./docs/adr/0009-filter-panel-contract.md)).
 _Avoid_: filter kind, filter type
 
+**Blank**:
+The absence of a value as Filter and Sort see it — the Column's value accessor returned null.
+Excel's word. A Blank matches only `IsBlank` (and an `In` list that explicitly contains it),
+and sorts last in both directions
+([ADR-0023](./docs/adr/0023-filter-and-sort-semantics-of-the-reference-implementation.md)).
+An empty string is a value, not a Blank.
+_Avoid_: null (implementation word, not user-facing), empty (an empty string is a value)
+
 ### Rendering and interaction
 
 **Chrome**:

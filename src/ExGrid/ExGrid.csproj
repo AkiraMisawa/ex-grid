@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Single-target net8.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <!-- No PackageReferences: ExGrid has no dependencies (ADR-0019).
+       Microsoft.AspNetCore.Components.Web enters at version 8.0.0
+       when the first .razor file does (ADR-0022). -->
+
+</Project>
