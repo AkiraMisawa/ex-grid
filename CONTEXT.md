@@ -182,7 +182,7 @@ _Avoid_: cell status, flag, decoration
 
 **Cell Metadata**:
 Information a cell carries that is not the value itself. It affects display and decoration but is
-never sorted or aggregated on. Example: an as-of stamp, where FVA and CVA in the *same row* can
+never sorted or aggregated on. Example: an as-of stamp, where two metrics in the *same row* can
 come from different batch runs, so it cannot be expressed per row.
 **It is not stored on the cell; it is asked for by (row, column)** — an as-of stamp is a function
 of (book × metric) and the Consumer can answer it.
@@ -303,8 +303,8 @@ _Avoid_: custom column, render column
 > hand-writing it and rewriting in place produces the failure where **the cell is coloured as
 > "modified" while the value is still the old one**.
 >
-> **Consumer developer**: Within one row, FVA can be intraday while CVA is close-of-business. Do
-> I put that on the row?
+> **Consumer developer**: Within one row, one metric can be intraday while another is
+> close-of-business. Do I put that on the row?
 >
 > **Designer**: Not on the row. **Cell Metadata** is **asked for** by (row, column), and the grid
 > asks when it needs it. What you return is a **Cell State** — normal / stale / missing / error /

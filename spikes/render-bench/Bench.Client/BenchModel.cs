@@ -1,9 +1,9 @@
 namespace Bench.Client;
 
-/// <summary>A generic cell state vocabulary — deliberately NOT poke's as-of/staleness terms.</summary>
+/// <summary>A generic cell state vocabulary — deliberately NOT any one Consumer's terms.</summary>
 public enum CellState : byte { Normal = 0, Stale = 1, Missing = 2, Error = 3 }
 
-/// <summary>Stand-in for a poke baseline row: a few string keys plus many numeric metrics.</summary>
+/// <summary>Stand-in for a realistic row: a few string keys plus many numeric metrics.</summary>
 public sealed class Row
 {
     public int Id;

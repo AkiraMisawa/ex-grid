@@ -7,7 +7,7 @@ does not fit within the maximum, text is cut with an ellipsis and numbers and da
 ## What may be truncated and what may not
 
 ```
-Text      "Counterparty Ho…"   → visibly truncated                        … an ellipsis is fine
+Text      "Very Long Descript…" → visibly truncated                       … an ellipsis is fine
 Number    "1,234,5…"           → looks like a VALID number three digits short … dangerous
 ```
 

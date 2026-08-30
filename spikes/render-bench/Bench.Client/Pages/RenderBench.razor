@@ -215,7 +215,7 @@
             _cols[c] = new Col { Header = $"M{ci}", Get = row => row.Values[ci] };
         }
 
-        // Roughly poke-shaped metadata: as-of differs by (book, metric), so ~15% of
+        // Realistically shaped metadata: it varies by (group, metric), so ~15% of
         // (book, metric) pairs are stale. Looked up, never stored per cell.
         for (var b = 0; b < 120; b++)
             for (var c = 0; c < MaxCols; c++)

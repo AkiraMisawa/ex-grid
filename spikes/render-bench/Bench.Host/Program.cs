@@ -1,6 +1,6 @@
 // Thin host: serves the standalone WASM client's static assets and collects
 // benchmark results posted back from the browser. Deliberately mirrors the
-// shape poke settled on (poke ADR-0003) so the numbers come from a realistic
+// shape the first Consumer settled on, so the numbers come from a realistic
 // deployment, not a dev-server special case.
 
 var builder = WebApplication.CreateBuilder(args);
