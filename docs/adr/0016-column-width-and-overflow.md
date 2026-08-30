@@ -18,6 +18,12 @@ case in [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md): **quie
 Excel's `####` **shows unreadability in an unreadable form** — it refuses to be half-read. That is
 the principle used throughout this design, adopted as-is.
 
+*(Refined while implementing: **Boolean is classified with Text** — a truncated `fal…` is
+visibly truncated, not a plausible other value, and letters are proportional, so the
+tabular-digit estimate below cannot apply to it anyway. Text and Boolean never become `####`.
+The core's decision is total over all column types and answers "show the value" for both, so
+no consumer re-derives the classification; the ellipsis stays pure CSS presentation.)*
+
 Rejected:
 - **Truncate numbers with an ellipsis too** — consistent presentation, but it looks like a
   different number.
@@ -72,6 +78,17 @@ Not narrowing means it cannot oscillate, and after a few screens it settles in p
 narrow, the user presses "size to fit" explicitly (which fixes the width at the content of that
 moment).
 
+*(Refined while implementing: before the first Window an Auto column stands at `MinWidth` —
+the diagram's "computed from the first Window" is the first observations growing that floor.
+Observation is per value and order-independent, and what is observed is the value's **full
+required cell width, padding included** — the same unit as the resolved column width and the
+estimate below — never the inner content width, which is 2×padding narrower. The defaults are `MinWidth` 40px and
+`MaxWidth` 400px: at typical grid metrics that is three `#` glyphs at minimum and roughly 48
+digits at maximum, so an untouched Auto column effectively never hashes — `####` appears when
+the user or the Consumer narrows a column, as in Excel. Both are per-column overridable. A
+declared `Fixed` width outside `[MinWidth, MaxWidth]` is refused at construction, not
+clamped — a declaration that contradicts its own bounds is an error, not an intent.)*
+
 **"Size to fit" is an approximation.** It can only fit the rows that have been fetched, not all of
 them. The column menu entry in
 [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) is written on that basis. A true fit
@@ -102,3 +119,12 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   `font-variant-numeric: tabular-nums` and estimate from the digit count (as
   `spikes/render-bench` already does) — which is also why this needs no measurement round-trip
   through JavaScript ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
+  *(Refined while implementing: the estimate is `character count × digit width + horizontal
+  padding`, every character counted at one tabular-digit width. Separators (`.` `,` `-` `/`)
+  are narrower in practice, so the estimate errs toward showing `####` one glyph early — the
+  safe direction: an early `####` costs a hover, a clipped number costs a misread. The digit
+  width the theme supplies is contractually **at least as wide as any glyph the column's
+  formats emit** — a currency symbol wider than a digit would otherwise flip the error into
+  the dangerous direction. A value estimating exactly at the resolved width fits and is
+  shown; hashing is strictly past the bound. The `####` fill is `floor(content width / digit
+  width)` hashes, minimum one.)*
