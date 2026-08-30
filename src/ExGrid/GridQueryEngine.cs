@@ -1,5 +1,3 @@
-using System.Runtime.ExceptionServices;
-
 namespace ExGrid;
 
 /// <summary>
@@ -64,7 +62,9 @@ public static class GridQueryEngine
     private sealed record PreparedClause(
         FilterOperator Operator,
         object? Operand,
-        IReadOnlyList<object?>? Operands);
+        IReadOnlyList<object?>? Operands,
+        object? OperandSet = null,
+        bool OperandsContainBlank = false);
 
     private sealed record PreparedColumn<TRow>(
         ColumnInfo<TRow> Column,
@@ -95,10 +95,7 @@ public static class GridQueryEngine
                 {
                     FilterOperator.IsBlank or FilterOperator.IsNotBlank
                         => new PreparedClause(clause.Operator, null, null),
-                    FilterOperator.In => new PreparedClause(clause.Operator, null,
-                        clause.Values!
-                            .Select(v => v is null ? null : NormalizeOperand(column, v))
-                            .ToList()),
+                    FilterOperator.In => PrepareIn(column, clause),
                     _ => new PreparedClause(clause.Operator, NormalizeOperand(column, clause.Value!), null),
                 });
             }
@@ -107,6 +104,25 @@ public static class GridQueryEngine
         }
 
         return prepared;
+    }
+
+    private static PreparedClause PrepareIn<TRow>(ColumnInfo<TRow> column, FilterClause clause)
+    {
+        var operands = clause.Values!
+            .Select(v => v is null ? null : NormalizeOperand(column, v))
+            .ToList();
+
+        // A value list can hold tens of thousands of entries (ADR-0009); membership is a
+        // set built once here, not a per-row scan. Date keeps the list — comparing cell
+        // against candidate is what refuses a mixed date type per row.
+        object? set = column.Type switch
+        {
+            ColumnType.Text => new HashSet<string>(operands.OfType<string>(), StringComparer.OrdinalIgnoreCase),
+            ColumnType.Number => new HashSet<decimal>(operands.OfType<decimal>()),
+            ColumnType.Boolean => new HashSet<bool>(operands.OfType<bool>()),
+            _ => null,
+        };
+        return new PreparedClause(FilterOperator.In, null, operands, set, operands.Contains(null));
     }
 
     private static bool Matches<TRow>(TRow row, List<PreparedColumn<TRow>> prepared)
@@ -135,7 +151,7 @@ public static class GridQueryEngine
             return clause.Operator switch
             {
                 FilterOperator.IsBlank => true,
-                FilterOperator.In => clause.Operands!.Contains(null),
+                FilterOperator.In => clause.OperandsContainBlank,
                 _ => false,
             };
         }
@@ -144,8 +160,14 @@ public static class GridQueryEngine
         {
             FilterOperator.IsBlank => false,
             FilterOperator.IsNotBlank => true,
-            FilterOperator.In => clause.Operands!.Any(
-                candidate => candidate is not null && AreEqual(column, cell, candidate)),
+            FilterOperator.In => clause.OperandSet switch
+            {
+                HashSet<string> set => set.Contains((string)cell),
+                HashSet<decimal> set => set.Contains((decimal)cell),
+                HashSet<bool> set => set.Contains((bool)cell),
+                _ => clause.Operands!.Any(
+                    candidate => candidate is not null && AreEqual(column, cell, candidate)),
+            },
             FilterOperator.Equals => AreEqual(column, cell, clause.Operand!),
             FilterOperator.NotEquals => !AreEqual(column, cell, clause.Operand!),
             FilterOperator.GreaterThan => Compare(column, cell, clause.Operand!) > 0,
@@ -213,25 +235,41 @@ public static class GridQueryEngine
         foreach (var spec in sorts)
         {
             var column = Resolve(columns, spec.Column);
-            object? Key(TRow row) => NormalizeCell(column, column.Value(row));
 
             // Always ThenBy: the direction lives inside the comparer, so the fixed
             // Blank ordering is never inverted with it (ADR-0023).
             var comparer = new CellComparer(column.Name, column.Type, spec.Direction);
-            ordered = ordered is null ? rows.OrderBy(Key, comparer) : ordered.ThenBy(Key, comparer);
+            var key = KeySelector(column);
+            ordered = ordered is null ? rows.OrderBy(key, comparer) : ordered.ThenBy(key, comparer);
         }
 
-        try
+        return ordered!.ToList(); // sorts is non-empty; LINQ's OrderBy keeps ties stable (ADR-0023)
+    }
+
+    private static Func<TRow, object?> KeySelector<TRow>(ColumnInfo<TRow> column)
+    {
+        if (column.Type != ColumnType.Date)
+            return row => NormalizeCell(column, column.Value(row));
+
+        // One date runtime type per column, checked while the keys are extracted: LINQ
+        // computes every level's keys before comparing any, whereas a comparer runs only
+        // when the previous level ties — a refusal there would depend on the data it
+        // happens to sit next to (ADR-0023). Checking here also keeps the comparer
+        // exception-free, so LINQ never wraps a refusal in its own message.
+        Type? seen = null;
+        return row =>
         {
-            return ordered!.ToList(); // sorts is non-empty; LINQ's OrderBy keeps ties stable (ADR-0023)
-        }
-        catch (InvalidOperationException wrapped) when (wrapped.InnerException is InvalidOperationException refusal)
-        {
-            // LINQ wraps comparer exceptions as "Failed to compare two elements in the
-            // array"; resurface the refusal that names the column (ADR-0023).
-            ExceptionDispatchInfo.Capture(refusal).Throw();
-            throw; // unreachable
-        }
+            var cell = NormalizeCell(column, column.Value(row));
+            if (cell is not null)
+            {
+                var type = cell.GetType();
+                seen ??= type;
+                if (type != seen)
+                    throw new InvalidOperationException(
+                        $"Column '{column.Name}' (Date) mixes {seen.Name} and {type.Name}; one date type per column.");
+            }
+            return cell;
+        };
     }
 
     private sealed class CellComparer(string columnName, ColumnType type, SortDirection direction) : IComparer<object?>
@@ -293,6 +331,20 @@ public static class GridQueryEngine
 
     private static object ToDecimalChecked<TRow>(ColumnInfo<TRow> column, double value, bool isOperand)
     {
+        try
+        {
+            return (decimal)value;
+        }
+        catch (OverflowException)
+        {
+            throw Mismatch(column, value, isOperand, "is outside the range a Number can represent");
+        }
+    }
+
+    private static object ToDecimalChecked<TRow>(ColumnInfo<TRow> column, float value, bool isOperand)
+    {
+        // Cast the float directly: widening to double first manufactures phantom digits
+        // ((decimal)(double)0.1f is 0.100000001490116) that break equality and ordering.
         try
         {
             return (decimal)value;

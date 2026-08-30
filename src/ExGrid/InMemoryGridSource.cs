@@ -86,9 +86,12 @@ public sealed class InMemoryGridSource<TRow>
         // Compute first — a refusal from the engine must leave the source usable.
         var next = GridQueryEngine.Apply(_rows, columns, filter, sorts);
 
-        _columns = columns;
+        // Snapshot the lists for the same reason the constructor snapshots the rows: a
+        // Consumer reusing and mutating its list must not desync Sorts from the Window
+        // it was applied to, nor be replayed by the next unrelated change.
+        _columns = columns.ToArray();
         Filter = filter;
-        Sorts = sorts;
+        Sorts = sorts.ToArray();
         if (!next.SequenceEqual(Window))
             RowSequenceVersion++;
         Window = next;

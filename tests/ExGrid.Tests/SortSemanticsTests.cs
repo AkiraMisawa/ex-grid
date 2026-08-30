@@ -125,6 +125,31 @@ public class SortSemanticsTests
         }
     }
 
+    [Fact] // ADR-0023: 1.1f and 1.1d normalise to the same decimal, so they tie and stay stable
+    public void Float_and_double_of_the_same_value_tie_in_a_sort()
+    {
+        var sorted = Sort(
+            [new(Book: "a", Amount: 1.1d), new(Book: "b", Amount: 1.1f)],
+            new SortSpec("Amount", SortDirection.Ascending));
+
+        Assert.Equal(["a", "b"], sorted.Select(t => t.Book));
+    }
+
+    [Fact] // ADR-0023: a mixed date column is refused even when the primary level never ties
+    public void Mixed_date_types_are_refused_even_when_the_primary_level_never_ties()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => Sort(
+            [
+                new(Book: "credit", TradedOn: new DateTime(2026, 8, 30)),
+                new(Book: "rates", TradedOn: new DateOnly(2026, 8, 30)),
+            ],
+            new SortSpec("Book", SortDirection.Ascending),
+            new SortSpec("TradedOn", SortDirection.Ascending)));
+
+        Assert.Contains("TradedOn", ex.Message);
+        Assert.Contains("one date type per column", ex.Message);
+    }
+
     [Fact] // ADR-0023: a refusal raised while sorting still names the column
     public void Sorting_mixed_date_runtime_types_throws_naming_the_column()
     {

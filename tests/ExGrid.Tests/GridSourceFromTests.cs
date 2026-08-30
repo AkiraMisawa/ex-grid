@@ -46,6 +46,22 @@ public class GridSourceFromTests
             () => source.OnFilterChanged(TradeColumns.FilterOn("Book", new FilterClause(FilterOperator.IsNotBlank))));
     }
 
+    [Fact] // ADR-0011: the source snapshots the query lists — a mutated caller list must not desync or replay
+    public void Mutating_the_callers_sorts_list_does_not_leak_into_the_source()
+    {
+        var source = Bound();
+        var sorts = new List<SortSpec> { new("Amount", SortDirection.Ascending) };
+        source.OnSortChanged(sorts);
+        var version = source.RowSequenceVersion;
+
+        sorts[0] = new("Amount", SortDirection.Descending);
+
+        Assert.Equal(SortDirection.Ascending, source.Sorts[0].Direction);
+        source.OnFilterChanged(null); // an unrelated change must not replay the mutation
+        Assert.Equal([1, 2, 3], source.Window.Select(t => t.Amount));
+        Assert.Equal(version, source.RowSequenceVersion);
+    }
+
     [Fact] // ADR-0001: From performs the sorting itself and repushes the Window
     public void A_sort_change_reorders_the_window()
     {

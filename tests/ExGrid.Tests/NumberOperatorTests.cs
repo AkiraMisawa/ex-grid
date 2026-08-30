@@ -27,6 +27,14 @@ public class NumberOperatorTests
         Assert.True(AmountMatches(0.1, FilterOperator.Equals, 0.1m));
     }
 
+    [Fact] // ADR-0023: a float keeps its own precision — no phantom digits from a double detour
+    public void Float_values_do_not_gain_phantom_precision()
+    {
+        Assert.True(AmountMatches(0.1f, FilterOperator.Equals, 0.1m));
+        Assert.True(AmountMatches(0.1f, FilterOperator.Equals, 0.1));
+        Assert.True(AmountMatches(1, FilterOperator.In, values: [1f, 2f]));
+    }
+
     [Fact] // ADR-0023
     public void In_matches_any_listed_number()
     {
