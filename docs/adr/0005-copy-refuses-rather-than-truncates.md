@@ -39,6 +39,16 @@ the rationale moved from "cannot" to "pointless", **the cap can be set considera
 
 **The decision to refuse has never changed.**
 
+*(Refined while implementing: the default cap is **1,000,000 cells** — roughly tens of
+megabytes of TSV — and the Consumer can set it higher. The unit is cells, not rows, because
+width varies and it matches the count in the status area
+([ADR-0014](./0014-paste-shape-rules-and-selection-count.md)). Refusal is strictly **past**
+the cap: a selection of exactly the cap still copies, so a whole single column of exactly a
+million rows goes through. An empty selection refuses with its own reason, which Chrome
+typically renders as nothing happening. When a selection is both misaligned and past the
+cap, **the misalignment is what is reported** — overlapping ranges double-count the cell
+figure, so until the shapes line up there is no well-formed block for the cap to judge.)*
+
 ## Considered Options
 
 - **Copy up to the cap and warn** — rejected, per "why not truncate" above.

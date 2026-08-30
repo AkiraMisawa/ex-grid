@@ -1,8 +1,10 @@
 # Selection is rectangles in position space, and is dropped when the order changes
 
 Selection is held as a **list of rectangles**. The coordinates are **positions in the current
-order** (row index, column index), not row identities. **When the sort order or filter changes,
-the selection is cleared.**
+order** (row index, column index), not row identities. **It is cleared when the Row Sequence
+Version changes** — when the visible order genuinely changed, not on a sort or filter change
+that leaves the sequence identical — **and when the visible-column set changes** (the same
+mis-mapping danger on the other axis; see Consequences).
 
 Disjoint multi-range selection (Ctrl+click) is supported. **There is no cap on selection itself.**
 
@@ -76,6 +78,12 @@ meaning of the operations. Behaviour follows Excel.
 - **Copy refuses when the ranges do not line up** (Excel imposes the same restriction). Together
   with ADR-0005 there are two grounds for refusing a copy — too large, and misaligned shape.
   **Say which one when refusing.**
+  *(Refined while implementing: aligned segments are emitted in **position order** — by top
+  row for a vertical stack, by left column for a horizontal strip — never creation order,
+  which is a gesture artifact; the pasted block must read as the screen does. Ranges whose
+  spans overlap or duplicate are refused as misaligned: stacking them would emit the same
+  cells twice, and a total that is quietly wrong is the exact failure
+  [ADR-0005](./0005-copy-refuses-rather-than-truncates.md) exists to prevent.)*
 - **Bulk entry into disjoint ranges is allowed** (type a value and press Ctrl+Enter to fill every
   selected cell). Without it the main use of disjoint selection does not work.
 
@@ -160,6 +168,12 @@ disappearing, consider re-mapping and pay the three costs above knowingly.
   the version and keeps the selection, because there is no reorder to mis-map against
   ([ADR-0023](./0023-filter-and-sort-semantics-of-the-reference-implementation.md)). Server-side
   implementations follow the same rule.)*
+- **A change of the visible-column set clears the selection too** *(added while implementing
+  the selection model)*. Column coordinates are visible-column indices, so hiding, showing or
+  reordering columns re-maps that axis exactly as a row reorder re-maps the other. The Row
+  Sequence Version names row order only and cannot carry this; **the trigger is the holder's
+  own** — the grid applies View State, so it knows when the visible columns changed without
+  needing a version from the Consumer.
 - **Ctrl+Down jumps to the last row.** Excel jumps to the edge of a contiguous block, but this
   component displays query results with no blank rows in the middle, and finding a block edge
   would require the whole dataset (which the grid does not have). Jumping to the last row is the
