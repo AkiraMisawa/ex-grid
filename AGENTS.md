@@ -41,7 +41,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 21 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 22 of them. The implementation follows these |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
 **Rules:**
@@ -65,14 +65,17 @@ nix develop -c dotnet test ...
 nix develop .#browser -c node ...   # when a headless Chromium is needed
 ```
 
-- Target framework is **net10.0**
+- **Shipped packages target `net8.0`** (single-target; newer runtimes load it as-is —
+  [ADR-0022](docs/adr/0022-packages-target-net8-and-run-on-everything-newer.md)). The **SDK**
+  is .NET 10 — SDK version and target framework are independent. The code is therefore C# 12;
+  do not raise `LangVersion`
 - **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
   see it (committing is not required)
 - **Do not commit or push unless asked**
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 21 ADRs. **A new decision that follows these will not
+The principles that run through all 22 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and

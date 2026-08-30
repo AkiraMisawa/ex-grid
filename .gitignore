@@ -1,3 +1,6 @@
+# nix-direnv cache (built dev-shell profile)
+.direnv/
+
 # .NET build output
 bin/
 obj/
