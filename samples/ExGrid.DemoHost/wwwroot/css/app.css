@@ -6,6 +6,21 @@ body {
     font-family: system-ui, sans-serif;
 }
 
+.demo-nav {
+    display: flex;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #ddd;
+}
+
+.demo-nav span {
+    font-weight: 600;
+}
+
+.demo-status {
+    font-variant-numeric: tabular-nums;
+}
+
 .demo-toolbar {
     display: flex;
     gap: 0.5rem;
