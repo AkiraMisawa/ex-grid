@@ -27,6 +27,14 @@ public sealed class ColumnGeometry
     // the end.
     private readonly double[] _offsets;
 
+    // The widths as given, kept beside the offsets rather than recovered from them.
+    // `_offsets[i + 1] - _offsets[i]` is the same number only for integral widths: a
+    // running sum loses low bits, so a measured 8.55px column would come back an ulp
+    // away from what was passed in. The caller comparing "did this width move?" would
+    // then see movement on every frame and rebuild everything downstream (ADR-0003 —
+    // the rows would stop skipping, silently).
+    private readonly double[] _widths;
+
     public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx)
     {
         ArgumentNullException.ThrowIfNull(widthsPx);
@@ -43,6 +51,7 @@ public sealed class ColumnGeometry
         }
 
         _offsets = new double[widthsPx.Count + 1];
+        _widths = new double[widthsPx.Count];
         for (var i = 0; i < widthsPx.Count; i++)
         {
             var width = widthsPx[i];
@@ -51,6 +60,7 @@ public sealed class ColumnGeometry
                 throw new ArgumentOutOfRangeException(nameof(widthsPx), width,
                     $"Column {i} has a width of {width}px; a resolved width is finite and non-negative (ADR-0016).");
             }
+            _widths[i] = width;
             _offsets[i + 1] = _offsets[i] + width;
         }
 
@@ -102,11 +112,13 @@ public sealed class ColumnGeometry
         return _offsets[columnIndex];
     }
 
+    /// <summary>The width this column was built with, returned exactly — see
+    /// <c>_widths</c> for why it is not recovered from the offsets.</summary>
     public double WidthPxOf(int columnIndex)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(columnIndex);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(columnIndex, Count);
-        return _offsets[columnIndex + 1] - _offsets[columnIndex];
+        return _widths[columnIndex];
     }
 
     /// <summary>
@@ -195,6 +207,47 @@ public sealed class ColumnGeometry
     }
 
     /// <summary>
+    /// Which column a pixel belongs to, or null when there are no columns. The inverse of
+    /// <see cref="OffsetPxOf"/>, and the horizontal half of turning a mouse position into
+    /// a cell (ADR-0008): the grid reads the pointer's offset within the painted area and
+    /// asks this what was pointed at, rather than measuring elements through JavaScript,
+    /// which is deliberately not on the allowlist (ADR-0021).
+    ///
+    /// The scroll offset is an argument because of the same asymmetry the rest of this
+    /// type carries: <paramref name="contentXPx"/> is a position in the content, but a
+    /// Pinned Column covers the Viewport's left edge, so the pixels in that band belong to
+    /// the pinned column drawn over them rather than to whatever content has scrolled
+    /// underneath. Without the offset the two cannot be told apart — and at
+    /// <c>scrollLeft = 0</c> they coincide, which is exactly why testing only there proves
+    /// nothing.
+    ///
+    /// A position outside the content is clamped rather than refused: a drag that runs
+    /// past the last column keeps extending to the last column, which is what a user
+    /// dragging to the edge means.
+    /// </summary>
+    public int? ColumnAt(double contentXPx, double scrollLeftPx)
+    {
+        if (!double.IsFinite(contentXPx))
+        {
+            throw new ArgumentOutOfRangeException(nameof(contentXPx), contentXPx,
+                "A pointer position is a finite number of pixels.");
+        }
+        if (!double.IsFinite(scrollLeftPx))
+        {
+            throw new ArgumentOutOfRangeException(nameof(scrollLeftPx), scrollLeftPx,
+                "A scroll offset is a finite number of pixels.");
+        }
+        if (Count == 0)
+            return null;
+
+        var left = Math.Clamp(scrollLeftPx, 0, MaxScrollLeftPx);
+        var viewportX = contentXPx - left;
+        if (PinnedCount > 0 && viewportX < PinnedWidthPx)
+            return IndexContaining(Math.Max(0, viewportX), 0, PinnedCount);
+        return IndexContaining(contentXPx, PinnedCount, Count);
+    }
+
+    /// <summary>
     /// Whether a horizontal move is a fling — more than one Viewport at once, so every
     /// row's cells change and the row boundaries buy nothing, exactly as in the vertical
     /// case (<see cref="ViewportGeometry.IsFling"/>). Measured in pixels rather than in
@@ -206,6 +259,23 @@ public sealed class ColumnGeometry
         if (!double.IsFinite(fromScrollLeftPx) || !double.IsFinite(toScrollLeftPx))
             return false;
         return Math.Abs(toScrollLeftPx - fromScrollLeftPx) > ViewportWidthPx;
+    }
+
+    /// <summary>The column of <c>[lo, hi)</c> holding x, clamped to that run at both ends.
+    /// A zero-width column holds no pixel and is stepped over.</summary>
+    private int IndexContaining(double x, int lo, int hi)
+    {
+        var low = lo;
+        var high = hi - 1;
+        while (low < high)
+        {
+            var mid = low + ((high - low) / 2);
+            if (_offsets[mid + 1] > x)
+                high = mid;
+            else
+                low = mid + 1;
+        }
+        return low;
     }
 
     /// <summary>The first scrollable column whose right edge lies past x — the leftmost

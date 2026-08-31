@@ -122,6 +122,29 @@ public readonly record struct ViewportGeometry
     }
 
     /// <summary>
+    /// Which row a pixel belongs to, or null when there are no rows. The inverse of
+    /// <see cref="OffsetPxOf"/>, and the vertical half of turning a mouse position into a
+    /// cell (ADR-0008) — one division, for the same reason every other method here is one
+    /// multiplication (ADR-0013).
+    ///
+    /// <paramref name="contentYPx"/> is measured from the top of the first row, not from
+    /// the top of the Viewport: the caller adds the offset of whatever it painted first,
+    /// which it already knows. A position outside the content is clamped rather than
+    /// refused — a drag that runs past the last row keeps extending to the last row.
+    /// </summary>
+    public int? RowAt(double contentYPx)
+    {
+        if (!double.IsFinite(contentYPx))
+            throw new ArgumentOutOfRangeException(nameof(contentYPx), contentYPx,
+                "A pointer position is a finite number of pixels.");
+        if (TotalRowCount == 0)
+            return null;
+        // Clamped as a double before the cast: a position far past the content would
+        // otherwise overflow the conversion and land back at row 0 — the wrong end.
+        return (int)Math.Clamp(Math.Floor(contentYPx / RowHeightPx), 0, TotalRowCount - 1);
+    }
+
+    /// <summary>
     /// Whether a move from one painted position to another is a fling — more than one
     /// Viewport at once, so every row changes and the row boundaries buy nothing
     /// (ADR-0003's memoisation does not help here, measured). Placeholders are painted

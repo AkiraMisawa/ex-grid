@@ -204,9 +204,104 @@ public class ColumnGeometryTests
         Assert.Contains("could never be reached", ex.Message);
     }
 
+    [Fact] // ADR-0003: a width read back exactly, or "has this moved?" is true forever and the rows stop skipping
+    public void A_width_comes_back_exactly_as_it_was_given()
+    {
+        // Not exactly representable, and enough of them to run the sum out of low bits:
+        // recovering a width by subtracting two running sums would come back an ulp away
+        // for some of these, and a caller comparing widths to decide whether anything
+        // moved would rebuild the whole column layout on every render.
+        var widths = new double[50];
+        Array.Fill(widths, 8.55);
+        widths[7] = 33.3;
+        widths[19] = 91.7;
+        var geometry = new ColumnGeometry(widths, 0, 350);
+
+        for (var i = 0; i < widths.Length; i++)
+            Assert.Equal(widths[i], geometry.WidthPxOf(i));
+    }
+
+    [Fact] // ADR-0008: a pointer position becomes a column here, not by measuring elements
+    public void A_pixel_names_the_column_it_lands_in()
+    {
+        var geometry = Geometry();
+
+        Assert.Equal(0, geometry.ColumnAt(0, scrollLeftPx: 0));
+        Assert.Equal(0, geometry.ColumnAt(99.9, scrollLeftPx: 0));
+        // A boundary belongs to the column starting there, as a browser's own hit test does.
+        Assert.Equal(1, geometry.ColumnAt(100, scrollLeftPx: 0));
+        Assert.Equal(4, geometry.ColumnAt(499.9, scrollLeftPx: 0));
+    }
+
+    [Fact] // ADR-0008: a drag past the edge keeps extending to the edge, it does not stop meaning anything
+    public void A_pixel_outside_the_content_clamps_to_the_end_column()
+    {
+        var geometry = Geometry();
+
+        Assert.Equal(4, geometry.ColumnAt(10_000, scrollLeftPx: 150));
+        Assert.Equal(0, geometry.ColumnAt(-50, scrollLeftPx: 0));
+        // Past the conversion's range rather than merely past the content — clamping in
+        // pixels rather than after the cast is what keeps this at the far end.
+        Assert.Equal(4, geometry.ColumnAt(1e18, scrollLeftPx: 0));
+    }
+
+    [Fact] // ADR-0004: the pinned block covers those pixels, so they belong to it and not to what is underneath
+    public void A_pixel_under_the_pinned_block_names_the_pinned_column()
+    {
+        var geometry = Geometry(pinnedCount: 2);
+
+        // Scrolled to the far right: content 150-500 is on screen, but its first 200px
+        // are covered by columns 0 and 1.
+        Assert.Equal(0, geometry.ColumnAt(150, scrollLeftPx: 150));
+        Assert.Equal(1, geometry.ColumnAt(250, scrollLeftPx: 150));
+        // Where the pinned block ends the content takes over again.
+        Assert.Equal(3, geometry.ColumnAt(350, scrollLeftPx: 150));
+
+        // The content at 160 is column 1's territory, and column 1 is nowhere near the
+        // pointer: the pinned block is drawn over it. Answering from the content alone
+        // would select a column the user cannot see.
+        Assert.Equal(0, geometry.ColumnAt(160, scrollLeftPx: 150));
+    }
+
+    [Fact] // ADR-0004: at rest the two readings coincide, which is why testing only there proves nothing
+    public void Unscrolled_the_pinned_columns_stand_where_their_content_is()
+    {
+        var geometry = Geometry(pinnedCount: 2);
+
+        Assert.Equal(0, geometry.ColumnAt(50, scrollLeftPx: 0));
+        Assert.Equal(1, geometry.ColumnAt(150, scrollLeftPx: 0));
+        Assert.Equal(2, geometry.ColumnAt(250, scrollLeftPx: 0));
+    }
+
+    [Fact] // ADR-0004: pin everything and every pixel on screen is a pinned one
+    public void With_everything_pinned_every_pixel_is_pinned()
+    {
+        var geometry = Geometry(pinnedCount: 5);
+
+        Assert.Equal(0, geometry.ColumnAt(150, scrollLeftPx: 150));
+        Assert.Equal(2, geometry.ColumnAt(400, scrollLeftPx: 150));
+    }
+
+    [Fact] // A zero-width column occupies no pixel, so no pixel can name it
+    public void A_zero_width_column_is_stepped_over()
+    {
+        var geometry = new ColumnGeometry([100, 0, 100], 0, 350);
+
+        Assert.Equal(0, geometry.ColumnAt(99, scrollLeftPx: 0));
+        Assert.Equal(2, geometry.ColumnAt(100, scrollLeftPx: 0));
+    }
+
+    [Fact] // A grid with no columns has nothing to point at — not an error, just nothing
+    public void There_is_no_column_when_there_are_none()
+    {
+        Assert.Null(new ColumnGeometry([], 0, 350).ColumnAt(0, scrollLeftPx: 0));
+    }
+
     [Fact] // Rather than be quietly wrong: nonsense geometry is refused by name
     public void Invalid_geometry_is_refused()
     {
+        Assert.Throws<ArgumentOutOfRangeException>(() => Geometry().ColumnAt(double.NaN, 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Geometry().ColumnAt(0, double.NaN));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ColumnGeometry([100, -1], 0, 350));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ColumnGeometry([100, double.NaN], 0, 350));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ColumnGeometry(FiveEqualColumns, 6, 350));

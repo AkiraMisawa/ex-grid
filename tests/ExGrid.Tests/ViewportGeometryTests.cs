@@ -121,9 +121,39 @@ public class ViewportGeometryTests
         Assert.Contains("page the result", ex.Message);
     }
 
+    [Fact] // ADR-0008: a pointer position becomes a row here, not by measuring elements
+    public void A_pixel_names_the_row_it_lands_in()
+    {
+        var geometry = Geometry(1000);
+
+        Assert.Equal(0, geometry.RowAt(0));
+        Assert.Equal(0, geometry.RowAt(19.9));
+        Assert.Equal(1, geometry.RowAt(20));
+        Assert.Equal(7, geometry.RowAt(150));
+    }
+
+    [Fact] // ADR-0008: a drag past the last row keeps extending to the last row
+    public void A_pixel_outside_the_content_clamps_to_the_end_row()
+    {
+        var geometry = Geometry(10);
+
+        Assert.Equal(9, geometry.RowAt(10_000));
+        Assert.Equal(0, geometry.RowAt(-50));
+        // Past what the cast itself can hold: clamped in pixels first, or this would
+        // overflow and come back as row 0 — the wrong end entirely.
+        Assert.Equal(9, geometry.RowAt(1e18));
+    }
+
+    [Fact] // A result with no rows has nothing to point at — not an error, just nothing
+    public void There_is_no_row_when_there_are_none()
+    {
+        Assert.Null(Geometry(0).RowAt(0));
+    }
+
     [Fact] // Rather than be quietly wrong: nonsense geometry is refused by name
     public void Invalid_geometry_is_refused()
     {
+        Assert.Throws<ArgumentOutOfRangeException>(() => Geometry(10).RowAt(double.NaN));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ViewportGeometry(0, 100, 10));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ViewportGeometry(20, 0, 10));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ViewportGeometry(double.NaN, 100, 10));
