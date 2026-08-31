@@ -32,6 +32,22 @@ body {
     margin-bottom: 2rem;
 }
 
+/* What a Template Column paints on the cells page. Nothing here turns pointer events
+   back on, so clicking the bar still selects the cell as any other click does — only a
+   control that wants its own click takes ex-interactive (ADR-0020). */
+.demo-bar {
+    height: 10px;
+    margin-top: 9px;
+    background: rgba(128, 128, 128, 0.2);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.demo-bar-fill {
+    height: 100%;
+    background: #3c78d8;
+}
+
 #blazor-error-ui {
     display: none;
     position: fixed;

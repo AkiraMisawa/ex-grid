@@ -1,4 +1,6 @@
+using ExGrid.Cells;
 using ExGrid.Columns;
+using ExGrid.Rows;
 
 namespace ExGrid.DemoHost;
 
@@ -14,6 +16,20 @@ public sealed class DemoTrade
     public decimal Notional;
     public DateTime TradeDate;
     public bool Confirmed;
+}
+
+/// <summary>
+/// A row for the cells page: a book's limit usage, as a position screen would hold it.
+/// The Row Kind is stored on the row here because this Consumer computes its own
+/// subtotals — the grid is only told which role each row plays (ADR-0024).
+/// </summary>
+public sealed class DemoPosition
+{
+    public string Book = "";
+    public decimal CloseOfBusiness;
+    public decimal Intraday;
+    public double LimitUsed;
+    public RowKind Kind;
 }
 
 /// <summary>
@@ -84,6 +100,63 @@ public static class DemoData
 
     private static readonly string[] Books = ["Rates", "Credit", "FX", "Equity", "Commodity"];
     private static readonly string[] Traders = ["Ito", "Marsh", "Okafor", "Petrov", "Silva"];
+
+    /// <summary>
+    /// Group headers, their detail rows and a grand total, in the order they are painted
+    /// — the Consumer computed all of it, including the aggregates (ADR-0001 / ADR-0024).
+    /// </summary>
+    public static readonly DemoPosition[] Positions = BuildPositions();
+
+    private static DemoPosition[] BuildPositions()
+    {
+        var rows = new List<DemoPosition>();
+        decimal totalCob = 0, totalIntraday = 0;
+        foreach (var region in new[] { "EMEA", "Americas" })
+        {
+            var groupCob = 0m;
+            var groupIntraday = 0m;
+            var details = new List<DemoPosition>();
+            for (var b = 0; b < Books.Length; b++)
+            {
+                var book = Books[b];
+                var index = b + (region == "EMEA" ? 0 : 5);
+                var cob = 1_000m * (index + 3) + (index * 137m);
+                var intraday = cob + (index % 3 == 0 ? -420.5m : 318.25m);
+                groupCob += cob;
+                groupIntraday += intraday;
+                details.Add(new DemoPosition
+                {
+                    Book = $"{region} · {book}",
+                    CloseOfBusiness = cob,
+                    Intraday = intraday,
+                    LimitUsed = Math.Min(1, 0.25 + (index * 0.09)),
+                    Kind = RowKind.Detail,
+                });
+            }
+
+            rows.Add(new DemoPosition
+            {
+                Book = region,
+                CloseOfBusiness = groupCob,
+                Intraday = groupIntraday,
+                LimitUsed = 0,
+                Kind = RowKind.Group,
+            });
+            rows.AddRange(details);
+            totalCob += groupCob;
+            totalIntraday += groupIntraday;
+        }
+
+        rows.Add(new DemoPosition
+        {
+            Book = "All books",
+            CloseOfBusiness = totalCob,
+            Intraday = totalIntraday,
+            LimitUsed = 0,
+            Kind = RowKind.Total,
+        });
+        return [.. rows];
+    }
 
     /// <summary>Deterministic rows so a reload paints the same data.</summary>
     public static DemoTrade[] Window(int count, int seed)
