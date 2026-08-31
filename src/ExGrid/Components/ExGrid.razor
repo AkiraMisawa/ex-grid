@@ -215,12 +215,13 @@
     /// JavaScript, which is deliberately not on the allowlist (ADR-0021). The header
     /// takes the first <see cref="RowHeight"/> of it, so the rows get what is left.
     ///
-    /// This is the element's outer size, and a classic (non-overlay) scrollbar is drawn
-    /// inside it: on a platform that reserves room for one, the rows get about 15px less
-    /// than the arithmetic assumes. The slice stays conservative, so no gap appears — but
-    /// the last row's bottom edge can sit behind the horizontal scrollbar. The grid
-    /// cannot measure a scrollbar without a layout read, so a Consumer that needs the
-    /// row band exact adds the allowance here.
+    /// This is the element's <em>outer</em> size, and a classic (non-overlay) scrollbar
+    /// is drawn inside it. The allowance is not the Consumer's to make: the same
+    /// application ships to macOS, where a scrollbar takes nothing, and to Windows, where
+    /// it takes about 15px, so any constant written here is wrong for half its users.
+    /// The browser reports what its scrollbars actually take and the grid subtracts it
+    /// (<see cref="ViewportBox"/>, ADR-0013/0021); this parameter keeps meaning the size
+    /// of the element, which is also what the CSS is written from.
     /// </summary>
     [Parameter] public double ViewportHeight { get; set; } = DefaultViewportHeightPx;
 
@@ -353,6 +354,14 @@
     private double _scrollLeftPx;
     private ViewportGeometry _geometry = new(DefaultRowHeightPx, DefaultViewportHeightPx - DefaultRowHeightPx, 0);
     private ColumnStyles _columnStyles = new(new ColumnGeometry([], 0, DefaultViewportWidthPx));
+
+    // What the scrollbars take out of the declared Viewport, as the browser reports it
+    // (ADR-0021). Zero until it says otherwise, which is both the right assumption —
+    // `overflow: auto` shows no bar until the content overflows — and what an overlay
+    // scrollbar platform reports forever.
+    private double _gutterWidthPx;
+    private double _gutterHeightPx;
+    private ViewportBox _box = ViewportBox.Declared(DefaultViewportWidthPx, DefaultViewportHeightPx);
     private RowRange? _visible;
     private ColumnRange? _scrollable;
 
@@ -755,10 +764,28 @@
     /// settling — so the two can never disagree.</summary>
     private void PrepareRender()
     {
+        // What the Consumer declared, minus what the browser says its scrollbars take out
+        // of it (ADR-0013). Both gutters are 0 until the browser reports otherwise, so on
+        // a machine with overlay scrollbars this is the declared size exactly and nothing
+        // below it changed.
+        _box = new ViewportBox(ViewportWidth, ViewportHeight, _gutterWidthPx, _gutterHeightPx);
+        if (_box.VisibleHeightPx <= RowHeight)
+        {
+            // The declared height was checked against RowHeight when it arrived; this is
+            // the same rule after the scrollbar has taken its strip, and it can only fail
+            // on a platform that draws one. Rather than hand ViewportGeometry a negative
+            // band and have it complain about a number the Consumer never wrote.
+            throw new InvalidOperationException(
+                $"A horizontal scrollbar takes {_gutterHeightPx}px out of the {ViewportHeight}px Viewport, " +
+                $"leaving {_box.VisibleHeightPx}px — not enough for the header's own {RowHeight}px, let alone a " +
+                "row. Declare a Viewport tall enough to hold its own scrollbar; on a platform with overlay " +
+                "scrollbars this same grid would have painted (ADR-0013).");
+        }
+
         // The header stands on the first row height of the Viewport, so the rows get the
         // rest. Everything downstream — how many rows fit, where a scroll offset lands —
         // is arithmetic over that remainder (ADR-0013).
-        _geometry = new ViewportGeometry(RowHeight, ViewportHeight - RowHeight, _total ?? _window.Count);
+        _geometry = new ViewportGeometry(RowHeight, _box.VisibleHeightPx - RowHeight, _total ?? _window.Count);
         _visible = _geometry.SliceAt(_scrollTopPx);
         ObserveAutoWidths();
         ResolveColumnGeometry();
@@ -855,7 +882,7 @@
         var geometry = _columnStyles.Geometry;
         if (geometry.Count == Columns.Count
             && geometry.PinnedCount == PinnedColumnCount
-            && geometry.ViewportWidthPx == ViewportWidth)
+            && geometry.ViewportWidthPx == _box.VisibleWidthPx)
         {
             var moved = false;
             for (var c = 0; !moved && c < Columns.Count; c++)
@@ -867,7 +894,7 @@
         var widths = new double[Columns.Count];
         for (var c = 0; c < Columns.Count; c++)
             widths[c] = Columns[c].Width.ResolveWidthPx(_autoWidths[c]);
-        _columnStyles = new ColumnStyles(new ColumnGeometry(widths, PinnedColumnCount, ViewportWidth));
+        _columnStyles = new ColumnStyles(new ColumnGeometry(widths, PinnedColumnCount, _box.VisibleWidthPx));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -1161,6 +1188,51 @@
     /// hear each other's keys (ADR-0018). The listener has already prevented the default:
     /// what is left is to say what the key meant.
     /// </summary>
+    /// <summary>
+    /// What the browser says its scrollbars take out of the declared Viewport, reported
+    /// whenever it changes (ADR-0021). Both numbers are 0 on a platform with overlay
+    /// scrollbars, and 0 anywhere until the content overflows.
+    ///
+    /// The frame between the bar appearing and this landing is painted from the old
+    /// visible size: one frame of a slice that is one row too generous, on a grid that
+    /// has just gained a scrollbar. That is accepted rather than pre-empted — the
+    /// alternative is a layout read of our own before every paint, which is the round
+    /// trip the whole geometry exists to avoid (ADR-0013).
+    /// </summary>
+    [JSInvokable]
+    public async Task OnScrollbarGutterChangedAsync(double widthPx, double heightPx)
+    {
+        // Nothing here is trusted: it crosses the JS boundary, and a NaN would travel
+        // silently into every offset the grid computes.
+        if (_disposed
+            || !double.IsFinite(widthPx) || !double.IsFinite(heightPx)
+            || widthPx < 0 || heightPx < 0
+            || (widthPx == _gutterWidthPx && heightPx == _gutterHeightPx))
+        {
+            return;
+        }
+
+        // A bar that appeared can have covered the Focus where it stands. Revealing is a
+        // no-op when it is already whole on screen, so this costs nothing in the ordinary
+        // case and keeps ADR-0012 true in the one that is not.
+        var shrank = widthPx > _gutterWidthPx || heightPx > _gutterHeightPx;
+        _gutterWidthPx = widthPx;
+        _gutterHeightPx = heightPx;
+        try
+        {
+            PrepareRender();
+            _revealFocus = _revealFocus || shrank;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Not a UI event, so nothing else would surface this: an unusable Viewport
+            // would be swallowed into the browser console and the grid would sit there
+            // painting the old geometry.
+            await DispatchExceptionAsync(ex);
+        }
+    }
+
     [JSInvokable]
     public async Task OnKeyAsync(string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary)
     {
