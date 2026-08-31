@@ -414,7 +414,10 @@
 
     public override Task SetParametersAsync(ParameterView parameters)
     {
-        var hasSource = parameters.TryGetValue<IGridSource<TRow>?>(nameof(Source), out var source) && source is not null;
+        // Supplied, not non-null: a Consumer whose Source is built in OnInitializedAsync
+        // passes Source="@_source" with _source still null on the first render, and that
+        // is a pull grid waiting for its source — not a Consumer who passed nothing.
+        var sourceSupplied = parameters.TryGetValue<IGridSource<TRow>?>(nameof(Source), out _);
         var supplied = new List<string>();
         foreach (var name in SourceReplaces)
         {
@@ -422,7 +425,7 @@
                 supplied.Add(name);
         }
 
-        if (hasSource && supplied.Count > 0)
+        if (sourceSupplied && supplied.Count > 0)
         {
             throw new InvalidOperationException(
                 $"Source was passed together with {string.Join(", ", supplied)}. A Source holds those itself " +
@@ -432,7 +435,7 @@
         // Neither is a Consumer that forgot: an empty grid is written as Window="[]",
         // never as nothing at all. Left unchecked it paints an empty result that looks
         // exactly like a loaded one.
-        if (!hasSource && supplied.Count == 0 && _boundSource is null && !_bound)
+        if (!sourceSupplied && supplied.Count == 0 && !_bound)
         {
             throw new InvalidOperationException(
                 "Neither Window nor Source was passed. Pass the Window to paint (push), or a Grid Source to " +
@@ -502,8 +505,20 @@
         {
             if (_disposed)
                 return;
-            ApplyState();
-            StateHasChanged();
+            try
+            {
+                ApplyState();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                // ApplyState validates what it was handed (ADR-0001), and a Source
+                // landing an answer is exactly the case that arrives off the renderer's
+                // thread. Discarded with the task, the refusal would vanish and the grid
+                // would go on painting the previous state — which is the failure the
+                // validation exists to prevent, arrived at by another route.
+                _ = DispatchExceptionAsync(ex);
+            }
         });
     }
 
@@ -1134,9 +1149,16 @@
         {
             if (_disposed || !_placeholderMode)
                 return;
-            _placeholderMode = false;
-            PrepareRender();
-            StateHasChanged();
+            try
+            {
+                _placeholderMode = false;
+                PrepareRender();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                _ = DispatchExceptionAsync(ex);
+            }
         });
     }
 

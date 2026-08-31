@@ -99,6 +99,48 @@ public class GridSourceBindingTests : GridTestContext
         Assert.Contains("Source", error.Message);
     }
 
+    [Fact] // ADR-0001: a Source built in OnInitializedAsync is null on the first render
+    public void A_source_supplied_as_null_is_a_pull_grid_waiting_for_it()
+    {
+        // Source="@_source" with _source not assigned yet. It was supplied, so this is a
+        // pull grid — not a Consumer who passed nothing — and it paints an empty result
+        // until the source arrives.
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, (IGridSource<TestRow>?)null)
+            .Add(g => g.Columns, Columns()));
+
+        Assert.Empty(cut.FindComponents<ExGridRow<TestRow>>());
+
+        var source = new TestSource();
+        source.Push(TestRows.Window(), totalCount: 3);
+        cut.Render(ps => ps.Add(g => g.Source, source).Add(g => g.Columns, cut.Instance.Columns));
+
+        Assert.Equal(3, cut.FindComponents<ExGridRow<TestRow>>().Count);
+    }
+
+    [Fact] // ADR-0001: what a Source refuses must not vanish because it arrived off-thread
+    public async Task A_source_pushing_an_invalid_window_surfaces_its_refusal()
+    {
+        var source = new TestSource();
+        source.Push(TestRows.Window(), totalCount: 3);
+        var cut = Render<ExGrid<TestRow>>(ps => ps.Add(g => g.Source, source).Add(g => g.Columns, Columns()));
+
+        // The same row instance twice: Row Identity cannot tell them apart (ADR-0003),
+        // and the grid refuses the Window rather than paint it.
+        var duplicated = TestRows.Window();
+        duplicated[1] = duplicated[0];
+
+        // Pushed from the source and nothing else: no parameter change follows, so if the
+        // refusal were discarded with the task it would leave no trace at all and the
+        // grid would go on painting the previous Window.
+        source.Push(duplicated, totalCount: 3);
+
+        var raised = await Renderer.UnhandledException.WaitAsync(
+            TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        Assert.IsType<InvalidOperationException>(raised);
+        Assert.Contains("same row instance", raised.Message);
+    }
+
     [Fact] // ADR-0018: a replaced Source is released — it must not go on repainting a grid
     public void Replacing_the_source_releases_the_old_one()
     {
