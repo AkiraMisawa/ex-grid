@@ -159,6 +159,15 @@ cell editor, the loading indicator. **It renders and calls back; it does not dec
 behaviour.
 _Avoid_: theme, skin (those name appearance only), template
 
+**Primary Modifier**:
+The modifier key that means "add to what is selected" — Ctrl+click adding a range, Ctrl+A
+selecting everything. **Control everywhere, and Command as well on an Apple platform**; the
+Meta key is the OS's own elsewhere (Win+Arrow snaps a window), so the grid does not answer to
+it there. Which platform it is can only be answered by the browser, so it is asked once and
+the keyboard and the mouse read the same answer
+([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)).
+_Avoid_: Ctrl (that names one platform's key), Cmd, accel key
+
 **Cell Editor**:
 The single input floated over the cell being edited. **Never placed inside the row** — that
 breaks row memoisation
