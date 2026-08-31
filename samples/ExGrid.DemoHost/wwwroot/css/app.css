@@ -1,0 +1,28 @@
+/* Host-side styling only. The grid's own classes are ex- prefixed and come from
+   _content/ExGrid/ex-grid.css; nothing here may touch them (ADR-0018). */
+body {
+    margin: 0;
+    padding: 1rem 2rem 3rem;
+    font-family: system-ui, sans-serif;
+}
+
+.demo-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.demo-pane {
+    max-width: 60rem;
+    margin-bottom: 2rem;
+}
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.6rem 1.25rem;
+    background: lightyellow;
+}

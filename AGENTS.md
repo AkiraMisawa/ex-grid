@@ -1,7 +1,7 @@
 # ExGrid — guide for AI agents
 
-An Excel-like grid component for Blazor. **The specification is settled; there is no
-implementation yet.**
+An Excel-like grid component for Blazor. **The specification is settled; implementation
+is underway** (pure-logic core, first component layer, and the demo host exist).
 
 The products are **ExGrid** (display-oriented, the one that is specified) and **ExSheet**
 (edit-oriented, later). `Ex` is a prefix that names the claim — Excel-like operability — in the

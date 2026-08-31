@@ -18,11 +18,21 @@ ex-grid/                      ← one repository
 │   ├── ExGrid.Tests/         ← pure logic (xUnit)
 │   ├── ExGrid.Components/    ← component (bUnit)
 │   └── ExGrid.Browser/       ← browser (CDP driver)
+├── samples/
+│   └── ExGrid.DemoHost/      ← runnable Consumer. not shipped
 └── spikes/render-bench/      ← render-cost measurement. disposable
 ```
 
 A Consumer that only wants the grid references only `ExGrid`. **Splitting the repository is not
 needed for that.**
+
+*(Refined while implementing: `samples/ExGrid.DemoHost` was added — a standalone WASM host
+that exercises the component as a real Consumer, serves manual verification, and is the
+fixture `tests/ExGrid.Browser` drives. It follows the same one-directional reference rule as
+every Consumer — it references `ExGrid` and nothing references it — and, unlike the spikes, it
+is in the solution and under the repository-wide build properties, because letting the browser
+layer's fixture rot would break that layer. It is not shipped, so ADR-0022's `net8.0` pin does
+not apply to it; it targets the SDK-bundled ASP.NET Core runtime.)*
 
 ## Reasons
 
