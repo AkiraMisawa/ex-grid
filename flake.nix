@@ -33,14 +33,24 @@
           '';
         };
 
-        # Headless browser for reproducing client-side errors in the spike.
-        # Timing numbers from here are NOT representative (software rendering) —
-        # real measurements must come from the user's own browser.
+        # The layer-3 (browser) tests: Node for Playwright, and dotnet because
+        # Playwright starts the DemoHost itself.
+        #
+        # Chromium only where nixpkgs builds it. It has no aarch64-darwin
+        # build, and listing it unconditionally made this shell fail to
+        # EVALUATE on an Apple Silicon Mac — so `.#browser` had never once been
+        # usable on the machine this project is developed on. Playwright is
+        # pointed at the Chrome that is already installed (`channel: 'chrome'`),
+        # which is what makes that acceptable rather than merely convenient:
+        # nothing here downloads a browser.
         browser = pkgs.mkShell {
-          packages = [ pkgs.chromium pkgs.nodejs ];
+          packages = [ dotnet pkgs.nodejs ]
+            ++ pkgs.lib.optional pkgs.stdenv.hostPlatform.isLinux pkgs.chromium;
           shellHook = ''
-            export CHROMIUM_BIN="${pkgs.chromium}/bin/chromium"
-            echo "chromium: $CHROMIUM_BIN"
+            export DOTNET_ROOT=${dotnet}/share/dotnet
+            export DOTNET_CLI_TELEMETRY_OPTOUT=1
+            export DOTNET_NOLOGO=1
+            echo "node $(node --version), dotnet $(dotnet --version)"
           '';
         };
       });
