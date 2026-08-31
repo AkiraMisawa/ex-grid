@@ -106,6 +106,31 @@ them. The column menu entry in
 would require the Consumer to compute the maximum width server-side and pass it in; that is
 overkill for now.
 
+## Resizing by dragging — open
+
+This ADR **assumes** dragging three times over — "widen the column by dragging", "a dragged
+width is persisted as Fixed", "`MinWidth` is the lower bound for dragging" — and **nowhere
+specifies the gesture itself**. That is not a decision made here; it is a decision nobody has
+made yet. Its own ADR settles at least these:
+
+- **May a drag exceed `MaxWidth`?** This ADR calls `MinWidth` the lower bound outright, but
+  gives `MaxWidth` a second job — it is *what gives `####` meaning* — and never says whether it
+  also stops a drag. Letting a drag past it means a column the user widened can never hash;
+  stopping the drag there means the user cannot see a long value by widening, which is one of
+  the three escapes from `####` listed above.
+- **Whether it can be done inside the allowlist.** It looks like it can: `pointermove` carries
+  `clientX`, C# already holds the current resolved width, and
+  `new width = width at drag start + (clientX − clientX at drag start)` needs no layout read, so
+  [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) would not be touched. **That is
+  a reading of the APIs, not a measurement** — nothing has been built or tried.
+- **Dragging an Auto column makes it Fixed.** The table above reads that way (a dragged width is
+  the user's intent and is persisted), so a drag ends the column's Auto-ness. Worth stating
+  outright rather than leaving to be inferred from a table.
+
+*(The gesture for **reordering** columns is unspecified in the same way; the note is in
+[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md), which is
+the ADR that already treats reordering as a trigger without saying how it is performed.)*
+
 ## Columns appearing and disappearing, and saved views
 
 Data-derived columns come and go at runtime. Representing them is not a problem — **Column is a

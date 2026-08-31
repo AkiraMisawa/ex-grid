@@ -259,6 +259,16 @@ row**, the type (which decides the filter UI and the default format), and the wi
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
 _Avoid_: field, column definition
 
+**Pinned Column**:
+A column held against the Viewport's edge while the others pan under it — Excel's frozen panes.
+It stands **outside virtualisation and is always painted**, so it is the landmark that survives
+panning sideways, and it **costs directly**: pin enough columns and the resident cell count is
+back where virtualisation found it
+([ADR-0004](./docs/adr/0004-cap-the-cells-touched-per-frame.md)). Which columns are pinned is
+**View State**, not a property of the Column — combined with the column order the Consumer owns,
+"the leading N" expresses it.
+_Avoid_: frozen, sticky, locked (those name the mechanism or Excel's wording, not the state)
+
 **Row Kind**:
 What a row represents — detail / group / total. **Distinct from Cell State**: that names the
 state of a value per cell, this names the role of a row. Needed to paint group rows differently

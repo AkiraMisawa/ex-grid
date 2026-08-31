@@ -93,3 +93,28 @@ about what expands.
   only CSS knew would drift the painted rows away from the arithmetic in exactly the way this
   ADR is about. `ViewportHeight` is therefore a C# parameter emitted inline, like the row
   height, and the two together are the whole of the vertical geometry.
+- **And so is its width** *(refined while implementing horizontal virtualisation)*. Which columns
+  are on screen is the same question on the other axis, and `getBoundingClientRect` is off the
+  allowlist for the same reason. `ViewportWidth` is a C# parameter alongside the height.
+- **`ViewportHeight` includes the header, which is exactly one row tall** *(refined while
+  implementing horizontal virtualisation)*. The header moved inside the one scroll container so
+  it can be held by `position: sticky` beside the Pinned Columns
+  ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)), which makes it part of the scrollable
+  content: it occupies the content's first row height **and** covers the Viewport's first row
+  height. The two cancel, so `first row = floor(scrollTop / RowHeight)` is unchanged and the rows
+  simply get `ViewportHeight − RowHeight` to fill. Reusing the row height rather than adding a
+  header-height parameter is a deliberate simplification, and **the thing that would overturn it
+  is tiered headers** — a header several rows deep stops being one row tall, and the meaning of
+  `ViewportHeight` changes with it. That is recorded as open in ADR-0004.
+  *(One consequence is left standing rather than hidden: the header band spends one row height of
+  the browser's 2^25 px scrolling budget, so the practical ceiling is one row below the
+  `MaxScrollHeightPx` guard — about 1.19 million rows either way, and paging carries anything
+  longer.)*
+- **"Scroll to this row" is arithmetic here too, and it is not symmetric with the column axis**
+  *(refined while implementing)*. `ViewportGeometry.ScrollTopToReveal` and
+  `ColumnGeometry.ScrollLeftToReveal` exist so that nothing outside them adds or subtracts a
+  header height or a pinned width — the same reason the Auto/Fixed branch lives in one place
+  ([ADR-0016](./0016-column-width-and-overflow.md)). The header cancels out, as above; a Pinned
+  Column does **not**, because it covers the Viewport's edge without occupying anything ahead of
+  the content, so its width has to come off the offset or the revealed column lands underneath
+  it. The browser's `scrollIntoView()` knows neither, which is why it is not used.

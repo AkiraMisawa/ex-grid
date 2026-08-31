@@ -158,6 +158,25 @@ to the grid" and "committed belongs to the Consumer".
 **When to revisit:** if in real use rows are added and removed often enough that selection keeps
 disappearing, consider re-mapping and pay the three costs above knowingly.
 
+## Reordering columns — the gesture is open
+
+This ADR treats a change of the visible-column set as **a trigger**: it clears the selection,
+because the column axis re-maps exactly as the row axis does. `CONTEXT.md` lists column order as
+part of View State, which the Consumer owns and persists. **Between the two, nothing says how a
+user reorders a column** — that decision has not been made.
+
+What its own ADR has to settle:
+
+- **The gesture.** Dragging a header, the column menu, or only through the Consumer's own UI.
+  (The resizing gesture is open in the same way; the note is in
+  [ADR-0016](./0016-column-width-and-overflow.md).)
+- **Whether dragging in and out of the pinned block expresses pinning.** Pinning is "the leading
+  N columns" ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)), so dragging a column across
+  that boundary is a natural way to pin it — and it would mean one gesture changing two pieces of
+  View State at once.
+- **That it clears the selection is already decided here**, whichever gesture is chosen. A new
+  ADR must not quietly reopen it.
+
 ## Consequences
 
 - **Selection is cleared when the Row Sequence Version changes — and the version names the
