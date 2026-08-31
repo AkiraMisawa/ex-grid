@@ -1,0 +1,73 @@
+@page "/wide"
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <span>Wide</span>
+</nav>
+
+<h1>Wide — 100,000 rows × 100 columns</h1>
+
+<p>
+    Both axes are virtualised (ADR-0004): only the rows and the columns the Viewport
+    reaches are in the DOM, and the first two columns are pinned, so they stay against
+    the left edge while the rest pans under them. Unvirtualised this page is the
+    2,000-cell case ADR-0004 measured as unpaintable at 60fps — the button turns
+    horizontal virtualisation off so the two can be compared on the same data.
+</p>
+
+<div class="demo-toolbar">
+    <button id="toggle-virtualise" @onclick="ToggleVirtualise">
+        Horizontal virtualisation: @(_virtualiseColumns ? "on" : "off") — turn it @(_virtualiseColumns ? "off" : "on")
+    </button>
+    <button id="toggle-pinned" @onclick="TogglePinned">
+        Pinned columns: @_pinnedColumnCount — @(_pinnedColumnCount == 0 ? "pin two" : "unpin")
+    </button>
+</div>
+
+<p class="demo-status">
+    Window: rows @_windowStart–@(_windowStart + _window.Count - 1) of @Total,
+    @DemoData.WideColumns.Length columns.
+</p>
+
+<ExGrid TRow="DemoWideRow"
+        Window="_window"
+        WindowStart="_windowStart"
+        TotalCount="Total"
+        Columns="DemoData.WideColumns"
+        RowHeight="28"
+        ViewportHeight="600"
+        ViewportWidth="900"
+        PinnedColumnCount="_pinnedColumnCount"
+        VirtualiseColumns="_virtualiseColumns"
+        OnRangeNeeded="OnRangeNeeded" />
+
+@code {
+    private const int Total = 100_000;
+
+    /// <summary>Rows either side of the Viewport to answer with, so ordinary scrolling
+    /// does not ask again immediately (ADR-0001: read-ahead belongs to the Consumer).</summary>
+    private const int ReadAhead = 60;
+
+    private static readonly DemoWideRow[] AllRows = DemoData.WideRows(Total);
+
+    private IReadOnlyList<DemoWideRow> _window = [];
+    private int _windowStart;
+    private bool _virtualiseColumns = true;
+    private int _pinnedColumnCount = 2;
+
+    // Answered on the spot rather than after a delay: this page is here to compare frame
+    // times across the two settings, and a fake latency would be the thing being timed.
+    // The Virtualised page shows the waiting case.
+    private void OnRangeNeeded(RowRange range)
+    {
+        var start = Math.Max(0, range.Start - ReadAhead);
+        var end = Math.Min(Total, range.Start + range.Count + ReadAhead);
+        _windowStart = start;
+        _window = AllRows[start..end];
+    }
+
+    private void ToggleVirtualise() => _virtualiseColumns = !_virtualiseColumns;
+
+    private void TogglePinned() => _pinnedColumnCount = _pinnedColumnCount == 0 ? 2 : 0;
+}
