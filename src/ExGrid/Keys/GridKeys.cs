@@ -16,10 +16,13 @@ namespace ExGrid.Keys;
 /// is taken and nothing happens, which is visible — rather than a key meaning something
 /// different in the two places, which is not.</para>
 ///
-/// <para>The canonical form is <c>[Control+][Shift+][Alt+]{key}</c>, with Meta folded into
-/// Control because the gesture a Mac user makes for "add a range" is Cmd (ADR-0012) and
-/// both platforms are Chromium (ADR-0017). <b>The mirror of this rule is in
-/// <c>ex-grid.js</c></b> — the two must move together.</para>
+/// <para>The canonical form is <c>[Control+][Shift+][Alt+]{key}</c>. Control is the
+/// <b>primary modifier</b>: always the Control key, and the Meta key as well <b>only where
+/// Meta is what a user reaches for</b> — Command on an Apple keyboard (ADR-0012). On
+/// Windows and Linux the Meta key belongs to the OS, and folding it there would make
+/// Win+Arrow or Super+A move the selection on the days the window manager does not grab
+/// them first. <b>The mirror of this rule is in <c>ex-grid.js</c></b> — the two must move
+/// together.</para>
 /// </summary>
 public static class GridKeys
 {
@@ -44,18 +47,30 @@ public static class GridKeys
     /// <see cref="GridKeyKind.None"/> — including keys nobody has heard of, because the
     /// browser is free to send <c>Unidentified</c>, a dead key, or an IME's own.
     /// </summary>
-    public static GridKeyAction Resolve(string? key, bool ctrl, bool shift, bool alt, bool meta)
-        => key is null ? GridKeyAction.None : Resolve(Canonical(key, ctrl, shift, alt, meta));
+    /// <param name="metaIsPrimary">Whether the Meta key is this platform's primary
+    /// modifier — true on an Apple platform, where it is Command. Only the browser can
+    /// answer it, so it is asked once and passed in.</param>
+    public static GridKeyAction Resolve(
+        string? key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary)
+        => key is null ? GridKeyAction.None : Resolve(Canonical(key, ctrl, shift, alt, meta, metaIsPrimary));
 
     /// <summary>The canonical form of one key press. Its mirror is in <c>ex-grid.js</c>.</summary>
-    public static string Canonical(string key, bool ctrl, bool shift, bool alt, bool meta)
+    public static string Canonical(string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary)
     {
-        // Meta folds into Control before anything else, so Cmd+A and Ctrl+A are one entry
-        // in the table rather than two that could drift apart.
-        var control = ctrl || meta;
-        if (!control && !shift && !alt)
+        // The primary modifier folds into Control before anything else, so Cmd+A on a Mac
+        // and Ctrl+A everywhere are one entry in the table rather than two that could
+        // drift apart. Control is always primary — Ctrl+A works on a Mac too; Meta is
+        // primary only where it is Command.
+        var control = ctrl || (meta && metaIsPrimary);
+        // Held where it is NOT primary, Meta still has to appear in the form, or Win+Down
+        // would canonicalise to a bare "ArrowDown" and move the selection under a chord
+        // aimed at the window manager. No entry in the table carries it, which is the
+        // point: a key held with the OS's own modifier is not the grid's.
+        var foreign = meta && !metaIsPrimary;
+        if (!control && !foreign && !shift && !alt)
             return key;
-        var prefix = (control ? "Control+" : "") + (shift ? "Shift+" : "") + (alt ? "Alt+" : "");
+        var prefix = (control ? "Control+" : "") + (foreign ? "Meta+" : "")
+            + (shift ? "Shift+" : "") + (alt ? "Alt+" : "");
         return prefix + key;
     }
 

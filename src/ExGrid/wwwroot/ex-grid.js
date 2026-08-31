@@ -18,6 +18,14 @@
 export function attach(root, scroller, core, takenKeys) {
     const taken = new Set(takenKeys);
 
+    // Which modifier the user reaches for. Command on an Apple keyboard; on Windows and
+    // Linux the Meta key is the OS's — Win+Arrow snaps a window, Super+A opens a shell —
+    // and a grid that folded it into Control would act on the ones the window manager
+    // happened not to grab. Only the browser can answer this, so it is answered here and
+    // handed to C#, which stays the authority on what the key then means.
+    const platform = navigator.userAgentData?.platform ?? navigator.platform ?? '';
+    const metaIsPrimary = /mac|iphone|ipad|ipod/i.test(platform);
+
     const onKeyDown = (event) => {
         if (!core) {
             return;
@@ -48,15 +56,20 @@ export function attach(root, scroller, core, takenKeys) {
         // key MEANS is resolved on the C# side, from the raw fields sent below, so a
         // disagreement between the two shows up as a key that does nothing rather than as
         // a key that does something else.
-        const control = event.ctrlKey || event.metaKey;
-        const prefix = (control ? 'Control+' : '') + (event.shiftKey ? 'Shift+' : '') + (event.altKey ? 'Alt+' : '');
+        const control = event.ctrlKey || (event.metaKey && metaIsPrimary);
+        // Meta held where it is not primary still appears in the form, so it cannot pass
+        // for an unmodified key: nothing in the set carries it, and the browser keeps it.
+        const foreign = event.metaKey && !metaIsPrimary;
+        const prefix = (control ? 'Control+' : '') + (foreign ? 'Meta+' : '')
+            + (event.shiftKey ? 'Shift+' : '') + (event.altKey ? 'Alt+' : '');
         if (!taken.has(prefix + event.key)) {
             return;
         }
 
         event.preventDefault();
         event.stopPropagation();
-        core.invokeMethodAsync('OnKeyAsync', event.key, event.ctrlKey, event.shiftKey, event.altKey, event.metaKey)
+        core.invokeMethodAsync(
+            'OnKeyAsync', event.key, event.ctrlKey, event.shiftKey, event.altKey, event.metaKey, metaIsPrimary)
             .catch((error) => {
                 // Disposal can overtake a key in flight, and that is not a fault. Anything
                 // else is reported: a swallowed failure here means keys that silently stop
@@ -77,6 +90,9 @@ export function attach(root, scroller, core, takenKeys) {
         // calls means two round-trips with the browser free to process another scroll
         // event in between — the rows would then be painted from one moment's offset and
         // the columns from another's. One call is one snapshot.
+        // Read once at attach: the mouse path needs the same answer, and Ctrl+click and
+        // Cmd+click have to agree with Ctrl+A and Cmd+A about which one adds a range.
+        metaIsPrimary: () => metaIsPrimary,
         getScrollOffset: () => (scroller
             ? { top: scroller.scrollTop, left: scroller.scrollLeft }
             : { top: 0, left: 0 }),

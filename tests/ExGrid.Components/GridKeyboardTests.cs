@@ -40,8 +40,9 @@ public class GridKeyboardTests : GridTestContext
 
     private static Task PressAsync(
         IRenderedComponent<ExGrid<TestRow>> cut, string key,
-        bool ctrl = false, bool shift = false, bool alt = false, bool meta = false)
-        => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, alt, meta));
+        bool ctrl = false, bool shift = false, bool alt = false,
+        bool meta = false, bool metaIsPrimary = true)
+        => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, alt, meta, metaIsPrimary));
 
     private static Task ClickAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
         => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y });
@@ -87,16 +88,23 @@ public class GridKeyboardTests : GridTestContext
         Assert.Equal(200, selection!.CellCount); // the whole column
     }
 
-    [Fact] // ADR-0012: Meta counts as Ctrl — the gesture a Mac user makes
-    public async Task Meta_behaves_as_ctrl()
+    [Fact] // ADR-0012: Cmd is the primary modifier where it is Cmd, and the OS's elsewhere
+    public async Task Meta_moves_to_the_edge_only_where_it_is_command()
     {
         GridSelection? selection = null;
         var cut = RenderGrid(s => selection = s);
         await ClickAsync(cut, 50, 10);
 
-        await PressAsync(cut, "ArrowDown", meta: true);
-
+        await PressAsync(cut, "ArrowDown", meta: true, metaIsPrimary: true);
         Assert.Equal(199, selection!.Focus.Row);
+
+        await PressAsync(cut, "ArrowUp", ctrl: true);
+        Assert.Equal(0, selection!.Focus.Row);
+
+        // On Windows and Linux this chord belongs to the window manager, and a grid that
+        // acted on the ones it did not grab would move under a gesture aimed elsewhere.
+        await PressAsync(cut, "ArrowDown", meta: true, metaIsPrimary: false);
+        Assert.Equal(0, selection!.Focus.Row);
     }
 
     [Fact] // ADR-0012: Enter runs down columns and Tab across rows, and the range stays selected

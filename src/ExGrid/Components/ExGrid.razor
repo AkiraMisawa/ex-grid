@@ -332,6 +332,12 @@
     private ElementReference _root;
     private ElementReference _scroller;
     private DotNetObjectReference<ExGrid<TRow>>? _self;
+
+    // Whether the Meta key is this platform's primary modifier — Command on an Apple
+    // keyboard, and the OS's own key everywhere else (ADR-0012). Only the browser can
+    // answer it; until it has, Control alone is primary, which is right on every platform
+    // and merely incomplete on one.
+    private bool _metaIsPrimary;
     private bool _revealFocus;
     private IJSObjectReference? _module;
     private IJSObjectReference? _scrollHandle;
@@ -895,6 +901,7 @@
             }
 
             _scrollHandle = handle;
+            _metaIsPrimary = await handle.InvokeAsync<bool>("metaIsPrimary");
 
             // The scroller can already be somewhere: a reload restores the offsets
             // without raising a scroll event, and events arriving before the module
@@ -1033,7 +1040,11 @@
         // range being built and leave the other ranges standing, which is ExtendTo. Meta
         // counts as Ctrl so the gesture is the one a Mac user actually makes — both are
         // Chromium (ADR-0017).
-        var toggling = !e.ShiftKey && (e.CtrlKey || e.MetaKey);
+        // The same primary modifier the keyboard uses: Ctrl+click everywhere, and
+        // Cmd+click where Cmd is what a user reaches for. Folding Meta unconditionally
+        // would make Win+click and Super+click add ranges on platforms where that chord
+        // belongs to the window manager (ADR-0012).
+        var toggling = !e.ShiftKey && (e.CtrlKey || (e.MetaKey && _metaIsPrimary));
         var next = e.ShiftKey ? current.ExtendTo(cell, extent)
             : toggling ? current.ToggleRange(cell, extent)
             : current.Click(cell, extent);
@@ -1142,11 +1153,11 @@
     /// what is left is to say what the key meant.
     /// </summary>
     [JSInvokable]
-    public async Task OnKeyAsync(string key, bool ctrl, bool shift, bool alt, bool meta)
+    public async Task OnKeyAsync(string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary)
     {
         if (_disposed)
             return;
-        var action = GridKeys.Resolve(key, ctrl, shift, alt, meta);
+        var action = GridKeys.Resolve(key, ctrl, shift, alt, meta, metaIsPrimary);
         switch (action.Kind)
         {
             case GridKeyKind.None:

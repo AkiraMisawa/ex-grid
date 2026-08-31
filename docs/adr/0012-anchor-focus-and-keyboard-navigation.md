@@ -173,8 +173,18 @@ rules refuse. Open.
 - **The mouse resolves to these same three transitions, and three details had to be settled**
   *(added while implementing the mouse)*. Shift outranks Ctrl, so Ctrl+Shift+click extends the
   range being built and leaves the others standing — which is what Excel does and what
-  `ExtendTo` already means. **Meta counts as Ctrl**, because the gesture a Mac user makes for
-  "add a range" is Cmd+click and both platforms are Chromium (ADR-0017). And **a toggle-off does
+  `ExtendTo` already means. **Meta counts as Ctrl where Meta is Command**, because the gesture
+  a Mac user makes for "add a range" is Cmd+click. *(Corrected while wiring the keyboard: the
+  original said "Meta counts as Ctrl" flatly, which is wrong off an Apple keyboard. **On
+  Windows and Linux the Meta key is the OS's** — Win+Arrow snaps a window, Super+A opens a
+  shell — and folding it there means the grid acts on whichever of those chords the window
+  manager happens not to grab. So Control is the primary modifier everywhere, Meta is primary
+  only on an Apple platform, and a Meta held anywhere else keeps the key **out** of the table
+  rather than letting it pass for an unmodified one: a Win+Down that canonicalised to a bare
+  ArrowDown would move the selection under a gesture aimed at the desktop. Which platform it
+  is can only be answered by the browser, so it is asked once at attach and passed in — the
+  keyboard and the mouse read the same answer, or Ctrl+click and Ctrl+A would disagree about
+  which modifier adds a range.)* And **a toggle-off does
   not begin a drag**: it leaves Anchor and Focus detached, so dragging on from there would append
   a range nobody asked for. A drag is not a transition of its own — mouse down is `Click` and the
   moves are `ExtendTo`, as `GridSelection` says.

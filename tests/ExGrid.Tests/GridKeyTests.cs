@@ -11,8 +11,10 @@ namespace ExGrid.Tests;
 /// </summary>
 public class GridKeyTests
 {
-    private static GridKeyAction Key(string key, bool ctrl = false, bool shift = false, bool alt = false, bool meta = false)
-        => GridKeys.Resolve(key, ctrl, shift, alt, meta);
+    private static GridKeyAction Key(
+        string key, bool ctrl = false, bool shift = false, bool alt = false,
+        bool meta = false, bool metaIsPrimary = true)
+        => GridKeys.Resolve(key, ctrl, shift, alt, meta, metaIsPrimary);
 
     [Theory] // ADR-0012: the four forms of an arrow key
     [InlineData(false, false, GridKeyKind.Move)]
@@ -27,13 +29,40 @@ public class GridKeyTests
         Assert.Equal(GridDirection.Down, action.Direction);
     }
 
-    [Fact] // ADR-0012: Meta counts as Ctrl — Cmd+A is the gesture a Mac user makes
-    public void Meta_folds_into_control()
+    [Fact] // ADR-0012: where Meta is Command, it is the modifier a user reaches for
+    public void Meta_is_primary_on_an_apple_platform()
     {
         Assert.Equal(GridKeyKind.SelectAll, Key("a", meta: true).Kind);
-        Assert.Equal(GridKeyKind.SelectAll, Key("a", ctrl: true).Kind);
         Assert.Equal(GridKeyKind.MoveToEdge, Key("ArrowUp", meta: true).Kind);
-        Assert.Equal("Control+ArrowUp", GridKeys.Canonical("ArrowUp", ctrl: false, shift: false, alt: false, meta: true));
+        Assert.Equal(
+            "Control+ArrowUp",
+            GridKeys.Canonical("ArrowUp", ctrl: false, shift: false, alt: false, meta: true, metaIsPrimary: true));
+    }
+
+    [Fact] // ADR-0012: elsewhere the Meta key is the OS's, and the grid does not take it
+    public void Meta_is_not_primary_anywhere_else()
+    {
+        // Win+ArrowUp snaps a window, Super+A opens a shell. On the days the window
+        // manager does not grab them first, a grid that folded Meta into Control would
+        // move the selection under a gesture aimed at the desktop.
+        Assert.Equal(GridKeyKind.None, Key("a", meta: true, metaIsPrimary: false).Kind);
+        Assert.Equal(GridKeyKind.None, Key("ArrowUp", meta: true, metaIsPrimary: false).Kind);
+        // And it stays in the form rather than disappearing from it: canonicalised to a
+        // bare "ArrowUp", Win+Down would move the selection under a chord aimed at the
+        // window manager. Nothing in the table carries "Meta+".
+        Assert.Equal(
+            "Meta+ArrowUp",
+            GridKeys.Canonical("ArrowUp", ctrl: false, shift: false, alt: false, meta: true, metaIsPrimary: false));
+        Assert.Equal(GridKeyKind.None, Key("Enter", meta: true, metaIsPrimary: false).Kind);
+        Assert.Equal(GridKeyKind.None, Key(" ", meta: true, metaIsPrimary: false).Kind);
+    }
+
+    [Fact] // Control is primary everywhere — Ctrl+A works on a Mac too
+    public void Control_is_primary_on_every_platform()
+    {
+        Assert.Equal(GridKeyKind.SelectAll, Key("a", ctrl: true, metaIsPrimary: true).Kind);
+        Assert.Equal(GridKeyKind.SelectAll, Key("a", ctrl: true, metaIsPrimary: false).Kind);
+        Assert.Equal(GridKeyKind.MoveToEdge, Key("ArrowUp", ctrl: true, metaIsPrimary: false).Kind);
     }
 
     [Fact] // ADR-0012: Enter runs down columns, Tab runs across rows, Shift runs both backwards
@@ -87,7 +116,7 @@ public class GridKeyTests
         Assert.Equal(GridKeyKind.None, Key("Unidentified").Kind);
         Assert.Equal(GridKeyKind.None, Key("Dead").Kind);
         Assert.Equal(GridKeyKind.None, Key("Process", ctrl: true, shift: true, alt: true).Kind);
-        Assert.Equal(GridKeyKind.None, GridKeys.Resolve(null, false, false, false, false).Kind);
+        Assert.Equal(GridKeyKind.None, GridKeys.Resolve(null, false, false, false, false, false).Kind);
         Assert.Equal(GridKeyKind.None, Key("").Kind);
     }
 
@@ -107,7 +136,9 @@ public class GridKeyTests
             if (canonical.EndsWith("+ ", StringComparison.Ordinal))
                 key = " ";
 
-            Assert.NotEqual(GridKeyKind.None, GridKeys.Resolve(key, ctrl, shift, alt, meta: false).Kind);
+            Assert.NotEqual(
+                GridKeyKind.None,
+                GridKeys.Resolve(key, ctrl, shift, alt, meta: false, metaIsPrimary: false).Kind);
         }
     }
 }

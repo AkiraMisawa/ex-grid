@@ -45,6 +45,11 @@ internal sealed class GridJSInterop
     {
         var module = context.JSInterop.SetupModule(ModulePath);
         var handle = module.SetupModule("attach", _ => true);
+        // Asked once at attach: which modifier this platform's users reach for (ADR-0012).
+        // The tests drive OnKeyAsync directly and pass it per key, so the answer here only
+        // has to exist.
+        var metaIsPrimary = handle.Setup<bool>("metaIsPrimary");
+        metaIsPrimary.SetResult(false);
         var offset = handle.Setup<ScrollOffset>("getScrollOffset");
         offset.SetResult(default);
         var setOffset = handle.SetupVoid("setScrollOffset", _ => true);
