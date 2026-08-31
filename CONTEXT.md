@@ -54,6 +54,17 @@ The rectangle of rows × columns the grid is actually painting. Render cost is d
 fits in here, not by the size of the data.
 _Avoid_: visible area, visible range, window
 
+**Scrollbar Gutter**:
+How much of the declared Viewport its own scrollbars occupy. A classic scrollbar is drawn
+**inside** the box the element declares and takes about 15px off that axis; an overlay scrollbar
+(macOS) takes nothing. It is neither assumed nor measured — **the browser reports it when it
+changes**, and the grid subtracts it before any geometry is computed
+([ADR-0013](./docs/adr/0013-fixed-row-height.md),
+[ADR-0021](./docs/adr/0021-javascript-is-allowlisted-not-minimised.md)). `ViewportWidth` and
+`ViewportHeight` keep meaning the **outer** size.
+_Avoid_: scrollbar width, padding, inset (the width is per platform and per user setting, and the
+strip is not padding — it belongs to the browser)
+
 **View State**:
 The non-data settings a user has applied to a screen — column widths, column order, pinned
 columns, sort order, filter conditions. **Being serialisable for external persistence is a

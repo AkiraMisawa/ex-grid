@@ -26,8 +26,11 @@ Chrome, Overwrite, Caret, …); do not translate those.
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **three** permitted uses:
-capture-phase `keydown`, reading/setting scroll offsets, and the clipboard.
+shows the Blazor-side approach is too slow. There are currently **four** permitted uses:
+capture-phase `keydown`, reading/setting scroll offsets, the clipboard, and a `ResizeObserver`
+reporting the Scrollbar Gutter. The last one turns on a distinction worth keeping: the grid never
+**measures** (a synchronous read it performs, on the path to a paint), it is **told** when a
+number the browser already knows changes.
 
 **Anything else needs a new ADR.** See
 [ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what
@@ -41,7 +44,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 23 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 26 of them. The implementation follows these |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
 **Rules:**
@@ -62,7 +65,7 @@ not re-derive it.
 ```sh
 nix develop -c dotnet build ...
 nix develop -c dotnet test ...
-nix develop .#browser -c node ...   # when a headless Chromium is needed
+nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Browser
 ```
 
 - **Shipped packages target `net8.0`** (single-target; newer runtimes load it as-is —
@@ -75,7 +78,7 @@ nix develop .#browser -c node ...   # when a headless Chromium is needed
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 23 ADRs. **A new decision that follows these will not
+The principles that run through all 26 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -122,23 +125,38 @@ the kind that still look correct on screen**, so review will not catch them.
 - **CSS classes take an `ex-` prefix; JS is a module returning per-instance handles.**
   `spikes/render-bench` uses `.r` `.c` `.sel` and `window.bench` as a **bad example** on
   purpose (it is disposable). Do not carry that into product code (ADR-0018).
+- **A scrollbar takes about 15px out of the Viewport on Windows and Linux, and 0 on macOS.**
+  Every geometry bug this causes is invisible on the development machine. The gutter is
+  reported by the browser and subtracted in `ViewportBox` (ADR-0013 / 0021) — never assumed,
+  never measured once at attach (`overflow: auto` shows no bar until the content overflows,
+  so attach is the moment the answer is 0).
 
 ### Environment
 
 - **`pkill -f "Bench.Host"` kills the calling shell**, because the pattern matches the shell's
   own command line. Stop the spike host with `fuser -k 5199/tcp`.
+- **Headless Chrome on macOS keeps overlay scrollbars on the horizontal axis** whatever the CSS
+  asks for, so a scrollbar test written there passes without testing anything. Layer 3 runs
+  headed for that reason (ADR-0026).
 
 ## Tests
 
 **Three layers. All three gate. Performance does not gate.**
 
-| Layer | Tool | Covers |
-|---|---|---|
-| 1. Pure logic | xUnit | Selection rectangle arithmetic, Anchor/Focus, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
-| 2. Component | bUnit (no browser) | Which rows get rendered, and **whether row memoisation actually skips** (count renders) |
-| 3. Browser | CDP driver | Capture-phase keys, clipboard, popovers, multiple-instance independence |
+| Layer | Where | Tool | Covers |
+|---|---|---|---|
+| 1. Pure logic | `tests/ExGrid.Tests` | xUnit | Selection rectangle arithmetic, Anchor/Focus, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
+| 2. Component | `tests/ExGrid.Components` | bUnit (no browser) | Which rows get rendered, and **whether row memoisation actually skips** (count renders) |
+| 3. Browser | `tests/ExGrid.Browser` | Playwright | The Scrollbar Gutter; and to come: capture-phase keys, clipboard, popovers, multiple-instance independence |
 
 **Rules:**
+
+- **Layer 3 does not run automatically, and layers 1 and 2 cannot cover it.** `npm ci &&
+  npx playwright test` in `tests/ExGrid.Browser`, or `nix develop .#browser -c npx playwright
+  test`. It needs Chrome installed and starts the DemoHost itself; there is no CI, so it is run
+  by hand — and **deliberately on Windows or Linux**, where the platform's own scrollbars occupy
+  layout and the assertions are not tautologies. `tests/ExGrid.Browser/README.md` says what it
+  asserts and what it deliberately does not.
 
 - **Put the ADR number in the test name.** A failure then says which decision was violated.
   ```csharp

@@ -90,6 +90,8 @@ may be too aggressive for a sheet.
   [ADR-0018](./0018-multiple-instances-must-be-independent.md) /
   [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)). Sharing a repository and mixing
   dependencies are different things. **Enforce it structurally through project reference
-  direction.**
+  direction.** *(A test project is not one of the shipped packages, and the browser layer takes
+  an npm dependency of its own — [ADR-0026](./0026-layer-three-runs-on-playwright-against-the-installed-chrome.md).
+  Nothing in `src/` knows that directory exists; the rule this bullet states is about what ships.)*
 - **The repository name stays `ex-grid`.** When ExSheet is actually built, whether an umbrella
   name is wanted can be reconsidered then. No single umbrella noun is invented now.

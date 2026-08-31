@@ -115,15 +115,43 @@ about what expands.
   longer. `ViewportGeometry` knows only about rows and cannot see this, so **the component checks
   the spacer's real height itself**: recording the edge in prose and letting the browser clamp the
   last row away in silence is the failure this ceiling exists to refuse.)*
-- **`ViewportHeight` and `ViewportWidth` are the element's outer size, scrollbars included**
-  *(refined while implementing selection)*. Where the platform draws classic scrollbars rather
-  than overlay ones, roughly 15px of the height goes to the horizontal bar and the rows get that
-  much less than the arithmetic assumes. Nothing breaks — the painted slice is conservative, so no
-  gap appears — but the last row's bottom edge can sit behind the bar, which is a live concern for
-  "the Focus is always visible" ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)) once
-  the keyboard is wired up. The grid cannot measure a scrollbar without the layout read the
-  allowlist refuses, so **the allowance is the Consumer's to add**, and this is stated on the
-  parameters rather than guessed at.
+- **`ViewportHeight` and `ViewportWidth` are the element's outer size, and the browser tells the
+  grid what its scrollbars take out of it** *(refined while implementing selection; the second
+  half rewritten once the keyboard existed — see below)*. Where the platform draws classic
+  scrollbars rather than overlay ones, roughly 15px of each axis goes to its bar: the element
+  stays the size it declared and its **`clientWidth` shrinks**. The parameters keep meaning the
+  outer size, because that is what the CSS is written from; the **Scrollbar Gutter** is subtracted
+  once, in `ViewportBox`, and both geometry types are built from what is left.
+
+  > **The first version of this bullet said the allowance was the Consumer's to add**, on the
+  > grounds that the grid cannot measure a scrollbar without the layout read the allowlist
+  > refuses. Wiring up the keyboard showed both halves to be wrong. The Consumer cannot make the
+  > allowance: **the same application ships to macOS, where the gutter is 0, and to Windows, where
+  > it is about 15px**, so any constant written into `ViewportHeight` is wrong for half its users
+  > — and the bullet's own "nothing breaks" was already false, because with the Focus at the last
+  > row and the last column, 15px of it sits behind each bar and
+  > [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)'s "the Focus must always be
+  > visible" is broken on two platforms out of three. Invisibly so on the third, which is where
+  > this component is developed. And the grid does not measure anything: the browser **reports**
+  > the gutter when it changes, which is a different mechanism from a layout read and is
+  > allowlisted separately ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
+  > CSS could not have closed this: `scrollbar-gutter: stable` reserves the vertical strip only,
+  > and does nothing at all where the scrollbars are overlays.
+
+- **The gutter's own arithmetic cannot feed itself, and one frame is spent behind it.** The
+  scrollable area (`.ex-spacer`) is sized from the total row and column count, never from the
+  Viewport, so a narrower visible box does not resize the content that made the bar appear —
+  there is no loop for the observation to chase, and nothing writes to the DOM inside the
+  callback, so the browser's own "ResizeObserver loop" warning has no way to arise either.
+  What is accepted is the other end: **the frame between a bar appearing and the report landing
+  is painted from the old visible size**, one slice too generous on a grid that has just gained a
+  scrollbar. The alternative is a layout read of our own before every paint, which is the round
+  trip this whole ADR exists to avoid.
+- **A scrollbar can leave a Viewport with nothing to paint in, and that is refused by name.** A
+  declared height is checked against `RowHeight` when it arrives; the same rule is checked again
+  after the gutter comes off, and the message names the scrollbar rather than the height — the
+  number the Consumer actually wrote is a perfectly ordinary one until a bar is drawn inside it,
+  and on a Mac the same grid would have painted.
 - **"Scroll to this row" is arithmetic here too, and it is not symmetric with the column axis**
   *(refined while implementing)*. `ViewportGeometry.ScrollTopToReveal` and
   `ColumnGeometry.ScrollLeftToReveal` exist so that nothing outside them adds or subtracts a

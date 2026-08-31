@@ -193,7 +193,15 @@ rules refuse. Open.
   Enter and Tab belong to the core. While editing, only the arrows change hands according to
   Overwrite / Caret; Enter and Tab are always the core's (commit, then move by these rules).
 - **The Focus must always be visible.** If cycling or Ctrl+arrow takes it out of the Viewport, the
-  grid scrolls to it.
+  grid scrolls to it. *(Refined once the keyboard existed: "visible" means inside what the
+  **scrollbars left readable**, not inside the box the Consumer declared. Where the platform draws
+  classic scrollbars they take about 15px out of that box, and the first implementation
+  right-aligned the Focus against the declared edge — putting 15px of it behind the bar on Windows
+  and Linux at Ctrl+End, on both axes. On macOS, where the bars are overlays and take nothing,
+  this was not visible at all. The gutter is now reported by the browser and comes off the
+  geometry before any of these transitions are computed
+  ([ADR-0013](./0013-fixed-row-height.md), [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)),
+  and `tests/ExGrid.Browser/scrollbar.spec.mjs` is what holds it.)*
 - **When the Focus leaves the Window, a Range Request is raised**
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). A range taller than the
   Window will move the Focus onto rows that have not been fetched. The Focus cell is a Placeholder
