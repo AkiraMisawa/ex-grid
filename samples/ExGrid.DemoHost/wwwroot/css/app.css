@@ -48,6 +48,16 @@ body {
     background: #3c78d8;
 }
 
+/* A Consumer's own control inside a Template Column. It keeps the keyboard while it has
+   focus — the grid's keys stay out (ADR-0020). */
+.demo-note {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    border: 1px solid rgba(128, 128, 128, 0.4);
+    border-radius: 2px;
+}
+
 #blazor-error-ui {
     display: none;
     position: fixed;

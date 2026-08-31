@@ -242,6 +242,20 @@ public class GridKeyboardTests : GridTestContext
         Assert.Equal(0, raised);
     }
 
+    [Fact] // ADR-0012: a transition that changes nothing must not arm a scroll for later
+    public async Task A_key_that_moves_nothing_leaves_no_reveal_behind()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 10);          // row 0
+        await PressAsync(cut, "ArrowUp");       // already at the top: nothing moves
+
+        // A reveal armed for a render that never happened would fire on the next one —
+        // here, a wheel scroll five hundred rows away, yanked back to the Focus.
+        await ScrollToAsync(cut.Find(".ex-scroller"), top: 10_000, left: 0);
+
+        Assert.Empty(Js.ScrolledTo);
+    }
+
     [Fact] // ADR-0010: a key the core has not claimed changes nothing
     public async Task An_unclaimed_key_is_ignored()
     {

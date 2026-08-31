@@ -120,6 +120,22 @@ nothing — visible — rather than a key that means something different in each
 asks for: in Caret the arrows come out of the set and reach the editor; in Overwrite they
 stay in it.
 
+**And the listener only claims a key aimed at the grid itself.** Capturing on the root
+means it also sees keys meant for anything focusable inside — a Consumer's control in a
+Template Column, one of the grid's own action buttons ([ADR-0020](./0020-action-and-template-columns.md)),
+and one day the editor. Taken from there, Space types nothing, the arrows move the
+selection instead of a caret and Ctrl+A selects the grid instead of the field's text. So
+the guard is `event.target === root`: **with no editor and no Interactive mode yet, "the
+focus is on something inside" is the whole of the case where the core does not
+arbitrate.** When those modes arrive they refine exactly this line — the core keeps Esc,
+Enter and Tab while a descendant holds the focus, and the arrows according to the mode,
+which is the table at the top of this section.
+
+**A composing IME is left alone too** (`isComposing`, and the `229` keyCode older browsers
+report). Mid-composition Enter, Escape and the arrows choose and commit a candidate; taking
+them there breaks typing in any language that needs an IME, and moves the grid under a
+half-finished word.
+
 ## Consequences
 
 - **The core carries a small amount of JavaScript.** A capture-phase listener can only be attached

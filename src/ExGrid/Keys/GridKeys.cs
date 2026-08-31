@@ -99,7 +99,10 @@ public static class GridKeys
         table["Shift+Tab"] = new(GridKeyKind.Cycle, Order: CycleOrder.RowMajor, Backward: true);
 
         table["Control+a"] = new(GridKeyKind.SelectAll);
-        table["Control+A"] = new(GridKeyKind.SelectAll);   // Ctrl+Shift+A arrives as this on some layouts
+        // With CapsLock on the browser reports an uppercase key and no Shift, which would
+        // otherwise be a Ctrl+A that does nothing. Ctrl+Shift+A is a different key press
+        // and canonicalises to "Control+Shift+A", which the core does not claim.
+        table["Control+A"] = new(GridKeyKind.SelectAll);
         table["Control+ "] = new(GridKeyKind.SelectWholeColumns);
         table["Shift+ "] = new(GridKeyKind.SelectWholeRows);
         table[" "] = new(GridKeyKind.Engage);

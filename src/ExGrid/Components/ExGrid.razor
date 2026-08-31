@@ -886,7 +886,10 @@
                 "attach", _root, _scroller, _self, GridKeys.Taken);
             if (_disposed)
             {
-                // Disposal overtook the attach; nobody else holds this handle now.
+                // Disposal overtook the attach; nobody else holds this handle now. Its own
+                // dispose still has to run — releasing the .NET reference does not remove
+                // the listener it attached (ADR-0018).
+                await handle.InvokeVoidAsync("dispose");
                 await handle.DisposeAsync();
                 return;
             }
@@ -1100,7 +1103,7 @@
         _suppressRender = false;
     }
 
-    private void Apply(GridSelection next)
+    private bool Apply(GridSelection next)
     {
         // Dragging within one cell raises an event per frame and changes nothing, so it
         // renders nothing. This is the only case the root skips a render for — the rows
@@ -1109,10 +1112,11 @@
         if (next.Equals(_selection.Selection))
         {
             _suppressRender = true;
-            return;
+            return false;
         }
         _selection = _selection.With(next);
         _selectionChanged = true;
+        return true;
     }
 
     protected override bool ShouldRender()
@@ -1122,11 +1126,13 @@
         return !suppressed;
     }
 
-    private Task RaiseActionAsync(GridActionEventArgs<TRow> args)
+    private async Task RaiseActionAsync(GridActionEventArgs<TRow> args)
     {
-        if (_disposed || !OnAction.HasDelegate)
-            return Task.CompletedTask;
-        return OnAction.InvokeAsync(args);
+        if (_disposed)
+            return;
+        if (OnAction.HasDelegate)
+            await OnAction.InvokeAsync(args);
+        await ReclaimFocusAsync();
     }
 
     /// <summary>
@@ -1200,10 +1206,14 @@
             _ => current,
         };
 
-        Apply(next);
-        // Whatever the transition did, the Focus has to end up on screen (ADR-0012). Done
-        // after the render, where the geometry it is measured against is the one that was
-        // just painted.
+        // Only when something moved. A transition that changed nothing — ArrowUp at the
+        // first row, Home at the first column — suppresses the render, and a reveal armed
+        // for a render that never happens fires on whatever renders next: a wheel scroll
+        // five hundred rows away would be yanked back to the Focus mid-gesture.
+        if (!Apply(next))
+            return;
+        // The Focus has to end up on screen (ADR-0012), measured after the render against
+        // the geometry that was actually painted.
         _revealFocus = true;
         StateHasChanged();
     }
@@ -1227,6 +1237,26 @@
         if (slice < 0 || slice >= _window.Count)
             return;
         await RaiseActionAsync(new GridActionEventArgs<TRow>(_window[slice], column.Name, column.Actions[0].Name));
+    }
+
+    /// <summary>
+    /// Called after one of the grid's own action buttons fires. Clicking a button gives it
+    /// DOM focus, and the keys then belong to it rather than to the grid — which is right
+    /// while it is focused and wrong the moment it has finished. Handing the keyboard back
+    /// keeps "click a button, then carry on with the arrows" working. A Consumer's own
+    /// control in a Template Column is left alone: it may well want to keep the focus.
+    /// </summary>
+    private async Task ReclaimFocusAsync()
+    {
+        if (_disposed)
+            return;
+        try
+        {
+            await _root.FocusAsync(preventScroll: true);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
     }
 
     private async Task LeaveAsync()
@@ -1364,8 +1394,6 @@
     {
         _disposed = true;
         _settleTimer?.Dispose();
-        _self?.Dispose();
-        _self = null;
         if (_boundSource is not null)
         {
             _boundSource.StateChanged -= OnSourceStateChanged;
@@ -1385,6 +1413,15 @@
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
         {
+        }
+        finally
+        {
+            // After the handle's own dispose has removed the listener, never before: a
+            // key arriving in between would invoke a reference that has already been
+            // released, and the module would report it as a fault when it is only a race
+            // with teardown.
+            _self?.Dispose();
+            _self = null;
         }
     }
 

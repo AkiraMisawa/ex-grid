@@ -52,6 +52,16 @@
         <div class="demo-bar-fill" style="width: @(((int)(row.LimitUsed * 100)).ToString())%"></div>
     </div>;
 
+    /// <summary>
+    /// The other half of ADR-0020's seam: a control the Consumer owns. `ex-interactive`
+    /// turns pointer events back on for it, and the grid stops the mouse at the cell, so
+    /// clicking it does not move the selection — and because it then holds the keyboard,
+    /// the grid's own keys stay out of its way. Typing, arrows and Ctrl+A all belong to
+    /// the field while it has focus.
+    /// </summary>
+    private static readonly RenderFragment<DemoPosition> NoteField = row => @<input
+        class="ex-interactive demo-note" placeholder="note" aria-label="@($"Note for {row.Book}")" />;
+
     private static readonly GridColumn<DemoPosition>[] Columns =
     [
         new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(180))),
@@ -61,6 +71,8 @@
         // never the template (ADR-0020).
         GridColumn<DemoPosition>.TemplateColumn("LimitUsed", ColumnType.Number, r => r.LimitUsed, LimitBar,
             header: "Limit used", width: new ColumnWidthSpec(ColumnWidth.Fixed(160))),
+        GridColumn<DemoPosition>.TemplateColumn("Note", ColumnType.Text, r => r.Book, NoteField,
+            header: "Note", width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
         GridColumn<DemoPosition>.ActionColumn("Actions", [new GridAction("open", "Open")]),
     ];
 

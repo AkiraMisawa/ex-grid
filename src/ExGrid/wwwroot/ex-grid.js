@@ -22,6 +22,26 @@ export function attach(root, scroller, core, takenKeys) {
         if (!core) {
             return;
         }
+        // Only when the grid itself holds the keyboard. The listener captures on the
+        // root, so it sees keys aimed at anything inside it too — a Consumer's control in
+        // a Template Column, or one of the grid's own action buttons, both of which take
+        // focus when clicked (ADR-0020). Taken from there, Space would type nothing,
+        // arrows would move the selection instead of a caret and Ctrl+A would select the
+        // grid instead of the field's text.
+        //
+        // This is the mode-free form of ADR-0010's table: with no editor and no
+        // Interactive mode yet, "something inside has focus" is the whole of the case
+        // where the core does not arbitrate. When those modes arrive the set of keys
+        // becomes mode-dependent and this guard is what they refine.
+        if (event.target !== root) {
+            return;
+        }
+        // Mid-composition an IME owns Enter, Escape and the arrows — they choose and
+        // commit a candidate. Taking them there breaks typing in any language that needs
+        // one, and the grid would move under a half-finished word.
+        if (event.isComposing || event.keyCode === 229) {
+            return;
+        }
         // The mirror of GridKeys.Canonical — the two must move together. It exists here
         // only to decide whether to take the key: preventDefault has to happen now, and
         // invokeMethodAsync's answer would arrive long after the event is over. What the
@@ -72,8 +92,12 @@ export function attach(root, scroller, core, takenKeys) {
         // Escape's way out of Enter/Tab cycling. Setting focus is Blazor's FocusAsync;
         // releasing it has no Blazor API, and it is this instance's own root either way.
         blur: () => {
-            if (root) {
-                root.blur();
+            // Whatever inside the grid holds the keyboard, not only the root itself: an
+            // action button that was clicked has DOM focus, and blurring the root would
+            // do nothing at all.
+            const active = document.activeElement;
+            if (root && active instanceof HTMLElement && root.contains(active)) {
+                active.blur();
             }
         },
         dispose: () => {
