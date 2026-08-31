@@ -23,6 +23,11 @@ const CLASSIC_SCROLLBARS = `
 // pixel of slack is far below the ~15px this suite exists to catch.
 const SLACK_PX = 1;
 
+// How close to a corner counts as "the grid has finished moving there". Wide enough that
+// a wrong answer still arrives and gets asserted on, narrow enough that not having moved
+// at all cannot pass for having arrived. See moveToCorner.
+const SETTLED_PX = 64;
+
 /**
  * Where the Focus outline is, and where the scroller's readable area is, measured in the
  * same coordinates at the same instant.
@@ -128,21 +133,39 @@ async function openGrid(page, { classicScrollbars }) {
  */
 async function moveToCorner(page, key) {
     await page.keyboard.press(`Control+${key}`);
-    // The reveal is a scroll the browser answers with an event, and the grid repaints
-    // from that. Waiting for the scroll to have settled is what makes this not a sleep.
-    await page.waitForFunction(() => {
+    // Waited for by naming the position the grid is supposed to land on, not by watching
+    // for the scroll to stop changing. "Stopped changing" is true before the keystroke has
+    // been round-tripped at all, so it would sample the PREVIOUS corner and, at Ctrl+Home
+    // from the top, would never notice the grid had failed to move.
+    //
+    // Ctrl+End is the browser's own far extreme on both axes: the content is the whole
+    // result, and revealing the last cell right- and bottom-aligns it against the READABLE
+    // area, which is exactly scrollWidth - clientWidth. That the C# arithmetic agrees with
+    // the browser there is not assumed — if it disagreed this wait would time out and say
+    // so, which is most of why the condition is written this way.
+    //
+    // Ctrl+Home only names the vertical extreme. /wide pins its first two columns, and a
+    // Pinned Column covers the Viewport's left edge without occupying anything ahead of the
+    // content, so a Focus on column 0 is already whole on screen and nothing needs to
+    // scroll sideways to show it (ADR-0004/0013). Asserting left === 0 here would be
+    // asserting a behaviour the grid deliberately does not have.
+    // The tolerance is wide on purpose. This is asking "has the grid finished moving",
+    // not "did it land in the right place" — that is the assertion's job, and a wait
+    // strict enough to answer it would turn a real failure into a timeout, which says
+    // nothing about scrollbars. A whole scrollbar's width fits inside SETTLED_PX, so the
+    // 15px error this suite exists to catch reaches the assertion and gets named.
+    await page.waitForFunction(({ corner, settled }) => {
         const scroller = document.querySelector('.ex-scroller');
-        if (!scroller || window.__exScroll === undefined) {
-            window.__exScroll = -1;
+        if (!scroller) {
             return false;
         }
-        const now = `${scroller.scrollTop}/${scroller.scrollLeft}`;
-        if (window.__exScroll !== now) {
-            window.__exScroll = now;
-            return false;
+        const at = (actual, want) => Math.abs(actual - want) <= settled;
+        if (corner === 'Home') {
+            return at(scroller.scrollTop, 0);
         }
-        return true;
-    }, null, { polling: 'raf' });
+        return at(scroller.scrollTop, scroller.scrollHeight - scroller.clientHeight)
+            && at(scroller.scrollLeft, scroller.scrollWidth - scroller.clientWidth);
+    }, { corner: key, settled: SETTLED_PX }, { polling: 'raf' });
 }
 
 test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {
