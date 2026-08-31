@@ -105,10 +105,10 @@
                        into a row correctly reads as a fresh mount. *@
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
                     {
-                        var slice = row - WindowStart;
-                        if (slice >= 0 && slice < Window.Count)
+                        var slice = row - _windowStart;
+                        if (slice >= 0 && slice < _window.Count)
                         {
-                            var data = Window[slice];
+                            var data = _window[slice];
                             @* A Placeholder is handed no slice at all, so a fling that keeps
                                moving sideways does not churn the rows through renders whose
                                output is the same pinned cells every time. *@
@@ -174,7 +174,18 @@
 
     /// <summary>The contiguous block of rows the Consumer pushes in, starting at
     /// <see cref="WindowStart"/> (ADR-0001).</summary>
-    [Parameter, EditorRequired] public IReadOnlyList<TRow> Window { get; set; } = [];
+    [Parameter] public IReadOnlyList<TRow> Window { get; set; } = [];
+
+    /// <summary>
+    /// The bundled pull entry point (ADR-0001): a Grid Source holds the Window and
+    /// answers Range Requests, and the grid drives the push form from it internally —
+    /// the two are not peers, and there is one behavioural path.
+    ///
+    /// <para>Passing a Source alongside any of the push parameters it replaces is
+    /// refused by name: one of the two would silently win, and which one is not
+    /// something a Consumer should have to know.</para>
+    /// </summary>
+    [Parameter] public IGridSource<TRow>? Source { get; set; }
 
     /// <summary>Where the Window begins in the current order. The grid paints rows at
     /// their positions in the whole result, so it must know which positions the Window
@@ -301,6 +312,20 @@
     /// </summary>
     [Parameter] public EventCallback<GridActionEventArgs<TRow>> OnAction { get; set; }
 
+    // What the grid actually paints, resolved from the Source when there is one and
+    // from the push parameters when there is not. Every reader below goes through these,
+    // so binding a Source adds no branch to the pipeline — only one more way to fill it.
+    private IReadOnlyList<TRow> _window = [];
+    private int _windowStart;
+    private int? _total;
+    private bool _loading;
+    private int _sequenceVersion;
+
+    private IGridSource<TRow>? _boundSource;
+    private IReadOnlyList<GridColumn<TRow>>? _boundColumns;
+    private bool _applying;
+    private bool _bound;
+
     private ElementReference _scroller;
     private IJSObjectReference? _module;
     private IJSObjectReference? _scrollHandle;
@@ -364,11 +389,11 @@
     private RowRange? _measuredVisible;
     private bool _measured;
 
-    private string RootClass => IsLoading ? "ex-grid ex-loading" : "ex-grid";
+    private string RootClass => _loading ? "ex-grid ex-loading" : "ex-grid";
 
     /// <summary>The bounds every selection transition is checked against: rows after
     /// filtering, and visible columns (ADR-0011).</summary>
-    private GridExtent Extent => new(TotalCount ?? Window.Count, Columns.Count);
+    private GridExtent Extent => new(_total ?? _window.Count, Columns.Count);
 
     /// <summary>The Focus as a one-cell rectangle, so the outline and a block travel the
     /// same arithmetic. Only read where the selection is known not to be empty — an empty
@@ -378,8 +403,118 @@
     private TimeProvider Time
         => _time ??= Services.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System;
 
+    /// <summary>
+    /// The push parameters a Source replaces. Checked here rather than in
+    /// <see cref="OnParametersSet"/> because a value type cannot tell "passed 0" from
+    /// "left at its default": only the ParameterView knows what was actually supplied.
+    /// </summary>
+    private static readonly string[] SourceReplaces =
+        [nameof(Window), nameof(WindowStart), nameof(TotalCount), nameof(IsLoading),
+         nameof(RowSequenceVersion), nameof(OnRangeNeeded)];
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        var hasSource = parameters.TryGetValue<IGridSource<TRow>?>(nameof(Source), out var source) && source is not null;
+        var supplied = new List<string>();
+        foreach (var name in SourceReplaces)
+        {
+            if (parameters.TryGetValue<object>(name, out _))
+                supplied.Add(name);
+        }
+
+        if (hasSource && supplied.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Source was passed together with {string.Join(", ", supplied)}. A Source holds those itself " +
+                "and drives the push form internally, so one of the two would have to silently win. Pass a " +
+                "Source, or pass the push parameters — not both (ADR-0001).");
+        }
+        // Neither is a Consumer that forgot: an empty grid is written as Window="[]",
+        // never as nothing at all. Left unchecked it paints an empty result that looks
+        // exactly like a loaded one.
+        if (!hasSource && supplied.Count == 0 && _boundSource is null && !_bound)
+        {
+            throw new InvalidOperationException(
+                "Neither Window nor Source was passed. Pass the Window to paint (push), or a Grid Source to " +
+                "hold it for you (pull) — an empty result is Window=\"[]\" (ADR-0001).");
+        }
+
+        _bound = true;
+        return base.SetParametersAsync(parameters);
+    }
+
     protected override void OnParametersSet()
     {
+        // The Source's own change notification lands in the same pipeline (ApplyState),
+        // so a re-entrant one raised by the column push below would run it twice.
+        _applying = true;
+        try
+        {
+            BindSource();
+            ApplyState();
+        }
+        finally
+        {
+            _applying = false;
+        }
+    }
+
+    /// <summary>
+    /// Subscribes to the Source and keeps its columns current. The subscription is
+    /// swapped when the instance changes and released on disposal: left attached, a
+    /// replaced Source would go on repainting a grid that no longer shows it.
+    /// </summary>
+    private void BindSource()
+    {
+        if (!ReferenceEquals(_boundSource, Source))
+        {
+            if (_boundSource is not null)
+                _boundSource.StateChanged -= OnSourceStateChanged;
+            _boundSource = Source;
+            _boundColumns = null;
+            if (_boundSource is not null)
+                _boundSource.StateChanged += OnSourceStateChanged;
+        }
+
+        if (_boundSource is null || ReferenceEquals(_boundColumns, Columns))
+            return;
+
+        // The markup declaration stays the single source of truth (ADR-0023); the source
+        // gets the filtering-and-sorting slice of it. Pushing the same columns again is a
+        // no-op inside the source, so a Consumer rebuilding its array costs a comparison,
+        // not a requery.
+        _boundColumns = Columns;
+        var infos = new ColumnInfo<TRow>[Columns.Count];
+        for (var i = 0; i < Columns.Count; i++)
+            infos[i] = Columns[i].Info;
+        _boundSource.OnColumnsChanged(infos);
+    }
+
+    private void OnSourceStateChanged()
+    {
+        if (_disposed || _applying)
+            return;
+        // Marshalled: a Source that fetches raises this from whatever thread its answer
+        // arrived on. ApplyState has to run with it — OnParametersSet does not run for a
+        // change that came from outside the parameters, and rendering alone would paint
+        // the new Window through the old geometry and the old Auto widths.
+        _ = InvokeAsync(() =>
+        {
+            if (_disposed)
+                return;
+            ApplyState();
+            StateHasChanged();
+        });
+    }
+
+    private void ApplyState()
+    {
+        _window = Source?.Window ?? Window;
+        _windowStart = Source?.WindowStart ?? WindowStart;
+        _total = Source is null ? TotalCount : Source.TotalCount;
+        _loading = Source?.IsLoading ?? IsLoading;
+        _sequenceVersion = Source?.RowSequenceVersion ?? RowSequenceVersion;
+
         if (!double.IsFinite(RowHeight) || RowHeight <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(RowHeight), RowHeight,
@@ -412,11 +547,11 @@
         // a result one row inside the pure guard would still have its last row clamped
         // away, and being quietly unable to reach the end is the failure ADR-0013's
         // ceiling exists to refuse.
-        if (RowHeight + ((TotalCount ?? Window.Count) * RowHeight) > ViewportGeometry.MaxScrollHeightPx)
+        if (RowHeight + ((_total ?? _window.Count) * RowHeight) > ViewportGeometry.MaxScrollHeightPx)
         {
             throw new InvalidOperationException(
-                $"{TotalCount ?? Window.Count} rows at {RowHeight}px, plus the header's own row height, need " +
-                $"{RowHeight + ((TotalCount ?? Window.Count) * RowHeight)}px of scrollable area — past the " +
+                $"{_total ?? _window.Count} rows at {RowHeight}px, plus the header's own row height, need " +
+                $"{RowHeight + ((_total ?? _window.Count) * RowHeight)}px of scrollable area — past the " +
                 $"{ViewportGeometry.MaxScrollHeightPx}px a browser can scroll, so the last rows could never be " +
                 "reached. Use a shorter row height, or page the result (ADR-0013/0015).");
         }
@@ -430,10 +565,10 @@
         var columnsChanged = !ReferenceEquals(_observedColumns, Columns);
         var metricsChanged = _observedMetrics != CellMetrics;
 
-        if (!ReferenceEquals(_observedWindow, Window))
+        if (!ReferenceEquals(_observedWindow, _window))
         {
-            RequireDistinctRows(Window);
-            _observedWindow = Window;
+            RequireDistinctRows(_window);
+            _observedWindow = _window;
         }
 
         if (columnsChanged || metricsChanged)
@@ -484,6 +619,7 @@
         PrepareRender();
     }
 
+
     /// <summary>
     /// Drops the selection when the coordinates it is written in stop meaning what they
     /// meant (ADR-0011). One trigger per axis: the Consumer's Row Sequence Version for
@@ -498,9 +634,9 @@
     /// </summary>
     private void ReconcileSelection()
     {
-        var reconciled = _selection.Under(RowSequenceVersion);
+        var reconciled = _selection.Under(_sequenceVersion);
         if (!ColumnsAreAsBefore())
-            reconciled = HeldSelection.Empty(RowSequenceVersion);
+            reconciled = HeldSelection.Empty(_sequenceVersion);
 
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
@@ -532,23 +668,23 @@
     /// </summary>
     private void ValidateWindowPlacement()
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(WindowStart);
-        if (TotalCount is null)
+        ArgumentOutOfRangeException.ThrowIfNegative(_windowStart, nameof(WindowStart));
+        if (_total is null)
         {
-            if (WindowStart != 0)
+            if (_windowStart != 0)
             {
                 throw new InvalidOperationException(
-                    $"WindowStart is {WindowStart} but TotalCount is null, which claims the Window is the whole result. " +
+                    $"WindowStart is {_windowStart} but TotalCount is null, which claims the Window is the whole result. " +
                     "Pass TotalCount whenever the Window is a slice of something larger (ADR-0001).");
             }
             return;
         }
 
-        ArgumentOutOfRangeException.ThrowIfNegative(TotalCount.Value, nameof(TotalCount));
-        if (WindowStart + Window.Count > TotalCount.Value)
+        ArgumentOutOfRangeException.ThrowIfNegative(_total.Value, nameof(TotalCount));
+        if (_windowStart + _window.Count > _total.Value)
         {
             throw new InvalidOperationException(
-                $"The Window claims rows {WindowStart}-{WindowStart + Window.Count - 1}, past a TotalCount of {TotalCount.Value}.");
+                $"The Window claims rows {_windowStart}-{_windowStart + _window.Count - 1}, past a TotalCount of {_total.Value}.");
         }
     }
 
@@ -586,7 +722,7 @@
         // The header stands on the first row height of the Viewport, so the rows get the
         // rest. Everything downstream — how many rows fit, where a scroll offset lands —
         // is arithmetic over that remainder (ADR-0013).
-        _geometry = new ViewportGeometry(RowHeight, ViewportHeight - RowHeight, TotalCount ?? Window.Count);
+        _geometry = new ViewportGeometry(RowHeight, ViewportHeight - RowHeight, _total ?? _window.Count);
         _visible = _geometry.SliceAt(_scrollTopPx);
         ObserveAutoWidths();
         ResolveColumnGeometry();
@@ -631,8 +767,8 @@
         // the rows again when none of those moved is how a rewritten-in-place value
         // would sneak onto the screen (ADR-0003), besides being wasted work.
         var sameWindow = _measured
-            && ReferenceEquals(_measuredWindow, Window)
-            && _measuredWindowStart == WindowStart;
+            && ReferenceEquals(_measuredWindow, _window)
+            && _measuredWindowStart == _windowStart;
         if (sameWindow && _measuredVisible == _visible)
             return;
 
@@ -641,8 +777,8 @@
         var seen = sameWindow ? _measuredVisible : null;
 
         _measured = true;
-        _measuredWindow = Window;
-        _measuredWindowStart = WindowStart;
+        _measuredWindow = _window;
+        _measuredWindowStart = _windowStart;
         _measuredVisible = _visible;
 
         if (_visible is not { } visible)
@@ -652,11 +788,11 @@
         {
             if (seen is { } already && row >= already.Start && row < already.Start + already.Count)
                 continue;
-            var slice = row - WindowStart;
-            if (slice < 0 || slice >= Window.Count)
+            var slice = row - _windowStart;
+            if (slice < 0 || slice >= _window.Count)
                 continue;
 
-            var data = Window[slice];
+            var data = _window[slice];
             for (var c = 0; c < Columns.Count; c++)
             {
                 var column = Columns[c];
@@ -1005,14 +1141,14 @@
     }
 
     private bool IsCovered(RowRange range)
-        => range.Start >= WindowStart && range.Start + range.Count <= WindowStart + Window.Count;
+        => range.Start >= _windowStart && range.Start + range.Count <= _windowStart + _window.Count;
 
     private async Task RaiseRangeIfUncoveredAsync()
     {
         // Mid-fling the visible range is passing through; asking for every range it
         // crosses is what ADR-0004's one mechanism exists to avoid. Settling raises the
         // range that was actually landed on.
-        if (_disposed || _placeholderMode || !OnRangeNeeded.HasDelegate)
+        if (_disposed || _placeholderMode || (Source is null && !OnRangeNeeded.HasDelegate))
             return;
         if (_visible is not { } range || IsCovered(range))
         {
@@ -1026,22 +1162,32 @@
         // would spin — as would a Consumer that answers, honestly but unhelpfully, with
         // rows that still do not cover the Viewport.
         if (_lastRaised == range
-            && _lastRaisedWindowStart == WindowStart
-            && _lastRaisedWindowCount == Window.Count)
+            && _lastRaisedWindowStart == _windowStart
+            && _lastRaisedWindowCount == _window.Count)
         {
             return;
         }
 
         _lastRaised = range;
-        _lastRaisedWindowStart = WindowStart;
-        _lastRaisedWindowCount = Window.Count;
-        await OnRangeNeeded.InvokeAsync(range);
+        _lastRaisedWindowStart = _windowStart;
+        _lastRaisedWindowCount = _window.Count;
+        // Awaited, so a Source that fetches surfaces its failure here rather than in an
+        // unobserved task, and the loading state it raised is already on screen.
+        if (Source is not null)
+            await Source.OnRangeNeededAsync(range);
+        else
+            await OnRangeNeeded.InvokeAsync(range);
     }
 
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
         _settleTimer?.Dispose();
+        if (_boundSource is not null)
+        {
+            _boundSource.StateChanged -= OnSourceStateChanged;
+            _boundSource = null;
+        }
         try
         {
             if (_scrollHandle is not null)
