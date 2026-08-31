@@ -15,10 +15,15 @@ internal sealed class GridJSInterop
     internal const string ModulePath = "./_content/ExGrid/ex-grid.js";
 
     private readonly JSRuntimeInvocationHandler<ScrollOffset> _offset;
+    private readonly JSRuntimeInvocationHandler _setOffset;
 
-    private GridJSInterop(JSRuntimeInvocationHandler<ScrollOffset> offset, JSRuntimeInvocationHandler dispose)
+    private GridJSInterop(
+        JSRuntimeInvocationHandler<ScrollOffset> offset,
+        JSRuntimeInvocationHandler setOffset,
+        JSRuntimeInvocationHandler dispose)
     {
         _offset = offset;
+        _setOffset = setOffset;
         Dispose = dispose;
     }
 
@@ -30,15 +35,25 @@ internal sealed class GridJSInterop
     /// the rows and the columns were painted from different moments.</summary>
     internal int OffsetReads => _offset.Invocations.Count;
 
+    /// <summary>Where the grid has told the browser to scroll — how Focus-follows-scroll
+    /// is observed without a browser (ADR-0012).</summary>
+    internal IReadOnlyList<(double Top, double Left)> ScrolledTo =>
+        [.. _setOffset.Invocations
+            .Select(invocation => ((double)invocation.Arguments[0]!, (double)invocation.Arguments[1]!))];
+
     internal static GridJSInterop Setup(BunitContext context)
     {
         var module = context.JSInterop.SetupModule(ModulePath);
         var handle = module.SetupModule("attach", _ => true);
         var offset = handle.Setup<ScrollOffset>("getScrollOffset");
         offset.SetResult(default);
+        var setOffset = handle.SetupVoid("setScrollOffset", _ => true);
+        setOffset.SetVoidResult();
+        var blur = handle.SetupVoid("blur");
+        blur.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
-        return new GridJSInterop(offset, dispose);
+        return new GridJSInterop(offset, setOffset, dispose);
     }
 
     /// <summary>What the next <c>getScrollOffset</c> answers — the browser scroll

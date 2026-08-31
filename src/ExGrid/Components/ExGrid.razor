@@ -1,6 +1,7 @@
 @typeparam TRow where TRow : class
 @using System.Runtime.CompilerServices
 @using global::ExGrid.Cells
+@using global::ExGrid.Keys
 @using global::ExGrid.Rows
 @using global::ExGrid.Columns
 @using global::ExGrid.Selection
@@ -20,7 +21,9 @@
     so ShouldRender exists here for one case only: a mouse move that stays inside the
     cell it started in changes nothing, and arrives once a frame while a drag lasts.
 *@
-<div class="@RootClass" style="--ex-row-height: @Px(RowHeight)">
+@* tabindex, so the browser's focus answers which grid a key belongs to (ADR-0018).
+   The capture-phase listener is attached to this element and to nothing wider. *@
+<div class="@RootClass" style="--ex-row-height: @Px(RowHeight)" tabindex="0" @ref="_root">
     @* One scroll container for both axes, with the header and the Pinned Columns held in
        place by `position: sticky` inside it. Two containers cannot do this: giving the
        inner one a non-visible overflow on one axis turns the other into `auto` (CSS
@@ -326,7 +329,10 @@
     private bool _applying;
     private bool _bound;
 
+    private ElementReference _root;
     private ElementReference _scroller;
+    private DotNetObjectReference<ExGrid<TRow>>? _self;
+    private bool _revealFocus;
     private IJSObjectReference? _module;
     private IJSObjectReference? _scrollHandle;
     private bool _disposed;
@@ -859,6 +865,7 @@
         // answering synchronously would re-enter the same batch. From here the cycle is
         // structurally finite: raise, the Consumer pushes, an ordinary render follows,
         // and this check finds the range covered and stays quiet.
+        await RevealFocusIfNeededAsync();
         await RaiseRangeIfUncoveredAsync();
         await RaiseSelectionIfChangedAsync();
     }
@@ -874,7 +881,9 @@
             if (_module is null || _disposed)
                 return;
 
-            var handle = await _module.InvokeAsync<IJSObjectReference>("attach", _scroller);
+            _self ??= DotNetObjectReference.Create(this);
+            var handle = await _module.InvokeAsync<IJSObjectReference>(
+                "attach", _root, _scroller, _self, GridKeys.Taken);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now.
@@ -1120,6 +1129,156 @@
         return OnAction.InvokeAsync(args);
     }
 
+    /// <summary>
+    /// A key the core claimed (ADR-0010). Called from the instance's own capture-phase
+    /// listener, so a grid without focus never gets here, and two grids on one page never
+    /// hear each other's keys (ADR-0018). The listener has already prevented the default:
+    /// what is left is to say what the key meant.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnKeyAsync(string key, bool ctrl, bool shift, bool alt, bool meta)
+    {
+        if (_disposed)
+            return;
+        var action = GridKeys.Resolve(key, ctrl, shift, alt, meta);
+        switch (action.Kind)
+        {
+            case GridKeyKind.None:
+                return;
+            case GridKeyKind.Leave:
+                // The way out of Enter/Tab cycling, which never leaves the selection by
+                // design (ADR-0012) and would otherwise trap the keyboard in the grid.
+                await LeaveAsync();
+                return;
+            case GridKeyKind.Engage:
+                await EngageAsync();
+                return;
+        }
+
+        var extent = Extent;
+        if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
+            return;
+
+        var current = _selection.Selection;
+        var fromEmpty = current.IsEmpty;
+        if (fromEmpty)
+        {
+            // GridSelection has no Focus to move from, deliberately. Where a keyboard
+            // user starts is a question about the view, not about the selection model,
+            // so it is answered here: the first cell on screen, without moving the
+            // Viewport. Reached by tabbing in, by clicking the header — and above all
+            // after a sort, which drops the selection (ADR-0011) and would otherwise
+            // leave every key dead until the user picked up the mouse again.
+            if (FirstVisibleCell() is not { } start)
+                return;
+            current = current.Click(start, extent);
+        }
+
+        // A key that moves the Focus, pressed when there is no Focus, only places one —
+        // it does not also take its step. This is what every list does: the first Down
+        // selects the first item rather than the second, and the selection appears where
+        // the user is looking. A key that names a whole region (Ctrl+A, the Space pair,
+        // Ctrl+Home) needs no starting point and still does what it says.
+        var movesTheFocus = action.Kind
+            is GridKeyKind.Move or GridKeyKind.Extend
+            or GridKeyKind.MoveToEdge or GridKeyKind.ExtendToEdge or GridKeyKind.Cycle;
+        var next = fromEmpty && movesTheFocus ? current : action.Kind switch
+        {
+            GridKeyKind.Move => current.Move(action.Direction, extent),
+            GridKeyKind.Extend => current.Extend(action.Direction, extent),
+            GridKeyKind.MoveToEdge => current.MoveToEdge(action.Direction, extent),
+            GridKeyKind.ExtendToEdge => current.ExtendToEdge(action.Direction, extent),
+            GridKeyKind.Cycle => current.CycleFocus(action.Order, action.Backward, extent),
+            GridKeyKind.SelectAll => current.SelectAll(extent),
+            GridKeyKind.SelectWholeColumns => current.SelectWholeColumns(extent),
+            GridKeyKind.SelectWholeRows => current.SelectWholeRows(extent),
+            GridKeyKind.MoveToCorner => current.Click(
+                action.Backward
+                    ? new CellPosition(0, 0)
+                    : new CellPosition(extent.RowCount - 1, extent.ColumnCount - 1),
+                extent),
+            _ => current,
+        };
+
+        Apply(next);
+        // Whatever the transition did, the Focus has to end up on screen (ADR-0012). Done
+        // after the render, where the geometry it is measured against is the one that was
+        // just painted.
+        _revealFocus = true;
+        StateHasChanged();
+    }
+
+    /// <summary>Space on a single-action cell fires it; N ≥ 2 and editable cells wait for
+    /// the Interactive and Overwrite modes (ADR-0020).</summary>
+    private async Task EngageAsync()
+    {
+        if (_selection.Selection.IsEmpty)
+            return;
+        var focus = _selection.Selection.Focus;
+        if (focus.Column < 0 || focus.Column >= Columns.Count)
+            return;
+        var column = Columns[focus.Column];
+        if (column.Actions.Count != 1)
+            return;
+
+        // The row has to be in hand: a Focus over a Placeholder has no row to act on, and
+        // ADR-0012 already says editing waits for the data to arrive.
+        var slice = focus.Row - _windowStart;
+        if (slice < 0 || slice >= _window.Count)
+            return;
+        await RaiseActionAsync(new GridActionEventArgs<TRow>(_window[slice], column.Name, column.Actions[0].Name));
+    }
+
+    private async Task LeaveAsync()
+    {
+        if (_scrollHandle is null || _disposed)
+            return;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("blur");
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+
+    /// <summary>The top-left cell currently painted — the leading Pinned Column when there
+    /// is one, otherwise the leftmost scrollable column on screen.</summary>
+    private CellPosition? FirstVisibleCell()
+    {
+        if (_visible is not { } visible)
+            return null;
+        var column = _columnStyles.Geometry.PinnedCount > 0 ? 0 : _scrollable?.Start ?? 0;
+        return new CellPosition(visible.Start, column);
+    }
+
+    private async Task RevealFocusIfNeededAsync()
+    {
+        if (!_revealFocus)
+            return;
+        _revealFocus = false;
+        if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)
+            return;
+
+        var focus = _selection.Selection.Focus;
+        if (focus.Row >= _geometry.TotalRowCount || focus.Column >= _columnStyles.Geometry.Count)
+            return;
+        var top = _geometry.ScrollTopToReveal(focus.Row, _scrollTopPx);
+        var left = _columnStyles.Geometry.ScrollLeftToReveal(focus.Column, _scrollLeftPx);
+        if (top == _scrollTopPx && left == _scrollLeftPx)
+            return;
+
+        try
+        {
+            // The browser answers with a scroll event, which is what updates the offsets
+            // and, if the Focus went past the Window, raises the Range Request (ADR-0012).
+            await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+
     private async Task RaiseSelectionIfChangedAsync()
     {
         // Raised from after the render for the reason the Range Request is: a Consumer
@@ -1205,6 +1364,8 @@
     {
         _disposed = true;
         _settleTimer?.Dispose();
+        _self?.Dispose();
+        _self = null;
         if (_boundSource is not null)
         {
             _boundSource.StateChanged -= OnSourceStateChanged;

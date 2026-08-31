@@ -8,6 +8,13 @@
    browser paints its own highlight over the top of the grid's (ADR-0008). Copying goes
    through the clipboard path, not through a native text selection (ADR-0005). */
 .ex-grid { font-size: 14px; font-variant-numeric: tabular-nums; user-select: none; }
+/* The root is the tab stop and where keys are captured (ADR-0018), so it needs to say
+   when it holds the keyboard. :focus-visible rather than :focus — a click already shows
+   itself by moving the selection, and a permanent ring around a clicked grid is noise.
+   Distinct from the selection's own Focus outline: this one says "keys come here", that
+   one says "and they start from this cell". */
+.ex-grid:focus { outline: none; }
+.ex-grid:focus-visible { outline: var(--ex-grid-focus-outline, 2px solid Highlight); outline-offset: 1px; }
 /* One scroll container for both axes. The header and the Pinned Columns are held in
    place inside it with `position: sticky`, which is why there can only be one: a nested
    container with a non-visible overflow on one axis computes `auto` on the other (CSS
