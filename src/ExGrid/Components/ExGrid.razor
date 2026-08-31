@@ -537,6 +537,15 @@
     private void ApplyState()
     {
         _window = Source?.Window ?? Window;
+        if (_window is null)
+        {
+            throw new InvalidOperationException(
+                Source is null
+                    ? "Window is null. Pass the rows to paint — an empty result is Window=\"[]\" — or a Grid " +
+                      "Source to hold them for you (ADR-0001)."
+                    : "The Source's Window is null. A Grid Source paints what it holds, and holding nothing is " +
+                      "an empty Window, never a missing one (ADR-0001).");
+        }
         _windowStart = Source?.WindowStart ?? WindowStart;
         _total = Source is null ? TotalCount : Source.TotalCount;
         _loading = Source?.IsLoading ?? IsLoading;
@@ -1222,7 +1231,15 @@
         // for a render that never happens fires on whatever renders next: a wheel scroll
         // five hundred rows away would be yanked back to the Focus mid-gesture.
         if (!Apply(next))
+        {
+            // Apply arms the suppression for the render Blazor runs automatically after a
+            // UI event. This is a [JSInvokable]: no such render follows, so an armed flag
+            // would sit here and swallow whatever renders NEXT — the following keystroke,
+            // a Source's answer landing, the settle timer putting real cells back. The
+            // grid would look frozen for one beat, with nothing queued to unfreeze it.
+            _suppressRender = false;
             return;
+        }
         // The Focus has to end up on screen (ADR-0012), measured after the render against
         // the geometry that was actually painted.
         _revealFocus = true;

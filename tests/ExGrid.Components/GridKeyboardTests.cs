@@ -264,6 +264,43 @@ public class GridKeyboardTests : GridTestContext
         Assert.Empty(Js.ScrolledTo);
     }
 
+    [Fact] // ADR-0003: a key that moved nothing must not swallow the NEXT render
+    public async Task A_key_that_moves_nothing_leaves_the_next_keystroke_alone()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(s => selection = s);
+        await ClickAsync(cut, 50, 10);          // row 0
+        selection = null;
+
+        await PressAsync(cut, "ArrowUp");       // already at the top: nothing moves
+        await PressAsync(cut, "ArrowDown");     // this one does
+
+        // A JSInvokable gets no automatic render, so a suppression armed by the first key
+        // would still be armed here and eat this one: the model moves, the screen does
+        // not, and nothing is queued to put them back in step.
+        Assert.NotNull(selection);
+        Assert.Equal(new CellPosition(1, 0), selection!.Focus);
+        Assert.Contains("top: 20px", cut.Find(".ex-focus").GetAttribute("style"));
+    }
+
+    [Fact] // ADR-0001: and it must not swallow the next Window either
+    public async Task A_key_that_moves_nothing_leaves_the_next_window_alone()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 10);
+        await PressAsync(cut, "ArrowUp");       // nothing moves
+
+        cut.Render(ps => ps
+            .Add(g => g.Window, TestRows.Many(200).Select(r => { r.Book = "Repushed"; return r; }).ToArray())
+            .Add(g => g.TotalCount, 200)
+            .Add(g => g.Columns, cut.Instance.Columns)
+            .Add(g => g.RowHeight, RowHeightPx)
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.ViewportWidth, 350));
+
+        Assert.Contains("Repushed", cut.Markup);
+    }
+
     [Fact] // ADR-0010: a key the core has not claimed changes nothing
     public async Task An_unclaimed_key_is_ignored()
     {

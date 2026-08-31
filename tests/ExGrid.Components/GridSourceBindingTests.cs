@@ -141,6 +141,17 @@ public class GridSourceBindingTests : GridTestContext
         Assert.Contains("same row instance", raised.Message);
     }
 
+    [Fact] // ADR-0001: a missing Window is refused by name, not with a bare null reference
+    public void A_null_window_is_refused_by_name()
+    {
+        var error = Assert.Throws<InvalidOperationException>(() => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, (IReadOnlyList<TestRow>)null!)
+            .Add(g => g.Columns, Columns())));
+
+        Assert.Contains("Window", error.Message);
+        Assert.Contains("ADR-0001", error.Message);
+    }
+
     [Fact] // ADR-0018: a replaced Source is released — it must not go on repainting a grid
     public void Replacing_the_source_releases_the_old_one()
     {

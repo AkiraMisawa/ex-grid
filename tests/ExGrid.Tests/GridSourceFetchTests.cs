@@ -216,6 +216,31 @@ public class GridSourceFetchTests
         Assert.Equal([new SortSpec("Book", SortDirection.Ascending)], server.Last.Query.Sorts);
     }
 
+    [Fact] // ADR-0025: a restart IS the cold start — binding afterwards must not fetch again
+    public void A_query_set_before_binding_is_fetched_once()
+    {
+        var server = new Server();
+        // The shape of a Consumer restoring a saved View State in OnInitialized: the sort
+        // is set before the grid has bound and pushed its columns.
+        var source = GridSource.Fetch<Trade>((query, cancellation) =>
+        {
+            var pending = new Pending
+            {
+                Query = query,
+                Completion = new TaskCompletionSource<GridPage<Trade>>(),
+                Cancellation = cancellation,
+            };
+            server.Calls.Add(pending);
+            return new ValueTask<GridPage<Trade>>(pending.Completion.Task);
+        }, readAheadRows: 0);
+
+        source.OnSortChanged([new SortSpec("Book", SortDirection.Ascending)]);
+        source.OnColumnsChanged(TradeColumns.All);
+
+        Assert.Single(server.Calls);
+        Assert.False(server.Last.Cancellation.IsCancellationRequested);
+    }
+
     [Fact] // ADR-0011: scrolling to another slice of the same query is not a reorder
     public async Task Scrolling_to_another_slice_does_not_bump_the_sequence_version()
     {

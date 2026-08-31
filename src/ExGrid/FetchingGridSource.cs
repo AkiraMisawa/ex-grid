@@ -159,6 +159,11 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable
     /// </summary>
     private void Restart()
     {
+        // A restart IS the first fetch as far as the cold start is concerned. Left unset,
+        // a Consumer that restores a saved sort before the grid binds gets this fetch and
+        // then a second identical one from OnColumnsChanged, which cancels the first: a
+        // wasted round trip and a loading flash on every page that pre-seeds a query.
+        _started = true;
         RowSequenceVersion++;
         Window = [];
         WindowStart = 0;

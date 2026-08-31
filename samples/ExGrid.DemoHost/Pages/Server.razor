@@ -90,6 +90,10 @@
 
     public void Dispose()
     {
+        // Disposed first, then unsubscribed. The other order leaves a fetch in flight
+        // with nobody listening for its failure, which is precisely when the source
+        // rethrows — onto the dispatcher of a page that has gone (ADR-0025).
+        _source.Dispose();
         _source.FetchFailed -= OnFetchFailed;
         _source.StateChanged -= OnSourceChanged;
     }
