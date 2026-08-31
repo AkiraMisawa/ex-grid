@@ -88,6 +88,40 @@ public readonly record struct ViewportGeometry
     }
 
     /// <summary>
+    /// The scroll offset that brings a row fully into view, moving as little as possible
+    /// — the arithmetic behind "Focus must always be visible" (ADR-0012). A row already
+    /// on screen returns the offset unchanged, so arrowing down a visible column does
+    /// not jump the Viewport.
+    ///
+    /// The header cancels out here, which is why this axis looks simpler than
+    /// <see cref="ColumnGeometry.ScrollLeftToReveal"/>: the header occupies the first row
+    /// height of the content AND covers the first row height of the Viewport, so the two
+    /// offsets subtract away and top-aligning row r is <c>r × RowHeight</c> exactly. The
+    /// horizontal axis has no such luck — a Pinned Column covers the Viewport's edge
+    /// without occupying anything ahead of the content — so do not read one axis as the
+    /// template for the other.
+    /// </summary>
+    public double ScrollTopToReveal(int rowIndex, double currentScrollTopPx)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(rowIndex);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(rowIndex, TotalRowCount);
+        if (!double.IsFinite(currentScrollTopPx))
+        {
+            throw new ArgumentOutOfRangeException(nameof(currentScrollTopPx), currentScrollTopPx,
+                "A scroll offset is a finite number of pixels.");
+        }
+
+        var maxScrollTopPx = Math.Max(0, ScrollHeightPx - ViewportHeightPx);
+        var current = Math.Clamp(currentScrollTopPx, 0, maxScrollTopPx);
+        var alignTop = rowIndex * RowHeightPx;
+        var alignBottom = alignTop + RowHeightPx - ViewportHeightPx;
+        // A Viewport shorter than one row cannot show a row whole; top-aligning shows
+        // where the value starts.
+        var offset = Math.Clamp(current, Math.Min(alignBottom, alignTop), alignTop);
+        return Math.Clamp(offset, 0, maxScrollTopPx);
+    }
+
+    /// <summary>
     /// Whether a move from one painted position to another is a fling — more than one
     /// Viewport at once, so every row changes and the row boundaries buy nothing
     /// (ADR-0003's memoisation does not help here, measured). Placeholders are painted

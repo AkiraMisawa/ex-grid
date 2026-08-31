@@ -78,6 +78,36 @@ public class ViewportGeometryTests
         Assert.False(geometry.IsFling(100, 100));
     }
 
+    [Fact] // ADR-0012 groundwork: the header cancels out, so top-aligning a row is row × row height
+    public void Revealing_a_row_above_the_viewport_puts_it_at_the_top()
+    {
+        // The header occupies the content's first row height and covers the Viewport's
+        // first row height, so the two subtract away and no header term appears here —
+        // unlike the pinned width on the other axis, which does not cancel.
+        Assert.Equal(0, Geometry(1000).ScrollTopToReveal(0, currentScrollTopPx: 500));
+        Assert.Equal(200, Geometry(1000).ScrollTopToReveal(10, currentScrollTopPx: 900));
+    }
+
+    [Fact] // ADR-0012: reaching down scrolls just far enough to show the whole row
+    public void Revealing_a_row_below_the_viewport_aligns_it_against_the_bottom()
+    {
+        // Row 10 spans 200-220 and the row area is 100 tall, so 120 brings its bottom
+        // edge onto the Viewport's — the minimum move, not a jump to the top.
+        Assert.Equal(120, Geometry(1000).ScrollTopToReveal(10, currentScrollTopPx: 0));
+    }
+
+    [Fact] // ADR-0012: a row already on screen does not jerk the Viewport to an edge
+    public void Revealing_a_visible_row_does_not_move_the_offset()
+    {
+        Assert.Equal(0, Geometry(1000).ScrollTopToReveal(3, currentScrollTopPx: 0));
+    }
+
+    [Fact] // The last row is revealed at the furthest the browser will scroll, not past it
+    public void Revealing_the_last_row_clamps_to_the_end()
+    {
+        Assert.Equal(19_900, Geometry(1000).ScrollTopToReveal(999, currentScrollTopPx: 0));
+    }
+
     [Fact] // ADR-0013/0017: past what a browser can scroll the tail is unreachable — refused, not shown
     public void A_result_too_tall_to_scroll_is_refused()
     {
@@ -100,5 +130,8 @@ public class ViewportGeometryTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new ViewportGeometry(20, 100, -1));
         Assert.Throws<ArgumentOutOfRangeException>(() => Geometry(10).SliceAt(double.NaN));
         Assert.Throws<ArgumentOutOfRangeException>(() => Geometry(10).OffsetPxOf(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Geometry(10).ScrollTopToReveal(10, 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Geometry(10).ScrollTopToReveal(-1, 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Geometry(10).ScrollTopToReveal(0, double.NaN));
     }
 }
