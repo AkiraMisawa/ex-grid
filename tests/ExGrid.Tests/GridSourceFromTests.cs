@@ -24,7 +24,7 @@ public class GridSourceFromTests
         var source = Bound();
         Assert.Equal(Rows, source.Window);
         Assert.False(source.IsLoading);
-        source.OnRangeNeeded(new RowRange(0, 2)); // already pushed; nothing to answer
+        source.OnRangeNeededAsync(new RowRange(0, 2)); // already pushed; nothing to answer
         Assert.Equal(Rows, source.Window);
     }
 
@@ -227,7 +227,7 @@ public class GridSourceFromTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new RowRange(0, 0));
 
         var source = Bound();
-        source.OnRangeNeeded(new RowRange(1_000_000, 20)); // races with data updates; ignoring is the answer
+        source.OnRangeNeededAsync(new RowRange(1_000_000, 20)); // races with data updates; ignoring is the answer
         Assert.Equal(Rows, source.Window);
     }
 }

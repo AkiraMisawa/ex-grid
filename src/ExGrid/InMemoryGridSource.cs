@@ -12,7 +12,7 @@ namespace ExGrid;
 /// A refused change leaves the source exactly as it was: every change is computed
 /// first and committed only on success.
 /// </summary>
-public sealed class InMemoryGridSource<TRow>
+public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>
 {
     private readonly IReadOnlyList<TRow> _rows;
     private IReadOnlyList<ColumnInfo<TRow>>? _columns;
@@ -27,8 +27,14 @@ public sealed class InMemoryGridSource<TRow>
 
     public IReadOnlyList<TRow> Window { get; private set; }
 
-    /// <summary>Post-filter count — what feeds the pager (ADR-0015).</summary>
-    public int TotalCount => Window.Count;
+    /// <summary>Always 0: everything is in hand, so the Window is the whole result and
+    /// starts at its beginning (ADR-0001).</summary>
+    public int WindowStart => 0;
+
+    /// <summary>Post-filter count — what feeds the pager (ADR-0015). Stated rather than
+    /// left null even though the Window is the whole result: a Consumer reading it for a
+    /// count display should not have to know that convention.</summary>
+    public int? TotalCount => Window.Count;
 
     public IReadOnlyList<SortSpec> Sorts { get; private set; } = [];
 
@@ -69,9 +75,7 @@ public sealed class InMemoryGridSource<TRow>
     /// range beyond the data is legal (requests race with data updates), and ignoring
     /// it is the answer (ADR-0001). A malformed range never gets here: the
     /// <see cref="RowRange"/> constructor refuses it.</summary>
-    public void OnRangeNeeded(RowRange range)
-    {
-    }
+    public Task OnRangeNeededAsync(RowRange range) => Task.CompletedTask;
 
     private static GridFilter? Snapshot(GridFilter? filter)
     {
