@@ -95,6 +95,31 @@ This approach **requires no cooperation from Chrome.** A contract of the form "t
 keydown to the core" would make behaviour depend on whether each Chrome implements the forwarding,
 which breaks the rule above.
 
+## How the capture works, given that `preventDefault` is synchronous
+
+*(Settled while implementing.)* The listener has to decide **now** whether to take a key:
+`invokeMethodAsync` is asynchronous, and an answer that came back after the event would be
+too late to stop anything. So the decision cannot be a round trip.
+
+It is not Chrome deciding either. **The core builds the set of keys it claims and hands it
+to its own listener at attach time**; the listener takes exactly those, prevents their
+default, and forwards *the raw event fields*. What the key **means** is resolved back in
+C#, from those fields.
+
+```
+C#  the table: which keys are the core's, and what each one means   ← the authority
+JS  a Set lookup: take it, or let the browser have it               ← the gate only
+```
+
+The canonical form (`[Control+][Shift+][Alt+]{key}`, Meta folded into Control) is the one
+rule that exists in both languages. Keeping the *meaning* on the C# side is what makes that
+duplication safe: if the two ever disagree, the symptom is a key that is taken and does
+nothing — visible — rather than a key that means something different in each place.
+
+**A mode change is a different set**, which is exactly the shape this ADR's table above
+asks for: in Caret the arrows come out of the set and reach the editor; in Overwrite they
+stay in it.
+
 ## Consequences
 
 - **The core carries a small amount of JavaScript.** A capture-phase listener can only be attached

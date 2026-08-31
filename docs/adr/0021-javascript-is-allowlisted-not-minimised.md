@@ -10,7 +10,7 @@ Every entry names the reason it cannot be done from Blazor.
 
 | Interop | Why Blazor cannot do it |
 |---|---|
-| **Capture-phase `keydown` on the grid root** | Blazor's `@onkeydown` only sees the bubble phase, by which point the cell editor has already moved the caret. Capture is the whole point ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)), and the listener must be scoped to the instance root, not `document` ([ADR-0018](./0018-multiple-instances-must-be-independent.md)). |
+| **Capture-phase `keydown` on the grid root** (with `blur()` on that same root — see below) | Blazor's `@onkeydown` only sees the bubble phase, by which point the cell editor has already moved the caret. Capture is the whole point ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)), and the listener must be scoped to the instance root, not `document` ([ADR-0018](./0018-multiple-instances-must-be-independent.md)). |
 | **Reading and setting `scrollTop` / `scrollLeft`** | Blazor's scroll event args carry no scroll offset, and there is no way to set it from C#. Virtualisation needs both directions ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md), [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md) — Focus must stay visible). |
 | **Clipboard: `copy` / `paste` events and the async Clipboard API** | Writing two MIME types in one operation, and resolving a `ClipboardItem` from a promise, have no C# equivalent ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md), [ADR-0017](./0017-target-chromium-browsers-only.md)). |
 
@@ -28,7 +28,13 @@ These are the places where reaching for JS would be the easy answer, and where w
   Instead numeric columns assume `font-variant-numeric: tabular-nums` and estimate from digit
   count ([ADR-0016](./0016-column-width-and-overflow.md)). No measurement round-trip, and it
   works before the cell is painted.
-- **Focus.** `ElementReference.FocusAsync()` is enough.
+- **Focus.** `ElementReference.FocusAsync()` is enough. *(Refined while wiring the keyboard:
+  that covers **taking** focus. **Releasing** it has no Blazor API, and Escape has to release
+  it — Enter and Tab never leave the selection ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)),
+  so without an exit the keyboard is trapped in the grid. The key handle therefore has a
+  `blur()` on the instance's own root, alongside the listener already attached to it. It is
+  one line, it reaches nothing outside this grid, and it is listed in the table above rather
+  than left as an unremarked fourth use.)*
 - **Selection and editor geometry — and which cell the pointer is on.** Overlays are positioned
   by arithmetic over a fixed row height ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md),
   [ADR-0013](./0013-fixed-row-height.md)) — no layout reads. *(The hit test is the place this was

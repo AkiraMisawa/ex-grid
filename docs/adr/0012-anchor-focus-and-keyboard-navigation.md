@@ -135,6 +135,39 @@ Rejected:
 - **Split the header into regions** (the text sorts, a thin strip selects) — both become single
   clicks, but the hit target is fiddly and users never discover the strip.
 
+## What the implementation settled
+
+*(Written while wiring the keyboard. Three of these are decisions this ADR did not make.)*
+
+**Home and End.** Never mentioned here, and Excel-shaped: Home and End are the row's first
+and last cell, Shift extends to them, and Ctrl+Home / Ctrl+End are the whole result's first
+and last. They resolve to the same `MoveToEdge` / `ExtendToEdge` transitions the Ctrl+arrows
+use, so nothing new enters the selection model.
+
+**Escape leaves the grid, because Tab never leaves the selection.** Taken literally, "Enter
+and Tab cycle inside it and never leave it" traps the keyboard: a user who tabbed into the
+grid could not tab out, which contradicts
+[ADR-0020](./0020-action-and-template-columns.md)'s own "the ARIA grid pattern is exactly
+the grid as one tab stop". Excel is an application; this is one component on someone's
+page. **Escape releases the grid's DOM focus** — it has no other meaning outside editing,
+and when the Interactive and Overwrite modes arrive it stays the outermost of them.
+
+**With focus but no selection, the first key only places the Focus.** `GridSelection.Move`
+is a no-op on an empty selection, deliberately — there is no Focus to start from. But
+"focus on the grid, nothing selected" is an ordinary state: reached by tabbing in, by
+clicking the header, and above all **by a sort or filter, which drops the selection**
+([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+Left as a no-op, every key would be dead after every reorder until the user reached for the
+mouse. So the component — which knows what is on screen, as the selection model does not —
+puts the Focus on **the first visible cell**, without moving the Viewport, and lets that be
+the whole of the keypress: the first Down selects the first cell, the way the first Down in
+any list selects its first item. Keys that name a whole region (Ctrl+A, the Space pair,
+Ctrl+Home) need no starting point and still do what they say.
+
+**PageUp / PageDown are still not specified.** They would need a "move by N rows" transition
+that does not exist, and inventing the behaviour in the implementation is what the project's
+rules refuse. Open.
+
 ## Consequences
 
 - **The mouse resolves to these same three transitions, and three details had to be settled**
