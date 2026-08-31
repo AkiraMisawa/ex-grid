@@ -5,7 +5,18 @@
    this size, and inheriting the host's would silently break the >= any-glyph contract
    (ADR-0016). A theme changing either supplies its own CellMetrics. */
 .ex-grid { display: flex; flex-direction: column; font-size: 14px; font-variant-numeric: tabular-nums; overflow-x: auto; }
-.ex-header { display: flex; }
+.ex-header { display: flex; min-width: 100%; box-sizing: border-box; }
+/* Horizontal scrolling stays on .ex-grid so the header pans with the body. That takes
+   both halves of this rule: the scroller is emitted as wide as its columns (so the
+   root's scrollbar reaches the rows), and its own horizontal axis is pinned shut —
+   a non-visible overflow on one axis turns the other into `auto`, which would give the
+   body a second scrollbar the header does not follow. Height and width both come from
+   C#, where the geometry's truth lives (ADR-0013). */
+.ex-scroller { overflow-y: auto; overflow-x: clip; position: relative; min-width: 100%; box-sizing: border-box; }
+/* Total rows × row height — the scrollbar is as long as the whole result, whatever
+   fraction of it the Window holds (ADR-0013). */
+.ex-spacer { position: relative; }
+.ex-viewport { position: absolute; top: 0; left: 0; right: 0; will-change: transform; }
 .ex-row { display: flex; height: var(--ex-row-height); line-height: var(--ex-row-height); }
 /* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016), and
    the 8px padding pairs with DefaultCellMetrics.CellHorizontalPaddingPx — the two must
@@ -13,3 +24,8 @@
    fit is painted as #### by the core, never clipped. */
 .ex-cell, .ex-header-cell { flex: 0 0 auto; box-sizing: border-box; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ex-cell-numeric { text-align: right; }
+/* A row not yet painted with real data — waiting for the Consumer's Window, or
+   deliberately skipped while scrolling fast. One mechanism, so one appearance
+   (ADR-0004). It carries no cells at all: painting them is the cost being avoided. */
+.ex-placeholder::after { content: ""; margin: calc(var(--ex-row-height) / 4) 8px; flex: 1 1 auto; border-radius: 2px; background: currentColor; opacity: 0.08; }
+.ex-loading { opacity: 0.7; }

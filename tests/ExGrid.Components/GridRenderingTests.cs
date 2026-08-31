@@ -5,7 +5,7 @@ using Xunit;
 
 namespace ExGrid.Components.Tests;
 
-public class GridRenderingTests : BunitContext
+public class GridRenderingTests : GridTestContext
 {
     private static IRenderedComponent<ExGrid<TestRow>> RenderGrid(
         BunitContext ctx, TestRow[] rows, GridColumn<TestRow>[] columns, double? rowHeight = null)

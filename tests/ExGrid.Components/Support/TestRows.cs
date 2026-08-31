@@ -21,6 +21,26 @@ internal static class TestRows
         new() { Book = "Gamma", Amount = 0m, AsOf = new DateTime(2026, 1, 7), Active = true },
     ];
 
+    /// <summary>A result too large to paint, for the virtualisation tests. Book labels
+    /// are a constant length so an Auto width settles immediately and slice assertions
+    /// are not chasing a growing column.</summary>
+    internal static TestRow[] Many(int count)
+    {
+        var rows = new TestRow[count];
+        for (var i = 0; i < count; i++)
+        {
+            rows[i] = new TestRow
+            {
+                Book = $"Row {i:D6}",
+                Amount = i,
+                AsOf = new DateTime(2026, 1, 1).AddDays(i % 365),
+                Active = i % 2 == 0,
+            };
+        }
+
+        return rows;
+    }
+
     internal static GridColumn<TestRow>[] Columns() =>
     [
         new("Book", ColumnType.Text, r => r.Book),

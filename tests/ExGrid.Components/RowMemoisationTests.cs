@@ -9,7 +9,7 @@ namespace ExGrid.Components.Tests;
 /// Transcribes ADR-0003: the boundary sits at the row, ShouldRender is hand-written,
 /// and the change signal is a different instance, never rewritten contents.
 /// </summary>
-public class RowMemoisationTests : BunitContext
+public class RowMemoisationTests : GridTestContext
 {
     [Fact] // ADR-0003: an unchanged row instance skips re-rendering entirely
     public void Re_pushing_the_same_window_and_columns_renders_no_row_again()

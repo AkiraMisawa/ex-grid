@@ -9,7 +9,7 @@ namespace ExGrid.Components.Tests;
 /// The ADR-0016 wiring: columns carry C#-resolved pixel widths, and a Number or Date
 /// that does not fit is painted as ####, never as a plausible-looking shorter number.
 /// </summary>
-public class OverflowRenderingTests : BunitContext
+public class OverflowRenderingTests : GridTestContext
 {
     private static IRenderedComponent<ExGrid<TestRow>> RenderGrid(
         BunitContext ctx, TestRow[] rows, GridColumn<TestRow>[] columns)

@@ -13,7 +13,8 @@ one-directionally.
 
 ```razor
 @* Push — the bare entry point *@
-<ExGrid Window="@State.Value.Window" TotalCount="@State.Value.Total"
+<ExGrid Window="@State.Value.Window" WindowStart="@State.Value.WindowStart"
+        TotalCount="@State.Value.Total"
         Sorts="@State.Value.Sorts"   Filter="@State.Value.Filter"
         IsLoading="@State.Value.IsLoading"
         OnRangeNeeded="r => Dispatcher.Dispatch(new RangeNeeded(r))"
@@ -69,6 +70,20 @@ The reasons only surfaced after editing was added to the scope.
   implementation faces the same, already-validated shape. A range **beyond the currently known
   rows is legal** — requests race with data updates — and answering nothing is the correct
   answer, as the reference implementation does.
+- **A Window has to say where it starts** *(refined while implementing)*. The original sample
+  passed the rows and the total and left the start implicit, which only works while the Window
+  is the whole result. Once it is a slice, every offset on screen depends on knowing which
+  positions it holds, so `WindowStart` joins the contract. `TotalCount` left null claims the
+  Window **is** the whole result; a non-zero start alongside it contradicts that and is refused,
+  as is a Window claiming rows past the total. Rather than paint them at the wrong place.
+- **The grid asks once and keeps painting** *(refined while implementing)*. A Range Request is
+  raised after a render, never during one, so a Consumer answering synchronously cannot re-enter
+  the render it was called from; the answer arrives as an ordinary parameter change and the
+  check simply finds the Viewport covered. What is asked for is the **visible range** — read-ahead
+  is the Consumer's judgement, not something the grid can guess — and it is not asked for again
+  until the Window moves. **Where the Window sits is what counts, never which instance it is**:
+  a Consumer that builds its Window inline hands over a fresh list on every render, and treating
+  that as an answer would spin.
 - **The Consumer carries more.** Holding the Window, answering range requests and expressing the
   loading state are now its job. **The bundled `GridSource`** takes that over, so for a small
   Consumer the ergonomics are unchanged from pull

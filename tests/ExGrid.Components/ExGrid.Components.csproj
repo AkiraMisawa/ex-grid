@@ -15,6 +15,10 @@
     <!-- bunit 2.x carries no test-framework dependency of its own, so it composes
          with xunit.v3 on Microsoft.Testing.Platform. -->
     <PackageReference Include="bunit" Version="2.9.0" />
+    <!-- FakeTimeProvider drives the settle delay (ADR-0004) deterministically. The
+         abstraction it fakes, TimeProvider, is in the net8 BCL, so the core stays
+         dependency-free (ADR-0019) and only the tests take this package. -->
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>

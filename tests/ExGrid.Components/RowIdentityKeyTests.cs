@@ -8,7 +8,7 @@ namespace ExGrid.Components.Tests;
 /// Row Identity is reference identity (ADR-0003), and the row diffing key must follow
 /// it even when TRow overrides Equals — value-equal rows are still different rows.
 /// </summary>
-public class RowIdentityKeyTests : BunitContext
+public class RowIdentityKeyTests : GridTestContext
 {
     private sealed record RecordTrade(string Book, decimal Amount);
 

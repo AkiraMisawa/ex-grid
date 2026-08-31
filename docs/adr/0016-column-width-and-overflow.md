@@ -78,6 +78,17 @@ Not narrowing means it cannot oscillate, and after a few screens it settles in p
 narrow, the user presses "size to fit" explicitly (which fixes the width at the content of that
 moment).
 
+*(Refined while implementing: the width is measured from **what has been painted**, not from the
+whole Window. A Window can hold far more rows than the Viewport shows, and measuring all of them
+on every push would cost more than virtualisation saves. Because observation is a monotone
+maximum, seeing fewer rows can never narrow a column — a wide value simply grows it as it
+scrolls into the Viewport, which is this diagram's direction anyway. Measuring is also driven by
+the same signals rendering is — a different Window instance, a different slice on screen,
+different columns — and never by a render alone: re-reading the rows every time would let a
+value **rewritten in place** grow a column and repaint through the width path, which is the
+repaint [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md) promises will not
+happen.)*
+
 *(Refined while implementing: before the first Window an Auto column stands at `MinWidth` —
 the diagram's "computed from the first Window" is the first observations growing that floor.
 Observation is per value and order-independent, and what is observed is the value's **full

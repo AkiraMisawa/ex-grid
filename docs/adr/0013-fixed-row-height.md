@@ -86,3 +86,10 @@ about what expands.
   ([ADR-0016](./0016-column-width-and-overflow.md)). There is no wrapping onto multiple lines.
 - **`RowHeight` is a public parameter and must not be overridable from an external stylesheet.**
   It is emitted as a CSS variable, but the truth lives in C#.
+- **So is the Viewport's height** *(refined while implementing)*. The same arithmetic needs to
+  know how tall the scrolling area is, in order to answer how many rows fit. Measuring the
+  element would mean a layout round-trip through JavaScript, which is deliberately not on the
+  allowlist ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)) — and a height that
+  only CSS knew would drift the painted rows away from the arithmetic in exactly the way this
+  ADR is about. `ViewportHeight` is therefore a C# parameter emitted inline, like the row
+  height, and the two together are the whole of the vertical geometry.

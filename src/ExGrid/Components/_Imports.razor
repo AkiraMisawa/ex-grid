@@ -4,3 +4,7 @@
    where a plain "ExGrid.Columns" is looked up against sibling types first (the CS0426
    trap recorded in AGENTS.md). *@
 @using Microsoft.AspNetCore.Components
+@* Required for @@onscroll and friends to compile as event handlers rather than as
+   plain HTML attributes: the [EventHandler] declarations live in this namespace, and
+   without it the markup builds and renders while quietly listening to nothing. *@
+@using Microsoft.AspNetCore.Components.Web
