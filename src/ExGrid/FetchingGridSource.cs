@@ -13,7 +13,7 @@ namespace ExGrid;
 /// has been told is empty — "nothing to show is not a range" (ADR-0001) — so a source
 /// that starts with nothing has to break its own cold start.</para>
 /// </summary>
-public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
+public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable
 {
     /// <summary>How many rows the first fetch asks for, before the grid has said how
     /// tall it is. Wide enough for an ordinary Viewport; the grid's own request replaces
@@ -30,6 +30,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
 
     private CancellationTokenSource? _cancellation;
     private RowRange? _inFlight;
+    private bool _disposed;
     private Task _current = Task.CompletedTask;
     private int _generation;
     private int _pageRows = DefaultPageRows;
@@ -86,10 +87,11 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
     public void OnColumnsChanged(IReadOnlyList<ColumnInfo<TRow>> columns)
     {
         ArgumentNullException.ThrowIfNull(columns);
-        if (_started)
+        if (_started || _disposed)
             return;
         _started = true;
-        StartDetached(new RowRange(0, _pageRows));
+        var first = new RowRange(0, _pageRows);
+        StartDetached(first, first);
     }
 
     public void OnSortChanged(IReadOnlyList<SortSpec> sorts)
@@ -103,9 +105,13 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
 
     public void OnFilterChanged(GridFilter? filter)
     {
-        if (ReferenceEquals(filter, Filter))
+        // Structurally, and stored as a copy: a Consumer's GridFilter is typically backed
+        // by its own live Dictionary and List, so comparing or keeping it by reference
+        // makes a mutation look like nothing and a re-hand look like a change — both
+        // wrong, and both silent (ADR-0023).
+        if (GridFilters.Equal(filter, Filter))
             return;
-        Filter = filter;
+        Filter = GridFilters.Snapshot(filter);
         Restart();
     }
 
@@ -116,7 +122,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
         _pageRows = Math.Max(_pageRows, range.Count);
         _started = true;
 
-        if (Covers(range))
+        if (_disposed || Covers(range))
             return Task.CompletedTask;
 
         var wanted = Expand(range);
@@ -126,7 +132,10 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
         if (_inFlight == wanted)
             return _current;
 
-        return Start(wanted);
+        // Both ranges travel together: the widened one is what the server is asked for,
+        // and the unwidened one is what the answer has to cover. Judging the answer by
+        // the widened start accepts a page that reaches none of the rows the grid needs.
+        return Start(wanted, range);
     }
 
     private bool Covers(RowRange range)
@@ -154,46 +163,57 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
         Window = [];
         WindowStart = 0;
         TotalCount = 0;
-        StartDetached(new RowRange(0, _pageRows));
+        // Notified whatever the loading flag was doing. The Window, the total and the
+        // order's version have all moved, and none of that depends on whether a fetch
+        // happened to be in flight — which, while the user is scrolling, it usually is.
+        // Left to the loading flip, a filter change lands invisibly: the old rows stay on
+        // screen under the new filter, with a selection ADR-0011 says must be dropped.
+        var first = new RowRange(0, _pageRows);
+        StartDetached(first, first, notify: true);
     }
 
-    private void StartDetached(RowRange range) => _ = SurfaceAsync(Start(range));
+    private void StartDetached(RowRange wanted, RowRange needed, bool notify = false)
+        => _ = SurfaceAsync(Start(wanted, needed, notify));
 
-    private Task Start(RowRange range)
+    private Task Start(RowRange wanted, RowRange needed, bool notify = false)
     {
         // The previous answer can no longer be the truth, so it is cancelled and, if it
         // arrives anyway, discarded by generation below. Cancelling is a courtesy to the
         // server; the generation check is what makes it correct.
+        // Cancelled but not disposed here: the superseded fetch still holds this token,
+        // and a delegate that registers on it would meet an ObjectDisposedException for a
+        // reason it could not see. Each run disposes its own.
         _cancellation?.Cancel();
-        _cancellation?.Dispose();
         var cancellation = new CancellationTokenSource();
         _cancellation = cancellation;
-        _inFlight = range;
+        _inFlight = wanted;
         var generation = ++_generation;
         // Only when it actually flips: a second range asked for while the first is still
         // in flight moves nothing the grid paints, and an event for it would repaint
         // every row for nothing (ADR-0023's no-op principle).
         var wasLoading = IsLoading;
         IsLoading = true;
-        if (!wasLoading)
+        if (notify || !wasLoading)
             StateChanged?.Invoke();
-        _current = RunAsync(range, generation, cancellation.Token);
+        _current = RunAsync(wanted, needed, generation, cancellation);
         return _current;
     }
 
-    private async Task RunAsync(RowRange range, int generation, CancellationToken cancellation)
+    private async Task RunAsync(
+        RowRange wanted, RowRange needed, int generation, CancellationTokenSource cancellation)
     {
         try
         {
-            var page = await _fetch(new GridQuery(range, Sorts, Filter), cancellation).ConfigureAwait(true);
+            var page = await _fetch(new GridQuery(wanted, Sorts, Filter), cancellation.Token)
+                .ConfigureAwait(true);
             // Late and superseded: a newer question has been asked, and this answer is to
             // the old one. Applying it would put rows on screen that nothing asked for —
             // the failure ADR-0001 names when it hands stale-answer discarding to the
             // source.
-            if (generation != _generation)
+            if (generation != _generation || _disposed)
                 return;
             ArgumentNullException.ThrowIfNull(page);
-            Apply(range, page);
+            Apply(needed, page);
         }
         catch (OperationCanceledException) when (generation != _generation)
         {
@@ -201,7 +221,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
         }
         catch (Exception ex)
         {
-            if (generation != _generation)
+            if (generation != _generation || _disposed)
                 return;
             _inFlight = null;
             IsLoading = false;
@@ -214,6 +234,17 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
             }
 
             throw;
+        }
+        finally
+        {
+            // Each run owns its own token source and disposes it here, once every
+            // awaiting continuation is through with it — never at the moment it is
+            // superseded, where the fetch it belongs to is still holding the token.
+            // Cleared first if it is still the current one, so the next Start does not
+            // reach for a source this line has just disposed.
+            if (ReferenceEquals(_cancellation, cancellation))
+                _cancellation = null;
+            cancellation.Dispose();
         }
     }
 
@@ -228,11 +259,19 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
             || (asked.Start < page.TotalCount && page.Start + page.Rows.Count <= asked.Start))
         {
             throw new InvalidOperationException(
-                $"Asked for {asked.Count} rows at {asked.Start} and got {page.Rows.Count} at {page.Start} " +
-                $"of {page.TotalCount}, which does not cover the position asked for. A source may answer with " +
-                "fewer rows, or with none when the result has shrunk past that position, but not with a " +
-                "different part of the result (ADR-0025).");
+                $"The grid needs {asked.Count} rows at {asked.Start} and the answer is {page.Rows.Count} rows " +
+                $"at {page.Start} of {page.TotalCount}, which does not reach it. A source may answer with fewer " +
+                "rows than the read-ahead asked for, or with none when the result has shrunk past that " +
+                "position, but the rows the grid is about to paint have to be in it (ADR-0025). A server that " +
+                "caps its pages below the read-ahead window will trip this.");
         }
+
+        // A result that shrank means the positions mean something else — row 900 is a
+        // different row, or no row at all — so the selection goes, exactly as it does for
+        // a reorder (ADR-0011). Growing is safe: existing positions still name the same
+        // rows.
+        if (TotalCount is int previous && page.TotalCount < previous)
+            RowSequenceVersion++;
 
         _inFlight = null;
         IsLoading = false;
@@ -251,15 +290,37 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>
     /// </summary>
     private async Task SurfaceAsync(Task fetch)
     {
+        if (_context is null)
+        {
+            // Nowhere to rethrow to — a source built in a DI service or a static
+            // initialiser has no dispatcher. Left faulted rather than swallowed, so
+            // .NET's unobserved-exception path can still report it; LastError holds it
+            // either way. ADR-0025 says such a source must subscribe to FetchFailed.
+            await fetch.ConfigureAwait(false);
+            return;
+        }
+
         try
         {
             await fetch.ConfigureAwait(true);
         }
         catch (Exception ex)
         {
-            _context?.Post(
-                static state => ExceptionDispatchInfo.Capture((Exception)state!).Throw(),
-                ex);
+            _context.Post(static state => ExceptionDispatchInfo.Capture((Exception)state!).Throw(), ex);
         }
+    }
+
+    /// <summary>
+    /// Stops fetching and lets go of what is in flight. The grid does not own its Source
+    /// — the Consumer built it, so the Consumer disposes it (ADR-0025). Left undisposed,
+    /// a fetch outstanding at teardown goes on running and goes on raising
+    /// <see cref="StateChanged"/> at whoever is still listening.
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+        _cancellation?.Cancel();
     }
 }

@@ -232,6 +232,106 @@ public class GridSourceFetchTests
         Assert.Equal(version, source.RowSequenceVersion);
     }
 
+    [Fact] // ADR-0011 / ADR-0025: a query change is visible even when one was already in flight
+    public void A_sort_change_during_a_fetch_still_reports_itself()
+    {
+        var server = new Server();
+        var source = server.Source();
+        server.Last.Completion.SetResult(Page(0, 100, 5_000));
+        var changes = 0;
+        source.StateChanged += () => changes++;
+        // A fetch is in flight when the sort changes — the ordinary case while scrolling.
+        _ = source.OnRangeNeededAsync(new RowRange(500, 20));
+        var beforeSort = changes;
+
+        source.OnSortChanged([new SortSpec("Book", SortDirection.Ascending)]);
+
+        // The Window emptied and the order's version moved. Neither depends on whether a
+        // fetch happened to be running, and a grid told nothing goes on painting the old
+        // rows under the new sort, with a selection ADR-0011 says must be dropped.
+        Assert.Equal(beforeSort + 1, changes);
+        Assert.Empty(source.Window);
+    }
+
+    [Fact] // ADR-0025: the answer has to cover the range the GRID needed, not the widened one
+    public async Task An_answer_that_covers_only_the_read_ahead_is_refused()
+    {
+        var server = new Server();
+        var source = server.Source(readAheadRows: 60);
+        server.Last.Completion.SetResult(Page(0, 100, 5_000));
+        await Task.Yield();
+
+        // The grid needs (100, 20); read-ahead widens it to (40, 140). A server that caps
+        // its pages at 50 answers rows 40-89 — which covers the widened start and none of
+        // what the grid asked about. Accepted, the Viewport stays on Placeholders with no
+        // load in flight and no error, and the grid's own dedupe stops it asking again.
+        var wanted = source.OnRangeNeededAsync(new RowRange(100, 20));
+        server.Last.Completion.SetResult(Page(40, 50, 5_000));
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => wanted);
+        Assert.Contains("100", error.Message);
+    }
+
+    [Fact] // ADR-0011: a result that shrank means the positions mean something else
+    public async Task A_smaller_total_drops_the_selection()
+    {
+        var server = new Server();
+        var source = server.Source();
+        server.Last.Completion.SetResult(Page(0, 100, 5_000));
+        await Task.Yield();
+        var version = source.RowSequenceVersion;
+
+        var wanted = source.OnRangeNeededAsync(new RowRange(200, 20));
+        server.Last.Completion.SetResult(Page(200, 20, 4_000));
+        await wanted;
+
+        Assert.NotEqual(version, source.RowSequenceVersion);
+    }
+
+    [Fact] // ADR-0023: the Filter is compared structurally and kept as a copy
+    public void The_filter_is_snapshotted_and_compared_by_content()
+    {
+        var server = new Server();
+        var source = server.Source();
+        server.Last.Completion.SetResult(Page(0, 100, 5_000));
+        var clauses = new List<FilterClause> { new(FilterOperator.IsBlank) };
+        var filter = new GridFilter(new Dictionary<string, FilterSpec> { ["Book"] = new(clauses) });
+        source.OnFilterChanged(filter);
+        var fetches = server.Calls.Count;
+
+        // Mutating the Consumer's own object does not rewrite the query that ran: what
+        // was applied is what the source kept, and it kept a copy.
+        clauses.Add(new FilterClause(FilterOperator.IsNotBlank));
+        Assert.Single(source.Filter!.Columns["Book"].Clauses);
+
+        // A structurally equal but different instance is not a change — the record's own
+        // equality would call it one, because it compares the collections by reference.
+        source.OnFilterChanged(new GridFilter(new Dictionary<string, FilterSpec>
+        {
+            ["Book"] = new([new FilterClause(FilterOperator.IsBlank)]),
+        }));
+        Assert.Equal(fetches, server.Calls.Count);
+
+        // And the mutated one now differs in content, so it IS a change.
+        source.OnFilterChanged(filter);
+        Assert.Equal(fetches + 1, server.Calls.Count);
+    }
+
+    [Fact] // ADR-0025: a disposed source stops working — nothing in flight reaches anyone
+    public void Disposing_the_source_cancels_what_is_in_flight()
+    {
+        var server = new Server();
+        var source = server.Source();
+        var changes = 0;
+        source.StateChanged += () => changes++;
+
+        source.Dispose();
+
+        Assert.True(server.Last.Cancellation.IsCancellationRequested);
+        server.Last.Completion.SetResult(Page(0, 100, 5_000));
+        Assert.Equal(0, changes);
+    }
+
     [Fact] // ADR-0025: a failure is reported, and the rows already on screen are left alone
     public async Task A_failure_is_reported_and_leaves_the_window_standing()
     {

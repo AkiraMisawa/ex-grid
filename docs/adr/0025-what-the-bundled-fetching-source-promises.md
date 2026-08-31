@@ -52,7 +52,7 @@ Consumer has *said* the result is empty, and asking anyway is the grid disbeliev
 | The widened range equals the one in flight | **hand back the fetch already running.** Awaiting it is also what carries a failure to the grid |
 | A different range while one is in flight | cancel the old one and start the new. **The cancel is a courtesy to the server; the generation counter is what makes it correct** |
 | An answer whose generation is not the current one | **discarded, always.** This is the accident ADR-0001 named: a fling asks three times, and the first answer arriving last would paint rows nobody is looking at |
-| An answer that does not reach the position asked for | **refused by name.** A source may answer with fewer rows, or with none when the result has shrunk past that position — but a different part of the result leaves the Viewport on Placeholders, and the grid would ask again, and get the same answer, and spin |
+| An answer that does not reach **the range the grid needed** | **refused by name.** A source may answer with fewer rows than the read-ahead asked for, or with none when the result has shrunk past that position — but the rows the grid is about to paint have to be in it, or the Viewport stays on Placeholders, the grid asks again, gets the same answer, and its own dedupe then goes quiet: no rows, no load, no error. *(The check is against the **unwidened** range. Judging it by the widened one accepts a page that reaches none of the rows the grid needs — a server capping its pages below the read-ahead window does exactly that.)* |
 
 Read-ahead is a number the Consumer passes rather than a guess in the grid: how many rows
 are worth fetching ahead is a judgement about their data and their server, which is exactly
@@ -82,11 +82,23 @@ build, which ADR-0015 explicitly wants to work.
 | The Window | **is left exactly as it was.** Removing rows over a network hiccup empties a screen that was fine a moment ago |
 | `LastError` | holds the exception, for a Consumer that would rather read a property than subscribe |
 | `FetchFailed` | raised |
-| No subscriber | **the exception is rethrown** — on the grid's awaited call when the grid asked, and otherwise on the synchronization context the source was created on, so it reaches the host's error UI |
+| No subscriber | **the exception is rethrown** — on the grid's awaited call when the grid asked, and otherwise on the synchronization context the source was created on, so it reaches the host's error UI. **A source built where there is no context** (a DI service, a static initialiser) has nowhere to rethrow to: the task is left faulted rather than swallowed, and `LastError` holds it — but such a source **must subscribe to `FetchFailed`**, or a failed cold start is a blank grid and a silence |
 
 Rethrowing when nobody is listening is the point. A failed fetch that vanished leaves the
 previous rows on screen looking current, and a Consumer who never wired up an error handler
 is exactly the one who would not notice.
+
+## Two things that only look like details
+
+**A query change reports itself whatever the loading flag was doing.** The Window, the total
+and the Row Sequence Version all move at that moment, and none of it depends on whether a
+fetch happened to be in flight — which, while the user is scrolling, it usually is. Reporting
+only the `IsLoading` flip leaves a filter change invisible in exactly that case: the old rows
+stay on screen under the new filter, carrying a selection ADR-0011 says must be dropped.
+
+**A result that shrank drops the selection too.** Positions are what a selection is made of
+(ADR-0011), and when the total comes back smaller they name different rows, or none. Growing
+is safe — the existing positions still mean what they meant.
 
 ## Consequences
 
@@ -99,6 +111,10 @@ is exactly the one who would not notice.
   Window away, which is the invalidation problem ADR-0001 got rid of by making the grid
   hold nothing. If a measurement later shows the refetch is what hurts, the cache belongs
   here, in the source, and not in the grid.
+- **The Consumer disposes the Source.** The grid does not own it — it is handed one, and
+  several grids could in principle be handed the same one — so `FetchingGridSource` is
+  `IDisposable` and the Consumer that built it releases it. Left undisposed, a fetch
+  outstanding at teardown goes on running and goes on raising `StateChanged`.
 - **`PageSize` and a pager are not here** ([ADR-0015](./0015-paging-is-another-driver-for-range-requests.md)).
   Paging changes only what drives a Range Request, so it rides this same machinery when it
   comes.
