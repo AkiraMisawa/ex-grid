@@ -40,12 +40,34 @@
    layout read through JavaScript (ADR-0021). A Template or Action cell turns it back on
    for itself and stops the event there (ADR-0020). */
 .ex-row { display: flex; height: var(--ex-row-height); line-height: var(--ex-row-height); pointer-events: none; }
+/* Row Kind (ADR-0024): the role of a row, painted without touching its geometry. Height
+   stays exactly the detail row's — the virtualisation arithmetic, the selection overlay
+   and the editor position are all one row height (ADR-0013), and a group row that were
+   taller would drift all three out of alignment. No indentation either: Row Kind is the
+   role, not the depth, and the grid is told neither how deep a group sits nor what it
+   contains (ADR-0001). Weight and ground only. */
 /* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016), and
    the 8px padding pairs with DefaultCellMetrics.CellHorizontalPaddingPx — the two must
    move together. The ellipsis only ever shows on Text/Boolean: a number that does not
    fit is painted as #### by the core, never clipped. */
 .ex-cell, .ex-header-cell { flex: 0 0 auto; box-sizing: border-box; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ex-cell-numeric { text-align: right; }
+/* Cell State (ADR-0006): the grid says which of the five states a cell is in, the theme
+   says what that looks like — hence a variable per state with a default that only has to
+   be legible. Every one of them decorates; none replaces the text. Missing in particular
+   paints no substitute glyph: what is missing is the metadata's claim, not the value, and
+   a Blank cell that really is Blank must stay distinguishable from one nobody could
+   answer for (ADR-0023). The accompanying data — an as-of stamp, a failure message —
+   stays with the Consumer and is not on the cell. */
+.ex-state-stale { color: var(--ex-state-stale-color, #8a6d1f); font-style: var(--ex-state-stale-style, italic); }
+.ex-state-missing {
+    background-image: linear-gradient(var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)), var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)));
+}
+.ex-state-error { color: var(--ex-state-error-color, #b3261e); text-decoration: var(--ex-state-error-decoration, underline wavy); text-decoration-skip-ink: none; }
+/* A corner mark rather than a fill: the value has been overridden, and the number itself
+   is what the reader is here for. box-shadow paints inside the cell's own box, so it
+   costs no extra element and cannot shift the row's flow. */
+.ex-state-modified { box-shadow: var(--ex-state-modified-mark, inset -6px 6px 0 -3px rgba(106, 68, 166, 0.9)); }
 /* What stands in for the columns left out to the left of the first painted one. It must
    not be allowed to shrink: a flex-shrunk spacer would slide every painted column left
    of where the arithmetic put it, and the header and the body would disagree. */
@@ -54,8 +76,11 @@
    (ADR-0004). `left` is the column's own offset, set inline from C#: sticky keeps an
    element in its normal flow position until the content scrolls past that offset. Opaque
    for the same reason the header is — the columns underneath pass beneath it. */
-.ex-pinned { position: sticky; z-index: 2; background: var(--ex-pinned-background, Canvas); }
-.ex-header .ex-pinned { z-index: 5; background: var(--ex-header-background, Canvas); }
+/* background-COLOR, not the shorthand: Cell State and Row Kind paint their tints as
+   background images on the same cell, and the shorthand would reset them. The colour is
+   the ground underneath; the tints layer on top. */
+.ex-pinned { position: sticky; z-index: 2; background-color: var(--ex-pinned-background, Canvas); }
+.ex-header .ex-pinned { z-index: 5; background-color: var(--ex-header-background, Canvas); }
 /* Selection is painted as overlay rectangles, never as a class on the selected cells
    (ADR-0008): one element per range, so what it costs depends on how many rectangles
    there are and not on how many cells they cover — and no row parameter carries

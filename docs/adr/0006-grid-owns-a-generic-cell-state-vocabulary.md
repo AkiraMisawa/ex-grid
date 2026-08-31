@@ -48,6 +48,41 @@ rule on the column suffices. This ADR concerns only the third.
 - **Adopt the Consumer's vocabulary directly (as-of / staleness)** — rejected. It fuses the grid
   to one Consumer. The term **Consumer** exists in `CONTEXT.md` precisely to avoid this.
 
+## How a change reaches the screen: the lookup's identity
+
+*(Decided while implementing. The ADR had settled that the state is **asked for** by
+(row, column) and left open how the grid learns that an answer would now be different.)*
+
+Metadata changes without any row instance changing — a batch lands, and the rows are the
+same objects they were. The grid cannot see that by comparing rows, and re-reading every
+visible cell on every render is exactly the per-cell cost row memoisation exists to avoid.
+
+**The lookup delegate's identity is the change signal.**
+
+```
+hold the lookup in a field                → same reference = the metadata is unchanged
+hand over a NEW lookup when it changes    → reference changed = repaint the rows
+```
+
+It is the same rule as ADR-0003's "a new row instance, never a rewrite in place", and the
+same rule as its "cache delegates passed as parameters in a field" — one discipline for a
+Consumer to learn instead of three. A version number beside the lookup was rejected for
+being a second thing to keep in step: "swapped the lookup, left the version alone" fails
+silently and looks correct on screen.
+
+**The cost is real and is accepted:** rewriting the dictionary behind a lookup that stays
+reference-identical leaves the old states painted. That is why the sample's cells page has
+two buttons doing the same edit — one hands over a new lookup, one does not — and why a
+bUnit test pins the second one's screen as unchanged.
+
+## Missing paints no substitute text
+
+Also decided while implementing. The five states decorate; none of them replaces the
+cell's text. **Missing** is the one worth stating outright: it does not paint a dash, an
+`n/a` or anything else. A Blank the Consumer really holds and a cell nobody could answer
+for must stay distinguishable, and inventing a glyph for the second is the grid saying
+something it was not told (ADR-0023 owns what Blank means).
+
 ## Consequences
 
 - **The granularity of the vocabulary has to be decided up front.** Adding values later is easy;

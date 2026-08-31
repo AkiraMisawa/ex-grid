@@ -1,5 +1,6 @@
 @typeparam TRow where TRow : class
 @using System.Runtime.CompilerServices
+@using global::ExGrid.Cells
 @using global::ExGrid.Columns
 @using global::ExGrid.Selection
 @using Microsoft.JSInterop
@@ -112,7 +113,8 @@
                                output is the same pinned cells every time. *@
                             <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
-                                       Placeholder="_placeholderMode" Metrics="CellMetrics" />
+                                       Placeholder="_placeholderMode" Metrics="CellMetrics"
+                                       CellState="CellState" />
                         }
                         else
                         {
@@ -257,6 +259,19 @@
     /// <summary>Whether an answer is in flight. Forgetting to pass it means a stale
     /// Window is shown as if it were current (ADR-0001).</summary>
     [Parameter] public bool IsLoading { get; set; }
+
+    /// <summary>
+    /// Cell Metadata, asked for by (row, column) and answered as one of the five states
+    /// the grid understands (ADR-0006). The grid does not interpret the answer beyond
+    /// painting a class for it — the Consumer's own vocabulary is mapped onto these five
+    /// on the way in, and any accompanying data stays with the Consumer.
+    ///
+    /// <para><b>Hold it in a field and hand over a new one when the metadata changes.</b>
+    /// The delegate's identity is the change signal, the way a row instance's is
+    /// (ADR-0003): rewriting the dictionary behind a lookup that stays the same leaves
+    /// the states already on screen where they are.</para>
+    /// </summary>
+    [Parameter] public CellStateOf<TRow>? CellState { get; set; }
 
     private ElementReference _scroller;
     private IJSObjectReference? _module;
