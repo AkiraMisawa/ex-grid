@@ -88,6 +88,17 @@ with the same data, so server-side implementations agree for free. A Consumer wh
 Utc- and Local-kinded values must normalise in the accessor; the grid cannot guess which
 instant a Kind was meant to name.)*
 
+*(Refined again while fixing review findings — the other two permitted date types were
+running on their native comparisons without those semantics being written down, so they are
+pinned here rather than left to drift: `DateTimeOffset` compares and equals by the instant it
+names — the offset is presentation, so two stored values with different offsets naming the
+same moment are Equal and tie in sort — and `DateOnly` compares by its day. Both are the
+types' own .NET semantics, the same stance as `DateTime` above; a Consumer wanting
+offset-preserving distinctions normalises in the accessor. Additionally, the one-date-type
+rule is now held against every cell a filtered Date column reads, eagerly at extraction —
+whether mixed-type cell data is refused must not depend on which operator happens to
+compare.)*
+
 **A mismatch between declared type and accessor value is refused.** An unknown column name in a
 Filter or Sorts, or an accessor returning text where the column is declared Number, throws an
 exception naming the column. Rather than be quietly wrong — comparing values under the wrong

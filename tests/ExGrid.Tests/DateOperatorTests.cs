@@ -63,4 +63,30 @@ public class DateOperatorTests
             () => TradedOnMatches(new DateTime(2026, 8, 30), FilterOperator.Equals, new DateOnly(2026, 8, 30)));
         Assert.Contains("TradedOn", ex.Message);
     }
+
+    [Fact] // ADR-0023: mixed cell data is refused regardless of which operator would compare
+    public void A_mismatched_cell_type_is_refused_even_when_no_comparing_operator_reaches_it()
+    {
+        // Or(IsNotBlank, Equals): IsNotBlank alone would match without ever comparing,
+        // which used to let the mismatched cell slip through — acceptance must not
+        // depend on the operator.
+        var filter = TradeColumns.FilterOnAny("TradedOn",
+            new FilterClause(FilterOperator.IsNotBlank),
+            new FilterClause(FilterOperator.Equals, new DateTime(2026, 8, 30)));
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => TradeColumns.Matches(new Trade(TradedOn: new DateOnly(2026, 8, 30)), filter));
+        Assert.Contains("one date type per column", ex.Message);
+    }
+
+    [Fact] // ADR-0023: date In is set membership, agreeing with Equals
+    public void In_matches_dates_by_set_membership()
+    {
+        var filter = TradeColumns.FilterOn("TradedOn",
+            new FilterClause(FilterOperator.In,
+                Values: [new DateTime(2026, 8, 29), new DateTime(2026, 8, 30)]));
+
+        Assert.True(TradeColumns.Matches(new Trade(TradedOn: new DateTime(2026, 8, 30)), filter));
+        Assert.False(TradeColumns.Matches(new Trade(TradedOn: new DateTime(2026, 8, 31)), filter));
+    }
 }

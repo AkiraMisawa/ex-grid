@@ -13,6 +13,21 @@ namespace ExGrid.Columns;
 /// </summary>
 public static class OverflowRules
 {
+    /// <summary>
+    /// The one place the Number/Date-versus-Text/Boolean split lives. It answers both
+    /// "does this type become <c>####</c> when it does not fit" and, for rendering,
+    /// "is this a numeric presentation" (right-aligned, tabular digits) — the two are
+    /// the same classification by construction (ADR-0016), and consumers call this
+    /// instead of re-deriving it. An undefined ColumnType is refused, never quietly
+    /// treated as text.
+    /// </summary>
+    public static bool HashesWhenOverflowing(ColumnType type) => type switch
+    {
+        ColumnType.Text or ColumnType.Boolean => false,
+        ColumnType.Number or ColumnType.Date => true,
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
+    };
+
     public static OverflowDecision Decide(
         ColumnType type,
         string formattedText,
@@ -29,25 +44,16 @@ public static class OverflowRules
             throw new ArgumentOutOfRangeException(nameof(metrics), metrics,
                 "default(CellTextMetrics) is not valid; construct it with the theme's real metrics.");
 
-        switch (type)
-        {
-            case ColumnType.Text:
-            case ColumnType.Boolean:
-                // A truncated "fal…" is visibly truncated — the quietly-wrong danger
-                // motivating #### is absent — and proportional letters cannot be
-                // estimated by the tabular-digit model anyway (ADR-0016).
-                return OverflowDecision.ShowValue(formattedText);
+        // A truncated "fal…" is visibly truncated — the quietly-wrong danger motivating
+        // #### is absent — and proportional letters cannot be estimated by the
+        // tabular-digit model anyway (ADR-0016).
+        if (!HashesWhenOverflowing(type))
+            return OverflowDecision.ShowValue(formattedText);
 
-            case ColumnType.Number:
-            case ColumnType.Date:
-                if (metrics.EstimatePx(formattedText.Length) <= resolvedWidthPx)
-                    return OverflowDecision.ShowValue(formattedText); // exactly fitting still shows
-                var hashCount = Math.Max(1, (int)Math.Floor(
-                    metrics.ContentWidthPx(resolvedWidthPx) / metrics.DigitWidthPx));
-                return OverflowDecision.Hashes(new string('#', hashCount));
-
-            default:
-                throw new ArgumentOutOfRangeException(nameof(type), type, null);
-        }
+        if (metrics.EstimatePx(formattedText.Length) <= resolvedWidthPx)
+            return OverflowDecision.ShowValue(formattedText); // exactly fitting still shows
+        var hashCount = Math.Max(1, (int)Math.Floor(
+            metrics.ContentWidthPx(resolvedWidthPx) / metrics.DigitWidthPx));
+        return OverflowDecision.Hashes(new string('#', hashCount));
     }
 }

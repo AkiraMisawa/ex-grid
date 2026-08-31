@@ -236,6 +236,13 @@ selected** ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md))
 be visible; if it leaves the Viewport the grid scrolls to it.
 _Avoid_: cursor, current cell, selected cell
 
+**Held Selection**:
+A Selection paired with the Row Sequence Version it was made under. Reconciling it
+against the current version is what drops the selection on reorder — the rule lives in
+this pairing, not in each holder's discipline
+([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+_Avoid_: selection snapshot, selection cache (nothing is restored from it)
+
 **Anchor**:
 The **fixed** end of range extension. Moved by a click and by Ctrl+click. When there are disjoint
 ranges, Shift+arrow extends **the range the Anchor belongs to**. After Ctrl+click deselects a

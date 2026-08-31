@@ -110,9 +110,14 @@ public sealed class InMemoryGridSource<TRow>
         // A byte-identical repush changes nothing — no recompute, no event. Without
         // this, a binding layer that repushes on every render and re-renders on
         // StateChanged would spin (ADR-0023's no-op principle, applied to the commit).
+        // Columns compare element-wise, never by list reference: _columns is a snapshot
+        // (a different instance by construction), while ColumnInfo's record equality —
+        // name, type, and the accessor delegate's identity — is exactly what "the same
+        // columns repushed" means for a grid that caches its column objects (ADR-0003).
         var sortsChanged = !sorts.SequenceEqual(Sorts);
         var filterChanged = !FiltersEqual(filter, Filter);
-        if (!sortsChanged && !filterChanged && ReferenceEquals(columns, _columns))
+        var columnsChanged = _columns is null || !columns.SequenceEqual(_columns);
+        if (!sortsChanged && !filterChanged && !columnsChanged)
             return;
 
         // Compute first — a refusal from the engine must leave the source usable.

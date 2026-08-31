@@ -112,4 +112,14 @@ public class OverflowRuleTests
         // default(CellTextMetrics) sidesteps the ctor — refused by name, not a quiet fit-everything
         Assert.Throws<ArgumentOutOfRangeException>(() => OverflowRules.Decide(ColumnType.Number, "1", 40, default));
     }
+
+    [Fact] // ADR-0016: the Number/Date-vs-Text/Boolean split has one home, and it refuses unknowns
+    public void The_hashing_classification_is_total_and_refuses_undefined_types()
+    {
+        Assert.True(OverflowRules.HashesWhenOverflowing(ColumnType.Number));
+        Assert.True(OverflowRules.HashesWhenOverflowing(ColumnType.Date));
+        Assert.False(OverflowRules.HashesWhenOverflowing(ColumnType.Text));
+        Assert.False(OverflowRules.HashesWhenOverflowing(ColumnType.Boolean));
+        Assert.Throws<ArgumentOutOfRangeException>(() => OverflowRules.HashesWhenOverflowing((ColumnType)9));
+    }
 }
