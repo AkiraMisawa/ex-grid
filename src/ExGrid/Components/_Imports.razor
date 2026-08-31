@@ -1,0 +1,6 @@
+@* Root-namespace types (GridColumn, ColumnType) resolve via the parent-namespace walk
+   with no @using at all. If a sub-namespace is ever needed here, write it as
+   @using global::ExGrid.Columns — Razor emits usings INSIDE namespace ExGrid.Components,
+   where a plain "ExGrid.Columns" is looked up against sibling types first (the CS0426
+   trap recorded in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components

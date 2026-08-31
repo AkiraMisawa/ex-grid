@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0 so the gating tests execute on the oldest supported runtime (ADR-0022). -->
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Same xunit.v3 / Microsoft.Testing.Platform shape as ExGrid.Tests: VSTest's
+         testhost misses the nix-combined net8 runtime. -->
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <!-- bunit 2.x carries no test-framework dependency of its own, so it composes
+         with xunit.v3 on Microsoft.Testing.Platform. -->
+    <PackageReference Include="bunit" Version="2.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+</Project>

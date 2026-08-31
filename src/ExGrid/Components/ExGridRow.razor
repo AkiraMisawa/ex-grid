@@ -1,0 +1,82 @@
+@typeparam TRow where TRow : class
+@using global::ExGrid.Columns
+
+@*
+    The memoisation boundary sits at the row; cells are plain markup (ADR-0003).
+    ShouldRender is hand-written because Blazor's automatic parameter change detection
+    treats a mutable reference-typed parameter as "may have changed" even when the
+    reference is identical (measured; ADR-0003).
+
+    Public because the row boundary is a documented architectural seam and the bUnit
+    layer counts its renders; it is not meant to be used by a Consumer directly.
+    Selection is never painted here — rows know nothing about it (ADR-0008).
+*@
+<div class="ex-row">
+    @for (var i = 0; i < Columns.Count; i++)
+    {
+        var column = Columns[i];
+        var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Widths[i], Metrics);
+        <div class="@CellClass(column.Type)" style="@WidthStyle(Widths[i])">@decision.DisplayText</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TRow Row { get; set; } = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
+
+    /// <summary>Resolved per-column widths, index-aligned with Columns. The parent
+    /// replaces the array instance only when a width moved (ADR-0016).</summary>
+    [Parameter, EditorRequired] public double[] Widths { get; set; } = [];
+
+    [Parameter] public CellTextMetrics Metrics { get; set; }
+
+    private TRow? _renderedRow;
+    private IReadOnlyList<GridColumn<TRow>>? _renderedColumns;
+    private double[]? _renderedWidths;
+    private CellTextMetrics _renderedMetrics;
+
+    protected override void OnInitialized()
+    {
+        // The first render happens unconditionally — Blazor does not consult
+        // ShouldRender for it — so record what it will paint here. Left unrecorded,
+        // every row pays one extra full render on the second parameter push, which the
+        // render-count tests exist to catch (ADR-0003).
+        _renderedRow = Row;
+        _renderedColumns = Columns;
+        _renderedWidths = Widths;
+        _renderedMetrics = Metrics;
+    }
+
+    protected override bool ShouldRender()
+    {
+        // Identity, not mutation, is the change signal (ADR-0003): a Consumer that
+        // rewrites a row in place gets no repaint — it hands over a new instance.
+        if (ReferenceEquals(_renderedRow, Row)
+            && ReferenceEquals(_renderedColumns, Columns)
+            && ReferenceEquals(_renderedWidths, Widths)
+            && _renderedMetrics == Metrics)
+        {
+            return false;
+        }
+
+        _renderedRow = Row;
+        _renderedColumns = Columns;
+        _renderedWidths = Widths;
+        _renderedMetrics = Metrics;
+        return true;
+    }
+
+    /// <summary>The one string a cell paints, measures and decides overflow on — count
+    /// and render must see the same text. A formatting layer replaces the bare
+    /// ToString later; null is a Blank and paints empty (ADR-0023).</summary>
+    internal static string CellText(GridColumn<TRow> column, TRow row)
+        => column.Value(row)?.ToString() ?? "";
+
+    // Interned constants — no per-cell allocation on the render path. The numeric
+    // classification is the core's, not re-derived here (ADR-0016).
+    private static string CellClass(ColumnType type)
+        => OverflowRules.HashesWhenOverflowing(type) ? "ex-cell ex-cell-numeric" : "ex-cell";
+
+    private static string WidthStyle(double px) => FormattableString.Invariant($"width: {px}px");
+}

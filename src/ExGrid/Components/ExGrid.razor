@@ -1,0 +1,163 @@
+@typeparam TRow where TRow : class
+@using System.Globalization
+@using System.Runtime.CompilerServices
+@using global::ExGrid.Columns
+
+@*
+    The push entry point (ADR-0001): the grid paints the Window it is given and holds
+    no data of its own. Only the parameters this layer actually renders are declared —
+    a declared-but-inert parameter would be quietly wrong. The rest of the push
+    contract (TotalCount, OnRangeNeeded, Sorts, Filter, IsLoading, ...) arrives with
+    the layers that give it behaviour.
+
+    The root deliberately has no ShouldRender: re-rendering it is cheap because the
+    row boundaries below it skip (ADR-0003).
+*@
+<div class="ex-grid" style="--ex-row-height: @(RowHeight.ToString(CultureInfo.InvariantCulture))px">
+    <div class="ex-header">
+        @for (var i = 0; i < Columns.Count; i++)
+        {
+            <div class="ex-header-cell" style="@WidthStyle(_resolvedWidths[i])">@Columns[i].Header</div>
+        }
+    </div>
+    <div class="ex-body">
+        @foreach (var row in Window)
+        {
+            <ExGridRow @key="RowKey(row)" Row="row" Columns="Columns" Widths="_resolvedWidths" Metrics="CellMetrics" />
+        }
+    </div>
+</div>
+
+@code {
+    private const double DefaultRowHeightPx = 28;
+
+    /// <summary>
+    /// The metrics behind width observation and the overflow decision until a theme
+    /// layer supplies real ones. The digit width is contractually at least as wide as
+    /// any glyph the formats emit (ADR-0016) — overshooting errs toward an early
+    /// <c>####</c>, the safe direction. Both values pair with ex-grid.css and must move
+    /// with it: 9px covers a tabular digit of the common system fonts at the
+    /// stylesheet's pinned 14px (SF Pro measures 8.55px there), and the padding is its
+    /// 8px. A theme that changes the font supplies its own <see cref="CellMetrics"/>.
+    /// </summary>
+    public static readonly CellTextMetrics DefaultCellMetrics = new(digitWidthPx: 9, cellHorizontalPaddingPx: 8);
+
+    // One key object per row instance, so @key is reference identity even when TRow
+    // overrides Equals (a record row model): value-equal rows are still different rows
+    // (ADR-0003), and Blazor's duplicate-@key refusal must not fire on them. Entries
+    // die with their rows; the table is per closed generic type.
+    private static readonly ConditionalWeakTable<TRow, object> RowIdentityKeys = new();
+
+    /// <summary>The contiguous block of rows the Consumer pushes in (ADR-0001).</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<TRow> Window { get; set; } = [];
+
+    [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
+
+    /// <summary>Emitted as --ex-row-height on the instance root, inline so a stylesheet
+    /// cannot override it — the truth lives in this parameter, not in CSS (ADR-0013).</summary>
+    [Parameter] public double RowHeight { get; set; } = DefaultRowHeightPx;
+
+    /// <summary>Overridden by a theme that measured its real font; defaults to
+    /// <see cref="DefaultCellMetrics"/>.</summary>
+    [Parameter] public CellTextMetrics CellMetrics { get; set; } = DefaultCellMetrics;
+
+    private IReadOnlyList<TRow>? _observedWindow;
+    private IReadOnlyList<GridColumn<TRow>>? _observedColumns;
+    private CellTextMetrics _observedMetrics;
+    private AutoWidth[] _autoWidths = [];
+    private double[] _resolvedWidths = [];
+
+    protected override void OnParametersSet()
+    {
+        if (!double.IsFinite(RowHeight) || RowHeight <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(RowHeight), RowHeight,
+                "RowHeight is a finite, positive number of pixels (ADR-0013).");
+        }
+        if (CellMetrics.DigitWidthPx <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(CellMetrics), CellMetrics,
+                "default(CellTextMetrics) is not valid; construct it with real metrics.");
+        }
+
+        var columnsChanged = !ReferenceEquals(_observedColumns, Columns);
+        var windowChanged = !ReferenceEquals(_observedWindow, Window);
+        var metricsChanged = _observedMetrics != CellMetrics;
+
+        if (windowChanged)
+            RequireDistinctRows(Window);
+
+        if (columnsChanged || metricsChanged)
+        {
+            // A changed column declaration means a fresh tracker re-measured from the
+            // next Window (ADR-0016); the metrics feed the estimates, so they reset too.
+            _autoWidths = new AutoWidth[Columns.Count];
+            for (var i = 0; i < Columns.Count; i++)
+                _autoWidths[i] = new AutoWidth(Columns[i].Width);
+        }
+
+        if (columnsChanged || windowChanged || metricsChanged)
+        {
+            ObserveAutoWidths();
+            _observedColumns = Columns;
+            _observedWindow = Window;
+            _observedMetrics = CellMetrics;
+        }
+    }
+
+    // Refused up front rather than failing strangely mid-render: a duplicate instance
+    // makes Row Identity ambiguous (ADR-0003 — which row did the Consumer mean?), and
+    // a null is not a row (absent data is a Placeholder concern, ADR-0004).
+    private static void RequireDistinctRows(IReadOnlyList<TRow> window)
+    {
+        var seen = new HashSet<object>(window.Count, ReferenceEqualityComparer.Instance);
+        for (var i = 0; i < window.Count; i++)
+        {
+            var row = window[i];
+            if (row is null)
+            {
+                throw new InvalidOperationException(
+                    $"Window[{i}] is null; a Window holds rows, not gaps.");
+            }
+            if (!seen.Add(row))
+            {
+                throw new InvalidOperationException(
+                    $"Window[{i}] is the same row instance as an earlier position; Row Identity cannot tell them apart (ADR-0003).");
+            }
+        }
+    }
+
+    /// <summary>Auto widths only ever grow while the declaration stands (ADR-0016);
+    /// the resolved array is replaced only when a value moved, so an unchanged layout
+    /// keeps its reference and the rows keep skipping (ADR-0003).</summary>
+    private void ObserveAutoWidths()
+    {
+        for (var c = 0; c < Columns.Count; c++)
+        {
+            var column = Columns[c];
+            if (!column.Width.Width.IsAuto)
+                continue;
+            var auto = _autoWidths[c];
+            // The header label is content the column paints too — without observing it,
+            // every short Auto column stands with a chopped header.
+            auto = auto.Observe(CellMetrics.EstimatePx(column.Header.Length));
+            foreach (var row in Window)
+                auto = auto.Observe(CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(column, row).Length));
+            _autoWidths[c] = auto;
+        }
+
+        var widths = new double[Columns.Count];
+        for (var c = 0; c < Columns.Count; c++)
+            widths[c] = Columns[c].Width.ResolveWidthPx(_autoWidths[c]);
+
+        var changed = widths.Length != _resolvedWidths.Length;
+        for (var c = 0; !changed && c < widths.Length; c++)
+            changed = widths[c] != _resolvedWidths[c];
+        if (changed)
+            _resolvedWidths = widths;
+    }
+
+    private static object RowKey(TRow row) => RowIdentityKeys.GetValue(row, static _ => new object());
+
+    private static string WidthStyle(double px) => FormattableString.Invariant($"width: {px}px");
+}

@@ -1,0 +1,15 @@
+/* Instance-scoped styling: every class is ex- prefixed and every variable lives on the
+   instance root, never :root (ADR-0018). The inline --ex-row-height set from the C#
+   RowHeight parameter wins over any stylesheet value (ADR-0013). */
+/* The grid pins its own font-size: DefaultCellMetrics' digit width is stated against
+   this size, and inheriting the host's would silently break the >= any-glyph contract
+   (ADR-0016). A theme changing either supplies its own CellMetrics. */
+.ex-grid { display: flex; flex-direction: column; font-size: 14px; font-variant-numeric: tabular-nums; overflow-x: auto; }
+.ex-header { display: flex; }
+.ex-row { display: flex; height: var(--ex-row-height); line-height: var(--ex-row-height); }
+/* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016), and
+   the 8px padding pairs with DefaultCellMetrics.CellHorizontalPaddingPx — the two must
+   move together. The ellipsis only ever shows on Text/Boolean: a number that does not
+   fit is painted as #### by the core, never clipped. */
+.ex-cell, .ex-header-cell { flex: 0 0 auto; box-sizing: border-box; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ex-cell-numeric { text-align: right; }
