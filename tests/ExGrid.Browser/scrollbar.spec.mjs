@@ -99,7 +99,12 @@ function expectFocusInsideClientBox(measured, testInfo) {
  * leaves the horizontal one an overlay — which is exactly the axis the row band loses.
  */
 async function expectScrollbarsOccupyLayout(page) {
-    const { diagnostics } = await focusAgainstClientBox(page);
+    const measured = await focusAgainstClientBox(page);
+    // Checked before destructuring: a grid that failed to render answers with `error` and
+    // no diagnostics, and reaching into them would replace the message below with a
+    // TypeError about reading a property of undefined.
+    expect(measured.error).toBeUndefined();
+    const { diagnostics } = measured;
     const message = 'the scrollbars are not occupying layout, so this test proves nothing '
         + `(measured ${diagnostics.gutterWidth}x${diagnostics.gutterHeight} on ${diagnostics.platform})`;
     expect(diagnostics.gutterWidth, message).toBeGreaterThan(0);
@@ -144,7 +149,12 @@ async function moveToCorner(page, key) {
     // the browser there is not assumed — if it disagreed this wait would time out and say
     // so, which is most of why the condition is written this way.
     //
-    // Ctrl+Home only names the vertical extreme. /wide pins its first two columns, and a
+    // Ctrl+Home only names the vertical extreme, and "at the top" can already be true
+    // before the keystroke has been round-tripped: **never call this with 'Home' from a
+    // grid that is already at the top** — it would return immediately and the caller would
+    // measure the state before the press. Every caller here reaches Home from End.
+    //
+    // The reason it names only the one axis: /wide pins its first two columns, and a
     // Pinned Column covers the Viewport's left edge without occupying anything ahead of the
     // content, so a Focus on column 0 is already whole on screen and nothing needs to
     // scroll sideways to show it (ADR-0004/0013). Asserting left === 0 here would be
@@ -216,9 +226,11 @@ test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {
             // Both corners, both pressed after the change. A grid that had the right
             // answer at 100% and kept using it would still be sitting at a legal offset
             // until something asked it to move.
-            await moveToCorner(page, 'Home');
-            expectFocusInsideClientBox(await focusAgainstClientBox(page), testInfo);
-
+            //
+            // End first, and that order matters: moveToCorner waits for the grid to reach
+            // the corner, and "at the top" is already true before Ctrl+Home has even been
+            // round-tripped. Starting with Home would let the first iteration measure the
+            // state BEFORE the keystroke — the same vacuous pass this test exists to avoid.
             await moveToCorner(page, 'End');
             const measured = await focusAgainstClientBox(page);
             testInfo.annotations.push({
@@ -227,6 +239,9 @@ test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {
                     `${measured.diagnostics.gutterWidth}x${measured.diagnostics.gutterHeight}`,
             });
             expectFocusInsideClientBox(measured, testInfo);
+
+            await moveToCorner(page, 'Home');
+            expectFocusInsideClientBox(await focusAgainstClientBox(page), testInfo);
         }
 
         await client.send('Emulation.clearDeviceMetricsOverride');

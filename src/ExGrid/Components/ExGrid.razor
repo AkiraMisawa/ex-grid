@@ -1183,12 +1183,6 @@
     }
 
     /// <summary>
-    /// A key the core claimed (ADR-0010). Called from the instance's own capture-phase
-    /// listener, so a grid without focus never gets here, and two grids on one page never
-    /// hear each other's keys (ADR-0018). The listener has already prevented the default:
-    /// what is left is to say what the key meant.
-    /// </summary>
-    /// <summary>
     /// What the browser says its scrollbars take out of the declared Viewport, reported
     /// whenever it changes (ADR-0021). Both numbers are 0 on a platform with overlay
     /// scrollbars, and 0 anywhere until the content overflows.
@@ -1233,6 +1227,12 @@
         }
     }
 
+    /// <summary>
+    /// A key the core claimed (ADR-0010). Called from the instance's own capture-phase
+    /// listener, so a grid without focus never gets here, and two grids on one page never
+    /// hear each other's keys (ADR-0018). The listener has already prevented the default:
+    /// what is left is to say what the key meant.
+    /// </summary>
     [JSInvokable]
     public async Task OnKeyAsync(string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary)
     {

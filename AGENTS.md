@@ -141,7 +141,8 @@ the kind that still look correct on screen**, so review will not catch them.
 
 ## Tests
 
-**Three layers. All three gate. Performance does not gate.**
+**Three layers. Layers 1 and 2 gate; layer 3 is run by hand (there is no CI). Performance
+never gates.**
 
 | Layer | Where | Tool | Covers |
 |---|---|---|---|

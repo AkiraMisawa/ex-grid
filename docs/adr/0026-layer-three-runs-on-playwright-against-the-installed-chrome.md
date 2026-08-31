@@ -62,8 +62,11 @@ mode this whole ADR is about.
 - **`nix develop .#browser` had to be repaired to be usable at all.** It listed
   `pkgs.chromium`, which has no `aarch64-darwin` build, so the shell failed to *evaluate*
   on Apple Silicon — it had never once worked on the machine this project is developed on.
-  Chromium is now Linux-only there, and `dotnet` joins Node because Playwright starts the
-  DemoHost itself.
+  It now carries Node and `dotnet` (Playwright starts the DemoHost itself) and **no
+  browser at all**: `channel: 'chrome'` resolves Google Chrome by its own well-known
+  paths and would never pick up a nix store one, so a `chromium` there is unused and
+  misleading, and `google-chrome` is unfree and would make the shell fail to build for
+  anyone who has not opted in.
 - **The suite runs headed by default, and that is a measured decision.** On macOS, headless
   Chrome keeps overlay scrollbars on the horizontal axis whatever the CSS asks for, so the
   15px the row band loses cannot be reproduced there and the scrollbar tests would pass

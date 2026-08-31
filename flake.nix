@@ -36,16 +36,20 @@
         # The layer-3 (browser) tests: Node for Playwright, and dotnet because
         # Playwright starts the DemoHost itself.
         #
-        # Chromium only where nixpkgs builds it. It has no aarch64-darwin
-        # build, and listing it unconditionally made this shell fail to
-        # EVALUATE on an Apple Silicon Mac — so `.#browser` had never once been
-        # usable on the machine this project is developed on. Playwright is
-        # pointed at the Chrome that is already installed (`channel: 'chrome'`),
-        # which is what makes that acceptable rather than merely convenient:
-        # nothing here downloads a browser.
+        # No browser. `channel: 'chrome'` resolves Google Chrome by its own
+        # well-known paths and would never pick up a nix store one, so putting
+        # a browser here would be both unused and misleading — nixpkgs'
+        # `chromium` is not what that channel means, and `google-chrome` is
+        # unfree, which would make this shell fail to build for anyone who has
+        # not opted in. Chrome is a machine prerequisite, as
+        # tests/ExGrid.Browser/README.md says (ADR-0026).
+        #
+        # It also used to list `pkgs.chromium` unconditionally, which has no
+        # aarch64-darwin build: this shell failed to EVALUATE on an Apple
+        # Silicon Mac, so `.#browser` had never once been usable on the machine
+        # this project is developed on.
         browser = pkgs.mkShell {
-          packages = [ dotnet pkgs.nodejs ]
-            ++ pkgs.lib.optional pkgs.stdenv.hostPlatform.isLinux pkgs.chromium;
+          packages = [ dotnet pkgs.nodejs ];
           shellHook = ''
             export DOTNET_ROOT=${dotnet}/share/dotnet
             export DOTNET_CLI_TELEMETRY_OPTOUT=1
