@@ -70,10 +70,14 @@ improvement it gives during slow scrolling does nothing for this worst case.
     row, not once per frame: observation is a monotone maximum
     ([ADR-0016](./0016-column-width-and-overflow.md)), so only rows newly entering the Viewport
     are read.*
-  - ***A fling is either axis.*** A diagonal gesture that crosses screens sideways while barely
-    moving down changes every cell just the same. Pinned Columns are painted **through** a
-    fling — they are the landmark that survives panning, and having them blink out and back is
-    what pinning exists to prevent. Only the scrollable cells are skipped.*
+  - ***A fling is either axis*** — but the horizontal half only counts when the columns are
+    virtualised. A diagonal gesture that crosses screens sideways while barely moving down
+    changes every cell just the same; with virtualisation off nothing changes at all, and
+    blanking the rows would be the only work in the frame, followed by rebuilding every cell
+    when it settled. A fling is a way of not painting what would otherwise have to be painted,
+    so where there is nothing to skip there is no fling. Pinned Columns are painted **through**
+    one either way — they are the landmark that survives panning, and having them blink out and
+    back is what pinning exists to prevent. Only the scrollable cells are skipped.*
   - ***The header moved inside the scroll container***, held with `position: sticky` beside the
     pinned cells. Two nested containers cannot do this: a non-visible overflow on one axis makes
     the other compute to `auto` (CSS Overflow 3), so the inner one becomes the scrollport, the

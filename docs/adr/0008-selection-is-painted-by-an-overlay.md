@@ -99,7 +99,9 @@ the concerns stay apart.
   the cell — instead of measuring elements, which would be the layout read
   [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) refuses. One handler for the whole
   body rather than one per cell also keeps the ~220 painted cells free of handlers that would be
-  re-registered on every frame of a scroll (ADR-0004).
+  re-registered on every frame of a scroll (ADR-0004). **The move handler is attached only while
+  a drag is running**, because a pointer merely crossing the grid would otherwise raise an event
+  per frame — for a Blazor Server Consumer, a wire round trip each time.
 - **800 cells was not measured on real hardware.** Only 2000 cells (40×50) was confirmed there.
   With horizontal virtualisation
   ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)) the effective cell count drops to

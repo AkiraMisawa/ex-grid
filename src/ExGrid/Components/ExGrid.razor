@@ -54,7 +54,7 @@
                body: a handler per cell would be ~220 of them re-registered on every
                frame of a scroll, which is the cost ADR-0004 caps. *@
             <div class="ex-viewport" style="transform: translateY(@Px(_geometry.OffsetPxOf(_visible?.Start ?? 0)))"
-                 @onmousedown="OnMouseDown" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp">
+                 @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmouseup="OnMouseUp">
                 @if (_visible is { } visible)
                 {
                     @if (!_selection.Selection.IsEmpty)
@@ -283,6 +283,15 @@
     private bool _dragging;
     private bool _suppressRender;
     private bool _selectionChanged;
+
+    // The move handler, splatted onto the row Viewport only while a drag is running. Left
+    // attached permanently it would send an event per frame for a pointer merely crossing
+    // the grid — on a Blazor Server Consumer a wire round trip each time, which is the
+    // cost the scroll read goes out of its way to pay only once. @onmousemove cannot be
+    // written conditionally, hence the splat; the delegate is cached in a field because a
+    // method group is a new instance on every render (ADR-0003).
+    private readonly Dictionary<string, object> _dragHandler = new();
+    private Action<MouseEventArgs>? _onMouseMove;
 
     // Distinct objects, so the two overlay layers can carry keys that cannot collide
     // with a row's identity key or a Placeholder's boxed index.
@@ -716,8 +725,13 @@
         // Either axis on its own is enough. A diagonal fling that crosses screens
         // sideways while barely moving down is still a frame where every cell changes,
         // and testing only the rows would miss it entirely.
+        // The horizontal half only counts when the columns are virtualised. Off, the slice
+        // is every scrollable column at every offset, so panning sideways changes nothing
+        // and costs nothing — blanking the rows would be the only work in the frame, and
+        // then paying to rebuild every cell 150ms later. A fling is a way of not painting
+        // what would have to be painted; there is nothing to skip here.
         var flung = (firstRow != paintedFirstRow && _geometry.IsFling(paintedFirstRow, firstRow))
-            || _columnStyles.Geometry.IsFling(previousLeftPx, _scrollLeftPx);
+            || (VirtualiseColumns && _columnStyles.Geometry.IsFling(previousLeftPx, _scrollLeftPx));
         if (flung)
         {
             // Waiting for data and skipping paint during a fling are one mechanism, so
@@ -784,11 +798,15 @@
             : toggling ? current.ToggleRange(cell, extent)
             : current.Click(cell, extent);
 
+        Apply(next);
         // A toggle-off leaves Anchor and Focus detached on the deselected cell, and
         // dragging on from there would append a range the user never asked for
         // (ADR-0012). Every other gesture has left a range that a drag can grow.
-        _dragging = !(toggling && current.Contains(cell));
-        Apply(next);
+        //
+        // Last, because attaching the move handler is itself a change to the markup: a
+        // click on the one cell already selected changes no selection at all, and
+        // suppressing that render would leave the drag with nothing listening.
+        SetDragging(!(toggling && current.Contains(cell)));
     }
 
     /// <summary>
@@ -798,6 +816,8 @@
     /// </summary>
     private void OnMouseMove(MouseEventArgs e)
     {
+        // The handler is only attached while dragging, but an event can still be in
+        // flight from the frame it was taken off.
         if (!_dragging)
         {
             _suppressRender = true;
@@ -810,8 +830,8 @@
         // listener would make every grid on the page react to every drag (ADR-0018).
         if ((e.Buttons & 1) == 0)
         {
-            _dragging = false;
             _suppressRender = true;
+            SetDragging(false);
             return;
         }
         if (CellUnder(e) is not { } cell)
@@ -824,8 +844,23 @@
 
     private void OnMouseUp()
     {
-        _dragging = false;
         _suppressRender = true;
+        SetDragging(false);
+    }
+
+    private void SetDragging(bool dragging)
+    {
+        if (_dragging == dragging)
+            return;
+        _dragging = dragging;
+        if (dragging)
+            _dragHandler["onmousemove"] = _onMouseMove ??= OnMouseMove;
+        else
+            _dragHandler.Remove("onmousemove");
+        // The handler is markup, so adding or removing it has to reach the DOM whatever
+        // the selection did — which is why every caller sets the suppression first and
+        // lets this override it.
+        _suppressRender = false;
     }
 
     private void Apply(GridSelection next)

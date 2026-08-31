@@ -280,6 +280,13 @@ public class ColumnGeometryTests
 
         Assert.Equal(0, geometry.ColumnAt(150, scrollLeftPx: 150));
         Assert.Equal(2, geometry.ColumnAt(400, scrollLeftPx: 150));
+
+        // Past the pinned block, where there is no scrollable run to fall through to. The
+        // Viewport can be wider than the columns, so this is the empty strip beside them
+        // — it clamps to the last column like any other overshoot, and must not name a
+        // column that is not there.
+        Assert.Equal(4, geometry.ColumnAt(700, scrollLeftPx: 0));
+        Assert.Equal(4, geometry.ColumnAt(500, scrollLeftPx: 0));
     }
 
     [Fact] // A zero-width column occupies no pixel, so no pixel can name it

@@ -50,6 +50,23 @@ public class HorizontalVirtualisationTests : GridTestContext
         Assert.Equal(before, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount));
     }
 
+    [Fact] // ADR-0004: a fling exists to skip painting, and unvirtualised there is nothing to skip
+    public async Task A_sideways_fling_paints_no_placeholders_when_the_columns_are_not_virtualised()
+    {
+        var cut = RenderGrid(virtualiseColumns: false);
+        var painted = cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToArray();
+
+        // Far more than a Viewport, so it is a fling by any measure — but every column is
+        // already in the DOM and the slice is the same at every offset. Blanking the rows
+        // would be the only work in the frame, and the settle would then pay to rebuild
+        // all 2,200 cells for nothing.
+        await ScrollToAsync(cut.Find(".ex-scroller"), top: 0, left: 5000);
+
+        Assert.Empty(cut.FindAll(".ex-placeholder"));
+        Assert.Equal(100, cut.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell").Length);
+        Assert.Equal(painted, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount));
+    }
+
     private static string[] PaintedColumns(IRenderedComponent<ExGrid<TestRow>> cut, int row = 0)
         => [.. cut.FindAll(".ex-row")[row].QuerySelectorAll(".ex-cell").Select(c => TestRows.ColumnOf(c.TextContent))];
 

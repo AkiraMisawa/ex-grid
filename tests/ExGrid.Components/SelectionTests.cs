@@ -138,12 +138,61 @@ public class SelectionTests : GridTestContext
         var cut = RenderGrid();
 
         await PressAsync(cut, Cell(1, 1).X, Cell(1, 1).Y);
+        // Without the Buttons check this would keep extending a gesture the user finished
+        // somewhere else, the moment the pointer came back over the grid.
         await DragAsync(cut, Cell(2, 2).X, Cell(2, 2).Y, buttons: 0);
-        // Back over the grid with the button up: without the Buttons check this would
-        // keep extending a gesture the user finished somewhere else.
-        await DragAsync(cut, Cell(4, 4).X, Cell(4, 4).Y, buttons: 0);
 
         Assert.Equal([Rect(100, 20, 100, 20)], Rects(cut));
+        // And the gesture being over, the grid has stopped listening for moves again.
+        await Assert.ThrowsAsync<MissingEventHandlerException>(
+            () => DragAsync(cut, Cell(4, 4).X, Cell(4, 4).Y));
+    }
+
+    [Fact] // A pointer merely crossing the grid must not cost an event per frame (a wire round trip on Server)
+    public async Task The_grid_does_not_listen_for_moves_until_a_drag_begins()
+    {
+        var cut = RenderGrid();
+
+        await Assert.ThrowsAsync<MissingEventHandlerException>(
+            () => DragAsync(cut, Cell(1, 1).X, Cell(1, 1).Y));
+
+        // And it does listen once one has.
+        await PressAsync(cut, Cell(1, 1).X, Cell(1, 1).Y);
+        await DragAsync(cut, Cell(2, 2).X, Cell(2, 2).Y);
+        Assert.Equal([Rect(100, 20, 200, 40)], Rects(cut));
+    }
+
+    [Fact] // A click that selects nothing new still has to attach the drag handler
+    public async Task Pressing_the_cell_already_selected_still_begins_a_drag()
+    {
+        var cut = RenderGrid();
+        await PressAsync(cut, Cell(1, 1).X, Cell(1, 1).Y);
+
+        // The same cell again: the selection is unchanged, so the render that would carry
+        // the handler onto the element is the one there is no other reason to do.
+        await PressAsync(cut, Cell(1, 1).X, Cell(1, 1).Y);
+        await DragAsync(cut, Cell(3, 3).X, Cell(3, 3).Y);
+
+        Assert.Equal([Rect(100, 20, 300, 60)], Rects(cut));
+    }
+
+    [Fact] // ADR-0004: pin every column and the strip beside them still has to name a cell
+    public async Task A_click_past_the_last_column_when_everything_is_pinned_selects_the_last_one()
+    {
+        // Three 100px columns, all pinned, in a 350px Viewport: the row Viewport is wider
+        // than the columns, so there is empty space to the right of them to click in.
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(200))
+            .Add(g => g.TotalCount, 200)
+            .Add(g => g.Columns, TestRows.Wide(3))
+            .Add(g => g.RowHeight, RowHeightPx)
+            .Add(g => g.ViewportHeight, ViewportHeightPx)
+            .Add(g => g.ViewportWidth, ViewportWidthPx)
+            .Add(g => g.PinnedColumnCount, 3));
+
+        await PressAsync(cut, 340, 10);
+
+        Assert.Equal([Rect(200, 0, 100, 20)], Rects(cut, ".ex-selection-pinned"));
     }
 
     [Fact] // ADR-0008's non-performance reason: the row knows nothing about selection, so it does not repaint

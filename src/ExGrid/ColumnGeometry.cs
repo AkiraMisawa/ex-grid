@@ -242,7 +242,11 @@ public sealed class ColumnGeometry
 
         var left = Math.Clamp(scrollLeftPx, 0, MaxScrollLeftPx);
         var viewportX = contentXPx - left;
-        if (PinnedCount > 0 && viewportX < PinnedWidthPx)
+        // Everything pinned means there is no scrollable run to fall through to, and a
+        // pixel past the pinned block — the Viewport is wider than the columns, so there
+        // is empty space to the right of them — has to clamp to the last pinned column
+        // rather than name a column that does not exist.
+        if (PinnedCount > 0 && (viewportX < PinnedWidthPx || PinnedCount >= Count))
             return IndexContaining(Math.Max(0, viewportX), 0, PinnedCount);
         return IndexContaining(contentXPx, PinnedCount, Count);
     }
