@@ -28,6 +28,11 @@
 <p class="demo-status">
     Window: rows @_windowStart–@(_windowStart + _window.Count - 1) of @Total,
     @DemoData.WideColumns.Length columns.
+    <span id="selection-status">
+        @* The count is the sum of the rectangles' areas, so it costs nothing to show for
+           a selection of any size — no data is needed to compute it (ADR-0014). *@
+        Selected: @_selection.CellCount @(_selection.Ranges.Count > 1 ? $"in {_selection.Ranges.Count} ranges" : "")
+    </span>
 </p>
 
 <ExGrid TRow="DemoWideRow"
@@ -40,7 +45,8 @@
         ViewportWidth="900"
         PinnedColumnCount="_pinnedColumnCount"
         VirtualiseColumns="_virtualiseColumns"
-        OnRangeNeeded="OnRangeNeeded" />
+        OnRangeNeeded="OnRangeNeeded"
+        SelectionChanged="OnSelectionChanged" />
 
 @code {
     private const int Total = 100_000;
@@ -55,6 +61,7 @@
     private int _windowStart;
     private bool _virtualiseColumns = true;
     private int _pinnedColumnCount = 2;
+    private GridSelection _selection = GridSelection.Empty;
 
     // Answered on the spot rather than after a delay: this page is here to compare frame
     // times across the two settings, and a fake latency would be the thing being timed.
@@ -66,6 +73,8 @@
         _windowStart = start;
         _window = AllRows[start..end];
     }
+
+    private void OnSelectionChanged(GridSelection selection) => _selection = selection;
 
     private void ToggleVirtualise() => _virtualiseColumns = !_virtualiseColumns;
 
