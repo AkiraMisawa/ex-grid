@@ -4,7 +4,10 @@
 /* The grid pins its own font-size: DefaultCellMetrics' digit width is stated against
    this size, and inheriting the host's would silently break the >= any-glyph contract
    (ADR-0016). A theme changing either supplies its own CellMetrics. */
-.ex-grid { font-size: 14px; font-variant-numeric: tabular-nums; }
+/* Dragging across cells is a selection gesture, not a text selection: without this the
+   browser paints its own highlight over the top of the grid's (ADR-0008). Copying goes
+   through the clipboard path, not through a native text selection (ADR-0005). */
+.ex-grid { font-size: 14px; font-variant-numeric: tabular-nums; user-select: none; }
 /* One scroll container for both axes. The header and the Pinned Columns are held in
    place inside it with `position: sticky`, which is why there can only be one: a nested
    container with a non-visible overflow on one axis computes `auto` on the other (CSS
@@ -24,13 +27,19 @@
     display: flex;
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 4;
     height: var(--ex-row-height);
     line-height: var(--ex-row-height);
     background: var(--ex-header-background, Canvas);
 }
 .ex-viewport { position: absolute; top: var(--ex-row-height); left: 0; right: 0; will-change: transform; }
-.ex-row { display: flex; height: var(--ex-row-height); line-height: var(--ex-row-height); }
+/* pointer-events is inherited, so this one declaration makes every cell, spacer and
+   Placeholder bar transparent to the mouse and leaves .ex-viewport as the target of every
+   event in the body. The grid then reads the cell from the event's own offsets and its
+   own geometry, instead of a handler on each of a couple of hundred cells (ADR-0004) or a
+   layout read through JavaScript (ADR-0021). A Template or Action cell turns it back on
+   for itself and stops the event there (ADR-0020). */
+.ex-row { display: flex; height: var(--ex-row-height); line-height: var(--ex-row-height); pointer-events: none; }
 /* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016), and
    the 8px padding pairs with DefaultCellMetrics.CellHorizontalPaddingPx — the two must
    move together. The ellipsis only ever shows on Text/Boolean: a number that does not
@@ -45,8 +54,31 @@
    (ADR-0004). `left` is the column's own offset, set inline from C#: sticky keeps an
    element in its normal flow position until the content scrolls past that offset. Opaque
    for the same reason the header is — the columns underneath pass beneath it. */
-.ex-pinned { position: sticky; z-index: 1; background: var(--ex-pinned-background, Canvas); }
-.ex-header .ex-pinned { z-index: 3; background: var(--ex-header-background, Canvas); }
+.ex-pinned { position: sticky; z-index: 2; background: var(--ex-pinned-background, Canvas); }
+.ex-header .ex-pinned { z-index: 5; background: var(--ex-header-background, Canvas); }
+/* Selection is painted as overlay rectangles, never as a class on the selected cells
+   (ADR-0008): one element per range, so what it costs depends on how many rectangles
+   there are and not on how many cells they cover — and no row parameter carries
+   selection, which keeps "the row changed" meaning the data changed (ADR-0003).
+
+   Both layers sit inside .ex-viewport deliberately. Its transform makes it a stacking
+   context, so the Pinned Columns' z-index counts only in there: a rectangle outside would
+   paint over the pinned block rather than sliding beneath it. The price is that the
+   coordinates are relative to the painted slice rather than to the content.
+   Order in here: cells, selection (1), Pinned Columns (2), their selection (3); the
+   header (4, 5) is outside and covers the lot. */
+.ex-selection { position: absolute; top: 0; left: 0; z-index: 1; }
+/* The pinned part of a range travels with the Pinned Columns. Zero-sized and first in the
+   flow, so it displaces no row; `left` with no `top` sticks it to the Viewport's left
+   edge and to nothing else. */
+.ex-selection-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
+/* Neither layer may take a click — .ex-viewport underneath is where the mouse handlers
+   read their offsets from. */
+.ex-selection, .ex-selection-pinned { pointer-events: none; }
+/* Translucent, so the value reads through it: geometry is the only kind of effect an
+   overlay can paint, and this is also what Excel looks like (ADR-0008). */
+.ex-range { position: absolute; background: var(--ex-selection-fill, rgba(60, 120, 216, 0.18)); }
+.ex-focus { position: absolute; outline: 2px solid var(--ex-focus-outline, Highlight); outline-offset: -1px; }
 /* A row not yet painted with real data — waiting for the Consumer's Window, or
    deliberately skipped while scrolling fast. One mechanism, so one appearance
    (ADR-0004). It carries no scrollable cells at all: painting them is the cost being

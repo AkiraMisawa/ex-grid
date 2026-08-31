@@ -14,8 +14,9 @@
     Only the parameters this layer renders are declared; the rest of the push contract
     (Sorts, Filter, PageSize, ...) arrives with the layers that give it behaviour.
 
-    The root deliberately has no ShouldRender: re-rendering it is cheap because the
-    row boundaries below it skip (ADR-0003).
+    Re-rendering the root is cheap because the row boundaries below it skip (ADR-0003),
+    so ShouldRender exists here for one case only: a mouse move that stays inside the
+    cell it started in changes nothing, and arrives once a frame while a drag lasts.
 *@
 <div class="@RootClass" style="--ex-row-height: @Px(RowHeight)">
     @* One scroll container for both axes, with the header and the Pinned Columns held in
@@ -47,9 +48,52 @@
                     }
                 }
             </div>
-            <div class="ex-viewport" style="transform: translateY(@Px(_geometry.OffsetPxOf(_visible?.Start ?? 0)))">
+            @* Every cell under here is `pointer-events: none`, so this element is the
+               target of every mouse event in the rows and the offsets on the event are
+               already measured from its own left and top edge. One handler for the whole
+               body: a handler per cell would be ~220 of them re-registered on every
+               frame of a scroll, which is the cost ADR-0004 caps. *@
+            <div class="ex-viewport" style="transform: translateY(@Px(_geometry.OffsetPxOf(_visible?.Start ?? 0)))"
+                 @onmousedown="OnMouseDown" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp">
                 @if (_visible is { } visible)
                 {
+                    @if (!_selection.Selection.IsEmpty)
+                    {
+                        @* One element per range, so what selection costs to paint depends
+                           on how many rectangles there are and never on how many cells
+                           they cover (ADR-0008). The two layers are the horizontal axis
+                           being asymmetric again: the pinned part of a range has to
+                           travel with the Pinned Columns, and the rest has to pass
+                           underneath them. Both carry a key because their siblings do —
+                           an unkeyed element beside keyed ones degrades the diff to
+                           positional matching and would recreate the rows (ADR-0003). *@
+                        <div class="ex-selection-pinned" @key="PinnedSelectionLayerKey">
+                            @foreach (var range in _selection.Selection.Ranges)
+                            {
+                                @if (SelectionStyles.Pinned(range, _columnStyles.Geometry, RowHeight, visible.Start) is { } fill)
+                                {
+                                    <div class="ex-range" style="@fill"></div>
+                                }
+                            }
+                            @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, RowHeight, visible.Start) is { } pinnedFocus)
+                            {
+                                <div class="ex-focus" style="@pinnedFocus"></div>
+                            }
+                        </div>
+                        <div class="ex-selection" @key="SelectionLayerKey">
+                            @foreach (var range in _selection.Selection.Ranges)
+                            {
+                                @if (SelectionStyles.Scrollable(range, _columnStyles.Geometry, RowHeight, visible.Start) is { } fill)
+                                {
+                                    <div class="ex-range" style="@fill"></div>
+                                }
+                            }
+                            @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, RowHeight, visible.Start) is { } focus)
+                            {
+                                <div class="ex-focus" style="@focus"></div>
+                            }
+                        </div>
+                    }
                     @* One loop over absolute row positions, and every sibling carries a
                        key: a keyed component beside an unkeyed element degrades the diff
                        to positional matching, which would recreate the very row
@@ -143,11 +187,19 @@
     /// and measuring the element instead would mean a layout round-trip through
     /// JavaScript, which is deliberately not on the allowlist (ADR-0021). The header
     /// takes the first <see cref="RowHeight"/> of it, so the rows get what is left.
+    ///
+    /// This is the element's outer size, and a classic (non-overlay) scrollbar is drawn
+    /// inside it: on a platform that reserves room for one, the rows get about 15px less
+    /// than the arithmetic assumes. The slice stays conservative, so no gap appears — but
+    /// the last row's bottom edge can sit behind the horizontal scrollbar. The grid
+    /// cannot measure a scrollbar without a layout read, so a Consumer that needs the
+    /// row band exact adds the allowance here.
     /// </summary>
     [Parameter] public double ViewportHeight { get; set; } = DefaultViewportHeightPx;
 
-    /// <summary>How wide the scrolling area is — the other half of the geometry, and a
-    /// C# parameter for exactly the reason <see cref="ViewportHeight"/> is.</summary>
+    /// <summary>How wide the scrolling area is — the other half of the geometry, a C#
+    /// parameter for exactly the reason <see cref="ViewportHeight"/> is, and the outer
+    /// size in the same way.</summary>
     [Parameter] public double ViewportWidth { get; set; } = DefaultViewportWidthPx;
 
     /// <summary>
@@ -174,6 +226,25 @@
     /// <summary>Overridden by a theme that measured its real font; defaults to
     /// <see cref="DefaultCellMetrics"/>.</summary>
     [Parameter] public CellTextMetrics CellMetrics { get; set; } = DefaultCellMetrics;
+
+    /// <summary>
+    /// A number naming the <em>order</em> of the rows, bumped by the Consumer whenever
+    /// the visible sequence changes and left alone when only values did (ADR-0011).
+    /// Selection is positions rather than identities, so when this changes the selection
+    /// is dropped rather than re-mapped: the same positions would name a different set of
+    /// rows, and the operation that follows a selection is a bulk paste. The grid cannot
+    /// detect it on its own — holding only the Window, it sees neither an insertion nor
+    /// a shift.
+    /// </summary>
+    [Parameter] public int RowSequenceVersion { get; set; }
+
+    /// <summary>
+    /// Raised whenever the selection changes, including when it is dropped. The
+    /// selected-cell count a status line shows is <see cref="GridSelection.CellCount"/>,
+    /// which is the sum of the rectangles' areas and therefore needs no data at all
+    /// (ADR-0014).
+    /// </summary>
+    [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
 
     /// <summary>
     /// Raised when the rows on screen are not all in the Window: "I need these rows".
@@ -205,6 +276,19 @@
     private RowRange? _visible;
     private ColumnRange? _scrollable;
 
+    // The selection and the row order it was made under, together, because that pairing
+    // is where ADR-0011's "drop it, never re-map it" rule lives (HeldSelection).
+    private HeldSelection _selection = HeldSelection.Empty(0);
+    private string[] _columnNames = [];
+    private bool _dragging;
+    private bool _suppressRender;
+    private bool _selectionChanged;
+
+    // Distinct objects, so the two overlay layers can carry keys that cannot collide
+    // with a row's identity key or a Placeholder's boxed index.
+    private static readonly object SelectionLayerKey = new();
+    private static readonly object PinnedSelectionLayerKey = new();
+
     private RowRange? _lastRaised;
     private int _lastRaisedWindowStart;
     private int _lastRaisedWindowCount;
@@ -223,6 +307,15 @@
     private bool _measured;
 
     private string RootClass => IsLoading ? "ex-grid ex-loading" : "ex-grid";
+
+    /// <summary>The bounds every selection transition is checked against: rows after
+    /// filtering, and visible columns (ADR-0011).</summary>
+    private GridExtent Extent => new(TotalCount ?? Window.Count, Columns.Count);
+
+    /// <summary>The Focus as a one-cell rectangle, so the outline and a block travel the
+    /// same arithmetic. Only read where the selection is known not to be empty — an empty
+    /// one has no Focus to draw.</summary>
+    private SelectionRange FocusRange => SelectionStyles.CellRange(_selection.Selection.Focus);
 
     private TimeProvider Time
         => _time ??= Services.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System;
@@ -254,6 +347,20 @@
         {
             throw new ArgumentOutOfRangeException(nameof(PinnedColumnCount), PinnedColumnCount,
                 $"PinnedColumnCount is the first N of {Columns.Count} columns; there are not that many (ADR-0004).");
+        }
+        // The header band stands in the content as well as over it, so it spends one row
+        // of the browser's scroll budget that ViewportGeometry — which knows only about
+        // rows — cannot see. Checked here, where the spacer's real height is known:
+        // a result one row inside the pure guard would still have its last row clamped
+        // away, and being quietly unable to reach the end is the failure ADR-0013's
+        // ceiling exists to refuse.
+        if (RowHeight + ((TotalCount ?? Window.Count) * RowHeight) > ViewportGeometry.MaxScrollHeightPx)
+        {
+            throw new InvalidOperationException(
+                $"{TotalCount ?? Window.Count} rows at {RowHeight}px, plus the header's own row height, need " +
+                $"{RowHeight + ((TotalCount ?? Window.Count) * RowHeight)}px of scrollable area — past the " +
+                $"{ViewportGeometry.MaxScrollHeightPx}px a browser can scroll, so the last rows could never be " +
+                "reached. Use a shorter row height, or page the result (ADR-0013/0015).");
         }
         if (CellMetrics.DigitWidthPx <= 0)
         {
@@ -291,7 +398,48 @@
             _measured = false;
         }
 
+        ReconcileSelection();
         PrepareRender();
+    }
+
+    /// <summary>
+    /// Drops the selection when the coordinates it is written in stop meaning what they
+    /// meant (ADR-0011). One trigger per axis: the Consumer's Row Sequence Version for
+    /// the rows, and the visible-column set for the columns — the grid applies View
+    /// State, so it can see the second one itself and needs no version for it.
+    ///
+    /// The columns are compared by name, in order, and never by the array's identity. A
+    /// Consumer that builds its column list inline hands over a fresh array on every
+    /// render; dropping on that would clear the selection continuously and make selecting
+    /// anything impossible. (The Range Request dedupe fell into exactly this hole, which
+    /// is why it deduplicates on where the Window sits rather than on which list it is.)
+    /// </summary>
+    private void ReconcileSelection()
+    {
+        var reconciled = _selection.Under(RowSequenceVersion);
+        if (!ColumnsAreAsBefore())
+            reconciled = HeldSelection.Empty(RowSequenceVersion);
+
+        if (!reconciled.Selection.Equals(_selection.Selection))
+            _selectionChanged = true;
+        _selection = reconciled;
+    }
+
+    private bool ColumnsAreAsBefore()
+    {
+        if (_columnNames.Length == Columns.Count)
+        {
+            var same = true;
+            for (var i = 0; same && i < Columns.Count; i++)
+                same = _columnNames[i] == Columns[i].Name;
+            if (same)
+                return true;
+        }
+
+        _columnNames = new string[Columns.Count];
+        for (var i = 0; i < Columns.Count; i++)
+            _columnNames[i] = Columns[i].Name;
+        return false;
     }
 
     /// <summary>
@@ -388,7 +536,12 @@
         // Nothing is painted during a fling, so there is nothing to measure from —
         // measuring what is not on screen contradicts ADR-0016's "measured from what has
         // been painted", besides being pure waste in the frames that can least afford it.
-        if (_placeholderMode)
+        //
+        // Unless the trackers were just reset. A Consumer swapping the columns mid-fling
+        // leaves every Auto column holding nothing but its header estimate, and skipping
+        // here would paint that collapsed layout for the whole settle delay and then snap
+        // back. One observation costs a normal frame; watching the grid jump does not.
+        if (_placeholderMode && _measured)
             return;
 
         // Measured from the same signals rendering itself follows: a different Window
@@ -470,6 +623,7 @@
         // structurally finite: raise, the Consumer pushes, an ordinary render follows,
         // and this check finds the range covered and stays quiet.
         await RaiseRangeIfUncoveredAsync();
+        await RaiseSelectionIfChangedAsync();
     }
 
     private async Task AttachScrollAsync()
@@ -579,6 +733,134 @@
         {
             StateHasChanged();
         }
+    }
+
+    /// <summary>
+    /// Which cell the pointer is over, read from the offsets the browser already put on
+    /// the event. No element is measured: a layout read would be a JavaScript round trip,
+    /// and it is deliberately not on the allowlist (ADR-0021) — the grid knows where
+    /// every row and column is, so it can answer this itself.
+    ///
+    /// The offsets are relative to the row Viewport, which is the target of every mouse
+    /// event down here because everything inside it is <c>pointer-events: none</c>. Its
+    /// top edge is the first painted row, so the slice's offset goes back on; its left
+    /// edge is the content's, so the x needs nothing added — but the pinned band has to
+    /// be resolved against the scroll offset, which <see cref="ColumnGeometry.ColumnAt"/>
+    /// does.
+    /// </summary>
+    private CellPosition? CellUnder(MouseEventArgs e)
+    {
+        if (_visible is not { } visible)
+            return null;
+        var row = _geometry.RowAt(e.OffsetY + _geometry.OffsetPxOf(visible.Start));
+        var column = _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx);
+        return row is int r && column is int c ? new CellPosition(r, c) : null;
+    }
+
+    /// <summary>
+    /// Mouse down is one of the three gestures ADR-0012 names, chosen by the modifiers.
+    /// The transitions themselves are the pure model's; nothing about what a click means
+    /// is decided here.
+    /// </summary>
+    private void OnMouseDown(MouseEventArgs e)
+    {
+        // Primary button only. What a secondary click does to a selection is Excel
+        // behaviour that has not been specified here, and inventing it would be worse
+        // than leaving the selection alone.
+        if (e.Button != 0 || CellUnder(e) is not { } cell)
+        {
+            _suppressRender = true;
+            return;
+        }
+
+        var extent = Extent;
+        var current = _selection.Selection;
+        // Shift outranks Ctrl, which is also what Ctrl+Shift+click should do: extend the
+        // range being built and leave the other ranges standing, which is ExtendTo. Meta
+        // counts as Ctrl so the gesture is the one a Mac user actually makes — both are
+        // Chromium (ADR-0017).
+        var toggling = !e.ShiftKey && (e.CtrlKey || e.MetaKey);
+        var next = e.ShiftKey ? current.ExtendTo(cell, extent)
+            : toggling ? current.ToggleRange(cell, extent)
+            : current.Click(cell, extent);
+
+        // A toggle-off leaves Anchor and Focus detached on the deselected cell, and
+        // dragging on from there would append a range the user never asked for
+        // (ADR-0012). Every other gesture has left a range that a drag can grow.
+        _dragging = !(toggling && current.Contains(cell));
+        Apply(next);
+    }
+
+    /// <summary>
+    /// Dragging is not a transition of its own: mouse down is a Click and the moves are
+    /// ExtendTo, which is what <see cref="GridSelection"/> says to do rather than
+    /// inventing a third path here.
+    /// </summary>
+    private void OnMouseMove(MouseEventArgs e)
+    {
+        if (!_dragging)
+        {
+            _suppressRender = true;
+            return;
+        }
+
+        // Buttons is what is held down now, not what started the gesture. Released
+        // outside the grid, no mouseup is ever delivered here — and this is what ends the
+        // drag instead. Pointer capture would mean JavaScript, and a document-level
+        // listener would make every grid on the page react to every drag (ADR-0018).
+        if ((e.Buttons & 1) == 0)
+        {
+            _dragging = false;
+            _suppressRender = true;
+            return;
+        }
+        if (CellUnder(e) is not { } cell)
+        {
+            _suppressRender = true;
+            return;
+        }
+        Apply(_selection.Selection.ExtendTo(cell, Extent));
+    }
+
+    private void OnMouseUp()
+    {
+        _dragging = false;
+        _suppressRender = true;
+    }
+
+    private void Apply(GridSelection next)
+    {
+        // Dragging within one cell raises an event per frame and changes nothing, so it
+        // renders nothing. This is the only case the root skips a render for — the rows
+        // below it do their own skipping (ADR-0003) — and the very next ShouldRender
+        // consumes it.
+        if (next.Equals(_selection.Selection))
+        {
+            _suppressRender = true;
+            return;
+        }
+        _selection = _selection.With(next);
+        _selectionChanged = true;
+    }
+
+    protected override bool ShouldRender()
+    {
+        var suppressed = _suppressRender;
+        _suppressRender = false;
+        return !suppressed;
+    }
+
+    private async Task RaiseSelectionIfChangedAsync()
+    {
+        // Raised from after the render for the reason the Range Request is: a Consumer
+        // that handles it synchronously would otherwise re-enter the batch it was raised
+        // from.
+        if (!_selectionChanged)
+            return;
+        _selectionChanged = false;
+        if (_disposed || !SelectionChanged.HasDelegate)
+            return;
+        await SelectionChanged.InvokeAsync(_selection.Selection);
     }
 
     private void RestartSettleTimer()

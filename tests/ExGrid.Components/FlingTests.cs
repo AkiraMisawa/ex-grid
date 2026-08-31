@@ -100,4 +100,39 @@ public class FlingTests : GridTestContext
 
         cut.WaitForAssertion(() => Assert.Equal([new RowRange(200, 5)], asked));
     }
+
+    [Fact] // ADR-0016: a fling skips observation, but it must not paint a collapsed layout while it does
+    public async Task Columns_replaced_during_a_fling_keep_the_width_they_had()
+    {
+        // One Text column whose every value is the same length, so an Auto width is the
+        // same number wherever the Viewport sits and the assertion is about the reset,
+        // not about which rows happened to be on screen.
+        static GridColumn<TestRow>[] BookOnly() => [new("Book", ColumnType.Text, r => r.Book)];
+
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(1000))
+            .Add(g => g.TotalCount, 1000)
+            .Add(g => g.Columns, BookOnly())
+            .Add(g => g.RowHeight, RowHeightPx)
+            .Add(g => g.ViewportHeight, ViewportHeightPx));
+        var observed = SpacerWidthPx(cut);
+
+        await ScrollToAsync(cut.Find(".ex-scroller"), 100 * RowHeightPx);
+        Assert.NotEmpty(cut.FindAll(".ex-placeholder"));
+
+        // A different array, the same declaration: the trackers reset to nothing but the
+        // header's estimate. Skipping observation now would shrink every Auto column,
+        // shorten the scrollbar, and hold that for the whole settle delay before
+        // snapping back.
+        cut.Render(ps => ps.Add(g => g.Columns, BookOnly()));
+
+        Assert.Equal(observed, SpacerWidthPx(cut));
+    }
+
+    private static double SpacerWidthPx(IRenderedComponent<ExGrid<TestRow>> cut)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            cut.Find(".ex-spacer").GetAttribute("style")!, @"width: ([0-9.]+)px");
+        return double.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+    }
 }

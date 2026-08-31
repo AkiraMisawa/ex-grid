@@ -34,6 +34,22 @@ public class HorizontalVirtualisationTests : GridTestContext
             .Add(g => g.PinnedColumnCount, pinnedColumnCount)
             .Add(g => g.VirtualiseColumns, virtualiseColumns));
 
+    [Fact] // ADR-0003: an unmoved layout keeps its instance, so the rows keep skipping — whatever the widths are
+    public void A_fractional_column_width_does_not_churn_the_rows()
+    {
+        // The widths are only resolved once, so nothing here should read as movement.
+        // Recovering a width from the offsets would say otherwise for half the columns,
+        // rebuild the styles, and hand every row a new reference to compare against.
+        // 120.3, not 120.5: a width that is exactly representable survives the subtraction
+        // too, and would prove nothing.
+        var cut = RenderGrid(columns: TestRows.Wide(100, widthPx: 120.3));
+        var before = cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToArray();
+
+        cut.Render(ps => ps.Add(g => g.IsLoading, true));
+
+        Assert.Equal(before, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount));
+    }
+
     private static string[] PaintedColumns(IRenderedComponent<ExGrid<TestRow>> cut, int row = 0)
         => [.. cut.FindAll(".ex-row")[row].QuerySelectorAll(".ex-cell").Select(c => TestRows.ColumnOf(c.TextContent))];
 

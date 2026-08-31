@@ -182,6 +182,22 @@ public class VirtualisationTests : GridTestContext
         Assert.Contains("page the result", ex.Message);
     }
 
+    [Fact] // ADR-0013: the header band spends a row of the browser's budget, and the guard counts it
+    public void A_result_that_only_fits_without_the_header_is_refused()
+    {
+        // The rows alone clear the 2^25 px ceiling at both of these counts, so the pure
+        // guard lets them through; the spacer is a header taller than the rows, and at
+        // the second one that is what the browser clamps away — the last row unreachable,
+        // in silence.
+        var fits = (int)((ViewportGeometry.MaxScrollHeightPx - RowHeightPx) / RowHeightPx);
+
+        RenderGrid(TestRows.Many(10), total: fits);
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => RenderGrid(TestRows.Many(10), total: fits + 1));
+        Assert.Contains("header", ex.Message);
+    }
+
     [Fact] // ADR-0018: a grid gives back the per-instance handle it took
     public async Task Disposing_releases_the_scroll_handle()
     {
