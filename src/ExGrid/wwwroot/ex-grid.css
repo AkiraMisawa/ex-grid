@@ -68,6 +68,20 @@
    fit is painted as #### by the core, never clipped. */
 .ex-cell, .ex-header-cell { flex: 0 0 auto; box-sizing: border-box; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ex-cell-numeric { text-align: right; }
+/* The seam an Action or Template cell crosses (ADR-0020). Everything under .ex-row is
+   pointer-events: none so the Viewport can hit-test by arithmetic; a control that wants
+   its own click turns them back on for itself alone. The inert parts of the cell stay
+   transparent, so clicking beside a button still selects the cell as any other does —
+   and the cell element carries the stopPropagation, because an event bubbling out of a
+   button would otherwise reach the Viewport handler carrying offsets measured from the
+   button. `ex-interactive` is the class a Consumer puts on its own control inside a
+   Template Column; the grid owns the buttons in an Action Column. */
+.ex-action, .ex-interactive { pointer-events: auto; }
+/* The 6px padding, the 1px UA border and the 4px gap are paired with
+   ExGrid.ActionButtonChromePx, which is what an Auto Action Column's width is measured
+   from — the two must move together (ADR-0016), or the column stops fitting its own
+   buttons. */
+.ex-action { font: inherit; line-height: normal; margin: 0 4px 0 0; padding: 0 6px; border-width: 1px; cursor: pointer; }
 /* Cell State (ADR-0006): the grid says which of the five states a cell is in, the theme
    says what that looks like — hence a variable per state with a default that only has to
    be legible. Every one of them decorates; none replaces the text. Missing in particular

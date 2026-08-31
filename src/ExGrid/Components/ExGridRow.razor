@@ -23,9 +23,28 @@
     @for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
     {
         var column = Columns[i];
-        var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
-        var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Styles.Geometry.WidthPxOf(i), Metrics);
-        <div class="@CellClasses.For(numeric, pinned: true, StateOf(column))" style="@Styles.PinnedCell(i)">@decision.DisplayText</div>
+        @if (!column.PaintsValue)
+        {
+            @* An Action or Template cell stops the mouse here (ADR-0020). The event
+               reaches this element by bubbling from whatever inside it turned pointer
+               events back on — an ancestor's own `pointer-events: none` does not stop a
+               bubbled event — and left to carry on it would reach the Viewport handler
+               with offsets measured from a button, which would move the selection to
+               whichever cell that arithmetic happened to name.
+
+               mouseup is deliberately NOT stopped: it carries no position into the
+               Viewport's handler, which only ends the drag. Swallowed here, a drag
+               released over a button would leave the grid still dragging, and the next
+               move with a button held would extend the old selection to the pointer. *@
+            <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: true, StateOf(column))" style="@Styles.PinnedCell(i)"
+                 @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column)</div>
+        }
+        else
+        {
+            var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
+            var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Styles.Geometry.WidthPxOf(i), Metrics);
+            <div class="@CellClasses.For(numeric, pinned: true, StateOf(column))" style="@Styles.PinnedCell(i)">@decision.DisplayText</div>
+        }
     }
     @if (!Placeholder && Scrollable is { } scrollable)
     {
@@ -36,9 +55,17 @@
         @for (var i = scrollable.Start; i < scrollable.Start + scrollable.Count; i++)
         {
             var column = Columns[i];
-            var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
-            var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Styles.Geometry.WidthPxOf(i), Metrics);
-            <div class="@CellClasses.For(numeric, pinned: false, StateOf(column))" style="@Styles.Cell(i)">@decision.DisplayText</div>
+            @if (!column.PaintsValue)
+            {
+                <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: false, StateOf(column))" style="@Styles.Cell(i)"
+                     @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column)</div>
+            }
+            else
+            {
+                var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
+                var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Styles.Geometry.WidthPxOf(i), Metrics);
+                <div class="@CellClasses.For(numeric, pinned: false, StateOf(column))" style="@Styles.Cell(i)">@decision.DisplayText</div>
+            }
         }
     }
 </div>
@@ -85,6 +112,12 @@
     /// </summary>
     [Parameter] public Func<TRow, RowKind>? RowKind { get; set; }
 
+    /// <summary>Where a pressed action is reported (ADR-0020). A plain delegate rather
+    /// than an EventCallback because it is compared by reference in
+    /// <see cref="ShouldRender"/>; the parent holds it in a field for the same reason
+    /// (ADR-0003).</summary>
+    [Parameter] public Func<GridActionEventArgs<TRow>, Task>? OnAction { get; set; }
+
     private TRow? _renderedRow;
     private IReadOnlyList<GridColumn<TRow>>? _renderedColumns;
     private ColumnStyles? _renderedStyles;
@@ -93,6 +126,7 @@
     private CellTextMetrics _renderedMetrics;
     private CellStateOf<TRow>? _renderedCellState;
     private Func<TRow, RowKind>? _renderedRowKind;
+    private Func<GridActionEventArgs<TRow>, Task>? _renderedOnAction;
 
     protected override void OnInitialized()
     {
@@ -116,7 +150,8 @@
             && _renderedPlaceholder == Placeholder
             && _renderedMetrics == Metrics
             && ReferenceEquals(_renderedCellState, CellState)
-            && ReferenceEquals(_renderedRowKind, RowKind))
+            && ReferenceEquals(_renderedRowKind, RowKind)
+            && ReferenceEquals(_renderedOnAction, OnAction))
         {
             return false;
         }
@@ -135,7 +170,53 @@
         _renderedMetrics = Metrics;
         _renderedCellState = CellState;
         _renderedRowKind = RowKind;
+        _renderedOnAction = OnAction;
     }
+
+    /// <summary>
+    /// What an Action or Template cell paints. A Template Column's fragment is rendered
+    /// <em>inside</em> this row rather than in a component of its own: it then rides the
+    /// row's memoisation boundary instead of adding one per cell, which is what
+    /// ADR-0003 measured as expensive. An Action Column's buttons are plain markup for
+    /// the same reason — a boundary is the cost, not the content (ADR-0020).
+    /// </summary>
+    private RenderFragment CellContent(GridColumn<TRow> column) => builder =>
+    {
+        if (column.Template is { } template)
+        {
+            builder.AddContent(0, template(Row));
+            return;
+        }
+
+        var sequence = 1;
+        foreach (var action in column.Actions)
+        {
+            var fired = action;
+            builder.OpenElement(sequence++, "button");
+            builder.AddAttribute(sequence++, "type", "button");
+            builder.AddAttribute(sequence++, "class", ActionClass(action));
+            builder.AddAttribute(sequence++, "title", action.Label);
+            // An icon-only button has no text to name it. `title` alone is the
+            // last-resort source in the accessible-name computation — ignored under
+            // several screen-reader configurations and unavailable to touch — so the
+            // guarantee GridAction's mandatory label claims is delivered by aria-label,
+            // with title left as the tooltip.
+            if (action.CssClass is not null)
+                builder.AddAttribute(sequence++, "aria-label", action.Label);
+            builder.AddAttribute(sequence++, "onclick",
+                EventCallback.Factory.Create<MouseEventArgs>(this, () => FireAsync(column, fired)));
+            builder.AddContent(sequence++, action.CssClass is null ? action.Label : null);
+            builder.CloseElement();
+        }
+    };
+
+    private static string ActionClass(GridAction action)
+        => action.CssClass is null ? "ex-action" : "ex-action " + action.CssClass;
+
+    // The grid reports; it does not act (ADR-0020). What the action opens happens
+    // outside the grid, and the Consumer holds the state.
+    private Task FireAsync(GridColumn<TRow> column, GridAction action)
+        => OnAction?.Invoke(new GridActionEventArgs<TRow>(Row, column.Name, action.Name)) ?? Task.CompletedTask;
 
     /// <summary>One lookup per painted cell, including the Pinned Columns of a
     /// Placeholder row — those paint their real values, so blinking their state away

@@ -53,9 +53,20 @@ public static class GridQueryEngine
     }
 
     private static ColumnInfo<TRow> Resolve<TRow>(Dictionary<string, ColumnInfo<TRow>> columns, string name)
-        => columns.TryGetValue(name, out var column)
-            ? column
-            : throw new InvalidOperationException($"Unknown column '{name}'.");
+    {
+        if (!columns.TryGetValue(name, out var column))
+            throw new InvalidOperationException($"Unknown column '{name}'.");
+        // An Action Column carries no value, so every row would compare equal and a sort
+        // would shuffle the result into an order nobody could account for. Refused here,
+        // where every other ambiguity is (ADR-0020).
+        if (!column.IsQueryable)
+        {
+            throw new InvalidOperationException(
+                $"Column '{name}' carries actions only and has no value, so it cannot be sorted or filtered.");
+        }
+
+        return column;
+    }
 
     // ---- Filter: validate the Query once, then evaluate rows against it --------
 

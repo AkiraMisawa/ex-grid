@@ -115,7 +115,8 @@
                             <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="CellMetrics"
-                                       CellState="CellState" RowKind="RowKind" />
+                                       CellState="CellState" RowKind="RowKind"
+                                       OnAction="@(_onAction ??= RaiseActionAsync)" />
                         }
                         else
                         {
@@ -131,6 +132,15 @@
 </div>
 
 @code {
+    /// <summary>
+    /// One action button's own box, beside its text: the 6px padding either side, the
+    /// 1px border either side and the 4px gap to the next button that <c>.ex-action</c>
+    /// declares in <c>ex-grid.css</c>. Paired with the stylesheet the way
+    /// <see cref="DefaultCellMetrics"/>'s padding is — the two must move together
+    /// (ADR-0016).
+    /// </summary>
+    private const double ActionButtonChromePx = (6 * 2) + (1 * 2) + 4;
+
     private const double DefaultRowHeightPx = 28;
     private const double DefaultViewportHeightPx = 600;
     private const double DefaultViewportWidthPx = 800;
@@ -283,6 +293,14 @@
     /// </summary>
     [Parameter] public Func<TRow, RowKind>? RowKind { get; set; }
 
+    /// <summary>
+    /// Raised when an action in an Action Column is pressed: which row, which column,
+    /// which action (ADR-0020). The grid does not perform it and holds no state about
+    /// it — what a detail action opens happens outside the grid, and expanding inside a
+    /// row is not possible anyway (ADR-0013).
+    /// </summary>
+    [Parameter] public EventCallback<GridActionEventArgs<TRow>> OnAction { get; set; }
+
     private ElementReference _scroller;
     private IJSObjectReference? _module;
     private IJSObjectReference? _scrollHandle;
@@ -317,6 +335,12 @@
     // method group is a new instance on every render (ADR-0003).
     private readonly Dictionary<string, object> _dragHandler = new();
     private Action<MouseEventArgs>? _onMouseMove;
+
+    // Held in a field so every row is handed the same instance: a method group is a new
+    // delegate on every render and would defeat the rows' ShouldRender comparison
+    // (ADR-0003). Stable for the component's whole life, whether or not the Consumer
+    // handles OnAction — swapping it about would be the same trap.
+    private Func<GridActionEventArgs<TRow>, Task>? _onAction;
 
     // Distinct objects, so the two overlay layers can carry keys that cannot collide
     // with a row's identity key or a Placeholder's boxed index.
@@ -424,7 +448,31 @@
                 var spec = Columns[i].Width;
                 var auto = new AutoWidth(spec);
                 if (spec.Width.IsAuto)
+                {
                     auto = auto.Observe(CellMetrics.EstimatePx(Columns[i].Header.Length));
+                    // An Action Column paints no value, so the rows can never grow it
+                    // and its header is usually empty (ADR-0020) — left at that it would
+                    // stand at MinWidth with its buttons clipped. What it does declare
+                    // is its labels, so those are what it is measured from, once. A
+                    // theme painting icons instead declares a Fixed width; text is the
+                    // only thing this grid can estimate (ADR-0021 keeps measurement out
+                    // of JavaScript).
+                    if (Columns[i].Actions.Count > 0)
+                    {
+                        // The cell's own padding once, then each button's text plus its
+                        // own box. Summed, not maximised: the buttons stand side by side.
+                        // Both terms are needed — the cell consumes its padding before
+                        // any button is reached, and a button is wider than its text —
+                        // and leaving either out resolves a short label like "Open" to a
+                        // column narrower than the single button it holds, which
+                        // `overflow: hidden` then clips: the very outcome this estimate
+                        // exists to prevent.
+                        var required = CellMetrics.EstimatePx(0);
+                        foreach (var action in Columns[i].Actions)
+                            required += (action.Label.Length * CellMetrics.DigitWidthPx) + ActionButtonChromePx;
+                        auto = auto.Observe(required);
+                    }
+                }
                 _autoWidths[i] = auto;
             }
             _observedColumns = Columns;
@@ -612,7 +660,11 @@
             for (var c = 0; c < Columns.Count; c++)
             {
                 var column = Columns[c];
-                if (!column.Width.Width.IsAuto)
+                // A Template or Action column has no text in its cells to measure —
+                // observing it would fold in the empty string and hold the column at
+                // MinWidth, which is worse than the label estimate it already carries
+                // (ADR-0016 / ADR-0020).
+                if (!column.Width.Width.IsAuto || !column.PaintsValue)
                     continue;
                 _autoWidths[c] = _autoWidths[c].Observe(
                     CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(column, data).Length));
@@ -908,6 +960,13 @@
         var suppressed = _suppressRender;
         _suppressRender = false;
         return !suppressed;
+    }
+
+    private Task RaiseActionAsync(GridActionEventArgs<TRow> args)
+    {
+        if (_disposed || !OnAction.HasDelegate)
+            return Task.CompletedTask;
+        return OnAction.InvokeAsync(args);
     }
 
     private async Task RaiseSelectionIfChangedAsync()

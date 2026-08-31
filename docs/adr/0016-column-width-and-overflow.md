@@ -164,3 +164,21 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   the dangerous direction. A value estimating exactly at the resolved width fits and is
   shown; hashing is strictly past the bound. The `####` fill is `floor(content width / digit
   width)` hashes, minimum one.)*
+- **A column that paints no value is outside both mechanisms.** Action and Template columns
+  never hash — `####` is about a value that does not fit, and there is no value being
+  painted ([ADR-0020](./0020-action-and-template-columns.md)) — and the rows never grow
+  them either: observing their empty cell text would fold in the empty string and hold the
+  column at `MinWidth`. *(Decided while implementing.)* A **Template Column's Auto width is
+  its header alone**: what the Consumer paints in there is the Consumer's to size. An
+  **Action Column's is measured from what it declares** — the cell's own padding once, then
+  each button's label at the digit width plus that button's own box (its padding, border
+  and the gap to the next), summed because the buttons stand side by side. Both terms are
+  needed: the cell consumes its padding before any button is reached, and a button is wider
+  than its text; leaving either out resolves a short label like "Open" to a column narrower
+  than the single button it holds, which `overflow: hidden` then clips. That estimate and
+  the header's are two separate observations, so the column settles at the **larger** of the
+  two rather than their sum — a header and the buttons under it never occupy the same row.
+  The button's box is a constant paired with `ex-grid.css`, exactly as the cell padding is
+  paired with `DefaultCellMetrics`: the two must move together, or the column stops fitting
+  the buttons it was measured for. A theme painting icons instead has no text to estimate
+  and declares a Fixed width.

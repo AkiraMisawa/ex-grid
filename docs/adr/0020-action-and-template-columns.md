@@ -136,6 +136,60 @@ ADR-0010's "Chrome does not decide meaning" is preserved.
   each time makes the `Column` look changed and **slips past row memoisation** — the same trap as
   "cache delegates in a field" in ADR-0003.
 
+## What the implementation settled
+
+*(Written while implementing. Three of these refine predictions this ADR made; they are
+left visible rather than edited away.)*
+
+**A template rides inside the row's boundary, it does not add one.** The prediction above
+was that "a `RenderFragment` is effectively a component" and that boundaries would
+increase toward the measured 92.0 ms. In the event the fragment is rendered **inline in
+the row component**, so it adds no boundary at all and stays inside the row's
+memoisation — a template column costs whatever its content costs, and nothing for
+existing. The warning the prediction was protecting still stands, just for a different
+reason: heavy content in forty visible cells is heavy content, and a fragment constructed
+per render still hands every row a changed column and defeats memoisation.
+
+**The seam is closed with `stopPropagation` on the cell, not `pointer-events` on it.**
+Everything under `.ex-row` is `pointer-events: none` so the Viewport can hit-test by
+arithmetic (ADR-0008). What turns them back on is the **control**, never the cell: the
+grid's own `.ex-action` button, or a Consumer's control marked `.ex-interactive` inside a
+template. The cell element carries `@onmousedown` and `@onmousemove:stopPropagation`
+(**not** `@onmouseup` — see below) and catches what bubbles out of that control — an ancestor's own `pointer-events: none`
+does not stop a bubbled event from reaching a handler on it. The consequence is the one
+worth having: **the inert parts of an Action or Template cell still select**, because they
+never became event targets, while a press on a button never reaches the Viewport's
+arithmetic. A drag crossing a button pauses over it, for the same reason.
+
+**`mouseup` is deliberately not stopped.** It is the one of the three that carries no
+position into the Viewport's handler — that handler only ends the drag. Swallowed with the
+other two, a drag released over a button would leave the grid still dragging, and the next
+move with a button held (pressing that same button and pulling off it) would extend the
+old selection to the pointer.
+
+**The refusal for a value-less column lives in the query engine.** An Action Column
+declares no value, so `ColumnInfo.IsQueryable` is false and `GridQueryEngine` refuses a
+sort or a filter naming it, by name. Sorting every row by nothing would silently shuffle
+the result — refusing is the same rule as refusing to copy rather than truncate
+(ADR-0005).
+
+**An Action Column's header is empty by default**, which answers the question this ADR
+left open only halfway: the width is answered (Auto measures the declared labels —
+ADR-0016), the column menu is not, because there is no column menu yet.
+
+### Still open
+
+- **The keyboard half of this ADR is not implemented.** Space fires a single action, N≥2
+  enters the cell, Esc leaves, and Enter never fires — all of it waits on the
+  capture-phase key handling (ADR-0010 / ADR-0018), which does not exist yet. What exists
+  today is the mouse: a press on a button reports `(row, column, action)` and does nothing
+  else.
+- **Interactive mode itself** — the third mode alongside Overwrite / Caret — likewise.
+- **Copy of a range covering an Action Column.** The clipboard rules are pure and not yet
+  wired to the component; a value-less column would copy as an empty cell today. Whether
+  that is right, or whether copy should refuse, is decided when the clipboard is
+  connected (ADR-0005).
+
 ## Consequences
 
 - **There are now three modes.** Selected / Overwrite–Caret (editing) / Interactive (inside a
