@@ -4,19 +4,32 @@
 /* The grid pins its own font-size: DefaultCellMetrics' digit width is stated against
    this size, and inheriting the host's would silently break the >= any-glyph contract
    (ADR-0016). A theme changing either supplies its own CellMetrics. */
-.ex-grid { display: flex; flex-direction: column; font-size: 14px; font-variant-numeric: tabular-nums; overflow-x: auto; }
-.ex-header { display: flex; min-width: 100%; box-sizing: border-box; }
-/* Horizontal scrolling stays on .ex-grid so the header pans with the body. That takes
-   both halves of this rule: the scroller is emitted as wide as its columns (so the
-   root's scrollbar reaches the rows), and its own horizontal axis is pinned shut —
-   a non-visible overflow on one axis turns the other into `auto`, which would give the
-   body a second scrollbar the header does not follow. Height and width both come from
-   C#, where the geometry's truth lives (ADR-0013). */
-.ex-scroller { overflow-y: auto; overflow-x: clip; position: relative; min-width: 100%; box-sizing: border-box; }
-/* Total rows × row height — the scrollbar is as long as the whole result, whatever
-   fraction of it the Window holds (ADR-0013). */
-.ex-spacer { position: relative; }
-.ex-viewport { position: absolute; top: 0; left: 0; right: 0; will-change: transform; }
+.ex-grid { font-size: 14px; font-variant-numeric: tabular-nums; }
+/* One scroll container for both axes. The header and the Pinned Columns are held in
+   place inside it with `position: sticky`, which is why there can only be one: a nested
+   container with a non-visible overflow on one axis computes `auto` on the other (CSS
+   Overflow 3), becomes the scrollport itself, and the sticky offsets then measure
+   against the wrong box. Width and height both come from C#, where the geometry's truth
+   lives (ADR-0013). */
+.ex-scroller { overflow: auto; position: relative; box-sizing: border-box; }
+/* Total columns wide by header + total rows tall — the scrollbars are as long as the
+   whole result on both axes, whatever fraction of it the Window holds (ADR-0013). */
+.ex-spacer { position: relative; min-width: 100%; }
+/* The header occupies the content's first row height and covers the Viewport's first
+   row height; the C# arithmetic assumes exactly that, so the height is stated here and
+   not left to the line box. Sticky elements are transparent by default and rows would
+   scroll through it, hence the explicit background — a theme overrides the variable on
+   the instance root rather than the class. */
+.ex-header {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    height: var(--ex-row-height);
+    line-height: var(--ex-row-height);
+    background: var(--ex-header-background, Canvas);
+}
+.ex-viewport { position: absolute; top: var(--ex-row-height); left: 0; right: 0; will-change: transform; }
 .ex-row { display: flex; height: var(--ex-row-height); line-height: var(--ex-row-height); }
 /* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016), and
    the 8px padding pairs with DefaultCellMetrics.CellHorizontalPaddingPx — the two must
@@ -24,8 +37,19 @@
    fit is painted as #### by the core, never clipped. */
 .ex-cell, .ex-header-cell { flex: 0 0 auto; box-sizing: border-box; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ex-cell-numeric { text-align: right; }
+/* What stands in for the columns left out to the left of the first painted one. It must
+   not be allowed to shrink: a flex-shrunk spacer would slide every painted column left
+   of where the arithmetic put it, and the header and the body would disagree. */
+.ex-gap { flex: 0 0 auto; }
+/* A Pinned Column stays against the Viewport's left edge while the rest pans under it
+   (ADR-0004). `left` is the column's own offset, set inline from C#: sticky keeps an
+   element in its normal flow position until the content scrolls past that offset. Opaque
+   for the same reason the header is — the columns underneath pass beneath it. */
+.ex-pinned { position: sticky; z-index: 1; background: var(--ex-pinned-background, Canvas); }
+.ex-header .ex-pinned { z-index: 3; background: var(--ex-header-background, Canvas); }
 /* A row not yet painted with real data — waiting for the Consumer's Window, or
    deliberately skipped while scrolling fast. One mechanism, so one appearance
-   (ADR-0004). It carries no cells at all: painting them is the cost being avoided. */
+   (ADR-0004). It carries no scrollable cells at all: painting them is the cost being
+   avoided. The Pinned Columns do stay, so the bar fills whatever is left beside them. */
 .ex-placeholder::after { content: ""; margin: calc(var(--ex-row-height) / 4) 8px; flex: 1 1 auto; border-radius: 2px; background: currentColor; opacity: 0.08; }
 .ex-loading { opacity: 0.7; }

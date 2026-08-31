@@ -25,11 +25,12 @@ public abstract class GridTestContext : BunitContext
     /// <summary>
     /// Moves the browser's scroll position and raises the scroll event the component
     /// listens for. The event is Blazor's own @onscroll — attaching listeners in
-    /// JavaScript is not on the allowlist; only reading the offset is (ADR-0021).
+    /// JavaScript is not on the allowlist; only reading the offsets is (ADR-0021).
+    /// Both axes move together because a real one does: a trackpad gesture is diagonal.
     /// </summary>
-    internal async Task ScrollToAsync(IElement scroller, double px)
+    internal async Task ScrollToAsync(IElement scroller, double top, double left = 0)
     {
-        Js.SetScrollTop(px);
+        Js.SetScrollOffset(top, left);
         await scroller.ScrollAsync(EventArgs.Empty);
     }
 }

@@ -1,5 +1,6 @@
 @typeparam TRow where TRow : class
 @using global::ExGrid.Columns
+@using global::ExGrid.Selection
 
 @*
     The memoisation boundary sits at the row; cells are plain markup (ADR-0003).
@@ -7,16 +8,34 @@
     treats a mutable reference-typed parameter as "may have changed" even when the
     reference is identical (measured; ADR-0003).
 
+    A row paints the Pinned Columns, then one spacer standing in for everything
+    virtualised away to the left, then the scrollable columns on screen (ADR-0004). The
+    pinned cells come first because they are `position: sticky` and therefore still
+    occupy their place in the flow — the spacer's width is measured from where they end.
+
     Public because the row boundary is a documented architectural seam and the bUnit
     layer counts its renders; it is not meant to be used by a Consumer directly.
     Selection is never painted here — rows know nothing about it (ADR-0008).
 *@
-<div class="ex-row">
-    @for (var i = 0; i < Columns.Count; i++)
+<div class="@RowClass">
+    @for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
     {
         var column = Columns[i];
-        var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Widths[i], Metrics);
-        <div class="@CellClass(column.Type)" style="@WidthStyle(Widths[i])">@decision.DisplayText</div>
+        var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Styles.Geometry.WidthPxOf(i), Metrics);
+        <div class="@PinnedCellClass(column.Type)" style="@Styles.PinnedCell(i)">@decision.DisplayText</div>
+    }
+    @if (!Placeholder && Scrollable is { } scrollable)
+    {
+        @if (Styles.HasGap(scrollable.Start))
+        {
+            <div class="ex-gap" style="@Styles.Gap(scrollable.Start)"></div>
+        }
+        @for (var i = scrollable.Start; i < scrollable.Start + scrollable.Count; i++)
+        {
+            var column = Columns[i];
+            var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Styles.Geometry.WidthPxOf(i), Metrics);
+            <div class="@CellClass(column.Type)" style="@Styles.Cell(i)">@decision.DisplayText</div>
+        }
     }
 </div>
 
@@ -25,16 +44,34 @@
 
     [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
 
-    /// <summary>Resolved per-column widths, index-aligned with Columns. The parent
-    /// replaces the array instance only when a width moved (ADR-0016).</summary>
-    [Parameter, EditorRequired] public double[] Widths { get; set; } = [];
+    /// <summary>The resolved column widths and the strings they reach CSS as, index-aligned
+    /// with Columns. The parent replaces the instance only when a width actually moved
+    /// (ADR-0016), which is what keeps this a reference comparison.</summary>
+    [Parameter, EditorRequired] public ColumnStyles Styles { get; set; } = default!;
+
+    /// <summary>Which scrollable columns are on screen, or null when the Pinned Columns
+    /// cover the whole Viewport (ADR-0004).</summary>
+    [Parameter] public ColumnRange? Scrollable { get; set; }
+
+    /// <summary>
+    /// Paint the row as a Placeholder: Pinned Columns only, and a bar in place of the
+    /// rest (ADR-0004). The pinned cells stay because a Pinned Column is the landmark
+    /// that survives panning sideways — having it blink out and back on every fling is
+    /// the thing pinning exists to prevent. The 21 rows × 2 pinned cells that costs is
+    /// noise beside the scrollable cells being skipped.
+    /// </summary>
+    [Parameter] public bool Placeholder { get; set; }
 
     [Parameter] public CellTextMetrics Metrics { get; set; }
 
     private TRow? _renderedRow;
     private IReadOnlyList<GridColumn<TRow>>? _renderedColumns;
-    private double[]? _renderedWidths;
+    private ColumnStyles? _renderedStyles;
+    private ColumnRange? _renderedScrollable;
+    private bool _renderedPlaceholder;
     private CellTextMetrics _renderedMetrics;
+
+    private string RowClass => Placeholder ? "ex-row ex-placeholder" : "ex-row";
 
     protected override void OnInitialized()
     {
@@ -42,29 +79,37 @@
         // ShouldRender for it — so record what it will paint here. Left unrecorded,
         // every row pays one extra full render on the second parameter push, which the
         // render-count tests exist to catch (ADR-0003).
-        _renderedRow = Row;
-        _renderedColumns = Columns;
-        _renderedWidths = Widths;
-        _renderedMetrics = Metrics;
+        Record();
     }
 
     protected override bool ShouldRender()
     {
         // Identity, not mutation, is the change signal (ADR-0003): a Consumer that
-        // rewrites a row in place gets no repaint — it hands over a new instance.
+        // rewrites a row in place gets no repaint — it hands over a new instance. The
+        // two additions here are values, so they compare by content: scrolling sideways
+        // genuinely changes what a row paints, and no memoisation should hide that.
         if (ReferenceEquals(_renderedRow, Row)
             && ReferenceEquals(_renderedColumns, Columns)
-            && ReferenceEquals(_renderedWidths, Widths)
+            && ReferenceEquals(_renderedStyles, Styles)
+            && _renderedScrollable == Scrollable
+            && _renderedPlaceholder == Placeholder
             && _renderedMetrics == Metrics)
         {
             return false;
         }
 
+        Record();
+        return true;
+    }
+
+    private void Record()
+    {
         _renderedRow = Row;
         _renderedColumns = Columns;
-        _renderedWidths = Widths;
+        _renderedStyles = Styles;
+        _renderedScrollable = Scrollable;
+        _renderedPlaceholder = Placeholder;
         _renderedMetrics = Metrics;
-        return true;
     }
 
     /// <summary>The one string a cell paints, measures and decides overflow on — count
@@ -78,5 +123,6 @@
     private static string CellClass(ColumnType type)
         => OverflowRules.HashesWhenOverflowing(type) ? "ex-cell ex-cell-numeric" : "ex-cell";
 
-    private static string WidthStyle(double px) => FormattableString.Invariant($"width: {px}px");
+    private static string PinnedCellClass(ColumnType type)
+        => OverflowRules.HashesWhenOverflowing(type) ? "ex-cell ex-cell-numeric ex-pinned" : "ex-cell ex-pinned";
 }

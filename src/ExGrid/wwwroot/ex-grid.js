@@ -13,7 +13,13 @@
  */
 export function attach(scroller) {
     return {
-        getScrollTop: () => (scroller ? scroller.scrollTop : 0),
+        // Both axes in one call, deliberately. A trackpad moves them together, and two
+        // calls means two round-trips with the browser free to process another scroll
+        // event in between — the rows would then be painted from one moment's offset and
+        // the columns from another's. One call is one snapshot.
+        getScrollOffset: () => (scroller
+            ? { top: scroller.scrollTop, left: scroller.scrollLeft }
+            : { top: 0, left: 0 }),
         // Kept even though nothing is held yet: the handle's contract is that a grid
         // releases what it took, and Focus-follows-scroll (ADR-0012) will set offsets
         // through this same handle.

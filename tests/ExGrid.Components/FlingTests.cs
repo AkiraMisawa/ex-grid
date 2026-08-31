@@ -6,8 +6,8 @@ namespace ExGrid.Components.Tests;
 
 /// <summary>
 /// Waiting for data and skipping paint during a fling are one mechanism, so they paint
-/// the same thing (ADR-0004). 20px rows in a 100px Viewport: a move of more than six
-/// rows is a fling.
+/// the same thing (ADR-0004). 20px rows in a 100px Viewport, of which the header takes
+/// the first 20: a Viewport is five rows, and a move of more than five is a fling.
 /// </summary>
 public class FlingTests : GridTestContext
 {
@@ -35,15 +35,17 @@ public class FlingTests : GridTestContext
         // 100 rows at once: every row changes, so the row boundaries buy nothing.
         await ScrollToAsync(cut.Find(".ex-scroller"), 100 * RowHeightPx);
 
-        Assert.Equal(6, cut.FindAll(".ex-placeholder").Count);
-        Assert.Empty(cut.FindComponents<ExGridRow<TestRow>>());
+        // With nothing pinned there is nothing left to paint, so a flung row carries no
+        // cells at all — the cost being skipped is exactly those cells.
+        Assert.Equal(5, cut.FindAll(".ex-placeholder").Count);
+        Assert.Empty(cut.FindAll(".ex-cell"));
 
         Clock.Advance(SettleDelay);
 
         cut.WaitForAssertion(() =>
         {
             Assert.Empty(cut.FindAll(".ex-placeholder"));
-            Assert.Equal(6, cut.FindComponents<ExGridRow<TestRow>>().Count);
+            Assert.Equal(5, cut.FindComponents<ExGridRow<TestRow>>().Count);
         });
         Assert.Equal("Row 000100", cut.FindAll(".ex-row")[0].QuerySelector(".ex-cell")!.TextContent);
     }
@@ -70,10 +72,10 @@ public class FlingTests : GridTestContext
     {
         var cut = RenderGrid();
 
-        await ScrollToAsync(cut.Find(".ex-scroller"), 6 * RowHeightPx);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 5 * RowHeightPx);
 
         Assert.Empty(cut.FindAll(".ex-placeholder"));
-        Assert.Equal(6, cut.FindComponents<ExGridRow<TestRow>>().Count);
+        Assert.Equal(5, cut.FindComponents<ExGridRow<TestRow>>().Count);
     }
 
     [Fact] // ADR-0004/0001: the ranges a fling passes over are not asked for — only the one it lands on
@@ -96,6 +98,6 @@ public class FlingTests : GridTestContext
 
         Clock.Advance(SettleDelay);
 
-        cut.WaitForAssertion(() => Assert.Equal([new RowRange(200, 6)], asked));
+        cut.WaitForAssertion(() => Assert.Equal([new RowRange(200, 5)], asked));
     }
 }

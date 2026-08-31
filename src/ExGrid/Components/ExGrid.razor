@@ -1,7 +1,7 @@
 @typeparam TRow where TRow : class
-@using System.Globalization
 @using System.Runtime.CompilerServices
 @using global::ExGrid.Columns
+@using global::ExGrid.Selection
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 @inject IJSRuntime JS
@@ -18,19 +18,35 @@
     row boundaries below it skip (ADR-0003).
 *@
 <div class="@RootClass" style="--ex-row-height: @Px(RowHeight)">
-    @* The header and the scroller are both as wide as the columns, so the one
-       horizontal scrollbar — the root's — pans them together. Left to itself the
-       scroller would scroll horizontally on its own (a non-visible overflow on one
-       axis makes the other axis auto), and the body would slide out from under the
-       header: every column read under its neighbour's label. *@
-    <div class="ex-header" style="width: @Px(_totalWidthPx)">
-        @for (var i = 0; i < Columns.Count; i++)
-        {
-            <div class="ex-header-cell" style="@WidthStyle(_resolvedWidths[i])">@Columns[i].Header</div>
-        }
-    </div>
-    <div class="ex-scroller" style="height: @Px(ViewportHeight); width: @Px(_totalWidthPx)" @ref="_scroller" @onscroll="OnScrollAsync">
-        <div class="ex-spacer" style="height: @Px(_geometry.ScrollHeightPx)">
+    @* One scroll container for both axes, with the header and the Pinned Columns held in
+       place by `position: sticky` inside it. Two containers cannot do this: giving the
+       inner one a non-visible overflow on one axis turns the other into `auto` (CSS
+       Overflow 3), so the body would pan on its own scrollbar while the header stayed
+       put — every column read under its neighbour's label — and a sticky offset measured
+       against the inner scrollport would not hold the pinned cells at all. *@
+    <div class="ex-scroller" style="width: @Px(ViewportWidth); height: @Px(ViewportHeight)"
+         @ref="_scroller" @onscroll="OnScrollAsync">
+        <div class="ex-spacer" style="width: @Px(_columnStyles.Geometry.TotalWidthPx); height: @Px(RowHeight + _geometry.ScrollHeightPx)">
+            @* The header occupies the content's first row height and covers the
+               Viewport's first row height, so the two cancel and the row arithmetic
+               below is unchanged by its presence (ADR-0013). *@
+            <div class="ex-header">
+                @for (var i = 0; i < _columnStyles.Geometry.PinnedCount; i++)
+                {
+                    <div class="ex-header-cell ex-pinned" style="@_columnStyles.PinnedCell(i)">@Columns[i].Header</div>
+                }
+                @if (_scrollable is { } headerColumns)
+                {
+                    @if (_columnStyles.HasGap(headerColumns.Start))
+                    {
+                        <div class="ex-gap" style="@_columnStyles.Gap(headerColumns.Start)"></div>
+                    }
+                    @for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
+                    {
+                        <div class="ex-header-cell" style="@_columnStyles.Cell(i)">@Columns[i].Header</div>
+                    }
+                }
+            </div>
             <div class="ex-viewport" style="transform: translateY(@Px(_geometry.OffsetPxOf(_visible?.Start ?? 0)))">
                 @if (_visible is { } visible)
                 {
@@ -44,13 +60,20 @@
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
                     {
                         var slice = row - WindowStart;
-                        if (!_placeholderMode && slice >= 0 && slice < Window.Count)
+                        if (slice >= 0 && slice < Window.Count)
                         {
                             var data = Window[slice];
-                            <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Widths="_resolvedWidths" Metrics="CellMetrics" />
+                            @* A Placeholder is handed no slice at all, so a fling that keeps
+                               moving sideways does not churn the rows through renders whose
+                               output is the same pinned cells every time. *@
+                            <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
+                                       Scrollable="@(_placeholderMode ? null : _scrollable)"
+                                       Placeholder="_placeholderMode" Metrics="CellMetrics" />
                         }
                         else
                         {
+                            @* No row behind this position at all, so not even a Pinned
+                               Column has anything to paint. *@
                             <div class="ex-row ex-placeholder" @key="row"></div>
                         }
                     }
@@ -63,6 +86,7 @@
 @code {
     private const double DefaultRowHeightPx = 28;
     private const double DefaultViewportHeightPx = 600;
+    private const double DefaultViewportWidthPx = 800;
 
     /// <summary>
     /// How long scrolling must stand still before Placeholders are filled in with real
@@ -114,12 +138,38 @@
     [Parameter] public double RowHeight { get; set; } = DefaultRowHeightPx;
 
     /// <summary>
-    /// How tall the scrolling area is. A C# parameter for the same reason the row
-    /// height is one (ADR-0013): the virtualisation arithmetic reads it, and measuring
-    /// the element instead would mean a layout round-trip through JavaScript, which is
-    /// deliberately not on the allowlist (ADR-0021).
+    /// How tall the scrolling area is, header included. A C# parameter for the same
+    /// reason the row height is one (ADR-0013): the virtualisation arithmetic reads it,
+    /// and measuring the element instead would mean a layout round-trip through
+    /// JavaScript, which is deliberately not on the allowlist (ADR-0021). The header
+    /// takes the first <see cref="RowHeight"/> of it, so the rows get what is left.
     /// </summary>
     [Parameter] public double ViewportHeight { get; set; } = DefaultViewportHeightPx;
+
+    /// <summary>How wide the scrolling area is — the other half of the geometry, and a
+    /// C# parameter for exactly the reason <see cref="ViewportHeight"/> is.</summary>
+    [Parameter] public double ViewportWidth { get; set; } = DefaultViewportWidthPx;
+
+    /// <summary>
+    /// How many leading columns are pinned: always painted, outside virtualisation,
+    /// held against the Viewport's left edge. The same shape as Excel's frozen panes,
+    /// and combined with the column order the Consumer already owns it expresses which
+    /// columns are pinned without the grid holding View State of its own (ADR-0001).
+    ///
+    /// Pinning is not free and is not capped: pinned cells are painted at every scroll
+    /// offset, so pinning 50 of 100 columns puts the resident cell count back where
+    /// virtualisation found it (ADR-0004 says this outright). Pinning a handful is the
+    /// case this serves.
+    /// </summary>
+    [Parameter] public int PinnedColumnCount { get; set; }
+
+    /// <summary>
+    /// Whether columns outside the Viewport are left out of the DOM (ADR-0004). Off, the
+    /// grid paints every column and travels the same rendering path — the spacer is
+    /// simply zero wide and the slice is every scrollable column — so turning it off
+    /// cannot change what a cell means, only how many of them exist.
+    /// </summary>
+    [Parameter] public bool VirtualiseColumns { get; set; } = true;
 
     /// <summary>Overridden by a theme that measured its real font; defaults to
     /// <see cref="DefaultCellMetrics"/>.</summary>
@@ -149,8 +199,11 @@
     private bool _placeholderMode;
 
     private double _scrollTopPx;
-    private ViewportGeometry _geometry = new(DefaultRowHeightPx, DefaultViewportHeightPx, 0);
+    private double _scrollLeftPx;
+    private ViewportGeometry _geometry = new(DefaultRowHeightPx, DefaultViewportHeightPx - DefaultRowHeightPx, 0);
+    private ColumnStyles _columnStyles = new(new ColumnGeometry([], 0, DefaultViewportWidthPx));
     private RowRange? _visible;
+    private ColumnRange? _scrollable;
 
     private RowRange? _lastRaised;
     private int _lastRaisedWindowStart;
@@ -160,8 +213,6 @@
     private IReadOnlyList<GridColumn<TRow>>? _observedColumns;
     private CellTextMetrics _observedMetrics;
     private AutoWidth[] _autoWidths = [];
-    private double[] _resolvedWidths = [];
-    private double _totalWidthPx;
 
     // What the widths were last measured from. Re-measuring on every render would read
     // the rows' current contents, so an in-place rewrite would grow a column and repaint
@@ -187,6 +238,22 @@
         {
             throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
                 "ViewportHeight is a finite, positive number of pixels (ADR-0013).");
+        }
+        if (ViewportHeight <= RowHeight)
+        {
+            throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
+                $"ViewportHeight must exceed RowHeight ({RowHeight}px): the header takes the first row height of it, " +
+                "and what is left is where the rows go (ADR-0013).");
+        }
+        if (!double.IsFinite(ViewportWidth) || ViewportWidth <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(ViewportWidth), ViewportWidth,
+                "ViewportWidth is a finite, positive number of pixels (ADR-0013).");
+        }
+        if (PinnedColumnCount < 0 || PinnedColumnCount > Columns.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(PinnedColumnCount), PinnedColumnCount,
+                $"PinnedColumnCount is the first N of {Columns.Count} columns; there are not that many (ADR-0004).");
         }
         if (CellMetrics.DigitWidthPx <= 0)
         {
@@ -258,6 +325,10 @@
     // Refused up front rather than failing strangely mid-render: a duplicate instance
     // makes Row Identity ambiguous (ADR-0003 — which row did the Consumer mean?), and
     // a null is not a row (an absent row is a Placeholder, ADR-0004).
+    //
+    // Walking the whole Window is fine while a Window is tens or hundreds of rows. The
+    // pull layer that hands over an entire result at once (GridSource.From, Task 9)
+    // would make this a hash insert per row on every push, and is where to revisit it.
     private static void RequireDistinctRows(IReadOnlyList<TRow> window)
     {
         var seen = new HashSet<object>(window.Count, ReferenceEqualityComparer.Instance);
@@ -282,9 +353,14 @@
     /// settling — so the two can never disagree.</summary>
     private void PrepareRender()
     {
-        _geometry = new ViewportGeometry(RowHeight, ViewportHeight, TotalCount ?? Window.Count);
+        // The header stands on the first row height of the Viewport, so the rows get the
+        // rest. Everything downstream — how many rows fit, where a scroll offset lands —
+        // is arithmetic over that remainder (ADR-0013).
+        _geometry = new ViewportGeometry(RowHeight, ViewportHeight - RowHeight, TotalCount ?? Window.Count);
         _visible = _geometry.SliceAt(_scrollTopPx);
         ObserveAutoWidths();
+        ResolveColumnGeometry();
+        _scrollable = _columnStyles.Geometry.ScrollableSliceAt(_scrollLeftPx, VirtualiseColumns);
     }
 
     /// <summary>
@@ -293,64 +369,94 @@
     /// would cost more than the virtualisation saves. Observation is a monotone maximum,
     /// so seeing fewer rows can never narrow a column — a wide value simply grows it as
     /// it scrolls into the Viewport, which is the direction ADR-0016 chose to avoid
-    /// judder. The resolved array is replaced only when a width actually moved, so an
-    /// unchanged layout keeps its reference and the rows keep skipping (ADR-0003).
+    /// judder.
+    ///
+    /// Every column is observed, including the ones horizontal virtualisation is leaving
+    /// out of the DOM, and that is what keeps the horizontal axis stable. Observing only
+    /// the painted columns would make a column's width depend on where the Viewport sits:
+    /// an Auto column entering from the right would grow, the total width would change,
+    /// the scrollbar would change length, and the same scrollLeft would point somewhere
+    /// else — a loop feeding itself. Observing all of them takes the position out of the
+    /// input and the loop cannot form.
+    ///
+    /// Paying for that every frame is what the incremental step avoids: observation is a
+    /// monotone maximum, so re-observing a row it has already seen cannot change the
+    /// answer, and only the rows that newly entered the Viewport are read.
     /// </summary>
     private void ObserveAutoWidths()
     {
+        // Nothing is painted during a fling, so there is nothing to measure from —
+        // measuring what is not on screen contradicts ADR-0016's "measured from what has
+        // been painted", besides being pure waste in the frames that can least afford it.
+        if (_placeholderMode)
+            return;
+
         // Measured from the same signals rendering itself follows: a different Window
         // instance, a different slice on screen, different columns or metrics. Reading
         // the rows again when none of those moved is how a rewritten-in-place value
         // would sneak onto the screen (ADR-0003), besides being wasted work.
-        if (_measured
+        var sameWindow = _measured
             && ReferenceEquals(_measuredWindow, Window)
-            && _measuredWindowStart == WindowStart
-            && _measuredVisible == _visible)
-        {
+            && _measuredWindowStart == WindowStart;
+        if (sameWindow && _measuredVisible == _visible)
             return;
-        }
+
+        // Rows the previous observation already folded in. Disjoint from the new slice
+        // after a fling, which correctly means every visible row is read again.
+        var seen = sameWindow ? _measuredVisible : null;
 
         _measured = true;
         _measuredWindow = Window;
         _measuredWindowStart = WindowStart;
         _measuredVisible = _visible;
 
-        for (var c = 0; c < Columns.Count; c++)
+        if (_visible is not { } visible)
+            return;
+
+        for (var row = visible.Start; row < visible.Start + visible.Count; row++)
         {
-            var column = Columns[c];
-            if (!column.Width.Width.IsAuto)
+            if (seen is { } already && row >= already.Start && row < already.Start + already.Count)
+                continue;
+            var slice = row - WindowStart;
+            if (slice < 0 || slice >= Window.Count)
                 continue;
 
-            var auto = _autoWidths[c];
-            if (_visible is { } visible)
+            var data = Window[slice];
+            for (var c = 0; c < Columns.Count; c++)
             {
-                for (var row = visible.Start; row < visible.Start + visible.Count; row++)
-                {
-                    var slice = row - WindowStart;
-                    if (slice < 0 || slice >= Window.Count)
-                        continue;
-                    auto = auto.Observe(CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(column, Window[slice]).Length));
-                }
+                var column = Columns[c];
+                if (!column.Width.Width.IsAuto)
+                    continue;
+                _autoWidths[c] = _autoWidths[c].Observe(
+                    CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(column, data).Length));
             }
-            _autoWidths[c] = auto;
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the column geometry only when something it is made of actually moved, so
+    /// an unchanged layout keeps its instance and the rows keep skipping (ADR-0003). The
+    /// comparison runs against the live geometry rather than a parallel copy: one place
+    /// holds the widths, so the two cannot fall out of step.
+    /// </summary>
+    private void ResolveColumnGeometry()
+    {
+        var geometry = _columnStyles.Geometry;
+        if (geometry.Count == Columns.Count
+            && geometry.PinnedCount == PinnedColumnCount
+            && geometry.ViewportWidthPx == ViewportWidth)
+        {
+            var moved = false;
+            for (var c = 0; !moved && c < Columns.Count; c++)
+                moved = geometry.WidthPxOf(c) != Columns[c].Width.ResolveWidthPx(_autoWidths[c]);
+            if (!moved)
+                return;
         }
 
         var widths = new double[Columns.Count];
-        var total = 0d;
         for (var c = 0; c < Columns.Count; c++)
-        {
             widths[c] = Columns[c].Width.ResolveWidthPx(_autoWidths[c]);
-            total += widths[c];
-        }
-
-        var changed = widths.Length != _resolvedWidths.Length;
-        for (var c = 0; !changed && c < widths.Length; c++)
-            changed = widths[c] != _resolvedWidths[c];
-        if (changed)
-        {
-            _resolvedWidths = widths;
-            _totalWidthPx = total;
-        }
+        _columnStyles = new ColumnStyles(new ColumnGeometry(widths, PinnedColumnCount, ViewportWidth));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -387,11 +493,11 @@
 
             _scrollHandle = handle;
 
-            // The scroller can already be somewhere: a reload restores scrollTop without
-            // raising a scroll event, and events arriving before the module landed were
-            // skipped by design. Read the position once so the first paint matches what
-            // the browser is actually showing.
-            ApplyScrollTop(await handle.InvokeAsync<double>("getScrollTop"));
+            // The scroller can already be somewhere: a reload restores the offsets
+            // without raising a scroll event, and events arriving before the module
+            // landed were skipped by design. Read the position once so the first paint
+            // matches what the browser is actually showing.
+            ApplyScrollOffset(await handle.InvokeAsync<ScrollOffset>("getScrollOffset"));
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
         {
@@ -418,13 +524,13 @@
             do
             {
                 _scrollPending = false;
-                var top = await _scrollHandle.InvokeAsync<double>("getScrollTop");
+                var offset = await _scrollHandle.InvokeAsync<ScrollOffset>("getScrollOffset");
                 // Disposal can have overtaken the read, and a released handle answers
                 // zero — applying that would jump the model back to the top and touch a
                 // component and a timer that are already gone.
                 if (_disposed)
                     return;
-                ApplyScrollTop(top);
+                ApplyScrollOffset(offset);
             }
             // Reads are awaited, so a burst would otherwise apply stale offsets out of
             // order; looping on the flag lands the last position and drops the rest.
@@ -439,18 +545,26 @@
         }
     }
 
-    private void ApplyScrollTop(double scrollTopPx)
+    private void ApplyScrollOffset(ScrollOffset offset)
     {
-        if (!double.IsFinite(scrollTopPx))
+        if (!double.IsFinite(offset.Top) || !double.IsFinite(offset.Left))
             return;
 
         var paintedFirstRow = _visible?.Start ?? 0;
-        _scrollTopPx = scrollTopPx;
+        var paintedColumns = _scrollable;
+        var previousLeftPx = _scrollLeftPx;
+        _scrollTopPx = offset.Top;
+        _scrollLeftPx = offset.Left;
         PrepareRender();
         var firstRow = _visible?.Start ?? 0;
 
-        var moved = firstRow != paintedFirstRow;
-        if (moved && _geometry.IsFling(paintedFirstRow, firstRow))
+        var moved = firstRow != paintedFirstRow || _scrollable != paintedColumns;
+        // Either axis on its own is enough. A diagonal fling that crosses screens
+        // sideways while barely moving down is still a frame where every cell changes,
+        // and testing only the rows would miss it entirely.
+        var flung = (firstRow != paintedFirstRow && _geometry.IsFling(paintedFirstRow, firstRow))
+            || _columnStyles.Geometry.IsFling(previousLeftPx, _scrollLeftPx);
+        if (flung)
         {
             // Waiting for data and skipping paint during a fling are one mechanism, so
             // they paint the same thing (ADR-0004).
@@ -545,8 +659,6 @@
     }
 
     private static object RowKey(TRow row) => RowIdentityKeys.GetValue(row, static _ => new object());
-
-    private static string WidthStyle(double px) => FormattableString.Invariant($"width: {px}px");
 
     private static string Px(double value) => FormattableString.Invariant($"{value}px");
 }

@@ -7,14 +7,15 @@ namespace ExGrid.Components.Tests;
 
 /// <summary>
 /// Only the Viewport is painted, wherever the Window happens to sit inside the result
-/// (ADR-0001/0004). The geometry is 20px rows in a 100px Viewport, so a Viewport holds
-/// six rows: five that fit plus the one straddling the bottom edge.
+/// (ADR-0001/0004). The geometry is 20px rows in a 100px Viewport, of which the header
+/// takes the first 20: a Viewport therefore holds five rows — four that fit in the 80px
+/// left over plus the one straddling the bottom edge.
 /// </summary>
 public class VirtualisationTests : GridTestContext
 {
     private const double RowHeightPx = 20;
     private const double ViewportHeightPx = 100;
-    private const int RowsPerViewport = 6;
+    private const int RowsPerViewport = 5;
 
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
         TestRow[] window, int windowStart = 0, int? total = null, double viewportHeight = ViewportHeightPx)
@@ -35,27 +36,29 @@ public class VirtualisationTests : GridTestContext
         Assert.Equal(RowsPerViewport, cut.FindAll(".ex-row").Count);
     }
 
-    [Fact] // ADR-0013: the scrollbar spans every row; the painted rows are offset into it
+    [Fact] // ADR-0013: the scrollbar spans every row plus the header; the painted rows are offset into it
     public async Task The_spacer_spans_the_whole_result_and_the_viewport_is_offset_by_the_first_row()
     {
         var cut = RenderGrid(TestRows.Many(100_000), total: 100_000);
 
-        Assert.Contains("height: 2000000px", cut.Find(".ex-spacer").GetAttribute("style"));
+        // 100,000 rows of 20px, and one row height for the header standing at the top of
+        // the content — which is also why the row offsets below carry no header term.
+        Assert.Contains("height: 2000020px", cut.Find(".ex-spacer").GetAttribute("style"));
         Assert.Contains("translateY(0px)", cut.Find(".ex-viewport").GetAttribute("style"));
 
-        // Six rows — one Viewport exactly, so this is ordinary scrolling and the rows
+        // Five rows — one Viewport exactly, so this is ordinary scrolling and the rows
         // are painted for real (a longer jump is a fling; FlingTests covers that).
-        await ScrollToAsync(cut.Find(".ex-scroller"), 6 * RowHeightPx);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 5 * RowHeightPx);
 
-        Assert.Contains("translateY(120px)", cut.Find(".ex-viewport").GetAttribute("style"));
-        Assert.Equal("Row 000006", cut.FindAll(".ex-row")[0].QuerySelector(".ex-cell")!.TextContent);
+        Assert.Contains("translateY(100px)", cut.Find(".ex-viewport").GetAttribute("style"));
+        Assert.Equal("Row 000005", cut.FindAll(".ex-row")[0].QuerySelector(".ex-cell")!.TextContent);
     }
 
     [Fact] // ADR-0004 / CONTEXT.md "Placeholder": a row outside the Window is painted, but not with cells
     public void Rows_outside_the_window_are_placeholders_without_cells()
     {
-        // The Window holds rows 0-3 of a much longer result, so the Viewport's last two
-        // rows have no data behind them yet.
+        // The Window holds rows 0-3 of a much longer result, so the Viewport's last row
+        // has no data behind it yet.
         var cut = RenderGrid(TestRows.Many(4), total: 1000);
 
         var rows = cut.FindAll(".ex-row");
@@ -66,7 +69,6 @@ public class VirtualisationTests : GridTestContext
             r => Assert.DoesNotContain("ex-placeholder", r.ClassList),
             r => Assert.DoesNotContain("ex-placeholder", r.ClassList),
             r => Assert.DoesNotContain("ex-placeholder", r.ClassList),
-            r => Assert.Contains("ex-placeholder", r.ClassList),
             r => Assert.Contains("ex-placeholder", r.ClassList));
         Assert.All(cut.FindAll(".ex-placeholder"), p => Assert.Empty(p.QuerySelectorAll(".ex-cell")));
     }
@@ -74,12 +76,12 @@ public class VirtualisationTests : GridTestContext
     [Fact] // ADR-0001: a Window starting past the Viewport paints Placeholders above itself
     public void A_window_starting_below_the_viewport_paints_placeholders_above_it()
     {
-        // Rows 3-6 are in hand while the Viewport shows 0-5: the top three are gaps.
+        // Rows 3-6 are in hand while the Viewport shows 0-4: the top three are gaps.
         var cut = RenderGrid(TestRows.Many(4), windowStart: 3, total: 1000);
 
         var rows = cut.FindAll(".ex-row");
         Assert.Equal(3, rows.Take(3).Count(r => r.ClassList.Contains("ex-placeholder")));
-        Assert.Equal(3, cut.FindComponents<ExGridRow<TestRow>>().Count);
+        Assert.Equal(2, cut.FindComponents<ExGridRow<TestRow>>().Count);
     }
 
     [Fact] // ADR-0003: scrolling one row keeps the overlapping rows alive and unrepainted
@@ -91,9 +93,9 @@ public class VirtualisationTests : GridTestContext
         await ScrollToAsync(cut.Find(".ex-scroller"), RowHeightPx);
 
         var after = cut.FindComponents<ExGridRow<TestRow>>();
-        // The five rows that stayed on screen are the same component instances, and none
+        // The four rows that stayed on screen are the same component instances, and none
         // of them rendered a second time: only the row entering at the bottom mounted.
-        Assert.Equal(before.Skip(1), after.Take(5).Select(r => r.Instance));
+        Assert.Equal(before.Skip(1), after.Take(4).Select(r => r.Instance));
         Assert.All(after, r => Assert.Equal(1, r.RenderCount));
     }
 
@@ -127,8 +129,8 @@ public class VirtualisationTests : GridTestContext
             () => RenderGrid(TestRows.Many(10), windowStart: 995, total: 1000));
     }
 
-    [Fact] // ADR-0018: header and body are one horizontal unit — the root's scrollbar pans both
-    public void The_header_and_the_scroller_are_as_wide_as_the_columns()
+    [Fact] // ADR-0004/0018: one scroll container, sized from C#, with the content as wide as the columns
+    public void The_scroller_is_the_viewport_and_the_spacer_is_as_wide_as_the_columns()
     {
         GridColumn<TestRow>[] columns =
         [
@@ -140,12 +142,34 @@ public class VirtualisationTests : GridTestContext
             .Add(g => g.TotalCount, 10)
             .Add(g => g.Columns, columns)
             .Add(g => g.RowHeight, RowHeightPx)
-            .Add(g => g.ViewportHeight, ViewportHeightPx));
+            .Add(g => g.ViewportHeight, ViewportHeightPx)
+            .Add(g => g.ViewportWidth, 300d));
 
-        // Left to itself the scroller would pan horizontally on its own and slide the
-        // body out from under the header; sized to the columns, only the root scrolls.
-        Assert.Contains("width: 200px", cut.Find(".ex-header").GetAttribute("style"));
-        Assert.Contains("width: 200px", cut.Find(".ex-scroller").GetAttribute("style"));
+        // The header travels inside the one scroller and is held by `position: sticky`,
+        // so there is no second container to slide the body out from under it.
+        Assert.Contains("width: 300px", cut.Find(".ex-scroller").GetAttribute("style"));
+        Assert.Contains("width: 200px", cut.Find(".ex-spacer").GetAttribute("style"));
+        Assert.NotNull(cut.Find(".ex-scroller .ex-header"));
+    }
+
+    [Fact] // ADR-0013: ViewportWidth is a C# parameter for the same reason the height is
+    public void A_non_positive_viewport_width_is_refused()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(10))
+            .Add(g => g.TotalCount, 10)
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.RowHeight, RowHeightPx)
+            .Add(g => g.ViewportHeight, ViewportHeightPx)
+            .Add(g => g.ViewportWidth, 0d)));
+    }
+
+    [Fact] // ADR-0013: the header takes the first row height, so a Viewport that short holds no rows at all
+    public void A_viewport_no_taller_than_a_row_is_refused()
+    {
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(
+            () => RenderGrid(TestRows.Many(10), total: 10, viewportHeight: RowHeightPx));
+        Assert.Contains("header", ex.Message);
     }
 
     [Fact] // ADR-0013/0017: a result too tall for a browser to scroll is refused, not half-shown

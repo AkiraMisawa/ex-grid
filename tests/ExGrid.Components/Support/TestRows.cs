@@ -1,3 +1,5 @@
+using ExGrid.Columns;
+
 namespace ExGrid.Components.Tests.Support;
 
 /// <summary>
@@ -48,4 +50,32 @@ internal static class TestRows
         new("AsOf", ColumnType.Date, r => r.AsOf),
         new("Active", ColumnType.Boolean, r => r.Active),
     ];
+
+    /// <summary>
+    /// More columns than any Viewport can hold, for the horizontal virtualisation tests.
+    /// Every cell says which column it came from, so a test can tell exactly which
+    /// columns reached the DOM. Fixed widths so the arithmetic under test is not chasing
+    /// a growing Auto column.
+    /// </summary>
+    internal static GridColumn<TestRow>[] Wide(int count, double widthPx = 100)
+    {
+        var columns = new GridColumn<TestRow>[count];
+        for (var i = 0; i < count; i++)
+        {
+            var index = i;
+            columns[i] = new GridColumn<TestRow>(
+                ColumnName(index),
+                ColumnType.Text,
+                r => $"{r.Book}/{index:D2}",
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(widthPx)));
+        }
+
+        return columns;
+    }
+
+    internal static string ColumnName(int index) => $"C{index:D2}";
+
+    /// <summary>Which column a cell painted by <see cref="Wide"/> belongs to — the tail
+    /// of its text, read back so header and body can be compared as column sets.</summary>
+    internal static string ColumnOf(string cellText) => "C" + cellText[(cellText.IndexOf('/') + 1)..];
 }

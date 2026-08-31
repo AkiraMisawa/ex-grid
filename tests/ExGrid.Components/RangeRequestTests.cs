@@ -6,7 +6,7 @@ namespace ExGrid.Components.Tests;
 
 /// <summary>
 /// The grid asks and keeps painting; it never fetches and never waits (ADR-0001).
-/// 20px rows in a 100px Viewport, so a Viewport is six rows.
+/// 20px rows in a 100px Viewport, of which the header takes the first 20, so a Viewport is five rows.
 /// </summary>
 public class RangeRequestTests : GridTestContext
 {
@@ -31,7 +31,7 @@ public class RangeRequestTests : GridTestContext
 
         RenderGrid([], asked, total: 1000);
 
-        Assert.Equal([new RowRange(0, 6)], asked);
+        Assert.Equal([new RowRange(0, 5)], asked);
     }
 
     [Fact] // ADR-0001: a Viewport the Window covers needs nothing
@@ -60,13 +60,13 @@ public class RangeRequestTests : GridTestContext
         var asked = new List<RowRange>();
         var cut = RenderGrid(TestRows.Many(10), asked, total: 1000);
 
-        // Rows 2-7 — still inside the Window's 0-9.
+        // Rows 2-6 — still inside the Window's 0-9.
         await ScrollToAsync(cut.Find(".ex-scroller"), 2 * RowHeightPx);
         Assert.Empty(asked);
 
-        // Rows 5-10 — row 10 is past the Window's end.
-        await ScrollToAsync(cut.Find(".ex-scroller"), 5 * RowHeightPx);
-        Assert.Equal([new RowRange(5, 6)], asked);
+        // Rows 6-10 — row 10 is past the Window's end.
+        await ScrollToAsync(cut.Find(".ex-scroller"), 6 * RowHeightPx);
+        Assert.Equal([new RowRange(6, 5)], asked);
     }
 
     [Fact] // ADR-0001: the grid does not wait — an unanswered range is asked for once, not on every render
@@ -74,7 +74,10 @@ public class RangeRequestTests : GridTestContext
     {
         var asked = new List<RowRange>();
         var cut = RenderGrid(TestRows.Many(10), asked, total: 1000);
-        await ScrollToAsync(cut.Find(".ex-scroller"), 5 * RowHeightPx);
+        // Two ordinary scrolls rather than one jump: crossing a whole Viewport at once
+        // is a fling, and a fling deliberately asks for nothing (ADR-0004).
+        await ScrollToAsync(cut.Find(".ex-scroller"), 2 * RowHeightPx);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 6 * RowHeightPx);
 
         // An unrelated parameter change, with the Window rebuilt inline as a Consumer
         // naturally would: a fresh list instance holding the same rows is not an answer,
@@ -88,7 +91,7 @@ public class RangeRequestTests : GridTestContext
             .Add(g => g.IsLoading, true)
             .Add(g => g.OnRangeNeeded, asked.Add));
 
-        Assert.Equal([new RowRange(5, 6)], asked);
+        Assert.Equal([new RowRange(6, 5)], asked);
     }
 
     [Fact] // ADR-0001: a Consumer answering in the callback settles — the loop is finite by construction
@@ -99,8 +102,8 @@ public class RangeRequestTests : GridTestContext
             .Add(h => h.RowHeight, RowHeightPx)
             .Add(h => h.ViewportHeight, ViewportHeightPx));
 
-        Assert.Equal([new RowRange(0, 6)], cut.Instance.Requests);
-        Assert.Equal(6, cut.FindComponents<ExGridRow<TestRow>>().Count);
+        Assert.Equal([new RowRange(0, 5)], cut.Instance.Requests);
+        Assert.Equal(5, cut.FindComponents<ExGridRow<TestRow>>().Count);
         Assert.Empty(cut.FindAll(".ex-placeholder"));
     }
 
@@ -115,6 +118,6 @@ public class RangeRequestTests : GridTestContext
 
         await ScrollToAsync(cut.Find(".ex-scroller"), 5 * RowHeightPx);
 
-        Assert.Equal([new RowRange(0, 6)], cut.Instance.Requests);
+        Assert.Equal([new RowRange(0, 5)], cut.Instance.Requests);
     }
 }
