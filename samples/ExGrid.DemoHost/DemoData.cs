@@ -42,8 +42,57 @@ public sealed class DemoWideRow
     public int Index;
 }
 
+/// <summary>A row of the server page. Values are derived from the position, so the
+/// "server" can answer any range without holding ten million values.</summary>
+public sealed class DemoServerRow
+{
+    public int Index;
+    public string Book = "";
+    public decimal Amount;
+    public DateTime AsOf;
+}
+
 public static class DemoData
 {
+    /// <summary>
+    /// Stands in for a server: it answers a range and nothing else, and it has no idea
+    /// what the grid is showing. The artificial delay is what makes the Placeholders and
+    /// the loading state visible — without it every answer lands in the same frame as the
+    /// question.
+    /// </summary>
+    public static async Task<GridPage<DemoServerRow>> FetchAsync(
+        GridQuery query, int total, int delayMs, CancellationToken cancellation)
+    {
+        await Task.Delay(delayMs, cancellation);
+
+        var start = Math.Min(query.Range.Start, total);
+        var count = Math.Min(query.Range.Count, total - start);
+        var rows = new DemoServerRow[count];
+        for (var i = 0; i < count; i++)
+        {
+            var index = start + i;
+            rows[i] = new DemoServerRow
+            {
+                Index = index,
+                Book = $"{Books[index % Books.Length]}-{index:D6}",
+                Amount = ((index * 7919L) % 1_999_999L) / 100m,
+                AsOf = new DateTime(2026, 1, 1).AddMinutes(index),
+            };
+        }
+
+        return new GridPage<DemoServerRow>(rows, start, total);
+    }
+
+    /// <summary>One shared, reference-stable columns array, for the reason
+    /// <see cref="Columns"/> is one.</summary>
+    public static readonly GridColumn<DemoServerRow>[] ServerColumns =
+    [
+        new("Index", ColumnType.Number, r => r.Index, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(180))),
+        new("Amount", ColumnType.Number, r => r.Amount),
+        new("AsOf", ColumnType.Date, r => r.AsOf, header: "As of"),
+    ];
+
     /// <summary>
     /// One shared, reference-stable columns array. A Consumer that rebuilds this per
     /// render would defeat row memoisation — the same trap as method-group delegates

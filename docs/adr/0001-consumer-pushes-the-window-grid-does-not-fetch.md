@@ -88,6 +88,21 @@ The reasons only surfaced after editing was added to the scope.
   loading state are now its job. **The bundled `GridSource`** takes that over, so for a small
   Consumer the ergonomics are unchanged from pull
   (`<ExGrid Source="GridSource.From(_rows)" />`).
+  *(Implemented: `IGridSource<TRow>` is what the grid reads from a Source — the Window, where it
+  starts, the total, the loading flag, the order's version — and the grid resolves those from the
+  Source or from the parameters in **one place**, so a Source is another way to fill the same
+  pipeline rather than a second path through it. **Passing both is refused by name**: one would
+  have to silently win, and which one is not something a Consumer should have to know. The check
+  reads the `ParameterView`, because a value type cannot tell "passed 0" from "left at its
+  default". Passing neither is refused too — an empty result is `Window="[]"`, never nothing at
+  all.)*
+- **A Source has to break its own cold start** *(found while implementing; settled in
+  [ADR-0025](./0025-what-the-bundled-fetching-source-promises.md))*. The grid asks for the rows
+  that are visible, and "nothing to show is not a range" — a total of zero asks for nothing. A
+  Source that starts with no rows therefore cannot be woken by the grid at all, so the bundled
+  fetching one fetches its first page itself, at bind time. The alternative — letting the grid ask
+  for a first Viewport when it has nothing — would overturn a decision this ADR already made: with
+  an explicit `TotalCount` of zero the Consumer has *said* the result is empty.
 - **The bundled in-memory implementation is the reference implementation, and its semantics are
   the specification.** `GridSource.From` actually performs the filtering and sorting — which
   means it **decides the meaning** of things like whether `contains` is case-sensitive and
