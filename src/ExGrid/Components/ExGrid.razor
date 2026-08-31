@@ -340,6 +340,11 @@
     // and merely incomplete on one.
     private bool _metaIsPrimary;
     private bool _revealFocus;
+
+    // Whether that reveal should also put the Viewport's left edge back at the start of
+    // the row. Only ever set alongside _revealFocus, and cleared with it — see
+    // RevealFocusIfNeededAsync for what it is for.
+    private bool _revealRowStart;
     private IJSObjectReference? _module;
     private IJSObjectReference? _scrollHandle;
     private bool _disposed;
@@ -1209,7 +1214,9 @@
         // A bar that appeared can have covered the Focus where it stands. Revealing is a
         // no-op when it is already whole on screen, so this costs nothing in the ordinary
         // case and keeps ADR-0012 true in the one that is not.
-        var shrank = widthPx > _gutterWidthPx || heightPx > _gutterHeightPx;
+        // Only when nothing is already armed: a key's reveal may be waiting to run, and
+        // it carries an intent this one does not have.
+        var shrank = (widthPx > _gutterWidthPx || heightPx > _gutterHeightPx) && !_revealFocus;
         _gutterWidthPx = widthPx;
         _gutterHeightPx = heightPx;
         try
@@ -1314,9 +1321,23 @@
         }
         // The Focus has to end up on screen (ADR-0012), measured after the render against
         // the geometry that was actually painted.
+        _revealRowStart = NamesTheStartOfTheRow(action);
         _revealFocus = true;
         StateHasChanged();
     }
+
+    /// <summary>
+    /// Whether a key means "go to the beginning" rather than "move one step" — Home and
+    /// Ctrl+Left for the row, Ctrl+Home for the whole result, with their Shift forms.
+    /// The horizontal direction is what is asked: Ctrl+Up and Ctrl+Down are the same
+    /// transition on the other axis and name no column at all.
+    /// </summary>
+    private static bool NamesTheStartOfTheRow(GridKeyAction action) => action.Kind switch
+    {
+        GridKeyKind.MoveToEdge or GridKeyKind.ExtendToEdge => action.Direction == GridDirection.Left,
+        GridKeyKind.MoveToCorner => action.Backward,
+        _ => false,
+    };
 
     /// <summary>Space on a single-action cell fires it; N ≥ 2 and editable cells wait for
     /// the Interactive and Overwrite modes (ADR-0020).</summary>
@@ -1386,7 +1407,9 @@
     {
         if (!_revealFocus)
             return;
+        var toRowStart = _revealRowStart;
         _revealFocus = false;
+        _revealRowStart = false;
         if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)
             return;
 
@@ -1394,7 +1417,23 @@
         if (focus.Row >= _geometry.TotalRowCount || focus.Column >= _columnStyles.Geometry.Count)
             return;
         var top = _geometry.ScrollTopToReveal(focus.Row, _scrollTopPx);
-        var left = _columnStyles.Geometry.ScrollLeftToReveal(focus.Column, _scrollLeftPx);
+        // "Go to the beginning" is not the same request as "make this cell visible", and
+        // Pinned Columns are where the two come apart. ScrollLeftToReveal answers the
+        // second one and answers it correctly: a pinned column covers the Viewport's left
+        // edge, so it is already whole on screen and nothing has to move. But Home and
+        // Ctrl+Home mean the first one — and with the first column pinned they would leave
+        // the Viewport parked wherever it was, halfway along a hundred columns, which is
+        // not where the row starts.
+        //
+        // What settles it is that pinning would otherwise CHANGE what the key does:
+        // unpinned, column 0 is scrollable and revealing it already lands the Viewport at
+        // 0. This makes the two agree rather than inventing a behaviour for the pinned
+        // case. (A press that moves nothing at all — the Focus is already at the first
+        // column — renders nothing and so reveals nothing, pinned or not. That is the
+        // "only when something moved" guard above, and it is the same on both paths.)
+        var left = toRowStart
+            ? 0
+            : _columnStyles.Geometry.ScrollLeftToReveal(focus.Column, _scrollLeftPx);
         if (top == _scrollTopPx && left == _scrollLeftPx)
             return;
 

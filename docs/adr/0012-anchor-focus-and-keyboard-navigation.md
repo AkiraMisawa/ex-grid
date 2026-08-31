@@ -164,6 +164,36 @@ the whole of the keypress: the first Down selects the first cell, the way the fi
 any list selects its first item. Keys that name a whole region (Ctrl+A, the Space pair,
 Ctrl+Home) need no starting point and still do what they say.
 
+**"Go to the beginning" is a different request from "make this cell visible", and
+Pinned Columns are where the two come apart.** Found by pressing Ctrl+Home on a grid
+with two pinned columns: the Focus went to the first cell and **the Viewport did not
+move sideways at all**, leaving the user reading columns 60-70 with the pinned pair on
+the left. Measured, same data, same keystroke, only `PinnedColumnCount` differing:
+
+```
+pinned = 2   Ctrl+End → scrollLeft 8170   Ctrl+Home → scrollLeft 8170
+pinned = 0   Ctrl+End → scrollLeft 8170   Ctrl+Home → scrollLeft 0
+```
+
+So **pinning was changing what the key meant** — which is the argument that settles it.
+`ColumnGeometry.ScrollLeftToReveal` is not wrong: a pinned column covers the Viewport's
+left edge, so it is already whole on screen and revealing it correctly moves nothing.
+Home and Ctrl+Home simply are not asking for that. **A key that names the start of the
+row or of the result puts the Viewport's left edge at the start** — Home, Shift+Home,
+Ctrl+Left, Ctrl+Shift+Left, Ctrl+Home — which is what already happened when nothing was
+pinned, so the two cases agree instead of the pinned one getting a behaviour of its own.
+The right-hand end needed nothing: End and Ctrl+End right-align against the readable
+area either way.
+
+The obvious fix is the wrong one, and is worth naming because it passes every test
+about Home. **Making `ScrollLeftToReveal` answer 0 for a pinned column would break
+ordinary navigation**: a reveal runs after *every* keyboard move, including the ones
+that name no column at all, so a user who had scrolled right and pressed Down would be
+yanked back to the first column. The intent belongs to the transition, not to the
+geometry. (One limit, the same with or without pinning: a press that moves the Focus
+nowhere — it is already at the first column — renders nothing and so reveals nothing,
+even if the user has since scrolled away with the mouse.)
+
 **PageUp / PageDown are still not specified.** They would need a "move by N rows" transition
 that does not exist, and inventing the behaviour in the implementation is what the project's
 rules refuse. Open.
