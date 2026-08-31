@@ -33,6 +33,19 @@ needed** either. Clicks can be taken once on the root and resolved from `data-` 
 fairness, around 40 visible cells means per-cell handlers would not be fatal — **it is the
 componentisation that costs**.)
 
+*(Refined while implementing selection: the click really is taken once, on the row Viewport, and
+resolved by arithmetic rather than from `data-` attributes — the grid knows where every row and
+column is, so it needs nothing written into the markup
+([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). What it does need is for the cells to
+be out of the way, so `.ex-row` carries `pointer-events: none`, which is an inherited property and
+therefore covers the whole subtree.*
+
+***This is the seam an Action or Template Column has to cross.*** *A cell that wants a click of
+its own turns pointer events back on for itself **and stops the event there**. Left to bubble, it
+reaches the Viewport handler with offsets measured from the button rather than from the Viewport,
+and the grid would move the selection to whatever cell that arithmetic happens to name. A test
+that a button in a Template Column does not move the selection belongs with that feature.)*
+
 ## Keyboard — one rule
 
 ```

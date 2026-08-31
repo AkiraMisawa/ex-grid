@@ -106,10 +106,21 @@ about what expands.
   header-height parameter is a deliberate simplification, and **the thing that would overturn it
   is tiered headers** — a header several rows deep stops being one row tall, and the meaning of
   `ViewportHeight` changes with it. That is recorded as open in ADR-0004.
-  *(One consequence is left standing rather than hidden: the header band spends one row height of
-  the browser's 2^25 px scrolling budget, so the practical ceiling is one row below the
+  *(One consequence is not merely left standing but refused: the header band spends one row height
+  of the browser's 2^25 px scrolling budget, so the true ceiling is one row below the
   `MaxScrollHeightPx` guard — about 1.19 million rows either way, and paging carries anything
-  longer.)*
+  longer. `ViewportGeometry` knows only about rows and cannot see this, so **the component checks
+  the spacer's real height itself**: recording the edge in prose and letting the browser clamp the
+  last row away in silence is the failure this ceiling exists to refuse.)*
+- **`ViewportHeight` and `ViewportWidth` are the element's outer size, scrollbars included**
+  *(refined while implementing selection)*. Where the platform draws classic scrollbars rather
+  than overlay ones, roughly 15px of the height goes to the horizontal bar and the rows get that
+  much less than the arithmetic assumes. Nothing breaks — the painted slice is conservative, so no
+  gap appears — but the last row's bottom edge can sit behind the bar, which is a live concern for
+  "the Focus is always visible" ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)) once
+  the keyboard is wired up. The grid cannot measure a scrollbar without the layout read the
+  allowlist refuses, so **the allowance is the Consumer's to add**, and this is stated on the
+  parameters rather than guessed at.
 - **"Scroll to this row" is arithmetic here too, and it is not symmetric with the column axis**
   *(refined while implementing)*. `ViewportGeometry.ScrollTopToReveal` and
   `ColumnGeometry.ScrollLeftToReveal` exist so that nothing outside them adds or subtracts a

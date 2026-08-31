@@ -137,6 +137,14 @@ Rejected:
 
 ## Consequences
 
+- **The mouse resolves to these same three transitions, and three details had to be settled**
+  *(added while implementing the mouse)*. Shift outranks Ctrl, so Ctrl+Shift+click extends the
+  range being built and leaves the others standing — which is what Excel does and what
+  `ExtendTo` already means. **Meta counts as Ctrl**, because the gesture a Mac user makes for
+  "add a range" is Cmd+click and both platforms are Chromium (ADR-0017). And **a toggle-off does
+  not begin a drag**: it leaves Anchor and Focus detached, so dragging on from there would append
+  a range nobody asked for. A drag is not a transition of its own — mouse down is `Click` and the
+  moves are `ExtendTo`, as `GridSelection` says.
 - **All of this rides on the capture-phase key handling in
   [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).** Outside editing, the arrows,
   Enter and Tab belong to the core. While editing, only the arrows change hands according to

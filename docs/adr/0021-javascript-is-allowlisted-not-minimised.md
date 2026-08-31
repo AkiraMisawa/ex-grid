@@ -29,9 +29,15 @@ These are the places where reaching for JS would be the easy answer, and where w
   count ([ADR-0016](./0016-column-width-and-overflow.md)). No measurement round-trip, and it
   works before the cell is painted.
 - **Focus.** `ElementReference.FocusAsync()` is enough.
-- **Selection and editor geometry.** Overlays are positioned by arithmetic over a fixed row
-  height ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md),
-  [ADR-0013](./0013-fixed-row-height.md)) — no layout reads.
+- **Selection and editor geometry — and which cell the pointer is on.** Overlays are positioned
+  by arithmetic over a fixed row height ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md),
+  [ADR-0013](./0013-fixed-row-height.md)) — no layout reads. *(The hit test is the place this was
+  most tempting, and it is written down here because "just call `getBoundingClientRect` on the
+  cell" is the obvious answer: the grid already knows where every row and column is, so the
+  pointer's own offsets are enough. Cells are `pointer-events: none`, the row Viewport is
+  therefore the event's target, and the offsets arrive measured from it. `scrollIntoView()` is
+  refused for the mirror-image reason — it knows nothing of a sticky header or a pinned block and
+  would tuck the revealed cell underneath them.)*
 - **Click dispatch for action columns.** Blazor event handlers on plain markup are cheap
   enough at ~40 visible rows ([ADR-0020](./0020-action-and-template-columns.md)).
 
