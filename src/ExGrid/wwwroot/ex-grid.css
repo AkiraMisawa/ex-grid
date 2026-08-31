@@ -46,6 +46,22 @@
    taller would drift all three out of alignment. No indentation either: Row Kind is the
    role, not the depth, and the grid is told neither how deep a group sits nor what it
    contains (ADR-0001). Weight and ground only. */
+.ex-row-group { font-weight: var(--ex-row-group-weight, 600); }
+.ex-row-total { font-weight: var(--ex-row-total-weight, 600); }
+/* Painted on the row AND on its cells, as a background IMAGE layer. A Pinned Column
+   carries its own opaque background-color (it has to: the columns underneath pass beneath
+   it), so a tint on the row alone stops at the pinned block and the role of the row is
+   visible everywhere except the column its name is in. An image layer sits above that
+   colour on the cell itself, and the row keeps its own for the space beyond the last
+   column. The separating rule is likewise a 1px gradient, not a border: .ex-row's height
+   is content-box, so a border would make every total row one pixel taller than the
+   arithmetic says — the drift ADR-0013 warns about, and invisible on screen. */
+.ex-row-group, .ex-row-group .ex-cell {
+    background-image: linear-gradient(var(--ex-row-group-background, rgba(128, 128, 128, 0.08)), var(--ex-row-group-background, rgba(128, 128, 128, 0.08)));
+}
+.ex-row-total, .ex-row-total .ex-cell {
+    background-image: linear-gradient(var(--ex-row-total-rule-color, rgba(128, 128, 128, 0.45)) 0 1px, transparent 1px);
+}
 /* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016), and
    the 8px padding pairs with DefaultCellMetrics.CellHorizontalPaddingPx — the two must
    move together. The ellipsis only ever shows on Text/Boolean: a number that does not
@@ -58,16 +74,21 @@
    paints no substitute glyph: what is missing is the metadata's claim, not the value, and
    a Blank cell that really is Blank must stay distinguishable from one nobody could
    answer for (ADR-0023). The accompanying data — an as-of stamp, a failure message —
-   stays with the Consumer and is not on the cell. */
-.ex-state-stale { color: var(--ex-state-stale-color, #8a6d1f); font-style: var(--ex-state-stale-style, italic); }
-.ex-state-missing {
+   stays with the Consumer and is not on the cell.
+
+   Written as `.ex-cell.ex-state-x`, and declared after the Row Kind block, so that a
+   state the Consumer named outranks the role of the row it happens to sit in. A state
+   is something the grid was explicitly told; a role is something about its neighbours,
+   and it is the state that must never be the one that disappears. */
+.ex-cell.ex-state-stale { color: var(--ex-state-stale-color, #8a6d1f); font-style: var(--ex-state-stale-style, italic); }
+.ex-cell.ex-state-missing {
     background-image: linear-gradient(var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)), var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)));
 }
-.ex-state-error { color: var(--ex-state-error-color, #b3261e); text-decoration: var(--ex-state-error-decoration, underline wavy); text-decoration-skip-ink: none; }
+.ex-cell.ex-state-error { color: var(--ex-state-error-color, #b3261e); text-decoration: var(--ex-state-error-decoration, underline wavy); text-decoration-skip-ink: none; }
 /* A corner mark rather than a fill: the value has been overridden, and the number itself
    is what the reader is here for. box-shadow paints inside the cell's own box, so it
    costs no extra element and cannot shift the row's flow. */
-.ex-state-modified { box-shadow: var(--ex-state-modified-mark, inset -6px 6px 0 -3px rgba(106, 68, 166, 0.9)); }
+.ex-cell.ex-state-modified { box-shadow: var(--ex-state-modified-mark, inset -6px 6px 0 -3px rgba(106, 68, 166, 0.9)); }
 /* What stands in for the columns left out to the left of the first painted one. It must
    not be allowed to shrink: a flex-shrunk spacer would slide every painted column left
    of where the arithmetic put it, and the header and the body would disagree. */

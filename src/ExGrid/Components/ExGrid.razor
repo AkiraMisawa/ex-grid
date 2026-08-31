@@ -1,6 +1,7 @@
 @typeparam TRow where TRow : class
 @using System.Runtime.CompilerServices
 @using global::ExGrid.Cells
+@using global::ExGrid.Rows
 @using global::ExGrid.Columns
 @using global::ExGrid.Selection
 @using Microsoft.JSInterop
@@ -114,7 +115,7 @@
                             <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="CellMetrics"
-                                       CellState="CellState" />
+                                       CellState="CellState" RowKind="RowKind" />
                         }
                         else
                         {
@@ -272,6 +273,15 @@
     /// the states already on screen where they are.</para>
     /// </summary>
     [Parameter] public CellStateOf<TRow>? CellState { get; set; }
+
+    /// <summary>
+    /// What role each row plays — detail, group or total (ADR-0024). Null means every
+    /// row is a detail row. Asked once per painted row, so it is as cheap as
+    /// <see cref="CellState"/> has to be, and its identity is the change signal in the
+    /// same way: hold it in a field and hand over a new one when the roles change.
+    /// Changing what an unchanged delegate would answer does not repaint.
+    /// </summary>
+    [Parameter] public Func<TRow, RowKind>? RowKind { get; set; }
 
     private ElementReference _scroller;
     private IJSObjectReference? _module;

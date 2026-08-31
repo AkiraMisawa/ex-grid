@@ -67,7 +67,7 @@ have required variable row height is already gone on the Consumer's side.**
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). **It does not group
   either** — the Consumer computes it and puts it in the Window |
 | Expanding and collapsing changes the row count | Treated like a sort change. The grid notifies; the Consumer returns a new Window and `TotalCount` |
-| Group rows look different from detail rows | Needs a **Row Kind** (detail / group / total). **Not yet designed** |
+| Group rows look different from detail rows | Needs a **Row Kind** (detail / group / total). Designed in [ADR-0024](./0024-row-kind-is-a-declared-role-not-a-hierarchy.md): a role the Consumer declares per row, carrying neither depth nor the aggregate |
 
 Only the last is missing, and it has nothing to do with row height — it is about painting and
 about what expands.
@@ -77,6 +77,9 @@ about what expands.
 - **A Row Kind has to be introduced** (detail / group / total). It is distinct from Cell State
   ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) — that names the state of a
   value per cell; this names the role of a row. Do not conflate them.
+  *(Introduced in [ADR-0024](./0024-row-kind-is-a-declared-role-not-a-hierarchy.md). It carries
+  the role and nothing else — no depth, no aggregate, no expansion state — and the height stays
+  this ADR's fixed one.)*
 - **Expanding and collapsing become notifications.** The grid knows neither the row hierarchy nor
   how many rows an expansion adds. The Consumer pushes a new Window.
 - **If in-row expansion is ever needed, this ADR is revisited whole.** It cannot be added

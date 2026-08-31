@@ -83,6 +83,21 @@ cell's text. **Missing** is the one worth stating outright: it does not paint a 
 for must stay distinguishable, and inventing a glyph for the second is the grid saying
 something it was not told (ADR-0023 owns what Blank means).
 
+## A state must never be the thing that disappears
+
+*(Decided while implementing, after a review found two ways it could.)* A cell can be
+under three things that all want to paint its ground: the **Pinned Columns**' opaque
+background (they must be opaque — the columns underneath pass beneath them), the **Row
+Kind** of the row it sits in ([ADR-0024](./0024-row-kind-is-a-declared-role-not-a-hierarchy.md)),
+and its own **Cell State**. Two rules settle it, both in CSS:
+
+- The pinned ground is a `background-color`; every tint is a `background-image` layer, so
+  a tinted pinned cell keeps both instead of one silently replacing the other.
+- Cell State is written with a doubled class (`.ex-cell.ex-state-x`) and declared last, so
+  **a state outranks a role**. A state is something the grid was explicitly told; a role is
+  something about the row's neighbours. If one of the two has to be invisible, it is not
+  the one the Consumer named.
+
 ## Consequences
 
 - **The granularity of the vocabulary has to be decided up front.** Adding values later is easy;

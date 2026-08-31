@@ -1,5 +1,6 @@
 @typeparam TRow where TRow : class
 @using global::ExGrid.Cells
+@using global::ExGrid.Rows
 @using global::ExGrid.Columns
 @using global::ExGrid.Selection
 
@@ -18,7 +19,7 @@
     layer counts its renders; it is not meant to be used by a Consumer directly.
     Selection is never painted here — rows know nothing about it (ADR-0008).
 *@
-<div class="@RowClass">
+<div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder)">
     @for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
     {
         var column = Columns[i];
@@ -75,6 +76,15 @@
     /// </summary>
     [Parameter] public CellStateOf<TRow>? CellState { get; set; }
 
+    /// <summary>
+    /// What role each row plays (ADR-0024). Passed down as the delegate and invoked here,
+    /// not invoked by the parent and passed as a value: the delegate's identity is the
+    /// change signal, exactly as it is for <see cref="CellState"/>, and a role that could
+    /// also change because the parent happened to re-render would arrive on the next
+    /// scroll — quietly, and at a moment nobody chose.
+    /// </summary>
+    [Parameter] public Func<TRow, RowKind>? RowKind { get; set; }
+
     private TRow? _renderedRow;
     private IReadOnlyList<GridColumn<TRow>>? _renderedColumns;
     private ColumnStyles? _renderedStyles;
@@ -82,8 +92,7 @@
     private bool _renderedPlaceholder;
     private CellTextMetrics _renderedMetrics;
     private CellStateOf<TRow>? _renderedCellState;
-
-    private string RowClass => Placeholder ? "ex-row ex-placeholder" : "ex-row";
+    private Func<TRow, RowKind>? _renderedRowKind;
 
     protected override void OnInitialized()
     {
@@ -106,7 +115,8 @@
             && _renderedScrollable == Scrollable
             && _renderedPlaceholder == Placeholder
             && _renderedMetrics == Metrics
-            && ReferenceEquals(_renderedCellState, CellState))
+            && ReferenceEquals(_renderedCellState, CellState)
+            && ReferenceEquals(_renderedRowKind, RowKind))
         {
             return false;
         }
@@ -124,6 +134,7 @@
         _renderedPlaceholder = Placeholder;
         _renderedMetrics = Metrics;
         _renderedCellState = CellState;
+        _renderedRowKind = RowKind;
     }
 
     /// <summary>One lookup per painted cell, including the Pinned Columns of a
