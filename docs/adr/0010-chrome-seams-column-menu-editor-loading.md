@@ -15,6 +15,12 @@ public sealed record ColumnMenuContext(
 public sealed record GridCommand(string Id, string Label, bool Enabled, Action Invoke);
 ```
 
+*(Amended by [ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md):
+`Label` is gone. The core naming the commands is what this section argues for — two Chromes must
+not offer different items — and it says nothing about what they are called. A label is rendering,
+and the core's were English, which no Consumer could change. The wording is resolved from the
+`Id` by Chrome; a command is `(Id, Enabled, Invoke)`.)*
+
 **Chrome does not decide what goes in the menu.** Letting it do so would mean the default and the
 MudBlazor implementations offering different items, which breaks the premise that substituting
 Chrome does not change behaviour.

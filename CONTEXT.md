@@ -296,6 +296,14 @@ against a **Refusal**, which judges the operation
 ([ADR-0034](./docs/adr/0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)).
 _Avoid_: validation result, error (that is a Cell State), refusal (that judges the operation)
 
+**Context Menu**:
+The menu a secondary click opens over the grid. Its items are Commands the core decides and the
+Consumer extends, and Chrome only lays them out — the same ownership the column menu has. A
+secondary click outside the Selection moves the Focus onto the cell it lands on first, so that
+what a Command will act on is what the user can see
+([ADR-0036](./docs/adr/0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md)).
+_Avoid_: right-click menu, popup menu, shortcut menu
+
 **Edit Discard**:
 Text a user typed into the Cell Editor and never committed, thrown away because the grid can no
 longer place it — the order changed beneath the editor, or the row left the Window. The grid

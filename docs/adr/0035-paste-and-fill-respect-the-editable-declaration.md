@@ -117,7 +117,7 @@ forbid a commit the grid has no objection to, turning a mis-sized selection into
 - **A grid with no editable column refuses every paste and every fill.** That is the honest
   reading of the declaration; the JS key gate already refuses to open an editor there.
 - **The refusal reason is `TargetNotEditable`, and the message is Chrome's to write**
-  (ADR-0010). The grid holds no UI strings — and therefore **cannot announce this one**. Where a
+  (ADR-0010). The grid holds no UI strings — a claim that was aspirational when this was written, since `GridCommand` still carried English labels, and is made true by [ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md) — and therefore it **cannot announce this one**. Where a
   Reject carries the Consumer's sentence through the grid and is relayed into the root's live
   region (ADR-0034), a refusal arrives as an enum and the sentence exists only in Chrome. So the
   announcement is Chrome's too: **whatever renders a refusal must be a live region**, or a user
