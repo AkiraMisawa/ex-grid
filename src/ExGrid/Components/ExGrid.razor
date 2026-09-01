@@ -271,7 +271,7 @@
                 {
                     var invoked = command;
                     <button type="button" role="menuitem" disabled="@(!command.Enabled)"
-                            @onclick="() => RunCommandAsync(invoked)">@command.Label</button>
+                            @onclick="() => RunCommandAsync(invoked)">@LabelOf(command)</button>
                 }
             }
         </div>
@@ -702,6 +702,14 @@
     /// loss to be guessed at. Chrome writes the sentence and announces it (A11Y-16); the
     /// grid holds no strings.</summary>
     [Parameter] public EventCallback<EditDiscardReason> OnEditDiscarded { get; set; }
+
+    /// <summary>The wording for a command id, for the menus the built-in Chrome renders
+    /// (ADR-0036). The core names commands and does not name them in a language: this is
+    /// how a Consumer keeping the built-in menu translates it, or renames one item,
+    /// without reimplementing the menu. Returning null for an id falls back to
+    /// <see cref="BuiltInCommandLabels"/>. A substituted Chrome never consults this — it
+    /// has the ids and resolves its own wording.</summary>
+    [Parameter] public Func<string, string?>? CommandLabel { get; set; }
 
     /// <summary>
     /// Answers a copy whose selection runs beyond the Window on the push form
@@ -2252,24 +2260,29 @@
         var filterable = declared.IsQueryable && (Source is not null || OnFilterChanged.HasDelegate);
         var commands = new List<GridCommand>
         {
-            new("sort-ascending", "Sort ascending", sortable,
+            new("sort-ascending", sortable,
                 () => ApplySortsAsync([new SortSpec(declared.Name, SortDirection.Ascending)])),
-            new("sort-descending", "Sort descending", sortable,
+            new("sort-descending", sortable,
                 () => ApplySortsAsync([new SortSpec(declared.Name, SortDirection.Descending)])),
-            new("filter", "Filter", filterable, () => OpenPanelAsync(column)),
-            new("hide", "Hide this column", OnColumnHidden.HasDelegate,
+            new("filter", filterable, () => OpenPanelAsync(column)),
+            new("hide", OnColumnHidden.HasDelegate,
                 () => OnColumnHidden.InvokeAsync(declared.Name)),
-            new("pin", "Pin up to this column",
+            new("pin",
                 OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount != column + 1,
                 () => OnPinnedCountChanged.InvokeAsync(column + 1)),
-            new("unpin", "Unpin all columns",
+            new("unpin",
                 OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount > 0,
                 () => OnPinnedCountChanged.InvokeAsync(0)),
-            new("size-to-fit", "Size to fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
+            new("size-to-fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
                 () => SizeToFitAsync(column)),
         };
         return new ColumnMenuContext(declared.Name, declared.Type, commands, CloseMenus);
     }
+
+    /// <summary>What the built-in menu calls a command (ADR-0036): the Consumer's wording
+    /// where it has one, the default Chrome's table otherwise.</summary>
+    private string LabelOf(GridCommand command)
+        => CommandLabel?.Invoke(command.Id) ?? BuiltInCommandLabels.For(command.Id);
 
     /// <summary>"Size to fit" fixes the width at the content of this moment (ADR-0016):
     /// an estimate over the painted rows and the header, clamped by the declaration.</summary>

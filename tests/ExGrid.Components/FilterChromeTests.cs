@@ -49,7 +49,8 @@ public class FilterChromeTests : GridTestContext
     }
 
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
-        TestSource source, IGridChrome? chrome = null, GridColumn<TestRow>[]? columns = null)
+        TestSource source, IGridChrome? chrome = null, GridColumn<TestRow>[]? columns = null,
+        Func<string, string?>? commandLabel = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Source, source)
@@ -59,6 +60,8 @@ public class FilterChromeTests : GridTestContext
               .Add(g => g.ViewportWidth, 350);
             if (chrome is not null)
                 ps.Add(g => g.Chrome, chrome);
+            if (commandLabel is not null)
+                ps.Add(g => g.CommandLabel, commandLabel);
         });
 
     private static TestSource PushedSource()
@@ -76,6 +79,25 @@ public class FilterChromeTests : GridTestContext
         await OpenMenuAsync(cut, column);
         await cut.FindAll(".ex-popover button[role=menuitem]")
             .Single(b => b.TextContent == "Filter").ClickAsync(new MouseEventArgs());
+    }
+
+    [Fact] // ADR-0036: the core names the commands and does not name them in a language
+    public async Task A_consumer_renames_a_command_without_replacing_the_menu()
+    {
+        var cut = RenderGrid(PushedSource(), commandLabel: id => id switch
+        {
+            "sort-ascending" => "昇順で並べ替え",
+            "hide" => "この列を隠す",
+            _ => null,     // the rest fall back to the built-in Chrome's table
+        });
+
+        await OpenMenuAsync(cut);
+
+        var labels = cut.FindAll(".ex-popover button[role=menuitem]").Select(b => b.TextContent).ToList();
+        Assert.Equal(
+            ["昇順で並べ替え", "Sort descending", "Filter", "この列を隠す",
+             "Pin up to this column", "Unpin all columns", "Size to fit"],
+            labels);
     }
 
     [Fact] // ADR-0010 / FN-18: the core decides the menu's commands; Chrome only lays them out

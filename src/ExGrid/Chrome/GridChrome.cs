@@ -53,7 +53,14 @@ public sealed class DistinctValues
 /// <summary>One command in the column menu (ADR-0010). The core decides the list;
 /// Chrome only lays them out. <see cref="Id"/> is stable — the hook for icons and for
 /// a Consumer substituting a particular command.</summary>
-public sealed record GridCommand(string Id, string Label, bool Enabled, Func<Task> Invoke);
+/// <summary>
+/// One item of a menu the core decides (ADR-0010/0036). It carries no label: the core
+/// names a command and says whether it is available, and what it is called is
+/// rendering, which is Chrome's. A substituted Chrome resolves the wording from the
+/// <paramref name="Id"/>; the built-in menu resolves it through
+/// <c>ExGrid.CommandLabel</c>, falling back to <see cref="BuiltInCommandLabels"/>.
+/// </summary>
+public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 
 /// <summary>
 /// Everything a filter panel substitute needs (ADR-0009): the column, the condition in

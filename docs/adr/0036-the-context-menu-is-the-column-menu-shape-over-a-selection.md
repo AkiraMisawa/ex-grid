@@ -116,5 +116,10 @@ translation impossible without replacing Chrome wholesale.
 - **The keyboard trigger** (`Shift+F10` and the Context Menu key) and where the menu opens from —
   the Focus cell's box, presumably — sit inside ADR-0012's key layering and have not been placed
   in it.
-- **The label seam's shape** — a delegate on the component, a member of `IGridChrome`, or a
-  resource lookup — is decided in direction here and not in form.
+- ~~The label seam's shape~~ — **settled while implementing**: a `CommandLabel` delegate on the
+  component, `id → string?`, consulted by the built-in menu and falling back to a
+  `BuiltInCommandLabels` table that belongs to the default Chrome rather than to the core. It is
+  not a member of `IGridChrome`: a substituted Chrome already receives the ids and resolves its
+  own wording, and the seam exists for the Consumer who keeps the built-in menu and wants it in
+  their own language. An unknown id renders as the id — a Consumer command reaching the built-in
+  menu unlabelled says what happened rather than showing a blank.
