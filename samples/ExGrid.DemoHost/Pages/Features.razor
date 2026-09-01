@@ -53,8 +53,8 @@
         OnColumnHidden="OnHidden"
         OnPinnedCountChanged="OnPinned"
         ContextCommands="ContextCommands"
-        CellState="_rules.StateOf"
-        CellMessageOf="_rules.MessageOf" />
+        CellState="_rules.State"
+        CellMessageOf="_rules.Message" />
 
 <h2>A second, independent instance</h2>
 <p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
@@ -212,6 +212,11 @@
             }
         }
         _pasteStatus += $", {applied} applied";
+        // Re-judged, as a typed edit is. Without this the ruleset's own promise — that one
+        // implementation runs whether a change arrived by an edit, a paste or program code
+        // — would be false in the reference Consumer, and a pasted -5 would wear no mark
+        // until an unrelated edit happened to re-evaluate (ADR-0034).
+        _rules.Evaluate(_source.Window, _columns);
     }
 
     /// <summary>A new instance with one field changed — identity is the change signal

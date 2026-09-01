@@ -324,6 +324,16 @@ test('a flagged cell says why when the pointer rests on it (ED-17b, ADR-0021/003
     await expect(grid(page).locator('.ex-message')).toHaveCount(0);
 });
 
+test('a pasted value wears the same mark as a typed one (ADR-0034)', async ({ page }) => {
+    await page.evaluate(() => navigator.clipboard.writeText('-5'));
+    await clickCell(page, 1, 2);                   // Notional
+
+    await page.keyboard.press('ControlOrMeta+V');
+
+    // One ruleset, whether the change arrived by an edit or by a paste.
+    await expect(grid(page).locator("[id$='r1c2']")).toHaveClass(/ex-state-error/);
+});
+
 test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) => {
     await clickCell(page, 0, 1);
     const focusBefore = await grid(page).getAttribute('aria-activedescendant');

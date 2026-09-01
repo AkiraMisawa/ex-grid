@@ -100,19 +100,19 @@ opens:
   first-class citizen, and an error only a mouse can read would not be. It never shows
   permanently: the paint is the standing display, and forty popovers
   after a bulk paste would bury the screen.
-  *(Found while implementing: **the hover half collides with a decision already taken**, and is
-  not built. A hover that knows which cell it is over needs a pointer-move handler, and cells are
-  `pointer-events: none` so the Viewport is the only target — one interop call per pointer move
-  across the grid. `_dragHandler` exists precisely so that handler is attached only while
-  dragging. Paying it always is the kind of per-move cost [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)
-  measured and refused, and this project does not assert performance without measuring. The three
-  ways out are each a decision of their own: measure and pay it; put a cached handler on flagged
-  cells only, which puts a delegate back into the row's parameters and is what
-  [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)'s memoisation costs;
-  or throttle in JavaScript, which is a fifth allowlist entry
-  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)). **The Focus trigger is built
-  and the hover trigger is not**, so the keyboard — which this section calls the point — is
-  served, and the mouse reads the paint. ED-17 is split accordingly.)*
+  *(Found while implementing, and **since resolved**: the hover half collides with a decision
+  already taken. A hover that knows which cell it is over needs a pointer-move handler, and cells
+  are `pointer-events: none` so the Viewport is the only target — one interop call per move, which
+  on a Blazor Server circuit is a wire round trip per frame. That was not a prediction: the grid
+  already refused it, in a test named `The_grid_does_not_listen_for_moves_until_a_drag_begins`
+  whose comment gives the same reason. Two ways out were rejected — paying it, which that test
+  forbids, and a handler on flagged cells only, which needs those cells to take the pointer and so
+  breaks selection and drag on exactly the cells a user most wants to click, besides putting a
+  delegate into the row's parameters against
+  [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)'s memoisation. **The way
+  taken is [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s fifth allowlist entry**:
+  JavaScript hears the moves and reports only the stillness, so C# is called once per pause — the
+  same cost profile as the Focus trigger. Both triggers are built; ED-17b and ED-17c state them.)*
 
 - **A validation message is Cell State plus a popover, never an element in the row**
   ([ADR-0013](./0013-fixed-row-height.md)) — the row's height does not move. The popover is

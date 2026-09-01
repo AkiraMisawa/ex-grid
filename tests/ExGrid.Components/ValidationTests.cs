@@ -335,6 +335,81 @@ public class ValidationTests : GridTestContext
         Assert.NotEmpty(cut.FindAll(".ex-editor"));
     }
 
+    [Fact] // ADR-0034 / ED-15: the sort is on the click, so the click is where the Reject must hold
+    public async Task A_reject_holds_the_editor_against_a_header_click()
+    {
+        var discarded = new List<EditDiscardReason>();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, _rows)
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, Columns((_, _) => EditVerdict.Reject("no")))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.OnSortChanged, _ => { })
+            .Add(g => g.OnEditDiscarded, r => discarded.Add(r)));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "a");
+        await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "abc" });
+
+        var header = cut.Find(".ex-header");
+        await header.MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 5 });
+        await header.ClickAsync(new MouseEventArgs { Button = 0, OffsetX = 50, OffsetY = 5 });
+
+        // No sort, so no sequence bump, so nothing dropped the selection and took the text.
+        Assert.NotEmpty(cut.FindAll(".ex-editor"));
+        Assert.Empty(discarded);
+    }
+
+    [Fact] // ADR-0010/0034: the menu button stops the press, so it carries the gate itself
+    public async Task A_reject_holds_the_editor_against_the_column_menu_button()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, _rows)
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, Columns((_, _) => EditVerdict.Reject("no")))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.OnSortChanged, _ => { }));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "a");
+        await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "abc" });
+
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+
+        Assert.NotEmpty(cut.FindAll(".ex-editor"));
+        Assert.Empty(cut.FindAll("[role=menu] button[role=menuitem]"));
+    }
+
+    [Fact] // ADR-0034: what was open belonged to the cell the pointer left
+    public async Task Resting_on_a_cell_with_nothing_to_say_closes_the_last_message()
+    {
+        var cut = RenderGrid(cellMessageOf: (_, column) => column.Name == "Book" ? "out of range" : null);
+        await cut.InvokeAsync(() => cut.Instance.OnPointerRestAsync(50, 10));
+        Assert.NotEmpty(cut.FindAll(".ex-message"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnPointerRestAsync(150, 10));
+
+        Assert.Empty(cut.FindAll(".ex-message"));
+    }
+
+    [Fact] // ADR-0033: the region holds the sentence again after an identical repeat
+    public async Task The_same_reject_twice_leaves_the_sentence_standing()
+    {
+        var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("not a date"));
+        await TypeAndCommitAsync(cut, "abc");
+
+        await PressAsync(cut, "Enter");
+
+        // The mechanism is empty-then-rewrite across two renders — two mutations inside
+        // one element, rather than a replaced element, which a screen reader ignores.
+        // What this layer can see is the outcome; whether an assistive technology speaks
+        // it is a browser-level fact no suite here asserts.
+        Assert.Equal("not a date", cut.Find(".ex-announce").TextContent);
+        Assert.Equal("status", cut.Find(".ex-announce").GetAttribute("role"));
+    }
+
     [Fact] // ADR-0034 / ED-15: nor may a secondary press walk the selection away from it
     public async Task A_reject_holds_the_editor_against_a_secondary_press()
     {

@@ -277,6 +277,10 @@
 .ex-message {
     position: absolute;
     z-index: 11;
+    /* It describes a cell; it must not intercept the pointer aimed at one. Without this
+       a click on a flagged cell lands on the message and neither selects nor reaches the
+       Viewport, and a mouse-up ending a drag goes the same way. */
+    pointer-events: none;
     max-width: 320px;
     padding: 4px;
     background: var(--ex-header-background, Canvas);

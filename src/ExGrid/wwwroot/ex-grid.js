@@ -150,12 +150,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // Cells are pointer-events: none, so the Viewport is what a move over the rows
         // lands on. Anything else — the header, a Template Column's own control — is not
         // a cell to describe.
+        // Cleared first, whatever this move was over: a pending rest armed on the rows and
+        // then abandoned for the header would otherwise fire for a cell the pointer left.
+        clearTimeout(restTimer);
         if (!core || !(event.target instanceof Element) || !event.target.classList.contains('ex-viewport')) {
             return;
         }
         const x = event.offsetX;
         const y = event.offsetY;
-        clearTimeout(restTimer);
         restTimer = setTimeout(() => {
             if (!core) {
                 return;

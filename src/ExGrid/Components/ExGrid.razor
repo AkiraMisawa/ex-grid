@@ -78,7 +78,7 @@
                 {
                     var pinnedIndex = i;
                     <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@(i + 1)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
-                        {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenu(pinnedIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                        {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenuAsync(pinnedIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                         {<div class="ex-resize-grip" @onmousedown="e => OnResizeGripDown(pinnedIndex, e)" @onmousedown:stopPropagation></div>}</div>
                 }
                 @if (_scrollable is { } headerColumns)
@@ -91,7 +91,7 @@
                     {
                         var columnIndex = i;
                         <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@(i + 1)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
-                            {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenu(columnIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                            {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenuAsync(columnIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                             {<div class="ex-resize-grip" @onmousedown="e => OnResizeGripDown(columnIndex, e)" @onmousedown:stopPropagation></div>}</div>
                     }
                 }
@@ -400,12 +400,12 @@
     @* The selection's extent, in one sentence, once per settled selection (ADR-0033):
        polite, so it never interrupts, and written after the same settle the loading
        path uses — a drag announces the destination, not the journey. *@
-    @* A live region announces on mutation, so a Reject repeated on the same value would
-       write the same sentence and say nothing — and the second refusal is the one the
-       user needs, having just tried again. The key changes per announcement, so the node
-       is replaced rather than left identical; the sentence stays the Consumer's, which
-       appending a count to would not (ADR-0033/0034). *@
-    <div class="ex-announce" role="status" @key="_announceNonce">@_announcement</div>
+    @* One region, and the same element throughout: a screen reader announces a mutation
+       *inside* a live region, and a region inserted with its text already in it is widely
+       ignored. So a sentence repeated verbatim is emptied first and written on the next
+       render — two mutations, nothing invented, and the sentence stays the Consumer's
+       (ADR-0033/0034). *@
+    <div class="ex-announce" role="status">@_announcement</div>
 </div>
 
 @code {
@@ -1011,8 +1011,9 @@
     // means, and comparing ranges (never Focus) is what keeps a bare Focus move silent.
     private string _announcement = "";
 
-    /// <summary>Bumped with every announcement, so an identical repeat still mutates.</summary>
-    private int _announceNonce;
+    /// <summary>A sentence that repeats verbatim, waiting for the empty render that makes
+    /// it a mutation the region will announce.</summary>
+    private string? _announcePending;
     private IReadOnlyList<SelectionRange> _announcedRanges = [];
     private ITimer? _announceTimer;
 
@@ -1688,6 +1689,12 @@
         if (firstRender)
             await AttachScrollAsync();
 
+        if (_announcePending is { } pending)
+        {
+            _announcePending = null;
+            _announcement = pending;
+            StateHasChanged();
+        }
         if (_jsEditingDirty)
             await PushEditingModeAsync();
         // A display-only grid must not take printable keys away from the page
@@ -2321,6 +2328,13 @@
             _gestureConsumedClick = false;
             return;
         }
+        // An editor still standing means the mouse-down's commit was Rejected, and this
+        // click is the same gesture: it keeps no meaning of its own (ADR-0034, ED-15).
+        // The mouse-down's early return cannot stop this handler — the sort happens here,
+        // and a sort would bump the Row Sequence Version, drop the selection and take the
+        // text the Reject was holding on to.
+        if (_editMode != EditMode.None)
+            return;
         // Past the last column the header is dead space, not the last column again:
         // ColumnAt clamps because a drag past the edge should keep extending, and that
         // is the wrong answer for a click that landed on nothing.
@@ -2420,7 +2434,10 @@
         _menuColumn = -1;
         _panelColumn = -1;
         _contextCell = cell;
-        _contextLeftPx = e.OffsetX;
+        // OffsetX is relative to the Viewport, whose left edge is the content's — the
+        // convention CellUnder works in. The popovers are laid out in viewport space, so
+        // it converts here, exactly as PopoverStyle and CellCorner do.
+        _contextLeftPx = e.OffsetX - _scrollLeftPx;
         _contextTopPx = e.OffsetY;
     }
 
@@ -2491,8 +2508,10 @@
     {
         var (left, top) = CellCorner(cell);
         left = Math.Clamp(left, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
+        // Below the cell, not over it: a box that covers the value it is complaining
+        // about, or the editor the user is being asked to correct, is worse than none.
         return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx + top}px; min-width: {PopoverMinWidthPx}px");
+            $"left: {left}px; top: {BandHeightPx + top + _metrics.RowHeightPx}px; min-width: {PopoverMinWidthPx}px");
     }
 
     /// <summary>A cell's top-left inside the Viewport, in the coordinates the popovers
@@ -2503,9 +2522,11 @@
         var left = cell.Column < geometry.PinnedCount
             ? geometry.OffsetPxOf(cell.Column)
             : geometry.OffsetPxOf(cell.Column) - _scrollLeftPx;
+        // Relative to the top of the Viewport, not to the first painted row: SliceAt floors
+        // the offset, so with a smooth scroll that row starts up to a row height above the
+        // visible top and a popover placed from it would sit a row too low.
         var top = _visible is { } visible
-            ? _geometry.OffsetPxOf(cell.Row - _pageStartRow)
-              - _geometry.OffsetPxOf(visible.Start - _pageStartRow)
+            ? _geometry.OffsetPxOf(cell.Row - _pageStartRow) - _scrollTopPx
             : 0d;
         return (left, top);
     }
@@ -2519,17 +2540,26 @@
     [JSInvokable]
     public Task OnPointerRestAsync(double x, double y)
     {
-        if (_disposed || CellMessageOf is null || _editMode != EditMode.None)
+        // A pause in the middle of a drag-select is not a hover: the pointer is holding a
+        // gesture, and a popover under it would take the mouse-up that ends the drag.
+        if (_disposed || CellMessageOf is null || _editMode != EditMode.None || _dragging)
             return Task.CompletedTask;
         if (CellUnder(new MouseEventArgs { OffsetX = x, OffsetY = y }) is not { } cell)
             return Task.CompletedTask;
         if (_messageCell == cell)
             return Task.CompletedTask;
 
-        // The stillness is already established, so there is nothing left to wait for: the
-        // message is asked for now, once, exactly as the Focus path asks after its timer.
+        // Whatever was open belonged to the cell the pointer left, so it goes whether or
+        // not this one has anything to say — the Focus path closes first for the same
+        // reason. The stillness is already established, so the message is asked for now,
+        // once, rather than waiting again.
+        var closed = _messageCell is not null;
+        if (closed)
+            CloseMessage();
         _messageTarget = cell;
         ShowMessageAt(cell);
+        if (closed && _messageCell is null)
+            StateHasChanged();
         return Task.CompletedTask;
     }
 
@@ -2640,8 +2670,17 @@
     /// <summary>The menu button is a toggle: the second press on the same column's
     /// button closes what the first opened — a popover the user cannot dismiss is a
     /// popover in the way.</summary>
-    private void OpenMenu(int column)
+    private async Task OpenMenuAsync(int column)
     {
+        // The button stops the press from reaching the header, so the click-away commit
+        // never ran for it — it has to run here, and a Reject holds the editor and keeps
+        // this press meaningless like every other (ADR-0010/0034). Without it "Sort
+        // ascending" from the menu is a silent way to lose the held text.
+        if (_editMode != EditMode.None && !await CommitEditAsync())
+        {
+            StateHasChanged();
+            return;
+        }
         if (_menuColumn == column)
         {
             CloseMenus();
@@ -4010,8 +4049,17 @@
     /// is what makes a repeat audible.</summary>
     private void Announce(string? sentence)
     {
-        _announcement = sentence ?? "";
-        _announceNonce++;
+        var text = sentence ?? "";
+        if (text.Length > 0 && text == _announcement)
+        {
+            // Identical text is no mutation, and the second refusal is the one the user
+            // needs. Empty it now; the next render puts it back, and that is a change.
+            _announcement = "";
+            _announcePending = text;
+            return;
+        }
+        _announcement = text;
+        _announcePending = null;
     }
 
     private void OnAnnounceSettled(object? state)

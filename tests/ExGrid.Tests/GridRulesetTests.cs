@@ -107,4 +107,23 @@ public class GridRulesetTests
             Assert.Null(rules.MessageOf(good, column));
         }
     }
+
+    [Fact] // ADR-0003/0034: the lookup's identity is what tells a memoised row to repaint
+    public void Evaluating_hands_over_new_lookups()
+    {
+        var rules = Ruleset();
+        var before = rules.State;
+        var beforeMessage = rules.Message;
+
+        rules.Evaluate([new Trade { Amount = -5 }], Columns());
+
+        Assert.NotSame(before, rules.State);
+        Assert.NotSame(beforeMessage, rules.Message);
+        // And they answer the same as the methods behind them.
+        var row = new Trade { Amount = -5 };
+        rules.Evaluate([row], Columns());
+        Assert.Equal(CellState.Error, rules.State(row, Columns()[1]));
+        Assert.Equal("a negative notional needs approval", rules.Message(row, Columns()[1]));
+    }
+
 }
