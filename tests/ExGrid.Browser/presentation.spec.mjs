@@ -183,6 +183,23 @@ test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async 
     await expect(arabic).toBeVisible();
 });
 
+test('a Header Group label is centred, and nothing aligns it vertically (HG-13, ADR-0032)', async ({ page }) => {
+    await open(page);
+    const group = grid(page).locator('.ex-header-group').first();
+    await expect(group).toBeVisible();
+
+    const painted = await group.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return { textAlign: style.textAlign, verticalAlign: style.verticalAlign };
+    });
+
+    expect(painted.textAlign).toBe('center');
+    // The other half of HG-13 is the absence of a knob, which the layer-1 surface test
+    // holds; what a browser can say is that nothing is being aligned vertically here —
+    // the row height is fixed (ADR-0013), so the option would have nothing to do.
+    expect(painted.verticalAlign).toBe('baseline');
+});
+
 test("the editor's box is exactly the cell's (ED-9)", async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r0c1']").click({ force: true });

@@ -24,7 +24,7 @@ public class HeaderGroupRenderingTests : GridTestContext
     ];
 
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
-        HeaderGroup[]? groups = null, int pinned = 0, double viewportHeight = 200)
+        IReadOnlyList<HeaderGroup>? groups = null, int pinned = 0, double viewportHeight = 200)
         => Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Many(200))
             .Add(g => g.TotalCount, 200)
@@ -193,4 +193,74 @@ public class HeaderGroupRenderingTests : GridTestContext
             none.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell").Length,
             some.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell").Length);
     }
+
+    /// <summary>
+    /// A declaration that counts resolutions from outside the component. It counts
+    /// **indexer reads, not `Count` reads**: `HeaderGroupLayout.Resolve` reads the length
+    /// several times over (its own guard, the result's size, the loop condition) and the
+    /// component reads it once more to decide whether to resolve at all, so a length
+    /// counter measures reads and not resolutions. It takes each group exactly once, so
+    /// with a single group declared this counter *is* the resolution count.
+    ///
+    /// <para>Nothing else in the component reads the parameter: the painting reads the
+    /// resolved layout, which is the whole of HG-11.</para>
+    /// </summary>
+    private sealed class CountingGroups(IReadOnlyList<HeaderGroup> inner) : IReadOnlyList<HeaderGroup>
+    {
+        internal int Resolutions { get; private set; }
+
+        public HeaderGroup this[int index]
+        {
+            get
+            {
+                Resolutions++;
+                return inner[index];
+            }
+        }
+
+        public int Count => inner.Count;
+
+        public IEnumerator<HeaderGroup> GetEnumerator() => inner.GetEnumerator();
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    [Fact] // ADR-0032 / HG-11: resolution count is 1, not 20 — once per push, off the render path
+    public async Task Membership_resolves_once_per_push_and_never_while_scrolling()
+    {
+        var groups = new CountingGroups(
+            [new HeaderGroup("CVA", [TestRows.ColumnName(1), TestRows.ColumnName(2)])]);
+        var cut = RenderGrid(groups: groups);
+        Assert.NotEmpty(cut.FindAll(".ex-header-group"));
+        var renders = cut.RenderCount;
+
+        for (var i = 1; i <= 20; i++)
+            await ScrollToAsync(cut.Find(".ex-scroller"), i * 20d);
+
+        // The scrolls really did paint — otherwise this asserts nothing — and across all
+        // of them the declaration was resolved exactly once, on the push that brought it.
+        Assert.True(cut.RenderCount > renders, "the scrolls rendered nothing, so this proves nothing");
+        Assert.Equal(1, groups.Resolutions);
+        Assert.NotEmpty(cut.FindAll(".ex-header-group"));
+    }
+
+    [Fact] // ADR-0032 / HG-11: a new declaration is a push, and is resolved again
+    public void A_pushed_declaration_is_resolved_again()
+    {
+        var groups = new CountingGroups(
+            [new HeaderGroup("CVA", [TestRows.ColumnName(1), TestRows.ColumnName(2)])]);
+        var cut = RenderGrid(groups: groups);
+        Assert.Equal(1, groups.Resolutions);
+
+        var pushed = new CountingGroups(
+            [new HeaderGroup("CVA", [TestRows.ColumnName(2), TestRows.ColumnName(3)])]);
+        cut.Render(ps => ps.Add(g => g.HeaderGroups, (IReadOnlyList<HeaderGroup>)pushed));
+
+        // Once per push is the rule in both directions: the old declaration is not
+        // re-read, and the new one is resolved rather than assumed unchanged.
+        Assert.Equal(1, groups.Resolutions);
+        Assert.Equal(1, pushed.Resolutions);
+        Assert.Contains("left: 200px", cut.FindAll(".ex-header-group")[0].GetAttribute("style"));
+    }
+
 }
