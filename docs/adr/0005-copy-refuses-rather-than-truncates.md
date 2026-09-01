@@ -132,6 +132,61 @@ Excel preferring HTML.
 The shape rules for paste are in
 [ADR-0014](./0014-paste-shape-rules-and-selection-count.md).
 
+## Copy with headers *(added when the context menu was designed)*
+
+[ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md) needed a
+"copy with headers" item and found there was no such capability: this ADR had never mentioned
+headers and `BuildCopyPayload` had no notion of them. Most of what it needs derives.
+
+- **The text is the column's `Header`, not its `Name`.** A column already carries both, and
+  `Header` is what is on screen — which is what `text/plain` is for. It is the full declared
+  header, never the truncated paint, by the same rule that keeps `####` off the clipboard
+  ([ADR-0016](./0016-column-width-and-overflow.md)).
+- **It needs no new refusal, in either orientation.** A `CopyPlan`'s vertical segments share a
+  column span and stack, so one header row stands above the stack; its horizontal segments share
+  a row span and concatenate, so the header row is those names in the order the cells are
+  emitted. A disjoint selection has a well-defined header row either way.
+- **It goes into both formats** — a `<th>` row in `text/html` as well as the first TSV line.
+  Excel prefers the HTML flavour, and a header row that reached the text editor but not the
+  spreadsheet would miss the case the feature exists for.
+
+Two things were decisions.
+
+**The header row counts against the cap.** The cap is applied to the `CopyPlan` — to what is
+actually copied — not to the selection, and it should keep meaning that. A selection sitting
+exactly on the cap therefore copies plainly and refuses with headers, which is explicable in one
+sentence: the payload is bigger. The alternative, redefining the cap as a property of the
+selection, buys consistency between two commands at the price of a cap that under-reports what it
+lets through.
+
+**The copied block is one row taller than the selection, and that is not hidden.** Pasting it
+back lands on [ADR-0014](./0014-paste-shape-rules-and-selection-count.md)'s shape rules and is
+refused by name — the first copy this grid produces that does not round-trip into it. That is the
+right failure and needs no special case: it is loud, it names its rule, and the advice attached
+to a shape refusal — reselect a target of the same shape — is true here, because a selection one
+row taller does take it.
+
+## A menu copy has no `copy` event *(added with the same design)*
+
+The route table above switches **by the size of the selection**, on the premise that the everyday
+copy is a Ctrl+C, whose `copy` event is itself the permission grant. A context-menu item breaks
+that premise from a direction the table does not cover: **clicking a menu item fires no `copy`
+event**, so a menu copy cannot take the event route however small the selection is.
+
+**Decision: clipboard commands invoked from a menu always take the asynchronous API route.** No
+new JavaScript use is needed — the clipboard is already one of the four
+([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)) — and the alternative,
+synthesising a `copy` event with `document.execCommand('copy')` inside the click handler, buys
+the prompt-free property with a deprecated API this component would then depend on.
+
+**Whether a prompt actually appears is not asserted here.** This ADR's caution about prompts was
+written before [ADR-0017](./0017-target-chromium-browsers-only.md) narrowed the target, and
+Chromium grants `clipboard-write` to the active tab — so the answer for the browsers this
+component supports is probably "no prompt", and probably is not good enough for something a user
+meets every day. **Layer 3 is where that answer lives**: the suite asserts that a menu copy
+writes without a prompt on Chrome and on Edge, and if one appears that is a finding, recorded
+against this section, not a surprise in the field.
+
 ## Consequences
 
 - **It presupposes the selection model** — rectangular ranges (anchor plus focus), whole rows and

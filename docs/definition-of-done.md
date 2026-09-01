@@ -355,6 +355,9 @@ The grid renders the filter UI and never evaluates a filter.
 | **CP-14** | MUST | Paste reads `text/html` as well as `text/plain`, preserving type and precision from Excel (ADR-0005) | Layer 3 with an Excel-shaped clipboard payload | values arrive typed, not as display strings |
 | **CP-15** | MUST | An empty selection refuses, with its own reason, for both copy and paste (ADR-0005/0014) | Layer 1 | nothing happens, and the reason says why |
 | **CP-16** | MUST | A paste or Ctrl+Enter fill whose target covers a column that is not `Editable` is refused **whole** — with its own reason, and no intent is raised (ADR-0035) | Layer 1 `PasteRuleTests` + Layer 2 | refused with `TargetNotEditable`; `OnPaste` never fires; the refusal outranks the shape rules |
+| **CP-17** | MUST | Copy with headers emits the column's **declared `Header`** as one extra row — the first TSV line and a `<th>` row in `text/html` — for a disjoint selection in either orientation, and never the truncated paint (ADR-0005) | Layer 1 for the assembly, Layer 3 for the real clipboard | one header row, in both formats, naming the covered columns in emission order |
+| **CP-18** | MUST | The header row **counts against the copy cap**: a selection exactly on the cap copies plainly and refuses with headers (ADR-0005) | Layer 1 at the boundary | `Copy` approves, `Copy with headers` refuses with the cap's own reason |
+| **CP-19** | MUST | A clipboard command invoked from a menu writes **without a permission prompt** on Chrome and on Edge, taking the asynchronous route whatever the selection's size (ADR-0005/0017/0036) | Layer 3, both browser projects | the clipboard holds the payload and no prompt was shown; a prompt is a recorded finding, not a pass |
 
 ---
 

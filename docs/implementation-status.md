@@ -33,6 +33,11 @@ places out of scope for the core. What remains is verification depth, not featur
 `verification/2026-09-01/results.md` for the honest pass/blocked ledger — that record is the
 macOS one; a run now files itself under `verification/<date>-<platform>/`.
 
+**ADR-0005 gained two sections and none of them are built**: copy with headers (CP-17/CP-18) and
+the rule that a menu copy always takes the asynchronous clipboard route (CP-19). CP-19 is the one
+holding an unverified claim — that Chromium raises no prompt for it — and layer 3 is where that
+is settled.
+
 **ADR-0036 (the context menu) is accepted and unimplemented.** It also amends ADR-0010:
 `GridCommand` loses its `Label`, and the core's built-in English command labels move behind a
 label seam. Nothing of it is built, including that amendment — so the core still holds the UI

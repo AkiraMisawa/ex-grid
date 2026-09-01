@@ -108,10 +108,11 @@ translation impossible without replacing Chrome wholesale.
 
 ## Open
 
-- **Copy with headers is not a menu item, it is a clipboard capability that does not exist yet.**
-  ADR-0005 says nothing about headers and `BuildCopyPayload` has no notion of them. What a header
-  row means for a disjoint selection, whether it counts against the copy cap, and whether it
-  reaches `text/html` as a `<th>` row, are ADR-0005's questions and are not answered here.
+- ~~Copy with headers~~ — **decided in [ADR-0005](./0005-copy-refuses-rather-than-truncates.md)**,
+  which gained two sections for it: the header row is the column's `Header`, needs no new refusal
+  in either orientation, reaches both formats, and **counts against the copy cap**; and a menu
+  copy always takes the asynchronous clipboard route, because clicking a menu item fires no
+  `copy` event. Neither is implemented.
 - **The keyboard trigger** (`Shift+F10` and the Context Menu key) and where the menu opens from —
   the Focus cell's box, presumably — sit inside ADR-0012's key layering and have not been placed
   in it.
