@@ -147,6 +147,45 @@ public class SelectionKeyboardTests
         Assert.True(GridSelection.Empty.CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid).IsEmpty);
     }
 
+    [Fact] // ADR-0012: PageDown collapses and moves the Focus by the rows the caller passed
+    public void Move_by_viewport_steps_the_focus_by_the_given_rows()
+    {
+        var selection = GridSelection.Empty
+            .Click(new(2, 2), Grid)
+            .ExtendTo(new(4, 4), Grid)
+            .MoveByViewport(20, Grid);
+
+        Assert.Equal([new SelectionRange(24, 4, 1, 1)], selection.Ranges);
+        Assert.Equal(new CellPosition(24, 4), selection.Focus);
+
+        Assert.Equal(new CellPosition(4, 4), selection.MoveByViewport(-20, Grid).Focus);
+    }
+
+    [Fact] // ADR-0012: at the first and last row the step clamps — the Focus stays inside
+    public void Move_by_viewport_clamps_at_both_ends()
+    {
+        var nearTop = GridSelection.Empty.Click(new(3, 5), Grid);
+        var nearBottom = GridSelection.Empty.Click(new(95, 5), Grid);
+
+        Assert.Equal(new CellPosition(0, 5), nearTop.MoveByViewport(-20, Grid).Focus);
+        Assert.Equal(new CellPosition(99, 5), nearBottom.MoveByViewport(20, Grid).Focus);
+    }
+
+    [Fact] // ADR-0012: Shift+PageDown redraws the Anchor's range between Anchor and moved Focus
+    public void Extend_by_viewport_grows_the_range_from_the_anchor()
+    {
+        var selection = GridSelection.Empty
+            .Click(new(10, 3), Grid)
+            .ExtendByViewport(20, Grid);
+
+        Assert.Equal([new SelectionRange(10, 3, 21, 1)], selection.Ranges);
+        Assert.Equal(new CellPosition(10, 3), selection.Anchor);
+        Assert.Equal(new CellPosition(30, 3), selection.Focus);
+
+        var back = selection.ExtendByViewport(-20, Grid);
+        Assert.Equal([new SelectionRange(10, 3, 1, 1)], back.Ranges);
+    }
+
     [Fact] // ADR-0011: a grid with no rows (or no columns) has nothing to select
     public void A_degenerate_extent_yields_empty_from_every_transition()
     {
@@ -175,5 +214,29 @@ public class SelectionKeyboardTests
         Assert.Throws<ArgumentOutOfRangeException>(() => GridSelection.Empty.Click(new(100, 0), Grid));
         Assert.Throws<ArgumentOutOfRangeException>(() => GridSelection.Empty.Click(new(0, 26), Grid));
         Assert.Throws<ArgumentOutOfRangeException>(() => GridSelection.Empty.Click(new(-1, 0), Grid));
+    }
+
+
+    [Fact] // ADR-0012/0015: the page-context SelectAll names a region — Anchor and Focus stay
+    public void Select_all_in_a_context_keeps_anchor_and_focus()
+    {
+        var selection = GridSelection.Empty.Click(new(52, 3), Grid);
+
+        var paged = selection.SelectAll(Grid, 50, 25);
+
+        Assert.Equal([new SelectionRange(50, 0, 25, 26)], paged.Ranges);
+        Assert.Equal(new CellPosition(52, 3), paged.Focus);
+        Assert.Equal(new CellPosition(52, 3), paged.Anchor);
+    }
+
+    [Fact] // From Empty — or from another page — Anchor and Focus land on the context's first cell
+    public void Select_all_in_a_context_relocates_a_foreign_focus()
+    {
+        var fromEmpty = GridSelection.Empty.SelectAll(Grid, 50, 25);
+        Assert.Equal(new CellPosition(50, 0), fromEmpty.Focus);
+
+        var elsewhere = GridSelection.Empty.Click(new(10, 3), Grid).SelectAll(Grid, 50, 25);
+        Assert.Equal([new SelectionRange(50, 0, 25, 26)], elsewhere.Ranges);
+        Assert.Equal(new CellPosition(50, 0), elsewhere.Focus);
     }
 }

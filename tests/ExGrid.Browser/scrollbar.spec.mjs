@@ -137,6 +137,37 @@ async function openGrid(page, { classicScrollbars }) {
  * previous scroll offset happened to leave it, inside the box by luck.
  */
 async function moveToCorner(page, key) {
+    // Pressed inside a bounded retry: right after a zoom change, the browser's own
+    // gutter report can still be in flight when the keystroke lands, and a corner
+    // computed from the outgoing size settles a few pixels short of the browser's
+    // exact extreme — forever. Re-pressing is safe because the corner is absorbing
+    // (Ctrl+End from the corner stays at the corner), and it forgives ONLY the raced
+    // keystroke: a grid whose arithmetic lands the wrong corner persistently never
+    // satisfies the wait, however often it is asked, and still fails here.
+    for (let attempt = 1; ; attempt++) {
+        try {
+            await pressAndAwaitCorner(page, key);
+            return;
+        } catch (error) {
+            if (attempt === 3) {
+                const state = await page.evaluate(() => {
+                    const scroller = document.querySelector('.ex-scroller');
+                    return {
+                        top: scroller.scrollTop, left: scroller.scrollLeft,
+                        wantTop: scroller.scrollHeight - scroller.clientHeight,
+                        wantLeft: scroller.scrollWidth - scroller.clientWidth,
+                        client: [scroller.clientWidth, scroller.clientHeight],
+                        dpr: window.devicePixelRatio,
+                        active: document.activeElement?.className ?? 'none',
+                    };
+                });
+                throw new Error(`corner ${key} never reached: ${JSON.stringify(state)}`, { cause: error });
+            }
+        }
+    }
+}
+
+async function pressAndAwaitCorner(page, key) {
     await page.keyboard.press(`Control+${key}`);
     // Waited for by naming the position the grid is supposed to land on, not by watching
     // for the scroll to stop changing. "Stopped changing" is true before the keystroke has
@@ -175,7 +206,7 @@ async function moveToCorner(page, key) {
         }
         return at(scroller.scrollTop, scroller.scrollHeight - scroller.clientHeight)
             && at(scroller.scrollLeft, scroller.scrollWidth - scroller.clientWidth);
-    }, { corner: key, settled: SETTLED_PX }, { polling: 'raf' });
+    }, { corner: key, settled: SETTLED_PX }, { polling: 'raf', timeout: 5000 });
 }
 
 test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {

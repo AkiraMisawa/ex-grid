@@ -102,12 +102,36 @@ public class GridKeyTests
         foreach (var action in new[]
         {
             Key("c", ctrl: true), Key("v", ctrl: true), Key("F2"), Key("f", ctrl: true),
-            Key("PageDown"), Key("PageUp"), Key("x"), Key("F5"), Key("Alt+ArrowDown"),
+            Key("x"), Key("F5"), Key("Alt+ArrowDown"),
             Key("ArrowDown", alt: true),
         })
         {
             Assert.Equal(GridKeyKind.None, action.Kind);
         }
+    }
+
+    [Theory] // ADR-0012: PageUp / PageDown move Focus and Viewport together; Shift extends
+    [InlineData("PageUp", false, GridKeyKind.MoveByViewport, GridDirection.Up)]
+    [InlineData("PageDown", false, GridKeyKind.MoveByViewport, GridDirection.Down)]
+    [InlineData("PageUp", true, GridKeyKind.ExtendByViewport, GridDirection.Up)]
+    [InlineData("PageDown", true, GridKeyKind.ExtendByViewport, GridDirection.Down)]
+    public void The_viewport_keys_resolve_by_their_modifiers(
+        string key, bool shift, GridKeyKind expected, GridDirection direction)
+    {
+        var action = Key(key, shift: shift);
+
+        Assert.Equal(expected, action.Kind);
+        Assert.Equal(direction, action.Direction);
+    }
+
+    [Fact] // ADR-0012: the Control forms are the browser's — it switches tabs with them
+    public void Control_viewport_keys_are_neither_handled_nor_taken()
+    {
+        Assert.Equal(GridKeyKind.None, Key("PageUp", ctrl: true).Kind);
+        Assert.Equal(GridKeyKind.None, Key("PageDown", ctrl: true).Kind);
+        // Not in the taken set either: the listener must not preventDefault them.
+        Assert.DoesNotContain("Control+PageUp", GridKeys.Taken);
+        Assert.DoesNotContain("Control+PageDown", GridKeys.Taken);
     }
 
     [Fact] // The browser sends what it likes — Unidentified, dead keys, an IME's own

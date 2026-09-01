@@ -35,7 +35,9 @@ internal sealed class PushHost : ComponentBase
         builder.AddComponentParameter(3, nameof(ExGrid<TestRow>.TotalCount), (int?)AllRows.Length);
         builder.AddComponentParameter(4, nameof(ExGrid<TestRow>.Columns), (IReadOnlyList<GridColumn<TestRow>>)TestRows.Columns());
         builder.AddComponentParameter(5, nameof(ExGrid<TestRow>.RowHeight), RowHeight);
-        builder.AddComponentParameter(6, nameof(ExGrid<TestRow>.ViewportHeight), ViewportHeight);
+        // Boxed, so the conversion has to be written: Blazor casts a parameter's boxed
+        // value at runtime and a double is not a ViewportSize.
+        builder.AddComponentParameter(6, nameof(ExGrid<TestRow>.ViewportHeight), (ViewportSize)ViewportHeight);
         builder.AddComponentParameter(7, nameof(ExGrid<TestRow>.OnRangeNeeded),
             EventCallback.Factory.Create<RowRange>(this, Answer));
         builder.CloseComponent();

@@ -71,6 +71,14 @@ public class GridRenderingTests : GridTestContext
             () => RenderGrid(this, TestRows.Window(), TestRows.Columns(), rowHeight: 0));
     }
 
+    [Fact] // ADR-0031: the instance root carries dir="ltr" explicitly — an LTR island in an RTL page
+    public void The_root_carries_dir_ltr()
+    {
+        var cut = RenderGrid(this, TestRows.Window(), TestRows.Columns());
+
+        Assert.Equal("ltr", cut.Find(".ex-grid").GetAttribute("dir"));
+    }
+
     [Fact] // ADR-0018: every class carries the ex- prefix; nothing leaks an unprefixed name
     public void All_css_classes_carry_the_ex_prefix()
     {
@@ -118,6 +126,25 @@ public class GridRenderingTests : GridTestContext
         Assert.Equal(
             [false, true, true, false], // Text, Number, Date, Boolean
             firstRowCells.Select(c => c.ClassList.Contains("ex-cell-numeric")));
+    }
+
+    [Fact] // ADR-0016/0029: alignment is a closed enum painted as interned classes; Auto adds nothing
+    public void An_explicit_alignment_paints_its_class_and_auto_adds_nothing()
+    {
+        GridColumn<TestRow>[] columns =
+        [
+            new("Book", ColumnType.Text, r => r.Book),
+            new("Amount", ColumnType.Number, r => r.Amount, align: Columns.CellAlign.Left,
+                headerAlign: Columns.CellAlign.Center),
+        ];
+        var cut = RenderGrid(this, TestRows.Window(), columns);
+
+        var cells = cut.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell");
+        Assert.DoesNotContain("ex-align", cells[0].ClassName);
+        // Explicit Left beats the numeric derivation — both classes stand, Left later.
+        Assert.Contains("ex-cell-numeric", cells[1].ClassName);
+        Assert.Contains("ex-align-left", cells[1].ClassName);
+        Assert.Contains("ex-align-center", cut.FindAll(".ex-header-cell")[1].ClassName);
     }
 
     [Fact] // ADR-0023: a Blank paints an empty cell — the accessor returned null

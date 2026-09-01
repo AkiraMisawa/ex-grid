@@ -309,7 +309,8 @@ public class GridKeyboardTests : GridTestContext
         await ClickAsync(cut, 50, 10);
         var focus = selection!.Focus;
 
-        await PressAsync(cut, "PageDown");
+        // Ctrl+PageDown is the browser's tab switch, deliberately unclaimed (ADR-0012).
+        await PressAsync(cut, "PageDown", ctrl: true);
         await PressAsync(cut, "c", ctrl: true);
         await PressAsync(cut, "F2");
         await PressAsync(cut, "Unidentified");

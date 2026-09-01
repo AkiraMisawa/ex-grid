@@ -1,5 +1,6 @@
 using Bunit;
 using ExGrid.Components.Tests.Support;
+using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -159,4 +160,26 @@ public class GoToStartTests : GridTestContext
         // the beginning of the row.
         Assert.Equal(9_600d, Js.ScrolledTo[^1].Left);
     }
+
+    [Fact] // ADR-0012: a reveal is never skipped against a scroll write still in flight —
+           // _scrollTopPx mirrors the last scroll EVENT, and until the browser answers,
+           // "already there" judges against a position the browser is about to leave
+    public async Task Every_reveal_is_written_even_when_the_mirror_says_already_there()
+    {
+        var cut = RenderGrid(pinnedColumnCount: 0);
+        await cut.Find(".ex-viewport").MouseDownAsync(
+            new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 10 });
+
+        // Three corner jumps, faster than any scroll event round-trips (none is
+        // simulated): each must produce its own write, and the LAST write must be the
+        // last keystroke's corner — the dropped-reveal bug ended with the view at the
+        // WRONG corner and nothing armed to recover.
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("End", true, false, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Home", true, false, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("End", true, false, false, false, false));
+
+        var tops = Js.ScrolledTo.Select(w => w.Top).ToList();
+        Assert.Equal([FarBottomPx, 0, FarBottomPx], tops[^3..]);
+    }
 }
+

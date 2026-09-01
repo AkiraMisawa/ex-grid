@@ -207,4 +207,23 @@ public class VirtualisationTests : GridTestContext
 
         Js.Dispose.VerifyInvoke("dispose");
     }
+
+
+    [Fact] // ADR-0013/0015: under a pager only one page ever scrolls — a paged result of
+           // any total is the prescribed shape, and refusing it would refuse the
+           // Consumer for having done the prescribed thing
+    public void A_paged_result_of_any_size_is_not_refused()
+    {
+        var tooMany = (int)(ViewportGeometry.MaxScrollHeightPx / RowHeightPx) + 1;
+
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(10))
+            .Add(g => g.TotalCount, tooMany)
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.RowHeight, RowHeightPx)
+            .Add(g => g.ViewportHeight, ViewportHeightPx)
+            .Add(g => g.PageSize, 100));
+
+        Assert.NotNull(cut.Find(".ex-pager"));
+    }
 }

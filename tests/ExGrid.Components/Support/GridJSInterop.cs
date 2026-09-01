@@ -16,16 +16,23 @@ internal sealed class GridJSInterop
 
     private readonly JSRuntimeInvocationHandler<ScrollOffset> _offset;
     private readonly JSRuntimeInvocationHandler _setOffset;
+    private readonly JSRuntimeInvocationHandler _blur;
 
     private GridJSInterop(
         JSRuntimeInvocationHandler<ScrollOffset> offset,
         JSRuntimeInvocationHandler setOffset,
+        JSRuntimeInvocationHandler blur,
         JSRuntimeInvocationHandler dispose)
     {
         _offset = offset;
         _setOffset = setOffset;
+        _blur = blur;
         Dispose = dispose;
     }
+
+    /// <summary>How many times Escape's Leave has released the grid's focus — the way
+    /// "the grid was not blurred" is observable without a browser (ADR-0012).</summary>
+    internal int BlurCount => _blur.Invocations.Count;
 
     /// <summary>The handle's own dispose — asserted by the teardown test (ADR-0018).</summary>
     internal JSRuntimeInvocationHandler Dispose { get; }
@@ -56,9 +63,18 @@ internal sealed class GridJSInterop
         setOffset.SetVoidResult();
         var blur = handle.SetupVoid("blur");
         blur.SetVoidResult();
+
+        // The Cell Editor's mode reaching the key gate (ADR-0010). The tests drive
+        // OnKeyAsync directly, so the mode only has to be accepted here.
+        var setEditing = handle.SetupVoid("setEditing", _ => true);
+        setEditing.SetVoidResult();
+        // Whether any column edits, re-told when a parameter change flips it
+        // (ADR-0010/0020) — accepted for the same reason.
+        var setCanEdit = handle.SetupVoid("setCanEdit", _ => true);
+        setCanEdit.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
-        return new GridJSInterop(offset, setOffset, dispose);
+        return new GridJSInterop(offset, setOffset, blur, dispose);
     }
 
     /// <summary>What the next <c>getScrollOffset</c> answers — the browser scroll

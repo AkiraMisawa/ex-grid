@@ -32,7 +32,7 @@ public class ScrollbarGutterTests : GridTestContext
 
     private static Task ReportGutterAsync(
         IRenderedComponent<ExGrid<TestRow>> cut, double widthPx, double heightPx)
-        => cut.InvokeAsync(() => cut.Instance.OnScrollbarGutterChangedAsync(widthPx, heightPx));
+        => cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(widthPx, heightPx, 0, 0));
 
     [Fact] // ADR-0013: with overlay scrollbars nothing changes — not the output, and not the render count
     public async Task A_gutter_of_zero_paints_exactly_what_it_painted_before()
@@ -177,6 +177,6 @@ public class ScrollbarGutterTests : GridTestContext
         var instance = cut.Instance;
         await cut.InvokeAsync(() => ((IAsyncDisposable)instance).DisposeAsync().AsTask());
 
-        await instance.OnScrollbarGutterChangedAsync(GutterPx, GutterPx);
+        await instance.OnViewportReportAsync(GutterPx, GutterPx, 0, 0);
     }
 }

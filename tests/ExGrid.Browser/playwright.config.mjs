@@ -14,13 +14,17 @@ export default defineConfig({
     // Retrying would turn "the scrollbar covers the Focus here" into an intermittent
     // report, which is the opposite of what this suite is for.
     retries: 0,
+    // Both target browsers, because ADR-0017 says both are verified: "Passing on one
+    // does not satisfy the requirement." Each channel resolves a browser that is
+    // already on the machine rather than one downloaded into the repository — what
+    // this suite asks about is what the real browser on the real OS does, so a
+    // bundled build would be answering for the wrong one. A machine without Edge
+    // fails that project by name, which is the honest outcome (ADR-0026).
+    projects: [
+        { name: 'chrome', use: { channel: 'chrome' } },
+        { name: 'msedge', use: { channel: 'msedge' } },
+    ],
     use: {
-        // The Chrome that is already on the machine, rather than a browser downloaded
-        // into the repository. Chromium is the target (ADR-0017), and what this suite
-        // is asking about — how wide the platform draws a scrollbar — is a question
-        // about the real browser on the real OS, so a bundled build would be answering
-        // for the wrong one.
-        channel: 'chrome',
         // Headed by default, which is not a preference. Measured on macOS 15 / Chrome:
         // headless keeps overlay scrollbars on the horizontal axis whatever CSS asks
         // for, so the row band's 15px could not be reproduced there at all and the
