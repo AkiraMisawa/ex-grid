@@ -27,6 +27,7 @@
        string to announce it with (ADR-0035, A11Y-16). Announcing it is Chrome's, so this one is
        a live region where the confirmations above are not: they report what did happen. *@
     <span id="paste-refused-status" role="status">Paste refused: @_pasteRefusedStatus</span>
+    <span id="edit-discarded-status" role="status">Edit discarded: @_editDiscardedStatus</span>
     <span id="order-status">Order: @string.Join(",", _columns.Select(c => c.Name))</span>
     <span id="width-status">Width: @_widthStatus</span>
 </p>
@@ -45,6 +46,7 @@
         OnPaste="OnPaste"
         OnCopyRefused="OnCopyRefused"
         OnPasteRefused="OnPasteRefused"
+        OnEditDiscarded="OnEditDiscarded"
         OnColumnWidthChanged="OnWidthChanged"
         OnColumnOrderChanged="OnOrderChanged"
         OnColumnHidden="OnHidden"
@@ -123,6 +125,7 @@
     private string _pasteStatus = "—";
     private string _copyStatus = "—";
     private string _pasteRefusedStatus = "—";
+    private string _editDiscardedStatus = "—";
     private string _widthStatus = "—";
 
     private void OnEdit(GridEditIntent<DemoTrade> intent)
@@ -218,6 +221,19 @@
                 "SingleCellTarget — reselect a target of the same shape",
             _ => reason.ToString(),
         }, s => _pasteRefusedStatus = s);
+
+    /// <summary>The typing is already gone when this arrives; what a Consumer owes the
+    /// user is the reason (ADR-0011). Announced, not merely painted — nobody asked for
+    /// this to happen, so nobody is watching for it.</summary>
+    private void OnEditDiscarded(EditDiscardReason reason)
+        => Status(reason, reason switch
+        {
+            EditDiscardReason.OrderChanged =>
+                "OrderChanged — the rows were reordered while you were typing, so the entry was dropped",
+            EditDiscardReason.RowLeftTheWindow =>
+                "RowLeftTheWindow — that row is no longer loaded, so the entry could not be placed",
+            _ => reason.ToString(),
+        }, s => _editDiscardedStatus = s);
 
     private void OnWidthChanged(ColumnWidthChange change)
     {

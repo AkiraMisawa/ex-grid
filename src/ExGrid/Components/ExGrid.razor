@@ -377,6 +377,9 @@
     /// </summary>
     private static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(150);
 
+    /// <summary>Set while a render is being prepared, raised once it has been.</summary>
+    private EditDiscardReason? _pendingDiscard;
+
     /// <summary>How often the edge band scrolls while a drag holds the pointer in it
     /// (ADR-0008). Provisional the way the band's own numbers are — the shape is the
     /// decision, the period is not.</summary>
@@ -688,6 +691,14 @@
     /// the one whose message says reselecting a target of the same shape will work; the
     /// editability reason is the one where no reselection of that shape ever will.</summary>
     [Parameter] public EventCallback<PasteRefusalReason> OnPasteRefused { get; set; }
+
+    /// <summary>Text the user had typed and not committed, thrown away because the grid
+    /// could no longer place it (ADR-0011): the order changed under the editor, or the
+    /// row left the Window. Neither is the user's own doing — a Consumer-pushed sort or
+    /// refresh lands and the typing goes — so the grid says so rather than leaving the
+    /// loss to be guessed at. Chrome writes the sentence and announces it (A11Y-16); the
+    /// grid holds no strings.</summary>
+    [Parameter] public EventCallback<EditDiscardReason> OnEditDiscarded { get; set; }
 
     /// <summary>
     /// Answers a copy whose selection runs beyond the Window on the push form
@@ -1290,6 +1301,11 @@
             _editText = "";
             _editorNeedsFocus = false;
             _jsEditingDirty = true;
+            // Announced, not silent: the user typed and something they did not do took
+            // it away. Raised from OnAfterRenderAsync for the reason the Range Request
+            // is — a Consumer handler run inside this render stack would re-enter the
+            // same batch.
+            _pendingDiscard = EditDiscardReason.OrderChanged;
         }
         PrepareRender();
     }
@@ -1604,6 +1620,12 @@
         await RevealFocusIfNeededAsync();
         await RaiseRangeIfUncoveredAsync();
         await RaiseSelectionIfChangedAsync();
+        if (_pendingDiscard is { } discarded)
+        {
+            _pendingDiscard = null;
+            if (OnEditDiscarded.HasDelegate)
+                await OnEditDiscarded.InvokeAsync(discarded);
+        }
     }
 
     private async Task AttachScrollAsync()
@@ -3157,9 +3179,15 @@
         await EndEditingAsync();
         var slice = cell.Row - _windowStart;
         // The row left the Window mid-edit: there is no identity to commit onto, and a
-        // positional guess would land the value on a different row (ADR-0011).
+        // positional guess would land the value on a different row (ADR-0011). The text
+        // is gone either way, so the grid says which rule took it — this one is on a
+        // gesture, so it is raised here rather than deferred.
         if (slice < 0 || slice >= _window.Count)
+        {
+            if (OnEditDiscarded.HasDelegate)
+                await OnEditDiscarded.InvokeAsync(EditDiscardReason.RowLeftTheWindow);
             return;
+        }
         if (OnEdit.HasDelegate)
             await OnEdit.InvokeAsync(new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text));
     }

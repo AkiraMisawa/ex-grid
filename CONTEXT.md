@@ -296,6 +296,15 @@ against a **Refusal**, which judges the operation
 ([ADR-0034](./docs/adr/0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)).
 _Avoid_: validation result, error (that is a Cell State), refusal (that judges the operation)
 
+**Edit Discard**:
+Text a user typed into the Cell Editor and never committed, thrown away because the grid can no
+longer place it — the order changed beneath the editor, or the row left the Window. The grid
+raises the reason rather than losing it quietly, and the loss is not the user's own doing
+([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+Distinct from a **Refusal**, which stops an operation before anything is lost, and from an
+**Edit Verdict**'s Reject, which keeps the text where the user can correct it.
+_Avoid_: cancel (that is Escape), rollback, revert
+
 **Refusal**:
 The grid's own "no", raised on **the operation** — its target, its shape, its size — and never on
 the value being written: a copy cap, a misaligned selection, a paste shape, a target covering a

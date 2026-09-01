@@ -205,6 +205,31 @@ side effect; ADR-0032 carries the rules.
 **That a reorder clears the selection was already decided above** and is untouched: the column axis
 re-maps exactly as the row axis does.
 
+## The discard is announced
+
+*(Added after the fact.)* Dropping the selection under an open editor also throws away text the
+user had typed and not committed — the cell the editor floats over no longer names the row it was
+opened on, so committing would put the value on a stranger. The same loss happens on the other
+side of the same rule: if the row has left the Window by the time the commit lands, there is no
+row instance to carry the Edit Intent's identity, and a positional guess would land the value
+somewhere else.
+
+Both discards were **silent**. That is the failure this project's first principle names, with an
+aggravation: **the user did not do this.** A Consumer-pushed sort or refresh lands, and the
+number they were typing is gone with no gesture of theirs to associate it with. There is nothing
+to reason from.
+
+So the grid raises `OnEditDiscarded` with the reason — `OrderChanged` or `RowLeftTheWindow`. It
+carries no sentence, as ever: Chrome writes the wording and, because nobody provoked this, must
+announce it rather than only paint it (A11Y-16's rule, for the same reason).
+
+The decision **not to commit** is unchanged and is what the rest of this ADR argues for. What
+changed is that the grid now says the value was lost, rather than leaving the user to notice.
+
+Rejected: **committing the text onto the row instance captured when the editor opened.** It loses
+nothing and is wrong for a different reason — the user never pressed Enter, and turning an
+abandoned draft into a commit is a worse failure than losing it loudly.
+
 ## Consequences
 
 - **Selection is cleared when the Row Sequence Version changes — and the version names the

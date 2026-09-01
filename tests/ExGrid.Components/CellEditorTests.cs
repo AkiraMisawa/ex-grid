@@ -30,7 +30,8 @@ public class CellEditorTests : GridTestContext
         Action<GridPasteIntent>? onPaste = null,
         TestRow[]? rows = null,
         int? totalCount = null,
-        Action<PasteRefusalReason>? onPasteRefused = null)
+        Action<PasteRefusalReason>? onPasteRefused = null,
+        Action<EditDiscardReason>? onEditDiscarded = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Window, rows ?? TestRows.Many(50))
@@ -45,6 +46,8 @@ public class CellEditorTests : GridTestContext
                 ps.Add(g => g.OnPaste, onPaste);
             if (onPasteRefused is not null)
                 ps.Add(g => g.OnPasteRefused, onPasteRefused);
+            if (onEditDiscarded is not null)
+                ps.Add(g => g.OnEditDiscarded, onEditDiscarded);
         });
 
     private static Task PressAsync(
@@ -351,6 +354,39 @@ public class CellEditorTests : GridTestContext
         Assert.Empty(pastes);
         // And it is no longer silent: the refusal reaches the Consumer (ADR-0035).
         Assert.Equal(PasteRefusalReason.TargetNotEditable, refused);
+    }
+
+    [Fact] // ADR-0011 / ED-21: a sort landing under an open editor takes the typing, and says so
+    public async Task Text_discarded_because_the_order_changed_is_announced()
+    {
+        EditDiscardReason? discarded = null;
+        var cut = RenderGrid(onEditDiscarded: r => discarded = r);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+        Assert.NotEmpty(cut.FindAll(".ex-editor"));
+
+        cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 1));
+
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.Equal(EditDiscardReason.OrderChanged, discarded);
+    }
+
+    [Fact] // ADR-0011 / ED-21: the row left the Window before the commit landed, so there is no identity
+    public async Task Text_discarded_because_the_row_left_the_window_is_announced()
+    {
+        EditDiscardReason? discarded = null;
+        var edits = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(onEdit: edits.Add, totalCount: 500, onEditDiscarded: r => discarded = r);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+
+        // The Window moves on beneath the open editor, with the order unchanged — so the
+        // selection is kept (ADR-0011) and only the row instance is gone.
+        cut.Render(ps => ps.Add(g => g.WindowStart, 100).Add(g => g.Window, TestRows.Many(50)));
+        await PressAsync(cut, "Enter");
+
+        Assert.Empty(edits);
+        Assert.Equal(EditDiscardReason.RowLeftTheWindow, discarded);
     }
 
     [Fact] // ADR-0035 / ED-19: the refusal judged the operation, so it does not take the text with it
