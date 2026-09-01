@@ -184,6 +184,20 @@ test('Ctrl+Enter fill across a non-editable column is refused, and says so (CP-1
     await expect(grid(page).locator('.ex-editor')).toHaveValue('7');
 });
 
+test('a refusal is announced, not only painted (A11Y-16, ADR-0035)', async ({ page }) => {
+    // The grid has an enum and no sentence, so it cannot announce this one; whatever Chrome
+    // renders a refusal into has to be a live region or the refusal is silent to a reader
+    // who cannot see it. The reference Chrome meets its own contract here.
+    await expect(page.locator('#paste-refused-status')).toHaveAttribute('role', 'status');
+
+    await page.evaluate(() => navigator.clipboard.writeText('intruder'));
+    await clickCell(page, 0, 0);                   // Book, never declared editable
+    await page.keyboard.press('Shift+ArrowRight');
+    await page.keyboard.press('ControlOrMeta+V');
+
+    await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
+});
+
 test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) => {
     await clickCell(page, 0, 1);
     const focusBefore = await grid(page).getAttribute('aria-activedescendant');

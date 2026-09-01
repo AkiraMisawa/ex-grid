@@ -166,6 +166,8 @@ them.
 | **A11Y-12** | MUST | Selection Overlay elements are `aria-hidden="true"` (ADR-0008) | Layer 2 | no unnamed `div` appears as a child of `role="grid"` |
 | **A11Y-13** | MUST | A Header Group cell carries `aria-colspan` equal to its member count (ADR-0032 hands this to ADR-0033) | Layer 2 with a three-member group | `aria-colspan="3"` |
 | **A11Y-14** | MUST | Announcing costs no row render — A11Y is not a way back into ADR-0008's rejected path | Layer 2 render counts across a drag | identical to the counts RR-4 asserts without a live region |
+| **A11Y-15** | MUST | A **Reject** is announced: the verdict's message is relayed once into the root's `polite` live region, and the editor carries `aria-invalid` (ADR-0033/0034) | Layer 2 | one live-region write per Reject, carrying the Consumer's text verbatim; nothing written on Accept or Flag |
+| **A11Y-16** | MUST | Whatever Chrome renders a **refusal** into is a live region — the grid holds no string for it and cannot announce it (ADR-0035) | Layer 3 against the reference Chrome | the DemoHost's refusal status is a live region and a refusal writes into it |
 
 ### 4.2 Header Groups (HG) — ADR-0032
 

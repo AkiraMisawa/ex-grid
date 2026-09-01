@@ -83,6 +83,21 @@ cells.
 A keystroke that moves the Focus without changing the selection announces nothing: the Focus moved,
 `aria-activedescendant` moved with it, and the assistive technology reads the new cell itself.
 
+## The live region has a second writer
+
+*(Added by [ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md).)*
+The region was written for the selection extent and nothing else. A **Reject** writes to it too:
+a rejected commit is a keypress that deliberately does nothing, and a user who cannot see the
+editor's border and its popover would otherwise be told nothing at all.
+
+It stays **one region and stays `polite`**. A Reject changes no selection, so it never races the
+sentence this ADR was written for, and `polite` is right for a message the user provoked and is
+waiting on. The criteria that make this region quiet — a Focus move announces nothing, a drag
+announces once on settle — are untouched, because neither is a commit.
+
+The grid still writes no sentence of its own: the text is the Consumer's, carried in the verdict
+and relayed verbatim. What the grid owns is the region, which is what this ADR said it owned.
+
 ## The dangling reference, which will be hit in implementation
 
 `aria-activedescendant` must name an element that is **in the DOM**. The Focus normally is —

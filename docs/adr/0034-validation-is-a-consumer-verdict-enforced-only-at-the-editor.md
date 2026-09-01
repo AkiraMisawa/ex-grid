@@ -55,6 +55,13 @@ applying.** This is Excel's *Stop* style, and the product claims Excel-like oper
   the editor's box — the shape [ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)
   already sketched.
 
+**A Reject is announced.** The verdict's message is relayed into the root's existing live region
+([ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)) — `polite`,
+one region, no second writer of sentences: the text is the Consumer's and the grid passes it
+through. Without it a rejected commit is, for a user who cannot see the border and the popover, a
+key that did nothing. The editor also carries `aria-invalid` and is described by the popover, but
+that is read when the field is read, not at the moment the user is refused.
+
 Rejected: **click-away as an implicit Escape** (keyboard gestures hold, a stray click
 abandons). Gentler, but a slipped click then discards input silently — the quiet loss the
 first principle exists to forbid.

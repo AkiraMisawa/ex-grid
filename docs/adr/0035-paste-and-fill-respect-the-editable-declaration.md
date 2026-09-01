@@ -114,7 +114,14 @@ forbid a commit the grid has no objection to, turning a mis-sized selection into
 - **A grid with no editable column refuses every paste and every fill.** That is the honest
   reading of the declaration; the JS key gate already refuses to open an editor there.
 - **The refusal reason is `TargetNotEditable`, and the message is Chrome's to write**
-  (ADR-0010). The grid holds no UI strings.
+  (ADR-0010). The grid holds no UI strings — and therefore **cannot announce this one**. Where a
+  Reject carries the Consumer's sentence through the grid and is relayed into the root's live
+  region (ADR-0034), a refusal arrives as an enum and the sentence exists only in Chrome. So the
+  announcement is Chrome's too: **whatever renders a refusal must be a live region**, or a user
+  who cannot see it is told nothing while being told, in the code's own terms, that the write was
+  "always reported". The obligation is stated here, in `tests/ExGrid.Browser/README.md`, and met
+  by the reference Chrome in the DemoHost; a Chrome that ignores it is silent, and that is the
+  cost of the grid holding no strings.
 - **Hiding a column does not change this.** Editability is judged on the columns the selection
   actually covers, in the current order.
 - The Consumer is still free to ignore an approved paste. `Editable` is the grid's gate, not a
