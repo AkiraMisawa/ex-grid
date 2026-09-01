@@ -18,6 +18,29 @@ public class ClipboardParseTests
         Assert.Equal([["a", "b"], ["c", "d"]], block);
     }
 
+    [Fact] // ADR-0005 / CP-20: a thousands separator is not a cell boundary
+    public void A_comma_is_never_a_cell_boundary()
+    {
+        Assert.Equal([["1,234"]], ClipboardParse.Parse(null, "1,234"));
+        // European notation, where the comma is the decimal point and the dot groups.
+        Assert.Equal([["1.234,56"]], ClipboardParse.Parse(null, "1.234,56"));
+        Assert.Equal([["USD 1,234.00"]], ClipboardParse.Parse(null, "USD 1,234.00"));
+    }
+
+    [Fact] // ADR-0005 / CP-20: the shape a CSV heuristic would read as two columns is one column of money
+    public void Lines_of_comma_grouped_numbers_stay_one_column()
+    {
+        var block = ClipboardParse.Parse(null, "1,234\r\n5,678\r\n");
+
+        Assert.Equal([["1,234"], ["5,678"]], block);
+    }
+
+    [Fact] // ADR-0005 / CP-20: the tab still splits, and splits only where it is
+    public void A_tab_is_the_only_cell_boundary()
+    {
+        Assert.Equal([["a,b", "c"]], ClipboardParse.Parse(null, "a,b\tc"));
+    }
+
     [Fact] // Excel always appends a trailing break; it is not an extra empty row
     public void A_trailing_line_break_is_not_a_row()
     {

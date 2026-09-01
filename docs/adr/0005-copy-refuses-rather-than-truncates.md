@@ -132,6 +132,42 @@ Excel preferring HTML.
 The shape rules for paste are in
 [ADR-0014](./0014-paste-shape-rules-and-selection-count.md).
 
+## A cell boundary is a tab, and is never guessed *(added later)*
+
+The clipboard's tabular convention is **TSV**. Excel, Sheets and every spreadsheet put
+tab-separated text in `text/plain` and a table in `text/html`; none of them put commas there.
+That single fact answers both halves of a question that looks like it needs a heuristic:
+
+- **`1,234` pasted as text is one cell.** A thousands separator is not a cell boundary, because
+  nothing that produces a real multi-cell copy would have used a comma to say so.
+- **A CSV opened in Excel and copied back out keeps its structure**, because by then it is no
+  longer CSV — Excel has parsed it into cells and writes tabs. Nothing needs to be guessed to
+  preserve it.
+
+**Decision: the grid never sniffs a delimiter. A tab and an HTML table cell are the only cell
+boundaries; a line break is the only row boundary.** This was true of the implementation from the
+first day and was written down nowhere, which is the state a convenience feature walks into.
+
+The convenience in question looks harmless — *when the text holds no tabs, read it as CSV* — and
+its worked example is the one this component cannot afford. A column of prices copied out of a
+text editor,
+
+```
+1,234
+5,678
+```
+
+is exactly the shape that heuristic reads as two rows of two columns. It is consistent, it is
+plausible, and it is wrong; and the person who discovers it is the one who pasted money into a
+grid that displays money. The same heuristic takes a European `1.234,56` apart, and a currency
+string with it.
+
+Rejected: **sniffing CSV when no tab is present**, above. Rejected: **a `PasteDelimiter`
+parameter**, which keeps the default safe and makes the same grid read the clipboard differently
+per Consumer — and in its CSV mode `1,234` still splits, so it does not solve the problem, it
+relocates it to a Consumer who did not know they were choosing it. A Consumer that genuinely
+needs CSV converts it before it reaches the clipboard; the grid does not, deliberately.
+
 ## Copy with headers *(added when the context menu was designed)*
 
 [ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md) needed a
