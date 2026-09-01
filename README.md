@@ -12,7 +12,7 @@ Two products share this repository and ship as separate packages
 pure-logic core and the component layer exist, virtualised on both axes, with pinned
 columns and with selection painted and driven by the mouse. The keyboard, editing and
 the clipboard are still to come. The specification lives
-in [`docs/adr/`](docs/adr/) (23 decision records) and the domain glossary in
+in [`docs/adr/`](docs/adr/) (30 decision records) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
 ## Getting started

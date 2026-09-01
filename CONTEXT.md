@@ -168,7 +168,51 @@ The parts of the grid's own UI that can be substituted — the filter panel, the
 cell editor, the loading indicator. **It renders and calls back; it does not decide meaning**
 (which operators exist, and what a filter means, are the core's). Substituting it does not change
 behaviour.
-_Avoid_: theme, skin (those name appearance only), template
+_Avoid_: skin (appearance only is a **Theme**, a term of its own below), template
+
+**Theme**:
+The appearance of one instance — the values of its Visual Tokens. It travels entirely in CSS,
+set on any element wrapping the instance root, and never through C#: a palette edit or a
+dark/light switch costs no render
+([ADR-0027](./docs/adr/0027-appearance-travels-in-css-geometry-travels-in-csharp.md)).
+Distinct from Chrome — Chrome renders behavioural UI and calls back; a Theme only colours what
+is already painted.
+_Avoid_: skin, style, look and feel
+
+**Wrapper**:
+A package that adapts one design system to the presentation contract: it maps the system's
+palette to a Theme, its density words onto Density, supplies Cell Metrics for its font, and adds
+the system's outer chrome around the instance root. It owns no geometry, no DOM and no state
+([ADR-0030](./docs/adr/0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)).
+A Consumer's own CSS file doing the same is a minimal Wrapper.
+_Avoid_: theme package, skin, integration (ExGrid.Fluxor integrates a store and wraps nothing)
+
+**Density**:
+A named preset — Comfortable / Standard / Compact / Excel — resolving into a complete Grid
+Metrics, so its numbers are consistent with each other. An explicitly passed value beats the
+preset, per value; the default is Compact, which is today's numbers
+([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)). No design
+system's density word is the grid's: a Wrapper maps its own onto these.
+_Avoid_: spacing, size, compact mode (Compact is one preset, not the concept)
+
+**Grid Metrics**:
+The single resolved geometry of an instance — row and header heights, font size, digit width,
+paddings. The virtualisation arithmetic, the overlays, the editor box, Auto width and `####`
+all read it, and the Geometry Tokens the DOM lays out with are emitted from it, so arithmetic
+and paint cannot disagree
+([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)).
+_Avoid_: layout, dimensions, theme (metrics are geometry, not appearance)
+
+**Geometry Token / Visual Token**:
+The two kinds of `--ex-*` custom property. A **Geometry Token** is written inline on the
+instance root from the Grid Metrics and is read-only — an inline declaration outranks any
+stylesheet, and overriding one is unsupported. A **Visual Token** is only ever read by the
+stylesheet, with a default, and is the whole surface a Theme sets. The metrics-bearing Visual
+Tokens — font family and weight — oblige whoever sets them to supply new Cell Metrics
+([ADR-0027](./docs/adr/0027-appearance-travels-in-css-geometry-travels-in-csharp.md),
+[ADR-0029](./docs/adr/0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)).
+_Avoid_: CSS variable (the mechanism, not the contract), design token (suggests a
+design-system-wide vocabulary; these are one component's)
 
 **Primary Modifier**:
 The modifier key that means "add to what is selected" — Ctrl+click adding a range, Ctrl+A
@@ -288,6 +332,16 @@ back where virtualisation found it
 **View State**, not a property of the Column — combined with the column order the Consumer owns,
 "the leading N" expresses it.
 _Avoid_: frozen, sticky, locked (those name the mechanism or Excel's wording, not the state)
+
+**Header Group**:
+A labelled rectangle over adjacent leaf columns in the tiers above the header row, declared by
+**member column names** — `colspan`/`rowspan` expressiveness without a column tree. It paints, and
+it is the **drag unit** for reordering (a leaf drag clamps at its group's edge); it carries no
+data behaviour — no collapse, no group sort, no aggregate — the line Row Kind draws for rows, on
+the other axis. A column no tier covers has its leaf header stretch the full band; members no
+longer adjacent, an unknown member, or a rectangle straddling the pinned boundary are refused by
+name ([ADR-0032](./docs/adr/0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)).
+_Avoid_: column group (no data behaviour is grouped), banded header, merged cells
 
 **Row Kind**:
 What a row represents — detail / group / total. **Distinct from Cell State**: that names the

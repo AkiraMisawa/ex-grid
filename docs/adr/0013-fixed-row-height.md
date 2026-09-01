@@ -109,6 +109,10 @@ about what expands.
   header-height parameter is a deliberate simplification, and **the thing that would overturn it
   is tiered headers** — a header several rows deep stops being one row tall, and the meaning of
   `ViewportHeight` changes with it. That is recorded as open in ADR-0004.
+  *(It arrived: [ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)
+  separates `HeaderHeight` and proves the cancellation holds for any band height, and
+  [ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md) stacks tiers of
+  it. The simplification ends; the arithmetic survives.)*
   *(One consequence is not merely left standing but refused: the header band spends one row height
   of the browser's 2^25 px scrolling budget, so the true ceiling is one row below the
   `MaxScrollHeightPx` guard — about 1.19 million rows either way, and paging carries anything
@@ -160,3 +164,28 @@ about what expands.
   Column does **not**, because it covers the Viewport's edge without occupying anything ahead of
   the content, so its width has to come off the offset or the revealed column lands underneath
   it. The browser's `scrollIntoView()` knows neither, which is why it is not used.
+
+## Re-examined while designing the presentation contract — the decision stands
+
+*(Added with ADR-0027–0030. A design-system Wrapper is where "can rows wrap?" arrives from, so
+the question was asked again deliberately rather than left to this ADR's original argument.)*
+
+| | **A. Fixed (this ADR)** | B. Declared variable | C. Measured variable |
+|---|---|---|---|
+| Row position | one multiplication | prefix sum — and the grid holds only a Window (ADR-0001), so the **Consumer** would have to own the sum and push offsets with every Window | unknowable until rendered |
+| Scrollbar | exact | exact, at the Consumer's expense | an estimate that shifts as you scroll — the judder ADR-0016 refuses on the other axis |
+| Memoisation (ADR-0003) | intact | intact (heights are declared, not measured) | broken: measuring requires the render memoisation exists to skip |
+| Overlays / editor (ADR-0008/0010) | arithmetic | arithmetic over pushed offsets | measurement-dependent |
+| JS (ADR-0021) | none | none | per-row observation or layout reads — off the allowlist |
+| Verdict | **kept** | coherent; **refused for now** — a real per-push obligation on every Consumer, bought for a need no Consumer has | **refused outright** — it overturns ADR-0003, 0008, 0010, 0016 and 0021 at once |
+
+B is recorded as the door to open if in-row expansion is ever truly needed; C is not a door.
+
+What keeps A true is now stated as guards rather than assumed
+([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)/[0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)):
+cells never wrap and no wrap mode is offered; a validation message is Cell State plus a popover,
+never an element in the row; the Cell Editor is sized by the core to exactly the cell's box; rules
+between rows and columns are painted (gradients, inset shadows), never borders, so they occupy no
+layout; and a Template Column's content can only be **clipped** by its cell, never grow the row —
+the row's height is declared, so an over-tall template shows itself cut off, visibly wrong rather
+than quietly bending the arithmetic.

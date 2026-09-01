@@ -39,6 +39,11 @@ case, which is the case where the gutter never changes.
 - **Re-measuring happens on change and on nothing else.** No polling, no read per render.
 - **A Consumer that sets `scrollbar-width: thin` is followed automatically**, because the
   observation is of the outcome rather than of a platform.
+- *(Refined while designing the presentation contract: the same notification is how a Viewport
+  declared as `Fill` learns its size — the observer already watches the content box, so the
+  report grows a field rather than this list growing an entry
+  ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)). The distinction
+  this section draws is unchanged: the grid is told; it never asks.)*
 
 Rejected on the way here:
 
