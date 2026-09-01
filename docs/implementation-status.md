@@ -33,19 +33,23 @@ places out of scope for the core. What remains is verification depth, not featur
 `verification/2026-09-01/results.md` for the honest pass/blocked ledger — that record is the
 macOS one; a run now files itself under `verification/<date>-<platform>/`.
 
-**ADR-0005 gained two sections and none of them are built**: copy with headers (CP-17/CP-18) and
-the rule that a menu copy always takes the asynchronous clipboard route (CP-19). CP-19 is the one
-holding an unverified claim — that Chromium raises no prompt for it — and layer 3 is where that
-is settled.
+**ADR-0034 (validation) and ADR-0036 (the context menu) are built**, along with the three
+sections ADR-0005 gained on the way: copy with headers, the rule that a menu copy always takes
+the asynchronous clipboard route, and the rule that no delimiter is ever guessed. ADR-0010 is
+amended as ADR-0036 asked — `GridCommand` has no `Label`, and the built-in English wording sits
+behind a `CommandLabel` seam — so the core holds no UI strings, which ADR-0035 had been claiming
+before it was true.
 
-**ADR-0036 (the context menu) is accepted and unimplemented.** It also amends ADR-0010:
-`GridCommand` loses its `Label`, and the core's built-in English command labels move behind a
-label seam. Nothing of it is built, including that amendment — so the core still holds the UI
-strings ADR-0035 says it does not.
+CP-19's claim is no longer unverified: a menu copy writes without a permission prompt on Chrome
+and on Edge, and layer 3 says so rather than the ADR assuming it.
 
-**ADR-0034 (validation) is accepted and unimplemented** — decided after this snapshot was
-taken. Its criteria (ED-14…ED-18, ED-20 and A11Y-15, and ED-12's Reject clause) stand failing by design: the
-verdict seam, the message channel, the error popover and the bundled ruleset are not built.
+**One criterion is knowingly failing, and is not relaxed to hide it.** The error popover opens on
+the Focus and **not on hover** (ED-17b): a hover that knows which cell it is over needs a
+pointer-move handler on the Viewport, which is one interop call per move — the per-move cost
+ADR-0008 measured and refused, and the reason `_dragHandler` is attached only while dragging.
+Building it is a decision of its own (measure and pay it; a cached handler on flagged cells only,
+against ADR-0003's memoisation; or a fifth JavaScript allowlist entry) and none has been made.
+The keyboard trigger, which ADR-0034 calls the point, is built.
 
 **Same-day review round:** an adversarial 17-candidate review of this drop confirmed all
 17 (pager-vs-pre-pager arithmetic, the editor's missing pointer teardown, and a cluster
@@ -85,6 +89,8 @@ against the newer of last-event and last-write (recorded in ADR-0012), and pinne
 | 0031 | `dir="ltr"` on the root | `GridRenderingTests` |
 | 0032 | **Header Groups** — rectangles, refusals, the band, group/leaf drag units | `HeaderGroupTests`, `HeaderGroupRenderingTests` |
 | 0033 | **ARIA** — the root surface, absolute indices, `aria-activedescendant`, the live region | `AccessibilityTests` |
+| 0034 | **The verdict seam** — Accept/Flag/Reject at the commit, the editor holding under a Reject, the message channel and its popover, the fill's verdict, and the bundled ruleset. Not the hover trigger (ED-17b) | `ValidationTests`, `GridRulesetTests`, `features.spec.mjs` |
+| 0036 | **The context menu** — the secondary click's meaning, the core's clipboard commands and the Consumer's, the keyboard trigger, and `GridCommand` losing its label | `ContextMenuTests`, `FilterChromeTests`, `features.spec.mjs` |
 | 0035 | **The Editable declaration gates writes** — a paste or Ctrl+Enter fill covering a non-editable column is refused whole, and the fill refusal is no longer silent (CP-16) | `PasteRuleTests`, `ClipboardWiringTests`, `CellEditorTests` |
 
 ## Not in the core, by decision

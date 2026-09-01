@@ -3,8 +3,8 @@
     "PST-6": {
       "sourceCells": 400,
       "bytes": 10400400,
-      "parseAndIntentMs": 2575,
-      "nextKeyMs": 14
+      "parseAndIntentMs": 2626,
+      "nextKeyMs": 13
     },
     "DOM-5": {
       "elements": 246,
@@ -12,7 +12,7 @@
       "rows": 21
     },
     "BIG-7": {
-      "mountToFirstPaintedRowMs": 718,
+      "mountToFirstPaintedRowMs": 732,
       "totalRows": 100000
     }
   },
@@ -20,7 +20,7 @@
     "PST-6": {
       "sourceCells": 400,
       "bytes": 10400400,
-      "parseAndIntentMs": 2740,
+      "parseAndIntentMs": 2564,
       "nextKeyMs": 16
     },
     "DOM-5": {
@@ -29,7 +29,7 @@
       "rows": 21
     },
     "BIG-7": {
-      "mountToFirstPaintedRowMs": 765,
+      "mountToFirstPaintedRowMs": 760,
       "totalRows": 100000
     }
   }

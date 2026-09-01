@@ -52,7 +52,9 @@
         OnColumnOrderChanged="OnOrderChanged"
         OnColumnHidden="OnHidden"
         OnPinnedCountChanged="OnPinned"
-        ContextCommands="ContextCommands" />
+        ContextCommands="ContextCommands"
+        CellState="_rules.StateOf"
+        CellMessageOf="_rules.MessageOf" />
 
 <h2>A second, independent instance</h2>
 <p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
@@ -67,6 +69,11 @@
 @code {
     private InMemoryGridSource<DemoTrade> _source = default!;
     private InMemoryGridSource<DemoTrade> _second = default!;
+    /// <summary>The bundled ruleset (ADR-0034): owned and driven here, shipped with the
+    /// library. It answers both display channels, so a value that arrived by paste wears
+    /// the same mark as one that was typed.</summary>
+    private readonly GridRuleset<DemoTrade> _rules = new();
+
     private IReadOnlyList<GridColumn<DemoTrade>> _columns = default!;
     private IReadOnlyList<GridColumn<DemoTrade>> _secondColumns = default!;
     private IReadOnlyList<HeaderGroup> _groups = default!;
@@ -92,7 +99,14 @@
 
         _source = GridSource.From(rows);
         _second = GridSource.From(rows.Take(20).ToArray());
+        _rules
+            .Column("Notional", (_, text) => !decimal.TryParse(text, out var value)
+                ? EditVerdict.Reject($"'{text}' is not a number")
+                : value < 0
+                    ? EditVerdict.Flag("a negative notional needs approval")
+                    : EditVerdict.Accept);
         _columns = BuildColumns();
+        _rules.Evaluate(rows, _columns);
         _secondColumns =
         [
             new GridColumn<DemoTrade>("Book", ColumnType.Text, t => t.Book),
@@ -111,8 +125,12 @@
             width: new ColumnWidthSpec(ColumnWidth.Fixed(110)), filterUi: FilterUiMode.Both),
         new("Trader", ColumnType.Text, t => t.Trader,
             width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), editable: true, filterUi: FilterUiMode.Both),
+        // The verdict seam (ADR-0034), wired to the bundled ruleset: an unparseable text
+        // Rejects and the editor holds, a negative notional Flags and is applied wearing
+        // its mark. Which is which is this side's convention, not the grid's.
         new("Notional", ColumnType.Number, t => t.Notional,
-            width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true),
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true,
+            validate: _rules.ValidatorFor("Notional")),
         // Deliberately too narrow for its values: what #### looks like, and what the
         // clipboard must never receive (ADR-0016 / CP-5).
         new("Narrow", ColumnType.Number, t => t.Notional,
@@ -138,9 +156,16 @@
         // back through the source, and the screen follows the identity change. An
         // unparseable value applies nothing — validation is the Consumer's.
         if (Edited(intent.Row, intent.Column, intent.Value) is { } replacement)
+        {
             _source.ReplaceRow(intent.Row, replacement);
+            // Re-judged after applying, which is the only moment a row rule can be judged
+            // at all (ADR-0034). One call for the rows now held.
+            _rules.Evaluate(_source.Window, _columns);
+        }
         else
+        {
             _editStatus += " (not applied: unparseable)";
+        }
     }
 
     private void OnPaste(GridPasteIntent intent)

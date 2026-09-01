@@ -268,6 +268,42 @@ test('a menu copy writes without a prompt, and with headers (CP-19/CP-17, ADR-00
         .toMatch(/^Trader\r?\n/);
 });
 
+test('a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034)', async ({ page }) => {
+    await clickCell(page, 0, 2);                   // Notional, which carries the verdict
+    await page.keyboard.type('abc');
+
+    await page.keyboard.press('Enter');
+
+    // Every commit gesture stops, and the editor is still standing with the text in it.
+    await expect(grid(page).locator('.ex-editor')).toHaveValue('abc');
+    await expect(grid(page).locator('.ex-editor')).toHaveAttribute('aria-invalid', 'true');
+    await page.keyboard.press('Tab');
+    await expect(grid(page).locator('.ex-editor')).toHaveValue('abc');
+    // The Consumer's own sentence, relayed into the root's live region (A11Y-15).
+    await expect(grid(page).locator('.ex-announce')).toContainText("'abc' is not a number");
+    await expect(page.locator('#edit-status')).not.toContainText('Notional=abc');
+
+    await page.keyboard.press('Escape');
+    await expect(grid(page).locator('.ex-editor')).toHaveCount(0);
+});
+
+test('a Flag applies and is marked, and its message opens on the Focus (ED-16/ED-17, ADR-0034)', async ({ page }) => {
+    await clickCell(page, 0, 2);
+    await page.keyboard.type('-5');
+
+    await page.keyboard.press('Enter');
+
+    // Applied — the intent was byte-identical to an Accept's — and marked afterwards by
+    // the Consumer's ruleset through the display channels.
+    await expect(page.locator('#edit-status')).toContainText('Notional=-5');
+    await expect(grid(page).locator("[id$='r0c2']")).toHaveClass(/ex-state-error/);
+
+    // The popover follows the Focus after 300ms of stillness, and never before.
+    await clickCell(page, 0, 2);
+    await expect(grid(page).locator('.ex-message')).toHaveCount(0);
+    await expect(grid(page).locator('.ex-message')).toContainText('approval', { timeout: 3000 });
+});
+
 test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) => {
     await clickCell(page, 0, 1);
     const focusBefore = await grid(page).getAttribute('aria-activedescendant');
