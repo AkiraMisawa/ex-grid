@@ -116,12 +116,52 @@ Rejected: **a `RowValidate` seam on the grid**, symmetric with `Validate`. Flag-
 the grid would gain nothing but a seam — plus the evaluation timing and cost, which on the
 Consumer side resolve naturally to "when the Overlay is applied".
 
-## Paste is never rejected on value
+## A clipboard paste is never rejected on value
 
 The shape refusals of [ADR-0014](./0014-paste-shape-rules-and-selection-count.md) are
 unchanged, and the grid raises the paste intent **without consulting any verdict function**:
-a veto is a property of an open editor, and during a paste none is open. Excel behaves the
-same way — paste goes through data validation and the invalid cells are circled afterwards.
+a veto is a property of an open editor, and during a clipboard paste none is open. Excel
+behaves the same way — paste goes through data validation and the invalid cells are circled
+afterwards.
+
+*(The heading said "a paste" until [ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md)
+made a Ctrl+Enter fill a 1×1 paste. The word had to narrow: the rationale above is about the
+clipboard, and it does not reach a fill — see the next section.)*
+
+## ...but a fill is a commit, and is judged
+
+A fill would sit on the wrong side of that rule by construction, and must not. The reason the
+clipboard is exempt is that a veto belongs to an open editor and during a paste none is open.
+**During a fill one is.** The value is a single value the user typed a moment ago, in an editor
+still standing — the very moment this ADR chose to ask.
+
+Left unjudged, the gate would point the wrong way: `abc` typed into a date column and committed
+with Enter Rejects and reaches one cell, while the same keystrokes with Ctrl+Enter would reach
+three hundred cells unexamined. The wider operation would carry the weaker gate.
+
+- **The verdict runs once**, against the row the editor was opened on, with the text the editor
+  holds. It cannot run per row: a fill's target legitimately covers rows outside the Window and
+  rows not yet fetched (ADR-0014), so for most of them there is no row instance to pass.
+- **That representative evaluation is sound for the only tier that can stop a fill.** The
+  intended split above makes Reject the unparseable-text tier, and unparseable does not depend
+  on the row — `abc` is not a date anywhere. Row-dependent judgements are Flag-tier, evaluated
+  after apply, per row, by the Consumer's ruleset, exactly as for a clipboard paste. The split
+  stays the Consumer's convention rather than something the grid enforces; a Consumer that
+  Rejects on a row-dependent rule gets one row's answer applied to the whole fill, which is its
+  own choice to make.
+- **A Reject holds the editor and raises nothing** — no paste intent, no cell written — the same
+  hold as any other commit gesture (ED-15).
+- **The Refusal is asked first, the verdict second.** A Refusal judges the operation and never
+  the value, so if the operation is refused there is nothing to ask about the value; the
+  editability refusal keeps its place at the head of the order (ADR-0035).
+
+Rejected: **leaving the fill unjudged**, the literal reading of the previous section. It is
+defensible only while a fill is thought of as a paste, and a fill is a commit that happens to be
+expressed as one.
+
+Rejected: **downgrading a Reject to a Flag for a fill**. It dodges the representative-row
+question, but a Reject means the text cannot be a value at all; applying it anyway would oblige
+the Overlay to hold raw text, which is the thing the Reject tier exists to prevent.
 
 The bundled helper's default for a payload with unappliable cells is **partial apply plus
 Flag**: every cell that parses is applied; a cell that does not keeps its old value, is

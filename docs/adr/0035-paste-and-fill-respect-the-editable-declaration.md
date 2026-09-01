@@ -64,6 +64,12 @@ silently.** It now raises `OnPasteRefused` like every other refusal, which is wh
 promise "a write attempted against a non-editable column is always reported" true rather than
 true-on-one-path.
 
+**One gate, not two vocabularies.** What paste and fill share is the gate on the *operation* —
+shape, target, editability. They do not share the gate on the *value*: a clipboard paste is
+never judged on value and a fill always is, because a fill's value comes from an editor that is
+still open ([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)).
+Reading "a fill is a paste" past the operation is the mistake this paragraph exists to stop.
+
 The editability of the cell the editor opened on is *not* the test — the fill writes the whole
 selection, so the whole selection is what is judged. The row half of the component's
 `IsEditableCell` (is the row inside the Window?) is deliberately **not** reused here: a paste
