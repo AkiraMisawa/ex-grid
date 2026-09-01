@@ -28,6 +28,7 @@
        a live region where the confirmations above are not: they report what did happen. *@
     <span id="paste-refused-status" role="status">Paste refused: @_pasteRefusedStatus</span>
     <span id="edit-discarded-status" role="status">Edit discarded: @_editDiscardedStatus</span>
+    <span id="context-status">Context: @_contextStatus</span>
     <span id="order-status">Order: @string.Join(",", _columns.Select(c => c.Name))</span>
     <span id="width-status">Width: @_widthStatus</span>
 </p>
@@ -50,7 +51,8 @@
         OnColumnWidthChanged="OnWidthChanged"
         OnColumnOrderChanged="OnOrderChanged"
         OnColumnHidden="OnHidden"
-        OnPinnedCountChanged="OnPinned" />
+        OnPinnedCountChanged="OnPinned"
+        ContextCommands="ContextCommands" />
 
 <h2>A second, independent instance</h2>
 <p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
@@ -126,6 +128,7 @@
     private string _copyStatus = "—";
     private string _pasteRefusedStatus = "—";
     private string _editDiscardedStatus = "—";
+    private string _contextStatus = "—";
     private string _widthStatus = "—";
 
     private void OnEdit(GridEditIntent<DemoTrade> intent)
@@ -234,6 +237,30 @@
                 "RowLeftTheWindow — that row is no longer loaded, so the entry could not be placed",
             _ => reason.ToString(),
         }, s => _editDiscardedStatus = s);
+
+    /// <summary>What a Consumer adds to the context menu (ADR-0036). It is handed the
+    /// clicked row and the selection as rectangles plus the version they are written in;
+    /// resolving the rest of the selection into rows is this side's question, because
+    /// this side owns the data. The demo does the one-row case, which is the one the
+    /// design was argued from — open what this row is about.</summary>
+    private IEnumerable<GridCommand> ContextCommands(ContextMenuContext<DemoTrade> context)
+    {
+        var row = context.Row;
+        var cells = context.Selection.Sum(r => r.CellCount);
+        return
+        [
+            new GridCommand("open-trade", true, () =>
+            {
+                _contextStatus = $"open {row.Book}/{row.Trader} ({cells} cells selected, v{context.RowSequenceVersion})";
+                // A command's Invoke is a plain delegate, not an EventCallback: Blazor
+                // re-renders the grid that handled the click, and nothing tells this page
+                // that its own field moved. The Consumer says so — the same obligation as
+                // for any callback it hands to a component (ADR-0010).
+                StateHasChanged();
+                return Task.CompletedTask;
+            }),
+        ];
+    }
 
     private void OnWidthChanged(ColumnWidthChange change)
     {

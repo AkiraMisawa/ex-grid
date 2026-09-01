@@ -103,6 +103,11 @@ translation impossible without replacing Chrome wholesale.
 - **`CONTEXT.md` gains Context Menu**, and Command keeps the meaning ADR-0010 gave it.
 - The Definition of Done gains the criteria for the trigger, the Focus move, the context's
   contents and the absence of new JavaScript.
+- **A command's `Invoke` is a plain delegate, not an `EventCallback`** (ADR-0010's shape,
+  unchanged). Blazor re-renders the grid that handled the click and says nothing to the Consumer's
+  own component, so a command that changes the Consumer's state calls `StateHasChanged` itself —
+  the ordinary obligation for a callback handed to a component, and worth stating because the
+  first thing anyone writes is a command that updates a field and appears not to work.
 - A Consumer command that acts on a large selection does its own resolution, and the grid's
   refusal rules do not protect it. That is the same bargain ADR-0001 makes everywhere.
 

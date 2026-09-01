@@ -205,6 +205,69 @@ test('a refusal is announced, not only painted (A11Y-16, ADR-0035)', async ({ pa
     await expect(page.locator('#paste-refused-status')).not.toHaveText(first);
 });
 
+test('a secondary click opens the grid\'s menu, not the browser\'s (CTX-1/CTX-5, ADR-0036)', async ({ page }) => {
+    await clickCell(page, 0, 1);
+    const prevented = page.evaluate(() => new Promise((resolve) => {
+        window.addEventListener('contextmenu', (e) => resolve(e.defaultPrevented), { once: true });
+    }));
+
+    await grid(page).locator("[id$='r0c1']").click({ button: 'right', force: true });
+
+    // The browser's own menu is suppressed declaratively on the element — no listener
+    // the grid installed, so the allowlist stays at four (ADR-0021).
+    expect(await prevented).toBe(true);
+    const items = grid(page).locator('[role=menu] button[role=menuitem]');
+    await expect(items).toHaveText(['Copy', 'Copy with headers', 'open-trade']);
+});
+
+test('a secondary click outside the selection moves it first (CTX-1, ADR-0036)', async ({ page }) => {
+    await clickCell(page, 0, 1);
+    const before = await grid(page).getAttribute('aria-activedescendant');
+
+    await grid(page).locator("[id$='r3c2']").click({ button: 'right', force: true });
+
+    // What a command will act on is what the user can see.
+    await expect(grid(page)).not.toHaveAttribute('aria-activedescendant', before ?? '');
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r3c2$/);
+});
+
+test('a Consumer command receives the clicked row and the selection (CTX-3, ADR-0036)', async ({ page }) => {
+    await clickCell(page, 2, 1);
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await grid(page).locator("[id$='r2c1']").click({ button: 'right', force: true });
+    await grid(page).locator('[role=menu] button[role=menuitem]').last().click();
+
+    await expect(page.locator('#context-status')).toContainText('2 cells selected');
+});
+
+test('the ContextMenu key opens it on the Focus (CTX-4, ADR-0036)', async ({ page }) => {
+    await clickCell(page, 1, 1);
+
+    await page.keyboard.press('ContextMenu');
+
+    await expect(grid(page).locator('[role=menu] button[role=menuitem]').first()).toHaveText('Copy');
+    // Escape peels the menu before it leaves the grid (ADR-0012's layering).
+    await page.keyboard.press('Escape');
+    await expect(grid(page).locator('[role=menu]')).toHaveCount(0);
+});
+
+test('a menu copy writes without a prompt, and with headers (CP-19/CP-17, ADR-0005/0036)', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await clickCell(page, 0, 1);
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await grid(page).locator("[id$='r0c1']").click({ button: 'right', force: true });
+    await grid(page).locator('[role=menu] button[role=menuitem]')
+        .filter({ hasText: 'Copy with headers' }).click();
+
+    // A menu item's click fires no copy event, so this went through the asynchronous
+    // clipboard API. Chromium grants clipboard-write to the active tab, so no prompt is
+    // expected — if one ever appears this test hangs, which is the finding, not a pass.
+    await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 })
+        .toMatch(/^Trader\r?\n/);
+});
+
 test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) => {
     await clickCell(page, 0, 1);
     const focusBefore = await grid(page).getAttribute('aria-activedescendant');
