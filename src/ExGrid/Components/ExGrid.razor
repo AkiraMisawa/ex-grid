@@ -203,7 +203,7 @@
                                     }
                                     else
                                     {
-                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" aria-invalid="@EditorInvalid" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -216,7 +216,7 @@
                             }
                             else
                             {
-                                <input class="ex-editor" style="@editorBox" value="@_editText" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="ex-editor" style="@editorBox" value="@_editText" aria-invalid="@EditorInvalid" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -294,6 +294,21 @@
                     <button type="button" role="menuitem" disabled="@(!command.Enabled)"
                             @onclick="() => RunCommandAsync(invoked)">@LabelOf(command)</button>
                 }
+            }
+        </div>
+    }
+    @if (MessageOnShow() is var (messageCell, messageText, isEditorError) && messageText is not null)
+    {
+        var messageContext = new CellMessageContext(
+            Columns[messageCell.Column].Name, messageText, isEditorError, CloseMessage);
+        <div class="ex-message" style="@CellCornerStyle(messageCell)" role="status">
+            @if (Chrome?.CellMessage(messageContext) is { } messageFragment)
+            {
+                @messageFragment
+            }
+            else
+            {
+                @messageText
             }
         </div>
     }
@@ -400,6 +415,25 @@
 
     /// <summary>Set while a render is being prepared, raised once it has been.</summary>
     private EditDiscardReason? _pendingDiscard;
+
+    /// <summary>How long the Focus stands still before its error message opens
+    /// (ADR-0034). A constant of its own, deliberately not the 150 ms SettleDelay: that
+    /// one measures stillness to protect a frame budget and a live region, while this
+    /// estimates the intent to read — is the user looking at that cell, or passing over
+    /// it? Sharing the number would tie a UX judgement to a performance one.</summary>
+    private static readonly TimeSpan PopoverDelay = TimeSpan.FromMilliseconds(300);
+
+    /// <summary>The cell whose message is open, and the message — asked for once, at the
+    /// moment it opened, never per render (ADR-0034, ED-17).</summary>
+    private CellPosition? _messageCell;
+
+    private string? _messageText;
+
+    private ITimer? _messageTimer;
+
+    /// <summary>The standing Reject's message while the editor holds, or null (ADR-0034).
+    /// The Consumer's sentence, relayed — the grid writes none of its own.</summary>
+    private string? _editError;
 
     /// <summary>Why the last reconciliation emptied the selection, or null.</summary>
     private EditDiscardReason? _selectionEmptiedBy;
@@ -739,6 +773,13 @@
     /// into a row beyond the Window is the Consumer's own question; the grid does not
     /// hold those rows.</summary>
     [Parameter] public Func<ContextMenuContext<TRow>, IEnumerable<GridCommand>>? ContextCommands { get; set; }
+
+    /// <summary>A cell's message, asked for by (row, column) — Cell Metadata's idiom
+    /// verbatim (ADR-0034). It is <b>asked on demand</b>, at the moment a popover opens
+    /// and never while painting: <c>CellStateOf</c> is consulted every render for every
+    /// cell and stays a cheap enum, while the message is read for at most one cell at a
+    /// time. Returning null means there is nothing to show and nothing opens.</summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, string?>? CellMessageOf { get; set; }
 
     /// <summary>
     /// Answers a copy whose selection runs beyond the Window on the push form
@@ -1850,8 +1891,15 @@
         // — the editor's own elements never let a press through — commits the
         // uncommitted text first, and the press then keeps its own meaning.
         var committed = _editMode != EditMode.None;
-        if (committed)
-            await CommitEditAsync();
+        if (committed && !await CommitEditAsync())
+        {
+            // A Reject holds the editor, and the press that would have dismissed it keeps
+            // no meaning of its own: the selection must not walk away from an editor that
+            // is still standing — the stale-editor failure ADR-0010's rule exists to
+            // prevent (ADR-0034 amends it).
+            StateHasChanged();
+            return;
+        }
 
         // Primary button only here. The secondary button's meaning is ADR-0036's and is
         // taken on the contextmenu event, which fires after this one — this press has
@@ -2354,21 +2402,68 @@
     /// </summary>
     private void OpenContextMenuAtFocus()
     {
-        if (_visible is not { } visible || _selection.Selection.IsEmpty)
+        if (_visible is null || _selection.Selection.IsEmpty)
             return;
         var focus = _selection.Selection.Focus;
         if (focus.Column >= Columns.Count)
             return;
 
-        var geometry = _columnStyles.Geometry;
-        _contextLeftPx = focus.Column < geometry.PinnedCount
-            ? geometry.OffsetPxOf(focus.Column)
-            : geometry.OffsetPxOf(focus.Column) - _scrollLeftPx;
-        _contextTopPx = _geometry.OffsetPxOf(focus.Row - _pageStartRow)
-            - _geometry.OffsetPxOf(visible.Start - _pageStartRow);
+        (_contextLeftPx, _contextTopPx) = CellCorner(focus);
         _menuColumn = -1;
         _panelColumn = -1;
         _contextCell = focus;
+    }
+
+    /// <summary>
+    /// Which message is showing, if any (ADR-0034). The editor's Reject outranks a
+    /// flagged cell's: while an editor holds, the sentence the user needs is the one
+    /// about the value they are still typing.
+    /// </summary>
+    private (CellPosition Cell, string? Text, bool IsEditorError) MessageOnShow()
+    {
+        if (_editError is { } error && _editMode != EditMode.None && _editingCell.Column < Columns.Count)
+            return (_editingCell, error, true);
+        if (_messageCell is { } cell && _messageText is { } text && cell.Column < Columns.Count)
+            return (cell, text, false);
+        return (default, null, false);
+    }
+
+    /// <summary>"true" while a Reject stands, and absent otherwise (ADR-0034). A string
+    /// rather than a bool: Blazor renders a false bool as an omitted attribute and a true
+    /// one as an empty value, and an assistive technology reading aria-invalid wants the
+    /// word.</summary>
+    private string? EditorInvalid => _editError is null ? null : "true";
+
+    private void CloseMessage()
+    {
+        _messageCell = null;
+        _messageText = null;
+    }
+
+    /// <summary>A popover at a cell's own corner, clamped to the Viewport and below the
+    /// header band the popovers all sit under (ADR-0027 — the min-width rides the
+    /// instance inline, so the clamp and the laid-out box are one number).</summary>
+    private string CellCornerStyle(CellPosition cell)
+    {
+        var (left, top) = CellCorner(cell);
+        left = Math.Clamp(left, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
+        return FormattableString.Invariant(
+            $"left: {left}px; top: {BandHeightPx + top}px; min-width: {PopoverMinWidthPx}px");
+    }
+
+    /// <summary>A cell's top-left inside the Viewport, in the coordinates the popovers
+    /// are laid out in.</summary>
+    private (double Left, double Top) CellCorner(CellPosition cell)
+    {
+        var geometry = _columnStyles.Geometry;
+        var left = cell.Column < geometry.PinnedCount
+            ? geometry.OffsetPxOf(cell.Column)
+            : geometry.OffsetPxOf(cell.Column) - _scrollLeftPx;
+        var top = _visible is { } visible
+            ? _geometry.OffsetPxOf(cell.Row - _pageStartRow)
+              - _geometry.OffsetPxOf(visible.Start - _pageStartRow)
+            : 0d;
+        return (left, top);
     }
 
     /// <summary>Where the menu stands: at the pointer, clamped to the Viewport, and
@@ -2728,9 +2823,56 @@
             _suppressRender = true;
             return false;
         }
+        // An empty selection has no Focus to ask for (ADR-0012), and a selection being
+        // dropped closes anything open anyway.
+        var movedFocus = next.IsEmpty
+            || _selection.Selection.IsEmpty
+            || next.Focus != _selection.Selection.Focus;
         _selection = _selection.With(next);
         _selectionChanged = true;
+        if (movedFocus)
+            ScheduleMessage();
         return true;
+    }
+
+    /// <summary>
+    /// The error popover follows the Focus after 300 ms of stillness (ADR-0034). Held
+    /// arrows repeat far faster than that, so a run across a column of flagged cells
+    /// opens nothing — the delay is what distinguishes looking at a cell from passing
+    /// over it. Anything open closes at once, because it belongs to the cell that was
+    /// left, not to the one being reached.
+    /// </summary>
+    private void ScheduleMessage()
+    {
+        if (_messageCell is not null)
+        {
+            _messageCell = null;
+            _messageText = null;
+        }
+        if (CellMessageOf is null)
+            return;
+        _messageTimer ??= Time.CreateTimer(OnMessageSettled, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        _messageTimer.Change(PopoverDelay, Timeout.InfiniteTimeSpan);
+    }
+
+    private void OnMessageSettled(object? state)
+    {
+        _ = InvokeAsync(() =>
+        {
+            if (_disposed || CellMessageOf is null || _selection.Selection.IsEmpty)
+                return;
+            var focus = _selection.Selection.Focus;
+            var slice = focus.Row - _windowStart;
+            if (slice < 0 || slice >= _window.Count || focus.Column >= Columns.Count)
+                return;
+            // The one call, here and nowhere else: never on the painting path (ED-17).
+            var message = CellMessageOf(_window[slice], Columns[focus.Column]);
+            if (string.IsNullOrEmpty(message))
+                return;
+            _messageCell = focus;
+            _messageText = message;
+            StateHasChanged();
+        });
     }
 
     protected override bool ShouldRender()
@@ -3358,11 +3500,13 @@
 
     /// <summary>A commit leaves the grid as an intent and nothing else (ADR-0007): the
     /// painted value does not change until the Consumer returns a new row instance.</summary>
-    private async Task CommitEditAsync()
+    /// <returns><c>false</c> when a Reject held the editor: nothing was raised, the
+    /// editor is still standing, and the gesture that asked for the commit keeps no
+    /// meaning of its own (ADR-0034).</returns>
+    private async Task<bool> CommitEditAsync()
     {
         var cell = _editingCell;
         var text = _editText;
-        await EndEditingAsync();
         var slice = cell.Row - _windowStart;
         // The row left the Window mid-edit: there is no identity to commit onto, and a
         // positional guess would land the value on a different row (ADR-0011). The text
@@ -3370,26 +3514,54 @@
         // gesture, so it is raised here rather than deferred.
         if (slice < 0 || slice >= _window.Count)
         {
+            await EndEditingAsync();
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(EditDiscardReason.RowLeftTheWindow);
-            return;
+            return true;
         }
         // Asked again, not assumed from when the editor opened: a Consumer may revoke the
         // declaration mid-edit, and `Editable` means a write may land here (ADR-0035). This
         // is the last write path the gate did not cover.
         if (!ColumnIsEditable(cell.Column))
         {
+            await EndEditingAsync();
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(EditDiscardReason.ColumnNoLongerEditable);
-            return;
+            return true;
         }
+
+        // The Consumer's judgement, at the one moment a veto is still possible (ADR-0034).
+        // No function means Accept, so a column that declares nothing behaves as before.
+        var verdict = Columns[cell.Column].Validate?.Invoke(_window[slice], text) ?? EditVerdict.Accept;
+        if (verdict.Kind == EditVerdictKind.Reject)
+        {
+            // The editor holds with the focus in it and the error shown; Escape stays the
+            // only way out without applying. Announced too, because a rejected commit is
+            // otherwise a key that did nothing and said nothing (A11Y-15).
+            _editError = verdict.Message;
+            _editorNeedsFocus = true;
+            _announcement = verdict.Message ?? "";
+            return false;
+        }
+        // A Flag raises the intent unchanged: the mark does not travel in it, and comes
+        // back through the display channels when the Consumer answers them (ADR-0034).
+        _editError = null;
+        await EndEditingAsync();
         if (OnEdit.HasDelegate)
             await OnEdit.InvokeAsync(new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text));
+        return true;
     }
 
     private async Task CommitAndMoveAsync(Func<GridSelection, GridSelection> move)
     {
-        await CommitEditAsync();
+        // Enter, Tab and the Overwrite arrows are commit gestures, so a Reject stops all
+        // of them: the Focus does not move away from an editor that is still standing
+        // (ADR-0034, ED-15).
+        if (!await CommitEditAsync())
+        {
+            StateHasChanged();
+            return;
+        }
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0 || _selection.Selection.IsEmpty)
         {
@@ -3419,6 +3591,24 @@
                 await OnPasteRefused.InvokeAsync(decision.Reason);
             return;
         }
+        // The Refusal judged the operation; the verdict judges the value, and only now
+        // that there is still an operation to perform (ADR-0034's fill carve-out, ED-20).
+        // It runs once, against the row the editor was opened on: a fill's target
+        // legitimately covers rows outside the Window, so there is no row instance to
+        // pass for most of them.
+        var slice = _editingCell.Row - _windowStart;
+        var verdict = slice >= 0 && slice < _window.Count
+            ? Columns[_editingCell.Column].Validate?.Invoke(_window[slice], _editText) ?? EditVerdict.Accept
+            : EditVerdict.Accept;
+        if (verdict.Kind == EditVerdictKind.Reject)
+        {
+            _editError = verdict.Message;
+            _editorNeedsFocus = true;
+            _announcement = verdict.Message ?? "";
+            StateHasChanged();
+            return;
+        }
+
         var text = _editText;
         await EndEditingAsync();
         StateHasChanged();
@@ -3433,6 +3623,7 @@
     {
         _editMode = EditMode.None;
         _editText = "";
+        _editError = null;
         _editorNeedsFocus = false;
         await PushEditingModeAsync();
         await ReclaimFocusAsync();
@@ -3451,6 +3642,7 @@
             declared.Type,
             _editText,
             _editMode == EditMode.Caret ? CellEditMode.Caret : CellEditMode.Overwrite,
+            _editError,
             text => _editText = text,
             () => _ = InvokeAsync(() => CommitAndMoveAsync(next => next)),
             () => _ = InvokeAsync(async () =>

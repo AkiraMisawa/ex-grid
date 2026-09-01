@@ -270,6 +270,19 @@
     color: inherit;
     outline: var(--ex-grid-focus-outline, 1px solid Highlight);
 }
+/* A cell's message (ADR-0034): the same popover machinery, carrying a sentence rather
+   than commands. Never an element in the row — the row's height does not move
+   (ADR-0013) — and outside the scroll container like every other popover. The error
+   token names it, so a theme recolours it without the core knowing (ADR-0027). */
+.ex-message {
+    position: absolute;
+    z-index: 11;
+    max-width: 320px;
+    padding: 4px;
+    background: var(--ex-header-background, Canvas);
+    color: var(--ex-state-error-color, #b3261e);
+    outline: 1px solid var(--ex-state-error-color, #b3261e);
+}
 .ex-popover button { font: inherit; text-align: left; padding: 2px var(--ex-action-padding-x, 6px); cursor: pointer; }
 .ex-popover button:disabled { cursor: default; opacity: 0.5; }
 .ex-popover-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; }

@@ -107,6 +107,14 @@ public sealed record ContextMenuContext<TRow>(
     IReadOnlyList<GridCommand> Commands,
     Action Close);
 
+/// <summary>
+/// A cell's message, while it is showing (ADR-0034): the Consumer's sentence for a
+/// flagged cell, or the standing Reject's while an editor holds. The core decides when
+/// it opens and closes and supplies the text; Chrome draws it. It is a popover and never
+/// an element in the row — the row's height does not move (ADR-0013).
+/// </summary>
+public sealed record CellMessageContext(string Column, string Message, bool IsEditorError, Action Close);
+
 /// <summary>Receive and render (ADR-0010). Placeholders are one mechanism, so Chrome
 /// does not distinguish waiting from skipping either.</summary>
 public sealed record LoadingContext(bool IsLoading, int PlaceholderRowCount);
@@ -117,12 +125,18 @@ public sealed record LoadingContext(bool IsLoading, int PlaceholderRowCount);
 /// its text through <see cref="TextChanged"/> as it changes — Enter, Tab, Esc and the
 /// Overwrite arrows never reach it (the capture phase takes them), so the core must
 /// already hold the text when one of them commits.
+///
+/// <para><see cref="Error"/> is the standing Reject's message while the editor holds
+/// (ADR-0034), for the substitute to paint <c>aria-invalid</c> and its own border.
+/// Chrome still cannot veto: <see cref="Commit"/> stays argument-less and the decision
+/// to hold is the core's.</para>
 /// </summary>
 public sealed record CellEditorContext(
     string Column,
     ColumnType Type,
     string InitialText,
     CellEditMode Mode,
+    string? Error,
     Action<string> TextChanged,
     Action Commit,
     Action Cancel);
@@ -144,6 +158,9 @@ public interface IGridChrome
 
     /// <summary>Null falls back to the core's built-in menu (ADR-0036).</summary>
     RenderFragment? ContextMenu<TRow>(ContextMenuContext<TRow> context) => null;
+
+    /// <summary>Null falls back to the core's built-in popover (ADR-0034).</summary>
+    RenderFragment? CellMessage(CellMessageContext context) => null;
 
     /// <summary>Null falls back to the core's own floating input.</summary>
     RenderFragment? CellEditor(CellEditorContext context);

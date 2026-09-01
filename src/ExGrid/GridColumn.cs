@@ -2,6 +2,8 @@ using ExGrid.Chrome;
 using ExGrid.Columns;
 using Microsoft.AspNetCore.Components;
 
+using ExGrid.Cells;
+
 namespace ExGrid;
 
 /// <summary>
@@ -23,9 +25,11 @@ public sealed record GridColumn<TRow>
         bool editable = false,
         FilterUiMode filterUi = FilterUiMode.Condition,
         CellAlign align = CellAlign.Auto,
-        CellAlign headerAlign = CellAlign.Auto)
+        CellAlign headerAlign = CellAlign.Auto,
+        Func<TRow, string, EditVerdict>? validate = null)
         : this(name, type, value, header, width, [], null, queryable: true,
-            editable: editable, filterUi: filterUi, align: align, headerAlign: headerAlign)
+            editable: editable, filterUi: filterUi, align: align, headerAlign: headerAlign,
+            validate: validate)
     {
     }
 
@@ -41,7 +45,8 @@ public sealed record GridColumn<TRow>
         bool editable = false,
         FilterUiMode filterUi = FilterUiMode.Condition,
         CellAlign align = CellAlign.Auto,
-        CellAlign headerAlign = CellAlign.Auto)
+        CellAlign headerAlign = CellAlign.Auto,
+        Func<TRow, string, EditVerdict>? validate = null)
     {
         if (align is not (CellAlign.Auto or CellAlign.Left or CellAlign.Center or CellAlign.Right))
             throw new ArgumentOutOfRangeException(nameof(align), align, null);
@@ -63,6 +68,7 @@ public sealed record GridColumn<TRow>
         FilterUi = filterUi;
         Align = align;
         HeaderAlign = headerAlign;
+        Validate = validate;
     }
 
     /// <summary>
@@ -135,6 +141,13 @@ public sealed record GridColumn<TRow>
 
     /// <summary>The label the header row paints. Defaults to <see cref="Name"/>.</summary>
     public string Header { get; }
+
+    /// <summary>The Consumer's judgement on a commit into this column, or null for none —
+    /// which means Accept, so a column that declares nothing behaves exactly as before
+    /// (ADR-0034). It receives the current row instance and the committed text, so an
+    /// in-row rule ("the break date must precede maturity") is expressible: the row
+    /// carries the other values.</summary>
+    public Func<TRow, string, EditVerdict>? Validate { get; }
 
     /// <summary>Never <c>default(ColumnWidthSpec)</c>: an unspecified width means Auto
     /// within the default bounds.</summary>

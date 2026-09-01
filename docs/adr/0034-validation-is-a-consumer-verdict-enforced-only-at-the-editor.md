@@ -100,6 +100,20 @@ opens:
   first-class citizen, and an error only a mouse can read would not be. It never shows
   permanently: the paint is the standing display, and forty popovers
   after a bulk paste would bury the screen.
+  *(Found while implementing: **the hover half collides with a decision already taken**, and is
+  not built. A hover that knows which cell it is over needs a pointer-move handler, and cells are
+  `pointer-events: none` so the Viewport is the only target — one interop call per pointer move
+  across the grid. `_dragHandler` exists precisely so that handler is attached only while
+  dragging. Paying it always is the kind of per-move cost [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)
+  measured and refused, and this project does not assert performance without measuring. The three
+  ways out are each a decision of their own: measure and pay it; put a cached handler on flagged
+  cells only, which puts a delegate back into the row's parameters and is what
+  [ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)'s memoisation costs;
+  or throttle in JavaScript, which is a fifth allowlist entry
+  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)). **The Focus trigger is built
+  and the hover trigger is not**, so the keyboard — which this section calls the point — is
+  served, and the mouse reads the paint. ED-17 is split accordingly.)*
+
 - **A validation message is Cell State plus a popover, never an element in the row**
   ([ADR-0013](./0013-fixed-row-height.md)) — the row's height does not move. The popover is
   rendered through a Chrome seam, like the filter panel; the core decides when it opens and
