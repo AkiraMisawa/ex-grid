@@ -31,10 +31,10 @@ public static class GridKeys
     /// lets everything else through — a grid that swallowed Ctrl+F or Cmd+R would be
     /// taking the browser's keys, not its own.
     ///
-    /// <para>Not here, deliberately: Ctrl+C / Ctrl+V (the clipboard is not wired yet,
-    /// ADR-0005), F2 and printable characters (no editor yet, ADR-0010), PageUp /
-    /// PageDown (no ADR specifies them, and inventing the behaviour here is what the
-    /// project's rules refuse).</para>
+    /// <para>Not here, deliberately: Ctrl+C / Ctrl+V (the clipboard rides the browser's
+    /// own <c>copy</c> and <c>paste</c> events — taking the keys would suppress the very
+    /// events that make the route prompt-free, ADR-0005), and F2 and printable
+    /// characters (no editor yet, ADR-0010).</para>
     /// </summary>
     // Declared before Taken on purpose: static field initialisers run in textual order,
     // and a Taken built above this line would read a null table.
@@ -106,6 +106,15 @@ public static class GridKeys
         table["Shift+End"] = new(GridKeyKind.ExtendToEdge, GridDirection.Right);
         table["Control+Home"] = new(GridKeyKind.MoveToCorner, Backward: true);
         table["Control+End"] = new(GridKeyKind.MoveToCorner);
+
+        // PageUp / PageDown move the Focus and the Viewport by the same number of rows
+        // (ADR-0012). Their Control forms are deliberately absent: the browser switches
+        // tabs with them, and the capture-phase listener exists to see this grid's own
+        // keys first — not to take the browser's away.
+        table["PageUp"] = new(GridKeyKind.MoveByViewport, GridDirection.Up);
+        table["PageDown"] = new(GridKeyKind.MoveByViewport, GridDirection.Down);
+        table["Shift+PageUp"] = new(GridKeyKind.ExtendByViewport, GridDirection.Up);
+        table["Shift+PageDown"] = new(GridKeyKind.ExtendByViewport, GridDirection.Down);
 
         // Enter runs down columns, Tab runs across rows; Shift runs both backwards.
         table["Enter"] = new(GridKeyKind.Cycle, Order: CycleOrder.ColumnMajor);

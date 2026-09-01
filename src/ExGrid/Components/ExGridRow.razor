@@ -19,7 +19,12 @@
     layer counts its renders; it is not meant to be used by a Consumer directly.
     Selection is never painted here — rows know nothing about it (ADR-0008).
 *@
-<div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder)">
+@* role and the absolute index (ADR-0033): the DOM holds a Window, so the position
+   among siblings is wrong in exactly the way virtualisation makes it — aria-rowindex
+   states the 1-based absolute one. aria-busy while a Placeholder: values that have
+   not arrived must not be read out as though they had (ADR-0004). *@
+<div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder)"
+     role="row" aria-rowindex="@(RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
     @for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
     {
         var column = Columns[i];
@@ -36,35 +41,45 @@
                Viewport's handler, which only ends the drag. Swallowed here, a drag
                released over a button would leave the grid still dragging, and the next
                move with a button held would extend the old selection to the pointer. *@
-            <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: true, StateOf(column))" style="@Styles.PinnedCell(i)"
+            <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: true, StateOf(column), column.Align)" style="@Styles.PinnedCell(i)"
+                 role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
                  @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column)</div>
         }
         else
         {
             var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
-            var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Styles.Geometry.WidthPxOf(i), Metrics);
-            <div class="@CellClasses.For(numeric, pinned: true, StateOf(column))" style="@Styles.PinnedCell(i)">@decision.DisplayText</div>
+            var text = CellText(column, Row);
+            var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
+            @* aria-label only when hashed: the accessible name of a #### cell is the
+               real value (ADR-0016/0033), and on every other cell the text names itself. *@
+            <div class="@CellClasses.For(numeric, pinned: true, StateOf(column), column.Align)" style="@Styles.PinnedCell(i)"
+                 role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                 aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
         }
     }
     @if (!Placeholder && Scrollable is { } scrollable)
     {
         @if (Styles.HasGap(scrollable.Start))
         {
-            <div class="ex-gap" style="@Styles.Gap(scrollable.Start)"></div>
+            <div class="ex-gap" style="@Styles.Gap(scrollable.Start)" aria-hidden="true"></div>
         }
         @for (var i = scrollable.Start; i < scrollable.Start + scrollable.Count; i++)
         {
             var column = Columns[i];
             @if (!column.PaintsValue)
             {
-                <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: false, StateOf(column))" style="@Styles.Cell(i)"
+                <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: false, StateOf(column), column.Align)" style="@Styles.Cell(i)"
+                     role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
                      @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column)</div>
             }
             else
             {
                 var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
-                var decision = OverflowRules.Decide(column.Type, CellText(column, Row), Styles.Geometry.WidthPxOf(i), Metrics);
-                <div class="@CellClasses.For(numeric, pinned: false, StateOf(column))" style="@Styles.Cell(i)">@decision.DisplayText</div>
+                var text = CellText(column, Row);
+                var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
+                <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.Align)" style="@Styles.Cell(i)"
+                     role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                     aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
             }
         }
     }
@@ -94,6 +109,16 @@
     [Parameter] public bool Placeholder { get; set; }
 
     [Parameter] public CellTextMetrics Metrics { get; set; }
+
+    /// <summary>The row's absolute, 0-based position in the whole result — what
+    /// <c>aria-rowindex</c> (1-based) and the cell ids are written from (ADR-0033).
+    /// Constant for a given row within a Window, so memoisation is untouched by it.</summary>
+    [Parameter] public int RowIndex { get; set; }
+
+    /// <summary>The instance's id prefix (ADR-0018/0033): two grids on one page must
+    /// not share a cell id, or <c>aria-activedescendant</c> resolves into the wrong
+    /// grid. Constant for the component's life.</summary>
+    [Parameter] public string IdPrefix { get; set; } = "";
 
     /// <summary>
     /// Asks the Consumer what state a cell is in (ADR-0006). Null means every cell is
@@ -127,6 +152,7 @@
     private CellStateOf<TRow>? _renderedCellState;
     private Func<TRow, RowKind>? _renderedRowKind;
     private Func<GridActionEventArgs<TRow>, Task>? _renderedOnAction;
+    private int _renderedRowIndex;
 
     protected override void OnInitialized()
     {
@@ -151,7 +177,8 @@
             && _renderedMetrics == Metrics
             && ReferenceEquals(_renderedCellState, CellState)
             && ReferenceEquals(_renderedRowKind, RowKind)
-            && ReferenceEquals(_renderedOnAction, OnAction))
+            && ReferenceEquals(_renderedOnAction, OnAction)
+            && _renderedRowIndex == RowIndex)
         {
             return false;
         }
@@ -171,7 +198,12 @@
         _renderedCellState = CellState;
         _renderedRowKind = RowKind;
         _renderedOnAction = OnAction;
+        _renderedRowIndex = RowIndex;
     }
+
+    /// <summary>One cell's id: instance prefix, absolute row, column (ADR-0033). What
+    /// the root's <c>aria-activedescendant</c> resolves to.</summary>
+    private string CellId(int column) => $"{IdPrefix}r{RowIndex}c{column}";
 
     /// <summary>
     /// What an Action or Template cell paints. A Template Column's fragment is rendered

@@ -22,6 +22,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable
 
     private readonly Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> _fetch;
     private readonly int _readAheadRows;
+    private readonly Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? _distinctValues;
 
     // Captured where the source is constructed — the Consumer's component, so Blazor's
     // dispatcher. It is where a failure nobody subscribed to is rethrown, since the task
@@ -38,12 +39,14 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable
 
     internal FetchingGridSource(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
-        int readAheadRows)
+        int readAheadRows,
+        Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null)
     {
         ArgumentNullException.ThrowIfNull(fetch);
         ArgumentOutOfRangeException.ThrowIfNegative(readAheadRows);
         _fetch = fetch;
         _readAheadRows = readAheadRows;
+        _distinctValues = distinctValues;
     }
 
     public IReadOnlyList<TRow> Window { get; private set; } = [];
@@ -313,6 +316,46 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable
         {
             _context.Post(static state => ExceptionDispatchInfo.Capture((Exception)state!).Throw(), ex);
         }
+    }
+
+    /// <summary>
+    /// Rows for a copy beyond the Window (ADR-0005): a one-off fetch under the Sort and
+    /// Filter in force, bypassing the Window, the coalescing and the generations — this
+    /// answer is handed straight to the copy and stored nowhere, so it cannot go stale
+    /// in the way a painted Window can.
+    /// </summary>
+    public async Task<IReadOnlyList<TRow>> GetRowsAsync(RowRange range, CancellationToken cancellationToken)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var page = await _fetch(new GridQuery(range, Sorts, Filter), cancellationToken).ConfigureAwait(true);
+        ArgumentNullException.ThrowIfNull(page);
+        // Trimmed to the asked range: a server free to widen its page is not free to
+        // make the caller guess which of its rows were the ones asked for.
+        var skip = range.Start - page.Start;
+        if (skip < 0 || skip > page.Rows.Count)
+            return [];
+        var count = Math.Min(range.Count, page.Rows.Count - skip);
+        var rows = new TRow[count];
+        for (var i = 0; i < count; i++)
+            rows[i] = page.Rows[skip + i];
+        return rows;
+    }
+
+    /// <summary>
+    /// The value list, answered by the Consumer's own delegate — a server DISTINCT
+    /// with the other columns' conditions applied (ADR-0009). Handed the Filter with
+    /// this column's own spec already removed. Without a delegate the honest answer
+    /// is TooMany: the panel degrades to condition mode rather than enumerating a
+    /// result the source cannot see.
+    /// </summary>
+    public Task<Chrome.DistinctValues> GetDistinctValuesAsync(string column, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(column);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_distinctValues is null)
+            return Task.FromResult(Chrome.DistinctValues.TooMany);
+
+        return _distinctValues(column, GridFilters.Without(Filter, column), cancellationToken);
     }
 
     /// <summary>

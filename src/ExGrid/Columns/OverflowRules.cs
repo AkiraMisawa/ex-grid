@@ -50,7 +50,7 @@ public static class OverflowRules
         if (!HashesWhenOverflowing(type))
             return OverflowDecision.ShowValue(formattedText);
 
-        if (metrics.EstimatePx(formattedText.Length) <= resolvedWidthPx)
+        if (metrics.EstimatePx(formattedText) <= resolvedWidthPx)
             return OverflowDecision.ShowValue(formattedText); // exactly fitting still shows
         var hashCount = Math.Max(1, (int)Math.Floor(
             metrics.ContentWidthPx(resolvedWidthPx) / metrics.DigitWidthPx));

@@ -8,12 +8,17 @@ namespace ExGrid.Clipboard;
 /// <see cref="TooLarge"/>: past the cap — point at export instead.
 /// <see cref="EmptySelection"/>: nothing to copy; Chrome typically renders it as
 /// nothing happening, the safe side to fall on.
+/// <see cref="RowsUnavailable"/>: the selection runs beyond the Window and nobody can
+/// be asked for the rows — a push Consumer that passed no provider, or one whose
+/// answer did not cover the selection. Component-level, never produced by the pure
+/// rules: refusing by name beats copying the fraction in hand (ADR-0005).
 /// </summary>
 public enum CopyRefusalReason
 {
     EmptySelection,
     MisalignedShape,
     TooLarge,
+    RowsUnavailable,
 }
 
 /// <summary>

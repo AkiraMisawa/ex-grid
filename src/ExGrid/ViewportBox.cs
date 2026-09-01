@@ -73,6 +73,22 @@ public readonly record struct ViewportBox
     public ViewportBox WithGutter(double gutterWidthPx, double gutterHeightPx)
         => new(OuterWidthPx, OuterHeightPx, gutterWidthPx, gutterHeightPx);
 
+    /// <summary>One axis alone, validated and subtracted — what a grid whose other axis
+    /// is <c>Fill</c> needs (ADR-0028): the declared axis keeps its refusals while the
+    /// filled one is an observation with none to make.</summary>
+    public static double VisibleWidthOf(double outerWidthPx, double gutterWidthPx)
+    {
+        Check(outerWidthPx, nameof(outerWidthPx), gutterWidthPx, nameof(gutterWidthPx), "wide", "vertical");
+        return outerWidthPx - gutterWidthPx;
+    }
+
+    /// <summary>The height half of <see cref="VisibleWidthOf"/>.</summary>
+    public static double VisibleHeightOf(double outerHeightPx, double gutterHeightPx)
+    {
+        Check(outerHeightPx, nameof(outerHeightPx), gutterHeightPx, nameof(gutterHeightPx), "tall", "horizontal");
+        return outerHeightPx - gutterHeightPx;
+    }
+
     // Both axes are checked identically, and each refusal names the gutter rather than
     // the remainder: a Consumer told "ViewportWidth is not positive" about a width it
     // set to 12 would have nothing to go on, because the number it wrote is not the

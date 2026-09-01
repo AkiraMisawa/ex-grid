@@ -1,4 +1,5 @@
 using ExGrid.Cells;
+using ExGrid.Columns;
 
 namespace ExGrid.Components;
 
@@ -17,22 +18,42 @@ namespace ExGrid.Components;
 /// </summary>
 public static class CellClasses
 {
-    // Indexed by (state, numeric, pinned) so the lookup is arithmetic, never a switch
-    // over combinations that would have to be kept in step with the enum by hand.
+    // Indexed by (state, align, numeric, pinned) so the lookup is arithmetic, never a
+    // switch over combinations that would have to be kept in step with the enums by hand.
     private const int Variants = 4;
+    private const int Aligns = 4;
     private static readonly string[] Composed = Compose();
 
     /// <summary>
     /// The full class attribute for one cell. <paramref name="numeric"/> is the core's
     /// classification (<see cref="Columns.OverflowRules.HashesWhenOverflowing"/>), not a
-    /// re-derivation of it, and <see cref="CellState.Normal"/> adds nothing at all — an
-    /// ordinary cell is painted exactly as it was before Cell State existed.
+    /// re-derivation of it; <see cref="CellState.Normal"/> and <see cref="CellAlign.Auto"/>
+    /// add nothing at all — an ordinary cell is painted exactly as it was before either
+    /// vocabulary existed (ADR-0006/0016).
     /// </summary>
-    public static string For(bool numeric, bool pinned, CellState state)
+    public static string For(bool numeric, bool pinned, CellState state, CellAlign align = CellAlign.Auto)
     {
-        var index = Index(state) * Variants + (numeric ? 2 : 0) + (pinned ? 1 : 0);
+        var index = ((Index(state) * Aligns) + AlignIndex(align)) * Variants + (numeric ? 2 : 0) + (pinned ? 1 : 0);
         return Composed[index];
     }
+
+    private static int AlignIndex(CellAlign align) => align switch
+    {
+        CellAlign.Auto => 0,
+        CellAlign.Left => 1,
+        CellAlign.Center => 2,
+        CellAlign.Right => 3,
+        _ => throw new ArgumentOutOfRangeException(nameof(align), align, null),
+    };
+
+    private static string AlignSuffix(CellAlign align) => align switch
+    {
+        CellAlign.Auto => "",
+        CellAlign.Left => " ex-align-left",
+        CellAlign.Center => " ex-align-center",
+        CellAlign.Right => " ex-align-right",
+        _ => throw new ArgumentOutOfRangeException(nameof(align), align, null),
+    };
 
     // An undefined CellState is refused rather than quietly painted as Normal: a state
     // cast in from an integer would otherwise hide a Consumer's mapping bug behind a
@@ -61,19 +82,25 @@ public static class CellClasses
     private static string[] Compose()
     {
         CellState[] states = [CellState.Normal, CellState.Stale, CellState.Missing, CellState.Error, CellState.Modified];
-        var composed = new string[states.Length * Variants];
+        CellAlign[] aligns = [CellAlign.Auto, CellAlign.Left, CellAlign.Center, CellAlign.Right];
+        var composed = new string[states.Length * Aligns * Variants];
         foreach (var state in states)
         {
             var suffix = Suffix(state);
-            for (var variant = 0; variant < Variants; variant++)
+            foreach (var align in aligns)
             {
-                var numeric = (variant & 2) != 0;
-                var pinned = (variant & 1) != 0;
-                composed[Index(state) * Variants + variant] = string.Concat(
-                    "ex-cell",
-                    numeric ? " ex-cell-numeric" : "",
-                    pinned ? " ex-pinned" : "",
-                    suffix);
+                var alignSuffix = AlignSuffix(align);
+                for (var variant = 0; variant < Variants; variant++)
+                {
+                    var numeric = (variant & 2) != 0;
+                    var pinned = (variant & 1) != 0;
+                    composed[((Index(state) * Aligns) + AlignIndex(align)) * Variants + variant] = string.Concat(
+                        "ex-cell",
+                        numeric ? " ex-cell-numeric" : "",
+                        pinned ? " ex-pinned" : "",
+                        alignSuffix,
+                        suffix);
+                }
             }
         }
 

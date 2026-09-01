@@ -1,13 +1,31 @@
 /* Instance-scoped styling: every class is ex- prefixed and every variable lives on the
    instance root, never :root (ADR-0018). The inline --ex-row-height set from the C#
    RowHeight parameter wins over any stylesheet value (ADR-0013). */
-/* The grid pins its own font-size: DefaultCellMetrics' digit width is stated against
-   this size, and inheriting the host's would silently break the >= any-glyph contract
-   (ADR-0016). A theme changing either supplies its own CellMetrics. */
+/* The font size is a Geometry Token from the resolved Grid Metrics (ADR-0028): the
+   digit width is stated against it, and inheriting the host's would silently break
+   the >= any-glyph contract (ADR-0016). A theme changing the font supplies its own
+   CellMetrics. */
 /* Dragging across cells is a selection gesture, not a text selection: without this the
    browser paints its own highlight over the top of the grid's (ADR-0008). Copying goes
    through the clipboard path, not through a native text selection (ADR-0005). */
-.ex-grid { font-size: 14px; font-variant-numeric: tabular-nums; user-select: none; }
+/* The family carries a default so the metric defaults are true of each other
+   (ADR-0016): the character-class widths were measured against system-ui at this
+   size. --ex-font-family is metrics-bearing — whoever sets it owes new CellMetrics
+   (ADR-0027). */
+/* position: relative carries no offsets — it exists so the popovers can anchor to the
+   instance root, outside the scroll container (ADR-0017/0018). The ground defaults to
+   system colours, so the bare grid follows the host's colour scheme and forced-colors
+   settings (ADR-0027/0029). */
+.ex-grid {
+    position: relative;
+    font-family: var(--ex-font-family, system-ui, sans-serif);
+    font-size: var(--ex-font-size, 14px);
+    font-weight: var(--ex-font-weight, 400);
+    font-variant-numeric: tabular-nums;
+    background: var(--ex-background, Canvas);
+    color: var(--ex-color, CanvasText);
+    user-select: none;
+}
 /* The root is the tab stop and where keys are captured (ADR-0018), so it needs to say
    when it holds the keyboard. :focus-visible rather than :focus — a click already shows
    itself by moving the selection, and a permanent ring around a clicked grid is noise.
@@ -35,11 +53,16 @@
     position: sticky;
     top: 0;
     z-index: 4;
-    height: var(--ex-row-height);
-    line-height: var(--ex-row-height);
+    height: var(--ex-header-height);
+    line-height: var(--ex-header-height);
     background: var(--ex-header-background, Canvas);
+    color: var(--ex-header-color, inherit);
+    font-weight: var(--ex-header-font-weight, 600);
+    /* The band's own rule, painted as a gradient on its bottom pixel — never a
+       border, which would add to the box (ADR-0028/0029). */
+    background-image: linear-gradient(to top, var(--ex-header-rule-color, rgba(128, 128, 128, 0.45)) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
 }
-.ex-viewport { position: absolute; top: var(--ex-row-height); left: 0; right: 0; will-change: transform; }
+.ex-viewport { position: absolute; top: var(--ex-header-height); left: 0; right: 0; will-change: transform; }
 /* pointer-events is inherited, so this one declaration makes every cell, spacer and
    Placeholder bar transparent to the mouse and leaves .ex-viewport as the target of every
    event in the body. The grid then reads the cell from the event's own offsets and its
@@ -47,6 +70,12 @@
    layout read through JavaScript (ADR-0021). A Template or Action cell turns it back on
    for itself and stops the event there (ADR-0020). */
 .ex-row { display: flex; height: var(--ex-row-height); line-height: var(--ex-row-height); pointer-events: none; }
+/* The row rule, transparent by default: a Theme turns it on by setting the token —
+   painted, never a border, so the row's box never grows (ADR-0028/0029). The Row Kind
+   blocks below override it on group and total rows, whose grounds carry their own. */
+.ex-row {
+    background-image: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
+}
 /* Row Kind (ADR-0024): the role of a row, painted without touching its geometry. Height
    stays exactly the detail row's — the virtualisation arithmetic, the selection overlay
    and the editor position are all one row height (ADR-0013), and a group row that were
@@ -69,12 +98,54 @@
 .ex-row-total, .ex-row-total .ex-cell {
     background-image: linear-gradient(var(--ex-row-total-rule-color, rgba(128, 128, 128, 0.45)) 0 1px, transparent 1px);
 }
-/* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016), and
-   the 8px padding pairs with DefaultCellMetrics.CellHorizontalPaddingPx — the two must
-   move together. The ellipsis only ever shows on Text/Boolean: a number that does not
-   fit is painted as #### by the core, never clipped. */
-.ex-cell, .ex-header-cell { flex: 0 0 auto; box-sizing: border-box; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016);
+   the padding is a Geometry Token from the same Grid Metrics the width estimates read,
+   so the pairing is structural rather than a comment (ADR-0028). The ellipsis only
+   ever shows on Text/Boolean: a number that does not fit is painted as #### by the
+   core, never clipped. */
+.ex-cell, .ex-header-cell { flex: 0 0 auto; box-sizing: border-box; padding: 0 var(--ex-cell-padding-x, 8px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The header is the delegated click target the way .ex-viewport is for the rows: its
+   cells and gap spacer are transparent to the mouse, so the sort click's offsets are
+   measured from the header's own left edge and the column is read from the geometry
+   (ADR-0012). position: relative carries no offsets — it exists so the resize grip
+   can anchor to the cell's own right edge. */
+.ex-header-cell, .ex-header .ex-gap { pointer-events: none; }
+.ex-header-cell { position: relative; }
+/* The grip in the header cell's right-hand edge (ADR-0016): the one part of a header
+   cell that takes its own pointer, because it starts a different gesture. */
+.ex-resize-grip { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; pointer-events: auto; }
+/* The guide a resize drags (ADR-0016) and the reorder drop indicator (ADR-0011):
+   painted, never laid out — their colours are Visual Tokens (ADR-0029). */
+.ex-resize-guide, .ex-drop-indicator { position: absolute; top: 0; bottom: 0; width: 2px; z-index: 7; pointer-events: none; }
+.ex-resize-guide { background: var(--ex-resize-guide-color, rgba(60, 120, 216, 0.7)); }
+.ex-drop-indicator { background: var(--ex-drop-indicator-color, rgba(60, 120, 216, 0.9)); }
+/* The sort indicator is painted from the same attribute the accessibility tree reads
+   (ADR-0033), so the two cannot disagree. A glyph, not a class: the stable class list
+   is closed (ADR-0029) and this earns no entry in it. */
+.ex-header-cell[aria-sort="ascending"]::after { content: " ▲"; opacity: 0.6; }
+.ex-header-cell[aria-sort="descending"]::after { content: " ▼"; opacity: 0.6; }
 .ex-cell-numeric { text-align: right; }
+/* A Header Group's rectangle (ADR-0032): a caption over its members, centred, on the
+   header's own ground. Absolutely positioned from the geometry, so it stands whether
+   or not its leaves are in the DOM; cost is per rectangle (ADR-0008's economy). Its
+   label gets the Text treatment — ellipsis, never #### — and it is transparent to the
+   mouse like every other header cell, so a click on it sorts nothing. */
+.ex-header-group {
+    position: absolute;
+    z-index: 1;
+    box-sizing: border-box;
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    background: var(--ex-header-background, Canvas);
+    pointer-events: none;
+}
+/* The pinned rectangles' zero-size sticky anchor — the pinned selection layer's trick,
+   one tier up: a group is entirely pinned or entirely scrollable (ADR-0032). */
+.ex-header-groups-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 6; }
+.ex-header-groups-pinned .ex-header-group { pointer-events: none; }
 /* The seam an Action or Template cell crosses (ADR-0020). Everything under .ex-row is
    pointer-events: none so the Viewport can hit-test by arithmetic; a control that wants
    its own click turns them back on for itself alone. The inert parts of the cell stay
@@ -84,11 +155,10 @@
    button. `ex-interactive` is the class a Consumer puts on its own control inside a
    Template Column; the grid owns the buttons in an Action Column. */
 .ex-action, .ex-interactive { pointer-events: auto; }
-/* The 6px padding, the 1px UA border and the 4px gap are paired with
-   ExGrid.ActionButtonChromePx, which is what an Auto Action Column's width is measured
-   from — the two must move together (ADR-0016), or the column stops fitting its own
-   buttons. */
-.ex-action { font: inherit; line-height: normal; margin: 0 4px 0 0; padding: 0 6px; border-width: 1px; cursor: pointer; }
+/* The button's own box comes from the action Geometry Tokens, which are what an Auto
+   Action Column's width is measured from (ADR-0016/0028) — the pairing is structural,
+   so the column cannot stop fitting its own buttons. */
+.ex-action { font: inherit; line-height: normal; margin: 0 var(--ex-action-gap, 4px) 0 0; padding: 0 var(--ex-action-padding-x, 6px); border-width: var(--ex-action-border-width, 1px); cursor: pointer; }
 /* Cell State (ADR-0006): the grid says which of the five states a cell is in, the theme
    says what that looks like — hence a variable per state with a default that only has to
    be legible. Every one of them decorates; none replaces the text. Missing in particular
@@ -145,10 +215,134 @@
 /* Translucent, so the value reads through it: geometry is the only kind of effect an
    overlay can paint, and this is also what Excel looks like (ADR-0008). */
 .ex-range { position: absolute; background: var(--ex-selection-fill, rgba(60, 120, 216, 0.18)); }
-.ex-focus { position: absolute; outline: 2px solid var(--ex-focus-outline, Highlight); outline-offset: -1px; }
+/* The Focus band (ADR-0008): one more overlay rectangle, first in its layer so every
+   range stays readable over it. Enabling it is a parameter; this is only its colour. */
+.ex-focus-row { position: absolute; background: var(--ex-focus-row-fill, rgba(128, 128, 128, 0.10)); }
+.ex-focus { position: absolute; outline: 2px solid var(--ex-focus-outline, CanvasText); outline-offset: -1px; }
+/* CanvasText, not Highlight: measured in the browser suite, Chrome's Highlight against
+   Canvas is ~2:1 and UX-9 requires 3:1 — the ink colour contrasts by construction in
+   both schemes, which is also roughly what Excel's own dark focus border does. */
 /* A row not yet painted with real data — waiting for the Consumer's Window, or
    deliberately skipped while scrolling fast. One mechanism, so one appearance
    (ADR-0004). It carries no scrollable cells at all: painting them is the cost being
    avoided. The Pinned Columns do stay, so the bar fills whatever is left beside them. */
-.ex-placeholder::after { content: ""; margin: calc(var(--ex-row-height) / 4) 8px; flex: 1 1 auto; border-radius: 2px; background: currentColor; opacity: 0.08; }
-.ex-loading { opacity: 0.7; }
+.ex-placeholder::after { content: ""; margin: calc(var(--ex-row-height) / 4) var(--ex-cell-padding-x, 8px); flex: 1 1 auto; border-radius: 2px; background: var(--ex-placeholder-background, currentColor); opacity: 0.08; }
+.ex-loading { opacity: var(--ex-loading-opacity, 0.7); }
+/* The scrollbar's look, by token rather than by reaching the internal element
+   (ADR-0029). Unset, both declarations are invalid and the native scrollbar stands
+   untouched; a Wrapper that narrows the bar should colour the thumb too, because a
+   customised scrollbar paints no native parts. Narrowing changes the gutter, the
+   browser reports it, and the geometry follows (ADR-0021). */
+.ex-scroller::-webkit-scrollbar { width: var(--ex-scrollbar-width, ); height: var(--ex-scrollbar-width, ); }
+.ex-scroller::-webkit-scrollbar-thumb { background: var(--ex-scrollbar-color, ); }
+/* The column menu's button in the header cell (ADR-0010): the glyph is CSS content,
+   so the header's own text stays exactly the label. It takes its own pointer — a
+   click on it opens the menu, never sorts. */
+.ex-menu-button {
+    position: absolute;
+    top: 0;
+    /* Geometry Tokens from the resolved metrics (ADR-0028): the same numbers the
+       Auto header estimate adds, so the label and the button cannot overlap. */
+    right: var(--ex-menu-button-inset, 6px);
+    width: var(--ex-menu-button-width, 16px);
+    height: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+}
+.ex-menu-button::after { content: "▾"; opacity: 0.55; }
+/* A popover (ADR-0009/0010/0018): anchored to the instance root, outside the scroll
+   container, so it is never clipped and never tangles across instances. */
+.ex-popover {
+    position: absolute;
+    z-index: 10;
+    /* min-width arrives inline from PopoverStyle (ADR-0027): the number the core
+       clamps the popover on screen with is the number the box is laid out from. */
+    max-width: 320px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--ex-header-background, Canvas);
+    color: inherit;
+    outline: var(--ex-grid-focus-outline, 1px solid Highlight);
+}
+.ex-popover button { font: inherit; text-align: left; padding: 2px var(--ex-action-padding-x, 6px); cursor: pointer; }
+.ex-popover button:disabled { cursor: default; opacity: 0.5; }
+.ex-popover-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; }
+.ex-popover-actions { display: flex; gap: 4px; justify-content: flex-end; }
+/* The Cell Editor (ADR-0010): one input floated over the focused cell, never inside a
+   row. Its box is the cell's exactly (ADR-0028); font and line height come from the
+   same tokens the cells read, so the text does not jump when editing starts. */
+.ex-editor {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    border: none;
+    outline: var(--ex-editor-outline, 2px solid Highlight);
+    outline-offset: -1px;
+    font: inherit;
+    line-height: var(--ex-row-height);
+    background: var(--ex-editor-background, Canvas);
+    color: var(--ex-editor-color, CanvasText);
+}
+/* The pinned editor's zero-size sticky anchor — the pinned selection layer's trick. */
+.ex-editor-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
+/* The pager and the status line (ADR-0015): the pager exists when PageSize is passed
+   and rides the same Range Request machinery as scrolling; the status line closes the
+   invisible-selection hole — for paging and scrolling alike. */
+.ex-pager, .ex-status {
+    display: flex;
+    align-items: center;
+    gap: var(--ex-cell-padding-x, 8px);
+    padding: 4px var(--ex-cell-padding-x, 8px);
+}
+.ex-pager button, .ex-status button {
+    font: inherit;
+    padding: 0 var(--ex-action-padding-x, 6px);
+    border-width: var(--ex-action-border-width, 1px);
+    cursor: pointer;
+}
+.ex-pager button:disabled { cursor: default; }
+/* The live region (ADR-0033): visually hidden, present to assistive technology. The
+   classic clip recipe rather than display:none, which would silence it entirely. */
+.ex-announce {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+/* The column rule, transparent by default (ADR-0029): an inset shadow on the cell's
+   right edge — painted, never a border. A Modified cell's own mark overrides it;
+   the state must never be the one that disappears (ADR-0006). */
+.ex-cell { box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-column-rule-color, transparent); }
+/* Alignment is a closed enum painted as interned classes (ADR-0016/0029). Last in the
+   file, so an explicit alignment beats the numeric derivation and a Header Group's
+   centred default at equal specificity. */
+.ex-align-left { text-align: left; }
+.ex-align-center { text-align: center; }
+.ex-align-right { text-align: right; }
+/* Forced colors (ADR-0027/0029): every Cell State and Row Kind restated in painted
+   system colours, because the browser discards the background images and tints above.
+   No state may rely on a discarded layer alone, and no two may collapse together. */
+@media (forced-colors: active) {
+    .ex-cell.ex-state-stale { color: GrayText; }
+    .ex-cell.ex-state-missing { outline: 1px dotted GrayText; outline-offset: -2px; }
+    .ex-cell.ex-state-error { color: LinkText; }
+    .ex-cell.ex-state-modified { outline: 1px solid Highlight; outline-offset: -2px; }
+    /* A group row keeps its weight; a total row's rule becomes an overline — a text
+       decoration survives where the gradient does not. */
+    .ex-row-total .ex-cell { text-decoration: overline; }
+    /* The selection and the Focus stay visible: outlines, which forced colors keeps. */
+    .ex-range { outline: 2px solid Highlight; outline-offset: -1px; }
+    .ex-focus-row { outline: 1px dotted Highlight; outline-offset: -1px; }
+}

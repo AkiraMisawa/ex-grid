@@ -27,8 +27,13 @@ public static class GridSource
     /// ordinary scrolling does not ask again immediately. Read-ahead is a judgement about
     /// the Consumer's data, which is why it is a number here and not a guess in the grid
     /// (ADR-0001).</param>
+    /// <param name="distinctValues">Answers the filter panel's value list (ADR-0009):
+    /// a DISTINCT of one column with the handed Filter — the other columns' conditions,
+    /// this one's already removed — applied. Null degrades every value list to
+    /// TooMany, which is condition mode.</param>
     public static FetchingGridSource<TRow> Fetch<TRow>(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
-        int readAheadRows = 60)
-        => new(fetch, readAheadRows);
+        int readAheadRows = 60,
+        Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null)
+        => new(fetch, readAheadRows, distinctValues);
 }

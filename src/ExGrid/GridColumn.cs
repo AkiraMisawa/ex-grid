@@ -1,3 +1,4 @@
+using ExGrid.Chrome;
 using ExGrid.Columns;
 using Microsoft.AspNetCore.Components;
 
@@ -18,8 +19,13 @@ public sealed record GridColumn<TRow>
         ColumnType type,
         Func<TRow, object?> value,
         string? header = null,
-        ColumnWidthSpec? width = null)
-        : this(name, type, value, header, width, [], null, queryable: true)
+        ColumnWidthSpec? width = null,
+        bool editable = false,
+        FilterUiMode filterUi = FilterUiMode.Condition,
+        CellAlign align = CellAlign.Auto,
+        CellAlign headerAlign = CellAlign.Auto)
+        : this(name, type, value, header, width, [], null, queryable: true,
+            editable: editable, filterUi: filterUi, align: align, headerAlign: headerAlign)
     {
     }
 
@@ -31,8 +37,16 @@ public sealed record GridColumn<TRow>
         ColumnWidthSpec? width,
         IReadOnlyList<GridAction> actions,
         RenderFragment<TRow>? template,
-        bool queryable)
+        bool queryable,
+        bool editable = false,
+        FilterUiMode filterUi = FilterUiMode.Condition,
+        CellAlign align = CellAlign.Auto,
+        CellAlign headerAlign = CellAlign.Auto)
     {
+        if (align is not (CellAlign.Auto or CellAlign.Left or CellAlign.Center or CellAlign.Right))
+            throw new ArgumentOutOfRangeException(nameof(align), align, null);
+        if (headerAlign is not (CellAlign.Auto or CellAlign.Left or CellAlign.Center or CellAlign.Right))
+            throw new ArgumentOutOfRangeException(nameof(headerAlign), headerAlign, null);
         ArgumentException.ThrowIfNullOrEmpty(name);
         ArgumentNullException.ThrowIfNull(value);
         // Refused here, at the one construction site, so a cast-in integer cannot reach
@@ -45,6 +59,10 @@ public sealed record GridColumn<TRow>
         Width = width ?? new ColumnWidthSpec(ColumnWidth.Auto);
         Actions = actions;
         Template = template;
+        Editable = editable;
+        FilterUi = filterUi;
+        Align = align;
+        HeaderAlign = headerAlign;
     }
 
     /// <summary>
@@ -132,6 +150,26 @@ public sealed record GridColumn<TRow>
     /// <summary>Whether the query engine will sort or filter on this column. False only
     /// for an Action Column, which has no value to order by (ADR-0020).</summary>
     public bool IsQueryable => Info.IsQueryable;
+
+    /// <summary>The cells' alignment (ADR-0016): Auto derives from the type — the
+    /// ex-cell-numeric behaviour — and an explicit value beats the derivation.</summary>
+    public CellAlign Align { get; }
+
+    /// <summary>The header cell's own alignment; Auto is the header's default (left).</summary>
+    public CellAlign HeaderAlign { get; }
+
+    /// <summary>Whether this column's filter offers a value list, only conditions, or
+    /// both (ADR-0009). Declared here because only the Consumer knows the cardinality;
+    /// the runtime safety net is <see cref="Chrome.DistinctValues.TooMany"/>.</summary>
+    public FilterUiMode FilterUi { get; }
+
+    /// <summary>
+    /// Whether the Cell Editor opens on this column's cells (ADR-0007/0010). Off by
+    /// default: this is a display-first grid, and a cell that edits when nobody wired
+    /// <c>OnEdit</c> would type into nothing. The grid never holds the committed value
+    /// either way — an edit leaves as an intent.
+    /// </summary>
+    public bool Editable { get; }
 
     /// <summary>
     /// Whether this column's cells paint their value as text. False for Action and

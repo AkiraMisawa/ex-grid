@@ -36,6 +36,22 @@ internal static class GridFilters
         return filter with { Columns = columns };
     }
 
+    /// <summary>The Filter with one column's own spec removed — Excel's rule for the
+    /// value list, for Excel's reason: a list honouring its own filter can never grow
+    /// back (ADR-0009). One implementation, because the in-memory reference semantics
+    /// and what a fetching source hands its delegate must be the same rule.</summary>
+    public static GridFilter? Without(GridFilter? filter, string column)
+    {
+        if (filter is null)
+            return null;
+
+        var remaining = filter.Columns.Where(pair => pair.Key != column)
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        return remaining.Count > 0 || filter.Opaque is not null
+            ? new GridFilter(remaining, filter.Opaque)
+            : null;
+    }
+
     public static bool Equal(GridFilter? a, GridFilter? b)
     {
         if (ReferenceEquals(a, b))

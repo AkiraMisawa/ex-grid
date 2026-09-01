@@ -36,6 +36,13 @@ public enum GridKeyKind
     /// <summary>Ctrl+Home / Ctrl+End: the first or last cell of the whole result.</summary>
     MoveToCorner,
 
+    /// <summary>PageUp / PageDown: collapse and move the Focus by the rows fully
+    /// visible, with the Viewport moving by the same number (ADR-0012).</summary>
+    MoveByViewport,
+
+    /// <summary>Shift+PageUp / Shift+PageDown: extend by the same rows.</summary>
+    ExtendByViewport,
+
     /// <summary>Space: engage with the cell's content (ADR-0020).</summary>
     Engage,
 

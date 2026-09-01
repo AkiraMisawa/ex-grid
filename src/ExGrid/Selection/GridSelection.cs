@@ -197,6 +197,17 @@ public sealed record GridSelection
     public GridSelection ExtendToEdge(GridDirection direction, GridExtent extent)
         => ExtendFocusTo(extent, focus => EdgeOf(focus, direction, extent));
 
+    /// <summary>PageUp / PageDown (ADR-0012): collapse and move the Focus by one
+    /// Viewport of rows. How many rows that is is view geometry the model never holds,
+    /// so the caller passes the signed delta; the grid edge clamps it.</summary>
+    public GridSelection MoveByViewport(int rowDelta, GridExtent extent)
+        => MoveFocusTo(extent, focus => StepRows(focus, rowDelta, extent));
+
+    /// <summary>Shift+PageUp / Shift+PageDown (ADR-0012): the Focus moves by one
+    /// Viewport of rows and the Anchor's range is redrawn between them.</summary>
+    public GridSelection ExtendByViewport(int rowDelta, GridExtent extent)
+        => ExtendFocusTo(extent, focus => StepRows(focus, rowDelta, extent));
+
     /// <summary>
     /// Ctrl+A: every row after filtering across every visible column, as one rectangle —
     /// expressible without holding the data (ADR-0011). Anchor and Focus stay where they
@@ -211,6 +222,25 @@ public sealed record GridSelection
             return new([all], new(0, 0), new(0, 0), anchorDetached: false, focusRangeIndex: 0);
         RequireFits(extent);
         return new([all], _anchor, _focus, anchorDetached: false, focusRangeIndex: 0);
+    }
+
+    /// <summary>Ctrl+A under a pager (ADR-0015): every cell of the rows in context —
+    /// the page — as one range. Anchor and Focus stay exactly as <see cref="SelectAll"/>
+    /// keeps them: a key that names a whole region needs no starting point and must not
+    /// move the active cell (ADR-0012). From Empty they land on the context's first
+    /// cell — as they do when they stand outside the context (the selection came from
+    /// another page), because a range must contain its own Focus.</summary>
+    public GridSelection SelectAll(GridExtent extent, int firstRow, int rowCount)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        var start = Math.Clamp(firstRow, 0, extent.RowCount - 1);
+        var count = Math.Clamp(rowCount, 1, extent.RowCount - start);
+        var context = new SelectionRange(start, 0, count, extent.ColumnCount);
+        if (IsEmpty || !context.Contains(_anchor) || !context.Contains(_focus))
+            return new([context], new(start, 0), new(start, 0), anchorDetached: false, focusRangeIndex: 0);
+        RequireFits(extent);
+        return new([context], _anchor, _focus, anchorDetached: false, focusRangeIndex: 0);
     }
 
     /// <summary>Ctrl+Space: the Anchor's range expands to every row, keeping its column
@@ -430,6 +460,11 @@ public sealed record GridSelection
         GridDirection.Right => origin with { Column = Math.Min(extent.ColumnCount - 1, origin.Column + 1) },
         _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null),
     };
+
+    // Clamped in long space: the delta is a Viewport's worth of rows, but nothing here
+    // may assume the sum stays inside int just because both halves do.
+    private static CellPosition StepRows(CellPosition origin, int rowDelta, GridExtent extent)
+        => origin with { Row = (int)Math.Clamp((long)origin.Row + rowDelta, 0, extent.RowCount - 1) };
 
     private static CellPosition EdgeOf(CellPosition origin, GridDirection direction, GridExtent extent) => direction switch
     {

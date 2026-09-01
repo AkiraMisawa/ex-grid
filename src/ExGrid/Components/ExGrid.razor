@@ -1,6 +1,9 @@
 @typeparam TRow where TRow : class
+@using System.Globalization
 @using System.Runtime.CompilerServices
 @using global::ExGrid.Cells
+@using global::ExGrid.Chrome
+@using global::ExGrid.Clipboard
 @using global::ExGrid.Keys
 @using global::ExGrid.Rows
 @using global::ExGrid.Columns
@@ -22,44 +25,108 @@
     cell it started in changes nothing, and arrives once a frame while a drag lasts.
 *@
 @* tabindex, so the browser's focus answers which grid a key belongs to (ADR-0018).
-   The capture-phase listener is attached to this element and to nothing wider. *@
-<div class="@RootClass" style="--ex-row-height: @Px(RowHeight)" tabindex="0" @ref="_root">
+   The capture-phase listener is attached to this element and to nothing wider.
+   dir="ltr", so a grid embedded in an RTL page is an LTR island rather than a
+   half-mirrored one — every offset the arithmetic computes is physical (ADR-0031). *@
+@* onmouseleave stops the edge-band auto-scroll (ADR-0008): outside the element no
+   events arrive at all, so a running timer would scroll to the end of a million rows
+   with nothing to contradict it. The drag itself is left alone — the e.Buttons check
+   on the next move ends it if the button came up while the pointer was away. *@
+@* The accessibility surface is the root's (ADR-0033): the totals, the multi-select
+   claim, and aria-activedescendant pointing at the Focus cell — cleared while the
+   Focus is not painted, so it never names a missing id. No element anywhere carries
+   aria-selected; the live region below announces the extent instead. *@
+<div class="@RootClass" style="@RootStyle()" tabindex="0" dir="ltr" @ref="_root"
+     role="grid" aria-multiselectable="true"
+     aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
+     aria-activedescendant="@ActiveDescendant()"
+     @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
     @* One scroll container for both axes, with the header and the Pinned Columns held in
        place by `position: sticky` inside it. Two containers cannot do this: giving the
        inner one a non-visible overflow on one axis turns the other into `auto` (CSS
        Overflow 3), so the body would pan on its own scrollbar while the header stayed
        put — every column read under its neighbour's label — and a sticky offset measured
        against the inner scrollport would not hold the pinned cells at all. *@
-    <div class="ex-scroller" style="width: @Px(ViewportWidth); height: @Px(ViewportHeight)"
-         @ref="_scroller" @onscroll="OnScrollAsync">
-        <div class="ex-spacer" style="width: @Px(_columnStyles.Geometry.TotalWidthPx); height: @Px(RowHeight + _geometry.ScrollHeightPx)">
+    <div class="ex-scroller" style="@ScrollerStyle()"
+         role="presentation" @ref="_scroller" @onscroll="OnScrollAsync">
+        <div class="ex-spacer" style="width: @Px(_columnStyles.Geometry.TotalWidthPx); height: @Px(BandHeightPx + _geometry.ScrollHeightPx)"
+             role="presentation">
             @* The header occupies the content's first row height and covers the
                Viewport's first row height, so the two cancel and the row arithmetic
                below is unchanged by its presence (ADR-0013). *@
-            <div class="ex-header">
+            @* The header is a delegated click target the way the row Viewport is: its
+               cells are pointer-events: none, so the click's offsets are measured from
+               the header's own left edge — content coordinates, which is what ColumnAt
+               reads. Clicking a header sorts; it never selects the column (ADR-0012). *@
+            <div class="ex-header" role="row" style="@HeaderBandStyle()" @onclick="OnHeaderClickAsync" @onmousedown="OnHeaderMouseDown">
+                @if (_headerLayout.Groups.Count > 0)
+                {
+                    @* The pinned rectangles ride a zero-size sticky anchor, exactly as
+                       the pinned selection layer does: a group is entirely pinned or
+                       entirely scrollable — a straddle was refused (ADR-0032). *@
+                    <div class="ex-header-groups-pinned">
+                        @foreach (var group in _headerLayout.Groups)
+                        {
+                            @if (group.Pinned)
+                            {
+                                <div class="ex-header-group" style="@GroupStyle(group)" role="columnheader" aria-colspan="@group.MemberCount">@group.Label</div>
+                            }
+                        }
+                    </div>
+                }
                 @for (var i = 0; i < _columnStyles.Geometry.PinnedCount; i++)
                 {
-                    <div class="ex-header-cell ex-pinned" style="@_columnStyles.PinnedCell(i)">@Columns[i].Header</div>
+                    var pinnedIndex = i;
+                    <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@(i + 1)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
+                        {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenu(pinnedIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                        {<div class="ex-resize-grip" @onmousedown="e => OnResizeGripDown(pinnedIndex, e)" @onmousedown:stopPropagation></div>}</div>
                 }
                 @if (_scrollable is { } headerColumns)
                 {
                     @if (_columnStyles.HasGap(headerColumns.Start))
                     {
-                        <div class="ex-gap" style="@_columnStyles.Gap(headerColumns.Start)"></div>
+                        <div class="ex-gap" style="@_columnStyles.Gap(headerColumns.Start)" aria-hidden="true"></div>
                     }
                     @for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
                     {
-                        <div class="ex-header-cell" style="@_columnStyles.Cell(i)">@Columns[i].Header</div>
+                        var columnIndex = i;
+                        <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@(i + 1)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
+                            {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenu(columnIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                            {<div class="ex-resize-grip" @onmousedown="e => OnResizeGripDown(columnIndex, e)" @onmousedown:stopPropagation></div>}</div>
+                    }
+                }
+                @* A rectangle stands correctly whether or not its leaves are in the
+                   DOM (ADR-0032): absolutely positioned from the geometry, so it never
+                   depends on the sliced flex flow beside it. *@
+                @foreach (var group in _headerLayout.Groups)
+                {
+                    @if (!group.Pinned)
+                    {
+                        <div class="ex-header-group" style="@GroupStyle(group)" role="columnheader" aria-colspan="@group.MemberCount">@group.Label</div>
                     }
                 }
             </div>
+            @if (_resizeColumn >= 0)
+            {
+                @* The resize guide (ADR-0016): one absolutely positioned element
+                   moving over the top — the selection Overlay's mechanism, for the
+                   selection Overlay's reason. *@
+                <div class="ex-resize-guide" style="left: @Px(_resizeGuideLeftPx)" aria-hidden="true"></div>
+            }
+            @if (_reordering && _dropBoundary >= 0)
+            {
+                @* Where the dragged unit will land (ADR-0011): it stops at the pinned
+                   boundary and at a group's edge rather than promising a refused drop. *@
+                <div class="ex-drop-indicator" style="left: @Px(_dropIndicatorLeftPx)" aria-hidden="true"></div>
+            }
             @* Every cell under here is `pointer-events: none`, so this element is the
                target of every mouse event in the rows and the offsets on the event are
                already measured from its own left and top edge. One handler for the whole
                body: a handler per cell would be ~220 of them re-registered on every
                frame of a scroll, which is the cost ADR-0004 caps. *@
-            <div class="ex-viewport" style="transform: translateY(@Px(_geometry.OffsetPxOf(_visible?.Start ?? 0)))"
-                 @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmouseup="OnMouseUp">
+            <div class="ex-viewport" style="@ViewportStyle()"
+                 role="presentation" @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmouseup="OnMouseUp"
+                 @ondblclick="OnViewportDoubleClickAsync">
                 @if (_visible is { } visible)
                 {
                     @if (!_selection.Selection.IsEmpty)
@@ -72,32 +139,85 @@
                            underneath them. Both carry a key because their siblings do —
                            an unkeyed element beside keyed ones degrades the diff to
                            positional matching and would recreate the rows (ADR-0003). *@
-                        <div class="ex-selection-pinned" @key="PinnedSelectionLayerKey">
+                        @* Paint, not content (ADR-0008/0033): a role="grid" whose rows
+                           are interleaved with unnamed divs is a malformed grid. *@
+                        <div class="ex-selection-pinned" aria-hidden="true" @key="PinnedSelectionLayerKey">
+                            @* The Focus band (ADR-0008): one more rectangle, first in
+                               the layer so every range stays readable over it. *@
+                            @if (HighlightFocusRow && SelectionStyles.Pinned(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedBand)
+                            {
+                                <div class="ex-focus-row" style="@pinnedBand"></div>
+                            }
                             @foreach (var range in _selection.Selection.Ranges)
                             {
-                                @if (SelectionStyles.Pinned(range, _columnStyles.Geometry, RowHeight, visible.Start) is { } fill)
+                                @if (SelectionStyles.Pinned(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fill)
                                 {
                                     <div class="ex-range" style="@fill"></div>
                                 }
                             }
-                            @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, RowHeight, visible.Start) is { } pinnedFocus)
+                            @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedFocus)
                             {
                                 <div class="ex-focus" style="@pinnedFocus"></div>
                             }
                         </div>
-                        <div class="ex-selection" @key="SelectionLayerKey">
+                        <div class="ex-selection" aria-hidden="true" @key="SelectionLayerKey">
+                            @if (HighlightFocusRow && SelectionStyles.Scrollable(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } band)
+                            {
+                                <div class="ex-focus-row" style="@band"></div>
+                            }
                             @foreach (var range in _selection.Selection.Ranges)
                             {
-                                @if (SelectionStyles.Scrollable(range, _columnStyles.Geometry, RowHeight, visible.Start) is { } fill)
+                                @if (SelectionStyles.Scrollable(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fill)
                                 {
                                     <div class="ex-range" style="@fill"></div>
                                 }
                             }
-                            @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, RowHeight, visible.Start) is { } focus)
+                            @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } focus)
                             {
                                 <div class="ex-focus" style="@focus"></div>
                             }
                         </div>
+                    }
+                    @* The Cell Editor (ADR-0010): one input floated over the focused
+                       cell — never inside a row, which would break the memoisation.
+                       Its box is the cell's own, from the same arithmetic the
+                       selection overlay reads (ADR-0028); over a pinned cell it rides
+                       a sticky anchor exactly as a pinned rectangle does. *@
+                    @if (_editMode != EditMode.None)
+                    {
+                        var editorChrome = Chrome?.CellEditor(BuildEditorContext());
+                        @if (_editingCell.Column < _columnStyles.Geometry.PinnedCount)
+                        {
+                            <div class="ex-editor-pinned" @key="EditorLayerKey">
+                                @if (SelectionStyles.Pinned(SelectionStyles.CellRange(_editingCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedBox)
+                                {
+                                    @* stopPropagation, like every other interactive
+                                       element over the delegated viewport: a
+                                       caret-placing click that bubbled would be read
+                                       as viewport coordinates and re-select a wrong
+                                       cell under the live editor. *@
+                                    @if (editorChrome is not null)
+                                    {
+                                        <div class="ex-editor" style="@pinnedBox" @onmousedown:stopPropagation>@editorChrome</div>
+                                    }
+                                    else
+                                    {
+                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                    }
+                                }
+                            </div>
+                        }
+                        else if (SelectionStyles.Scrollable(SelectionStyles.CellRange(_editingCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } editorBox)
+                        {
+                            @if (editorChrome is not null)
+                            {
+                                <div class="ex-editor" style="@editorBox" @key="EditorLayerKey" @onmousedown:stopPropagation>@editorChrome</div>
+                            }
+                            else
+                            {
+                                <input class="ex-editor" style="@editorBox" value="@_editText" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                            }
+                        }
                     }
                     @* One loop over absolute row positions, and every sibling carries a
                        key: a keyed component beside an unkeyed element degrades the diff
@@ -117,33 +237,134 @@
                                output is the same pinned cells every time. *@
                             <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
-                                       Placeholder="_placeholderMode" Metrics="CellMetrics"
+                                       Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
                                        CellState="CellState" RowKind="RowKind"
+                                       RowIndex="row" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)" />
                         }
                         else
                         {
                             @* No row behind this position at all, so not even a Pinned
-                               Column has anything to paint. *@
-                            <div class="ex-row ex-placeholder" @key="row"></div>
+                               Column has anything to paint. aria-busy, because a value
+                               that has not arrived must not read as one (ADR-0004/0033). *@
+                            <div class="ex-row ex-placeholder" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"></div>
                         }
                     }
                 }
             </div>
         </div>
     </div>
+    @if (_menuColumn >= 0 && _menuColumn < Columns.Count)
+    {
+        @* The column menu (ADR-0010): the core decides the items; Chrome — built-in or
+           substituted — only lays them out. Outside the scroll container, so nothing
+           clips it and instances never share one (ADR-0017/0018). *@
+        var menuContext = BuildMenuContext(_menuColumn);
+        <div class="ex-popover" style="@PopoverStyle(_menuColumn)" role="menu">
+            @if (Chrome?.ColumnMenu(menuContext) is { } menuFragment)
+            {
+                @menuFragment
+            }
+            else
+            {
+                @foreach (var command in menuContext.Commands)
+                {
+                    var invoked = command;
+                    <button type="button" role="menuitem" disabled="@(!command.Enabled)"
+                            @onclick="() => RunCommandAsync(invoked)">@command.Label</button>
+                }
+            }
+        </div>
+    }
+    @if (_panelColumn >= 0 && _panelColumn < Columns.Count)
+    {
+        var panelContext = BuildPanelContext(_panelColumn);
+        var panelColumn = _panelColumn;
+        <div class="ex-popover" style="@PopoverStyle(_panelColumn)">
+            @if (Chrome?.FilterPanel(panelContext) is { } panelFragment)
+            {
+                @panelFragment
+            }
+            else
+            {
+                @* The built-in panel (ADR-0009): Excel's shape — a value list where the
+                   column declared one and the domain arrived, and the degraded
+                   search-and-condition form where it did not. Applied on OK. *@
+                @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
+                {
+                    <input type="search" placeholder="Search" value="@_panelSearch"
+                           @oninput="e => _panelSearch = e.Value?.ToString() ?? string.Empty" />
+                    <div class="ex-popover-list">
+                        @foreach (var value in domain.Values)
+                        {
+                            var text = value?.ToString() ?? "(Blanks)";
+                            if (_panelSearch.Length > 0 && !text.Contains(_panelSearch, StringComparison.OrdinalIgnoreCase))
+                                continue;
+                            var item = value;
+                            <label>
+                                <input type="checkbox" checked="@chosen.Contains(item)"
+                                       @onchange="e => { if (e.Value is true) chosen.Add(item); else chosen.Remove(item); }" />
+                                @text
+                            </label>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <select value="@_panelOperator" @onchange="e => _panelOperator = Enum.Parse<FilterOperator>((string)e.Value!)">
+                        @foreach (var op in panelContext.Allowed)
+                        {
+                            <option value="@op">@op</option>
+                        }
+                    </select>
+                    <input value="@_panelValueText" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
+                }
+                <div class="ex-popover-actions">
+                    <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
+                    <button type="button" @onclick="CloseMenus">Cancel</button>
+                    <button type="button" @onclick="panelContext.Clear">Clear</button>
+                </div>
+            }
+        </div>
+    }
+    @if (Chrome?.LoadingIndicator(new LoadingContext(_loading, CountPlaceholders())) is { } loadingFragment)
+    {
+        @loadingFragment
+    }
+    @if (PageSize is not null)
+    {
+        @* The pager (ADR-0015): a page click raises the same notification shape as a
+           scroll. TotalCount feeds the display. *@
+        <div class="ex-pager" role="presentation">
+            <button type="button" @onclick="() => TurnPageAsync(-1)" disabled="@(_pageIndex == 0)">‹</button>
+            <span>@(_pageIndex + 1) / @PageCount</span>
+            <button type="button" @onclick="() => TurnPageAsync(1)" disabled="@(_pageIndex >= PageCount - 1)">›</button>
+        </div>
+    }
+    @if (!_selection.Selection.IsEmpty && (PageSize is not null || !SelectionIntersectsView()))
+    {
+        @* The selection count, the off-screen indicator that closes the invisible-paste
+           hole — for paging and scrolling alike — and, under a pager, the explicit way
+           past the page's context (ADR-0014/0015). *@
+        <div class="ex-status" role="presentation">
+            <span>@_selection.Selection.CellCount cells selected@(SelectionIntersectsView() ? "" : " (outside the visible range)")</span>
+            @if (!SelectionIntersectsView())
+            {
+                <button type="button" @onclick="GoToSelectionAsync">Go to selection</button>
+            }
+            @if (PageSize is not null)
+            {
+                <button type="button" @onclick="SelectWholeResultAsync">Select all @TotalRows rows</button>
+            }
+        </div>
+    }
+    @* The selection's extent, in one sentence, once per settled selection (ADR-0033):
+       polite, so it never interrupts, and written after the same settle the loading
+       path uses — a drag announces the destination, not the journey. *@
+    <div class="ex-announce" role="status">@_announcement</div>
 </div>
 
 @code {
-    /// <summary>
-    /// One action button's own box, beside its text: the 6px padding either side, the
-    /// 1px border either side and the 4px gap to the next button that <c>.ex-action</c>
-    /// declares in <c>ex-grid.css</c>. Paired with the stylesheet the way
-    /// <see cref="DefaultCellMetrics"/>'s padding is — the two must move together
-    /// (ADR-0016).
-    /// </summary>
-    private const double ActionButtonChromePx = (6 * 2) + (1 * 2) + 4;
-
     private const double DefaultRowHeightPx = 28;
     private const double DefaultViewportHeightPx = 600;
     private const double DefaultViewportWidthPx = 800;
@@ -156,18 +377,22 @@
     /// </summary>
     private static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(150);
 
+    /// <summary>How often the edge band scrolls while a drag holds the pointer in it
+    /// (ADR-0008). Provisional the way the band's own numbers are — the shape is the
+    /// decision, the period is not.</summary>
+    private static readonly TimeSpan EdgeScrollTick = TimeSpan.FromMilliseconds(50);
+
     private const string ModulePath = "./_content/ExGrid/ex-grid.js";
 
     /// <summary>
     /// The metrics behind width observation and the overflow decision until a theme
-    /// layer supplies real ones. The digit width is contractually at least as wide as
-    /// any glyph the formats emit (ADR-0016) — overshooting errs toward an early
-    /// <c>####</c>, the safe direction. Both values pair with ex-grid.css and must move
-    /// with it: 9px covers a tabular digit of the common system fonts at the
-    /// stylesheet's pinned 14px (SF Pro measures 8.55px there), and the padding is its
-    /// 8px. A theme that changes the font supplies its own <see cref="CellMetrics"/>.
+    /// layer supplies real ones — the three measured numbers of ADR-0016, not guesses:
+    /// Chrome, the stylesheet's <c>system-ui</c> at 14px, tabular digits, at the 600
+    /// weight the group and total rows paint. A theme that changes the font supplies
+    /// its own <see cref="CellMetrics"/>.
     /// </summary>
-    public static readonly CellTextMetrics DefaultCellMetrics = new(digitWidthPx: 9, cellHorizontalPaddingPx: 8);
+    public static readonly CellTextMetrics DefaultCellMetrics = new(
+        wideWidthPx: 13.836, digitWidthPx: 9.058, narrowWidthPx: 5.63, cellHorizontalPaddingPx: 8);
 
     // One key object per row instance, so @key is reference identity even when TRow
     // overrides Equals (a record row model): value-equal rows are still different rows
@@ -204,9 +429,32 @@
 
     [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
 
+    /// <summary>
+    /// Labelled rectangles over adjacent leaf columns in the tiers above the header
+    /// row, declared by member names (ADR-0032). Null or empty means the band is the
+    /// one header row it always was. Refused by name at resolution: an unknown member,
+    /// members not adjacent in the current order, overlapping rectangles, a rectangle
+    /// straddling the pinned boundary.
+    /// </summary>
+    [Parameter] public IReadOnlyList<HeaderGroup>? HeaderGroups { get; set; }
+
     /// <summary>Emitted as --ex-row-height on the instance root, inline so a stylesheet
-    /// cannot override it — the truth lives in this parameter, not in CSS (ADR-0013).</summary>
+    /// cannot override it — the truth lives in this parameter, not in CSS (ADR-0013).
+    /// Beats the <see cref="Density"/> preset when passed (ADR-0028).</summary>
     [Parameter] public double RowHeight { get; set; } = DefaultRowHeightPx;
+
+    /// <summary>The header band's own height (ADR-0028) — one tier's height once Header
+    /// Groups exist (ADR-0032). Null follows <see cref="RowHeight"/> or the preset, the
+    /// relationship an untouched grid always had.</summary>
+    [Parameter] public double? HeaderHeight { get; set; }
+
+    /// <summary>
+    /// A named preset resolving into a complete, self-consistent Grid Metrics
+    /// (ADR-0028). An explicitly passed value beats it, per value:
+    /// <c>Density="Excel" RowHeight="22"</c> is a 22px row with Excel's font, padding
+    /// and digit width. The default is Compact — today's numbers, unchanged.
+    /// </summary>
+    [Parameter] public GridDensity Density { get; set; }
 
     /// <summary>
     /// How tall the scrolling area is, header included. A C# parameter for the same
@@ -223,12 +471,14 @@
     /// (<see cref="ViewportBox"/>, ADR-0013/0021); this parameter keeps meaning the size
     /// of the element, which is also what the CSS is written from.
     /// </summary>
-    [Parameter] public double ViewportHeight { get; set; } = DefaultViewportHeightPx;
+    [Parameter] public ViewportSize ViewportHeight { get; set; } = DefaultViewportHeightPx;
 
     /// <summary>How wide the scrolling area is — the other half of the geometry, a C#
     /// parameter for exactly the reason <see cref="ViewportHeight"/> is, and the outer
-    /// size in the same way.</summary>
-    [Parameter] public double ViewportWidth { get; set; } = DefaultViewportWidthPx;
+    /// size in the same way. <see cref="ViewportSize.Fill"/> hands the size to the CSS
+    /// and the browser's report becomes the input (ADR-0028): the arithmetic still
+    /// never reads the DOM — it is told.</summary>
+    [Parameter] public ViewportSize ViewportWidth { get; set; } = DefaultViewportWidthPx;
 
     /// <summary>
     /// How many leading columns are pinned: always painted, outside virtualisation,
@@ -267,6 +517,42 @@
     [Parameter] public int RowSequenceVersion { get; set; }
 
     /// <summary>
+    /// Raised when a resize drag releases (ADR-0016): the column and the width the
+    /// user dragged it to, bounded below by the column's MinWidth and unbounded above
+    /// — the bound that stops a gesture is the one the same gesture cannot undo. The
+    /// grid changes nothing; the Consumer records the width as Fixed. Grips render
+    /// only while this has a delegate.
+    /// </summary>
+    [Parameter] public EventCallback<ColumnWidthChange> OnColumnWidthChanged { get; set; }
+
+    /// <summary>
+    /// Raised when a header drag drops (ADR-0011/0032): the whole new column order,
+    /// by name. What was grabbed is the unit that moved — a leaf within its group, a
+    /// group among its peers — and the drop indicator clamped at every edge that
+    /// carries meaning, so the order handed over never splits a group and never
+    /// crosses the pinned boundary. The grid changes nothing; the Consumer pushes
+    /// back a reordered <see cref="Columns"/>.
+    /// </summary>
+    [Parameter] public EventCallback<IReadOnlyList<string>> OnColumnOrderChanged { get; set; }
+
+    /// <summary>
+    /// A pager exists when this is passed; its absence produces continuous scrolling
+    /// (ADR-0015). Internally both are driven by the same Range Request: a page click
+    /// raises the same notification shape as a scroll. Paging and scrolling are not
+    /// exclusive — a page taller than the Viewport scrolls within the page.
+    /// </summary>
+    [Parameter] public int? PageSize { get; set; }
+
+    /// <summary>
+    /// A translucent band across the full width of the row the Focus is in — Excel
+    /// 365's "Focus Cell", and the answer to "which row am I on?" a hundred columns
+    /// wide (ADR-0008). Off by default, as Excel's own is: whether it is on is
+    /// behaviour, its colour is appearance (<c>--ex-focus-row-fill</c>, ADR-0027's
+    /// split). One more overlay rectangle — no row learns anything.
+    /// </summary>
+    [Parameter] public bool HighlightFocusRow { get; set; }
+
+    /// <summary>
     /// Raised whenever the selection changes, including when it is dropped. The
     /// selected-cell count a status line shows is <see cref="GridSelection.CellCount"/>,
     /// which is the sum of the rectangles' areas and therefore needs no data at all
@@ -285,6 +571,21 @@
     /// <summary>Whether an answer is in flight. Forgetting to pass it means a stale
     /// Window is shown as if it were current (ADR-0001).</summary>
     [Parameter] public bool IsLoading { get; set; }
+
+    /// <summary>
+    /// The Sort in force, outermost first — what the header indicator and
+    /// <c>aria-sort</c> are painted from, and what the next header click cycles from
+    /// (ADR-0012/0023). The grid never sorts: the Consumer applies this and pushes the
+    /// reordered Window in, bumping <see cref="RowSequenceVersion"/> (ADR-0001/0011).
+    /// </summary>
+    [Parameter] public IReadOnlyList<SortSpec>? Sorts { get; set; }
+
+    /// <summary>
+    /// Raised when a header click changes the sort (ADR-0012): the whole next Sorts
+    /// list, not a delta. The grid changes nothing on its own — the painted order moves
+    /// only when the Consumer answers with a new Window (ADR-0001).
+    /// </summary>
+    [Parameter] public EventCallback<IReadOnlyList<SortSpec>> OnSortChanged { get; set; }
 
     /// <summary>
     /// Cell Metadata, asked for by (row, column) and answered as one of the five states
@@ -316,6 +617,86 @@
     /// </summary>
     [Parameter] public EventCallback<GridActionEventArgs<TRow>> OnAction { get; set; }
 
+    /// <summary>
+    /// The copy cap, in cells (ADR-0005). Past it the grid does not copy at all — it
+    /// never copies the first N — and the refusal is strictly past: a selection of
+    /// exactly the cap still copies. The Consumer can set it higher; the default is a
+    /// safety valve, not a daily path.
+    /// </summary>
+    [Parameter] public long CopyCellCap { get; set; } = ClipboardRules.DefaultCellCap;
+
+    /// <summary>
+    /// The one Edit Intent a paste raises (ADR-0007/0014): all cells in one
+    /// notification. The grid writes nothing — the screen changes when the Consumer
+    /// returns new row instances. Rows off screen or not yet fetched are included in
+    /// the target; that is intended (ADR-0014).
+    /// </summary>
+    [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
+
+    /// <summary>
+    /// The Filter in force (ADR-0002/0009), on the push form: what the panel paints
+    /// its current state from. The grid never filters — the Consumer applies this and
+    /// pushes the narrowed Window in, bumping <see cref="RowSequenceVersion"/> when
+    /// the sequence moved (ADR-0011).
+    /// </summary>
+    [Parameter] public GridFilter? Filters { get; set; }
+
+    /// <summary>Raised when the filter panel applies or clears (ADR-0009): the whole
+    /// next Filter, columns combined with AND. The painted rows move only when the
+    /// Consumer answers with a new Window.</summary>
+    [Parameter] public EventCallback<GridFilter?> OnFilterChanged { get; set; }
+
+    /// <summary>
+    /// Answers the filter panel's value list on the push form (ADR-0009): the distinct
+    /// values of one column under all applied filters except that column's own — the
+    /// exclusion is the Consumer's to honour, since the Consumer owns the filter
+    /// state. Pull, deliberately: transient UI data. Left null, every value list
+    /// answers TooMany and the panel degrades to condition mode. A Source answers this
+    /// itself.
+    /// </summary>
+    [Parameter] public Func<string, CancellationToken, Task<DistinctValues>>? OnDistinctValuesNeeded { get; set; }
+
+    /// <summary>The substitutable UI seams (ADR-0009/0010). Null renders the built-in
+    /// Chrome; a substitute changes rendering and nothing about behaviour — the
+    /// commands, the operators and what a filter means stay the core's.</summary>
+    [Parameter] public IGridChrome? Chrome { get; set; }
+
+    /// <summary>The column menu's "hide this column" (ADR-0010): visibility is View
+    /// State, so the grid notifies and the Consumer pushes back a Columns list without
+    /// the column. The command renders only while this has a delegate.</summary>
+    [Parameter] public EventCallback<string> OnColumnHidden { get; set; }
+
+    /// <summary>The column menu's "pin up to this column" (ADR-0010/0011): pinning
+    /// changes through its own explicit act, never through a drag — and it notifies
+    /// separately, one gesture, one piece of View State.</summary>
+    [Parameter] public EventCallback<int> OnPinnedCountChanged { get; set; }
+
+    /// <summary>
+    /// The Edit Intent (ADR-0007): a committed edit leaves the grid as row identity,
+    /// column and new value, and the grid holds no committed value — the painted cell
+    /// changes when the Consumer returns a new row instance. Uncommitted text is the
+    /// grid's and never reaches this.
+    /// </summary>
+    [Parameter] public EventCallback<GridEditIntent<TRow>> OnEdit { get; set; }
+
+    /// <summary>A refused copy, saying which rule it hit (ADR-0005): the clipboard was
+    /// left untouched, and this is where Chrome learns why.</summary>
+    [Parameter] public EventCallback<CopyRefusalReason> OnCopyRefused { get; set; }
+
+    /// <summary>A refused paste, saying which rule it hit (ADR-0014). The single-cell
+    /// reason is the one whose message says reselecting a target of the same shape will
+    /// work.</summary>
+    [Parameter] public EventCallback<PasteRefusalReason> OnPasteRefused { get; set; }
+
+    /// <summary>
+    /// Answers a copy whose selection runs beyond the Window on the push form
+    /// (ADR-0005): asked for the rows of one range, under the order on screen. The
+    /// answer is handed to the clipboard and stored nowhere. Left null, such a copy is
+    /// refused as <see cref="CopyRefusalReason.RowsUnavailable"/> rather than emitting
+    /// the fraction in hand. A Source answers this itself.
+    /// </summary>
+    [Parameter] public Func<RowRange, CancellationToken, Task<IReadOnlyList<TRow>>>? OnCopyRowsNeeded { get; set; }
+
     // What the grid actually paints, resolved from the Source when there is one and
     // from the push parameters when there is not. Every reader below goes through these,
     // so binding a Source adds no branch to the pipeline — only one more way to fill it.
@@ -324,6 +705,19 @@
     private int? _total;
     private bool _loading;
     private int _sequenceVersion;
+    private IReadOnlyList<SortSpec> _sorts = [];
+    private GridFilter? _filter;
+
+    // The column menu and the filter panel (ADR-0009/0010): which column each stands
+    // open on, and the panel's uncommitted working state — applied on OK, discarded on
+    // Cancel, never re-fetched while open (FL-4).
+    private int _menuColumn = -1;
+    private int _panelColumn = -1;
+    private DistinctValues? _panelValues;
+    private HashSet<object?>? _panelChecked;
+    private FilterOperator _panelOperator;
+    private string _panelValueText = "";
+    private string _panelSearch = "";
 
     private IGridSource<TRow>? _boundSource;
     private IReadOnlyList<GridColumn<TRow>>? _boundColumns;
@@ -345,6 +739,11 @@
     // the row. Only ever set alongside _revealFocus, and cleared with it — see
     // RevealFocusIfNeededAsync for what it is for.
     private bool _revealRowStart;
+
+    // How many rows the Viewport itself moves alongside the Focus — non-zero only for
+    // PageUp / PageDown, where the two travel together so the Focus keeps its position
+    // on screen (ADR-0012). Set alongside _revealFocus, and cleared with it.
+    private int _revealStepRows;
     private IJSObjectReference? _module;
     private IJSObjectReference? _scrollHandle;
     private bool _disposed;
@@ -355,10 +754,40 @@
     private ITimer? _settleTimer;
     private bool _placeholderMode;
 
+    // The edge-band auto-scroll (ADR-0008): timer-driven, because a pointer held still
+    // inside the band must keep scrolling and a still pointer raises no events. The
+    // pointer's viewport-relative position is remembered from the last move; each tick
+    // scrolls by the band's rate and extends the selection to whatever the arithmetic
+    // then puts under that unmoved pointer.
+    private ITimer? _edgeTimer;
+    private bool _edgeTimerRunning;
+    private int _edgeStepRows;
+    private double _edgeStepXPx;
+    private double _edgePointerViewportYPx;
+    private double _edgePointerViewportXPx;
+
     private double _scrollTopPx;
     private double _scrollLeftPx;
+    // Where the scroller is going to be: the last scroll event or the last write this
+    // instance pushed, whichever came later. The reveal's no-op check reads these, not
+    // the event mirror above — a pushed write still in flight would otherwise make the
+    // next reveal look redundant, be dropped, and be overtaken by that very write.
+    private double _expectedScrollTopPx;
+    private double _expectedScrollLeftPx;
     private ViewportGeometry _geometry = new(DefaultRowHeightPx, DefaultViewportHeightPx - DefaultRowHeightPx, 0);
     private ColumnStyles _columnStyles = new(new ColumnGeometry([], 0, DefaultViewportWidthPx));
+
+    // The single resolved geometry (ADR-0028): the arithmetic and the inline tokens are
+    // both projections of this object, so the two cannot disagree. The style string is
+    // cached beside it — rebuilt only when the metrics move.
+    private GridMetrics _metrics = GridMetrics.Resolve(GridDensity.Compact);
+    private string _rootStyle = "";
+    private bool _rowHeightSupplied;
+    private bool _cellMetricsSupplied;
+
+    // Whether the scroll offset must be re-anchored after this render: a geometry
+    // change re-anchors on the first visible row, never the pixel offset (ADR-0028).
+    private double? _anchorScrollTopPx;
 
     // What the scrollbars take out of the declared Viewport, as the browser reports it
     // (ADR-0021). Zero until it says otherwise, which is both the right assumption —
@@ -366,9 +795,29 @@
     // scrollbar platform reports forever.
     private double _gutterWidthPx;
     private double _gutterHeightPx;
-    private ViewportBox _box = ViewportBox.Declared(DefaultViewportWidthPx, DefaultViewportHeightPx);
+
+    // The scroller's content box as the browser reports it — the size itself, under
+    // ViewportSize.Fill (ADR-0028). The same notification carries both; a declared axis
+    // ignores its half.
+    private double _reportedWidthPx;
+    private double _reportedHeightPx;
+
+    // What the two axes actually give the header, rows and columns after the gutter or
+    // the report is applied — every geometry consumer below reads these.
+    private double _visibleWidthPx = DefaultViewportWidthPx;
+    private double _visibleHeightPx = DefaultViewportHeightPx;
     private RowRange? _visible;
     private ColumnRange? _scrollable;
+
+    // The current page under a PageSize (ADR-0015). Transient view state the way the
+    // scroll offset is; the geometry then runs in page-local rows, and _pageStartRow
+    // translates between the page's space and the result's.
+    private int _pageIndex;
+    private int _pageStartRow;
+
+    private int TotalRows => _total ?? _window.Count;
+
+    private int PageCount => PageSize is { } size ? Math.Max(1, (TotalRows + size - 1) / size) : 1;
 
     // The selection and the row order it was made under, together, because that pairing
     // is where ADR-0011's "drop it, never re-map it" rule lives (HeldSelection).
@@ -377,6 +826,45 @@
     private bool _dragging;
     private bool _suppressRender;
     private bool _selectionChanged;
+
+    // The Cell Editor (ADR-0007/0010): one floating input, its uncommitted text the
+    // grid's own — the line ADR-0007 draws at "committed". The mode decides what the
+    // arrow keys mean, and the JS key gate is told whenever it changes.
+    private enum EditMode
+    {
+        None = 0,
+        Overwrite,
+        Caret,
+    }
+
+    private EditMode _editMode;
+    private CellPosition _editingCell;
+    private string _editText = "";
+    private ElementReference _editorElement;
+    private bool _editorNeedsFocus;
+    private bool _jsEditingDirty;
+    // What the key gate was last told about whether any column edits (ADR-0010/0020).
+    private bool _jsCanEdit;
+
+    // The header gestures (ADR-0016 resize, ADR-0011/0032 reorder). Both attach root
+    // move/up handlers only while running, the way the selection drag splats its own;
+    // ClientX deltas need no layout read (ADR-0021). A resize applies on release; a
+    // reorder begins only past a small threshold, so a plain click stays a sort.
+    private readonly Dictionary<string, object> _rootGestureHandler = new();
+    private Action<MouseEventArgs>? _onRootGestureMove;
+    private Action<MouseEventArgs>? _onRootGestureUp;
+    private int _resizeColumn = -1;
+    private double _resizeStartClientX;
+    private double _resizeStartWidthPx;
+    private double _resizeGuideLeftPx;
+    private int _dragUnitFirst = -1;
+    private int _dragUnitCount;
+    private double _dragStartClientX;
+    private double _dragStartContentX;
+    private bool _reordering;
+    private double _dropIndicatorLeftPx;
+    private int _dropBoundary = -1;
+    private bool _gestureConsumedClick;
 
     // The move handler, splatted onto the row Viewport only while a drag is running. Left
     // attached permanently it would send an event per frame for a pointer merely crossing
@@ -397,6 +885,20 @@
     // with a row's identity key or a Placeholder's boxed index.
     private static readonly object SelectionLayerKey = new();
     private static readonly object PinnedSelectionLayerKey = new();
+    private static readonly object EditorLayerKey = new();
+
+    // Every id this instance writes is prefixed per instance (ADR-0018/0033): two
+    // grids on one page must not share a cell id, or aria-activedescendant resolves
+    // into the wrong grid.
+    private static int InstanceCounter;
+    private readonly string _idPrefix = FormattableString.Invariant($"ex{Interlocked.Increment(ref InstanceCounter)}-");
+
+    // The live region's sentence, and the ranges it last described. The announcement
+    // is made once per settled selection (ADR-0033) — the timer below is what "settled"
+    // means, and comparing ranges (never Focus) is what keeps a bare Focus move silent.
+    private string _announcement = "";
+    private IReadOnlyList<SelectionRange> _announcedRanges = [];
+    private ITimer? _announceTimer;
 
     private RowRange? _lastRaised;
     private int _lastRaisedWindowStart;
@@ -407,6 +909,18 @@
     private CellTextMetrics _observedMetrics;
     private AutoWidth[] _autoWidths = [];
 
+    // The Header Groups resolved against the current order — once per push, off the
+    // render path (ADR-0032). Re-resolved only when a declaration, the columns or the
+    // pinned boundary moved.
+    private HeaderGroupLayout _headerLayout = HeaderGroupLayout.Empty;
+    private IReadOnlyList<HeaderGroup>? _observedHeaderGroups;
+    private IReadOnlyList<GridColumn<TRow>>? _layoutColumns;
+    private int _layoutPinned = -1;
+
+    /// <summary>The header band: one tier, plus one per declared tier above it
+    /// (ADR-0032). Identical to the header height while no group is declared.</summary>
+    private double BandHeightPx => (1 + _headerLayout.TierCount) * _metrics.HeaderHeightPx;
+
     // What the widths were last measured from. Re-measuring on every render would read
     // the rows' current contents, so an in-place rewrite would grow a column and repaint
     // through the width path — the repaint ADR-0003 promises will not happen.
@@ -415,7 +929,13 @@
     private RowRange? _measuredVisible;
     private bool _measured;
 
-    private string RootClass => _loading ? "ex-grid ex-loading" : "ex-grid";
+    private string RootClass => (_loading, _editMode != EditMode.None) switch
+    {
+        (true, true) => "ex-grid ex-loading ex-editing",
+        (true, false) => "ex-grid ex-loading",
+        (false, true) => "ex-grid ex-editing",
+        _ => "ex-grid",
+    };
 
     /// <summary>The bounds every selection transition is checked against: rows after
     /// filtering, and visible columns (ADR-0011).</summary>
@@ -425,6 +945,11 @@
     /// same arithmetic. Only read where the selection is known not to be empty — an empty
     /// one has no Focus to draw.</summary>
     private SelectionRange FocusRange => SelectionStyles.CellRange(_selection.Selection.Focus);
+
+    /// <summary>The Focus row, every column wide — the Focus band's rectangle
+    /// (ADR-0008): which row am I on, in a grid a hundred columns wide.</summary>
+    private SelectionRange FocusRowRange
+        => new(_selection.Selection.Focus.Row, 0, 1, Math.Max(1, Columns.Count));
 
     private TimeProvider Time
         => _time ??= Services.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System;
@@ -436,13 +961,22 @@
     /// </summary>
     private static readonly string[] SourceReplaces =
         [nameof(Window), nameof(WindowStart), nameof(TotalCount), nameof(IsLoading),
-         nameof(RowSequenceVersion), nameof(OnRangeNeeded)];
+         nameof(RowSequenceVersion), nameof(OnRangeNeeded), nameof(Sorts), nameof(OnSortChanged),
+         nameof(OnCopyRowsNeeded), nameof(Filters), nameof(OnFilterChanged), nameof(OnDistinctValuesNeeded)];
 
     public override Task SetParametersAsync(ParameterView parameters)
     {
         // Supplied, not non-null: a Consumer whose Source is built in OnInitializedAsync
         // passes Source="@_source" with _source still null on the first render, and that
         // is a pull grid waiting for its source — not a Consumer who passed nothing.
+        // Whether the two per-value overrides were actually written (ADR-0028): a value
+        // type cannot tell "passed 28" from "left at its default", and the precedence
+        // "explicit beats the preset" turns on exactly that difference. Sticky, because
+        // a programmatic parameter push may carry only the parameters that moved — the
+        // property keeps its value then, and so must the fact that it was written.
+        _rowHeightSupplied |= parameters.TryGetValue<double>(nameof(RowHeight), out _);
+        _cellMetricsSupplied |= parameters.TryGetValue<CellTextMetrics>(nameof(CellMetrics), out _);
+
         var sourceSupplied = parameters.TryGetValue<IGridSource<TRow>?>(nameof(Source), out _);
         var supplied = new List<string>();
         foreach (var name in SourceReplaces)
@@ -564,24 +1098,55 @@
         _total = Source is null ? TotalCount : Source.TotalCount;
         _loading = Source?.IsLoading ?? IsLoading;
         _sequenceVersion = Source?.RowSequenceVersion ?? RowSequenceVersion;
+        _sorts = Source is not null ? Source.Sorts : Sorts ?? [];
+        _filter = Source is not null ? Source.Filter : Filters;
 
-        if (!double.IsFinite(RowHeight) || RowHeight <= 0)
+        if (_cellMetricsSupplied && CellMetrics.DigitWidthPx <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(RowHeight), RowHeight,
-                "RowHeight is a finite, positive number of pixels (ADR-0013).");
+            throw new ArgumentOutOfRangeException(nameof(CellMetrics), CellMetrics,
+                "default(CellTextMetrics) is not valid; construct it with real metrics.");
         }
-        if (!double.IsFinite(ViewportHeight) || ViewportHeight <= 0)
+
+        // Resolved once, per precedence: explicit parameter > Density preset > default
+        // (ADR-0028). Everything below — the arithmetic and the inline tokens — reads
+        // this and nothing else.
+        var previousMetrics = _metrics;
+        _metrics = GridMetrics.Resolve(
+            Density,
+            _rowHeightSupplied ? RowHeight : null,
+            HeaderHeight,
+            _cellMetricsSupplied ? CellMetrics : null);
+        if (!ReferenceEquals(previousMetrics, _metrics) && previousMetrics != _metrics)
         {
-            throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
-                "ViewportHeight is a finite, positive number of pixels (ADR-0013).");
+            _rootStyle = "";
+            // The scroll anchor is the first visible row, not the pixel offset
+            // (ADR-0028): at a million rows, keeping scrollTop across a row-height
+            // change would silently teleport the user a third of the dataset away.
+            if (previousMetrics.RowHeightPx != _metrics.RowHeightPx && _visible is { } anchored)
+            {
+                // Page-local: _visible is absolute, the scroll offset is not — under a
+                // pager, anchoring on the absolute index would land past the page's own
+                // scroll range and clamp the view to its end.
+                _scrollTopPx = (anchored.Start - _pageStartRow) * _metrics.RowHeightPx;
+                _anchorScrollTopPx = _scrollTopPx;
+            }
         }
-        if (ViewportHeight <= RowHeight)
+
+        if (!ViewportHeight.IsFill)
         {
-            throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
-                $"ViewportHeight must exceed RowHeight ({RowHeight}px): the header takes the first row height of it, " +
-                "and what is left is where the rows go (ADR-0013).");
+            if (!double.IsFinite(ViewportHeight.Px) || ViewportHeight.Px <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
+                    "ViewportHeight is a finite, positive number of pixels (ADR-0013).");
+            }
+            if (ViewportHeight.Px <= _metrics.HeaderHeightPx)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
+                    $"ViewportHeight must exceed the header's {_metrics.HeaderHeightPx}px: the header takes the " +
+                    "first band of it, and what is left is where the rows go (ADR-0013/0028).");
+            }
         }
-        if (!double.IsFinite(ViewportWidth) || ViewportWidth <= 0)
+        if (!ViewportWidth.IsFill && (!double.IsFinite(ViewportWidth.Px) || ViewportWidth.Px <= 0))
         {
             throw new ArgumentOutOfRangeException(nameof(ViewportWidth), ViewportWidth,
                 "ViewportWidth is a finite, positive number of pixels (ADR-0013).");
@@ -591,29 +1156,74 @@
             throw new ArgumentOutOfRangeException(nameof(PinnedColumnCount), PinnedColumnCount,
                 $"PinnedColumnCount is the first N of {Columns.Count} columns; there are not that many (ADR-0004).");
         }
-        // The header band stands in the content as well as over it, so it spends one row
-        // of the browser's scroll budget that ViewportGeometry — which knows only about
-        // rows — cannot see. Checked here, where the spacer's real height is known:
-        // a result one row inside the pure guard would still have its last row clamped
-        // away, and being quietly unable to reach the end is the failure ADR-0013's
-        // ceiling exists to refuse.
-        if (RowHeight + ((_total ?? _window.Count) * RowHeight) > ViewportGeometry.MaxScrollHeightPx)
+
+        // Members resolve to indices once per push, off the render path (ADR-0032).
+        if (!ReferenceEquals(_observedHeaderGroups, HeaderGroups)
+            || !ReferenceEquals(_layoutColumns, Columns)
+            || _layoutPinned != PinnedColumnCount)
+        {
+            _observedHeaderGroups = HeaderGroups;
+            _layoutColumns = Columns;
+            _layoutPinned = PinnedColumnCount;
+            if (HeaderGroups is { Count: > 0 })
+            {
+                var names = new string[Columns.Count];
+                for (var i = 0; i < Columns.Count; i++)
+                    names[i] = Columns[i].Name;
+                _headerLayout = HeaderGroupLayout.Resolve(HeaderGroups, names, PinnedColumnCount);
+            }
+            else
+            {
+                _headerLayout = HeaderGroupLayout.Empty;
+            }
+        }
+        // The band comes off the scroll budget, and the refusal names the band
+        // (ADR-0032): a Viewport that cannot hold the band plus one row shows headers
+        // and no data, which reads as an empty result.
+        if (_headerLayout.TierCount > 0 && !ViewportHeight.IsFill
+            && ViewportHeight.Px <= BandHeightPx + _metrics.RowHeightPx)
         {
             throw new InvalidOperationException(
-                $"{_total ?? _window.Count} rows at {RowHeight}px, plus the header's own row height, need " +
-                $"{RowHeight + ((_total ?? _window.Count) * RowHeight)}px of scrollable area — past the " +
-                $"{ViewportGeometry.MaxScrollHeightPx}px a browser can scroll, so the last rows could never be " +
-                "reached. Use a shorter row height, or page the result (ADR-0013/0015).");
+                $"ViewportHeight ({ViewportHeight.Px}px) must exceed the header band — " +
+                $"{1 + _headerLayout.TierCount} tiers × {_metrics.HeaderHeightPx}px = {BandHeightPx}px — plus one " +
+                $"row of {_metrics.RowHeightPx}px (ADR-0032).");
         }
-        if (CellMetrics.DigitWidthPx <= 0)
+        // The header band stands in the content as well as over it, so it spends its
+        // own height of the browser's scroll budget that ViewportGeometry — which knows
+        // only about rows — cannot see. Checked here, where the spacer's real height is
+        // known: a result one row inside the pure guard would still have its last row
+        // clamped away, and being quietly unable to reach the end is the failure
+        // ADR-0013's ceiling exists to refuse.
+        // Under a pager only one page ever scrolls, so one page is what the ceiling is
+        // checked against — a paged two-million-row result is exactly what ADR-0015
+        // prescribes, and refusing it for the whole result's height would refuse the
+        // Consumer for having done the prescribed thing.
+        var scrolledRows = PageSize is int pagedBy
+            ? Math.Min(_total ?? _window.Count, pagedBy)
+            : _total ?? _window.Count;
+        if (BandHeightPx + (scrolledRows * _metrics.RowHeightPx) > ViewportGeometry.MaxScrollHeightPx)
         {
-            throw new ArgumentOutOfRangeException(nameof(CellMetrics), CellMetrics,
-                "default(CellTextMetrics) is not valid; construct it with real metrics.");
+            throw new InvalidOperationException(
+                $"{scrolledRows} rows at {_metrics.RowHeightPx}px, plus the header band's own " +
+                $"{BandHeightPx}px, need " +
+                $"{BandHeightPx + (scrolledRows * _metrics.RowHeightPx)}px of scrollable " +
+                $"area — past the {ViewportGeometry.MaxScrollHeightPx}px a browser can scroll, so the last rows " +
+                "could never be reached. Use a shorter row height, or page the result (ADR-0013/0015).");
+        }
+        if (CopyCellCap < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(CopyCellCap), CopyCellCap,
+                "The copy cap is at least one cell; the Consumer may raise it, not disable copying with it (ADR-0005).");
+        }
+        if (PageSize is < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(PageSize), PageSize,
+                "A page holds at least one row; continuous scrolling is PageSize left unset (ADR-0015).");
         }
         ValidateWindowPlacement();
 
         var columnsChanged = !ReferenceEquals(_observedColumns, Columns);
-        var metricsChanged = _observedMetrics != CellMetrics;
+        var metricsChanged = _observedMetrics != _metrics.CellMetrics;
 
         if (!ReferenceEquals(_observedWindow, _window))
         {
@@ -634,7 +1244,11 @@
                 var auto = new AutoWidth(spec);
                 if (spec.Width.IsAuto)
                 {
-                    auto = auto.Observe(CellMetrics.EstimatePx(Columns[i].Header.Length));
+                    // The menu button stands inside the header cell, over the text's
+                    // room — an estimate that ignores it resolves a short header to a
+                    // width whose label ends under the ▾ (ADR-0016/0028).
+                    auto = auto.Observe(_metrics.CellMetrics.EstimatePx(Columns[i].Header)
+                        + (ShowMenuButtons ? _metrics.MenuButtonBandPx : 0));
                     // An Action Column paints no value, so the rows can never grow it
                     // and its header is usually empty (ADR-0020) — left at that it would
                     // stand at MinWidth with its buttons clipped. What it does declare
@@ -652,20 +1266,30 @@
                         // column narrower than the single button it holds, which
                         // `overflow: hidden` then clips: the very outcome this estimate
                         // exists to prevent.
-                        var required = CellMetrics.EstimatePx(0);
+                        var required = _metrics.CellMetrics.EstimatePx(0);
                         foreach (var action in Columns[i].Actions)
-                            required += (action.Label.Length * CellMetrics.DigitWidthPx) + ActionButtonChromePx;
+                            required += _metrics.CellMetrics.TextWidthPx(action.Label) + _metrics.ActionButtonChromePx;
                         auto = auto.Observe(required);
                     }
                 }
                 _autoWidths[i] = auto;
             }
             _observedColumns = Columns;
-            _observedMetrics = CellMetrics;
+            _observedMetrics = _metrics.CellMetrics;
             _measured = false;
         }
 
         ReconcileSelection();
+        // A dropped selection mid-edit means the cell the editor floats over no longer
+        // names the same thing (ADR-0011): the uncommitted text is discarded rather
+        // than committed onto a stranger. The gate learns after this render.
+        if (_editMode != EditMode.None && _selection.Selection.IsEmpty)
+        {
+            _editMode = EditMode.None;
+            _editText = "";
+            _editorNeedsFocus = false;
+            _jsEditingDirty = true;
+        }
         PrepareRender();
     }
 
@@ -769,29 +1393,54 @@
     /// settling — so the two can never disagree.</summary>
     private void PrepareRender()
     {
-        // What the Consumer declared, minus what the browser says its scrollbars take out
-        // of it (ADR-0013). Both gutters are 0 until the browser reports otherwise, so on
-        // a machine with overlay scrollbars this is the declared size exactly and nothing
-        // below it changed.
-        _box = new ViewportBox(ViewportWidth, ViewportHeight, _gutterWidthPx, _gutterHeightPx);
-        if (_box.VisibleHeightPx <= RowHeight)
+        // What the Consumer declared, minus what the browser says its scrollbars take
+        // out of it (ADR-0013) — or, under Fill, what the browser reported the content
+        // box to be, which already has the scrollbars taken out (ADR-0028). Both
+        // gutters are 0 until the browser reports otherwise, so on a machine with
+        // overlay scrollbars a declared axis is the declared size exactly.
+        _visibleWidthPx = ViewportWidth.IsFill
+            ? Math.Max(0, _reportedWidthPx)
+            : ViewportBox.VisibleWidthOf(ViewportWidth.Px, _gutterWidthPx);
+        _visibleHeightPx = ViewportHeight.IsFill
+            ? Math.Max(0, _reportedHeightPx)
+            : ViewportBox.VisibleHeightOf(ViewportHeight.Px, _gutterHeightPx);
+
+        if (_visibleHeightPx <= BandHeightPx || _visibleWidthPx <= 0)
         {
-            // The declared height was checked against RowHeight when it arrived; this is
-            // the same rule after the scrollbar has taken its strip, and it can only fail
-            // on a platform that draws one. Rather than hand ViewportGeometry a negative
-            // band and have it complain about a number the Consumer never wrote.
-            throw new InvalidOperationException(
-                $"A horizontal scrollbar takes {_gutterHeightPx}px out of the {ViewportHeight}px Viewport, " +
-                $"leaving {_box.VisibleHeightPx}px — not enough for the header's own {RowHeight}px, let alone a " +
-                "row. Declare a Viewport tall enough to hold its own scrollbar; on a platform with overlay " +
-                "scrollbars this same grid would have painted (ADR-0013).");
+            // The refusal keys on declared-vs-reported (ADR-0028): a declared height
+            // this small was a bug when the Consumer wrote it and stays one after the
+            // scrollbar's strip; a reported zero is a hidden tab — paint nothing,
+            // throw nothing, and the next report brings the grid back.
+            if (_visibleHeightPx <= BandHeightPx && !ViewportHeight.IsFill)
+            {
+                throw new InvalidOperationException(
+                    $"A horizontal scrollbar takes {_gutterHeightPx}px out of the {ViewportHeight.Px}px Viewport, " +
+                    $"leaving {_visibleHeightPx}px — not enough for the header band's own {BandHeightPx}px, " +
+                    "let alone a row. Declare a Viewport tall enough to hold its own scrollbar; on a platform " +
+                    "with overlay scrollbars this same grid would have painted (ADR-0013).");
+            }
+            _visible = null;
+            _scrollable = null;
+            return;
         }
 
-        // The header stands on the first row height of the Viewport, so the rows get the
+        // The header stands on the first band of the Viewport, so the rows get the
         // rest. Everything downstream — how many rows fit, where a scroll offset lands —
-        // is arithmetic over that remainder (ADR-0013).
-        _geometry = new ViewportGeometry(RowHeight, _box.VisibleHeightPx - RowHeight, _total ?? _window.Count);
-        _visible = _geometry.SliceAt(_scrollTopPx);
+        // is arithmetic over that remainder (ADR-0013/0028/0032). Under a PageSize the
+        // geometry runs over the page alone: the scrollbar spans the page, and the
+        // page boundary is where a drag stops (ADR-0015).
+        var geometryRows = TotalRows;
+        _pageStartRow = 0;
+        if (PageSize is { } pageSize)
+        {
+            _pageIndex = Math.Clamp(_pageIndex, 0, PageCount - 1);
+            _pageStartRow = _pageIndex * pageSize;
+            geometryRows = Math.Clamp(TotalRows - _pageStartRow, 0, pageSize);
+        }
+        _geometry = new ViewportGeometry(
+            _metrics.RowHeightPx, _visibleHeightPx - BandHeightPx, geometryRows);
+        var local = _geometry.SliceAt(_scrollTopPx);
+        _visible = local is { } slice ? new RowRange(_pageStartRow + slice.Start, slice.Count) : null;
         ObserveAutoWidths();
         ResolveColumnGeometry();
         _scrollable = _columnStyles.Geometry.ScrollableSliceAt(_scrollLeftPx, VirtualiseColumns);
@@ -871,7 +1520,7 @@
                 if (!column.Width.Width.IsAuto || !column.PaintsValue)
                     continue;
                 _autoWidths[c] = _autoWidths[c].Observe(
-                    CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(column, data).Length));
+                    _metrics.CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(column, data)));
             }
         }
     }
@@ -887,7 +1536,7 @@
         var geometry = _columnStyles.Geometry;
         if (geometry.Count == Columns.Count
             && geometry.PinnedCount == PinnedColumnCount
-            && geometry.ViewportWidthPx == _box.VisibleWidthPx)
+            && geometry.ViewportWidthPx == _visibleWidthPx)
         {
             var moved = false;
             for (var c = 0; !moved && c < Columns.Count; c++)
@@ -899,13 +1548,52 @@
         var widths = new double[Columns.Count];
         for (var c = 0; c < Columns.Count; c++)
             widths[c] = Columns[c].Width.ResolveWidthPx(_autoWidths[c]);
-        _columnStyles = new ColumnStyles(new ColumnGeometry(widths, PinnedColumnCount, _box.VisibleWidthPx));
+        _columnStyles = new ColumnStyles(new ColumnGeometry(widths, PinnedColumnCount, _visibleWidthPx));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
             await AttachScrollAsync();
+
+        if (_jsEditingDirty)
+            await PushEditingModeAsync();
+        // A display-only grid must not take printable keys away from the page
+        // (ADR-0010/0020) — the gate is told whether any column edits, and re-told
+        // when a parameter change flips the answer.
+        var canEdit = AnyColumnEdits();
+        if (_scrollHandle is not null && !_disposed && canEdit != _jsCanEdit)
+        {
+            _jsCanEdit = canEdit;
+            try
+            {
+                await _scrollHandle.InvokeVoidAsync("setCanEdit", canEdit);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+            {
+            }
+        }
+        if (_editorNeedsFocus)
+        {
+            _editorNeedsFocus = false;
+            try
+            {
+                await _editorElement.FocusAsync();
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+            {
+            }
+        }
+
+        // A geometry change re-anchors on the first visible row (ADR-0028): the model
+        // has already moved; this is the browser being told, through the allowlisted
+        // scroll write. Not a reveal — a density change is not a navigation, and a
+        // Focus that was off screen stays off screen.
+        if (_anchorScrollTopPx is { } anchorTopPx)
+        {
+            _anchorScrollTopPx = null;
+            await PushScrollOffsetAsync(anchorTopPx, _scrollLeftPx);
+        }
 
         // The one place a Range Request is raised. Raising it from OnParametersSet would
         // run the Consumer's handler inside the current render stack, and a Consumer
@@ -929,8 +1617,9 @@
                 return;
 
             _self ??= DotNetObjectReference.Create(this);
+            _jsCanEdit = AnyColumnEdits();
             var handle = await _module.InvokeAsync<IJSObjectReference>(
-                "attach", _root, _scroller, _self, GridKeys.Taken);
+                "attach", _root, _scroller, _self, GridKeys.Taken, _jsCanEdit);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -1006,6 +1695,8 @@
         var previousLeftPx = _scrollLeftPx;
         _scrollTopPx = offset.Top;
         _scrollLeftPx = offset.Left;
+        _expectedScrollTopPx = offset.Top;
+        _expectedScrollLeftPx = offset.Left;
         PrepareRender();
         var firstRow = _visible?.Start ?? 0;
 
@@ -1054,9 +1745,10 @@
     {
         if (_visible is not { } visible)
             return null;
-        var row = _geometry.RowAt(e.OffsetY + _geometry.OffsetPxOf(visible.Start));
+        var row = _geometry.RowAt(e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow));
         var column = _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx);
-        return row is int r && column is int c ? new CellPosition(r, c) : null;
+        // The geometry answers in page-local rows; positions are the result's (ADR-0015).
+        return row is int r && column is int c ? new CellPosition(_pageStartRow + r, c) : null;
     }
 
     /// <summary>
@@ -1064,14 +1756,29 @@
     /// The transitions themselves are the pure model's; nothing about what a click means
     /// is decided here.
     /// </summary>
-    private void OnMouseDown(MouseEventArgs e)
+    private async Task OnMouseDown(MouseEventArgs e)
     {
+        // A press anywhere in the body dismisses an open popover — clicking past a
+        // menu is how people close menus everywhere else on the platform. The
+        // dismissal is markup, so the render must run even when the press itself
+        // changes nothing.
+        var dismissed = _menuColumn >= 0 || _panelColumn >= 0;
+        if (dismissed)
+            CloseMenus();
+
+        // Excel's click-away semantics (ADR-0010): a press that is not on the editor
+        // — the editor's own elements never let a press through — commits the
+        // uncommitted text first, and the press then keeps its own meaning.
+        var committed = _editMode != EditMode.None;
+        if (committed)
+            await CommitEditAsync();
+
         // Primary button only. What a secondary click does to a selection is Excel
         // behaviour that has not been specified here, and inventing it would be worse
         // than leaving the selection alone.
         if (e.Button != 0 || CellUnder(e) is not { } cell)
         {
-            _suppressRender = true;
+            _suppressRender = !dismissed && !committed;
             return;
         }
 
@@ -1132,12 +1839,667 @@
             return;
         }
         Apply(_selection.Selection.ExtendTo(cell, Extent));
+        UpdateEdgeBand(e);
+    }
+
+    /// <summary>
+    /// Reads the pointer's position against the two edge bands (ADR-0008) and arms or
+    /// disarms the auto-scroll accordingly. Positions are viewport-relative — where the
+    /// pointer sits in the visible box — because that is what stays put while the
+    /// content scrolls beneath it.
+    /// </summary>
+    private void UpdateEdgeBand(MouseEventArgs e)
+    {
+        if (_visible is not { } visible)
+            return;
+        _edgePointerViewportYPx = e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow) - _scrollTopPx;
+        _edgePointerViewportXPx = e.OffsetX - _scrollLeftPx;
+        _edgeStepRows = EdgeBand.RowsPerTick(
+            _edgePointerViewportYPx, _geometry.ViewportHeightPx, _geometry.RowsPerViewport);
+        // Sideways the unit is a row height per rate step — the band has no natural
+        // column unit, columns being of unequal width, and the vertical ceiling's
+        // reasoning (stay under the fling) holds trivially at eight row heights.
+        _edgeStepXPx = EdgeBand.RowsPerTick(
+            _edgePointerViewportXPx, _visibleWidthPx, int.MaxValue) * _metrics.RowHeightPx;
+        if (_edgeStepRows != 0 || _edgeStepXPx != 0)
+            StartEdgeTimer();
+        else
+            StopEdgeTimer();
+    }
+
+    private void StartEdgeTimer()
+    {
+        if (_disposed || _edgeTimerRunning)
+            return;
+        _edgeTimer ??= Time.CreateTimer(OnEdgeTick, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        _edgeTimer.Change(EdgeScrollTick, EdgeScrollTick);
+        _edgeTimerRunning = true;
+    }
+
+    private void StopEdgeTimer()
+    {
+        if (_edgeTimerRunning)
+        {
+            _edgeTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            _edgeTimerRunning = false;
+        }
+        _edgeStepRows = 0;
+        _edgeStepXPx = 0;
+    }
+
+    /// <summary>The pointer left the grid: stop the auto-scroll — outside the element
+    /// there are no events to contradict a running timer (ADR-0008). The drag stands;
+    /// the e.Buttons check on the next move ends it if the button came up away.</summary>
+    private void OnRootMouseLeave()
+    {
+        _suppressRender = true;
+        StopEdgeTimer();
+    }
+
+    private void OnEdgeTick(object? state)
+    {
+        _ = InvokeAsync(() =>
+        {
+            if (_disposed || !_dragging || (_edgeStepRows == 0 && _edgeStepXPx == 0))
+                return;
+            try
+            {
+                var maxTopPx = Math.Max(0, _geometry.ScrollHeightPx - _geometry.ViewportHeightPx);
+                var top = Math.Clamp(_scrollTopPx + (_edgeStepRows * _metrics.RowHeightPx), 0, maxTopPx);
+                var left = Math.Clamp(_scrollLeftPx + _edgeStepXPx, 0, _columnStyles.Geometry.MaxScrollLeftPx);
+                var moved = top != _scrollTopPx || left != _scrollLeftPx;
+                if (moved)
+                {
+                    // The model moves first, so the ticks compound deterministically;
+                    // the browser is told below and its echo lands on the same numbers.
+                    // The rate is capped below the fling threshold (ADR-0008), so this
+                    // can never enter Placeholder mode mid-selection.
+                    _scrollTopPx = top;
+                    _scrollLeftPx = left;
+                    PrepareRender();
+                }
+
+                // The pointer has not moved; the cell under it has. The selection's far
+                // edge tracks it (ADR-0008).
+                var changed = false;
+                var row = _geometry.RowAt(top + _edgePointerViewportYPx);
+                var column = _columnStyles.Geometry.ColumnAt(_edgePointerViewportXPx + left, left);
+                // RowAt clamps inside the page, which is exactly ADR-0015's rule: a
+                // drag never turns the page.
+                if (row is int r && column is int c)
+                    changed = Apply(_selection.Selection.ExtendTo(new CellPosition(_pageStartRow + r, c), Extent));
+
+                // Not a UI event: an armed suppression would swallow whatever renders
+                // next (the OnKeyAsync lesson).
+                _suppressRender = false;
+                if (!moved && !changed)
+                    return;
+                StateHasChanged();
+                if (moved)
+                    _ = PushScrollOffsetAsync(top, left);
+            }
+            catch (Exception ex)
+            {
+                _ = DispatchExceptionAsync(ex);
+            }
+        });
+    }
+
+    private async Task PushScrollOffsetAsync(double top, double left)
+    {
+        if (_scrollHandle is null || _disposed)
+            return;
+        _expectedScrollTopPx = top;
+        _expectedScrollLeftPx = left;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
     }
 
     private void OnMouseUp()
     {
         _suppressRender = true;
         SetDragging(false);
+    }
+
+    /// <summary>A resize drag begins on a grip (ADR-0016): the guide line follows the
+    /// pointer and the width is applied on release — never live, which would rebuild
+    /// every painted row's markup on every move.</summary>
+    private void OnResizeGripDown(int column, MouseEventArgs e)
+    {
+        if (e.Button != 0)
+            return;
+        _resizeColumn = column;
+        _resizeStartClientX = e.ClientX;
+        _resizeStartWidthPx = _columnStyles.Geometry.WidthPxOf(column);
+        _resizeGuideLeftPx = GuideLeftPx(column, _resizeStartWidthPx);
+        AttachRootGesture();
+    }
+
+    /// <summary>A pinned column's edge stands at the Viewport's left plus its offset,
+    /// a scrollable one at its content offset; the guide is drawn in content space.</summary>
+    private double GuideLeftPx(int column, double widthPx)
+        => (column < _columnStyles.Geometry.PinnedCount ? _scrollLeftPx : 0)
+            + _columnStyles.Geometry.OffsetPxOf(column) + widthPx;
+
+    /// <summary>A reorder candidate begins on a header cell or a group rectangle; the
+    /// drag itself begins past a small threshold, so a plain click stays a sort
+    /// (ADR-0011/0032).</summary>
+    private async Task OnHeaderMouseDown(MouseEventArgs e)
+    {
+        // A new press is a new story. The flag a gesture arms is consumed by that
+        // gesture's own click — but a release outside the header raises no header
+        // click at all, and a flag left standing would eat the NEXT genuine sort.
+        _gestureConsumedClick = false;
+        // The same dismissal rule as the body: pressing the header past an open
+        // popover closes it, and whatever the press also meant still happens.
+        if (_menuColumn >= 0 || _panelColumn >= 0)
+            CloseMenus();
+        // And the same click-away commit (ADR-0010): a header press mid-edit commits
+        // before it sorts or grabs a column.
+        if (_editMode != EditMode.None)
+            await CommitEditAsync();
+        if (e.Button != 0 || !OnColumnOrderChanged.HasDelegate
+            || e.OffsetX < 0 || e.OffsetX >= _columnStyles.Geometry.TotalWidthPx
+            || _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx) is not { } column)
+        {
+            return;
+        }
+
+        // What you grab is the unit that moves (ADR-0032): the tier under the pointer
+        // decides whether that is the leaf or a rectangle standing over it.
+        var unitFirst = column;
+        var unitCount = 1;
+        if (_headerLayout.TierCount > 0)
+        {
+            var leafTopPx = BandHeightPx - (_headerLayout.LeafTierSpanOf(column) * _metrics.HeaderHeightPx);
+            if (e.OffsetY < leafTopPx)
+            {
+                var tier = _headerLayout.TierCount - (int)Math.Floor(e.OffsetY / _metrics.HeaderHeightPx);
+                ResolvedHeaderGroup? grabbed = null;
+                foreach (var group in _headerLayout.Groups)
+                {
+                    if (column >= group.FirstColumn && column < group.FirstColumn + group.MemberCount
+                        && tier >= group.BottomTier && tier <= group.TopTier)
+                    {
+                        grabbed = group;
+                        break;
+                    }
+                }
+                if (grabbed is null)
+                    return; // an empty tier above a leaf that does not stretch there
+                unitFirst = grabbed.FirstColumn;
+                unitCount = grabbed.MemberCount;
+            }
+        }
+
+        _dragUnitFirst = unitFirst;
+        _dragUnitCount = unitCount;
+        _dragStartClientX = e.ClientX;
+        _dragStartContentX = e.OffsetX;
+        _reordering = false;
+        AttachRootGesture();
+    }
+
+    private void AttachRootGesture()
+    {
+        _rootGestureHandler["onmousemove"] = _onRootGestureMove ??= OnRootGestureMove;
+        _rootGestureHandler["onmouseup"] = _onRootGestureUp ??= OnRootGestureUp;
+    }
+
+    private void DetachRootGesture()
+    {
+        _rootGestureHandler.Remove("onmousemove");
+        _rootGestureHandler.Remove("onmouseup");
+        _resizeColumn = -1;
+        _dragUnitFirst = -1;
+        _reordering = false;
+        _dropBoundary = -1;
+    }
+
+    private void OnRootGestureMove(MouseEventArgs e)
+    {
+        if ((e.Buttons & 1) == 0)
+        {
+            // Released outside the grid: nothing is applied — a resize applies on
+            // release over the grid, and a vanished drag must not drop anywhere.
+            DetachRootGesture();
+            return;
+        }
+
+        if (_resizeColumn >= 0)
+        {
+            var column = _resizeColumn;
+            var widthPx = Math.Max(
+                Columns[column].Width.MinWidthPx,
+                _resizeStartWidthPx + (e.ClientX - _resizeStartClientX));
+            _resizeGuideLeftPx = GuideLeftPx(column, widthPx);
+            return;
+        }
+        if (_dragUnitFirst >= 0)
+        {
+            if (!_reordering && Math.Abs(e.ClientX - _dragStartClientX) <= 4)
+            {
+                _suppressRender = true;
+                return;
+            }
+            _reordering = true;
+            var contentX = _dragStartContentX + (e.ClientX - _dragStartClientX);
+            var boundaries = HeaderReorder.AllowedBoundaries(
+                _headerLayout, Columns.Count, _columnStyles.Geometry.PinnedCount, _dragUnitFirst, _dragUnitCount);
+            var best = boundaries[0];
+            var bestDistance = double.MaxValue;
+            foreach (var boundary in boundaries)
+            {
+                var edge = BoundaryLeftPx(boundary);
+                var distance = Math.Abs(edge - contentX);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = boundary;
+                }
+            }
+            _dropBoundary = best;
+            _dropIndicatorLeftPx = BoundaryLeftPx(best);
+            return;
+        }
+        _suppressRender = true;
+    }
+
+    private double BoundaryLeftPx(int boundary)
+        => (boundary <= _columnStyles.Geometry.PinnedCount && _columnStyles.Geometry.PinnedCount > 0
+                && _dragUnitFirst < _columnStyles.Geometry.PinnedCount ? _scrollLeftPx : 0)
+            + (boundary >= Columns.Count
+                ? _columnStyles.Geometry.TotalWidthPx
+                : _columnStyles.Geometry.OffsetPxOf(boundary));
+
+    private void OnRootGestureUp(MouseEventArgs e)
+    {
+        if (_resizeColumn >= 0)
+        {
+            var column = _resizeColumn;
+            var widthPx = Math.Max(
+                Columns[column].Width.MinWidthPx,
+                _resizeStartWidthPx + (e.ClientX - _resizeStartClientX));
+            DetachRootGesture();
+            _gestureConsumedClick = true;
+            if (OnColumnWidthChanged.HasDelegate)
+                _ = InvokeAsync(() => OnColumnWidthChanged.InvokeAsync(
+                    new ColumnWidthChange(Columns[column].Name, widthPx)));
+            return;
+        }
+        if (_dragUnitFirst >= 0 && _reordering)
+        {
+            var boundary = _dropBoundary;
+            var unitFirst = _dragUnitFirst;
+            var unitCount = _dragUnitCount;
+            DetachRootGesture();
+            _gestureConsumedClick = true;
+            if (boundary >= 0 && (boundary < unitFirst || boundary > unitFirst + unitCount))
+            {
+                var names = new string[Columns.Count];
+                for (var i = 0; i < Columns.Count; i++)
+                    names[i] = Columns[i].Name;
+                var order = HeaderReorder.Reorder(names, unitFirst, unitCount, boundary);
+                _ = InvokeAsync(() => OnColumnOrderChanged.InvokeAsync(order));
+            }
+            return;
+        }
+        // A candidate that never crossed the threshold: the detach is markup, so the
+        // render must run — and the click that follows stays a sort.
+        DetachRootGesture();
+    }
+
+    /// <summary>
+    /// Clicking a column header sorts, and never selects the column (ADR-0012). The
+    /// cycle is the pure model's (<see cref="SortCycle"/>); what happens to the result
+    /// is not this grid's — a Source requeries itself, and a push Consumer answers with
+    /// a new Window and a moved Row Sequence Version (ADR-0001/0011).
+    /// </summary>
+    private async Task OnHeaderClickAsync(MouseEventArgs e)
+    {
+        // A resize or reorder just released here: the click is the gesture's tail, not
+        // a sort (ADR-0016/0011).
+        if (_gestureConsumedClick)
+        {
+            _gestureConsumedClick = false;
+            return;
+        }
+        // Past the last column the header is dead space, not the last column again:
+        // ColumnAt clamps because a drag past the edge should keep extending, and that
+        // is the wrong answer for a click that landed on nothing.
+        if (e.Button != 0
+            || e.OffsetX < 0 || e.OffsetX >= _columnStyles.Geometry.TotalWidthPx
+            || _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx) is not { } column
+            || !Columns[column].IsQueryable)
+        {
+            return;
+        }
+        // A click on a Header Group's rectangle is not a click on the leaf under it
+        // (ADR-0032): only the column's own header sorts — its leaf tier, and whatever
+        // uncovered tiers that leaf stretches through.
+        if (_headerLayout.TierCount > 0
+            && e.OffsetY < BandHeightPx - (_headerLayout.LeafTierSpanOf(column) * _metrics.HeaderHeightPx))
+        {
+            return;
+        }
+
+        await ApplySortsAsync(SortCycle.Next(_sorts, Columns[column].Name));
+    }
+
+    private async Task ApplySortsAsync(IReadOnlyList<SortSpec> next)
+    {
+        if (Source is not null)
+        {
+            // The source's own StateChanged lands the reordered Window; an unchanged
+            // sequence raises nothing, which is what keeps a no-op cheap (ADR-0023).
+            Source.OnSortChanged(next);
+            return;
+        }
+        await OnSortChanged.InvokeAsync(next);
+    }
+
+    /// <summary>
+    /// The column menu's contract (ADR-0010): the core decides the items, all of them
+    /// moving View State, so every Invoke ultimately notifies the Consumer. A command
+    /// whose sink nobody wired is disabled rather than absent — Chrome lays out a
+    /// stable list.
+    /// </summary>
+    private ColumnMenuContext BuildMenuContext(int column)
+    {
+        var declared = Columns[column];
+        var sortable = declared.IsQueryable && (Source is not null || OnSortChanged.HasDelegate);
+        var filterable = declared.IsQueryable && (Source is not null || OnFilterChanged.HasDelegate);
+        var commands = new List<GridCommand>
+        {
+            new("sort-ascending", "Sort ascending", sortable,
+                () => ApplySortsAsync([new SortSpec(declared.Name, SortDirection.Ascending)])),
+            new("sort-descending", "Sort descending", sortable,
+                () => ApplySortsAsync([new SortSpec(declared.Name, SortDirection.Descending)])),
+            new("filter", "Filter", filterable, () => OpenPanelAsync(column)),
+            new("hide", "Hide this column", OnColumnHidden.HasDelegate,
+                () => OnColumnHidden.InvokeAsync(declared.Name)),
+            new("pin", "Pin up to this column",
+                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount != column + 1,
+                () => OnPinnedCountChanged.InvokeAsync(column + 1)),
+            new("unpin", "Unpin all columns",
+                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount > 0,
+                () => OnPinnedCountChanged.InvokeAsync(0)),
+            new("size-to-fit", "Size to fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
+                () => SizeToFitAsync(column)),
+        };
+        return new ColumnMenuContext(declared.Name, declared.Type, commands, CloseMenus);
+    }
+
+    /// <summary>"Size to fit" fixes the width at the content of this moment (ADR-0016):
+    /// an estimate over the painted rows and the header, clamped by the declaration.</summary>
+    private Task SizeToFitAsync(int column)
+    {
+        var declared = Columns[column];
+        var required = _metrics.CellMetrics.EstimatePx(declared.Header);
+        if (_visible is { } visible)
+        {
+            for (var row = visible.Start; row < visible.Start + visible.Count; row++)
+            {
+                var slice = row - _windowStart;
+                if (slice < 0 || slice >= _window.Count)
+                    continue;
+                required = Math.Max(
+                    required,
+                    _metrics.CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(declared, _window[slice])));
+            }
+        }
+        var width = declared.Width.SizeToFit(required);
+        return OnColumnWidthChanged.InvokeAsync(new ColumnWidthChange(declared.Name, width.FixedPx));
+    }
+
+    private async Task RunCommandAsync(GridCommand command)
+    {
+        await command.Invoke();
+        // The filter command replaces the menu with the panel; everything else closes.
+        if (_panelColumn < 0)
+            CloseMenus();
+        else
+            _menuColumn = -1;
+    }
+
+    /// <summary>The menu button is a toggle: the second press on the same column's
+    /// button closes what the first opened — a popover the user cannot dismiss is a
+    /// popover in the way.</summary>
+    private void OpenMenu(int column)
+    {
+        if (_menuColumn == column)
+        {
+            CloseMenus();
+            return;
+        }
+        _menuColumn = column;
+        _panelColumn = -1;
+    }
+
+    private void CloseMenus()
+    {
+        _menuColumn = -1;
+        _panelColumn = -1;
+        _panelValues = null;
+        _panelChecked = null;
+    }
+
+    /// <summary>
+    /// Opens the filter panel on one column (ADR-0009): the value list is fetched
+    /// once per opening and not again while it stands — a list that shifted with every
+    /// checkbox would be unusable — and everything in it is uncommitted until OK.
+    /// </summary>
+    private async Task OpenPanelAsync(int column)
+    {
+        _menuColumn = -1;
+        _panelColumn = column;
+        _panelValues = null;
+        _panelChecked = null;
+        _panelSearch = "";
+        _panelValueText = "";
+        var declared = Columns[column];
+        _panelOperator = FilterOperators.AllowedFor(declared.Type)[0];
+
+        var current = CurrentSpecOf(declared.Name);
+        if (current is { Clauses: [{ Operator: not FilterOperator.In } clause] })
+        {
+            _panelOperator = clause.Operator;
+            _panelValueText = clause.Value?.ToString() ?? "";
+        }
+        StateHasChanged();
+
+        if (declared.FilterUi == FilterUiMode.Condition)
+            return;
+        var answer = await RequestDistinctValuesAsync(declared.Name);
+        if (_disposed || _panelColumn != column)
+            return;
+        _panelValues = answer;
+        if (answer.IsTooMany)
+        {
+            // The degraded form is Excel's own: a search box (ADR-0009). Contains is
+            // that search, where the type allows it.
+            if (_panelValueText.Length == 0
+                && FilterOperators.AllowedFor(declared.Type).Contains(FilterOperator.Contains))
+            {
+                _panelOperator = FilterOperator.Contains;
+            }
+        }
+        else
+        {
+            // The applied In list is what starts checked; no filter checks everything.
+            // Intersected with the fetched domain: another column's filter can have
+            // shifted it since the list was applied, and a value the panel cannot show
+            // must not ride along invisibly checked.
+            _panelChecked = current is { Clauses: [{ Operator: FilterOperator.In, Values: { } applied }] }
+                ? new HashSet<object?>(applied.Intersect(answer.Values))
+                : new HashSet<object?>(answer.Values);
+        }
+        StateHasChanged();
+    }
+
+    private FilterSpec? CurrentSpecOf(string column)
+        => _filter is not null && _filter.Columns.TryGetValue(column, out var spec) ? spec : null;
+
+    private Task<DistinctValues> RequestDistinctValuesAsync(string column)
+    {
+        if (Source is not null)
+            return Source.GetDistinctValuesAsync(column, CancellationToken.None);
+        if (OnDistinctValuesNeeded is not null)
+            return OnDistinctValuesNeeded(column, CancellationToken.None);
+        return Task.FromResult(DistinctValues.TooMany);
+    }
+
+    /// <summary>Everything a substitute needs (ADR-0009); the built-in panel uses the
+    /// same context, so the two cannot diverge.</summary>
+    private FilterPanelContext BuildPanelContext(int column)
+    {
+        var declared = Columns[column];
+        return new FilterPanelContext(
+            declared.Name,
+            declared.Type,
+            CurrentSpecOf(declared.Name),
+            FilterOperators.AllowedFor(declared.Type),
+            declared.FilterUi,
+            () => RequestDistinctValuesAsync(declared.Name),
+            spec => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, spec)),
+            () => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, null)),
+            CloseMenus);
+    }
+
+    /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
+    /// replaced or removed in the whole Filter, columns combined with AND, and the
+    /// Consumer notified — the grid never evaluates any of it.</summary>
+    private async Task ApplyFilterSpecAsync(string column, FilterSpec? spec)
+    {
+        var columns = _filter is null
+            ? new Dictionary<string, FilterSpec>(StringComparer.Ordinal)
+            : new Dictionary<string, FilterSpec>(_filter.Columns, StringComparer.Ordinal);
+        if (spec is null)
+            columns.Remove(column);
+        else
+            columns[column] = spec;
+        GridFilter? next = columns.Count == 0 && _filter?.Opaque is null
+            ? null
+            : new GridFilter(columns, _filter?.Opaque);
+
+        CloseMenus();
+        if (Source is not null)
+            Source.OnFilterChanged(next);
+        else if (OnFilterChanged.HasDelegate)
+            await OnFilterChanged.InvokeAsync(next);
+        StateHasChanged();
+    }
+
+    /// <summary>The built-in panel's OK (ADR-0009): the working state becomes one
+    /// FilterSpec — the checked values as an In clause, or the condition's one clause —
+    /// and applies whole. Cancel is <see cref="CloseMenus"/> and discards.</summary>
+    private Task ApplyPanelAsync(int column)
+    {
+        var declared = Columns[column];
+        if (_panelValues is { IsTooMany: false } values && _panelChecked is { } chosen)
+        {
+            // Everything checked is no filter at all — the domain is not a condition.
+            // Set membership, never a count: counts drift when the domain shifts under
+            // another column's filter, and a count test here silently removed a filter
+            // the user was looking at.
+            if (values.Values.All(chosen.Contains))
+                return ApplyFilterSpecAsync(declared.Name, null);
+            var ordered = values.Values.Where(chosen.Contains).ToArray();
+            return ApplyFilterSpecAsync(declared.Name,
+                new FilterSpec([new FilterClause(FilterOperator.In, Values: ordered)]));
+        }
+
+        if (_panelOperator is FilterOperator.IsBlank or FilterOperator.IsNotBlank)
+            return ApplyFilterSpecAsync(declared.Name, new FilterSpec([new FilterClause(_panelOperator)]));
+        if (string.IsNullOrEmpty(_panelValueText))
+            return ApplyFilterSpecAsync(declared.Name, null);
+        if (ParseFilterValue(declared.Type, _panelValueText) is not { } parsed)
+            return Task.CompletedTask; // an unparseable operand applies nothing; the panel stands
+        return ApplyFilterSpecAsync(declared.Name,
+            new FilterSpec([new FilterClause(_panelOperator, parsed)]));
+    }
+
+    /// <summary>The panel's operand, parsed per the declared type — the engine compares
+    /// typed values (ADR-0023). Invariant first, so "1234.5" means the same number on
+    /// every machine; the local convention as the fallback.</summary>
+    private static object? ParseFilterValue(ColumnType type, string text) => type switch
+    {
+        ColumnType.Text => text,
+        ColumnType.Number => decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var invariant)
+            ? invariant
+            : decimal.TryParse(text, out var local) ? local : null,
+        ColumnType.Date => DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var isoDate)
+            ? isoDate
+            : DateTime.TryParse(text, out var localDate) ? localDate : null,
+        ColumnType.Boolean => bool.TryParse(text, out var flag) ? flag : null,
+        _ => null,
+    };
+
+    /// <summary>Where a popover stands (ADR-0017/0018): under the header band, at the
+    /// column's visible left edge, clamped inside the Viewport — outside the scroll
+    /// container, so nothing clips it and no instance shares it.</summary>
+    private string PopoverStyle(int column)
+    {
+        var geometry = _columnStyles.Geometry;
+        var left = column < geometry.PinnedCount
+            ? geometry.OffsetPxOf(column)
+            : geometry.OffsetPxOf(column) - _scrollLeftPx;
+        left = Math.Clamp(left, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
+        // min-width rides the instance inline (ADR-0027): the clamp above and the box
+        // the browser lays out must be one number, never a C# constant paired with a
+        // stylesheet literal by a comment.
+        return FormattableString.Invariant(
+            $"left: {left}px; top: {BandHeightPx}px; min-width: {PopoverMinWidthPx}px");
+    }
+
+    /// <summary>The narrowest usable popover — what the clamp keeps on screen and what
+    /// the browser is told to lay out, from this one number (ADR-0027).</summary>
+    private const double PopoverMinWidthPx = 200;
+
+    /// <summary>Whether the header cells carry a menu button: only where some command
+    /// could reach a Consumer at all (ADR-0010).</summary>
+    private bool ShowMenuButtons
+        => Source is not null || OnSortChanged.HasDelegate || OnFilterChanged.HasDelegate
+            || OnColumnHidden.HasDelegate || OnPinnedCountChanged.HasDelegate
+            || OnColumnWidthChanged.HasDelegate;
+
+    private int CountPlaceholders()
+    {
+        if (_visible is not { } visible)
+            return 0;
+        if (_placeholderMode)
+            return visible.Count;
+        var count = 0;
+        for (var row = visible.Start; row < visible.Start + visible.Count; row++)
+        {
+            var slice = row - _windowStart;
+            if (slice < 0 || slice >= _window.Count)
+                count++;
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// <c>aria-sort</c> for one header (ADR-0033): the applied direction on the sorted
+    /// column, <c>none</c> on every other sortable one, and no attribute at all where a
+    /// sort is refused (an Action Column). The visual indicator is painted from this
+    /// same attribute in the stylesheet, so the two cannot disagree.
+    /// </summary>
+    private string? AriaSort(int column)
+    {
+        if (!Columns[column].IsQueryable)
+            return null;
+        foreach (var sort in _sorts)
+        {
+            if (sort.Column == Columns[column].Name)
+                return sort.Direction == SortDirection.Ascending ? "ascending" : "descending";
+        }
+        return "none";
     }
 
     private void SetDragging(bool dragging)
@@ -1148,7 +2510,10 @@
         if (dragging)
             _dragHandler["onmousemove"] = _onMouseMove ??= OnMouseMove;
         else
+        {
             _dragHandler.Remove("onmousemove");
+            StopEdgeTimer();
+        }
         // The handler is markup, so adding or removing it has to reach the DOM whatever
         // the selection did — which is why every caller sets the suppression first and
         // lets this override it.
@@ -1188,37 +2553,50 @@
     }
 
     /// <summary>
-    /// What the browser says its scrollbars take out of the declared Viewport, reported
-    /// whenever it changes (ADR-0021). Both numbers are 0 on a platform with overlay
-    /// scrollbars, and 0 anywhere until the content overflows.
+    /// What the browser says about the scroller's box, reported whenever it changes
+    /// (ADR-0021): the Scrollbar Gutter — 0 on a platform with overlay scrollbars, and
+    /// 0 anywhere until the content overflows — and the content box's own size, which
+    /// under <see cref="ViewportSize.Fill"/> is the size (ADR-0028). One notification
+    /// carries both; the observer gained no new reason to exist and no new moment to
+    /// fire.
     ///
-    /// The frame between the bar appearing and this landing is painted from the old
-    /// visible size: one frame of a slice that is one row too generous, on a grid that
-    /// has just gained a scrollbar. That is accepted rather than pre-empted — the
-    /// alternative is a layout read of our own before every paint, which is the round
-    /// trip the whole geometry exists to avoid (ADR-0013).
+    /// The frame between a change and this landing is painted from the old visible
+    /// size: one frame of a slice that is one row too generous. That is accepted rather
+    /// than pre-empted — the alternative is a layout read of our own before every
+    /// paint, which is the round trip the whole geometry exists to avoid (ADR-0013).
     /// </summary>
     [JSInvokable]
-    public async Task OnScrollbarGutterChangedAsync(double widthPx, double heightPx)
+    public async Task OnViewportReportAsync(
+        double gutterWidthPx, double gutterHeightPx, double widthPx, double heightPx)
     {
         // Nothing here is trusted: it crosses the JS boundary, and a NaN would travel
         // silently into every offset the grid computes.
         if (_disposed
+            || !double.IsFinite(gutterWidthPx) || !double.IsFinite(gutterHeightPx)
             || !double.IsFinite(widthPx) || !double.IsFinite(heightPx)
-            || widthPx < 0 || heightPx < 0
-            || (widthPx == _gutterWidthPx && heightPx == _gutterHeightPx))
+            || gutterWidthPx < 0 || gutterHeightPx < 0)
         {
             return;
         }
+        // A report carrying no news renders nothing. The content box moves on every
+        // frame of a window drag, but only a Fill axis reads it — under a declared
+        // size that half of the report is noise by design.
+        var guttersChanged = gutterWidthPx != _gutterWidthPx || gutterHeightPx != _gutterHeightPx;
+        var sizeChanged = (ViewportWidth.IsFill && widthPx != _reportedWidthPx)
+            || (ViewportHeight.IsFill && heightPx != _reportedHeightPx);
+        _reportedWidthPx = widthPx;
+        _reportedHeightPx = heightPx;
+        if (!guttersChanged && !sizeChanged)
+            return;
 
         // A bar that appeared can have covered the Focus where it stands. Revealing is a
         // no-op when it is already whole on screen, so this costs nothing in the ordinary
         // case and keeps ADR-0012 true in the one that is not.
         // Only when nothing is already armed: a key's reveal may be waiting to run, and
         // it carries an intent this one does not have.
-        var shrank = (widthPx > _gutterWidthPx || heightPx > _gutterHeightPx) && !_revealFocus;
-        _gutterWidthPx = widthPx;
-        _gutterHeightPx = heightPx;
+        var shrank = (gutterWidthPx > _gutterWidthPx || gutterHeightPx > _gutterHeightPx) && !_revealFocus;
+        _gutterWidthPx = gutterWidthPx;
+        _gutterHeightPx = gutterHeightPx;
         try
         {
             PrepareRender();
@@ -1235,24 +2613,241 @@
     }
 
     /// <summary>
+    /// The <c>copy</c> event's synchronous question (ADR-0005): refused, in hand, or
+    /// beyond the Window. Refusals are decided by the pure rules and raised through
+    /// <see cref="OnCopyRefused"/>; the payload is assembled from the Window when every
+    /// selected row is in it, which is the overwhelming majority of copies.
+    /// </summary>
+    [JSInvokable]
+    public ClipboardPayload BuildCopyPayload()
+    {
+        if (_disposed)
+            return ClipboardPayload.None;
+
+        var decision = ClipboardRules.PlanCopy(_selection.Selection, CopyCellCap);
+        if (decision.IsRefused)
+        {
+            NotifyCopyRefused(decision.Reason);
+            return ClipboardPayload.None;
+        }
+        if (!WindowCovers(decision.Plan))
+        {
+            // The async route needs somebody to ask. Without one, refuse by name
+            // rather than copy the fraction in hand (ADR-0005).
+            if (Source is null && OnCopyRowsNeeded is null)
+            {
+                NotifyCopyRefused(CopyRefusalReason.RowsUnavailable);
+                return ClipboardPayload.None;
+            }
+            return ClipboardPayload.Async;
+        }
+
+        var (text, html) = ClipboardData.Assemble(
+            decision.Plan,
+            (row, column) => ExGridRow<TRow>.CellText(Columns[column], _window[row - _windowStart]),
+            (row, column) => RawText(Columns[column], _window[row - _windowStart]));
+        return ClipboardPayload.Data(text, html);
+    }
+
+    /// <summary>
+    /// The asynchronous copy route (ADR-0005): the selection runs beyond the Window, so
+    /// the rows are gathered — from the Source, or from the push Consumer's provider —
+    /// assembled, handed to the clipboard, and stored nowhere. Null aborts the write
+    /// and the clipboard stays as it was.
+    /// </summary>
+    [JSInvokable]
+    public async Task<ClipboardPayload?> BuildCopyPayloadAsync()
+    {
+        if (_disposed)
+            return null;
+
+        // Decided again rather than remembered from the synchronous half: the answer
+        // must be about the selection as it stands now, not as it stood one event ago.
+        var decision = ClipboardRules.PlanCopy(_selection.Selection, CopyCellCap);
+        if (decision.IsRefused)
+        {
+            NotifyCopyRefused(decision.Reason);
+            return null;
+        }
+
+        var rows = await GatherRowsAsync(decision.Plan);
+        if (_disposed)
+            return null;
+        if (rows is null)
+        {
+            NotifyCopyRefused(CopyRefusalReason.RowsUnavailable);
+            return null;
+        }
+
+        var (text, html) = ClipboardData.Assemble(
+            decision.Plan,
+            (row, column) => ExGridRow<TRow>.CellText(Columns[column], rows[row]),
+            (row, column) => RawText(Columns[column], rows[row]));
+        return ClipboardPayload.Data(text, html);
+    }
+
+    /// <summary>
+    /// The <c>paste</c> event's block, both flavours (ADR-0005/0014). Nothing tabular
+    /// consults no rule; a refusal says which rule it hit; an approval is one Edit
+    /// Intent carrying every cell (ADR-0007).
+    /// </summary>
+    [JSInvokable]
+    public async Task OnPasteAsync(string? text, string? html)
+    {
+        if (_disposed)
+            return;
+
+        var block = ClipboardParse.Parse(html, text);
+        if (block is null)
+            return;
+
+        var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(block.Count, block[0].Count));
+        if (decision.IsRefused)
+        {
+            if (OnPasteRefused.HasDelegate)
+                await OnPasteRefused.InvokeAsync(decision.Reason);
+            return;
+        }
+        if (OnPaste.HasDelegate)
+            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, _sequenceVersion));
+    }
+
+    /// <summary>Whether every row the plan touches is in the Window — the test that
+    /// chooses between the two clipboard routes (ADR-0005).</summary>
+    private bool WindowCovers(CopyPlan plan)
+    {
+        foreach (var segment in plan.Segments)
+        {
+            if (segment.TopRow < _windowStart || segment.BottomRow >= _windowStart + _window.Count)
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// The rows the plan needs, keyed by absolute position: from the Window where the
+    /// Window has them, otherwise asked for (ADR-0005). Null when nobody can answer or
+    /// an answer came back short — a partial block is never emitted.
+    /// </summary>
+    private async Task<Dictionary<int, TRow>?> GatherRowsAsync(CopyPlan plan)
+    {
+        var rows = new Dictionary<int, TRow>();
+        foreach (var segment in plan.Segments)
+        {
+            var range = new RowRange(segment.TopRow, segment.RowCount);
+            if (range.Start >= _windowStart && range.Start + range.Count <= _windowStart + _window.Count)
+            {
+                for (var row = range.Start; row < range.Start + range.Count; row++)
+                    rows[row] = _window[row - _windowStart];
+                continue;
+            }
+
+            IReadOnlyList<TRow> answered;
+            if (Source is not null)
+                answered = await Source.GetRowsAsync(range, CancellationToken.None);
+            else if (OnCopyRowsNeeded is not null)
+                answered = await OnCopyRowsNeeded(range, CancellationToken.None);
+            else
+                return null;
+            if (_disposed)
+                return null;
+            if (answered is null || answered.Count < range.Count)
+                return null;
+            for (var i = 0; i < range.Count; i++)
+                rows[range.Start + i] = answered[i];
+        }
+        return rows;
+    }
+
+    /// <summary>The raw, locale-free form for <c>text/html</c> (ADR-0005): full
+    /// precision for a number, ISO for a date, TRUE/FALSE for a boolean — never the
+    /// displayed format, whose separators are a locale trap.</summary>
+    private static string RawText(GridColumn<TRow> column, TRow row)
+    {
+        var value = column.Value(row);
+        return value switch
+        {
+            null => "",
+            bool b => b ? "TRUE" : "FALSE",
+            DateTime d => d.ToString("s", CultureInfo.InvariantCulture),
+            DateTimeOffset d => d.ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture),
+            DateOnly d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            TimeOnly t => t.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
+            IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
+            _ => value.ToString() ?? "",
+        };
+    }
+
+    /// <summary>Raised off the synchronous copy path: the event handler cannot await,
+    /// and the refusal must still reach the Consumer (ADR-0005: say which one).</summary>
+    private void NotifyCopyRefused(CopyRefusalReason reason)
+    {
+        if (_disposed || !OnCopyRefused.HasDelegate)
+            return;
+        _ = InvokeAsync(() => OnCopyRefused.InvokeAsync(reason));
+    }
+
+    /// <summary>
+    /// The synchronous-channel probe: called once at attach, synchronously. Where the
+    /// call cannot be made that way (a server circuit), the copy path knows to take the
+    /// async route from the start — so a later synchronous failure is a failure to be
+    /// reported, never mistaken for a missing channel (ADR-0005/0017).
+    /// </summary>
+    [JSInvokable]
+    public bool Ping() => true;
+
+    /// <summary>
     /// A key the core claimed (ADR-0010). Called from the instance's own capture-phase
     /// listener, so a grid without focus never gets here, and two grids on one page never
     /// hear each other's keys (ADR-0018). The listener has already prevented the default:
     /// what is left is to say what the key meant.
     /// </summary>
     [JSInvokable]
-    public async Task OnKeyAsync(string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary)
+    public async Task OnKeyAsync(
+        string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
+        bool fromDescendant = false)
     {
         if (_disposed)
             return;
+        // While editing, the keys the gate forwarded are the editor's contract
+        // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite.
+        if (_editMode != EditMode.None)
+        {
+            await OnEditingKeyAsync(key, ctrl, shift);
+            return;
+        }
+
         var action = GridKeys.Resolve(key, ctrl, shift, alt, meta, metaIsPrimary);
         switch (action.Kind)
         {
             case GridKeyKind.None:
+                // F2 and a printable character open the Cell Editor (ADR-0010) — the
+                // gate forwarded them; whether this cell edits is decided here.
+                await TryStartEditingAsync(key, ctrl, alt, meta, metaIsPrimary);
                 return;
             case GridKeyKind.Leave:
-                // The way out of Enter/Tab cycling, which never leaves the selection by
-                // design (ADR-0012) and would otherwise trap the keyboard in the grid.
+                // Escape peels the outermost layer first: an open popover closes and
+                // the grid keeps the keyboard — one press, one dismissal. Only with
+                // nothing left to dismiss is it the way out of Enter/Tab cycling
+                // (ADR-0012), releasing the grid's DOM focus.
+                if (_menuColumn >= 0 || _panelColumn >= 0)
+                {
+                    CloseMenus();
+                    if (fromDescendant)
+                        await ReclaimFocusAsync();
+                    StateHasChanged();
+                    return;
+                }
+                if (fromDescendant)
+                {
+                    // From a focusable descendant — a Consumer's Template Column
+                    // control, an action button — Escape is the way out of the cell,
+                    // not of the grid (ADR-0020): the keyboard returns to the grid
+                    // and navigation resumes.
+                    await ReclaimFocusAsync();
+                    StateHasChanged();
+                    return;
+                }
                 await LeaveAsync();
                 return;
             case GridKeyKind.Engage:
@@ -1286,7 +2881,8 @@
         // Ctrl+Home) needs no starting point and still does what it says.
         var movesTheFocus = action.Kind
             is GridKeyKind.Move or GridKeyKind.Extend
-            or GridKeyKind.MoveToEdge or GridKeyKind.ExtendToEdge or GridKeyKind.Cycle;
+            or GridKeyKind.MoveToEdge or GridKeyKind.ExtendToEdge or GridKeyKind.Cycle
+            or GridKeyKind.MoveByViewport or GridKeyKind.ExtendByViewport;
         var next = fromEmpty && movesTheFocus ? current : action.Kind switch
         {
             GridKeyKind.Move => current.Move(action.Direction, extent),
@@ -1294,7 +2890,7 @@
             GridKeyKind.MoveToEdge => current.MoveToEdge(action.Direction, extent),
             GridKeyKind.ExtendToEdge => current.ExtendToEdge(action.Direction, extent),
             GridKeyKind.Cycle => current.CycleFocus(action.Order, action.Backward, extent),
-            GridKeyKind.SelectAll => current.SelectAll(extent),
+            GridKeyKind.SelectAll => SelectAllInContext(current, extent),
             GridKeyKind.SelectWholeColumns => current.SelectWholeColumns(extent),
             GridKeyKind.SelectWholeRows => current.SelectWholeRows(extent),
             GridKeyKind.MoveToCorner => current.Click(
@@ -1302,6 +2898,8 @@
                     ? new CellPosition(0, 0)
                     : new CellPosition(extent.RowCount - 1, extent.ColumnCount - 1),
                 extent),
+            GridKeyKind.MoveByViewport => current.MoveByViewport(SignedViewportRows(action.Direction), extent),
+            GridKeyKind.ExtendByViewport => current.ExtendByViewport(SignedViewportRows(action.Direction), extent),
             _ => current,
         };
 
@@ -1319,11 +2917,40 @@
             _suppressRender = false;
             return;
         }
+        // The keyboard crosses pages; dragging does not (ADR-0015): a Focus the
+        // keystroke carried past the page boundary turns the page, and the reveal then
+        // positions it inside the new one.
+        if (PageSize is { } pageSize && next.Focus.Row / pageSize != _pageIndex)
+        {
+            _pageIndex = next.Focus.Row / pageSize;
+            PrepareRender();
+        }
+
         // The Focus has to end up on screen (ADR-0012), measured after the render against
         // the geometry that was actually painted.
         _revealRowStart = NamesTheStartOfTheRow(action);
+        // PageUp / PageDown move the Viewport by the same rows the Focus moved, so the
+        // Focus keeps its position on screen (ADR-0012). Everywhere else the scroll is a
+        // reveal, so the step stays zero — and so does the press that only placed the
+        // Focus, which moves nothing by design.
+        _revealStepRows = !fromEmpty
+            && action.Kind is GridKeyKind.MoveByViewport or GridKeyKind.ExtendByViewport
+            ? SignedViewportRows(action.Direction)
+            : 0;
         _revealFocus = true;
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// How far PageUp / PageDown move, as a signed row count: the rows fully visible in
+    /// what the header band and the Scrollbar Gutter leave (ADR-0012) — the geometry's
+    /// height is already both of those subtractions. At least one, so a Viewport shorter
+    /// than a row still moves.
+    /// </summary>
+    private int SignedViewportRows(GridDirection direction)
+    {
+        var rows = Math.Max(1, (int)Math.Floor(_geometry.ViewportHeightPx / _metrics.RowHeightPx));
+        return direction == GridDirection.Up ? -rows : rows;
     }
 
     /// <summary>
@@ -1338,6 +2965,351 @@
         GridKeyKind.MoveToCorner => action.Backward,
         _ => false,
     };
+
+    /// <summary>
+    /// The focused cell's full value — the formula-bar role behind <c>####</c>
+    /// (ADR-0016): the raw value, never the hashes, and null when there is no Focus or
+    /// its row is not in hand. Producing the value is the core's; painting it is
+    /// Chrome's (ADR-0010).
+    /// </summary>
+    public object? GetFocusedValue()
+    {
+        if (_selection.Selection.IsEmpty)
+            return null;
+        var focus = _selection.Selection.Focus;
+        if (focus.Column < 0 || focus.Column >= Columns.Count)
+            return null;
+        var slice = focus.Row - _windowStart;
+        if (slice < 0 || slice >= _window.Count)
+            return null;
+        return Columns[focus.Column].Value(_window[slice]);
+    }
+
+    /// <summary>Whether the Cell Editor opens here: an editable column, and a row that
+    /// is in hand — the Focus over a Placeholder waits for the data (ADR-0012/ED-8).</summary>
+    private bool AnyColumnEdits()
+    {
+        for (var i = 0; i < Columns.Count; i++)
+        {
+            if (Columns[i].Editable)
+                return true;
+        }
+        return false;
+    }
+
+    private bool IsEditableCell(CellPosition cell)
+    {
+        if (cell.Column < 0 || cell.Column >= Columns.Count || !Columns[cell.Column].Editable)
+            return false;
+        var slice = cell.Row - _windowStart;
+        return slice >= 0 && slice < _window.Count && !_placeholderMode;
+    }
+
+    private async Task TryStartEditingAsync(string key, bool ctrl, bool alt, bool meta, bool metaIsPrimary)
+    {
+        // A chorded key is not typing — except AltGr, which Windows reports as Control
+        // and Alt held together and is how the German, French and Nordic layouts type
+        // @ { [ €. Either modifier alone is a shortcut and stays out; both together is
+        // a character. A Meta held where it is not primary was never forwarded, but
+        // the guard costs nothing to keep honest.
+        if (meta || ctrl != alt)
+            return;
+        var caret = key == "F2" && !ctrl;
+        if (!caret && key.Length != 1)
+            return;
+
+        var extent = Extent;
+        if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
+            return;
+        var current = _selection.Selection;
+        if (current.IsEmpty)
+        {
+            // The same placement rule as any first key (ADR-0012): the Focus lands on
+            // the first visible cell, and the editing starts there.
+            if (FirstVisibleCell() is not { } start)
+                return;
+            current = current.Click(start, extent);
+        }
+        if (!IsEditableCell(current.Focus))
+        {
+            _suppressRender = false;
+            return;
+        }
+
+        if (!Apply(current))
+            _suppressRender = false;
+        // The character that started Overwrite mode is not lost (ADR-0010): it was
+        // pressed before the editor existed, so the core holds it and the editor opens
+        // containing it. Caret keeps the current value, with the caret inside it.
+        await StartEditingAsync(
+            current.Focus,
+            caret ? EditMode.Caret : EditMode.Overwrite,
+            caret ? CellTextOf(current.Focus) : key);
+    }
+
+    private string CellTextOf(CellPosition cell)
+    {
+        var slice = cell.Row - _windowStart;
+        return slice >= 0 && slice < _window.Count
+            ? ExGridRow<TRow>.CellText(Columns[cell.Column], _window[slice])
+            : "";
+    }
+
+    private async Task StartEditingAsync(CellPosition cell, EditMode mode, string initialText)
+    {
+        _editMode = mode;
+        _editingCell = cell;
+        _editText = initialText;
+        _editorNeedsFocus = true;
+        await PushEditingModeAsync();
+        StateHasChanged();
+    }
+
+    /// <summary>Tells the key gate which set it runs under (ADR-0010): a mode change
+    /// is a different set of claimed keys.</summary>
+    private async Task PushEditingModeAsync()
+    {
+        _jsEditingDirty = false;
+        if (_scrollHandle is null || _disposed)
+            return;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("setEditing", _editMode switch
+            {
+                EditMode.Overwrite => "overwrite",
+                EditMode.Caret => "caret",
+                _ => "none",
+            });
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+
+    private async Task OnEditingKeyAsync(string key, bool ctrl, bool shift)
+    {
+        switch (key)
+        {
+            case "Escape":
+                // Cancel discards: the uncommitted text was the grid's and dies with
+                // the editor (ADR-0007). Esc never blurs the grid from here.
+                await EndEditingAsync();
+                StateHasChanged();
+                return;
+            case "F2":
+                // F2 moves between the two states (ADR-0010).
+                _editMode = _editMode == EditMode.Caret ? EditMode.Overwrite : EditMode.Caret;
+                await PushEditingModeAsync();
+                _editorNeedsFocus = true;
+                StateHasChanged();
+                return;
+            case "Enter" when ctrl:
+                // Ctrl+Enter fills the whole selection with the committed value — one
+                // Edit Intent carrying all cells, the paste machinery's shape (ADR-0007/0014).
+                await CommitFillAsync();
+                return;
+            case "Enter":
+                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.ColumnMajor, shift, Extent));
+                return;
+            case "Tab":
+                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.RowMajor, shift, Extent));
+                return;
+            case "ArrowUp":
+                await CommitAndMoveAsync(next => next.Move(GridDirection.Up, Extent));
+                return;
+            case "ArrowDown":
+                await CommitAndMoveAsync(next => next.Move(GridDirection.Down, Extent));
+                return;
+            case "ArrowLeft":
+                await CommitAndMoveAsync(next => next.Move(GridDirection.Left, Extent));
+                return;
+            case "ArrowRight":
+                await CommitAndMoveAsync(next => next.Move(GridDirection.Right, Extent));
+                return;
+            case "Home":
+                await CommitAndMoveAsync(next => next.MoveToEdge(GridDirection.Left, Extent));
+                return;
+            case "End":
+                await CommitAndMoveAsync(next => next.MoveToEdge(GridDirection.Right, Extent));
+                return;
+        }
+    }
+
+    /// <summary>A commit leaves the grid as an intent and nothing else (ADR-0007): the
+    /// painted value does not change until the Consumer returns a new row instance.</summary>
+    private async Task CommitEditAsync()
+    {
+        var cell = _editingCell;
+        var text = _editText;
+        await EndEditingAsync();
+        var slice = cell.Row - _windowStart;
+        // The row left the Window mid-edit: there is no identity to commit onto, and a
+        // positional guess would land the value on a different row (ADR-0011).
+        if (slice < 0 || slice >= _window.Count)
+            return;
+        if (OnEdit.HasDelegate)
+            await OnEdit.InvokeAsync(new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text));
+    }
+
+    private async Task CommitAndMoveAsync(Func<GridSelection, GridSelection> move)
+    {
+        await CommitEditAsync();
+        var extent = Extent;
+        if (extent.RowCount <= 0 || extent.ColumnCount <= 0 || _selection.Selection.IsEmpty)
+        {
+            StateHasChanged();
+            return;
+        }
+        if (Apply(move(_selection.Selection)))
+            _revealFocus = true;
+        else
+            _suppressRender = false;
+        StateHasChanged();
+    }
+
+    private async Task CommitFillAsync()
+    {
+        var text = _editText;
+        await EndEditingAsync();
+        var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(1, 1));
+        StateHasChanged();
+        if (decision.IsRefused)
+            return;
+        if (OnPaste.HasDelegate)
+        {
+            await OnPaste.InvokeAsync(new GridPasteIntent(
+                decision.Plan, [[text]], _sequenceVersion));
+        }
+    }
+
+    private async Task EndEditingAsync()
+    {
+        _editMode = EditMode.None;
+        _editText = "";
+        _editorNeedsFocus = false;
+        await PushEditingModeAsync();
+        await ReclaimFocusAsync();
+    }
+
+    private void OnEditorInput(ChangeEventArgs e) => _editText = e.Value?.ToString() ?? "";
+
+    /// <summary>The editor seam's contract (ADR-0010): the core owns the box, the keys
+    /// and the text's lifecycle; a substitute renders the control and reports its text
+    /// as it changes — Enter and its siblings never reach it.</summary>
+    private CellEditorContext BuildEditorContext()
+    {
+        var declared = Columns[_editingCell.Column];
+        return new CellEditorContext(
+            declared.Name,
+            declared.Type,
+            _editText,
+            _editMode == EditMode.Caret ? CellEditMode.Caret : CellEditMode.Overwrite,
+            text => _editText = text,
+            () => _ = InvokeAsync(() => CommitAndMoveAsync(next => next)),
+            () => _ = InvokeAsync(async () =>
+            {
+                await EndEditingAsync();
+                StateHasChanged();
+            }));
+    }
+
+    /// <summary>F2's other door (ADR-0010): a double click enters Caret on an editable
+    /// cell — the original value stays, with the caret inside it.</summary>
+    private async Task OnViewportDoubleClickAsync(MouseEventArgs e)
+    {
+        if (_editMode != EditMode.None || CellUnder(e) is not { } cell || !IsEditableCell(cell))
+        {
+            _suppressRender = true;
+            return;
+        }
+        var extent = Extent;
+        if (!Apply(_selection.Selection.Click(cell, extent)))
+            _suppressRender = false;
+        await StartEditingAsync(cell, EditMode.Caret, CellTextOf(cell));
+    }
+
+    /// <summary>
+    /// Ctrl+A selects the context that is visible (ADR-0015): under a pager the page —
+    /// which reads as the world — and going beyond it is requested explicitly, through
+    /// the offer beside the count. Scrolling has no such boundary, so there it stays
+    /// every row after filtering across every visible column (ADR-0011).
+    /// </summary>
+    private GridSelection SelectAllInContext(GridSelection current, GridExtent extent)
+    {
+        if (PageSize is not { } size)
+            return current.SelectAll(extent);
+        var start = Math.Min(_pageStartRow, extent.RowCount - 1);
+        var count = Math.Min(extent.RowCount - start, size);
+        if (start < 0 || count <= 0)
+            return current;
+        // The page-context overload, not Click+ExtendTo: naming the whole region must
+        // keep Anchor and Focus where they stand, exactly as SelectAll does (ADR-0012).
+        return current.SelectAll(extent, start, count);
+    }
+
+    /// <summary>The explicit way past the page's context (ADR-0015): the offer beside
+    /// the count, doing what Ctrl+A does without a pager.</summary>
+    private async Task SelectWholeResultAsync()
+    {
+        var extent = Extent;
+        if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
+            return;
+        if (!Apply(_selection.Selection.SelectAll(extent)))
+            _suppressRender = false;
+        await ReclaimFocusAsync();
+    }
+
+    private async Task TurnPageAsync(int delta)
+    {
+        if (PageSize is null)
+            return;
+        var target = Math.Clamp(_pageIndex + delta, 0, PageCount - 1);
+        if (target != _pageIndex)
+        {
+            // The same machinery as a scroll (ADR-0015): the new page recomputes the
+            // slice, and the after-render pass raises the Range Request if the Window
+            // does not cover it.
+            _pageIndex = target;
+            _scrollTopPx = 0;
+            PrepareRender();
+            await PushScrollOffsetAsync(0, _scrollLeftPx);
+        }
+        await ReclaimFocusAsync();
+    }
+
+    /// <summary>The way back to an off-screen selection (ADR-0015): to its page when
+    /// there is one, and the ordinary reveal from there.</summary>
+    private async Task GoToSelectionAsync()
+    {
+        if (_selection.Selection.IsEmpty)
+            return;
+        if (PageSize is { } size)
+            _pageIndex = _selection.Selection.Focus.Row / size;
+        PrepareRender();
+        _revealFocus = true;
+        await ReclaimFocusAsync();
+    }
+
+    /// <summary>Whether any selection rectangle intersects what is on screen — the
+    /// off-screen indicator's test, needing no data (ADR-0014/0015).</summary>
+    private bool SelectionIntersectsView()
+    {
+        if (_visible is not { } visible)
+            return false;
+        foreach (var range in _selection.Selection.Ranges)
+        {
+            if (range.TopRow >= visible.Start + visible.Count || range.BottomRow < visible.Start)
+                continue;
+            if (range.LeftColumn < _columnStyles.Geometry.PinnedCount)
+                return true;
+            if (_scrollable is { } columns
+                && range.LeftColumn < columns.Start + columns.Count && range.RightColumn >= columns.Start)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /// <summary>Space on a single-action cell fires it; N ≥ 2 and editable cells wait for
     /// the Interactive and Overwrite modes (ADR-0020).</summary>
@@ -1408,15 +3380,28 @@
         if (!_revealFocus)
             return;
         var toRowStart = _revealRowStart;
+        var stepRows = _revealStepRows;
         _revealFocus = false;
         _revealRowStart = false;
+        _revealStepRows = 0;
         if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)
             return;
 
         var focus = _selection.Selection.Focus;
-        if (focus.Row >= _geometry.TotalRowCount || focus.Column >= _columnStyles.Geometry.Count)
+        if (focus.Row >= TotalRows || focus.Column >= _columnStyles.Geometry.Count)
             return;
-        var top = _geometry.ScrollTopToReveal(focus.Row, _scrollTopPx);
+        // Under a PageSize the reveal works in page-local rows; a Focus that left the
+        // page has already turned it at the keystroke (ADR-0015).
+        var localRow = focus.Row - _pageStartRow;
+        if (localRow < 0 || localRow >= _geometry.TotalRowCount)
+            return;
+        // PageUp / PageDown scroll by the same rows the Focus moved — the one scroll
+        // that is not a reveal (ADR-0012). The reveal still runs over the stepped
+        // offset: at the top and bottom the scroll clamps, the relative position cannot
+        // be held, and the transition degrades to exactly a reveal there — the Focus is
+        // still visible, which is the invariant that actually matters.
+        var steppedTop = _scrollTopPx + (stepRows * _metrics.RowHeightPx);
+        var top = _geometry.ScrollTopToReveal(localRow, steppedTop);
         // "Go to the beginning" is not the same request as "make this cell visible", and
         // Pinned Columns are where the two come apart. ScrollLeftToReveal answers the
         // second one and answers it correctly: a pinned column covers the Viewport's left
@@ -1434,18 +3419,20 @@
         var left = toRowStart
             ? 0
             : _columnStyles.Geometry.ScrollLeftToReveal(focus.Column, _scrollLeftPx);
-        if (top == _scrollTopPx && left == _scrollLeftPx)
+        // The no-op check compares against where the scroller is GOING TO BE — the last
+        // scroll event or the last write, whichever is newer — never against the event
+        // mirror alone. A previous reveal's write can still be in flight; judged against
+        // the mirror, this reveal would be dropped as "already there" and the in-flight
+        // write would land after it, leaving the Focus off screen with nothing armed to
+        // recover (hit for real: Ctrl+Home then Ctrl+End faster than the scroll event
+        // round-trips, under the zoom suite). A move that truly needs no scroll still
+        // writes nothing.
+        if (top == _expectedScrollTopPx && left == _expectedScrollLeftPx)
             return;
 
-        try
-        {
-            // The browser answers with a scroll event, which is what updates the offsets
-            // and, if the Focus went past the Window, raises the Range Request (ADR-0012).
-            await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left);
-        }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
-        {
-        }
+        // The browser answers with a scroll event, which is what updates the offsets
+        // and, if the Focus went past the Window, raises the Range Request (ADR-0012).
+        await PushScrollOffsetAsync(top, left);
     }
 
     private async Task RaiseSelectionIfChangedAsync()
@@ -1456,9 +3443,119 @@
         if (!_selectionChanged)
             return;
         _selectionChanged = false;
+        ScheduleAnnouncement();
         if (_disposed || !SelectionChanged.HasDelegate)
             return;
         await SelectionChanged.InvokeAsync(_selection.Selection);
+    }
+
+    /// <summary>
+    /// Arms the live region for the settled selection (ADR-0033). Only when the
+    /// <em>ranges</em> moved: a Focus move announces nothing — aria-activedescendant
+    /// moved with it and the assistive technology reads the new cell itself — and a
+    /// single collapsed cell is that same case arrived at by arrow key.
+    /// </summary>
+    private void ScheduleAnnouncement()
+    {
+        if (_disposed)
+            return;
+        var ranges = _selection.Selection.Ranges;
+        if (RangesEqual(ranges, _announcedRanges))
+            return;
+        // A 1×1 selection is the Focus by another name; the region neither announces
+        // it nor clears — "live region unchanged" is the criterion.
+        if (ranges.Count == 1 && ranges[0].CellCount == 1)
+        {
+            _announcedRanges = ranges;
+            return;
+        }
+        if (ranges.Count == 0)
+        {
+            _announcedRanges = ranges;
+            return;
+        }
+        _announceTimer ??= Time.CreateTimer(OnAnnounceSettled, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        _announceTimer.Change(SettleDelay, Timeout.InfiniteTimeSpan);
+    }
+
+    private void OnAnnounceSettled(object? state)
+    {
+        _ = InvokeAsync(() =>
+        {
+            if (_disposed)
+                return;
+            var ranges = _selection.Selection.Ranges;
+            if (RangesEqual(ranges, _announcedRanges))
+                return;
+            _announcedRanges = ranges;
+            _announcement = DescribeSelection(_selection.Selection);
+            StateHasChanged();
+        });
+    }
+
+    private static bool RangesEqual(IReadOnlyList<SelectionRange> a, IReadOnlyList<SelectionRange> b)
+    {
+        if (a.Count != b.Count)
+            return false;
+        for (var i = 0; i < a.Count; i++)
+        {
+            if (a[i] != b[i])
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// The extent in one sentence, naming the corners (ADR-0033). The wording is
+    /// provisional — ADR-0033 leaves header-versus-index to a real screen reader in
+    /// layer 3 — but the shape is not: one sentence, the extent, at any moment.
+    /// </summary>
+    private string DescribeSelection(GridSelection selection)
+    {
+        if (selection.IsEmpty)
+            return "";
+        if (selection.Ranges.Count > 1)
+        {
+            return FormattableString.Invariant(
+                $"{selection.CellCount} cells in {selection.Ranges.Count} ranges selected");
+        }
+        var range = selection.Ranges[0];
+        var left = range.LeftColumn < Columns.Count ? Columns[range.LeftColumn].Header : "";
+        var right = range.RightColumn < Columns.Count ? Columns[range.RightColumn].Header : "";
+        return FormattableString.Invariant(
+            $"{range.RowCount} rows by {range.ColumnCount} columns selected, {left} {range.TopRow + 1} to {right} {range.BottomRow + 1}");
+    }
+
+    /// <summary>
+    /// The Focus cell's id for <c>aria-activedescendant</c>, or null while the Focus is
+    /// not painted (ADR-0033): a wheel scroll can carry the Focus cell out of the DOM,
+    /// and the attribute must never name a missing id — nor force a scroll back.
+    /// </summary>
+    private string? ActiveDescendant()
+    {
+        if (_selection.Selection.IsEmpty || _visible is not { } visible)
+            return null;
+        var focus = _selection.Selection.Focus;
+        if (focus.Row < visible.Start || focus.Row >= visible.Start + visible.Count)
+            return null;
+        var slice = focus.Row - _windowStart;
+        if (slice < 0 || slice >= _window.Count)
+            return null;
+        if (focus.Column >= _columnStyles.Geometry.PinnedCount)
+        {
+            // Not pinned, so it is in the DOM only while the horizontal slice paints it
+            // — and not at all mid-fling, when the scrollable cells are skipped.
+            if (_placeholderMode || _scrollable is not { } columns
+                || focus.Column < columns.Start || focus.Column >= columns.Start + columns.Count)
+            {
+                return null;
+            }
+        }
+        else if (_placeholderMode && slice >= _window.Count)
+        {
+            return null;
+        }
+        return FormattableString.Invariant($"{_idPrefix}r{focus.Row}c{focus.Column}");
     }
 
     private void RestartSettleTimer()
@@ -1533,6 +3630,8 @@
     {
         _disposed = true;
         _settleTimer?.Dispose();
+        _edgeTimer?.Dispose();
+        _announceTimer?.Dispose();
         if (_boundSource is not null)
         {
             _boundSource.StateChanged -= OnSourceStateChanged;
@@ -1565,6 +3664,98 @@
     }
 
     private static object RowKey(TRow row) => RowIdentityKeys.GetValue(row, static _ => new object());
+
+    /// <summary>
+    /// The Geometry Tokens, inline on the instance root and emitted from the same
+    /// resolved metrics the arithmetic reads (ADR-0027/0028) — inline so no stylesheet
+    /// can override one, cached so an unchanged geometry costs no string per render.
+    /// </summary>
+    private string RootStyle()
+    {
+        if (_rootStyle.Length == 0)
+        {
+            _rootStyle = string.Create(
+                CultureInfo.InvariantCulture,
+                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px");
+        }
+        return _rootStyle;
+    }
+
+    /// <summary>The rows' own layer: its offset transform, and — while tiers exist —
+    /// the band it starts under, which the stylesheet's one-tier default cannot know
+    /// (ADR-0032). Geometry travels inline (ADR-0027).</summary>
+    private string ViewportStyle()
+    {
+        var transform = FormattableString.Invariant(
+            $"transform: translateY({_geometry.OffsetPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow)}px)");
+        return _headerLayout.TierCount == 0
+            ? transform
+            : FormattableString.Invariant($"top: {BandHeightPx}px; {transform}");
+    }
+
+    /// <summary>The band's own height while tiers exist; the leaf line-height stays one
+    /// tier's (ADR-0032). Null leaves the stylesheet's one-tier default in charge.</summary>
+    private string? HeaderBandStyle()
+        => _headerLayout.TierCount == 0
+            ? null
+            : FormattableString.Invariant(
+                $"height: {BandHeightPx}px; line-height: {_metrics.HeaderHeightPx}px");
+
+    // Interned per combination, the CellClasses economy: a header cell's class is
+    // never composed in the render loop (ADR-0027 P5).
+    private static readonly string[] HeaderClasses =
+    [
+        "ex-header-cell", "ex-header-cell ex-pinned",
+        "ex-header-cell ex-align-left", "ex-header-cell ex-pinned ex-align-left",
+        "ex-header-cell ex-align-center", "ex-header-cell ex-pinned ex-align-center",
+        "ex-header-cell ex-align-right", "ex-header-cell ex-pinned ex-align-right",
+    ];
+
+    private string HeaderClass(int column, bool pinned)
+        => HeaderClasses[((int)Columns[column].HeaderAlign * 2) + (pinned ? 1 : 0)];
+
+    /// <summary>
+    /// One leaf header's style: the cached width and offset, and — while tiers exist —
+    /// its own height, anchored to the band's bottom edge. A column no tier covers
+    /// stretches the full band with nothing declared (ADR-0032).
+    /// </summary>
+    private string HeaderCellStyle(int column, bool pinned)
+    {
+        var cached = pinned ? _columnStyles.PinnedCell(column) : _columnStyles.Cell(column);
+        if (_headerLayout.TierCount == 0)
+            return cached;
+        var heightPx = _headerLayout.LeafTierSpanOf(column) * _metrics.HeaderHeightPx;
+        return FormattableString.Invariant(
+            $"{cached}; align-self: flex-end; height: {heightPx}px; line-height: {heightPx}px");
+    }
+
+    /// <summary>One rectangle's box, from the numbers layout already has (ADR-0032):
+    /// <c>left = OffsetPxOf(first member)</c>, width to past-last, height in tiers —
+    /// standing correctly whether or not its leaves are in the DOM.</summary>
+    private string GroupStyle(ResolvedHeaderGroup group)
+    {
+        var geometry = _columnStyles.Geometry;
+        var leftPx = geometry.OffsetPxOf(group.FirstColumn);
+        var widthPx = geometry.OffsetPxOf(group.FirstColumn + group.MemberCount - 1)
+            + geometry.WidthPxOf(group.FirstColumn + group.MemberCount - 1) - leftPx;
+        var topPx = (_headerLayout.TierCount - group.TopTier) * _metrics.HeaderHeightPx;
+        var heightPx = group.TierSpan * _metrics.HeaderHeightPx;
+        return FormattableString.Invariant(
+            $"left: {leftPx}px; top: {topPx}px; width: {widthPx}px; height: {heightPx}px; line-height: {heightPx}px");
+    }
+
+    /// <summary>A declared axis is written inline; a Fill axis is left to the
+    /// Consumer's CSS, whose answer comes back through the report (ADR-0028).</summary>
+    private string ScrollerStyle()
+    {
+        if (ViewportWidth.IsFill && ViewportHeight.IsFill)
+            return "";
+        if (ViewportWidth.IsFill)
+            return FormattableString.Invariant($"height: {ViewportHeight.Px}px");
+        if (ViewportHeight.IsFill)
+            return FormattableString.Invariant($"width: {ViewportWidth.Px}px");
+        return FormattableString.Invariant($"width: {ViewportWidth.Px}px; height: {ViewportHeight.Px}px");
+    }
 
     private static string Px(double value) => FormattableString.Invariant($"{value}px");
 }
