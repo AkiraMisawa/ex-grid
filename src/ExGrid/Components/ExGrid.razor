@@ -400,7 +400,12 @@
     @* The selection's extent, in one sentence, once per settled selection (ADR-0033):
        polite, so it never interrupts, and written after the same settle the loading
        path uses — a drag announces the destination, not the journey. *@
-    <div class="ex-announce" role="status">@_announcement</div>
+    @* A live region announces on mutation, so a Reject repeated on the same value would
+       write the same sentence and say nothing — and the second refusal is the one the
+       user needs, having just tried again. The key changes per announcement, so the node
+       is replaced rather than left identical; the sentence stays the Consumer's, which
+       appending a count to would not (ADR-0033/0034). *@
+    <div class="ex-announce" role="status" @key="_announceNonce">@_announcement</div>
 </div>
 
 @code {
@@ -1000,6 +1005,9 @@
     // is made once per settled selection (ADR-0033) — the timer below is what "settled"
     // means, and comparing ranges (never Focus) is what keeps a bare Focus move silent.
     private string _announcement = "";
+
+    /// <summary>Bumped with every announcement, so an identical repeat still mutates.</summary>
+    private int _announceNonce;
     private IReadOnlyList<SelectionRange> _announcedRanges = [];
     private ITimer? _announceTimer;
 
@@ -1390,6 +1398,7 @@
         {
             _editMode = EditMode.None;
             _editText = "";
+            _editError = null;
             _editorNeedsFocus = false;
             _jsEditingDirty = true;
             // Announced, not silent: the user typed and something they did not do took
@@ -1886,7 +1895,7 @@
         // menu is how people close menus everywhere else on the platform. The
         // dismissal is markup, so the render must run even when the press itself
         // changes nothing.
-        var dismissed = _menuColumn >= 0 || _panelColumn >= 0;
+        var dismissed = _menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null;
         if (dismissed)
             CloseMenus();
 
@@ -2129,12 +2138,18 @@
         _gestureConsumedClick = false;
         // The same dismissal rule as the body: pressing the header past an open
         // popover closes it, and whatever the press also meant still happens.
-        if (_menuColumn >= 0 || _panelColumn >= 0)
+        if (_menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null)
             CloseMenus();
         // And the same click-away commit (ADR-0010): a header press mid-edit commits
-        // before it sorts or grabs a column.
-        if (_editMode != EditMode.None)
-            await CommitEditAsync();
+        // before it sorts or grabs a column — unless the verdict Rejects, and then the
+        // press keeps no meaning of its own (ADR-0034, ED-15). A sort here would bump the
+        // Row Sequence Version, drop the selection and take with it the very text the
+        // Reject was holding on to.
+        if (_editMode != EditMode.None && !await CommitEditAsync())
+        {
+            StateHasChanged();
+            return;
+        }
         if (e.Button != 0 || !OnColumnOrderChanged.HasDelegate
             || e.OffsetX < 0 || e.OffsetX >= _columnStyles.Geometry.TotalWidthPx
             || _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx) is not { } column)
@@ -2380,6 +2395,14 @@
         // clamps, which is why a primary click below the last row selects the last row.
         // So this is not a dead zone but the guard for having nothing painted at all, and
         // then there is no target to aim a menu at.
+        // The mouse-down that preceded this has already committed or been refused
+        // (ADR-0010/0034). An editor still standing here means a Reject held it, and this
+        // press keeps no meaning of its own either — moving the selection would leave the
+        // editor floating over a cell nobody is on, the stale-editor state the commit-first
+        // rule exists to prevent.
+        if (_editMode != EditMode.None)
+            return;
+
         if (CellUnder(e) is not { } cell)
         {
             CloseMenus();
@@ -2426,10 +2449,19 @@
     {
         if (_editError is { } error && _editMode != EditMode.None && _editingCell.Column < Columns.Count)
             return (_editingCell, error, true);
-        if (_messageCell is { } cell && _messageText is { } text && cell.Column < Columns.Count)
+        // Only while its cell is painted. A wheel scroll moves the Viewport without moving
+        // the Focus (ADR-0033's dangling-reference problem, in another shape), and a
+        // popover anchored above the Window would draw over the header band.
+        if (_messageCell is { } cell && _messageText is { } text
+            && cell.Column < Columns.Count && IsPainted(cell))
+        {
             return (cell, text, false);
+        }
         return (default, null, false);
     }
+
+    private bool IsPainted(CellPosition cell)
+        => _visible is { } visible && cell.Row >= visible.Start && cell.Row < visible.Start + visible.Count;
 
     /// <summary>"true" while a Reject stands, and absent otherwise (ADR-0034). A string
     /// rather than a bool: Blazor renders a false bool as an omitted attribute and a true
@@ -3547,7 +3579,7 @@
             // otherwise a key that did nothing and said nothing (A11Y-15).
             _editError = verdict.Message;
             _editorNeedsFocus = true;
-            _announcement = verdict.Message ?? "";
+            Announce(verdict.Message);
             return false;
         }
         // A Flag raises the intent unchanged: the mark does not travel in it, and comes
@@ -3611,7 +3643,7 @@
         {
             _editError = verdict.Message;
             _editorNeedsFocus = true;
-            _announcement = verdict.Message ?? "";
+            Announce(verdict.Message);
             StateHasChanged();
             return;
         }
@@ -3924,6 +3956,14 @@
         _announceTimer.Change(SettleDelay, Timeout.InfiniteTimeSpan);
     }
 
+    /// <summary>Says something through the root's one live region (ADR-0033). The nonce
+    /// is what makes a repeat audible.</summary>
+    private void Announce(string? sentence)
+    {
+        _announcement = sentence ?? "";
+        _announceNonce++;
+    }
+
     private void OnAnnounceSettled(object? state)
     {
         _ = InvokeAsync(() =>
@@ -3934,7 +3974,7 @@
             if (RangesEqual(ranges, _announcedRanges))
                 return;
             _announcedRanges = ranges;
-            _announcement = DescribeSelection(_selection.Selection);
+            Announce(DescribeSelection(_selection.Selection));
             StateHasChanged();
         });
     }
@@ -4078,6 +4118,7 @@
         _settleTimer?.Dispose();
         _edgeTimer?.Dispose();
         _announceTimer?.Dispose();
+        _messageTimer?.Dispose();
         if (_boundSource is not null)
         {
             _boundSource.StateChanged -= OnSourceStateChanged;

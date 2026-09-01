@@ -124,6 +124,22 @@ public class ContextMenuTests : GridTestContext
         Assert.Equal(["Copy", "Copy with headers"], Items(cut));
     }
 
+    [Fact] // ADR-0010: a pointer-down elsewhere closes it, and keeps its own meaning
+    public async Task A_press_elsewhere_closes_it_and_still_selects()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 10);
+        await SecondaryClickAsync(cut, 50, 10);
+        Assert.NotEmpty(Items(cut));
+
+        await ClickAsync(cut, 250, 50);
+
+        Assert.Empty(Items(cut));
+        // "a popover the user cannot dismiss is a popover in the way" — and the press
+        // that dismissed it still selected the cell it landed on.
+        Assert.Single(Rects(cut));
+    }
+
     [Fact] // ADR-0010's dismissal rules carry over unchanged
     public async Task Escape_closes_it()
     {

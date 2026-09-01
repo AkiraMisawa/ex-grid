@@ -274,4 +274,66 @@ public class ValidationTests : GridTestContext
         // And the editor points at it, so it is read when the field is read.
         Assert.Equal(message.GetAttribute("id"), cut.Find(".ex-editor").GetAttribute("aria-describedby"));
     }
+
+    [Fact] // ADR-0034 / ED-15: a header press is a click-away too, and a Reject stops it
+    public async Task A_reject_holds_the_editor_against_a_header_press()
+    {
+        var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("no"));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "a");
+        await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "abc" });
+
+        await cut.Find(".ex-header").MouseDownAsync(
+            new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 5 });
+
+        // A sort here would bump the sequence version, drop the selection, and take the
+        // typing the Reject was holding on to.
+        Assert.NotEmpty(cut.FindAll(".ex-editor"));
+    }
+
+    [Fact] // ADR-0034 / ED-15: nor may a secondary press walk the selection away from it
+    public async Task A_reject_holds_the_editor_against_a_secondary_press()
+    {
+        var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("no"));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "a");
+        await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "abc" });
+        var focusBefore = cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
+
+        await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { OffsetX = 150, OffsetY = 50 });
+
+        Assert.NotEmpty(cut.FindAll(".ex-editor"));
+        Assert.Equal(focusBefore, cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.Empty(cut.FindAll("[role=menu] button[role=menuitem]"));
+    }
+
+    [Fact] // ADR-0034: a standing error belongs to the editor that earned it, not the next one
+    public async Task A_rejects_error_does_not_survive_into_the_next_editor()
+    {
+        var cut = RenderGrid(validate: (row, text) => text == "abc" ? EditVerdict.Reject("no") : EditVerdict.Accept);
+        await TypeAndCommitAsync(cut, "abc");
+        Assert.NotEmpty(cut.FindAll(".ex-message"));
+
+        // The Consumer pushes a reorder: the selection is dropped and the editor with it.
+        cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 1));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "7");
+
+        Assert.Empty(cut.FindAll(".ex-message"));
+        Assert.Null(cut.Find(".ex-editor").GetAttribute("aria-invalid"));
+    }
+
+    [Fact] // ADR-0033/0034: a live region announces on mutation, so a repeat must be one
+    public async Task The_same_reject_twice_is_announced_twice()
+    {
+        var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("not a date"));
+        await TypeAndCommitAsync(cut, "abc");
+        var first = cut.Find(".ex-announce");
+
+        await PressAsync(cut, "Enter");
+
+        // Same sentence, a different node: the second refusal is the one the user needs.
+        Assert.Equal("not a date", cut.Find(".ex-announce").TextContent);
+        Assert.NotSame(first, cut.Find(".ex-announce"));
+    }
 }
