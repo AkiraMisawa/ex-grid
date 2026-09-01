@@ -203,7 +203,7 @@
                                     }
                                     else
                                     {
-                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" aria-invalid="@EditorInvalid" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -216,7 +216,7 @@
                             }
                             else
                             {
-                                <input class="ex-editor" style="@editorBox" value="@_editText" aria-invalid="@EditorInvalid" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="ex-editor" style="@editorBox" value="@_editText" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -301,7 +301,10 @@
     {
         var messageContext = new CellMessageContext(
             Columns[messageCell.Column].Name, messageText, isEditorError, CloseMessage);
-        <div class="ex-message" style="@CellCornerStyle(messageCell)" role="status">
+        @* A tooltip, not a live region: the Reject is already announced through the root's
+           one region (ADR-0033/0034), and a role="status" here would say it twice. The
+           editor points at it with aria-describedby so it is read when the field is. *@
+        <div class="ex-message" id="@MessageId" style="@CellCornerStyle(messageCell)" role="tooltip">
             @if (Chrome?.CellMessage(messageContext) is { } messageFragment)
             {
                 @messageFragment
@@ -2433,6 +2436,10 @@
     /// one as an empty value, and an assistive technology reading aria-invalid wants the
     /// word.</summary>
     private string? EditorInvalid => _editError is null ? null : "true";
+
+    /// <summary>The message popover's id, instance-prefixed like every other (ADR-0018),
+    /// so the editor can be described by it.</summary>
+    private string MessageId => _idPrefix + "message";
 
     private void CloseMessage()
     {

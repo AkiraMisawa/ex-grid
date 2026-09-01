@@ -260,4 +260,18 @@ public class ValidationTests : GridTestContext
         Assert.Equal(0, asked);
         Assert.Empty(cut.FindAll(".ex-message"));
     }
+
+    [Fact] // ADR-0033/0034: announced once, by the one live region — the popover is a tooltip
+    public async Task The_rejects_message_is_not_announced_twice()
+    {
+        var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("not a date"));
+
+        await TypeAndCommitAsync(cut, "abc");
+
+        Assert.Equal("not a date", cut.Find(".ex-announce").TextContent);
+        var message = cut.Find(".ex-message");
+        Assert.Equal("tooltip", message.GetAttribute("role"));
+        // And the editor points at it, so it is read when the field is read.
+        Assert.Equal(message.GetAttribute("id"), cut.Find(".ex-editor").GetAttribute("aria-describedby"));
+    }
 }
