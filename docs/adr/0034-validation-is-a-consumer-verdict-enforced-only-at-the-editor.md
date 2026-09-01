@@ -137,11 +137,23 @@ what the first principle actually demands.
 
 ## Reject is not Refusal
 
-**Refusal** stays what it has always been: the grid's own, structural *cannot* — caps,
-shape, misalignment (ADR-0014: "the grid refuses because it cannot, not because something is
-large"; Definition of Done ERR-1: every refusal is structural). A **Reject** is the
-Consumer's *wrong*, relayed and enforced by the grid. Keeping the words apart keeps ERR-1
-true.
+The line falls on **what is being judged**. A **Refusal** is the grid's own "no", raised on the
+**operation** — its target, its shape, its size: caps, misalignment, a paste shape, a target
+covering a column that is not Editable. It never looks at the value being written. A **Reject**
+judges **the value**, and is the Consumer's *wrong*, relayed and enforced by the grid. Keeping
+the words apart keeps Definition of Done ERR-1 — every refusal names which rule it is — worth
+stating.
+
+The axis is not decorative: it decides behaviour. A Reject holds the editor and stops *every*
+commit gesture, because the value is what is wrong and the editor is where a value is corrected.
+A Refusal stops only the operation it named — so a fill refused for covering a non-editable
+column holds the editor too, but leaves the single-cell Enter alone
+([ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md)).
+
+*(This section replaced an earlier one that drew the line as the grid's own structural* cannot
+*against the Consumer's* wrong. *ADR-0035 broke that reading by adding a refusal that enforces a
+Consumer's declaration — `Editable` — and is, in its own words, a "may not" where the others were
+a "cannot". Who is judging no longer separates the two; what is judged still does.)*
 
 ## Consequences
 

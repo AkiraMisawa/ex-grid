@@ -215,6 +215,31 @@ never gates.**
 `spikes/render-bench` still works. **Add a mode and measure rather than asserting from
 reasoning.**
 
+## Working in parallel
+
+Independent tasks may run as background agents, each in its own worktree
+(`.claude/worktrees/`, git-ignored; the flake rule above still applies inside it). The
+rules that make this safe:
+
+- **Decisions are serial. Only implementation is parallel.** A background agent never changes
+  an ADR, `CONTEXT.md` or `docs/definition-of-done.md`. When its task turns out to need one,
+  it stops, returns the proposal and the reason as its report, and leaves its worktree
+  building. The orchestrator collects the proposals from every running agent and puts them
+  **together** in front of the user, who decides; the orchestrator writes the ADR and sends
+  the decision back. Merging is detecting the collision and presenting it, not resolving it.
+  Two proposals that touch the same concept are the case to watch — one implementation may
+  have to be redone, and that is the user's call.
+- **Split by files and by decisions.** Parallelise when the file sets are disjoint and no
+  task is expected to need an ADR; then the merge is textual and the orchestrator can do it.
+  If a task cannot be described without a decision, make the decision first, here, and fan
+  out afterwards — the ADR is the contract that makes parallel work possible.
+- **Only one agent at a time runs layer 3.** The DemoHost sits on a fixed port and an
+  already-running host is reused, so a second runner would be testing the *other*
+  worktree's code and passing. The suite is also single-worker because it changes the
+  page zoom.
+- **Remove a worktree when its agent is done.** `git worktree list` shows the leftovers; a
+  stale one starts the next agent from an old tip.
+
 ## Do not
 
 - **Do not add MudBlazor, Fluxor or similar dependencies to the core.** Integrations live in

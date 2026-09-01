@@ -290,10 +290,22 @@ _Avoid_: change event, commit, update
 **Edit Verdict**:
 The Consumer's judgement on one commit, asked by the grid at the moment of committing —
 **Accept** / **Flag** (applied, painted as Error with a message) / **Reject** (the editor stays
-open; Escape remains the only exit without applying). A Reject is the Consumer's "wrong" relayed
-by the grid — distinct from a **Refusal**, which is the grid's own structural "cannot"
+open; Escape remains the only exit without applying). A Reject judges **the value**, which is why
+the place to correct it stays open and every gesture that would commit that value stops — as
+against a **Refusal**, which judges the operation
 ([ADR-0034](./docs/adr/0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)).
-_Avoid_: validation result, error (that is a Cell State), refusal (structural only)
+_Avoid_: validation result, error (that is a Cell State), refusal (that judges the operation)
+
+**Refusal**:
+The grid's own "no", raised on **the operation** — its target, its shape, its size — and never on
+the value being written: a copy cap, a misaligned selection, a paste shape, a target covering a
+column that is not Editable. Because a Refusal never looked at what the user typed, it stops only
+the operation it named: a fill refused for covering a non-editable column leaves the editor open
+and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject, which judges the
+value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),
+[ADR-0014](./docs/adr/0014-paste-shape-rules-and-selection-count.md),
+[ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
+_Avoid_: rejection, validation failure, error (that is a Cell State), denial
 
 ### Selection
 

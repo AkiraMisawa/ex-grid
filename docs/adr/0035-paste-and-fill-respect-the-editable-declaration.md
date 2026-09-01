@@ -70,6 +70,37 @@ selection, so the whole selection is what is judged. The row half of the compone
 target legitimately covers rows that are off screen or not yet fetched (ADR-0014), and applying
 that check would refuse a correct paste.
 
+## A refused fill holds the editor
+
+*(Added after the fact. The decision as first written said nothing about the editor's fate, and
+the implementation closed it — `CommitFillAsync` tore the editor down before consulting the
+gate, so a refused fill took the user's typing with it.)*
+
+The gate runs **before** the editor is torn down. A refused fill leaves the editor open, the text
+still in it, and the Focus where it was.
+
+For a 1×1 source this is the whole of the case rather than a branch of it: `EmptySelection` cannot
+arise while an editor is open, and every shape rule approves a single cell, so `TargetNotEditable`
+is the only refusal a fill can meet.
+
+The reason is the line [ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)
+draws, read the way this decision forces it: **a Reject judges the value; a Refusal judges the
+operation.** A fill refused for covering a non-editable column never looked at the text. Discarding
+it would punish the user for the shape of their selection — and quietly, because the status area
+says the fill was refused and nothing says the typing is gone.
+
+It follows that the other commit gestures keep their meaning. **Enter still commits the one cell**
+the editor was opened on: that cell is editable by construction — an editor opens nowhere else —
+so the operation is legal and the refusal has no standing over it. This is where a Refusal and a
+Reject part company. A Reject stops *every* commit gesture (ED-15), because there the value is what
+is wrong. A Refusal stops only the operation it named.
+
+Rejected: **closing the editor and discarding the text**, which is what the implementation did. It
+costs the user their typing for a mistake that is one keystroke from being legal.
+
+Rejected: **holding the editor with Escape as the only exit**, symmetric with a Reject. It would
+forbid a commit the grid has no objection to, turning a mis-sized selection into a trap.
+
 ## Consequences
 
 - **`PlanPaste` takes the column predicate as a required argument.** No overload without it —
@@ -82,3 +113,5 @@ that check would refuse a correct paste.
   actually covers, in the current order.
 - The Consumer is still free to ignore an approved paste. `Editable` is the grid's gate, not a
   permission system: the Consumer applies the intent and remains the last word (ADR-0007).
+- **The Definition of Done gains ED-19**, and CP-16 keeps its clipboard-side half unchanged: the
+  refusal itself, its order among the rules, and the silence that used to follow a fill.

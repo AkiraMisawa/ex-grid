@@ -8,9 +8,10 @@ namespace ExGrid.Components.Tests;
 
 /// <summary>
 /// CON-7: no unobserved Task exception. A busy scenario — renders, scrolls, keys, a
-/// source landing answers, disposal — followed by a forced collection with an
-/// UnobservedTaskException handler installed. A discarded task that faulted anywhere
-/// in the component would surface here and nowhere else.
+/// source landing answers, a paste that is refused and a paste that is planned,
+/// disposal — followed by a forced collection with an UnobservedTaskException handler
+/// installed. A discarded task that faulted anywhere in the component would surface
+/// here and nowhere else.
 /// </summary>
 public class UnobservedExceptionTests : GridTestContext
 {
@@ -40,6 +41,13 @@ public class UnobservedExceptionTests : GridTestContext
             source.OnSortChanged([new SortSpec("Amount", SortDirection.Descending)]);
             await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("a", true, false, false, false, false));
             _ = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+            // Select All covers Amount, which is not editable, so this one is refused
+            // before any planning happens (ADR-0035) — it exercises the refusal path.
+            await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x", null));
+            // ...and one that is not refused, so the parse-and-plan path this fixture
+            // was written to stress still runs. Without it the busy session quietly
+            // stopped covering it the day the Editable gate arrived.
+            await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 20, OffsetY = 10 });
             await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x", null));
             await DisposeComponentsAsync();
 

@@ -19,9 +19,12 @@ first time; every earlier run had one browser only.
 That is also the first layer-3 run on a platform whose scrollbars occupy layout: **15 CSS px**
 measured, against the 0 of the macOS machine the 2026-09-01 record was taken on. The zoom loop
 that `scrollbar.spec.mjs` calls "where the answer lives" passes at device scale 1, 1.25 and 2.
-It discharges VZ-10's Linux half only — and the Definition of Done states the requirement two
-ways that disagree: §22 asks for "Windows **or** Linux at least once", VZ-10's own Pass column
-for "Windows **and** Linux". Under the stricter reading VZ-10 is still not met.
+**VZ-10 is discharged.** Its Pass column used to ask for "Windows and Linux" where §22 asked for
+either, and §22 stated the reason: the test is a tautology against overlay scrollbars. The
+criterion now names that property rather than the platform pair. What the run does not give is
+the case behind the test's own "run it on Windows" comment — a real Windows desktop at 125%,
+where the native scrollbar is a non-integer number of CSS pixels and the OS, not CDP, does the
+scaling. That is **VZ-14**, and it is open.
 
 **Every ADR from 0001 to 0035 now works through to the component**, except ADR-0034
 (validation — accepted after this snapshot and unimplemented, below) and the two package

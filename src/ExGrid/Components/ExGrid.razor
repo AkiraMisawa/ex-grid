@@ -3182,19 +3182,23 @@
 
     private async Task CommitFillAsync()
     {
-        var text = _editText;
-        await EndEditingAsync();
         // The same gate as a paste, over the whole selection — not the one cell the
         // editor was opened on (ADR-0035). A refusal is announced rather than silent:
         // an attempted write against a non-editable column is always reported.
         var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(1, 1), ColumnIsEditable);
-        StateHasChanged();
         if (decision.IsRefused)
         {
+            // Before the editor is torn down (ADR-0035, ED-19). A Refusal judges the
+            // operation and never the text, so the editor stays open with the typing in
+            // it, and Enter — a gesture the refusal did not name — still commits the one
+            // cell the editor was opened on, which is editable by construction.
             if (OnPasteRefused.HasDelegate)
                 await OnPasteRefused.InvokeAsync(decision.Reason);
             return;
         }
+        var text = _editText;
+        await EndEditingAsync();
+        StateHasChanged();
         if (OnPaste.HasDelegate)
         {
             await OnPaste.InvokeAsync(new GridPasteIntent(

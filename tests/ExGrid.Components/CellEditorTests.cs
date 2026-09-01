@@ -352,4 +352,27 @@ public class CellEditorTests : GridTestContext
         // And it is no longer silent: the refusal reaches the Consumer (ADR-0035).
         Assert.Equal(PasteRefusalReason.TargetNotEditable, refused);
     }
+
+    [Fact] // ADR-0035 / ED-19: the refusal judged the operation, so it does not take the text with it
+    public async Task A_refused_fill_holds_the_editor_and_enter_still_commits_the_one_cell()
+    {
+        var edits = new List<GridEditIntent<TestRow>>();
+        var pastes = new List<GridPasteIntent>();
+        var cut = RenderGrid(onEdit: edits.Add, onPaste: pastes.Add);
+        await ClickCellAsync(cut, 150, 10);                      // Amount, not editable
+        await PressAsync(cut, "ArrowLeft", shift: true);         // Focus on Book, selection still covers Amount
+        await PressAsync(cut, "9");
+
+        await PressAsync(cut, "Enter", ctrl: true);
+
+        Assert.Empty(pastes);
+        Assert.NotEmpty(cut.FindAll(".ex-editor"));
+
+        // Enter is a gesture the refusal never named, and the cell the editor opened on
+        // is editable by construction — so it commits, carrying the text that survived.
+        await PressAsync(cut, "Enter");
+
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.Equal("9", Assert.Single(edits).Value);
+    }
 }

@@ -217,10 +217,11 @@ RTL **content** is supported; RTL **layout** is refused. The distinction is the 
 | **VZ-7** | MUST | The scrollbar spans the whole result: header height + total rows × row height (ADR-0013) | Layer 2 | `.ex-spacer` height exact |
 | **VZ-8** | MUST | A result whose scrollable height would exceed 33,554,432 px is **refused by name**, header included, rather than silently clamped (ADR-0013) | Layer 1 + Layer 2 | throws, naming the row count and the ceiling; 1,000,000 rows at 28px passes, at 40px throws |
 | **VZ-9** | MUST | The Scrollbar Gutter is subtracted before any geometry is computed, on both axes (ADR-0013/0021) | Layer 1 `ViewportBox`, Layer 2, Layer 3 `scrollbar.spec.mjs` | a gutter of 0 is bit-for-bit today's behaviour; the Focus never lands behind a bar |
-| **VZ-10** | MUST | Scrolling to the far corner and back, at every zoom level, keeps the Focus inside the readable area (ADR-0012/0021) | Layer 3 `scrollbar.spec.mjs` at DPR 1 / 1.25 / 2 | passes on **Windows and Linux**, not only where scrollbars are overlays |
+| **VZ-10** | MUST | Scrolling to the far corner and back, at every zoom level, keeps the Focus inside the readable area (ADR-0012/0021) | Layer 3 `scrollbar.spec.mjs` at DPR 1 / 1.25 / 2 | passes on a platform **whose scrollbars occupy layout** — Windows or Linux — and not only where they are overlays. §22 states the reason: the test is a tautology against overlay scrollbars, so macOS alone does not discharge it |
 | **VZ-11** | MUST | A geometry change re-anchors on the first visible row, not on the pixel offset (ADR-0028) | Layer 2: change density at scroll position P | the first visible row index is unchanged; the Focus's visibility is unchanged |
 | **VZ-12** | MUST | Under `ViewportHeight=Fill`, a reported size of 0 paints nothing and throws nothing; a *declared* 12px still throws (ADR-0028) | Layer 2 | the refusal keys on declared-vs-reported, not on the number |
 | **VZ-13** | MUST | Under `PageSize`, the scroll-ceiling refusal measures **one page**, and a paged result of any total binds; a `Density`/`RowHeight` change re-anchors on the first visible row **page-locally** (ADR-0013/0015/0028) | Layer 2 | a 2M-row paged result renders; the re-anchor writes local-row × height, never absolute-row × height |
+| **VZ-14** | MUST | On a **real Windows desktop at fractional display scaling** (125%), where the native scrollbar is a non-integer number of CSS pixels, the Focus still lands inside the readable area (ADR-0012/0021) | Layer 3 `scrollbar.spec.mjs`, run on Windows itself | passes with the OS doing the scaling. CDP's `Emulation.setDeviceMetricsOverride` does **not** discharge this: it scales the page, and whether it reproduces what the OS does to the browser's own scrollbar is exactly the unknown |
 
 ---
 
@@ -277,6 +278,7 @@ The grid renders the filter UI and never evaluates a filter.
 | **ED-16** | MUST | A Flag raises the intent unchanged; the error paint and message come only from the display channels, never through the intent (ADR-0034) | Layer 2 | the intent is byte-identical to Accept's; `Error` appears only when the Consumer answers it |
 | **ED-17** | MUST | The error message is asked for on demand — at popover open, never per render — and the popover opens on Focus (delayed) and hover, never permanently (ADR-0034) | Layer 2, counting delegate calls; Layer 3 for the triggers | zero `CellMessageOf` calls while painting; one per open |
 | **ED-18** | MUST | A paste is never rejected on value: shape refusals are unchanged, and no verdict function runs on the paste path (ADR-0014/0034) | Layer 2 | the validate delegate is not called during a paste or a fill |
+| **ED-19** | MUST | A fill refused for covering a non-editable column holds the editor open with the typed text intact, and the gestures the refusal did not name keep their meaning — Enter still commits the one cell (ADR-0035) | Layer 2 + Layer 3 | the editor survives the refusal; Enter then raises one Edit Intent, and the fill raises none |
 
 ---
 

@@ -240,6 +240,12 @@ test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {
     // if the width changes the notification arrives, and if it does not, nothing needed
     // to happen. THIS TEST IS WHERE THE ANSWER LIVES — run it on Windows and it either
     // passes, or it names the zoom level at which the chain breaks.
+    //
+    // Since run on Linux (WSL2), where the platform's own scrollbars measure 15 CSS px:
+    // it passes at every scale. That discharged VZ-10, and not the comment above it —
+    // the scale here is CDP's, and a real Windows desktop at 125% puts the scrollbar at
+    // a non-integer number of CSS pixels with the OS doing the scaling. That case is
+    // VZ-14, and it is still open.
     test('at every zoom level, after moving again', async ({ page }, testInfo) => {
         await openGrid(page, { classicScrollbars: true });
         await expectScrollbarsOccupyLayout(page);
