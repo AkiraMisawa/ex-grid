@@ -280,6 +280,14 @@ The notification the grid raises when a user commits an edit — (row identity, 
 The grid changes nothing itself. The screen changes when the Consumer returns new row instances.
 _Avoid_: change event, commit, update
 
+**Edit Verdict**:
+The Consumer's judgement on one commit, asked by the grid at the moment of committing —
+**Accept** / **Flag** (applied, painted as Error with a message) / **Reject** (the editor stays
+open; Escape remains the only exit without applying). A Reject is the Consumer's "wrong" relayed
+by the grid — distinct from a **Refusal**, which is the grid's own structural "cannot"
+([ADR-0034](./docs/adr/0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)).
+_Avoid_: validation result, error (that is a Cell State), refusal (structural only)
+
 ### Selection
 
 **Selection**:

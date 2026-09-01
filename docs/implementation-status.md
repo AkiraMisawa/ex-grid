@@ -14,6 +14,10 @@ projects (0019/0030's `ExGrid.MudBlazor` / `ExGrid.Fluxor`), which the Definitio
 places out of scope for the core. What remains is verification depth, not features — see
 `verification/2026-09-01/results.md` for the honest pass/blocked ledger.
 
+**ADR-0034 (validation) is accepted and unimplemented** — decided after this snapshot was
+taken. Its criteria (ED-14…ED-18, and ED-12's Reject clause) stand failing by design: the
+verdict seam, the message channel, the error popover and the bundled ruleset are not built.
+
 **Same-day review round:** an adversarial 17-candidate review of this drop confirmed all
 17 (pager-vs-pre-pager arithmetic, the editor's missing pointer teardown, and a cluster
 of silently-wrong paths — ReplaceRow's value-equality lookup, the filter panel's count

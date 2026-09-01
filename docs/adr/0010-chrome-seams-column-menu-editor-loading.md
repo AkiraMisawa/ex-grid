@@ -70,6 +70,14 @@ public sealed record CellEditorContext(
     Action Cancel);
 ```
 
+*(Wiring narrowed this record: the shipped `CellEditorContext` carries the text as `string` —
+`InitialText`, `TextChanged`, an argument-less `Commit` — because parsing is the Consumer's
+([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md), `GridEditIntent`); a typed
+`object?` here implied a parse the core does not perform.
+[ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md) later added
+`string? Error` to the record, so the editor can paint `aria-invalid` while a Reject holds it
+open.)*
+
 ### Two editing states
 
 Excel has two editing states, and **the same arrow key means different things in each**.
@@ -90,6 +98,13 @@ keeps its own meaning: the click still selects, the header press still sorts. Th
 own elements never let a press through to the delegated viewport (its input stops
 propagation, like every interactive element standing over that arithmetic), so "not on the
 editor" is exactly what reaches the grid's handlers. Escape remains the one way to discard.
+
+**A Reject holds the commit** *(added with validation,
+[ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md))*: when the
+Column's Edit Verdict rejects the committed text, no commit gesture closes the editor — and the
+rejected press does **not** keep its own meaning. Letting the click select while the editor
+stands rejected would recreate exactly the stale-editor failure this rule exists to prevent.
+The decision to hold is the core's; Chrome still cannot veto.
 
 **AltGr is typing, not a chord** *(same review, same list)*: Windows reports an AltGr
 character as Control and Alt held together, and several European layouts type `@ { [ €`

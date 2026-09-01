@@ -270,8 +270,13 @@ The grid renders the filter UI and never evaluates a filter.
 | **ED-9** | MUST | The editor's box is exactly `RowHeight` × the resolved column width (ADR-0028/0030) | Layer 3 | measured equal |
 | **ED-10** | MUST | A bulk paste and a Ctrl+Enter fill are each **one** Edit Intent (ADR-0007/0011) | Layer 2 | one notification carrying all cells, not one per cell |
 | **ED-11** | MUST | An IME composition is never taken by the core (ADR-0010) | Layer 3 with composition events | `isComposing` and keyCode 229 both pass through |
-| **ED-12** | MUST | A press that is not on the editor commits first — Excel's click-away — and the press keeps its own meaning; a press inside the editor never reaches the delegated viewport (ADR-0010) | Layer 2 | another cell, and the header, both commit; the editor's input stops propagation |
+| **ED-12** | MUST | A press that is not on the editor commits first — Excel's click-away — and the press keeps its own meaning **unless the verdict Rejects** (ADR-0010/0034); a press inside the editor never reaches the delegated viewport | Layer 2 | another cell, and the header, both commit; the editor's input stops propagation |
 | **ED-13** | MUST | An AltGr character (Control+Alt together) opens the editor; either modifier alone opens nothing (ADR-0010) | Layer 2 + inspect the JS gate | both-held admits a printable key in the C# mirror and in `ex-grid.js` |
+| **ED-14** | MUST | A Column may carry a validate function returning an Edit Verdict; the grid runs it at commit and never judges a value itself (ADR-0034) | Layer 1/2 | no function means Accept; Accept raises the intent unchanged |
+| **ED-15** | MUST | A Reject holds the editor open under **every** commit gesture — Enter, Tab, the Overwrite arrows, click-away — with focus in the editor; Escape remains the only exit without applying, and the rejected press keeps no meaning of its own (ADR-0034) | Layer 2 + Layer 3 | none of the four closes it; the click selects nothing |
+| **ED-16** | MUST | A Flag raises the intent unchanged; the error paint and message come only from the display channels, never through the intent (ADR-0034) | Layer 2 | the intent is byte-identical to Accept's; `Error` appears only when the Consumer answers it |
+| **ED-17** | MUST | The error message is asked for on demand — at popover open, never per render — and the popover opens on Focus (delayed) and hover, never permanently (ADR-0034) | Layer 2, counting delegate calls; Layer 3 for the triggers | zero `CellMessageOf` calls while painting; one per open |
+| **ED-18** | MUST | A paste is never rejected on value: shape refusals are unchanged, and no verdict function runs on the paste path (ADR-0014/0034) | Layer 2 | the validate delegate is not called during a paste or a fill |
 
 ---
 
