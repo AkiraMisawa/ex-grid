@@ -9,7 +9,21 @@ nix develop -c dotnet test ExGrid.slnx     # 412 + 306 pass, 0 failed, exit 0
 cd tests/ExGrid.Browser && npx playwright test --project=chrome   # 38 pass (Edge absent here)
 ```
 
-**Every ADR from 0001 to 0033 now works through to the component**, except the two package
+**Later the same day, ADR-0035** (paste and fill respect the Editable declaration) added 7 layer-1
+and 4 layer-2 tests: **419 + 310 pass**. Its two layer-3 tests have since been run, and pass:
+layer 3 came up on the machine the drop was made on — Linux (WSL2) — once Chrome was installed,
+for **40 pass on `chrome`**. Edge is still absent there, so ADR-0017's both-browsers requirement
+stays undischarged.
+
+That is also the first layer-3 run on a platform whose scrollbars occupy layout: **15 CSS px**
+measured, against the 0 of the macOS machine the 2026-09-01 record was taken on. The zoom loop
+that `scrollbar.spec.mjs` calls "where the answer lives" passes at device scale 1, 1.25 and 2.
+It discharges VZ-10's Linux half only — and the Definition of Done states the requirement two
+ways that disagree: §22 asks for "Windows **or** Linux at least once", VZ-10's own Pass column
+for "Windows **and** Linux". Under the stricter reading VZ-10 is still not met.
+
+**Every ADR from 0001 to 0035 now works through to the component**, except ADR-0034
+(validation — accepted after this snapshot and unimplemented, below) and the two package
 projects (0019/0030's `ExGrid.MudBlazor` / `ExGrid.Fluxor`), which the Definition of Done
 places out of scope for the core. What remains is verification depth, not features — see
 `verification/2026-09-01/results.md` for the honest pass/blocked ledger.
@@ -56,6 +70,7 @@ against the newer of last-event and last-write (recorded in ADR-0012), and pinne
 | 0031 | `dir="ltr"` on the root | `GridRenderingTests` |
 | 0032 | **Header Groups** — rectangles, refusals, the band, group/leaf drag units | `HeaderGroupTests`, `HeaderGroupRenderingTests` |
 | 0033 | **ARIA** — the root surface, absolute indices, `aria-activedescendant`, the live region | `AccessibilityTests` |
+| 0035 | **The Editable declaration gates writes** — a paste or Ctrl+Enter fill covering a non-editable column is refused whole, and the fill refusal is no longer silent (CP-16) | `PasteRuleTests`, `ClipboardWiringTests`, `CellEditorTests` |
 
 ## Not in the core, by decision
 

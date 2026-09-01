@@ -275,6 +275,13 @@ rows. Reset is **deleting an entry** (the original is still in the base, so noth
 saving).
 _Avoid_: diff, patch, change set, draft
 
+**Editable**:
+A column's declaration that a write may land in it. It gates both the Cell Editor opening and the
+writes that arrive without one — a paste, or a Ctrl+Enter fill. A target covering a column that is
+not Editable is refused whole, never applied in part
+([ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
+_Avoid_: read-only, locked, protected, disabled
+
 **Edit Intent**:
 The notification the grid raises when a user commits an edit — (row identity, column, new value).
 The grid changes nothing itself. The screen changes when the Consumer returns new row instances.

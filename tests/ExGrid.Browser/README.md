@@ -17,6 +17,38 @@ verification**: VZ-10's real clause is about platforms whose scrollbars take spa
 A machine without Edge fails the `msedge` project by name — the honest outcome
 (ADR-0017 requires both browsers; passing on one does not satisfy it).
 
+## Installing the browsers
+
+The flake ships none on purpose, and `flake.nix` says why: `channel: 'chrome'` means the
+real Google Chrome the machine has, found by its own well-known path — on Linux
+`/opt/google/chrome/chrome`, which is where Playwright reports it missing — and a nix
+store build is not that. Both browsers are a machine prerequisite, installed once,
+outside nix.
+
+On Ubuntu-family Linux, including WSL2 (these need root, so run them yourself):
+
+```sh
+# Google Chrome
+curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
+  | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" \
+  | sudo tee /etc/apt/sources.list.d/google-chrome.list
+sudo apt update && sudo apt install -y google-chrome-stable
+
+# Microsoft Edge
+curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+  | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-edge.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-edge.gpg] https://packages.microsoft.com/repos/edge stable main" \
+  | sudo tee /etc/apt/sources.list.d/microsoft-edge.list
+sudo apt update && sudo apt install -y microsoft-edge-stable
+```
+
+Under WSL2 the headed default should stand as it is: WSLg supplies the display (`/mnt/wslg`,
+with the X socket at `/tmp/.X11-unix/X0`), and WSL2 is one of the platforms whose scrollbars
+occupy layout, so `EXGRID_HEADLESS=1` would disarm the suite rather than help it. If a headed
+launch reports that it cannot open a display, check that `DISPLAY` is set to `:0` — a
+non-interactive shell does not always inherit it.
+
 ## What it asserts
 
 - `scrollbar.spec.mjs` — the Scrollbar Gutter: the Focus is never behind a bar, at

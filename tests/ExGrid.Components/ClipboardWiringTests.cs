@@ -18,10 +18,13 @@ public class ClipboardWiringTests : GridTestContext
 {
     private static readonly ColumnWidthSpec Fixed100 = new(ColumnWidth.Fixed(100));
 
+    // Both editable: the shape rules are what this file pins, and a paste into a column
+    // that never opted in is refused before them (ADR-0035). "Locked" is that column.
     private static GridColumn<TestRow>[] Columns() =>
     [
-        new("Book", ColumnType.Text, r => r.Book, width: Fixed100),
-        new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100),
+        new("Book", ColumnType.Text, r => r.Book, width: Fixed100, editable: true),
+        new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100, editable: true),
+        new("Locked", ColumnType.Text, r => r.Book, width: Fixed100),
     ];
 
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
@@ -239,5 +242,48 @@ public class ClipboardWiringTests : GridTestContext
             "1,234.57", "<table><tr><td x:num=\"1234.56789\">1,234.57</td></tr></table>"));
 
         Assert.Equal("1234.56789", Assert.Single(intents).ValueFor(new CellPosition(0, 0)));
+    }
+
+    [Fact] // ADR-0035 / CP-16: a target covering a non-editable column refuses, and raises no intent
+    public async Task A_paste_covering_a_non_editable_column_is_refused_and_raises_no_intent()
+    {
+        var intents = new List<GridPasteIntent>();
+        PasteRefusalReason? refused = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused = r));
+        await ClickCellAsync(cut, 150, 10);                      // Amount, editable
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false)); // into Locked
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\n", null));
+
+        Assert.Empty(intents);
+        Assert.Equal(PasteRefusalReason.TargetNotEditable, refused);
+    }
+
+    [Fact] // ADR-0035: the declaration is reported before the shape rules — a reselection would not help
+    public async Task An_editability_refusal_outranks_the_shape_refusal()
+    {
+        PasteRefusalReason? refused = null;
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused = r));
+        await ClickCellAsync(cut, 250, 10);                      // Locked, a single cell
+
+        // On an editable column this is Excel's spill, refused as SingleCellTarget.
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        Assert.Equal(PasteRefusalReason.TargetNotEditable, refused);
+    }
+
+    [Fact] // ADR-0035: a selection wholly inside the editable columns is unaffected
+    public async Task A_paste_inside_the_editable_columns_still_goes_through()
+    {
+        var intents = new List<GridPasteIntent>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i)));
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\n", null));
+
+        Assert.Equal(2, Assert.Single(intents).CellCount);
     }
 }

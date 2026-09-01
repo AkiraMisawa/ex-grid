@@ -9,6 +9,10 @@ namespace ExGrid.Clipboard;
 /// work. <see cref="ShapeMismatch"/>: the target is not a multiple of the copied block.
 /// <see cref="DisjointTarget"/>: a block cannot be pasted into multiple ranges.
 /// <see cref="EmptySelection"/>: nowhere to paste; nothing happens.
+/// <see cref="TargetNotEditable"/> is the one that is not about shape (ADR-0035): the
+/// target covers a column the Consumer declared non-editable, so the write may not land
+/// however it is shaped. Chrome must not offer the "reselect the same shape" advice for
+/// it — no reselection of that shape would be accepted.
 /// </summary>
 public enum PasteRefusalReason
 {
@@ -16,6 +20,7 @@ public enum PasteRefusalReason
     SingleCellTarget,
     ShapeMismatch,
     DisjointTarget,
+    TargetNotEditable,
 }
 
 /// <summary>

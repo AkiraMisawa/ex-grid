@@ -23,6 +23,7 @@
     <span id="edit-status">Edited: @_editStatus</span>
     <span id="paste-status">Pasted: @_pasteStatus</span>
     <span id="copy-status">Copy refused: @_copyStatus</span>
+    <span id="paste-refused-status">Paste refused: @_pasteRefusedStatus</span>
     <span id="order-status">Order: @string.Join(",", _columns.Select(c => c.Name))</span>
     <span id="width-status">Width: @_widthStatus</span>
 </p>
@@ -40,6 +41,7 @@
         OnEdit="OnEdit"
         OnPaste="OnPaste"
         OnCopyRefused="OnCopyRefused"
+        OnPasteRefused="OnPasteRefused"
         OnColumnWidthChanged="OnWidthChanged"
         OnColumnOrderChanged="OnOrderChanged"
         OnColumnHidden="OnHidden"
@@ -117,6 +119,7 @@
     private string _editStatus = "—";
     private string _pasteStatus = "—";
     private string _copyStatus = "—";
+    private string _pasteRefusedStatus = "—";
     private string _widthStatus = "—";
 
     private void OnEdit(GridEditIntent<DemoTrade> intent)
@@ -199,6 +202,19 @@
 
     private void OnCopyRefused(CopyRefusalReason reason)
         => Status(reason, reason.ToString(), s => _copyStatus = s);
+
+    /// <summary>Where a Consumer puts its snackbar (ADR-0010/0035): the grid names the
+    /// rule, the wording is ours. TargetNotEditable arrives here for a paste and for a
+    /// Ctrl+Enter fill alike, and is the one refusal reselecting cannot fix.</summary>
+    private void OnPasteRefused(PasteRefusalReason reason)
+        => Status(reason, reason switch
+        {
+            PasteRefusalReason.TargetNotEditable =>
+                "TargetNotEditable — the selection covers a column that is not editable",
+            PasteRefusalReason.SingleCellTarget =>
+                "SingleCellTarget — reselect a target of the same shape",
+            _ => reason.ToString(),
+        }, s => _pasteRefusedStatus = s);
 
     private void OnWidthChanged(ColumnWidthChange change)
     {

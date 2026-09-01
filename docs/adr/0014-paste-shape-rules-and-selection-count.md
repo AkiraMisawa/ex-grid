@@ -83,3 +83,8 @@ so one Ctrl+Z, ADR-0007).
 - **The selection count display may live in Chrome.** Counting is the core's; displaying is
   Chrome's, per the rule in
   [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).
+- *(Added later, by [ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md):)* **A
+  fifth refusal reason joins the four above** — the target covers a column that is not `Editable`.
+  It is the first that is a declaration ("may not") rather than a shape ("cannot"), so it is
+  checked *before* the shape rules, whose "reselect a target of the same shape" advice would
+  otherwise send the user after something that can never succeed.

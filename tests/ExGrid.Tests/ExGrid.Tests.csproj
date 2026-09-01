@@ -10,6 +10,14 @@
     <IsPackable>false</IsPackable>
     <!-- Lets `dotnet test` drive the executable instead of VSTest's testhost. -->
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- No native apphost. The one the SDK emits for net8.0 comes from a NuGet
+         template stamped with the host ELF interpreter, so it starts under the host
+         loader and then dlopens the nix runtime's libcoreclr.so — two glibcs in one
+         process, and on WSL2 Ubuntu the load fails. Without it, `dotnet test` runs
+         the dll through the nix muxer instead, the same way on every platform.
+         tests/Directory.Build.targets has the full account, and relaxes the xunit.v3
+         build guard that would otherwise demand an apphost. -->
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>

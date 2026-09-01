@@ -148,6 +148,31 @@ test('paste raises one intent shaped by the clipboard block (CP-14, PST-1)', asy
     await expect(page.locator('#paste-status')).toContainText('3 cells from 1x1');
 });
 
+test('a paste covering a non-editable column is refused whole (CP-16, ADR-0035)', async ({ page }) => {
+    await page.evaluate(() => navigator.clipboard.writeText('intruder'));
+    const book = grid(page).locator("[id$='r0c0']"); // Book, never declared editable
+    const before = await book.textContent();
+    await clickCell(page, 0, 0);
+    await page.keyboard.press('Shift+ArrowRight'); // ...and Trader, which is editable
+
+    await page.keyboard.press('ControlOrMeta+V');
+
+    await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
+    // The whole target is refused, not the editable half of it.
+    await expect(book).toHaveText(before);
+    await expect(grid(page).locator("[id$='r0c1']")).not.toHaveText('intruder');
+});
+
+test('Ctrl+Enter fill across a non-editable column is refused, and says so (CP-16, ADR-0035)', async ({ page }) => {
+    await clickCell(page, 0, 3);                   // Narrow, which is not editable
+    await page.keyboard.press('Shift+ArrowLeft');  // Focus lands on Notional, which is
+    await page.keyboard.type('7');                 // — so the editor opens, over a selection covering Narrow
+
+    await page.keyboard.press('ControlOrMeta+Enter');
+
+    await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
+});
+
 test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) => {
     await clickCell(page, 0, 1);
     const focusBefore = await grid(page).getAttribute('aria-activedescendant');

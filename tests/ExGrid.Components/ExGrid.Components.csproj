@@ -8,6 +8,11 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- No native apphost, for the reason set out in tests/Directory.Build.targets:
+         the SDK's net8 apphost starts under the host loader and then dlopens the nix
+         runtime's libcoreclr.so, putting two glibcs in one process. Going through the
+         muxer keeps one. -->
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>

@@ -44,9 +44,17 @@ public static class ClipboardRules
         return CopyDecision.Approve(plan);
     }
 
-    public static PasteDecision PlanPaste(GridSelection target, PasteShape source)
+    /// <summary>
+    /// The paste rules (ADR-0014), plus the Editable declaration (ADR-0035).
+    /// <paramref name="columnIsEditable"/> is asked about each column the target covers,
+    /// by position in the current order. It has no overload without it on purpose: an
+    /// entry point that skips the declaration is one that walks past it.
+    /// </summary>
+    public static PasteDecision PlanPaste(
+        GridSelection target, PasteShape source, Func<int, bool> columnIsEditable)
     {
         ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(columnIsEditable);
         // default(PasteShape) sidesteps the constructor's validation; refuse it here by
         // name rather than let the tiling arithmetic divide by zero.
         if (source.Rows < 1 || source.Columns < 1)
@@ -55,6 +63,15 @@ public static class ClipboardRules
 
         if (target.IsEmpty)
             return PasteDecision.Refuse(PasteRefusalReason.EmptySelection);
+
+        // Before every shape rule (ADR-0035). A shape refusal carries the advice
+        // "reselect a target of the same shape and it will work"; on a target that
+        // covers a non-editable column that advice is a lie, so the declaration has to
+        // be reported first. Refused whole, never column by column: a partial write
+        // would disagree with the displayed cell count, and PastePlan holds ranges and
+        // modulo arithmetic, never a per-cell list (ADR-0014).
+        if (!EveryColumnIsEditable(target.Ranges, columnIsEditable))
+            return PasteDecision.Refuse(PasteRefusalReason.TargetNotEditable);
 
         // A single value fills every selected cell — the bulk-entry shape, and the only
         // paste a disjoint target accepts (ADR-0011 / 0014).
@@ -73,6 +90,23 @@ public static class ClipboardRules
         return only.RowCount % source.Rows == 0 && only.ColumnCount % source.Columns == 0
             ? PasteDecision.Approve(new PastePlan(target.Ranges, source))
             : PasteDecision.Refuse(PasteRefusalReason.ShapeMismatch);
+    }
+
+    /// <summary>Every column the target covers, across every range. Columns, not cells:
+    /// the row half of editability is the Window's, and a paste target legitimately
+    /// covers rows that are off screen or not yet fetched (ADR-0014 / 0035).</summary>
+    private static bool EveryColumnIsEditable(
+        IReadOnlyList<SelectionRange> ranges, Func<int, bool> columnIsEditable)
+    {
+        foreach (var range in ranges)
+        {
+            for (var column = range.LeftColumn; column <= range.RightColumn; column++)
+            {
+                if (!columnIsEditable(column))
+                    return false;
+            }
+        }
+        return true;
     }
 
     private static CopyPlan? TryAlign(IReadOnlyList<SelectionRange> ranges)

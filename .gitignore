@@ -14,3 +14,8 @@ obj/
 # docs/adr/, and the exit criteria in docs/definition-of-done.md. Keeping them out
 # also keeps the English-only rule about repository content, not about scratch input.
 docs/agent-runs/
+
+# Agent worktrees. A checkout per background agent, so one can build and run the
+# suites without touching the working tree you are editing. Disposable: the branch
+# it sits on carries nothing the main tip does not.
+.claude/worktrees/

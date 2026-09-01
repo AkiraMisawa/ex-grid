@@ -683,9 +683,10 @@
     /// left untouched, and this is where Chrome learns why.</summary>
     [Parameter] public EventCallback<CopyRefusalReason> OnCopyRefused { get; set; }
 
-    /// <summary>A refused paste, saying which rule it hit (ADR-0014). The single-cell
-    /// reason is the one whose message says reselecting a target of the same shape will
-    /// work.</summary>
+    /// <summary>A refused paste — or a refused Ctrl+Enter fill, which goes through the
+    /// same rules — saying which rule it hit (ADR-0014 / 0035). The single-cell reason is
+    /// the one whose message says reselecting a target of the same shape will work; the
+    /// editability reason is the one where no reselection of that shape ever will.</summary>
     [Parameter] public EventCallback<PasteRefusalReason> OnPasteRefused { get; set; }
 
     /// <summary>
@@ -2701,7 +2702,8 @@
         if (block is null)
             return;
 
-        var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(block.Count, block[0].Count));
+        var decision = ClipboardRules.PlanPaste(
+            _selection.Selection, new PasteShape(block.Count, block[0].Count), ColumnIsEditable);
         if (decision.IsRefused)
         {
             if (OnPasteRefused.HasDelegate)
@@ -2997,6 +2999,17 @@
         return false;
     }
 
+    /// <summary>
+    /// The Editable declaration, by position in the current order (ADR-0035) — what a
+    /// paste and a fill are judged against. Deliberately not <see cref="IsEditableCell"/>:
+    /// that one also asks whether the row is in the Window, and a paste target
+    /// legitimately covers rows that are off screen or not yet fetched (ADR-0014).
+    /// A column outside the declared set is not editable — a selection should never name
+    /// one, and refusing is the honest answer if it ever does.
+    /// </summary>
+    private bool ColumnIsEditable(int column) =>
+        column >= 0 && column < Columns.Count && Columns[column].Editable;
+
     private bool IsEditableCell(CellPosition cell)
     {
         if (cell.Column < 0 || cell.Column >= Columns.Count || !Columns[cell.Column].Editable)
@@ -3171,10 +3184,17 @@
     {
         var text = _editText;
         await EndEditingAsync();
-        var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(1, 1));
+        // The same gate as a paste, over the whole selection — not the one cell the
+        // editor was opened on (ADR-0035). A refusal is announced rather than silent:
+        // an attempted write against a non-editable column is always reported.
+        var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(1, 1), ColumnIsEditable);
         StateHasChanged();
         if (decision.IsRefused)
+        {
+            if (OnPasteRefused.HasDelegate)
+                await OnPasteRefused.InvokeAsync(decision.Reason);
             return;
+        }
         if (OnPaste.HasDelegate)
         {
             await OnPaste.InvokeAsync(new GridPasteIntent(

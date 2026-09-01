@@ -29,7 +29,8 @@ public class CellEditorTests : GridTestContext
         Action<GridEditIntent<TestRow>>? onEdit = null,
         Action<GridPasteIntent>? onPaste = null,
         TestRow[]? rows = null,
-        int? totalCount = null)
+        int? totalCount = null,
+        Action<PasteRefusalReason>? onPasteRefused = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Window, rows ?? TestRows.Many(50))
@@ -42,6 +43,8 @@ public class CellEditorTests : GridTestContext
                 ps.Add(g => g.OnEdit, onEdit);
             if (onPaste is not null)
                 ps.Add(g => g.OnPaste, onPaste);
+            if (onPasteRefused is not null)
+                ps.Add(g => g.OnPasteRefused, onPasteRefused);
         });
 
     private static Task PressAsync(
@@ -329,5 +332,24 @@ public class CellEditorTests : GridTestContext
             "q", ctrl: false, shift: false, alt: true, meta: false, metaIsPrimary: false));
 
         Assert.Empty(cut.FindAll(".ex-editor"));
+    }
+
+    [Fact] // ADR-0035 / CP-16: a fill whose selection crosses a non-editable column is refused whole
+    public async Task Ctrl_enter_fill_across_a_non_editable_column_is_refused()
+    {
+        var pastes = new List<GridPasteIntent>();
+        PasteRefusalReason? refused = null;
+        var cut = RenderGrid(onPaste: pastes.Add, onPasteRefused: r => refused = r);
+        await ClickCellAsync(cut, 150, 10);                      // Amount, not editable
+        // Extend left so the Focus lands on Book: the editor opens on an editable cell,
+        // and the selection still covers Amount — the case that used to write anyway.
+        await PressAsync(cut, "ArrowLeft", shift: true);
+        await PressAsync(cut, "9");
+
+        await PressAsync(cut, "Enter", ctrl: true);
+
+        Assert.Empty(pastes);
+        // And it is no longer silent: the refusal reaches the Consumer (ADR-0035).
+        Assert.Equal(PasteRefusalReason.TargetNotEditable, refused);
     }
 }
