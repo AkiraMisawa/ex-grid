@@ -147,6 +147,48 @@ export function attach(root, scroller, core, takenKeys, canEdit) {
     // user-select:none element with focus receives both — so Ctrl+C / Ctrl+V are never
     // in the keydown table above; the browser's own copy and paste commands are the
     // trigger, which is also what makes the event route prompt-free.
+    // The asynchronous write (ADR-0005), shared by the two callers that need it: a
+    // Ctrl+C whose selection runs beyond the Window, and every copy invoked from a menu
+    // — a menu item's click fires no `copy` event, so it has no other route (ADR-0036).
+    // Chrome accepts a promise as a ClipboardItem value, so the user-activation context
+    // survives the wait. A rejected promise aborts the whole write and the clipboard
+    // stays as it was — never a fraction of the selection.
+    const writeAsync = (withHeaders) => {
+        const answer = core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders)
+            .catch((error) => {
+                // A .NET failure — a Consumer delegate that threw, a circuit that
+                // dropped. Reported here, because the null it becomes reads as a
+                // refusal below and would otherwise make the copy a silent no-op.
+                if (core) {
+                    console.error('[ex-grid] the grid failed to build a copy', error);
+                }
+                return null;
+            });
+        const flavour = (type, field) => answer.then((p) => {
+            if (!p) {
+                throw new Error('the copy was refused');
+            }
+            return new Blob([p[field]], { type });
+        });
+        return navigator.clipboard.write([new ClipboardItem({
+            'text/plain': flavour('text/plain', 'text'),
+            'text/html': flavour('text/html', 'html'),
+        })]).catch((error) => {
+            // A refusal from the core or a denied clipboard permission: nothing landed,
+            // which is the refusing grid's contract (ADR-0005) — the reason has already
+            // been raised (OnCopyRefused on the C# side, or the console line above).
+            // Anything else is a failure and is said so.
+            if (error instanceof Error && error.message === 'the copy was refused') {
+                return;
+            }
+            if (error instanceof DOMException && error.name === 'NotAllowedError') {
+                return;
+            }
+            if (core) {
+                console.error('[ex-grid] the grid failed to write a copy', error);
+            }
+        });
+    };
     const onCopy = (event) => {
         // Only when the root itself holds the keyboard: a control inside a Template
         // Column keeps its own clipboard behaviour (ADR-0020).
@@ -186,44 +228,9 @@ export function attach(root, scroller, core, takenKeys, canEdit) {
             event.clipboardData.setData('text/html', payload.html);
             return;
         }
-        // Beyond the Window: ask the Consumer for the rows, then write. Chrome accepts
-        // a promise as a ClipboardItem value, so the user-activation context survives
-        // the wait (ADR-0005/0017). A rejected promise aborts the whole write and the
-        // clipboard stays as it was — never a fraction of the selection.
-        const answer = core.invokeMethodAsync('BuildCopyPayloadAsync')
-            .catch((error) => {
-                // A .NET failure — a Consumer delegate that threw, a circuit that
-                // dropped. Reported here, because the null it becomes reads as a
-                // refusal below and would otherwise make Ctrl+C a silent no-op.
-                if (core) {
-                    console.error('[ex-grid] the grid failed to build a copy', error);
-                }
-                return null;
-            });
-        const flavour = (type, field) => answer.then((p) => {
-            if (!p) {
-                throw new Error('the copy was refused');
-            }
-            return new Blob([p[field]], { type });
-        });
-        navigator.clipboard.write([new ClipboardItem({
-            'text/plain': flavour('text/plain', 'text'),
-            'text/html': flavour('text/html', 'html'),
-        })]).catch((error) => {
-            // A refusal from the core or a denied clipboard permission: nothing landed,
-            // which is the refusing grid's contract (ADR-0005) — the reason has already
-            // been raised (OnCopyRefused on the C# side, or the console line above).
-            // Anything else is a failure and is said so.
-            if (error instanceof Error && error.message === 'the copy was refused') {
-                return;
-            }
-            if (error instanceof DOMException && error.name === 'NotAllowedError') {
-                return;
-            }
-            if (core) {
-                console.error('[ex-grid] the grid failed to write a copy', error);
-            }
-        });
+        // Beyond the Window: the asynchronous route, without headers — Ctrl+C copies
+        // the selection and nothing else (ADR-0005).
+        writeAsync(false);
     };
     const onPaste = (event) => {
         if (!core || event.target !== root) {
@@ -317,6 +324,11 @@ export function attach(root, scroller, core, takenKeys, canEdit) {
         // Read once at attach: the mouse path needs the same answer, and Ctrl+click and
         // Cmd+click have to agree with Ctrl+A and Cmd+A about which one adds a range.
         metaIsPrimary: () => metaIsPrimary,
+        // A copy invoked from a menu (ADR-0036). Clicking a menu item fires no `copy`
+        // event, so there is no event route to take however small the selection is:
+        // this always writes through the asynchronous API. Still the fourth allowlist
+        // entry — the clipboard — and not a fifth (ADR-0021).
+        writeCopy: (withHeaders) => writeAsync(withHeaders === true),
         // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite'
         // or 'caret'. Set by the core when the mode changes — a mode change is a
         // different set of claimed keys. (A focusable descendant holding the keyboard

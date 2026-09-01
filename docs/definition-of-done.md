@@ -359,6 +359,11 @@ The grid renders the filter UI and never evaluates a filter.
 | **CP-18** | MUST | The header row **counts against the copy cap**: a selection exactly on the cap copies plainly and refuses with headers (ADR-0005) | Layer 1 at the boundary | `Copy` approves, `Copy with headers` refuses with the cap's own reason |
 | **CP-19** | MUST | A clipboard command invoked from a menu writes **without a permission prompt** on Chrome and on Edge, taking the asynchronous route whatever the selection's size (ADR-0005/0017/0036) | Layer 3, both browser projects | the clipboard holds the payload and no prompt was shown; a prompt is a recorded finding, not a pass |
 | **CP-20** | MUST | **No delimiter is ever guessed**: a tab and an HTML table cell are the only cell boundaries, a line break the only row boundary — `1,234` is one cell however many lines share its shape (ADR-0005) | Layer 1 `ClipboardParseTests` | comma-grouped numbers parse as one column; a tab in the same text still splits |
+| **CTX-1** | MUST | A secondary click **outside** the selection collapses it onto the cell it lands on before the menu opens; **inside**, the selection stands (ADR-0036) | Layer 2 + Layer 3 | the commands act on what the user can see |
+| **CTX-2** | MUST | The menu's items are the core's — the clipboard's — with the Consumer's appended, and Chrome only lays them out (ADR-0010/0036) | Layer 2 | `Copy`, `Copy with headers`, then whatever `ContextCommands` returned |
+| **CTX-3** | MUST | A command is handed the clicked **row instance**, the column, and the selection as **rectangles plus the Row Sequence Version** — never rows (ADR-0011/0036) | Layer 2 | the context's `Selection` is ranges; no row beyond the Window is resolved |
+| **CTX-4** | MUST | The menu is reachable from the keyboard — `ContextMenu` and `Shift+F10`, on the Focus cell — and Escape closes it before it leaves the grid (ADR-0012/0036) | Layer 1 for the table, Layer 2 for the open, Layer 3 for the browser's own menu staying away | both keys open it; the browser menu never appears |
+| **CTX-5** | MUST | **No new JavaScript use**: the browser's menu is suppressed by `@oncontextmenu:preventDefault` and by the key gate, not by a listener the grid installs (ADR-0021) | inspect `ex-grid.js` | the allowlist stays at four |
 
 ---
 

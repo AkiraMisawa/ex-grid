@@ -165,4 +165,26 @@ public class GridKeyTests
                 GridKeys.Resolve(key, ctrl, shift, alt, meta: false, metaIsPrimary: false).Kind);
         }
     }
+
+    [Fact] // ADR-0036: the context menu is reachable without a mouse, on both spellings
+    public void The_context_menu_key_and_shift_f10_both_open_the_menu()
+    {
+        Assert.Equal(
+            GridKeyKind.OpenContextMenu,
+            GridKeys.Resolve("ContextMenu", false, false, false, false, false).Kind);
+        Assert.Equal(
+            GridKeyKind.OpenContextMenu,
+            GridKeys.Resolve("F10", false, true, false, false, false).Kind);
+        // F10 alone is the browser's, and stays the browser's.
+        Assert.Equal(
+            GridKeyKind.None,
+            GridKeys.Resolve("F10", false, false, false, false, false).Kind);
+    }
+
+    [Fact] // ADR-0036: the JS gate claims them, which is what suppresses the browser's own menu
+    public void The_gate_is_told_to_take_the_context_menu_keys()
+    {
+        Assert.Contains("ContextMenu", GridKeys.Taken);
+        Assert.Contains("Shift+F10", GridKeys.Taken);
+    }
 }

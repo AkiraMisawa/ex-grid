@@ -126,7 +126,8 @@
                frame of a scroll, which is the cost ADR-0004 caps. *@
             <div class="ex-viewport" style="@ViewportStyle()"
                  role="presentation" @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmouseup="OnMouseUp"
-                 @ondblclick="OnViewportDoubleClickAsync">
+                 @ondblclick="OnViewportDoubleClickAsync"
+                 @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
                 @if (_visible is { } visible)
                 {
                     @if (!_selection.Selection.IsEmpty)
@@ -268,6 +269,26 @@
             else
             {
                 @foreach (var command in menuContext.Commands)
+                {
+                    var invoked = command;
+                    <button type="button" role="menuitem" disabled="@(!command.Enabled)"
+                            @onclick="() => RunCommandAsync(invoked)">@LabelOf(command)</button>
+                }
+            }
+        </div>
+    }
+    @if (_contextCell is { } contextCell && contextCell.Row - _windowStart is var contextSlice
+         && contextSlice >= 0 && contextSlice < _window.Count && contextCell.Column < Columns.Count)
+    {
+        var contextMenu = BuildContextMenuContext(contextCell, contextSlice);
+        <div class="ex-popover" style="@ContextPopoverStyle()" role="menu">
+            @if (Chrome?.ContextMenu(contextMenu) is { } contextFragment)
+            {
+                @contextFragment
+            }
+            else
+            {
+                @foreach (var command in contextMenu.Commands)
                 {
                     var invoked = command;
                     <button type="button" role="menuitem" disabled="@(!command.Enabled)"
@@ -711,6 +732,14 @@
     /// has the ids and resolves its own wording.</summary>
     [Parameter] public Func<string, string?>? CommandLabel { get; set; }
 
+    /// <summary>The Consumer's own context-menu commands, appended to the core's
+    /// (ADR-0010/0036). It is handed the target — the clicked row, the column, and the
+    /// selection as rectangles plus the version they are written in — and returns
+    /// commands whose <c>Invoke</c> closes over whatever it needs. Resolving an index
+    /// into a row beyond the Window is the Consumer's own question; the grid does not
+    /// hold those rows.</summary>
+    [Parameter] public Func<ContextMenuContext<TRow>, IEnumerable<GridCommand>>? ContextCommands { get; set; }
+
     /// <summary>
     /// Answers a copy whose selection runs beyond the Window on the push form
     /// (ADR-0005): asked for the rows of one range, under the order on screen. The
@@ -735,6 +764,13 @@
     // open on, and the panel's uncommitted working state — applied on OK, discarded on
     // Cancel, never re-fetched while open (FL-4).
     private int _menuColumn = -1;
+
+    /// <summary>The cell the context menu was opened on, or null (ADR-0036).</summary>
+    private CellPosition? _contextCell;
+
+    private double _contextLeftPx;
+
+    private double _contextTopPx;
     private int _panelColumn = -1;
     private DistinctValues? _panelValues;
     private HashSet<object?>? _panelChecked;
@@ -1817,9 +1853,10 @@
         if (committed)
             await CommitEditAsync();
 
-        // Primary button only. What a secondary click does to a selection is Excel
-        // behaviour that has not been specified here, and inventing it would be worse
-        // than leaving the selection alone.
+        // Primary button only here. The secondary button's meaning is ADR-0036's and is
+        // taken on the contextmenu event, which fires after this one — this press has
+        // already closed any open popover and committed an open editor, which is what a
+        // press that lands elsewhere is supposed to do.
         if (e.Button != 0 || CellUnder(e) is not { } cell)
         {
             _suppressRender = !dismissed && !committed;
@@ -2279,6 +2316,116 @@
         return new ColumnMenuContext(declared.Name, declared.Type, commands, CloseMenus);
     }
 
+    /// <summary>
+    /// The secondary click (ADR-0036). Outside the selection it collapses onto the cell
+    /// it lands on, so that what a command will act on is what the user can see; inside
+    /// it, the selection stands. The browser's own menu is suppressed declaratively on
+    /// the element, which is why no listener is installed and the JavaScript allowlist
+    /// stays at four (ADR-0021).
+    /// </summary>
+    private void OnContextMenu(MouseEventArgs e)
+    {
+        // The pointer lands on a cell wherever it is inside the Viewport — the geometry
+        // clamps, which is why a primary click below the last row selects the last row.
+        // So this is not a dead zone but the guard for having nothing painted at all, and
+        // then there is no target to aim a menu at.
+        if (CellUnder(e) is not { } cell)
+        {
+            CloseMenus();
+            return;
+        }
+
+        if (!_selection.Selection.Contains(cell))
+            Apply(_selection.Selection.Click(cell, Extent));
+
+        _menuColumn = -1;
+        _panelColumn = -1;
+        _contextCell = cell;
+        _contextLeftPx = e.OffsetX;
+        _contextTopPx = e.OffsetY;
+    }
+
+    /// <summary>
+    /// The context menu from the keyboard (ADR-0036): on the Focus cell, which is inside
+    /// the selection by construction, so nothing about the selection changes — the
+    /// pointer's rule about collapsing onto what was clicked has nothing to decide here.
+    /// It opens at the Focus cell's own corner rather than at a fixed place, so the menu
+    /// arrives where the user's attention already is.
+    /// </summary>
+    private void OpenContextMenuAtFocus()
+    {
+        if (_visible is not { } visible || _selection.Selection.IsEmpty)
+            return;
+        var focus = _selection.Selection.Focus;
+        if (focus.Column >= Columns.Count)
+            return;
+
+        var geometry = _columnStyles.Geometry;
+        _contextLeftPx = focus.Column < geometry.PinnedCount
+            ? geometry.OffsetPxOf(focus.Column)
+            : geometry.OffsetPxOf(focus.Column) - _scrollLeftPx;
+        _contextTopPx = _geometry.OffsetPxOf(focus.Row - _pageStartRow)
+            - _geometry.OffsetPxOf(visible.Start - _pageStartRow);
+        _menuColumn = -1;
+        _panelColumn = -1;
+        _contextCell = focus;
+    }
+
+    /// <summary>Where the menu stands: at the pointer, clamped to the Viewport, and
+    /// below the header band the popovers all sit under (ADR-0027 — the min-width rides
+    /// the instance inline, so the clamp and the laid-out box are one number).</summary>
+    private string ContextPopoverStyle()
+    {
+        var left = Math.Clamp(_contextLeftPx, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
+        return FormattableString.Invariant(
+            $"left: {left}px; top: {BandHeightPx + _contextTopPx}px; min-width: {PopoverMinWidthPx}px");
+    }
+
+    /// <summary>
+    /// The context menu's items (ADR-0036): the clipboard's, because only the grid can
+    /// build that payload — the cap, the misalignment refusal, the Window-coverage check
+    /// and the rule that <c>####</c> never reaches the clipboard are ADR-0005's and are
+    /// not reimplementable from outside — and then the Consumer's own.
+    /// </summary>
+    private ContextMenuContext<TRow> BuildContextMenuContext(CellPosition cell, int slice)
+    {
+        var declared = Columns[cell.Column];
+        var canCopy = !_selection.Selection.IsEmpty;
+        var core = new List<GridCommand>
+        {
+            new("copy", canCopy, () => MenuCopyAsync(withHeaders: false)),
+            new("copy-with-headers", canCopy, () => MenuCopyAsync(withHeaders: true)),
+        };
+        var context = new ContextMenuContext<TRow>(
+            _window[slice], declared.Name, declared.Type,
+            _selection.Selection.Ranges, _sequenceVersion, core, CloseMenus);
+        if (ContextCommands?.Invoke(context) is { } extra)
+        {
+            var added = extra as IReadOnlyList<GridCommand> ?? [.. extra];
+            if (added.Count > 0)
+                context = context with { Commands = [.. core, .. added] };
+        }
+        return context;
+    }
+
+    /// <summary>A copy invoked from a menu takes the asynchronous route whatever the
+    /// selection's size, because a menu item's click fires no <c>copy</c> event
+    /// (ADR-0005/0036). Still the allowlisted clipboard use, not a new one.</summary>
+    private async Task MenuCopyAsync(bool withHeaders)
+    {
+        if (_scrollHandle is null || _disposed)
+            return;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("writeCopy", withHeaders);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+            // The circuit or the module is gone; the clipboard stays as it was, which is
+            // the refusing grid's contract (ADR-0005).
+        }
+    }
+
     /// <summary>What the built-in menu calls a command (ADR-0036): the Consumer's wording
     /// where it has one, the default Chrome's table otherwise.</summary>
     private string LabelOf(GridCommand command)
@@ -2332,6 +2479,7 @@
 
     private void CloseMenus()
     {
+        _contextCell = null;
         _menuColumn = -1;
         _panelColumn = -1;
         _panelValues = null;
@@ -2703,16 +2851,21 @@
     /// the rows are gathered — from the Source, or from the push Consumer's provider —
     /// assembled, handed to the clipboard, and stored nowhere. Null aborts the write
     /// and the clipboard stays as it was.
+    ///
+    /// Also the only route a menu copy has, whatever the selection's size: clicking a
+    /// menu item fires no <c>copy</c> event (ADR-0036).
     /// </summary>
+    /// <param name="withHeaders">Emit the declared headers as one row above the block,
+    /// counted against the cap (ADR-0005).</param>
     [JSInvokable]
-    public async Task<ClipboardPayload?> BuildCopyPayloadAsync()
+    public async Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false)
     {
         if (_disposed)
             return null;
 
         // Decided again rather than remembered from the synchronous half: the answer
         // must be about the selection as it stands now, not as it stood one event ago.
-        var decision = ClipboardRules.PlanCopy(_selection.Selection, CopyCellCap);
+        var decision = ClipboardRules.PlanCopy(_selection.Selection, CopyCellCap, withHeaders);
         if (decision.IsRefused)
         {
             NotifyCopyRefused(decision.Reason);
@@ -2731,7 +2884,8 @@
         var (text, html) = ClipboardData.Assemble(
             decision.Plan,
             (row, column) => ExGridRow<TRow>.CellText(Columns[column], rows[row]),
-            (row, column) => RawText(Columns[column], rows[row]));
+            (row, column) => RawText(Columns[column], rows[row]),
+            withHeaders ? column => Columns[column].Header : null);
         return ClipboardPayload.Data(text, html);
     }
 
@@ -2875,12 +3029,18 @@
                 // gate forwarded them; whether this cell edits is decided here.
                 await TryStartEditingAsync(key, ctrl, alt, meta, metaIsPrimary);
                 return;
+            case GridKeyKind.OpenContextMenu:
+                OpenContextMenuAtFocus();
+                // A key arrives through interop, so nothing renders unless this says so —
+                // the pointer's path is a Blazor DOM event and renders on its own.
+                StateHasChanged();
+                return;
             case GridKeyKind.Leave:
                 // Escape peels the outermost layer first: an open popover closes and
                 // the grid keeps the keyboard — one press, one dismissal. Only with
                 // nothing left to dismiss is it the way out of Enter/Tab cycling
                 // (ADR-0012), releasing the grid's DOM focus.
-                if (_menuColumn >= 0 || _panelColumn >= 0)
+                if (_menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null)
                 {
                     CloseMenus();
                     if (fromDescendant)

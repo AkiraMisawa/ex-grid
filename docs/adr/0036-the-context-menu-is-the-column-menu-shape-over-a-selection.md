@@ -113,9 +113,18 @@ translation impossible without replacing Chrome wholesale.
   in either orientation, reaches both formats, and **counts against the copy cap**; and a menu
   copy always takes the asynchronous clipboard route, because clicking a menu item fires no
   `copy` event. Neither is implemented.
-- **The keyboard trigger** (`Shift+F10` and the Context Menu key) and where the menu opens from —
-  the Focus cell's box, presumably — sit inside ADR-0012's key layering and have not been placed
-  in it.
+- ~~The keyboard trigger~~ — **settled while implementing.** `ContextMenu` and `Shift+F10` join
+  the key table, which is what makes the JS gate take them and suppress the browser's own menu:
+  there is no `contextmenu` attribute to lean on for a key. Both spellings, because the platforms
+  disagree about which exists. The menu opens at the **Focus cell's own corner**, and touches no
+  selection — the Focus is inside the selection by construction, so the pointer's rule about
+  collapsing onto what was clicked has nothing to decide. Escape closes it, ahead of leaving the
+  grid, exactly as it already does for the column menu and the filter panel (ADR-0012's layering,
+  unchanged).
+
+  What this exposed: a key arrives through interop, so nothing renders unless the handler says so
+  — the pointer's path is a Blazor DOM event and renders on its own. The first version opened the
+  menu and painted nothing.
 - ~~The label seam's shape~~ — **settled while implementing**: a `CommandLabel` delegate on the
   component, `id → string?`, consulted by the built-in menu and falling back to a
   `BuiltInCommandLabels` table that belongs to the default Chrome rather than to the core. It is

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
 
+using ExGrid.Selection;
+
 namespace ExGrid.Chrome;
 
 /// <summary>Whether a column's filter can offer a list of values, only conditions, or
@@ -85,6 +87,26 @@ public sealed record ColumnMenuContext(
     IReadOnlyList<GridCommand> Commands,
     Action Close);
 
+/// <summary>
+/// The context menu's contract (ADR-0036). The core decides the items and the Consumer
+/// extends them, exactly as for the column menu; what is different is the target.
+///
+/// The clicked cell arrives as a <b>row instance</b>, because a secondary click is
+/// inside the Window by construction. The selection arrives as <b>rectangles in index
+/// space</b> and the version they are written in (ADR-0011) — not as rows, and it
+/// cannot be: a selection legitimately covers rows outside the Window and rows never
+/// fetched. The Consumer holds the data, so resolving an index into a row is its
+/// question, asked of the source it already has.
+/// </summary>
+public sealed record ContextMenuContext<TRow>(
+    TRow Row,
+    string Column,
+    ColumnType Type,
+    IReadOnlyList<SelectionRange> Selection,
+    int RowSequenceVersion,
+    IReadOnlyList<GridCommand> Commands,
+    Action Close);
+
 /// <summary>Receive and render (ADR-0010). Placeholders are one mechanism, so Chrome
 /// does not distinguish waiting from skipping either.</summary>
 public sealed record LoadingContext(bool IsLoading, int PlaceholderRowCount);
@@ -119,6 +141,9 @@ public interface IGridChrome
 
     /// <summary>Null falls back to the core's built-in menu.</summary>
     RenderFragment? ColumnMenu(ColumnMenuContext context);
+
+    /// <summary>Null falls back to the core's built-in menu (ADR-0036).</summary>
+    RenderFragment? ContextMenu<TRow>(ContextMenuContext<TRow> context) => null;
 
     /// <summary>Null falls back to the core's own floating input.</summary>
     RenderFragment? CellEditor(CellEditorContext context);

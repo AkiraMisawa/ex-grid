@@ -48,6 +48,11 @@ public enum GridKeyKind
 
     /// <summary>Escape: leave the grid, which is the way out of Tab's cycle.</summary>
     Leave,
+
+    /// <summary>The Context Menu key and Shift+F10: open the context menu on the Focus
+    /// cell (ADR-0036). A menu only a mouse can reach would fail the same test ADR-0034's
+    /// error popover has to pass.</summary>
+    OpenContextMenu,
 }
 
 /// <summary>

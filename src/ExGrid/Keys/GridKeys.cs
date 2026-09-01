@@ -136,6 +136,13 @@ public static class GridKeys
         // against ADR-0020's own "the grid is one tab stop".
         table["Escape"] = new(GridKeyKind.Leave);
 
+        // The context menu, from the keyboard (ADR-0036). Both spellings, because the
+        // platforms disagree about which one exists: a Windows keyboard has the menu key
+        // and every platform has Shift+F10. Taking them is what suppresses the browser's
+        // own menu — there is no `contextmenu` attribute to lean on for a key.
+        table["ContextMenu"] = new(GridKeyKind.OpenContextMenu);
+        table["Shift+F10"] = new(GridKeyKind.OpenContextMenu);
+
         return table;
     }
 }
