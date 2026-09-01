@@ -11,9 +11,10 @@ cd tests/ExGrid.Browser && npx playwright test --project=chrome   # 38 pass (Edg
 
 **Later the same day, ADR-0035** (paste and fill respect the Editable declaration) added 7 layer-1
 and 4 layer-2 tests: **419 + 310 pass**. Its two layer-3 tests have since been run, and pass:
-layer 3 came up on the machine the drop was made on — Linux (WSL2) — once Chrome was installed,
-for **40 pass on `chrome`**. Edge is still absent there, so ADR-0017's both-browsers requirement
-stays undischarged.
+layer 3 came up on the machine the drop was made on — Linux (WSL2) — once both browsers were
+installed: **80 pass, 0 failed, exit 0**, being 40 on `chrome` (152.0.7977.64) and 40 on
+`msedge` (152.0.4191.53), each headed. ADR-0017's both-browsers clause is discharged for the
+first time; every earlier run had one browser only.
 
 That is also the first layer-3 run on a platform whose scrollbars occupy layout: **15 CSS px**
 measured, against the 0 of the macOS machine the 2026-09-01 record was taken on. The zoom loop
