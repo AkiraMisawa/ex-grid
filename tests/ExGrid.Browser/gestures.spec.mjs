@@ -3,8 +3,39 @@ import fs from 'node:fs';
 
 // The drag gestures with a real mouse (ADR-0011/0016/0032), the large-paste and
 // off-screen-paste rules (ADR-0014/0015), the remaining measured UX rows, and the
-// observational numbers, written to verification/<date>/metrics.json rather than
-// gated (Definition of Done §1). Console errors fail the run, as everywhere.
+// observational numbers, recorded rather than gated (Definition of Done §1).
+// Console errors fail the run, as everywhere.
+
+// Where the observational numbers go. This path used to be the literal
+// verification/2026-09-01, so every layer-3 run on every machine overwrote that one
+// dated record: a record whose results.md names macOS ended up holding WSL2 timings,
+// with nothing in the file to say so, and the second browser project overwrote the
+// first. A structural count (DOM-5) is comparable across machines; a timing is not.
+// So the directory carries the day and the platform, and each project writes under
+// its own key.
+const RECORD_DIR = (() => {
+    const day = new Date().toISOString().slice(0, 10);
+    const wsl = process.platform === 'linux'
+        && fs.existsSync('/proc/version')
+        && fs.readFileSync('/proc/version', 'utf8').toLowerCase().includes('microsoft');
+    const platform = process.platform === 'darwin' ? 'macos'
+        : process.platform === 'win32' ? 'windows'
+        : wsl ? 'linux-wsl2'
+        : process.platform;
+    return `../../verification/${day}-${platform}`;
+})();
+
+// Two tests write this file, and Playwright may run them in parallel workers; the
+// read-modify-write below is not atomic. It has never lost an entry here, and a lock
+// would be more machinery than an observational number is worth — but if a key ever
+// goes missing from a record, this is why.
+function record(project, entries) {
+    fs.mkdirSync(RECORD_DIR, { recursive: true });
+    const path = `${RECORD_DIR}/metrics.json`;
+    const all = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : {};
+    all[project] = { ...all[project], ...entries };
+    fs.writeFileSync(path, `${JSON.stringify(all, null, 2)}\n`);
+}
 
 let consoleErrors;
 let pageErrors;
@@ -104,7 +135,7 @@ test('pasting onto an off-screen selection works, and the indicator showed first
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
 });
 
-test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded)', async ({ page, context }) => {
+test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded)', async ({ page, context }, testInfo) => {
     test.setTimeout(120000);
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page);
@@ -131,11 +162,9 @@ test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded)', a
         .toMatch(/r398c1$/);
     const keyMs = Date.now() - keyBefore;
 
-    fs.mkdirSync('../../verification/2026-09-01', { recursive: true });
-    const path = '../../verification/2026-09-01/metrics.json';
-    const metrics = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : {};
-    metrics['PST-6'] = { sourceCells: 400, bytes: 26001 * 400, parseAndIntentMs: parseMs, nextKeyMs: keyMs };
-    fs.writeFileSync(path, JSON.stringify(metrics, null, 2));
+    record(testInfo.project.name, {
+        'PST-6': { sourceCells: 400, bytes: 26001 * 400, parseAndIntentMs: parseMs, nextKeyMs: keyMs },
+    });
 });
 
 test('the focus outline holds 3:1 against the cell ground under the default theme (UX-9)', async ({ page }) => {
@@ -216,7 +245,7 @@ test('a composing IME keydown is never taken (ED-11, the listener guard)', async
     expect(await grid(page).getAttribute('aria-activedescendant')).toBe(before);
 });
 
-test('observational numbers are recorded, never gated (DOM-5, BIG-7-shaped)', async ({ page }) => {
+test('observational numbers are recorded, never gated (DOM-5, BIG-7-shaped)', async ({ page }, testInfo) => {
     const started = Date.now();
     await page.goto('/wide');
     await expect(page.locator('.ex-grid .ex-row').first()).toBeVisible();
@@ -231,11 +260,9 @@ test('observational numbers are recorded, never gated (DOM-5, BIG-7-shaped)', as
         };
     });
 
-    fs.mkdirSync('../../verification/2026-09-01', { recursive: true });
-    const path = '../../verification/2026-09-01/metrics.json';
-    const metrics = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : {};
-    metrics['DOM-5'] = counts;
-    metrics['BIG-7'] = { mountToFirstPaintedRowMs: firstPaintMs, totalRows: 100000 };
-    fs.writeFileSync(path, JSON.stringify(metrics, null, 2));
+    record(testInfo.project.name, {
+        'DOM-5': counts,
+        'BIG-7': { mountToFirstPaintedRowMs: firstPaintMs, totalRows: 100000 },
+    });
     expect(counts.rows).toBeGreaterThan(0);
 });

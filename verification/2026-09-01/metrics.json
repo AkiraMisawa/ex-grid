@@ -5,13 +5,13 @@
     "rows": 21
   },
   "BIG-7": {
-    "mountToFirstPaintedRowMs": 650,
+    "mountToFirstPaintedRowMs": 417,
     "totalRows": 100000
   },
   "PST-6": {
     "sourceCells": 400,
     "bytes": 10400400,
-    "parseAndIntentMs": 2373,
-    "nextKeyMs": 11
+    "parseAndIntentMs": 2686,
+    "nextKeyMs": 6
   }
 }
