@@ -1,0 +1,226 @@
+@page "/features"
+@using ExGrid.Chrome
+@using ExGrid.Clipboard
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <a href="wide">Wide</a>
+    <a href="cells">Cells and rows</a>
+    <a href="server">Server</a>
+    <span>Features</span>
+</nav>
+
+<h1>Features — editing, clipboard, sorting, filtering, Header Groups</h1>
+
+<p>
+    The interaction surface on one page, for the browser layer to drive: an editable
+    source-bound grid with tiered headers, the clipboard, the pager-free selection
+    status, and every gesture notification written to the status lines below.
+</p>
+
+<p class="demo-status">
+    <span id="edit-status">Edited: @_editStatus</span>
+    <span id="paste-status">Pasted: @_pasteStatus</span>
+    <span id="copy-status">Copy refused: @_copyStatus</span>
+    <span id="order-status">Order: @string.Join(",", _columns.Select(c => c.Name))</span>
+    <span id="width-status">Width: @_widthStatus</span>
+</p>
+
+<ExGrid TRow="DemoTrade"
+        Source="_source"
+        Columns="_columns"
+        RowHeight="24"
+        HeaderHeight="28"
+        ViewportHeight="320"
+        ViewportWidth="720"
+        PinnedColumnCount="_pinned"
+        HeaderGroups="_groups"
+        HighlightFocusRow="true"
+        OnEdit="OnEdit"
+        OnPaste="OnPaste"
+        OnCopyRefused="OnCopyRefused"
+        OnColumnWidthChanged="OnWidthChanged"
+        OnColumnOrderChanged="OnOrderChanged"
+        OnColumnHidden="OnHidden"
+        OnPinnedCountChanged="OnPinned" />
+
+<h2>A second, independent instance</h2>
+<p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
+
+<ExGrid TRow="DemoTrade"
+        Source="_second"
+        Columns="_secondColumns"
+        RowHeight="20"
+        ViewportHeight="140"
+        ViewportWidth="480" />
+
+@code {
+    private InMemoryGridSource<DemoTrade> _source = default!;
+    private InMemoryGridSource<DemoTrade> _second = default!;
+    private IReadOnlyList<GridColumn<DemoTrade>> _columns = default!;
+    private IReadOnlyList<GridColumn<DemoTrade>> _secondColumns = default!;
+    private IReadOnlyList<HeaderGroup> _groups = default!;
+
+    protected override void OnInitialized()
+    {
+        var rows = new DemoTrade[400];
+        string[] books = ["Alpha", "Beta", "Gamma", "Delta"];
+        // The last name is Arabic on purpose: RTL content renders correctly inside
+        // the LTR island (ADR-0031), and the browser layer asserts exactly that.
+        string[] traders = ["Ishikawa", "Novak", "Osei", "\u0639\u0645\u0631"];
+        for (var i = 0; i < rows.Length; i++)
+        {
+            rows[i] = new DemoTrade
+            {
+                Book = books[i % books.Length],
+                Trader = traders[(i / 3) % traders.Length],
+                Notional = 1_000_000m + (i * 12_345.67m),
+                TradeDate = new DateTime(2026, 1, 1).AddDays(i % 200),
+                Confirmed = i % 3 != 0,
+            };
+        }
+
+        _source = GridSource.From(rows);
+        _second = GridSource.From(rows.Take(20).ToArray());
+        _columns = BuildColumns();
+        _secondColumns =
+        [
+            new GridColumn<DemoTrade>("Book", ColumnType.Text, t => t.Book),
+            new GridColumn<DemoTrade>("Trader", ColumnType.Text, t => t.Trader),
+        ];
+        _groups =
+        [
+            new HeaderGroup("Who", ["Book", "Trader"]),
+            new HeaderGroup("What", ["Notional", "Narrow", "TradeDate", "Confirmed"]),
+        ];
+    }
+
+    private GridColumn<DemoTrade>[] BuildColumns() =>
+    [
+        new("Book", ColumnType.Text, t => t.Book,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(110)), filterUi: FilterUiMode.Both),
+        new("Trader", ColumnType.Text, t => t.Trader,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), editable: true, filterUi: FilterUiMode.Both),
+        new("Notional", ColumnType.Number, t => t.Notional,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true),
+        // Deliberately too narrow for its values: what #### looks like, and what the
+        // clipboard must never receive (ADR-0016 / CP-5).
+        new("Narrow", ColumnType.Number, t => t.Notional,
+            header: "N…", width: new ColumnWidthSpec(ColumnWidth.Fixed(48))),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(170))),
+        new("Confirmed", ColumnType.Boolean, t => t.Confirmed,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(100))),
+    ];
+
+    private string _editStatus = "—";
+    private string _pasteStatus = "—";
+    private string _copyStatus = "—";
+    private string _widthStatus = "—";
+
+    private void OnEdit(GridEditIntent<DemoTrade> intent)
+    {
+        _editStatus = $"{intent.Column}={intent.Value} on {intent.Row.Book}/{intent.Row.Trader}";
+        // The Consumer's half of ADR-0007: a NEW instance carrying the change goes
+        // back through the source, and the screen follows the identity change. An
+        // unparseable value applies nothing — validation is the Consumer's.
+        if (Edited(intent.Row, intent.Column, intent.Value) is { } replacement)
+            _source.ReplaceRow(intent.Row, replacement);
+        else
+            _editStatus += " (not applied: unparseable)";
+    }
+
+    private void OnPaste(GridPasteIntent intent)
+    {
+        _pasteStatus = $"{intent.CellCount} cells from {intent.Plan.Source.Rows}x{intent.Plan.Source.Columns}";
+        // Positions are the current order's, so every (row, column, value) is resolved
+        // against the Window FIRST — applying as we go could reorder mid-loop under a
+        // sort on the edited column (ADR-0011/0014).
+        var window = _source.Window;
+        var resolved = new List<(DemoTrade Row, string Column, string Value)>();
+        foreach (var target in intent.Plan.Targets)
+        {
+            for (var row = target.TopRow; row <= target.BottomRow; row++)
+            {
+                if (row >= window.Count)
+                    continue;
+                for (var column = target.LeftColumn; column <= target.RightColumn; column++)
+                {
+                    if (column >= _columns.Count)
+                        continue;
+                    resolved.Add((window[row], _columns[column].Name,
+                        intent.ValueFor(new ExGrid.Selection.CellPosition(row, column))));
+                }
+            }
+        }
+        var applied = 0;
+        foreach (var (row, column, value) in resolved)
+        {
+            // The instance may already have been replaced by an earlier cell of this
+            // same paste (two targets on one row): follow it through the window.
+            var current = _source.Window.FirstOrDefault(r => ReferenceEquals(r, row)) ?? row;
+            if (Edited(current, column, value) is { } replacement)
+            {
+                try
+                {
+                    _source.ReplaceRow(current, replacement);
+                    applied++;
+                }
+                catch (ArgumentException)
+                {
+                    // The row left the result mid-apply (a filter the paste itself
+                    // falsified); skipping it is the honest outcome for a demo.
+                }
+            }
+        }
+        _pasteStatus += $", {applied} applied";
+    }
+
+    /// <summary>A new instance with one field changed — identity is the change signal
+    /// (ADR-0003). Null where the value does not parse or the column is not editable
+    /// by this Consumer.</summary>
+    private static DemoTrade? Edited(DemoTrade row, string column, string value) => column switch
+    {
+        "Trader" => new DemoTrade
+        {
+            Book = row.Book, Trader = value, Notional = row.Notional,
+            TradeDate = row.TradeDate, Confirmed = row.Confirmed,
+        },
+        "Notional" => decimal.TryParse(value, out var notional)
+            ? new DemoTrade
+            {
+                Book = row.Book, Trader = row.Trader, Notional = notional,
+                TradeDate = row.TradeDate, Confirmed = row.Confirmed,
+            }
+            : null,
+        _ => null,
+    };
+
+    private void OnCopyRefused(CopyRefusalReason reason)
+        => Status(reason, reason.ToString(), s => _copyStatus = s);
+
+    private void OnWidthChanged(ColumnWidthChange change)
+    {
+        _widthStatus = $"{change.Column}={change.WidthPx:0}";
+        _columns = _columns
+            .Select(c => c.Name == change.Column
+                ? new GridColumn<DemoTrade>(c.Name, c.Type, c.Value, c.Header,
+                    new ColumnWidthSpec(ColumnWidth.Fixed(Math.Max(40, change.WidthPx)), maxWidthPx: Math.Max(400, change.WidthPx)),
+                    editable: c.Editable, filterUi: c.FilterUi)
+                : c)
+            .ToArray();
+    }
+
+    private void OnOrderChanged(IReadOnlyList<string> order)
+        => _columns = order.Select(name => _columns.First(c => c.Name == name)).ToArray();
+
+    private void OnHidden(string column)
+        => _columns = _columns.Where(c => c.Name != column).ToArray();
+
+    private int _pinned;
+
+    private void OnPinned(int count) => _pinned = count;
+
+    private void Status<T>(T _, string text, Action<string> set) => set(text);
+}
