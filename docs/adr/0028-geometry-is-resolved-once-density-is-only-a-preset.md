@@ -31,6 +31,7 @@ same value the arithmetic computed from, because both are projections of the sam
 | **DigitWidthPx** | `####` and Auto width ([ADR-0016](./0016-column-width-and-overflow.md)) | `CellMetrics` parameter |
 | **CellPaddingXPx** | the same estimates, and the cells' own padding | `8` in C# **and** `8px` in CSS, paired by a comment |
 | **ActionPaddingXPx / ActionBorderPx / ActionGapPx** | an Auto Action Column's width ([ADR-0020](./0020-action-and-template-columns.md)) | `ActionButtonChromePx` in C# **and** three literals in CSS, paired by a comment |
+| **MenuButtonWidthPx / MenuButtonInsetPx** *(added later, when review caught the pairing re-entering through the ▾ button)* | an Auto column's **header** estimate, which must clear the menu button ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)/0016) | was `16px`/`6px` in CSS with no C# side at all — the estimate ignored the button |
 
 The last two rows are the point as much as the first: today the C# constant and the stylesheet
 literal are kept equal **by a comment saying they must move together**. Two of those pairings

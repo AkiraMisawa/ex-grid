@@ -183,6 +183,10 @@ ADR-0016), the column menu is not, because there is no column menu yet.
   exists, and the key table maps Space to `Engage` and Escape to `Leave`
   (`GridKeys.cs`, `ExGrid.OnKeyAsync`). Enter still never fires an action, as specified.
 - ~~Interactive mode itself~~ — likewise implemented, as the `Engage` / `Leave` pair.
+  The way out is not a JS mode: the key gate reads "inside a cell's control" off the
+  event target, so Escape returns the keyboard to the grid **whether focus arrived by
+  key or by click** — an `'interactive'` mode string the core never set had left the
+  contract dead until review caught it. Every other key stays the control's.
 - **Copy of a range covering an Action Column.** The clipboard rules are pure and not yet
   wired to the component; a value-less column would copy as an empty cell today. Whether
   that is right, or whether copy should refuse, is decided when the clipboard is

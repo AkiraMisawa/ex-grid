@@ -197,4 +197,5 @@ the Focus moves and the rows keep skipping (ADR-0003).
   one row or two?"), and answer this one — where is the Focus — not at all.
 - Painted beneath the selection rectangles: a range must stay readable over the band.
 
-Not yet implemented; it lands with the selection paint polish.
+Implemented as specified: `HighlightFocusRow` on the component, one rectangle per layer
+painted first so every range stays readable over it, and `--ex-focus-row-fill` as the colour.

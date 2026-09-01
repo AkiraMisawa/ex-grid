@@ -26,6 +26,22 @@ notifies the Consumer** ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-
 **The Consumer can add its own commands.** Something like "open the report for this book" will
 come up. It is added by the Consumer, not by Chrome — Chrome still only lays them out.
 
+**What closes a popover — the core decides, as it decides the items** *(settled after the
+first manual session found a filter panel that could not be closed at all)*. A column menu or
+filter panel closes three ways, and all three are the core's behaviour, identical under every
+Chrome:
+
+- the same ▾ that opened it — the button is a toggle;
+- Escape, wherever focus sits ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)
+  records where that key fits in its layering);
+- a pointer-down anywhere else in the instance — which **keeps its own meaning**: the click
+  that dismissed the menu still selects the cell or sorts the header it landed on.
+
+Closing any of these ways without OK **discards**, exactly as
+[ADR-0009](./0009-filter-panel-contract.md)'s Cancel does — a dismissal is a Cancel the user
+did not have to aim at. The `Close` callback in the contexts is what Chrome's own affordances
+(an × button, its framework's backdrop) invoke; it is the same discard.
+
 ## Loading indicator — receive and render
 
 ```csharp
@@ -64,6 +80,23 @@ Excel has two editing states, and **the same arrow key means different things in
 | **Caret** | F2, or a double click | kept, with the caret inside it | **move the caret within the text** |
 
 F2 moves between the two.
+
+**What ends editing by pointer — Excel's click-away commits** *(settled when review found
+the editor had no pointer teardown at all: a click elsewhere moved the selection and left
+the editor floating over the old cell with stale text, and the next Enter committed that
+text onto it)*. A press anywhere that is not the editor — another cell, the header, a
+popover-dismissing press — **commits first**, exactly as Excel does, and the press then
+keeps its own meaning: the click still selects, the header press still sorts. The editor's
+own elements never let a press through to the delegated viewport (its input stops
+propagation, like every interactive element standing over that arithmetic), so "not on the
+editor" is exactly what reaches the grid's handlers. Escape remains the one way to discard.
+
+**AltGr is typing, not a chord** *(same review, same list)*: Windows reports an AltGr
+character as Control and Alt held together, and several European layouts type `@ { [ €`
+that way. The gates — JS and the C# mirror — admit a printable key with both held, while
+either alone stays a shortcut. And **a grid with no editable column claims no printable
+keys at all**: the gate is told whether any column edits, so a display-only grid does not
+eat the page's keys or round-trip every keystroke.
 
 Many grid products do not implement this and behave as if always in Caret. Continuous entry —
 "type a value, arrow to the next cell" — then does not work, and anyone coming from Excel

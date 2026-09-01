@@ -152,6 +152,18 @@ the grid as one tab stop". Excel is an application; this is one component on som
 page. **Escape releases the grid's DOM focus** — it has no other meaning outside editing,
 and when the Interactive and Overwrite modes arrive it stays the outermost of them.
 
+An open popover — a column menu or a filter panel — sits **inside** that layering *(recorded
+when dismissal was wired, after the first manual session left a filter panel with no way to
+close it)*: while one is open, Escape closes it and hands the keyboard back to the grid,
+**wherever focus sits** — on the root, on the ▾ button, or inside the panel. A focusable
+descendant keeps its keys (above) with exactly one exception: the capture-phase listener
+forwards a descendant's **Escape**, marked as coming from one, because Escape is
+[ADR-0020](./0020-action-and-template-columns.md)'s way out of the cell — the core answers it
+by closing whatever popover stands and taking the keyboard back, never by leaving the grid.
+Only an Escape with nothing left to dismiss, pressed on the root itself, releases the DOM
+focus. The other ways a popover closes belong to
+[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).
+
 **With focus but no selection, the first key only places the Focus.** `GridSelection.Move`
 is a no-op on an empty selection, deliberately — there is no Focus to start from. But
 "focus on the grid, nothing selected" is an ordinary state: reached by tabbing in, by
@@ -215,6 +227,33 @@ Consumer's pager. The keys keep the names the browser reports; the vocabulary do
 switch tabs. The capture-phase listener exists so that this grid sees its own keys before a cell
 editor does ([ADR-0018](./0018-multiple-instances-must-be-independent.md)) — not so that it can take
 keys away from the browser around it.
+
+**A reveal is judged against where the scroller is going to be, never against the last
+scroll event alone** *(recorded when the zoom stress run caught the gap)*. The offsets the
+component mirrors follow the browser's scroll events, and a reveal's own write is
+asynchronous — so between write and echo, the mirror is one step behind. A reveal that
+compared its target to the mirror was dropped as "already there" exactly when a previous
+reveal's write was still in flight, and that write then landed after it: Ctrl+Home
+followed by Ctrl+End faster than one round-trip left the Focus at the far corner with the
+view parked at the top, and — since a selection already at the corner changes no more —
+nothing ever armed a recovery. The no-op check therefore reads the newer of "last event"
+and "last write" (a move that truly needs no scroll still writes nothing, which is the
+economy the tests pin).
+
+**What one header click does to the Sorts list** *(settled while wiring the click; "clicking a
+column header sorts" above says nothing about the cycle)*. The cycle is **unsorted → ascending →
+descending → unsorted**, and a click **replaces the whole list** with at most that one column. The
+third state exists so the Consumer's own order is reachable again without reloading. A click on a
+column that is not the single sorted one — unsorted, another column, or a multi-column list a
+Consumer set up — starts over at ascending on the clicked column: the click means "sort by this",
+not "amend what was there". Multi-column sorting stays expressible through the `Sorts` model for a
+Consumer or a column menu ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)); the
+single click stays the single-column gesture it was given for. The pure cycle lives in `SortCycle`,
+and an Action Column — unsortable by declaration
+([ADR-0020](./0020-action-and-template-columns.md)) — ignores the click rather than sorting by
+nothing. The header is one delegated click target the way the row Viewport is: its cells are
+`pointer-events: none` and the column is read from the geometry, not from two hundred per-cell
+handlers ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)'s economy).
 
 ## Consequences
 

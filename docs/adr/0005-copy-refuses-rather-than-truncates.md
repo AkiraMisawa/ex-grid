@@ -92,6 +92,31 @@ Rejected:
 - **Always the `copy` event** — no prompt, but copying is limited to the Window, which undoes the
   point of raising the cap.
 
+### What wiring the routes settled *(added while implementing the clipboard)*
+
+- **The `copy` and `paste` events do fire on the focused grid root** — a non-editable,
+  `user-select: none` element — on the real Chrome. This was the assumption the whole event
+  route stood on, and it was verified in a headed browser before the wiring was built, because
+  a browser that only fired these events in editable contexts would have forced the hidden-
+  textarea trick every other grid library carries.
+- **The event route needs a synchronous answer, and only WebAssembly has the channel.** The
+  `copy` event cannot await; the payload is asked for through `invokeMethod`, which exists on
+  WASM (the first Consumer's premise, [ADR-0017](./0017-target-chromium-browsers-only.md)) and
+  not on Blazor Server. Where the synchronous channel is missing, **every copy takes the
+  asynchronous route** — correct, with the prompt-risk this ADR already priced in.
+- **Ctrl+C / Ctrl+V are deliberately not in the key table.** Taking them in the capture-phase
+  listener would `preventDefault` the very browser commands that fire the `copy`/`paste`
+  events — the route would suppress itself.
+- **A copy over an Action Column emits an empty cell** — the question
+  [ADR-0020](./0020-action-and-template-columns.md) reserved for this wiring. The column has
+  no value by declaration (`Value` answers null), so the empty cell is what the existing
+  machinery already produces, and a refusal would make an ordinary "copy these rows" fail for
+  containing a column the user cannot unselect sensibly. A Template Column copies its value
+  accessor's answer, never its markup.
+- **A copy beyond the Window with nobody to ask refuses by name** (`RowsUnavailable`, a
+  component-level reason beside the three pure ones): a push Consumer that passed no provider
+  cannot be answered for, and the fraction in hand is never emitted.
+
 ## Paste is received through the `paste` event
 
 **Paste is in scope.** (The first draft of this ADR said it was not, on the grounds that a

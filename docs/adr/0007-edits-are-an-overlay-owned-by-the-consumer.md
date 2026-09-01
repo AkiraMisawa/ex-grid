@@ -132,3 +132,25 @@ value. **The screen and the computed result disagree, and each looks normal on i
 - **Add a development-time check.** When an edit is committed and **no row identity changes** in
   the renders that follow, warn on the console. That catches both 2 and 3. Disabled in release
   builds, so it costs nothing.
+
+## What wiring the editor settled — and what it deliberately did not
+
+*(Recorded when the first working edit demo was built.)*
+
+**`InMemoryGridSource.ReplaceRow(row, replacement)` is the library-provided apply for the
+Consumer that owns its rows in memory** — the `GridSource.From` case this ADR's sorting
+paragraph already names. It closes the three links above by construction: it **refuses the
+same instance** (point 3, the in-place rewrite, rejected by name rather than warned about),
+replaces the row in the base, requeries under the Filter and Sorts in force (point 2 cannot be
+missed, because application and requery are one call), and moves the Row Sequence Version
+**only when the visible sequence actually moved** — so an ordinary value edit keeps the
+selection and continuous entry survives, while an edit that reorders under the current sort
+drops it, exactly as
+[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md) requires.
+
+**It is not the Overlay application.** A source that owns its rows has no base/override split:
+there are no Overrides to consult for Cell State "modified", and no reset-by-deleting-an-entry —
+the pre-edit instance is gone from the base. The single library-provided **Overlay**
+application this ADR promises — and the bundled undo stack with it — remains to be built, and
+its trigger is the first scenario-backed Consumer, where the base is fetched and the diff is
+what gets persisted. `ReplaceRow` neither replaces that obligation nor prejudges its shape.

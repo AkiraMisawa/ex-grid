@@ -23,14 +23,21 @@ meaning, without an ADR. It marks a **meaning**, never a mechanism.
 | `ex-state-stale / -missing / -error / -modified` | Cell State ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | `ex-range`, `ex-focus` | a selection rectangle and the Focus outline ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) |
 | `ex-action`, `ex-interactive` | the grid's own action button; a Consumer's control that takes its own pointer events ([ADR-0020](./0020-action-and-template-columns.md)) |
-| `ex-editor` *(reserved)* | the floating Cell Editor, when it exists ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) |
-| `ex-resize-guide` *(reserved)* | the vertical guide a column resize drags, applied on release ([ADR-0016](./0016-column-width-and-overflow.md)) |
-| `ex-drop-indicator` *(reserved)* | where a dragged header will land; it stops at the pinned boundary rather than promising a drop that is refused ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) |
+| `ex-editor` | the floating Cell Editor; `ex-editing` joins the root while it stands ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) |
+| `ex-resize-guide` | the vertical guide a column resize drags, applied on release ([ADR-0016](./0016-column-width-and-overflow.md)) |
+| `ex-drop-indicator` | where a dragged header will land; it stops at the pinned boundary rather than promising a drop that is refused ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) |
 
 ## The internal classes — and why the line sits exactly there
 
 `ex-scroller`, `ex-spacer`, `ex-viewport`, `ex-gap`, `ex-selection`, `ex-selection-pinned`,
-`ex-announce` are **implementation detail**. They may be renamed, merged or removed by any commit.
+`ex-header-groups-pinned`, `ex-focus-row`, `ex-pager`, `ex-status`, `ex-resize-grip`,
+`ex-menu-button`, `ex-popover`, `ex-popover-list`, `ex-popover-actions`, `ex-editor-pinned`,
+`ex-announce` are
+**implementation detail**. They may be renamed, merged or removed by any commit — the Focus
+band's contract is its token (`--ex-focus-row-fill`) and the parameter that turns it on, never
+the element; the pager and status line are the minimal built-in chrome
+([ADR-0015](./0015-paging-is-another-driver-for-range-requests.md)), replaceable when the Chrome
+seams land ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)).
 
 `ex-announce` — the visually hidden live region that states the selection extent
 ([ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)) — is internal
@@ -64,7 +71,12 @@ Geometry tokens (written inline by C#, read-only — ADR-0027/0028):
 ```
 --ex-row-height   --ex-header-height   --ex-font-size   --ex-cell-padding-x
 --ex-action-padding-x   --ex-action-border-width   --ex-action-gap
+--ex-menu-button-width   --ex-menu-button-inset
 ```
+
+*(The menu-button pair was added when review found the ▾'s 16px/6px living as a CSS
+literal beside a C# estimate that ignored it — the exact pairing defect ADR-0027/0028
+dissolved, re-entering through a new element.)*
 
 Visual tokens (defaults in `ex-grid.css`, overridden on any ancestor). The existing eleven are
 kept with their names and defaults; the vocabulary this ADR fixes is:
@@ -74,14 +86,14 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Ground | `--ex-background`, `--ex-color`, `--ex-font-family`, `--ex-font-weight` |
 | Header | `--ex-header-background` *(exists)*, `--ex-header-color`, `--ex-header-font-weight`, `--ex-header-rule-color` |
 | Rules | `--ex-row-rule-color`, `--ex-column-rule-color`, `--ex-rule-width` — painted as gradients/inset shadows, **never borders** ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)) |
-| Hover | `--ex-row-hover-background` (via `:hover`; costs no C#) |
+| Hover | `--ex-row-hover-background` *(unimplementable as stated — see the correction below)* |
 | Pinned | `--ex-pinned-background` *(exists)* |
 | Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(reserved — the border Excel draws around the range's perimeter; decided with the selection paint polish)*, `--ex-focus-outline` *(exists)*, `--ex-grid-focus-outline` *(exists)* |
 | Cell State | the six `--ex-state-*` *(exist)* |
 | Row Kind | the four `--ex-row-group/total-*` *(exist)* |
 | Placeholder / loading | `--ex-placeholder-background`, `--ex-loading-opacity` |
-| Editor *(reserved)* | `--ex-editor-background`, `--ex-editor-color`, `--ex-editor-outline` |
-| Column gestures *(reserved)* | `--ex-resize-guide-color`, `--ex-drop-indicator-color` — the guide and the indicator are painted, not laid out, so neither is metrics-bearing (ADR-0011/0016) |
+| Editor | `--ex-editor-background`, `--ex-editor-color`, `--ex-editor-outline` |
+| Column gestures | `--ex-resize-guide-color`, `--ex-drop-indicator-color` — the guide and the indicator are painted, not laid out, so neither is metrics-bearing (ADR-0011/0016) |
 | Scrollbar | `--ex-scrollbar-width`, `--ex-scrollbar-color` |
 
 Defaults stay on system colours (`Canvas`, `Highlight`, `currentColor`) so the bare grid follows
@@ -149,11 +161,36 @@ transition animates from another row's value. The tokens above set colours, not 
   **selection is described by the root, never attributed per cell** — the one real decision,
   taken to keep ADR-0008's memoisation. Ownership stays the core's, never a Wrapper's
   ([ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)).
-- **The editor's classes and tokens are reserved with a named trigger**: `ex-editor`, the
-  `--ex-editor-*` tokens and the `ex-editing`-on-root question are all settled **inside the Cell
-  Editor task** (ADR-0010) — the namespace is fixed now so no Wrapper has to guess where they
-  will appear, and the geometry half needs nothing: the editor's box is already the cell's
-  (ADR-0028). `--ex-selection-outline` is reserved the same way, settled with the selection
-  paint polish alongside the Focus band ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)).
-  Deliberately not decided earlier: naming the look of a control that does not exist is the
-  reasoning-without-the-thing this project has been wrong with twice.
+- **The editor's classes and tokens were reserved with a named trigger, and the trigger fired**:
+  the Cell Editor exists (ADR-0010), `ex-editor` marks it, `ex-editing` joins the root while it
+  stands, and the three `--ex-editor-*` tokens carry its look — exactly the namespace fixed here
+  in advance, with the geometry half needing nothing because the editor's box is the cell's
+  (ADR-0028). `--ex-selection-outline` remains reserved, settled with the selection paint
+  polish; the Focus band half of that polish has landed (`--ex-focus-row-fill`,
+  [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)).
+
+## A correction found in implementation: the hover token cannot work as declared
+
+`--ex-row-hover-background` was specified as "via `:hover`; costs no C#". **`:hover` never
+matches a row**: every element under the row Viewport is `pointer-events: none` — that is the
+delegated hit-test the mouse machinery is built on (ADR-0004/0008) — and an element that takes
+no pointer events takes no hover either. The token is therefore **not implemented**, and the
+honest options are (a) dropping it, or (b) a C#-driven hover class from the mousemove the
+Viewport already receives, which contradicts "costs no C#". Neither is decided here; the row
+stays in the table so the vocabulary is complete, marked *(unimplementable as stated — see
+below)* by this section. Deciding it is cheap and non-urgent: no Consumer has asked for hover.
+
+## A second correction: what "read-only" can and cannot mean for a Geometry Token
+
+Measured while writing the browser suite: the inline Geometry Tokens on the instance root beat
+an ancestor's value and beat a stylesheet rule targeting `.ex-grid` — the two override routes
+this ADR supports — but **CSS offers two routes past an inline declaration that no emission
+strategy on the root can close**: an `!important` stylesheet declaration, and a rule that
+re-declares the token on a *descendant* (`.ex-row { --ex-row-height: … }`), where inheritance
+from the root is simply replaced. Both are already unsupported by this ADR's own rule —
+geometry from CSS is the defect class ADR-0027 exists to remove, and `.ex-row`'s stable-class
+contract licenses styling its *appearance*, not re-declaring the core's tokens — but the
+earlier claim that a stylesheet "cannot displace" a token-fed property was stronger than CSS
+permits. The contract is stated precisely now: **the supported override routes cannot move
+geometry; a stylesheet that reaches for the unsupported ones is writing outside the contract,
+and what breaks is on it.** The browser suite pins the supported routes.
