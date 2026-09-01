@@ -196,6 +196,13 @@ test('a refusal is announced, not only painted (A11Y-16, ADR-0035)', async ({ pa
     await page.keyboard.press('ControlOrMeta+V');
 
     await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
+
+    // A live region announces on mutation, so the second refusal for the same reason
+    // would be silent if Chrome wrote the same sentence again — and that is the one the
+    // user needs, having just tried again.
+    const first = await page.locator('#paste-refused-status').textContent();
+    await page.keyboard.press('ControlOrMeta+V');
+    await expect(page.locator('#paste-refused-status')).not.toHaveText(first);
 });
 
 test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) => {

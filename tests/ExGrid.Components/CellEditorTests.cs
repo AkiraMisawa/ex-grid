@@ -371,6 +371,43 @@ public class CellEditorTests : GridTestContext
         Assert.Equal(EditDiscardReason.OrderChanged, discarded);
     }
 
+    [Fact] // ADR-0011 / ED-21: a column change is not a reorder, and must not be reported as one
+    public async Task Text_discarded_because_the_columns_changed_says_so_and_not_reordered()
+    {
+        EditDiscardReason? discarded = null;
+        var cut = RenderGrid(onEditDiscarded: r => discarded = r);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+
+        // The Consumer hides a column from its own toolbar. The order never moved.
+        cut.Render(ps => ps.Add(g => g.Columns, (GridColumn<TestRow>[])
+            [new("Book", ColumnType.Text, r => r.Book, width: Fixed100, editable: true)]));
+
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.Equal(EditDiscardReason.ColumnsChanged, discarded);
+    }
+
+    [Fact] // ADR-0035 / ED-21: Editable is asked again at the commit, not assumed from the open
+    public async Task A_column_that_stops_being_editable_mid_edit_discards_rather_than_commits()
+    {
+        EditDiscardReason? discarded = null;
+        var edits = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(onEdit: edits.Add, onEditDiscarded: r => discarded = r);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+
+        // Same names, so the selection and the editor both stand: only the declaration moved.
+        cut.Render(ps => ps.Add(g => g.Columns, (GridColumn<TestRow>[])
+            [new("Book", ColumnType.Text, r => r.Book, width: Fixed100),
+             new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100)]));
+        Assert.NotEmpty(cut.FindAll(".ex-editor"));
+
+        await PressAsync(cut, "Enter");
+
+        Assert.Empty(edits);
+        Assert.Equal(EditDiscardReason.ColumnNoLongerEditable, discarded);
+    }
+
     [Fact] // ADR-0011 / ED-21: the row left the Window before the commit landed, so there is no identity
     public async Task Text_discarded_because_the_row_left_the_window_is_announced()
     {

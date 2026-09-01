@@ -14,7 +14,10 @@ import fs from 'node:fs';
 // So the directory carries the day and the platform, and each project writes under
 // its own key.
 const RECORD_DIR = (() => {
-    const day = new Date().toISOString().slice(0, 10);
+    // The operator's day, not UTC: the directory names where and when this ran, and an
+    // evening run west of Greenwich filing itself under tomorrow would be a record that
+    // lies about the second half of that.
+    const day = new Date().toLocaleDateString('en-CA');
     const wsl = process.platform === 'linux'
         && fs.existsSync('/proc/version')
         && fs.readFileSync('/proc/version', 'utf8').toLowerCase().includes('microsoft');
@@ -25,10 +28,10 @@ const RECORD_DIR = (() => {
     return `../../verification/${day}-${platform}`;
 })();
 
-// Two tests write this file, and Playwright may run them in parallel workers; the
-// read-modify-write below is not atomic. It has never lost an entry here, and a lock
-// would be more machinery than an observational number is worth — but if a key ever
-// goes missing from a record, this is why.
+// Two tests write this file and the read-modify-write below is not atomic. It is safe
+// only because playwright.config.mjs pins `workers: 1, fullyParallel: false` — which it
+// does for its own reason, that the suite changes the page zoom. If that ever relaxes,
+// this needs a lock, and the symptom will be a key missing from a record.
 function record(project, entries) {
     fs.mkdirSync(RECORD_DIR, { recursive: true });
     const path = `${RECORD_DIR}/metrics.json`;

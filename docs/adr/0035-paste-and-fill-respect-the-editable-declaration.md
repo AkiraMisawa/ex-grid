@@ -97,7 +97,10 @@ says the fill was refused and nothing says the typing is gone.
 
 It follows that the other commit gestures keep their meaning. **Enter still commits the one cell**
 the editor was opened on: that cell is editable by construction — an editor opens nowhere else —
-so the operation is legal and the refusal has no standing over it. This is where a Refusal and a
+so the operation was legal when the editor opened — and is asked again at the commit, because a
+Consumer may revoke the declaration mid-edit; if it has, the commit is discarded with its own
+reason rather than raised (ADR-0011's `ColumnNoLongerEditable`). The refusal has no standing over
+a commit the declaration still permits. This is where a Refusal and a
 Reject part company. A Reject stops *every* commit gesture (ED-15), because there the value is what
 is wrong. A Refusal stops only the operation it named.
 

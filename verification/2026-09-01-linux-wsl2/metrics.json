@@ -3,24 +3,7 @@
     "PST-6": {
       "sourceCells": 400,
       "bytes": 10400400,
-      "parseAndIntentMs": 2384,
-      "nextKeyMs": 11
-    },
-    "DOM-5": {
-      "elements": 246,
-      "cells": 210,
-      "rows": 21
-    },
-    "BIG-7": {
-      "mountToFirstPaintedRowMs": 581,
-      "totalRows": 100000
-    }
-  },
-  "msedge": {
-    "PST-6": {
-      "sourceCells": 400,
-      "bytes": 10400400,
-      "parseAndIntentMs": 2387,
+      "parseAndIntentMs": 2551,
       "nextKeyMs": 13
     },
     "DOM-5": {
@@ -29,7 +12,24 @@
       "rows": 21
     },
     "BIG-7": {
-      "mountToFirstPaintedRowMs": 670,
+      "mountToFirstPaintedRowMs": 656,
+      "totalRows": 100000
+    }
+  },
+  "msedge": {
+    "PST-6": {
+      "sourceCells": 400,
+      "bytes": 10400400,
+      "parseAndIntentMs": 2482,
+      "nextKeyMs": 13
+    },
+    "DOM-5": {
+      "elements": 246,
+      "cells": 210,
+      "rows": 21
+    },
+    "BIG-7": {
+      "mountToFirstPaintedRowMs": 700,
       "totalRows": 100000
     }
   }

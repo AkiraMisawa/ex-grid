@@ -75,7 +75,27 @@ Every spec fails any test on a console `error` or an uncaught page error (CON-1/
 Timing. Milliseconds never gate (Definition of Done §1); the structural invariants
 above are what produce them. The CDP-metrics instrumentation (MEM-2/5, PF-6/7,
 BIG-6/7, DOM-5) is still to be written, and is listed as `blocked`, not passed, in
-`verification/<date>/results.md`.
+`verification/<date>-<platform>/results.md`. The observational numbers this suite does
+write go to `verification/<date>-<platform>/metrics.json`, one key per browser project:
+the directory carries the platform because a structural count is comparable across
+machines and a timing is not.
+
+## What Chrome owes this suite
+
+**Whatever renders a refusal has to be a live region.** The grid raises a refusal as an
+enum and holds no sentence for it, so it cannot announce this one — the announcement is
+Chrome's, and a refusal rendered into a plain element is silent to a reader who cannot
+see it while ADR-0035 promises the write is "always reported" (A11Y-16). The same goes
+for a discarded edit, which nobody even provoked (ED-21).
+
+Two traps live in that, and the DemoHost has hit both:
+
+- A live region announces on **mutation**. Writing the same sentence twice says nothing
+  the second time — and the second refusal is the one the user needs, having just tried
+  again. The reference Chrome appends an occurrence count so the repeat is a change.
+- The confirmations beside it (`#edit-status`, `#paste-status`) are deliberately **not**
+  live regions. They report what did happen, and announcing every successful edit would
+  bury the one message that matters.
 
 ## Traps this suite has already hit
 

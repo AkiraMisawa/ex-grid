@@ -257,5 +257,19 @@
 
     private void OnPinned(int count) => _pinned = count;
 
-    private void Status<T>(T _, string text, Action<string> set) => set(text);
+    private readonly Dictionary<string, int> _statusRepeats = [];
+
+    /// <summary>A live region announces on mutation, so writing the same sentence twice
+    /// says nothing the second time — and the second refusal is exactly the one a user
+    /// needs to hear, having just tried again. The grid promises a refused write is
+    /// always reported (ADR-0035, A11Y-16), and it is Chrome that would break that
+    /// promise here. The count makes the repeat a change, and says it happened again
+    /// rather than pretending it did not.</summary>
+    private void Status<T>(T reason, string text, Action<string> set)
+    {
+        var key = $"{typeof(T).Name}:{reason}";
+        var seen = _statusRepeats.TryGetValue(key, out var n) ? n + 1 : 1;
+        _statusRepeats[key] = seen;
+        set(seen > 1 ? $"{text} (×{seen})" : text);
+    }
 }

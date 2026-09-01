@@ -380,6 +380,9 @@
     /// <summary>Set while a render is being prepared, raised once it has been.</summary>
     private EditDiscardReason? _pendingDiscard;
 
+    /// <summary>Why the last reconciliation emptied the selection, or null.</summary>
+    private EditDiscardReason? _selectionEmptiedBy;
+
     /// <summary>How often the edge band scrolls while a drag holds the pointer in it
     /// (ADR-0008). Provisional the way the band's own numbers are — the shape is the
     /// decision, the period is not.</summary>
@@ -1305,7 +1308,7 @@
             // it away. Raised from OnAfterRenderAsync for the reason the Range Request
             // is — a Consumer handler run inside this render stack would re-enter the
             // same batch.
-            _pendingDiscard = EditDiscardReason.OrderChanged;
+            _pendingDiscard = _selectionEmptiedBy ?? EditDiscardReason.OrderChanged;
         }
         PrepareRender();
     }
@@ -1325,9 +1328,19 @@
     /// </summary>
     private void ReconcileSelection()
     {
+        // Which of the two causes emptied it, for the discard reason (ADR-0011). They are
+        // different sentences to a user, and the wrong one is worse than none.
+        _selectionEmptiedBy = null;
+        var held = _selection.Selection;
         var reconciled = _selection.Under(_sequenceVersion);
+        if (!held.IsEmpty && reconciled.Selection.IsEmpty)
+            _selectionEmptiedBy = EditDiscardReason.OrderChanged;
         if (!ColumnsAreAsBefore())
+        {
+            if (!held.IsEmpty)
+                _selectionEmptiedBy ??= EditDiscardReason.ColumnsChanged;
             reconciled = HeldSelection.Empty(_sequenceVersion);
+        }
 
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
@@ -3186,6 +3199,15 @@
         {
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(EditDiscardReason.RowLeftTheWindow);
+            return;
+        }
+        // Asked again, not assumed from when the editor opened: a Consumer may revoke the
+        // declaration mid-edit, and `Editable` means a write may land here (ADR-0035). This
+        // is the last write path the gate did not cover.
+        if (!ColumnIsEditable(cell.Column))
+        {
+            if (OnEditDiscarded.HasDelegate)
+                await OnEditDiscarded.InvokeAsync(EditDiscardReason.ColumnNoLongerEditable);
             return;
         }
         if (OnEdit.HasDelegate)
