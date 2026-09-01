@@ -31,6 +31,45 @@ public class ClipboardDataTests
             html);
     }
 
+    private static string Header(int column) => $"H{column}";
+
+    [Fact] // ADR-0005 / CP-17: one header row above the block, in both flavours
+    public void Copy_with_headers_emits_one_row_of_declared_headers()
+    {
+        var plan = ClipboardRules.PlanCopy(
+            GridSelection.Empty.Click(new(1, 2), Grid).ExtendTo(new(2, 3), Grid), withHeaders: true).Plan;
+
+        var (text, html) = ClipboardData.Assemble(plan, Display, Raw, Header);
+
+        Assert.Equal("H2\tH3\r\nd1.2\td1.3\r\nd2.2\td2.3\r\n", text);
+        Assert.StartsWith("<table><tr><th>H2</th><th>H3</th></tr><tr><td>r1.2</td>", html);
+    }
+
+    [Fact] // ADR-0005 / CP-17: vertical segments share a column span, so one row names them all
+    public void A_vertically_disjoint_selection_gets_one_header_row()
+    {
+        var selection = GridSelection.Empty
+            .Click(new(5, 0), Grid).ExtendTo(new(5, 1), Grid)
+            .ToggleRange(new(1, 0), Grid).ExtendTo(new(2, 1), Grid);
+        var plan = ClipboardRules.PlanCopy(selection, withHeaders: true).Plan;
+
+        var (text, _) = ClipboardData.Assemble(plan, Display, Raw, Header);
+
+        Assert.Equal("H0\tH1\r\nd1.0\td1.1\r\nd2.0\td2.1\r\nd5.0\td5.1\r\n", text);
+    }
+
+    [Fact] // ADR-0005 / CP-17: without the provider nothing changes — the plain copy is untouched
+    public void Copy_without_headers_is_unchanged()
+    {
+        var plan = ClipboardRules.PlanCopy(
+            GridSelection.Empty.Click(new(1, 2), Grid).ExtendTo(new(1, 2), Grid)).Plan;
+
+        var (text, html) = ClipboardData.Assemble(plan, Display, Raw);
+
+        Assert.Equal("d1.2\r\n", text);
+        Assert.DoesNotContain("<th>", html);
+    }
+
     [Fact] // ADR-0011 / CP-9: vertically aligned ranges stack in position order, never creation order
     public void Vertical_segments_stack_in_position_order()
     {

@@ -19,10 +19,15 @@ public static class ClipboardData
     /// <param name="displayAt">The displayed text of (row, column) — what the cell
     /// paints before the overflow decision, never <c>####</c> (ADR-0016).</param>
     /// <param name="rawAt">The raw value of (row, column), unformatted and locale-free.</param>
+    /// <param name="headerAt">The declared header of a column, or null for no header row
+    /// (ADR-0005). It is the full declared text, never the truncated paint, by the rule
+    /// that keeps <c>####</c> off the clipboard — and it goes into both flavours,
+    /// because Excel reads the HTML one and that is the case headers exist for.</param>
     public static (string Text, string Html) Assemble(
         CopyPlan plan,
         Func<int, int, string> displayAt,
-        Func<int, int, string> rawAt)
+        Func<int, int, string> rawAt,
+        Func<int, string>? headerAt = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(displayAt);
@@ -30,6 +35,9 @@ public static class ClipboardData
 
         var text = new StringBuilder();
         var html = new StringBuilder("<table>");
+
+        if (headerAt is not null)
+            AppendHeaderRow(text, html, plan, headerAt);
 
         if (plan.Orientation == CopyOrientation.Vertical)
         {
@@ -65,6 +73,41 @@ public static class ClipboardData
 
         html.Append("</table>");
         return (text.ToString(), html.ToString());
+    }
+
+    /// <summary>One row above the block, whichever orientation the plan has. Vertical
+    /// segments share a column span, so the first names them for all; horizontal ones
+    /// concatenate, so the names follow the order the cells are emitted in (ADR-0005).
+    /// A disjoint selection has a well-defined header row either way.</summary>
+    private static void AppendHeaderRow(
+        StringBuilder text, StringBuilder html, CopyPlan plan, Func<int, string> headerAt)
+    {
+        html.Append("<tr>");
+        var cell = 0;
+        if (plan.Orientation == CopyOrientation.Vertical)
+        {
+            var span = plan.Segments[0];
+            for (var column = span.LeftColumn; column <= span.RightColumn; column++)
+                AppendHeaderCell(text, html, headerAt(column), cell++);
+        }
+        else
+        {
+            foreach (var segment in plan.Segments)
+            {
+                for (var column = segment.LeftColumn; column <= segment.RightColumn; column++)
+                    AppendHeaderCell(text, html, headerAt(column), cell++);
+            }
+        }
+        text.Append("\r\n");
+        html.Append("</tr>");
+    }
+
+    private static void AppendHeaderCell(StringBuilder text, StringBuilder html, string header, int index)
+    {
+        if (index > 0)
+            text.Append('\t');
+        text.Append(QuoteForTsv(header));
+        html.Append("<th>").Append(EscapeHtml(header)).Append("</th>");
     }
 
     private static void AppendLine(

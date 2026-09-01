@@ -157,4 +157,25 @@ public class CopyRuleTests
         var approved = ClipboardRules.PlanCopy(GridSelection.Empty.Click(new(0, 0), Grid));
         Assert.Throws<InvalidOperationException>(() => approved.Reason);
     }
+
+    [Fact] // ADR-0005 / CP-18: the header row counts, so the cap keeps meaning what it says
+    public void A_selection_exactly_on_the_cap_copies_plainly_and_refuses_with_headers()
+    {
+        // 4 rows x 2 columns = 8 cells; with a header row it is 10.
+        var selection = GridSelection.Empty.Click(new(0, 0), Grid).ExtendTo(new(3, 1), Grid);
+
+        Assert.False(ClipboardRules.PlanCopy(selection, cellCap: 8).IsRefused);
+        var refused = ClipboardRules.PlanCopy(selection, cellCap: 8, withHeaders: true);
+
+        Assert.True(refused.IsRefused);
+        Assert.Equal(CopyRefusalReason.TooLarge, refused.Reason);
+    }
+
+    [Fact] // ADR-0005 / CP-18: room for the extra row and it approves, as the plain copy does
+    public void With_headers_it_approves_when_the_cap_has_room_for_the_extra_row()
+    {
+        var selection = GridSelection.Empty.Click(new(0, 0), Grid).ExtendTo(new(3, 1), Grid);
+
+        Assert.False(ClipboardRules.PlanCopy(selection, cellCap: 10, withHeaders: true).IsRefused);
+    }
 }

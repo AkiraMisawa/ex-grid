@@ -24,7 +24,13 @@ public static class ClipboardRules
     /// </summary>
     public const long DefaultCellCap = 1_000_000;
 
-    public static CopyDecision PlanCopy(GridSelection selection, long cellCap = DefaultCellCap)
+    /// <param name="withHeaders">Whether a header row will be emitted above the block
+    /// (ADR-0005). It counts against the cap, because the cap is applied to what is
+    /// actually copied and not to the selection: a selection sitting exactly on the cap
+    /// copies plainly and refuses with headers, and the reason is that the payload is
+    /// bigger.</param>
+    public static CopyDecision PlanCopy(
+        GridSelection selection, long cellCap = DefaultCellCap, bool withHeaders = false)
     {
         ArgumentNullException.ThrowIfNull(selection);
         // A cap below one cell is a misconfiguration, not a refusal.
@@ -39,7 +45,8 @@ public static class ClipboardRules
         var plan = TryAlign(selection.Ranges);
         if (plan is null)
             return CopyDecision.Refuse(CopyRefusalReason.MisalignedShape);
-        if ((long)plan.TotalRows * plan.TotalColumns > cellCap)
+        var rows = (long)plan.TotalRows + (withHeaders ? 1 : 0);
+        if (rows * plan.TotalColumns > cellCap)
             return CopyDecision.Refuse(CopyRefusalReason.TooLarge);
         return CopyDecision.Approve(plan);
     }
