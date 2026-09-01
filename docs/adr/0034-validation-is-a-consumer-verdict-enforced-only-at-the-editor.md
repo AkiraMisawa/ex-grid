@@ -86,10 +86,19 @@ opens:
 - `CellStateOf` is consulted every render for every cell, so it stays a cheap enum; the
   message — read for at most one cell at a time — is a separate, lazy question. This is
   Cell Metadata's idiom verbatim: *not stored on the cell; asked for by (row, column)*.
-- **The popover opens on Focus (after a short delay, so continuous arrow movement stays
-  quiet) and on hover.** Keyboard reachability is the point of the Focus trigger — this
-  design makes the keyboard a first-class citizen, and an error only a mouse can read would
-  not be. It never shows permanently: the paint is the standing display, and forty popovers
+- **The popover opens after 300 ms of stillness, on Focus and on hover alike** — a constant of
+  its own, `PopoverDelay`, and deliberately not ADR-0004's 150 ms `SettleDelay`. The two measure
+  different things: the settle measures **stillness**, to protect a frame budget and a live
+  region, while this one estimates **the intent to read** — is the user looking at that cell, or
+  passing over it? Sharing the number would tie a UX judgement to a performance one, and tuning
+  either would silently move the other. Hover takes the same delay for the same reason it exists
+  at all: a pointer crossing a column of flagged cells is passing over them, and a popover that
+  fires on arrival flashes its way across the screen. A *stopped* pointer has shown intent; a
+  moving one has not.
+
+  Keyboard reachability is the point of the Focus trigger — this design makes the keyboard a
+  first-class citizen, and an error only a mouse can read would not be. It never shows
+  permanently: the paint is the standing display, and forty popovers
   after a bulk paste would bury the screen.
 - **A validation message is Cell State plus a popover, never an element in the row**
   ([ADR-0013](./0013-fixed-row-height.md)) — the row's height does not move. The popover is
