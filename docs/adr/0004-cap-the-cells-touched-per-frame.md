@@ -136,7 +136,12 @@ what is painted, and nothing else).
   so the full rebuild happens once per click and goes unnoticed
   ([ADR-0015](./0015-paging-is-another-driver-for-range-requests.md)).
 
-## Tiered headers — open
+## Tiered headers — resolved in ADR-0032; the analysis is kept
+
+*(Resolved: [ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)
+designs them as declared rectangles, absolutely positioned from `ColumnGeometry`, with the
+straddling-the-pinned-boundary case refused by name. The analysis below is kept as the record
+of what the design had to answer.)*
 
 A header several rows deep, with a group label spanning a run of columns, is **not designed**.
 It is recorded here rather than elsewhere because horizontal virtualisation is what it collides
@@ -156,9 +161,11 @@ with. What is already known:
   tiered header ends that simplification and changes what `ViewportHeight` means. **This is the
   decision that overturns it** — nothing else is expected to.
 - **A group straddling the pinned boundary is undefined.** Half of a group sticky and half of it
-  scrolling is not a thing that can be drawn. Refuse it, or split it visually — undecided.
+  scrolling is not a thing that can be drawn. Refuse it, or split it visually — ADR-0032 took the
+  first: a rectangle that straddles the boundary is refused by name.
 - **The Column model stops being a flat list.** Column Group would be a new term for
-  `CONTEXT.md`, column reordering (open — see
+  `CONTEXT.md`, column reordering (since decided — a header drags within its block and never
+  across the pinned boundary,
   [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) becomes
   constrained by groups, and whether a copy includes the group row is unsettled
   ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md) says a copy follows the current

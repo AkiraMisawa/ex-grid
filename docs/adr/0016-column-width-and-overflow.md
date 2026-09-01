@@ -106,30 +106,100 @@ them. The column menu entry in
 would require the Consumer to compute the maximum width server-side and pass it in; that is
 overkill for now.
 
-## Resizing by dragging — open
+## Resizing by dragging — decided
 
-This ADR **assumes** dragging three times over — "widen the column by dragging", "a dragged
-width is persisted as Fixed", "`MinWidth` is the lower bound for dragging" — and **nowhere
-specifies the gesture itself**. That is not a decision made here; it is a decision nobody has
-made yet. Its own ADR settles at least these:
+The three assumptions above are now a gesture. **A grip in the right-hand edge of the header cell;
+a guide line follows the pointer; the width is applied on release.** Not a live resize:
+`ColumnStyles` composes the width as an inline `style` per cell, so a live drag would rebuild every
+painted row's markup on every `pointermove`. The guide line is one absolutely positioned element
+moving over the top — the same mechanism, and the same reason, as the selection Overlay
+([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). It is also what Excel does, which is
+the operability this component's name claims.
 
-- **May a drag exceed `MaxWidth`?** This ADR calls `MinWidth` the lower bound outright, but
-  gives `MaxWidth` a second job — it is *what gives `####` meaning* — and never says whether it
-  also stops a drag. Letting a drag past it means a column the user widened can never hash;
-  stopping the drag there means the user cannot see a long value by widening, which is one of
-  the three escapes from `####` listed above.
-- **Whether it can be done inside the allowlist.** It looks like it can: `pointermove` carries
-  `clientX`, C# already holds the current resolved width, and
-  `new width = width at drag start + (clientX − clientX at drag start)` needs no layout read, so
-  [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) would not be touched. **That is
-  a reading of the APIs, not a measurement** — nothing has been built or tried.
-- **Dragging an Auto column makes it Fixed.** The table above reads that way (a dragged width is
-  the user's intent and is persisted), so a drag ends the column's Auto-ness. Worth stating
-  outright rather than leaving to be inferred from a table.
+`new width = width at drag start + (clientX − clientX at drag start)` needs no layout read, so
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) is untouched. A drag ends a column's
+Auto-ness: the resulting width is Fixed, because it is the user's intent and the table above
+already says the user's intent is persisted.
 
-*(The gesture for **reordering** columns is unspecified in the same way; the note is in
-[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md), which is
-the ADR that already treats reordering as a trigger without saying how it is performed.)*
+### `MaxWidth` bounds what the grid computes. It does not bound what the user asks for
+
+The question this ADR left open — *may a drag exceed `MaxWidth`?* — was posed as a dilemma, and the
+dilemma does not survive being looked at. `MaxWidth` was given two jobs above, and only the first
+of them is about the grid acting on its own:
+
+1. **It clamps the Auto computation** — a bound on what the grid does unasked.
+2. **It is "what gives `####` meaning"** — without an upper bound a column would keep growing and
+   overflow could never occur.
+
+The second job only ever held for **Auto** columns. A Fixed column hashes whenever its value does
+not fit, with `MaxWidth` playing no part — this ADR says as much above, where an untouched Auto
+column "effectively never hashes". Stopping a drag at `MaxWidth` would therefore be the grid
+overruling an explicit request with a number written for a different purpose.
+
+**A drag is bounded below by `MinWidth` and is not bounded above.** `MaxWidth` goes on clamping the
+Auto computation and `SizeToFit`, and goes on refusing a *declared* Fixed width outside the bounds
+— `ColumnWidthSpec`'s message already says **declared**, and the check is narrowed to match the
+word it already uses.
+
+The asymmetry is not an oversight, and the rule behind it is worth stating on its own: **the bound
+that stops a gesture is the one the same gesture cannot undo.** A column crushed to 2px has no grip
+left to grab; a column dragged too wide is dragged back. `MinWidth` protects against something
+irreversible, `MaxWidth` against nothing.
+
+And "a widened column can never hash again" is not a loss. If the user has widened it until every
+value fits, nothing hashing is the correct outcome. `####` is a refusal that appears when it is
+needed, not a feature to be preserved.
+
+*(The gesture for **reordering** columns is settled in
+[ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md).)*
+
+## The estimate charges per character class, and the default was finally measured
+
+This ADR originally charged **every character at one tabular-digit width**, and `CellTextMetrics`
+states the contract that makes that safe: the width supplied is "contractually at least as wide as
+any glyph the column's formats emit". The default — `DigitWidthPx: 9`, against the `font-size: 14px`
+the stylesheet pins — had never been measured against it. Measured in Chrome, `system-ui`,
+`font-variant-numeric: tabular-nums`:
+
+| glyph | weight 400 | weight 600 | against 9px |
+|---|---|---|---|
+| `0`–`9`, `$`, `¥`, `£`, `−`, `+`, `#` | 8.668 | **9.058** | under by 0.06 |
+| `€` | 8.668 | **9.331** | under by 0.33 |
+| **`%`** | **12.804** | **13.836** | **under by 4.84** |
+| `,` `.` `(` `)` `/` `:` | 4.01–5.20 | 4.40–5.63 | the documented margin |
+
+Two findings, and the smaller one is the one that had been predicted.
+
+- **At weight 600 the digits themselves are 9.058px.** The estimate errs the **unsafe** way on
+  exactly the rows this project paints bold — `.ex-row-group` and `.ex-row-total`
+  ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)) — which are the rows
+  a reader is most likely to be taking a number off. Twelve digits come out 0.69px short. Small,
+  and pointing the wrong way: the rule stated above is that an early `####` costs a hover while a
+  clipped number costs a misread.
+- **`%` is 13.836px, so the contract breaks by 54% the moment a percent column exists** — which in
+  a position-and-risk grid is immediately. This had not been noticed at all.
+
+**One number cannot fix it, because `CellMetrics` is one parameter for the whole grid.** A grid
+holding both a twelve-digit amount column and a percent column would have to choose between
+inflating the amounts by half and clipping the percentages.
+
+**So the estimate charges per character class.** `CellTextMetrics` carries three widths — wide,
+digit, narrow — and `EstimatePx` takes the text rather than a character count. It stays O(n) over
+the text with no layout read, so neither ADR-0021 nor the "estimate, never measure" premise moves;
+only the accuracy does. The three defaults are the measured numbers above, not guesses.
+
+**The stylesheet gives `--ex-font-family` a default, so that the defaults are true of each other.**
+It pinned `font-size` and left the family to inherit, while its own comment said that inheriting the
+host's font "would silently break the >= any-glyph contract" — and a family at 14px settles the
+glyph widths exactly as firmly as the size does.
+[ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md) already makes
+`--ex-font-family` a metrics-bearing token and obliges whoever sets it to hand back new
+`CellMetrics`; what was missing is that **with nobody setting it, the host page's
+`body { font-family: … }` was taking the decision and owing nothing.** The core now declares
+`font-family: var(--ex-font-family, system-ui, sans-serif)`, which is the stack the widths above
+were measured against. A Wrapper overrides the token and pays the obligation, exactly as ADR-0027
+and [ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md) already
+describe — nothing in the Wrapper contract changes except that it now hands back three numbers.
 
 ## Columns appearing and disappearing, and saved views
 
@@ -182,3 +252,24 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   paired with `DefaultCellMetrics`: the two must move together, or the column stops fitting
   the buttons it was measured for. A theme painting icons instead has no text to estimate
   and declares a Fixed width.
+- **The digit width covers every painted variant, not only every format** *(refined while
+  designing the presentation contract)*. "At least as wide as any glyph the column's formats
+  emit" was too narrow: `.ex-row-group` and `.ex-row-total` paint at 600 weight (ADR-0024), and
+  a bold tabular digit is wider than a regular one in most families, so a number that estimated
+  as fitting can clip on exactly the rows most read. The default digit width must cover the
+  boldest weight the grid itself paints, and a Theme that raises a family or weight owes new
+  metrics — the metrics-bearing obligation in
+  [ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md). *(That
+  measurement has since been made — see "The estimate charges per character class" below: 9px
+  did **not** cover weight 600 (9.058px), and `%` at 13.836px broke the single-width contract
+  outright, which is what moved the estimate to per-class widths rather than a retuned
+  constant.)*
+- **Alignment is a closed enum, not a stylesheet hook** *(added with the tiered-header design)*.
+  `CellAlign { Auto, Left, Center, Right }` on the column (`Align`, and `HeaderAlign` for its
+  header cell): `Auto` derives from the type — Number/Date right, Text/Boolean left, exactly
+  today's `ex-cell-numeric` behaviour — and an explicit value beats the derivation, which is
+  safe: `####`, the ellipsis rule and copy are all alignment-blind. Painted as interned
+  `ex-align-*` classes (allocation-free, the `CellClasses` mechanism); a Header Group's label
+  defaults to Center ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)).
+  There is no vertical alignment anywhere: a single-line fixed row centres by construction, and
+  a multi-tier header cell centres in its rectangle by arithmetic.

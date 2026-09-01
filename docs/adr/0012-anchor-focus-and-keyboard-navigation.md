@@ -194,9 +194,27 @@ geometry. (One limit, the same with or without pinning: a press that moves the F
 nowhere — it is already at the first column — renders nothing and so reveals nothing,
 even if the user has since scrolled away with the mouse.)
 
-**PageUp / PageDown are still not specified.** They would need a "move by N rows" transition
-that does not exist, and inventing the behaviour in the implementation is what the project's
-rules refuse. Open.
+**PageUp / PageDown move the Focus and the Viewport by the same number of rows.** N is the number
+of rows fully visible — `ViewportBox.VisibleHeightPx` less the header band, floored, so the
+Scrollbar Gutter is already off it ([ADR-0013](./0013-fixed-row-height.md)). The Focus keeps its
+position within the Viewport, which is what Excel does, and which is the difference between pressing
+the key repeatedly and having the Focus pinned to the bottom row from the second press onward.
+
+**This is the grid's only scroll that is not a reveal**, and that is the price of the decision rather
+than an oversight: everywhere else, writing `scrollTop` means "make the Focus visible". At the top
+and the bottom the scroll clamps and the relative position cannot be held, so the transition
+degrades to exactly a reveal there — the Focus is still visible, which is the invariant that
+actually matters.
+
+The transitions are named **`MoveByViewport` / `ExtendByViewport`**, and deliberately not "page":
+`CONTEXT.md` puts *page* on the `_Avoid_` list under **Window**, and
+[ADR-0015](./0015-paging-is-another-driver-for-range-requests.md) has already spent the word on a
+Consumer's pager. The keys keep the names the browser reports; the vocabulary does not take them on.
+
+**`Ctrl`+PageUp / `Ctrl`+PageDown are neither handled nor prevented.** The browser uses them to
+switch tabs. The capture-phase listener exists so that this grid sees its own keys before a cell
+editor does ([ADR-0018](./0018-multiple-instances-must-be-independent.md)) — not so that it can take
+keys away from the browser around it.
 
 ## Consequences
 

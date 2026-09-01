@@ -108,16 +108,11 @@ the concerns stay apart.
   around 800, and the tail at that size has not been measured on real hardware. Since the overlay
   does not depend on cell count, the conclusion is not expected to change.
 
-## What the mouse does not do yet — open
+## What the mouse does not do yet — two things, both with named triggers
 
-The gestures ADR-0012 names are wired; three things around them are deliberately not.
+The gestures ADR-0012 names are wired; two things around them are deliberately not, and the third
+— dragging past an edge — is decided below.
 
-- **Dragging past an edge does not scroll.** In Excel a drag that reaches the bottom of the window
-  keeps going, which is how a selection larger than the Viewport is made with the mouse at all.
-  Setting a scroll offset **is** on the allowlist (ADR-0021), so nothing structural is in the way —
-  what is missing is a decision about the rate and about what happens when the pointer leaves the
-  element entirely, where no further move events arrive. Keyboard extension reaches the same
-  places meanwhile.
 - **The fill handle is not painted.** This ADR names it as one of the three things an overlay
   draws, but what it does belongs with edits
   ([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)) and neither the gesture nor
@@ -130,3 +125,76 @@ The gestures ADR-0012 names are wired; three things around them are deliberately
 Touch and pen are out of scope for the same reason the browser target is narrow
 ([ADR-0017](./0017-target-chromium-browsers-only.md)): this is a desktop grid, and a touch drag is
 a different gesture vocabulary rather than the same one with a different device.
+
+## Dragging at the edge scrolls, and the pointer leaving stops it
+
+*(Decided after the keyboard shipped; this section replaces the "no decision about the rate, and
+about what happens when the pointer leaves" bullet above.)*
+
+**An edge band, and a rate that grows with how far into it the pointer is.** The band is the
+Viewport's inner 20px on each scrolling axis; a drag whose pointer sits inside it scrolls by one
+row per tick at the band's inner lip, rising to eight at the outer edge, and the selection extends
+to whatever cell the arithmetic then puts under the pointer. The tick runs off the injected
+`TimeProvider` the settle delay already uses, so the whole rate curve is pinned in layer 2 with a
+`FakeTimeProvider` and no browser.
+
+**The ceiling is not a taste.** It is one row short of
+[ADR-0004](./0004-cap-the-cells-touched-per-frame.md)'s fling threshold: scroll a full Viewport in
+a tick and the rows become Placeholders, so the user would be dragging a selection across rows
+whose values have not arrived. Selection is index space and would survive that
+([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) — but
+being shown a blank grid while choosing what to select is the kind of quiet wrongness this project
+refuses, and the bound falls out of a decision already taken rather than being guessed.
+
+### The half that was actually hard: no events arrive from outside the element
+
+Auto-scroll has to be timer-driven, because a pointer held **still** inside the band must keep
+scrolling and a still pointer raises no events. That is what makes leaving the element dangerous:
+outside it there are no `mousemove`s at all, so a running timer learns neither "still held" nor
+"released" — and a drag released outside would scroll to the end of a million rows with nothing to
+stop it.
+
+**`@onmouseleave` stops the timer.** It is an ordinary Blazor event on the instance root, it fires
+exactly when the events stop arriving, and it costs nothing. The drag itself is left alone: the
+`e.Buttons` check on the next move already ends it if the button came up while the pointer was
+away, which is the mechanism the mouse handler was built on.
+
+Rejected on the way here:
+
+- **`setPointerCapture`.** It is what Excel's behaviour really wants — events keep arriving outside
+  the window, and the band could go away entirely. Blazor has no API for it, so it would be a
+  **fifth entry on ADR-0021's allowlist** and its own ADR. Bought for a gesture the edge band
+  already serves, with keyboard extension reaching the same cells either way.
+- **A document-level listener.** Refused for the reason
+  [ADR-0018](./0018-multiple-instances-must-be-independent.md) exists: every grid on the page would
+  react to every drag.
+- **A timer that keeps running after the pointer leaves**, at the last known rate, until something
+  contradicts it. There is nothing to contradict it, which is the whole point.
+
+**The three numbers — the 20px band, one row and eight rows per tick — are provisional and
+unmeasured**, exactly like ADR-0004's fling threshold and settle delay, and are recorded as
+OBSERVATIONAL rather than gated. What is *not* provisional is the shape: a band, a rate that grows
+inside it, a ceiling under the fling threshold, and a stop on leaving.
+
+## The Focus band *(added while designing the presentation contract)*
+
+A translucent band across the full width of the row the Focus is in — what Excel 365 ships as
+"Focus Cell", and the answer to "which row am I on?" in a grid a hundred columns wide. It is
+specified here because it is **one more overlay rectangle and nothing else**: this ADR's economy
+(cost per rectangle, never per cell) prices it at O(1), it crosses the pinned boundary as two
+layers exactly as every other rectangle does, and no row learns anything — the band moves when
+the Focus moves and the rows keep skipping (ADR-0003).
+
+- **Off by default**, as Excel's own Focus Cell is; enabled by a C# parameter
+  (`HighlightFocusRow`) — whether it is on is behaviour, its colour is appearance, which is
+  precisely [ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)'s split.
+  The fill is a Visual Token (`--ex-focus-row-fill`,
+  [ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)).
+- **A column band is the same mechanism turned sideways** and is reserved, not specified.
+- **Zebra striping was refused in its favour**
+  ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)): stripes would
+  need an absolute row index threaded through every row, answer a different question ("is this
+  one row or two?"), and answer this one — where is the Focus — not at all.
+- Painted beneath the selection rectangles: a range must stay readable over the band.
+
+Not yet implemented; it lands with the selection paint polish.

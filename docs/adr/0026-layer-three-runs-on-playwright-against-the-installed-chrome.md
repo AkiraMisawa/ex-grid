@@ -79,6 +79,17 @@ mode this whole ADR is about.
 - **The three suites still in a scratchpad (keys, cells, server) move in next.** This
   directory is the ground they move onto; until they do, `AGENTS.md`'s layer 3 row names
   what is actually there and what is still to come.
-- **If the browser target ever widens** ([ADR-0017](./0017-target-chromium-browsers-only.md)),
-  `channel: 'chrome'` becomes a projects matrix. That cost belongs in the decision to
-  widen, not here.
+- **Both target browsers run, because [ADR-0017](./0017-target-chromium-browsers-only.md) says
+  both are verified.** `projects` names `chrome` and `msedge`, each resolving an installed
+  browser by channel rather than downloading one; a single `npx playwright test` runs every
+  spec on both, so the wall clock doubles and the effort asked of a person does not. A machine
+  without Edge fails that project by name, which is the honest outcome — the README says so.
+
+  > **The first version of this bullet had it backwards.** It read "if the browser target ever
+  > widens, `channel: 'chrome'` becomes a projects matrix", treating Edge as a widening still to
+  > come. ADR-0017 had already made it a hard requirement, in those words: *"Verification runs on
+  > both Chrome and Edge. Passing on one does not satisfy the requirement."* This ADR was narrower
+  > than the decision it was implementing, and the two sat contradicting each other in the
+  > repository until someone read them side by side. The two things ADR-0017 names as differing in
+  > practice — the minimum Edge version an organisation deploys, and enterprise clipboard policy —
+  > are exactly the things a Chrome-only run cannot see.

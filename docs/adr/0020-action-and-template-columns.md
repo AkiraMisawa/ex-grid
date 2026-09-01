@@ -179,12 +179,10 @@ ADR-0016), the column menu is not, because there is no column menu yet.
 
 ### Still open
 
-- **The keyboard half of this ADR is not implemented.** Space fires a single action, N≥2
-  enters the cell, Esc leaves, and Enter never fires — all of it waits on the
-  capture-phase key handling (ADR-0010 / ADR-0018), which does not exist yet. What exists
-  today is the mouse: a press on a button reports `(row, column, action)` and does nothing
-  else.
-- **Interactive mode itself** — the third mode alongside Overwrite / Caret — likewise.
+- ~~The keyboard half of this ADR is not implemented~~ — **it is.** The capture-phase handler
+  exists, and the key table maps Space to `Engage` and Escape to `Leave`
+  (`GridKeys.cs`, `ExGrid.OnKeyAsync`). Enter still never fires an action, as specified.
+- ~~Interactive mode itself~~ — likewise implemented, as the `Engage` / `Leave` pair.
 - **Copy of a range covering an Action Column.** The clipboard rules are pure and not yet
   wired to the component; a value-less column would copy as an empty cell today. Whether
   that is right, or whether copy should refuse, is decided when the clipboard is

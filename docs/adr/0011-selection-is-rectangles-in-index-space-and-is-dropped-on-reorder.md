@@ -158,24 +158,52 @@ to the grid" and "committed belongs to the Consumer".
 **When to revisit:** if in real use rows are added and removed often enough that selection keeps
 disappearing, consider re-mapping and pay the three costs above knowingly.
 
-## Reordering columns — the gesture is open
+## Reordering columns — decided
 
-This ADR treats a change of the visible-column set as **a trigger**: it clears the selection,
-because the column axis re-maps exactly as the row axis does. `CONTEXT.md` lists column order as
-part of View State, which the Consumer owns and persists. **Between the two, nothing says how a
-user reorders a column** — that decision has not been made.
+**A header can be dragged to a new position within its own block. The grid changes nothing; it
+notifies, and the Consumer pushes back a reordered `Columns`.** Column order is View State that
+`CONTEXT.md` gives to the Consumer, and the grid holds no View State of its own
+([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)) — the same shape as sorting and filtering
+([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). That half was never really
+open; it follows from where the order lives.
 
-What its own ADR has to settle:
+### A drag never crosses the pinned boundary
 
-- **The gesture.** Dragging a header, the column menu, or only through the Consumer's own UI.
-  (The resizing gesture is open in the same way; the note is in
-  [ADR-0016](./0016-column-width-and-overflow.md).)
-- **Whether dragging in and out of the pinned block expresses pinning.** Pinning is "the leading
-  N columns" ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)), so dragging a column across
-  that boundary is a natural way to pin it — and it would mean one gesture changing two pieces of
-  View State at once.
-- **That it clears the selection is already decided here**, whichever gesture is chosen. A new
-  ADR must not quietly reopen it.
+This ADR asked whether dragging in and out of the pinned block should express pinning, and priced
+it as "one gesture changing two pieces of View State at once". The price is higher than that, and
+it is a correctness price rather than a tidiness one. **Pinning is the leading N columns, not a
+flag on a column** (ADR-0004), so position and pinned-ness are the same fact:
+
+```
+PinnedColumnCount = 2      [ A  B ] C  D  E
+drag C to the front        [ C  A ] B  D  E
+                                    ^ B is unpinned, and B was never touched
+```
+
+**One gesture would change the pinned status of a column the user did not drag.** However the count
+is then adjusted — held at 2 so that B falls out, or bumped to 3 so that B stays — the user asked
+for neither. That is the first item of this project's spine: not missing behaviour, but behaviour
+that looks deliberate and is not.
+
+**So a drop that crosses the boundary is not accepted**, and the drop indicator stops at the
+boundary rather than promising a drop that will be refused. Reordering within the pinned block and
+within the scrollable block are both ordinary. Pinning changes through its own explicit act — the
+column menu's "pin up to this column" — and notifies separately. One gesture, one piece of View
+State.
+
+### A Header Group's edge is the same kind of boundary
+
+With tiered headers ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md))
+the same principle applies once more: **what you grab is the unit that moves, and a drag never
+crosses an edge that carries meaning.** Dragging a Header Group's rectangle moves its member
+columns as one; dragging a leaf inside a group reorders **within** the group, and the drop
+indicator clamps at the group's edge exactly as it does at the pinned boundary — it does not
+escalate into a group swap, because a ten-pixel overshoot must not turn "put Before at the end of
+CVA" into six columns changing places. Membership is the Consumer's declaration, never a gesture's
+side effect; ADR-0032 carries the rules.
+
+**That a reorder clears the selection was already decided above** and is untouched: the column axis
+re-maps exactly as the row axis does.
 
 ## Consequences
 
