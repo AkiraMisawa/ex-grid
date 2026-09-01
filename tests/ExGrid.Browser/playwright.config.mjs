@@ -1,6 +1,11 @@
 import { defineConfig } from '@playwright/test';
 
 const BASE_URL = process.env.EXGRID_BASE_URL ?? 'http://localhost:5299';
+// The host is started on whatever port BASE_URL names, so two checkouts — one per
+// parallel agent — do not share a port: with reuseExistingServer a second runner on
+// the same port would be driving the OTHER checkout's DemoHost and passing (AGENTS.md,
+// "Working in parallel").
+const HOST_URL = new URL(BASE_URL).origin;
 
 export default defineConfig({
     testDir: '.',
@@ -41,7 +46,7 @@ export default defineConfig({
     // Started here so `npx playwright test` is the whole command on any machine. An
     // already-running host is reused, which is what makes an edit-and-rerun loop quick.
     webServer: {
-        command: 'dotnet run --project ../../samples/ExGrid.DemoHost --urls http://localhost:5299',
+        command: `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
         url: `${BASE_URL}/wide`,
         reuseExistingServer: true,
         timeout: 180_000,

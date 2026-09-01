@@ -14,7 +14,7 @@ inwards; nothing in the core knows any Wrapper exists, and the core takes no dep
 |---|---|---|
 | the resolved geometry and every number derived from it ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)) | mapping its density words onto the core's presets | change any geometry from CSS — height, padding, margin, border on `ex-row`/`ex-cell`, or any `--ex-*` geometry token (ADR-0027 makes the attempt lose; layer 3 makes it fail a test) |
 | the DOM structure and the internal classes ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)) | the values of the visual tokens, set on its own wrapping element | select internal classes, or touch `display` / `position` / `overflow` / `transform` of anything inside the root |
-| Selection, Focus, editing state, keys ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)/[0012](./0012-anchor-focus-and-keyboard-navigation.md)) | its own outer controls (toolbar, pager shell, card) | handle keys or focus itself, or hold a second copy of any grid state |
+| Selection, Focus, editing state, keys ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)/[0012](./0012-anchor-focus-and-keyboard-navigation.md)) | its own outer controls (toolbar, pager shell, card); **and DOM focus on its own editor control** — the core owns the editor's box and keys, but a control the Chrome rendered is the Chrome's to focus when it appears and when the mode changes (F2), by Blazor's `FocusAsync`; the core has no reference to it and does not try | handle grid keys or the grid's Focus itself, or hold a second copy of any grid state |
 | the class and state vocabulary, closed ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)/[0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)) | mapping its own states onto that vocabulary | invent per-wrapper state classes on grid elements |
 | Chrome seams and their meaning ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) | Chrome implementations — filter panel, column menu, editor, loading — that render and call back | let Chrome decide meaning, or smuggle JavaScript in ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) names companion packages explicitly) |
 | accessibility semantics — roles, names, indices, the announcement, the value behind `####` ([ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md), [ADR-0016](./0016-column-width-and-overflow.md)) | making its palette keep the focus outline and selection visible | set or remove ARIA on grid elements, or style by ARIA attributes |
@@ -34,32 +34,101 @@ Two entries deserve their own sentence:
 
 ## Verified against the first concrete case: MudBlazor
 
+*(This section was rewritten on 2026-09-01, when the package started. The first version,
+written before any Wrapper existed, sketched one component —
+`<MudExGrid T="Trade" Color="Color.Primary" Dense="true" RowHeight="22" Elevation="2" … />` —
+that forwarded every core parameter inward. Two things were wrong with it, and both are kept
+here because they are the kind of wrong a future Wrapper will be tempted by again.)*
+
+**What was wrong the first time.**
+
+- **Forwarding.** The core has 39 parameters and passes its columns as one of them, so a
+  forwarding component re-declares all 39 and must follow every one the core adds. That is
+  not a boundary violation, but it is exactly the "growing beyond thin" this ADR warns about,
+  and it guarantees a silent gap one day: a core feature unreachable through the Wrapper. The
+  Wrapper's whole presentation job — compose one token string, map one density word, supply
+  one `CellMetrics`, wrap one element — needs none of the 39.
+- **`Color="Color.Primary"`.** A survey of MudBlazor v9.9 (`MudDataGrid`: 100 parameters,
+  `MudTable`: 92) found that **neither table has a `Color` parameter**. Their selected row is
+  coloured from the theme's palette by CSS; the only colour parameter is
+  `LoadingProgressColor`. The sketch had invented an idiom. The Wrapper therefore exposes no
+  `Color`: selection fill, Focus outline and the bands derive from `MudTheme`'s palette
+  (Primary, and the dark/light variant in force) without a parameter.
+
+**The shape that holds.** Two pieces, neither of which forwards anything:
+
 ```razor
-<MudExGrid T="Trade" Color="Color.Primary" Dense="true" RowHeight="22" Elevation="2" ... />
+<MudExGridPaper Dense="true" Hover="true" Elevation="2" Bordered="true">
+    <ExGrid TRow="Trade" Source="_source" Columns="_columns" Chrome="MudGridChrome.Default" … />
+</MudExGridPaper>
 ```
 
-What the Wrapper renders — and everything it needed is already in the contract:
+- **The outer element** (`MudExGridPaper` — the Wrapper's own component, named after
+  MudBlazor's `MudPaper` because that is what it is: a surface with elevation, corners and an
+  outline) carries the `mud-elevation-n` / square / outlined / bordered classes and hosts the
+  `ToolBarContent` slot above the grid. The Visual Tokens are **not composed in C# at all**:
+  the Wrapper's stylesheet maps each `--ex-*` token onto the variable `MudThemeProvider`
+  already emits (`--ex-selection-fill: rgba(var(--mud-palette-primary-rgb), .18)`, and so
+  on), scoped under `.mud-ex-grid`. A palette edit or a dark/light switch is then the
+  browser recomputing variables — no string recomposed, no element touched, no render
+  anywhere ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)). *(The
+  first draft of this shape recomposed a token string per theme change; the stylesheet route
+  is what a Consumer's CSS-only minimal Wrapper does, and there was no reason for the
+  package to do more.)* A change of the paper's own parameters re-renders the paper and, as
+  any parent's render does, the grid root once; the rows skip (ADR-0003).
+- **A Chrome implementation** (`IGridChrome`) the Consumer passes to `ExGrid` as `Chrome`,
+  rendering MudBlazor controls into the seams the core hands it.
+- **Core parameters stay on `ExGrid`, in the core's words.** `ViewportHeight`, `RowHeight`,
+  `PinnedColumnCount` and the rest are written by the Consumer on the core component. A
+  Wrapper that translated MudBlazor's `Height="400px"` would be parsing a CSS string into
+  geometry — a guess where ADR-0028 wants a number.
 
-```razor
-<div class="mud-ex-grid mud-elevation-2" style="@_tokens">   @* its element, its elevation *@
-    <ExGrid TRow="Trade" Density="GridDensity.Compact" RowHeight="22"
-            CellMetrics="RobotoMetrics" ... />
-</div>
-```
+**The one thing the two-piece shape could not do, and the one core change it costs.** The
+metrics-bearing obligation (ADR-0027): whoever sets `--ex-font-family` owes `CellMetrics`.
+The outer element sets the font (Roboto) but cannot reach the inner `ExGrid`'s parameters, so
+in the first draft of this shape the Consumer had to remember
+`CellMetrics="MudExGrid.RobotoMetrics"` by hand — and forgetting it is the quiet failure this
+component is built to refuse: Roboto on screen, `system-ui` widths in the `####` and Auto-width
+arithmetic. The obligation must not be split across two components. So **the core reads one
+cascaded value** — `GridPresentationDefaults`: the three glyph widths stated at the size they
+were measured, scaled by the core to the resolved font size; a default `Density`; and a
+default for the hover band's switch — and applies each **only where the corresponding
+parameter is not set explicitly**; an explicit parameter still beats it, per value, as
+ADR-0028 says of presets. The outer element cascades Roboto's widths together with the font
+token, so the font and its metrics leave the same hand. The cascaded object is one of four
+static instances (Dense × Hover), so it changes only when those two flags do — which is a
+tidiness, not a render guarantee: a parent's render reaches the grid root whatever the
+cascaded reference is, and it is the rows' own value comparison that skips them (ADR-0003).
+The core learns nothing about MudBlazor: the cascaded type is the core's own, and a
+Consumer's CSS-only minimal Wrapper may cascade one just the same. *(The
+earlier sentence "nothing on this list required a core change beyond ADR-0028" is therefore
+corrected: this one type is the exception, and it exists to keep the metrics obligation
+whole. The hover switch rode along for the same reason: MudBlazor's `Hover` is a word on the
+table, and the band's switch is the grid's parameter — ADR-0029 — so the only honest way for
+the paper to say it is as a default the grid's own value beats.)*
 
-| Wrapper parameter | Becomes | Route |
+**The MudBlazor surface, sorted.** Every `MudDataGrid` / `MudTable` parameter falls into one
+of four rows, and the rule for each row is the reason a parameter lands there.
+
+| Sorted as | Parameters | Because |
 |---|---|---|
-| `Color="Color.Primary"` | `--ex-selection-fill: rgba(<palette.Primary>, .18); --ex-focus-outline: 2px solid <palette.Primary>; …` composed **once** into `_tokens` when the theme changes | visual tokens on the wrapping element; custom properties inherit, so the core needs no theming API and no render happens per cell (ADR-0027) |
-| dark/light switch, palette edit | the same string recomposed; one element's `style` changes | zero renders inside the grid |
-| `Dense="true"` | `GridDensity.Compact` | **not** `Excel` — Material's dense is not a spreadsheet row (ADR-0028); the Wrapper may expose the core's `Density` alongside for the full range |
-| `RowHeight="22"` | the core's `RowHeight` | explicit beats the preset (ADR-0028); virtualiser, DOM, overlays and editor all follow the one value |
-| `Elevation="2"` | `mud-elevation-2` on the wrapping element | never a shadow on the scroller: outside the root entirely, so it cannot be clipped by the scroll container or mistaken for a rule |
-| MudTheme typography (Roboto) | `--ex-font-family` on the wrapping element **plus** `CellMetrics` measured for Roboto at the resolved size — a wide, a digit and a narrow width | the metrics-bearing obligation (ADR-0027). *(This row read "Roboto at 14px measures ≈8.4px, declared as 9 — over is the safe direction" while `CellMetrics` was one number. One number was not enough: measured against the system stack, `%` is 54% wider than a digit, so a single declared width either inflates the amount columns or clips the percentages — ADR-0016 has the table. Declaring one width per class is the same duty, done three times; overshooting each is still the safe direction.)* |
-| its icons, its toolbar, its pager | its own markup outside the root; `GridCommand.Id` keys the icons in Chrome ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) | wrapper-only |
+| **Outer element's own** | `Elevation` (1), `Square`, `Outlined`, `Bordered` → `--ex-column-rule-color` visible, `ToolBarContent`, `Class` / `Style` on the outer element only | the value is a token or lands outside the instance root; `ExGrid` itself has no `Class` / `Style` ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)) |
+| **Mapped onto the core, through the cascade** | `Dense` → `Density.Compact`, false → `Standard`; `Hover` → `HighlightHoverRow`, the band coloured by the palette's table-hover ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md), [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) fifth entry) | Material's dense is not a spreadsheet row ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)); the band's switch is the grid's parameter and its colour a token, and the Wrapper reaches the parameter the only way it can — as a default the grid's own value beats |
+| **A seam's content** | the loading bar → `LoadingIndicator` (`MudProgressLinear`, indeterminate, where the core places the seam) with `LoadingProgressColor` (Info) **on the Chrome**, whose content it colours; the editor → `CellEditor`, a bare input in the core's box with Material's underline painted; `FilterTemplate` and the menu icons → `FilterPanel` / `ColumnMenu`, later, inside the core's popover | the seam exists and the core keeps the meaning ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) |
+| **Not offered, and why** | `Striped` — needs a row-parity class the core does not emit, and `nth-child` flips with the Window's first index (reserved, trigger: a Consumer asking for stripes); `FixedHeader`, `Virtualize`, `ItemSize`, `OverscanCount`, `HorizontalScrollbar` — always so, nothing to map; `Breakpoint` — no stacked layout, the grid is an island ([ADR-0031](./0031-the-grid-lays-out-left-to-right-only.md)); `RowClass/Style(Func)`, `CellClass/Style`, `HeaderClass` — per-row and per-cell styling is closed, Row Kind and Cell State are the vocabulary ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)); `LoadingContent`, `NoRecordsContent`, `PagerContent` — the empty body is the Placeholder mechanism ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)) and the pager has no seam yet; `Height` — a CSS string the Wrapper would have to parse into geometry, where ADR-0028 wants a number on the grid; every behaviour parameter (`Items`/`ServerData`, sorting, filtering, grouping, selection, editing, paging) — the grid neither holds nor executes ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)/[0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)); a Wrapper accepting one would only forward it to the Consumer under a name that no longer means what it did | a MudBlazor word that would change meaning inside this contract is refused rather than accepted and quietly redefined |
 
-Nothing on this list required a core change beyond what ADR-0028 introduces (`Density`,
-`HeaderHeight`, `Fill`), and nothing required the core to reference a MudBlazor type. That is the
-check this ADR exists to record.
+Nothing in the table required the core to reference a MudBlazor type, and nothing but the
+cascaded presentation default required a core change. That is the check this section exists
+to record.
+
+**One thing the palette could not supply.** The Focus outline was first mapped onto the
+palette's primary, which is what Material draws its focus indicators in. The browser suite
+measured it against the dark surface at **2.83:1**, under the 3:1 the Definition of Done's
+UX-9 requires — the same shortfall, one palette over, that had already put `CanvasText` rather
+than `Highlight` on the core's default. The Wrapper's Focus outline is therefore the palette's
+ink colour (`text-primary`), which contrasts with its own surface by construction in both
+schemes; the selection fill, the Focus band and the root's outline keep the primary. The
+requirement was not relaxed to fit the palette.
 
 ## How a violation is caught rather than trusted away
 
@@ -102,6 +171,18 @@ The contract is enforceable because each prohibition lands somewhere observable:
   generator.
 - ~~RTL~~ — resolved: LTR-only ([ADR-0031](./0031-the-grid-lays-out-left-to-right-only.md));
   a Wrapper on an RTL page leaves the grid an LTR island and does not try to flip it.
-- **Which Chrome seams `ExGrid.MudBlazor` implements first** is reserved with its trigger: the
-  package's own start. The boundary is settled here; the ordering is a product call made with
-  the package in hand, and its editor lives inside the fixed box either way (ADR-0028).
+- ~~Which Chrome seams `ExGrid.MudBlazor` implements first~~ — the trigger fired (the package
+  started 2026-09-01), and the first thing settled was **what the package is for**, because
+  the seam order follows from it. No Consumer on MudBlazor exists yet (the first Consumer,
+  `poke`, does not use it), so `ExGrid.MudBlazor` is built **as the proof of this boundary**:
+  the first real Wrapper, whose job is to show that one design system can be wrapped inside
+  this contract and to discharge the Definition of Done's "stub Wrapper" criteria (UX-3/6/9)
+  with a real one. The seam order is therefore a verification order, not a product order —
+  it begins where the boundary is most likely to break: **(1) no seam at all** — the outer
+  element, the palette-derived tokens, the cascaded Roboto metrics, and the browser layer
+  asserting painted geometry equals declared geometry with the real stylesheet loaded;
+  **(2) the Cell Editor**, the one seam that must fit inside the box the core hands it and the
+  one a Material control most wants to overflow; **(3) the loading bar**; the filter panel and
+  the column menu after, as content inside the core's own popover — never a `MudPopover`,
+  whose provider renders outside the instance root and would break the three dismissals of
+  ADR-0010 and the independence of ADR-0018.

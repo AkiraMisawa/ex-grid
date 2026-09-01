@@ -1,0 +1,125 @@
+@* The Wrapper's outer element (ADR-0030): a Material surface — elevation, corners, an
+   outline — around one or more grids, a toolbar slot above them, and the cascaded
+   presentation defaults that carry Roboto's widths and the Dense / Hover mapping to
+   every grid inside. It sets Visual Tokens and nothing else of the grid's: the
+   tokens are mapped onto MudBlazor's own palette variables in mud-ex-grid.css, so a
+   dark/light switch or a palette edit re-renders nothing here either — the browser
+   recomputes the variables (ADR-0027). Named after MudPaper because that is what it
+   is; unlike the first sketch in ADR-0030 it forwards no grid parameter — the grid's
+   parameters are written on the grid, in the core's words. *@
+<div class="@Classes" style="@InlineStyle" @attributes="UserAttributes">
+    @if (ToolBarContent is not null)
+    {
+        <MudToolBar Dense="true" Class="mud-ex-grid-toolbar">@ToolBarContent</MudToolBar>
+    }
+    <CascadingValue Value="_presentation">
+        @ChildContent
+    </CascadingValue>
+</div>
+
+@code {
+    private GridPresentationDefaults _presentation = MudExGridPresentation.For(dense: false, hover: false);
+
+    /// <summary>The grids, and anything else the surface holds.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>A slot above the grids — a title, a spacer, a search field — laid out
+    /// by a dense <c>MudToolBar</c>, outside the instance root entirely.</summary>
+    [Parameter] public RenderFragment? ToolBarContent { get; set; }
+
+    /// <summary>MudBlazor's dense: Compact rows (ADR-0028), cascaded as the default so
+    /// a <c>Density</c> written on the grid still wins.</summary>
+    [Parameter] public bool Dense { get; set; }
+
+    /// <summary>MudBlazor's hover: the row under the pointer highlighted — the grid's
+    /// hover band (ADR-0029), cascaded as the default so <c>HighlightHoverRow</c>
+    /// written on the grid still wins. The band's colour is the palette's table
+    /// hover colour.</summary>
+    [Parameter] public bool Hover { get; set; }
+
+    /// <summary>The drop shadow, <c>mud-elevation-{n}</c>; 0 is flat. Ignored when
+    /// <see cref="Outlined"/>, as MudBlazor's own tables ignore it.</summary>
+    [Parameter] public int Elevation { get; set; } = 1;
+
+    /// <summary>Disables the rounded corners — and the inset that keeps the grid's
+    /// square corners inside them (ADR-0030): square, the grid sits flush.</summary>
+    [Parameter] public bool Square { get; set; }
+
+    /// <summary>An outline instead of elevation.</summary>
+    [Parameter] public bool Outlined { get; set; }
+
+    /// <summary>Column rules between the cells, in the palette's table-lines colour.
+    /// Row rules are always on, as on every MudBlazor table.</summary>
+    [Parameter] public bool Bordered { get; set; }
+
+    /// <summary>Classes on this element — never on the grid, which has no
+    /// <c>Class</c> (ADR-0029).</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Styles on this element. A Visual Token written here reaches every grid
+    /// inside; a Geometry Token written here reaches nothing (ADR-0027).</summary>
+    [Parameter] public string? Style { get; set; }
+
+    /// <summary>A font other than Roboto — the family and the widths measured for it,
+    /// in one value (ADR-0027's metrics-bearing obligation, kept whole). Null is
+    /// Roboto: the stylesheet's family and this package's measured widths. The theme's
+    /// own typography is deliberately not read: a theme font the grid was not measured
+    /// for would put one font on screen and another's widths in the arithmetic.</summary>
+    [Parameter] public MudExGridFont? Font { get; set; }
+
+    private MudExGridFont? _presentationFont;
+    private bool _presentationDense;
+    private bool _presentationHover;
+
+    private string? InlineStyle
+    {
+        get
+        {
+            if (Font is null)
+                return Style;
+            var font = "--ex-font-family: " + Font.Family + ";";
+            return string.IsNullOrEmpty(Style) ? font : font + " " + Style;
+        }
+    }
+
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? UserAttributes { get; set; }
+
+    private string Classes
+    {
+        get
+        {
+            var classes = "mud-ex-grid";
+            if (Square)
+                classes += " mud-ex-grid-square";
+            if (Outlined)
+                classes += " mud-ex-grid-outlined";
+            else if (Elevation > 0)
+                classes += " mud-elevation-" + Elevation;
+            if (Bordered)
+                classes += " mud-ex-grid-bordered";
+            if (!string.IsNullOrEmpty(Class))
+                classes += " " + Class;
+            return classes;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Elevation is < 0 or > 25)
+        {
+            throw new ArgumentOutOfRangeException(nameof(Elevation), Elevation,
+                "MudBlazor's elevation runs from 0 to 25.");
+        }
+        // Rebuilt only when the font, Dense or Hover moved, so the cascaded value
+        // changes exactly when its content does.
+        if (Font != _presentationFont || Dense != _presentationDense || Hover != _presentationHover)
+        {
+            _presentationFont = Font;
+            _presentationDense = Dense;
+            _presentationHover = Hover;
+            _presentation = Font is null
+                ? MudExGridPresentation.For(Dense, Hover)
+                : MudExGridPresentation.For(Font, Dense, Hover);
+        }
+    }
+}

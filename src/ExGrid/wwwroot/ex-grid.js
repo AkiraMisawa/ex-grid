@@ -1,7 +1,8 @@
-// The four permitted uses of JavaScript (ADR-0021): the capture-phase keydown
-// listener, reading and setting scroll offsets, the clipboard, and being told what the
-// scrollbar takes out of the box. Anything else — text measurement, overlay geometry,
-// popovers — stays in C#; adding to this file needs an ADR.
+// The five permitted uses of JavaScript (ADR-0021): the capture-phase keydown
+// listener, reading and setting scroll offsets, the clipboard, being told what the
+// scrollbar takes out of the box, and being told which cell the pointer is over — only
+// when that changes. Anything else — text measurement, overlay geometry, popovers —
+// stays in C#; adding to this file needs an ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
@@ -309,7 +310,123 @@ export function attach(root, scroller, core, takenKeys, canEdit) {
         observer.observe(scroller, { box: 'content-box' });
     }
 
+    // The cell under the pointer, reported on change (the fifth entry, ADR-0021). Not a
+    // measurement: the offsets on the event are already relative to the row Viewport
+    // — every cell under it is pointer-events: none, so the Viewport is the target —
+    // the Viewport's own translation is the inline style C# wrote, the scroll offset
+    // is read here already, and the row height and the column edges are handed over
+    // by C# when they change. The same arithmetic C# runs during a drag, run where
+    // the event is born, so that only a CHANGE crosses to .NET: a pointer moving
+    // within a cell costs nothing, and on a server circuit that is the difference
+    // between one message per row crossed and one per frame. Off — the default — it
+    // does not even compute.
+    let pointerReporting = false;
+    let pointerRowHeight = 0;
+    let pointerEdges = [];
+    let pointerPinned = 0;
+    let lastPointerRow = -2;
+    let lastPointerColumn = -2;
+    const reportPointer = (row, column) => {
+        if (row === lastPointerRow && column === lastPointerColumn) {
+            return;
+        }
+        lastPointerRow = row;
+        lastPointerColumn = column;
+        core.invokeMethodAsync('OnPointerCellAsync', row, column)
+            .catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to take the pointer cell', error);
+                }
+            });
+    };
+    // Mirrors ColumnGeometry.ColumnAt: a pinned column covers the Viewport's left edge
+    // rather than occupying content, so the pinned run is resolved against the
+    // Viewport and the rest against the content. Clamped at the ends as C# clamps.
+    const indexContaining = (x, first, last) => {
+        for (let c = first; c < last; c++) {
+            if (x < pointerEdges[c + 1]) {
+                return c;
+            }
+        }
+        return last - 1;
+    };
+    const pointerColumnAt = (contentX, scrollLeft) => {
+        const count = pointerEdges.length - 1;
+        if (count <= 0) {
+            return -1;
+        }
+        const viewportX = contentX - scrollLeft;
+        if (pointerPinned > 0 && (viewportX < pointerEdges[pointerPinned] || pointerPinned >= count)) {
+            return indexContaining(Math.max(0, viewportX), 0, pointerPinned);
+        }
+        return indexContaining(contentX, pointerPinned, count);
+    };
+    const onPointerMove = (event) => {
+        if (!core || !pointerReporting || !(event.target instanceof HTMLElement)) {
+            return;
+        }
+        const target = event.target;
+        if (!target.classList.contains('ex-viewport')) {
+            // Over an element that takes its own pointer events — the editor, an
+            // action button, a Consumer's control (ADR-0020) — the offsets are that
+            // element's and say nothing about the row; the last report stands. Over
+            // the header or anything outside the rows there is no row: none.
+            if (!target.closest('.ex-viewport')) {
+                reportPointer(-1, -1);
+            }
+            return;
+        }
+        // The Viewport is translated to the first painted row; the number is the
+        // inline transform C# wrote for it, read as text — not a layout read.
+        const match = /translateY\(([-\d.]+)px\)/.exec(target.style.transform);
+        const translateY = match ? Number(match[1]) : 0;
+        const row = pointerRowHeight > 0
+            ? Math.floor((event.offsetY + translateY) / pointerRowHeight)
+            : -1;
+        const column = pointerColumnAt(event.offsetX, scroller ? scroller.scrollLeft : 0);
+        reportPointer(row, column);
+    };
+    const onPointerLeave = () => {
+        if (pointerReporting) {
+            reportPointer(-1, -1);
+        }
+    };
+    // Rows moved under a still pointer: C# drops its band on that paint, and the
+    // memory of the last pair goes with it, so the next movement is reported even
+    // when it lands on the same indices as before the scroll.
+    const onPointerScroll = () => {
+        lastPointerRow = -2;
+        lastPointerColumn = -2;
+    };
+    if (scroller) {
+        scroller.addEventListener('mousemove', onPointerMove);
+        scroller.addEventListener('mouseleave', onPointerLeave);
+        scroller.addEventListener('scroll', onPointerScroll, { passive: true });
+    }
+
     return {
+        // The pointer report's own geometry and its switch (ADR-0021's fifth entry).
+        // Told, never measured: the row height and the column edges are the same
+        // numbers C# painted with.
+        setPointerGeometry: (rowHeight, edges, pinned) => {
+            pointerRowHeight = rowHeight;
+            pointerEdges = edges;
+            pointerPinned = pinned;
+            lastPointerRow = -2;
+            lastPointerColumn = -2;
+        },
+        setPointerReporting: (value) => {
+            pointerReporting = value;
+            lastPointerRow = -2;
+            lastPointerColumn = -2;
+        },
+        // C# dropped its band on a scroll paint: a report that arrived between the
+        // scroll event and that paint is forgotten with it, so the next movement —
+        // even within the same cell — is reported again.
+        forgetPointer: () => {
+            lastPointerRow = -2;
+            lastPointerColumn = -2;
+        },
         // Both axes in one call, deliberately. A trackpad moves them together, and two
         // calls means two round-trips with the browser free to process another scroll
         // event in between — the rows would then be painted from one moment's offset and
@@ -359,6 +476,11 @@ export function attach(root, scroller, core, takenKeys, canEdit) {
             // scroller and the .NET reference the same way, and a notification arriving
             // after disposal would call into a component that no longer exists.
             observer.disconnect();
+            if (scroller) {
+                scroller.removeEventListener('mousemove', onPointerMove);
+                scroller.removeEventListener('mouseleave', onPointerLeave);
+                scroller.removeEventListener('scroll', onPointerScroll);
+            }
             root.removeEventListener('keydown', onKeyDown, true);
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);

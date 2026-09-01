@@ -218,6 +218,11 @@
 /* The Focus band (ADR-0008): one more overlay rectangle, first in its layer so every
    range stays readable over it. Enabling it is a parameter; this is only its colour. */
 .ex-focus-row { position: absolute; background: var(--ex-focus-row-fill, rgba(128, 128, 128, 0.10)); }
+/* The hover band (ADR-0029): the row under the pointer, told to the grid only when it
+   changes (ADR-0021's fifth entry) and painted as the Focus band is. Enabling it is a
+   parameter; this is only its colour, and the default is a shade lighter than the
+   Focus band so the two read apart when they coincide. */
+.ex-hover-row { position: absolute; background: var(--ex-row-hover-background, rgba(128, 128, 128, 0.06)); }
 .ex-focus { position: absolute; outline: 2px solid var(--ex-focus-outline, CanvasText); outline-offset: -1px; }
 /* CanvasText, not Highlight: measured in the browser suite, Chrome's Highlight against
    Canvas is ~2:1 and UX-9 requires 3:1 — the ink colour contrasts by construction in
@@ -345,4 +350,5 @@
     /* The selection and the Focus stay visible: outlines, which forced colors keeps. */
     .ex-range { outline: 2px solid Highlight; outline-offset: -1px; }
     .ex-focus-row { outline: 1px dotted Highlight; outline-offset: -1px; }
+    .ex-hover-row { outline: 1px dotted GrayText; outline-offset: -1px; }
 }

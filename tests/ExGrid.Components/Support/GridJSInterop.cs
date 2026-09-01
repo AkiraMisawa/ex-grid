@@ -72,10 +72,36 @@ internal sealed class GridJSInterop
         // (ADR-0010/0020) — accepted for the same reason.
         var setCanEdit = handle.SetupVoid("setCanEdit", _ => true);
         setCanEdit.SetVoidResult();
+        // The pointer report's geometry and switch (ADR-0021's fifth entry). The
+        // tests drive OnPointerCellAsync directly; what is asserted here is whether
+        // the browser was told to report at all.
+        var setPointerGeometry = handle.SetupVoid("setPointerGeometry", _ => true);
+        setPointerGeometry.SetVoidResult();
+        var setPointerReporting = handle.SetupVoid("setPointerReporting", _ => true);
+        setPointerReporting.SetVoidResult();
+        var forgetPointer = handle.SetupVoid("forgetPointer");
+        forgetPointer.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
-        return new GridJSInterop(offset, setOffset, blur, dispose);
+        return new GridJSInterop(offset, setOffset, blur, dispose)
+        {
+            PointerReporting = setPointerReporting,
+            PointerGeometry = setPointerGeometry,
+            PointerForgotten = forgetPointer,
+        };
     }
+
+    /// <summary>How many times a scroll paint told the browser to forget its last
+    /// pointer report along with the band it dropped.</summary>
+    internal JSRuntimeInvocationHandler PointerForgotten { get; private init; } = default!;
+
+    /// <summary>Every value the grid told the browser about whether to report the
+    /// pointer — off by default, on with <c>HighlightHoverRow</c>.</summary>
+    internal JSRuntimeInvocationHandler PointerReporting { get; private init; } = default!;
+
+    /// <summary>The geometry pushes: one per change of row height or column edges,
+    /// never per frame.</summary>
+    internal JSRuntimeInvocationHandler PointerGeometry { get; private init; } = default!;
 
     /// <summary>What the next <c>getScrollOffset</c> answers — the browser scroll
     /// position the grid is about to read, on both axes at once.</summary>

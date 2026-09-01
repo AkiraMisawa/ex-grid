@@ -26,9 +26,10 @@ Chrome, Overwrite, Caret, …); do not translate those.
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **four** permitted uses:
-capture-phase `keydown`, reading/setting scroll offsets, the clipboard, and a `ResizeObserver`
-reporting the Scrollbar Gutter. The last one turns on a distinction worth keeping: the grid never
+shows the Blazor-side approach is too slow. There are currently **five** permitted uses:
+capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
+reporting the Scrollbar Gutter, and a `mousemove` listener reporting the cell under the pointer
+**only when it changes**. The last two turn on a distinction worth keeping: the grid never
 **measures** (a synchronous read it performs, on the path to a paint), it is **told** when a
 number the browser already knows changes.
 
@@ -114,10 +115,12 @@ the kind that still look correct on screen**, so review will not catch them.
 - **`StateHasChanged()` can complete the render synchronously.** A field set just before it may
   already have been cleared by `OnAfterRender` when you read it back — this produced a real
   `NullReferenceException`. Copy to a local first.
-- **Two name collisions exist.** A Razor page class with the same name as the root namespace
+- **Three name collisions exist.** A Razor page class with the same name as the root namespace
   shadows the namespace (`Bench.razor` in namespace `Bench` → CS0426). An enum named
   `RenderMode` collides with `Microsoft.AspNetCore.Components.Web.RenderMode`, which
-  `_Imports.razor` pulls in.
+  `_Imports.razor` pulls in. And inside any namespace nested under `ExGrid` — the DemoHost,
+  the Wrapper itself — a bare `@using MudBlazor` resolves to `ExGrid.MudBlazor`, so `Color`
+  and `Typo` vanish: write `@using global::MudBlazor`.
 
 ### Specific to this component
 

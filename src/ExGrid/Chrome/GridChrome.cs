@@ -113,7 +113,12 @@ public interface IGridChrome
     /// <summary>Null falls back to the core's built-in menu.</summary>
     RenderFragment? ColumnMenu(ColumnMenuContext context);
 
-    /// <summary>Null falls back to the core's own floating input.</summary>
+    /// <summary>Null falls back to the core's own floating input. A fragment is
+    /// rendered inside the core's <c>ex-editor</c> box, which carries the padding,
+    /// outline and background — the control fills it — and <b>the fragment focuses its
+    /// own control</b>, when it appears and when <see cref="CellEditorContext.Mode"/>
+    /// changes: the core holds no reference to a control it did not render, and does
+    /// not try (ADR-0010/0030).</summary>
     RenderFragment? CellEditor(CellEditorContext context);
 
     /// <summary>Null falls back to the core's own loading presentation (the

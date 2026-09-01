@@ -1,0 +1,42 @@
+@* The Cell Editor seam's content (ADR-0010/0030): a bare input, filling the box the
+   core floats over the cell — the core owns the box, the keys and the text's
+   lifecycle; this only paints the control and reports what is typed. Material's
+   touch is an underline in the primary colour, painted, not laid out. A MudTextField
+   with its label, helper text and 48px of comfort would not fit a 28px cell and is
+   the wrong control here. *@
+<input class="mud-ex-editor" value="@Context.InitialText" @oninput="OnInput" @ref="_input"
+       aria-label="@Context.Column" />
+
+@code {
+    private ElementReference _input;
+    private CellEditMode _focusedMode;
+    private bool _needsFocus = true;
+
+    [Parameter, EditorRequired] public CellEditorContext Context { get; set; } = default!;
+
+    private void OnInput(ChangeEventArgs e) => Context.TextChanged(e.Value?.ToString() ?? "");
+
+    protected override void OnParametersSet()
+    {
+        // F2 moves between Overwrite and Caret (ADR-0010) and the core asks for focus
+        // again on the way; the mode is the signal this component sees.
+        if (Context.Mode != _focusedMode)
+            _needsFocus = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_needsFocus)
+            return;
+        _needsFocus = false;
+        _focusedMode = Context.Mode;
+        try
+        {
+            // Blazor's own FocusAsync — focus stays out of JavaScript (ADR-0021).
+            await _input.FocusAsync();
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+}

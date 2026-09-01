@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net8.0, like every shipped package (ADR-0022). MudBlazor 9
+         targets net8.0 itself, so the Wrapper keeps the core's floor. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>ExGrid.MudBlazor</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The lowest 9.x: the application resolves it upward (ADR-0022's rule applied to
+         the one dependency this package adds). Its net8.0 build asks for
+         Microsoft.AspNetCore.Components.Web 8.0.12, so this package's effective floor
+         is 8.0.12 where the core's is 8.0.0 — MudBlazor's floor, not a choice made
+         here. -->
+    <PackageReference Include="MudBlazor" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0019/0030): the Wrapper references the core;
+         nothing in the core knows this package exists. -->
+    <ProjectReference Include="..\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+</Project>

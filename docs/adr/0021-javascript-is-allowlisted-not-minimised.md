@@ -14,6 +14,7 @@ Every entry names the reason it cannot be done from Blazor.
 | **Reading and setting `scrollTop` / `scrollLeft`** | Blazor's scroll event args carry no scroll offset, and there is no way to set it from C#. Virtualisation needs both directions ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md), [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md) — Focus must stay visible). |
 | **Clipboard: `copy` / `paste` events and the async Clipboard API** | Writing two MIME types in one operation, and resolving a `ClipboardItem` from a promise, have no C# equivalent ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md), [ADR-0017](./0017-target-chromium-browsers-only.md)). |
 | **A `ResizeObserver` reporting the Scrollbar Gutter** | Added while wiring the keyboard; the paragraph below is the argument. |
+| **A `mousemove` listener on the row Viewport reporting the cell under the pointer — only when it changes** | Added when two decisions needed the same thing at once; the section after the gutter's is the argument. Blazor's `@onmousemove` has no client-side predicate: every event crosses to .NET, and on Blazor Server every crossing is a wire round trip. |
 
 That is the entire list. **Four entries.**
 
@@ -64,6 +65,81 @@ Rejected on the way here:
   level, after moving again — rather than a guessed number of pixels. Run on Windows it either
   passes, or it names the zoom level at which the chain breaks.
 
+### The fifth entry: the cell under the pointer, reported on change
+
+**Why a decision was needed at all.** Two independent decisions arrived on the same day asking
+for the same missing fact — *which cell is the pointer over, while nothing is being dragged*:
+
+- [ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md) decided
+  that the validation popover opens after 300 ms of stillness **on hover as well as on Focus**.
+  A hover trigger has to know the cell the pointer stopped on.
+- The `ExGrid.MudBlazor` survey ([ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md))
+  found that every MudBlazor table exposes `Hover` — the pointer's row highlighted — and the
+  first Consumer expects a grid to do it; the Focus band already exists, the hover band did not.
+  [ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md) had
+  declared `--ex-row-hover-background` and then recorded it as unimplementable.
+
+Both had the same obstacle, and it is one this project chose deliberately. Rows and cells are
+`pointer-events: none` so that the row Viewport is the target of every mouse event and the cell
+is **arithmetic over the event's own offsets** rather than a measured element
+([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). That choice is what keeps ~220
+painted cells free of handlers and keeps `getBoundingClientRect` off the paint path — and its
+side effect is that `:hover` never matches a row, so the CSS route to either feature is closed.
+Giving rows their pointer events back would reopen `:hover` and take the arithmetic away:
+the offsets would arrive relative to the cell, and `MouseEventArgs` carries nothing that says
+which cell. The delegated hit-test stays.
+
+**Why not C#.** Blazor can attach `@onmousemove` to the Viewport; nothing is technically
+impossible about it. But ADR-0008 already refused exactly that — *the move handler is attached
+only while a drag is running, because a pointer merely crossing the grid would otherwise raise an
+event per frame; for a Blazor Server Consumer, a wire round trip each time* — and the component
+splats the handler on and off around every drag for that reason. A permanent handler would
+spend, on every idle pointer, the cost the scroll read goes out of its way to pay once. That
+decision is recorded and is not re-measured here; this ADR's own rule asks for a measurement
+before claiming Blazor is *too slow*, and the claim made here is narrower: **Blazor offers no
+way to filter the event before it crosses**. The API that does not exist is a client-side
+predicate on `@onmousemove`. That is ground 1 of the two below, not ground 2.
+
+**Why this shape and no other.** The same distinction the gutter entry turned on: the grid is not
+*measuring*, it is being *told when a number the browser already knows changes*. The listener
+sits on the row Viewport of one instance (per-instance handle, like the key listener — never
+`document`, [ADR-0018](./0018-multiple-instances-must-be-independent.md)). From the event's
+own offsets, the scroll offsets this module already reads, and the row height and column edges
+.NET hands it at attach and whenever they change, it computes a row and a column index — the
+same numbers C# would have computed from the same offsets. It calls into .NET **only when the
+pair differs from the last one reported**, and once more with *none* on `mouseleave` — and
+**only while something consumes the report**: the core tells it to report when the hover
+band is on (`HighlightHoverRow`, or a Wrapper's cascaded default for it), and ADR-0034's
+popover trigger adds its own condition when it is wired; off, the listener computes nothing.
+A pointer moving within a cell costs nothing; a pointer sweeping down a column costs one
+call per row crossed; the paint is still C#'s, by the overlay arithmetic, and JS positions
+nothing. A scroll under a still pointer drops the band and the listener's memory of its
+last report together, so the next movement is reported even onto the same indices. The
+error popover's stillness timer and the hover band both consume this one report, so the
+coordinate arithmetic is not written twice. Column edges are per-column and change on a
+release, not per frame, so nothing per-cell reaches JavaScript (ADR-0027 P-invariants).
+
+**What is expected, and what must be recorded once it exists.** A hover band is one overlay
+element per layer, the Focus band's mechanism with a one-row range: ADR-0008 measured that
+paint at 2.1 ms worst case on real hardware. A fast vertical sweep crosses perhaps twenty to
+thirty rows a second, so that is the order of renders and, on Server, of messages. The number
+that is *not* known is a Server host under a sweep while scrolling, and **it is still not
+known**: the repository has no Blazor Server host — the DemoHost's "Server" page is a
+WebAssembly page driving a fetching source — so the measurement waits for one, and a
+`spikes/render-bench` mode for the band's own paint is still to be added. Both are recorded
+here as owed, not as done. Timing never gates ([definition of done](../definition-of-done.md));
+if the measured cost is bad on Server, the answer is the switch the report already has —
+off, it computes nothing — not a return to per-frame events.
+
+**Verified by.** Layer 2: a hover change re-renders no row (`RenderCount`, RR). Layer 3: a
+real mouse moved down a column paints the band and moves it; two instances on one page do not
+react to each other's pointer; the band vanishes on leave; reading `ex-grid.js` against this
+table still matches exactly (PF-2, now five entries).
+
+*(Decided 2026-09-01 on the Wrapper branch, while the validation popover was being wired on
+the core branch. The two met at merge; the hover trigger of ADR-0034 is meant to consume this
+entry rather than carry a listener of its own.)*
+
 ## What deliberately stays out of JavaScript
 
 These are the places where reaching for JS would be the easy answer, and where we do not.
@@ -94,7 +170,11 @@ These are the places where reaching for JS would be the easy answer, and where w
   pointer's own offsets are enough. Cells are `pointer-events: none`, the row Viewport is
   therefore the event's target, and the offsets arrive measured from it. `scrollIntoView()` is
   refused for the mirror-image reason — it knows nothing of a sticky header or a pinned block and
-  would tuck the revealed cell underneath them.)*
+  would tuck the revealed cell underneath them.)* **The fifth entry does not move this line**:
+  during a drag the cell still comes from C# over the event's offsets, and JS still measures
+  nothing. What the fifth entry adds is a *filter* on idle movement — the same arithmetic, run
+  where the event is born, so that only a change crosses to .NET. It reports indices; it never
+  positions an element.
 - **Click dispatch for action columns.** Blazor event handlers on plain markup are cheap
   enough at ~40 visible rows ([ADR-0020](./0020-action-and-template-columns.md)).
 

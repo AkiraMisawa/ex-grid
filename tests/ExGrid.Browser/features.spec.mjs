@@ -202,15 +202,22 @@ test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) 
     await clickCell(page, 0, 1);
     const focusBefore = await grid(page).getAttribute('aria-activedescendant');
 
-    const prevented = page.evaluate(() => new Promise((resolve) => {
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'PageDown') resolve(event.defaultPrevented);
-        }, { once: true, capture: false });
-        setTimeout(() => resolve('never arrived'), 3000);
-    }));
+    // Registered and awaited before the key is sent, and NOT `once`: a chord arrives
+    // as two keydowns — Control first, then PageDown — and a once-listener is spent
+    // on the Control. This test used to pass only when its un-awaited registration
+    // happened to land between the two keydowns, which read as "never arrived" about
+    // half the time on Edge and looked like the browser swallowing the shortcut.
+    await page.evaluate(() => {
+        window.__kb15 = new Promise((resolve) => {
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'PageDown') resolve(event.defaultPrevented);
+            }, { capture: false });
+            setTimeout(() => resolve('never arrived'), 3000);
+        });
+    });
     await page.keyboard.press('ControlOrMeta+PageDown');
 
-    expect(await prevented).toBe(false);
+    expect(await page.evaluate(() => window.__kb15)).toBe(false);
     expect(await grid(page).getAttribute('aria-activedescendant')).toBe(focusBefore);
 });
 

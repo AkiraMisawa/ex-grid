@@ -135,6 +135,7 @@ so conformance is a set comparison rather than a judgement of taste.
 | **UX-9** | MUST | The focus outline and the selection fill remain visible under the default Theme and under a stub Wrapper Theme (ADR-0030) | Layer 3: contrast of `ex-focus` outline against the cell ground | ≥ 3:1 |
 | **UX-10** | SHOULD | `--ex-scrollbar-width` narrows the bar, the gutter changes, and the geometry follows (ADR-0029) | Layer 3 | the Focus stays inside the readable area after the change (the `scrollbar.spec.mjs` invariant) |
 | **UX-11** | MUST | Popovers (filter panel, column menu) are not clipped by the scroll container and do not tangle across instances (ADR-0017/0018) | Layer 3: open the filter on the rightmost column of two grids | fully visible; each grid's popover is its own |
+| **UX-12** | MUST | The row under the pointer is highlighted by an overlay band filled with `--ex-row-hover-background`, on hover alone — no row carries a class, and the band vanishes on leave (ADR-0029, ADR-0021 fifth entry) | Layer 3: real mouse moved down a column of two grids | one band, in the hovered instance only, following the pointer row; none after `mouseleave` |
 | **UX-12** | MUST | Accessibility semantics as ADR-0033 specifies them | see **§4.1** | every row of §4.1 passes |
 
 ---
@@ -430,7 +431,7 @@ Structural invariants gate; milliseconds do not (§1).
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
 | **PF-1** | MUST | No per-cell JS interop, and no layout read on the path to a paint (ADR-0021 P4) | grep `src/` for `getBoundingClientRect`, `clientWidth`, `offsetWidth`, `scrollIntoView`; count interop calls per frame in Layer 3 via CDP | zero matches in the component; interop calls per scroll frame ≤ 1 |
-| **PF-2** | MUST | The JS allowlist has exactly the four entries ADR-0021 names, and `ex-grid.js` uses no fifth | read `ex-grid.js` against the ADR table | exact match |
+| **PF-2** | MUST | The JS allowlist has exactly the five entries ADR-0021 names, and `ex-grid.js` uses no sixth | read `ex-grid.js` against the ADR table | exact match |
 | **PF-3** | MUST | Per-cell strings are interned or cached alongside the geometry that produced them, never composed in the render loop (ADR-0027 P5) | inspect `CellClasses` / `RowClasses` / `ColumnStyles`; Layer 2 allocation test | zero string allocation per cell per render |
 | **PF-4** | MUST | Scroll offsets are read once per frame, both axes in one call (ADR-0021) | Layer 2 `OffsetReads` | one read per scroll event, never two |
 | **PF-5** | MUST | Selection painting cost is a function of the number of rectangles, not of the number of cells or the size of the selection (ADR-0008) | Layer 2 | element count and render count independent of selection area |
@@ -482,6 +483,7 @@ ADR-0027 P3 states the expectation precisely, which makes this the most mechanic
 | **RR-8** | MUST | A Scrollbar Gutter report carrying no change renders nothing | Layer 2 | `RenderCount` unchanged |
 | **RR-9** | MUST | Delegates passed as parameters are cached in fields, never method groups | inspect `ExGrid.razor` | no method group in a parameter position |
 | **RR-10** | MUST | `ShouldRender` is hand-written wherever memoisation is claimed (ADR-0003) | inspect | present on `ExGridRow` and on the root |
+| **RR-11** | MUST | The pointer-cell report (ADR-0021, fifth entry) reaches .NET only when the cell changes, and a hover-row change re-renders no row — the band is the overlay's (ADR-0029) | Layer 2 counting `RenderCount`; Layer 3 counting interop calls under a sweep within one cell | zero calls within a cell; row counts unchanged across a hover change |
 
 ---
 
@@ -673,7 +675,7 @@ grep -rn "OrderBy\|Where(" src/ExGrid/Components/                               
 grep -o -- "--ex-[a-z-]*" src/ExGrid/wwwroot/ex-grid.css | sort -u                # UX-1, UX-4
 ```
 
-Read `ex-grid.js` against ADR-0021's four-entry table (PF-2), and `ExGrid.razor` for RR-9/RR-10.
+Read `ex-grid.js` against ADR-0021's five-entry table (PF-2), and `ExGrid.razor` for RR-9/RR-10.
 
 ### Step 4 — Layer 3, real browsers
 
