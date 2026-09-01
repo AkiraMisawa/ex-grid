@@ -275,6 +275,50 @@ public class ValidationTests : GridTestContext
         Assert.Equal(message.GetAttribute("id"), cut.Find(".ex-editor").GetAttribute("aria-describedby"));
     }
 
+    [Fact] // ADR-0034 / ED-17b: the pointer coming to rest opens it, asking once
+    public async Task The_pointer_coming_to_rest_opens_the_message()
+    {
+        var asked = 0;
+        var cut = RenderGrid(cellMessageOf: (_, _) => { asked++; return "out of range"; });
+
+        // JS heard the moves and reports only the stillness (ADR-0021's fifth entry).
+        await cut.InvokeAsync(() => cut.Instance.OnPointerRestAsync(150, 50));
+
+        Assert.Equal(1, asked);
+        Assert.Equal("out of range", cut.Find(".ex-message").TextContent.Trim());
+
+        // Resting again on the same cell asks nothing more.
+        await cut.InvokeAsync(() => cut.Instance.OnPointerRestAsync(155, 52));
+        Assert.Equal(1, asked);
+    }
+
+    [Fact] // ADR-0034 / ED-17b: the pointer leaving takes the message with it
+    public async Task The_pointer_leaving_closes_the_message()
+    {
+        var cut = RenderGrid(cellMessageOf: (_, _) => "out of range");
+        await cut.InvokeAsync(() => cut.Instance.OnPointerRestAsync(150, 50));
+        Assert.NotEmpty(cut.FindAll(".ex-message"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnPointerAwayAsync());
+
+        Assert.Empty(cut.FindAll(".ex-message"));
+    }
+
+    [Fact] // ADR-0034: while an editor holds, the sentence the user needs is the editor's
+    public async Task Hovering_says_nothing_while_an_editor_is_open()
+    {
+        var asked = 0;
+        var cut = RenderGrid(
+            validate: (_, _) => EditVerdict.Reject("not a date"),
+            cellMessageOf: (_, _) => { asked++; return "out of range"; });
+        await TypeAndCommitAsync(cut, "abc");
+
+        await cut.InvokeAsync(() => cut.Instance.OnPointerRestAsync(150, 50));
+
+        Assert.Equal(0, asked);
+        Assert.Equal("not a date", cut.Find(".ex-message").TextContent.Trim());
+    }
+
     [Fact] // ADR-0034 / ED-15: a header press is a click-away too, and a Reject stops it
     public async Task A_reject_holds_the_editor_against_a_header_press()
     {

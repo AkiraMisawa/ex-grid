@@ -1,7 +1,7 @@
-// The four permitted uses of JavaScript (ADR-0021): the capture-phase keydown
-// listener, reading and setting scroll offsets, the clipboard, and being told what the
-// scrollbar takes out of the box. Anything else — text measurement, overlay geometry,
-// popovers — stays in C#; adding to this file needs an ADR.
+// The five permitted uses of JavaScript (ADR-0021): the capture-phase keydown listener,
+// reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
+// out of the box, and reporting when the pointer has come to rest. Anything else — text
+// measurement, overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
@@ -16,9 +16,11 @@
  *   GridKeys.Taken — this file decides nothing about which keys those are
  * @param {boolean} canEdit whether any column edits at all — a display-only grid must
  *   not take printable keys away from the page (ADR-0010)
+ * @param {number} restDelayMs how long the pointer must be still before the core is told
+ *   — the core's own constant, so the number lives in one place (ADR-0034)
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit) {
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     const taken = new Set(takenKeys);
 
     // Whether the synchronous channel exists — WebAssembly has it, a server circuit
@@ -136,6 +138,41 @@ export function attach(root, scroller, core, takenKeys, canEdit) {
                 }
             });
     };
+
+    // The fifth allowlist entry (ADR-0021): the moves are heard here and only the
+    // stillness is reported. A Blazor handler on the Viewport would cost an interop call
+    // per move — a wire round trip per frame on a Server circuit, which is why the grid
+    // has never listened for moves outside a drag. This decides nothing: it reports the
+    // offsets the browser hands it, and C# resolves which cell that is from its own
+    // geometry (ADR-0034).
+    let restTimer = 0;
+    const onPointerMove = (event) => {
+        // Cells are pointer-events: none, so the Viewport is what a move over the rows
+        // lands on. Anything else — the header, a Template Column's own control — is not
+        // a cell to describe.
+        if (!core || !(event.target instanceof Element) || !event.target.classList.contains('ex-viewport')) {
+            return;
+        }
+        const x = event.offsetX;
+        const y = event.offsetY;
+        clearTimeout(restTimer);
+        restTimer = setTimeout(() => {
+            if (!core) {
+                return;
+            }
+            core.invokeMethodAsync('OnPointerRestAsync', x, y).catch(() => {
+                // Disposal can overtake a rest report, and that is not a fault.
+            });
+        }, restDelayMs);
+    };
+    const onPointerLeave = () => {
+        clearTimeout(restTimer);
+        if (core) {
+            core.invokeMethodAsync('OnPointerAwayAsync').catch(() => {});
+        }
+    };
+    root.addEventListener('mousemove', onPointerMove);
+    root.addEventListener('mouseleave', onPointerLeave);
 
     // Capture, and on the root rather than the document: on the document every grid on
     // the page would receive every keystroke, and in the bubble phase a cell editor would
@@ -371,6 +408,9 @@ export function attach(root, scroller, core, takenKeys, canEdit) {
             // scroller and the .NET reference the same way, and a notification arriving
             // after disposal would call into a component that no longer exists.
             observer.disconnect();
+            clearTimeout(restTimer);
+            root.removeEventListener('mousemove', onPointerMove);
+            root.removeEventListener('mouseleave', onPointerLeave);
             root.removeEventListener('keydown', onKeyDown, true);
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);

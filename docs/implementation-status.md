@@ -43,13 +43,13 @@ before it was true.
 CP-19's claim is no longer unverified: a menu copy writes without a permission prompt on Chrome
 and on Edge, and layer 3 says so rather than the ADR assuming it.
 
-**One criterion is knowingly failing, and is not relaxed to hide it.** The error popover opens on
-the Focus and **not on hover** (ED-17b): a hover that knows which cell it is over needs a
-pointer-move handler on the Viewport, which is one interop call per move — the per-move cost
-ADR-0008 measured and refused, and the reason `_dragHandler` is attached only while dragging.
-Building it is a decision of its own (measure and pay it; a cached handler on flagged cells only,
-against ADR-0003's memoisation; or a fifth JavaScript allowlist entry) and none has been made.
-The keyboard trigger, which ADR-0034 calls the point, is built.
+The error popover's hover trigger (ED-17b) was left failing for one round and is now built. It
+took **ADR-0021's fifth allowlist entry**: JavaScript hears the pointer moves and reports only the
+stillness, because a Blazor handler on the Viewport is a wire round trip per frame on a Server
+circuit — which the grid had already pinned as unaffordable in
+`The_grid_does_not_listen_for_moves_until_a_drag_begins`, whose comment is the reason ADR-0021
+asks for. The module decides nothing: it reports the offsets the browser hands it, and C# resolves
+the cell and asks the Consumer.
 
 **Same-day review round:** an adversarial 17-candidate review of this drop confirmed all
 17 (pager-vs-pre-pager arithmetic, the editor's missing pointer teardown, and a cluster

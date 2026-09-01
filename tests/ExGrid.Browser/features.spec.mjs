@@ -304,6 +304,26 @@ test('a Flag applies and is marked, and its message opens on the Focus (ED-16/ED
     await expect(grid(page).locator('.ex-message')).toContainText('approval', { timeout: 3000 });
 });
 
+test('a flagged cell says why when the pointer rests on it (ED-17b, ADR-0021/0034)', async ({ page }) => {
+    // Flag a cell first: -5 is applied and marked by the Consumer's ruleset.
+    await clickCell(page, 0, 2);
+    await page.keyboard.type('-5');
+    await page.keyboard.press('Enter');
+    await expect(grid(page).locator("[id$='r0c2']")).toHaveClass(/ex-state-error/);
+    // Park the Focus elsewhere so what follows can only be the hover.
+    await clickCell(page, 4, 1);
+    await expect(grid(page).locator('.ex-message')).toHaveCount(0);
+
+    await grid(page).locator("[id$='r0c2']").hover({ force: true });
+
+    // JS heard the moves; C# was told once, when the pointer stopped.
+    await expect(grid(page).locator('.ex-message')).toContainText('approval', { timeout: 3000 });
+
+    // And crossing back out takes it away.
+    await page.mouse.move(5, 5);
+    await expect(grid(page).locator('.ex-message')).toHaveCount(0);
+});
+
 test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) => {
     await clickCell(page, 0, 1);
     const focusBefore = await grid(page).getAttribute('aria-activedescendant');

@@ -435,6 +435,11 @@
     /// moment it opened, never per render (ADR-0034, ED-17).</summary>
     private CellPosition? _messageCell;
 
+    /// <summary>The cell the timer is counting for — reached by the Focus or by the
+    /// pointer, which ask the same question and take the same delay.</summary>
+    private CellPosition? _messageTarget;
+
+
     private string? _messageText;
 
     private ITimer? _messageTimer;
@@ -1752,7 +1757,8 @@
             _self ??= DotNetObjectReference.Create(this);
             _jsCanEdit = AnyColumnEdits();
             var handle = await _module.InvokeAsync<IJSObjectReference>(
-                "attach", _root, _scroller, _self, GridKeys.Taken, _jsCanEdit);
+                "attach", _root, _scroller, _self, GridKeys.Taken, _jsCanEdit,
+                PopoverDelay.TotalMilliseconds);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -1956,8 +1962,7 @@
     /// </summary>
     private void OnMouseMove(MouseEventArgs e)
     {
-        // The handler is only attached while dragging, but an event can still be in
-        // flight from the frame it was taken off.
+        // An event can still be in flight from the frame the drag ended on.
         if (!_dragging)
         {
             _suppressRender = true;
@@ -2505,6 +2510,41 @@
         return (left, top);
     }
 
+    /// <summary>
+    /// The pointer has come to rest over the Viewport (ADR-0021's fifth entry). JS heard
+    /// the moves and reports only the stillness, so this runs once per pause rather than
+    /// once per frame. What it was told is a pair of offsets; which cell that is, and
+    /// whether there is anything to say about it, are both decided here.
+    /// </summary>
+    [JSInvokable]
+    public Task OnPointerRestAsync(double x, double y)
+    {
+        if (_disposed || CellMessageOf is null || _editMode != EditMode.None)
+            return Task.CompletedTask;
+        if (CellUnder(new MouseEventArgs { OffsetX = x, OffsetY = y }) is not { } cell)
+            return Task.CompletedTask;
+        if (_messageCell == cell)
+            return Task.CompletedTask;
+
+        // The stillness is already established, so there is nothing left to wait for: the
+        // message is asked for now, once, exactly as the Focus path asks after its timer.
+        _messageTarget = cell;
+        ShowMessageAt(cell);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>The pointer left the instance, so what it was hovering it is not any
+    /// more.</summary>
+    [JSInvokable]
+    public Task OnPointerAwayAsync()
+    {
+        if (_disposed || _messageCell is null)
+            return Task.CompletedTask;
+        CloseMessage();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
     /// <summary>Where the menu stands: at the pointer, clamped to the Viewport, and
     /// below the header band the popovers all sit under (ADR-0027 — the min-width rides
     /// the instance inline, so the clamp and the laid-out box are one number).</summary>
@@ -2870,7 +2910,7 @@
         _selection = _selection.With(next);
         _selectionChanged = true;
         if (movedFocus)
-            ScheduleMessage();
+            ScheduleMessage(next.IsEmpty ? null : next.Focus);
         return true;
     }
 
@@ -2881,37 +2921,47 @@
     /// over it. Anything open closes at once, because it belongs to the cell that was
     /// left, not to the one being reached.
     /// </summary>
-    private void ScheduleMessage()
+    /// <returns>Whether anything visible changed — a popover that was open is now shut.</returns>
+    private bool ScheduleMessage(CellPosition? target)
     {
-        if (_messageCell is not null)
-        {
-            _messageCell = null;
-            _messageText = null;
-        }
-        if (CellMessageOf is null)
-            return;
+        var closed = _messageCell is not null;
+        if (closed)
+            CloseMessage();
+        _messageTarget = target;
+        if (CellMessageOf is null || target is null)
+            return closed;
         _messageTimer ??= Time.CreateTimer(OnMessageSettled, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _messageTimer.Change(PopoverDelay, Timeout.InfiniteTimeSpan);
+        return closed;
     }
 
     private void OnMessageSettled(object? state)
     {
         _ = InvokeAsync(() =>
         {
-            if (_disposed || CellMessageOf is null || _selection.Selection.IsEmpty)
+            if (_disposed || _messageTarget is not { } target)
                 return;
-            var focus = _selection.Selection.Focus;
-            var slice = focus.Row - _windowStart;
-            if (slice < 0 || slice >= _window.Count || focus.Column >= Columns.Count)
-                return;
-            // The one call, here and nowhere else: never on the painting path (ED-17).
-            var message = CellMessageOf(_window[slice], Columns[focus.Column]);
-            if (string.IsNullOrEmpty(message))
-                return;
-            _messageCell = focus;
-            _messageText = message;
-            StateHasChanged();
+            ShowMessageAt(target);
         });
+    }
+
+    /// <summary>Ask for the message and open, or leave everything shut. The one call to
+    /// <c>CellMessageOf</c>, here and nowhere else: never on the painting path (ED-17),
+    /// and only once the cell has been settled on — whether by the Focus standing still
+    /// or by the pointer coming to rest.</summary>
+    private void ShowMessageAt(CellPosition target)
+    {
+        if (CellMessageOf is null)
+            return;
+        var slice = target.Row - _windowStart;
+        if (slice < 0 || slice >= _window.Count || target.Column >= Columns.Count)
+            return;
+        var message = CellMessageOf(_window[slice], Columns[target.Column]);
+        if (string.IsNullOrEmpty(message))
+            return;
+        _messageCell = target;
+        _messageText = message;
+        StateHasChanged();
     }
 
     protected override bool ShouldRender()

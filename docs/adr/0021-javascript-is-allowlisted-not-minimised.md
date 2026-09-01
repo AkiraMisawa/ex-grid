@@ -68,6 +68,41 @@ Rejected on the way here:
 
 These are the places where reaching for JS would be the easy answer, and where we do not.
 
+## Fifth: pointer stillness, reported *(added with ADR-0034's error popover)*
+
+The error popover opens after 300 ms of stillness, on the Focus **and on hover**
+([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)). The Focus
+half is C#'s. The hover half is not, and the reason is the one this ADR asks for.
+
+Knowing which cell a pointer is over means hearing `mousemove`. Cells are
+`pointer-events: none`, so the Viewport is the only thing that can be asked, and a Blazor
+handler on it costs **one interop call per move** — on a Blazor Server circuit, one **wire
+round trip per frame** while a pointer merely crosses the grid. That is not a prediction: it is
+already a pinned decision, held by a test whose name is
+*`The_grid_does_not_listen_for_moves_until_a_drag_begins`* and whose comment gives the same
+reason. The Blazor-side approach is not slow in the abstract; it is unaffordable on a host this
+component supports.
+
+**So JS hears the moves and C# hears the stillness.** The listener throttles locally and calls
+into C# **once, when the pointer has stopped** — the same cost profile as the Focus trigger, and
+the same shape as the fourth entry: *the grid is not measuring, it is being told when something
+the browser already knows has settled.*
+
+What it deliberately does not do: decide anything. It reports `offsetX`/`offsetY` — numbers the
+browser hands it, never `getBoundingClientRect` — and C# resolves which cell that is from its own
+geometry and asks the Consumer for the message. The delay is the core's constant, passed in at
+attach, so the number lives in one place.
+
+Rejected: **a Blazor handler on flagged cells only**, which bounds the cost by the number of
+marked cells rather than by moves. It needs those cells to be `pointer-events: auto`, and then a
+press on one no longer reaches the Viewport — selection and drag break on exactly the cells a
+user most wants to click. Working around that means forwarding the press from the marker, which
+is a second pointer path, and it puts a delegate into the row's parameters against
+[ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)'s memoisation.
+
+Rejected: **dropping the hover trigger**. An error a mouse user can see but not read is the
+half-measure this component's first principle exists to refuse.
+
 - **Popovers.** The Popover API is driven by the `popover` and `popovertarget` **attributes**,
   and CSS Anchor Positioning is CSS. Filter panels and column menus
   ([ADR-0009](./0009-filter-panel-contract.md), ADR-0010) need **no JS**, and that is a reason

@@ -13,7 +13,7 @@ this decision could not be written on top of.
 | ADR-0010: *the Consumer can add its own commands* | "open the pricing run for this row" is a Consumer command. It was already the worked example there — "open the report for this book" |
 | ADR-0010: the three ways a popover closes | the same three, unchanged: the gesture that opened it, Escape, and a pointer-down elsewhere **which keeps its own meaning** |
 | ADR-0018 | one menu per instance, ids instance-prefixed |
-| ADR-0021 | **no new JavaScript.** `@oncontextmenu:preventDefault` is a Blazor attribute, not a listener the grid installs; the allowlist stays at four |
+| ADR-0021 | **no new JavaScript.** `@oncontextmenu:preventDefault` is a Blazor attribute, not a listener the grid installs — this decision adds nothing to the allowlist (ADR-0034's hover popover later did, for its own reason) |
 | ADR-0013 | the menu is a popover, never an element in a row: no row height moves |
 
 Cells are `pointer-events: none` and the Viewport is the event target, so the menu binds where

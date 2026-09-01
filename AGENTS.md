@@ -26,11 +26,13 @@ Chrome, Overwrite, Caret, …); do not translate those.
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **four** permitted uses:
-capture-phase `keydown`, reading/setting scroll offsets, the clipboard, and a `ResizeObserver`
-reporting the Scrollbar Gutter. The last one turns on a distinction worth keeping: the grid never
-**measures** (a synchronous read it performs, on the path to a paint), it is **told** when a
-number the browser already knows changes.
+shows the Blazor-side approach is too slow. There are currently **five** permitted uses:
+capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
+reporting the Scrollbar Gutter, and a throttle that reports when the **pointer has come to rest**
+(ADR-0034's error popover; a Blazor handler would be a wire round trip per frame on Server). The
+last two turn on a distinction worth keeping: the grid never **measures** (a synchronous read it
+performs, on the path to a paint), it is **told** when something the browser already knows has
+changed or settled.
 
 **Anything else needs a new ADR.** See
 [ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what
