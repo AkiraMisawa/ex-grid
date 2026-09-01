@@ -44,11 +44,16 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 26 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 33 of them. The implementation follows these |
+| `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
 **Rules:**
 
+- **The ADRs and `docs/definition-of-done.md` are authoritative.** Where code, a comment, a plan
+  or a conversation disagrees with them, they win, and the disagreement is a defect in the other
+  thing. **A major architectural decision is made by writing an ADR**, not by writing code that
+  implies one.
 - **Read the relevant ADR before changing behaviour.** The reason is written down. Changing
   something without knowing the reason usually walks back into an option that was already
   rejected.
@@ -78,7 +83,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 26 ADRs. **A new decision that follows these will not
+The principles that run through all 33 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -116,6 +121,10 @@ the kind that still look correct on screen**, so review will not catch them.
 
 ### Specific to this component
 
+- **No colour is a C# parameter, and no pixel is only a stylesheet value.** Appearance travels
+  as Visual Tokens the stylesheet reads; geometry is emitted inline on the instance root from the
+  resolved Grid Metrics (ADR-0027/0028). A stylesheet literal paired with a C# constant by a
+  "must move together" comment is the defect that split replaces — do not add another pairing.
 - **Row height must go through a C# parameter.** Changing it in CSS alone makes the
   virtualisation arithmetic, the selection overlay and the editor position **drift slightly
   out of alignment** (ADR-0013 / 0016).
@@ -138,6 +147,27 @@ the kind that still look correct on screen**, so review will not catch them.
 - **Headless Chrome on macOS keeps overlay scrollbars on the horizontal axis** whatever the CSS
   asks for, so a scrollbar test written there passes without testing anything. Layer 3 runs
   headed for that reason (ADR-0026).
+
+## What counts as verified
+
+**A green build is not a result.** `dotnet build` and `dotnet run` prove that the code compiles and
+starts; they say nothing about whether it does what an ADR decided.
+
+```sh
+nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
+```
+
+- **A UI-facing change is not verified until a real browser has exercised it.** Layers 1 and 2
+  cannot see a sticky header slipping, a scrollbar eating the last column, or a key the browser
+  took first — which is exactly why layer 3 exists, and why the worst bugs in this project were
+  invisible to suites that were passing at the time. Use `tests/ExGrid.Browser`, and read the
+  layer 3 rules below before trusting a pass.
+- **An unexpected console message or runtime exception is a failure**, not noise to scroll past.
+  This component displays money; something the browser is complaining about may be something the
+  reader is already seeing wrong.
+- **The virtualisation and performance invariants hold, or the change is wrong.** The DOM does not
+  grow with the row count, rows still skip their render, and nothing per-cell reaches JavaScript
+  (P1-P9 in ADR-0027; the Definition of Done states them as criteria you can run).
 
 ## Tests
 
@@ -196,3 +226,10 @@ reasoning.**
   nothing else.
 - **Do not quietly rewrite an ADR.** When a decision changes, leave what changed and why in the
   text (ADR-0005's "the rationale was replaced once" is the model).
+- **Do not weaken a requirement to make an implementation easier.** If a criterion cannot be met,
+  leave it failing and say so. A criterion quietly relaxed to fit the code is how a specification
+  stops meaning anything — and changing what is required is an ADR change, made deliberately and
+  in writing.
+- **Do not stop at an intermediate task while unblocked work remains.** Finishing a step is not
+  finishing the task. If something is genuinely blocked, name what blocks it and carry on with
+  everything that is not.
