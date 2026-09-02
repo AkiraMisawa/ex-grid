@@ -72,7 +72,7 @@ against the newer of last-event and last-write (recorded in ADR-0012), and pinne
 | 0003 | Plain-markup cells, row memoisation | `RowMemoisationTests` |
 | 0004 | Both-axis virtualisation, Pinned Columns, the fling | `VirtualisationTests`, `FlingTests` |
 | 0005 / 0014 | The clipboard — both routes, both formats, every refusal; the JS allowlist's fourth entry is in use | `ClipboardDataTests`, `ClipboardParseTests`, `ClipboardWiringTests`, `features.spec.mjs` (real clipboard) |
-| 0006 / 0024 | Cell State, Row Kind | both layers |
+| 0006 / 0024 | Cell State, Row Kind; **the column's display format** — one text for a value, in the cell, copy's `text/plain`, the value list and the editor, never in the raw `text/html`; **the tone rule** — the Consumer's closed-enum answer about a value, painted as `ex-tone-*`, coloured by tokens the bare grid leaves at `inherit` | both layers, `ColumnFormatTests`, `CellToneTests`, `mud.spec.mjs` (FN-7a) |
 | 0007 / 0010 | **The Cell Editor** — Overwrite / Caret, F2, the typed-first character, Ctrl+Enter fill, the mode-gated key listener | `CellEditorTests`, `features.spec.mjs` (real keys) |
 | 0008 | Selection overlay, the mouse, **the edge-band auto-scroll**, **the Focus band** | `SelectionTests`, `EdgeAutoScrollTests`, `FocusBandTests` |
 | 0009 / 0010 | **The Chrome seams** — filter panel, column menu, editor, loading; `IGridChrome`; distinct values with the Excel exclusion rule; popovers dismiss by toggle, Escape and click-away | `FilterChromeTests`, `DistinctValueTests` |

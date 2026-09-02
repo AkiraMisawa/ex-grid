@@ -48,11 +48,12 @@
         else
         {
             var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
-            var text = CellText(column, Row);
+            var value = column.Value(Row);
+            var text = TextOf(column, value);
             var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
             @* aria-label only when hashed: the accessible name of a #### cell is the
                real value (ADR-0016/0033), and on every other cell the text names itself. *@
-            <div class="@CellClasses.For(numeric, pinned: true, StateOf(column), column.Align)" style="@Styles.PinnedCell(i)"
+            <div class="@CellClasses.For(numeric, pinned: true, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.PinnedCell(i)"
                  role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
                  aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
         }
@@ -75,9 +76,10 @@
             else
             {
                 var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
-                var text = CellText(column, Row);
+                var value = column.Value(Row);
+                var text = TextOf(column, value);
                 var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
-                <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.Align)" style="@Styles.Cell(i)"
+                <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
                      aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
             }
@@ -256,8 +258,22 @@
     private Cells.CellState StateOf(GridColumn<TRow> column) => CellState?.Invoke(Row, column) ?? default;
 
     /// <summary>The one string a cell paints, measures and decides overflow on — count
-    /// and render must see the same text. A formatting layer replaces the bare
-    /// ToString later; null is a Blank and paints empty (ADR-0023).</summary>
+    /// and render must see the same text — and the one copy, the value list and the
+    /// editor show for the value (ADR-0005/0006): the column's Format where it declares
+    /// one, the bare ToString where it does not. Null is a Blank and paints empty
+    /// (ADR-0023).</summary>
     internal static string CellText(GridColumn<TRow> column, TRow row)
-        => column.Value(row)?.ToString() ?? "";
+        => TextOf(column, column.Value(row));
+
+    /// <summary>The same text from a value already fetched — the row fetches once and
+    /// derives both the text and the tone from it.</summary>
+    internal static string TextOf(GridColumn<TRow> column, object? value)
+        => value is null
+            ? ""
+            : column.Format is { } format ? format(value) : value.ToString() ?? "";
+
+    /// <summary>The column's tone for a value (ADR-0006): None without a rule, None for a
+    /// null — a Blank has no sign and the rule is never asked about it.</summary>
+    internal static CellTone ToneOf(GridColumn<TRow> column, object? value)
+        => value is not null && column.Tone is { } tone ? tone(value) : CellTone.None;
 }

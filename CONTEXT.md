@@ -252,6 +252,14 @@ vocabulary does not enter the grid**
 ([ADR-0006](./docs/adr/0006-grid-owns-a-generic-cell-state-vocabulary.md)).
 _Avoid_: cell status, flag, decoration
 
+**Tone**:
+What a Column's rule says a value means — positive / negative — for the theme to paint. The
+value-derived half of "why a cell looks different": decided by looking at the value and declared
+by the Consumer on the Column, where a Cell State cannot be derived from the value and is asked
+for from outside. A tone names a meaning, never a colour; the grid paints none of its own
+([ADR-0006](./docs/adr/0006-grid-owns-a-generic-cell-state-vocabulary.md)).
+_Avoid_: colour, conditional formatting, style
+
 **Cell Metadata**:
 Information a cell carries that is not the value itself. It affects display and decoration but is
 never sorted or aggregated on. Example: an as-of stamp, where two metrics in the *same row* can
@@ -362,8 +370,9 @@ _Avoid_: origin, base cell
 
 **Column**:
 A runtime object. Beyond the header's appearance it holds **how to extract the value from a
-row**, the type (which decides the filter UI and the default format), and the width
-(`Auto | Fixed` plus `MinWidth` / `MaxWidth`). A statically listed column and a column generated
+row**, the type (which decides the filter UI and the default format), an optional display
+format that replaces the default, and the width (`Auto | Fixed` plus `MinWidth` /
+`MaxWidth`). A statically listed column and a column generated
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
 _Avoid_: field, column definition
 

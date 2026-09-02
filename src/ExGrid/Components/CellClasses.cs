@@ -13,29 +13,46 @@ namespace ExGrid.Components;
 ///
 /// <para>Every combination is composed once, up front. The alternative — concatenating
 /// two or three class names per cell — allocates a string for each of the ~800 cells on
-/// every render, on the exact path ADR-0004 caps. Twenty strings held forever is the
-/// cheaper end of that trade by a wide margin.</para>
+/// every render, on the exact path ADR-0004 caps. A few hundred strings held forever is
+/// the cheaper end of that trade by a wide margin.</para>
 /// </summary>
 public static class CellClasses
 {
-    // Indexed by (state, align, numeric, pinned) so the lookup is arithmetic, never a
-    // switch over combinations that would have to be kept in step with the enums by hand.
+    // Indexed by (tone, state, align, numeric, pinned) so the lookup is arithmetic, never
+    // a switch over combinations that would have to be kept in step with the enums by hand.
     private const int Variants = 4;
     private const int Aligns = 4;
+    private const int States = 5;
     private static readonly string[] Composed = Compose();
 
     /// <summary>
     /// The full class attribute for one cell. <paramref name="numeric"/> is the core's
     /// classification (<see cref="Columns.OverflowRules.HashesWhenOverflowing"/>), not a
-    /// re-derivation of it; <see cref="CellState.Normal"/> and <see cref="CellAlign.Auto"/>
-    /// add nothing at all — an ordinary cell is painted exactly as it was before either
-    /// vocabulary existed (ADR-0006/0016).
+    /// re-derivation of it; <see cref="CellState.Normal"/>, <see cref="CellAlign.Auto"/>
+    /// and <see cref="CellTone.None"/> add nothing at all — an ordinary cell is painted
+    /// exactly as it was before any of the vocabularies existed (ADR-0006/0016).
     /// </summary>
-    public static string For(bool numeric, bool pinned, CellState state, CellAlign align = CellAlign.Auto)
+    public static string For(bool numeric, bool pinned, CellState state, CellAlign align = CellAlign.Auto, CellTone tone = CellTone.None)
     {
-        var index = ((Index(state) * Aligns) + AlignIndex(align)) * Variants + (numeric ? 2 : 0) + (pinned ? 1 : 0);
+        var index = (((ToneIndex(tone) * States + Index(state)) * Aligns) + AlignIndex(align)) * Variants + (numeric ? 2 : 0) + (pinned ? 1 : 0);
         return Composed[index];
     }
+
+    private static int ToneIndex(CellTone tone) => tone switch
+    {
+        CellTone.None => 0,
+        CellTone.Positive => 1,
+        CellTone.Negative => 2,
+        _ => throw new ArgumentOutOfRangeException(nameof(tone), tone, null),
+    };
+
+    private static string ToneSuffix(CellTone tone) => tone switch
+    {
+        CellTone.None => "",
+        CellTone.Positive => " ex-tone-positive",
+        CellTone.Negative => " ex-tone-negative",
+        _ => throw new ArgumentOutOfRangeException(nameof(tone), tone, null),
+    };
 
     private static int AlignIndex(CellAlign align) => align switch
     {
@@ -81,25 +98,31 @@ public static class CellClasses
 
     private static string[] Compose()
     {
+        CellTone[] tones = [CellTone.None, CellTone.Positive, CellTone.Negative];
         CellState[] states = [CellState.Normal, CellState.Stale, CellState.Missing, CellState.Error, CellState.Modified];
         CellAlign[] aligns = [CellAlign.Auto, CellAlign.Left, CellAlign.Center, CellAlign.Right];
-        var composed = new string[states.Length * Aligns * Variants];
-        foreach (var state in states)
+        var composed = new string[tones.Length * States * Aligns * Variants];
+        foreach (var tone in tones)
         {
-            var suffix = Suffix(state);
-            foreach (var align in aligns)
+            var toneSuffix = ToneSuffix(tone);
+            foreach (var state in states)
             {
-                var alignSuffix = AlignSuffix(align);
-                for (var variant = 0; variant < Variants; variant++)
+                var suffix = Suffix(state);
+                foreach (var align in aligns)
                 {
-                    var numeric = (variant & 2) != 0;
-                    var pinned = (variant & 1) != 0;
-                    composed[((Index(state) * Aligns) + AlignIndex(align)) * Variants + variant] = string.Concat(
-                        "ex-cell",
-                        numeric ? " ex-cell-numeric" : "",
-                        pinned ? " ex-pinned" : "",
-                        alignSuffix,
-                        suffix);
+                    var alignSuffix = AlignSuffix(align);
+                    for (var variant = 0; variant < Variants; variant++)
+                    {
+                        var numeric = (variant & 2) != 0;
+                        var pinned = (variant & 1) != 0;
+                        composed[(((ToneIndex(tone) * States + Index(state)) * Aligns) + AlignIndex(align)) * Variants + variant] = string.Concat(
+                            "ex-cell",
+                            numeric ? " ex-cell-numeric" : "",
+                            pinned ? " ex-pinned" : "",
+                            alignSuffix,
+                            toneSuffix,
+                            suffix);
+                    }
                 }
             }
         }

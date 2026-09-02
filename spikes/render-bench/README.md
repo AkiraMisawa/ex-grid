@@ -10,7 +10,7 @@ count. The data is already in memory, and **only rendering is measured** (fetchi
 filtering are excluded — [ADR-0001](../../docs/adr/0001-consumer-pushes-the-window-grid-does-not-fetch.md)
 puts them on the Consumer side, so the grid never walks every row).
 
-Five modes stack up, isolating **the cost of one design decision each**:
+Six modes stack up, isolating **the cost of one design decision each**:
 
 | Mode | What it adds |
 |---|---|
@@ -18,6 +18,7 @@ Five modes stack up, isolating **the cost of one design decision each**:
 | `Accessor` | a per-column `Func<Row, object>` accessor (boxes every decimal) |
 | `AccessorMeta` | a per-cell metadata lookup (a Cell State probe, keyed on (group, metric)) |
 | `RowComponent` | the boundary at the row: row is a component, cells stay plain markup |
+| `RowComponentTone` | `RowComponent` + a per-cell tone rule: a Consumer delegate on the value answering a closed enum, painted as an interned class ([ADR-0006](../../docs/adr/0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | `Component` | the boundary at the cell: every cell is a Blazor component |
 
 There is a second benchmark for **painting the selection**: a CSS class per cell versus a single
@@ -35,7 +36,7 @@ Open <http://localhost:5199>. Under WSL2, if `localhost` does not reach it from 
 browser, use the address from `hostname -I`.
 
 1. Pick a preset (`Fling (40×20, 50 rows)` is the harshest realistic case)
-2. **Measure all five modes**
+2. **Measure all modes**
 3. **Save results to the server** → lands in `spikes/render-bench/results/{timestamp}.json`
 
 For the felt experience of manual scrolling: `Start frame measurement` → drag the grid → `Stop and

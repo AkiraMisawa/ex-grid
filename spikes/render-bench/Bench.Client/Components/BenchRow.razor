@@ -25,7 +25,9 @@
     {
         var ci = c;
         var sel = ci >= SelFrom && ci <= SelTo;
-        <div class="@(sel ? CellFormat.Class(Meta(RowData, ci)) + " sel" : CellFormat.Class(Meta(RowData, ci)))">@CellFormat.Value(Cols[ci].Get(RowData))</div>
+        var value = Cols[ci].Get(RowData);
+        var cls = Tone is null ? CellFormat.Class(Meta(RowData, ci)) : CellFormat.Class(Meta(RowData, ci), Tone(value));
+        <div class="@(sel ? cls + " sel" : cls)">@CellFormat.Value(value)</div>
     }
 </div>
 
@@ -34,6 +36,9 @@
     [Parameter] public Col[] Cols { get; set; } = [];
     [Parameter] public int VisibleCols { get; set; }
     [Parameter] public Func<Row, int, CellState> Meta { get; set; } = default!;
+    /// <summary>The per-cell tone rule (RowComponentTone), or null for none. Cached by the
+    /// parent for the same reason Meta is.</summary>
+    [Parameter] public Func<object, CellTone>? Tone { get; set; }
     /// <summary>Bumped by the Consumer when a row's contents changed without changing identity.</summary>
     [Parameter] public int Version { get; set; }
     /// <summary>Selected column range within this row, or -1/-1 when selection is painted by an overlay.</summary>

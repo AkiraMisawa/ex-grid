@@ -354,7 +354,9 @@
                     <div class="ex-popover-list">
                         @foreach (var value in domain.Values)
                         {
-                            var text = value?.ToString() ?? "(Blanks)";
+                            var text = value is null
+                                ? "(Blanks)"
+                                : Columns[panelColumn].Format is { } format ? format(value) : value.ToString() ?? "";
                             if (_panelSearch.Length > 0 && !text.Contains(_panelSearch, StringComparison.OrdinalIgnoreCase))
                                 continue;
                             var item = value;

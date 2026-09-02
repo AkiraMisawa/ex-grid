@@ -259,6 +259,13 @@
     pointer-events: auto;
 }
 .ex-menu-button::after { content: "▾"; opacity: 0.55; }
+/* A header cell that carries the button keeps its label out from under it: the
+   button's band is added to the right padding, the same band the Auto header estimate
+   adds. A left-aligned label does not move; a right-aligned one ends where the button
+   begins instead of beneath it. */
+.ex-header-cell:has(> .ex-menu-button) {
+    padding-right: calc(var(--ex-cell-padding-x, 8px) + var(--ex-menu-button-width, 16px) + var(--ex-menu-button-inset, 6px));
+}
 /* A popover (ADR-0009/0010/0018): anchored to the instance root, outside the scroll
    container, so it is never clipped and never tangles across instances. */
 .ex-popover {
@@ -344,6 +351,13 @@
     clip-path: inset(50%);
     white-space: nowrap;
 }
+/* Tone (ADR-0006/0029): the meaning a column's rule attached to the value — a gain, a
+   loss — as the theme's tokens paint it. No default colour: the bare grid paints a
+   toned cell as an ordinary one until a token says otherwise, which is Excel's default
+   number format too. Declared before the Cell State block, so a state the Consumer
+   named outranks a tone its rule derived. */
+.ex-cell.ex-tone-positive { color: var(--ex-tone-positive-color, inherit); }
+.ex-cell.ex-tone-negative { color: var(--ex-tone-negative-color, inherit); }
 /* The column rule, transparent by default (ADR-0029): an inset shadow on the cell's
    right edge — painted, never a border. A Modified cell's own mark overrides it;
    the state must never be the one that disappears (ADR-0006). */

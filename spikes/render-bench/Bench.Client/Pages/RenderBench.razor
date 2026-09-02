@@ -19,7 +19,7 @@
     <label>Rows moved per step <input type="number" @bind="Step" min="1" max="200" /></label>
     <label>Iterations <input type="number" @bind="Iterations" min="20" max="2000" /></label>
     <span class="cells">= @(VisibleRows * VisibleCols) cells/render</span>
-    <button @onclick="RunAllAsync" disabled="@_running">@(_running ? "measuring…" : "Measure all 5 modes")</button>
+    <button @onclick="RunAllAsync" disabled="@_running">@(_running ? "measuring…" : "Measure all modes")</button>
     <button @onclick="RunSelectionAsync" disabled="@_running">Measure selection drag (rows fixed)</button>
 </div>
 
@@ -96,9 +96,9 @@
             {
                 var row = _rows[(_startRow + r) % TotalRows];
 
-                if (_mode == CellRenderMode.RowComponent)
+                if (_mode is CellRenderMode.RowComponent or CellRenderMode.RowComponentTone)
                 {
-                    <BenchRow @key="row.Id" RowData="row" Cols="_cols" VisibleCols="VisibleCols" Meta="_metaFn"
+                    <BenchRow @key="row.Id" RowData="row" Cols="_cols" VisibleCols="VisibleCols" Meta="_metaFn" Tone="@(_mode == CellRenderMode.RowComponentTone ? _toneFn : null)"
                               SelFrom="@RowSelFrom(_startRow + r)" SelTo="@RowSelTo(_startRow + r)" />
                 }
                 else
@@ -179,6 +179,7 @@
     // Cached: BenchRow only skips re-rendering if every parameter compares equal,
     // and a method group creates a NEW delegate instance on each render.
     private Func<Row, int, CellState>? _metaFn;
+    private Func<object, CellTone>? _toneFn;
 
     // Selection benchmark: a rectangle that slides down the grid one row per
     // iteration, imitating a drag-select. Scroll position is held fixed so the
@@ -190,6 +191,7 @@
     protected override void OnInitialized()
     {
         _metaFn = Meta;
+        _toneFn = Sign;
         var rnd = new Random(42);
         _rows = new Row[TotalRows];
         for (var i = 0; i < TotalRows; i++)
@@ -245,6 +247,9 @@
 
     private static string StateClass(CellState s) => CellFormat.Class(s);
 
+    // The tone rule as a Consumer would write it: one unbox and one comparison.
+    private static CellTone Sign(object v) => v is decimal d ? d < 0 ? CellTone.Negative : d > 0 ? CellTone.Positive : CellTone.None : CellTone.None;
+
     private static string ModeNote(string mode) => mode switch
     {
         nameof(CellRenderMode.Direct) => "the floor, no abstraction",
@@ -253,6 +258,7 @@
         "Sel:PerCellClass" => "selection painted with per-cell CSS classes (defeats row memoisation)",
         "Sel:Overlay" => "selection painted with one absolutely positioned overlay (rows never repaint)",
         nameof(CellRenderMode.RowComponent) => "boundary at the row (row = component, cells = plain markup)",
+        nameof(CellRenderMode.RowComponentTone) => "+ a per-cell tone rule on the row boundary (ADR-0006)",
         nameof(CellRenderMode.Component) => "+ every cell a Blazor component",
         _ => "",
     };

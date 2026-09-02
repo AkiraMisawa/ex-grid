@@ -1,4 +1,5 @@
 @page "/mud"
+@using System.Globalization
 @using ExGrid.Chrome
 @using global::ExGrid.MudBlazor
 @* global::, because inside this project's namespace a bare "MudBlazor" resolves to
@@ -101,7 +102,8 @@
             {
                 Book = books[i % books.Length],
                 Trader = traders[(i / 3) % traders.Length],
-                Notional = 1_000_000m + (i * 12_345.67m),
+                // Every fifth trade is a loss, for the tone rule below.
+                Notional = (i % 5 == 4 ? -1 : 1) * (1_000_000m + (i * 12_345.67m)),
                 TradeDate = new DateTime(2026, 1, 1).AddDays(i % 200),
                 Confirmed = i % 3 != 0,
             };
@@ -115,20 +117,38 @@
                 width: new ColumnWidthSpec(ColumnWidth.Fixed(110)), filterUi: FilterUiMode.Both),
             new("Trader", ColumnType.Text, t => t.Trader,
                 width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), editable: true),
+            // Numbers right, everything else left — the date too, which Auto would set
+            // right as it does every fixed-width value (ADR-0016). Headers are text, so
+            // they stay left whatever the column holds, as Excel's do.
             new("Notional", ColumnType.Number, t => t.Notional,
-                width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true),
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true, format: Thousands, tone: Sign),
             new("TradeDate", ColumnType.Date, t => t.TradeDate,
-                width: new ColumnWidthSpec(ColumnWidth.Fixed(170))),
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(130)), align: CellAlign.Left, format: IsoDate),
             new("Confirmed", ColumnType.Boolean, t => t.Confirmed,
-                width: new ColumnWidthSpec(ColumnWidth.Fixed(100))),
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
         ];
         _secondColumns =
         [
             new("Book", ColumnType.Text, t => t.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(110))),
             new("Trader", ColumnType.Text, t => t.Trader, width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
-            new("Notional", ColumnType.Number, t => t.Notional, width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
+            new("Notional", ColumnType.Number, t => t.Notional, width: new ColumnWidthSpec(ColumnWidth.Fixed(140)),
+                format: Thousands, tone: Sign),
         ];
     }
+
+    private static string IsoDate(object value)
+        => ((DateTime)value).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    /// <summary>Thousands separated, rounded to the unit — the display only; the value
+    /// keeps its decimals, and copy's text/html carries them (ADR-0005).</summary>
+    private static string Thousands(object value)
+        => ((decimal)value).ToString("N0", CultureInfo.InvariantCulture);
+
+    /// <summary>The Consumer's tone rule (ADR-0006): a loss is Negative. The Wrapper's
+    /// stylesheet paints that in the palette's error colour; the grid itself paints
+    /// nothing for it.</summary>
+    private static CellTone Sign(object value)
+        => (decimal)value < 0 ? CellTone.Negative : CellTone.None;
 
     private void OnEdit(GridEditIntent<DemoTrade> intent)
     {
@@ -138,7 +158,8 @@
         _editStatus = $"{intent.Column}={intent.Value} on {row.Book}/{row.Trader}";
         if (intent.Column == "Trader")
             _source.ReplaceRow(row, new DemoTrade { Book = row.Book, Trader = intent.Value, Notional = row.Notional, TradeDate = row.TradeDate, Confirmed = row.Confirmed });
-        else if (intent.Column == "Notional" && decimal.TryParse(intent.Value, out var notional))
+        else if (intent.Column == "Notional"
+                 && decimal.TryParse(intent.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var notional))
             _source.ReplaceRow(row, new DemoTrade { Book = row.Book, Trader = row.Trader, Notional = notional, TradeDate = row.TradeDate, Confirmed = row.Confirmed });
         else
             _editStatus += " (not applied)";

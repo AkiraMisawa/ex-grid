@@ -21,6 +21,7 @@ meaning, without an ADR. It marks a **meaning**, never a mechanism.
 | `ex-cell` | one cell; `ex-cell-numeric` joins it on the numeric presentation ([ADR-0016](./0016-column-width-and-overflow.md)) |
 | `ex-pinned` | a Pinned Column's cell, body or header |
 | `ex-state-stale / -missing / -error / -modified` | Cell State ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
+| `ex-tone-positive / -negative` | the Column's tone rule's answer about the value — a gain, a loss ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)); a meaning, never a colour, and `None` adds nothing |
 | `ex-range`, `ex-focus` | a selection rectangle and the Focus outline ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) |
 | `ex-action`, `ex-interactive` | the grid's own action button; a Consumer's control that takes its own pointer events ([ADR-0020](./0020-action-and-template-columns.md)) |
 | `ex-editor` | the floating Cell Editor; `ex-editing` joins the root while it stands ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) |
@@ -90,6 +91,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Pinned | `--ex-pinned-background` *(exists)* |
 | Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(reserved — the border Excel draws around the range's perimeter; decided with the selection paint polish)*, `--ex-focus-outline` *(exists)*, `--ex-grid-focus-outline` *(exists)* |
 | Cell State | the six `--ex-state-*` *(exist)* |
+| Tone | `--ex-tone-positive-color`, `--ex-tone-negative-color` — default `inherit`, so a declared tone paints nothing until a theme says what colour it is ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | Row Kind | the four `--ex-row-group/total-*` *(exist)* |
 | Placeholder / loading | `--ex-placeholder-background`, `--ex-loading-opacity` |
 | Editor | `--ex-editor-background`, `--ex-editor-color`, `--ex-editor-outline` |
@@ -108,7 +110,7 @@ door back into everything ADR-0027 closed (`style="height: 40px"` on a cell is g
 CSS), a `Class` parameter is an invitation to rules on arbitrary elements, and a per-cell style
 string is an allocation in the render loop (P5). The escape hatches are exactly three, each with
 its price on the label: **Visual Tokens** for instance-wide appearance, **closed enums painted as
-interned classes** (Cell State, Row Kind, alignment) for per-column and per-cell meaning, and a
+interned classes** (Cell State, Row Kind, alignment, tone) for per-column and per-cell meaning, and a
 **Template Column** for arbitrary content, paid for per column
 ([ADR-0020](./0020-action-and-template-columns.md)).
 
@@ -121,6 +123,7 @@ interned classes** (Cell State, Row Kind, alignment) for per-column and per-cell
 | grid holds the keyboard | `:focus-visible` on the root | [ADR-0018](./0018-multiple-instances-must-be-independent.md) requires the live grid to be tellable |
 | editing | `ex-editor` on the floating input; `ex-editing` on the root | one element exists; no row knows |
 | error / stale / missing / modified | Cell State classes | the closed vocabulary below |
+| a gain / a loss | tone classes, from the Column's rule | the Consumer says when; the theme says what colour; the grid derives nothing from a sign on its own ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | pending / dirty / disabled / anything else | **mapped onto Cell State by the Consumer or Wrapper** | ADR-0006: the Consumer's vocabulary does not enter the grid — a design system's does not either. `dirty` is `modified`; `pending` is `stale` or `missing`; a state that maps to none of the five is a Template Column or a case for amending ADR-0006, not a per-wrapper class |
 | loading | `ex-loading` + Placeholder rows | one mechanism ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)) |
 | row role | Row Kind classes | |

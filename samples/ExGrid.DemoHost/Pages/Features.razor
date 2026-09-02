@@ -132,14 +132,22 @@
             width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true,
             validate: _rules.ValidatorFor("Notional")),
         // Deliberately too narrow for its values: what #### looks like, and what the
-        // clipboard must never receive (ADR-0016 / CP-5).
+        // clipboard must never receive (ADR-0016 / CP-5). The label is the full word,
+        // so the header's own ellipsis is the real thing and widening the column
+        // restores it along with the values.
         new("Narrow", ColumnType.Number, t => t.Notional,
-            header: "N…", width: new ColumnWidthSpec(ColumnWidth.Fixed(48))),
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(48))),
+        // ISO, and the widths sum under the Viewport minus its scrollbar gutter: a
+        // horizontal bar here would sit exactly where the browser suite drags into the
+        // bottom edge band (SL-14/15), the CLAUDE.md gutter trap in its purest form.
         new("TradeDate", ColumnType.Date, t => t.TradeDate,
-            width: new ColumnWidthSpec(ColumnWidth.Fixed(170))),
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), format: IsoDate),
         new("Confirmed", ColumnType.Boolean, t => t.Confirmed,
-            width: new ColumnWidthSpec(ColumnWidth.Fixed(100))),
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
     ];
+
+    private static string IsoDate(object value)
+        => ((DateTime)value).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
     private string _editStatus = "—";
     private string _pasteStatus = "—";
@@ -299,7 +307,8 @@
             .Select(c => c.Name == change.Column
                 ? new GridColumn<DemoTrade>(c.Name, c.Type, c.Value, c.Header,
                     new ColumnWidthSpec(ColumnWidth.Fixed(Math.Max(40, change.WidthPx)), maxWidthPx: Math.Max(400, change.WidthPx)),
-                    editable: c.Editable, filterUi: c.FilterUi)
+                    editable: c.Editable, filterUi: c.FilterUi, align: c.Align, headerAlign: c.HeaderAlign,
+                    validate: c.Validate, format: c.Format, tone: c.Tone)
                 : c)
             .ToArray();
     }

@@ -41,6 +41,10 @@
     --ex-placeholder-background: var(--mud-palette-skeleton);
     --ex-resize-guide-color: var(--mud-palette-primary);
     --ex-drop-indicator-color: var(--mud-palette-primary);
+    /* Tone (ADR-0006): a loss in the palette's error, a gain in its success. The
+       Consumer's rule says which cell; the palette says which colour. */
+    --ex-tone-negative-color: var(--mud-palette-error);
+    --ex-tone-positive-color: var(--mud-palette-success);
     /* Cell State (ADR-0006): the palette's own error and info. */
     --ex-state-error-color: var(--mud-palette-error);
     --ex-state-modified-mark: var(--mud-palette-info);

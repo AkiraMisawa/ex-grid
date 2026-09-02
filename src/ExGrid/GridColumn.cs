@@ -26,10 +26,12 @@ public sealed record GridColumn<TRow>
         FilterUiMode filterUi = FilterUiMode.Condition,
         CellAlign align = CellAlign.Auto,
         CellAlign headerAlign = CellAlign.Auto,
-        Func<TRow, string, EditVerdict>? validate = null)
+        Func<TRow, string, EditVerdict>? validate = null,
+        Func<object, string>? format = null,
+        Func<object, CellTone>? tone = null)
         : this(name, type, value, header, width, [], null, queryable: true,
             editable: editable, filterUi: filterUi, align: align, headerAlign: headerAlign,
-            validate: validate)
+            validate: validate, format: format, tone: tone)
     {
     }
 
@@ -46,7 +48,9 @@ public sealed record GridColumn<TRow>
         FilterUiMode filterUi = FilterUiMode.Condition,
         CellAlign align = CellAlign.Auto,
         CellAlign headerAlign = CellAlign.Auto,
-        Func<TRow, string, EditVerdict>? validate = null)
+        Func<TRow, string, EditVerdict>? validate = null,
+        Func<object, string>? format = null,
+        Func<object, CellTone>? tone = null)
     {
         if (align is not (CellAlign.Auto or CellAlign.Left or CellAlign.Center or CellAlign.Right))
             throw new ArgumentOutOfRangeException(nameof(align), align, null);
@@ -69,6 +73,8 @@ public sealed record GridColumn<TRow>
         Align = align;
         HeaderAlign = headerAlign;
         Validate = validate;
+        Format = format;
+        Tone = tone;
     }
 
     /// <summary>
@@ -124,10 +130,11 @@ public sealed record GridColumn<TRow>
         Func<TRow, object?> value,
         RenderFragment<TRow> template,
         string? header = null,
-        ColumnWidthSpec? width = null)
+        ColumnWidthSpec? width = null,
+        Func<object, string>? format = null)
     {
         ArgumentNullException.ThrowIfNull(template);
-        return new GridColumn<TRow>(name, type, value, header, width, [], template, queryable: true);
+        return new GridColumn<TRow>(name, type, value, header, width, [], template, queryable: true, format: format);
     }
 
     /// <summary>The slice filtering and sorting need — handed to the engine as-is.</summary>
@@ -170,6 +177,28 @@ public sealed record GridColumn<TRow>
 
     /// <summary>The header cell's own alignment; Auto is the header's default (left).</summary>
     public CellAlign HeaderAlign { get; }
+
+    /// <summary>
+    /// The column's display format (ADR-0006): the text a non-null value paints as, or
+    /// null for the value's own <c>ToString()</c>. A null value paints empty either way —
+    /// an absent value is a Cell State, not a format's business. This is the ONE text the
+    /// grid shows for a value, so it is also what copy puts in <c>text/plain</c>, what the
+    /// value list offers, what the Auto width estimates over and what the editor opens
+    /// with (ADR-0005/0016); the raw, locale-free <c>text/html</c> form never goes through
+    /// it. The Consumer's delegate owns the culture: the grid takes no view on separators.
+    /// </summary>
+    public Func<object, string>? Format { get; }
+
+    /// <summary>
+    /// The column's tone rule (ADR-0006): what a non-null value means — a gain, a loss —
+    /// for the theme to paint, or null for no rule. The Consumer declares WHEN; the
+    /// theme's tokens say what colour, and the bare grid paints none, as Excel's default
+    /// number format does. A null value has no tone and the rule is not asked. Painted as
+    /// an interned class per <see cref="CellTone"/>, so the rule may return a different
+    /// answer per row at no allocation; it is called once per painted cell, on the row's
+    /// render path, and should stay a comparison.
+    /// </summary>
+    public Func<object, CellTone>? Tone { get; }
 
     /// <summary>Whether this column's filter offers a value list, only conditions, or
     /// both (ADR-0009). Declared here because only the Consumer knows the cardinality;

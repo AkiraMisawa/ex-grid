@@ -33,9 +33,10 @@ async function open(page) {
     await page.goto('/mud');
     await expect(gridA(page).locator('.ex-row').first()).toBeVisible();
     await expect(gridB(page).locator('.ex-row').first()).toBeVisible();
-    // The Wrapper's stylesheet has landed when its token reaches the root.
-    await expect.poll(async () => gridA(page).evaluate((g) => getComputedStyle(g).getPropertyValue('--ex-header-font-weight').trim()))
-        .toBe('500');
+    // The Wrapper's stylesheet has landed when one of its tokens reaches the root —
+    // one the page's own stylesheet does not restate (the header tokens it does).
+    await expect.poll(async () => gridA(page).evaluate((g) => getComputedStyle(g).getPropertyValue('--ex-editor-outline').trim()))
+        .not.toBe('');
 }
 
 // Relative luminance and contrast ratio, WCAG's definitions, for UX-9.
@@ -120,6 +121,28 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         expect(contrast(outline, ground), `focus outline against the cell ground, dark=${dark}`).toBeGreaterThanOrEqual(3);
         expect(colours.fill).not.toBe('rgba(0, 0, 0, 0)');
     }
+});
+
+test('a loss is painted in the palette\'s error colour by the Consumer\'s tone rule, and only there (ADR-0006, FN-7a)', async ({ page }) => {
+    await open(page);
+    // Every fifth trade is negative in the fixture; the rule marks it, the Wrapper's
+    // token colours it, and a gain the rule says nothing about stays the ink colour.
+    const loss = gridA(page).locator('.ex-row').nth(4).locator('.ex-cell').nth(2);
+    const gain = gridA(page).locator('.ex-row').nth(3).locator('.ex-cell').nth(2);
+    await expect(loss).toHaveClass(/ex-tone-negative/);
+    await expect(gain).not.toHaveClass(/ex-tone-/);
+    const colours = await gridA(page).evaluate((g, [lossIdx, gainIdx]) => {
+        const cell = (r) => g.querySelectorAll('.ex-row')[r].querySelectorAll('.ex-cell')[2];
+        const probe = document.createElement('span');
+        probe.style.color = 'var(--mud-palette-error)';
+        g.appendChild(probe);
+        const error = getComputedStyle(probe).color;
+        probe.remove();
+        return { loss: getComputedStyle(cell(lossIdx)).color, gain: getComputedStyle(cell(gainIdx)).color, ink: getComputedStyle(g).color, error };
+    }, [4, 3]);
+    expect(colours.loss).toBe(colours.error);
+    expect(colours.gain).toBe(colours.ink);
+    expect(colours.loss).not.toBe(colours.ink);
 });
 
 test('a theme switch re-renders nothing inside the grid: the rows are the same elements (RR-1)', async ({ page }) => {
