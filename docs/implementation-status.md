@@ -45,7 +45,8 @@ and on Edge, and layer 3 says so rather than the ADR assuming it.
 
 The error popover's hover trigger (ED-17b) was left failing for one round and is now built. It
 took **ADR-0021's fifth allowlist entry**: JavaScript hears the pointer moves and reports only the
-stillness, because a Blazor handler on the Viewport is a wire round trip per frame on a Server
+stillness — and, since the Wrapper branch merged, a move onto another row, for the hover band —
+because a Blazor handler on the Viewport is a wire round trip per frame on a Server
 circuit — which the grid had already pinned as unaffordable in
 `The_grid_does_not_listen_for_moves_until_a_drag_begins`, whose comment is the reason ADR-0021
 asks for. The module decides nothing: it reports the offsets the browser hands it, and C# resolves
@@ -92,19 +93,29 @@ against the newer of last-event and last-write (recorded in ADR-0012), and pinne
 | 0034 | **The verdict seam** — Accept/Flag/Reject at the commit, the editor holding under a Reject, the message channel and its popover, the fill's verdict, and the bundled ruleset. Not the hover trigger (ED-17b) | `ValidationTests`, `GridRulesetTests`, `features.spec.mjs` |
 | 0036 | **The context menu** — the secondary click's meaning, the core's clipboard commands and the Consumer's, the keyboard trigger, and `GridCommand` losing its label | `ContextMenuTests`, `FilterChromeTests`, `features.spec.mjs` |
 | 0035 | **The Editable declaration gates writes** — a paste or Ctrl+Enter fill covering a non-editable column is refused whole, and the fill refusal is no longer silent (CP-16) | `PasteRuleTests`, `ClipboardWiringTests`, `CellEditorTests` |
+| 0021 (fifth entry) / 0029 | **The hover band** — the pointer reported by JavaScript only when it moves onto another row (offsets; the cell is resolved in C#), the band painted by the overlay like the Focus band, `HighlightHoverRow`, `--ex-row-hover-background` made real; off by default and then not even computed | `HoverBandTests`, `mud.spec.mjs` (UX-13, real mouse) |
+| 0030 | **`GridPresentationDefaults`** — the one cascaded value a Wrapper hands down: glyph widths at their measured size, a default Density, a default for the hover switch; an explicit parameter beats each | `GridPresentationDefaultsTests`, `PresentationDefaultsWiringTests` |
 
 ## Not in the core, by decision
 
-- **0019 / 0030** `ExGrid.MudBlazor` and `ExGrid.Fluxor` — out of the core DoD's scope;
-  the Wrapper-facing contract (tokens, metrics, seams, `ex-*` classes) is in place.
+- **0019 / 0030** `ExGrid.Fluxor` — not started. **`ExGrid.MudBlazor` exists** as the
+  proof of the Wrapper boundary (`src/ExGrid.MudBlazor`, `tests/ExGrid.MudBlazor.Tests`,
+  the `/mud` page and `mud.spec.mjs`): `MudExGridPaper` (elevation, corners, outline,
+  bordered, a toolbar slot, Dense and Hover cascaded as defaults), Roboto's measured
+  widths, the Visual Tokens mapped onto MudBlazor's palette variables in the Wrapper's
+  stylesheet, and `MudGridChrome` filling two seams — the Cell Editor (a bare input in
+  the core's box) and the loading bar. The filter panel and the column menu still fall
+  back to the core's. Nothing in `src/ExGrid` references MudBlazor (PRE-4).
 - **Interactive mode's keyboard entry** (Space into a multi-action or Template cell,
   ADR-0020) is partial: Space fires a single action; entering *into* a cell's control by
   key is not wired (focus into plain-markup cells needs a decision the ADRs do not make).
   The way **out** is wired: Escape from any focusable descendant returns the keyboard to
   the grid (KB-18), read off the event target rather than a mode flag.
-- **`--ex-row-hover-background`** (ADR-0029's hover token) cannot work as written:
-  rows are `pointer-events: none` by the delegated hit-test design, so `:hover` never
-  matches them. Declared as a known contradiction to settle in ADR-0029, not papered over.
+- **`--ex-row-hover-background`** (ADR-0029's hover token) could not work as written —
+  rows are `pointer-events: none`, so `:hover` never matches them — and is now real by
+  another route: the fifth allowlist entry of ADR-0021 reports the pointer moving onto another
+  row, and the token colours an overlay band (the hover row above).
+  ADR-0034's popover hover trigger consumes the same listener's other report, the rest.
 - *(FN-20 landed late in the run: `GetFocusedValue()` serves the formula-bar role.)*
 
 ## Verification
@@ -122,8 +133,12 @@ against the newer of last-event and last-write (recorded in ADR-0012), and pinne
    `spikes/render-bench` entry (PF-8), and the CON-3/6 instrumentation.
 2. **The other machine** — an Edge run, and a Windows or Linux run for VZ-10's real
    clause; both are hard DoD requirements the development Mac cannot discharge.
-3. The hover-token contradiction (recorded in ADR-0029) and Interactive mode's
-   keyboard entry.
+3. Interactive mode's keyboard entry; the hover band's owed numbers — a
+   `spikes/render-bench` mode for the band's paint, and a Blazor Server host to measure
+   the pointer report under (ADR-0021, fifth entry; none exists in the repository).
+4. `ExGrid.MudBlazor`'s remaining seams — the filter panel and the column menu as
+   content inside the core's popover — and `Striped`, reserved until the core emits a
+   row-parity class (ADR-0030).
 
 ## Where the exit criteria stand
 

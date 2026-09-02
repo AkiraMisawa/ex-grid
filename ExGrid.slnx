@@ -1,6 +1,8 @@
 <Solution>
   <Project Path="samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj" />
   <Project Path="src/ExGrid/ExGrid.csproj" />
+  <Project Path="src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj" />
   <Project Path="tests/ExGrid.Components/ExGrid.Components.csproj" />
+  <Project Path="tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj" />
   <Project Path="tests/ExGrid.Tests/ExGrid.Tests.csproj" />
 </Solution>

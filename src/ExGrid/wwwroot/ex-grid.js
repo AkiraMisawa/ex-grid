@@ -1,7 +1,8 @@
 // The five permitted uses of JavaScript (ADR-0021): the capture-phase keydown listener,
 // reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
-// out of the box, and reporting when the pointer has come to rest. Anything else — text
-// measurement, overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
+// out of the box, and being told about the pointer — when it moves onto another row, and
+// when it comes to rest. Anything else — text measurement, overlay geometry, popovers —
+// stays in C#; adding to this file needs an ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
@@ -139,38 +140,83 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             });
     };
 
-    // The fifth allowlist entry (ADR-0021): the moves are heard here and only the
-    // stillness is reported. A Blazor handler on the Viewport would cost an interop call
-    // per move — a wire round trip per frame on a Server circuit, which is why the grid
-    // has never listened for moves outside a drag. This decides nothing: it reports the
-    // offsets the browser hands it, and C# resolves which cell that is from its own
-    // geometry (ADR-0034).
+    // The fifth allowlist entry (ADR-0021): the moves are heard here, and two things —
+    // only two — are reported. The pointer coming to REST, for the error popover
+    // (ADR-0034); and the pointer moving onto another ROW, for the hover band
+    // (ADR-0029). A Blazor handler on the Viewport would cost an interop call per move —
+    // a wire round trip per frame on a Server circuit, which is why the grid has never
+    // listened for moves outside a drag. Neither report decides anything: both carry the
+    // offsets the browser hands the event, and C# resolves which cell that is from its
+    // own geometry, once, in one place. The row is worked out here only to know whether
+    // a move is worth reporting — from the row height C# wrote inline on the root and
+    // the translation it wrote on the Viewport, both read as text, never measured — and
+    // the number itself never crosses. Each report is switched on by C# only while
+    // something consumes it; off, nothing here computes.
     let restTimer = 0;
+    let reportRows = false;
+    let reportRest = false;
+    let lastPointerRow = -2;
+    const rowUnder = (viewport, offsetY) => {
+        const rowHeight = parseFloat(root.style.getPropertyValue('--ex-row-height'));
+        if (!(rowHeight > 0)) {
+            return -2;
+        }
+        const match = /translateY\(([-\d.]+)px\)/.exec(viewport.style.transform);
+        const translateY = match ? Number(match[1]) : 0;
+        return Math.floor((offsetY + translateY) / rowHeight);
+    };
     const onPointerMove = (event) => {
         // Cells are pointer-events: none, so the Viewport is what a move over the rows
-        // lands on. Anything else — the header, a Template Column's own control — is not
-        // a cell to describe.
+        // lands on. Anything else — the header, the message popover, a Template Column's
+        // own control — is not a cell to describe, and the last report stands.
         // Cleared first, whatever this move was over: a pending rest armed on the rows and
         // then abandoned for the header would otherwise fire for a cell the pointer left.
         clearTimeout(restTimer);
-        if (!core || !(event.target instanceof Element) || !event.target.classList.contains('ex-viewport')) {
+        if (!core || !(event.target instanceof Element)) {
+            return;
+        }
+        if (!event.target.classList.contains('ex-viewport')) {
+            // Inside the Viewport but on an element that takes its own pointer events
+            // — the editor, a Consumer's control — the band stands where it was. On the
+            // header or a popover there is no row under the pointer: the band goes, and
+            // only the band; the message a rest opened is still being read.
+            if (reportRows && lastPointerRow !== -2 && !event.target.closest('.ex-viewport')) {
+                lastPointerRow = -2;
+                core.invokeMethodAsync('OnPointerAwayAsync', true).catch(() => {});
+            }
             return;
         }
         const x = event.offsetX;
         const y = event.offsetY;
-        restTimer = setTimeout(() => {
-            if (!core) {
-                return;
+        if (reportRows) {
+            const row = rowUnder(event.target, y);
+            if (row !== lastPointerRow) {
+                lastPointerRow = row;
+                core.invokeMethodAsync('OnPointerRowAsync', x, y).catch((error) => {
+                    if (core) {
+                        console.error('[ex-grid] the grid failed to take the pointer row', error);
+                    }
+                });
             }
-            core.invokeMethodAsync('OnPointerRestAsync', x, y).catch(() => {
-                // Disposal can overtake a rest report, and that is not a fault.
-            });
-        }, restDelayMs);
+        }
+        if (reportRest) {
+            restTimer = setTimeout(() => {
+                if (!core) {
+                    return;
+                }
+                core.invokeMethodAsync('OnPointerRestAsync', x, y).catch(() => {
+                    // Disposal can overtake a rest report, and that is not a fault.
+                });
+            }, restDelayMs);
+        }
     };
     const onPointerLeave = () => {
         clearTimeout(restTimer);
+        lastPointerRow = -2;
+        // Unconditionally: a message opened while rests were reported outlives the
+        // switch being turned off, and leaving is what closes it.
         if (core) {
-            core.invokeMethodAsync('OnPointerAwayAsync').catch(() => {});
+            core.invokeMethodAsync('OnPointerAwayAsync', false).catch(() => {});
         }
     };
     root.addEventListener('mousemove', onPointerMove);
@@ -356,6 +402,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     }
 
     return {
+        // The two pointer reports' switches (ADR-0021's fifth entry): rows for the
+        // hover band, rest for the error popover. Told by C#, which knows who consumes
+        // what; off, the listener above computes nothing for that report.
+        setPointerReporting: (rows, rest) => {
+            reportRows = rows === true;
+            reportRest = rest === true;
+            lastPointerRow = -2;
+            if (!reportRest) {
+                clearTimeout(restTimer);
+            }
+        },
+        // The rows moved under a still pointer and C# dropped its band on that paint:
+        // the memory of the last row goes with it, so the next movement — even within
+        // the same row as before the scroll — is reported again. Told from C#, at the
+        // paint, rather than heard here at the scroll event: a move landing between
+        // the two would otherwise be remembered and its band already dropped.
+        forgetPointer: () => {
+            lastPointerRow = -2;
+        },
         // Both axes in one call, deliberately. A trackpad moves them together, and two
         // calls means two round-trips with the browser free to process another scroll
         // event in between — the rows would then be painted from one moment's offset and

@@ -78,7 +78,11 @@ public sealed class GridRuleset<TRow> where TRow : class
             {
                 if (ValidatorFor(column.Name) is not { } rule)
                     continue;
-                var verdict = rule(row, column.Info.Value(row)?.ToString() ?? "");
+                // The same text the editor would show and commit for this cell — the
+                // column's own formatting, not a bare ToString — so a rule written to
+                // the editor's grammar reads the same grammar here (ADR-0034: one
+                // implementation, by edit, paste or program code).
+                var verdict = rule(row, Components.ExGridRow<TRow>.CellText(column, row));
                 if (verdict.Kind is EditVerdictKind.Accept)
                     continue;
                 (found ??= [])[column.Name] = verdict.Message!;

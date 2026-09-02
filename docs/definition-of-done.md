@@ -136,6 +136,7 @@ so conformance is a set comparison rather than a judgement of taste.
 | **UX-10** | SHOULD | `--ex-scrollbar-width` narrows the bar, the gutter changes, and the geometry follows (ADR-0029) | Layer 3 | the Focus stays inside the readable area after the change (the `scrollbar.spec.mjs` invariant) |
 | **UX-11** | MUST | Popovers (filter panel, column menu) are not clipped by the scroll container and do not tangle across instances (ADR-0017/0018) | Layer 3: open the filter on the rightmost column of two grids | fully visible; each grid's popover is its own |
 | **UX-12** | MUST | Accessibility semantics as ADR-0033 specifies them | see **§4.1** | every row of §4.1 passes |
+| **UX-13** | MUST | The row under the pointer is highlighted by an overlay band filled with `--ex-row-hover-background`, on hover alone — no row carries a class, and the band vanishes on leave (ADR-0029, ADR-0021 fifth entry) | Layer 3: real mouse moved down a column of two grids | one band, in the hovered instance only, following the pointer row; none after `mouseleave` |
 
 ---
 
@@ -281,7 +282,7 @@ The grid renders the filter UI and never evaluates a filter.
 | **ED-17** | MUST | The error message is asked for on demand — at popover open, never per render — and the popover opens after **300 ms of stillness**, never permanently (ADR-0034) | Layer 2, counting delegate calls | zero `CellMessageOf` calls while painting; one per open; a run of arrow keys opens nothing |
 | **ED-18** | MUST | A **clipboard** paste is never rejected on value: shape refusals are unchanged, and no verdict function runs on that path (ADR-0014/0034) | Layer 2 | the validate delegate is not called during a clipboard paste, whatever the payload |
 | **ED-17b** | MUST | The popover **also** opens on hover, after the same 300 ms, and the pointer leaving closes it (ADR-0021/0034) | Layer 2 for the seam, Layer 3 for a real pointer | resting on a flagged cell opens it and asks once; resting again on the same cell asks nothing more; an open editor's own message outranks it |
-| **ED-17c** | MUST | The pointer is heard in JavaScript and **only its stillness** reaches C# — no interop call per move, because on a Server circuit that is a wire round trip per frame (ADR-0021's fifth entry) | inspect `ex-grid.js`, and the pinned test that the grid does not listen for moves outside a drag | the module throttles locally and calls `OnPointerRestAsync` once per pause; no Blazor `onmousemove` outside `_dragHandler` |
+| **ED-17c** | MUST | The pointer is heard in JavaScript and only **its stillness, and its moving onto another row**, reach C# — never a call per move, because on a Server circuit that is a wire round trip per frame; and neither report is made while nothing consumes it (ADR-0021's fifth entry) | inspect `ex-grid.js`, and the pinned test that the grid does not listen for moves outside a drag | the module throttles locally and calls `OnPointerRestAsync` once per pause and `OnPointerRowAsync` once per row crossed, each only when switched on; no Blazor `onmousemove` outside `_dragHandler` |
 | **ED-19** | MUST | A fill refused for covering a non-editable column holds the editor open with the typed text intact, and the gestures the refusal did not name keep their meaning — Enter still commits the one cell (ADR-0035) | Layer 2 + Layer 3 | the editor survives the refusal; Enter then raises one Edit Intent, and the fill raises none |
 | **ED-20** | MUST | A Ctrl+Enter fill **is** judged on value: the verdict runs once, against the row the editor was opened on, and a Reject holds the editor and raises no paste intent — the Editable refusal is asked before it (ADR-0034/0035) | Layer 2 | exactly one validate call per fill; under a Reject the editor survives and `OnPaste` never fires; under a refusal validate is not called at all |
 | **ED-21** | MUST | Text typed and not committed that the grid throws away is **announced with the reason that is true of it** — the order changed, the columns changed, the row left the Window, or the column stopped being Editable (ADR-0011/0035) | Layer 2, one per path | `OnEditDiscarded` carries `OrderChanged` / `ColumnsChanged` / `RowLeftTheWindow` / `ColumnNoLongerEditable`, never a neighbour's reason; no Edit Intent is raised in any of them |
@@ -441,7 +442,7 @@ Structural invariants gate; milliseconds do not (§1).
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
 | **PF-1** | MUST | No per-cell JS interop, and no layout read on the path to a paint (ADR-0021 P4) | grep `src/` for `getBoundingClientRect`, `clientWidth`, `offsetWidth`, `scrollIntoView`; count interop calls per frame in Layer 3 via CDP | zero matches in the component; interop calls per scroll frame ≤ 1 |
-| **PF-2** | MUST | The JS allowlist has exactly the four entries ADR-0021 names, and `ex-grid.js` uses no fifth | read `ex-grid.js` against the ADR table | exact match |
+| **PF-2** | MUST | The JS allowlist has exactly the five entries ADR-0021 names, and `ex-grid.js` uses no sixth | read `ex-grid.js` against the ADR table | exact match |
 | **PF-3** | MUST | Per-cell strings are interned or cached alongside the geometry that produced them, never composed in the render loop (ADR-0027 P5) | inspect `CellClasses` / `RowClasses` / `ColumnStyles`; Layer 2 allocation test | zero string allocation per cell per render |
 | **PF-4** | MUST | Scroll offsets are read once per frame, both axes in one call (ADR-0021) | Layer 2 `OffsetReads` | one read per scroll event, never two |
 | **PF-5** | MUST | Selection painting cost is a function of the number of rectangles, not of the number of cells or the size of the selection (ADR-0008) | Layer 2 | element count and render count independent of selection area |
@@ -493,6 +494,7 @@ ADR-0027 P3 states the expectation precisely, which makes this the most mechanic
 | **RR-8** | MUST | A Scrollbar Gutter report carrying no change renders nothing | Layer 2 | `RenderCount` unchanged |
 | **RR-9** | MUST | Delegates passed as parameters are cached in fields, never method groups | inspect `ExGrid.razor` | no method group in a parameter position |
 | **RR-10** | MUST | `ShouldRender` is hand-written wherever memoisation is claimed (ADR-0003) | inspect | present on `ExGridRow` and on the root |
+| **RR-11** | MUST | The pointer-row report (ADR-0021, fifth entry) reaches .NET only when the pointer crosses a row, and a hover-row change re-renders no row — the band is the overlay's (ADR-0029) | Layer 2 counting `RenderCount`; inspect `ex-grid.js` for the row filter | a report onto the row already held renders nothing; row counts unchanged across a hover change |
 
 ---
 
@@ -684,7 +686,7 @@ grep -rn "OrderBy\|Where(" src/ExGrid/Components/                               
 grep -o -- "--ex-[a-z-]*" src/ExGrid/wwwroot/ex-grid.css | sort -u                # UX-1, UX-4
 ```
 
-Read `ex-grid.js` against ADR-0021's four-entry table (PF-2), and `ExGrid.razor` for RR-9/RR-10.
+Read `ex-grid.js` against ADR-0021's five-entry table (PF-2), and `ExGrid.razor` for RR-9/RR-10.
 
 ### Step 4 — Layer 3, real browsers
 

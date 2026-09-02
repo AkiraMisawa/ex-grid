@@ -130,7 +130,7 @@
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
                 @if (_visible is { } visible)
                 {
-                    @if (!_selection.Selection.IsEmpty)
+                    @if (!_selection.Selection.IsEmpty || HoverRowRange is not null)
                     {
                         @* One element per range, so what selection costs to paint depends
                            on how many rectangles there are and never on how many cells
@@ -143,39 +143,56 @@
                         @* Paint, not content (ADR-0008/0033): a role="grid" whose rows
                            are interleaved with unnamed divs is a malformed grid. *@
                         <div class="ex-selection-pinned" aria-hidden="true" @key="PinnedSelectionLayerKey">
-                            @* The Focus band (ADR-0008): one more rectangle, first in
-                               the layer so every range stays readable over it. *@
-                            @if (HighlightFocusRow && SelectionStyles.Pinned(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedBand)
+                            @* The hover band (ADR-0029, ADR-0021's fifth entry): the row
+                               under the pointer, painted exactly as the Focus band is —
+                               one rectangle, beneath everything, no row told. *@
+                            @if (HoverRowRange is { } hoverRow && SelectionStyles.Pinned(hoverRow, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedHover)
                             {
-                                <div class="ex-focus-row" style="@pinnedBand"></div>
+                                <div class="ex-hover-row" style="@pinnedHover"></div>
                             }
-                            @foreach (var range in _selection.Selection.Ranges)
+                            @if (!_selection.Selection.IsEmpty)
                             {
-                                @if (SelectionStyles.Pinned(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fill)
+                                @* The Focus band (ADR-0008): one more rectangle, first in
+                                   the layer so every range stays readable over it. *@
+                                @if (HighlightFocusRow && SelectionStyles.Pinned(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedBand)
                                 {
-                                    <div class="ex-range" style="@fill"></div>
+                                    <div class="ex-focus-row" style="@pinnedBand"></div>
                                 }
-                            }
-                            @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedFocus)
-                            {
-                                <div class="ex-focus" style="@pinnedFocus"></div>
+                                @foreach (var range in _selection.Selection.Ranges)
+                                {
+                                    @if (SelectionStyles.Pinned(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fill)
+                                    {
+                                        <div class="ex-range" style="@fill"></div>
+                                    }
+                                }
+                                @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedFocus)
+                                {
+                                    <div class="ex-focus" style="@pinnedFocus"></div>
+                                }
                             }
                         </div>
                         <div class="ex-selection" aria-hidden="true" @key="SelectionLayerKey">
-                            @if (HighlightFocusRow && SelectionStyles.Scrollable(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } band)
+                            @if (HoverRowRange is { } hoverRowScrollable && SelectionStyles.Scrollable(hoverRowScrollable, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } hoverBand)
                             {
-                                <div class="ex-focus-row" style="@band"></div>
+                                <div class="ex-hover-row" style="@hoverBand"></div>
                             }
-                            @foreach (var range in _selection.Selection.Ranges)
+                            @if (!_selection.Selection.IsEmpty)
                             {
-                                @if (SelectionStyles.Scrollable(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fill)
+                                @if (HighlightFocusRow && SelectionStyles.Scrollable(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } band)
                                 {
-                                    <div class="ex-range" style="@fill"></div>
+                                    <div class="ex-focus-row" style="@band"></div>
                                 }
-                            }
-                            @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } focus)
-                            {
-                                <div class="ex-focus" style="@focus"></div>
+                                @foreach (var range in _selection.Selection.Ranges)
+                                {
+                                    @if (SelectionStyles.Scrollable(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fill)
+                                    {
+                                        <div class="ex-range" style="@fill"></div>
+                                    }
+                                }
+                                @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } focus)
+                                {
+                                    <div class="ex-focus" style="@focus"></div>
+                                }
                             }
                         </div>
                     }
@@ -187,6 +204,7 @@
                     @if (_editMode != EditMode.None)
                     {
                         var editorChrome = Chrome?.CellEditor(BuildEditorContext());
+                        _editorIsChrome = editorChrome is not null;
                         @if (_editingCell.Column < _columnStyles.Geometry.PinnedCount)
                         {
                             <div class="ex-editor-pinned" @key="EditorLayerKey">
@@ -627,6 +645,25 @@
     [Parameter] public bool HighlightFocusRow { get; set; }
 
     /// <summary>
+    /// A translucent band across the row the pointer is over — what every design
+    /// system's table calls <c>Hover</c>. Off by default, and while it is off the
+    /// browser is not asked to report row changes at all: JavaScript notices the
+    /// pointer crossing a row from the geometry the core wrote inline and reports the
+    /// event's offsets only then (ADR-0021's fifth entry); the cell is resolved here.
+    /// Its colour is <c>--ex-row-hover-background</c> (ADR-0029); the band is the
+    /// overlay's, so no row learns anything and none re-renders.
+    /// </summary>
+    [Parameter] public bool HighlightHoverRow { get; set; }
+
+    /// <summary>
+    /// What a Wrapper hands down (ADR-0030): the glyph widths of the font its Theme
+    /// sets, and the Density its density word maps onto. Read only where the
+    /// corresponding parameter was not written — an explicit parameter still wins,
+    /// per value (ADR-0028).
+    /// </summary>
+    [CascadingParameter] public GridPresentationDefaults? Presentation { get; set; }
+
+    /// <summary>
     /// Raised whenever the selection changes, including when it is dropped. The
     /// selected-cell count a status line shows is <see cref="GridSelection.CellCount"/>,
     /// which is the sum of the rectangles' areas and therefore needs no data at all
@@ -897,6 +934,21 @@
     private string _rootStyle = "";
     private bool _rowHeightSupplied;
     private bool _cellMetricsSupplied;
+    private bool _densitySupplied;
+    private bool _hoverSupplied;
+
+    /// <summary>Whether the hover band is on: the parameter where it was written, the
+    /// Wrapper's cascaded default where it was not (ADR-0030), off otherwise.</summary>
+    private bool HoverEnabled
+        => _hoverSupplied ? HighlightHoverRow : Presentation?.HighlightHoverRow ?? HighlightHoverRow;
+
+    // The row under the pointer, resolved from JavaScript's last row-change report
+    // (ADR-0021's fifth entry): absolute, or -1 for none.
+    private int _hoverRow = -1;
+    // What the pointer report was last told: whether to report at all, and the
+    // geometry it computes with. Re-told only when either moves.
+    private bool _jsPointerRows;
+    private bool _jsPointerRest;
 
     // Whether the scroll offset must be re-anchored after this render: a geometry
     // change re-anchors on the first visible row, never the pixel offset (ADR-0028).
@@ -955,6 +1007,10 @@
     private string _editText = "";
     private ElementReference _editorElement;
     private bool _editorNeedsFocus;
+    private int _editorFocusRequest;
+    // Whether the editor standing is a Chrome's fragment rather than the built-in
+    // input — recorded at render, because only the render knows which it painted.
+    private bool _editorIsChrome;
     private bool _jsEditingDirty;
     // What the key gate was last told about whether any column edits (ADR-0010/0020).
     private bool _jsCanEdit;
@@ -1093,6 +1149,8 @@
         // property keeps its value then, and so must the fact that it was written.
         _rowHeightSupplied |= parameters.TryGetValue<double>(nameof(RowHeight), out _);
         _cellMetricsSupplied |= parameters.TryGetValue<CellTextMetrics>(nameof(CellMetrics), out _);
+        _densitySupplied |= parameters.TryGetValue<GridDensity>(nameof(Density), out _);
+        _hoverSupplied |= parameters.TryGetValue<bool>(nameof(HighlightHoverRow), out _);
 
         var sourceSupplied = parameters.TryGetValue<IGridSource<TRow>?>(nameof(Source), out _);
         var supplied = new List<string>();
@@ -1227,12 +1285,16 @@
         // Resolved once, per precedence: explicit parameter > Density preset > default
         // (ADR-0028). Everything below — the arithmetic and the inline tokens — reads
         // this and nothing else.
+        // A Wrapper's cascaded defaults sit one rung below the explicit parameters
+        // (ADR-0030): its Density stands where none was written, and its glyph widths
+        // where no CellMetrics were.
         var previousMetrics = _metrics;
         _metrics = GridMetrics.Resolve(
-            Density,
+            _densitySupplied ? Density : Presentation?.Density ?? Density,
             _rowHeightSupplied ? RowHeight : null,
             HeaderHeight,
-            _cellMetricsSupplied ? CellMetrics : null);
+            _cellMetricsSupplied ? CellMetrics : null,
+            Presentation);
         if (!ReferenceEquals(previousMetrics, _metrics) && previousMetrics != _metrics)
         {
             _rootStyle = "";
@@ -1697,6 +1759,7 @@
         }
         if (_jsEditingDirty)
             await PushEditingModeAsync();
+        await PushPointerReportingAsync();
         // A display-only grid must not take printable keys away from the page
         // (ADR-0010/0020) — the gate is told whether any column edits, and re-told
         // when a parameter change flips the answer.
@@ -1717,7 +1780,10 @@
             _editorNeedsFocus = false;
             try
             {
-                await _editorElement.FocusAsync();
+                // A Chrome's editor focuses its own control (ADR-0010/0030): the core's
+                // reference is the built-in input's, and there is none to focus then.
+                if (!_editorIsChrome)
+                    await _editorElement.FocusAsync();
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
             {
@@ -1868,9 +1934,93 @@
             // Any scrolling at all keeps it unsettled; the delay measures stillness.
             RestartSettleTimer();
         }
+        // The rows moved under a still pointer: the band would stand on a row the
+        // pointer is no longer over. It goes, and the browser is told to forget its
+        // last report with it, so the next movement brings the band back even when it
+        // lands on the same row as before the scroll.
+        if (moved && _hoverRow >= 0)
+        {
+            _hoverRow = -1;
+            _ = ForgetPointerAsync();
+        }
         if (moved || _placeholderMode)
         {
             StateHasChanged();
+        }
+    }
+
+    private async Task ForgetPointerAsync()
+    {
+        if (_scrollHandle is null || _disposed)
+            return;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("forgetPointer");
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+
+    /// <summary>
+    /// The pointer moved onto another row (ADR-0021's fifth entry): JavaScript noticed
+    /// the row change from the geometry C# wrote inline, and reports the event's own
+    /// offsets — which cell that is, is resolved here, by the same <see cref="CellUnder"/>
+    /// every press goes through, clamped as a press is. A report resolving to the row
+    /// already held renders nothing; one that moves the band re-renders the overlay and
+    /// no row.
+    /// </summary>
+    [JSInvokable]
+    public Task OnPointerRowAsync(double x, double y)
+    {
+        if (_disposed || !double.IsFinite(x) || !double.IsFinite(y))
+            return Task.CompletedTask;
+        var row = CellUnder(new MouseEventArgs { OffsetX = x, OffsetY = y })?.Row ?? -1;
+        if (row == _hoverRow)
+            return Task.CompletedTask;
+        _hoverRow = row;
+        if (HoverEnabled)
+            StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>The hover band's rectangle, or null while there is none to paint.</summary>
+    private SelectionRange? HoverRowRange
+        => HoverEnabled && _hoverRow >= 0 && Columns.Count > 0
+            ? new SelectionRange(_hoverRow, 0, 1, Columns.Count)
+            : null;
+
+    /// <summary>
+    /// Keeps the browser-side pointer reports in step with who consumes them: row
+    /// changes while the hover band is on, rests while a Consumer can be asked for a
+    /// message. Re-told only when either answer moves; off, the listener computes
+    /// nothing for that report (ADR-0021's fifth entry).
+    /// </summary>
+    private async Task PushPointerReportingAsync()
+    {
+        if (_scrollHandle is null || _disposed)
+            return;
+        var rows = HoverEnabled;
+        var rest = CellMessageOf is not null;
+        if (rows == _jsPointerRows && rest == _jsPointerRest)
+            return;
+        _jsPointerRows = rows;
+        _jsPointerRest = rest;
+        if (!rows && _hoverRow >= 0)
+            _hoverRow = -1;
+        // A message a rest opened has no consumer to close it once rests stop being
+        // reported; it goes with the switch.
+        if (!rest && _messageCell is not null)
+        {
+            CloseMessage();
+            StateHasChanged();
+        }
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("setPointerReporting", rows, rest);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
         }
     }
 
@@ -2406,7 +2556,7 @@
     /// it lands on, so that what a command will act on is what the user can see; inside
     /// it, the selection stands. The browser's own menu is suppressed declaratively on
     /// the element, which is why no listener is installed and the JavaScript allowlist
-    /// stays at four (ADR-0021).
+    /// gains nothing for it (ADR-0021).
     /// </summary>
     private void OnContextMenu(MouseEventArgs e)
     {
@@ -2431,14 +2581,19 @@
         if (!_selection.Selection.Contains(cell))
             Apply(_selection.Selection.Click(cell, Extent));
 
+        // The click that aimed the menu also armed the Focus's message timer; a message
+        // opening over the menu 300 ms later would cover the items being read.
+        ScheduleMessage(null);
+
         _menuColumn = -1;
         _panelColumn = -1;
         _contextCell = cell;
-        // OffsetX is relative to the Viewport, whose left edge is the content's — the
-        // convention CellUnder works in. The popovers are laid out in viewport space, so
-        // it converts here, exactly as PopoverStyle and CellCorner do.
+        // The offsets are relative to the Viewport, whose left edge is the content's and
+        // whose top edge is the first painted row — the convention CellUnder works in.
+        // The popovers are laid out in viewport space, so both axes convert here,
+        // exactly as CellCorner and the edge band do.
         _contextLeftPx = e.OffsetX - _scrollLeftPx;
-        _contextTopPx = e.OffsetY;
+        _contextTopPx = e.OffsetY + _geometry.OffsetPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow) - _scrollTopPx;
     }
 
     /// <summary>
@@ -2501,18 +2656,24 @@
         _messageText = null;
     }
 
-    /// <summary>A popover at a cell's own corner, clamped to the Viewport and below the
-    /// header band the popovers all sit under (ADR-0027 — the min-width rides the
-    /// instance inline, so the clamp and the laid-out box are one number).</summary>
+    /// <summary>The message popover at its cell's own corner, clamped to the Viewport
+    /// and below the header band the popovers all sit under (ADR-0027 — the widest the
+    /// box may be rides the instance inline, so the clamp and the laid-out box are one
+    /// number, and a message at the rightmost column is wholly on screen).</summary>
     private string CellCornerStyle(CellPosition cell)
     {
         var (left, top) = CellCorner(cell);
-        left = Math.Clamp(left, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
+        var width = Math.Min(MessageMaxWidthPx, _visibleWidthPx);
+        left = Math.Clamp(left, 0, Math.Max(0, _visibleWidthPx - width));
         // Below the cell, not over it: a box that covers the value it is complaining
         // about, or the editor the user is being asked to correct, is worse than none.
         return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx + top + _metrics.RowHeightPx}px; min-width: {PopoverMinWidthPx}px");
+            $"left: {left}px; top: {BandHeightPx + top + _metrics.RowHeightPx}px; max-width: {width}px");
     }
+
+    /// <summary>The widest a message popover lays out — emitted inline, never a
+    /// stylesheet literal beside this number (ADR-0027).</summary>
+    private const double MessageMaxWidthPx = 320;
 
     /// <summary>A cell's top-left inside the Viewport, in the coordinates the popovers
     /// are laid out in.</summary>
@@ -2563,15 +2724,27 @@
         return Task.CompletedTask;
     }
 
-    /// <summary>The pointer left the instance, so what it was hovering it is not any
-    /// more.</summary>
+    /// <summary>The pointer is not over a row any more. Onto the header or a popover,
+    /// only the band goes (<paramref name="bandOnly"/>): the message a rest opened is
+    /// still being read. Out of the instance altogether, the message closes too.</summary>
     [JSInvokable]
-    public Task OnPointerAwayAsync()
+    public Task OnPointerAwayAsync(bool bandOnly)
     {
-        if (_disposed || _messageCell is null)
+        if (_disposed)
             return Task.CompletedTask;
-        CloseMessage();
-        StateHasChanged();
+        var changed = false;
+        if (_hoverRow >= 0)
+        {
+            _hoverRow = -1;
+            changed = HoverEnabled;
+        }
+        if (!bandOnly && _messageCell is not null)
+        {
+            CloseMessage();
+            changed = true;
+        }
+        if (changed)
+            StateHasChanged();
         return Task.CompletedTask;
     }
 
@@ -2923,6 +3096,11 @@
         {
             _dragHandler.Remove("onmousemove");
             StopEdgeTimer();
+            // A message the Focus's timer would have opened mid-drag was refused
+            // (ShowMessageAt); the button is up now, so the stillness starts again from
+            // here — a press held longer than the delay still gets its message.
+            if (_messageTarget is { } target && _messageCell is null)
+                ScheduleMessage(target);
         }
         // The handler is markup, so adding or removing it has to reach the DOM whatever
         // the selection did — which is why every caller sets the suppression first and
@@ -2990,7 +3168,10 @@
     /// or by the pointer coming to rest.</summary>
     private void ShowMessageAt(CellPosition target)
     {
-        if (CellMessageOf is null)
+        // Whichever path settled on the cell: under an editor the editor's own message
+        // outranks it, and mid-drag a popover would take the mouse-up that ends the
+        // drag — the rest path refuses both, and so does the Focus's timer.
+        if (CellMessageOf is null || _editMode != EditMode.None || _dragging)
             return;
         var slice = target.Row - _windowStart;
         if (slice < 0 || slice >= _window.Count || target.Column >= Columns.Count)
@@ -3551,7 +3732,7 @@
         _editMode = mode;
         _editingCell = cell;
         _editText = initialText;
-        _editorNeedsFocus = true;
+        RequestEditorFocus();
         await PushEditingModeAsync();
         StateHasChanged();
     }
@@ -3591,7 +3772,7 @@
                 // F2 moves between the two states (ADR-0010).
                 _editMode = _editMode == EditMode.Caret ? EditMode.Overwrite : EditMode.Caret;
                 await PushEditingModeAsync();
-                _editorNeedsFocus = true;
+                RequestEditorFocus();
                 StateHasChanged();
                 return;
             case "Enter" when ctrl:
@@ -3667,7 +3848,7 @@
             // only way out without applying. Announced too, because a rejected commit is
             // otherwise a key that did nothing and said nothing (A11Y-15).
             _editError = verdict.Message;
-            _editorNeedsFocus = true;
+            RequestEditorFocus();
             Announce(verdict.Message);
             return false;
         }
@@ -3731,7 +3912,7 @@
         if (verdict.Kind == EditVerdictKind.Reject)
         {
             _editError = verdict.Message;
-            _editorNeedsFocus = true;
+            RequestEditorFocus();
             Announce(verdict.Message);
             StateHasChanged();
             return;
@@ -3762,6 +3943,15 @@
     /// <summary>The editor seam's contract (ADR-0010): the core owns the box, the keys
     /// and the text's lifecycle; a substitute renders the control and reports its text
     /// as it changes — Enter and its siblings never reach it.</summary>
+    /// <summary>The core wants the editor's control to hold DOM focus: the built-in
+    /// input is focused after the render; a Chrome's control is told through the
+    /// context's <see cref="CellEditorContext.FocusRequest"/>, which this bumps.</summary>
+    private void RequestEditorFocus()
+    {
+        _editorNeedsFocus = true;
+        _editorFocusRequest++;
+    }
+
     private CellEditorContext BuildEditorContext()
     {
         var declared = Columns[_editingCell.Column];
@@ -3777,7 +3967,9 @@
             {
                 await EndEditingAsync();
                 StateHasChanged();
-            }));
+            }),
+            _editError is null ? null : MessageId,
+            _editorFocusRequest);
     }
 
     /// <summary>F2's other door (ADR-0010): a double click enters Caret on an editable
@@ -4045,8 +4237,9 @@
         _announceTimer.Change(SettleDelay, Timeout.InfiniteTimeSpan);
     }
 
-    /// <summary>Says something through the root's one live region (ADR-0033). The nonce
-    /// is what makes a repeat audible.</summary>
+    /// <summary>Says something through the root's one live region (ADR-0033). A repeat
+    /// is made audible by emptying the region for one render and putting the text back
+    /// on the next — a mutation, where identical text would be none.</summary>
     private void Announce(string? sentence)
     {
         var text = sentence ?? "";

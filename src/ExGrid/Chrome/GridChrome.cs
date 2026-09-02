@@ -139,7 +139,21 @@ public sealed record CellEditorContext(
     string? Error,
     Action<string> TextChanged,
     Action Commit,
-    Action Cancel);
+    Action Cancel,
+    string? MessageId = null,
+    int FocusRequest = 0)
+{
+    /// <summary>The id of the popover carrying <see cref="Error"/> while a Reject stands
+    /// (ADR-0034), for the control's <c>aria-describedby</c>; null when nothing is
+    /// shown.</summary>
+    public string? MessageId { get; init; } = MessageId;
+
+    /// <summary>Counts the core's requests that the control take DOM focus — on opening,
+    /// on F2, and after a Reject that a click-away had moved focus off it. A substitute
+    /// focuses its control whenever this changes; the core holds no reference to a
+    /// control it did not render (ADR-0010/0030).</summary>
+    public int FocusRequest { get; init; } = FocusRequest;
+}
 
 /// <summary>
 /// The substitutable UI seams (ADR-0009/0010): the filter panel, the column menu, the
@@ -162,7 +176,12 @@ public interface IGridChrome
     /// <summary>Null falls back to the core's built-in popover (ADR-0034).</summary>
     RenderFragment? CellMessage(CellMessageContext context) => null;
 
-    /// <summary>Null falls back to the core's own floating input.</summary>
+    /// <summary>Null falls back to the core's own floating input. A fragment is
+    /// rendered inside the core's <c>ex-editor</c> box, which carries the padding,
+    /// outline and background — the control fills it — and <b>the fragment focuses its
+    /// own control</b>, when it appears and when <see cref="CellEditorContext.Mode"/>
+    /// changes: the core holds no reference to a control it did not render, and does
+    /// not try (ADR-0010/0030).</summary>
     RenderFragment? CellEditor(CellEditorContext context);
 
     /// <summary>Null falls back to the core's own loading presentation (the

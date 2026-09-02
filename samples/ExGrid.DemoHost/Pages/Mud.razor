@@ -1,0 +1,146 @@
+@page "/mud"
+@using ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+@* global::, because inside this project's namespace a bare "MudBlazor" resolves to
+   ExGrid.MudBlazor — the CS0426 trap in AGENTS.md, one level up. *@
+@using global::MudBlazor
+
+@* The Wrapper's own stylesheets and font, loaded by this page alone so the other
+   pages — the browser layer's fixtures for the bare grid — stay bare. Order is
+   deliberately unremarkable: the Wrapper's rules are scoped under its own element and
+   cannot depend on it (ADR-0030). *@
+<HeadContent>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
+</HeadContent>
+
+<MudThemeProvider @bind-IsDarkMode="_dark" />
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <a href="wide">Wide</a>
+    <a href="cells">Cells and rows</a>
+    <a href="server">Server</a>
+    <a href="features">Features</a>
+    <span>MudBlazor</span>
+</nav>
+
+<h1>ExGrid.MudBlazor — the Wrapper, verified against the contract</h1>
+
+<p>
+    Two papers, two grids (ADR-0018/0030): Material's surface, palette and Roboto
+    around the core, with the Wrapper's editor and loading bar in the seams. The
+    buttons drive what the browser layer asserts: a theme switch that re-renders
+    nothing inside the grids, a loading state, and the second paper's options.
+</p>
+
+<div class="demo-toolbar">
+    <button id="toggle-dark" @onclick="() => _dark = !_dark">Toggle dark mode</button>
+    <button id="toggle-loading" @onclick="() => _loading = !_loading">Toggle loading</button>
+    <button id="toggle-square" @onclick="() => _square = !_square">Toggle square</button>
+    <button id="toggle-dense" @onclick="() => _dense = !_dense">Toggle dense</button>
+</div>
+
+<p class="demo-status">
+    <span id="edit-status">Edited: @_editStatus</span>
+    <span id="dark-status">Dark: @_dark</span>
+</p>
+
+<MudExGridPaper Elevation="2" Bordered="true" Hover="true" Dense="@_dense" Square="@_square" Class="demo-paper-a">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6" Class="mud-ex-grid-title">Trades</MudText>
+        <MudSpacer />
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="DemoTrade"
+                Source="_source"
+                Columns="_columns"
+                ViewportHeight="240"
+                ViewportWidth="640"
+                PinnedColumnCount="1"
+                HighlightFocusRow="true"
+                Chrome="_chrome"
+                OnEdit="OnEdit" />
+    </ChildContent>
+</MudExGridPaper>
+
+<MudExGridPaper Outlined="true" Hover="true" Class="demo-paper-b">
+    <ExGrid TRow="DemoTrade"
+            Window="_secondWindow"
+            TotalCount="_secondWindow.Count"
+            IsLoading="_loading"
+            Columns="_secondColumns"
+            ViewportHeight="160"
+            ViewportWidth="400"
+            Chrome="_chrome" />
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new() { LoadingProgressColor = Color.Primary };
+
+    private InMemoryGridSource<DemoTrade> _source = default!;
+    private IReadOnlyList<DemoTrade> _secondWindow = default!;
+    private IReadOnlyList<GridColumn<DemoTrade>> _columns = default!;
+    private IReadOnlyList<GridColumn<DemoTrade>> _secondColumns = default!;
+    private bool _dark;
+    private bool _loading;
+    private bool _square;
+    private bool _dense = true;
+    private string _editStatus = "—";
+
+    protected override void OnInitialized()
+    {
+        var rows = new DemoTrade[120];
+        string[] books = ["Alpha", "Beta", "Gamma", "Delta"];
+        string[] traders = ["Ishikawa", "Novak", "Osei", "Ferrari"];
+        for (var i = 0; i < rows.Length; i++)
+        {
+            rows[i] = new DemoTrade
+            {
+                Book = books[i % books.Length],
+                Trader = traders[(i / 3) % traders.Length],
+                Notional = 1_000_000m + (i * 12_345.67m),
+                TradeDate = new DateTime(2026, 1, 1).AddDays(i % 200),
+                Confirmed = i % 3 != 0,
+            };
+        }
+
+        _source = GridSource.From(rows);
+        _secondWindow = rows.Take(12).ToArray();
+        _columns =
+        [
+            new("Book", ColumnType.Text, t => t.Book,
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(110)), filterUi: FilterUiMode.Both),
+            new("Trader", ColumnType.Text, t => t.Trader,
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), editable: true),
+            new("Notional", ColumnType.Number, t => t.Notional,
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true),
+            new("TradeDate", ColumnType.Date, t => t.TradeDate,
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(170))),
+            new("Confirmed", ColumnType.Boolean, t => t.Confirmed,
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(100))),
+        ];
+        _secondColumns =
+        [
+            new("Book", ColumnType.Text, t => t.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(110))),
+            new("Trader", ColumnType.Text, t => t.Trader, width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
+            new("Notional", ColumnType.Number, t => t.Notional, width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
+        ];
+    }
+
+    private void OnEdit(GridEditIntent<DemoTrade> intent)
+    {
+        // The Consumer's half of ADR-0007: a new instance carrying the change goes back
+        // through the source. An unparseable number applies nothing.
+        var row = intent.Row;
+        _editStatus = $"{intent.Column}={intent.Value} on {row.Book}/{row.Trader}";
+        if (intent.Column == "Trader")
+            _source.ReplaceRow(row, new DemoTrade { Book = row.Book, Trader = intent.Value, Notional = row.Notional, TradeDate = row.TradeDate, Confirmed = row.Confirmed });
+        else if (intent.Column == "Notional" && decimal.TryParse(intent.Value, out var notional))
+            _source.ReplaceRow(row, new DemoTrade { Book = row.Book, Trader = row.Trader, Notional = notional, TradeDate = row.TradeDate, Confirmed = row.Confirmed });
+        else
+            _editStatus += " (not applied)";
+    }
+}

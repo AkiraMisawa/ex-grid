@@ -92,13 +92,16 @@ public sealed record GridMetrics
     /// <summary>
     /// Resolution, once, at parameter time (ADR-0028): a null means "not supplied", so
     /// the preset's value stands; a value wins over the preset. There is no way to hold
-    /// two opinions.
+    /// two opinions. A Wrapper's cascaded <paramref name="defaults"/> sits between the
+    /// two for the glyph widths (ADR-0030): explicit metrics beat it, it beats the
+    /// preset's, and its widths are scaled to the preset's font size.
     /// </summary>
     public static GridMetrics Resolve(
         GridDensity density,
         double? rowHeightPx = null,
         double? headerHeightPx = null,
-        CellTextMetrics? cellMetrics = null)
+        CellTextMetrics? cellMetrics = null,
+        GridPresentationDefaults? defaults = null)
     {
         // The preset table (ADR-0028), with the character-class widths of ADR-0016:
         // wide/digit/narrow measured in Chrome at the stylesheet's system-ui 14px, 600
@@ -137,7 +140,7 @@ public sealed record GridMetrics
             resolvedRow,
             resolvedHeader,
             font,
-            cellMetrics ?? new CellTextMetrics(wide, digit, narrow, padding),
+            cellMetrics ?? defaults?.CellMetricsAt(font, padding) ?? new CellTextMetrics(wide, digit, narrow, padding),
             actionPad, actionBorder, actionGap,
             menuWidth, menuInset);
     }

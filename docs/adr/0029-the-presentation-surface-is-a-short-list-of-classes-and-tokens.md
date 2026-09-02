@@ -169,16 +169,31 @@ transition animates from another row's value. The tokens above set colours, not 
   polish; the Focus band half of that polish has landed (`--ex-focus-row-fill`,
   [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)).
 
-## A correction found in implementation: the hover token cannot work as declared
+## A correction found in implementation: the hover token could not work as declared — and how it now does
 
 `--ex-row-hover-background` was specified as "via `:hover`; costs no C#". **`:hover` never
 matches a row**: every element under the row Viewport is `pointer-events: none` — that is the
 delegated hit-test the mouse machinery is built on (ADR-0004/0008) — and an element that takes
-no pointer events takes no hover either. The token is therefore **not implemented**, and the
-honest options are (a) dropping it, or (b) a C#-driven hover class from the mousemove the
-Viewport already receives, which contradicts "costs no C#". Neither is decided here; the row
-stays in the table so the vocabulary is complete, marked *(unimplementable as stated — see
-below)* by this section. Deciding it is cheap and non-urgent: no Consumer has asked for hover.
+no pointer events takes no hover either. The token was therefore not implemented, and the row
+above stayed in the table marked *(unimplementable as stated)* while the two honest options
+stood: (a) drop it, or (b) a C#-driven hover class from a permanent `mousemove`, which
+contradicts "costs no C#" and, on a Blazor Server host, ADR-0008's reason for attaching the
+move handler only during a drag.
+
+**Decided 2026-09-01, when two callers arrived at once**: the `ExGrid.MudBlazor` survey
+([ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)) found
+`Hover` on every MudBlazor table and the first Consumer expects a pointer-row highlight; and
+[ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md) gave the
+validation popover a hover trigger. Neither (a) nor (b): the cell under the pointer is
+**reported by JavaScript only when it changes** — the fifth allowlist entry of
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md), which holds the whole argument
+— and the hover row is then painted **as a band by the overlay**, exactly like the Focus band
+(`--ex-focus-row-fill`, ADR-0008): one element per layer, no class on any row, no row
+re-rendered. The token keeps its name and becomes the band's fill. "Costs no C#" was wrong and
+is withdrawn: hover costs one render per row the pointer crosses, which is the Focus band's
+price and not the per-frame price (b) would have paid. The state-hooks table above still says
+`:hover` in its hover row; read it as *the overlay band, driven by the fifth entry* — the
+mechanism column was written before this correction and is left so the correction stays visible.
 
 ## A second correction: what "read-only" can and cannot mean for a Geometry Token
 

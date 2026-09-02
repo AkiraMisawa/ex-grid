@@ -72,10 +72,33 @@ internal sealed class GridJSInterop
         // (ADR-0010/0020) — accepted for the same reason.
         var setCanEdit = handle.SetupVoid("setCanEdit", _ => true);
         setCanEdit.SetVoidResult();
+        // The two pointer reports' switches (ADR-0021's fifth entry). The tests drive
+        // OnPointerRowAsync and OnPointerRestAsync directly; what is asserted here is
+        // what the browser was told to report.
+        var setPointerReporting = handle.SetupVoid("setPointerReporting", _ => true);
+        setPointerReporting.SetVoidResult();
+        var forgetPointer = handle.SetupVoid("forgetPointer");
+        forgetPointer.SetVoidResult();
+        // A menu copy always takes the asynchronous clipboard route (ADR-0005/0036);
+        // the strict stub has to know the call or the first menu Copy throws.
+        var writeCopy = handle.SetupVoid("writeCopy", _ => true);
+        writeCopy.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
-        return new GridJSInterop(offset, setOffset, blur, dispose);
+        return new GridJSInterop(offset, setOffset, blur, dispose)
+        {
+            PointerReporting = setPointerReporting,
+            PointerForgotten = forgetPointer,
+        };
     }
+
+    /// <summary>How many times a scroll paint told the browser to forget its last
+    /// pointer report along with the band it dropped.</summary>
+    internal JSRuntimeInvocationHandler PointerForgotten { get; private init; } = default!;
+
+    /// <summary>Every pair the grid told the browser: whether to report row changes
+    /// (on with <c>HighlightHoverRow</c>) and rests (on with <c>CellMessageOf</c>).</summary>
+    internal JSRuntimeInvocationHandler PointerReporting { get; private init; } = default!;
 
     /// <summary>What the next <c>getScrollOffset</c> answers — the browser scroll
     /// position the grid is about to read, on both axes at once.</summary>

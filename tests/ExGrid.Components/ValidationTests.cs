@@ -55,9 +55,15 @@ public class ValidationTests : GridTestContext
         IRenderedComponent<ExGrid<TestRow>> cut, string key, bool ctrl = false, bool shift = false)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
 
-    private static Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
-        => cut.Find(".ex-viewport").MouseDownAsync(
+    /// <summary>A click is a press and a release: the message timer counts stillness
+    /// from the release, because mid-drag it opens nothing (ADR-0034).</summary>
+    private static async Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
+    {
+        await cut.Find(".ex-viewport").MouseDownAsync(
             new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y });
+        await cut.Find(".ex-viewport").MouseUpAsync(
+            new MouseEventArgs { Button = 0, Buttons = 0, OffsetX = x, OffsetY = y });
+    }
 
     private static async Task TypeAndCommitAsync(
         IRenderedComponent<ExGrid<TestRow>> cut, string text, string commitKey = "Enter", bool ctrl = false)
@@ -299,7 +305,7 @@ public class ValidationTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.OnPointerRestAsync(150, 50));
         Assert.NotEmpty(cut.FindAll(".ex-message"));
 
-        await cut.InvokeAsync(() => cut.Instance.OnPointerAwayAsync());
+        await cut.InvokeAsync(() => cut.Instance.OnPointerAwayAsync(false));
 
         Assert.Empty(cut.FindAll(".ex-message"));
     }

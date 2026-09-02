@@ -24,6 +24,10 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <!-- MudBlazor's script, for the /mud page's theme provider. Its stylesheet is
+         loaded by that page alone, so the other pages stay the bare grid the browser
+         layer measures. -->
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>
 
 </html>

@@ -210,7 +210,7 @@ that premise from a direction the table does not cover: **clicking a menu item f
 event**, so a menu copy cannot take the event route however small the selection is.
 
 **Decision: clipboard commands invoked from a menu always take the asynchronous API route.** No
-new JavaScript use is needed — the clipboard is already one of the four
+new JavaScript use is needed — the clipboard is already on the allowlist
 ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)) — and the alternative,
 synthesising a `copy` event with `document.execCommand('copy')` inside the click handler, buys
 the prompt-free property with a deprecated API this component would then depend on.

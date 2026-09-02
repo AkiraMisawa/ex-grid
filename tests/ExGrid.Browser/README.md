@@ -67,6 +67,14 @@ non-interactive shell does not always inherit it.
   Blazor error UI never shows (CON-5).
 - `virtualisation.spec.mjs` — the far corner at 100,000 rows, element-count stability
   across scrolling, and the overlay's per-rectangle economy on a 10⁷-cell selection.
+- `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
+  `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
+  and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline
+  keeps 3:1 against the surface in both palettes (UX-9), a theme switch re-renders no
+  row (RR-1), the hover band follows the pointer in the hovered instance only (UX-13,
+  ADR-0021's fifth entry), the Wrapper's editor fits the core's box and commits
+  (ED-4), the loading bar shows only while loading, and the paper's corners never
+  clip (UX-11's premise).
 
 Every spec fails any test on a console `error` or an uncaught page error (CON-1/2).
 
@@ -105,5 +113,15 @@ Two traps live in that, and the DemoHost has hit both:
   user's click does.
 - Restart the DemoHost after any rebuild: a stale host serves a stale app, and the
   first symptom is an unrelated-looking 404 or a page without the newest feature.
+- Two checkouts must not share a port. The host is started on whatever port
+  `EXGRID_BASE_URL` names (default 5299), and an already-running host is reused — so a
+  second checkout running on the default would be testing the *other* checkout's
+  code and passing. A parallel agent's worktree runs with its own, e.g.
+  `EXGRID_BASE_URL=http://localhost:5399` (AGENTS.md, "Working in parallel").
 - Chrome normalises clipboard HTML on read (adds a meta and a tbody): assert on the
   cells, not the exact fragment.
+- A chord is two keydowns — the modifier first. A `{ once: true }` listener waiting for
+  the key is spent on the modifier; and a `page.evaluate` that registers a listener must
+  be awaited before the key is sent, or it races the key through a different channel.
+  KB-15 failed half the time on Edge for exactly this, and it looked like the browser
+  swallowing the shortcut.
