@@ -200,7 +200,7 @@ public class HorizontalVirtualisationTests : GridTestContext
         Assert.Equal(spacer, cut.Find(".ex-spacer").GetAttribute("style"));
     }
 
-    [Fact] // ADR-0021: both axes come back in one read, so the rows and the columns are one moment
+    [Fact] // ADR-0021 / PF-4: both axes come back in one read, so the rows and the columns are one moment
     public async Task A_diagonal_scroll_reads_both_axes_in_a_single_call()
     {
         var cut = RenderGrid();

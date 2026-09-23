@@ -119,6 +119,21 @@ Numbered so that a review, a Wrapper author or a future ADR can cite one.
 | **P8** | Nothing inside the row Viewport transitions or animates | new here — see below |
 | **P9** | A Wrapper adds no geometry, no JavaScript, no per-cell component and no state of its own | ADR-0021, [ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md) |
 
+**P5 governs the strings the grid composes** — classes, styles, ids, `aria-colindex`, the run of
+`####`. *(Scoped 2026-09-24, when PF-3 was first measured: the measurement found the grid's own
+per-cell strings composed per render — the cell id, `aria-colindex`, `####`, an action's class,
+and under header groups each leaf's and each rectangle's style and `aria-colspan` — and fixed
+them, and found one cost that is not the grid's.)* An event
+directive — `@onmousedown:stopPropagation`, `:preventDefault` — has Blazor compose the
+attribute's internal name on every render, some 100 bytes a directive, and an Action or
+Template cell carries several, as does a header's menu button. That cost is the framework's,
+and it stays. The only way round it is to write the internal name out pre-composed, and that
+name is interpreted by whichever Blazor the **host** runs: this package is built on net8.0 and
+runs on everything newer ([ADR-0022](./0022-packages-target-net8-and-run-on-everything-newer.md)),
+so a rename in a later release would let a press on an action through to the Viewport — the
+selection moving under it, with no error — and nothing run on net8.0 would notice. Being
+quietly wrong is refused in favour of a small allocation.
+
 **P8 is the one that will look like an arbitrary restriction.** Rows are recycled: the element
 that painted row 400 paints row 460 after a scroll. A `transition` on a cell's background or
 colour therefore animates *from the previous row's value to this one's* — a wave of colour

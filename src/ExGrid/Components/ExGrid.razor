@@ -65,21 +65,27 @@
                        the pinned selection layer does: a group is entirely pinned or
                        entirely scrollable — a straddle was refused (ADR-0032). *@
                     <div class="ex-header-groups-pinned">
-                        @foreach (var group in _headerLayout.Groups)
+                        @for (var g = 0; g < _headerLayout.Groups.Count; g++)
                         {
+                            var group = _headerLayout.Groups[g];
                             @if (group.Pinned)
                             {
-                                <div class="ex-header-group" style="@GroupStyle(group)" role="columnheader" aria-colspan="@group.MemberCount">@group.Label</div>
+                                <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
                             }
                         }
                     </div>
                 }
                 @for (var i = 0; i < _columnStyles.Geometry.PinnedCount; i++)
                 {
-                    var pinnedIndex = i;
-                    <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@(i + 1)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
-                        {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenuAsync(pinnedIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                        {<div class="ex-resize-grip" @onmousedown="e => OnResizeGripDown(pinnedIndex, e)" @onmousedown:stopPropagation></div>}</div>
+                    @* The buttons' handlers are held per column (MenuOpener, GripDown), never
+                       written as lambdas here: a lambda capturing the index allocated its
+                       closure at the top of every iteration, button or not, and handed the
+                       diff a new handler per render — re-registered and sent to the browser
+                       for every header button on every render of the root, which is every
+                       vertical scroll frame (PF-3). *@
+                    <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
+                        {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                        {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation></div>}</div>
                 }
                 @if (_scrollable is { } headerColumns)
                 {
@@ -89,20 +95,20 @@
                     }
                     @for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
                     {
-                        var columnIndex = i;
-                        <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@(i + 1)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
-                            {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenuAsync(columnIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                            {<div class="ex-resize-grip" @onmousedown="e => OnResizeGripDown(columnIndex, e)" @onmousedown:stopPropagation></div>}</div>
+                        <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
+                            {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                            {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation></div>}</div>
                     }
                 }
                 @* A rectangle stands correctly whether or not its leaves are in the
                    DOM (ADR-0032): absolutely positioned from the geometry, so it never
                    depends on the sliced flex flow beside it. *@
-                @foreach (var group in _headerLayout.Groups)
+                @for (var g = 0; g < _headerLayout.Groups.Count; g++)
                 {
+                    var group = _headerLayout.Groups[g];
                     @if (!group.Pinned)
                     {
-                        <div class="ex-header-group" style="@GroupStyle(group)" role="columnheader" aria-colspan="@group.MemberCount">@group.Label</div>
+                        <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
                     }
                 }
             </div>
@@ -2890,6 +2896,35 @@
             _menuColumn = -1;
     }
 
+    // A header button's handler depends on nothing but its column's index, so one is made
+    // per index the first time it is painted and handed over from then on: the same
+    // delegate every render, which the diff recognises and leaves registered while the
+    // button keeps its place (PF-3). A sideways scroll that shifts the painted columns
+    // moves a scrollable header's button to where another column's stood, and the diff,
+    // comparing by position, registers that one afresh.
+    private Func<Task>?[] _menuOpeners = [];
+    private Action<MouseEventArgs>?[] _gripDowns = [];
+
+    private Func<Task> MenuOpener(int column)
+    {
+        if (column >= _menuOpeners.Length)
+            Array.Resize(ref _menuOpeners, Math.Max(column + 1, Columns.Count));
+        return _menuOpeners[column] ??= MenuOpenerFor(column);
+    }
+
+    private Action<MouseEventArgs> GripDown(int column)
+    {
+        if (column >= _gripDowns.Length)
+            Array.Resize(ref _gripDowns, Math.Max(column + 1, Columns.Count));
+        return _gripDowns[column] ??= GripDownFor(column);
+    }
+
+    // Their own methods so that only a miss captures anything: a lambda capturing a
+    // parameter allocates its closure on entry to the method, cache hit or not.
+    private Func<Task> MenuOpenerFor(int column) => () => OpenMenuAsync(column);
+
+    private Action<MouseEventArgs> GripDownFor(int column) => e => OnResizeGripDown(column, e);
+
     /// <summary>The menu button is a toggle: the second press on the same column's
     /// button closes what the first opened — a popover the user cannot dismiss is a
     /// popover in the way.</summary>
@@ -3127,10 +3162,13 @@
     {
         if (!Columns[column].IsQueryable)
             return null;
-        foreach (var sort in _sorts)
+        // By index, not foreach: through the interface, foreach over a sort that is applied
+        // allocates an enumerator, and this runs for every header cell on every render of
+        // the root (PF-3).
+        for (var s = 0; s < _sorts.Count; s++)
         {
-            if (sort.Column == Columns[column].Name)
-                return sort.Direction == SortDirection.Ascending ? "ascending" : "descending";
+            if (_sorts[s].Column == Columns[column].Name)
+                return _sorts[s].Direction == SortDirection.Ascending ? "ascending" : "descending";
         }
         return "none";
     }
@@ -4751,15 +4789,54 @@
         var cached = pinned ? _columnStyles.PinnedCell(column) : _columnStyles.Cell(column);
         if (_headerLayout.TierCount == 0)
             return cached;
+        ForgetTieredStylesIfStale();
+        return _leafHeaderStyles[column] ??= ComposeLeafHeaderStyle(column, cached);
+    }
+
+    private string ComposeLeafHeaderStyle(int column, string cached)
+    {
         var heightPx = _headerLayout.LeafTierSpanOf(column) * _metrics.HeaderHeightPx;
         return FormattableString.Invariant(
             $"{cached}; align-self: flex-end; height: {heightPx}px; line-height: {heightPx}px");
     }
 
+    // A tiered header's styles — each leaf's height and each rectangle's box — cached
+    // alongside the three things that produce them: the column geometry, the resolved
+    // layout and the tier height (ADR-0027 P5). The root renders on every scroll frame,
+    // and composed there, they were a string per leaf and per rectangle per frame (PF-3).
+    // A pinned leaf and a scrollable one never share an index, so one slot per column is
+    // enough.
+    private ColumnStyles? _tieredStylesGeometry;
+    private HeaderGroupLayout? _tieredStylesLayout;
+    private double _tieredStylesTierPx = double.NaN;
+    private string?[] _leafHeaderStyles = [];
+    private string?[] _groupStyles = [];
+
+    private void ForgetTieredStylesIfStale()
+    {
+        if (ReferenceEquals(_tieredStylesGeometry, _columnStyles)
+            && ReferenceEquals(_tieredStylesLayout, _headerLayout)
+            && _tieredStylesTierPx == _metrics.HeaderHeightPx)
+        {
+            return;
+        }
+        _tieredStylesGeometry = _columnStyles;
+        _tieredStylesLayout = _headerLayout;
+        _tieredStylesTierPx = _metrics.HeaderHeightPx;
+        _leafHeaderStyles = new string?[_columnStyles.Geometry.Count];
+        _groupStyles = new string?[_headerLayout.Groups.Count];
+    }
+
     /// <summary>One rectangle's box, from the numbers layout already has (ADR-0032):
     /// <c>left = OffsetPxOf(first member)</c>, width to past-last, height in tiers —
     /// standing correctly whether or not its leaves are in the DOM.</summary>
-    private string GroupStyle(ResolvedHeaderGroup group)
+    private string GroupStyle(int index)
+    {
+        ForgetTieredStylesIfStale();
+        return _groupStyles[index] ??= ComposeGroupStyle(_headerLayout.Groups[index]);
+    }
+
+    private string ComposeGroupStyle(ResolvedHeaderGroup group)
     {
         var geometry = _columnStyles.Geometry;
         var leftPx = geometry.OffsetPxOf(group.FirstColumn);

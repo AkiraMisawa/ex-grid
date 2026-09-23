@@ -210,6 +210,28 @@ public class SelectionTests : GridTestContext
         Assert.Equal(painted, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount));
     }
 
+    [Fact] // PF-5 / ADR-0008: painting a selection costs per rectangle, never per cell or per area
+    public async Task Selecting_the_whole_result_costs_what_eleven_cells_cost()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(onSelectionChanged: s => selection = s);
+        await PressAsync(cut, Cell(0, 0).X, Cell(0, 0).Y);
+        // Past the five painted rows, so both selections reach off screen and anything
+        // painted for that reason (ADR-0015) is painted for both.
+        for (var i = 0; i < 10; i++)
+            await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+        Assert.Equal(11, selection!.CellCount);
+        var elements = cut.FindAll(".ex-grid *").Count;
+        var rows = cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToArray();
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("a", true, false, false, false, false));
+
+        Assert.Equal(200 * 100, selection!.CellCount);
+        Assert.Single(cut.FindAll(".ex-selection > .ex-range"));
+        Assert.Equal(elements, cut.FindAll(".ex-grid *").Count);
+        Assert.Equal(rows, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount));
+    }
+
     [Fact] // A drag that stays inside one cell arrives once a frame and changes nothing
     public async Task Dragging_within_one_cell_renders_nothing()
     {

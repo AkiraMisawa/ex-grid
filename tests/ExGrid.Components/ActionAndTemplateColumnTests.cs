@@ -34,6 +34,46 @@ public class ActionAndTemplateColumnTests : GridTestContext
                 ps.Add(g => g.OnAction, onAction);
         });
 
+    [Fact] // PF-3 / ADR-0003: a button's handler is held, so re-rendering its row re-registers no event
+    public void An_action_keeps_its_click_handler_across_renders()
+    {
+        var cut = RenderGrid(WithActions(new GridAction("open", "Open"), new GridAction("close", "Close")));
+        var handlers = cut.FindAll(".ex-action").Select(b => b.GetAttribute("blazor:onclick")).ToArray();
+        Assert.NotEmpty(handlers);
+        Assert.All(handlers, Assert.NotNull); // or an all-null pair would compare equal
+        var renders = cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToArray();
+
+        // A new state lookup re-renders every row while changing nothing they paint.
+        cut.Render(ps => ps.Add(g => g.CellState, (_, _) => CellState.Normal));
+
+        Assert.All(
+            cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).Zip(renders),
+            pair => Assert.Equal(pair.Second + 1, pair.First));
+        // The same handler, not an equal one: a delegate built afresh on each render is a
+        // changed attribute, which the diff answers by registering a new event and sending
+        // it to the browser — for every button, on every render of its row.
+        Assert.Equal(handlers, cut.FindAll(".ex-action").Select(b => b.GetAttribute("blazor:onclick")));
+    }
+
+    [Fact] // ADR-0020: a press is the row's event, so a Consumer's failure reaches the nearest ErrorBoundary
+    public void A_failing_action_is_caught_by_the_error_boundary_around_the_grid()
+    {
+        // Held so its handler is not rebuilt per render, the button's click must still name
+        // the row as its receiver: the renderer routes a handler's exception to an error
+        // boundary only through the receiver, and without one it is unhandled — on a
+        // Server circuit, fatal.
+        var cut = Render<ErrorBoundary>(ps => ps
+            .AddChildContent<ExGrid<TestRow>>(grid => grid
+                .Add(g => g.Window, TestRows.Window())
+                .Add(g => g.Columns, WithActions(new GridAction("open", "Open")))
+                .Add(g => g.OnAction, (GridActionEventArgs<TestRow> _) => throw new InvalidOperationException("boom")))
+            .Add(b => b.ErrorContent, (Exception ex) => $"<p class='caught'>{ex.Message}</p>"));
+
+        cut.FindAll(".ex-action")[0].Click();
+
+        Assert.Equal("boom", cut.Find(".caught").TextContent);
+    }
+
     [Fact] // ADR-0020: one button per declared action, painted as plain markup in the row
     public void An_action_column_paints_one_button_per_declared_action()
     {

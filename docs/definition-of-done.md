@@ -455,7 +455,7 @@ Structural invariants gate; milliseconds do not (§1).
 |---|---|---|---|---|
 | **PF-1** | MUST | No per-cell JS interop, and no layout read on the path to a paint (ADR-0021 P4) | grep `src/` for `getBoundingClientRect`, `clientWidth`, `offsetWidth`, `scrollIntoView`; count interop calls per frame in Layer 3 via CDP | zero matches in the component; interop calls per scroll frame ≤ 1 |
 | **PF-2** | MUST | The JS allowlist has exactly the five entries ADR-0021 names, and `ex-grid.js` uses no sixth | read `ex-grid.js` against the ADR table | exact match |
-| **PF-3** | MUST | Per-cell strings are interned or cached alongside the geometry that produced them, never composed in the render loop (ADR-0027 P5) | inspect `CellClasses` / `RowClasses` / `ColumnStyles`; Layer 2 allocation test | zero string allocation per cell per render |
+| **PF-3** | MUST | Per-cell strings are interned or cached alongside the geometry that produced them, never composed in the render loop (ADR-0027 P5) | inspect `CellClasses` / `RowClasses` / `ColumnStyles`; Layer 2 allocation test (`RenderAllocationTests`) | zero string allocation per painted cell per render by the grid's own code. Measured as the slope of a re-render's bytes between 4 and 16 columns — for text, `####`, a sorted grid and header groups, where it is zero bytes of any kind. The attribute names Blazor composes for an event directive (`@on…:stopPropagation`, `:preventDefault`) are the framework's and outside P5 (ADR-0027 says why), so where a cell or header cell carries one — an action, a menu button — its class is pinned as a difference between two grids alike in every directive, and its handlers as ids that survive a render. *(Scoped 2026-09-24)* |
 | **PF-4** | MUST | Scroll offsets are read once per frame, both axes in one call (ADR-0021) | Layer 2 `OffsetReads` | one read per scroll event, never two |
 | **PF-5** | MUST | Selection painting cost is a function of the number of rectangles, not of the number of cells or the size of the selection (ADR-0008) | Layer 2 | element count and render count independent of selection area |
 | **PF-6** | OBSERVATIONAL | Settle repaint, fling frame interval, ordinary scroll frame interval, at 220 and 2,200 cells | Layer 3, median of ≥ 8 | recorded; compared with ADR-0004's table |
@@ -726,7 +726,10 @@ Run ST-1's scripted sequence with a recorded seed, at 10³ and at 10⁶ rows, an
 
 ### Step 6 — Observational numbers
 
-Record `metrics.json` and add a `spikes/render-bench` entry (PF-8). Compare with the previous
+Record `metrics.json` and add a `spikes/render-bench` entry (PF-8). MEM-7 is layer 2's: after
+Step 2's build, read it from `nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net8.0/ExGrid.Components.dll -method
+"ExGrid.Components.Tests.AllocationTests.Bytes_per_scroll_frame_are_recorded" -showLiveOutput` and
+copy it into `metrics.json` by hand — layer 2 runs too often to write into `verification/` itself. Compare with the previous
 verification directory and **write one sentence per number that moved more than 20%** — not as a
 gate, as a note.
 

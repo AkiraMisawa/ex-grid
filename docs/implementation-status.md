@@ -115,6 +115,67 @@ included. After the fix: layers 1 and 2 **446 + 405** plus the Wrapper's 17, lay
 record; against the 2026-09-01 macOS one, BIG-7 moved from 374 to 481 ms (+29%) on a
 machine in ordinary use — observational, recorded as a note and not investigated.
 
+**2026-09-24, the measurement harness's layer-2 half.** Every MUST in it that layer 2 can
+check now has a test. Writing them found nine defects, and two rounds of review found four
+more, two of them introduced by the fixes. All thirteen are fixed, and all but one with its
+test seen failing first; the one is named below. The review also found two tests too weak to
+fail — MEM-3 counted disposals but not creations, and nothing counted a fetch's token source —
+and both are strengthened.
+
+- **PF-3** — `RenderAllocationTests` measures a re-render's bytes as a slope between 4 and 16
+  columns, so fixed costs cancel and only what scales with the painted cells is left. It found
+  the grid composing per cell, per render: each cell's **id** (now cached per row, keyed on
+  what composes it), **`aria-colindex`** (an int boxed and turned into a string on every cell
+  and header cell; now interned), the run of **`####`** (interned by length — filled on demand
+  since the review, because the first version filled every shorter run as it grew, some 25 MB
+  of characters to reach one very wide column's), and an action's **class**. It also found
+  per-cell allocations that are not strings: a **closure per header cell** (a captured index
+  declared at the top of the loop, allocated with no button painted), **an enumerator per
+  header cell** whenever a sort is applied (`aria-sort` iterated the interface), a closure per
+  Action or Template cell (40 bytes; measured, fixed, and **not pinned** — every cell it
+  touches also pays Blazor's directive cost, and no pair of grids differs in the closure
+  alone), and — the costly one — **a new click handler per action button per render**: a
+  changed attribute, so the diff registered a fresh event for every button on every render of
+  its row and sent each to the browser (~50 KB per cell per render under bUnit). The review
+  found **the header's menu buttons and resize grips doing the same on every render of the
+  root** — every vertical scroll frame, on any grid with a sort, filter, width or Source wired
+  — and their handlers are now held per column index as well. Held handlers survive a render
+  that leaves a button in place; a sideways scroll that shifts the painted columns still
+  re-registers the scrollable buttons it moves, because the diff compares by position. The
+  second round found **header groups composing a string per leaf and per rectangle on every
+  render of the root** (a leaf's height, a rectangle's box, `aria-colspan`); they are now
+  cached alongside the geometry, layout and tier height that produce them. It also found that holding the
+  action's handler as a bare delegate had dropped the row as its **receiver**, which is how the
+  renderer finds an `ErrorBoundary` for a handler that throws: a Consumer's failing `OnAction`
+  would have gone unhandled — on Server, fatal to the circuit. The row is its receiver again;
+  that costs one small boxed callback per button per render, which is not a string, and the
+  held delegate keeps the callback equal to the last, so the diff keeps its event. Pinned by
+  `A_failing_action_is_caught_by_the_error_boundary_around_the_grid`, and by handler ids that
+  survive a render for both the actions and the header. What an event directive still costs
+  is Blazor composing its internal attribute name; that is the framework's, and stays —
+  ADR-0027 now records P5's scope and why pre-composing the names would be quietly wrong on a
+  newer runtime (ADR-0022). The measurement is the least of ten runs: in the full suite a few
+  kilobytes landed in one run about one time in four, and never with tiered compilation off.
+- **PF-4** and **MEM-4**'s layer-2 half were already pinned, and now say so in their comments;
+  **BIG-4** gained a test at the Definition of Done's own numbers (10⁶ rows fit at 28px and are
+  refused by name at 40px).
+- **PF-5** — the whole result selected costs what eleven cells cost: the same element count,
+  one range, no row re-rendered.
+- **MEM-3** — `ResourceDisposalTests`, over a counting JavaScript runtime that answers every
+  import and attach with a new reference, and a counting clock: created equals disposed, one
+  for one, for every module, handle, .NET reference and all four timers. It found **the module
+  leaked when disposal overtook its import** — `DisposeAsync` saw no module yet, and the
+  import's continuation returned without releasing it. Fixed. The grid creates no token
+  source; a fetching source creates one per fetch, and `GridSourceFetchTests` now shows each
+  disposed however its fetch ended — answered, superseded, failed or cut off by disposal —
+  which ASY-2 had claimed and nothing had checked.
+- **MEM-7** (observational) — **51,014 bytes per one-row scroll frame**, 6 rows × 2 columns,
+  under bUnit's renderer; recorded in `verification/2026-09-24-macos/metrics.json` as §22
+  Step 6 now says.
+
+MEM-5's ten-minute soak will run only under `EXGRID_SOAK=1` — decided 2026-09-24, and to be
+written into §22 Step 4 with the layer-3 half that implements it.
+
 ## Working through to the component
 
 | ADR | | Pinned by |
@@ -176,17 +237,19 @@ machine in ordinary use — observational, recorded as a note and not investigat
 
 | Layer | | State |
 |---|---|---|
-| 1 | `tests/ExGrid.Tests` | 46 files, **446 pass** (2026-09-23) |
-| 2 | `tests/ExGrid.Components` | 41 files, **405 pass** (2026-09-23) — including ST-1's randomised 500-operation run, MEM-1's allocation invariant and ADR-0037's `InteractiveTests` |
-| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And **69 pass on `chrome`** on macOS (2026-09-23, Chrome 153, headed), after the Cmd+Enter fix the Windows run could not have seen |
+| 1 | `tests/ExGrid.Tests` | 46 files, **449 pass** (2026-09-24) |
+| 2 | `tests/ExGrid.Components` | 43 files, **419 pass** (2026-09-24) — including ST-1's randomised 500-operation run, MEM-1's allocation invariant, PF-3's `RenderAllocationTests`, MEM-3's `ResourceDisposalTests` and ADR-0037's `InteractiveTests` |
+| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And on macOS, `chrome` only (Chrome 153, headed): **69 pass** on 2026-09-23 after the Cmd+Enter fix the Windows run could not have seen, and again on 2026-09-24 after the layer-2 harness's fixes, which touch the action buttons, the header and every cell's id — so those fixes have not yet met `msedge` |
 | — | `verification/2026-09-01/` | layer logs + `results.md` with the pass/blocked ledger |
 | — | `verification/2026-09-23-windows/` | the Windows layer-3 run: `results.md`, the 150% and 125% logs, `metrics.json` |
-| — | `verification/2026-09-23-macos/` | the macOS `chrome` run's `metrics.json` |
+| — | `verification/2026-09-23-macos/`, `verification/2026-09-24-macos/` | the macOS `chrome` runs' `metrics.json` — the second with MEM-7 under `layer2` |
 
 ## What is left, in the order that costs least
 
-1. **The measurement harness** — MEM-2..7, PF-3..8, BIG-2..6, plus a fresh
-   `spikes/render-bench` entry (PF-8), and the CON-3/6 instrumentation.
+1. **The measurement harness's layer-3 half** — MEM-2, MEM-4's listener count, MEM-5 (the
+   opt-in soak), BIG-2/3/5, the CON-3/6 instrumentation, and the observational PF-6/7, BIG-6 and
+   MEM-6 into `metrics.json`; then a fresh `spikes/render-bench` entry (PF-8). The layer-2 half
+   is done (above).
 2. ~~**VZ-14 at 125%.**~~ Discharged on 2026-09-24 on a Windows desktop at 125%, on both
    browsers. (The Edge run and VZ-10, which this item used to hold, were discharged on
    2026-09-01.)
