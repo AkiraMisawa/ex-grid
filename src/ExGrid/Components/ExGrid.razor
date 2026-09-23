@@ -1854,9 +1854,17 @@
         // Placeholders forever without ever asking the Consumer for rows.
         try
         {
-            _module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
-            if (_module is null || _disposed)
+            var module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            if (module is null)
                 return;
+            if (_disposed)
+            {
+                // Disposal overtook the import, and found no module to give back — this is
+                // the only place left that can (MEM-3).
+                await module.DisposeAsync();
+                return;
+            }
+            _module = module;
 
             _self ??= DotNetObjectReference.Create(this);
             _jsCanEdit = AnyColumnEdits();
