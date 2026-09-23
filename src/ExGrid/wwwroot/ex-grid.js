@@ -80,16 +80,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         if (editing === 'none') {
             if (event.target !== root) {
                 // A focusable descendant holds the keyboard — a Consumer's control in a
-                // Template Column, or one of the grid's own action buttons, both of
-                // which take focus when clicked (ADR-0020). The control owns everything
-                // but the way out: Escape returns the keyboard to the grid; every other
-                // key keeps its meaning in the control — taken from there, Space would
-                // type nothing, arrows would move the selection instead of a caret and
-                // Ctrl+A would select the grid instead of the field's text.
+                // Template Column, whether clicked or entered by Space (ADR-0037). (Not
+                // one of the grid's own action buttons: over its own actions the core
+                // keeps the keyboard on this root and chooses by aria-activedescendant,
+                // and the buttons take focus neither by Tab nor by the pointer — ADR-0020
+                // /0037.) The control owns everything but the way out: Escape returns the
+                // keyboard to the grid; every other key keeps its meaning in the control —
+                // taken from there, Space would type nothing, arrows would move the
+                // selection instead of a caret and Ctrl+A would select the grid instead
+                // of the field's text.
                 if (canonical !== 'Escape') {
                     return;
                 }
             } else {
+                // A held Space engages once (ADR-0037). Space is a key that DOES
+                // something — it fires a single action — and auto-repeat would fire it
+                // again for every repeat, on the same row, for as long as it is held.
+                // The repeat is taken (so the page does not scroll by it either) and
+                // never forwarded. Shift+Space and Ctrl+Space name whole regions and
+                // repeat harmlessly, so only the plain key is filtered.
+                if (canonical === ' ' && event.repeat) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
                 let take = taken.has(canonical);
                 // F2 and a printable character open the Cell Editor (ADR-0010) — only
                 // on a grid that has an editable column at all: a display-only grid

@@ -159,6 +159,11 @@
    Action Column's width is measured from (ADR-0016/0028) — the pairing is structural,
    so the column cannot stop fitting its own buttons. */
 .ex-action { font: inherit; line-height: normal; margin: 0 var(--ex-action-gap, 4px) 0 0; padding: 0 var(--ex-action-padding-x, 6px); border-width: var(--ex-action-border-width, 1px); cursor: pointer; }
+/* The chosen action of an Interactive cell (ADR-0029/0037). The keyboard never leaves the
+   root, so :focus-visible has nothing to match; the row paints this one button instead,
+   with the Focus outline's token — it is where the keyboard is. Drawn inside the button's
+   own box, because the cell clips anything that reaches past its edge. */
+.ex-action-chosen { outline: 2px solid var(--ex-focus-outline, CanvasText); outline-offset: -2px; }
 /* Cell State (ADR-0006): the grid says which of the five states a cell is in, the theme
    says what that looks like — hence a variable per state with a default that only has to
    be legible. Every one of them decorates; none replaces the text. Missing in particular
@@ -383,4 +388,7 @@
     .ex-range { outline: 2px solid Highlight; outline-offset: -1px; }
     .ex-focus-row { outline: 1px dotted Highlight; outline-offset: -1px; }
     .ex-hover-row { outline: 1px dotted GrayText; outline-offset: -1px; }
+    /* The chosen action stays tellable from its neighbours, which keep their own
+       ButtonBorder (ADR-0037). */
+    .ex-action-chosen { outline: 2px solid Highlight; outline-offset: -2px; }
 }

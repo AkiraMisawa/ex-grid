@@ -16,8 +16,8 @@ namespace ExGrid.Components.Tests;
 /// </summary>
 public class ActionAndTemplateColumnTests : GridTestContext
 {
-    private static readonly RenderFragment<TestRow> Bar =
-        row => builder => builder.AddMarkupContent(0, $"<span class='bar'>{row.Book}</span>");
+    private static readonly RenderFragment<TemplateCellContext<TestRow>> Bar =
+        cell => builder => builder.AddMarkupContent(0, $"<span class='bar'>{cell.Row.Book}</span>");
 
     private static GridColumn<TestRow>[] WithActions(params GridAction[] actions) =>
     [

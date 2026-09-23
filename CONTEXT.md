@@ -241,7 +241,11 @@ _Avoid_: input mode / edit mode (both read as "editing" and the distinction disa
 **Interactive**:
 The state of being **inside** a cell. Entered with Space and left with Esc, on an Action Column
 with several actions or on a Template Column. **The third mode alongside Overwrite / Caret**, and
-it matches the ARIA grid pattern.
+it matches the ARIA grid pattern. **Two mechanisms, one contract**: over the grid's own actions it
+is a mode the core holds — the keyboard stays on the grid, the arrows choose an action and Space
+fires it; in a Template cell it is the Consumer's control holding DOM focus, taken when the core
+asks and never by the core reaching in. Either way Enter never fires, and Esc leaves
+([ADR-0037](./docs/adr/0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)).
 _Avoid_: focus mode, edit mode (confusable with Caret)
 
 **Cell State**:
@@ -411,9 +415,13 @@ adds no component boundary**
 _Avoid_: button column, command column
 
 **Template Column**:
-A column whose cell contents the Consumer paints with arbitrary markup. **The cell becomes a
-component, so it costs more** — which is why it is opt-in per column. A value accessor is
-**still required** (sorting and filtering need it).
+A column whose cell contents the Consumer paints with arbitrary markup. It costs whatever that
+markup costs — the fragment rides inside the row's own boundary rather than adding one per cell
+([ADR-0020](./docs/adr/0020-action-and-template-columns.md), which predicted otherwise and records
+the correction) — so it is opt-in per column. A value accessor is **still required** (sorting and
+filtering need it). A control inside it that should be reachable by keyboard **focuses itself**
+when the core asks
+([ADR-0037](./docs/adr/0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)).
 _Avoid_: custom column, render column
 
 ## Flagged ambiguities
@@ -423,6 +431,14 @@ _Avoid_: custom column, render column
   noun (`ag-grid` has none either).
 - **"User" gets used two ways** — the developer embedding this component, and the end user
   touching the screen. The former is the **Consumer**; the latter is the **user**.
+- **"Focus" names a cell; "DOM focus" names an element.** The **Focus** is the cell keyboard
+  operations start from, and it is described, never held: the grid root holds the browser's
+  focus and `aria-activedescendant` points at the Focus cell
+  ([ADR-0033](./docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)).
+  **DOM focus** is the browser's — which element receives the keys. The two meet only when a
+  Template's control takes DOM focus inside the Focus cell (**Interactive**). Write "DOM focus"
+  whenever the browser's is meant; `FocusRequest` in the Chrome and template contexts asks for
+  DOM focus, not for a Focus move.
 
 ## Example: a conversation between a Consumer developer and the component designer
 

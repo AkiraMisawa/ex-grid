@@ -479,3 +479,173 @@ test('Escape returns the keyboard from a descendant control to the grid (ADR-002
     await page.keyboard.press('Escape');
     await expect(cells).toBeFocused();
 });
+
+// Entering a cell by key (ADR-0037), on /cells. Columns there: Book 0 (pinned), Close of
+// business 1, Intraday 2, Limit used 3 (a Template), Note 4 (a Template with a real
+// field), Actions 5 (one action), Review 6 (three actions). The Focus is placed by
+// clicking the pinned Book cell and walked there by key, so no test depends on where a
+// button happens to be painted.
+
+async function openCellsAt(page, column) {
+    await page.goto('/cells');
+    const cells = page.locator('.ex-grid').first();
+    await expect(cells.locator('.ex-row').first()).toBeVisible();
+    await cells.locator("[id$='r0c0']").click({ force: true });
+    for (let i = 0; i < column; i++) {
+        await page.keyboard.press('ArrowRight');
+    }
+    await expect(cells).toHaveAttribute('aria-activedescendant', new RegExp(`r0c${column}$`));
+    return cells;
+}
+
+test('Space enters a cell with several actions; the arrows choose and Space fires once (KB-20/KB-21, ADR-0037)', async ({ page }) => {
+    const cells = await openCellsAt(page, 6);
+
+    await page.keyboard.press(' ');
+    const chosen = cells.locator('.ex-action-chosen');
+    await expect(chosen).toHaveCount(1);
+    await expect(chosen).toHaveText('Approve');
+    // The keyboard never left the root; the root names the chosen button instead.
+    await expect(cells).toBeFocused();
+    const chosenId = await chosen.getAttribute('id');
+    await expect(cells).toHaveAttribute('aria-activedescendant', chosenId);
+
+    await page.keyboard.press('ArrowRight');
+    await expect(chosen).toHaveText('Query');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight'); // clamped at the end, still inside
+    await expect(chosen).toHaveText('Escalate');
+    await page.keyboard.press('ArrowLeft');
+
+    await page.keyboard.press(' ');
+    await expect(page.locator('#action-status')).toContainText("Pressed 'query' in column 'Review'");
+    await expect(page.locator('#action-status')).toContainText('Presses so far: 1.');
+    // Firing leaves.
+    await expect(chosen).toHaveCount(0);
+    await expect(cells).toHaveAttribute('aria-activedescendant', /r0c6$/);
+});
+
+test('inside a cell Enter never fires: it leaves and moves down (KB-22, ADR-0020/0037)', async ({ page }) => {
+    const cells = await openCellsAt(page, 6);
+    await page.keyboard.press(' ');
+    await page.keyboard.press('ArrowRight');
+
+    await page.keyboard.press('Enter');
+
+    await expect(page.locator('#action-status')).toHaveText('No action pressed yet.');
+    await expect(cells.locator('.ex-action-chosen')).toHaveCount(0);
+    await expect(cells).toHaveAttribute('aria-activedescendant', /r1c6$/);
+});
+
+test('Escape leaves an Interactive cell and the grid keeps the keyboard (KB-22, ADR-0037)', async ({ page }) => {
+    const cells = await openCellsAt(page, 6);
+    await page.keyboard.press(' ');
+
+    await page.keyboard.press('Escape');
+
+    await expect(cells.locator('.ex-action-chosen')).toHaveCount(0);
+    await expect(cells).toBeFocused();
+    await expect(cells).toHaveAttribute('aria-activedescendant', /r0c6$/);
+});
+
+test('Space puts the caret in a Template cell\'s field, and Escape brings the keyboard back (KB-23/KB-24, ADR-0037)', async ({ page }) => {
+    const cells = await openCellsAt(page, 4);
+
+    await page.keyboard.press(' ');
+    // The row's own note field — the grid asked, the Consumer's control focused itself.
+    const note = cells.locator("[id$='r0c4'] input.demo-note");
+    await expect(note).toBeFocused();
+    await page.keyboard.type('memo');
+    await expect(note).toHaveValue('memo');
+
+    await page.keyboard.press('Escape');
+    await expect(cells).toBeFocused();
+    await expect(cells).toHaveAttribute('aria-activedescendant', /r0c4$/);
+    // The text typed there is the field's, and it is still there.
+    await expect(note).toHaveValue('memo');
+});
+
+test('a held Space fires a one-action cell once (KB-26, ADR-0037)', async ({ page }) => {
+    await openCellsAt(page, 5);
+
+    // Playwright marks every keydown after the first as a repeat until the key goes up.
+    await page.keyboard.down(' ');
+    await page.keyboard.down(' ');
+    await page.keyboard.down(' ');
+    await page.keyboard.down(' ');
+    await page.keyboard.up(' ');
+
+    await expect(page.locator('#action-status')).toContainText("Pressed 'open' in column 'Actions'");
+    await expect(page.locator('#action-status')).toContainText('Presses so far: 1.');
+});
+
+test('holding Space to enter a cell fires nothing (KB-26, ADR-0037)', async ({ page }) => {
+    const cells = await openCellsAt(page, 6);
+
+    // Without the repeat filter the first repeat would reach an Interactive cell as a
+    // second Space — and fire the action the user had not yet chosen.
+    await page.keyboard.down(' ');
+    await page.keyboard.down(' ');
+    await page.keyboard.down(' ');
+    await page.keyboard.up(' ');
+
+    await expect(cells.locator('.ex-action-chosen')).toHaveText('Approve');
+    await expect(page.locator('#action-status')).toHaveText('No action pressed yet.');
+});
+
+test('Shift+Tab from after the grid lands on the root, not on a button inside it (A11Y-17, ADR-0037)', async ({ page }) => {
+    await page.goto('/cells');
+    const cells = page.locator('.ex-grid').first();
+    await expect(cells.locator('.ex-action').first()).toBeVisible();
+
+    // Something focusable straight after the grid, as any page would have.
+    await page.evaluate(() => {
+        const after = document.createElement('button');
+        after.id = 'after-grid';
+        after.textContent = 'after';
+        document.querySelector('.ex-grid').insertAdjacentElement('afterend', after);
+    });
+    await page.locator('#after-grid').focus();
+
+    await page.keyboard.press('Shift+Tab');
+
+    await expect(cells).toBeFocused();
+});
+
+test('the chosen action is outlined, with and without forced colors (UX-14, ADR-0029/0037)', async ({ page }) => {
+    for (const forcedColors of ['none', 'active']) {
+        await page.emulateMedia({ forcedColors });
+        const cells = await openCellsAt(page, 6);
+        await page.keyboard.press(' ');
+
+        const outlines = await cells.locator("[id$='r0c6'] .ex-action").evaluateAll((buttons) =>
+            buttons.map((b) => ({ chosen: b.classList.contains('ex-action-chosen'), style: getComputedStyle(b).outlineStyle })));
+        expect(outlines.filter((o) => o.chosen).map((o) => o.style), forcedColors).toEqual(['solid']);
+        expect(outlines.filter((o) => !o.chosen).map((o) => o.style), forcedColors).toEqual(['none', 'none']);
+    }
+});
+
+test('a press dragged off an action leaves no button holding the keyboard, and Enter fires nothing (KB-27, ADR-0020/0037)', async ({ page }) => {
+    await page.goto('/cells');
+    const cells = page.locator('.ex-grid').first();
+    const open = cells.locator("[id$='r0c5'] .ex-action");
+    await expect(open).toBeVisible();
+    const box = await open.boundingBox();
+
+    // Press, then leave the button before letting go — the platform's cancel.
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, 5, { steps: 5 });
+    await page.mouse.up();
+    await expect(page.locator('#action-status')).toHaveText('No action pressed yet.');
+
+    const held = await page.evaluate(() => document.activeElement?.classList.contains('ex-action') ?? false);
+    expect(held, 'no grid button holds the keyboard').toBe(false);
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#action-status')).toHaveText('No action pressed yet.');
+
+    // And an ordinary click still lands: only the press's default was prevented.
+    await open.click();
+    await expect(page.locator('#action-status')).toContainText("Pressed 'open' in column 'Actions'");
+    await expect(page.locator('#action-status')).toContainText('Presses so far: 1.');
+});

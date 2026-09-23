@@ -164,6 +164,14 @@ Only an Escape with nothing left to dismiss, pressed on the root itself, release
 focus. The other ways a popover closes belong to
 [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).
 
+*(The Interactive layer arrived with
+[ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md), and
+sits between the two: a popover closes first, then an Interactive cell is left — the grid
+keeps the keyboard and the Focus does not move — and only then does Escape release the DOM
+focus. Inside a cell with several actions, ← and → choose rather than move and Home / End
+choose the first and last; every other key the grid claims leaves the cell and keeps the
+meaning this ADR gives it, Enter and Tab included, so nothing about cycling changes.)*
+
 **With focus but no selection, the first key only places the Focus.** `GridSelection.Move`
 is a no-op on an empty selection, deliberately — there is no Focus to start from. But
 "focus on the grid, nothing selected" is an ordinary state: reached by tabbing in, by

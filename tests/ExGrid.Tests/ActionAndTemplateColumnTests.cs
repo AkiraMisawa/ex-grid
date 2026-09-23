@@ -1,3 +1,4 @@
+using ExGrid.Cells;
 using ExGrid.Columns;
 using Microsoft.AspNetCore.Components;
 using Xunit;
@@ -11,7 +12,8 @@ namespace ExGrid.Tests;
 public class ActionAndTemplateColumnTests
 {
     private static readonly GridAction Open = new("open", "Open");
-    private static readonly RenderFragment<Trade> Bar = row => builder => builder.AddContent(0, row.Book);
+    private static readonly RenderFragment<TemplateCellContext<Trade>> Bar =
+        cell => builder => builder.AddContent(0, cell.Row.Book);
 
     [Fact] // ADR-0020: an Action Column has no value, and says so
     public void An_action_column_is_not_queryable()

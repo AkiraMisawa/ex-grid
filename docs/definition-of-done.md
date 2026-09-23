@@ -138,6 +138,7 @@ so conformance is a set comparison rather than a judgement of taste.
 | **UX-11** | MUST | Popovers (filter panel, column menu) are not clipped by the scroll container and do not tangle across instances (ADR-0017/0018) | Layer 3: open the filter on the rightmost column of two grids | fully visible; each grid's popover is its own |
 | **UX-12** | MUST | Accessibility semantics as ADR-0033 specifies them | see **§4.1** | every row of §4.1 passes |
 | **UX-13** | MUST | The row under the pointer is highlighted by an overlay band filled with `--ex-row-hover-background`, on hover alone — no row carries a class, and the band vanishes on leave (ADR-0029, ADR-0021 fifth entry) | Layer 3: real mouse moved down a column of two grids | one band, in the hovered instance only, following the pointer row; none after `mouseleave` |
+| **UX-14** | MUST | The chosen action of an Interactive cell is tellable — outlined through `--ex-focus-outline`, and restated in the forced-colors block like every other state (ADR-0029/0037) | Layer 3 on `/cells`, with and without forced colors | the chosen button's computed outline is non-`none` in both, and no other button's is |
 
 ---
 
@@ -150,7 +151,7 @@ A11Y-8 exists to catch exactly that.
 Interactive mode announce — are settled inside their own tasks (ADR-0029/0010/0020), on the
 grounds that ARIA describing an interaction that does not exist yet is an accessibility tree that
 lies. A release that ships the editor ships its criteria with it; this table does not stand in for
-them.
+them. *(Interactive mode's were settled with the mode, ADR-0037: A11Y-17 and A11Y-18.)*
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
@@ -170,6 +171,8 @@ them.
 | **A11Y-14** | MUST | Announcing costs no row render — A11Y is not a way back into ADR-0008's rejected path | Layer 2 render counts across a drag | identical to the counts RR-4 asserts without a live region |
 | **A11Y-15** | MUST | A **Reject** is announced: the verdict's message is relayed once into the root's `polite` live region, and the editor carries `aria-invalid` (ADR-0033/0034) | Layer 2 | one live-region write per Reject, carrying the Consumer's text verbatim; nothing written on Accept or Flag |
 | **A11Y-16** | MUST | Whatever Chrome renders a **refusal** into is a live region — the grid holds no string for it and cannot announce it (ADR-0035) | Layer 3 against the reference Chrome | the DemoHost's refusal status is a live region and a refusal writes into it |
+| **A11Y-17** | MUST | The grid's own action buttons are outside the page's tab sequence (`tabindex="-1"`), so the root stays the one tab stop with an Action Column on screen (ADR-0033/0037) | Layer 2 + Layer 3 on `/cells`: Shift+Tab from the element after the grid | every `.ex-action` carries `tabindex="-1"`; focus lands on the root, not on a button |
+| **A11Y-18** | MUST | While a cell with several actions is Interactive, `aria-activedescendant` names the chosen action's button, whose accessible name is its declared label; leaving restores the Focus cell's id, and the attribute is cleared while that button is not painted (ADR-0033/0037) | Layer 2 | the id resolves to the chosen `.ex-action`; after Escape it resolves to the cell again |
 
 ### 4.2 Header Groups (HG) — ADR-0032
 
@@ -336,6 +339,14 @@ The grid renders the filter UI and never evaluates a filter.
 | **KB-17** | MUST | An open popover is dismissable three ways: the ▾ that opened it, Escape from wherever focus sits, and a pointer-down anywhere else in the instance — which keeps its own meaning (ADR-0009/0010/0012) | Layer 2 `FilterChromeTests` + Layer 3 | closing without OK discards; the grid is not blurred by the close |
 | **KB-18** | MUST | Escape from a focusable descendant — a Template Column control, an action button — returns the keyboard to the grid, never out of it (ADR-0020/0012) | Layer 2 + Layer 3 on `/cells` | the control's other keys are untouched; after Escape the root is focused and not blurred |
 | **KB-19** | MUST | A grid with no editable column claims no printable key (ADR-0010/0020) | Layer 3 on `/cells` | the keydown reaches the page unprevented; no editor appears |
+| **KB-20** | MUST | Space on a cell with several actions makes it Interactive with the **first** action chosen; DOM focus stays on the root (ADR-0020/0037) | Layer 2 + Layer 3 on `/cells` | the first button carries `ex-action-chosen`; the root still holds DOM focus; nothing fired |
+| **KB-21** | MUST | Inside, ← / → choose the neighbouring action and Home / End the first and last, clamped at both ends; Space fires the chosen action **once** and leaves (ADR-0020/0037) | Layer 2 + Layer 3 on `/cells` | the chosen action follows the keys and never leaves the cell by overshoot; one `OnAction` naming the chosen action; Interactive ended |
+| **KB-22** | MUST | Inside, Enter and Tab **never fire**: they leave and keep their root meaning, as does every other key the grid claims; Escape leaves without releasing the grid; a pointer press leaves (ADR-0020/0012/0037) | Layer 2 + Layer 3 on `/cells` | zero `OnAction`; the Focus moves exactly as the same key moves it outside; after Escape the root still holds DOM focus |
+| **KB-23** | MUST | Space on a Template cell hands **one** focus request to that cell's content — non-zero on one render, zero on every other and in every other cell; it waits for the cell to be painted, is dropped if the Focus moves first, and a row re-created afterwards never sees it (ADR-0037) | Layer 2 with a counting template | exactly one non-zero `FocusRequest` observed; none after scrolling the row out and back |
+| **KB-24** | MUST | A Template control that takes the request holds the keyboard: typing lands in it, and Escape brings the keyboard back with the Focus unmoved (ADR-0020/0037) | Layer 3 on `/cells` | the field has the typed text; after Escape the root is focused and `aria-activedescendant` names the same cell |
+| **KB-25** | MUST | Space on an editable cell opens Overwrite containing a space; with no Focus, Space only places it and neither fires nor enters (ADR-0020/0010/0012) | Layer 2 | the editor's text is `" "`; from an empty selection one Space selects the first visible cell and raises nothing |
+| **KB-26** | MUST | A held Space engages once: a repeated plain Space is taken and dropped by the gate (ADR-0037) | inspect `ex-grid.js`; Layer 3 holding Space on a one-action cell | one `OnAction` for the whole hold |
+| **KB-27** | MUST | A grid action button never holds the keyboard: a press dragged off it — the platform's cancel — leaves it unfocused, so Enter afterwards fires nothing (ADR-0020/0037) | Layer 3 on `/cells` with a real mouse | no `.ex-action` is `document.activeElement`; zero `OnAction` after the drag and the Enter |
 
 ---
 
@@ -496,6 +507,7 @@ ADR-0027 P3 states the expectation precisely, which makes this the most mechanic
 | **RR-9** | MUST | Delegates passed as parameters are cached in fields, never method groups | inspect `ExGrid.razor` | no method group in a parameter position |
 | **RR-10** | MUST | `ShouldRender` is hand-written wherever memoisation is claimed (ADR-0003) | inspect | present on `ExGridRow` and on the root |
 | **RR-11** | MUST | The pointer-row report (ADR-0021, fifth entry) reaches .NET only when the pointer crosses a row, and a hover-row change re-renders no row — the band is the overlay's (ADR-0029) | Layer 2 counting `RenderCount`; inspect `ex-grid.js` for the row filter | a report onto the row already held renders nothing; row counts unchanged across a hover change |
+| **RR-12** | MUST | Interactive re-renders only the engaged row: entering, each choice and leaving render that row and no other, and a template's focus request renders the Focus row at most twice — the request and its clearing (ADR-0037, ADR-0027 P3) | Layer 2 counting per-row renders | every other row's count unchanged |
 
 ---
 

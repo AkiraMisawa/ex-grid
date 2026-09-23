@@ -259,7 +259,8 @@
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
                                        CellState="CellState" RowKind="RowKind"
                                        RowIndex="row" IdPrefix="@_idPrefix"
-                                       OnAction="@(_onAction ??= RaiseActionAsync)" />
+                                       OnAction="@(_onAction ??= RaiseActionAsync)"
+                                       Engagement="EngagementFor(row)" />
                         }
                         else
                         {
@@ -1017,6 +1018,20 @@
     // What the key gate was last told about whether any column edits (ADR-0010/0020).
     private bool _jsCanEdit;
 
+    // Interactive over the core's own actions (ADR-0037): the cell Space entered and the
+    // action chosen in it. The keyboard never leaves the root; this is what the arrows
+    // move, what Space fires and what the row paints. Valid only while the Focus is still
+    // that cell (InteractiveChoice) — anything that moves or drops the Focus ends it.
+    private (CellPosition Cell, int Action)? _interactive;
+
+    // A Template cell's focus request (ADR-0037): pending from the Space that asked until
+    // the render that paints the cell hands it over, then cleared at once — a row recycled
+    // by virtualisation must never be handed a stale one, or its control would steal
+    // focus later. Dropped if the Focus moves before it could be delivered.
+    private (CellPosition Cell, int Number)? _focusRequest;
+    private int _focusRequestCounter;
+    private bool _focusRequestHandedOver;
+
     // The header gestures (ADR-0016 resize, ADR-0011/0032 reorder). Both attach root
     // move/up handlers only while running, the way the selection drag splats its own;
     // ClientX deltas need no layout read (ADR-0021). A resize applies on release; a
@@ -1750,6 +1765,20 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // A Template cell's focus request lives for exactly the render that handed it
+        // over (ADR-0037) — cleared first, before anything below can render again — and
+        // one the Focus walked away from is dropped undelivered.
+        if (_focusRequestHandedOver)
+        {
+            _focusRequestHandedOver = false;
+            _focusRequest = null;
+        }
+        else if (_focusRequest is { } undelivered
+            && (_selection.Selection.IsEmpty || _selection.Selection.Focus != undelivered.Cell))
+        {
+            _focusRequest = null;
+        }
+
         if (firstRender)
             await AttachScrollAsync();
 
@@ -2063,6 +2092,10 @@
         var dismissed = _menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null;
         if (dismissed)
             CloseMenus();
+        // A press anywhere in the body leaves an Interactive cell (ADR-0037) and keeps its
+        // own meaning. Like the dismissal, the chosen button's paint has to go even when
+        // the press itself moves nothing.
+        var leftInteractive = EndInteractive();
 
         // Excel's click-away semantics (ADR-0010): a press that is not on the editor
         // — the editor's own elements never let a press through — commits the
@@ -2084,7 +2117,7 @@
         // press that lands elsewhere is supposed to do.
         if (e.Button != 0 || CellUnder(e) is not { } cell)
         {
-            _suppressRender = !dismissed && !committed;
+            _suppressRender = !dismissed && !committed && !leftInteractive;
             return;
         }
 
@@ -2112,6 +2145,10 @@
         // click on the one cell already selected changes no selection at all, and
         // suppressing that render would leave the drag with nothing listening.
         SetDragging(!(toggling && current.Contains(cell)));
+        // A click on the Interactive cell itself changes no selection, and Apply has
+        // suppressed the render — which would leave the chosen button painted.
+        if (leftInteractive)
+            _suppressRender = false;
     }
 
     /// <summary>
@@ -2304,6 +2341,9 @@
         // popover closes it, and whatever the press also meant still happens.
         if (_menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null)
             CloseMenus();
+        // A press anywhere leaves an Interactive cell (ADR-0037); this handler always
+        // renders, so the chosen button's paint goes with it.
+        EndInteractive();
         // And the same click-away commit (ADR-0010): a header press mid-edit commits
         // before it sorts or grabs a column — unless the verdict Rejects, and then the
         // press keeps no meaning of its own (ADR-0034, ED-15). A sort here would bump the
@@ -3197,6 +3237,14 @@
     {
         if (_disposed)
             return;
+        // A press on any action ends Interactive (ADR-0037), by pointer as by Space — and
+        // the pointer's press arrives through the row's handler, which renders the row but
+        // not this root.
+        if (EndInteractive())
+        {
+            _suppressRender = false;
+            StateHasChanged();
+        }
         if (OnAction.HasDelegate)
             await OnAction.InvokeAsync(args);
         await ReclaimFocusAsync();
@@ -3475,6 +3523,36 @@
         }
 
         var action = GridKeys.Resolve(key, ctrl, shift, alt, meta, metaIsPrimary);
+
+        // Inside a cell with several actions (ADR-0037) the keyboard never left the root,
+        // so every key arrives here as it always does. The arrows, Home and End choose
+        // within the cell; Space and Escape are answered below; every other key leaves the
+        // cell first and then keeps the meaning it has everywhere else — Enter and Tab
+        // included, which is why nothing ever fires on them (ADR-0020).
+        if (InteractiveChoice() is { } choice)
+        {
+            if (ChoiceAfter(choice, action) is { } chosen)
+            {
+                // Clamped: a key that would step past either end chooses nothing new and
+                // renders nothing, rather than leaving the cell by overshoot.
+                if (chosen != choice.Action)
+                {
+                    _interactive = (choice.Cell, chosen);
+                    _suppressRender = false;
+                    StateHasChanged();
+                }
+                return;
+            }
+            if (action.Kind is not (GridKeyKind.Engage or GridKeyKind.Leave) && EndInteractive())
+            {
+                // A key arrives through interop, so nothing renders unless this says so —
+                // and the key's own handling may move nothing at all (ArrowUp at the top),
+                // which would leave the chosen button painted for a mode that has ended.
+                _suppressRender = false;
+                StateHasChanged();
+            }
+        }
+
         switch (action.Kind)
         {
             case GridKeyKind.None:
@@ -3506,14 +3584,31 @@
                     // From a focusable descendant — a Consumer's Template Column
                     // control, an action button — Escape is the way out of the cell,
                     // not of the grid (ADR-0020): the keyboard returns to the grid
-                    // and navigation resumes.
+                    // and navigation resumes. Returning from a control is leaving a
+                    // cell, so an Interactive one the pointer walked away from ends too.
+                    EndInteractive();
                     await ReclaimFocusAsync();
+                    StateHasChanged();
+                    return;
+                }
+                // The Interactive layer, between the popover and the grid (ADR-0037,
+                // ADR-0012's layering): Escape leaves the cell, the Focus stays where it
+                // is, and the grid keeps the keyboard. Only with nothing engaged is it
+                // the way out.
+                if (EndInteractive())
+                {
+                    _suppressRender = false;
                     StateHasChanged();
                     return;
                 }
                 await LeaveAsync();
                 return;
             case GridKeyKind.Engage:
+                // With no Focus, Space is a first key like any other: it only places the
+                // Focus (ADR-0012), and never fires or enters a cell the user has not
+                // seen focused (ADR-0037). The general path below does the placing.
+                if (_selection.Selection.IsEmpty)
+                    break;
                 await EngageAsync();
                 return;
         }
@@ -4072,25 +4167,147 @@
         return false;
     }
 
-    /// <summary>Space on a single-action cell fires it; N ≥ 2 and editable cells wait for
-    /// the Interactive and Overwrite modes (ADR-0020).</summary>
+    /// <summary>
+    /// Space engages with the Focus cell's content (ADR-0020, completed by ADR-0037): it
+    /// fires a single action; enters a cell with several, the first one chosen; asks a
+    /// Template cell's content to take DOM focus; and opens Overwrite on an editable cell
+    /// with the space already in it, as if it had been typed. Inside an Interactive cell
+    /// it fires the chosen action — and leaves.
+    /// </summary>
     private async Task EngageAsync()
     {
-        if (_selection.Selection.IsEmpty)
-            return;
         var focus = _selection.Selection.Focus;
         if (focus.Column < 0 || focus.Column >= Columns.Count)
             return;
         var column = Columns[focus.Column];
-        if (column.Actions.Count != 1)
-            return;
 
         // The row has to be in hand: a Focus over a Placeholder has no row to act on, and
         // ADR-0012 already says editing waits for the data to arrive.
         var slice = focus.Row - _windowStart;
-        if (slice < 0 || slice >= _window.Count)
+        var row = slice >= 0 && slice < _window.Count ? _window[slice] : null;
+
+        if (InteractiveChoice() is { } choice)
+        {
+            // Firing leaves (ADR-0037): an action changes the row under it — it opens a
+            // view, or deletes the row — and staying inside would leave the chosen action
+            // over whatever row slid into its place, one Space from firing on that.
+            EndInteractive();
+            _suppressRender = false;
+            StateHasChanged();
+            if (row is not null)
+                await RaiseActionAsync(new GridActionEventArgs<TRow>(row, column.Name, column.Actions[choice.Action].Name));
             return;
-        await RaiseActionAsync(new GridActionEventArgs<TRow>(_window[slice], column.Name, column.Actions[0].Name));
+        }
+
+        if (row is null)
+            return;
+        if (column.Actions.Count == 1)
+        {
+            await RaiseActionAsync(new GridActionEventArgs<TRow>(row, column.Name, column.Actions[0].Name));
+            return;
+        }
+        if (column.Actions.Count > 1)
+        {
+            // The keyboard stays on the root (ADR-0037): what changes is which action the
+            // row paints as chosen and what aria-activedescendant names.
+            _interactive = (focus, 0);
+            RequestFocusReveal();
+            _suppressRender = false;
+            StateHasChanged();
+            return;
+        }
+        if (column.Template is not null)
+        {
+            // Asked, never reached into: the fragment's context carries the request on the
+            // render that paints the cell, and the Consumer's control focuses itself
+            // (ADR-0037, the rule ADR-0030 applies to a Chrome's editor).
+            _focusRequest = (focus, ++_focusRequestCounter);
+            RequestFocusReveal();
+            _suppressRender = false;
+            StateHasChanged();
+            return;
+        }
+        if (IsEditableCell(focus))
+            await StartEditingAsync(focus, EditMode.Overwrite, " ");
+    }
+
+    /// <summary>The chosen action of the Interactive cell, or null when there is none —
+    /// including when the field is stale: Interactive belongs to the Focus, so a Focus that
+    /// moved or was dropped (a click, a sort, a new column set) has ended it, whatever the
+    /// field still says (ADR-0037).</summary>
+    private (CellPosition Cell, int Action)? InteractiveChoice()
+    {
+        if (_interactive is not { } interactive || _selection.Selection.IsEmpty
+            || _selection.Selection.Focus != interactive.Cell)
+        {
+            return null;
+        }
+        var column = interactive.Cell.Column;
+        if (column < 0 || column >= Columns.Count || Columns[column].Actions.Count < 2
+            || interactive.Action >= Columns[column].Actions.Count)
+        {
+            return null;
+        }
+        return interactive;
+    }
+
+    /// <summary>Ends Interactive (ADR-0037). True when a chosen action was showing, so the
+    /// caller knows a render is owed to take it away — the button's class and the root's
+    /// aria-activedescendant both go with the mode.</summary>
+    private bool EndInteractive()
+    {
+        var showing = InteractiveChoice() is not null;
+        _interactive = null;
+        return showing;
+    }
+
+    /// <summary>The action a key chooses inside an Interactive cell, or null for a key that
+    /// does not choose (ADR-0037): ← and → step, Home and End — and the Control+arrow forms,
+    /// which resolve to the same edge move — go to either end. Clamped at both, never
+    /// wrapping.</summary>
+    private int? ChoiceAfter((CellPosition Cell, int Action) choice, GridKeyAction action)
+    {
+        var last = Columns[choice.Cell.Column].Actions.Count - 1;
+        return action.Kind switch
+        {
+            GridKeyKind.Move when action.Direction == GridDirection.Left => Math.Max(0, choice.Action - 1),
+            GridKeyKind.Move when action.Direction == GridDirection.Right => Math.Min(last, choice.Action + 1),
+            GridKeyKind.MoveToEdge when action.Direction == GridDirection.Left => 0,
+            GridKeyKind.MoveToEdge when action.Direction == GridDirection.Right => last,
+            _ => null,
+        };
+    }
+
+    /// <summary>Arms the post-render reveal for a Focus that did not move (ADR-0012):
+    /// entering a cell needs it painted — a request cannot be handed to content that is not
+    /// in the DOM, and a chosen button nobody can see is no choice (ADR-0037). A Focus
+    /// already on screen scrolls nothing.</summary>
+    private void RequestFocusReveal()
+    {
+        _revealFocus = true;
+        _revealRowStart = false;
+        _revealStepRows = 0;
+    }
+
+    /// <summary>
+    /// What the row at this position is told about an engaged cell (ADR-0037): the chosen
+    /// action while its Focus cell is Interactive, a Template cell's focus request on the
+    /// render that can deliver it, and <see cref="CellEngagement.None"/> for every other
+    /// row — so no other row re-renders for any of it (ADR-0003). Recorded at render,
+    /// because only the render knows whether the cell was painted to be handed anything.
+    /// </summary>
+    private CellEngagement EngagementFor(int row)
+    {
+        if (_selection.Selection.IsEmpty || _selection.Selection.Focus.Row != row)
+            return CellEngagement.None;
+        if (InteractiveChoice() is { } choice)
+            return CellEngagement.Chosen(choice.Cell.Column, choice.Action);
+        if (_focusRequest is { } request && request.Cell == _selection.Selection.Focus && FocusCellIsPainted())
+        {
+            _focusRequestHandedOver = true;
+            return CellEngagement.Request(request.Cell.Column, request.Number);
+        }
+        return CellEngagement.None;
     }
 
     /// <summary>
@@ -4312,14 +4529,31 @@
     /// </summary>
     private string? ActiveDescendant()
     {
-        if (_selection.Selection.IsEmpty || _visible is not { } visible)
+        if (!FocusCellIsPainted())
             return null;
         var focus = _selection.Selection.Focus;
+        // Interactive over several actions (ADR-0037): the keyboard stays on this root and
+        // the attribute names the chosen button, which an assistive technology then reads
+        // as it would under real focus — by the label every action is required to carry.
+        if (InteractiveChoice() is { } choice)
+            return CellIds.Action(_idPrefix, focus.Row, focus.Column, choice.Action);
+        return CellIds.Cell(_idPrefix, focus.Row, focus.Column);
+    }
+
+    /// <summary>Whether the Focus cell is in the DOM right now: its row in the Window and
+    /// on screen, and its column pinned or inside the horizontal slice — never mid-fling,
+    /// when the scrollable cells are skipped (ADR-0004). What aria-activedescendant may
+    /// name (ADR-0033), and what a Template cell's focus request waits for (ADR-0037).</summary>
+    private bool FocusCellIsPainted()
+    {
+        if (_selection.Selection.IsEmpty || _visible is not { } visible)
+            return false;
+        var focus = _selection.Selection.Focus;
         if (focus.Row < visible.Start || focus.Row >= visible.Start + visible.Count)
-            return null;
+            return false;
         var slice = focus.Row - _windowStart;
         if (slice < 0 || slice >= _window.Count)
-            return null;
+            return false;
         if (focus.Column >= _columnStyles.Geometry.PinnedCount)
         {
             // Not pinned, so it is in the DOM only while the horizontal slice paints it
@@ -4327,14 +4561,10 @@
             if (_placeholderMode || _scrollable is not { } columns
                 || focus.Column < columns.Start || focus.Column >= columns.Start + columns.Count)
             {
-                return null;
+                return false;
             }
         }
-        else if (_placeholderMode && slice >= _window.Count)
-        {
-            return null;
-        }
-        return FormattableString.Invariant($"{_idPrefix}r{focus.Row}c{focus.Column}");
+        return true;
     }
 
     private void RestartSettleTimer()

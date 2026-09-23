@@ -122,7 +122,14 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   intelligible rather than surprising.
 - **This is the second reason the Focus cell is never merely "the cell with DOM focus".** The
   first was the capture-phase listener; this is `aria-activedescendant`. Anything that moves DOM
-  focus into a cell breaks both at once.
+  focus into a cell breaks both at once. *(The first decision made against this line was
+  entering a cell, [ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md),
+  and it kept both: over the core's own actions the keyboard stays on the root and
+  `aria-activedescendant` moves to the chosen action's **button** — the attribute may name any
+  descendant, and Chromium's accessibility tree resolves it to that button (checked over CDP;
+  what a screen reader then says is still owed a real one, like the wording below). Only a
+  Template's control takes DOM focus, which it already did when clicked; leaving it by Escape
+  puts both back.)*
 - **Layer 3 owns the verification.** Counts and indices are assertable in bUnit, but "the Focus is
   reachable by one tab, and the announcement is made once per settled selection" is a real-browser
   question. It joins the list in [ADR-0026](./0026-layer-three-runs-on-playwright-against-the-installed-chrome.md).
@@ -134,5 +141,10 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   add an audit, not a redesign.
 - **The Cell Editor's own semantics** are settled when the editor is built (ADR-0010), like its
   classes.
+- ~~**Interactive mode's semantics**~~ — settled with the mode
+  ([ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)): the
+  grid announces nothing new. A chosen action is exposed through `aria-activedescendant` by the
+  name ADR-0020 already requires every action to carry; a Template's control by its own label
+  when it takes focus. The live region keeps its two writers.
 - **Whether the announcement should name the corner cells by column header or by index** is a
   wording question, settled against a real screen reader in layer 3 rather than in prose here.

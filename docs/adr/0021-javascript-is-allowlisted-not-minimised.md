@@ -161,7 +161,15 @@ These are the places where reaching for JS would be the easy answer, and where w
   so without an exit the keyboard is trapped in the grid. The key handle therefore has a
   `blur()` on the instance's own root, alongside the listener already attached to it. It is
   one line, it reaches nothing outside this grid, and it is listed in the table above rather
-  than left as an unremarked fourth use.)*
+  than left as an unremarked fourth use.)* *(Refined again when entering a cell by key was
+  built, [ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md):
+  it needed **no** JavaScript, and that was a constraint on the design rather than luck. Over
+  its own actions the core never moves DOM focus at all — the keyboard stays on the root and
+  `aria-activedescendant` names the chosen button — and a Template's control focuses itself
+  with its own `FocusAsync` when the core asks through the fragment's context. "Focus the first
+  focusable thing in the cell" was the JavaScript answer and is recorded there as rejected. The
+  one change to `ex-grid.js` is inside the first entry's filter: a repeated plain Space is taken
+  and dropped, so a held Space engages once.)*
 - **Measuring the scrollbar.** The gutter is *reported*, never read — see the fourth entry above
   for why those are different things. Nothing in the grid calls `getBoundingClientRect`,
   `clientWidth` or `offsetWidth` on the path to a paint.

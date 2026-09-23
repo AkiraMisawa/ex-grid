@@ -63,6 +63,24 @@ judged against the scroll-event mirror was dropped while its predecessor's write
 still in flight, stranding the Focus off screen with no recovery — fixed by comparing
 against the newer of last-event and last-write (recorded in ADR-0012), and pinned at L2.
 
+**2026-09-23, ADR-0037 — entering a cell by key.** The last item on the "not in the core"
+list below that the core itself owed. Space on a cell with several actions makes it
+Interactive with the keyboard left on the root; Space on a Template cell hands its content
+one focus request through the new `TemplateCellContext`; Space on an editable cell opens
+Overwrite with the space in it; a held Space engages once; and the grid's action buttons no
+longer hold the keyboard at all — out of the tab sequence, and not focused by a press either.
+Run in a Linux cloud container with the .NET 10 SDK installed directly (no nix): layers 1 and 2
+**446 + 403 pass**, plus the Wrapper's 17 — twenty of the component tests new, and each of the
+rules they name was also broken on purpose once, to see its test fail. Layer 3: **69 pass,
+0 failed — on the Playwright-bundled Chromium 1194, headless**, because the container has
+neither Chrome nor Edge. Two settings were needed there that are not the project's:
+Playwright's headless `--hide-scrollbars` dropped, without which the gutter tests correctly
+refuse to pass ("measured 0x0" — confirmed identical on the untouched branch), and
+`ignoreHTTPSErrors`, because the container's TLS-intercepting proxy is not a CA the browser
+trusts. So KB-20 to KB-27, A11Y-17 and UX-14 are verified on Chromium only, and owe a run on
+the `chrome` and `msedge` projects (item 4 below). No observational record was filed under
+`verification/`: headless container timings are not comparable with that trend.
+
 ## Working through to the component
 
 | ADR | | Pinned by |
@@ -94,6 +112,7 @@ against the newer of last-event and last-write (recorded in ADR-0012), and pinne
 | 0036 | **The context menu** — the secondary click's meaning, the core's clipboard commands and the Consumer's, the keyboard trigger, and `GridCommand` losing its label | `ContextMenuTests`, `FilterChromeTests`, `features.spec.mjs` |
 | 0035 | **The Editable declaration gates writes** — a paste or Ctrl+Enter fill covering a non-editable column is refused whole, and the fill refusal is no longer silent (CP-16) | `PasteRuleTests`, `ClipboardWiringTests`, `CellEditorTests` |
 | 0021 (fifth entry) / 0029 | **The hover band** — the pointer reported by JavaScript only when it moves onto another row (offsets; the cell is resolved in C#), the band painted by the overlay like the Focus band, `HighlightHoverRow`, `--ex-row-hover-background` made real; off by default and then not even computed | `HoverBandTests`, `mud.spec.mjs` (UX-13, real mouse) |
+| 0037 | **Entering a cell by key** — Space on a cell with several actions makes it Interactive with the keyboard left on the root (the arrows, Home and End choose; Space fires once and leaves; Enter, Tab and every other key leave and keep their meaning; `aria-activedescendant` names the chosen button, painted `ex-action-chosen`); Space on a Template cell hands its content one `FocusRequest` through `TemplateCellContext` and the Consumer's control focuses itself; Space on an editable cell opens Overwrite with the space; a held Space engages once; the action buttons leave the tab sequence | `InteractiveTests`, `ShippedStylesheetTests`, `features.spec.mjs` (real keys on `/cells`) |
 | 0030 | **`GridPresentationDefaults`** — the one cascaded value a Wrapper hands down: glyph widths at their measured size, a default Density, a default for the hover switch; an explicit parameter beats each | `GridPresentationDefaultsTests`, `PresentationDefaultsWiringTests` |
 
 ## Not in the core, by decision
@@ -106,11 +125,12 @@ against the newer of last-event and last-write (recorded in ADR-0012), and pinne
   stylesheet, and `MudGridChrome` filling two seams — the Cell Editor (a bare input in
   the core's box) and the loading bar. The filter panel and the column menu still fall
   back to the core's. Nothing in `src/ExGrid` references MudBlazor (PRE-4).
-- **Interactive mode's keyboard entry** (Space into a multi-action or Template cell,
-  ADR-0020) is partial: Space fires a single action; entering *into* a cell's control by
-  key is not wired (focus into plain-markup cells needs a decision the ADRs do not make).
-  The way **out** is wired: Escape from any focusable descendant returns the keyboard to
-  the grid (KB-18), read off the event target rather than a mode flag.
+- ~~**Interactive mode's keyboard entry**~~ — **built** (2026-09-23), once
+  [ADR-0037](adr/0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)
+  made the decision this entry said was missing: the core never reaches into content it
+  did not render. Over its own actions the keyboard stays on the root; a Template's
+  control is asked, and focuses itself. The template's signature changed to receive a
+  `TemplateCellContext` for it.
 - **`--ex-row-hover-background`** (ADR-0029's hover token) could not work as written —
   rows are `pointer-events: none`, so `:hover` never matches them — and is now real by
   another route: the fifth allowlist entry of ADR-0021 reports the pointer moving onto another
@@ -122,9 +142,9 @@ against the newer of last-event and last-write (recorded in ADR-0012), and pinne
 
 | Layer | | State |
 |---|---|---|
-| 1 | `tests/ExGrid.Tests` | 45 files, **412 pass** |
-| 2 | `tests/ExGrid.Components` | 33 files, **306 pass** — including ST-1's randomised 500-operation run and MEM-1's allocation invariant |
-| 3 | `tests/ExGrid.Browser` | **5 specs, 38 pass on `chrome`** — scrollbar, features, presentation, gestures (real-mouse reorder/resize, off-screen paste, 10MB paste, the IME guard), virtualisation, and the /cells key-gate pair (KB-18/19). `msedge` declared, unrunnable on this machine (no Edge) |
+| 1 | `tests/ExGrid.Tests` | 46 files, **446 pass** (2026-09-23) |
+| 2 | `tests/ExGrid.Components` | 41 files, **403 pass** (2026-09-23) — including ST-1's randomised 500-operation run, MEM-1's allocation invariant and ADR-0037's `InteractiveTests` |
+| 3 | `tests/ExGrid.Browser` | **6 specs, 69 pass** (2026-09-23) — but on the bundled Chromium in a container, not on `chrome` or `msedge` (see the ADR-0037 paragraph above). The last run on a target browser was 2026-09-01's: 80 on `chrome` and `msedge` together, before ADR-0037's tests existed |
 | — | `verification/2026-09-01/` | layer logs + `results.md` with the pass/blocked ledger |
 
 ## What is left, in the order that costs least
@@ -133,10 +153,14 @@ against the newer of last-event and last-write (recorded in ADR-0012), and pinne
    `spikes/render-bench` entry (PF-8), and the CON-3/6 instrumentation.
 2. **The other machine** — an Edge run, and a Windows or Linux run for VZ-10's real
    clause; both are hard DoD requirements the development Mac cannot discharge.
-3. Interactive mode's keyboard entry; the hover band's owed numbers — a
-   `spikes/render-bench` mode for the band's paint, and a Blazor Server host to measure
-   the pointer report under (ADR-0021, fifth entry; none exists in the repository).
-4. `ExGrid.MudBlazor`'s remaining seams — the filter panel and the column menu as
+3. The hover band's owed numbers — a `spikes/render-bench` mode for the band's paint,
+   and a Blazor Server host to measure the pointer report under (ADR-0021, fifth entry;
+   none exists in the repository). *(Interactive mode's keyboard entry, which headed this
+   item, is built — ADR-0037.)*
+4. **ADR-0037's layer 3 on the two target browsers.** Its tests were written and run on
+   the Playwright-bundled Chromium only (the machine had neither Chrome nor Edge); KB-20
+   to KB-26, A11Y-17 and UX-14 are owed a run on the `chrome` and `msedge` projects.
+5. `ExGrid.MudBlazor`'s remaining seams — the filter panel and the column menu as
    content inside the core's popover — and `Striped`, reserved until the core emits a
    row-parity class (ADR-0030).
 

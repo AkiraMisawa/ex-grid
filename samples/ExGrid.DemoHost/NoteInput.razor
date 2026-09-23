@@ -1,0 +1,27 @@
+@*
+    A Template Column's control that the keyboard can enter (ADR-0037). The grid asks
+    through the context, and the control focuses itself with Blazor's own FocusAsync —
+    the grid holds no reference to it and does not try, exactly as with a Chrome's Cell
+    Editor (ADR-0030). `ex-interactive` turns pointer events back on for this element
+    alone (ADR-0020); `tabindex="-1"` keeps the grid one tab stop, which only the
+    Consumer's own markup can do.
+*@
+<input class="ex-interactive demo-note" tabindex="-1" placeholder="note"
+       aria-label="@($"Note for {Cell.Row.Book}")" @ref="_input" />
+
+@code {
+    [Parameter, EditorRequired] public TemplateCellContext<DemoPosition> Cell { get; set; }
+
+    private ElementReference _input;
+    private int _acted;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // A request is non-zero on one render only; acting once per number is what
+        // makes a second render carrying the same one harmless (ADR-0037).
+        if (Cell.FocusRequest == 0 || Cell.FocusRequest == _acted)
+            return;
+        _acted = Cell.FocusRequest;
+        await _input.FocusAsync();
+    }
+}

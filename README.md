@@ -10,9 +10,10 @@ Two products share this repository and ship as separate packages
 
 **Current status: the specification is settled; implementation is underway** — the
 pure-logic core and the component layer exist, virtualised on both axes, with pinned
-columns and with selection painted and driven by the mouse. The keyboard, editing and
-the clipboard are still to come. The specification lives
-in [`docs/adr/`](docs/adr/) (30 decision records) and the domain glossary in
+columns, selection, the keyboard (including entering a cell), the Cell Editor and the
+clipboard. What is left is recorded in
+[`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
+in [`docs/adr/`](docs/adr/) (37 decision records) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
 ## Getting started

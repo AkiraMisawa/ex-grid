@@ -42,7 +42,7 @@ public sealed record GridColumn<TRow>
         string? header,
         ColumnWidthSpec? width,
         IReadOnlyList<GridAction> actions,
-        RenderFragment<TRow>? template,
+        RenderFragment<TemplateCellContext<TRow>>? template,
         bool queryable,
         bool editable = false,
         FilterUiMode filterUi = FilterUiMode.Condition,
@@ -123,12 +123,19 @@ public sealed record GridColumn<TRow>
     /// <para>Hold the fragment on the column declaration; do not construct it per render.
     /// A new lambda each time makes the column look changed and slips the whole row past
     /// memoisation (ADR-0003).</para>
+    ///
+    /// <para>The fragment receives a <see cref="TemplateCellContext{TRow}"/> rather than the
+    /// bare row: Space enters a Template cell by asking its content to take DOM focus, and
+    /// the context is where that request arrives. A control that should be reachable by
+    /// keyboard focuses itself when it sees one; the core never reaches into markup it did
+    /// not render (ADR-0037). Such a control should also carry <c>tabindex="-1"</c>, or the
+    /// grid stops being one tab stop.</para>
     /// </summary>
     public static GridColumn<TRow> TemplateColumn(
         string name,
         ColumnType type,
         Func<TRow, object?> value,
-        RenderFragment<TRow> template,
+        RenderFragment<TemplateCellContext<TRow>> template,
         string? header = null,
         ColumnWidthSpec? width = null,
         Func<object, string>? format = null)
@@ -164,8 +171,9 @@ public sealed record GridColumn<TRow>
     /// (ADR-0020).</summary>
     public IReadOnlyList<GridAction> Actions { get; }
 
-    /// <summary>What the Consumer paints in this column's cells, or null (ADR-0020).</summary>
-    public RenderFragment<TRow>? Template { get; }
+    /// <summary>What the Consumer paints in this column's cells, or null (ADR-0020) — handed
+    /// the row and the core's focus request for the cell (ADR-0037).</summary>
+    public RenderFragment<TemplateCellContext<TRow>>? Template { get; }
 
     /// <summary>Whether the query engine will sort or filter on this column. False only
     /// for an Action Column, which has no value to order by (ADR-0020).</summary>

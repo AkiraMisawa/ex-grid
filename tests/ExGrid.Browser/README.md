@@ -57,7 +57,12 @@ non-interactive shell does not always inherit it.
   real clipboard: the editor's two states (ED-2/3/4), both clipboard formats and the
   refusals (CP-1/3/4/5/6/10/14, PST-1), the keys the grid must not take (KB-15), one
   tab stop (A11Y-4, KB-12), instance independence (DOM-4), header-click sorting
-  (SR-1), popovers (UX-11).
+  (SR-1), popovers (UX-11). And on `/cells`, entering a cell by key (ADR-0037): Space
+  into a cell with several actions, the arrows choosing and Space firing once, Enter
+  never firing (KB-20/21/22); Space putting the caret in a Template's own field and
+  Escape bringing the keyboard back (KB-23/24); a held Space firing once (KB-26);
+  Shift+Tab from after the grid landing on the root with buttons on the page
+  (A11Y-17); the chosen action outlined under forced colors too (UX-14).
 - `presentation.spec.mjs` — the presentation contract, measured: inline Geometry
   Tokens beat the supported override routes (UX-2), painted geometry equals declared
   (UX-3/ST-3), Visual Tokens recolour from an ancestor (UX-5), nothing under the

@@ -70,4 +70,16 @@ public class ShippedStylesheetTests
         string[] allowed = ["copy", "keydown", "mousemove", "mouseleave", "paste"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
+
+    [Fact] // ADR-0037 / KB-26: a held Space engages once — the gate takes and drops a repeated plain Space
+    public void The_key_gate_drops_a_repeated_space()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // The Definition of Done states this one as an inspection, and this is it: the
+        // filter has to exist in the capture-phase listener, because auto-repeat is only
+        // visible there — by the time a key reaches .NET, a repeat looks like a press.
+        // Layer 3 holds the key for real.
+        Assert.Matches(new Regex(@"canonical === ' ' && event\.repeat"), script.Text);
+    }
 }

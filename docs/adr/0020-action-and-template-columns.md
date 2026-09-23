@@ -182,15 +182,24 @@ ADR-0016), the column menu is not, because there is no column menu yet.
 - ~~The keyboard half of this ADR is not implemented~~ — **it is.** The capture-phase handler
   exists, and the key table maps Space to `Engage` and Escape to `Leave`
   (`GridKeys.cs`, `ExGrid.OnKeyAsync`). Enter still never fires an action, as specified.
-- ~~Interactive mode itself~~ — likewise implemented, as the `Engage` / `Leave` pair.
+- ~~Interactive mode itself~~ — **half** implemented, as the `Engage` / `Leave` pair.
   The way out is not a JS mode: the key gate reads "inside a cell's control" off the
   event target, so Escape returns the keyboard to the grid **whether focus arrived by
-  key or by click** — an `'interactive'` mode string the core never set had left the
+  click or otherwise** — an `'interactive'` mode string the core never set had left the
   contract dead until review caught it. Every other key stays the control's.
-- **Copy of a range covering an Action Column.** The clipboard rules are pure and not yet
-  wired to the component; a value-less column would copy as an empty cell today. Whether
-  that is right, or whether copy should refuse, is decided when the clipboard is
-  connected (ADR-0005).
+  *(Corrected later: this bullet once said "whether focus arrived by key or by click",
+  but nothing could put focus inside a cell by key — Space did nothing on a cell with
+  several actions or on a Template cell, and the editable row of the Space table above
+  was not wired either. Entering needed a decision this ADR does not make, and
+  [ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)
+  makes it: over the core's own actions Interactive is a mode the core holds, with the
+  keyboard left on the root and `aria-activedescendant` naming the chosen action; a
+  Template's content is asked to focus itself, through a `TemplateCellContext` the
+  fragment now receives instead of the bare row.)*
+- ~~**Copy of a range covering an Action Column.**~~ — settled when the clipboard was
+  wired: an empty cell, recorded in
+  [ADR-0005](./0005-copy-refuses-rather-than-truncates.md)'s "what wiring the routes
+  settled".
 
 ## Consequences
 
