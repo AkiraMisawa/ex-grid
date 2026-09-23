@@ -99,6 +99,22 @@ code 0 before a page existed, and by the evidence it was applying an update that
 waiting for the first launch after the sign-in. The rerun passed 8 of 8, and the record
 keeps both logs.
 
+**Later on 2026-09-23, the `chrome` half — on macOS.** Layer 3 ran on the development Mac
+(macOS 26.6.2, Google Chrome 153.0.8010.53, headed, nothing changed in the configuration):
+KB-20 to KB-27, A11Y-17 and UX-14 pass on `chrome` there too. The same run failed one older test, deterministically — CP-16's Ctrl+Enter fill,
+written and passed on Linux, and never before run on a Mac, where Playwright's
+`ControlOrMeta` presses Command. The product was wrong, not the test: the editor's keys
+were read from the raw Control flag and never went through `GridKeys.Canonical`, so on a
+Mac Cmd+Enter was a plain Enter — one cell committed and the Focus moved on, the rest of
+the selection silently left unfilled — and off a Mac a Win+Enter committed too.
+`OnEditingKeyAsync` now switches on the canonical form, with two layer-2 tests seen
+failing first (`CellEditorTests`, Cmd+Enter fills where Meta is Command; Meta+Enter does
+nothing where it is not), and **KB-3** is widened to name every key path, the editor's
+included. After the fix: layers 1 and 2 **446 + 405** plus the Wrapper's 17, layer 3
+**69 of 69** on `chrome`. `verification/2026-09-23-macos/metrics.json` is the run's own
+record; against the 2026-09-01 macOS one, BIG-7 moved from 374 to 481 ms (+29%) on a
+machine in ordinary use — observational, recorded as a note and not investigated.
+
 ## Working through to the component
 
 | ADR | | Pinned by |
@@ -161,10 +177,11 @@ keeps both logs.
 | Layer | | State |
 |---|---|---|
 | 1 | `tests/ExGrid.Tests` | 46 files, **446 pass** (2026-09-23) |
-| 2 | `tests/ExGrid.Components` | 41 files, **403 pass** (2026-09-23) — including ST-1's randomised 500-operation run, MEM-1's allocation invariant and ADR-0037's `InteractiveTests` |
-| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above) |
+| 2 | `tests/ExGrid.Components` | 41 files, **405 pass** (2026-09-23) — including ST-1's randomised 500-operation run, MEM-1's allocation invariant and ADR-0037's `InteractiveTests` |
+| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And **69 pass on `chrome`** on macOS (2026-09-23, Chrome 153, headed), after the Cmd+Enter fix the Windows run could not have seen |
 | — | `verification/2026-09-01/` | layer logs + `results.md` with the pass/blocked ledger |
 | — | `verification/2026-09-23-windows/` | the Windows layer-3 run: `results.md`, the 150% and 125% logs, `metrics.json` |
+| — | `verification/2026-09-23-macos/` | the macOS `chrome` run's `metrics.json` |
 
 ## What is left, in the order that costs least
 

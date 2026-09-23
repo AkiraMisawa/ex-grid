@@ -3518,7 +3518,7 @@
         // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite.
         if (_editMode != EditMode.None)
         {
-            await OnEditingKeyAsync(key, ctrl, shift);
+            await OnEditingKeyAsync(GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary));
             return;
         }
 
@@ -3855,9 +3855,16 @@
         }
     }
 
-    private async Task OnEditingKeyAsync(string key, bool ctrl, bool shift)
+    /// <param name="canonical">The key in <see cref="GridKeys.Canonical"/>'s form, as it is
+    /// read outside editing: Command folds into Control only where it is Command
+    /// (ADR-0012), so Cmd+Enter fills on a Mac and Win+Enter is nobody's here. A form not
+    /// named below is not the editor's and does nothing. <b>The cases mirror
+    /// <c>editingKeys</c> / <c>overwriteKeys</c> in <c>ex-grid.js</c></b> — the two must
+    /// move together.</param>
+    private async Task OnEditingKeyAsync(string canonical)
     {
-        switch (key)
+        var backward = canonical.StartsWith("Shift+", StringComparison.Ordinal);
+        switch (canonical)
         {
             case "Escape":
                 // Cancel discards: the uncommitted text was the grid's and dies with
@@ -3872,16 +3879,18 @@
                 RequestEditorFocus();
                 StateHasChanged();
                 return;
-            case "Enter" when ctrl:
+            case "Control+Enter":
                 // Ctrl+Enter fills the whole selection with the committed value — one
                 // Edit Intent carrying all cells, the paste machinery's shape (ADR-0007/0014).
                 await CommitFillAsync();
                 return;
             case "Enter":
-                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.ColumnMajor, shift, Extent));
+            case "Shift+Enter":
+                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.ColumnMajor, backward, Extent));
                 return;
             case "Tab":
-                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.RowMajor, shift, Extent));
+            case "Shift+Tab":
+                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.RowMajor, backward, Extent));
                 return;
             case "ArrowUp":
                 await CommitAndMoveAsync(next => next.Move(GridDirection.Up, Extent));

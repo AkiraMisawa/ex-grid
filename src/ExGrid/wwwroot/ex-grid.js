@@ -46,7 +46,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // Tab are always the core's while editing; the arrows and Home/End only in
     // Overwrite, where they commit and move — in Caret they reach the editor and move
     // its caret. A mode change is a different set. The meaning stays on the C# side;
-    // these are gates only.
+    // these are gates only, and their mirror is the cases of OnEditingKeyAsync, which
+    // reads the same canonical form — the two must move together.
     let editing = 'none';
     const editingKeys = new Set(
         ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2']);
