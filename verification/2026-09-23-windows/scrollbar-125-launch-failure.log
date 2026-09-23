@@ -1,0 +1,35 @@
+Running 8 tests using 1 worker
+  x  1 [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars (0ms)
+  ok 2 [chrome] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout (1.0s)
+  ok 3 [chrome] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again (1.0s)
+  ok 4 [chrome] › scrollbar.spec.mjs:324:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (921ms)
+  ok 5 [msedge] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars (1.0s)
+  ok 6 [msedge] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout (1.0s)
+  ok 7 [msedge] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again (1.1s)
+  ok 8 [msedge] › scrollbar.spec.mjs:324:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (939ms)
+  1) [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars 
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+    <launching> C:\Program Files (x86)\Google\Chrome\Application\chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --user-data-dir=C:\Users\amisa\AppData\Local\Temp\playwright_chromiumdev_profile-rLA9PF --remote-debugging-pipe --no-startup-window
+    <launched> pid=19176
+    Call log:
+      - <launching> C:\Program Files (x86)\Google\Chrome\Application\chrome.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --user-data-dir=C:\Users\amisa\AppData\Local\Temp\playwright_chromiumdev_profile-rLA9PF --remote-debugging-pipe --no-startup-window
+      - <launched> pid=19176
+      - [pid=19176] <gracefully close start>
+      - [pid=19176] <kill>
+      - [pid=19176] <will force kill>
+      - [pid=19176] taskkill stderr: ERROR: The process "19176" not found.
+      - [pid=19176] <process did exit: exitCode=0, signal=null>
+      - [pid=19176] starting temporary directories cleanup
+      - [pid=19176] finished temporary directories cleanup
+      - [pid=19176] <gracefully close end>
+    Error Context: test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-chrome\error-context.md
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-chrome\trace.zip
+    Usage:
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-chrome\trace.zip
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+  1 failed
+    [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars 
+  7 passed (12.4s)
+exit=1

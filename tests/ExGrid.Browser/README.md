@@ -49,10 +49,39 @@ occupy layout, so `EXGRID_HEADLESS=1` would disarm the suite rather than help it
 launch reports that it cannot open a display, check that `DISPLAY` is set to `:0` — a
 non-interactive shell does not always inherit it.
 
+## Running on Windows itself
+
+VZ-14 is only discharged by browsers on a real Windows desktop set to 125%, with the OS
+doing the scaling. From a WSL2 checkout, only the runner and the browsers need to be on
+Windows. The DemoHost can stay in WSL: Windows reaches `localhost:5299` through WSL's
+localhost forwarding, and `reuseExistingServer` takes the running host.
+
+1. In WSL: `nix develop -c dotnet run --project samples/ExGrid.DemoHost --urls http://localhost:5299`
+2. Copy this directory to a Windows path, `node_modules` included but without
+   `node_modules/.bin`. Playwright is plain JavaScript, so the Linux install runs on
+   Windows unchanged. A UNC path to the WSL checkout does not work, because `cmd` refuses
+   a UNC working directory.
+3. On Windows, with any Node on `PATH` (the official zip, unpacked, is enough):
+   `node node_modules\@playwright\test\cli.js test`
+
+The observational numbers land in `..\..\verification\<day>-windows` relative to the
+copy. Move them into the repository's `verification/`.
+
+**Changing the display scale needs a sign-out on some machines, and a sign-out stops
+WSL.** Record what has run before you sign out. After you sign in again, Chrome's first
+launch can be the one that applies a waiting update. It exits with code 0, and the first
+test fails at 0 ms with `browserType.launch: Target page, context or browser has been
+closed`. That is not a result, but keep the log and say so rather than letting a rerun
+hide it.
+
 ## What it asserts
 
 - `scrollbar.spec.mjs` — the Scrollbar Gutter: the Focus is never behind a bar, at
-  DPR 1 / 1.25 / 2, with the platform's bars and with forced classic bars.
+  DPR 1 / 1.25 / 2, with the platform's bars and with forced classic bars. Those scales
+  are CDP's. Playwright's default viewport pins every page at DPR 1 whatever the OS is
+  set to, so none of those tests sees the OS scale. The VZ-14 block turns the emulation
+  off (`viewport: null`) and refuses to pass unless it is on Windows, at a fractional
+  DPR, with bars that occupy layout. Anywhere other than Windows it is skipped by name.
 - `features.spec.mjs` — the interaction surface on `/features`, with real keys and the
   real clipboard: the editor's two states (ED-2/3/4), both clipboard formats and the
   refusals (CP-1/3/4/5/6/10/14, PST-1), the keys the grid must not take (KB-15), one

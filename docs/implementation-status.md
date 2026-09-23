@@ -24,7 +24,8 @@ either, and §22 stated the reason: the test is a tautology against overlay scro
 criterion now names that property rather than the platform pair. What the run does not give is
 the case behind the test's own "run it on Windows" comment — a real Windows desktop at 125%,
 where the native scrollbar is a non-integer number of CSS pixels and the OS, not CDP, does the
-scaling. That is **VZ-14**, and it is open.
+scaling. That is **VZ-14**. It was discharged on 2026-09-24, on Windows at 125% (the Windows
+paragraph below).
 
 **Every ADR from 0001 to 0035 now works through to the component**, except ADR-0034
 (validation — accepted after this snapshot and unimplemented, below) and the two package
@@ -80,6 +81,23 @@ refuse to pass ("measured 0x0" — confirmed identical on the untouched branch),
 trusts. So KB-20 to KB-27, A11Y-17 and UX-14 are verified on Chromium only, and owe a run on
 the `chrome` and `msedge` projects (item 4 below). No observational record was filed under
 `verification/`: headless container timings are not comparable with that trend.
+
+**2026-09-23, the first layer-3 run on Windows itself** — Chrome 153 and Edge 153 on
+Windows 11, headed, with the DemoHost left in WSL2 and reached through localhost forwarding
+(`verification/2026-09-23-windows/`). The full suite: **140 pass, 0 failed, 0 skipped**,
+70 per browser. That discharges item 4 below: KB-20 to KB-27, A11Y-17 and UX-14 now pass on
+`chrome` and `msedge`. There was a finding first. Playwright's default viewport is a CDP
+emulation that pins `deviceScaleFactor` to 1, so on a desktop at 150% every existing test
+measured DPR 1.00000003. Run as it stood, `scrollbar.spec.mjs` could never have answered
+VZ-14, whatever the OS was set to. A VZ-14 block now turns the emulation off and refuses to
+pass unless it is on Windows, at a fractional DPR, with bars that occupy layout. At 150% it
+passes on both browsers: DPR 1.5, and the gutter the grid is told is **15.34375 CSS px**
+(23 device px), a non-integer as VZ-14 supposes. After a sign-out to apply 125%, it passes
+there too: DPR 1.25, gutter **15.203125 CSS px** (19 device px), on both browsers. **VZ-14 is
+discharged.** The first 125% attempt lost one Chrome test at launch. Chrome exited with
+code 0 before a page existed, and by the evidence it was applying an update that had been
+waiting for the first launch after the sign-in. The rerun passed 8 of 8, and the record
+keeps both logs.
 
 ## Working through to the component
 
@@ -144,22 +162,23 @@ the `chrome` and `msedge` projects (item 4 below). No observational record was f
 |---|---|---|
 | 1 | `tests/ExGrid.Tests` | 46 files, **446 pass** (2026-09-23) |
 | 2 | `tests/ExGrid.Components` | 41 files, **403 pass** (2026-09-23) — including ST-1's randomised 500-operation run, MEM-1's allocation invariant and ADR-0037's `InteractiveTests` |
-| 3 | `tests/ExGrid.Browser` | **6 specs, 69 pass** (2026-09-23) — but on the bundled Chromium in a container, not on `chrome` or `msedge` (see the ADR-0037 paragraph above). The last run on a target browser was 2026-09-01's: 80 on `chrome` and `msedge` together, before ADR-0037's tests existed |
+| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above) |
 | — | `verification/2026-09-01/` | layer logs + `results.md` with the pass/blocked ledger |
+| — | `verification/2026-09-23-windows/` | the Windows layer-3 run: `results.md`, the 150% and 125% logs, `metrics.json` |
 
 ## What is left, in the order that costs least
 
 1. **The measurement harness** — MEM-2..7, PF-3..8, BIG-2..6, plus a fresh
    `spikes/render-bench` entry (PF-8), and the CON-3/6 instrumentation.
-2. **The other machine** — an Edge run, and a Windows or Linux run for VZ-10's real
-   clause; both are hard DoD requirements the development Mac cannot discharge.
+2. ~~**VZ-14 at 125%.**~~ Discharged on 2026-09-24 on a Windows desktop at 125%, on both
+   browsers. (The Edge run and VZ-10, which this item used to hold, were discharged on
+   2026-09-01.)
 3. The hover band's owed numbers — a `spikes/render-bench` mode for the band's paint,
    and a Blazor Server host to measure the pointer report under (ADR-0021, fifth entry;
    none exists in the repository). *(Interactive mode's keyboard entry, which headed this
    item, is built — ADR-0037.)*
-4. **ADR-0037's layer 3 on the two target browsers.** Its tests were written and run on
-   the Playwright-bundled Chromium only (the machine had neither Chrome nor Edge); KB-20
-   to KB-26, A11Y-17 and UX-14 are owed a run on the `chrome` and `msedge` projects.
+4. ~~**ADR-0037's layer 3 on the two target browsers.**~~ Discharged on 2026-09-23 by
+   the Windows run: KB-20 to KB-27, A11Y-17 and UX-14 pass on `chrome` and `msedge`.
 5. `ExGrid.MudBlazor`'s remaining seams — the filter panel and the column menu as
    content inside the core's popover — and `Striped`, reserved until the core emits a
    row-parity class (ADR-0030).
