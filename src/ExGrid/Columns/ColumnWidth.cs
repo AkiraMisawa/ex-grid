@@ -11,8 +11,12 @@ public readonly record struct ColumnWidth
 
     private ColumnWidth(double px) => _px = px;
 
+    /// <summary>Computed from content, and never narrowing on its own (ADR-0016). The
+    /// zero state.</summary>
     public static ColumnWidth Auto => default;
 
+    /// <summary>A fixed number of pixels, finite and positive — declared, or the user's
+    /// intent after a drag or Size to fit (ADR-0016).</summary>
     public static ColumnWidth Fixed(double px)
     {
         if (!double.IsFinite(px) || px <= 0)
@@ -21,8 +25,11 @@ public readonly record struct ColumnWidth
         return new(px);
     }
 
+    /// <summary>Whether this is an Auto width.</summary>
     public bool IsAuto => _px == 0;
 
+    /// <summary>The Fixed width in pixels. Throws when Auto: an Auto width is resolved
+    /// through its <see cref="AutoWidth"/> tracker, never read from here (ADR-0016).</summary>
     public double FixedPx => IsAuto
         ? throw new InvalidOperationException(
             "An Auto width has no fixed pixel value; resolve it through its AutoWidth tracker (ADR-0016).")

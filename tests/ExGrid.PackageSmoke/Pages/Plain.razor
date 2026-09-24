@@ -1,0 +1,19 @@
+@page "/"
+@* The first grid in src/ExGrid/README.md, as written there. *@
+@using ExGrid
+@using ExGrid.Components
+
+<ExGrid TRow="Trade" Source="_source" Columns="_columns" />
+
+@code {
+    // Kept in fields. A new source or column list on every render would make every row
+    // render again.
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Notional", ColumnType.Number, t => t.Notional),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate),
+    ];
+}

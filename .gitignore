@@ -19,3 +19,8 @@ docs/agent-runs/
 # suites without touching the working tree you are editing. Disposable: the branch
 # it sits on carries nothing the main tip does not.
 .claude/worktrees/
+
+# The package smoke check (tests/ExGrid.PackageSmoke/check.sh)
+.feed/
+.nuget-packages/
+.publish/

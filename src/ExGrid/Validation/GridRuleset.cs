@@ -6,9 +6,9 @@ namespace ExGrid.Validation;
 public sealed record RuleViolation(string Column, string Message);
 
 /// <summary>
-/// The bundled ruleset (ADR-0034). **Ownership and driving are the Consumer's; the
-/// implementation ships with the library** — the same arrangement as the undo stack
-/// (ADR-0007) and `GridSource` (ADR-0001). The grid never references this class.
+/// The bundled ruleset (ADR-0034). <b>Ownership and driving are the Consumer's; the
+/// implementation ships with the library</b> — the same arrangement as the undo stack
+/// (ADR-0007) and <c>GridSource</c> (ADR-0001). The grid never references this class.
 ///
 /// <para>It holds both kinds of rule and answers both display channels, so <b>one
 /// implementation runs whether a change arrived by a single edit, by a paste, or from

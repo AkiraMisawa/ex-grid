@@ -6,7 +6,10 @@ namespace ExGrid;
 /// </summary>
 public enum FilterCombinator
 {
+    /// <summary>A value matches when every clause matches.</summary>
     And,
+
+    /// <summary>A value matches when any clause matches.</summary>
     Or,
 }
 

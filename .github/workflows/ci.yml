@@ -1,7 +1,9 @@
 # Every layer, on every push to main and dev/claude-code and on every pull request
 # (ADR-0041). Layers 1 and 2 with coverage; layer 3 on the runner's installed Chrome and
 # Edge, headed under xvfb, as ADR-0026 asks. All three gate; coverage is reported, never
-# gated. The weekly run adds the soak and ST-1 at 10⁶ rows.
+# gated. The weekly run adds the soak and ST-1 at 10⁶ rows. The packages are packed and
+# taken by an application as a Consumer takes them (ADR-0042); the release workflow calls
+# this one and publishes exactly what that job tested.
 name: CI
 
 on:
@@ -15,6 +17,16 @@ on:
     inputs:
       long:
         description: 'Also run the soak (MEM-5/6) and ST-1 at 10⁶ rows'
+        type: boolean
+        default: false
+  # From release.yml, on a v* tag: the version is the tag's (ADR-0042).
+  workflow_call:
+    inputs:
+      version:
+        description: 'The version the package job packs'
+        type: string
+        default: ''
+      long:
         type: boolean
         default: false
 
@@ -120,6 +132,34 @@ jobs:
             verification/
             tests/ExGrid.Browser/test-results/
           if-no-files-found: ignore
+          retention-days: 30
+
+  package:
+    name: Packages, taken as a Consumer takes them
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          dotnet-version: 8.0.x
+
+      # Packs both, reads back what each .nuspec declares, and publishes a net8.0
+      # application that restores them from the packed files alone.
+      - name: Pack, read back, and consume
+        run: tests/ExGrid.PackageSmoke/check.sh "${{ inputs.version || format('0.0.0-ci.{0}', github.run_number) }}"
+
+      # What the release publishes: these files, not a rebuild. The feed is a dot directory,
+      # so MSBuild's default globs leave it alone, and upload-artifact skips hidden paths
+      # unless told otherwise.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: tests/ExGrid.PackageSmoke/.feed/
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 30
 
   badges:

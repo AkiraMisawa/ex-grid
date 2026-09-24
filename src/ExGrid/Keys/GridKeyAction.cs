@@ -73,5 +73,7 @@ public readonly record struct GridKeyAction(
     CycleOrder Order = CycleOrder.ColumnMajor,
     bool Backward = false)
 {
+    /// <summary>The key means nothing to the core — what every key outside the table
+    /// resolves to.</summary>
     public static GridKeyAction None { get; } = new(GridKeyKind.None);
 }

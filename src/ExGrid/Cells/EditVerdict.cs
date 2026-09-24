@@ -7,16 +7,16 @@ public enum EditVerdictKind
     /// means this, so a Consumer that declares none loses nothing.</summary>
     Accept = 0,
 
-    /// <summary>Applied and marked. The intent is raised **unchanged** — the flag does
+    /// <summary>Applied and marked. The intent is raised <b>unchanged</b> — the flag does
     /// not travel in it, exactly as Cell State does not travel through the Window
-    /// (ADR-0007). The Consumer applies the value and answers `Error` plus a message
+    /// (ADR-0007). The Consumer applies the value and answers <c>Error</c> plus a message
     /// through the display channels, so the screen shows what the user entered, marked
     /// as wrong. Loudly wrong, never quietly.</summary>
     Flag,
 
     /// <summary>The editor holds. Every commit gesture stops — Enter, Tab, the Overwrite
     /// arrows, click-away — the focus stays in the editor with the error shown, and
-    /// Escape is the only way out without applying. Excel's *Stop* style.</summary>
+    /// Escape is the only way out without applying. Excel's <em>Stop</em> style.</summary>
     Reject,
 }
 
@@ -52,6 +52,8 @@ public readonly record struct EditVerdict
     /// <summary>Hold the editor open, and say why.</summary>
     public static EditVerdict Reject(string message) => new(EditVerdictKind.Reject, Required(message));
 
+    /// <summary>Which of the three verdicts this is — the verb the grid enforces
+    /// (ADR-0034). The <c>default</c> value is an Accept.</summary>
     public EditVerdictKind Kind { get; }
 
     /// <summary>The Consumer's own sentence, or null for an Accept. The grid relays it —

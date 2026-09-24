@@ -17,10 +17,26 @@ pure-logic core and the component layer exist, virtualised on both axes, with pi
 columns, selection, the keyboard (including entering a cell), the Cell Editor and the
 clipboard. What is left is recorded in
 [`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
-in [`docs/adr/`](docs/adr/) (41 decision records) and the domain glossary in
+in [`docs/adr/`](docs/adr/) (42 decision records) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
-## Getting started
+## Using the packages
+
+Prereleases of **ExGrid** and **ExGrid.MudBlazor** are published to NuGet from tags, at one
+shared `0.1.0-beta.N` version
+([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)):
+
+```sh
+dotnet add package ExGrid --prerelease
+dotnet add package ExGrid.MudBlazor --prerelease   # for a MudBlazor application
+```
+
+Setup and a first grid are in each package's readme:
+[`src/ExGrid/README.md`](src/ExGrid/README.md) and
+[`src/ExGrid.MudBlazor/README.md`](src/ExGrid.MudBlazor/README.md). A beta has passed every
+test layer in CI. The Definition of Done's sign-off is what a stable version waits for.
+
+## Building the repository
 
 The toolchain is the **.NET 10 SDK** (version pinned via [`global.json`](global.json)).
 You can get it through Nix or install it yourself — both are supported.
@@ -88,7 +104,9 @@ your environment alone.
 | [`CONTEXT.md`](CONTEXT.md) | Domain glossary. The vocabulary used everywhere; read it first |
 | [`docs/adr/`](docs/adr/) | Architecture decision records — the specification and the reasons behind it |
 | [`src/ExGrid/`](src/ExGrid/) | The ExGrid package: pure-logic core and the Blazor components |
-| [`tests/`](tests/) | The gating test layers: `ExGrid.Tests` (xUnit) and `ExGrid.Components` (bUnit) |
+| [`src/ExGrid.MudBlazor/`](src/ExGrid.MudBlazor/) | The ExGrid.MudBlazor package: the Wrapper for MudBlazor applications |
+| [`tests/`](tests/) | The gating test layers — `ExGrid.Tests` (xUnit), `ExGrid.Components` and `ExGrid.MudBlazor.Tests` (bUnit), `ExGrid.Browser` (Playwright) — and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
+| [`.github/workflows/`](.github/workflows/) | CI (`ci.yml`) and the prerelease publish (`release.yml`) |
 | [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | Runnable Consumer for manual verification; the browser layer's fixture. Not shipped |
 | [`spikes/render-bench/`](spikes/render-bench/) | Disposable render-cost measurement harness (see its README) |
 | [`AGENTS.md`](AGENTS.md) | Working rules for AI agents; useful reading for humans too |
@@ -99,8 +117,9 @@ The two rules that override convenience (details in [`AGENTS.md`](AGENTS.md)):
 
 1. **Everything committed to this repository is written in English** — documents, code,
    comments, commit messages, test names, UI strings.
-2. **JavaScript is allowlisted, not "minimised"** — three permitted uses (capture-phase
-   `keydown`, scroll offsets, clipboard); anything else needs a new ADR
+2. **JavaScript is allowlisted, not "minimised"** — five permitted uses (capture-phase
+   `keydown`, scroll offsets, the clipboard, a `ResizeObserver` reporting the Scrollbar
+   Gutter, and a pointer report for the hover band); anything else needs a new ADR
    ([ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md)).
 
 Before changing behaviour, read the relevant ADR — the reasons are written down, and
@@ -126,7 +145,13 @@ on Linux, headed under xvfb, on the runner's installed Chrome and Edge. The soak
 10⁶ rows run weekly, or on demand from the Actions tab. Coverage counts the shipped
 assemblies only and is reported, never gated: each run's summary carries the table, and the
 badges above follow `main` (history in `history.csv` on the `badges` branch). Windows (VZ-14)
-and a real IME remain runs by hand.
+and a real IME remain runs by hand. A fourth job packs both packages and publishes an
+application that takes them from the packed files alone
+([`tests/ExGrid.PackageSmoke`](tests/ExGrid.PackageSmoke/check.sh)).
 
 Test names carry the ADR number they enforce, so a failure says which decision was
 violated.
+
+## License
+
+[MIT](LICENSE).

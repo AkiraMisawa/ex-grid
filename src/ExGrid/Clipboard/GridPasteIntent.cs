@@ -24,6 +24,8 @@ public sealed class GridPasteIntent
         RowSequenceVersion = rowSequenceVersion;
     }
 
+    /// <summary>The approved plan: the target ranges, and how the source block tiles
+    /// onto them (ADR-0014).</summary>
     public PastePlan Plan { get; }
 
     /// <summary>The source block, <c>Plan.Source.Rows</c> × <c>Plan.Source.Columns</c>.

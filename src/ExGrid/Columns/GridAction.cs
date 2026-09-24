@@ -12,6 +12,9 @@ namespace ExGrid.Columns;
 /// </summary>
 public sealed record GridAction
 {
+    /// <summary>Declares one action. <paramref name="name"/> and <paramref name="label"/>
+    /// are both required: the label is the button's accessible name even when
+    /// <paramref name="cssClass"/> paints an icon.</summary>
     public GridAction(string name, string label, string? cssClass = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(name);

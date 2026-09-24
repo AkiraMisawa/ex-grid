@@ -47,7 +47,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 41 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 42 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -83,10 +83,14 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 - **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
   see it (committing is not required)
 - **Do not commit or push unless asked**
+- **Only `src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
+  a `v*` tag runs `release.yml`, which publishes a prerelease and refuses a version without a
+  suffix until the Definition of Done is signed off (ADR-0042). Every public member of a shipped
+  project needs an XML doc comment — a missing one fails the build
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 41 ADRs. **A new decision that follows these will not
+The principles that run through all 42 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -195,6 +199,11 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   tautologies. CI runs it on Linux on every push; **Windows (VZ-14) and a real IME are still
   runs by hand**, and a CI artifact does not file the Step 4 record in `verification/`.
   `tests/ExGrid.Browser/README.md` says what it asserts and what it deliberately does not.
+
+- **The packages are checked as a Consumer takes them.** `tests/ExGrid.PackageSmoke/check.sh`
+  packs `ExGrid` and `ExGrid.MudBlazor`, reads back each `.nuspec`, and publishes a `net8.0`
+  application that restores them from the packed files alone. CI runs it as its `package` job.
+  The DemoHost's project references skip exactly what it checks (ADR-0042).
 
 - **Put the ADR number in the test name.** A failure then says which decision was violated.
   ```csharp

@@ -26,8 +26,13 @@ public readonly record struct ViewportSize
     /// asserted. The arithmetic still never reads the DOM; it is told (ADR-0028).</summary>
     public static ViewportSize Fill { get; } = new(0, fill: true);
 
+    /// <summary>A declared size in pixels — what keeps <c>ViewportHeight="480"</c>
+    /// compiling. It is validated where the grid uses it, as a number the Consumer
+    /// wrote.</summary>
     public static implicit operator ViewportSize(double px) => new(px, fill: false);
 
+    /// <summary>Whether this axis is <see cref="Fill"/>: sized by the CSS and taken from
+    /// the browser's report rather than declared.</summary>
     public bool IsFill => _fill;
 
     /// <summary>The declared pixels. Only meaningful when not <see cref="IsFill"/> —
@@ -36,5 +41,6 @@ public readonly record struct ViewportSize
         ? throw new InvalidOperationException("A Fill Viewport has no declared size; the browser's report is the size (ADR-0028).")
         : _px;
 
+    /// <summary><c>Fill</c>, or the declared size written as <c>480px</c>, culture-invariantly.</summary>
     public override string ToString() => _fill ? "Fill" : FormattableString.Invariant($"{_px}px");
 }

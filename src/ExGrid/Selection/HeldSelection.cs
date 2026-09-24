@@ -12,8 +12,12 @@ namespace ExGrid.Selection;
 /// struct-default hole as <c>default(SelectionRange)</c>; start from
 /// <see cref="Empty"/>.)
 /// </summary>
+/// <param name="RowSequenceVersion">The Row Sequence Version the selection was made under.</param>
+/// <param name="Selection">The selection, in positions of that version's order.</param>
 public readonly record struct HeldSelection(int RowSequenceVersion, GridSelection Selection)
 {
+    /// <summary>Nothing selected, held under <paramref name="rowSequenceVersion"/> — where
+    /// a holder starts.</summary>
     public static HeldSelection Empty(int rowSequenceVersion) => new(rowSequenceVersion, GridSelection.Empty);
 
     /// <summary>

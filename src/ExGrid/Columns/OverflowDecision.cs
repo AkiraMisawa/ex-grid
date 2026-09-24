@@ -17,7 +17,11 @@ public readonly record struct OverflowDecision
 
     internal static OverflowDecision Hashes(string hashes) => new(true, hashes);
 
+    /// <summary>Whether the value does not fit and the cell paints <c>####</c> instead —
+    /// Number and Date only.</summary>
     public bool IsHashed { get; }
 
+    /// <summary>What the cell paints: the formatted value, or a run of <c>#</c> filling
+    /// the cell when <see cref="IsHashed"/>.</summary>
     public string DisplayText { get; }
 }

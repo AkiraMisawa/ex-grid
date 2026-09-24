@@ -1,0 +1,22 @@
+@page "/mud"
+@* The grid on a paper in src/ExGrid.MudBlazor/README.md, as written there. *@
+@using ExGrid
+@using ExGrid.Components
+@using ExGrid.MudBlazor
+
+<MudExGridPaper Elevation="1" Hover="true" Striped="true">
+    <ExGrid TRow="Trade" Source="_source" Columns="_columns" Chrome="_chrome" />
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Notional", ColumnType.Number, t => t.Notional),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate),
+    ];
+}
