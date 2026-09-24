@@ -168,7 +168,8 @@ The parts of the grid's own UI that can be substituted — the filter panel, the
 Context Menu, the cell editor, the cell's message, the loading indicator. **It renders and calls
 back; it does not decide meaning**
 (which operators exist, and what a filter means, are the core's). Substituting it does not change
-behaviour.
+behaviour. Each of those places is a **Chrome seam**: the core owns its frame — where it appears,
+how it opens and closes — and hands the Chrome the contents to draw.
 _Avoid_: skin (appearance only is a **Theme**, a term of its own below), template
 
 **Theme**:
@@ -440,6 +441,9 @@ _Avoid_: custom column, render column
   noun (`ag-grid` has none either).
 - **"User" gets used two ways** — the developer embedding this component, and the end user
   touching the screen. The former is the **Consumer**; the latter is the **user**.
+- **"Seam" means two things.** A **Chrome seam** is one of the places Chrome is substituted
+  into. In talk about tests, a seam is the public boundary a test observes behaviour through —
+  write **test seam** for that, and never "seam" alone where either could be meant.
 - **"Focus" names a cell; "DOM focus" names an element.** The **Focus** is the cell keyboard
   operations start from, and it is described, never held: the grid root holds the browser's
   focus and `aria-activedescendant` points at the Focus cell
