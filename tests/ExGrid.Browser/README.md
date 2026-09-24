@@ -102,7 +102,11 @@ hide it.
   is its own panel, a `MudSelect` operator whose list is an Inner Popup and a
   `MudNumericField`); every close handing the
   keyboard back to the root (KB-32); the roles and names (A11Y-19); the scroll container
-  not clipping (UX-11); and the Context Menu (CTX-1..4).
+  not clipping (UX-11); and the Context Menu (CTX-1..4). Under the Wrapper alone, its
+  panel's Inner Popups (FN-21): drawn outside the root and disturbing neither grid, a
+  pointer-down elsewhere closing the list or the calendar and the panel while keeping its
+  meaning, and focus back on the root after a choice and Apply. FN-21's Escape clause is
+  not there yet: ADR-0039's row for it proved wrong in the browser and awaits a decision.
 - `stripes.spec.mjs` — Row Stripes on `/stripes` (ADR-0038), read as painted colours
   from a screenshot rather than as computed styles: a pinned and a scrollable cell of
   one striped row paint the same ground, and the stripe moves with its row (UX-15); a

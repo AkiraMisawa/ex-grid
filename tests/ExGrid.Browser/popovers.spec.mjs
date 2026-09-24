@@ -387,3 +387,84 @@ for (const chrome of CHROMES) {
         });
     });
 }
+
+// Inner Popups (FN-21, ADR-0039), under the Wrapper, whose panel holds them: the operator
+// MudSelect's list and the date MudDatePicker's calendar, both drawn by MudBlazor outside
+// the grid's root. /features has two grids, so "the other grid unaffected" is observed
+// too. The Escape clause is not here: the browser showed ADR-0039's row for it to be
+// wrong (MudBlazor keeps DOM focus on the control, so one Escape closes both), and the
+// correction is waiting on a decision.
+test.describe('Inner Popups under the mud Chrome', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/features?chrome=mud');
+        await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    });
+
+    const second = (page) => page.locator('.ex-grid').nth(1);
+    const openPopups = (page) => page.locator('.mud-popover-open');
+
+    async function openPanel(page, column) {
+        await clickCell(page, 1, column);
+        await page.keyboard.press('Alt+ArrowDown');
+        await grid(page).locator('.ex-popover [role=menuitem]', { hasText: 'Filter' }).click();
+        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+    }
+
+    test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
+        await second(page).locator("[id$='r2c1']").click({ force: true });
+        const other = await second(page).getAttribute('aria-activedescendant');
+        await openPanel(page, 2);
+        const focus = await grid(page).getAttribute('aria-activedescendant');
+
+        await grid(page).getByRole('combobox', { name: 'Operator' }).click();
+
+        await expect(openPopups(page).locator('.mud-list-item').first()).toBeVisible();
+        expect(await grid(page).locator('.mud-popover-open').count(), 'drawn outside the root').toBe(0);
+        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+        expect(await grid(page).getAttribute('aria-activedescendant')).toBe(focus);
+        expect(await second(page).getAttribute('aria-activedescendant')).toBe(other);
+        expect(await second(page).locator('.ex-popover').count()).toBe(0);
+    });
+
+    for (const [what, open] of [
+        ['the operator list', async (page) => grid(page).getByRole('combobox', { name: 'Operator' }).click()],
+        ['the date calendar', async (page) => {
+            await page.keyboard.press('Tab');
+            await grid(page).locator('.mud-ex-grid-filter-operand button').first().click();
+        }],
+    ]) {
+        test(`a pointer-down elsewhere in the instance closes ${what} and the panel, and keeps its meaning (FN-21, ModalOverlay off)`, async ({ page }) => {
+            await openPanel(page, what === 'the date calendar' ? 4 : 2);
+            await open(page);
+            await expect(openPopups(page)).not.toHaveCount(0);
+
+            // A press on the grid itself: the premise is that nothing drawn over the page —
+            // the calendar is large — stands between the pointer and that cell.
+            const target = grid(page).locator("[id$='r7c0']");
+            const box = await target.boundingBox();
+            const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+            expect(await page.evaluate(([px, py]) => !!document.elementFromPoint(px, py)?.closest('.ex-viewport'), [x, y]),
+                'the press lands on the grid').toBe(true);
+            await page.mouse.click(x, y);
+
+            await expect(openPopups(page)).toHaveCount(0);
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+            await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r7c0$/);
+            await expect.poll(() => activeIsRoot(page)).toBe(true);
+        });
+    }
+
+    test('choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the root (FN-21, KB-32)', async ({ page }) => {
+        await openPanel(page, 2);
+        await grid(page).getByRole('combobox', { name: 'Operator' }).click();
+        await page.locator('.mud-popover-open .mud-list-item', { hasText: /^>$/ }).click();
+
+        await expect(openPopups(page)).toHaveCount(0);
+        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+        await grid(page).locator('.mud-ex-grid-filter-operand input').fill('3000000');
+        await grid(page).locator('.mud-ex-grid-filter-apply').click();
+
+        await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+        await expect.poll(() => activeIsRoot(page)).toBe(true);
+    });
+});
