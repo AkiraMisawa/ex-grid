@@ -51,8 +51,12 @@ public readonly record struct ViewportBox
     public static ViewportBox Declared(double outerWidthPx, double outerHeightPx)
         => new(outerWidthPx, outerHeightPx, 0, 0);
 
+    /// <summary>The width the Consumer declared — the element's outer size, scrollbar
+    /// included (ADR-0013).</summary>
     public double OuterWidthPx { get; }
 
+    /// <summary>The height the Consumer declared — the element's outer size, header and
+    /// scrollbar included.</summary>
     public double OuterHeightPx { get; }
 
     /// <summary>How much of the width a vertical scrollbar occupies.</summary>

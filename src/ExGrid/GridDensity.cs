@@ -16,8 +16,11 @@ public enum GridDensity
     /// <summary>The default: today's numbers, 28px rows.</summary>
     Compact = 0,
 
+    /// <summary>The roomiest: 40px rows and wider cell padding.</summary>
     Comfortable,
 
+    /// <summary>32px rows, between Comfortable and Compact, at Compact's type and
+    /// padding.</summary>
     Standard,
 
     /// <summary>Excel's default row (15pt ≈ 20px) at a smaller type.</summary>

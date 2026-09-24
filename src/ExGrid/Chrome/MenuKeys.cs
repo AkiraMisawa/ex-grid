@@ -19,6 +19,8 @@ public enum MenuKeyKind
 /// <summary>A key's meaning in a menu: what to do, and for a move, which item.</summary>
 public readonly record struct MenuKey(MenuKeyKind Kind, int Item = -1)
 {
+    /// <summary>The key means nothing in a menu: the <c>default</c> value, whose kind is
+    /// <see cref="MenuKeyKind.None"/> and whose <see cref="Item"/> means nothing.</summary>
     public static MenuKey Nothing => default;
 }
 

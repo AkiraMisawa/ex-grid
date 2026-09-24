@@ -32,6 +32,8 @@ public sealed record GridMetrics
         MenuButtonInsetPx = menuButtonInsetPx;
     }
 
+    /// <summary>The fixed height of every row (ADR-0013) — what the virtualisation
+    /// arithmetic, the overlays and the editor box read.</summary>
     public double RowHeightPx { get; }
 
     /// <summary>No longer hard-wired to the row height (ADR-0028): the sticky header's
@@ -56,8 +58,12 @@ public sealed record GridMetrics
     /// <summary>The gap between neighbouring action buttons.</summary>
     public double ActionGapPx { get; }
 
+    /// <summary>A cell's horizontal padding on one side, read from
+    /// <see cref="CellMetrics"/>; a cell pays it twice.</summary>
     public double CellPaddingXPx => CellMetrics.CellHorizontalPaddingPx;
 
+    /// <summary>The width of one digit, read from <see cref="CellMetrics"/> — the unit
+    /// <c>####</c> is counted in (ADR-0016).</summary>
     public double DigitWidthPx => CellMetrics.DigitWidthPx;
 
     /// <summary>One action button's box beside its text: padding both sides, border

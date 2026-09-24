@@ -1,7 +1,7 @@
 namespace ExGrid.Cells;
 
 /// <summary>
-/// The Edit Intent (ADR-0007, `CONTEXT.md`): the notification the grid raises when a
+/// The Edit Intent (ADR-0007, <c>CONTEXT.md</c>): the notification the grid raises when a
 /// user commits an edit — row identity, column, new value. The grid changes nothing
 /// itself; the screen changes when the Consumer returns new row instances, with the
 /// override recorded in its Overlay.

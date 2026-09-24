@@ -1,8 +1,14 @@
 namespace ExGrid;
 
+/// <summary>The direction of one level of the Sorts list. Blanks go last in either
+/// direction (ADR-0023).</summary>
 public enum SortDirection
 {
+    /// <summary>Smallest first: A to Z, earliest date first, false before true.</summary>
     Ascending,
+
+    /// <summary>Largest first — the reverse of <see cref="Ascending"/>, except that
+    /// Blanks still go last.</summary>
     Descending,
 }
 

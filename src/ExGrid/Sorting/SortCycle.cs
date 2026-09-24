@@ -14,6 +14,10 @@ namespace ExGrid;
 /// </summary>
 public static class SortCycle
 {
+    /// <summary>The whole next Sorts list after a click on <paramref name="column"/>'s
+    /// header: a single ascending sort on it becomes descending, a single descending sort
+    /// becomes unsorted (an empty list), and any other state — unsorted, another column,
+    /// a multi-column list — becomes ascending on that column alone.</summary>
     public static IReadOnlyList<SortSpec> Next(IReadOnlyList<SortSpec> current, string column)
     {
         ArgumentNullException.ThrowIfNull(current);

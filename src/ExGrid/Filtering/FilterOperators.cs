@@ -33,6 +33,9 @@ public static class FilterOperators
         FilterOperator.IsBlank, FilterOperator.IsNotBlank,
     ];
 
+    /// <summary>The operators a column of the given declared type offers (ADR-0023's
+    /// table). The reference implementation refuses any other operator on that column by
+    /// name.</summary>
     public static IReadOnlyList<FilterOperator> AllowedFor(ColumnType type) => type switch
     {
         ColumnType.Text => Text,
