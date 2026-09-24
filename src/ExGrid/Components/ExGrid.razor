@@ -548,6 +548,12 @@
     /// </summary>
     [Parameter] public int? TotalCount { get; set; }
 
+    /// <summary>
+    /// The visible Columns, in display order; the leading <see cref="PinnedColumnCount"/>
+    /// of them are pinned. Which columns show and in what order is View State the Consumer
+    /// holds (ADR-0001/0010). The list instance is the change signal: hand over a new list
+    /// when anything about the columns changes, never an edited one (ADR-0003).
+    /// </summary>
     [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
 
     /// <summary>
@@ -1222,6 +1228,12 @@
          nameof(RowSequenceVersion), nameof(OnRangeNeeded), nameof(Sorts), nameof(OnSortChanged),
          nameof(OnCopyRowsNeeded), nameof(Filters), nameof(OnFilterChanged), nameof(OnDistinctValuesNeeded)];
 
+    /// <summary>
+    /// Blazor's parameter entry point, overridden to refuse by name a Source passed
+    /// together with any push parameter it replaces, and a first render passed neither a
+    /// Window nor a Source (ADR-0001) — and to record which per-value overrides were
+    /// actually written, which a value type cannot tell from its default (ADR-0028).
+    /// </summary>
     public override Task SetParametersAsync(ParameterView parameters)
     {
         // Supplied, not non-null: a Consumer whose Source is built in OnInitializedAsync
@@ -2079,6 +2091,9 @@
     /// every press goes through, clamped as a press is. A report resolving to the row
     /// already held renders nothing; one that moves the band re-renders the overlay and
     /// no row.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
     /// </summary>
     [JSInvokable]
     public Task OnPointerRowAsync(double x, double y)
@@ -2824,6 +2839,9 @@
     /// the moves and reports only the stillness, so this runs once per pause rather than
     /// once per frame. What it was told is a pair of offsets; which cell that is, and
     /// whether there is anything to say about it, are both decided here.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
     /// </summary>
     [JSInvokable]
     public Task OnPointerRestAsync(double x, double y)
@@ -2853,7 +2871,11 @@
 
     /// <summary>The pointer is not over a row any more. Onto the header or a popover,
     /// only the band goes (<paramref name="bandOnly"/>): the message a rest opened is
-    /// still being read. Out of the instance altogether, the message closes too.</summary>
+    /// still being read. Out of the instance altogether, the message closes too.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
     [JSInvokable]
     public Task OnPointerAwayAsync(bool bandOnly)
     {
@@ -3574,6 +3596,9 @@
     /// size: one frame of a slice that is one row too generous. That is accepted rather
     /// than pre-empted — the alternative is a layout read of our own before every
     /// paint, which is the round trip the whole geometry exists to avoid (ADR-0013).
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
     /// </summary>
     [JSInvokable]
     public async Task OnViewportReportAsync(
@@ -3627,6 +3652,9 @@
     /// beyond the Window. Refusals are decided by the pure rules and raised through
     /// <see cref="OnCopyRefused"/>; the payload is assembled from the Window when every
     /// selected row is in it, which is the overwhelming majority of copies.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
     /// </summary>
     [JSInvokable]
     public ClipboardPayload BuildCopyPayload()
@@ -3667,6 +3695,9 @@
     ///
     /// Also the only route a menu copy has, whatever the selection's size: clicking a
     /// menu item fires no <c>copy</c> event (ADR-0036).
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
     /// </summary>
     /// <param name="withHeaders">Emit the declared headers as one row above the block,
     /// counted against the cap (ADR-0005).</param>
@@ -3706,6 +3737,9 @@
     /// The <c>paste</c> event's block, both flavours (ADR-0005/0014). Nothing tabular
     /// consults no rule; a refusal says which rule it hit; an approval is one Edit
     /// Intent carrying every cell (ADR-0007).
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
     /// </summary>
     [JSInvokable]
     public async Task OnPasteAsync(string? text, string? html)
@@ -3809,6 +3843,9 @@
     /// call cannot be made that way (a server circuit), the copy path knows to take the
     /// async route from the start — so a later synchronous failure is a failure to be
     /// reported, never mistaken for a missing channel (ADR-0005/0017).
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
     /// </summary>
     [JSInvokable]
     public bool Ping() => true;
@@ -3818,6 +3855,9 @@
     /// listener, so a grid without focus never gets here, and two grids on one page never
     /// hear each other's keys (ADR-0018). The listener has already prevented the default:
     /// what is left is to say what the key meant.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
     /// </summary>
     [JSInvokable]
     public async Task OnKeyAsync(
@@ -4368,9 +4408,6 @@
 
     private void OnEditorInput(ChangeEventArgs e) => _editText = e.Value?.ToString() ?? "";
 
-    /// <summary>The editor seam's contract (ADR-0010): the core owns the box, the keys
-    /// and the text's lifecycle; a substitute renders the control and reports its text
-    /// as it changes — Enter and its siblings never reach it.</summary>
     /// <summary>The core wants the editor's control to hold DOM focus: the built-in
     /// input is focused after the render; a Chrome's control is told through the
     /// context's <see cref="CellEditorContext.FocusRequest"/>, which this bumps.</summary>
@@ -4380,6 +4417,9 @@
         _editorFocusRequest++;
     }
 
+    /// <summary>The editor seam's contract (ADR-0010): the core owns the box, the keys
+    /// and the text's lifecycle; a substitute renders the control and reports its text
+    /// as it changes — Enter and its siblings never reach it.</summary>
     private CellEditorContext BuildEditorContext()
     {
         var declared = Columns[_editingCell.Column];
@@ -4966,6 +5006,11 @@
             await OnRangeNeeded.InvokeAsync(range);
     }
 
+    /// <summary>
+    /// Stops the grid's timers, unsubscribes from the Source — which the Consumer built,
+    /// and so disposes itself (ADR-0025) — and releases this instance's handle in the
+    /// script module, whose listeners go with it (ADR-0018).
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         _disposed = true;

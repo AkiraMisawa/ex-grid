@@ -9,6 +9,8 @@ namespace ExGrid;
 /// </summary>
 public readonly record struct RowRange
 {
+    /// <summary>A run of <paramref name="count"/> rows from position
+    /// <paramref name="start"/>. A negative start or a count below one is refused.</summary>
     public RowRange(int start, int count)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(start);
@@ -17,7 +19,9 @@ public readonly record struct RowRange
         Count = count;
     }
 
+    /// <summary>The first row's position in the whole result, 0-based.</summary>
     public int Start { get; }
 
+    /// <summary>How many rows the range holds — at least one.</summary>
     public int Count { get; }
 }

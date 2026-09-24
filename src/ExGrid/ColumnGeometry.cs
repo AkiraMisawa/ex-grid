@@ -35,6 +35,10 @@ public sealed class ColumnGeometry
     // the rows would stop skipping, silently).
     private readonly double[] _widths;
 
+    /// <summary>The arithmetic over <paramref name="widthsPx"/> — every column's resolved
+    /// width, in display order (ADR-0016) — with the first <paramref name="pinnedCount"/>
+    /// pinned, laid out in <paramref name="viewportWidthPx"/>. A total width past
+    /// <see cref="MaxScrollWidthPx"/> is refused rather than clamped out of reach.</summary>
     public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx)
     {
         ArgumentNullException.ThrowIfNull(widthsPx);
@@ -86,12 +90,16 @@ public sealed class ColumnGeometry
     /// </summary>
     public const double MaxScrollWidthPx = ViewportGeometry.MaxScrollHeightPx;
 
+    /// <summary>How many columns there are, pinned and scrollable alike.</summary>
     public int Count { get; }
 
     /// <summary>How many leading columns are pinned — always painted, outside
     /// virtualisation, and costing directly (ADR-0004).</summary>
     public int PinnedCount { get; }
 
+    /// <summary>The width the columns are painted in, the pinned block included. The grid
+    /// passes the Viewport's width with the Scrollbar Gutter already taken out
+    /// (ADR-0013).</summary>
     public double ViewportWidthPx { get; }
 
     /// <summary>Scrollbar length — every column, whether or not it is painted.</summary>
@@ -128,6 +136,8 @@ public sealed class ColumnGeometry
     /// not, because painting it would put cells in the DOM that nobody can see, which is
     /// the cost this exists to avoid.
     /// </summary>
+    /// <param name="scrollLeftPx">The Viewport's horizontal scroll offset. Clamped to what
+    /// the browser can scroll, as the vertical one is.</param>
     /// <param name="virtualise">
     /// When false every scrollable column is returned and the caller paints them all.
     /// The switch lives here rather than in the component so that both settings travel

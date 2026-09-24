@@ -10,6 +10,10 @@ namespace ExGrid;
 /// </summary>
 public readonly record struct ViewportGeometry
 {
+    /// <summary>The arithmetic for rows of <paramref name="rowHeightPx"/>, painted in
+    /// <paramref name="viewportHeightPx"/>, over <paramref name="totalRowCount"/> rows. A
+    /// scrollable height past <see cref="MaxScrollHeightPx"/> is refused rather than
+    /// clamped out of reach.</summary>
     public ViewportGeometry(double rowHeightPx, double viewportHeightPx, int totalRowCount)
     {
         if (!double.IsFinite(rowHeightPx) || rowHeightPx <= 0)
@@ -34,7 +38,7 @@ public readonly record struct ViewportGeometry
 
     /// <summary>
     /// How tall an element a browser will scroll. Chromium caps it at 2^25 px, and the
-    /// target is Chromium ([ADR-0017]). Past this the browser clamps the scrollable area
+    /// target is Chromium (ADR-0017). Past this the browser clamps the scrollable area
     /// silently: the scrollbar stops mapping to the last row and the tail of the result
     /// becomes unreachable with nothing to show for it. Rather than display a result
     /// that cannot be read to the end, say it cannot be done — at the default 28px row
@@ -42,10 +46,15 @@ public readonly record struct ViewportGeometry
     /// </summary>
     public const double MaxScrollHeightPx = 33_554_432;
 
+    /// <summary>The fixed height of every row (ADR-0013).</summary>
     public double RowHeightPx { get; }
 
+    /// <summary>The height the rows are painted in. The grid passes what the Viewport has
+    /// left once the Scrollbar Gutter and the header band are taken out.</summary>
     public double ViewportHeightPx { get; }
 
+    /// <summary>How many rows the scrollbar spans — the whole result, or one page under a
+    /// pager (ADR-0015).</summary>
     public int TotalRowCount { get; }
 
     /// <summary>
