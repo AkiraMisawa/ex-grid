@@ -272,6 +272,38 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(root, LastFocused());
     }
 
+    [Fact] // ADR-0010 / ADR-0039: a command a substituted Chrome invokes closes the menu and hands the keyboard back
+    public async Task A_command_run_by_a_substituted_chrome_closes_its_menu()
+    {
+        var chrome = new StubChrome();
+        var source = new TestSource();
+        var cut = RenderGrid(chrome, source: source);
+        var root = RootRef(cut);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+
+        // Invoked from the Chrome's own event, not the grid's: the grid renders itself.
+        await cut.InvokeAsync(() => chrome.Menu!.Commands.Single(c => c.Id == "sort-descending").Invoke());
+
+        Assert.Equal([new SortSpec("Amount", SortDirection.Descending)], source.Sorts);
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Equal(root, LastFocused());
+    }
+
+    [Fact] // ADR-0010 / ADR-0039: the filter command a Chrome invokes replaces the menu with the panel
+    public async Task The_filter_command_run_by_a_chrome_leaves_the_panel_standing()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+
+        await cut.InvokeAsync(() => chrome.Menu!.Commands.Single(c => c.Id == "filter").Invoke());
+
+        Assert.NotNull(cut.Find(".ex-stub-panel"));
+        Assert.Empty(cut.FindAll(".ex-stub-menu"));
+    }
+
     [Fact] // ADR-0039 / KB-32: a Chrome's own Close closes the popover, re-renders the grid, and hands the keyboard back
     public async Task A_chromes_own_close_returns_the_keyboard_to_the_root()
     {

@@ -86,17 +86,21 @@ hide it.
   real clipboard: the editor's two states (ED-2/3/4), both clipboard formats and the
   refusals (CP-1/3/4/5/6/10/14, PST-1), the keys the grid must not take (KB-15), one
   tab stop (A11Y-4, KB-12), instance independence (DOM-4), header-click sorting
-  (SR-1), popovers (UX-11). And on `/cells`, entering a cell by key (ADR-0037): Space
+  (SR-1). And on `/cells`, entering a cell by key (ADR-0037): Space
   into a cell with several actions, the arrows choosing and Space firing once, Enter
   never firing (KB-20/21/22); Space putting the caret in a Template's own field and
   Escape bringing the keyboard back (KB-23/24); a held Space firing once (KB-26);
   Shift+Tab from after the grid landing on the root with buttons on the page
-  (A11Y-17); the chosen action outlined under forced colors too (UX-14). And the
-  popovers' keyboard (ADR-0039): `Alt+↓` opening the Focus column's menu (KB-28), every
-  popover taking DOM focus by key or pointer (KB-29), the menu keys — arrows over the
-  enabled items with wrap, Home/End, Enter/Space run, Tab closes (KB-30) — the panel's
-  Tab wrapping inside it and Enter in its value field applying what OK applies (KB-31),
-  and every close handing the keyboard back to the root (KB-32).
+  (A11Y-17); the chosen action outlined under forced colors too (UX-14).
+- `popovers.spec.mjs` — the popovers on `/features`, **run once per Chrome**: the
+  built-in one and `ExGrid.MudBlazor`'s (`/features?chrome=mud`), which must give
+  identical outcomes (WR-5, FN-17). The three dismissals, a pointer-down keeping its own
+  meaning (KB-17); `Alt+↓` opening the Focus column's menu (KB-28); every popover taking
+  DOM focus by key or pointer (KB-29); the menu keys — arrows over the enabled items with
+  wrap, Home/End, Enter/Space run, Tab closes (KB-30); the panel's Tab wrapping inside it
+  and Enter in its value field applying what OK applies (KB-31); every close handing the
+  keyboard back to the root (KB-32); the roles and names (A11Y-19); the scroll container
+  not clipping (UX-11); and the Context Menu (CTX-1..4).
 - `stripes.spec.mjs` — Row Stripes on `/stripes` (ADR-0038), read as painted colours
   from a screenshot rather than as computed styles: a pinned and a scrollable cell of
   one striped row paint the same ground, and the stripe moves with its row (UX-15); a

@@ -35,7 +35,12 @@ HeaderGroups = [
 **Refused by name at declaration**: a member name no column carries; members that are **not
 adjacent** in the current order; overlapping rectangles; and a rectangle **straddling the pinned
 boundary** — half sticky, half scrolling cannot be drawn honestly, and a dishonest header over
-money is the failure this design refuses everywhere.
+money is the failure this design refuses everywhere. *(Added 2026-09-24, found by the browser suite
+under the MudBlazor Chrome: the column menu offered "Pin up to this column" on a group's first
+member, and the refusal it led to took the page down. The core decides each command's `Enabled`
+state ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)), so it now asks the same
+question first: **pin is disabled wherever the boundary would cut a group**, as a drag already
+clamps at it.)*
 
 **The first draft declared groups by index (`firstColumn`, `columnCount`), and reordering is what
 killed it.** Once a column can be dragged ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)),

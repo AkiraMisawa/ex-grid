@@ -75,6 +75,22 @@ public class HeaderGroupTests
         Assert.True(pinned.Groups[0].Pinned);
     }
 
+    [Fact] // ADR-0032 / ADR-0010: a pinned count is asked about before it is refused — only a boundary through a group is
+    public void A_pinned_count_through_a_group_is_not_allowed()
+    {
+        var layout = HeaderGroupLayout.Resolve(
+            [new HeaderGroup("Who", ["Book", "Trader"]), new HeaderGroup("What", ["Notional", "Narrow"])],
+            ["Id", "Book", "Trader", "Notional", "Narrow", "Date"], pinnedCount: 0);
+
+        Assert.True(layout.AllowsPinnedCount(0));
+        Assert.True(layout.AllowsPinnedCount(1));
+        Assert.False(layout.AllowsPinnedCount(2));  // between Book and Trader
+        Assert.True(layout.AllowsPinnedCount(3));
+        Assert.False(layout.AllowsPinnedCount(4));  // between Notional and Narrow
+        Assert.True(layout.AllowsPinnedCount(6));
+        Assert.True(HeaderGroupLayout.Empty.AllowsPinnedCount(2));
+    }
+
     [Fact] // ADR-0032 / HG-3: a column no tier covers stretches its leaf the full band
     public void An_uncovered_column_stretches_the_full_band()
     {

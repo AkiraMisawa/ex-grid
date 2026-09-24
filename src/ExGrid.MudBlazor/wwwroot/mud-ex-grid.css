@@ -110,3 +110,16 @@
 .mud-ex-grid .mud-ex-grid-loading {
     height: 4px;
 }
+/* The menus' items (ADR-0010/0036): MudButtons laid out as a Material menu — each label at
+   the start, in sentence case rather than a button's capitals. Scoped to the menu's own
+   element, which stands inside the core's popover whether or not a paper wraps the grid;
+   the popover itself, its place and its box stay the core's. */
+.mud-ex-grid-menu {
+    display: flex;
+    flex-direction: column;
+}
+.mud-ex-grid-menu .mud-ex-grid-menu-item,
+.mud-ex-grid-menu .mud-ex-grid-menu-item .mud-button-label {
+    justify-content: flex-start;
+    text-transform: none;
+}

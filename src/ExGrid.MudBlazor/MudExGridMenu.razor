@@ -1,0 +1,91 @@
+@* The column menu's and the Context Menu's content under MudBlazor (ADR-0010/0036/0039):
+   exactly the core's commands, in its order, each with its Enabled state, as MudButtons
+   with role="menuitem" — the core's popover around them is the menu, named by the core.
+   Nothing here decides anything: a command closes its menu when invoked, and what a key
+   means on an item is MenuKeys', the same table the built-in menu answers to.
+
+   The keys are handled on this element, not on the buttons: a component cannot carry
+   :preventDefault, and every key's default has to go — an arrow, Home or End would
+   scroll the page under the menu, and Enter and Space run the item here rather than
+   through the button's own click. *@
+<div class="mud-ex-grid-menu" role="none" @onkeydown="OnKeyAsync" @onkeydown:preventDefault>
+    @for (var i = 0; i < Commands.Count; i++)
+    {
+        var item = i;
+        var command = Commands[i];
+        <MudButton @ref="_items[item]" role="menuitem" Variant="Variant.Text" FullWidth="true"
+                   Class="mud-ex-grid-menu-item" Size="Size.Small" Disabled="@(!command.Enabled)"
+                   StartIcon="@Chrome.IconFor(command.Id)" OnClick="command.Invoke"
+                   @onfocus="() => _current = item">@LabelOf(command.Id)</MudButton>
+    }
+</div>
+
+@code {
+    private readonly Dictionary<int, MudButton> _items = [];
+    private int _current = -1;
+    private int _focusedRequest = -1;
+    private bool _needsFocus;
+
+    [Inject] private ILocalizationInterceptor Localizer { get; set; } = default!;
+
+    /// <summary>The core's commands, in its order (ADR-0010).</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<GridCommand> Commands { get; set; } = [];
+
+    /// <summary>The core's discard, for Tab (ADR-0039).</summary>
+    [Parameter, EditorRequired] public Action Close { get; set; } = default!;
+
+    /// <summary>The context's count of openings: each new one asks for DOM focus.</summary>
+    [Parameter] public int FocusRequest { get; set; }
+
+    /// <summary>Where the wording and the icons come from.</summary>
+    [Parameter, EditorRequired] public MudGridChrome Chrome { get; set; } = default!;
+
+    private string LabelOf(string id) => Chrome.LabelFor(id, Localizer);
+
+    protected override void OnParametersSet()
+    {
+        if (FocusRequest != _focusedRequest)
+            _needsFocus = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_needsFocus)
+            return;
+        _needsFocus = false;
+        _focusedRequest = FocusRequest;
+        await FocusItemAsync(MenuKeys.First(Commands));
+    }
+
+    private async Task OnKeyAsync(KeyboardEventArgs e)
+    {
+        var meaning = MenuKeys.Resolve(e.Key, e.ShiftKey, e.CtrlKey || e.AltKey || e.MetaKey, Commands, _current);
+        switch (meaning.Kind)
+        {
+            case MenuKeyKind.Move:
+                await FocusItemAsync(meaning.Item);
+                break;
+            case MenuKeyKind.Run:
+                await Commands[meaning.Item].Invoke();
+                break;
+            case MenuKeyKind.Close:
+                Close();
+                break;
+        }
+    }
+
+    private async Task FocusItemAsync(int item)
+    {
+        if (!_items.TryGetValue(item, out var button))
+            return;
+        try
+        {
+            // MudBlazor's own FocusAsync on its button — focus stays out of JavaScript
+            // this package would own (ADR-0021/0039).
+            await button.FocusAsync();
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+}

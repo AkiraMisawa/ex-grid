@@ -263,4 +263,37 @@ public class HeaderGroupRenderingTests : GridTestContext
         Assert.Contains("left: 200px", cut.FindAll(".ex-header-group")[0].GetAttribute("style"));
     }
 
+
+    [Fact] // ADR-0032 / ADR-0010: the menu never offers a pin the grid would refuse — through a group it is disabled
+    public async Task Pinning_through_a_group_is_not_offered()
+    {
+        // CVA covers columns 1-3: pinning up to 1, 2 or 3 would cut it; up to 0 or 4 would not.
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.TotalCount, 20)
+            .Add(g => g.Columns, TestRows.Wide(6))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 650)
+            .Add(g => g.HeaderGroups, (HeaderGroup[])[Groups()[0]])
+            .Add(g => g.OnPinnedCountChanged, (int _) => { }));
+
+        bool PinOffered(int column)
+        {
+            var pin = cut.FindAll(".ex-popover button[role=menuitem]").Single(b => b.TextContent == "Pin up to this column");
+            return !pin.HasAttribute("disabled");
+        }
+
+        var offered = new List<bool>();
+        for (var column = 0; column < 5; column++)
+        {
+            await cut.FindAll(".ex-menu-button")[column].ClickAsync(new MouseEventArgs());
+            offered.Add(PinOffered(column));
+            await cut.FindAll(".ex-menu-button")[column].ClickAsync(new MouseEventArgs());
+        }
+
+        // Pinning up to column c pins c + 1 columns.
+        Assert.Equal([true, false, false, true, true], offered);
+    }
 }

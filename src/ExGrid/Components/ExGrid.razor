@@ -314,7 +314,7 @@
                     @if (command.Enabled)
                     {
                         <button type="button" role="menuitem" @ref="_menuItems[item]"
-                                @onclick="() => RunCommandAsync(command)"
+                                @onclick="command.Invoke"
                                 @onkeydown="e => OnMenuItemKeyAsync(e, menuCommands, item)" @onkeydown:preventDefault>@LabelOf(command)</button>
                     }
                     else
@@ -346,7 +346,7 @@
                     @if (command.Enabled)
                     {
                         <button type="button" role="menuitem" @ref="_menuItems[item]"
-                                @onclick="() => RunCommandAsync(command)"
+                                @onclick="command.Invoke"
                                 @onkeydown="e => OnMenuItemKeyAsync(e, contextCommands, item)" @onkeydown:preventDefault>@LabelOf(command)</button>
                     }
                     else
@@ -2687,8 +2687,11 @@
             new("filter", filterable, () => OpenPanelAsync(column)),
             new("hide", OnColumnHidden.HasDelegate,
                 () => OnColumnHidden.InvokeAsync(declared.Name)),
+            // Never a pin the grid would refuse: a boundary through a Header Group
+            // cannot be drawn honestly (ADR-0032), so the command is disabled there.
             new("pin",
-                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount != column + 1,
+                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount != column + 1
+                    && _headerLayout.AllowsPinnedCount(column + 1),
                 () => OnPinnedCountChanged.InvokeAsync(column + 1)),
             new("unpin",
                 OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount > 0,
@@ -2696,7 +2699,7 @@
             new("size-to-fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
                 () => SizeToFitAsync(column)),
         };
-        return new ColumnMenuContext(declared.Name, declared.Type, commands, CloseFromChrome, _popoverFocusRequest);
+        return new ColumnMenuContext(declared.Name, declared.Type, Closing(commands), CloseFromChrome, _popoverFocusRequest);
     }
 
     /// <summary>
@@ -2926,13 +2929,35 @@
         var context = new ContextMenuContext<TRow>(
             _window[slice], declared.Name, declared.Type,
             _selection.Selection.Ranges, _sequenceVersion, core, CloseFromChrome, _popoverFocusRequest);
+        var commands = new List<GridCommand>(core);
         if (ContextCommands?.Invoke(context) is { } extra)
+            commands.AddRange(extra);
+        return context with { Commands = Closing(commands) };
+    }
+
+    /// <summary>
+    /// The commands as a menu hands them out (ADR-0010/0039): invoking one runs it and then
+    /// closes the menu — or leaves standing the panel it opened — and hands the keyboard
+    /// back to the root, whichever Chrome invoked it and however: a click, Enter or Space.
+    /// What closes a popover is the core's to decide, so a substituted Chrome only calls
+    /// <see cref="GridCommand.Invoke"/>, and the grid renders itself, since the event that
+    /// invoked it may have been the Chrome's rather than the grid's.
+    /// </summary>
+    private List<GridCommand> Closing(List<GridCommand> commands)
+    {
+        for (var i = 0; i < commands.Count; i++)
         {
-            var added = extra as IReadOnlyList<GridCommand> ?? [.. extra];
-            if (added.Count > 0)
-                context = context with { Commands = [.. core, .. added] };
+            var command = commands[i];
+            commands[i] = command with
+            {
+                Invoke = () => InvokeAsync(async () =>
+                {
+                    await RunCommandAsync(command);
+                    StateHasChanged();
+                }),
+            };
         }
-        return context;
+        return commands;
     }
 
     /// <summary>A copy invoked from a menu takes the asynchronous route whatever the
@@ -3167,7 +3192,7 @@
                 await FocusQuietlyAsync(target);
                 break;
             case MenuKeyKind.Run:
-                await RunCommandAsync(commands[meaning.Item]);
+                await commands[meaning.Item].Invoke();
                 break;
             case MenuKeyKind.Close:
                 ClosePopoverAndReturnFocus();

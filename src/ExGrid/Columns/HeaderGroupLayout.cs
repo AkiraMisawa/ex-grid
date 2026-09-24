@@ -55,6 +55,22 @@ public sealed class HeaderGroupLayout
     public int LeafTierSpanOf(int column)
         => TierCount == 0 || column >= _leafTierSpans.Length ? 1 : _leafTierSpans[column];
 
+    /// <summary>
+    /// Whether <paramref name="pinnedCount"/> pinned columns would leave every rectangle
+    /// wholly on one side of the boundary — the straddle <see cref="Resolve"/> refuses,
+    /// asked before it would have to be refused, so that the column menu never offers a
+    /// pin the grid would then reject (ADR-0032/0010).
+    /// </summary>
+    public bool AllowsPinnedCount(int pinnedCount)
+    {
+        foreach (var group in Groups)
+        {
+            if (group.FirstColumn < pinnedCount && group.FirstColumn + group.MemberCount > pinnedCount)
+                return false;
+        }
+        return true;
+    }
+
     public static HeaderGroupLayout Resolve(
         IReadOnlyList<HeaderGroup> groups, IReadOnlyList<string> columnNames, int pinnedCount)
     {

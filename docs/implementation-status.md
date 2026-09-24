@@ -363,7 +363,25 @@ clean. The property is unchanged: the dependency points one way.
    Each popover is now keyed by its opening: one column's menu opened straight over
    another's kept the same buttons through the diff, and nothing took the keyboard. And Row
    Stripes in the core (UX-15/16, RR-13; `RowStripeTests`, `stripes.spec.mjs` on the new
-   `/stripes` page, which reads the painted colours from a screenshot).
+   `/stripes` page, which reads the painted colours from a screenshot). The proof-of-concept
+   page, `/mud-app`, and the `/features?chrome=mud` switch are in (T4, `mud-app.spec.mjs`,
+   WR-8's `WrapperScriptTests`). `MudGridChrome` fills the column menu and the Context Menu
+   with `MudButton` items, a Material icon each, and answers to `MenuKeys` (WR-4;
+   `MudMenuTests`), and `popovers.spec.mjs` runs every popover test under both Chromes
+   (WR-5 for the menus). Two core defects surfaced on the way and are fixed: a command a
+   substituted Chrome invoked never closed its menu — the core now hands out commands that
+   close themselves, since closing is its decision (ADR-0010) — and "Pin up to this column"
+   was offered where the pin would cut a Header Group, which the grid then refused by
+   taking the page down; it is now disabled there (ADR-0032).
+
+   **Open, and waiting on a decision:** WR-7's dialog clause fails. A grid inside a
+   `MudDialog` has its popover cut off by the dialog's scrolling content. ADR-0017/0018/0021
+   chose the Popover API and CSS Anchor Positioning, driven by attributes with no script,
+   but a popover opened by a key or a right-click cannot enter the top layer without
+   `showPopover()`, and the code places popovers inside the root, the option ADR-0017
+   rejected. Measured in the browser: `position: fixed` with anchor positioning is still
+   clipped, because `.mud-dialog` carries a transform. The top layer shows the popover
+   whole, but a design system's popup (an Inner Popup) then sits beneath it.
 
 ## Where the exit criteria stand
 

@@ -88,7 +88,10 @@ public sealed record FilterPanelContext(
 
 /// <summary>The column menu's contract (ADR-0010): the core decides the items.
 /// <see cref="FocusRequest"/> counts the openings; the menu puts DOM focus on its first
-/// enabled item whenever it changes (ADR-0039).</summary>
+/// enabled item whenever it changes (ADR-0039). Invoking a command also closes the menu
+/// — or replaces it with the filter panel — and hands the keyboard back: the Chrome only
+/// invokes, and calls <see cref="Close"/> for a dismissal of its own. What each key
+/// means on an item is <see cref="MenuKeys"/>'.</summary>
 public sealed record ColumnMenuContext(
     string Column,
     ColumnType Type,
@@ -108,7 +111,9 @@ public sealed record ColumnMenuContext(
 /// question, asked of the source it already has.
 ///
 /// <para><see cref="FocusRequest"/> counts the openings; the menu puts DOM focus on its
-/// first enabled item whenever it changes (ADR-0039).</para>
+/// first enabled item whenever it changes (ADR-0039). As in the column menu, invoking a
+/// command closes the menu and hands the keyboard back, and <see cref="MenuKeys"/> says
+/// what each key means on an item.</para>
 /// </summary>
 public sealed record ContextMenuContext<TRow>(
     TRow Row,
