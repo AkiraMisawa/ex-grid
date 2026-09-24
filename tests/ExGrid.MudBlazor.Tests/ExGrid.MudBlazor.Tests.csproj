@@ -14,6 +14,10 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <!-- Coverage for CI (ADR-0041), on the same Microsoft.Testing.Platform 1.6 line
+         xunit.v3 2.0 runs on; the 18.x extensions move to platform 2. Inert unless
+         the coverage switch is passed. -->
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
     <PackageReference Include="bunit" Version="2.9.0" />
   </ItemGroup>
 

@@ -1,0 +1,166 @@
+# Every layer, on every push to main and dev/claude-code and on every pull request
+# (ADR-0041). Layers 1 and 2 with coverage; layer 3 on the runner's installed Chrome and
+# Edge, headed under xvfb, as ADR-0026 asks. All three gate; coverage is reported, never
+# gated. The weekly run adds the soak and ST-1 at 10⁶ rows.
+name: CI
+
+on:
+  push:
+    branches: [main, dev/claude-code]
+  pull_request:
+  schedule:
+    # Weekly long run: Monday 03:17 UTC.
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      long:
+        description: 'Also run the soak (MEM-5/6) and ST-1 at 10⁶ rows'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+  # The long run: the weekly schedule, or a dispatch that asks for it.
+  LONG_RUN: ${{ github.event_name == 'schedule' || inputs.long == true }}
+
+jobs:
+  tests:
+    name: Build, layers 1 and 2, coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          # The gating tests execute on net8.0, the oldest supported runtime (ADR-0022).
+          dotnet-version: 8.0.x
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Build
+        run: dotnet build ExGrid.slnx
+
+      - name: Layers 1 and 2, with coverage
+        env:
+          EXGRID_ST1_MILLION: ${{ env.LONG_RUN == 'true' && '1' || '' }}
+        run: >
+          dotnet test ExGrid.slnx --no-build
+          -p:TestingPlatformCommandLineArguments="--coverage --coverage-output-format cobertura
+          --coverage-output coverage.cobertura.xml --coverage-settings ${{ github.workspace }}/tests/coverage.settings.xml"
+
+      - name: Merge coverage
+        run: >
+          dotnet reportgenerator
+          -reports:"tests/*/bin/*/*/TestResults/coverage.cobertura.xml"
+          -targetdir:coverage
+          -reporttypes:"MarkdownSummaryGithub;Badges;TextSummary"
+
+      - name: Coverage into the run's summary
+        run: cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 30
+
+  browser:
+    name: Layer 3 on Chrome and Edge (Linux, headed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
+
+      - name: The installed browsers the suite resolves by channel
+        run: |
+          google-chrome --version
+          microsoft-edge --version
+
+      - name: Install the suite
+        working-directory: tests/ExGrid.Browser
+        run: npm ci
+
+      # Built ahead, so the suite's own webServer start is a start and not a build.
+      - name: Build the DemoHost
+        run: dotnet build samples/ExGrid.DemoHost
+
+      - name: Layer 3, headed under xvfb
+        working-directory: tests/ExGrid.Browser
+        env:
+          EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" npx playwright test
+
+      - name: Keep the run's records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: layer3-records
+          path: |
+            verification/
+            tests/ExGrid.Browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  badges:
+    name: Publish the coverage badges
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+
+      # The badges branch holds only the badges, the latest table and one line of history
+      # per push to main. It is not a code branch and nothing merges it.
+      - name: Update the badges branch
+        env:
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          line=$(grep -oP 'Line coverage: \K[0-9.]+' coverage/Summary.txt)
+          branch=$(grep -oP 'Branch coverage: \K[0-9.]+' coverage/Summary.txt)
+          colour() {
+            awk -v v="$1" 'BEGIN {
+              if (v >= 90) print "brightgreen"; else if (v >= 80) print "green";
+              else if (v >= 70) print "yellowgreen"; else if (v >= 60) print "yellow";
+              else if (v >= 50) print "orange"; else print "red" }'
+          }
+          git clone --quiet --depth 1 --branch badges "https://x-access-token:${TOKEN}@github.com/${REPO}.git" out \
+            || { git init --quiet out && git -C out checkout --quiet --orphan badges; }
+          cp "coverage/badge_shieldsio_linecoverage_$(colour "$line").svg" out/coverage-line.svg
+          cp "coverage/badge_shieldsio_branchcoverage_$(colour "$branch").svg" out/coverage-branch.svg
+          cp coverage/SummaryGithub.md out/coverage.md
+          [ -f out/history.csv ] || echo 'date,commit,line,branch' > out/history.csv
+          echo "$(date -u +%Y-%m-%dT%H:%MZ),${SHA::7},${line},${branch}" >> out/history.csv
+          cd out
+          git add -A
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit --quiet -m "Coverage ${line}% lines, ${branch}% branches at ${SHA::7}"
+          git push --quiet "https://x-access-token:${TOKEN}@github.com/${REPO}.git" HEAD:badges
