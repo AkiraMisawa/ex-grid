@@ -1,4 +1,5 @@
 @page "/features"
+@implements IDisposable
 @using ExGrid.Chrome
 @using ExGrid.Clipboard
 @using global::ExGrid.MudBlazor
@@ -99,7 +100,7 @@
     /// <c>?modal=1</c> turns on MudBlazor's <c>ModalOverlay</c> — a Consumer's app-wide
     /// setting, under which a press outside an open popup is swallowed by MudBlazor's
     /// overlay and only the popup closes (ADR-0039, FN-21). Set on the options object the
-    /// app registered, so it holds for this page load; each browser test loads afresh.
+    /// app registered, and set back when the page goes, so no other page inherits it.
     /// </summary>
     [SupplyParameterFromQuery(Name = "modal")]
     public string? ModalOverlay { get; set; }
@@ -108,6 +109,8 @@
 
     private IGridChrome? _chrome;
     private bool _mudChrome;
+
+    public void Dispose() => MudPopovers.Value.ModalOverlay = false;
 
     protected override void OnParametersSet()
     {

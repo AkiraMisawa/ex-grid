@@ -9,6 +9,7 @@
 @using global::ExGrid.Columns
 @using global::ExGrid.Selection
 @using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components.Rendering
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject IServiceProvider Services
@@ -300,28 +301,7 @@
             }
             else
             {
-                @* The keys are the items' own once they hold DOM focus (ADR-0039), and what
-                   each one means is MenuKeys' — the table every Chrome answers to. Every
-                   key's default is prevented: an arrow, Home or End would otherwise scroll
-                   the page under the menu, and Enter and Space run the item here rather
-                   than through the button's own click. An enabled item is captured so the
-                   arrows can move to it; a disabled one cannot hold focus at all. *@
-                var menuCommands = menuContext.Commands;
-                @for (var i = 0; i < menuCommands.Count; i++)
-                {
-                    var item = i;
-                    var command = menuCommands[i];
-                    @if (command.Enabled)
-                    {
-                        <button type="button" role="menuitem" @ref="_menuItems[item]"
-                                @onclick="command.Invoke"
-                                @onkeydown="e => OnMenuItemKeyAsync(e, menuCommands, item)" @onkeydown:preventDefault>@LabelOf(command)</button>
-                    }
-                    else
-                    {
-                        <button type="button" role="menuitem" disabled>@LabelOf(command)</button>
-                    }
-                }
+                BuiltInMenuItems(__builder, menuContext.Commands);
             }
         </div>
     }
@@ -338,22 +318,7 @@
             {
                 @* The column menu's items and keys, over the selection's commands
                    (ADR-0036/0039). *@
-                var contextCommands = contextMenu.Commands;
-                @for (var i = 0; i < contextCommands.Count; i++)
-                {
-                    var item = i;
-                    var command = contextCommands[i];
-                    @if (command.Enabled)
-                    {
-                        <button type="button" role="menuitem" @ref="_menuItems[item]"
-                                @onclick="command.Invoke"
-                                @onkeydown="e => OnMenuItemKeyAsync(e, contextCommands, item)" @onkeydown:preventDefault>@LabelOf(command)</button>
-                    }
-                    else
-                    {
-                        <button type="button" role="menuitem" disabled>@LabelOf(command)</button>
-                    }
-                }
+                BuiltInMenuItems(__builder, contextMenu.Commands);
             }
         </div>
     }
@@ -2910,24 +2875,37 @@
         return Task.CompletedTask;
     }
 
-    /// <summary>Where the menu stands: at the pointer, clamped to the Viewport, and
-    /// below the header band the popovers all sit under (ADR-0027 — the min-width rides
-    /// the instance inline, so the clamp and the laid-out box are one number).</summary>
     /// <summary>
     /// The Context Menu stands at the pointer, on whichever side of it the grid has more
     /// room, and is bounded by that room (ADR-0040): above, it hangs from the pointer by
-    /// its own height — a translate of its own box, nothing measured.
+    /// its own height — a translate of its own box, nothing measured. Across, it is clamped
+    /// by the widest it may grow, as every popover is.
     /// </summary>
     private string ContextPopoverStyle()
     {
-        var left = Math.Clamp(_contextLeftPx, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
+        var (left, width) = PopoverAcross(_contextLeftPx);
         var at = Math.Clamp(BandHeightPx + _contextTopPx, 0, _visibleHeightPx);
         var below = _visibleHeightPx - at;
         return below >= at
             ? FormattableString.Invariant(
-                $"left: {left}px; top: {at}px; min-width: {PopoverMinWidthPx}px; max-height: {below}px")
+                $"left: {left}px; top: {at}px; {width}; max-height: {below}px")
             : FormattableString.Invariant(
-                $"left: {left}px; top: {at}px; transform: translateY(-100%); min-width: {PopoverMinWidthPx}px; max-height: {at}px");
+                $"left: {left}px; top: {at}px; transform: translateY(-100%); {width}; max-height: {at}px");
+    }
+
+    /// <summary>
+    /// A popover's place and width across the grid (ADR-0027/0040): no narrower than
+    /// <see cref="PopoverMinWidthPx"/>, no wider than <see cref="PopoverMaxWidthPx"/> or
+    /// the Viewport, and its left edge clamped by that widest — so however wide its
+    /// contents make it, its right edge stays inside the grid's box. The numbers the clamp
+    /// uses are the numbers written inline, never a C# constant beside a stylesheet one.
+    /// </summary>
+    private (double Left, string Width) PopoverAcross(double wantedLeft)
+    {
+        var widest = Math.Min(PopoverMaxWidthPx, Math.Max(0, _visibleWidthPx));
+        var narrowest = Math.Min(PopoverMinWidthPx, widest);
+        var left = Math.Clamp(wantedLeft, 0, Math.Max(0, _visibleWidthPx - widest));
+        return (left, FormattableString.Invariant($"min-width: {narrowest}px; max-width: {widest}px"));
     }
 
     /// <summary>
@@ -3027,13 +3005,14 @@
 
     private async Task RunCommandAsync(GridCommand command)
     {
+        var opening = _popoverFocusRequest;
         await command.Invoke();
-        // The filter command replaces the menu with the panel; everything else closes,
-        // and the keyboard goes back to the root (ADR-0039).
-        if (_panelColumn < 0)
+        // Only the popover the command ran from closes, and the keyboard goes back to the
+        // root (ADR-0039). The filter command replaced it with the panel — a new opening,
+        // which stays — and a command that took its time may find another popover opened
+        // meanwhile, which is not its to close.
+        if (_popoverFocusRequest == opening)
             ClosePopoverAndReturnFocus();
-        else
-            _menuColumn = -1;
     }
 
     // A header button's handler depends on nothing but its column's index, so one is made
@@ -3131,6 +3110,12 @@
         _panelLast = default;
         _menuItems.Clear();
         _reclaimFocusPending = false;
+        // A new opening starts clean, however the last one ended: a panel still waiting
+        // for its list, or contents that never reported their popup closed, must not keep
+        // this popover from taking the keyboard or from answering Escape (ADR-0039).
+        _panelAwaitingValues = false;
+        _innerPopupOpen = false;
+        _innerPopupChanged = null;
     }
 
     /// <summary>
@@ -3161,10 +3146,15 @@
     /// <summary>The contexts' <c>InnerPopupChanged</c>: the contents report a popup of their
     /// own opening or closing (ADR-0039), and the key gate is told at once — the next
     /// Escape may already be on its way.</summary>
-    private Action<bool> InnerPopupChangedFromChrome => _innerPopupChanged ??= open => _ = InvokeAsync(async () =>
+    private Action<bool> InnerPopupChangedFromChrome => _innerPopupChanged ??= ReportFor(_popoverFocusRequest);
+
+    // One reporter per opening: a report from contents that have since closed, or been
+    // replaced by another popover's, carries an opening that is no longer the current one
+    // and changes nothing.
+    private Action<bool> ReportFor(int opening) => open => _ = InvokeAsync(async () =>
     {
-        if (_menuColumn < 0 && _panelColumn < 0 && _contextCell is null)
-            return; // a report from contents already closed
+        if (opening != _popoverFocusRequest || (_menuColumn < 0 && _panelColumn < 0 && _contextCell is null))
+            return;
         _innerPopupOpen = open;
         await SyncInnerPopupAsync();
     });
@@ -3278,17 +3268,30 @@
         var current = CurrentSpecOf(declared.Name);
         _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: false);
         _panelValueText = FilterPanelChoices.InitialOperand(current)?.ToString() ?? "";
+        var startedOn = _panelOperator;
         StateHasChanged();
 
-        if (declared.FilterUi == FilterUiMode.Condition)
+        // The list is fetched here for the built-in panel alone: a substituted one pulls it
+        // through its context when it wants it, and a second query per opening would be the
+        // Consumer's cost for nothing.
+        if (declared.FilterUi == FilterUiMode.Condition || Chrome?.FilterPanel(BuildPanelContext(column)) is not null)
+        {
+            _panelAwaitingValues = false;
             return;
+        }
         var answer = await RequestDistinctValuesAsync(declared.Name);
         if (_disposed || _panelColumn != column)
             return;
         _panelValues = answer;
         _panelAwaitingValues = false;
+        // The condition form stood while the list was on its way, and whatever the user
+        // chose there meanwhile stays: only an untouched form starts over on TooMany's
+        // operator.
         if (answer.IsTooMany)
-            _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: true);
+        {
+            if (_panelOperator == startedOn && _panelValueText.Length == 0)
+                _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: true);
+        }
         else
             _panelChecked = FilterPanelChoices.InitiallyChosen(current, answer);
         StateHasChanged();
@@ -3376,21 +3379,21 @@
     private string PopoverStyle(int column)
     {
         var geometry = _columnStyles.Geometry;
-        var left = column < geometry.PinnedCount
+        var (left, width) = PopoverAcross(column < geometry.PinnedCount
             ? geometry.OffsetPxOf(column)
-            : geometry.OffsetPxOf(column) - _scrollLeftPx;
-        left = Math.Clamp(left, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
-        // min-width rides the instance inline (ADR-0027): the clamp above and the box
-        // the browser lays out must be one number, never a C# constant paired with a
-        // stylesheet literal by a comment. max-height keeps it inside the grid's box, so
-        // no ancestor that shows the grid can cut it; taller contents scroll (ADR-0040).
+            : geometry.OffsetPxOf(column) - _scrollLeftPx);
+        // max-height keeps it inside the grid's box downwards, as PopoverAcross does across,
+        // so no ancestor that shows the grid can cut it; taller contents scroll (ADR-0040).
         return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx}px; min-width: {PopoverMinWidthPx}px; max-height: {Math.Max(0, _visibleHeightPx - BandHeightPx)}px");
+            $"left: {left}px; top: {BandHeightPx}px; {width}; max-height: {Math.Max(0, _visibleHeightPx - BandHeightPx)}px");
     }
 
-    /// <summary>The narrowest usable popover — what the clamp keeps on screen and what
-    /// the browser is told to lay out, from this one number (ADR-0027).</summary>
+    /// <summary>The narrowest usable popover, and the widest any may grow — what the
+    /// clamp keeps inside the grid and what the browser is told to lay out, from these
+    /// numbers alone (ADR-0027/0040).</summary>
     private const double PopoverMinWidthPx = 200;
+
+    private const double PopoverMaxWidthPx = 320;
 
     /// <summary>Whether the header cells carry a menu button: only where some command
     /// could reach a Consumer at all (ADR-0010).</summary>
@@ -5135,4 +5138,34 @@
     }
 
     private static string Px(double value) => FormattableString.Invariant($"{value}px");
+}
+
+@code {
+    /// <summary>
+    /// The built-in menus' items — the column menu's and the Context Menu's alike
+    /// (ADR-0010/0036). The keys are the items' own once they hold DOM focus (ADR-0039),
+    /// and what each one means is <see cref="MenuKeys"/>' — the table every Chrome answers
+    /// to. Every key's default is prevented: an arrow, Home or End would otherwise scroll
+    /// the page under the menu, and Enter and Space run the item here rather than through
+    /// the button's own click. An enabled item is captured so the arrows can move to it; a
+    /// disabled one cannot hold focus at all.
+    /// </summary>
+    private void BuiltInMenuItems(RenderTreeBuilder __builder, IReadOnlyList<GridCommand> commands)
+    {
+        for (var i = 0; i < commands.Count; i++)
+        {
+            var item = i;
+            var command = commands[i];
+            if (command.Enabled)
+            {
+                <button type="button" role="menuitem" @ref="_menuItems[item]"
+                        @onclick="command.Invoke"
+                        @onkeydown="e => OnMenuItemKeyAsync(e, commands, item)" @onkeydown:preventDefault>@LabelOf(command)</button>
+            }
+            else
+            {
+                <button type="button" role="menuitem" disabled>@LabelOf(command)</button>
+            }
+        }
+    }
 }

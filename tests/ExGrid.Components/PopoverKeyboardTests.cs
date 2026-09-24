@@ -643,4 +643,108 @@ public class PopoverKeyboardTests : GridTestContext
 
         Assert.Empty(Js.InnerPopupTold.Invocations);
     }
+
+    // ---- Review round (2026-09-24): an opening starts clean, whatever the last one left.
+
+    /// <summary>The Filter command, run while the Consumer's value-list query is still
+    /// running: in a browser the event's handler renders the panel and waits on; bUnit would
+    /// wait for the whole handler, so the click is started and the panel waited for.</summary>
+    private static void OpenPanelWhileTheListIsPending(IRenderedComponent<ExGrid<TestRow>> cut)
+    {
+        _ = Item(cut, "Filter").ClickAsync(new MouseEventArgs());
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Find(".ex-popover[role=dialog]")));
+    }
+
+    [Fact] // ADR-0039 / KB-29: a menu opened while a panel's value list is still on its way takes the keyboard
+    public async Task A_menu_opened_over_a_waiting_panel_takes_the_keyboard()
+    {
+        var source = new TestSource { DistinctPending = new() };
+        var cut = RenderGrid(source: source);
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        OpenPanelWhileTheListIsPending(cut);
+
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+
+        Assert.Equal("Amount", cut.Find(".ex-popover[role=menu]").GetAttribute("aria-label"));
+        Assert.Equal(RefOf(Item(cut, "Sort ascending")), LastFocused());
+        // The answer that arrives for the panel left behind changes nothing.
+        await cut.InvokeAsync(() => source.DistinctPending.SetResult(DistinctValues.Of(["Alpha"])));
+        Assert.Equal("Amount", cut.Find(".ex-popover[role=menu]").GetAttribute("aria-label"));
+    }
+
+    [Fact] // ADR-0009: what the user chose in the condition form while the list was on its way survives TooMany
+    public async Task A_choice_made_while_waiting_survives_too_many()
+    {
+        var source = new TestSource { DistinctPending = new() };
+        var cut = RenderGrid(source: source);
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        OpenPanelWhileTheListIsPending(cut);
+
+        await cut.Find(".ex-popover select").ChangeAsync(new ChangeEventArgs { Value = nameof(FilterOperator.StartsWith) });
+        await cut.InvokeAsync(() => source.DistinctPending.SetResult(DistinctValues.TooMany));
+
+        Assert.Equal(nameof(FilterOperator.StartsWith), cut.Find(".ex-popover select").GetAttribute("value"));
+    }
+
+    [Fact] // ADR-0009: an untouched form still starts over on TooMany's operator
+    public async Task An_untouched_form_starts_over_on_too_many()
+    {
+        var source = new TestSource { DistinctPending = new() };
+        var cut = RenderGrid(source: source);
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        OpenPanelWhileTheListIsPending(cut);
+
+        await cut.InvokeAsync(() => source.DistinctPending.SetResult(DistinctValues.TooMany));
+
+        Assert.Equal(nameof(FilterOperator.Contains), cut.Find(".ex-popover select").GetAttribute("value"));
+    }
+
+    [Fact] // ADR-0009: a substituted panel pulls the list itself; the core asks nothing for a panel it does not draw
+    public async Task The_core_fetches_no_list_for_a_panel_it_does_not_draw()
+    {
+        var chrome = new StubChrome();
+        var source = new TestSource();
+        var cut = RenderGrid(chrome, source: source);
+        await ClickCellAsync(cut, 50, 10);
+        await AltDownAsync(cut);
+
+        await cut.InvokeAsync(() => chrome.Menu!.Commands.Single(c => c.Id == "filter").Invoke());
+
+        Assert.NotNull(cut.Find(".ex-stub-panel"));
+        Assert.Empty(source.DistinctRequested);
+    }
+
+    [Fact] // ADR-0039: a popup reported by contents that another popover replaced is forgotten with them
+    public async Task A_popup_report_does_not_outlive_its_popover()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+        var first = chrome.Menu!.InnerPopupChanged!;
+        await cut.InvokeAsync(() => first(true));
+        Assert.Equal([true], Js.InnerPopupTold.Invocations.Select(i => (bool)i.Arguments[0]!));
+
+        // Another column's menu, straight over this one: the gate is told the popup is gone.
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        Assert.Equal([true, false], Js.InnerPopupTold.Invocations.Select(i => (bool)i.Arguments[0]!));
+
+        // And a late report from the replaced contents changes nothing.
+        await cut.InvokeAsync(() => first(true));
+        Assert.Equal(2, Js.InnerPopupTold.Invocations.Count);
+    }
+
+    [Fact] // ADR-0040 / ADR-0027: across, a popover is clamped by the widest it may grow, written inline
+    public async Task A_popover_near_the_right_edge_stays_inside_the_grid()
+    {
+        var cut = RenderGrid();
+
+        // The second column starts at 100px of a 350px Viewport; a popover up to 320px wide
+        // from there would reach 420px.
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+        var style = cut.Find(".ex-popover").GetAttribute("style")!;
+
+        Assert.True(Px(style, "left") + Px(style, "max-width") <= 350, style);
+        Assert.Equal(200, Px(style, "min-width"));
+    }
 }

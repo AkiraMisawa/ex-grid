@@ -342,8 +342,8 @@ clean. The property is unchanged: the dependency points one way.
    item, is built — ADR-0037.)*
 4. ~~**ADR-0037's layer 3 on the two target browsers.**~~ Discharged on 2026-09-23 by
    the Windows run: KB-20 to KB-27, A11Y-17 and UX-14 pass on `chrome` and `msedge`.
-5. **`ExGrid.MudBlazor`'s remaining seams, and Row Stripes — decided 2026-09-24, not
-   built.** A grilling session settled them; the decisions are
+5. **`ExGrid.MudBlazor`'s remaining seams, and Row Stripes — decided and built
+   2026-09-24; verified on the container's Chromium only.** A grilling session settled them; the decisions are
    [ADR-0038](adr/0038-row-stripes-are-painted-from-the-rows-absolute-position.md) (Row
    Stripes, reversing ADR-0027's "not offered"),
    [ADR-0039](adr/0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)
@@ -408,6 +408,31 @@ clean. The property is unchanged: the dependency points one way.
 
    FN-21 is now observed clause by clause (`popovers.spec.mjs`), `ModalOverlay` included
    (`/features?chrome=mud&modal=1`).
+
+   **A review of the whole change** (the `code-review` pass, 10 findings) fixed:
+   - A menu opened while a panel's value list was still loading never took the keyboard.
+     When that list's command finally completed, it closed the menu standing by then. A
+     command now closes only the popover it ran from, and every opening starts clean.
+   - A popover on the rightmost column could hang past the grid's right edge. It is now
+     clamped by the widest it may grow, and that 320px moved from the stylesheet to the
+     inline style beside its 200px floor. The Wrapper panel's own 240px minimum went.
+   - TooMany overwrote an operator the user had picked while the list loaded.
+   - A substituted panel's value list was queried twice per opening.
+   - A reported Inner Popup could outlive its popover.
+
+   Not taken: a per-opening cache of the command list, since the context was already
+   rebuilt on every render.
+
+   **Runs still owed, not passed:**
+   - Every layer-3 test added on 2026-09-24 has run only on the container's bundled
+     Chromium, headless, with the two local settings that are not the project's. That is
+     `popovers.spec.mjs`, `stripes.spec.mjs`, the new `mud-app.spec.mjs` and the ADR-0039
+     half of `features.spec.mjs`. They still owe a `chrome` and an `msedge` run on Windows or
+     Linux (Step 4), headed.
+   - The soak (`EXGRID_SOAK=1`), per browser.
+   - A real IME is not reachable from the container: the claim that Enter confirming a
+     candidate does not apply a filter rests on the browser's implicit-submission rule, and
+     is owed a manual check with a Japanese IME on both browsers.
 
 ## Where the exit criteria stand
 

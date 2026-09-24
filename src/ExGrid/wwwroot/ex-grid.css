@@ -296,9 +296,8 @@
     z-index: 10;
     box-sizing: border-box;
     overflow-y: auto;
-    /* min-width arrives inline from PopoverStyle (ADR-0027): the number the core
-       clamps the popover on screen with is the number the box is laid out from. */
-    max-width: 320px;
+    /* min-width and max-width arrive inline from the core (ADR-0027/0040): the numbers it
+       clamps the popover inside the grid with are the numbers the box is laid out from. */
     padding: 4px;
     display: flex;
     flex-direction: column;
@@ -327,8 +326,10 @@
 }
 .ex-popover button { font: inherit; text-align: left; padding: 2px var(--ex-action-padding-x, 6px); cursor: pointer; }
 .ex-popover button:disabled { cursor: default; opacity: 0.5; }
-/* In a bounded popover the value list is what gives (ADR-0040): it shrinks, down to about
-   two rows, and scrolls, so the search above it and the actions below stay in view. */
+/* In a bounded popover the value list is what gives (ADR-0040): it shrinks, to a floor
+   that still shows a couple of entries, and scrolls, so the search above it and the
+   actions below stay in view. The floor is the panel's own layout, not the grid's geometry:
+   nothing in C# computes with it. */
 .ex-popover-list { max-height: 240px; min-height: 48px; flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; }
 .ex-popover-actions { display: flex; gap: 4px; justify-content: flex-end; flex-shrink: 0; }
 /* The filter panel's Tab-wrap sentinels (ADR-0039): focusable, and nothing else. Absolute,

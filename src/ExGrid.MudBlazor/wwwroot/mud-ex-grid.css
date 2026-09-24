@@ -133,11 +133,12 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    min-width: 240px;
     padding: 4px;
-    /* The core bounds its popover by the grid's box (ADR-0040): the panel fills what room
-       there is, and its value list is what gives — down to about two entries, scrolling —
-       so the search and the actions stay in view. */
+    /* No width of its own: the core's popover sets the narrowest and the widest inline and
+       clamps with those same numbers (ADR-0027/0040). Bounded in height by the grid's box,
+       the panel fills what room there is, and its value list is what gives — to a floor
+       that still shows a couple of entries, scrolling — so the search and the actions stay
+       in view. */
     flex: 1 1 auto;
     min-height: 0;
 }
