@@ -372,7 +372,9 @@ clean. The property is unchanged: the dependency points one way.
    substituted Chrome invoked never closed its menu — the core now hands out commands that
    close themselves, since closing is its decision (ADR-0010) — and "Pin up to this column"
    was offered where the pin would cut a Header Group, which the grid then refused by
-   taking the page down; it is now disabled there (ADR-0032).
+   taking the page down; it is now disabled there (ADR-0032). `MudExGridPaper.Striped`
+   cascades Row Stripes and the Wrapper's stylesheet colours them from the palette's
+   table-stripe colour (WR-6; `MudExGridPaperTests`, `mud-app.spec.mjs`).
 
    **Open, and waiting on a decision:** WR-7's dialog clause fails. A grid inside a
    `MudDialog` has its popover cut off by the dialog's scrolling content. ADR-0017/0018/0021

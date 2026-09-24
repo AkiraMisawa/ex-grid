@@ -33,6 +33,9 @@
     --ex-selection-fill: rgba(var(--mud-palette-primary-rgb), 0.18);
     --ex-focus-row-fill: rgba(var(--mud-palette-primary-rgb), 0.08);
     --ex-row-hover-background: var(--mud-palette-table-hover);
+    /* Row Stripes, where Striped or the grid turns them on (ADR-0038): the palette's
+       table-stripe colour, as MudBlazor's own tables paint it. */
+    --ex-row-stripe-background: var(--mud-palette-table-striped);
     --ex-focus-outline: var(--mud-palette-text-primary);
     --ex-grid-focus-outline: 2px solid var(--mud-palette-primary);
     --ex-editor-background: var(--mud-palette-surface);

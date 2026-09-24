@@ -1,6 +1,6 @@
 @* The Wrapper's outer element (ADR-0030): a Material surface — elevation, corners, an
    outline — around one or more grids, a toolbar slot above them, and the cascaded
-   presentation defaults that carry Roboto's widths and the Dense / Hover mapping to
+   presentation defaults that carry Roboto's widths and the Dense / Hover / Striped mapping to
    every grid inside. It sets Visual Tokens and nothing else of the grid's: the
    tokens are mapped onto MudBlazor's own palette variables in mud-ex-grid.css, so a
    dark/light switch or a palette edit re-renders nothing here either — the browser
@@ -18,7 +18,7 @@
 </div>
 
 @code {
-    private GridPresentationDefaults _presentation = MudExGridPresentation.For(dense: false, hover: false);
+    private GridPresentationDefaults _presentation = MudExGridPresentation.For(dense: false, hover: false, striped: false);
 
     /// <summary>The grids, and anything else the surface holds.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -36,6 +36,11 @@
     /// written on the grid still wins. The band's colour is the palette's table
     /// hover colour.</summary>
     [Parameter] public bool Hover { get; set; }
+
+    /// <summary>MudBlazor's striped: the grid's Row Stripes (ADR-0038), cascaded as the
+    /// default so <c>StripeRows</c> written on the grid still wins. The stripe's colour
+    /// is the palette's table-stripe colour, in both schemes.</summary>
+    [Parameter] public bool Striped { get; set; }
 
     /// <summary>The drop shadow, <c>mud-elevation-{n}</c>; 0 is flat. Ignored when
     /// <see cref="Outlined"/>, as MudBlazor's own tables ignore it.</summary>
@@ -70,6 +75,7 @@
     private MudExGridFont? _presentationFont;
     private bool _presentationDense;
     private bool _presentationHover;
+    private bool _presentationStriped;
 
     private string? InlineStyle
     {
@@ -110,16 +116,18 @@
             throw new ArgumentOutOfRangeException(nameof(Elevation), Elevation,
                 "MudBlazor's elevation runs from 0 to 25.");
         }
-        // Rebuilt only when the font, Dense or Hover moved, so the cascaded value
-        // changes exactly when its content does.
-        if (Font != _presentationFont || Dense != _presentationDense || Hover != _presentationHover)
+        // Rebuilt only when the font, Dense, Hover or Striped moved, so the cascaded
+        // value changes exactly when its content does.
+        if (Font != _presentationFont || Dense != _presentationDense || Hover != _presentationHover
+            || Striped != _presentationStriped)
         {
             _presentationFont = Font;
             _presentationDense = Dense;
             _presentationHover = Hover;
+            _presentationStriped = Striped;
             _presentation = Font is null
-                ? MudExGridPresentation.For(Dense, Hover)
-                : MudExGridPresentation.For(Font, Dense, Hover);
+                ? MudExGridPresentation.For(Dense, Hover, Striped)
+                : MudExGridPresentation.For(Font, Dense, Hover, Striped);
         }
     }
 }

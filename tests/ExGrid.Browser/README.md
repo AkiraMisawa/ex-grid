@@ -148,8 +148,10 @@ hide it.
   height and the right geometry once shown; a Drawer toggle resizes a `Fill` grid and
   the painted columns and End's reveal follow, both ways; the two main-area grids stay
   independent (DOM-4); the toolbar's `MudSelect` never disturbs a grid; a grid in a
-  `MudDialog` opens its menu above the dialog. The console rules hold across the app's
-  own controls (WR-9). And `/features?chrome=mud` — the switch that runs `/features`
+  `MudDialog` opens its menu above the dialog — **failing**, and waiting on a decision
+  (`docs/implementation-status.md`). The positions paper is `Striped`: the stripe is the
+  palette's table-stripe colour in both schemes, and a scheme switch re-creates no row
+  (WR-6). The console rules hold across the app's own controls (WR-9). And `/features?chrome=mud` — the switch that runs `/features`
   under `MudGridChrome` so its tests can run under both Chromes (WR-5) — is shown to
   take (the Wrapper's editor appears) and to open the column menu.
 

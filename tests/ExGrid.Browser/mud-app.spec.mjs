@@ -402,3 +402,49 @@ test('WR-5 (setup): /features?chrome=mud runs its grids under MudGridChrome, and
     await popover.press('Escape');
     await expect(popover).toHaveCount(0);
 });
+
+test("WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1)", async ({ page }) => {
+    await open(page);
+
+    // The stripe the grid paints and the colour MudBlazor's own striped tables paint,
+    // each resolved by the browser through a probe inside the grid's root.
+    const colours = () => positions(page).evaluate((root) => {
+        const probe = (value) => {
+            const el = document.createElement('div');
+            el.style.backgroundColor = value;
+            root.appendChild(el);
+            const colour = getComputedStyle(el).backgroundColor;
+            el.remove();
+            return colour;
+        };
+        const striped = root.querySelector('.ex-row.ex-row-stripe');
+        return {
+            token: probe('var(--ex-row-stripe-background)'),
+            palette: probe('var(--mud-palette-table-striped)'),
+            rowImage: striped ? getComputedStyle(striped).backgroundImage : null,
+        };
+    });
+    const parity = () => positions(page).evaluate((root) => [...root.querySelectorAll('.ex-row')].map((row) =>
+        (Number(row.getAttribute('aria-rowindex')) - 1) % 2 === 1 === row.classList.contains('ex-row-stripe')));
+
+    const light = await colours();
+    expect(light.token).toBe(light.palette);
+    expect(light.rowImage, 'a striped row paints the stripe').toContain(light.token);
+    expect(await parity()).not.toContain(false);
+
+    // Mark the rows: an element a render re-created loses the mark.
+    const count = await positions(page).evaluate((root) => {
+        const rows = [...root.querySelectorAll('.ex-row')];
+        rows.forEach((row, i) => { row.dataset.probe = String(i); });
+        return rows.length;
+    });
+    await page.locator('#theme-toggle').click();
+    await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+
+    const dark = await colours();
+    expect(dark.token).toBe(dark.palette);
+    expect(dark.token, 'the stripe recoloured with the scheme').not.toBe(light.token);
+    expect(dark.rowImage).toContain(dark.token);
+    const probes = await positions(page).evaluate((root) => [...root.querySelectorAll('.ex-row')].map((row) => row.dataset.probe));
+    expect(probes).toEqual([...Array(count).keys()].map(String));
+});
