@@ -95,11 +95,23 @@
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
 
+    /// <summary>
+    /// <c>?modal=1</c> turns on MudBlazor's <c>ModalOverlay</c> — a Consumer's app-wide
+    /// setting, under which a press outside an open popup is swallowed by MudBlazor's
+    /// overlay and only the popup closes (ADR-0039, FN-21). Set on the options object the
+    /// app registered, so it holds for this page load; each browser test loads afresh.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "modal")]
+    public string? ModalOverlay { get; set; }
+
+    [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
+
     private IGridChrome? _chrome;
     private bool _mudChrome;
 
     protected override void OnParametersSet()
     {
+        MudPopovers.Value.ModalOverlay = ModalOverlay == "1";
         _mudChrome = ChromeName == "mud";
         _chrome = ChromeName switch
         {

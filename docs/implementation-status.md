@@ -389,23 +389,25 @@ clean. The property is unchanged: the dependency points one way.
    `FilterPanelContext` carries the column's `Format`, so a substituted value list shows
    values as the cells do.
 
-   **Open, and waiting on a decision:** WR-7's dialog clause fails. A grid inside a
-   `MudDialog` has its popover cut off by the dialog's scrolling content. ADR-0017/0018/0021
-   chose the Popover API and CSS Anchor Positioning, driven by attributes with no script,
-   but a popover opened by a key or a right-click cannot enter the top layer without
-   `showPopover()`, and the code places popovers inside the root, the option ADR-0017
-   rejected. Measured in the browser: `position: fixed` with anchor positioning is still
-   clipped, because `.mud-dialog` carries a transform. The top layer shows the popover
-   whole, but a design system's popup (an Inner Popup) then sits beneath it.
+   **Two decisions, taken 2026-09-24 after the browser disagreed with the records:**
+   - **Popovers stay inside their grid's box** ([ADR-0040](adr/0040-a-popover-stays-inside-its-grids-box.md)).
+     A grid inside a `MudDialog` had its column menu cut off by the dialog's scrolling
+     content. ADR-0017/0018/0021 had chosen the Popover API and CSS Anchor Positioning, "no
+     script". What had been built was an in-root popover, and nothing recorded the
+     difference. Measured: the top layer needs `showPopover()` for key- and right-click
+     opens, and buries MudBlazor's popups. `position: fixed` with anchors is still cut by
+     `.mud-dialog`'s transform. The core now writes each popover's `max-height` from its own
+     geometry, and the Context Menu opens on the side with more room. A panel's value list
+     is what gives. WR-7's dialog clause and UX-11 were restated to match.
+   - **Escape closes an Inner Popup first**, as ADR-0039 intended. Its prediction of *how*
+     was wrong: MudBlazor keeps DOM focus on the control while its popup is open, so the
+     grid took the Escape and closed both. The contexts now carry `InnerPopupChanged`, the
+     Wrapper's panel reports its selects' lists and its date calendar, and while one is open
+     the capture-phase gate leaves a descendant's Escape to it. This is one more state of an
+     allowlisted listener, not a new use.
 
-   **Also waiting on a decision:** ADR-0039's Escape row for Inner Popups is wrong in the
-   browser. It predicted that the popup's own Escape would never reach the grid, because
-   DOM focus would be inside the popup. MudBlazor 9.9's `MudSelect` and `MudDatePicker`
-   both keep DOM focus on their control, inside the grid's popover, while their list or
-   calendar is open. So one Escape closes the popup and the panel together; focus does
-   return to the root. The other rows hold: a pointer-down elsewhere under the default
-   `ModalOverlay` closes both and keeps its meaning, closing the popover removes the popup,
-   and focus returns to the root. FN-21's layer-3 tests wait on the corrected row.
+   FN-21 is now observed clause by clause (`popovers.spec.mjs`), `ModalOverlay` included
+   (`/features?chrome=mud&modal=1`).
 
 ## Where the exit criteria stand
 

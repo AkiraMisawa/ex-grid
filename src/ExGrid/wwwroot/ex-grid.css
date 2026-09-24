@@ -286,11 +286,16 @@
 .ex-header-cell:has(> .ex-menu-button) {
     padding-right: calc(var(--ex-cell-padding-x, 8px) + var(--ex-menu-button-width, 16px) + var(--ex-menu-button-inset, 6px));
 }
-/* A popover (ADR-0009/0010/0018): anchored to the instance root, outside the scroll
-   container, so it is never clipped and never tangles across instances. */
+/* A popover (ADR-0009/0010/0018/0040): anchored to the instance root, outside the scroll
+   container, and bounded by the grid's box — its max-height arrives inline from the core's
+   geometry — so no ancestor that shows the grid can cut it, and it never tangles across
+   instances. Contents taller than the room scroll inside it. border-box, so the bound and
+   the min-width are the box the browser draws. */
 .ex-popover {
     position: absolute;
     z-index: 10;
+    box-sizing: border-box;
+    overflow-y: auto;
     /* min-width arrives inline from PopoverStyle (ADR-0027): the number the core
        clamps the popover on screen with is the number the box is laid out from. */
     max-width: 320px;
@@ -322,8 +327,10 @@
 }
 .ex-popover button { font: inherit; text-align: left; padding: 2px var(--ex-action-padding-x, 6px); cursor: pointer; }
 .ex-popover button:disabled { cursor: default; opacity: 0.5; }
-.ex-popover-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; }
-.ex-popover-actions { display: flex; gap: 4px; justify-content: flex-end; }
+/* In a bounded popover the value list is what gives (ADR-0040): it shrinks, down to about
+   two rows, and scrolls, so the search above it and the actions below stay in view. */
+.ex-popover-list { max-height: 240px; min-height: 48px; flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; }
+.ex-popover-actions { display: flex; gap: 4px; justify-content: flex-end; flex-shrink: 0; }
 /* The filter panel's Tab-wrap sentinels (ADR-0039): focusable, and nothing else. Absolute,
    so they take no place in the popover's flex column and add no gap to it. */
 .ex-focus-wrap { position: absolute; width: 0; height: 0; overflow: hidden; outline: none; }

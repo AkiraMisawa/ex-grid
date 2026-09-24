@@ -957,6 +957,13 @@
     private bool _reclaimFocusPending;
     private Action? _closeFromChrome;
 
+    // A popup the popover's contents opened of their own (ADR-0039): reported by them,
+    // and handed to the key gate, which leaves a descendant's Escape to it while it is
+    // open. What the gate was last told is kept, so it is told only of a change.
+    private bool _innerPopupOpen;
+    private bool _innerPopupTold;
+    private Action<bool>? _innerPopupChanged;
+
     private IGridSource<TRow>? _boundSource;
     private IReadOnlyList<GridColumn<TRow>>? _boundColumns;
     private bool _applying;
@@ -1918,6 +1925,7 @@
             }
         }
         await SettlePopoverFocusAsync();
+        await SyncInnerPopupAsync();
 
         // A geometry change re-anchors on the first visible row (ADR-0028): the model
         // has already moved; this is the browser being told, through the allowlisted
@@ -2699,7 +2707,8 @@
             new("size-to-fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
                 () => SizeToFitAsync(column)),
         };
-        return new ColumnMenuContext(declared.Name, declared.Type, Closing(commands), CloseFromChrome, _popoverFocusRequest);
+        return new ColumnMenuContext(declared.Name, declared.Type, Closing(commands), CloseFromChrome,
+            _popoverFocusRequest, InnerPopupChangedFromChrome);
     }
 
     /// <summary>
@@ -2904,11 +2913,21 @@
     /// <summary>Where the menu stands: at the pointer, clamped to the Viewport, and
     /// below the header band the popovers all sit under (ADR-0027 — the min-width rides
     /// the instance inline, so the clamp and the laid-out box are one number).</summary>
+    /// <summary>
+    /// The Context Menu stands at the pointer, on whichever side of it the grid has more
+    /// room, and is bounded by that room (ADR-0040): above, it hangs from the pointer by
+    /// its own height — a translate of its own box, nothing measured.
+    /// </summary>
     private string ContextPopoverStyle()
     {
         var left = Math.Clamp(_contextLeftPx, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
-        return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx + _contextTopPx}px; min-width: {PopoverMinWidthPx}px");
+        var at = Math.Clamp(BandHeightPx + _contextTopPx, 0, _visibleHeightPx);
+        var below = _visibleHeightPx - at;
+        return below >= at
+            ? FormattableString.Invariant(
+                $"left: {left}px; top: {at}px; min-width: {PopoverMinWidthPx}px; max-height: {below}px")
+            : FormattableString.Invariant(
+                $"left: {left}px; top: {at}px; transform: translateY(-100%); min-width: {PopoverMinWidthPx}px; max-height: {at}px");
     }
 
     /// <summary>
@@ -2928,7 +2947,8 @@
         };
         var context = new ContextMenuContext<TRow>(
             _window[slice], declared.Name, declared.Type,
-            _selection.Selection.Ranges, _sequenceVersion, core, CloseFromChrome, _popoverFocusRequest);
+            _selection.Selection.Ranges, _sequenceVersion, core, CloseFromChrome, _popoverFocusRequest,
+            InnerPopupChangedFromChrome);
         var commands = new List<GridCommand>(core);
         if (ContextCommands?.Invoke(context) is { } extra)
             commands.AddRange(extra);
@@ -3085,6 +3105,8 @@
 
     private void CloseMenus()
     {
+        // A popup inside the popover goes with it (ADR-0039).
+        _innerPopupOpen = false;
         _contextCell = null;
         _menuColumn = -1;
         _panelColumn = -1;
@@ -3135,6 +3157,33 @@
         ClosePopoverAndReturnFocus();
         StateHasChanged();
     });
+
+    /// <summary>The contexts' <c>InnerPopupChanged</c>: the contents report a popup of their
+    /// own opening or closing (ADR-0039), and the key gate is told at once — the next
+    /// Escape may already be on its way.</summary>
+    private Action<bool> InnerPopupChangedFromChrome => _innerPopupChanged ??= open => _ = InvokeAsync(async () =>
+    {
+        if (_menuColumn < 0 && _panelColumn < 0 && _contextCell is null)
+            return; // a report from contents already closed
+        _innerPopupOpen = open;
+        await SyncInnerPopupAsync();
+    });
+
+    /// <summary>Tells the key gate whether a popover's contents have a popup open, when
+    /// that has changed since it was last told.</summary>
+    private async Task SyncInnerPopupAsync()
+    {
+        if (_scrollHandle is null || _disposed || _innerPopupTold == _innerPopupOpen)
+            return;
+        _innerPopupTold = _innerPopupOpen;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("setInnerPopup", _innerPopupOpen);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
 
     /// <summary>The built-in panel's Cancel: a discard, and the keyboard back (ADR-0009/0039).</summary>
     private void CancelPanel() => ClosePopoverAndReturnFocus();
@@ -3273,7 +3322,8 @@
             () => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, null)),
             CloseFromChrome,
             _popoverFocusRequest,
-            declared.Format);
+            declared.Format,
+            InnerPopupChangedFromChrome);
     }
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
@@ -3319,9 +3369,10 @@
         return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromCondition(_panelOperator, parsed));
     }
 
-    /// <summary>Where a popover stands (ADR-0017/0018): under the header band, at the
-    /// column's visible left edge, clamped inside the Viewport — outside the scroll
-    /// container, so nothing clips it and no instance shares it.</summary>
+    /// <summary>Where a popover stands (ADR-0018/0040): under the header band, at the
+    /// column's visible left edge, clamped inside the Viewport and bounded by its bottom —
+    /// outside the scroll container, inside the grid's box, so nothing clips it and no
+    /// instance shares it.</summary>
     private string PopoverStyle(int column)
     {
         var geometry = _columnStyles.Geometry;
@@ -3331,9 +3382,10 @@
         left = Math.Clamp(left, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
         // min-width rides the instance inline (ADR-0027): the clamp above and the box
         // the browser lays out must be one number, never a C# constant paired with a
-        // stylesheet literal by a comment.
+        // stylesheet literal by a comment. max-height keeps it inside the grid's box, so
+        // no ancestor that shows the grid can cut it; taller contents scroll (ADR-0040).
         return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx}px; min-width: {PopoverMinWidthPx}px");
+            $"left: {left}px; top: {BandHeightPx}px; min-width: {PopoverMinWidthPx}px; max-height: {Math.Max(0, _visibleHeightPx - BandHeightPx)}px");
     }
 
     /// <summary>The narrowest usable popover — what the clamp keeps on screen and what

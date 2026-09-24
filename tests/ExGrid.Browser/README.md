@@ -105,8 +105,10 @@ hide it.
   not clipping (UX-11); and the Context Menu (CTX-1..4). Under the Wrapper alone, its
   panel's Inner Popups (FN-21): drawn outside the root and disturbing neither grid, a
   pointer-down elsewhere closing the list or the calendar and the panel while keeping its
-  meaning, and focus back on the root after a choice and Apply. FN-21's Escape clause is
-  not there yet: ADR-0039's row for it proved wrong in the browser and awaits a decision.
+  meaning — and under `ModalOverlay` (`/features?chrome=mud&modal=1`) only the popup —
+  Escape closing the popup first and the panel next, and focus back on the root after a
+  choice and Apply. Under both Chromes, a menu taller than its grid stays inside the
+  grid's box and scrolls (UX-11, ADR-0040).
 - `stripes.spec.mjs` — Row Stripes on `/stripes` (ADR-0038), read as painted colours
   from a screenshot rather than as computed styles: a pinned and a scrollable cell of
   one striped row paint the same ground, and the stripe moves with its row (UX-15); a
@@ -154,8 +156,9 @@ hide it.
   height and the right geometry once shown; a Drawer toggle resizes a `Fill` grid and
   the painted columns and End's reveal follow, both ways; the two main-area grids stay
   independent (DOM-4); the toolbar's `MudSelect` never disturbs a grid; a grid in a
-  `MudDialog` opens its menu above the dialog — **failing**, and waiting on a decision
-  (`docs/implementation-status.md`). The positions paper is `Striped`: the stripe is the
+  `MudDialog` opens its popovers whole — inside the grid's box, scrolling where they do not
+  fit — and the filter panel's Inner Popup stands above the dialog (ADR-0040). The
+  positions paper is `Striped`: the stripe is the
   palette's table-stripe colour in both schemes, and a scheme switch re-creates no row
   (WR-6). The console rules hold across the app's own controls (WR-9). And `/features?chrome=mud` — the switch that runs `/features`
   under `MudGridChrome` so its tests can run under both Chromes (WR-5) — is shown to

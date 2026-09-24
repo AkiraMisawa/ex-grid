@@ -82,7 +82,7 @@ own script. What that does to the grid, read from MudBlazor 9.9's source rather 
 
 | ADR-0010's promise | With an Inner Popup open |
 |---|---|
-| Escape closes the popover | **The Inner Popup closes first** — DOM focus is inside it, outside the root, so the grid never sees that Escape; the design system closes its popup and returns focus to its control, inside the popover. The next Escape reaches the grid and closes the popover. Innermost first, which is what a user expects of nested popups |
+| Escape closes the popover | **The Inner Popup closes first**, and the next Escape closes the popover — innermost first, which is what a user expects of nested popups. *(Corrected 2026-09-24; the prediction was wrong.)* It said DOM focus would be inside the popup, outside the root, so the grid would never see that Escape. In the browser, MudBlazor 9.9's `MudSelect` and `MudDatePicker` both keep DOM focus **on their own control, inside the popover**, while their list or calendar is open. The gate took the Escape, and one press closed both. So the contents now **report** their popup. Every popover context carries **`InnerPopupChanged`**, which the contents call with `true` when a popup of theirs opens and `false` when it closes. While one is open, the capture-phase gate leaves a descendant's Escape to the control, and the design system closes its popup. Innermost first is now kept by being told, not by where focus happens to sit |
 | a pointer-down elsewhere in the instance closes it and keeps its own meaning | **Under MudBlazor's default (`ModalOverlay = false`) it still does**: the design system closes its popup from a document-level listener it holds only while the popup is open, and the press goes on to reach the grid. **Under `ModalOverlay = true`** — a Consumer's global setting — the press is swallowed by the design system's overlay and only the Inner Popup closes. The grid acts on what reaches it; it does not reach past a design system's overlay to recover a press that system chose to consume, and that choice is recorded as the Consumer's |
 | the ▾ toggle closes it | unchanged, and closing the popover removes its contents — **the Inner Popup goes with them** |
 | instances stay independent (ADR-0018) | **the grid's own elements stay under its root**, without exception. What a Consumer's or Wrapper's Chrome opens is that design system's, and the core **does not assume** that everything its Chrome shows lies under the root — the rule above that returns focus from outside it is that non-assumption in practice |
@@ -100,7 +100,12 @@ If a row of the table above turns out wrong in a real browser, it is corrected h
 prediction it replaces was.
 
 **No JavaScript is added**: every focus move is Blazor's `FocusAsync`, and the allowlist does not
-grow.
+grow. The reported Inner Popup is one more state of the capture-phase listener the allowlist
+already holds — set from C#, as the editor's mode is — and not a new use.
+
+*(Where a popover stands, and why no ancestor may cut it, moved to
+[ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md) on 2026-09-24: this ADR's Inner Popup
+table assumed the popover itself could not be clipped, and inside a dialog it could.)*
 
 ## What this changes elsewhere
 

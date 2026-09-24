@@ -561,4 +561,86 @@ public class PopoverKeyboardTests : GridTestContext
         await cut.FindAll(".ex-popover[role=dialog] .ex-focus-wrap")[0].FocusAsync(new FocusEventArgs());
         Assert.Equal(clearRef, LastFocused());
     }
+
+    // ---- A popover stays inside its grid's box (ADR-0040), and a popup inside it keeps
+    // its Escape (ADR-0039's corrected row). The grid is 120px tall, the band 20px.
+
+    private static double Px(string style, string property)
+    {
+        var at = style.IndexOf(property + ":", StringComparison.Ordinal);
+        Assert.True(at >= 0, $"no {property} in '{style}'");
+        var value = style[(at + property.Length + 1)..].TrimStart();
+        return double.Parse(value[..value.IndexOf("px", StringComparison.Ordinal)], System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    [Fact] // ADR-0040 / UX-11: a column's popover is bounded by the grid's box — its top to the Viewport's bottom
+    public async Task A_column_popover_is_bounded_by_the_grids_box()
+    {
+        var cut = RenderGrid();
+
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        var menu = cut.Find(".ex-popover").GetAttribute("style")!;
+        Assert.Equal(120, Px(menu, "top") + Px(menu, "max-height"));
+
+        await Item(cut, "Filter").ClickAsync(new MouseEventArgs());
+        var panel = cut.Find(".ex-popover").GetAttribute("style")!;
+        Assert.Equal(120, Px(panel, "top") + Px(panel, "max-height"));
+    }
+
+    [Fact] // ADR-0040: the Context Menu opens on the side of the pointer with more room, bounded by it
+    public async Task The_context_menu_opens_where_there_is_more_room()
+    {
+        var cut = RenderGrid();
+
+        // Row 0, near the top: below, bounded by the rest of the grid.
+        await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { Button = 2, OffsetX = 50, OffsetY = 10 });
+        var high = cut.Find(".ex-popover[role=menu]").GetAttribute("style")!;
+        Assert.DoesNotContain("translateY", high);
+        Assert.Equal(120, Px(high, "top") + Px(high, "max-height"));
+        await KeyAsync(cut, "Escape", fromDescendant: true);
+
+        // Row 2, near the bottom: above, hanging from the pointer, bounded by the room above.
+        await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { Button = 2, OffsetX = 50, OffsetY = 55 });
+        var low = cut.Find(".ex-popover[role=menu]").GetAttribute("style")!;
+        Assert.Contains("translateY(-100%)", low);
+        Assert.Equal(Px(low, "top"), Px(low, "max-height"));
+    }
+
+    [Fact] // ADR-0039: a popup the contents report is handed to the key gate, and forgotten when the popover closes
+    public async Task A_reported_inner_popup_reaches_the_key_gate_and_goes_with_the_popover()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+        await cut.InvokeAsync(() => chrome.Menu!.Commands.Single(c => c.Id == "filter").Invoke());
+        cut.Render();
+
+        await cut.InvokeAsync(() => chrome.Panel!.InnerPopupChanged!(true));
+        Assert.Equal([true], Js.InnerPopupTold.Invocations.Select(i => (bool)i.Arguments[0]!));
+
+        // Reported twice, told once.
+        await cut.InvokeAsync(() => chrome.Panel!.InnerPopupChanged!(true));
+        Assert.Single(Js.InnerPopupTold.Invocations);
+
+        // Closed with the popover — told the popup is gone too.
+        await cut.InvokeAsync(() => chrome.Panel!.Close());
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover")));
+        Assert.Equal([true, false], Js.InnerPopupTold.Invocations.Select(i => (bool)i.Arguments[0]!));
+    }
+
+    [Fact] // ADR-0039: a report from contents already closed changes nothing
+    public async Task A_late_report_from_closed_contents_is_ignored()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+        var stale = chrome.Menu!.InnerPopupChanged!;
+        await KeyAsync(cut, "Escape", fromDescendant: true);
+
+        await cut.InvokeAsync(() => stale(true));
+
+        Assert.Empty(Js.InnerPopupTold.Invocations);
+    }
 }

@@ -49,6 +49,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // these are gates only, and their mirror is the cases of OnEditingKeyAsync, which
     // reads the same canonical form — the two must move together.
     let editing = 'none';
+    // Whether a popover's contents have a popup of their own open (ADR-0039), told by C#.
+    let innerPopup = false;
     const editingKeys = new Set(
         ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2']);
     const overwriteKeys = new Set([
@@ -91,6 +93,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 // selection instead of a caret and Ctrl+A would select the grid instead
                 // of the field's text.
                 if (canonical !== 'Escape') {
+                    return;
+                }
+                // …unless the control has a popup of its own open — a select's list, a
+                // picker's calendar — which its design system draws outside this root while
+                // keeping DOM focus on the control. That Escape is the popup's to close, and
+                // the next one is the grid's (ADR-0039). The popover's contents report the
+                // popup; C# tells this listener.
+                if (innerPopup) {
                     return;
                 }
             } else {
@@ -455,6 +465,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // which is true whether focus arrived by click or by key.)
         setEditing: (mode) => {
             editing = mode;
+        },
+        // A popover's contents reported a popup of their own opening or closing
+        // (ADR-0039): while one is open, a descendant's Escape is left to it.
+        setInnerPopup: (open) => {
+            innerPopup = open;
         },
         // Whether any column edits — re-told when the column set changes, so a grid
         // that becomes display-only stops taking printable keys (ADR-0010/0020).

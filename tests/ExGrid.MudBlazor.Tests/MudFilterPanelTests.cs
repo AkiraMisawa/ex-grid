@@ -23,6 +23,7 @@ namespace ExGrid.MudBlazor.Tests;
 public class MudFilterPanelTests : MudTestContext
 {
     private readonly List<FilterSpec?> _applied = [];
+    private readonly List<bool> _popups = [];
     private int _closed;
     private int _cleared;
 
@@ -32,7 +33,8 @@ public class MudFilterPanelTests : MudTestContext
         => new(
             "Book", type, current, FilterOperators.AllowedFor(type), mode,
             () => Task.FromResult(answer ?? DistinctValues.Of(["Alpha", "Beta", null, "Gamma"])),
-            spec => _applied.Add(spec), () => _cleared++, () => _closed++, focusRequest);
+            spec => _applied.Add(spec), () => _cleared++, () => _closed++, focusRequest,
+            InnerPopupChanged: _popups.Add);
 
     // MudBlazor's selects and pickers draw their popups into the page's provider — every
     // MudBlazor app has one — so the tests render one too.
@@ -169,6 +171,19 @@ public class MudFilterPanelTests : MudTestContext
             ["equals", "not equals", "contains", "not contains", "starts with", "ends with", "is one of", "is blank", "is not blank"],
             text.Select(t => t.ToLowerInvariant()));
         Assert.DoesNotContain(text, t => t.Contains("empty", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact] // ADR-0039: the operator's list is an Inner Popup, reported as it opens and closes
+    public async Task The_operator_list_is_reported_as_an_inner_popup()
+    {
+        var cut = RenderPanel(Context(ColumnType.Text, FilterUiMode.Condition));
+        var select = cut.FindComponent<MudSelect<FilterOperator>>();
+
+        await select.InvokeAsync(() => select.Instance.OpenMenu());
+        Assert.Equal([true], _popups);
+
+        await select.InvokeAsync(() => select.Instance.CloseMenu());
+        Assert.Equal([true, false], _popups);
     }
 
     [Fact] // WR-2 / WR-3: a number's operators are MudBlazor's symbols, and still exactly Allowed

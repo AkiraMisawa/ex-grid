@@ -309,7 +309,7 @@ test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039
     expect(await orders(page).getAttribute('aria-activedescendant')).toBe(before.orders.active);
 });
 
-test('WR-7: a grid in a MudDialog opens its column menu above the dialog, not clipped by it (ADR-0017/0039)', async ({ page }) => {
+test('WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039)', async ({ page }) => {
     await open(page);
     await page.locator('#open-dialog').click();
     const dialogGrid = page.locator('#dialog-paper .ex-grid');
@@ -320,19 +320,12 @@ test('WR-7: a grid in a MudDialog opens its column menu above the dialog, not cl
     await expect(popover).toHaveCount(1);
     await expect(popover.locator('[role=menuitem]').first()).toBeVisible();
 
-    // The premise: the menu is taller than the room below the grid's header, so it has
-    // to stand out past the grid's own box — the case the clause is about.
-    const extent = await dialogGrid.evaluate((root) => ({
-        grid: root.getBoundingClientRect().bottom,
-        popover: root.querySelector('.ex-popover').getBoundingClientRect().bottom,
-    }));
-    expect(extent.popover, 'the menu reaches past the grid, or this test proves nothing').toBeGreaterThan(extent.grid);
-
-    // Above the dialog: every corner of the menu is the menu's own, not the dialog's
-    // surface, its actions or its scrolled-away overflow. The ancestors whose overflow
-    // cuts the menu off are named, so a failure says where it was clipped.
+    // Every corner of the menu is the menu's own: nothing — the dialog's surface, its
+    // actions, its scrolled-away overflow — covers or cuts it. The ancestors whose overflow
+    // would cut it are named, so a failure says where.
     const measured = await popover.evaluate((p) => {
         const r = p.getBoundingClientRect();
+        const root = p.closest('.ex-grid').getBoundingClientRect();
         const corners = [[r.left + 2, r.top + 2], [r.right - 2, r.top + 2], [r.left + 2, r.bottom - 2], [r.right - 2, r.bottom - 2]]
             .map(([x, y]) => {
                 const hit = document.elementFromPoint(x, y);
@@ -346,11 +339,36 @@ test('WR-7: a grid in a MudDialog opens its column menu above the dialog, not cl
                 clippedBy.push(`${el.tagName.toLowerCase()}.${el.className} (overflow: ${style.overflow}, bottom ${Math.round(box.bottom)} against the menu's ${Math.round(r.bottom)})`);
             }
         }
-        return { corners, clippedBy };
+        return { corners, clippedBy, bottom: r.bottom, gridBottom: root.bottom, scrolls: p.scrollHeight > p.clientHeight };
     });
     expect(measured.corners.filter((c) => !c.own),
         `corners of the menu that something else covers or clips; clipped by: ${measured.clippedBy.join('; ') || 'nothing'}`).toEqual([]);
+    // Inside the grid's box (ADR-0040) — and, in a grid this short, bounded: the menu
+    // scrolls rather than reaching past it. The last item is there, a scroll away.
+    expect(measured.bottom).toBeLessThanOrEqual(measured.gridBottom + 0.5);
+    expect(measured.scrolls, 'the premise: the menu is taller than the room the grid gives it').toBe(true);
+    const last = popover.locator('[role=menuitem]').last();
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport();
+    await page.keyboard.press('Escape');
+    await expect(popover).toHaveCount(0);
 
+    // The filter panel's Inner Popup — the operator's list — stands above the dialog: its
+    // first entry is what the pointer would press.
+    await dialogGrid.locator('.ex-menu-button').nth(3).click(); // Notional: a condition, so an operator
+    await popover.locator('[role=menuitem]', { hasText: 'Filter' }).click();
+    const operator = popover.getByRole('combobox', { name: 'Operator' });
+    await expect(operator).toBeVisible();
+    await operator.click();
+    const item = page.locator('.mud-popover-open .mud-list-item').first();
+    await expect(item).toBeVisible();
+    const onTop = await item.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+    });
+    expect(onTop, 'the Inner Popup is above the dialog').toBe(true);
+
+    await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     await expect(popover).toHaveCount(0);
     await page.locator('#close-dialog').click();

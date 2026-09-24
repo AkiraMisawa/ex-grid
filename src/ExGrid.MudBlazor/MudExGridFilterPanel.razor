@@ -8,8 +8,11 @@
    same FilterSpec under either Chrome (WR-1).
 
    Its selects and its date picker open popups of their own, which MudBlazor draws outside
-   the grid's root: Inner Popups (ADR-0039). Escape inside one is MudBlazor's; the next
-   reaches the grid and closes the panel.
+   the grid's root: Inner Popups (ADR-0039). Each is reported through the context's
+   InnerPopupChanged as it opens and closes, so that Escape closes it first. MudBlazor keeps
+   DOM focus on the control while its popup is open, and without the report the grid would
+   take that Escape and close the panel with it. The next Escape reaches the grid and
+   closes the panel.
 
    Enter in a value field is the browser's implicit submission: Apply is this form's
    submit button, so Enter submits wherever a text field has focus — and the browser does
@@ -45,7 +48,7 @@
     {
         <MudSelect @ref="_operatorField" T="FilterOperator" Value="_operator" ValueChanged="OnOperatorChanged"
                    Label="@Mud("MudDataGrid_Operator")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
-                   Class="mud-ex-grid-filter-operator">
+                   OpenChanged="ReportPopup" Class="mud-ex-grid-filter-operator">
             @foreach (var op in Context.Allowed)
             {
                 <MudSelectItem T="FilterOperator" Value="op">@OperatorWord(op)</MudSelectItem>
@@ -62,6 +65,7 @@
                     break;
                 case ColumnType.Date:
                     <MudDatePicker @bind-Date="_date" Editable="true"
+                                   PickerOpened="() => ReportPopup(true)" PickerClosed="() => ReportPopup(false)"
                                    Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Class="mud-ex-grid-filter-operand" />
                     break;
@@ -70,7 +74,7 @@
                        apply a filter they never asked for (WR-2). *@
                     <MudSelect T="bool?" @bind-Value="_flag" Label="@Mud("MudDataGrid_Value")"
                                Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
-                               Class="mud-ex-grid-filter-operand">
+                               OpenChanged="ReportPopup" Class="mud-ex-grid-filter-operand">
                         <MudSelectItem T="bool?" Value="true">@Mud("MudDataGrid_True")</MudSelectItem>
                         <MudSelectItem T="bool?" Value="false">@Mud("MudDataGrid_False")</MudSelectItem>
                     </MudSelect>
@@ -197,6 +201,10 @@
     }
 
     private void OnOperatorChanged(FilterOperator op) => _operator = op;
+
+    /// <summary>A select's list or the date's calendar opened or closed: an Inner Popup,
+    /// reported so that Escape closes it before the panel (ADR-0039).</summary>
+    private void ReportPopup(bool open) => Context.InnerPopupChanged?.Invoke(open);
 
     private void Choose(object? value, bool chosen)
     {

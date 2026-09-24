@@ -176,6 +176,24 @@ for (const chrome of CHROMES) {
             expect(await page.locator('.ex-grid').nth(1).locator('.ex-popover').count()).toBe(0);
         });
 
+        test('a popover taller than its grid stays inside the grid\'s box and scrolls (UX-11, ADR-0040)', async ({ page }) => {
+            // The second grid is 140px tall: its column menu does not fit, and is bounded.
+            const short = page.locator('.ex-grid').nth(1);
+            await short.locator('.ex-menu-button').first().click();
+            const popover = short.locator('.ex-popover');
+            await expect(popover.locator('[role=menuitem]').first()).toBeVisible();
+
+            const measured = await popover.evaluate((p) => {
+                const r = p.getBoundingClientRect();
+                return { bottom: r.bottom, gridBottom: p.closest('.ex-grid').getBoundingClientRect().bottom, scrolls: p.scrollHeight > p.clientHeight };
+            });
+            expect(measured.bottom).toBeLessThanOrEqual(measured.gridBottom + 0.5);
+            expect(measured.scrolls, 'the premise: the menu is taller than the grid gives it').toBe(true);
+            const last = popover.locator('[role=menuitem]').last();
+            await last.scrollIntoViewIfNeeded();
+            await expect(last).toBeInViewport();
+        });
+
         test('Alt+↓ opens the Focus column\'s menu, and the menu takes the keyboard (KB-28/KB-29, ADR-0039)', async ({ page }) => {
             await clickCell(page, 1, 0);
 
@@ -391,9 +409,8 @@ for (const chrome of CHROMES) {
 // Inner Popups (FN-21, ADR-0039), under the Wrapper, whose panel holds them: the operator
 // MudSelect's list and the date MudDatePicker's calendar, both drawn by MudBlazor outside
 // the grid's root. /features has two grids, so "the other grid unaffected" is observed
-// too. The Escape clause is not here: the browser showed ADR-0039's row for it to be
-// wrong (MudBlazor keeps DOM focus on the control, so one Escape closes both), and the
-// correction is waiting on a decision.
+// too. MudBlazor keeps DOM focus on the control while its popup is open, so Escape closes
+// the popup first only because the panel reports it (ADR-0039, corrected 2026-09-24).
 test.describe('Inner Popups under the mud Chrome', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/features?chrome=mud');
@@ -453,6 +470,56 @@ test.describe('Inner Popups under the mud Chrome', () => {
             await expect.poll(() => activeIsRoot(page)).toBe(true);
         });
     }
+
+    for (const [what, column, open] of [
+        ['the operator list', 2, async (page) => grid(page).getByRole('combobox', { name: 'Operator' }).click()],
+        ['the date calendar', 4, async (page) => {
+            await page.keyboard.press('Tab');
+            await grid(page).locator('.mud-ex-grid-filter-operand button').first().click();
+        }],
+    ]) {
+        test(`Escape closes ${what} first, and the next Escape the panel (FN-21, KB-32)`, async ({ page }) => {
+            await openPanel(page, column);
+            await open(page);
+            await expect(openPopups(page)).not.toHaveCount(0);
+
+            await page.keyboard.press('Escape');
+
+            await expect(openPopups(page)).toHaveCount(0);
+            await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+            expect((await activeIsInPopover(page))?.role, 'the keyboard stays in the panel').toBe('dialog');
+
+            await page.keyboard.press('Escape');
+
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+            await expect.poll(() => activeIsRoot(page)).toBe(true);
+        });
+    }
+
+    test('under ModalOverlay the press is the overlay\'s: only the Inner Popup closes, and Escape then closes the panel (FN-21)', async ({ page }) => {
+        // A Consumer's app-wide MudBlazor setting (ADR-0039): /features sets it per load.
+        await page.goto('/features?chrome=mud&modal=1');
+        await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+        await openPanel(page, 2);
+        const focus = await grid(page).getAttribute('aria-activedescendant');
+        await grid(page).getByRole('combobox', { name: 'Operator' }).click();
+        await expect(openPopups(page).locator('.mud-list-item').first()).toBeVisible();
+
+        const box = await grid(page).locator("[id$='r7c0']").boundingBox();
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+        // The design system's overlay took the press: the popup closed, and nothing
+        // reached the grid — the panel stands and the Focus did not move.
+        await expect(openPopups(page)).toHaveCount(0);
+        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+        expect(await grid(page).getAttribute('aria-activedescendant')).toBe(focus);
+
+        // The popup reported itself closed, so the next Escape is the grid's.
+        await grid(page).getByRole('combobox', { name: 'Operator' }).focus();
+        await page.keyboard.press('Escape');
+        await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+        await expect.poll(() => activeIsRoot(page)).toBe(true);
+    });
 
     test('choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the root (FN-21, KB-32)', async ({ page }) => {
         await openPanel(page, 2);

@@ -68,6 +68,10 @@ internal sealed class GridJSInterop
         // OnKeyAsync directly, so the mode only has to be accepted here.
         var setEditing = handle.SetupVoid("setEditing", _ => true);
         setEditing.SetVoidResult();
+        // A popover's contents reporting a popup of their own (ADR-0039): what the key
+        // gate was told is asserted.
+        var setInnerPopup = handle.SetupVoid("setInnerPopup", _ => true);
+        setInnerPopup.SetVoidResult();
         // Whether any column edits, re-told when a parameter change flips it
         // (ADR-0010/0020) — accepted for the same reason.
         var setCanEdit = handle.SetupVoid("setCanEdit", _ => true);
@@ -89,8 +93,13 @@ internal sealed class GridJSInterop
         {
             PointerReporting = setPointerReporting,
             PointerForgotten = forgetPointer,
+            InnerPopupTold = setInnerPopup,
         };
     }
+
+    /// <summary>Every time the key gate was told whether a popover's contents have a popup
+    /// of their own open (ADR-0039).</summary>
+    internal JSRuntimeInvocationHandler InnerPopupTold { get; private init; } = default!;
 
     /// <summary>How many times a scroll paint told the browser to forget its last
     /// pointer report along with the band it dropped.</summary>

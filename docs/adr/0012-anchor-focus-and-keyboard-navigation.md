@@ -166,9 +166,12 @@ focus. The other ways a popover closes belong to
 
 *(An Inner Popup — a select's options or a picker's calendar, opened by a seam's contents and
 drawn by their design system outside the root — is the innermost layer of all, and the only one
-the grid does not close: DOM focus is outside the root, so its Escape is the design system's,
-which closes the popup and returns focus inside the popover. The next Escape is the grid's
-([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)).)*
+the grid does not close. Its Escape is the design system's, which closes the popup; the next
+Escape is the grid's
+([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)). *(Corrected
+2026-09-24: this said DOM focus would be outside the root, so the gate would never see that
+Escape. MudBlazor keeps focus on its control, inside the popover, so the contents now report
+the popup, and while it is open the gate leaves a descendant's Escape to it.)*)*
 
 *(The Interactive layer arrived with
 [ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md), and
