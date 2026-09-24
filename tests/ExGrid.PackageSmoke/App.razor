@@ -1,0 +1,11 @@
+<MudThemeProvider />
+<MudPopoverProvider />
+
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" />
+    </Found>
+    <NotFound>
+        <p>Not found.</p>
+    </NotFound>
+</Router>
