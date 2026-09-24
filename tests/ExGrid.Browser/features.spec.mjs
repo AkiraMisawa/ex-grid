@@ -1,32 +1,16 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.mjs';
 
 // The interaction surface, driven with real keys and the real clipboard against the
 // /features page: the Cell Editor's two states (ADR-0010), the clipboard's two formats
 // and its refusals (ADR-0005/0014/0016), the keys the grid must NOT take (ADR-0012),
 // and the one-tab-stop contract (ADR-0033). Console and page errors fail the run
-// (CON-1/2): this component displays money, and something the browser is complaining
-// about may be something the reader is already seeing wrong.
-
-let consoleErrors;
-let pageErrors;
+// (CON-1/2, in fixtures.mjs): this component displays money, and something the browser
+// is complaining about may be something the reader is already seeing wrong.
 
 test.beforeEach(async ({ page, context }) => {
-    consoleErrors = [];
-    pageErrors = [];
-    page.on('console', (message) => {
-        if (message.type() === 'error') {
-            consoleErrors.push(message.text());
-        }
-    });
-    page.on('pageerror', (error) => pageErrors.push(String(error)));
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/features');
     await expect(page.locator('.ex-grid').first().locator('.ex-row').first()).toBeVisible();
-});
-
-test.afterEach(() => {
-    expect(consoleErrors, 'zero console errors across the run (CON-1)').toEqual([]);
-    expect(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
 });
 
 function grid(page) {

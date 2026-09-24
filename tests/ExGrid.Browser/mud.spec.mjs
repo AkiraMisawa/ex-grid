@@ -1,28 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.mjs';
 
 // The Wrapper contract, measured with a real Wrapper (ADR-0030): ExGrid.MudBlazor on
 // /mud. The Definition of Done wrote UX-3/6/9 against a "stub Wrapper stylesheet";
 // this is the real one. Plus the hover band (UX-13, ADR-0021's fifth entry) and the
 // Wrapper's editor inside the core's box (ADR-0010/0030). Console errors fail the run.
-
-let consoleErrors;
-let pageErrors;
-
-test.beforeEach(({ page }) => {
-    consoleErrors = [];
-    pageErrors = [];
-    page.on('console', (m) => {
-        if (m.type() === 'error') {
-            consoleErrors.push(m.text());
-        }
-    });
-    page.on('pageerror', (e) => pageErrors.push(String(e)));
-});
-
-test.afterEach(() => {
-    expect(consoleErrors, 'zero console errors (CON-1)').toEqual([]);
-    expect(pageErrors, 'zero page errors (CON-2)').toEqual([]);
-});
 
 const paperA = (page) => page.locator('.demo-paper-a');
 const paperB = (page) => page.locator('.demo-paper-b');

@@ -1,63 +1,9 @@
-import { test, expect } from '@playwright/test';
-import fs from 'node:fs';
+import { test, expect, record } from './fixtures.mjs';
 
 // The drag gestures with a real mouse (ADR-0011/0016/0032), the large-paste and
-// off-screen-paste rules (ADR-0014/0015), the remaining measured UX rows, and the
-// observational numbers, recorded rather than gated (Definition of Done §1).
-// Console errors fail the run, as everywhere.
-
-// Where the observational numbers go. This path used to be the literal
-// verification/2026-09-01, so every layer-3 run on every machine overwrote that one
-// dated record: a record whose results.md names macOS ended up holding WSL2 timings,
-// with nothing in the file to say so, and the second browser project overwrote the
-// first. A structural count (DOM-5) is comparable across machines; a timing is not.
-// So the directory carries the day and the platform, and each project writes under
-// its own key.
-const RECORD_DIR = (() => {
-    // The operator's day, not UTC: the directory names where and when this ran, and an
-    // evening run west of Greenwich filing itself under tomorrow would be a record that
-    // lies about the second half of that.
-    const day = new Date().toLocaleDateString('en-CA');
-    const wsl = process.platform === 'linux'
-        && fs.existsSync('/proc/version')
-        && fs.readFileSync('/proc/version', 'utf8').toLowerCase().includes('microsoft');
-    const platform = process.platform === 'darwin' ? 'macos'
-        : process.platform === 'win32' ? 'windows'
-        : wsl ? 'linux-wsl2'
-        : process.platform;
-    return `../../verification/${day}-${platform}`;
-})();
-
-// Two tests write this file and the read-modify-write below is not atomic. It is safe
-// only because playwright.config.mjs pins `workers: 1, fullyParallel: false` — which it
-// does for its own reason, that the suite changes the page zoom. If that ever relaxes,
-// this needs a lock, and the symptom will be a key missing from a record.
-function record(project, entries) {
-    fs.mkdirSync(RECORD_DIR, { recursive: true });
-    const path = `${RECORD_DIR}/metrics.json`;
-    const all = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : {};
-    all[project] = { ...all[project], ...entries };
-    fs.writeFileSync(path, `${JSON.stringify(all, null, 2)}\n`);
-}
-
-let consoleErrors;
-let pageErrors;
-
-test.beforeEach(({ page }) => {
-    consoleErrors = [];
-    pageErrors = [];
-    page.on('console', (m) => {
-        if (m.type() === 'error') {
-            consoleErrors.push(m.text());
-        }
-    });
-    page.on('pageerror', (e) => pageErrors.push(String(e)));
-});
-
-test.afterEach(() => {
-    expect(consoleErrors, 'zero console errors (CON-1)').toEqual([]);
-    expect(pageErrors, 'zero page errors (CON-2)').toEqual([]);
-});
+// off-screen-paste rules (ADR-0014/0015) with the paste's own number (PST-6), and the
+// remaining measured UX rows. The other observational numbers are in
+// observational.spec.mjs. Console errors fail the run, as everywhere.
 
 function grid(page) {
     return page.locator('.ex-grid').first();
@@ -246,26 +192,4 @@ test('a composing IME keydown is never taken (ED-11, the listener guard)', async
     expect(results).toEqual({ composingEnter: false, composingArrow: false, keyCode229: false });
     // And the Focus did not move under the half-finished word.
     expect(await grid(page).getAttribute('aria-activedescendant')).toBe(before);
-});
-
-test('observational numbers are recorded, never gated (DOM-5, BIG-7-shaped)', async ({ page }, testInfo) => {
-    const started = Date.now();
-    await page.goto('/wide');
-    await expect(page.locator('.ex-grid .ex-row').first()).toBeVisible();
-    const firstPaintMs = Date.now() - started;
-
-    const counts = await page.evaluate(() => {
-        const g = document.querySelector('.ex-grid');
-        return {
-            elements: g.querySelectorAll('*').length,
-            cells: g.querySelectorAll('.ex-cell').length,
-            rows: g.querySelectorAll('.ex-row').length,
-        };
-    });
-
-    record(testInfo.project.name, {
-        'DOM-5': counts,
-        'BIG-7': { mountToFirstPaintedRowMs: firstPaintMs, totalRows: 100000 },
-    });
-    expect(counts.rows).toBeGreaterThan(0);
 });

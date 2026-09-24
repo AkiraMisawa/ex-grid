@@ -99,8 +99,25 @@ hide it.
   scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2/3), the
   editor's box is the cell's (ED-9), the runaway auto-scroll stops (SL-14/15), the
   Blazor error UI never shows (CON-5).
-- `virtualisation.spec.mjs` — the far corner at 100,000 rows, element-count stability
-  across scrolling, and the overlay's per-rectangle economy on a 10⁷-cell selection.
+- `virtualisation.spec.mjs` — the large-data criteria at the Definition of Done's own
+  scenario, `/wide` at 10⁶ rows × 100 columns (§12): the far corner reached and painted
+  (BIG-1), the same element count at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1 —
+  `/wide?rows=N`), the first and last rows painting their own data there and back
+  (BIG-5), Ctrl+A over 10⁸ cells as one rectangle with the next key answered (BIG-3),
+  and at most one interop call per scroll frame, counted over CDP by breakpoints that
+  never pause (PF-1).
+- `memory.spec.mjs` — on `/lifecycle`, a grid mounted and disposed fifty times leaves the
+  browser's node and listener counts where they were (MEM-2), and a dispose takes the
+  module's five listeners off the root (MEM-4). The ten-minute soak (MEM-5, with the
+  managed heap for MEM-6) runs only with `EXGRID_SOAK=1`:
+  ```sh
+  EXGRID_SOAK=1 npx playwright test memory.spec.mjs
+  ```
+- `observational.spec.mjs` — the numbers that are recorded, never gated, into
+  `metrics.json`: mount to first row at 10⁶ (BIG-7), the DOM with horizontal
+  virtualisation on and off (DOM-5), the settle repaint and the frame intervals at both
+  settings (PF-6, and BIG-6 as its "on" half), and a selection drag's cost per step
+  (PF-7). Each one asserts only that it measured something.
 - `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
   `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
   and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline
@@ -110,17 +127,22 @@ hide it.
   (ED-4), the loading bar shows only while loading, and the paper's corners never
   clip (UX-11's premise).
 
-Every spec fails any test on a console `error` or an uncaught page error (CON-1/2).
+Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
+first navigation and fails a test on a console `error` or an uncaught page error
+(CON-1/2), on a warning from ExGrid's own code (CON-3), and on an unhandled exception at
+any level of the WebAssembly host's log, which is the browser console (CON-6). What a
+test's console said is kept in `console.json` beside `metrics.json`, third-party
+warnings included, for `results.md` to list. The dev server's own output is piped into
+the run's output, which Step 4 of §22 tees into `layer3.log`.
 
 ## What it deliberately does not assert
 
 Timing. Milliseconds never gate (Definition of Done §1); the structural invariants
-above are what produce them. The CDP-metrics instrumentation (MEM-2/5, PF-6/7,
-BIG-6/7, DOM-5) is still to be written, and is listed as `blocked`, not passed, in
-`verification/<date>-<platform>/results.md`. The observational numbers this suite does
-write go to `verification/<date>-<platform>/metrics.json`, one key per browser project:
-the directory carries the platform because a structural count is comparable across
-machines and a timing is not.
+above are what produce them. The observational numbers go to
+`verification/<date>-<platform>/metrics.json`, one key per browser project: the
+directory carries the platform because a structural count is comparable across machines
+and a timing is not. A headless run in a container renders in software, and its numbers
+belong to no trend — do not file them.
 
 ## What Chrome owes this suite
 

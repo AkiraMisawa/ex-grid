@@ -34,7 +34,7 @@ public sealed class DemoPosition
 
 /// <summary>
 /// A row for the wide page. It holds only its position and derives every value from it:
-/// a hundred columns times a hundred thousand rows is ten million values, and storing
+/// a hundred columns times a million rows is a hundred million values, and storing
 /// them would say more about the sample's memory use than about the grid.
 /// </summary>
 public sealed class DemoWideRow
@@ -138,14 +138,6 @@ public static class DemoData
     /// <see cref="DemoWideRow"/>.</summary>
     private static decimal Metric(int rowIndex, int metric)
         => ((rowIndex * 7919L + metric * 104729L) % 1_999_999L) / 100m;
-
-    public static DemoWideRow[] WideRows(int count)
-    {
-        var rows = new DemoWideRow[count];
-        for (var i = 0; i < count; i++)
-            rows[i] = new DemoWideRow { Index = i };
-        return rows;
-    }
 
     private static readonly string[] Books = ["Rates", "Credit", "FX", "Equity", "Commodity"];
     private static readonly string[] Traders = ["Ito", "Marsh", "Okafor", "Petrov", "Silva"];

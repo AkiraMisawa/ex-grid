@@ -716,6 +716,16 @@ The run must capture `page.on('console')` and `page.on('pageerror')` into `conso
 CON-1..4 and CON-8, and read `Performance.getMetrics` into `metrics.json` for MEM-2/5, DOM-5,
 BIG-6/7, PF-6/7.
 
+**MEM-5's ten-minute soak runs only when asked for** — `EXGRID_SOAK=1` (decided 2026-09-24).
+An ordinary run skips it by name, and MEM-6 is read at its end. Sign-off needs one run with it
+set, on each browser:
+
+```sh
+EXGRID_SOAK=1 npx playwright test memory.spec.mjs 2>&1 | tee ../../verification/<date>/soak.log
+```
+
+A skipped soak is `not run` in `results.md`, never a pass.
+
 Discharges UX-2..11, VZ-1/10, ED-2/3/4/9/11, KB-1/8/11/12, CP-4/5/6/10/14, BIG, PST-3/5,
 CON-1..6/8, DOM, ST-3.
 

@@ -27,10 +27,17 @@ public class ConsistencyTests : GridTestContext
         new("Active", ColumnType.Boolean, r => r.Active, width: Fixed100),
     ];
 
-    [Theory] // ST-1: ≥500 randomised operations at two scales; the seeds are recorded here
+    // ST-1: ≥500 randomised operations at 10³ and 10⁶ rows (§22 Step 5); the seeds are
+    // recorded here. The 10⁶ case takes about a minute, and nearly all of it is the
+    // reference source re-sorting and re-filtering a million rows (~0.5 s a sort) — the
+    // Consumer's work, not the grid's (ADR-0001). The grid's own steps stay in
+    // milliseconds at either scale.
+    [Theory]
     [InlineData(20260901, 200)]
     [InlineData(424242, 200)]
-    [InlineData(20260901, 100_000)]
+    [InlineData(20260901, 1_000)]
+    [InlineData(424242, 1_000)]
+    [InlineData(20260901, 1_000_000)]
     public async Task Five_hundred_random_operations_leave_every_invariant_standing(int seed, int totalRows)
     {
         var random = new Random(seed);
