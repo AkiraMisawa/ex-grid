@@ -15,6 +15,8 @@ public readonly record struct AutoWidth
 {
     private readonly ColumnWidthSpec _spec;
 
+    /// <summary>A fresh tracker for a column declared with <paramref name="spec"/>. Before
+    /// anything is observed the column stands at the spec's MinWidth (ADR-0016).</summary>
     public AutoWidth(ColumnWidthSpec spec)
     {
         _spec = spec;
@@ -24,11 +26,13 @@ public readonly record struct AutoWidth
         CurrentPx = spec.MinWidthPx;
     }
 
+    /// <summary>The width the column stands at now: MinWidth until something is observed,
+    /// then the widest observation clamped to the spec's bounds. It never decreases.</summary>
     public double CurrentPx { get; private init; }
 
     /// <summary>
     /// Folds in the full cell width one value requires — the output of
-    /// <see cref="CellTextMetrics.EstimatePx"/>, padding included, in the same unit as
+    /// <see cref="CellTextMetrics.EstimatePx(string)"/>, padding included, in the same unit as
     /// the resolved column width. NOT the inner content width of
     /// <see cref="CellTextMetrics.ContentWidthPx"/>: feeding that here would produce a
     /// column exactly 2×padding too narrow, hashing the very value it auto-sized to.

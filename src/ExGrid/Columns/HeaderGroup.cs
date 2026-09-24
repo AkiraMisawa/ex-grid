@@ -13,6 +13,9 @@ namespace ExGrid.Columns;
 /// </summary>
 public sealed record HeaderGroup
 {
+    /// <summary>Declares one rectangle. Refused here: no member, an empty or repeated
+    /// member name, and a span reaching below the leaf row. Adjacency is refused at
+    /// resolution (ADR-0032).</summary>
     /// <param name="label">The caption. May be empty — a spacer rectangle — never null.</param>
     /// <param name="columns">The member column names. Adjacency in the current order is
     /// checked at resolution, where the order is known.</param>
@@ -47,11 +50,17 @@ public sealed record HeaderGroup
         TierSpan = tierSpan;
     }
 
+    /// <summary>The caption; empty for a spacer rectangle.</summary>
     public string Label { get; }
 
+    /// <summary>The member column names, as a set: the painted order is the flat Columns
+    /// order, never this list's.</summary>
     public IReadOnlyList<string> Columns { get; }
 
+    /// <summary>The rectangle's top tier, 1 sitting directly above the leaf row.</summary>
     public int Tier { get; }
 
+    /// <summary>How many tiers the rectangle spans downward from <see cref="Tier"/> — the
+    /// rowspan (ADR-0032).</summary>
     public int TierSpan { get; }
 }

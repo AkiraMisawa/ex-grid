@@ -8,6 +8,8 @@ namespace ExGrid.Selection;
 /// </summary>
 public readonly record struct SelectionRange
 {
+    /// <summary>A rectangle from its top-left cell and its size: positions are
+    /// non-negative, and each count is at least one.</summary>
     public SelectionRange(int topRow, int leftColumn, int rowCount, int columnCount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(topRow);
@@ -20,16 +22,22 @@ public readonly record struct SelectionRange
         ColumnCount = columnCount;
     }
 
+    /// <summary>The first row, as a position in the current order.</summary>
     public int TopRow { get; }
 
+    /// <summary>The first visible column's index.</summary>
     public int LeftColumn { get; }
 
+    /// <summary>How many rows the rectangle covers; at least one.</summary>
     public int RowCount { get; }
 
+    /// <summary>How many columns the rectangle covers; at least one.</summary>
     public int ColumnCount { get; }
 
+    /// <summary>The last row, inclusive.</summary>
     public int BottomRow => TopRow + RowCount - 1;
 
+    /// <summary>The last column, inclusive.</summary>
     public int RightColumn => LeftColumn + ColumnCount - 1;
 
     /// <summary>
@@ -53,6 +61,7 @@ public readonly record struct SelectionRange
         Math.Abs(a.Row - b.Row) + 1,
         Math.Abs(a.Column - b.Column) + 1);
 
+    /// <summary>Whether the cell lies inside this rectangle.</summary>
     public bool Contains(CellPosition cell) =>
         cell.Row >= TopRow && cell.Row <= BottomRow &&
         cell.Column >= LeftColumn && cell.Column <= RightColumn;

@@ -88,6 +88,8 @@
         }
     }
 
+    /// <summary>Any other attribute written on the paper, applied to this element — never
+    /// to the grid.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? UserAttributes { get; set; }
 
     private string Classes

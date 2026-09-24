@@ -15,6 +15,8 @@ namespace ExGrid.Clipboard;
 /// </summary>
 public static class ClipboardData
 {
+    /// <summary>Both flavours of one approved copy: <c>Text</c> is the TSV of the
+    /// displayed values, <c>Html</c> a table of the raw ones (ADR-0005).</summary>
     /// <param name="plan">The approved copy (ADR-0005/0011).</param>
     /// <param name="displayAt">The displayed text of (row, column) — what the cell
     /// paints before the overflow decision, never <c>####</c> (ADR-0016).</param>

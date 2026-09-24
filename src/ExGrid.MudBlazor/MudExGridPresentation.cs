@@ -19,10 +19,14 @@ public static class MudExGridPresentation
     /// </summary>
     public const double RobotoWidePx = 10.4;
 
+    /// <summary>Roboto's tabular digit, measured at 7.998px.</summary>
     public const double RobotoDigitPx = 8.0;
 
+    /// <summary>Roboto's widest separator, <c>(</c>, measured at 4.909px.</summary>
     public const double RobotoNarrowPx = 4.95;
 
+    /// <summary>The font size the three Roboto widths were measured at; the core scales
+    /// them to the resolved font size (ADR-0028).</summary>
     public const double RobotoMeasuredAtPx = 14;
 
     /// <summary>The widths alone — no density, no hover — for a bare grid.</summary>
@@ -86,6 +90,13 @@ public static class MudExGridPresentation
 /// (ADR-0027/0030). The paper writes <c>--ex-font-family</c> inline from
 /// <see cref="Family"/> and cascades the widths in the same render.
 /// </summary>
+/// <param name="Family">The CSS <c>font-family</c> value the paper writes as
+/// <c>--ex-font-family</c>.</param>
+/// <param name="WideWidthPx">The wide class — <c>%</c> and <c>€</c> — in this font
+/// (ADR-0016).</param>
+/// <param name="DigitWidthPx">A tabular digit in this font.</param>
+/// <param name="NarrowWidthPx">The widest separator in this font.</param>
+/// <param name="MeasuredAtPx">The font size the three widths were measured at.</param>
 public sealed record MudExGridFont(
     string Family, double WideWidthPx, double DigitWidthPx, double NarrowWidthPx, double MeasuredAtPx)
 {

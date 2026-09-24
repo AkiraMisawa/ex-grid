@@ -10,8 +10,16 @@ namespace ExGrid.Columns;
 /// </summary>
 public enum CellAlign
 {
+    /// <summary>Derived: a cell aligns by its column type — Number and Date right, Text
+    /// and Boolean left — and a header aligns left.</summary>
     Auto = 0,
+
+    /// <summary>Against the cell's left edge.</summary>
     Left,
+
+    /// <summary>Centred in the cell.</summary>
     Center,
+
+    /// <summary>Against the cell's right edge.</summary>
     Right,
 }
