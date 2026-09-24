@@ -17,6 +17,9 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>blazor;grid;datagrid;excel;virtualization;razor-components</PackageTags>
+    <!-- Every public member is documented, and the build says so when one is not: with the
+         repository's TreatWarningsAsErrors, a missing comment (CS1591) fails it (ADR-0042). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Source Link comes with the SDK; the symbol package carries what it points at. -->
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
