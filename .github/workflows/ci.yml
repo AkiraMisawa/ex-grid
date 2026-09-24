@@ -151,11 +151,14 @@ jobs:
       - name: Pack, read back, and consume
         run: tests/ExGrid.PackageSmoke/check.sh "${{ inputs.version || format('0.0.0-ci.{0}', github.run_number) }}"
 
-      # What the release publishes: these files, not a rebuild.
+      # What the release publishes: these files, not a rebuild. The feed is a dot directory,
+      # so MSBuild's default globs leave it alone, and upload-artifact skips hidden paths
+      # unless told otherwise.
       - uses: actions/upload-artifact@v4
         with:
           name: packages
           path: tests/ExGrid.PackageSmoke/.feed/
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 30
 
