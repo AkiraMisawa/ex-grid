@@ -137,6 +137,17 @@ hide it.
   ADR-0021's fifth entry), the Wrapper's editor fits the core's box and commits
   (ED-4), the loading bar shows only while loading, and the paper's corners never
   clip (UX-11's premise).
+- `mud-app.spec.mjs` — the Wrapper against a Consumer's application, on `/mud-app`: an
+  ordinary MudBlazor app with an AppBar, a Drawer, tabs, a dialog, a toolbar select and
+  a light/dark switch (§23's proof-of-concept page). The WR-7 clauses that need no seam
+  the Wrapper has yet to fill: a grid mounted in a hidden tab paints its declared row
+  height and the right geometry once shown; a Drawer toggle resizes a `Fill` grid and
+  the painted columns and End's reveal follow, both ways; the two main-area grids stay
+  independent (DOM-4); the toolbar's `MudSelect` never disturbs a grid; a grid in a
+  `MudDialog` opens its menu above the dialog. The console rules hold across the app's
+  own controls (WR-9). And `/features?chrome=mud` — the switch that runs `/features`
+  under `MudGridChrome` so its tests can run under both Chromes (WR-5) — is shown to
+  take (the Wrapper's editor appears) and to open the column menu.
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error
@@ -187,6 +198,12 @@ Two traps live in that, and the DemoHost has hit both:
   `EXGRID_BASE_URL=http://localhost:5399` (AGENTS.md, "Working in parallel").
 - Chrome normalises clipboard HTML on read (adds a meta and a tbody): assert on the
   cells, not the exact fragment.
+- MudBlazor 9's `MudSelect` takes the value on each arrow while its list is open, and
+  Enter leaves the list open; Escape closes it. A test that presses Enter and waits for
+  the list to go waits forever.
+- A grid whose Focus has scrolled out of view — a `Fill` grid narrowed under it, say —
+  paints no Focus cell, and `aria-activedescendant` is then rightly empty (ADR-0033).
+  Measure a row by its index, not by the Focus's.
 - A chord is two keydowns — the modifier first. A `{ once: true }` listener waiting for
   the key is spent on the modifier; and a `page.evaluate` that registers a listener must
   be awaited before the key is sent, or it races the key through a different channel.
