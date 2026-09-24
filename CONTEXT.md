@@ -172,6 +172,14 @@ behaviour. Each of those places is a **Chrome seam**: the core owns its frame �
 how it opens and closes — and hands the Chrome the contents to draw.
 _Avoid_: skin (appearance only is a **Theme**, a term of its own below), template
 
+**Inner Popup**:
+A popup that a Chrome seam's contents open for themselves and that their design system draws
+outside the grid — a select's list of options, a date picker's calendar. It closes before the
+popover that holds it, and with it
+([ADR-0039](./docs/adr/0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)).
+The grid's own popovers are never one.
+_Avoid_: nested popover, portal (a mechanism, not the thing)
+
 **Theme**:
 The appearance of one instance — the values of its Visual Tokens. It travels entirely in CSS,
 set on any element wrapping the instance root, and never through C#: a palette edit or a

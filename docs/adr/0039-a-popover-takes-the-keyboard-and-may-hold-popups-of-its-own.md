@@ -1,0 +1,117 @@
+# A popover takes the keyboard when it opens, gives it back when it closes, and may hold popups of its own
+
+The grid's popovers — the column menu, the filter panel
+([ADR-0009](./0009-filter-panel-contract.md)/[0010](./0010-chrome-seams-column-menu-editor-loading.md))
+and the Context Menu ([ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md))
+— were built for the pointer. Checked while `ExGrid.MudBlazor`'s remaining seams were being
+decided (2026-09-24):
+
+- **Nothing opens the column menu or the filter panel from the keyboard.** Only a click on ▾ does.
+- **Opening any popover leaves DOM focus on the root.** The arrows and Tab then belong to the grid
+  and move the Focus; the popover's items and controls cannot be reached without a pointer. The
+  Context Menu opens from `ContextMenu` / `Shift+F10` (CTX-4) and then cannot be used.
+
+A keyboard-only user could not filter, and could not copy from the menu they had just opened.
+For a component whose claim is Excel-like operability that is a hole, not a polish item.
+
+The same session reopened a line [ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)
+had drawn: a seam's contents "never a `MudPopover`, whose provider renders outside the instance
+root and would break the three dismissals of ADR-0010 and the independence of ADR-0018". That was
+a **prediction**, made before any seam held one. Reading MudBlazor 9.9's source showed most of it
+does not happen (below), and a seam that a design system's ordinary select cannot live in is not
+much of a seam. So this ADR settles both together: they are one question — who holds the keyboard
+while a popover stands, and what happens when its contents open something of their own.
+
+## Opening, and taking the keyboard
+
+- **`Alt+↓` opens the column menu of the Focus's column** — the key Excel uses to open a header's
+  filter drop-down. It joins the key table, so the capture-phase gate takes it
+  ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)); on a column with no menu it does
+  nothing. The filter panel is reached from the menu's Filter command, as it is by pointer. The
+  Context Menu keeps `ContextMenu` and `Shift+F10`.
+- **Every popover asks its contents to take DOM focus when it opens**, by key or by pointer.
+  `ColumnMenuContext`, `ContextMenuContext` and `FilterPanelContext` gain a **`FocusRequest`**,
+  counted up once per opening. The contents — the built-in Chrome's and any substitute's — focus
+  their first enabled item or control with Blazor's own `FocusAsync`. The core holds no reference
+  to an element it did not render and does not try: this is `CellEditorContext.FocusRequest`
+  ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)/[0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md))
+  and `TemplateCellContext.FocusRequest`
+  ([ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)),
+  applied to the popovers.
+
+## Inside a popover
+
+DOM focus on a descendant already means the capture-phase gate takes **Escape alone** and leaves
+every other key to the control ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)). So
+the keys inside a popover are the contents' to implement — and **what they mean is fixed here**,
+so that substituting Chrome still cannot change behaviour
+([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)). Every Chrome is held to the same
+table by running the same browser tests against it (FN-17).
+
+| In | Key | Meaning |
+|---|---|---|
+| a menu | ↑ / ↓ | the previous / next **enabled** item, wrapping at the ends |
+| | Home / End | the first / last enabled item |
+| | Enter / Space | runs the item; the menu closes |
+| | Tab / Shift+Tab | closes the menu, as a Cancel |
+| the filter panel | Tab / Shift+Tab | the next / previous control, **wrapping inside the panel** while it stands |
+| | Enter in a value field | Apply |
+| either | Escape | closes it, as a Cancel (ADR-0012's layering, unchanged) |
+
+**A popover that takes DOM focus is named.** The menus keep `role="menu"` with `menuitem` items;
+the filter panel is `role="dialog"`. A column's menu and panel carry `aria-label` set to **that
+column's own header text** — the Consumer's words, so the core still holds no sentence
+([ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md)) — and the
+Context Menu needs none beyond its role. The root keeps owning the rest of the surface
+([ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)).
+
+## Closing, and giving the keyboard back
+
+However a popover closes — Escape, its ▾ pressed again, a pointer-down elsewhere in the instance,
+a command run, Apply, Cancel, Clear — **DOM focus returns to the root**, wherever it was when the
+popover closed, **an Inner Popup included**. The next arrow moves the Focus, as it did before the
+popover opened. The one exception is the one ADR-0010 already makes: a pointer-down that
+dismissed the popover keeps its own meaning, and where that press lands decides focus.
+
+## Inner Popups
+
+An **Inner Popup** is a popup that a seam's contents open for themselves and that their design
+system draws **outside the instance root** — `MudSelect`'s list of options, `MudDatePicker`'s
+calendar. MudBlazor draws every such popup into one page-wide provider and positions it with its
+own script. What that does to the grid, read from MudBlazor 9.9's source rather than predicted:
+
+| ADR-0010's promise | With an Inner Popup open |
+|---|---|
+| Escape closes the popover | **The Inner Popup closes first** — DOM focus is inside it, outside the root, so the grid never sees that Escape; the design system closes its popup and returns focus to its control, inside the popover. The next Escape reaches the grid and closes the popover. Innermost first, which is what a user expects of nested popups |
+| a pointer-down elsewhere in the instance closes it and keeps its own meaning | **Under MudBlazor's default (`ModalOverlay = false`) it still does**: the design system closes its popup from a document-level listener it holds only while the popup is open, and the press goes on to reach the grid. **Under `ModalOverlay = true`** — a Consumer's global setting — the press is swallowed by the design system's overlay and only the Inner Popup closes. The grid acts on what reaches it; it does not reach past a design system's overlay to recover a press that system chose to consume, and that choice is recorded as the Consumer's |
+| the ▾ toggle closes it | unchanged, and closing the popover removes its contents — **the Inner Popup goes with them** |
+| instances stay independent (ADR-0018) | **the grid's own elements stay under its root**, without exception. What a Consumer's or Wrapper's Chrome opens is that design system's, and the core **does not assume** that everything its Chrome shows lies under the root — the rule above that returns focus from outside it is that non-assumption in practice |
+
+**Script.** [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s "Chrome implementations
+must not smuggle JS in" means **script a Wrapper adds**: a Wrapper ships no `.js` of its own and
+makes no interop calls of its own. The scripts a design system's own components run for
+themselves — MudBlazor's popup positioning, its key interceptor, its ripple — are that design
+system's, loaded by the Consumer's choice of it, and are not the grid's allowlist to count.
+
+**Verified, not trusted.** Layer 3 exercises Inner Popups through `ExGrid.MudBlazor`'s own filter
+panel — its operator is a `MudSelect`, its date value a `MudDatePicker` — by pointer and by key,
+under both `ModalOverlay` settings, with two grids on the page and with one inside a `MudDialog`.
+If a row of the table above turns out wrong in a real browser, it is corrected here, as the
+prediction it replaces was.
+
+**No JavaScript is added**: every focus move is Blazor's `FocusAsync`, and the allowlist does not
+grow.
+
+## What this changes elsewhere
+
+- **ADR-0010**: the popover section points here for the keyboard and for Inner Popups; its three
+  dismissals are unchanged.
+- **ADR-0012**: Escape's layering gains its innermost layer — an Inner Popup, which is its design
+  system's to close.
+- **ADR-0021**: the consequence about Chrome and script is narrowed to script a Wrapper adds, as
+  above.
+- **ADR-0030**: "never a `MudPopover`" is rewritten, keeping what it predicted and why it was
+  replaced.
+- **ADR-0036**: the Context Menu's keyboard trigger now leads somewhere — its items take the
+  keyboard.
+- **CONTEXT.md** gains **Inner Popup**.

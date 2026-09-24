@@ -172,9 +172,13 @@ root, the header or a popover are fine; inside `.ex-viewport` they are not.
   design refuses. The working exits already exist: copy carries raw values to Excel
   ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)), and a report is the Consumer's to
   produce from the data it owns.
-- ~~Zebra striping~~ — resolved: **not offered**, and it cannot be added in CSS anyway
-  (`:nth-child()` counts painted siblings, so under virtualisation the stripes crawl on every
-  scroll; a correct stripe needs an absolute row index threaded through every row). The need it
-  would have served — telling which row you are on — is served instead by the **Focus band**,
-  one overlay rectangle specified in
-  [ADR-0008](./0008-selection-is-painted-by-an-overlay.md).
+- ~~Zebra striping~~ — resolved as **not offered**, and **reversed on 2026-09-24** by
+  [ADR-0038](./0038-row-stripes-are-painted-from-the-rows-absolute-position.md). What this said:
+  it cannot be added in CSS (`:nth-child()` counts painted siblings, so under virtualisation the
+  stripes crawl on every scroll), a correct stripe needs an absolute row index threaded through
+  every row, and the need it would have served — telling which row you are on — is served by the
+  **Focus band** ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). The first reason
+  still holds. The second had stopped being a cost: ADR-0033 threaded exactly that index through
+  every row for `aria-rowindex`, so a stripe is one class derived from a parameter each row already
+  re-renders on. The third still holds too — the Focus band answers *where am I*; a stripe is
+  appearance, off unless a Consumer asks, and one asked.

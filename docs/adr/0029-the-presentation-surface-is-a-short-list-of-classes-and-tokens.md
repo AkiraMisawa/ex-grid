@@ -18,6 +18,7 @@ meaning, without an ADR. It marks a **meaning**, never a mechanism.
 | `ex-align-left`, `ex-align-center`, `ex-align-right` | an explicit alignment (`Auto` adds nothing — ADR-0016) |
 | `ex-row` | one row; `ex-placeholder` joins it for a row not painted with real data ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)) |
 | `ex-row-group`, `ex-row-total` | Row Kind ([ADR-0024](./0024-row-kind-is-a-declared-role-not-a-hierarchy.md)) |
+| `ex-row-stripe` | a Row Stripe: a row at an odd position in the whole result, while stripes are on ([ADR-0038](./0038-row-stripes-are-painted-from-the-rows-absolute-position.md)) |
 | `ex-cell` | one cell; `ex-cell-numeric` joins it on the numeric presentation ([ADR-0016](./0016-column-width-and-overflow.md)) |
 | `ex-pinned` | a Pinned Column's cell, body or header |
 | `ex-state-stale / -missing / -error / -modified` | Cell State ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
@@ -94,6 +95,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Cell State | the six `--ex-state-*` *(exist)* |
 | Tone | `--ex-tone-positive-color`, `--ex-tone-negative-color` — default `inherit`, so a declared tone paints nothing until a theme says what colour it is ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | Row Kind | the four `--ex-row-group/total-*` *(exist)* |
+| Row Stripe | `--ex-row-stripe-background` — a faint neutral by default, so turning stripes on shows them; unpainted under `forced-colors`, because a stripe carries no meaning ([ADR-0038](./0038-row-stripes-are-painted-from-the-rows-absolute-position.md)) |
 | Placeholder / loading | `--ex-placeholder-background`, `--ex-loading-opacity` |
 | Editor | `--ex-editor-background`, `--ex-editor-color`, `--ex-editor-outline` |
 | Column gestures | `--ex-resize-guide-color`, `--ex-drop-indicator-color` — the guide and the indicator are painted, not laid out, so neither is metrics-bearing (ADR-0011/0016) |
@@ -129,6 +131,7 @@ interned classes** (Cell State, Row Kind, alignment, tone) for per-column and pe
 | pending / dirty / disabled / anything else | **mapped onto Cell State by the Consumer or Wrapper** | ADR-0006: the Consumer's vocabulary does not enter the grid — a design system's does not either. `dirty` is `modified`; `pending` is `stale` or `missing`; a state that maps to none of the five is a Template Column or a case for amending ADR-0006, not a per-wrapper class |
 | loading | `ex-loading` + Placeholder rows | one mechanism ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)) |
 | row role | Row Kind classes | |
+| row stripe | `ex-row-stripe`, from the row's absolute position | the position is a parameter every row already re-renders on (ADR-0033), so the class costs no render; `:nth-child()` would count painted siblings and crawl ([ADR-0038](./0038-row-stripes-are-painted-from-the-rows-absolute-position.md)) |
 
 **Classes, not `data-*` attributes, and never ARIA.** The class strings are composed once and
 interned (`CellClasses` / `RowClasses`), so painting a state allocates nothing on the render path

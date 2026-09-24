@@ -342,14 +342,23 @@ clean. The property is unchanged: the dependency points one way.
    item, is built — ADR-0037.)*
 4. ~~**ADR-0037's layer 3 on the two target browsers.**~~ Discharged on 2026-09-23 by
    the Windows run: KB-20 to KB-27, A11Y-17 and UX-14 pass on `chrome` and `msedge`.
-5. `ExGrid.MudBlazor`'s remaining seams — the filter panel and the column menu as
-   content inside the core's popover — and `Striped`, reserved until the core emits a
-   row-parity class (ADR-0030).
+5. **`ExGrid.MudBlazor`'s remaining seams, and Row Stripes — decided 2026-09-24, not
+   built.** A grilling session settled them; the decisions are
+   [ADR-0038](adr/0038-row-stripes-are-painted-from-the-rows-absolute-position.md) (Row
+   Stripes, reversing ADR-0027's "not offered"),
+   [ADR-0039](adr/0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)
+   (popovers take the keyboard — a core gap: no key opened the column menu, and no popover
+   could be used without a pointer — and may hold Inner Popups, replacing ADR-0030's "never a
+   `MudPopover`"), and the rewritten passages of ADR-0010/0012/0021/0027/0029/0030/0036. The
+   criteria are FN-17/21, UX-15/16, A11Y-19, KB-28..32, RR-13 and the new §23 (WR-1..9); the
+   work is to be ticketed as vertical slices and built against a proof-of-concept MudBlazor
+   page in the DemoHost.
 
 ## Where the exit criteria stand
 
 **No open question in §21.** Settled this run, each with its trigger: the Action-Column
 copy (empty cell, ADR-0005), the editor's classes and tokens (with the editor), the
 header-click sort cycle (recorded in ADR-0012). Still reserved, triggers unfired: the
-fill handle, right-click, `--ex-selection-outline`, the Wrapper seam order, ExSheet's
-shape, the column band.
+fill handle, `--ex-selection-outline`, ExSheet's shape, the column band. *(Since then:
+right-click was settled by the Context Menu, ADR-0036; the Wrapper seam order by the
+package's start and ADR-0039, 2026-09-24.)*

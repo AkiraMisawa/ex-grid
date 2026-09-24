@@ -164,6 +164,12 @@ Only an Escape with nothing left to dismiss, pressed on the root itself, release
 focus. The other ways a popover closes belong to
 [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).
 
+*(An Inner Popup — a select's options or a picker's calendar, opened by a seam's contents and
+drawn by their design system outside the root — is the innermost layer of all, and the only one
+the grid does not close: DOM focus is outside the root, so its Escape is the design system's,
+which closes the popup and returns focus inside the popover. The next Escape is the grid's
+([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)).)*
+
 *(The Interactive layer arrived with
 [ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md), and
 sits between the two: a popover closes first, then an Interactive cell is left — the grid
