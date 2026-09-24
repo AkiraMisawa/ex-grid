@@ -13,8 +13,11 @@ namespace ExGrid.Columns;
 public sealed record ResolvedHeaderGroup(
     HeaderGroup Group, int FirstColumn, int MemberCount, int TopTier, int TierSpan, bool Pinned)
 {
+    /// <summary>The declaration's caption.</summary>
     public string Label => Group.Label;
 
+    /// <summary>The lowest tier the rectangle occupies, <c>TopTier − TierSpan + 1</c>; tier 1
+    /// sits directly above the leaf row.</summary>
     public int BottomTier => TopTier - TierSpan + 1;
 }
 
@@ -71,6 +74,13 @@ public sealed class HeaderGroupLayout
         return true;
     }
 
+    /// <summary>
+    /// Resolves the declarations against the columns' names in the current flat order
+    /// and the pinned count. An unknown member, members no longer adjacent, a rectangle
+    /// straddling the pinned boundary and two overlapping rectangles each throw an
+    /// <see cref="InvalidOperationException"/> naming the group (ADR-0032). No
+    /// declarations resolve to <see cref="Empty"/>.
+    /// </summary>
     public static HeaderGroupLayout Resolve(
         IReadOnlyList<HeaderGroup> groups, IReadOnlyList<string> columnNames, int pinnedCount)
     {

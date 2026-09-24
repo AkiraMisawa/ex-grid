@@ -28,6 +28,12 @@ public static class OverflowRules
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
 
+    /// <summary>
+    /// What one cell paints at its resolved width. Text and Boolean always show the
+    /// value; a Number or Date shows it when its estimate fits — exactly fitting still
+    /// shows — and otherwise becomes as many <c>#</c> as digits fit the content width,
+    /// at least one. <c>default(CellTextMetrics)</c> is refused.
+    /// </summary>
     public static OverflowDecision Decide(
         ColumnType type,
         string formattedText,

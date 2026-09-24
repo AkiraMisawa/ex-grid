@@ -6,4 +6,8 @@ namespace ExGrid;
 /// drag ends the column's Auto-ness: the Consumer records this as a Fixed width,
 /// because the user's intent is what is persisted.
 /// </summary>
+/// <param name="Column">The column's name.</param>
+/// <param name="WidthPx">The new width in pixels — where the drag was released, or what
+/// the column menu's Size to fit resolved. A drag is bounded below by MinWidth and not
+/// above by MaxWidth (ADR-0016).</param>
 public sealed record ColumnWidthChange(string Column, double WidthPx);

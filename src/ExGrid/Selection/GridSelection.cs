@@ -23,6 +23,8 @@ namespace ExGrid.Selection;
 /// </summary>
 public sealed record GridSelection
 {
+    /// <summary>Nothing selected: no range, and no Anchor or Focus. What a holder assigns
+    /// when the Row Sequence Version or the visible-column set changes (ADR-0011).</summary>
     public static GridSelection Empty { get; } = new([], default, default, anchorDetached: false, focusRangeIndex: null);
 
     private readonly CellPosition _anchor;
@@ -72,6 +74,8 @@ public sealed record GridSelection
     /// </summary>
     public IReadOnlyList<SelectionRange> Ranges { get; }
 
+    /// <summary>Whether nothing is selected. <see cref="Anchor"/> and <see cref="Focus"/>
+    /// throw then.</summary>
     public bool IsEmpty => Ranges.Count == 0;
 
     /// <summary>
@@ -104,6 +108,8 @@ public sealed record GridSelection
         }
     }
 
+    /// <summary>Whether the cell lies in any range. A detached Anchor and Focus stand on a
+    /// cell this answers false for (ADR-0012).</summary>
     public bool Contains(CellPosition cell)
     {
         foreach (var range in Ranges)
@@ -225,7 +231,7 @@ public sealed record GridSelection
     }
 
     /// <summary>Ctrl+A under a pager (ADR-0015): every cell of the rows in context —
-    /// the page — as one range. Anchor and Focus stay exactly as <see cref="SelectAll"/>
+    /// the page — as one range. Anchor and Focus stay exactly as <see cref="SelectAll(GridExtent)"/>
     /// keeps them: a key that names a whole region needs no starting point and must not
     /// move the active cell (ADR-0012). From Empty they land on the context's first
     /// cell — as they do when they stand outside the context (the selection came from
@@ -329,6 +335,8 @@ public sealed record GridSelection
             && _anchorDetached == other._anchorDetached && _focusRangeIndex == other._focusRangeIndex;
     }
 
+    /// <summary>Consistent with <see cref="Equals(GridSelection)"/>: the ranges, and Anchor
+    /// and Focus when not empty.</summary>
     public override int GetHashCode()
     {
         var hash = new HashCode();
