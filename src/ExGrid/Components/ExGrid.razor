@@ -3223,14 +3223,12 @@
         var declared = Columns[column];
         BeginPopoverFocus();
         _panelAwaitingValues = declared.FilterUi != FilterUiMode.Condition;
-        _panelOperator = FilterOperators.AllowedFor(declared.Type)[0];
 
+        // What the panel starts with is FilterPanelChoices' to say — the same rules a
+        // substituted panel starts from (ADR-0009/0010).
         var current = CurrentSpecOf(declared.Name);
-        if (current is { Clauses: [{ Operator: not FilterOperator.In } clause] })
-        {
-            _panelOperator = clause.Operator;
-            _panelValueText = clause.Value?.ToString() ?? "";
-        }
+        _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: false);
+        _panelValueText = FilterPanelChoices.InitialOperand(current)?.ToString() ?? "";
         StateHasChanged();
 
         if (declared.FilterUi == FilterUiMode.Condition)
@@ -3241,25 +3239,9 @@
         _panelValues = answer;
         _panelAwaitingValues = false;
         if (answer.IsTooMany)
-        {
-            // The degraded form is Excel's own: a search box (ADR-0009). Contains is
-            // that search, where the type allows it.
-            if (_panelValueText.Length == 0
-                && FilterOperators.AllowedFor(declared.Type).Contains(FilterOperator.Contains))
-            {
-                _panelOperator = FilterOperator.Contains;
-            }
-        }
+            _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: true);
         else
-        {
-            // The applied In list is what starts checked; no filter checks everything.
-            // Intersected with the fetched domain: another column's filter can have
-            // shifted it since the list was applied, and a value the panel cannot show
-            // must not ride along invisibly checked.
-            _panelChecked = current is { Clauses: [{ Operator: FilterOperator.In, Values: { } applied }] }
-                ? new HashSet<object?>(applied.Intersect(answer.Values))
-                : new HashSet<object?>(answer.Values);
-        }
+            _panelChecked = FilterPanelChoices.InitiallyChosen(current, answer);
         StateHasChanged();
     }
 
@@ -3290,7 +3272,8 @@
             spec => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, spec)),
             () => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, null)),
             CloseFromChrome,
-            _popoverFocusRequest);
+            _popoverFocusRequest,
+            declared.Format);
     }
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
@@ -3319,48 +3302,22 @@
 
     /// <summary>The built-in panel's OK (ADR-0009): the working state becomes one
     /// FilterSpec — the checked values as an In clause, or the condition's one clause —
-    /// and applies whole. Cancel is <see cref="CloseMenus"/> and discards.</summary>
+    /// and applies whole, by <see cref="FilterPanelChoices"/>' rules, which a substituted
+    /// panel applies by too. Cancel discards.</summary>
     private Task ApplyPanelAsync(int column)
     {
         var declared = Columns[column];
         if (_panelValues is { IsTooMany: false } values && _panelChecked is { } chosen)
-        {
-            // Everything checked is no filter at all — the domain is not a condition.
-            // Set membership, never a count: counts drift when the domain shifts under
-            // another column's filter, and a count test here silently removed a filter
-            // the user was looking at.
-            if (values.Values.All(chosen.Contains))
-                return ApplyFilterSpecAsync(declared.Name, null);
-            var ordered = values.Values.Where(chosen.Contains).ToArray();
-            return ApplyFilterSpecAsync(declared.Name,
-                new FilterSpec([new FilterClause(FilterOperator.In, Values: ordered)]));
-        }
+            return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromValueList(values, chosen));
 
-        if (_panelOperator is FilterOperator.IsBlank or FilterOperator.IsNotBlank)
-            return ApplyFilterSpecAsync(declared.Name, new FilterSpec([new FilterClause(_panelOperator)]));
+        if (!FilterPanelChoices.TakesOperand(_panelOperator))
+            return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromCondition(_panelOperator, null));
         if (string.IsNullOrEmpty(_panelValueText))
             return ApplyFilterSpecAsync(declared.Name, null);
-        if (ParseFilterValue(declared.Type, _panelValueText) is not { } parsed)
+        if (FilterPanelChoices.ParseOperand(declared.Type, _panelValueText) is not { } parsed)
             return Task.CompletedTask; // an unparseable operand applies nothing; the panel stands
-        return ApplyFilterSpecAsync(declared.Name,
-            new FilterSpec([new FilterClause(_panelOperator, parsed)]));
+        return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromCondition(_panelOperator, parsed));
     }
-
-    /// <summary>The panel's operand, parsed per the declared type — the engine compares
-    /// typed values (ADR-0023). Invariant first, so "1234.5" means the same number on
-    /// every machine; the local convention as the fallback.</summary>
-    private static object? ParseFilterValue(ColumnType type, string text) => type switch
-    {
-        ColumnType.Text => text,
-        ColumnType.Number => decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var invariant)
-            ? invariant
-            : decimal.TryParse(text, out var local) ? local : null,
-        ColumnType.Date => DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var isoDate)
-            ? isoDate
-            : DateTime.TryParse(text, out var localDate) ? localDate : null,
-        ColumnType.Boolean => bool.TryParse(text, out var flag) ? flag : null,
-        _ => null,
-    };
 
     /// <summary>Where a popover stands (ADR-0017/0018): under the header band, at the
     /// column's visible left edge, clamped inside the Viewport — outside the scroll
@@ -3877,9 +3834,15 @@
                 // (ADR-0012), releasing the grid's DOM focus.
                 if (_menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null)
                 {
-                    CloseMenus();
+                    // The keyboard comes back after the render that removes the popover,
+                    // never before it: a control inside it can still answer this Escape
+                    // for itself while the grid waits — a MudSelect puts DOM focus back
+                    // on itself — and removing the popover then would leave focus on the
+                    // page's body (KB-32, ADR-0039).
                     if (fromDescendant)
-                        await ReclaimFocusAsync();
+                        ClosePopoverAndReturnFocus();
+                    else
+                        CloseMenus();
                     StateHasChanged();
                     return;
                 }

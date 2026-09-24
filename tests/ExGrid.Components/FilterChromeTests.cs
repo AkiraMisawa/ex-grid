@@ -225,6 +225,28 @@ public class FilterChromeTests : GridTestContext
         Assert.Single(cut.FindAll(".ex-row"));
     }
 
+    [Fact] // ADR-0009/0023: In chosen in the condition form filters to its one value, instead of a clause the engine refuses
+    public async Task In_chosen_as_a_condition_filters_to_its_operand()
+    {
+        var source = GridSource.From(TestRows.Many(50));
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns(FilterUiMode.Condition))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350));
+
+        await OpenPanelAsync(cut);
+        await cut.Find(".ex-popover select").ChangeAsync(new ChangeEventArgs { Value = nameof(FilterOperator.In) });
+        await cut.Find(".ex-popover input").InputAsync(new ChangeEventArgs { Value = "Row 000001" });
+        await cut.FindAll(".ex-popover-actions button").Single(b => b.TextContent == "OK")
+            .ClickAsync(new MouseEventArgs());
+
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Single(cut.FindAll(".ex-row"));
+        Assert.Equal(["Row 000001"], Assert.Single(source.Filter!.Columns.Values).Clauses[0].Values!);
+    }
+
     [Fact] // FN-17: swapping Chrome changes rendering and nothing about behaviour
     public async Task A_stub_chrome_renders_but_the_core_still_decides()
     {

@@ -374,7 +374,20 @@ clean. The property is unchanged: the dependency points one way.
    was offered where the pin would cut a Header Group, which the grid then refused by
    taking the page down; it is now disabled there (ADR-0032). `MudExGridPaper.Striped`
    cascades Row Stripes and the Wrapper's stylesheet colours them from the palette's
-   table-stripe colour (WR-6; `MudExGridPaperTests`, `mud-app.spec.mjs`).
+   table-stripe colour (WR-6; `MudExGridPaperTests`, `mud-app.spec.mjs`). `MudGridChrome`
+   now fills the filter panel as well (WR-1/2/3). A value list of `MudCheckBox`es with a
+   search and a Blank entry. A condition form: a `MudSelect` operator offering exactly
+   `Allowed`, and the type's own operand control, with Apply held until the operand is
+   given. MudBlazor's words where it has keys, the Chrome's `Label` elsewhere
+   (`MudFilterPanelTests`). What a panel's choices mean moved into the core as
+   `FilterPanelChoices`, which the built-in panel uses too, so the same choices make the
+   same `FilterSpec` under either Chrome. Two more core defects surfaced and are fixed:
+   - `In` chosen in the built-in condition form applied a clause the engine refuses.
+   - Escape from inside a popover returned focus before the render that removed it, so a
+     `MudSelect` pulled focus back and it fell to `<body>`.
+
+   `FilterPanelContext` carries the column's `Format`, so a substituted value list shows
+   values as the cells do.
 
    **Open, and waiting on a decision:** WR-7's dialog clause fails. A grid inside a
    `MudDialog` has its popover cut off by the dialog's scrolling content. ADR-0017/0018/0021
@@ -384,6 +397,15 @@ clean. The property is unchanged: the dependency points one way.
    rejected. Measured in the browser: `position: fixed` with anchor positioning is still
    clipped, because `.mud-dialog` carries a transform. The top layer shows the popover
    whole, but a design system's popup (an Inner Popup) then sits beneath it.
+
+   **Also waiting on a decision:** ADR-0039's Escape row for Inner Popups is wrong in the
+   browser. It predicted that the popup's own Escape would never reach the grid, because
+   DOM focus would be inside the popup. MudBlazor 9.9's `MudSelect` and `MudDatePicker`
+   both keep DOM focus on their control, inside the grid's popover, while their list or
+   calendar is open. So one Escape closes the popup and the panel together; focus does
+   return to the root. The other rows hold: a pointer-down elsewhere under the default
+   `ModalOverlay` closes both and keeps its meaning, closing the popover removes the popup,
+   and focus returns to the root. FN-21's layer-3 tests wait on the corrected row.
 
 ## Where the exit criteria stand
 

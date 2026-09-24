@@ -11,8 +11,8 @@ namespace ExGrid.MudBlazor;
 /// inside the box the core hands it, never a <c>MudTextField</c>, which does not fit
 /// a 28px cell — the loading bar, a <c>MudProgressLinear</c> where the core places its
 /// loading seam, and the column menu and Context Menu, <c>MudButton</c>s with a Material
-/// icon each, inside the core's popover. The filter panel falls back to the core's own
-/// (null) until it is filled.
+/// icon each, and the filter panel — a value list or a condition form of MudBlazor's
+/// controls — all inside the core's popover.
 ///
 /// <para>What goes inside a popover is the Wrapper's, and may open popups of its own —
 /// a select's options, a picker's calendar — which MudBlazor draws outside the instance
@@ -33,9 +33,10 @@ public sealed class MudGridChrome : IGridChrome
 
     /// <summary>
     /// The Chrome's own words, for what MudBlazor has no localised text of its own
-    /// (ADR-0030, WR-3): handed a command's id, it answers the wording, or null for the
-    /// English default. Where MudBlazor has a key — Filter, Hide — its localiser answers
-    /// and this is not asked, so one registered <c>MudLocalizer</c> translates both.
+    /// (ADR-0030, WR-3): handed a command's id or one of <see cref="MudExGridWords"/>' ids,
+    /// it answers the wording, or null for the English default. Where MudBlazor has a key —
+    /// Filter, Hide, Apply, an operator — its localiser answers and this is not asked, so
+    /// one registered <c>MudLocalizer</c> translates both.
     /// </summary>
     public Func<string, string?>? Label { get; init; }
 
@@ -44,8 +45,20 @@ public sealed class MudGridChrome : IGridChrome
     /// supplies it (ADR-0010/0036).</summary>
     public Func<string, string?>? Icon { get; init; }
 
-    /// <summary>The core's panel, inside the core's popover.</summary>
-    public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+    /// <summary>The filter panel, from MudBlazor's controls inside the core's popover
+    /// (ADR-0009/0030): a value list with a search and a Blank entry where the column
+    /// declares one and the answer arrives, the condition form otherwise.</summary>
+    public RenderFragment? FilterPanel(FilterPanelContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            builder.OpenComponent<MudExGridFilterPanel>(0);
+            builder.AddComponentParameter(1, nameof(MudExGridFilterPanel.Context), context);
+            builder.AddComponentParameter(2, nameof(MudExGridFilterPanel.Chrome), this);
+            builder.CloseComponent();
+        };
+    }
 
     /// <summary>The column menu: the core's commands as <c>MudButton</c> menu items.</summary>
     public RenderFragment? ColumnMenu(ColumnMenuContext context)
@@ -72,21 +85,13 @@ public sealed class MudGridChrome : IGridChrome
             builder.CloseComponent();
         };
 
-    /// <summary>MudBlazor's own key for a command's word, where it has one.</summary>
-    private static string? MudKeyFor(string id) => id switch
-    {
-        "filter" => "MudDataGrid_Filter",
-        "hide" => "MudDataGrid_Hide",
-        _ => null,
-    };
-
     /// <summary>What a command is called (WR-3): MudBlazor's localised text where it has
     /// a key, the Chrome's <see cref="Label"/> for the rest, English where that says
     /// nothing.</summary>
     internal string LabelFor(string id, ILocalizationInterceptor localizer)
-        => MudKeyFor(id) is { } key
-            ? localizer.Handle(key).Value
-            : Label?.Invoke(id) ?? BuiltInCommandLabels.For(id);
+        => MudExGridWords.MudKeyForCommand(id) is { } key
+            ? MudExGridWords.Mud(localizer, key)
+            : MudExGridWords.Own(this, id);
 
     /// <summary>A command's icon: the Chrome's <see cref="Icon"/> first, then the
     /// Material icon of each of the core's commands.</summary>

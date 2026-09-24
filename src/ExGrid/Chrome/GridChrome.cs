@@ -73,6 +73,10 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// put DOM focus on their first control whenever it changes. The core holds no reference
 /// to a control it did not render, and does not try — the same rule as
 /// <see cref="CellEditorContext.FocusRequest"/>.</para>
+///
+/// <para><see cref="Format"/> is the column's own, so a value list shows each value as the
+/// cells show it — null where the column declares none. What the choices mean is
+/// <see cref="FilterPanelChoices"/>', the rules the built-in panel applies by.</para>
 /// </summary>
 public sealed record FilterPanelContext(
     string Column,
@@ -84,7 +88,8 @@ public sealed record FilterPanelContext(
     Action<FilterSpec?> Apply,
     Action Clear,
     Action Close,
-    int FocusRequest = 0);
+    int FocusRequest = 0,
+    Func<object, string>? Format = null);
 
 /// <summary>The column menu's contract (ADR-0010): the core decides the items.
 /// <see cref="FocusRequest"/> counts the openings; the menu puts DOM focus on its first

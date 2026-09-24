@@ -98,7 +98,9 @@ hide it.
   meaning (KB-17); `Alt+↓` opening the Focus column's menu (KB-28); every popover taking
   DOM focus by key or pointer (KB-29); the menu keys — arrows over the enabled items with
   wrap, Home/End, Enter/Space run, Tab closes (KB-30); the panel's Tab wrapping inside it
-  and Enter in its value field applying what OK applies (KB-31); every close handing the
+  and Enter in its value field applying what OK applies (KB-31 — under the Wrapper that
+  is its own panel, a `MudSelect` operator whose list is an Inner Popup and a
+  `MudNumericField`); every close handing the
   keyboard back to the root (KB-32); the roles and names (A11Y-19); the scroll container
   not clipping (UX-11); and the Context Menu (CTX-1..4).
 - `stripes.spec.mjs` — Row Stripes on `/stripes` (ADR-0038), read as painted colours

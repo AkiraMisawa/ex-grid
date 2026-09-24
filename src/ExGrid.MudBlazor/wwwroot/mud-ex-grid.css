@@ -126,3 +126,33 @@
     justify-content: flex-start;
     text-transform: none;
 }
+/* The filter panel (ADR-0009/0030): MudBlazor's controls in a column inside the core's
+   popover, the value list scrolling on its own and the actions at the end. Scoped to the
+   panel's own element, like the menu's. */
+.mud-ex-grid-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 240px;
+    padding: 4px;
+}
+.mud-ex-grid-filter-values {
+    display: flex;
+    flex-direction: column;
+    max-height: 240px;
+    overflow-y: auto;
+}
+.mud-ex-grid-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+}
+/* The Tab wrap's two sentinels (ADR-0039): focusable, and nothing else. Absolute, so they
+   take no place in the panel's column and add no gap to it. */
+.mud-ex-grid-focus-wrap {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    outline: none;
+}

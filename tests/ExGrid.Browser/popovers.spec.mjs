@@ -42,6 +42,16 @@ async function activeText(page) {
     return page.evaluate(() => document.activeElement?.textContent?.trim() ?? null);
 }
 
+// Whether DOM focus is on the condition form's operator: a native select in the built-in
+// panel, a MudSelect's combobox in the Wrapper's.
+async function activeIsOperator(page) {
+    return page.evaluate(() => {
+        const active = document.activeElement;
+        return !!active?.closest('.ex-popover[role=dialog]')
+            && (active.tagName === 'SELECT' || active.getAttribute('role') === 'combobox');
+    });
+}
+
 async function openNotionalPanel(page) {
     await clickCell(page, 1, 2);
     await page.keyboard.press('Alt+ArrowDown');
@@ -49,18 +59,38 @@ async function openNotionalPanel(page) {
     await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Filter' }).click();
     const panel = grid(page).locator('.ex-popover[role=dialog]');
     await expect(panel).toBeVisible();
-    await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'SELECT' });
+    await expect.poll(() => activeIsOperator(page)).toBe(true);
     return panel;
 }
+
+// Each Chrome's own controls for the same choice. The Wrapper's operator is a MudSelect,
+// whose list MudBlazor draws outside the grid's root — an Inner Popup (ADR-0039) — and
+// whose word for "greater than" is MudBlazor's.
+const CONDITION = {
+    builtin: {
+        choose: (page, panel) => panel.locator('select').selectOption('GreaterThan'),
+        operand: (panel) => panel.locator('input:not([type])'),
+        apply: (panel) => panel.locator('button', { hasText: 'OK' }),
+    },
+    mud: {
+        choose: async (page, panel) => {
+            await panel.getByRole('combobox', { name: 'Operator' }).click();
+            await page.locator('.mud-popover-open .mud-list-item', { hasText: /^>$/ }).click();
+            await expect(page.locator('.mud-popover-open .mud-list-item')).toHaveCount(0);
+        },
+        operand: (panel) => panel.locator('.mud-ex-grid-filter-operand input'),
+        apply: (panel) => panel.locator('.mud-ex-grid-filter-apply'),
+    },
+};
 
 // The rows left after a Notional > 3,000,000 condition (the page's notionals run from
 // 1,000,000 up), applied by `apply`. The source re-answers after the panel closes, so the
 // count is waited for, not read at once.
-async function rowCountAfterFilter(page, apply) {
+async function rowCountAfterFilter(page, chrome, apply) {
     const before = await grid(page).getAttribute('aria-rowcount');
     const panel = await openNotionalPanel(page);
-    await panel.locator('select').selectOption('GreaterThan');
-    await panel.locator('input:not([type])').fill('3000000');
+    await CONDITION[chrome].choose(page, panel);
+    await CONDITION[chrome].operand(panel).fill('3000000');
     await apply(panel);
     await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
     await expect.poll(() => activeIsRoot(page)).toBe(true);
@@ -291,29 +321,31 @@ for (const chrome of CHROMES) {
         test('in the filter panel Tab and Shift+Tab wrap inside it (KB-31, ADR-0039)', async ({ page }) => {
             await openNotionalPanel(page);
 
-            // Operator, value, OK, Cancel, Clear — and round to the operator: twice over, and
-            // DOM focus is never anywhere but the panel.
-            const seen = [];
+            // Operator, value, Apply (while it is available), Cancel, Clear — and round to
+            // the operator: twice over, and DOM focus is never anywhere but the panel.
+            let reachedOperator = 0;
             for (let i = 0; i < 10; i++) {
                 await page.keyboard.press('Tab');
                 await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog' });
-                seen.push((await activeIsInPopover(page)).tag + ':' + (await activeText(page)));
+                if (await activeIsOperator(page))
+                    reachedOperator++;
             }
-            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ tag: 'SELECT' });
-            expect(seen.filter((s) => s.startsWith('SELECT')).length, 'the wrap reached the operator again').toBeGreaterThan(0);
+            expect(reachedOperator, 'the wrap reached the operator again').toBeGreaterThan(0);
 
             // Shift+Tab off the operator goes to the last control, not out of the panel.
+            while (!(await activeIsOperator(page)))
+                await page.keyboard.press('Tab');
             await page.keyboard.press('Shift+Tab');
             await expect.poll(() => activeText(page)).toBe('Clear');
             await expect(grid(page).locator('.ex-popover[role=dialog]')).toBeVisible();
         });
 
         test('Enter in the value field applies exactly what OK applies (KB-31, ADR-0039)', async ({ page }) => {
-            const byOk = await rowCountAfterFilter(page, (panel) => panel.locator('button', { hasText: 'OK' }).click());
+            const byOk = await rowCountAfterFilter(page, chrome, (panel) => CONDITION[chrome].apply(panel).click());
 
             await page.reload();
             await expect(grid(page).locator('.ex-row').first()).toBeVisible();
-            const byEnter = await rowCountAfterFilter(page, (panel) => panel.locator('input:not([type])').press('Enter'));
+            const byEnter = await rowCountAfterFilter(page, chrome, (panel) => CONDITION[chrome].operand(panel).press('Enter'));
             expect(byEnter).toBe(byOk);
         });
 

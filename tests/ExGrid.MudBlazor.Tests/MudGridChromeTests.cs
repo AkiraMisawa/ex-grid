@@ -106,14 +106,6 @@ public class MudGridChromeTests : MudTestContext
         Assert.DoesNotContain("mud-ex-editor-error", clean.Find("input.mud-ex-editor").ClassName);
     }
 
-    [Fact] // ADR-0010: the filter panel stays the core's until the Wrapper fills it
-    public void The_filter_panel_stays_the_cores()
-    {
-        Assert.Null(MudGridChrome.Default.FilterPanel(new FilterPanelContext(
-            "Book", ColumnType.Text, null, [], FilterUiMode.Condition,
-            () => Task.FromResult(DistinctValues.Of([])), _ => { }, () => { }, () => { })));
-    }
-
     [Fact] // ADR-0028/0030: Material's dense is Compact, never Excel
     public void Dense_is_compact_not_excel()
     {
