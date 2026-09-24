@@ -35,6 +35,9 @@ public enum CellRenderMode
     AccessorMeta,
     /// <summary>Row is a component (memoisation boundary), cells inside stay plain markup.</summary>
     RowComponent,
+    /// <summary>RowComponent + a per-cell tone rule (a Consumer delegate on the value, answering a
+    /// closed enum painted as an interned class — ADR-0006). Prices the rule on the settled design.</summary>
+    RowComponentTone,
     /// <summary>Every cell is a Blazor component. Cheap when little changes, dear on a full rebuild.</summary>
     Component,
 }
@@ -101,4 +104,19 @@ public static class CellFormat
         CellState.Error => "c num err",
         _ => "c num",
     };
+
+    /// <summary>State × tone, interned up front the way the product's CellClasses is: the
+    /// render path indexes, never concatenates.</summary>
+    private static readonly string[] Toned =
+    [
+        "c num", "c num pos", "c num neg",
+        "c num stale", "c num stale pos", "c num stale neg",
+        "c num missing", "c num missing pos", "c num missing neg",
+        "c num err", "c num err pos", "c num err neg",
+    ];
+
+    public static string Class(CellState s, CellTone t) => Toned[(int)s * 3 + (int)t];
 }
+
+/// <summary>The product's closed tone vocabulary (ADR-0006), as the bench prices it.</summary>
+public enum CellTone : byte { None = 0, Positive = 1, Negative = 2 }

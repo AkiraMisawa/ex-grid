@@ -1,0 +1,13 @@
+{
+  "name": "exgrid-browser-tests",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Layer 3 of the ExGrid test suite: the things that only exist in a browser.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0"
+  }
+}

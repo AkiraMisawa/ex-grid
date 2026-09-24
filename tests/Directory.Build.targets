@@ -1,0 +1,38 @@
+<Project>
+
+  <!-- Replaces xunit.v3's build guard (_XunitValidateBuild in xunit.v3.core.targets),
+       which refuses to build a .NET test project unless it emits a native apphost.
+       Both test projects here deliberately set UseAppHost=false, so what is kept below
+       is the half of that guard which still applies.
+
+       Why the apphost has to go. The SDK stamps it out of a prebuilt template, and for
+       net8.0 — the framework the gating tests must execute on (ADR-0022) — that template
+       is restored from NuGet as Microsoft.NETCore.App.Host.&lt;rid&gt;, carrying the standard
+       ELF interpreter /lib64/ld-linux-x86-64.so.2. So it starts under the host loader and
+       binds the distribution's libc, then dlopens libcoreclr.so out of the nix runtime,
+       which drags in nix glibc: two glibcs in one process. Where the host glibc is the
+       older of the two the load fails outright — "version `GLIBC_ABI_DT_X86_64_PLT' not
+       found" — which is how this reads on WSL2 Ubuntu. nixpkgs patches the apphost
+       template it ships to the nix interpreter, but it ships only the one matching its
+       own SDK; nothing patches the net8 template NuGet hands out. These two projects are
+       the only net8 executables here, so they are the only things that hit it — the
+       DemoHost is a Blazor WebAssembly project and emits no apphost at all.
+
+       With no apphost, `dotnet test` runs the test dll through the nix muxer, which
+       already carries the nix interpreter: one glibc throughout, and the same path taken
+       on every platform rather than a Linux-only patch.
+
+       What this gives up. xunit's stated reason for the guard is xunit.v3.runner.utility,
+       which launches the executable; runners built on it, including some IDE test
+       explorers, will not find one. `dotnet test` does not use it, and `dotnet test` is
+       what the Definition of Done gates on.
+
+       Why this file exists at all: MSBuild imports a package's buildTransitive targets
+       after the project body, so the same override written in either .csproj would lose.
+       It sits in tests/ so it reaches only the two test projects. -->
+  <Target Name="_XunitValidateBuild" BeforeTargets="BeforeBuild" Condition=" '$(TargetFramework)' != '' ">
+    <Error Text="xUnit.net v3 test projects must be executable (set project property '&lt;OutputType&gt;Exe&lt;/OutputType&gt;')."
+           Condition=" '$(OutputType)' != 'Exe' " />
+  </Target>
+
+</Project>

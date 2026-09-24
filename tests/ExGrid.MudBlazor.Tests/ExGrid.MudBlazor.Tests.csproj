@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0 so the Wrapper's tests execute on the oldest supported runtime
+         (ADR-0022), in the same xunit.v3 / bunit shape as ExGrid.Components. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- No native apphost, for the reason in tests/Directory.Build.targets. -->
+    <UseAppHost>false</UseAppHost>
+    <RootNamespace>ExGrid.MudBlazor.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <PackageReference Include="bunit" Version="2.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
+  </ItemGroup>
+
+</Project>

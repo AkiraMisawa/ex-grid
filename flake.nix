@@ -1,5 +1,5 @@
 {
-  description = "cell-grid — Blazor grid component: .NET 10 toolchain (nix-managed)";
+  description = "ex-grid — Blazor grid component: .NET toolchain (nix-managed)";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -9,24 +9,52 @@
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f (import nixpkgs { inherit system; }));
     in
     {
-      devShells = forAllSystems (pkgs: {
+      devShells = forAllSystems (pkgs:
+        let
+          # SDK 10 builds every TFM at or below itself (ADR-0022); the net8
+          # runtime is included so the gating tests execute on the oldest
+          # supported runtime, not just build against it.
+          dotnet = pkgs.dotnetCorePackages.combinePackages [
+            pkgs.dotnet-sdk_10
+            pkgs.dotnetCorePackages.runtime_8_0
+          ];
+        in
+        {
         default = pkgs.mkShell {
-          packages = [ pkgs.dotnet-sdk_10 ];
+          packages = [ dotnet ];
           shellHook = ''
+            # Child processes (the test host) resolve frameworks from DOTNET_ROOT;
+            # without it they follow the muxer's real path into the SDK-only store
+            # path and miss the combined net8 runtime.
+            export DOTNET_ROOT=${dotnet}/share/dotnet
             export DOTNET_CLI_TELEMETRY_OPTOUT=1
             export DOTNET_NOLOGO=1
             echo "dotnet $(dotnet --version) (nix-managed)"
           '';
         };
 
-        # Headless browser for reproducing client-side errors in the spike.
-        # Timing numbers from here are NOT representative (software rendering) —
-        # real measurements must come from the user's own browser.
+        # The layer-3 (browser) tests: Node for Playwright, and dotnet because
+        # Playwright starts the DemoHost itself.
+        #
+        # No browser. `channel: 'chrome'` resolves Google Chrome by its own
+        # well-known paths and would never pick up a nix store one, so putting
+        # a browser here would be both unused and misleading — nixpkgs'
+        # `chromium` is not what that channel means, and `google-chrome` is
+        # unfree, which would make this shell fail to build for anyone who has
+        # not opted in. Chrome is a machine prerequisite, as
+        # tests/ExGrid.Browser/README.md says (ADR-0026).
+        #
+        # It also used to list `pkgs.chromium` unconditionally, which has no
+        # aarch64-darwin build: this shell failed to EVALUATE on an Apple
+        # Silicon Mac, so `.#browser` had never once been usable on the machine
+        # this project is developed on.
         browser = pkgs.mkShell {
-          packages = [ pkgs.chromium pkgs.nodejs ];
+          packages = [ dotnet pkgs.nodejs ];
           shellHook = ''
-            export CHROMIUM_BIN="${pkgs.chromium}/bin/chromium"
-            echo "chromium: $CHROMIUM_BIN"
+            export DOTNET_ROOT=${dotnet}/share/dotnet
+            export DOTNET_CLI_TELEMETRY_OPTOUT=1
+            export DOTNET_NOLOGO=1
+            echo "node $(node --version), dotnet $(dotnet --version)"
           '';
         };
       });

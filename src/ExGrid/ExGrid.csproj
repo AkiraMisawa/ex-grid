@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net8.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The lowest 8.0.x: the consumer's application resolves it upward, and a higher
+         version here would silently raise the real floor (ADR-0022). The only
+         dependency — ExGrid has no others (ADR-0019). -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

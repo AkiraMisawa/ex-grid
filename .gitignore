@@ -8,3 +8,14 @@ obj/
 *.suo
 
 # spikes/render-bench/results/*.json is kept — it is the measurement evidence for ADR-0003 / 0008
+
+# Agent run instructions — operational, deliberately not committed. They direct one
+# autonomous run; the repository's own rules live in AGENTS.md, the decisions in
+# docs/adr/, and the exit criteria in docs/definition-of-done.md. Keeping them out
+# also keeps the English-only rule about repository content, not about scratch input.
+docs/agent-runs/
+
+# Agent worktrees. A checkout per background agent, so one can build and run the
+# suites without touching the working tree you are editing. Disposable: the branch
+# it sits on carries nothing the main tip does not.
+.claude/worktrees/

@@ -18,11 +18,21 @@ ex-grid/                      ← one repository
 │   ├── ExGrid.Tests/         ← pure logic (xUnit)
 │   ├── ExGrid.Components/    ← component (bUnit)
 │   └── ExGrid.Browser/       ← browser (CDP driver)
+├── samples/
+│   └── ExGrid.DemoHost/      ← runnable Consumer. not shipped
 └── spikes/render-bench/      ← render-cost measurement. disposable
 ```
 
 A Consumer that only wants the grid references only `ExGrid`. **Splitting the repository is not
 needed for that.**
+
+*(Refined while implementing: `samples/ExGrid.DemoHost` was added — a standalone WASM host
+that exercises the component as a real Consumer, serves manual verification, and is the
+fixture `tests/ExGrid.Browser` drives. It follows the same one-directional reference rule as
+every Consumer — it references `ExGrid` and nothing references it — and, unlike the spikes, it
+is in the solution and under the repository-wide build properties, because letting the browser
+layer's fixture rot would break that layer. It is not shipped, so ADR-0022's `net8.0` pin does
+not apply to it; it targets the SDK-bundled ASP.NET Core runtime.)*
 
 ## Reasons
 
@@ -80,6 +90,8 @@ may be too aggressive for a sheet.
   [ADR-0018](./0018-multiple-instances-must-be-independent.md) /
   [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)). Sharing a repository and mixing
   dependencies are different things. **Enforce it structurally through project reference
-  direction.**
+  direction.** *(A test project is not one of the shipped packages, and the browser layer takes
+  an npm dependency of its own — [ADR-0026](./0026-layer-three-runs-on-playwright-against-the-installed-chrome.md).
+  Nothing in `src/` knows that directory exists; the rule this bullet states is about what ships.)*
 - **The repository name stays `ex-grid`.** When ExSheet is actually built, whether an umbrella
   name is wanted can be reconsidered then. No single umbrella noun is invented now.

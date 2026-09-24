@@ -15,6 +15,12 @@ public sealed record ColumnMenuContext(
 public sealed record GridCommand(string Id, string Label, bool Enabled, Action Invoke);
 ```
 
+*(Amended by [ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md):
+`Label` is gone. The core naming the commands is what this section argues for — two Chromes must
+not offer different items — and it says nothing about what they are called. A label is rendering,
+and the core's were English, which no Consumer could change. The wording is resolved from the
+`Id` by Chrome; a command is `(Id, Enabled, Invoke)`.)*
+
 **Chrome does not decide what goes in the menu.** Letting it do so would mean the default and the
 MudBlazor implementations offering different items, which breaks the premise that substituting
 Chrome does not change behaviour.
@@ -25,6 +31,22 @@ notifies the Consumer** ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-
 
 **The Consumer can add its own commands.** Something like "open the report for this book" will
 come up. It is added by the Consumer, not by Chrome — Chrome still only lays them out.
+
+**What closes a popover — the core decides, as it decides the items** *(settled after the
+first manual session found a filter panel that could not be closed at all)*. A column menu or
+filter panel closes three ways, and all three are the core's behaviour, identical under every
+Chrome:
+
+- the same ▾ that opened it — the button is a toggle;
+- Escape, wherever focus sits ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)
+  records where that key fits in its layering);
+- a pointer-down anywhere else in the instance — which **keeps its own meaning**: the click
+  that dismissed the menu still selects the cell or sorts the header it landed on.
+
+Closing any of these ways without OK **discards**, exactly as
+[ADR-0009](./0009-filter-panel-contract.md)'s Cancel does — a dismissal is a Cancel the user
+did not have to aim at. The `Close` callback in the contexts is what Chrome's own affordances
+(an × button, its framework's backdrop) invoke; it is the same discard.
 
 ## Loading indicator — receive and render
 
@@ -54,6 +76,14 @@ public sealed record CellEditorContext(
     Action Cancel);
 ```
 
+*(Wiring narrowed this record: the shipped `CellEditorContext` carries the text as `string` —
+`InitialText`, `TextChanged`, an argument-less `Commit` — because parsing is the Consumer's
+([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md), `GridEditIntent`); a typed
+`object?` here implied a parse the core does not perform.
+[ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md) later added
+`string? Error` to the record, so the editor can paint `aria-invalid` while a Reject holds it
+open.)*
+
 ### Two editing states
 
 Excel has two editing states, and **the same arrow key means different things in each**.
@@ -64,6 +94,30 @@ Excel has two editing states, and **the same arrow key means different things in
 | **Caret** | F2, or a double click | kept, with the caret inside it | **move the caret within the text** |
 
 F2 moves between the two.
+
+**What ends editing by pointer — Excel's click-away commits** *(settled when review found
+the editor had no pointer teardown at all: a click elsewhere moved the selection and left
+the editor floating over the old cell with stale text, and the next Enter committed that
+text onto it)*. A press anywhere that is not the editor — another cell, the header, a
+popover-dismissing press — **commits first**, exactly as Excel does, and the press then
+keeps its own meaning: the click still selects, the header press still sorts. The editor's
+own elements never let a press through to the delegated viewport (its input stops
+propagation, like every interactive element standing over that arithmetic), so "not on the
+editor" is exactly what reaches the grid's handlers. Escape remains the one way to discard.
+
+**A Reject holds the commit** *(added with validation,
+[ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md))*: when the
+Column's Edit Verdict rejects the committed text, no commit gesture closes the editor — and the
+rejected press does **not** keep its own meaning. Letting the click select while the editor
+stands rejected would recreate exactly the stale-editor failure this rule exists to prevent.
+The decision to hold is the core's; Chrome still cannot veto.
+
+**AltGr is typing, not a chord** *(same review, same list)*: Windows reports an AltGr
+character as Control and Alt held together, and several European layouts type `@ { [ €`
+that way. The gates — JS and the C# mirror — admit a printable key with both held, while
+either alone stays a shortcut. And **a grid with no editable column claims no printable
+keys at all**: the gate is told whether any column edits, so a display-only grid does not
+eat the page's keys or round-trip every keystroke.
 
 Many grid products do not implement this and behave as if always in Caret. Continuous entry —
 "type a value, arrow to the next cell" — then does not work, and anyone coming from Excel
@@ -94,6 +148,47 @@ back. **The capture phase is the point.**
 This approach **requires no cooperation from Chrome.** A contract of the form "the editor forwards
 keydown to the core" would make behaviour depend on whether each Chrome implements the forwarding,
 which breaks the rule above.
+
+## How the capture works, given that `preventDefault` is synchronous
+
+*(Settled while implementing.)* The listener has to decide **now** whether to take a key:
+`invokeMethodAsync` is asynchronous, and an answer that came back after the event would be
+too late to stop anything. So the decision cannot be a round trip.
+
+It is not Chrome deciding either. **The core builds the set of keys it claims and hands it
+to its own listener at attach time**; the listener takes exactly those, prevents their
+default, and forwards *the raw event fields*. What the key **means** is resolved back in
+C#, from those fields.
+
+```
+C#  the table: which keys are the core's, and what each one means   ← the authority
+JS  a Set lookup: take it, or let the browser have it               ← the gate only
+```
+
+The canonical form (`[Control+][Shift+][Alt+]{key}`, Meta folded into Control) is the one
+rule that exists in both languages. Keeping the *meaning* on the C# side is what makes that
+duplication safe: if the two ever disagree, the symptom is a key that is taken and does
+nothing — visible — rather than a key that means something different in each place.
+
+**A mode change is a different set**, which is exactly the shape this ADR's table above
+asks for: in Caret the arrows come out of the set and reach the editor; in Overwrite they
+stay in it.
+
+**And the listener only claims a key aimed at the grid itself.** Capturing on the root
+means it also sees keys meant for anything focusable inside — a Consumer's control in a
+Template Column, one of the grid's own action buttons ([ADR-0020](./0020-action-and-template-columns.md)),
+and one day the editor. Taken from there, Space types nothing, the arrows move the
+selection instead of a caret and Ctrl+A selects the grid instead of the field's text. So
+the guard is `event.target === root`: **with no editor and no Interactive mode yet, "the
+focus is on something inside" is the whole of the case where the core does not
+arbitrate.** When those modes arrive they refine exactly this line — the core keeps Esc,
+Enter and Tab while a descendant holds the focus, and the arrows according to the mode,
+which is the table at the top of this section.
+
+**A composing IME is left alone too** (`isComposing`, and the `229` keyCode older browsers
+report). Mid-composition Enter, Escape and the arrows choose and commit a candidate; taking
+them there breaks typing in any language that needs an IME, and moves the grid under a
+half-finished word.
 
 ## Consequences
 

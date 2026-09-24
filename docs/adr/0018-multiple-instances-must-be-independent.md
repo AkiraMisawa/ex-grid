@@ -35,6 +35,11 @@ Ctrl+C ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)), Ctrl+A
 Enter cycling ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)) **all ride on this**,
 so getting it wrong breaks all of them.
 
+*(Confirmed in a browser while implementing: two grids on one page, real keys through
+`Input.dispatchKeyEvent`. Only the focused one moves, and a grid that has just released
+its focus with Escape ignores the arrows entirely — the browser scrolls it instead, which
+is what an untaken key should do.)*
+
 ## 2. Prefix the CSS class names
 
 The CSS in `spikes/render-bench` uses `.r` (row), `.c` (cell), `.sel` (selection), `.window` and

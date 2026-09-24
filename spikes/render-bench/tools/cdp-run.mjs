@@ -2,7 +2,10 @@
 // (Node 24 has global fetch + WebSocket).
 //
 // Usage:
-//   nix develop .#browser -c node tools/cdp-run.mjs <url> [iterations] [waitSeconds] [step] [cols] [buttonLabel]
+//   nix develop .#browser -c node tools/cdp-run.mjs <url> [iterations] [waitSeconds] [step] [cols] [buttonLabel] [save]
+//
+// Pass `save` as the last argument to press "Save results to the server" after a
+// completed run, so the JSON lands in results/ like a manual run's does.
 //
 // Headless Chromium must already be listening on :9222, e.g.
 //   "$CHROMIUM_BIN" --headless=new --no-sandbox --remote-debugging-port=9222 --user-data-dir=/tmp/p about:blank
@@ -17,7 +20,8 @@ const ITER = process.argv[3] ?? '40';
 const WAIT_S = Number(process.argv[4] ?? 90);
 const STEP = process.argv[5] ?? null;
 const COLS = process.argv[6] ?? null;
-const BTN = process.argv[7] ?? 'Measure all 5 modes';
+const BTN = process.argv[7] ?? 'Measure all modes';
+const SAVE = process.argv[8] === 'save';
 
 const logs = [];
 let nextId = 1;
@@ -132,6 +136,16 @@ async function main() {
       outcome = 'COMPLETED';
       break;
     }
+  }
+  if (SAVE && outcome === 'COMPLETED') {
+    await evaluate(ws, `[...document.querySelectorAll('button')].find(b => b.textContent.includes('Save results')).click()`);
+    let saved = 'not confirmed';
+    for (let i = 0; i < 15; i++) {
+      await sleep(1000);
+      const label = await evaluate(ws, `[...document.querySelectorAll('button')].map(b => b.textContent).find(t => t.includes('saved') || t.includes('failed')) ?? ''`);
+      if (label) { saved = label; break; }
+    }
+    console.log('SAVE: ' + saved);
   }
   console.log('\\nOUTCOME: ' + outcome);
   dump();

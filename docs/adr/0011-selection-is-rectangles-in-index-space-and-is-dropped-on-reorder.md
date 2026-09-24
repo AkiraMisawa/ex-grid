@@ -1,8 +1,10 @@
 # Selection is rectangles in position space, and is dropped when the order changes
 
 Selection is held as a **list of rectangles**. The coordinates are **positions in the current
-order** (row index, column index), not row identities. **When the sort order or filter changes,
-the selection is cleared.**
+order** (row index, column index), not row identities. **It is cleared when the Row Sequence
+Version changes** — when the visible order genuinely changed, not on a sort or filter change
+that leaves the sequence identical — **and when the visible-column set changes** (the same
+mis-mapping danger on the other axis; see Consequences).
 
 Disjoint multi-range selection (Ctrl+click) is supported. **There is no cap on selection itself.**
 
@@ -76,6 +78,12 @@ meaning of the operations. Behaviour follows Excel.
 - **Copy refuses when the ranges do not line up** (Excel imposes the same restriction). Together
   with ADR-0005 there are two grounds for refusing a copy — too large, and misaligned shape.
   **Say which one when refusing.**
+  *(Refined while implementing: aligned segments are emitted in **position order** — by top
+  row for a vertical stack, by left column for a horizontal strip — never creation order,
+  which is a gesture artifact; the pasted block must read as the screen does. Ranges whose
+  spans overlap or duplicate are refused as misaligned: stacking them would emit the same
+  cells twice, and a total that is quietly wrong is the exact failure
+  [ADR-0005](./0005-copy-refuses-rather-than-truncates.md) exists to prevent.)*
 - **Bulk entry into disjoint ranges is allowed** (type a value and press Ctrl+Enter to fill every
   selected cell). Without it the main use of disjoint selection does not work.
 
@@ -150,10 +158,94 @@ to the grid" and "committed belongs to the Consumer".
 **When to revisit:** if in real use rows are added and removed often enough that selection keeps
 disappearing, consider re-mapping and pay the three costs above knowingly.
 
+## Reordering columns — decided
+
+**A header can be dragged to a new position within its own block. The grid changes nothing; it
+notifies, and the Consumer pushes back a reordered `Columns`.** Column order is View State that
+`CONTEXT.md` gives to the Consumer, and the grid holds no View State of its own
+([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)) — the same shape as sorting and filtering
+([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). That half was never really
+open; it follows from where the order lives.
+
+### A drag never crosses the pinned boundary
+
+This ADR asked whether dragging in and out of the pinned block should express pinning, and priced
+it as "one gesture changing two pieces of View State at once". The price is higher than that, and
+it is a correctness price rather than a tidiness one. **Pinning is the leading N columns, not a
+flag on a column** (ADR-0004), so position and pinned-ness are the same fact:
+
+```
+PinnedColumnCount = 2      [ A  B ] C  D  E
+drag C to the front        [ C  A ] B  D  E
+                                    ^ B is unpinned, and B was never touched
+```
+
+**One gesture would change the pinned status of a column the user did not drag.** However the count
+is then adjusted — held at 2 so that B falls out, or bumped to 3 so that B stays — the user asked
+for neither. That is the first item of this project's spine: not missing behaviour, but behaviour
+that looks deliberate and is not.
+
+**So a drop that crosses the boundary is not accepted**, and the drop indicator stops at the
+boundary rather than promising a drop that will be refused. Reordering within the pinned block and
+within the scrollable block are both ordinary. Pinning changes through its own explicit act — the
+column menu's "pin up to this column" — and notifies separately. One gesture, one piece of View
+State.
+
+### A Header Group's edge is the same kind of boundary
+
+With tiered headers ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md))
+the same principle applies once more: **what you grab is the unit that moves, and a drag never
+crosses an edge that carries meaning.** Dragging a Header Group's rectangle moves its member
+columns as one; dragging a leaf inside a group reorders **within** the group, and the drop
+indicator clamps at the group's edge exactly as it does at the pinned boundary — it does not
+escalate into a group swap, because a ten-pixel overshoot must not turn "put Before at the end of
+CVA" into six columns changing places. Membership is the Consumer's declaration, never a gesture's
+side effect; ADR-0032 carries the rules.
+
+**That a reorder clears the selection was already decided above** and is untouched: the column axis
+re-maps exactly as the row axis does.
+
+## The discard is announced
+
+*(Added after the fact.)* Dropping the selection under an open editor also throws away text the
+user had typed and not committed — the cell the editor floats over no longer names the row it was
+opened on, so committing would put the value on a stranger. The same loss happens on the other
+side of the same rule: if the row has left the Window by the time the commit lands, there is no
+row instance to carry the Edit Intent's identity, and a positional guess would land the value
+somewhere else.
+
+Both discards were **silent**. That is the failure this project's first principle names, with an
+aggravation: **the user did not do this.** A Consumer-pushed sort or refresh lands, and the
+number they were typing is gone with no gesture of theirs to associate it with. There is nothing
+to reason from.
+
+So the grid raises `OnEditDiscarded` with the reason — `OrderChanged` or `RowLeftTheWindow`. It
+carries no sentence, as ever: Chrome writes the wording and, because nobody provoked this, must
+announce it rather than only paint it (A11Y-16's rule, for the same reason).
+
+The decision **not to commit** is unchanged and is what the rest of this ADR argues for. What
+changed is that the grid now says the value was lost, rather than leaving the user to notice.
+
+Rejected: **committing the text onto the row instance captured when the editor opened.** It loses
+nothing and is wrong for a different reason — the user never pressed Enter, and turning an
+abandoned draft into a commit is a worse failure than losing it loudly.
+
 ## Consequences
 
-- **When the Consumer changes the sort or filter, the grid clears the selection.** In the push
-  form the Consumer passes `Sorts` / `Filter`, so the change is visible to the grid.
+- **Selection is cleared when the Row Sequence Version changes — and the version names the
+  order, not the query.** In the push form the Consumer passes `Sorts` / `Filter`, so the change
+  is visible to the grid. *(Refined while implementing `GridSource.From`: this bullet originally
+  said "when the Consumer changes the sort or filter". A change that leaves the visible sequence
+  exactly as it was — re-applying the same sort, a filter that excludes nothing — does not bump
+  the version and keeps the selection, because there is no reorder to mis-map against
+  ([ADR-0023](./0023-filter-and-sort-semantics-of-the-reference-implementation.md)). Server-side
+  implementations follow the same rule.)*
+- **A change of the visible-column set clears the selection too** *(added while implementing
+  the selection model)*. Column coordinates are visible-column indices, so hiding, showing or
+  reordering columns re-maps that axis exactly as a row reorder re-maps the other. The Row
+  Sequence Version names row order only and cannot carry this; **the trigger is the holder's
+  own** — the grid applies View State, so it knows when the visible columns changed without
+  needing a version from the Consumer.
 - **Ctrl+Down jumps to the last row.** Excel jumps to the edge of a contiguous block, but this
   component displays query results with no blank rows in the middle, and finding a block edge
   would require the whole dataset (which the grid does not have). Jumping to the last row is the

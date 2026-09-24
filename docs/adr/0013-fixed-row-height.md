@@ -67,7 +67,7 @@ have required variable row height is already gone on the Consumer's side.**
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). **It does not group
   either** — the Consumer computes it and puts it in the Window |
 | Expanding and collapsing changes the row count | Treated like a sort change. The grid notifies; the Consumer returns a new Window and `TotalCount` |
-| Group rows look different from detail rows | Needs a **Row Kind** (detail / group / total). **Not yet designed** |
+| Group rows look different from detail rows | Needs a **Row Kind** (detail / group / total). Designed in [ADR-0024](./0024-row-kind-is-a-declared-role-not-a-hierarchy.md): a role the Consumer declares per row, carrying neither depth nor the aggregate |
 
 Only the last is missing, and it has nothing to do with row height — it is about painting and
 about what expands.
@@ -77,6 +77,9 @@ about what expands.
 - **A Row Kind has to be introduced** (detail / group / total). It is distinct from Cell State
   ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) — that names the state of a
   value per cell; this names the role of a row. Do not conflate them.
+  *(Introduced in [ADR-0024](./0024-row-kind-is-a-declared-role-not-a-hierarchy.md). It carries
+  the role and nothing else — no depth, no aggregate, no expansion state — and the height stays
+  this ADR's fixed one.)*
 - **Expanding and collapsing become notifications.** The grid knows neither the row hierarchy nor
   how many rows an expansion adds. The Consumer pushes a new Window.
 - **If in-row expansion is ever needed, this ADR is revisited whole.** It cannot be added
@@ -86,3 +89,103 @@ about what expands.
   ([ADR-0016](./0016-column-width-and-overflow.md)). There is no wrapping onto multiple lines.
 - **`RowHeight` is a public parameter and must not be overridable from an external stylesheet.**
   It is emitted as a CSS variable, but the truth lives in C#.
+- **So is the Viewport's height** *(refined while implementing)*. The same arithmetic needs to
+  know how tall the scrolling area is, in order to answer how many rows fit. Measuring the
+  element would mean a layout round-trip through JavaScript, which is deliberately not on the
+  allowlist ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)) — and a height that
+  only CSS knew would drift the painted rows away from the arithmetic in exactly the way this
+  ADR is about. `ViewportHeight` is therefore a C# parameter emitted inline, like the row
+  height, and the two together are the whole of the vertical geometry.
+- **And so is its width** *(refined while implementing horizontal virtualisation)*. Which columns
+  are on screen is the same question on the other axis, and `getBoundingClientRect` is off the
+  allowlist for the same reason. `ViewportWidth` is a C# parameter alongside the height.
+- **`ViewportHeight` includes the header, which is exactly one row tall** *(refined while
+  implementing horizontal virtualisation)*. The header moved inside the one scroll container so
+  it can be held by `position: sticky` beside the Pinned Columns
+  ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)), which makes it part of the scrollable
+  content: it occupies the content's first row height **and** covers the Viewport's first row
+  height. The two cancel, so `first row = floor(scrollTop / RowHeight)` is unchanged and the rows
+  simply get `ViewportHeight − RowHeight` to fill. Reusing the row height rather than adding a
+  header-height parameter is a deliberate simplification, and **the thing that would overturn it
+  is tiered headers** — a header several rows deep stops being one row tall, and the meaning of
+  `ViewportHeight` changes with it. That is recorded as open in ADR-0004.
+  *(It arrived: [ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)
+  separates `HeaderHeight` and proves the cancellation holds for any band height, and
+  [ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md) stacks tiers of
+  it. The simplification ends; the arithmetic survives.)*
+  *(One consequence is not merely left standing but refused: the header band spends one row height
+  of the browser's 2^25 px scrolling budget, so the true ceiling is one row below the
+  `MaxScrollHeightPx` guard — about 1.19 million rows either way, and paging carries anything
+  longer. `ViewportGeometry` knows only about rows and cannot see this, so **the component checks
+  the spacer's real height itself**: recording the edge in prose and letting the browser clamp the
+  last row away in silence is the failure this ceiling exists to refuse.)*
+- **`ViewportHeight` and `ViewportWidth` are the element's outer size, and the browser tells the
+  grid what its scrollbars take out of it** *(refined while implementing selection; the second
+  half rewritten once the keyboard existed — see below)*. Where the platform draws classic
+  scrollbars rather than overlay ones, roughly 15px of each axis goes to its bar: the element
+  stays the size it declared and its **`clientWidth` shrinks**. The parameters keep meaning the
+  outer size, because that is what the CSS is written from; the **Scrollbar Gutter** is subtracted
+  once, in `ViewportBox`, and both geometry types are built from what is left.
+
+  > **The first version of this bullet said the allowance was the Consumer's to add**, on the
+  > grounds that the grid cannot measure a scrollbar without the layout read the allowlist
+  > refuses. Wiring up the keyboard showed both halves to be wrong. The Consumer cannot make the
+  > allowance: **the same application ships to macOS, where the gutter is 0, and to Windows, where
+  > it is about 15px**, so any constant written into `ViewportHeight` is wrong for half its users
+  > — and the bullet's own "nothing breaks" was already false, because with the Focus at the last
+  > row and the last column, 15px of it sits behind each bar and
+  > [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)'s "the Focus must always be
+  > visible" is broken on two platforms out of three. Invisibly so on the third, which is where
+  > this component is developed. And the grid does not measure anything: the browser **reports**
+  > the gutter when it changes, which is a different mechanism from a layout read and is
+  > allowlisted separately ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
+  > CSS could not have closed this: `scrollbar-gutter: stable` reserves the vertical strip only,
+  > and does nothing at all where the scrollbars are overlays.
+
+- **The gutter's own arithmetic cannot feed itself, and one frame is spent behind it.** The
+  scrollable area (`.ex-spacer`) is sized from the total row and column count, never from the
+  Viewport, so a narrower visible box does not resize the content that made the bar appear —
+  there is no loop for the observation to chase, and nothing writes to the DOM inside the
+  callback, so the browser's own "ResizeObserver loop" warning has no way to arise either.
+  What is accepted is the other end: **the frame between a bar appearing and the report landing
+  is painted from the old visible size**, one slice too generous on a grid that has just gained a
+  scrollbar. The alternative is a layout read of our own before every paint, which is the round
+  trip this whole ADR exists to avoid.
+- **A scrollbar can leave a Viewport with nothing to paint in, and that is refused by name.** A
+  declared height is checked against `RowHeight` when it arrives; the same rule is checked again
+  after the gutter comes off, and the message names the scrollbar rather than the height — the
+  number the Consumer actually wrote is a perfectly ordinary one until a bar is drawn inside it,
+  and on a Mac the same grid would have painted.
+- **"Scroll to this row" is arithmetic here too, and it is not symmetric with the column axis**
+  *(refined while implementing)*. `ViewportGeometry.ScrollTopToReveal` and
+  `ColumnGeometry.ScrollLeftToReveal` exist so that nothing outside them adds or subtracts a
+  header height or a pinned width — the same reason the Auto/Fixed branch lives in one place
+  ([ADR-0016](./0016-column-width-and-overflow.md)). The header cancels out, as above; a Pinned
+  Column does **not**, because it covers the Viewport's edge without occupying anything ahead of
+  the content, so its width has to come off the offset or the revealed column lands underneath
+  it. The browser's `scrollIntoView()` knows neither, which is why it is not used.
+
+## Re-examined while designing the presentation contract — the decision stands
+
+*(Added with ADR-0027–0030. A design-system Wrapper is where "can rows wrap?" arrives from, so
+the question was asked again deliberately rather than left to this ADR's original argument.)*
+
+| | **A. Fixed (this ADR)** | B. Declared variable | C. Measured variable |
+|---|---|---|---|
+| Row position | one multiplication | prefix sum — and the grid holds only a Window (ADR-0001), so the **Consumer** would have to own the sum and push offsets with every Window | unknowable until rendered |
+| Scrollbar | exact | exact, at the Consumer's expense | an estimate that shifts as you scroll — the judder ADR-0016 refuses on the other axis |
+| Memoisation (ADR-0003) | intact | intact (heights are declared, not measured) | broken: measuring requires the render memoisation exists to skip |
+| Overlays / editor (ADR-0008/0010) | arithmetic | arithmetic over pushed offsets | measurement-dependent |
+| JS (ADR-0021) | none | none | per-row observation or layout reads — off the allowlist |
+| Verdict | **kept** | coherent; **refused for now** — a real per-push obligation on every Consumer, bought for a need no Consumer has | **refused outright** — it overturns ADR-0003, 0008, 0010, 0016 and 0021 at once |
+
+B is recorded as the door to open if in-row expansion is ever truly needed; C is not a door.
+
+What keeps A true is now stated as guards rather than assumed
+([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)/[0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)):
+cells never wrap and no wrap mode is offered; a validation message is Cell State plus a popover,
+never an element in the row; the Cell Editor is sized by the core to exactly the cell's box; rules
+between rows and columns are painted (gradients, inset shadows), never borders, so they occupy no
+layout; and a Template Column's content can only be **clipped** by its cell, never grow the row —
+the row's height is declared, so an over-tall template shows itself cut off, visibly wrong rather
+than quietly bending the arithmetic.

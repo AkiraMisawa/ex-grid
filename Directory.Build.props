@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- LangVersion is deliberately not set: net8.0 defaults to C# 12 and the
+         compiler enforces it regardless of SDK version (ADR-0022). -->
+  </PropertyGroup>
+</Project>

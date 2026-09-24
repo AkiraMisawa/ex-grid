@@ -1,0 +1,112 @@
+/* ExGrid.MudBlazor — the Wrapper's stylesheet (ADR-0030). Every rule here is scoped
+   under the Wrapper's own element, .mud-ex-grid, so it outranks the core's bare-class
+   defaults whatever order the two stylesheets loaded in (ADR-0030, load order). It
+   sets Visual Tokens, mapped onto the variables MudThemeProvider emits — so a
+   dark/light switch or a palette edit recolours the grid with no render anywhere
+   (ADR-0027) — and styles the Wrapper's own elements. It touches no geometry, no
+   internal class and no ARIA (ADR-0029/0030). */
+.mud-ex-grid {
+    /* Ground. --ex-font-family is metrics-bearing (ADR-0027/0030): the widths
+       MudExGridPaper cascades were measured for ROBOTO, so this is Roboto and not the
+       theme's typography variable — a theme set to Inter would otherwise put Inter on
+       screen with Roboto's widths in the #### arithmetic, the quiet failure the cascade
+       exists to close. A paper given another font is given its widths in the same
+       call (MudExGridPaper.Font), and writes both inline. */
+    --ex-font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+    --ex-background: var(--mud-palette-surface);
+    --ex-color: var(--mud-palette-text-primary);
+    /* Header: MudBlazor's table header is the same surface at the 500 weight. */
+    --ex-header-background: var(--mud-palette-surface);
+    --ex-header-color: var(--mud-palette-text-primary);
+    --ex-header-font-weight: 500;
+    --ex-header-rule-color: var(--mud-palette-table-lines);
+    /* Rules: rows always, columns only when Bordered, as MudBlazor's tables do. */
+    --ex-row-rule-color: var(--mud-palette-table-lines);
+    --ex-column-rule-color: transparent;
+    --ex-pinned-background: var(--mud-palette-surface);
+    /* Selection from the palette's primary, translucent so the value reads through it
+       (ADR-0008). The Focus outline is the INK colour, not the primary: measured in the
+       browser suite, MudBlazor's dark primary (#776be7) against its dark surface
+       (#373740) is 2.83:1, under the 3:1 UX-9 requires — the same finding, one palette
+       over, that put CanvasText rather than Highlight on the core's default. The ink
+       contrasts with its own surface by construction in both schemes. */
+    --ex-selection-fill: rgba(var(--mud-palette-primary-rgb), 0.18);
+    --ex-focus-row-fill: rgba(var(--mud-palette-primary-rgb), 0.08);
+    --ex-row-hover-background: var(--mud-palette-table-hover);
+    --ex-focus-outline: var(--mud-palette-text-primary);
+    --ex-grid-focus-outline: 2px solid var(--mud-palette-primary);
+    --ex-editor-background: var(--mud-palette-surface);
+    --ex-editor-color: var(--mud-palette-text-primary);
+    --ex-editor-outline: 2px solid var(--mud-palette-primary);
+    --ex-placeholder-background: var(--mud-palette-skeleton);
+    --ex-resize-guide-color: var(--mud-palette-primary);
+    --ex-drop-indicator-color: var(--mud-palette-primary);
+    /* Tone (ADR-0006): a loss in the palette's error, a gain in its success. The
+       Consumer's rule says which cell; the palette says which colour. */
+    --ex-tone-negative-color: var(--mud-palette-error);
+    --ex-tone-positive-color: var(--mud-palette-success);
+    /* Cell State (ADR-0006): the palette's own error and info. */
+    --ex-state-error-color: var(--mud-palette-error);
+    --ex-state-modified-mark: var(--mud-palette-info);
+    --ex-state-stale-color: var(--mud-palette-text-secondary);
+    --ex-state-missing-background: var(--mud-palette-background-gray);
+    --ex-scrollbar-color: var(--mud-palette-gray-light);
+
+    /* The surface itself. Inline-flex so the paper is as wide as its grids, and the
+       toolbar stacks above them. */
+    display: inline-flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    background-color: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    border-radius: var(--mud-default-borderradius, 4px);
+    /* The inset that keeps the grid's square corners inside the paper's round ones
+       (ADR-0030): a rounded paper cannot clip its content — overflow: hidden here
+       would clip the grid's popovers, which UX-11 forbids — so the two never touch. */
+    padding: var(--mud-default-borderradius, 4px);
+    font-family: var(--mud-typography-default-family, Roboto, "Helvetica Neue", Arial, sans-serif);
+}
+.mud-ex-grid.mud-ex-grid-square {
+    border-radius: 0;
+    padding: 0;
+}
+.mud-ex-grid.mud-ex-grid-outlined {
+    border: 1px solid var(--mud-palette-lines-default);
+}
+.mud-ex-grid.mud-ex-grid-bordered {
+    --ex-column-rule-color: var(--mud-palette-table-lines);
+}
+.mud-ex-grid .mud-ex-grid-toolbar {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+/* The Cell Editor's content (ADR-0010): fills the box the core floats over the cell —
+   the box, its outline and its background are the core's (.ex-editor); this is the
+   control inside it, with Material's underline painted as an inset shadow so nothing
+   is laid out. */
+.mud-ex-grid .ex-editor .mud-ex-editor {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    /* No padding of its own: the core's .ex-editor box already pads by the cell's
+       padding, and a second one would set the edited text 16px in against the cell's
+       8px — the text would jump on edit start and commit. */
+    padding: 0;
+    border: none;
+    outline: none;
+    font: inherit;
+    line-height: inherit;
+    background: transparent;
+    color: inherit;
+    box-shadow: inset 0 -2px 0 var(--mud-palette-primary);
+}
+/* A Reject stands (ADR-0034): the underline turns the palette's error colour, the
+   same colour the core's message popover speaks in. Painted, not laid out. */
+.mud-ex-grid .ex-editor .mud-ex-editor.mud-ex-editor-error {
+    box-shadow: inset 0 -2px 0 var(--mud-palette-error);
+}
+/* The loading bar, where the core places its loading seam (ADR-0010). */
+.mud-ex-grid .mud-ex-grid-loading {
+    height: 4px;
+}

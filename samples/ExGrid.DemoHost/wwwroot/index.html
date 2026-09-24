@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ExGrid demo host</title>
+    <base href="/" />
+    <!-- No icon ships with the host; without this line the browser requests
+         /favicon.ico, and its 404 fails the layer-3 console capture (CON-1). -->
+    <link rel="icon" href="data:," />
+    <link rel="preload" id="webassembly" />
+    <link rel="stylesheet" href="_content/ExGrid/ex-grid.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <script type="importmap"></script>
+</head>
+
+<body>
+    <div id="app">Loading…</div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <!-- MudBlazor's script, for the /mud page's theme provider. Its stylesheet is
+         loaded by that page alone, so the other pages stay the bare grid the browser
+         layer measures. -->
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+</body>
+
+</html>

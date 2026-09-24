@@ -1,0 +1,316 @@
+@typeparam TRow where TRow : class
+@using global::ExGrid.Cells
+@using global::ExGrid.Rows
+@using global::ExGrid.Columns
+@using global::ExGrid.Selection
+
+@*
+    The memoisation boundary sits at the row; cells are plain markup (ADR-0003).
+    ShouldRender is hand-written because Blazor's automatic parameter change detection
+    treats a mutable reference-typed parameter as "may have changed" even when the
+    reference is identical (measured; ADR-0003).
+
+    A row paints the Pinned Columns, then one spacer standing in for everything
+    virtualised away to the left, then the scrollable columns on screen (ADR-0004). The
+    pinned cells come first because they are `position: sticky` and therefore still
+    occupy their place in the flow — the spacer's width is measured from where they end.
+
+    Public because the row boundary is a documented architectural seam and the bUnit
+    layer counts its renders; it is not meant to be used by a Consumer directly.
+    Selection is never painted here — rows know nothing about it (ADR-0008). The one
+    piece of keyboard state a row does paint is the chosen action of an Interactive cell,
+    because nothing else can draw a button's box (ADR-0037) — and only the Focus row is
+    ever handed it.
+*@
+@* role and the absolute index (ADR-0033): the DOM holds a Window, so the position
+   among siblings is wrong in exactly the way virtualisation makes it — aria-rowindex
+   states the 1-based absolute one. aria-busy while a Placeholder: values that have
+   not arrived must not be read out as though they had (ADR-0004). *@
+<div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder)"
+     role="row" aria-rowindex="@(RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
+    @for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
+    {
+        var column = Columns[i];
+        @if (!column.PaintsValue)
+        {
+            @* An Action or Template cell stops the mouse here (ADR-0020). The event
+               reaches this element by bubbling from whatever inside it turned pointer
+               events back on — an ancestor's own `pointer-events: none` does not stop a
+               bubbled event — and left to carry on it would reach the Viewport handler
+               with offsets measured from a button, which would move the selection to
+               whichever cell that arithmetic happened to name.
+
+               mouseup is deliberately NOT stopped: it carries no position into the
+               Viewport's handler, which only ends the drag. Swallowed here, a drag
+               released over a button would leave the grid still dragging, and the next
+               move with a button held would extend the old selection to the pointer. *@
+            <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: true, StateOf(column), column.Align)" style="@Styles.PinnedCell(i)"
+                 role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                 @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column, i)</div>
+        }
+        else
+        {
+            var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
+            var value = column.Value(Row);
+            var text = TextOf(column, value);
+            var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
+            @* aria-label only when hashed: the accessible name of a #### cell is the
+               real value (ADR-0016/0033), and on every other cell the text names itself. *@
+            <div class="@CellClasses.For(numeric, pinned: true, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.PinnedCell(i)"
+                 role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                 aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
+        }
+    }
+    @if (!Placeholder && Scrollable is { } scrollable)
+    {
+        @if (Styles.HasGap(scrollable.Start))
+        {
+            <div class="ex-gap" style="@Styles.Gap(scrollable.Start)" aria-hidden="true"></div>
+        }
+        @for (var i = scrollable.Start; i < scrollable.Start + scrollable.Count; i++)
+        {
+            var column = Columns[i];
+            @if (!column.PaintsValue)
+            {
+                <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: false, StateOf(column), column.Align)" style="@Styles.Cell(i)"
+                     role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                     @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column, i)</div>
+            }
+            else
+            {
+                var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
+                var value = column.Value(Row);
+                var text = TextOf(column, value);
+                var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
+                <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.Cell(i)"
+                     role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                     aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
+            }
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public TRow Row { get; set; } = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
+
+    /// <summary>The resolved column widths and the strings they reach CSS as, index-aligned
+    /// with Columns. The parent replaces the instance only when a width actually moved
+    /// (ADR-0016), which is what keeps this a reference comparison.</summary>
+    [Parameter, EditorRequired] public ColumnStyles Styles { get; set; } = default!;
+
+    /// <summary>Which scrollable columns are on screen, or null when the Pinned Columns
+    /// cover the whole Viewport (ADR-0004).</summary>
+    [Parameter] public ColumnRange? Scrollable { get; set; }
+
+    /// <summary>
+    /// Paint the row as a Placeholder: Pinned Columns only, and a bar in place of the
+    /// rest (ADR-0004). The pinned cells stay because a Pinned Column is the landmark
+    /// that survives panning sideways — having it blink out and back on every fling is
+    /// the thing pinning exists to prevent. The 21 rows × 2 pinned cells that costs is
+    /// noise beside the scrollable cells being skipped.
+    /// </summary>
+    [Parameter] public bool Placeholder { get; set; }
+
+    [Parameter] public CellTextMetrics Metrics { get; set; }
+
+    /// <summary>The row's absolute, 0-based position in the whole result — what
+    /// <c>aria-rowindex</c> (1-based) and the cell ids are written from (ADR-0033).
+    /// Constant for a given row within a Window, so memoisation is untouched by it.</summary>
+    [Parameter] public int RowIndex { get; set; }
+
+    /// <summary>The instance's id prefix (ADR-0018/0033): two grids on one page must
+    /// not share a cell id, or <c>aria-activedescendant</c> resolves into the wrong
+    /// grid. Constant for the component's life.</summary>
+    [Parameter] public string IdPrefix { get; set; } = "";
+
+    /// <summary>
+    /// Asks the Consumer what state a cell is in (ADR-0006). Null means every cell is
+    /// Normal and costs nothing. <b>The delegate's identity is the change signal</b>: a
+    /// lookup handed over unchanged is taken to mean the metadata behind it is unchanged,
+    /// exactly as an unchanged row instance means unchanged values (ADR-0003).
+    /// </summary>
+    [Parameter] public CellStateOf<TRow>? CellState { get; set; }
+
+    /// <summary>
+    /// What role each row plays (ADR-0024). Passed down as the delegate and invoked here,
+    /// not invoked by the parent and passed as a value: the delegate's identity is the
+    /// change signal, exactly as it is for <see cref="CellState"/>, and a role that could
+    /// also change because the parent happened to re-render would arrive on the next
+    /// scroll — quietly, and at a moment nobody chose.
+    /// </summary>
+    [Parameter] public Func<TRow, RowKind>? RowKind { get; set; }
+
+    /// <summary>Where a pressed action is reported (ADR-0020). A plain delegate rather
+    /// than an EventCallback because it is compared by reference in
+    /// <see cref="ShouldRender"/>; the parent holds it in a field for the same reason
+    /// (ADR-0003).</summary>
+    [Parameter] public Func<GridActionEventArgs<TRow>, Task>? OnAction { get; set; }
+
+    /// <summary>
+    /// The one cell of this row that Space has engaged, or <see cref="CellEngagement.None"/>
+    /// — which every row but the Focus row is handed, so none of them re-renders for it
+    /// (ADR-0037). A value, compared by content: the chosen action moving is exactly a
+    /// change this row paints.
+    /// </summary>
+    [Parameter] public CellEngagement Engagement { get; set; } = CellEngagement.None;
+
+    private TRow? _renderedRow;
+    private IReadOnlyList<GridColumn<TRow>>? _renderedColumns;
+    private ColumnStyles? _renderedStyles;
+    private ColumnRange? _renderedScrollable;
+    private bool _renderedPlaceholder;
+    private CellTextMetrics _renderedMetrics;
+    private CellStateOf<TRow>? _renderedCellState;
+    private Func<TRow, RowKind>? _renderedRowKind;
+    private Func<GridActionEventArgs<TRow>, Task>? _renderedOnAction;
+    private int _renderedRowIndex;
+    private CellEngagement _renderedEngagement = CellEngagement.None;
+
+    protected override void OnInitialized()
+    {
+        // The first render happens unconditionally — Blazor does not consult
+        // ShouldRender for it — so record what it will paint here. Left unrecorded,
+        // every row pays one extra full render on the second parameter push, which the
+        // render-count tests exist to catch (ADR-0003).
+        Record();
+    }
+
+    protected override bool ShouldRender()
+    {
+        // Identity, not mutation, is the change signal (ADR-0003): a Consumer that
+        // rewrites a row in place gets no repaint — it hands over a new instance. The
+        // two additions here are values, so they compare by content: scrolling sideways
+        // genuinely changes what a row paints, and no memoisation should hide that.
+        if (ReferenceEquals(_renderedRow, Row)
+            && ReferenceEquals(_renderedColumns, Columns)
+            && ReferenceEquals(_renderedStyles, Styles)
+            && _renderedScrollable == Scrollable
+            && _renderedPlaceholder == Placeholder
+            && _renderedMetrics == Metrics
+            && ReferenceEquals(_renderedCellState, CellState)
+            && ReferenceEquals(_renderedRowKind, RowKind)
+            && ReferenceEquals(_renderedOnAction, OnAction)
+            && _renderedRowIndex == RowIndex
+            && _renderedEngagement == Engagement)
+        {
+            return false;
+        }
+
+        Record();
+        return true;
+    }
+
+    private void Record()
+    {
+        _renderedRow = Row;
+        _renderedColumns = Columns;
+        _renderedStyles = Styles;
+        _renderedScrollable = Scrollable;
+        _renderedPlaceholder = Placeholder;
+        _renderedMetrics = Metrics;
+        _renderedCellState = CellState;
+        _renderedRowKind = RowKind;
+        _renderedOnAction = OnAction;
+        _renderedRowIndex = RowIndex;
+        _renderedEngagement = Engagement;
+    }
+
+    /// <summary>One cell's id: instance prefix, absolute row, column (ADR-0033). What
+    /// the root's <c>aria-activedescendant</c> resolves to.</summary>
+    private string CellId(int column) => CellIds.Cell(IdPrefix, RowIndex, column);
+
+    /// <summary>
+    /// What an Action or Template cell paints. A Template Column's fragment is rendered
+    /// <em>inside</em> this row rather than in a component of its own: it then rides the
+    /// row's memoisation boundary instead of adding one per cell, which is what
+    /// ADR-0003 measured as expensive. An Action Column's buttons are plain markup for
+    /// the same reason — a boundary is the cost, not the content (ADR-0020).
+    /// </summary>
+    private RenderFragment CellContent(GridColumn<TRow> column, int index) => builder =>
+    {
+        if (column.Template is { } template)
+        {
+            // The focus request reaches this cell's content on the one render that hands
+            // it over, and zero reaches every other (ADR-0037): the content focuses its
+            // own control, because the core holds no reference to one it did not render.
+            var request = Engagement.Column == index ? Engagement.FocusRequest : 0;
+            builder.AddContent(0, template(new TemplateCellContext<TRow>(Row, request)));
+            return;
+        }
+
+        var sequence = 1;
+        for (var a = 0; a < column.Actions.Count; a++)
+        {
+            var action = column.Actions[a];
+            var fired = action;
+            // The chosen action of an Interactive cell (ADR-0037): the keyboard stays on
+            // the root, so nothing matches :focus-visible — this button is painted instead,
+            // and carries the id the root's aria-activedescendant names. Only this one has
+            // an id; the root never names any other button.
+            var chosen = Engagement.Column == index && Engagement.Action == a;
+            builder.OpenElement(sequence++, "button");
+            builder.AddAttribute(sequence++, "type", "button");
+            builder.AddAttribute(sequence++, "class", chosen ? ChosenActionClass(action) : ActionClass(action));
+            builder.AddAttribute(sequence++, "id", chosen ? CellIds.Action(IdPrefix, RowIndex, index, a) : null);
+            // Never holding the keyboard (ADR-0033/0037). Out of the page's tab sequence,
+            // because the root is the grid's one tab stop; and not focused by the pointer
+            // either, because a press dragged off a button — the platform's way to cancel
+            // a click — would otherwise leave it focused, and Enter would then fire it
+            // natively: the key ADR-0020 says never fires. The click itself still lands.
+            builder.AddAttribute(sequence++, "tabindex", "-1");
+            builder.AddEventPreventDefaultAttribute(sequence++, "onmousedown", true);
+            builder.AddAttribute(sequence++, "title", action.Label);
+            // An icon-only button has no text to name it. `title` alone is the
+            // last-resort source in the accessible-name computation — ignored under
+            // several screen-reader configurations and unavailable to touch — so the
+            // guarantee GridAction's mandatory label claims is delivered by aria-label,
+            // with title left as the tooltip.
+            if (action.CssClass is not null)
+                builder.AddAttribute(sequence++, "aria-label", action.Label);
+            builder.AddAttribute(sequence++, "onclick",
+                EventCallback.Factory.Create<MouseEventArgs>(this, () => FireAsync(column, fired)));
+            builder.AddContent(sequence++, action.CssClass is null ? action.Label : null);
+            builder.CloseElement();
+        }
+    };
+
+    private static string ActionClass(GridAction action)
+        => action.CssClass is null ? "ex-action" : "ex-action " + action.CssClass;
+
+    /// <summary>Composed only for the one chosen button, on the render that paints it
+    /// (ADR-0029/0037).</summary>
+    private static string ChosenActionClass(GridAction action)
+        => action.CssClass is null ? "ex-action ex-action-chosen" : "ex-action ex-action-chosen " + action.CssClass;
+
+    // The grid reports; it does not act (ADR-0020). What the action opens happens
+    // outside the grid, and the Consumer holds the state.
+    private Task FireAsync(GridColumn<TRow> column, GridAction action)
+        => OnAction?.Invoke(new GridActionEventArgs<TRow>(Row, column.Name, action.Name)) ?? Task.CompletedTask;
+
+    /// <summary>One lookup per painted cell, including the Pinned Columns of a
+    /// Placeholder row — those paint their real values, so blinking their state away
+    /// mid-fling would be the landmark lying about itself (ADR-0004).</summary>
+    private Cells.CellState StateOf(GridColumn<TRow> column) => CellState?.Invoke(Row, column) ?? default;
+
+    /// <summary>The one string a cell paints, measures and decides overflow on — count
+    /// and render must see the same text — and the one copy, the value list and the
+    /// editor show for the value (ADR-0005/0006): the column's Format where it declares
+    /// one, the bare ToString where it does not. Null is a Blank and paints empty
+    /// (ADR-0023).</summary>
+    internal static string CellText(GridColumn<TRow> column, TRow row)
+        => TextOf(column, column.Value(row));
+
+    /// <summary>The same text from a value already fetched — the row fetches once and
+    /// derives both the text and the tone from it.</summary>
+    internal static string TextOf(GridColumn<TRow> column, object? value)
+        => value is null
+            ? ""
+            : column.Format is { } format ? format(value) : value.ToString() ?? "";
+
+    /// <summary>The column's tone for a value (ADR-0006): None without a rule, None for a
+    /// null — a Blank has no sign and the rule is never asked about it.</summary>
+    internal static CellTone ToneOf(GridColumn<TRow> column, object? value)
+        => value is not null && column.Tone is { } tone ? tone(value) : CellTone.None;
+}

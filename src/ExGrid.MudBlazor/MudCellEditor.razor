@@ -1,0 +1,47 @@
+@* The Cell Editor seam's content (ADR-0010/0030): a bare input, filling the box the
+   core floats over the cell — the core owns the box, the keys and the text's
+   lifecycle; this only paints the control and reports what is typed. Material's
+   touch is an underline in the primary colour, painted, not laid out, and in the
+   error colour while a Reject stands (ADR-0034). A MudTextField with its label,
+   helper text and 48px of comfort would not fit a 28px cell and is the wrong control
+   here. *@
+<input class="@(Context.Error is null ? "mud-ex-editor" : "mud-ex-editor mud-ex-editor-error")"
+       value="@Context.InitialText" @oninput="OnInput" @ref="_input"
+       aria-label="@Context.Column"
+       aria-invalid="@(Context.Error is null ? null : "true")"
+       aria-describedby="@Context.MessageId" />
+
+@code {
+    private ElementReference _input;
+    private int _focusedRequest = -1;
+    private bool _needsFocus;
+
+    [Parameter, EditorRequired] public CellEditorContext Context { get; set; } = default!;
+
+    private void OnInput(ChangeEventArgs e) => Context.TextChanged(e.Value?.ToString() ?? "");
+
+    protected override void OnParametersSet()
+    {
+        // The core asks for focus on opening, on F2, and after a Reject that a
+        // click-away had moved focus off the control (ADR-0034); each request is a new
+        // number, and the control focuses itself for each (ADR-0010/0030).
+        if (Context.FocusRequest != _focusedRequest)
+            _needsFocus = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_needsFocus)
+            return;
+        _needsFocus = false;
+        _focusedRequest = Context.FocusRequest;
+        try
+        {
+            // Blazor's own FocusAsync — focus stays out of JavaScript (ADR-0021).
+            await _input.FocusAsync();
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+}

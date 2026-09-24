@@ -71,6 +71,20 @@ so one Ctrl+Z, ADR-0007).
   paste whose shape does not match. **Say which one when refusing.**
 - **Users arriving from Excel will try "range → 1 cell" and be refused.** The message should say
   that reselecting a target of the same shape will work.
+- *(Refined while implementing:)* **The two refused rows carry distinct refusal reasons**, so
+  Chrome can attach the "reselect a target of the same shape" message to the single-cell
+  case specifically. The multiple rule is formally: a target of M×N accepts a source of m×n
+  iff m divides M and n divides N. **A source larger than 1×1 into a disjoint target is
+  refused** even when every range is individually a multiple — Excel refuses the same
+  operation, and 1×1 (which fills every range: the bulk-entry shape of
+  [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md))
+  stays the only multi-range paste. An empty target refuses with its own reason, and
+  nothing happens.
 - **The selection count display may live in Chrome.** Counting is the core's; displaying is
   Chrome's, per the rule in
   [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).
+- *(Added later, by [ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md):)* **A
+  fifth refusal reason joins the four above** — the target covers a column that is not `Editable`.
+  It is the first that is a declaration ("may not") rather than a shape ("cannot"), so it is
+  checked *before* the shape rules, whose "reselect a target of the same shape" advice would
+  otherwise send the user after something that can never succeed.

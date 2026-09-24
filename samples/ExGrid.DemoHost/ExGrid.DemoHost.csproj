@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <!-- net10.0 on purpose: this host is not shipped, so ADR-0022's net8.0 pin does not
+         apply, and the nix dev shell carries only the SDK-bundled ASP.NET Core 10
+         runtime. The net8 floor stays verified by the test projects. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.7" PrivateAssets="all" />
+    <!-- The latest MudBlazor, above the Wrapper's 9.0.0 floor on purpose: a Consumer's
+         application resolves the dependency upward (ADR-0022), and this host is where
+         that is seen to work. -->
+    <PackageReference Include="MudBlazor" Version="9.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The demo host is a Consumer: it references the core and the Wrapper, and
+         nothing references it (ADR-0019). The /mud page is the browser layer's fixture
+         for the Wrapper contract (ADR-0030). -->
+    <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
+    <ProjectReference Include="..\..\src\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
+  </ItemGroup>
+
+</Project>

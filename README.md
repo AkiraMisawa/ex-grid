@@ -8,9 +8,13 @@ Two products share this repository and ship as separate packages
 - **ExGrid** — display-oriented. Fully specified; this is what gets built first.
 - **ExSheet** — edit-oriented. Later.
 
-**Current status: the specification is settled; there is no implementation yet.**
-The specification lives in [`docs/adr/`](docs/adr/) (22 decision records) and the
-domain glossary in [`CONTEXT.md`](CONTEXT.md).
+**Current status: the specification is settled; implementation is underway** — the
+pure-logic core and the component layer exist, virtualised on both axes, with pinned
+columns, selection, the keyboard (including entering a cell), the Cell Editor and the
+clipboard. What is left is recorded in
+[`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
+in [`docs/adr/`](docs/adr/) (37 decision records) and the domain glossary in
+[`CONTEXT.md`](CONTEXT.md).
 
 ## Getting started
 
@@ -44,6 +48,15 @@ A second shell provides a headless Chromium and Node.js for the render spike:
 nix develop .#browser -c node ...
 ```
 
+To see the component running, start the demo host and open <http://localhost:5299>:
+
+```sh
+nix develop -c dotnet run --project samples/ExGrid.DemoHost
+```
+
+Stop it with `kill $(lsof -ti tcp:5299)` — not `pkill -f`, which matches the calling
+shell's own command line and kills it.
+
 > **Nix gotcha:** flakes only see git-tracked files. `git add` any new file before
 > building (committing is not required), or the build will not see it.
 
@@ -70,6 +83,9 @@ your environment alone.
 |---|---|
 | [`CONTEXT.md`](CONTEXT.md) | Domain glossary. The vocabulary used everywhere; read it first |
 | [`docs/adr/`](docs/adr/) | Architecture decision records — the specification and the reasons behind it |
+| [`src/ExGrid/`](src/ExGrid/) | The ExGrid package: pure-logic core and the Blazor components |
+| [`tests/`](tests/) | The gating test layers: `ExGrid.Tests` (xUnit) and `ExGrid.Components` (bUnit) |
+| [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | Runnable Consumer for manual verification; the browser layer's fixture. Not shipped |
 | [`spikes/render-bench/`](spikes/render-bench/) | Disposable render-cost measurement harness (see its README) |
 | [`AGENTS.md`](AGENTS.md) | Working rules for AI agents; useful reading for humans too |
 

@@ -1,0 +1,36 @@
+{
+  "chrome": {
+    "PST-6": {
+      "sourceCells": 400,
+      "bytes": 10400400,
+      "parseAndIntentMs": 2714,
+      "nextKeyMs": 15
+    },
+    "DOM-5": {
+      "elements": 246,
+      "cells": 210,
+      "rows": 21
+    },
+    "BIG-7": {
+      "mountToFirstPaintedRowMs": 772,
+      "totalRows": 100000
+    }
+  },
+  "msedge": {
+    "PST-6": {
+      "sourceCells": 400,
+      "bytes": 10400400,
+      "parseAndIntentMs": 2690,
+      "nextKeyMs": 13
+    },
+    "DOM-5": {
+      "elements": 246,
+      "cells": 210,
+      "rows": 21
+    },
+    "BIG-7": {
+      "mountToFirstPaintedRowMs": 749,
+      "totalRows": 100000
+    }
+  }
+}

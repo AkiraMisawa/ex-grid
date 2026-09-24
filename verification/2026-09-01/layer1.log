@@ -1,0 +1,9 @@
+warning: Git tree '/Users/akira338/github/ex-grid' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid -> /Users/akira338/github/ex-grid/src/ExGrid/bin/Debug/net8.0/ExGrid.dll
+  ExGrid.Tests -> /Users/akira338/github/ex-grid/tests/ExGrid.Tests/bin/Debug/net8.0/ExGrid.Tests.dll
+  Run tests: '/Users/akira338/github/ex-grid/tests/ExGrid.Tests/bin/Debug/net8.0/ExGrid.Tests.dll' [net8.0|arm64]
+  Passed! - Failed: 0, Passed: 402, Skipped: 0, Total: 402, Duration: 154ms - ExGrid.Tests.dll (net8.0|arm64)
+  Tests succeeded: '/Users/akira338/github/ex-grid/tests/ExGrid.Tests/bin/Debug/net8.0/ExGrid.Tests.dll' [net8.0|arm64]

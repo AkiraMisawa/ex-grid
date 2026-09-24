@@ -1,0 +1,17 @@
+{
+  "DOM-5": {
+    "elements": 246,
+    "cells": 210,
+    "rows": 21
+  },
+  "BIG-7": {
+    "mountToFirstPaintedRowMs": 417,
+    "totalRows": 100000
+  },
+  "PST-6": {
+    "sourceCells": 400,
+    "bytes": 10400400,
+    "parseAndIntentMs": 2686,
+    "nextKeyMs": 6
+  }
+}

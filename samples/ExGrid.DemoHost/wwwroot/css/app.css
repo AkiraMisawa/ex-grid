@@ -1,0 +1,83 @@
+/* Host-side styling only. The grid's own classes are ex- prefixed and come from
+   _content/ExGrid/ex-grid.css; nothing here may touch them (ADR-0018). */
+body {
+    margin: 0;
+    padding: 1rem 2rem 3rem;
+    font-family: system-ui, sans-serif;
+}
+
+.demo-nav {
+    display: flex;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #ddd;
+}
+
+.demo-nav span {
+    font-weight: 600;
+}
+
+.demo-status {
+    font-variant-numeric: tabular-nums;
+}
+
+.demo-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* The /mud page's papers: the header in the palette's primary, its ink the palette's
+   own contrast colour for primary (white in both bundled schemes, and it follows a
+   palette edit the way a literal white would not), at the bold weight, its rule a
+   shade darker so the band reads as one surface. Visual Tokens only (ADR-0027/0029):
+   set on the Wrapper's element, they outrank the Wrapper's own defaults on the bare
+   class, and nothing inside the grid is reached. */
+.mud-ex-grid.demo-paper-a,
+.mud-ex-grid.demo-paper-b {
+    --ex-header-background: var(--mud-palette-primary);
+    --ex-header-color: var(--mud-palette-primary-text);
+    --ex-header-font-weight: 700;
+    --ex-header-rule-color: var(--mud-palette-primary-darken);
+}
+
+.demo-pane {
+    max-width: 60rem;
+    margin-bottom: 2rem;
+}
+
+/* What a Template Column paints on the cells page. Nothing here turns pointer events
+   back on, so clicking the bar still selects the cell as any other click does — only a
+   control that wants its own click takes ex-interactive (ADR-0020). */
+.demo-bar {
+    height: 10px;
+    margin-top: 9px;
+    background: rgba(128, 128, 128, 0.2);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.demo-bar-fill {
+    height: 100%;
+    background: #3c78d8;
+}
+
+/* A Consumer's own control inside a Template Column. It keeps the keyboard while it has
+   focus — the grid's keys stay out (ADR-0020). */
+.demo-note {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    border: 1px solid rgba(128, 128, 128, 0.4);
+    border-radius: 2px;
+}
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.6rem 1.25rem;
+    background: lightyellow;
+}

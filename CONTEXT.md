@@ -54,6 +54,17 @@ The rectangle of rows × columns the grid is actually painting. Render cost is d
 fits in here, not by the size of the data.
 _Avoid_: visible area, visible range, window
 
+**Scrollbar Gutter**:
+How much of the declared Viewport its own scrollbars occupy. A classic scrollbar is drawn
+**inside** the box the element declares and takes about 15px off that axis; an overlay scrollbar
+(macOS) takes nothing. It is neither assumed nor measured — **the browser reports it when it
+changes**, and the grid subtracts it before any geometry is computed
+([ADR-0013](./docs/adr/0013-fixed-row-height.md),
+[ADR-0021](./docs/adr/0021-javascript-is-allowlisted-not-minimised.md)). `ViewportWidth` and
+`ViewportHeight` keep meaning the **outer** size.
+_Avoid_: scrollbar width, padding, inset (the width is per platform and per user setting, and the
+strip is not padding — it belongs to the browser)
+
 **View State**:
 The non-data settings a user has applied to a screen — column widths, column order, pinned
 columns, sort order, filter conditions. **Being serialisable for external persistence is a
@@ -142,6 +153,14 @@ the Consumer in the column definition** — only the Consumer knows the cardinal
 ([ADR-0009](./docs/adr/0009-filter-panel-contract.md)).
 _Avoid_: filter kind, filter type
 
+**Blank**:
+The absence of a value as Filter and Sort see it — the Column's value accessor returned null.
+Excel's word. A Blank matches only `IsBlank` (and an `In` list that explicitly contains it),
+and sorts last in both directions
+([ADR-0023](./docs/adr/0023-filter-and-sort-semantics-of-the-reference-implementation.md)).
+An empty string is a value, not a Blank.
+_Avoid_: null (implementation word, not user-facing), empty (an empty string is a value)
+
 ### Rendering and interaction
 
 **Chrome**:
@@ -149,7 +168,60 @@ The parts of the grid's own UI that can be substituted — the filter panel, the
 cell editor, the loading indicator. **It renders and calls back; it does not decide meaning**
 (which operators exist, and what a filter means, are the core's). Substituting it does not change
 behaviour.
-_Avoid_: theme, skin (those name appearance only), template
+_Avoid_: skin (appearance only is a **Theme**, a term of its own below), template
+
+**Theme**:
+The appearance of one instance — the values of its Visual Tokens. It travels entirely in CSS,
+set on any element wrapping the instance root, and never through C#: a palette edit or a
+dark/light switch costs no render
+([ADR-0027](./docs/adr/0027-appearance-travels-in-css-geometry-travels-in-csharp.md)).
+Distinct from Chrome — Chrome renders behavioural UI and calls back; a Theme only colours what
+is already painted.
+_Avoid_: skin, style, look and feel
+
+**Wrapper**:
+A package that adapts one design system to the presentation contract: it maps the system's
+palette to a Theme, its density words onto Density, supplies Cell Metrics for its font, and adds
+the system's outer chrome around the instance root. It owns no geometry, no DOM and no state
+([ADR-0030](./docs/adr/0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)).
+A Consumer's own CSS file doing the same is a minimal Wrapper.
+_Avoid_: theme package, skin, integration (ExGrid.Fluxor integrates a store and wraps nothing)
+
+**Density**:
+A named preset — Comfortable / Standard / Compact / Excel — resolving into a complete Grid
+Metrics, so its numbers are consistent with each other. An explicitly passed value beats the
+preset, per value; the default is Compact, which is today's numbers
+([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)). No design
+system's density word is the grid's: a Wrapper maps its own onto these.
+_Avoid_: spacing, size, compact mode (Compact is one preset, not the concept)
+
+**Grid Metrics**:
+The single resolved geometry of an instance — row and header heights, font size, digit width,
+paddings. The virtualisation arithmetic, the overlays, the editor box, Auto width and `####`
+all read it, and the Geometry Tokens the DOM lays out with are emitted from it, so arithmetic
+and paint cannot disagree
+([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)).
+_Avoid_: layout, dimensions, theme (metrics are geometry, not appearance)
+
+**Geometry Token / Visual Token**:
+The two kinds of `--ex-*` custom property. A **Geometry Token** is written inline on the
+instance root from the Grid Metrics and is read-only — an inline declaration outranks any
+stylesheet, and overriding one is unsupported. A **Visual Token** is only ever read by the
+stylesheet, with a default, and is the whole surface a Theme sets. The metrics-bearing Visual
+Tokens — font family and weight — oblige whoever sets them to supply new Cell Metrics
+([ADR-0027](./docs/adr/0027-appearance-travels-in-css-geometry-travels-in-csharp.md),
+[ADR-0029](./docs/adr/0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)).
+_Avoid_: CSS variable (the mechanism, not the contract), design token (suggests a
+design-system-wide vocabulary; these are one component's)
+
+**Primary Modifier**:
+The modifier key that means "add to what is selected" — Ctrl+click adding a range, Ctrl+A
+selecting everything. **Control everywhere, and Command as well on an Apple platform**; the
+Meta key is the OS's own elsewhere (Win+Arrow snaps a window), so the grid does not answer to
+it there. Which platform it is can only be answered by the browser, so it is asked once and
+the keyboard and the mouse read the same answer
+([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)).
+_Avoid_: Ctrl (that names one platform's key), Cmd, accel key
 
 **Cell Editor**:
 The single input floated over the cell being edited. **Never placed inside the row** — that
@@ -169,7 +241,11 @@ _Avoid_: input mode / edit mode (both read as "editing" and the distinction disa
 **Interactive**:
 The state of being **inside** a cell. Entered with Space and left with Esc, on an Action Column
 with several actions or on a Template Column. **The third mode alongside Overwrite / Caret**, and
-it matches the ARIA grid pattern.
+it matches the ARIA grid pattern. **Two mechanisms, one contract**: over the grid's own actions it
+is a mode the core holds — the keyboard stays on the grid, the arrows choose an action and Space
+fires it; in a Template cell it is the Consumer's control holding DOM focus, taken when the core
+asks and never by the core reaching in. Either way Enter never fires, and Esc leaves
+([ADR-0037](./docs/adr/0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)).
 _Avoid_: focus mode, edit mode (confusable with Caret)
 
 **Cell State**:
@@ -179,6 +255,14 @@ stale / missing / error / modified. The appearance belongs to the theme; any acc
 vocabulary does not enter the grid**
 ([ADR-0006](./docs/adr/0006-grid-owns-a-generic-cell-state-vocabulary.md)).
 _Avoid_: cell status, flag, decoration
+
+**Tone**:
+What a Column's rule says a value means — positive / negative — for the theme to paint. The
+value-derived half of "why a cell looks different": decided by looking at the value and declared
+by the Consumer on the Column, where a Cell State cannot be derived from the value and is asked
+for from outside. A tone names a meaning, never a colour; the grid paints none of its own
+([ADR-0006](./docs/adr/0006-grid-owns-a-generic-cell-state-vocabulary.md)).
+_Avoid_: colour, conditional formatting, style
 
 **Cell Metadata**:
 Information a cell carries that is not the value itself. It affects display and decoration but is
@@ -203,18 +287,63 @@ rows. Reset is **deleting an entry** (the original is still in the base, so noth
 saving).
 _Avoid_: diff, patch, change set, draft
 
+**Editable**:
+A column's declaration that a write may land in it. It gates both the Cell Editor opening and the
+writes that arrive without one — a paste, or a Ctrl+Enter fill. A target covering a column that is
+not Editable is refused whole, never applied in part
+([ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
+_Avoid_: read-only, locked, protected, disabled
+
 **Edit Intent**:
 The notification the grid raises when a user commits an edit — (row identity, column, new value).
 The grid changes nothing itself. The screen changes when the Consumer returns new row instances.
 _Avoid_: change event, commit, update
+
+**Edit Verdict**:
+The Consumer's judgement on one commit, asked by the grid at the moment of committing —
+**Accept** / **Flag** (applied, painted as Error with a message) / **Reject** (the editor stays
+open; Escape remains the only exit without applying). A Reject judges **the value**, which is why
+the place to correct it stays open and every gesture that would commit that value stops — as
+against a **Refusal**, which judges the operation
+([ADR-0034](./docs/adr/0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)).
+_Avoid_: validation result, error (that is a Cell State), refusal (that judges the operation)
+
+**Context Menu**:
+The menu a secondary click opens over the grid. Its items are Commands the core decides and the
+Consumer extends, and Chrome only lays them out — the same ownership the column menu has. A
+secondary click outside the Selection moves the Focus onto the cell it lands on first, so that
+what a Command will act on is what the user can see
+([ADR-0036](./docs/adr/0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md)).
+_Avoid_: right-click menu, popup menu, shortcut menu
+
+**Edit Discard**:
+Text a user typed into the Cell Editor and never committed, thrown away because the grid can no
+longer place it — the order changed beneath the editor, or the row left the Window. The grid
+raises the reason rather than losing it quietly, and the loss is not the user's own doing
+([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+Distinct from a **Refusal**, which stops an operation before anything is lost, and from an
+**Edit Verdict**'s Reject, which keeps the text where the user can correct it.
+_Avoid_: cancel (that is Escape), rollback, revert
+
+**Refusal**:
+The grid's own "no", raised on **the operation** — its target, its shape, its size — and never on
+the value being written: a copy cap, a misaligned selection, a paste shape, a target covering a
+column that is not Editable. Because a Refusal never looked at what the user typed, it stops only
+the operation it named: a fill refused for covering a non-editable column leaves the editor open
+and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject, which judges the
+value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),
+[ADR-0014](./docs/adr/0014-paste-shape-rules-and-selection-count.md),
+[ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
+_Avoid_: rejection, validation failure, error (that is a Cell State), denial
 
 ### Selection
 
 **Selection**:
 The set of cells a user has selected. Held as a **list of rectangles** whose coordinates are
 **positions in the current order**, not row identities (the grid does not know identities outside
-the Window). Disjoint multi-range selection is supported. **Cleared when the sort order or filter
-changes**
+the Window). Disjoint multi-range selection is supported. **Cleared when the Row Sequence Version
+changes** — a sort or filter change that leaves the visible sequence identical keeps it — **and
+when the visible-column set changes** (the holder's own trigger; the version names row order only)
 ([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
 **Rows know nothing about it** — painting is done by an overlay, and it is never mixed into Row
 Identity ([ADR-0008](./docs/adr/0008-selection-is-painted-by-an-overlay.md)).
@@ -227,19 +356,49 @@ selected** ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md))
 be visible; if it leaves the Viewport the grid scrolls to it.
 _Avoid_: cursor, current cell, selected cell
 
+**Held Selection**:
+A Selection paired with the Row Sequence Version it was made under. Reconciling it
+against the current version is what drops the selection on reorder — the rule lives in
+this pairing, not in each holder's discipline
+([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+_Avoid_: selection snapshot, selection cache (nothing is restored from it)
+
 **Anchor**:
 The **fixed** end of range extension. Moved by a click and by Ctrl+click. When there are disjoint
-ranges, Shift+arrow extends **the range the Anchor belongs to**.
+ranges, Shift+arrow extends **the range the Anchor belongs to**. After Ctrl+click deselects a
+cell, Anchor and Focus stand **detached** — on that cell, outside every range — and the next
+extension starts a new range ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)).
 _Avoid_: origin, base cell
 
 ### Columns
 
 **Column**:
 A runtime object. Beyond the header's appearance it holds **how to extract the value from a
-row**, the type (which decides the filter UI and the default format), and the width
-(`Auto | Fixed` plus `MinWidth` / `MaxWidth`). A statically listed column and a column generated
+row**, the type (which decides the filter UI and the default format), an optional display
+format that replaces the default, and the width (`Auto | Fixed` plus `MinWidth` /
+`MaxWidth`). A statically listed column and a column generated
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
 _Avoid_: field, column definition
+
+**Pinned Column**:
+A column held against the Viewport's edge while the others pan under it — Excel's frozen panes.
+It stands **outside virtualisation and is always painted**, so it is the landmark that survives
+panning sideways, and it **costs directly**: pin enough columns and the resident cell count is
+back where virtualisation found it
+([ADR-0004](./docs/adr/0004-cap-the-cells-touched-per-frame.md)). Which columns are pinned is
+**View State**, not a property of the Column — combined with the column order the Consumer owns,
+"the leading N" expresses it.
+_Avoid_: frozen, sticky, locked (those name the mechanism or Excel's wording, not the state)
+
+**Header Group**:
+A labelled rectangle over adjacent leaf columns in the tiers above the header row, declared by
+**member column names** — `colspan`/`rowspan` expressiveness without a column tree. It paints, and
+it is the **drag unit** for reordering (a leaf drag clamps at its group's edge); it carries no
+data behaviour — no collapse, no group sort, no aggregate — the line Row Kind draws for rows, on
+the other axis. A column no tier covers has its leaf header stretch the full band; members no
+longer adjacent, an unknown member, or a rectangle straddling the pinned boundary are refused by
+name ([ADR-0032](./docs/adr/0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)).
+_Avoid_: column group (no data behaviour is grouped), banded header, merged cells
 
 **Row Kind**:
 What a row represents — detail / group / total. **Distinct from Cell State**: that names the
@@ -256,9 +415,13 @@ adds no component boundary**
 _Avoid_: button column, command column
 
 **Template Column**:
-A column whose cell contents the Consumer paints with arbitrary markup. **The cell becomes a
-component, so it costs more** — which is why it is opt-in per column. A value accessor is
-**still required** (sorting and filtering need it).
+A column whose cell contents the Consumer paints with arbitrary markup. It costs whatever that
+markup costs — the fragment rides inside the row's own boundary rather than adding one per cell
+([ADR-0020](./docs/adr/0020-action-and-template-columns.md), which predicted otherwise and records
+the correction) — so it is opt-in per column. A value accessor is **still required** (sorting and
+filtering need it). A control inside it that should be reachable by keyboard **focuses itself**
+when the core asks
+([ADR-0037](./docs/adr/0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)).
 _Avoid_: custom column, render column
 
 ## Flagged ambiguities
@@ -268,6 +431,14 @@ _Avoid_: custom column, render column
   noun (`ag-grid` has none either).
 - **"User" gets used two ways** — the developer embedding this component, and the end user
   touching the screen. The former is the **Consumer**; the latter is the **user**.
+- **"Focus" names a cell; "DOM focus" names an element.** The **Focus** is the cell keyboard
+  operations start from, and it is described, never held: the grid root holds the browser's
+  focus and `aria-activedescendant` points at the Focus cell
+  ([ADR-0033](./docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)).
+  **DOM focus** is the browser's — which element receives the keys. The two meet only when a
+  Template's control takes DOM focus inside the Focus cell (**Interactive**). Write "DOM focus"
+  whenever the browser's is meant; `FocusRequest` in the Chrome and template contexts asks for
+  DOM focus, not for a Focus move.
 
 ## Example: a conversation between a Consumer developer and the component designer
 

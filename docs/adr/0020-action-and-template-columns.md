@@ -33,6 +33,19 @@ needed** either. Clicks can be taken once on the root and resolved from `data-` 
 fairness, around 40 visible cells means per-cell handlers would not be fatal — **it is the
 componentisation that costs**.)
 
+*(Refined while implementing selection: the click really is taken once, on the row Viewport, and
+resolved by arithmetic rather than from `data-` attributes — the grid knows where every row and
+column is, so it needs nothing written into the markup
+([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). What it does need is for the cells to
+be out of the way, so `.ex-row` carries `pointer-events: none`, which is an inherited property and
+therefore covers the whole subtree.*
+
+***This is the seam an Action or Template Column has to cross.*** *A cell that wants a click of
+its own turns pointer events back on for itself **and stops the event there**. Left to bubble, it
+reaches the Viewport handler with offsets measured from the button rather than from the Viewport,
+and the grid would move the selection to whatever cell that arithmetic happens to name. A test
+that a button in a Template Column does not move the selection belongs with that feature.)*
+
 ## Keyboard — one rule
 
 ```
@@ -122,6 +135,71 @@ ADR-0010's "Chrome does not decide meaning" is preserved.
 - **Hold the template on the column definition; do not construct it per render.** A new lambda
   each time makes the `Column` look changed and **slips past row memoisation** — the same trap as
   "cache delegates in a field" in ADR-0003.
+
+## What the implementation settled
+
+*(Written while implementing. Three of these refine predictions this ADR made; they are
+left visible rather than edited away.)*
+
+**A template rides inside the row's boundary, it does not add one.** The prediction above
+was that "a `RenderFragment` is effectively a component" and that boundaries would
+increase toward the measured 92.0 ms. In the event the fragment is rendered **inline in
+the row component**, so it adds no boundary at all and stays inside the row's
+memoisation — a template column costs whatever its content costs, and nothing for
+existing. The warning the prediction was protecting still stands, just for a different
+reason: heavy content in forty visible cells is heavy content, and a fragment constructed
+per render still hands every row a changed column and defeats memoisation.
+
+**The seam is closed with `stopPropagation` on the cell, not `pointer-events` on it.**
+Everything under `.ex-row` is `pointer-events: none` so the Viewport can hit-test by
+arithmetic (ADR-0008). What turns them back on is the **control**, never the cell: the
+grid's own `.ex-action` button, or a Consumer's control marked `.ex-interactive` inside a
+template. The cell element carries `@onmousedown` and `@onmousemove:stopPropagation`
+(**not** `@onmouseup` — see below) and catches what bubbles out of that control — an ancestor's own `pointer-events: none`
+does not stop a bubbled event from reaching a handler on it. The consequence is the one
+worth having: **the inert parts of an Action or Template cell still select**, because they
+never became event targets, while a press on a button never reaches the Viewport's
+arithmetic. A drag crossing a button pauses over it, for the same reason.
+
+**`mouseup` is deliberately not stopped.** It is the one of the three that carries no
+position into the Viewport's handler — that handler only ends the drag. Swallowed with the
+other two, a drag released over a button would leave the grid still dragging, and the next
+move with a button held (pressing that same button and pulling off it) would extend the
+old selection to the pointer.
+
+**The refusal for a value-less column lives in the query engine.** An Action Column
+declares no value, so `ColumnInfo.IsQueryable` is false and `GridQueryEngine` refuses a
+sort or a filter naming it, by name. Sorting every row by nothing would silently shuffle
+the result — refusing is the same rule as refusing to copy rather than truncate
+(ADR-0005).
+
+**An Action Column's header is empty by default**, which answers the question this ADR
+left open only halfway: the width is answered (Auto measures the declared labels —
+ADR-0016), the column menu is not, because there is no column menu yet.
+
+### Still open
+
+- ~~The keyboard half of this ADR is not implemented~~ — **it is.** The capture-phase handler
+  exists, and the key table maps Space to `Engage` and Escape to `Leave`
+  (`GridKeys.cs`, `ExGrid.OnKeyAsync`). Enter still never fires an action, as specified.
+- ~~Interactive mode itself~~ — **half** implemented, as the `Engage` / `Leave` pair.
+  The way out is not a JS mode: the key gate reads "inside a cell's control" off the
+  event target, so Escape returns the keyboard to the grid **whether focus arrived by
+  click or otherwise** — an `'interactive'` mode string the core never set had left the
+  contract dead until review caught it. Every other key stays the control's.
+  *(Corrected later: this bullet once said "whether focus arrived by key or by click",
+  but nothing could put focus inside a cell by key — Space did nothing on a cell with
+  several actions or on a Template cell, and the editable row of the Space table above
+  was not wired either. Entering needed a decision this ADR does not make, and
+  [ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)
+  makes it: over the core's own actions Interactive is a mode the core holds, with the
+  keyboard left on the root and `aria-activedescendant` naming the chosen action; a
+  Template's content is asked to focus itself, through a `TemplateCellContext` the
+  fragment now receives instead of the bare row.)*
+- ~~**Copy of a range covering an Action Column.**~~ — settled when the clipboard was
+  wired: an empty cell, recorded in
+  [ADR-0005](./0005-copy-refuses-rather-than-truncates.md)'s "what wiring the routes
+  settled".
 
 ## Consequences
 
