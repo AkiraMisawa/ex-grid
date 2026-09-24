@@ -165,7 +165,8 @@ _Avoid_: null (implementation word, not user-facing), empty (an empty string is 
 
 **Chrome**:
 The parts of the grid's own UI that can be substituted — the filter panel, the column menu, the
-cell editor, the loading indicator. **It renders and calls back; it does not decide meaning**
+Context Menu, the cell editor, the cell's message, the loading indicator. **It renders and calls
+back; it does not decide meaning**
 (which operators exist, and what a filter means, are the core's). Substituting it does not change
 behaviour.
 _Avoid_: skin (appearance only is a **Theme**, a term of its own below), template
