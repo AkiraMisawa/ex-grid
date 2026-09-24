@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.mjs';
 
 // A classic (non-overlay) scrollbar takes a strip out of the box the element declares.
 // macOS draws overlay scrollbars, which take nothing, so on the machine this component

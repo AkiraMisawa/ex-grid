@@ -81,7 +81,7 @@ any of them is open.
 | **PRE-1** | MUST | The whole solution builds with zero warnings | `nix develop -c dotnet build ExGrid.slnx` | `0 Warning(s)` and `0 Error(s)` |
 | **PRE-2** | MUST | The shipped package targets `net8.0` only, and raises no `LangVersion` (ADR-0022) | inspect `src/ExGrid/ExGrid.csproj` | single `<TargetFramework>net8.0` and no `LangVersion` above the default for the SDK's C# 12 |
 | **PRE-3** | MUST | `ExGrid` has no package dependency (ADR-0019) | `dotnet list src/ExGrid/ExGrid.csproj package` | no top-level package other than framework references |
-| **PRE-4** | MUST | Nothing in `src/` references a Wrapper or a design system (ADR-0019/0030) | `dotnet list src/ExGrid/ExGrid.csproj reference` and grep `src/` for `Mud`, `Fluxor` | no match |
+| **PRE-4** | MUST | The core, `src/ExGrid/`, references no Wrapper and no design system (ADR-0019/0030); the Wrapper packages beside it in `src/` depend on the core, never the reverse | `dotnet list src/ExGrid/ExGrid.csproj reference`, and grep `src/ExGrid/` for a `using` of `MudBlazor` or `Fluxor` | no project reference; no match. *(Rewritten 2026-09-24: it used to grep all of `src/` for the bare words, which `src/ExGrid.MudBlazor/` — the Wrapper, living there by ADR-0019 — matches throughout, and so does a comment in the core naming `MudDataGrid`. What it asks is unchanged: that the dependency points one way)* |
 | **PRE-5** | MUST | The layer-3 project declares **both** target browsers (ADR-0017, ADR-0026) | inspect `tests/ExGrid.Browser/playwright.config.mjs` | a `projects` array naming `chrome` and `msedge`; a single-browser config fails this outright |
 | **PRE-6** | MUST | Every file the build needs is git-tracked | `git status --porcelain` after a clean build | no untracked file under `src/` |
 
@@ -686,7 +686,8 @@ nix develop -c dotnet test tests/ExGrid.Components 2>&1 | tee verification/<date
 ```
 
 Discharges VZ, RR, MEM-1/3/4, ASY, ST-1/2, and the Layer 2 rows above.
-**Pass:** zero failures, zero skips, and `CON-7`'s unobserved-exception handler reports zero.
+**Pass:** zero failures, zero skips but one — ST-1's 10⁶-row case, skipped by name and run in
+Step 5 — and `CON-7`'s unobserved-exception handler reports zero.
 
 ### Step 3 — Static inspection
 
@@ -694,7 +695,7 @@ Grep and read, recording each result:
 
 ```sh
 grep -rn "getBoundingClientRect\|clientWidth\|offsetWidth\|scrollIntoView" src/   # PF-1
-grep -rn "Mud\|Fluxor" src/                                                       # PRE-4
+grep -rnE "using +(global::)?(ExGrid\.)?(MudBlazor|Fluxor)\b" src/ExGrid/           # PRE-4
 grep -rn "OrderBy\|Where(" src/ExGrid/Components/                                 # FN-15
 grep -o -- "--ex-[a-z-]*" src/ExGrid/wwwroot/ex-grid.css | sort -u                # UX-1, UX-4
 ```
@@ -716,6 +717,16 @@ The run must capture `page.on('console')` and `page.on('pageerror')` into `conso
 CON-1..4 and CON-8, and read `Performance.getMetrics` into `metrics.json` for MEM-2/5, DOM-5,
 BIG-6/7, PF-6/7.
 
+**MEM-5's ten-minute soak runs only when asked for** — `EXGRID_SOAK=1` (decided 2026-09-24).
+An ordinary run skips it by name, and MEM-6 is read at its end. Sign-off needs one run with it
+set, on each browser:
+
+```sh
+EXGRID_SOAK=1 npx playwright test memory.spec.mjs 2>&1 | tee ../../verification/<date>/soak.log
+```
+
+A skipped soak is `not run` in `results.md`, never a pass.
+
 Discharges UX-2..11, VZ-1/10, ED-2/3/4/9/11, KB-1/8/11/12, CP-4/5/6/10/14, BIG, PST-3/5,
 CON-1..6/8, DOM, ST-3.
 
@@ -723,6 +734,17 @@ CON-1..6/8, DOM, ST-3.
 
 Run ST-1's scripted sequence with a recorded seed, at 10³ and at 10⁶ rows, and record the seed in
 `results.md` whether it passed or not.
+
+**The 10⁶ case runs only when asked for** — `EXGRID_ST1_MILLION=1` (decided 2026-09-24). It takes
+about a minute, nearly all of it the reference source sorting and filtering a million rows, so
+Step 2 skips it by name and this step is the run that sets it:
+
+```sh
+EXGRID_ST1_MILLION=1 nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net8.0/ExGrid.Components.dll \
+  -class "ExGrid.Components.Tests.ConsistencyTests" 2>&1 | tee verification/<date>/st1.log
+```
+
+Pass: every case passes and none is skipped.
 
 ### Step 6 — Observational numbers
 

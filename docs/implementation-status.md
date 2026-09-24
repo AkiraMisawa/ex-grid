@@ -173,8 +173,83 @@ and both are strengthened.
   under bUnit's renderer; recorded in `verification/2026-09-24-macos/metrics.json` as §22
   Step 6 now says.
 
-MEM-5's ten-minute soak will run only under `EXGRID_SOAK=1` — decided 2026-09-24, and to be
-written into §22 Step 4 with the layer-3 half that implements it.
+MEM-5's ten-minute soak runs only under `EXGRID_SOAK=1` — decided 2026-09-24, and now written
+into §22 Step 4 along with the layer-3 half that implements it (below).
+
+**2026-09-24, the Definition of Done's row counts, and the harness's layer-3 half.** The
+user decided that the row counts are the Definition of Done's, not the DemoHost's. `/wide`
+had been 100,000 rows while §12 names 1,000,000, so every BIG test ran as "BIG-1-shaped" at a
+tenth of the scale. VZ-1 compared scroll positions rather than 10³, 10⁵ and 10⁶. ST-1 ran at
+200 and 100,000 rows where §22 Step 5 says 10³ and 10⁶. Now:
+
+- **`/wide` is 10⁶ rows**, and takes `?rows=N` for the criteria that compare one Viewport
+  across totals. Its rows are made on first request and kept, so a million are never built up
+  front and a row answered twice is the same instance (ADR-0003).
+- **ST-1 runs at 10³ and 10⁶** (the 200-row seeds stay). The 10⁶ case costs about a minute,
+  and layer 2 went from ~15 s to ~80 s. Timed per operation, nearly all of that is the
+  reference source re-sorting (~0.55 s) and re-filtering (~0.38 s) a million rows. That is the
+  Consumer's work (ADR-0001), and the grid's own steps stay in milliseconds. **Decided the
+  same day: it runs only under `EXGRID_ST1_MILLION=1`**, as the soak does. An ordinary layer 2
+  skips it by name (4.5 s for the class), and §22 Step 5 is the run that sets it (67 s, 5 of 5).
+  Step 2's "zero skips" now names this one exception.
+- **`fixtures.mjs`** gives every spec one console capture, writing `console.json`. It covers
+  CON-1/2 as before, plus **CON-3** (a warning from ExGrid's own code: served from
+  `_content/ExGrid*`, prefixed `[ex-grid]`, or naming an `ExGrid.` category) and **CON-6**
+  (an unhandled exception at any level). For CON-6 the DemoHost is WebAssembly, so its host's
+  log *is* the browser console. The dev server's own output now goes into the run's output,
+  which Step 4 tees. `scrollbar.spec.mjs` had no console check at all and now has one.
+- **`virtualisation.spec.mjs`**, at 10⁶ rows, covers:
+  - **BIG-1**.
+  - **VZ-1 / BIG-2 / DOM-1**: the element count at 10³, 10⁵ and 10⁶ rows is identical,
+    not "within 300".
+  - **BIG-5**: the first and last rows' data checked against the generator, there and back.
+  - **BIG-3**: Ctrl+A shows 10⁸, one rectangle, and the next key is answered.
+  - **PF-1's layer-3 half.** Until now it was discharged by the grep alone. Every crossing
+    between the module and .NET is counted in both directions, by CDP breakpoints that never
+    pause. They are placed from the source the page was served, and a site that cannot be
+    placed fails the test. At most one call per scroll frame, for rows, columns and a fling.
+    The reading taken: "interop" is the grid's own. Blazor's delegated `@onscroll` dispatch is
+    the framework's, one per event by construction, as ADR-0027 scopes P5.
+- **`memory.spec.mjs`**, on the new `/lifecycle` page, covers:
+  - **MEM-2**: fifty mounts and disposes, nodes and listeners within ±2 — measured 0 and 0.
+    Its baseline is taken after one warm-up cycle, and that is checked, not assumed. On a
+    page's first use of an event name, Blazor adds one delegated listener to the document and
+    keeps it. The test asserts that the warm-up added exactly those (`scroll`, `mouseleave`,
+    `mousedown`, `contextmenu` from `blazor.webassembly.js`) and no node.
+  - **MEM-4**: the root carries the module's five listeners, has none after dispose, and the
+    count returns exactly.
+  - **MEM-5/MEM-6**, under `EXGRID_SOAK=1`: a seeded ten-minute scroll, sampled every 30 s
+    after a forced GC. The managed heap is read through a `[JSInvokable]` host counter,
+    because CDP cannot see WebAssembly's linear memory.
+- **`observational.spec.mjs`** records into `metrics.json`: BIG-7 at 10⁶; DOM-5 at both
+  settings; PF-6 (the settle repaint from `Performance.getMetrics` deltas, with the fling
+  first let paint its Placeholders, plus frame intervals); BIG-6 as its "on" half; and PF-7,
+  a 10 × 7 drag edge moved a row a step. PF-7 is 10 × 7, not ADR-0008's 10 × 8, because only
+  seven scrollable columns fit whole beside the pinned block. It asserts the selection moved
+  on every step. Its first version measured a pointer outside the window and still recorded
+  "costs". These tests use a 1280×1000 window: the default 720px one leaves the grid's lower
+  rows off screen.
+
+The new checks whose failure is not plain from their assertion were each seen failing, with the product broken on purpose:
+- a second offset read per scroll event (PF-1: 120 calls for 60 frames);
+- a listener left on `window` per attach (MEM-2's warm-up check);
+- the key listener left on dispose (MEM-4);
+- an `[ex-grid]` warning (CON-3), where a third-party one passes;
+- an "Unhandled exception" logged at info (CON-6).
+
+**Where this ran, and what it therefore does not discharge.** It ran in a Linux cloud
+container with the .NET 10 SDK installed directly:
+- Layers 1 and 2: **449 + 421** plus the Wrapper's 17.
+- Layer 3: **76 pass, 2 skipped** (VZ-14, which is Windows-only, and the soak), 0 failed.
+- The soak run on its own: **pass**. The JS heap went 4.01 → 4.11 MB over 35,206 frames,
+  levelling off after five minutes. The last sample is 0.4% from the median. The managed
+  heap went 9.29 → 9.38 MB.
+
+All of it was on the Playwright-bundled Chromium 1194, headless, with the same two local
+settings as the 2026-09-23 container run (`--hide-scrollbars` dropped, `ignoreHTTPSErrors`),
+kept in an uncommitted config. So none of the new MUSTs has met `chrome` or `msedge` yet. The
+numbers were not filed under `verification/`, because software rendering belongs to no trend
+(for scale only: settle repaint 20 ms on / 120 ms off, drag step 5.4 ms median).
 
 ## Working through to the component
 
@@ -238,18 +313,26 @@ written into §22 Step 4 with the layer-3 half that implements it.
 | Layer | | State |
 |---|---|---|
 | 1 | `tests/ExGrid.Tests` | 46 files, **449 pass** (2026-09-24) |
-| 2 | `tests/ExGrid.Components` | 43 files, **419 pass** (2026-09-24) — including ST-1's randomised 500-operation run, MEM-1's allocation invariant, PF-3's `RenderAllocationTests`, MEM-3's `ResourceDisposalTests` and ADR-0037's `InteractiveTests` |
-| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And on macOS, `chrome` only (Chrome 153, headed): **69 pass** on 2026-09-23 after the Cmd+Enter fix the Windows run could not have seen, and again on 2026-09-24 after the layer-2 harness's fixes, which touch the action buttons, the header and every cell's id — so those fixes have not yet met `msedge` |
+| 2 | `tests/ExGrid.Components` | 43 files, **420 pass, 1 skipped by name** (2026-09-24): ST-1's 10⁶ case, which runs under `EXGRID_ST1_MILLION=1` (§22 Step 5). Including ST-1's randomised 500-operation run at 10³ rows, MEM-1's allocation invariant, PF-3's `RenderAllocationTests`, MEM-3's `ResourceDisposalTests` and ADR-0037's `InteractiveTests` |
+| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And on macOS, `chrome` only (Chrome 153, headed): **69 pass** on 2026-09-23 after the Cmd+Enter fix the Windows run could not have seen, and again on 2026-09-24 after the layer-2 harness's fixes, which touch the action buttons, the header and every cell's id — so those fixes have not yet met `msedge`. The harness's layer-3 half (**8 specs, 78 tests**) has run only on the container's bundled Chromium: **76 pass, 2 skipped**, and the soak separately (2026-09-24) |
 | — | `verification/2026-09-01/` | layer logs + `results.md` with the pass/blocked ledger |
 | — | `verification/2026-09-23-windows/` | the Windows layer-3 run: `results.md`, the 150% and 125% logs, `metrics.json` |
 | — | `verification/2026-09-23-macos/`, `verification/2026-09-24-macos/` | the macOS `chrome` runs' `metrics.json` — the second with MEM-7 under `layer2` |
 
+**2026-09-24, PRE-4 rewritten.** Its check grepped all of `src/` for `Mud` and `Fluxor`. Since
+`src/ExGrid.MudBlazor/` lives there (ADR-0019), and a comment in the core names `MudDataGrid`,
+the check as written could no longer pass, although the property held. It now names the core,
+`src/ExGrid/`: no project reference, and no `using` of `MudBlazor` or `Fluxor`. Both come back
+clean. The property is unchanged: the dependency points one way.
+
 ## What is left, in the order that costs least
 
-1. **The measurement harness's layer-3 half** — MEM-2, MEM-4's listener count, MEM-5 (the
-   opt-in soak), BIG-2/3/5, the CON-3/6 instrumentation, and the observational PF-6/7, BIG-6 and
-   MEM-6 into `metrics.json`; then a fresh `spikes/render-bench` entry (PF-8). The layer-2 half
-   is done (above).
+1. **The measurement harness's layer-3 half — written (2026-09-24), not yet run where it
+   counts.** It has run only on the container's Chromium (above). What discharges it is a
+   Step 4 run on `chrome` and `msedge`, on Windows or Linux, with the soak (`EXGRID_SOAK=1`)
+   once per browser and `metrics.json` / `console.json` filed. That run also takes the
+   2026-09-24 layer-2 fixes to `msedge` for the first time. Then a fresh `spikes/render-bench`
+   entry (PF-8), on real hardware.
 2. ~~**VZ-14 at 125%.**~~ Discharged on 2026-09-24 on a Windows desktop at 125%, on both
    browsers. (The Edge run and VZ-10, which this item used to hold, were discharged on
    2026-09-01.)

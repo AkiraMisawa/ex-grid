@@ -27,12 +27,27 @@ public class ConsistencyTests : GridTestContext
         new("Active", ColumnType.Boolean, r => r.Active, width: Fixed100),
     ];
 
-    [Theory] // ST-1: ≥500 randomised operations at two scales; the seeds are recorded here
+    // ST-1: ≥500 randomised operations at 10³ and 10⁶ rows (§22 Step 5); the seeds are
+    // recorded here. The 10⁶ case takes about a minute, and nearly all of it is the
+    // reference source re-sorting and re-filtering a million rows (~0.5 s a sort) — the
+    // Consumer's work, not the grid's (ADR-0001). The grid's own steps stay in
+    // milliseconds at either scale. So it runs only when asked for, with
+    // EXGRID_ST1_MILLION=1 (decided 2026-09-24): an ordinary run skips it by name, and
+    // Step 5 is the run that sets it.
+    private const string MillionSwitch = "EXGRID_ST1_MILLION";
+
+    [Theory]
     [InlineData(20260901, 200)]
     [InlineData(424242, 200)]
-    [InlineData(20260901, 100_000)]
+    [InlineData(20260901, 1_000)]
+    [InlineData(424242, 1_000)]
+    [InlineData(20260901, 1_000_000)]
     public async Task Five_hundred_random_operations_leave_every_invariant_standing(int seed, int totalRows)
     {
+        if (totalRows >= 1_000_000)
+            Assert.SkipUnless(Environment.GetEnvironmentVariable(MillionSwitch) == "1",
+                $"ST-1 at 10⁶ rows runs with {MillionSwitch}=1 (Definition of Done §22 Step 5)");
+
         var random = new Random(seed);
         var source = GridSource.From(TestRows.Many(totalRows));
         GridSelection selection = GridSelection.Empty;
