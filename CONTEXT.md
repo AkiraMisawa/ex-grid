@@ -408,6 +408,14 @@ from detail rows and to decide what expands and collapses in pivot-like views
 ([ADR-0013](./docs/adr/0013-fixed-row-height.md)).
 _Avoid_: row type, level, hierarchy (Row Kind is the role, not the depth)
 
+**Row Stripe**:
+The alternate background on every second row, counted by the row's position in the whole
+result — not on the screen — so a stripe stays with its row however far the Viewport scrolls.
+Off unless the Consumer asks for it. Appearance only: it marks no role (that is **Row Kind**)
+and no state.
+_Avoid_: banded rows (a band here is an overlay rectangle — the Focus band, the hover band),
+zebra, striped (MudBlazor's word, which its Wrapper maps onto this)
+
 **Action Column**:
 A column whose cells carry **declared actions**. The Consumer supplies the icon or label, but the
 meaning — "pressing this fires something" — belongs to the core. **Painted as plain markup and
