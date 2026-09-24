@@ -165,10 +165,20 @@ _Avoid_: null (implementation word, not user-facing), empty (an empty string is 
 
 **Chrome**:
 The parts of the grid's own UI that can be substituted — the filter panel, the column menu, the
-cell editor, the loading indicator. **It renders and calls back; it does not decide meaning**
+Context Menu, the cell editor, the cell's message, the loading indicator. **It renders and calls
+back; it does not decide meaning**
 (which operators exist, and what a filter means, are the core's). Substituting it does not change
-behaviour.
+behaviour. Each of those places is a **Chrome seam**: the core owns its frame — where it appears,
+how it opens and closes — and hands the Chrome the contents to draw.
 _Avoid_: skin (appearance only is a **Theme**, a term of its own below), template
+
+**Inner Popup**:
+A popup that a Chrome seam's contents open for themselves and that their design system draws
+outside the grid — a select's list of options, a date picker's calendar. It closes before the
+popover that holds it, and with it
+([ADR-0039](./docs/adr/0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)).
+The grid's own popovers are never one.
+_Avoid_: nested popover, portal (a mechanism, not the thing)
 
 **Theme**:
 The appearance of one instance — the values of its Visual Tokens. It travels entirely in CSS,
@@ -407,6 +417,14 @@ from detail rows and to decide what expands and collapses in pivot-like views
 ([ADR-0013](./docs/adr/0013-fixed-row-height.md)).
 _Avoid_: row type, level, hierarchy (Row Kind is the role, not the depth)
 
+**Row Stripe**:
+The alternate background on every second row, counted by the row's position in the whole
+result — not on the screen — so a stripe stays with its row however far the Viewport scrolls.
+Off unless the Consumer asks for it. Appearance only: it marks no role (that is **Row Kind**)
+and no state.
+_Avoid_: banded rows (a band here is an overlay rectangle — the Focus band, the hover band),
+zebra, striped (MudBlazor's word, which its Wrapper maps onto this)
+
 **Action Column**:
 A column whose cells carry **declared actions**. The Consumer supplies the icon or label, but the
 meaning — "pressing this fires something" — belongs to the core. **Painted as plain markup and
@@ -431,6 +449,9 @@ _Avoid_: custom column, render column
   noun (`ag-grid` has none either).
 - **"User" gets used two ways** — the developer embedding this component, and the end user
   touching the screen. The former is the **Consumer**; the latter is the **user**.
+- **"Seam" means two things.** A **Chrome seam** is one of the places Chrome is substituted
+  into. In talk about tests, a seam is the public boundary a test observes behaviour through —
+  write **test seam** for that, and never "seam" alone where either could be meant.
 - **"Focus" names a cell; "DOM focus" names an element.** The **Focus** is the cell keyboard
   operations start from, and it is described, never held: the grid root holds the browser's
   focus and `aria-activedescendant` points at the Focus cell

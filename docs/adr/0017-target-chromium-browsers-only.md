@@ -23,6 +23,15 @@ not tangle across multiple instances**
 ([ADR-0018](./0018-multiple-instances-must-be-independent.md)). It also keeps popovers off the
 JavaScript allowlist entirely ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
 
+*(Replaced on 2026-09-24 by [ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md). What was
+built was never this: every popover stood under the instance root, and nothing recorded it. When a
+grid in a dialog had its menu cut off, the answer above was measured and failed on two counts.
+The top layer is entered only by `showPopover()` or a button click, and the grid's popovers open
+from keys and a right-click, so script would be needed. And it buries every popup a design
+system draws, so a select inside the grid's own panel could not be used. A popover now stays inside
+its grid's box and scrolls rather than being cut. The "confine them inside the root" option below
+was rejected for being cut off at the edge; ADR-0040 keeps it and bounds it, so nothing is.)*
+
 Rejected:
 - **Portal to `document.body`** — not clipped, but z-index and outside-click detection tangle
   across instances and the coordinates must be recomputed in absolute terms.

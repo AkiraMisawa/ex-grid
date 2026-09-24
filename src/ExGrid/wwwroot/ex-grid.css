@@ -76,6 +76,21 @@
 .ex-row {
     background-image: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
 }
+/* Row Stripes (ADR-0038): the class comes from the row's absolute position, so the pattern
+   stays with its row however the Viewport scrolls — :nth-child() would count painted
+   siblings and crawl. Painted on the row, under its rule, and on the Pinned Columns' cells,
+   whose opaque ground would otherwise stop the band at the pinned block. Not on the
+   scrollable cells: they are transparent over the row already, and a second layer there
+   would make them darker than the pinned ones. Declared before Row Kind and Cell State, so
+   that at equal specificity the grounds that carry meaning paint over the one that does not. */
+.ex-row-stripe {
+    background-image:
+        linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px)),
+        linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
+}
+.ex-row-stripe .ex-pinned {
+    background-image: linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
+}
 /* Row Kind (ADR-0024): the role of a row, painted without touching its geometry. Height
    stays exactly the detail row's — the virtualisation arithmetic, the selection overlay
    and the editor position are all one row height (ADR-0013), and a group row that were
@@ -271,14 +286,18 @@
 .ex-header-cell:has(> .ex-menu-button) {
     padding-right: calc(var(--ex-cell-padding-x, 8px) + var(--ex-menu-button-width, 16px) + var(--ex-menu-button-inset, 6px));
 }
-/* A popover (ADR-0009/0010/0018): anchored to the instance root, outside the scroll
-   container, so it is never clipped and never tangles across instances. */
+/* A popover (ADR-0009/0010/0018/0040): anchored to the instance root, outside the scroll
+   container, and bounded by the grid's box — its max-height arrives inline from the core's
+   geometry — so no ancestor that shows the grid can cut it, and it never tangles across
+   instances. Contents taller than the room scroll inside it. border-box, so the bound and
+   the min-width are the box the browser draws. */
 .ex-popover {
     position: absolute;
     z-index: 10;
-    /* min-width arrives inline from PopoverStyle (ADR-0027): the number the core
-       clamps the popover on screen with is the number the box is laid out from. */
-    max-width: 320px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    /* min-width and max-width arrive inline from the core (ADR-0027/0040): the numbers it
+       clamps the popover inside the grid with are the numbers the box is laid out from. */
     padding: 4px;
     display: flex;
     flex-direction: column;
@@ -307,8 +326,18 @@
 }
 .ex-popover button { font: inherit; text-align: left; padding: 2px var(--ex-action-padding-x, 6px); cursor: pointer; }
 .ex-popover button:disabled { cursor: default; opacity: 0.5; }
-.ex-popover-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; }
-.ex-popover-actions { display: flex; gap: 4px; justify-content: flex-end; }
+/* In a bounded popover the value list is what gives (ADR-0040): it shrinks, to a floor
+   that still shows a couple of entries, and scrolls, so the search above it and the
+   actions below stay in view. The floor is the panel's own layout, not the grid's geometry:
+   nothing in C# computes with it. */
+.ex-popover-list { max-height: 240px; min-height: 48px; flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; }
+.ex-popover-actions { display: flex; gap: 4px; justify-content: flex-end; flex-shrink: 0; }
+/* The filter panel's Tab-wrap sentinels (ADR-0039): focusable, and nothing else. Absolute,
+   so they take no place in the popover's flex column and add no gap to it. */
+.ex-focus-wrap { position: absolute; width: 0; height: 0; overflow: hidden; outline: none; }
+/* The panel's form exists for Enter's implicit submission (ADR-0039) and has no box of its
+   own: its controls stay the popover's flex items. */
+.ex-popover-form { display: contents; }
 /* The Cell Editor (ADR-0010): one input floated over the focused cell, never inside a
    row. Its box is the cell's exactly (ADR-0028); font and line height come from the
    same tokens the cells read, so the text does not jump when editing starts. */
@@ -384,6 +413,8 @@
     /* A group row keeps its weight; a total row's rule becomes an overline — a text
        decoration survives where the gradient does not. */
     .ex-row-total .ex-cell { text-decoration: overline; }
+    /* A Row Stripe is restated as nothing: it carries no meaning, and forced colours are
+       kept for the things that do (ADR-0038). The discarded gradient is the whole of it. */
     /* The selection and the Focus stay visible: outlines, which forced colors keeps. */
     .ex-range { outline: 2px solid Highlight; outline-offset: -1px; }
     .ex-focus-row { outline: 1px dotted Highlight; outline-offset: -1px; }

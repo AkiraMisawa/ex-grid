@@ -64,7 +64,9 @@ Without that directory, the verification did not happen.
 **Out of scope for this document:** `ExSheet` (future), and the Wrapper packages
 `ExGrid.MudBlazor` / `ExGrid.Fluxor`. The criteria that describe the Wrapper boundary (§4) are
 written as properties of the *core's contract*, verifiable with a stub Wrapper, and do not require
-a real one.
+a real one. **`ExGrid.MudBlazor`'s own release is judged by §23**, which holds the Wrapper to the
+core's criteria with a real design system and adds the criteria only a real one can fail
+(added 2026-09-24).
 
 **"Finished" means every ADR from 0001 to 0030 is implemented.** This was asked as an open
 question and answered deliberately: the narrower alternatives — shipping the display-only slice
@@ -111,10 +113,11 @@ says; the areas that need more than one line get their own section below.
 | **FN-14** | MUST | `GridSource.From` is the reference implementation of filter and sort semantics, pinned exhaustively for null ordering, case sensitivity and culture (ADR-0001/0023) | Layer 1 | every clause of ADR-0023 has a named test |
 | **FN-15** | MUST | The Consumer's sort and filter state travels in and the grid never sorts or filters (ADR-0001) | inspect: no ordering or predicate evaluation inside `ExGrid.razor` | grep finds no `OrderBy` / `Where` over `Window` in the component |
 | **FN-16** | MUST | A pager exists when `PageSize` is passed, and rides the same Range Request machinery (ADR-0015) | Layer 2 | a page click raises the same notification shape as a scroll |
-| **FN-17** | MUST | The Chrome seams exist and are substitutable: filter panel, column menu, cell editor, loading indicator (ADR-0009/0010) | Layer 2 with a stub `IGridChrome` | swapping Chrome changes rendering and **nothing** about behaviour — the same key and mouse tests pass against both |
+| **FN-17** | MUST | The Chrome seams exist and are substitutable: filter panel, column menu, Context Menu, cell editor, the cell's message, loading indicator (ADR-0009/0010/0034/0036) | Layer 2 with a stub `IGridChrome` | swapping Chrome changes rendering and **nothing** about behaviour — the same key and mouse tests pass against both |
 | **FN-18** | MUST | Chrome renders and calls back; the core decides the menu items and the allowed operators (ADR-0009/0010) | inspect the contexts | `ColumnMenuContext.Commands` and `FilterPanelContext.Allowed` are produced by the core; Chrome has no way to add or reinterpret one |
 | **FN-19** | MUST | The selected-cell count is available without data, and an off-screen selection is reported as such (ADR-0014/0015) | Layer 1 + Layer 2 | count equals the sum of rectangle areas; the off-screen flag is the rectangle/visible-range intersection test |
 | **FN-20** | SHOULD | The focused cell's full value is available to Chrome for the formula-bar role behind `####` (ADR-0016) | Layer 2 | the raw value, never the `####` string |
+| **FN-21** | MUST | A Chrome seam's contents may hold an **Inner Popup** drawn outside the instance root. While one is open: Escape closes the Inner Popup first and the next Escape the popover; under the design system's default (`ModalOverlay = false`) a pointer-down elsewhere in the instance closes both and keeps its own meaning, and under `ModalOverlay = true` only the Inner Popup closes; closing the popover any way removes the Inner Popup; DOM focus returns to the root (ADR-0039) | Layer 2: the contents report the popup through `InnerPopupChanged`, and the gate is told; Layer 3 with `ExGrid.MudBlazor`'s filter panel — a `MudSelect` and a `MudDatePicker` — by pointer and by key, under both settings, with two grids on the page and with one inside a `MudDialog` | every clause observed; the other grid unaffected |
 
 ---
 
@@ -135,10 +138,12 @@ so conformance is a set comparison rather than a judgement of taste.
 | **UX-8** | MUST | An untouched grid follows the host's `color-scheme`, and the core declares none of its own (ADR-0027) | Layer 3 under `prefers-color-scheme: dark` | text and ground both readable; contrast ratio of body text ≥ 4.5:1 measured from the computed colours |
 | **UX-9** | MUST | The focus outline and the selection fill remain visible under the default Theme and under a stub Wrapper Theme (ADR-0030) | Layer 3: contrast of `ex-focus` outline against the cell ground | ≥ 3:1 |
 | **UX-10** | SHOULD | `--ex-scrollbar-width` narrows the bar, the gutter changes, and the geometry follows (ADR-0029) | Layer 3 | the Focus stays inside the readable area after the change (the `scrollbar.spec.mjs` invariant) |
-| **UX-11** | MUST | Popovers (filter panel, column menu) are not clipped by the scroll container and do not tangle across instances (ADR-0017/0018) | Layer 3: open the filter on the rightmost column of two grids | fully visible; each grid's popover is its own |
+| **UX-11** | MUST | Popovers (filter panel, column menu, Context Menu) are never cut — not by the scroll container, and not by any ancestor that shows the grid whole: each stays inside its grid's box and scrolls within itself when its contents are taller; they do not tangle across instances (ADR-0017/0018/0040) | Layer 2: the inline `max-height` from the geometry; Layer 3: open the filter on the rightmost column of two grids, and a menu in a short grid inside a `MudDialog` | fully visible; each grid's popover is its own; a menu taller than the grid scrolls |
 | **UX-12** | MUST | Accessibility semantics as ADR-0033 specifies them | see **§4.1** | every row of §4.1 passes |
 | **UX-13** | MUST | The row under the pointer is highlighted by an overlay band filled with `--ex-row-hover-background`, on hover alone — no row carries a class, and the band vanishes on leave (ADR-0029, ADR-0021 fifth entry) | Layer 3: real mouse moved down a column of two grids | one band, in the hovered instance only, following the pointer row; none after `mouseleave` |
 | **UX-14** | MUST | The chosen action of an Interactive cell is tellable — outlined through `--ex-focus-outline`, and restated in the forced-colors block like every other state (ADR-0029/0037) | Layer 3 on `/cells`, with and without forced colors | the chosen button's computed outline is non-`none` in both, and no other button's is |
+| **UX-15** | MUST | With `StripeRows` on, every row at an odd position in the whole result carries `ex-row-stripe` and is filled with `--ex-row-stripe-background`, **pinned cells included**; off by default; the stripe stays with its row across a scroll, across a pager's pages and on Placeholder rows (ADR-0038) | Layer 2: the class by absolute index at three scroll offsets and under a pager; Layer 3: a pinned and a scrollable cell of one striped row paint the same ground | exact parity at every offset; equal colours |
+| **UX-16** | MUST | Meaning paints over a stripe: Row Kind's and Cell State's grounds win, a group or total row still counts in the parity, the overlays paint above, and the forced-colors block paints no stripe (ADR-0038/0029) | Layer 3, including forced-colors emulation | each ground as stated; the row after a group row keeps its parity |
 
 ---
 
@@ -173,6 +178,7 @@ them. *(Interactive mode's were settled with the mode, ADR-0037: A11Y-17 and A11
 | **A11Y-16** | MUST | Whatever Chrome renders a **refusal** into is a live region — the grid holds no string for it and cannot announce it (ADR-0035) | Layer 3 against the reference Chrome | the DemoHost's refusal status is a live region and a refusal writes into it |
 | **A11Y-17** | MUST | The grid's own action buttons are outside the page's tab sequence (`tabindex="-1"`), so the root stays the one tab stop with an Action Column on screen (ADR-0033/0037) | Layer 2 + Layer 3 on `/cells`: Shift+Tab from the element after the grid | every `.ex-action` carries `tabindex="-1"`; focus lands on the root, not on a button |
 | **A11Y-18** | MUST | While a cell with several actions is Interactive, `aria-activedescendant` names the chosen action's button, whose accessible name is its declared label; leaving restores the Focus cell's id, and the attribute is cleared while that button is not painted (ADR-0033/0037) | Layer 2 | the id resolves to the chosen `.ex-action`; after Escape it resolves to the cell again |
+| **A11Y-19** | MUST | A popover that takes DOM focus is named: the menus are `role="menu"` with `menuitem` items, the filter panel `role="dialog"`, and a column's menu and panel carry `aria-label` set to that column's own header text — no sentence of the core's (ADR-0033/0036/0039) | Layer 2, under the built-in Chrome and `ExGrid.MudBlazor`'s | roles and names as stated under both |
 
 ### 4.2 Header Groups (HG) — ADR-0032
 
@@ -347,6 +353,11 @@ The grid renders the filter UI and never evaluates a filter.
 | **KB-25** | MUST | Space on an editable cell opens Overwrite containing a space; with no Focus, Space only places it and neither fires nor enters (ADR-0020/0010/0012) | Layer 2 | the editor's text is `" "`; from an empty selection one Space selects the first visible cell and raises nothing |
 | **KB-26** | MUST | A held Space engages once: a repeated plain Space is taken and dropped by the gate (ADR-0037) | inspect `ex-grid.js`; Layer 3 holding Space on a one-action cell | one `OnAction` for the whole hold |
 | **KB-27** | MUST | A grid action button never holds the keyboard: a press dragged off it — the platform's cancel — leaves it unfocused, so Enter afterwards fires nothing (ADR-0020/0037) | Layer 3 on `/cells` with a real mouse | no `.ex-action` is `document.activeElement`; zero `OnAction` after the drag and the Enter |
+| **KB-28** | MUST | `Alt+↓` opens the column menu of the Focus's column, and does nothing on a column with no menu (ADR-0039) | Layer 1 for the table, Layer 2 for the open, Layer 3 for the browser taking no action of its own | the menu is open for that column |
+| **KB-29** | MUST | Opening a column menu, a filter panel or the Context Menu — by key or by pointer — puts DOM focus on its first enabled item or control, asked through the context's `FocusRequest`, once per opening, never by the core reaching into content it did not render (ADR-0039/0037) | Layer 2: the request counts up once per opening; Layer 3: `document.activeElement` is inside the popover, under both Chromes | as stated |
+| **KB-30** | MUST | In a menu, ↑ / ↓ move among the **enabled** items and wrap, Home / End go to the first and last, Enter / Space run the item and close the menu, Tab / Shift+Tab close it as a Cancel (ADR-0039) | Layer 3, the same test against the built-in Chrome and against `ExGrid.MudBlazor`'s (FN-17) | identical outcomes under both |
+| **KB-31** | MUST | In the filter panel, Tab / Shift+Tab move among its controls and wrap inside it while it stands; Enter in a value field applies (ADR-0039) | Layer 3 under both Chromes | focus never leaves the panel by Tab; the filter applied equals the one OK applies |
+| **KB-32** | MUST | However a popover closes — Escape, its ▾, a pointer-down elsewhere in the instance, a command run, Apply, Cancel, Clear — DOM focus returns to the root, **including from inside an Inner Popup**; a dismissing pointer-down keeps its own meaning (ADR-0039/0010) | Layer 3 under both Chromes | `document.activeElement` is the root and the next arrow moves the Focus |
 
 ---
 
@@ -508,6 +519,7 @@ ADR-0027 P3 states the expectation precisely, which makes this the most mechanic
 | **RR-10** | MUST | `ShouldRender` is hand-written wherever memoisation is claimed (ADR-0003) | inspect | present on `ExGridRow` and on the root |
 | **RR-11** | MUST | The pointer-row report (ADR-0021, fifth entry) reaches .NET only when the pointer crosses a row, and a hover-row change re-renders no row — the band is the overlay's (ADR-0029) | Layer 2 counting `RenderCount`; inspect `ex-grid.js` for the row filter | a report onto the row already held renders nothing; row counts unchanged across a hover change |
 | **RR-12** | MUST | Interactive re-renders only the engaged row: entering, each choice and leaving render that row and no other, and a template's focus request renders the Focus row at most twice — the request and its clearing (ADR-0037, ADR-0027 P3) | Layer 2 counting per-row renders | every other row's count unchanged |
+| **RR-13** | MUST | Row Stripes cost no render: with `StripeRows` on, scrolling by one row re-renders only the rows that entered or left, and PF-3's per-cell slope stays zero (ADR-0038, ADR-0027 P3/P5) | Layer 2 counting per-row renders; `RenderAllocationTests` with stripes on | surviving rows skip; zero bytes per painted cell |
 
 ---
 
@@ -642,7 +654,7 @@ and so that the release gate can be stated as "**§21 lists no open question**" 
 | **`ex-editing` on the root, `ex-editor`, the `--ex-editor-*` tokens** | **settled with the Cell Editor, its trigger**: all three exist as ADR-0029 named them ([ADR-0029](adr/0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md), ADR-0010) |
 | **The Cell Editor's own ARIA semantics** | the editor exists; its input is a bare, focused `<input>` whose interaction semantics are the platform's. A richer announced contract (mode announcements) stays open against a real screen reader, with the live-region wording ([ADR-0033](adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)) |
 | **`--ex-selection-outline`** — the border Excel draws round a range's perimeter | the selection paint polish (ADR-0029) |
-| **Which Chrome seams `ExGrid.MudBlazor` implements first** | the package's own start ([ADR-0030](adr/0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)) |
+| **Which Chrome seams `ExGrid.MudBlazor` implements first** | **settled with the package's start, its trigger** — a verification order: no seam, the Cell Editor, the loading bar, then the filter panel, column menu and Context Menu with Inner Popups allowed ([ADR-0030](adr/0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md), [ADR-0039](adr/0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)); criteria in §23 |
 | **Whether ExSheet is a sibling of ExGrid or a Consumer of it** | building ExGrid ([ADR-0019](adr/0019-one-repository-many-packages.md): *"Do not decide now"*) |
 | **A column band** — the Focus band's mechanism turned sideways | **no trigger is named.** ADR-0008 says only "reserved, not specified". It is the one entry here whose *when* nobody has written down; nothing depends on it, and it is recorded rather than quietly promoted to open |
 
@@ -727,8 +739,9 @@ EXGRID_SOAK=1 npx playwright test memory.spec.mjs 2>&1 | tee ../../verification/
 
 A skipped soak is `not run` in `results.md`, never a pass.
 
-Discharges UX-2..11, VZ-1/10, ED-2/3/4/9/11, KB-1/8/11/12, CP-4/5/6/10/14, BIG, PST-3/5,
-CON-1..6/8, DOM, ST-3.
+Discharges UX-2..11/15/16, VZ-1/10, ED-2/3/4/9/11, KB-1/8/11/12/28..32, CP-4/5/6/10/14, BIG,
+PST-3/5, CON-1..6/8, DOM, ST-3, FN-21, and §23's layer-3 rows — the Wrapper's specs run in the
+same command, against the proof-of-concept page.
 
 ### Step 5 — The randomised consistency run
 
@@ -772,3 +785,31 @@ gate, as a note.
 - the toolchain, OS and browser versions used are recorded.
 
 **A criterion that could not be verified is not passed.** Write `blocked` and say why.
+
+---
+
+## 23. The Wrapper — `ExGrid.MudBlazor` (WR)
+
+*(Added 2026-09-24, when the Wrapper's remaining seams were decided — ADR-0030's verification
+order, ADR-0038, ADR-0039.)* §2 keeps the Wrappers out of the core's release; this section is the
+Wrapper's own. It does not restate the core's criteria — **every criterion above that a Chrome or a
+Theme can affect must hold with the Wrapper loaded** (WR-5) — and adds only what a real design
+system can fail and a stub cannot.
+
+The scenario for the layer-3 rows is the DemoHost's **proof-of-concept page**: an ordinary
+MudBlazor application — `MudLayout` with an AppBar and a Drawer, `MudTabs`, a `MudDialog`, a
+`MudSelect` in the toolbar, a light/dark switch, two grids — shaped like a Consumer's app and
+holding nothing of any real Consumer's domain.
+
+| ID | Level | Statement | Verification | Pass |
+|---|---|---|---|---|
+| **WR-1** | MUST | The filter panel is the Wrapper's own, built from MudBlazor controls inside the core's popover, and uses the whole `FilterPanelContext`: a value list with a search and a Blank entry where the column declares one and the answer arrives; the condition form where it declares that, or where the answer is TooMany; Apply, Cancel, Clear (ADR-0009/0030) | Layer 2 on `MudGridChrome.FilterPanel`; Layer 3 on the proof-of-concept page | the same choices produce the same `FilterSpec` through the Wrapper's panel as through the built-in one |
+| **WR-2** | MUST | A condition's operator is a `MudSelect` offering exactly `Allowed`, in the core's order; its value is a `MudTextField` for text, a `MudNumericField` for a number, an editable `MudDatePicker` for a date, and a `MudSelect` of true / false **with nothing chosen at first** for a boolean; Apply is unavailable until the operator's value is given (ADR-0009/0039) | Layer 2 per column type | the controls and the gating as stated |
+| **WR-3** | MUST | The wording is MudBlazor's localised text wherever MudBlazor has a key, and the Chrome's own label function — English by default — for the rest; the Blank entry and its operator are the Chrome's own words and never say "empty" (CONTEXT.md **Blank**) | Layer 2 with a non-English `MudLocalizer` registered | the keyed words change; the Blank wording is the Chrome's |
+| **WR-4** | MUST | The column menu and the Context Menu list exactly the core's commands, in its order, each with its `Enabled` state, as `MudButton`s with `role="menuitem"`; each core command id has a Material icon, and a Consumer's command has none unless the Chrome's icon function supplies one (ADR-0010/0036) | Layer 2 | items, order, state, roles and icons as stated |
+| **WR-5** | MUST | Behaviour is the core's: every layer-3 test of KB-17, KB-28..32, FN-21, A11Y-19, UX-11 and CTX-1..4 passes with `MudGridChrome` exactly as it does with the built-in Chrome (FN-17, ADR-0010) | Layer 3, each such test run under both Chromes | identical outcomes |
+| **WR-6** | MUST | `Striped` on `MudExGridPaper` turns Row Stripes on as a default the grid's own `StripeRows` beats, and the stripe takes the palette's table-stripe colour in both schemes; a scheme switch re-renders no row (ADR-0030/0038, RR-1) | Layer 2 for the cascade; Layer 3 for the colour and the render count | as stated |
+| **WR-7** | MUST | The proof-of-concept page holds: a grid in a tab that was hidden paints correctly once shown; a Drawer toggle resizes a `Fill` grid and its geometry follows; a grid in a `MudDialog` opens its popovers whole — inside the grid's box, never cut by the dialog — and its Inner Popups above the dialog; the toolbar's `MudSelect` and a grid panel's never interfere; the two grids stay independent (ADR-0018/0028/0030/0039) | Layer 3 | every clause observed |
+| **WR-8** | MUST | The Wrapper adds no script: no `.js` in the package and no interop call of its own; what MudBlazor's components run for themselves is MudBlazor's (ADR-0021 as narrowed by ADR-0039) | inspect the package; grep for `IJSRuntime`, `IJSObjectReference`, `.js` | none |
+| **WR-9** | MUST | The Wrapper's own suites hold the core's console rules: zero errors, zero page errors, zero warnings from ExGrid's or the Wrapper's code, no unhandled exception (CON-1/2/3/6) | the shared layer-3 fixture; layer 2's unobserved-exception handler | as the core's |
+

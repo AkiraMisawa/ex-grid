@@ -3,8 +3,8 @@ namespace ExGrid.MudBlazor;
 /// <summary>
 /// What this Wrapper hands down to the grids inside it (ADR-0030): Roboto's glyph
 /// widths — the metrics-bearing obligation of ADR-0027, discharged by the same hand
-/// that sets the font — and the presets MudBlazor's <c>Dense</c> and <c>Hover</c> map
-/// onto. Cascaded by <see cref="MudExGridPaper"/>; exposed here so a Consumer that
+/// that sets the font — and the presets MudBlazor's <c>Dense</c>, <c>Hover</c> and
+/// <c>Striped</c> map onto. Cascaded by <see cref="MudExGridPaper"/>; exposed here so a Consumer that
 /// wraps nothing can still pass the widths to a bare grid.
 /// </summary>
 public static class MudExGridPresentation
@@ -30,17 +30,23 @@ public static class MudExGridPresentation
         new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx);
 
     // One instance per combination: an allocation-free lookup, and a cascaded value
-    // that only changes when Dense or Hover do. Identity buys nothing beyond that —
-    // a parent's render reaches the grid root whatever the cascaded reference is, and
-    // the rows skip on value equality of what the root hands them (ADR-0003). A theme
-    // change is CSS and reaches no render at all.
-    private static readonly GridPresentationDefaults[] ByFlags =
-    [
-        new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx, GridDensity.Standard, highlightHoverRow: false),
-        new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx, GridDensity.Standard, highlightHoverRow: true),
-        new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx, GridDensity.Compact, highlightHoverRow: false),
-        new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx, GridDensity.Compact, highlightHoverRow: true),
-    ];
+    // that only changes when Dense, Hover or Striped do. Identity buys nothing beyond
+    // that — a parent's render reaches the grid root whatever the cascaded reference is,
+    // and the rows skip on value equality of what the root hands them (ADR-0003). A
+    // theme change is CSS and reaches no render at all.
+    private static readonly GridPresentationDefaults[] ByFlags = BuildFlags();
+
+    private static GridPresentationDefaults[] BuildFlags()
+    {
+        var all = new GridPresentationDefaults[8];
+        for (var flags = 0; flags < all.Length; flags++)
+        {
+            all[flags] = new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx,
+                DensityFor(dense: (flags & 4) != 0), highlightHoverRow: (flags & 2) != 0,
+                stripeRows: (flags & 1) != 0);
+        }
+        return all;
+    }
 
     /// <summary>
     /// Material's density word mapped onto the grid's presets (ADR-0028/0030):
@@ -52,16 +58,24 @@ public static class MudExGridPresentation
     public static GridDensity DensityFor(bool dense) => dense ? GridDensity.Compact : GridDensity.Standard;
 
     /// <summary>The cascaded value for a paper's <c>Dense</c> and <c>Hover</c>, in Roboto.</summary>
-    public static GridPresentationDefaults For(bool dense, bool hover)
-        => ByFlags[(dense ? 2 : 0) + (hover ? 1 : 0)];
+    public static GridPresentationDefaults For(bool dense, bool hover) => For(dense, hover, striped: false);
+
+    /// <summary>The cascaded value for a paper's <c>Dense</c>, <c>Hover</c> and
+    /// <c>Striped</c>, in Roboto. <c>Striped</c> is the grid's Row Stripes (ADR-0038).</summary>
+    public static GridPresentationDefaults For(bool dense, bool hover, bool striped)
+        => ByFlags[(dense ? 4 : 0) + (hover ? 2 : 0) + (striped ? 1 : 0)];
 
     /// <summary>The cascaded value for another font: its widths, with the paper's flags.</summary>
     public static GridPresentationDefaults For(MudExGridFont font, bool dense, bool hover)
+        => For(font, dense, hover, striped: false);
+
+    /// <summary>The cascaded value for another font: its widths, with the paper's flags.</summary>
+    public static GridPresentationDefaults For(MudExGridFont font, bool dense, bool hover, bool striped)
     {
         ArgumentNullException.ThrowIfNull(font);
         return new GridPresentationDefaults(
             font.WideWidthPx, font.DigitWidthPx, font.NarrowWidthPx, font.MeasuredAtPx,
-            DensityFor(dense), hover);
+            DensityFor(dense), hover, striped);
     }
 }
 

@@ -60,10 +60,14 @@ internal sealed class TestSource : IGridSource<TestRow>
 
     public List<string> DistinctRequested { get; } = [];
 
+    /// <summary>When set, the value list answers only once the test completes it — a
+    /// Consumer whose query is still running.</summary>
+    public TaskCompletionSource<Chrome.DistinctValues>? DistinctPending { get; set; }
+
     public Task<Chrome.DistinctValues> GetDistinctValuesAsync(string column, CancellationToken cancellationToken)
     {
         DistinctRequested.Add(column);
-        return Task.FromResult(DistinctAnswer);
+        return DistinctPending?.Task ?? Task.FromResult(DistinctAnswer);
     }
 
     public Task OnRangeNeededAsync(RowRange range)

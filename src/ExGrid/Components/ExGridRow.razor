@@ -27,7 +27,7 @@
    among siblings is wrong in exactly the way virtualisation makes it — aria-rowindex
    states the 1-based absolute one. aria-busy while a Placeholder: values that have
    not arrived must not be read out as though they had (ADR-0004). *@
-<div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder)"
+<div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder, Stripe)"
      role="row" aria-rowindex="@(RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
     @for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
     {
@@ -127,6 +127,11 @@
     /// Constant for a given row within a Window, so memoisation is untouched by it.</summary>
     [Parameter] public int RowIndex { get; set; }
 
+    /// <summary>Whether this row wears a Row Stripe (ADR-0038): decided by the grid from
+    /// the row's absolute position, so it changes only when <see cref="RowIndex"/> does —
+    /// or when stripes are turned on or off.</summary>
+    [Parameter] public bool Stripe { get; set; }
+
     /// <summary>The instance's id prefix (ADR-0018/0033): two grids on one page must
     /// not share a cell id, or <c>aria-activedescendant</c> resolves into the wrong
     /// grid. Constant for the component's life.</summary>
@@ -173,6 +178,7 @@
     private Func<TRow, RowKind>? _renderedRowKind;
     private Func<GridActionEventArgs<TRow>, Task>? _renderedOnAction;
     private int _renderedRowIndex;
+    private bool _renderedStripe;
     private CellEngagement _renderedEngagement = CellEngagement.None;
 
     protected override void OnInitialized()
@@ -200,6 +206,7 @@
             && ReferenceEquals(_renderedRowKind, RowKind)
             && ReferenceEquals(_renderedOnAction, OnAction)
             && _renderedRowIndex == RowIndex
+            && _renderedStripe == Stripe
             && _renderedEngagement == Engagement)
         {
             return false;
@@ -221,6 +228,7 @@
         _renderedRowKind = RowKind;
         _renderedOnAction = OnAction;
         _renderedRowIndex = RowIndex;
+        _renderedStripe = Stripe;
         _renderedEngagement = Engagement;
     }
 

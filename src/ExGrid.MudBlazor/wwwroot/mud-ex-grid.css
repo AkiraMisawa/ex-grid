@@ -33,6 +33,9 @@
     --ex-selection-fill: rgba(var(--mud-palette-primary-rgb), 0.18);
     --ex-focus-row-fill: rgba(var(--mud-palette-primary-rgb), 0.08);
     --ex-row-hover-background: var(--mud-palette-table-hover);
+    /* Row Stripes, where Striped or the grid turns them on (ADR-0038): the palette's
+       table-stripe colour, as MudBlazor's own tables paint it. */
+    --ex-row-stripe-background: var(--mud-palette-table-striped);
     --ex-focus-outline: var(--mud-palette-text-primary);
     --ex-grid-focus-outline: 2px solid var(--mud-palette-primary);
     --ex-editor-background: var(--mud-palette-surface);
@@ -109,4 +112,56 @@
 /* The loading bar, where the core places its loading seam (ADR-0010). */
 .mud-ex-grid .mud-ex-grid-loading {
     height: 4px;
+}
+/* The menus' items (ADR-0010/0036): MudButtons laid out as a Material menu — each label at
+   the start, in sentence case rather than a button's capitals. Scoped to the menu's own
+   element, which stands inside the core's popover whether or not a paper wraps the grid;
+   the popover itself, its place and its box stay the core's. */
+.mud-ex-grid-menu {
+    display: flex;
+    flex-direction: column;
+}
+.mud-ex-grid-menu .mud-ex-grid-menu-item,
+.mud-ex-grid-menu .mud-ex-grid-menu-item .mud-button-label {
+    justify-content: flex-start;
+    text-transform: none;
+}
+/* The filter panel (ADR-0009/0030): MudBlazor's controls in a column inside the core's
+   popover, the value list scrolling on its own and the actions at the end. Scoped to the
+   panel's own element, like the menu's. */
+.mud-ex-grid-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px;
+    /* No width of its own: the core's popover sets the narrowest and the widest inline and
+       clamps with those same numbers (ADR-0027/0040). Bounded in height by the grid's box,
+       the panel fills what room there is, and its value list is what gives — to a floor
+       that still shows a couple of entries, scrolling — so the search and the actions stay
+       in view. */
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.mud-ex-grid-filter-values {
+    display: flex;
+    flex-direction: column;
+    max-height: 240px;
+    min-height: 48px;
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+.mud-ex-grid-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+/* The Tab wrap's two sentinels (ADR-0039): focusable, and nothing else. Absolute, so they
+   take no place in the panel's column and add no gap to it. */
+.mud-ex-grid-focus-wrap {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    outline: none;
 }

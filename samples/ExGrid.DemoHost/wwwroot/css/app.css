@@ -46,6 +46,37 @@ body {
     margin-bottom: 2rem;
 }
 
+/* The /mud-app page is an application: its AppBar and Drawer are fixed to the window's
+   edges and its main content is laid out against them, so the host's page margin would
+   only put a gap between the Drawer and the content. */
+body:has(.demo-mud-app) {
+    padding: 0;
+}
+
+/* A paper that is as wide as the layout gives it rather than as wide as its grid, for a
+   grid whose width is ViewportSize.Fill (ADR-0028): the grid's box is then the layout's
+   answer, and the Drawer's toggle changes it. This lays out the Wrapper's OUTER element,
+   which is the Consumer's to place; nothing inside the grid's root is reached
+   (ADR-0030). */
+.mud-ex-grid.demo-fill-paper {
+    display: flex;
+    width: 100%;
+}
+
+.demo-paper-gap {
+    margin-top: 1.5rem;
+}
+
+/* The toolbar's select sits on the AppBar's primary colour; a surface behind it keeps
+   its outline and label readable in both schemes. */
+.demo-appbar-select {
+    min-width: 12rem;
+    margin-right: 0.5rem;
+    padding: 0 0.5rem 0.25rem;
+    border-radius: var(--mud-default-borderradius, 4px);
+    background: var(--mud-palette-surface);
+}
+
 /* What a Template Column paints on the cells page. Nothing here turns pointer events
    back on, so clicking the bar still selects the cell as any other click does — only a
    control that wants its own click takes ex-interactive (ADR-0020). */

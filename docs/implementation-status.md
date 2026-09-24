@@ -342,14 +342,103 @@ clean. The property is unchanged: the dependency points one way.
    item, is built — ADR-0037.)*
 4. ~~**ADR-0037's layer 3 on the two target browsers.**~~ Discharged on 2026-09-23 by
    the Windows run: KB-20 to KB-27, A11Y-17 and UX-14 pass on `chrome` and `msedge`.
-5. `ExGrid.MudBlazor`'s remaining seams — the filter panel and the column menu as
-   content inside the core's popover — and `Striped`, reserved until the core emits a
-   row-parity class (ADR-0030).
+5. **`ExGrid.MudBlazor`'s remaining seams, and Row Stripes — decided and built
+   2026-09-24; verified on the container's Chromium only.** A grilling session settled them; the decisions are
+   [ADR-0038](adr/0038-row-stripes-are-painted-from-the-rows-absolute-position.md) (Row
+   Stripes, reversing ADR-0027's "not offered"),
+   [ADR-0039](adr/0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)
+   (popovers take the keyboard — a core gap: no key opened the column menu, and no popover
+   could be used without a pointer — and may hold Inner Popups, replacing ADR-0030's "never a
+   `MudPopover`"), and the rewritten passages of ADR-0010/0012/0021/0027/0029/0030/0036. The
+   criteria are FN-17/21, UX-15/16, A11Y-19, KB-28..32, RR-13 and the new §23 (WR-1..9); the
+   work is ticketed as vertical slices (GitHub issues #3–#12) and built against a
+   proof-of-concept MudBlazor page in the DemoHost. **Built so far:** the core half of
+   ADR-0039 — `Alt+↓`, `FocusRequest` on the three popover contexts, the built-in Chrome
+   focusing its first item, focus returned to the root on every close, the menus' and
+   panel's roles and names (KB-28/29/32, A11Y-19), and the keys inside the built-in menus
+   and panel (KB-30/31): the table is `MenuKeys`, public so a substituted Chrome answers to
+   the same one; the panel's Tab wraps through two focus sentinels, and its Enter is the
+   browser's implicit form submission, which leaves a composing IME alone where a Blazor key
+   handler could not tell (`MenuKeysTests`, `PopoverKeyboardTests`, `features.spec.mjs`).
+   Each popover is now keyed by its opening: one column's menu opened straight over
+   another's kept the same buttons through the diff, and nothing took the keyboard. And Row
+   Stripes in the core (UX-15/16, RR-13; `RowStripeTests`, `stripes.spec.mjs` on the new
+   `/stripes` page, which reads the painted colours from a screenshot). The proof-of-concept
+   page, `/mud-app`, and the `/features?chrome=mud` switch are in (T4, `mud-app.spec.mjs`,
+   WR-8's `WrapperScriptTests`). `MudGridChrome` fills the column menu and the Context Menu
+   with `MudButton` items, a Material icon each, and answers to `MenuKeys` (WR-4;
+   `MudMenuTests`), and `popovers.spec.mjs` runs every popover test under both Chromes
+   (WR-5 for the menus). Two core defects surfaced on the way and are fixed: a command a
+   substituted Chrome invoked never closed its menu — the core now hands out commands that
+   close themselves, since closing is its decision (ADR-0010) — and "Pin up to this column"
+   was offered where the pin would cut a Header Group, which the grid then refused by
+   taking the page down; it is now disabled there (ADR-0032). `MudExGridPaper.Striped`
+   cascades Row Stripes and the Wrapper's stylesheet colours them from the palette's
+   table-stripe colour (WR-6; `MudExGridPaperTests`, `mud-app.spec.mjs`). `MudGridChrome`
+   now fills the filter panel as well (WR-1/2/3). A value list of `MudCheckBox`es with a
+   search and a Blank entry. A condition form: a `MudSelect` operator offering exactly
+   `Allowed`, and the type's own operand control, with Apply held until the operand is
+   given. MudBlazor's words where it has keys, the Chrome's `Label` elsewhere
+   (`MudFilterPanelTests`). What a panel's choices mean moved into the core as
+   `FilterPanelChoices`, which the built-in panel uses too, so the same choices make the
+   same `FilterSpec` under either Chrome. Two more core defects surfaced and are fixed:
+   - `In` chosen in the built-in condition form applied a clause the engine refuses.
+   - Escape from inside a popover returned focus before the render that removed it, so a
+     `MudSelect` pulled focus back and it fell to `<body>`.
+
+   `FilterPanelContext` carries the column's `Format`, so a substituted value list shows
+   values as the cells do.
+
+   **Two decisions, taken 2026-09-24 after the browser disagreed with the records:**
+   - **Popovers stay inside their grid's box** ([ADR-0040](adr/0040-a-popover-stays-inside-its-grids-box.md)).
+     A grid inside a `MudDialog` had its column menu cut off by the dialog's scrolling
+     content. ADR-0017/0018/0021 had chosen the Popover API and CSS Anchor Positioning, "no
+     script". What had been built was an in-root popover, and nothing recorded the
+     difference. Measured: the top layer needs `showPopover()` for key- and right-click
+     opens, and buries MudBlazor's popups. `position: fixed` with anchors is still cut by
+     `.mud-dialog`'s transform. The core now writes each popover's `max-height` from its own
+     geometry, and the Context Menu opens on the side with more room. A panel's value list
+     is what gives. WR-7's dialog clause and UX-11 were restated to match.
+   - **Escape closes an Inner Popup first**, as ADR-0039 intended. Its prediction of *how*
+     was wrong: MudBlazor keeps DOM focus on the control while its popup is open, so the
+     grid took the Escape and closed both. The contexts now carry `InnerPopupChanged`, the
+     Wrapper's panel reports its selects' lists and its date calendar, and while one is open
+     the capture-phase gate leaves a descendant's Escape to it. This is one more state of an
+     allowlisted listener, not a new use.
+
+   FN-21 is now observed clause by clause (`popovers.spec.mjs`), `ModalOverlay` included
+   (`/features?chrome=mud&modal=1`).
+
+   **A review of the whole change** (the `code-review` pass, 10 findings) fixed:
+   - A menu opened while a panel's value list was still loading never took the keyboard.
+     When that list's command finally completed, it closed the menu standing by then. A
+     command now closes only the popover it ran from, and every opening starts clean.
+   - A popover on the rightmost column could hang past the grid's right edge. It is now
+     clamped by the widest it may grow, and that 320px moved from the stylesheet to the
+     inline style beside its 200px floor. The Wrapper panel's own 240px minimum went.
+   - TooMany overwrote an operator the user had picked while the list loaded.
+   - A substituted panel's value list was queried twice per opening.
+   - A reported Inner Popup could outlive its popover.
+
+   Not taken: a per-opening cache of the command list, since the context was already
+   rebuilt on every render.
+
+   **Runs still owed, not passed:**
+   - Every layer-3 test added on 2026-09-24 has run only on the container's bundled
+     Chromium, headless, with the two local settings that are not the project's. That is
+     `popovers.spec.mjs`, `stripes.spec.mjs`, the new `mud-app.spec.mjs` and the ADR-0039
+     half of `features.spec.mjs`. They still owe a `chrome` and an `msedge` run on Windows or
+     Linux (Step 4), headed.
+   - The soak (`EXGRID_SOAK=1`), per browser.
+   - A real IME is not reachable from the container: the claim that Enter confirming a
+     candidate does not apply a filter rests on the browser's implicit-submission rule, and
+     is owed a manual check with a Japanese IME on both browsers.
 
 ## Where the exit criteria stand
 
 **No open question in §21.** Settled this run, each with its trigger: the Action-Column
 copy (empty cell, ADR-0005), the editor's classes and tokens (with the editor), the
 header-click sort cycle (recorded in ADR-0012). Still reserved, triggers unfired: the
-fill handle, right-click, `--ex-selection-outline`, the Wrapper seam order, ExSheet's
-shape, the column band.
+fill handle, `--ex-selection-outline`, ExSheet's shape, the column band. *(Since then:
+right-click was settled by the Context Menu, ADR-0036; the Wrapper seam order by the
+package's start and ADR-0039, 2026-09-24.)*

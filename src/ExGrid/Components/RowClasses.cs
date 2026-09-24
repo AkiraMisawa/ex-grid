@@ -16,8 +16,13 @@ public static class RowClasses
     /// <summary>The full class attribute for one row. A Placeholder keeps its Kind: a
     /// group row that blinked into a detail row mid-fling would be the landmark lying
     /// about itself (ADR-0004).</summary>
-    public static string For(RowKind kind, bool placeholder)
-        => Composed[Index(kind) * 2 + (placeholder ? 1 : 0)];
+    public static string For(RowKind kind, bool placeholder) => For(kind, placeholder, stripe: false);
+
+    /// <summary>The same, with the Row Stripe the grid decided from the row's absolute
+    /// position (ADR-0038) — one more interned string per combination, never composed on
+    /// the render path (ADR-0027 P5).</summary>
+    public static string For(RowKind kind, bool placeholder, bool stripe)
+        => Composed[Index(kind) * 4 + (placeholder ? 2 : 0) + (stripe ? 1 : 0)];
 
     // An undefined RowKind is refused rather than quietly painted as a detail row, for
     // the reason an undefined CellState is (ADR-0006 / ADR-0024).
@@ -40,11 +45,13 @@ public static class RowClasses
     private static string[] Compose()
     {
         RowKind[] kinds = [RowKind.Detail, RowKind.Group, RowKind.Total];
-        var composed = new string[kinds.Length * 2];
+        var composed = new string[kinds.Length * 4];
         foreach (var kind in kinds)
         {
-            composed[Index(kind) * 2] = "ex-row" + Suffix(kind);
-            composed[Index(kind) * 2 + 1] = "ex-row ex-placeholder" + Suffix(kind);
+            composed[Index(kind) * 4] = "ex-row" + Suffix(kind);
+            composed[Index(kind) * 4 + 1] = "ex-row" + Suffix(kind) + " ex-row-stripe";
+            composed[Index(kind) * 4 + 2] = "ex-row ex-placeholder" + Suffix(kind);
+            composed[Index(kind) * 4 + 3] = "ex-row ex-placeholder" + Suffix(kind) + " ex-row-stripe";
         }
 
         return composed;

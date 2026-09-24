@@ -68,6 +68,20 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// Everything a filter panel substitute needs (ADR-0009): the column, the condition in
 /// force, the operators the core allows, the declared UI mode, the pull for distinct
 /// values, and the three exits. A substitute compiles against this alone.
+///
+/// <para><see cref="FocusRequest"/> counts the openings (ADR-0039): the panel's contents
+/// put DOM focus on their first control whenever it changes. The core holds no reference
+/// to a control it did not render, and does not try — the same rule as
+/// <see cref="CellEditorContext.FocusRequest"/>.</para>
+///
+/// <para><see cref="Format"/> is the column's own, so a value list shows each value as the
+/// cells show it — null where the column declares none. What the choices mean is
+/// <see cref="FilterPanelChoices"/>', the rules the built-in panel applies by.</para>
+///
+/// <para><see cref="InnerPopupChanged"/> is how the contents report a popup of their own —
+/// a select's list, a picker's calendar — opening (<c>true</c>) and closing (<c>false</c>).
+/// While one is open, Escape is the popup's: the grid leaves it to the control, and the next
+/// one closes the panel (ADR-0039). Contents that open no popup never call it.</para>
 /// </summary>
 public sealed record FilterPanelContext(
     string Column,
@@ -78,14 +92,25 @@ public sealed record FilterPanelContext(
     Func<Task<DistinctValues>> RequestDistinctValues,
     Action<FilterSpec?> Apply,
     Action Clear,
-    Action Close);
+    Action Close,
+    int FocusRequest = 0,
+    Func<object, string>? Format = null,
+    Action<bool>? InnerPopupChanged = null);
 
-/// <summary>The column menu's contract (ADR-0010): the core decides the items.</summary>
+/// <summary>The column menu's contract (ADR-0010): the core decides the items.
+/// <see cref="FocusRequest"/> counts the openings; the menu puts DOM focus on its first
+/// enabled item whenever it changes (ADR-0039). Invoking a command also closes the menu
+/// — or replaces it with the filter panel — and hands the keyboard back: the Chrome only
+/// invokes, and calls <see cref="Close"/> for a dismissal of its own. What each key
+/// means on an item is <see cref="MenuKeys"/>'. A popup the menu's contents open of their
+/// own is reported through <see cref="InnerPopupChanged"/>, as in the filter panel.</summary>
 public sealed record ColumnMenuContext(
     string Column,
     ColumnType Type,
     IReadOnlyList<GridCommand> Commands,
-    Action Close);
+    Action Close,
+    int FocusRequest = 0,
+    Action<bool>? InnerPopupChanged = null);
 
 /// <summary>
 /// The context menu's contract (ADR-0036). The core decides the items and the Consumer
@@ -97,6 +122,11 @@ public sealed record ColumnMenuContext(
 /// cannot be: a selection legitimately covers rows outside the Window and rows never
 /// fetched. The Consumer holds the data, so resolving an index into a row is its
 /// question, asked of the source it already has.
+///
+/// <para><see cref="FocusRequest"/> counts the openings; the menu puts DOM focus on its
+/// first enabled item whenever it changes (ADR-0039). As in the column menu, invoking a
+/// command closes the menu and hands the keyboard back, and <see cref="MenuKeys"/> says
+/// what each key means on an item.</para>
 /// </summary>
 public sealed record ContextMenuContext<TRow>(
     TRow Row,
@@ -105,7 +135,9 @@ public sealed record ContextMenuContext<TRow>(
     IReadOnlyList<SelectionRange> Selection,
     int RowSequenceVersion,
     IReadOnlyList<GridCommand> Commands,
-    Action Close);
+    Action Close,
+    int FocusRequest = 0,
+    Action<bool>? InnerPopupChanged = null);
 
 /// <summary>
 /// A cell's message, while it is showing (ADR-0034): the Consumer's sentence for a

@@ -130,6 +130,11 @@ translation impossible without replacing Chrome wholesale.
   What this exposed: a key arrives through interop, so nothing renders unless the handler says so
   — the pointer's path is a Blazor DOM event and renders on its own. The first version opened the
   menu and painted nothing.
+
+  *(What it did not settle, found on 2026-09-24: the menu opened by key could not then be used —
+  DOM focus stayed on the root, and the arrows moved the Focus instead of choosing an item.
+  [ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md) moves DOM
+  focus into every popover when it opens and fixes the keys inside a menu.)*
 - ~~The label seam's shape~~ — **settled while implementing**: a `CommandLabel` delegate on the
   component, `id → string?`, consulted by the built-in menu and falling back to a
   `BuiltInCommandLabels` table that belongs to the default Chrome rather than to the core. It is

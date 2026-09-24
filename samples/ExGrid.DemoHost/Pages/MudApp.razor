@@ -1,0 +1,268 @@
+@page "/mud-app"
+@using System.Globalization
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+@* global::, because inside this project's namespace a bare "MudBlazor" resolves to
+   ExGrid.MudBlazor (AGENTS.md, the name collisions). *@
+@using global::MudBlazor
+
+@* The proof-of-concept page of the Definition of Done's §23: an ordinary MudBlazor
+   application — an AppBar with a toolbar select and a light/dark switch, a Drawer, tabs,
+   a dialog — with the Wrapper's grids placed where such an application places its
+   tables. It holds nothing of any real Consumer's domain: the rows are invented and
+   seeded (DemoData.Blotter). The layer-3 suite that runs on it is mud-app.spec.mjs
+   (WR-7, WR-9); every id below is one that suite reads.
+
+   Loaded by this page alone, as on /mud, so the other pages stay the bare grid the
+   browser layer measures. Order is deliberately unremarkable (ADR-0030, load order). *@
+<HeadContent>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
+</HeadContent>
+
+@* The three providers an application's main layout carries. The popover provider is
+   where the toolbar select's list is drawn — outside every grid's root, which is the
+   Inner Popup situation of ADR-0039 seen from the application's side. *@
+<MudThemeProvider @bind-IsDarkMode="_dark" />
+<MudPopoverProvider />
+<MudDialogProvider />
+
+<MudLayout Class="demo-mud-app">
+    <MudAppBar Elevation="1" Dense="true">
+        <MudIconButton id="drawer-toggle" Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       aria-label="Toggle navigation" OnClick="ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-2">Blotter</MudText>
+        <MudSpacer />
+        @* The toolbar's own select: an application setting that no grid reads, so
+           choosing an option must leave every grid exactly as it was (WR-7). *@
+        <div id="currency-select" class="demo-appbar-select">
+            <MudSelect T="string" @bind-Value="_currency" Label="Reporting currency" Dense="true"
+                       Margin="Margin.Dense" Variant="Variant.Outlined">
+                @foreach (var currency in ReportingCurrencies)
+                {
+                    <MudSelectItem Value="@currency">@currency</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+        <MudIconButton id="theme-toggle" Color="Color.Inherit"
+                       Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       aria-label="Toggle dark mode" OnClick="ToggleDark" />
+    </MudAppBar>
+
+    @* Persistent, so opening and closing it moves the main content's edge — the
+       Positions grid below is sized by the layout, and follows (WR-7). Responsive would
+       turn into an overlay below its breakpoint and resize nothing. *@
+    <MudDrawer id="app-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always"
+               Variant="DrawerVariant.Persistent" Elevation="1">
+        <MudNavMenu>
+            <MudNavLink Href="mud-app" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.TableChart">Blotter</MudNavLink>
+            <MudNavLink Href="mud" Icon="@Icons.Material.Filled.Palette">Wrapper contract</MudNavLink>
+            <MudNavLink Href="features" Icon="@Icons.Material.Filled.Keyboard">Features</MudNavLink>
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Demo host</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="py-4">
+            <p class="demo-status">
+                <span id="drawer-status">Drawer: @(_drawerOpen ? "open" : "closed")</span>
+                <span id="dark-status">Dark: @_dark</span>
+                <span id="currency-status">Reporting currency: @_currency</span>
+            </p>
+
+            @* Sized by the layout: ViewportSize.Fill on the width, so the browser's report
+               of the box is the size (ADR-0028), and the Drawer's toggle is a resize. The
+               paper is made a full-width block by this page's own class on the outer
+               element — the Wrapper's element is the Consumer's to lay out; the grid's
+               root is not (ADR-0030). *@
+            <MudExGridPaper id="positions-paper" Class="demo-fill-paper" Elevation="1" Dense="true" Hover="true" Striped="true" Bordered="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6" Class="mud-ex-grid-title">Positions</MudText>
+                    <MudSpacer />
+                    <MudButton id="open-dialog" Variant="Variant.Text" Color="Color.Primary" OnClick="OpenDialog">Open orders</MudButton>
+                </ToolBarContent>
+                <ChildContent>
+                    <ExGrid TRow="DemoBlotterTrade"
+                            Source="_positions"
+                            Columns="_columns"
+                            ViewportWidth="ViewportSize.Fill"
+                            ViewportHeight="260"
+                            PinnedColumnCount="1"
+                            HighlightFocusRow="true"
+                            Chrome="MudGridChrome.Default" />
+                </ChildContent>
+            </MudExGridPaper>
+
+            @* The second grid on the main area: a declared size and its own row height, so
+               the two roots carry different geometry and anything shared between them
+               would show (ADR-0018). *@
+            <MudExGridPaper id="orders-paper" Class="demo-paper-gap" Elevation="1" Dense="true" Hover="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6" Class="mud-ex-grid-title">Orders</MudText>
+                </ToolBarContent>
+                <ChildContent>
+                    <ExGrid TRow="DemoBlotterTrade"
+                            Source="_orders"
+                            Columns="_orderColumns"
+                            RowHeight="24"
+                            ViewportWidth="540"
+                            ViewportHeight="200"
+                            Chrome="MudGridChrome.Default" />
+                </ChildContent>
+            </MudExGridPaper>
+
+            @* KeepPanelsAlive: every panel is rendered at once and the inactive ones are
+               display: none, so the History grid mounts inside a box with no size at all
+               — the hidden tab ADR-0028 names — and must paint correctly the moment its
+               tab is shown (WR-7). Without it the panel would be created on first visit
+               and the case would never arise. *@
+            <div id="app-tabs" class="demo-paper-gap">
+                <MudTabs Elevation="1" Rounded="true" KeepPanelsAlive="true">
+                    <MudTabPanel Text="Summary" ID="@("summary")">
+                        <div class="pa-4">
+                            <MudText Typo="Typo.body1">
+                                @_historyRows.Length historical trades across @_historyRows.Select(r => r.Book).Distinct().Count() books.
+                                Open the History tab to list them.
+                            </MudText>
+                        </div>
+                    </MudTabPanel>
+                    <MudTabPanel Text="History" ID="@("history")">
+                        <div class="pa-4">
+                            <MudExGridPaper id="history-paper" Class="demo-fill-paper" Outlined="true" Hover="true">
+                                <ExGrid TRow="DemoBlotterTrade"
+                                        Source="_history"
+                                        Columns="_columns"
+                                        RowHeight="26"
+                                        ViewportWidth="ViewportSize.Fill"
+                                        ViewportHeight="220"
+                                        PinnedColumnCount="1"
+                                        Chrome="MudGridChrome.Default" />
+                            </MudExGridPaper>
+                        </div>
+                    </MudTabPanel>
+                </MudTabs>
+            </div>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@* Inline, so its content is this page's markup; MudDialogProvider draws it. The grid is
+   a short list — shorter than its own column menu — so a popover it opens has to stand
+   out past the grid's box and over the dialog, which is what WR-7 asks of it; a grid
+   tall enough to hold its menus would let that clause pass without being tested. *@
+<MudDialog @bind-Visible="_dialogOpen" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Orders</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudExGridPaper id="dialog-paper" Outlined="true" Dense="true" Hover="true">
+            <ExGrid TRow="DemoBlotterTrade"
+                    Source="_dialogOrders"
+                    Columns="_dialogColumns"
+                    ViewportWidth="560"
+                    ViewportHeight="160"
+                    Chrome="MudGridChrome.Default" />
+        </MudExGridPaper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton id="close-dialog" OnClick="CloseDialog">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private static readonly string[] ReportingCurrencies = ["USD", "EUR", "GBP", "JPY"];
+
+    private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, CloseButton = true };
+
+    private InMemoryGridSource<DemoBlotterTrade> _positions = default!;
+    private InMemoryGridSource<DemoBlotterTrade> _orders = default!;
+    private InMemoryGridSource<DemoBlotterTrade> _history = default!;
+    private InMemoryGridSource<DemoBlotterTrade> _dialogOrders = default!;
+    private DemoBlotterTrade[] _historyRows = default!;
+
+    // Built once and kept: a columns list rebuilt per render would defeat row
+    // memoisation (ADR-0003).
+    private IReadOnlyList<GridColumn<DemoBlotterTrade>> _columns = default!;
+    private IReadOnlyList<GridColumn<DemoBlotterTrade>> _orderColumns = default!;
+    private IReadOnlyList<GridColumn<DemoBlotterTrade>> _dialogColumns = default!;
+
+    private bool _drawerOpen = true;
+    private bool _dark;
+    private bool _dialogOpen;
+    private string _currency = "USD";
+
+    protected override void OnInitialized()
+    {
+        _positions = GridSource.From(DemoData.Blotter(200, seed: 11));
+        _orders = GridSource.From(DemoData.Blotter(40, seed: 12));
+        _historyRows = DemoData.Blotter(300, seed: 13);
+        _history = GridSource.From(_historyRows);
+        _dialogOrders = GridSource.From(DemoData.Blotter(60, seed: 14));
+
+        // Thirteen columns, 1420px together: wider than the main area with the Drawer
+        // open or closed, so a Fill grid always scrolls sideways and End always has
+        // somewhere to go.
+        _columns =
+        [
+            new("Id", ColumnType.Text, t => t.Id, width: Fixed(90)),
+            new("Book", ColumnType.Text, t => t.Book, width: Fixed(110), filterUi: FilterUiMode.Both),
+            new("Trader", ColumnType.Text, t => t.Trader, width: Fixed(110), filterUi: FilterUiMode.Both),
+            new("Counterparty", ColumnType.Text, t => t.Counterparty, width: Fixed(150)),
+            new("Currency", ColumnType.Text, t => t.Currency, width: Fixed(80), filterUi: FilterUiMode.Both),
+            new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(140), format: Thousands, tone: Sign),
+            new("Price", ColumnType.Number, t => t.Price, width: Fixed(100), format: FourPlaces),
+            new("Quantity", ColumnType.Number, t => t.Quantity, width: Fixed(110), format: Thousands),
+            new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", width: Fixed(110),
+                align: CellAlign.Left, format: IsoDate),
+            new("SettleDate", ColumnType.Date, t => t.SettleDate, header: "Settles", width: Fixed(110),
+                align: CellAlign.Left, format: IsoDate),
+            new("Status", ColumnType.Text, t => t.Status, width: Fixed(100), filterUi: FilterUiMode.Both),
+            new("Confirmed", ColumnType.Boolean, t => t.Confirmed, width: Fixed(100)),
+            new("Desk", ColumnType.Text, t => t.Desk, width: Fixed(110)),
+        ];
+        _orderColumns =
+        [
+            new("Id", ColumnType.Text, t => t.Id, width: Fixed(90)),
+            new("Book", ColumnType.Text, t => t.Book, width: Fixed(110)),
+            new("Currency", ColumnType.Text, t => t.Currency, width: Fixed(80)),
+            new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(140), format: Thousands, tone: Sign),
+            new("Status", ColumnType.Text, t => t.Status, width: Fixed(100)),
+        ];
+        _dialogColumns =
+        [
+            new("Id", ColumnType.Text, t => t.Id, width: Fixed(90)),
+            new("Book", ColumnType.Text, t => t.Book, width: Fixed(110), filterUi: FilterUiMode.Both),
+            new("Trader", ColumnType.Text, t => t.Trader, width: Fixed(110)),
+            new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(140), format: Thousands, tone: Sign),
+            new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", width: Fixed(110),
+                align: CellAlign.Left, format: IsoDate),
+        ];
+    }
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+
+    private static string IsoDate(object value)
+        => ((DateTime)value).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    /// <summary>Thousands separated, rounded to the unit — the display only; the value
+    /// keeps its decimals (ADR-0005).</summary>
+    private static string Thousands(object value)
+        => ((decimal)value).ToString("N0", CultureInfo.InvariantCulture);
+
+    private static string FourPlaces(object value)
+        => ((decimal)value).ToString("N4", CultureInfo.InvariantCulture);
+
+    /// <summary>The Consumer's tone rule (ADR-0006): a sold position is Negative, and
+    /// the Wrapper's stylesheet paints it in the palette's error colour.</summary>
+    private static CellTone Sign(object value)
+        => (decimal)value < 0 ? CellTone.Negative : CellTone.None;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private void ToggleDark() => _dark = !_dark;
+
+    private void OpenDialog() => _dialogOpen = true;
+
+    private void CloseDialog() => _dialogOpen = false;
+}

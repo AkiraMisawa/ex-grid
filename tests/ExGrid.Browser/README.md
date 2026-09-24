@@ -86,12 +86,35 @@ hide it.
   real clipboard: the editor's two states (ED-2/3/4), both clipboard formats and the
   refusals (CP-1/3/4/5/6/10/14, PST-1), the keys the grid must not take (KB-15), one
   tab stop (A11Y-4, KB-12), instance independence (DOM-4), header-click sorting
-  (SR-1), popovers (UX-11). And on `/cells`, entering a cell by key (ADR-0037): Space
+  (SR-1). And on `/cells`, entering a cell by key (ADR-0037): Space
   into a cell with several actions, the arrows choosing and Space firing once, Enter
   never firing (KB-20/21/22); Space putting the caret in a Template's own field and
   Escape bringing the keyboard back (KB-23/24); a held Space firing once (KB-26);
   Shift+Tab from after the grid landing on the root with buttons on the page
   (A11Y-17); the chosen action outlined under forced colors too (UX-14).
+- `popovers.spec.mjs` — the popovers on `/features`, **run once per Chrome**: the
+  built-in one and `ExGrid.MudBlazor`'s (`/features?chrome=mud`), which must give
+  identical outcomes (WR-5, FN-17). The three dismissals, a pointer-down keeping its own
+  meaning (KB-17); `Alt+↓` opening the Focus column's menu (KB-28); every popover taking
+  DOM focus by key or pointer (KB-29); the menu keys — arrows over the enabled items with
+  wrap, Home/End, Enter/Space run, Tab closes (KB-30); the panel's Tab wrapping inside it
+  and Enter in its value field applying what OK applies (KB-31 — under the Wrapper that
+  is its own panel, a `MudSelect` operator whose list is an Inner Popup and a
+  `MudNumericField`); every close handing the
+  keyboard back to the root (KB-32); the roles and names (A11Y-19); the scroll container
+  not clipping (UX-11); and the Context Menu (CTX-1..4). Under the Wrapper alone, its
+  panel's Inner Popups (FN-21): drawn outside the root and disturbing neither grid, a
+  pointer-down elsewhere closing the list or the calendar and the panel while keeping its
+  meaning — and under `ModalOverlay` (`/features?chrome=mud&modal=1`) only the popup —
+  Escape closing the popup first and the panel next, and focus back on the root after a
+  choice and Apply. Under both Chromes, a menu taller than its grid stays inside the
+  grid's box and scrolls (UX-11, ADR-0040).
+- `stripes.spec.mjs` — Row Stripes on `/stripes` (ADR-0038), read as painted colours
+  from a screenshot rather than as computed styles: a pinned and a scrollable cell of
+  one striped row paint the same ground, and the stripe moves with its row (UX-15); a
+  group or total row's ground and a Cell State's paint over the stripe, the roles still
+  count in the parity, the overlays paint above it, and forced colours paint none
+  (UX-16).
 - `presentation.spec.mjs` — the presentation contract, measured: inline Geometry
   Tokens beat the supported override routes (UX-2), painted geometry equals declared
   (UX-3/ST-3), Visual Tokens recolour from an ancestor (UX-5), nothing under the
@@ -126,6 +149,20 @@ hide it.
   ADR-0021's fifth entry), the Wrapper's editor fits the core's box and commits
   (ED-4), the loading bar shows only while loading, and the paper's corners never
   clip (UX-11's premise).
+- `mud-app.spec.mjs` — the Wrapper against a Consumer's application, on `/mud-app`: an
+  ordinary MudBlazor app with an AppBar, a Drawer, tabs, a dialog, a toolbar select and
+  a light/dark switch (§23's proof-of-concept page). The WR-7 clauses that need no seam
+  the Wrapper has yet to fill: a grid mounted in a hidden tab paints its declared row
+  height and the right geometry once shown; a Drawer toggle resizes a `Fill` grid and
+  the painted columns and End's reveal follow, both ways; the two main-area grids stay
+  independent (DOM-4); the toolbar's `MudSelect` never disturbs a grid; a grid in a
+  `MudDialog` opens its popovers whole — inside the grid's box, scrolling where they do not
+  fit — and the filter panel's Inner Popup stands above the dialog (ADR-0040). The
+  positions paper is `Striped`: the stripe is the
+  palette's table-stripe colour in both schemes, and a scheme switch re-creates no row
+  (WR-6). The console rules hold across the app's own controls (WR-9). And `/features?chrome=mud` — the switch that runs `/features`
+  under `MudGridChrome` so its tests can run under both Chromes (WR-5) — is shown to
+  take (the Wrapper's editor appears) and to open the column menu.
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error
@@ -176,6 +213,12 @@ Two traps live in that, and the DemoHost has hit both:
   `EXGRID_BASE_URL=http://localhost:5399` (AGENTS.md, "Working in parallel").
 - Chrome normalises clipboard HTML on read (adds a meta and a tbody): assert on the
   cells, not the exact fragment.
+- MudBlazor 9's `MudSelect` takes the value on each arrow while its list is open, and
+  Enter leaves the list open; Escape closes it. A test that presses Enter and waits for
+  the list to go waits forever.
+- A grid whose Focus has scrolled out of view — a `Fill` grid narrowed under it, say —
+  paints no Focus cell, and `aria-activedescendant` is then rightly empty (ADR-0033).
+  Measure a row by its index, not by the Focus's.
 - A chord is two keydowns — the modifier first. A `{ once: true }` listener waiting for
   the key is spent on the modifier; and a `page.evaluate` that registers a listener must
   be awaited before the key is sent, or it races the key through a different channel.
