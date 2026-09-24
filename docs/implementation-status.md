@@ -188,8 +188,10 @@ tenth of the scale. VZ-1 compared scroll positions rather than 10³, 10⁵ and 1
 - **ST-1 runs at 10³ and 10⁶** (the 200-row seeds stay). The 10⁶ case costs about a minute,
   and layer 2 went from ~15 s to ~80 s. Timed per operation, nearly all of that is the
   reference source re-sorting (~0.55 s) and re-filtering (~0.38 s) a million rows. That is the
-  Consumer's work (ADR-0001), and the grid's own steps stay in milliseconds. It stays in the
-  gate. Moving it behind a switch, as the soak is, would be a decision to make in writing.
+  Consumer's work (ADR-0001), and the grid's own steps stay in milliseconds. **Decided the
+  same day: it runs only under `EXGRID_ST1_MILLION=1`**, as the soak does. An ordinary layer 2
+  skips it by name (4.5 s for the class), and §22 Step 5 is the run that sets it (67 s, 5 of 5).
+  Step 2's "zero skips" now names this one exception.
 - **`fixtures.mjs`** gives every spec one console capture, writing `console.json`. It covers
   CON-1/2 as before, plus **CON-3** (a warning from ExGrid's own code: served from
   `_content/ExGrid*`, prefixed `[ex-grid]`, or naming an `ExGrid.` category) and **CON-6**
@@ -311,11 +313,17 @@ numbers were not filed under `verification/`, because software rendering belongs
 | Layer | | State |
 |---|---|---|
 | 1 | `tests/ExGrid.Tests` | 46 files, **449 pass** (2026-09-24) |
-| 2 | `tests/ExGrid.Components` | 43 files, **421 pass** (2026-09-24) — including ST-1's randomised 500-operation run at 10³ and 10⁶ rows, MEM-1's allocation invariant, PF-3's `RenderAllocationTests`, MEM-3's `ResourceDisposalTests` and ADR-0037's `InteractiveTests` |
+| 2 | `tests/ExGrid.Components` | 43 files, **420 pass, 1 skipped by name** (2026-09-24): ST-1's 10⁶ case, which runs under `EXGRID_ST1_MILLION=1` (§22 Step 5). Including ST-1's randomised 500-operation run at 10³ rows, MEM-1's allocation invariant, PF-3's `RenderAllocationTests`, MEM-3's `ResourceDisposalTests` and ADR-0037's `InteractiveTests` |
 | 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And on macOS, `chrome` only (Chrome 153, headed): **69 pass** on 2026-09-23 after the Cmd+Enter fix the Windows run could not have seen, and again on 2026-09-24 after the layer-2 harness's fixes, which touch the action buttons, the header and every cell's id — so those fixes have not yet met `msedge`. The harness's layer-3 half (**8 specs, 78 tests**) has run only on the container's bundled Chromium: **76 pass, 2 skipped**, and the soak separately (2026-09-24) |
 | — | `verification/2026-09-01/` | layer logs + `results.md` with the pass/blocked ledger |
 | — | `verification/2026-09-23-windows/` | the Windows layer-3 run: `results.md`, the 150% and 125% logs, `metrics.json` |
 | — | `verification/2026-09-23-macos/`, `verification/2026-09-24-macos/` | the macOS `chrome` runs' `metrics.json` — the second with MEM-7 under `layer2` |
+
+**2026-09-24, PRE-4 rewritten.** Its check grepped all of `src/` for `Mud` and `Fluxor`. Since
+`src/ExGrid.MudBlazor/` lives there (ADR-0019), and a comment in the core names `MudDataGrid`,
+the check as written could no longer pass, although the property held. It now names the core,
+`src/ExGrid/`: no project reference, and no `using` of `MudBlazor` or `Fluxor`. Both come back
+clean. The property is unchanged: the dependency points one way.
 
 ## What is left, in the order that costs least
 
