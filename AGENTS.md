@@ -47,7 +47,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 40 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 41 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -86,7 +86,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 40 ADRs. **A new decision that follows these will not
+The principles that run through all 41 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -176,23 +176,25 @@ nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
 
 ## Tests
 
-**Three layers. Layers 1 and 2 gate; layer 3 is run by hand (there is no CI). Performance
-never gates.**
+**Three layers, and all three gate in CI (`.github/workflows/ci.yml`, ADR-0041): layers 1 and
+2 on every push and pull request, layer 3 on Linux with the installed Chrome and Edge, headed
+under xvfb. Performance never gates, and neither does coverage — it is reported.**
 
 | Layer | Where | Tool | Covers |
 |---|---|---|---|
 | 1. Pure logic | `tests/ExGrid.Tests` | xUnit | Selection rectangle arithmetic, Anchor/Focus, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
 | 2. Component | `tests/ExGrid.Components` | bUnit (no browser) | Which rows get rendered, and **whether row memoisation actually skips** (count renders) |
-| 3. Browser | `tests/ExGrid.Browser` | Playwright | The Scrollbar Gutter; and to come: capture-phase keys, clipboard, popovers, multiple-instance independence |
+| 3. Browser | `tests/ExGrid.Browser` | Playwright | The Scrollbar Gutter, capture-phase keys, the clipboard, popovers under both Chromes, Row Stripes as painted, multiple-instance independence, large data |
 
 **Rules:**
 
-- **Layer 3 does not run automatically, and layers 1 and 2 cannot cover it.** `npm ci &&
-  npx playwright test` in `tests/ExGrid.Browser`, or `nix develop .#browser -c npx playwright
-  test`. It needs Chrome installed and starts the DemoHost itself; there is no CI, so it is run
-  by hand — and **deliberately on Windows or Linux**, where the platform's own scrollbars occupy
-  layout and the assertions are not tautologies. `tests/ExGrid.Browser/README.md` says what it
-  asserts and what it deliberately does not.
+- **Layers 1 and 2 cannot cover layer 3.** Locally: `npm ci && npx playwright test` in
+  `tests/ExGrid.Browser`, or `nix develop .#browser -c npx playwright test`. It needs Chrome and
+  Edge installed and starts the DemoHost itself, and it runs **deliberately on Windows or
+  Linux**, where the platform's own scrollbars occupy layout and the assertions are not
+  tautologies. CI runs it on Linux on every push; **Windows (VZ-14) and a real IME are still
+  runs by hand**, and a CI artifact does not file the Step 4 record in `verification/`.
+  `tests/ExGrid.Browser/README.md` says what it asserts and what it deliberately does not.
 
 - **Put the ADR number in the test name.** A failure then says which decision was violated.
   ```csharp

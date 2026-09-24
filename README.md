@@ -1,5 +1,9 @@
 # ExGrid
 
+[![CI](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml)
+[![Line coverage](https://github.com/AkiraMisawa/ex-grid/raw/badges/coverage-line.svg)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
+[![Branch coverage](https://github.com/AkiraMisawa/ex-grid/raw/badges/coverage-branch.svg)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
+
 An Excel-like grid component for Blazor.
 
 Two products share this repository and ship as separate packages
@@ -13,7 +17,7 @@ pure-logic core and the component layer exist, virtualised on both axes, with pi
 columns, selection, the keyboard (including entering a cell), the Cell Editor and the
 clipboard. What is left is recorded in
 [`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
-in [`docs/adr/`](docs/adr/) (37 decision records) and the domain glossary in
+in [`docs/adr/`](docs/adr/) (41 decision records) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
 ## Getting started
@@ -113,7 +117,16 @@ watch the trend in `spikes/render-bench/results/` instead):
 |---|---|---|
 | 1. Pure logic | xUnit | Selection arithmetic, navigation, paste/copy rules, overflow, widths |
 | 2. Component | bUnit (no browser) | Which rows render; whether row memoisation actually skips |
-| 3. Browser | CDP driver | Capture-phase keys, clipboard, popovers, multi-instance independence |
+| 3. Browser | Playwright, on the installed Chrome and Edge | Capture-phase keys, clipboard, popovers, scrollbars, multi-instance independence |
+
+**CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml),
+[ADR-0041](docs/adr/0041-ci-runs-every-layer-and-layer-three-gates-on-linux.md)) runs all
+three on every push to `main` and `dev/claude-code` and on every pull request. Layer 3 runs
+on Linux, headed under xvfb, on the runner's installed Chrome and Edge. The soak and ST-1 at
+10⁶ rows run weekly, or on demand from the Actions tab. Coverage counts the shipped
+assemblies only and is reported, never gated: each run's summary carries the table, and the
+badges above follow `main` (history in `history.csv` on the `badges` branch). Windows (VZ-14)
+and a real IME remain runs by hand.
 
 Test names carry the ADR number they enforce, so a failure says which decision was
 violated.
