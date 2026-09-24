@@ -106,17 +106,6 @@ public class MudGridChromeTests : MudTestContext
         Assert.DoesNotContain("mud-ex-editor-error", clean.Find("input.mud-ex-editor").ClassName);
     }
 
-    [Fact] // ADR-0010: the filter panel and the column menu stay the core's
-    public void The_popover_seams_stay_the_cores()
-    {
-        var chrome = MudGridChrome.Default;
-
-        Assert.Null(chrome.FilterPanel(new FilterPanelContext(
-            "Book", ColumnType.Text, null, [], FilterUiMode.Condition,
-            () => Task.FromResult(DistinctValues.Of([])), _ => { }, () => { }, () => { })));
-        Assert.Null(chrome.ColumnMenu(new ColumnMenuContext("Book", ColumnType.Text, [], () => { })));
-    }
-
     [Fact] // ADR-0028/0030: Material's dense is Compact, never Excel
     public void Dense_is_compact_not_excel()
     {

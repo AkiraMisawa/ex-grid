@@ -3,6 +3,7 @@
 @using global::ExGrid.Rows
 @using global::ExGrid.Columns
 @using global::ExGrid.Selection
+@using Microsoft.AspNetCore.Components.Rendering
 
 @*
     The memoisation boundary sits at the row; cells are plain markup (ADR-0003).
@@ -26,7 +27,7 @@
    among siblings is wrong in exactly the way virtualisation makes it — aria-rowindex
    states the 1-based absolute one. aria-busy while a Placeholder: values that have
    not arrived must not be read out as though they had (ADR-0004). *@
-<div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder)"
+<div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder, Stripe)"
      role="row" aria-rowindex="@(RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
     @for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
     {
@@ -43,9 +44,15 @@
                mouseup is deliberately NOT stopped: it carries no position into the
                Viewport's handler, which only ends the drag. Swallowed here, a drag
                released over a button would leave the grid still dragging, and the next
-               move with a button held would extend the old selection to the pointer. *@
+               move with a button held would extend the old selection to the pointer.
+
+               Blazor composes each directive's internal attribute name on every render —
+               a string per directive per cell. Left so on purpose: the pre-composed name is
+               the host's Blazor's to interpret, and a rename in a runtime newer than the
+               one this package builds on would let the press through here, in silence (ADR-0027,
+               P5's scope). *@
             <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: true, StateOf(column), column.Align)" style="@Styles.PinnedCell(i)"
-                 role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                 role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
                  @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column, i)</div>
         }
         else
@@ -57,7 +64,7 @@
             @* aria-label only when hashed: the accessible name of a #### cell is the
                real value (ADR-0016/0033), and on every other cell the text names itself. *@
             <div class="@CellClasses.For(numeric, pinned: true, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.PinnedCell(i)"
-                 role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                 role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
                  aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
         }
     }
@@ -73,7 +80,7 @@
             @if (!column.PaintsValue)
             {
                 <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: false, StateOf(column), column.Align)" style="@Styles.Cell(i)"
-                     role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                     role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
                      @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column, i)</div>
             }
             else
@@ -83,7 +90,7 @@
                 var text = TextOf(column, value);
                 var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
                 <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.Cell(i)"
-                     role="gridcell" id="@CellId(i)" aria-colindex="@(i + 1)"
+                     role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
                      aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
             }
         }
@@ -119,6 +126,11 @@
     /// <c>aria-rowindex</c> (1-based) and the cell ids are written from (ADR-0033).
     /// Constant for a given row within a Window, so memoisation is untouched by it.</summary>
     [Parameter] public int RowIndex { get; set; }
+
+    /// <summary>Whether this row wears a Row Stripe (ADR-0038): decided by the grid from
+    /// the row's absolute position, so it changes only when <see cref="RowIndex"/> does —
+    /// or when stripes are turned on or off.</summary>
+    [Parameter] public bool Stripe { get; set; }
 
     /// <summary>The instance's id prefix (ADR-0018/0033): two grids on one page must
     /// not share a cell id, or <c>aria-activedescendant</c> resolves into the wrong
@@ -166,6 +178,7 @@
     private Func<TRow, RowKind>? _renderedRowKind;
     private Func<GridActionEventArgs<TRow>, Task>? _renderedOnAction;
     private int _renderedRowIndex;
+    private bool _renderedStripe;
     private CellEngagement _renderedEngagement = CellEngagement.None;
 
     protected override void OnInitialized()
@@ -193,6 +206,7 @@
             && ReferenceEquals(_renderedRowKind, RowKind)
             && ReferenceEquals(_renderedOnAction, OnAction)
             && _renderedRowIndex == RowIndex
+            && _renderedStripe == Stripe
             && _renderedEngagement == Engagement)
         {
             return false;
@@ -214,12 +228,60 @@
         _renderedRowKind = RowKind;
         _renderedOnAction = OnAction;
         _renderedRowIndex = RowIndex;
+        _renderedStripe = Stripe;
         _renderedEngagement = Engagement;
     }
 
+    // Each cell's id, composed the first time the cell is painted in this row and kept
+    // until what composes it — the prefix or the row's index — changes. An id is unique to
+    // its cell, so unlike a class it cannot be interned; the next best thing ADR-0027 P5
+    // allows is caching it alongside what produced it. Composed per render instead, every
+    // sideways scroll and every row re-render wrote one string per painted cell (PF-3).
+    // The cost left is one string per cell per row's life, paid when the cell first
+    // enters — which it cannot do without being painted anyway.
+    private string?[] _cellIds = [];
+    private int _cellIdsRow = -1;
+    private string _cellIdsPrefix = "";
+
     /// <summary>One cell's id: instance prefix, absolute row, column (ADR-0033). What
     /// the root's <c>aria-activedescendant</c> resolves to.</summary>
-    private string CellId(int column) => CellIds.Cell(IdPrefix, RowIndex, column);
+    private string CellId(int column)
+    {
+        if (_cellIdsRow != RowIndex || !ReferenceEquals(_cellIdsPrefix, IdPrefix))
+        {
+            Array.Clear(_cellIds);
+            _cellIdsRow = RowIndex;
+            _cellIdsPrefix = IdPrefix;
+        }
+        if (column >= _cellIds.Length)
+            Array.Resize(ref _cellIds, Math.Max(column + 1, Columns.Count));
+        return _cellIds[column] ??= CellIds.Cell(IdPrefix, RowIndex, column);
+    }
+
+    // Per column, what an Action or Template cell paints from, kept until Columns itself is
+    // replaced — the identity ADR-0003 already treats as the change signal. Built per
+    // render instead, each was a new delegate per cell (PF-3), and a new click handler is a
+    // changed attribute: the diff re-registered every action button's event on every
+    // render of its row and sent each one to the browser. Held, a button keeps its event
+    // for as long as it keeps its place; a sideways scroll that shifts the painted columns
+    // moves a scrollable one to where another column's stood, and the diff, comparing by
+    // position, registers that one afresh.
+    private IReadOnlyList<GridColumn<TRow>>? _contentsBuiltFor;
+    private RenderFragment?[] _cellContents = [];
+    private ActionPaint[]?[] _actionPaints = [];
+
+    /// <summary>What one action's button carries that does not change while the columns
+    /// do not: its class attribute and its click handler.</summary>
+    private sealed record ActionPaint(string Class, Func<Task> Fire);
+
+    private void ForgetContentsBuiltForOtherColumns()
+    {
+        if (ReferenceEquals(_contentsBuiltFor, Columns))
+            return;
+        _contentsBuiltFor = Columns;
+        _cellContents = new RenderFragment?[Columns.Count];
+        _actionPaints = new ActionPaint[]?[Columns.Count];
+    }
 
     /// <summary>
     /// What an Action or Template cell paints. A Template Column's fragment is rendered
@@ -228,7 +290,30 @@
     /// ADR-0003 measured as expensive. An Action Column's buttons are plain markup for
     /// the same reason — a boundary is the cost, not the content (ADR-0020).
     /// </summary>
-    private RenderFragment CellContent(GridColumn<TRow> column, int index) => builder =>
+    private RenderFragment CellContent(GridColumn<TRow> column, int index)
+    {
+        ForgetContentsBuiltForOtherColumns();
+        return _cellContents[index] ??= CellContentFragment(column, index);
+    }
+
+    // Its own method so that only a miss captures anything: a lambda capturing a method's
+    // parameters allocates its closure on entry to that method, cache hit or not.
+    private RenderFragment CellContentFragment(GridColumn<TRow> column, int index)
+        => builder => PaintCellContent(builder, column, index);
+
+    private ActionPaint[] ActionPaintsOf(GridColumn<TRow> column)
+    {
+        var paints = new ActionPaint[column.Actions.Count];
+        for (var a = 0; a < paints.Length; a++)
+        {
+            var action = column.Actions[a];
+            paints[a] = new ActionPaint(ActionClass(action), () => FireAsync(column, action));
+        }
+
+        return paints;
+    }
+
+    private void PaintCellContent(RenderTreeBuilder builder, GridColumn<TRow> column, int index)
     {
         if (column.Template is { } template)
         {
@@ -240,11 +325,11 @@
             return;
         }
 
+        var paints = _actionPaints[index] ??= ActionPaintsOf(column);
         var sequence = 1;
         for (var a = 0; a < column.Actions.Count; a++)
         {
             var action = column.Actions[a];
-            var fired = action;
             // The chosen action of an Interactive cell (ADR-0037): the keyboard stays on
             // the root, so nothing matches :focus-visible — this button is painted instead,
             // and carries the id the root's aria-activedescendant names. Only this one has
@@ -252,7 +337,7 @@
             var chosen = Engagement.Column == index && Engagement.Action == a;
             builder.OpenElement(sequence++, "button");
             builder.AddAttribute(sequence++, "type", "button");
-            builder.AddAttribute(sequence++, "class", chosen ? ChosenActionClass(action) : ActionClass(action));
+            builder.AddAttribute(sequence++, "class", chosen ? ChosenActionClass(action) : paints[a].Class);
             builder.AddAttribute(sequence++, "id", chosen ? CellIds.Action(IdPrefix, RowIndex, index, a) : null);
             // Never holding the keyboard (ADR-0033/0037). Out of the page's tab sequence,
             // because the root is the grid's one tab stop; and not focused by the pointer
@@ -260,6 +345,8 @@
             // a click — would otherwise leave it focused, and Enter would then fire it
             // natively: the key ADR-0020 says never fires. The click itself still lands.
             builder.AddAttribute(sequence++, "tabindex", "-1");
+            // The directive's API, not its pre-composed internal name, for the reason the
+            // cell's own stopPropagation keeps it (ADR-0027, P5's scope).
             builder.AddEventPreventDefaultAttribute(sequence++, "onmousedown", true);
             builder.AddAttribute(sequence++, "title", action.Label);
             // An icon-only button has no text to name it. `title` alone is the
@@ -269,12 +356,17 @@
             // with title left as the tooltip.
             if (action.CssClass is not null)
                 builder.AddAttribute(sequence++, "aria-label", action.Label);
-            builder.AddAttribute(sequence++, "onclick",
-                EventCallback.Factory.Create<MouseEventArgs>(this, () => FireAsync(column, fired)));
+            // The held handler, with this row named as its receiver. The receiver is how the
+            // renderer finds the error boundary for a handler that throws — a Consumer's
+            // OnAction failing — so a bare delegate would leave that failure unhandled. Naming
+            // it boxes one small callback per render, which is not a string (ADR-0027 P5);
+            // and because the delegate inside is the held one, the callback compares equal
+            // to the last, and the diff keeps the event it already registered.
+            builder.AddAttribute(sequence++, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, paints[a].Fire));
             builder.AddContent(sequence++, action.CssClass is null ? action.Label : null);
             builder.CloseElement();
         }
-    };
+    }
 
     private static string ActionClass(GridAction action)
         => action.CssClass is null ? "ex-action" : "ex-action " + action.CssClass;

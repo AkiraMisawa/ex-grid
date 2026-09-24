@@ -1,0 +1,19 @@
+{
+  "chrome": {
+    "PST-6": {
+      "sourceCells": 400,
+      "bytes": 10400400,
+      "parseAndIntentMs": 2703,
+      "nextKeyMs": 6
+    },
+    "DOM-5": {
+      "elements": 246,
+      "cells": 210,
+      "rows": 21
+    },
+    "BIG-7": {
+      "mountToFirstPaintedRowMs": 481,
+      "totalRows": 100000
+    }
+  }
+}

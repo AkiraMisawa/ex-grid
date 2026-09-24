@@ -182,6 +182,26 @@ public class VirtualisationTests : GridTestContext
         Assert.Contains("page the result", ex.Message);
     }
 
+    [Fact] // BIG-4 / VZ-8 / ADR-0013: the Definition of Done's own numbers — 10^6 rows fit at 28px, and at 40px are refused by name
+    public void A_million_rows_fit_at_28px_and_are_refused_by_name_at_40px()
+    {
+        GridColumn<TestRow>[] columns = [new("Book", ColumnType.Text, r => r.Book)];
+        IRenderedComponent<ExGrid<TestRow>> RenderAt(double rowHeightPx) => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(10))
+            .Add(g => g.TotalCount, 1_000_000)
+            .Add(g => g.Columns, columns)
+            .Add(g => g.RowHeight, rowHeightPx)
+            .Add(g => g.ViewportHeight, 600));
+
+        Assert.NotEmpty(RenderAt(28).FindAll(".ex-row"));
+
+        // Refused rather than clamped: a clamped scrollbar would leave the last rows
+        // unreachable and say nothing (ADR-0013). The refusal names both numbers.
+        var ex = Assert.Throws<InvalidOperationException>(() => RenderAt(40));
+        Assert.Contains("1000000 rows at 40px", ex.Message);
+        Assert.Contains($"{ViewportGeometry.MaxScrollHeightPx}px", ex.Message);
+    }
+
     [Fact] // ADR-0013: the header band spends a row of the browser's budget, and the guard counts it
     public void A_result_that_only_fits_without_the_header_is_refused()
     {
@@ -198,7 +218,7 @@ public class VirtualisationTests : GridTestContext
         Assert.Contains("header", ex.Message);
     }
 
-    [Fact] // ADR-0018: a grid gives back the per-instance handle it took
+    [Fact] // ADR-0018 / MEM-4: a grid gives back the per-instance handle it took
     public async Task Disposing_releases_the_scroll_handle()
     {
         RenderGrid(TestRows.Many(10), total: 10);

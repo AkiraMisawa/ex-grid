@@ -18,4 +18,18 @@ internal static class CellIds
     /// button the root ever names (ADR-0037).</summary>
     internal static string Action(string prefix, int row, int column, int action)
         => string.Create(CultureInfo.InvariantCulture, $"{prefix}r{row}c{column}a{action}");
+
+    private static readonly InternedStrings ColumnIndexes =
+        new(static column => (column + 1).ToString(CultureInfo.InvariantCulture));
+
+    /// <summary>
+    /// The 1-based <c>aria-colindex</c> of a 0-based column, interned (ADR-0027 P5). An int
+    /// written straight into the attribute is boxed and turned into a string on every
+    /// render of every cell and header cell.
+    /// </summary>
+    internal static string ColumnIndex(int column) => ColumnIndexes[column];
+
+    /// <summary>The <c>aria-colspan</c> of a header rectangle over <paramref name="columns"/>
+    /// leaves — the same interned numbers, read one down.</summary>
+    internal static string Span(int columns) => ColumnIndexes[columns - 1];
 }

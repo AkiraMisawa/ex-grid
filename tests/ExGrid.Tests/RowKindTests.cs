@@ -37,6 +37,28 @@ public class RowKindTests
         Assert.Same(RowClasses.For(RowKind.Group, placeholder: false), RowClasses.For(RowKind.Group, placeholder: false));
     }
 
+    [Fact] // ADR-0038: a Row Stripe joins the classes without losing the kind or the Placeholder
+    public void A_stripe_joins_the_row_classes()
+    {
+        Assert.Equal("ex-row ex-row-stripe", RowClasses.For(RowKind.Detail, placeholder: false, stripe: true));
+        Assert.Equal("ex-row ex-placeholder ex-row-group ex-row-stripe", RowClasses.For(RowKind.Group, placeholder: true, stripe: true));
+        Assert.Equal(RowClasses.For(RowKind.Total, placeholder: false), RowClasses.For(RowKind.Total, placeholder: false, stripe: false));
+    }
+
+    [Fact] // ADR-0038 / ADR-0027 P5: all twelve combinations are distinct, and each is one interned string
+    public void All_twelve_striped_combinations_are_distinct_and_interned()
+    {
+        var combinations =
+            (from kind in new[] { RowKind.Detail, RowKind.Group, RowKind.Total }
+             from placeholder in new[] { false, true }
+             from stripe in new[] { false, true }
+             select (kind, placeholder, stripe)).ToList();
+
+        Assert.Equal(12, combinations.Select(c => RowClasses.For(c.kind, c.placeholder, c.stripe)).Distinct(StringComparer.Ordinal).Count());
+        Assert.All(combinations, c => Assert.Same(
+            RowClasses.For(c.kind, c.placeholder, c.stripe), RowClasses.For(c.kind, c.placeholder, c.stripe)));
+    }
+
     [Fact] // ADR-0024: a kind cast in from an integer is refused, not painted as a detail row
     public void An_undefined_kind_is_refused()
     {

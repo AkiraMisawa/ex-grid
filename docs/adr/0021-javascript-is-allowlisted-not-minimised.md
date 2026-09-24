@@ -147,10 +147,16 @@ vanishes on leave (UX-13); reading `ex-grid.js` against this table matches exact
 
 These are the places where reaching for JS would be the easy answer, and where we do not.
 
-- **Popovers.** The Popover API is driven by the `popover` and `popovertarget` **attributes**,
-  and CSS Anchor Positioning is CSS. Filter panels and column menus
-  ([ADR-0009](./0009-filter-panel-contract.md), ADR-0010) need **no JS**, and that is a reason
-  we restricted the browser target ([ADR-0017](./0017-target-chromium-browsers-only.md)).
+- **Popovers.** Filter panels, column menus and the Context Menu
+  ([ADR-0009](./0009-filter-panel-contract.md), ADR-0010,
+  [ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md)) need **no
+  JS**: each stands under the instance root and stays inside the grid's box, bounded by a height
+  the core writes inline ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)).
+  *(Corrected 2026-09-24. This entry used to give the reason as the Popover API being driven
+  by the `popover` and `popovertarget` attributes. That holds only for a popover opened by a
+  click on a button. The grid's popovers also open from keys and a right-click, which would
+  need `showPopover()`. And the top layer would bury the popups a design system draws inside
+  them.)*
 - **Text measurement for overflow.** `####` could be decided by measuring rendered text.
   Instead numeric columns assume `font-variant-numeric: tabular-nums` and estimate from digit
   count ([ADR-0016](./0016-column-width-and-overflow.md)). No measurement round-trip, and it
@@ -219,7 +225,11 @@ Two grounds, and only two.
 - **`ExGrid.MudBlazor` and `ExGrid.Fluxor` inherit this rule.** A companion package is not an
   excuse to add script.
 - **Chrome implementations must not smuggle JS in.** A `IGridChrome` implementation renders and
-  calls back; if it needs script to do that, the seam is wrong (ADR-0010).
+  calls back; if it needs script to do that, the seam is wrong (ADR-0010). *(Narrowed on
+  2026-09-24 by [ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md):
+  this means script a Wrapper or a Chrome **adds** — its own `.js`, its own interop calls. The
+  scripts a design system's own components run for themselves, loaded by the Consumer's choice of
+  that design system, are the design system's, not entries on this list.)*
 - **If the browser target ever widens, this list grows.** Popovers would need positioning code,
   and the clipboard path would need reworking (ADR-0017). That cost belongs in the decision to
   widen, not in this ADR.

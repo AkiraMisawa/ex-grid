@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.mjs';
 
 // A classic (non-overlay) scrollbar takes a strip out of the box the element declares.
 // macOS draws overlay scrollbars, which take nothing, so on the machine this component
@@ -245,7 +245,7 @@ test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {
     // it passes at every scale. That discharged VZ-10, and not the comment above it —
     // the scale here is CDP's, and a real Windows desktop at 125% puts the scrollbar at
     // a non-integer number of CSS pixels with the OS doing the scaling. That case is
-    // VZ-14, and it is still open.
+    // VZ-14, and it is the next describe block, not this test.
     test('at every zoom level, after moving again', async ({ page }, testInfo) => {
         await openGrid(page, { classicScrollbars: true });
         await expectScrollbarsOccupyLayout(page);
@@ -282,5 +282,72 @@ test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {
         }
 
         await client.send('Emulation.clearDeviceMetricsOverride');
+    });
+});
+
+// VZ-14: the OS doing the scaling, not CDP. Run this on a Windows desktop set to 125%.
+//
+// Run on Windows 11 at 125% and at 150% (verification/2026-09-23-windows): it passes on
+// both browsers, and the native bar measured 15.203125 and 15.34375 CSS px, not a whole
+// number of CSS pixels at either scale, which is the case the criterion names.
+//
+// Playwright's default viewport is itself a CDP emulation, and it pins the scale: it sends
+// Emulation.setDeviceMetricsOverride with `deviceScaleFactor: options.deviceScaleFactor || 1`
+// (read in playwright-core 1.62). Under the default, a desktop at 125% renders every page in
+// this suite at DPR 1 — the OS's scale never reaches it — and this test would have passed
+// on Windows without asking what it exists to ask. `viewport: null` turns the emulation off
+// and leaves the page the window the OS drew, at the OS's scale.
+test.describe('on a Windows desktop at fractional display scaling (VZ-14)', () => {
+    test.use({ viewport: null });
+
+    /**
+     * The gutter as the grid itself is told it — border box minus content box, from a
+     * ResizeObserver, unrounded (ex-grid.js) — plus the content box in device pixels.
+     * `offsetWidth - clientWidth` rounds to whole CSS pixels, so it cannot say whether
+     * the premise of VZ-14 held: that the native bar is a non-integer number of them.
+     * Recorded, not asserted; what a native bar is worth is not the grid's to decide.
+     */
+    async function exactGutter(page) {
+        return page.evaluate(() => new Promise((resolve) => {
+            const scroller = document.querySelector('.ex-scroller');
+            const observer = new ResizeObserver(([entry]) => {
+                observer.disconnect();
+                const [border] = entry.borderBoxSize;
+                const [content] = entry.contentBoxSize;
+                const [device] = entry.devicePixelContentBoxSize ?? [];
+                resolve({
+                    width: border.inlineSize - content.inlineSize,
+                    height: border.blockSize - content.blockSize,
+                    deviceContent: device ? [device.inlineSize, device.blockSize] : null,
+                });
+            });
+            observer.observe(scroller, { box: 'content-box' });
+        }));
+    }
+
+    test('the Focus stays readable with the OS doing the scaling', async ({ page }, testInfo) => {
+        await openGrid(page, { classicScrollbars: false });
+        const { diagnostics } = await focusAgainstClientBox(page);
+        testInfo.annotations.push({ type: 'measured', description: JSON.stringify(diagnostics) });
+
+        // The browser's platform, not the runner's: what is being asked about is the bar the
+        // OS draws for this window.
+        test.skip(!/^win/i.test(diagnostics.platform),
+            `VZ-14 is about a Windows desktop, and this browser reports ${diagnostics.platform}`);
+
+        // The two ways this could pass without testing anything: bars that take no space,
+        // and a scale that is not fractional. The second is a Windows desktop at 100%, or
+        // the emulation above having come back.
+        await expectScrollbarsOccupyLayout(page);
+        expect(Number.isInteger(diagnostics.dpr),
+            `the page is at DPR ${diagnostics.dpr}, so the OS is not scaling it by a fraction `
+            + 'and this proves nothing — set Settings → Display → Scale to 125%').toBe(false);
+        testInfo.annotations.push({ type: 'gutter', description: JSON.stringify(await exactGutter(page)) });
+
+        await moveToCorner(page, 'End');
+        expectFocusInsideClientBox(await focusAgainstClientBox(page), testInfo);
+
+        await moveToCorner(page, 'Home');
+        expectFocusInsideClientBox(await focusAgainstClientBox(page), testInfo);
     });
 });

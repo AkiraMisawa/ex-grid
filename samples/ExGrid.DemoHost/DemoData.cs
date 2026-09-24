@@ -34,12 +34,36 @@ public sealed class DemoPosition
 
 /// <summary>
 /// A row for the wide page. It holds only its position and derives every value from it:
-/// a hundred columns times a hundred thousand rows is ten million values, and storing
+/// a hundred columns times a million rows is a hundred million values, and storing
 /// them would say more about the sample's memory use than about the grid.
 /// </summary>
 public sealed class DemoWideRow
 {
     public int Index;
+}
+
+/// <summary>
+/// A row of the MudBlazor application page: a booked trade as an ordinary blotter lists
+/// it, with enough fields that its columns are wider than any screen the page is shown
+/// on — a grid sized by the layout (<c>ViewportSize.Fill</c>) then always has something
+/// to scroll to, whatever the Drawer leaves it. Every value is stored, and none of it is
+/// any real Consumer's: the names are invented and the numbers are a seeded sequence.
+/// </summary>
+public sealed class DemoBlotterTrade
+{
+    public string Id = "";
+    public string Book = "";
+    public string Trader = "";
+    public string Counterparty = "";
+    public string Currency = "";
+    public decimal Notional;
+    public decimal Price;
+    public decimal Quantity;
+    public DateTime TradeDate;
+    public DateTime SettleDate;
+    public string Status = "";
+    public bool Confirmed;
+    public string Desk = "";
 }
 
 /// <summary>A row of the server page. Values are derived from the position, so the
@@ -139,14 +163,6 @@ public static class DemoData
     private static decimal Metric(int rowIndex, int metric)
         => ((rowIndex * 7919L + metric * 104729L) % 1_999_999L) / 100m;
 
-    public static DemoWideRow[] WideRows(int count)
-    {
-        var rows = new DemoWideRow[count];
-        for (var i = 0; i < count; i++)
-            rows[i] = new DemoWideRow { Index = i };
-        return rows;
-    }
-
     private static readonly string[] Books = ["Rates", "Credit", "FX", "Equity", "Commodity"];
     private static readonly string[] Traders = ["Ito", "Marsh", "Okafor", "Petrov", "Silva"];
 
@@ -205,6 +221,45 @@ public static class DemoData
             Kind = RowKind.Total,
         });
         return [.. rows];
+    }
+
+    private static readonly string[] Counterparties =
+        ["Northwind Bank", "Contoso Capital", "Fabrikam Funds", "Tailspin Trust", "Woodgrove Partners"];
+    private static readonly string[] Currencies = ["USD", "EUR", "GBP", "JPY", "CHF"];
+    private static readonly string[] Statuses = ["Booked", "Pending", "Amended", "Settled"];
+    private static readonly string[] Desks = ["Flow", "Structured", "Treasury"];
+
+    /// <summary>Deterministic blotter rows (<see cref="DemoBlotterTrade"/>), so a reload
+    /// paints the same data. Every fifth notional is negative — a sold position — so a
+    /// tone rule has something to mark.</summary>
+    public static DemoBlotterTrade[] Blotter(int count, int seed)
+    {
+        var random = new Random(seed);
+        var rows = new DemoBlotterTrade[count];
+        for (var i = 0; i < count; i++)
+        {
+            var tradeDate = new DateTime(2026, 1, 1).AddDays(random.Next(0, 240));
+            var quantity = random.Next(1, 500) * 100m;
+            var price = 90m + (random.Next(0, 200_000) / 10_000m);
+            rows[i] = new DemoBlotterTrade
+            {
+                Id = $"T-{seed:D2}{i + 1:D5}",
+                Book = Books[random.Next(Books.Length)],
+                Trader = Traders[random.Next(Traders.Length)],
+                Counterparty = Counterparties[random.Next(Counterparties.Length)],
+                Currency = Currencies[random.Next(Currencies.Length)],
+                Notional = (i % 5 == 4 ? -1 : 1) * quantity * price,
+                Price = price,
+                Quantity = quantity,
+                TradeDate = tradeDate,
+                SettleDate = tradeDate.AddDays(2),
+                Status = Statuses[random.Next(Statuses.Length)],
+                Confirmed = random.Next(3) != 0,
+                Desk = Desks[random.Next(Desks.Length)],
+            };
+        }
+
+        return rows;
     }
 
     /// <summary>Deterministic rows so a reload paints the same data.</summary>

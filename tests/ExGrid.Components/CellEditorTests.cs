@@ -51,8 +51,9 @@ public class CellEditorTests : GridTestContext
         });
 
     private static Task PressAsync(
-        IRenderedComponent<ExGrid<TestRow>> cut, string key, bool ctrl = false, bool shift = false)
-        => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
+        IRenderedComponent<ExGrid<TestRow>> cut, string key, bool ctrl = false, bool shift = false,
+        bool meta = false, bool metaIsPrimary = false)
+        => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, false, meta, metaIsPrimary));
 
     private static Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
         => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y });
@@ -235,6 +236,46 @@ public class CellEditorTests : GridTestContext
         var fill = Assert.Single(pastes);
         Assert.Equal(3, fill.CellCount);
         Assert.Equal("9", fill.ValueFor(new CellPosition(2, 0)));
+    }
+
+    [Fact] // ADR-0012 / KB-3: the editor's keys fold Command into Control too, where Meta is Command
+    public async Task Command_enter_fills_where_meta_is_command()
+    {
+        var pastes = new List<GridPasteIntent>();
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(onEdit: intents.Add, onPaste: pastes.Add);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);
+        await PressAsync(cut, "ArrowDown", shift: true);
+        await PressAsync(cut, "9");
+
+        await PressAsync(cut, "Enter", meta: true, metaIsPrimary: true);
+
+        // The fill, not the plain Enter a Mac user would otherwise get: one cell committed
+        // and the Focus moved on, with the rest of the selection silently left unfilled.
+        var fill = Assert.Single(pastes);
+        Assert.Equal(3, fill.CellCount);
+        Assert.Empty(intents);
+    }
+
+    [Fact] // ADR-0012 / KB-3: off an Apple keyboard Meta is the OS's, and a chord held with it is not the editor's
+    public async Task Meta_enter_where_meta_is_not_command_is_not_the_editors()
+    {
+        var pastes = new List<GridPasteIntent>();
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(onEdit: intents.Add, onPaste: pastes.Add);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);
+        await PressAsync(cut, "9");
+
+        // The listener never forwards this chord; the C# side is the authority all the
+        // same (GridKeys), so a disagreement shows as a key that does nothing — never as a
+        // plain Enter that commits under a gesture aimed at the window manager.
+        await PressAsync(cut, "Enter", meta: true, metaIsPrimary: false);
+
+        Assert.Empty(pastes);
+        Assert.Empty(intents);
+        Assert.Equal("9", cut.Find(".ex-editor").GetAttribute("value"));
     }
 
     [Fact] // ADR-0010: F2 moves between Overwrite and Caret

@@ -102,6 +102,38 @@ public class MudExGridPaperTests : MudTestContext
         Assert.Empty(cut.FindAll(".ex-hover-row"));
     }
 
+    [Fact] // WR-6 / ADR-0038/0030: Striped turns the grid's Row Stripes on through the cascade
+    public void Striped_turns_row_stripes_on()
+    {
+        Assert.Empty(RenderPaper().FindAll(".ex-row-stripe"));
+
+        var striped = RenderPaper(ps => ps.Add(p => p.Striped, true));
+        var rows = striped.FindAll(".ex-row");
+        Assert.All(rows, row => Assert.Equal(
+            (int.Parse(row.GetAttribute("aria-rowindex")!) - 1) % 2 == 1, row.ClassList.Contains("ex-row-stripe")));
+        Assert.NotEmpty(striped.FindAll(".ex-row-stripe"));
+    }
+
+    [Fact] // WR-6 / ADR-0030: the grid's own StripeRows beats the paper's Striped, either way
+    public void The_grids_own_stripe_rows_wins()
+    {
+        Assert.Empty(RenderPaper(ps => ps.Add(p => p.Striped, true), g => g.Add(x => x.StripeRows, false))
+            .FindAll(".ex-row-stripe"));
+        Assert.NotEmpty(RenderPaper(ps => ps.Add(p => p.Striped, false), g => g.Add(x => x.StripeRows, true))
+            .FindAll(".ex-row-stripe"));
+    }
+
+    [Fact] // ADR-0030: each combination of the paper's words is one cascaded instance, and Striped is part of it
+    public void Striped_is_one_of_the_cascaded_combinations()
+    {
+        Assert.True(MudExGridPresentation.For(true, true, striped: true).StripeRows);
+        Assert.False(MudExGridPresentation.For(true, true).StripeRows);
+        Assert.Same(MudExGridPresentation.For(false, true, true), MudExGridPresentation.For(false, true, true));
+        Assert.NotSame(MudExGridPresentation.For(false, true, true), MudExGridPresentation.For(false, true, false));
+        Assert.Equal(GridDensity.Compact, MudExGridPresentation.For(true, false, true).Density);
+        Assert.True(MudExGridPresentation.For(MudExGridFont.Roboto, false, false, striped: true).StripeRows);
+    }
+
     [Fact] // RR-1 / ADR-0030: a change on the paper re-renders no row, and hands the grid the same defaults
     public void A_paper_change_re_renders_no_row()
     {

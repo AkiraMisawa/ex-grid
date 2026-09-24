@@ -54,6 +54,16 @@ public static class OverflowRules
             return OverflowDecision.ShowValue(formattedText); // exactly fitting still shows
         var hashCount = Math.Max(1, (int)Math.Floor(
             metrics.ContentWidthPx(resolvedWidthPx) / metrics.DigitWidthPx));
-        return OverflowDecision.Hashes(new string('#', hashCount));
+        return OverflowDecision.Hashes(HashRun(hashCount));
     }
+
+    /// <summary>
+    /// Runs of hashes by length, interned (ADR-0027 P5). The run is the width's string, not
+    /// the value's — the same few lengths are every hashed cell any grid paints — so
+    /// composing one per cell per render was a string for every hashed cell on every
+    /// sideways scroll.
+    /// </summary>
+    private static readonly InternedStrings HashRuns = new(static count => new string('#', count));
+
+    private static string HashRun(int count) => HashRuns[count];
 }

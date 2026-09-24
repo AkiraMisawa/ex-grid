@@ -25,7 +25,7 @@ public sealed record GridPresentationDefaults
 {
     public GridPresentationDefaults(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fontSizePx,
-        GridDensity? density = null, bool? highlightHoverRow = null)
+        GridDensity? density = null, bool? highlightHoverRow = null, bool? stripeRows = null)
     {
         if (!double.IsFinite(fontSizePx) || fontSizePx <= 0)
         {
@@ -42,6 +42,7 @@ public sealed record GridPresentationDefaults
         FontSizePx = fontSizePx;
         Density = density;
         HighlightHoverRow = highlightHoverRow;
+        StripeRows = stripeRows;
     }
 
     /// <summary>What <c>%</c> costs — the widest glyph of the wide class (ADR-0016).</summary>
@@ -66,6 +67,11 @@ public sealed record GridPresentationDefaults
     /// on the grid still wins (ADR-0029: the band's contract is its token and the
     /// parameter that turns it on).</summary>
     public bool? HighlightHoverRow { get; }
+
+    /// <summary>Row Stripes, where a design system's word for them — <c>Striped</c> on a
+    /// Material table — is set on the Wrapper's element (ADR-0038). Null leaves the grid's
+    /// default (off); an explicit parameter on the grid still wins.</summary>
+    public bool? StripeRows { get; }
 
     /// <summary>
     /// The metrics at the size the grid resolved — the widths scaled linearly from

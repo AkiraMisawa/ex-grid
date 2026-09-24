@@ -48,6 +48,14 @@ Closing any of these ways without OK **discards**, exactly as
 did not have to aim at. The `Close` callback in the contexts is what Chrome's own affordances
 (an × button, its framework's backdrop) invoke; it is the same discard.
 
+*(Extended on 2026-09-24 by
+[ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md): a popover now
+opens from the keyboard too, takes DOM focus when it opens through a `FocusRequest` in its context,
+fixes what the keys inside it mean for every Chrome, and returns DOM focus to the root however it
+closes. A seam's contents may open **Inner Popups** — a select's options, a picker's calendar —
+that their design system draws outside the root; ADR-0039 records what each of the three
+dismissals does while one is open. The three dismissals themselves are unchanged.)*
+
 ## Loading indicator — receive and render
 
 ```csharp

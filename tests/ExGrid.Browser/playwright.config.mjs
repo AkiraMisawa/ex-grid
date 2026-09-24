@@ -50,7 +50,12 @@ export default defineConfig({
         url: `${BASE_URL}/wide`,
         reuseExistingServer: true,
         timeout: 180_000,
-        stdout: 'ignore',
+        // Into the run's own output, which §22 Step 4 tees into layer3.log: CON-6 reads
+        // the DemoHost's output captured during the run. (The host is WebAssembly, so
+        // the log its renderer writes is the browser console, which fixtures.mjs reads;
+        // this is the dev server's side. A reused host was started elsewhere and its
+        // output is wherever that was.)
+        stdout: 'pipe',
         stderr: 'pipe',
     },
 });

@@ -357,6 +357,33 @@ public class GridSourceFetchTests
         Assert.Equal(0, changes);
     }
 
+    [Fact] // ASY-2 / MEM-3: each fetch's token source is disposed once that fetch is over, however it ended
+    public async Task Every_fetchs_token_source_is_disposed_when_its_fetch_ends()
+    {
+        var server = new Server();
+        var source = server.Source();
+        source.FetchFailed += _ => { };
+        server.Last.Completion.SetResult(Page(0, 100, 5_000));          // answered
+        await Task.Yield();
+
+        var stale = source.OnRangeNeededAsync(new RowRange(500, 20));
+        var fresh = source.OnRangeNeededAsync(new RowRange(900, 20));
+        server.Calls[^2].Completion.SetResult(Page(500, 20, 5_000));    // superseded, answering late
+        server.Last.Completion.SetException(new TimeoutException());   // failed
+        await stale;
+        await fresh;
+
+        var cutOff = source.OnRangeNeededAsync(new RowRange(2_000, 20));
+        source.Dispose();
+        server.Last.Completion.SetResult(Page(2_000, 20, 5_000));       // cut off by disposal
+        await cutOff;
+
+        // A token's wait handle is the one thing that says its source was disposed.
+        Assert.Equal(4, server.Calls.Count);
+        Assert.All(server.Calls, call =>
+            Assert.Throws<ObjectDisposedException>(() => call.Cancellation.WaitHandle));
+    }
+
     [Fact] // ADR-0025: a failure is reported, and the rows already on screen are left alone
     public async Task A_failure_is_reported_and_leaves_the_window_standing()
     {

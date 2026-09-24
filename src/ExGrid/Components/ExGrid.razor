@@ -9,6 +9,7 @@
 @using global::ExGrid.Columns
 @using global::ExGrid.Selection
 @using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components.Rendering
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject IServiceProvider Services
@@ -65,21 +66,27 @@
                        the pinned selection layer does: a group is entirely pinned or
                        entirely scrollable — a straddle was refused (ADR-0032). *@
                     <div class="ex-header-groups-pinned">
-                        @foreach (var group in _headerLayout.Groups)
+                        @for (var g = 0; g < _headerLayout.Groups.Count; g++)
                         {
+                            var group = _headerLayout.Groups[g];
                             @if (group.Pinned)
                             {
-                                <div class="ex-header-group" style="@GroupStyle(group)" role="columnheader" aria-colspan="@group.MemberCount">@group.Label</div>
+                                <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
                             }
                         }
                     </div>
                 }
                 @for (var i = 0; i < _columnStyles.Geometry.PinnedCount; i++)
                 {
-                    var pinnedIndex = i;
-                    <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@(i + 1)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
-                        {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenuAsync(pinnedIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                        {<div class="ex-resize-grip" @onmousedown="e => OnResizeGripDown(pinnedIndex, e)" @onmousedown:stopPropagation></div>}</div>
+                    @* The buttons' handlers are held per column (MenuOpener, GripDown), never
+                       written as lambdas here: a lambda capturing the index allocated its
+                       closure at the top of every iteration, button or not, and handed the
+                       diff a new handler per render — re-registered and sent to the browser
+                       for every header button on every render of the root, which is every
+                       vertical scroll frame (PF-3). *@
+                    <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
+                        {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                        {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation></div>}</div>
                 }
                 @if (_scrollable is { } headerColumns)
                 {
@@ -89,20 +96,20 @@
                     }
                     @for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
                     {
-                        var columnIndex = i;
-                        <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@(i + 1)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
-                            {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="() => OpenMenuAsync(columnIndex)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                            {<div class="ex-resize-grip" @onmousedown="e => OnResizeGripDown(columnIndex, e)" @onmousedown:stopPropagation></div>}</div>
+                        <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
+                            {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                            {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation></div>}</div>
                     }
                 }
                 @* A rectangle stands correctly whether or not its leaves are in the
                    DOM (ADR-0032): absolutely positioned from the geometry, so it never
                    depends on the sliced flex flow beside it. *@
-                @foreach (var group in _headerLayout.Groups)
+                @for (var g = 0; g < _headerLayout.Groups.Count; g++)
                 {
+                    var group = _headerLayout.Groups[g];
                     @if (!group.Pinned)
                     {
-                        <div class="ex-header-group" style="@GroupStyle(group)" role="columnheader" aria-colspan="@group.MemberCount">@group.Label</div>
+                        <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
                     }
                 }
             </div>
@@ -258,7 +265,7 @@
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
                                        CellState="CellState" RowKind="RowKind"
-                                       RowIndex="row" IdPrefix="@_idPrefix"
+                                       RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)" />
                         }
@@ -267,7 +274,7 @@
                             @* No row behind this position at all, so not even a Pinned
                                Column has anything to paint. aria-busy, because a value
                                that has not arrived must not read as one (ADR-0004/0033). *@
-                            <div class="ex-row ex-placeholder" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"></div>
+                            <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"></div>
                         }
                     }
                 }
@@ -280,19 +287,21 @@
            substituted — only lays them out. Outside the scroll container, so nothing
            clips it and instances never share one (ADR-0017/0018). *@
         var menuContext = BuildMenuContext(_menuColumn);
-        <div class="ex-popover" style="@PopoverStyle(_menuColumn)" role="menu">
+        @* Named by the column's own header text — the Consumer's words, so the core still
+           holds no sentence (ADR-0036/0039). Keyed by the opening, as every popover is:
+           one column's menu opened straight over another's would otherwise keep the
+           same buttons through the diff, and a kept element's reference is not captured
+           again — the new menu would open with nothing asked to take the keyboard. A new
+           opening is new contents, for a substituted Chrome's too. *@
+        <div class="ex-popover" style="@PopoverStyle(_menuColumn)" role="menu" aria-label="@Columns[_menuColumn].Header"
+             @key="_popoverFocusRequest">
             @if (Chrome?.ColumnMenu(menuContext) is { } menuFragment)
             {
                 @menuFragment
             }
             else
             {
-                @foreach (var command in menuContext.Commands)
-                {
-                    var invoked = command;
-                    <button type="button" role="menuitem" disabled="@(!command.Enabled)"
-                            @onclick="() => RunCommandAsync(invoked)">@LabelOf(command)</button>
-                }
+                BuiltInMenuItems(__builder, menuContext.Commands);
             }
         </div>
     }
@@ -300,19 +309,16 @@
          && contextSlice >= 0 && contextSlice < _window.Count && contextCell.Column < Columns.Count)
     {
         var contextMenu = BuildContextMenuContext(contextCell, contextSlice);
-        <div class="ex-popover" style="@ContextPopoverStyle()" role="menu">
+        <div class="ex-popover" style="@ContextPopoverStyle()" role="menu" @key="_popoverFocusRequest">
             @if (Chrome?.ContextMenu(contextMenu) is { } contextFragment)
             {
                 @contextFragment
             }
             else
             {
-                @foreach (var command in contextMenu.Commands)
-                {
-                    var invoked = command;
-                    <button type="button" role="menuitem" disabled="@(!command.Enabled)"
-                            @onclick="() => RunCommandAsync(invoked)">@LabelOf(command)</button>
-                }
+                @* The column menu's items and keys, over the selection's commands
+                   (ADR-0036/0039). *@
+                BuiltInMenuItems(__builder, contextMenu.Commands);
             }
         </div>
     }
@@ -338,7 +344,8 @@
     {
         var panelContext = BuildPanelContext(_panelColumn);
         var panelColumn = _panelColumn;
-        <div class="ex-popover" style="@PopoverStyle(_panelColumn)">
+        <div class="ex-popover" style="@PopoverStyle(_panelColumn)" role="dialog" aria-label="@Columns[_panelColumn].Header"
+             @key="_popoverFocusRequest">
             @if (Chrome?.FilterPanel(panelContext) is { } panelFragment)
             {
                 @panelFragment
@@ -347,43 +354,62 @@
             {
                 @* The built-in panel (ADR-0009): Excel's shape — a value list where the
                    column declared one and the domain arrived, and the degraded
-                   search-and-condition form where it did not. Applied on OK. *@
-                @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
-                {
-                    <input type="search" placeholder="Search" value="@_panelSearch"
-                           @oninput="e => _panelSearch = e.Value?.ToString() ?? string.Empty" />
-                    <div class="ex-popover-list">
-                        @foreach (var value in domain.Values)
-                        {
-                            var text = value is null
-                                ? "(Blanks)"
-                                : Columns[panelColumn].Format is { } format ? format(value) : value.ToString() ?? "";
-                            if (_panelSearch.Length > 0 && !text.Contains(_panelSearch, StringComparison.OrdinalIgnoreCase))
-                                continue;
-                            var item = value;
-                            <label>
-                                <input type="checkbox" checked="@chosen.Contains(item)"
-                                       @onchange="e => { if (e.Value is true) chosen.Add(item); else chosen.Remove(item); }" />
-                                @text
-                            </label>
-                        }
+                   search-and-condition form where it did not. Applied on OK, or by Enter in
+                   a value field (ADR-0039).
+
+                   Enter is the browser's implicit submission of a form, not a key handler:
+                   the form holds one text field and no submit button, so Enter in that
+                   field submits it — and the browser does not submit on the Enter that
+                   confirms an IME's candidate, which Blazor's key event could not tell
+                   apart (it carries no isComposing). A composing IME is left alone, as
+                   ADR-0010 requires of every key the grid hears.
+
+                   Tab wraps inside the panel while it stands (ADR-0039) through two
+                   focusable sentinels, one either side of the controls: Tab off the last
+                   control lands on the far one, which hands focus to the first control,
+                   and Shift+Tab off the first lands on the near one, which hands it to the
+                   last. Blazor's own focus events — no script, and no key the panel's
+                   controls would have to give up. *@
+                <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
+                    <span class="ex-focus-wrap" tabindex="0" @onfocus="FocusPanelLastAsync"></span>
+                    @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
+                    {
+                        <input type="search" placeholder="Search" value="@_panelSearch" @ref="_popoverFirst"
+                               @oninput="e => _panelSearch = e.Value?.ToString() ?? string.Empty" />
+                        <div class="ex-popover-list">
+                            @foreach (var value in domain.Values)
+                            {
+                                var text = value is null
+                                    ? "(Blanks)"
+                                    : Columns[panelColumn].Format is { } format ? format(value) : value.ToString() ?? "";
+                                if (_panelSearch.Length > 0 && !text.Contains(_panelSearch, StringComparison.OrdinalIgnoreCase))
+                                    continue;
+                                var item = value;
+                                <label>
+                                    <input type="checkbox" checked="@chosen.Contains(item)"
+                                           @onchange="e => { if (e.Value is true) chosen.Add(item); else chosen.Remove(item); }" />
+                                    @text
+                                </label>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <select value="@_panelOperator" @ref="_popoverFirst" @onchange="e => _panelOperator = Enum.Parse<FilterOperator>((string)e.Value!)">
+                            @foreach (var op in panelContext.Allowed)
+                            {
+                                <option value="@op">@op</option>
+                            }
+                        </select>
+                        <input value="@_panelValueText" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
+                    }
+                    <div class="ex-popover-actions">
+                        <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
+                        <button type="button" @onclick="CancelPanel">Cancel</button>
+                        <button type="button" @ref="_panelLast" @onclick="panelContext.Clear">Clear</button>
                     </div>
-                }
-                else
-                {
-                    <select value="@_panelOperator" @onchange="e => _panelOperator = Enum.Parse<FilterOperator>((string)e.Value!)">
-                        @foreach (var op in panelContext.Allowed)
-                        {
-                            <option value="@op">@op</option>
-                        }
-                    </select>
-                    <input value="@_panelValueText" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
-                }
-                <div class="ex-popover-actions">
-                    <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
-                    <button type="button" @onclick="CloseMenus">Cancel</button>
-                    <button type="button" @onclick="panelContext.Clear">Clear</button>
-                </div>
+                    <span class="ex-focus-wrap" tabindex="0" @onfocus="FocusPanelFirstAsync"></span>
+                </form>
             }
         </div>
     }
@@ -659,6 +685,16 @@
     [Parameter] public bool HighlightHoverRow { get; set; }
 
     /// <summary>
+    /// Paints a Row Stripe on every second row of the result (ADR-0038) — appearance only,
+    /// off unless asked for. Counted by the row's position in the whole result, so a
+    /// stripe stays with its row while scrolling, across a pager's pages and on a
+    /// Placeholder; Row Kind and Cell State paint over it, and the overlays above it. The
+    /// colour is <c>--ex-row-stripe-background</c>. An explicit value beats a Wrapper's
+    /// cascaded <see cref="GridPresentationDefaults.StripeRows"/>.
+    /// </summary>
+    [Parameter] public bool StripeRows { get; set; }
+
+    /// <summary>
     /// What a Wrapper hands down (ADR-0030): the glyph widths of the font its Theme
     /// sets, and the Density its density word maps onto. Read only where the
     /// corresponding parameter was not written — an explicit parameter still wins,
@@ -872,6 +908,27 @@
     private string _panelValueText = "";
     private string _panelSearch = "";
 
+    // A popover takes the keyboard when it opens and gives it back when it closes
+    // (ADR-0039). The count is handed to every popover's context: contents the core did
+    // not render focus themselves whenever it changes; the built-in contents are focused
+    // here — a menu through its enabled items, keyed by position, which the arrows move
+    // among; the panel through its first control, and its last for Tab's wrap.
+    private int _popoverFocusRequest;
+    private bool _popoverFocusPending;
+    private ElementReference _popoverFirst;
+    private ElementReference _panelLast;
+    private readonly Dictionary<int, ElementReference> _menuItems = [];
+    private bool _panelAwaitingValues;
+    private bool _reclaimFocusPending;
+    private Action? _closeFromChrome;
+
+    // A popup the popover's contents opened of their own (ADR-0039): reported by them,
+    // and handed to the key gate, which leaves a descendant's Escape to it while it is
+    // open. What the gate was last told is kept, so it is told only of a change.
+    private bool _innerPopupOpen;
+    private bool _innerPopupTold;
+    private Action<bool>? _innerPopupChanged;
+
     private IGridSource<TRow>? _boundSource;
     private IReadOnlyList<GridColumn<TRow>>? _boundColumns;
     private bool _applying;
@@ -939,11 +996,22 @@
     private bool _cellMetricsSupplied;
     private bool _densitySupplied;
     private bool _hoverSupplied;
+    private bool _stripesSupplied;
 
     /// <summary>Whether the hover band is on: the parameter where it was written, the
     /// Wrapper's cascaded default where it was not (ADR-0030), off otherwise.</summary>
     private bool HoverEnabled
         => _hoverSupplied ? HighlightHoverRow : Presentation?.HighlightHoverRow ?? HighlightHoverRow;
+
+    /// <summary>Row Stripes, on where the grid says so or where a Wrapper's cascaded
+    /// default does and the grid says nothing (ADR-0038/0030).</summary>
+    private bool StripesEnabled
+        => _stripesSupplied ? StripeRows : Presentation?.StripeRows ?? StripeRows;
+
+    /// <summary>Whether the row at this position in the whole result wears a stripe:
+    /// the second, the fourth, … — counted in the result, never on the screen, so a
+    /// stripe stays with its row however far the Viewport scrolls (ADR-0038).</summary>
+    private bool StripeAt(int row) => StripesEnabled && (row & 1) == 1;
 
     // The row under the pointer, resolved from JavaScript's last row-change report
     // (ADR-0021's fifth entry): absolute, or -1 for none.
@@ -1168,6 +1236,7 @@
         _cellMetricsSupplied |= parameters.TryGetValue<CellTextMetrics>(nameof(CellMetrics), out _);
         _densitySupplied |= parameters.TryGetValue<GridDensity>(nameof(Density), out _);
         _hoverSupplied |= parameters.TryGetValue<bool>(nameof(HighlightHoverRow), out _);
+        _stripesSupplied |= parameters.TryGetValue<bool>(nameof(StripeRows), out _);
 
         var sourceSupplied = parameters.TryGetValue<IGridSource<TRow>?>(nameof(Source), out _);
         var supplied = new List<string>();
@@ -1820,6 +1889,8 @@
             {
             }
         }
+        await SettlePopoverFocusAsync();
+        await SyncInnerPopupAsync();
 
         // A geometry change re-anchors on the first visible row (ADR-0028): the model
         // has already moved; this is the browser being told, through the allowlisted
@@ -1854,9 +1925,17 @@
         // Placeholders forever without ever asking the Consumer for rows.
         try
         {
-            _module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
-            if (_module is null || _disposed)
+            var module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            if (module is null)
                 return;
+            if (_disposed)
+            {
+                // Disposal overtook the import, and found no module to give back — this is
+                // the only place left that can (MEM-3).
+                await module.DisposeAsync();
+                return;
+            }
+            _module = module;
 
             _self ??= DotNetObjectReference.Create(this);
             _jsCanEdit = AnyColumnEdits();
@@ -2581,8 +2660,11 @@
             new("filter", filterable, () => OpenPanelAsync(column)),
             new("hide", OnColumnHidden.HasDelegate,
                 () => OnColumnHidden.InvokeAsync(declared.Name)),
+            // Never a pin the grid would refuse: a boundary through a Header Group
+            // cannot be drawn honestly (ADR-0032), so the command is disabled there.
             new("pin",
-                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount != column + 1,
+                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount != column + 1
+                    && _headerLayout.AllowsPinnedCount(column + 1),
                 () => OnPinnedCountChanged.InvokeAsync(column + 1)),
             new("unpin",
                 OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount > 0,
@@ -2590,7 +2672,8 @@
             new("size-to-fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
                 () => SizeToFitAsync(column)),
         };
-        return new ColumnMenuContext(declared.Name, declared.Type, commands, CloseMenus);
+        return new ColumnMenuContext(declared.Name, declared.Type, Closing(commands), CloseFromChrome,
+            _popoverFocusRequest, InnerPopupChangedFromChrome);
     }
 
     /// <summary>
@@ -2630,6 +2713,7 @@
         _menuColumn = -1;
         _panelColumn = -1;
         _contextCell = cell;
+        BeginPopoverFocus();
         // The offsets are relative to the Viewport, whose left edge is the content's and
         // whose top edge is the first painted row — the convention CellUnder works in.
         // The popovers are laid out in viewport space, so both axes convert here,
@@ -2657,6 +2741,7 @@
         _menuColumn = -1;
         _panelColumn = -1;
         _contextCell = focus;
+        BeginPopoverFocus();
     }
 
     /// <summary>
@@ -2790,14 +2875,37 @@
         return Task.CompletedTask;
     }
 
-    /// <summary>Where the menu stands: at the pointer, clamped to the Viewport, and
-    /// below the header band the popovers all sit under (ADR-0027 — the min-width rides
-    /// the instance inline, so the clamp and the laid-out box are one number).</summary>
+    /// <summary>
+    /// The Context Menu stands at the pointer, on whichever side of it the grid has more
+    /// room, and is bounded by that room (ADR-0040): above, it hangs from the pointer by
+    /// its own height — a translate of its own box, nothing measured. Across, it is clamped
+    /// by the widest it may grow, as every popover is.
+    /// </summary>
     private string ContextPopoverStyle()
     {
-        var left = Math.Clamp(_contextLeftPx, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
-        return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx + _contextTopPx}px; min-width: {PopoverMinWidthPx}px");
+        var (left, width) = PopoverAcross(_contextLeftPx);
+        var at = Math.Clamp(BandHeightPx + _contextTopPx, 0, _visibleHeightPx);
+        var below = _visibleHeightPx - at;
+        return below >= at
+            ? FormattableString.Invariant(
+                $"left: {left}px; top: {at}px; {width}; max-height: {below}px")
+            : FormattableString.Invariant(
+                $"left: {left}px; top: {at}px; transform: translateY(-100%); {width}; max-height: {at}px");
+    }
+
+    /// <summary>
+    /// A popover's place and width across the grid (ADR-0027/0040): no narrower than
+    /// <see cref="PopoverMinWidthPx"/>, no wider than <see cref="PopoverMaxWidthPx"/> or
+    /// the Viewport, and its left edge clamped by that widest — so however wide its
+    /// contents make it, its right edge stays inside the grid's box. The numbers the clamp
+    /// uses are the numbers written inline, never a C# constant beside a stylesheet one.
+    /// </summary>
+    private (double Left, string Width) PopoverAcross(double wantedLeft)
+    {
+        var widest = Math.Min(PopoverMaxWidthPx, Math.Max(0, _visibleWidthPx));
+        var narrowest = Math.Min(PopoverMinWidthPx, widest);
+        var left = Math.Clamp(wantedLeft, 0, Math.Max(0, _visibleWidthPx - widest));
+        return (left, FormattableString.Invariant($"min-width: {narrowest}px; max-width: {widest}px"));
     }
 
     /// <summary>
@@ -2817,14 +2925,37 @@
         };
         var context = new ContextMenuContext<TRow>(
             _window[slice], declared.Name, declared.Type,
-            _selection.Selection.Ranges, _sequenceVersion, core, CloseMenus);
+            _selection.Selection.Ranges, _sequenceVersion, core, CloseFromChrome, _popoverFocusRequest,
+            InnerPopupChangedFromChrome);
+        var commands = new List<GridCommand>(core);
         if (ContextCommands?.Invoke(context) is { } extra)
+            commands.AddRange(extra);
+        return context with { Commands = Closing(commands) };
+    }
+
+    /// <summary>
+    /// The commands as a menu hands them out (ADR-0010/0039): invoking one runs it and then
+    /// closes the menu — or leaves standing the panel it opened — and hands the keyboard
+    /// back to the root, whichever Chrome invoked it and however: a click, Enter or Space.
+    /// What closes a popover is the core's to decide, so a substituted Chrome only calls
+    /// <see cref="GridCommand.Invoke"/>, and the grid renders itself, since the event that
+    /// invoked it may have been the Chrome's rather than the grid's.
+    /// </summary>
+    private List<GridCommand> Closing(List<GridCommand> commands)
+    {
+        for (var i = 0; i < commands.Count; i++)
         {
-            var added = extra as IReadOnlyList<GridCommand> ?? [.. extra];
-            if (added.Count > 0)
-                context = context with { Commands = [.. core, .. added] };
+            var command = commands[i];
+            commands[i] = command with
+            {
+                Invoke = () => InvokeAsync(async () =>
+                {
+                    await RunCommandAsync(command);
+                    StateHasChanged();
+                }),
+            };
         }
-        return context;
+        return commands;
     }
 
     /// <summary>A copy invoked from a menu takes the asynchronous route whatever the
@@ -2874,13 +3005,44 @@
 
     private async Task RunCommandAsync(GridCommand command)
     {
+        var opening = _popoverFocusRequest;
         await command.Invoke();
-        // The filter command replaces the menu with the panel; everything else closes.
-        if (_panelColumn < 0)
-            CloseMenus();
-        else
-            _menuColumn = -1;
+        // Only the popover the command ran from closes, and the keyboard goes back to the
+        // root (ADR-0039). The filter command replaced it with the panel — a new opening,
+        // which stays — and a command that took its time may find another popover opened
+        // meanwhile, which is not its to close.
+        if (_popoverFocusRequest == opening)
+            ClosePopoverAndReturnFocus();
     }
+
+    // A header button's handler depends on nothing but its column's index, so one is made
+    // per index the first time it is painted and handed over from then on: the same
+    // delegate every render, which the diff recognises and leaves registered while the
+    // button keeps its place (PF-3). A sideways scroll that shifts the painted columns
+    // moves a scrollable header's button to where another column's stood, and the diff,
+    // comparing by position, registers that one afresh.
+    private Func<Task>?[] _menuOpeners = [];
+    private Action<MouseEventArgs>?[] _gripDowns = [];
+
+    private Func<Task> MenuOpener(int column)
+    {
+        if (column >= _menuOpeners.Length)
+            Array.Resize(ref _menuOpeners, Math.Max(column + 1, Columns.Count));
+        return _menuOpeners[column] ??= MenuOpenerFor(column);
+    }
+
+    private Action<MouseEventArgs> GripDown(int column)
+    {
+        if (column >= _gripDowns.Length)
+            Array.Resize(ref _gripDowns, Math.Max(column + 1, Columns.Count));
+        return _gripDowns[column] ??= GripDownFor(column);
+    }
+
+    // Their own methods so that only a miss captures anything: a lambda capturing a
+    // parameter allocates its closure on entry to the method, cache hit or not.
+    private Func<Task> MenuOpenerFor(int column) => () => OpenMenuAsync(column);
+
+    private Action<MouseEventArgs> GripDownFor(int column) => e => OnResizeGripDown(column, e);
 
     /// <summary>The menu button is a toggle: the second press on the same column's
     /// button closes what the first opened — a popover the user cannot dismiss is a
@@ -2898,21 +3060,190 @@
         }
         if (_menuColumn == column)
         {
-            CloseMenus();
+            ClosePopoverAndReturnFocus();
             return;
         }
         _menuColumn = column;
         _panelColumn = -1;
+        _contextCell = null;
+        BeginPopoverFocus();
+    }
+
+    /// <summary>Alt+↓ (ADR-0039): the Focus's column menu, opened — never toggled shut,
+    /// since a menu standing open holds DOM focus and this key cannot reach the root then.
+    /// With no Focus, or on a grid whose headers carry no menu, it does nothing.</summary>
+    private async Task OpenColumnMenuFromKeyAsync()
+    {
+        if (_selection.Selection.IsEmpty || !ShowMenuButtons)
+            return;
+        var column = _selection.Selection.Focus.Column;
+        if (column >= Columns.Count || _menuColumn == column)
+            return;
+        await OpenMenuAsync(column);
     }
 
     private void CloseMenus()
     {
+        // A popup inside the popover goes with it (ADR-0039).
+        _innerPopupOpen = false;
         _contextCell = null;
         _menuColumn = -1;
         _panelColumn = -1;
         _panelValues = null;
         _panelChecked = null;
+        _panelAwaitingValues = false;
+        _popoverFocusPending = false;
     }
+
+    /// <summary>
+    /// Every opening asks the popover's contents to take DOM focus (ADR-0039): the count
+    /// the contexts carry moves on, and the built-in contents are focused after the render
+    /// that paints them. The references are cleared first, so a substituted Chrome — which
+    /// binds none — leaves them empty and the core, holding nothing it did not render,
+    /// focuses nothing.
+    /// </summary>
+    private void BeginPopoverFocus()
+    {
+        _popoverFocusRequest++;
+        _popoverFocusPending = true;
+        _popoverFirst = default;
+        _panelLast = default;
+        _menuItems.Clear();
+        _reclaimFocusPending = false;
+        // A new opening starts clean, however the last one ended: a panel still waiting
+        // for its list, or contents that never reported their popup closed, must not keep
+        // this popover from taking the keyboard or from answering Escape (ADR-0039).
+        _panelAwaitingValues = false;
+        _innerPopupOpen = false;
+        _innerPopupChanged = null;
+    }
+
+    /// <summary>
+    /// Closes whatever popover stands and hands the keyboard back to the root after the
+    /// render that removes it (ADR-0039) — however it closed: a command run, Apply, Cancel,
+    /// Clear, the ▾ pressed again, or the Chrome's own affordance. DOM focus may be inside
+    /// the popover or inside an Inner Popup its design system drew outside the root, and
+    /// either way it would otherwise be left on an element that is about to disappear.
+    /// A pointer-down that dismisses does not come through here: it keeps its own meaning,
+    /// and where it lands decides focus (ADR-0010).
+    /// </summary>
+    private void ClosePopoverAndReturnFocus()
+    {
+        var wasOpen = _menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null;
+        CloseMenus();
+        if (wasOpen)
+            _reclaimFocusPending = true;
+    }
+
+    /// <summary>The contexts' <c>Close</c>: what a Chrome's own × or backdrop invokes. It
+    /// arrives from the Chrome's event, not the grid's, so the grid renders itself.</summary>
+    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() =>
+    {
+        ClosePopoverAndReturnFocus();
+        StateHasChanged();
+    });
+
+    /// <summary>The contexts' <c>InnerPopupChanged</c>: the contents report a popup of their
+    /// own opening or closing (ADR-0039), and the key gate is told at once — the next
+    /// Escape may already be on its way.</summary>
+    private Action<bool> InnerPopupChangedFromChrome => _innerPopupChanged ??= ReportFor(_popoverFocusRequest);
+
+    // One reporter per opening: a report from contents that have since closed, or been
+    // replaced by another popover's, carries an opening that is no longer the current one
+    // and changes nothing.
+    private Action<bool> ReportFor(int opening) => open => _ = InvokeAsync(async () =>
+    {
+        if (opening != _popoverFocusRequest || (_menuColumn < 0 && _panelColumn < 0 && _contextCell is null))
+            return;
+        _innerPopupOpen = open;
+        await SyncInnerPopupAsync();
+    });
+
+    /// <summary>Tells the key gate whether a popover's contents have a popup open, when
+    /// that has changed since it was last told.</summary>
+    private async Task SyncInnerPopupAsync()
+    {
+        if (_scrollHandle is null || _disposed || _innerPopupTold == _innerPopupOpen)
+            return;
+        _innerPopupTold = _innerPopupOpen;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("setInnerPopup", _innerPopupOpen);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+
+    /// <summary>The built-in panel's Cancel: a discard, and the keyboard back (ADR-0009/0039).</summary>
+    private void CancelPanel() => ClosePopoverAndReturnFocus();
+
+    private async Task SettlePopoverFocusAsync()
+    {
+        if (_disposed)
+            return;
+        if (_reclaimFocusPending)
+        {
+            _reclaimFocusPending = false;
+            await ReclaimFocusAsync();
+            return;
+        }
+        // The built-in panel paints its condition form while a value list is on its way,
+        // and swaps it for the list when the answer lands: focusing the first control
+        // before then would put DOM focus on an element about to be removed.
+        if (!_popoverFocusPending || _panelAwaitingValues)
+            return;
+        _popoverFocusPending = false;
+        // Only enabled items are captured, so the lowest position is the first enabled
+        // item (MenuKeys.First) — and a substituted Chrome captured nothing at all.
+        var first = _popoverFirst;
+        if (first.Id is null && _menuItems.Count > 0)
+            first = _menuItems[_menuItems.Keys.Min()];
+        await FocusQuietlyAsync(first);
+    }
+
+    /// <summary>Focuses an element the core rendered, if it is still there to focus. A
+    /// popover can close between the render that painted it and this call, and a closed
+    /// circuit cannot focus anything; neither is worth an exception.</summary>
+    private static async Task FocusQuietlyAsync(ElementReference element)
+    {
+        if (element.Id is null)
+            return;
+        try
+        {
+            await element.FocusAsync();
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+
+    /// <summary>
+    /// A key on one of the built-in menu's items (ADR-0039): what it means is
+    /// <see cref="MenuKeys"/>' to say, the same table a substituted Chrome answers to.
+    /// </summary>
+    private async Task OnMenuItemKeyAsync(KeyboardEventArgs e, IReadOnlyList<GridCommand> commands, int item)
+    {
+        var meaning = MenuKeys.Resolve(e.Key, e.ShiftKey, e.CtrlKey || e.AltKey || e.MetaKey, commands, item);
+        switch (meaning.Kind)
+        {
+            case MenuKeyKind.Move when _menuItems.TryGetValue(meaning.Item, out var target):
+                await FocusQuietlyAsync(target);
+                break;
+            case MenuKeyKind.Run:
+                await commands[meaning.Item].Invoke();
+                break;
+            case MenuKeyKind.Close:
+                ClosePopoverAndReturnFocus();
+                break;
+        }
+    }
+
+    // The two ends of the panel's Tab wrap (ADR-0039): focus arriving on a sentinel is
+    // passed on to the control at the other end.
+    private Task FocusPanelFirstAsync() => FocusQuietlyAsync(_popoverFirst);
+
+    private Task FocusPanelLastAsync() => FocusQuietlyAsync(_panelLast);
 
     /// <summary>
     /// Opens the filter panel on one column (ADR-0009): the value list is fetched
@@ -2922,48 +3253,47 @@
     private async Task OpenPanelAsync(int column)
     {
         _menuColumn = -1;
+        _contextCell = null;
         _panelColumn = column;
         _panelValues = null;
         _panelChecked = null;
         _panelSearch = "";
         _panelValueText = "";
         var declared = Columns[column];
-        _panelOperator = FilterOperators.AllowedFor(declared.Type)[0];
+        BeginPopoverFocus();
+        _panelAwaitingValues = declared.FilterUi != FilterUiMode.Condition;
 
+        // What the panel starts with is FilterPanelChoices' to say — the same rules a
+        // substituted panel starts from (ADR-0009/0010).
         var current = CurrentSpecOf(declared.Name);
-        if (current is { Clauses: [{ Operator: not FilterOperator.In } clause] })
-        {
-            _panelOperator = clause.Operator;
-            _panelValueText = clause.Value?.ToString() ?? "";
-        }
+        _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: false);
+        _panelValueText = FilterPanelChoices.InitialOperand(current)?.ToString() ?? "";
+        var startedOn = _panelOperator;
         StateHasChanged();
 
-        if (declared.FilterUi == FilterUiMode.Condition)
+        // The list is fetched here for the built-in panel alone: a substituted one pulls it
+        // through its context when it wants it, and a second query per opening would be the
+        // Consumer's cost for nothing.
+        if (declared.FilterUi == FilterUiMode.Condition || Chrome?.FilterPanel(BuildPanelContext(column)) is not null)
+        {
+            _panelAwaitingValues = false;
             return;
+        }
         var answer = await RequestDistinctValuesAsync(declared.Name);
         if (_disposed || _panelColumn != column)
             return;
         _panelValues = answer;
+        _panelAwaitingValues = false;
+        // The condition form stood while the list was on its way, and whatever the user
+        // chose there meanwhile stays: only an untouched form starts over on TooMany's
+        // operator.
         if (answer.IsTooMany)
         {
-            // The degraded form is Excel's own: a search box (ADR-0009). Contains is
-            // that search, where the type allows it.
-            if (_panelValueText.Length == 0
-                && FilterOperators.AllowedFor(declared.Type).Contains(FilterOperator.Contains))
-            {
-                _panelOperator = FilterOperator.Contains;
-            }
+            if (_panelOperator == startedOn && _panelValueText.Length == 0)
+                _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: true);
         }
         else
-        {
-            // The applied In list is what starts checked; no filter checks everything.
-            // Intersected with the fetched domain: another column's filter can have
-            // shifted it since the list was applied, and a value the panel cannot show
-            // must not ride along invisibly checked.
-            _panelChecked = current is { Clauses: [{ Operator: FilterOperator.In, Values: { } applied }] }
-                ? new HashSet<object?>(applied.Intersect(answer.Values))
-                : new HashSet<object?>(answer.Values);
-        }
+            _panelChecked = FilterPanelChoices.InitiallyChosen(current, answer);
         StateHasChanged();
     }
 
@@ -2993,7 +3323,10 @@
             () => RequestDistinctValuesAsync(declared.Name),
             spec => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, spec)),
             () => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, null)),
-            CloseMenus);
+            CloseFromChrome,
+            _popoverFocusRequest,
+            declared.Format,
+            InnerPopupChangedFromChrome);
     }
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
@@ -3012,7 +3345,7 @@
             ? null
             : new GridFilter(columns, _filter?.Opaque);
 
-        CloseMenus();
+        ClosePopoverAndReturnFocus();
         if (Source is not null)
             Source.OnFilterChanged(next);
         else if (OnFilterChanged.HasDelegate)
@@ -3022,69 +3355,45 @@
 
     /// <summary>The built-in panel's OK (ADR-0009): the working state becomes one
     /// FilterSpec — the checked values as an In clause, or the condition's one clause —
-    /// and applies whole. Cancel is <see cref="CloseMenus"/> and discards.</summary>
+    /// and applies whole, by <see cref="FilterPanelChoices"/>' rules, which a substituted
+    /// panel applies by too. Cancel discards.</summary>
     private Task ApplyPanelAsync(int column)
     {
         var declared = Columns[column];
         if (_panelValues is { IsTooMany: false } values && _panelChecked is { } chosen)
-        {
-            // Everything checked is no filter at all — the domain is not a condition.
-            // Set membership, never a count: counts drift when the domain shifts under
-            // another column's filter, and a count test here silently removed a filter
-            // the user was looking at.
-            if (values.Values.All(chosen.Contains))
-                return ApplyFilterSpecAsync(declared.Name, null);
-            var ordered = values.Values.Where(chosen.Contains).ToArray();
-            return ApplyFilterSpecAsync(declared.Name,
-                new FilterSpec([new FilterClause(FilterOperator.In, Values: ordered)]));
-        }
+            return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromValueList(values, chosen));
 
-        if (_panelOperator is FilterOperator.IsBlank or FilterOperator.IsNotBlank)
-            return ApplyFilterSpecAsync(declared.Name, new FilterSpec([new FilterClause(_panelOperator)]));
+        if (!FilterPanelChoices.TakesOperand(_panelOperator))
+            return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromCondition(_panelOperator, null));
         if (string.IsNullOrEmpty(_panelValueText))
             return ApplyFilterSpecAsync(declared.Name, null);
-        if (ParseFilterValue(declared.Type, _panelValueText) is not { } parsed)
+        if (FilterPanelChoices.ParseOperand(declared.Type, _panelValueText) is not { } parsed)
             return Task.CompletedTask; // an unparseable operand applies nothing; the panel stands
-        return ApplyFilterSpecAsync(declared.Name,
-            new FilterSpec([new FilterClause(_panelOperator, parsed)]));
+        return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromCondition(_panelOperator, parsed));
     }
 
-    /// <summary>The panel's operand, parsed per the declared type — the engine compares
-    /// typed values (ADR-0023). Invariant first, so "1234.5" means the same number on
-    /// every machine; the local convention as the fallback.</summary>
-    private static object? ParseFilterValue(ColumnType type, string text) => type switch
-    {
-        ColumnType.Text => text,
-        ColumnType.Number => decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var invariant)
-            ? invariant
-            : decimal.TryParse(text, out var local) ? local : null,
-        ColumnType.Date => DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var isoDate)
-            ? isoDate
-            : DateTime.TryParse(text, out var localDate) ? localDate : null,
-        ColumnType.Boolean => bool.TryParse(text, out var flag) ? flag : null,
-        _ => null,
-    };
-
-    /// <summary>Where a popover stands (ADR-0017/0018): under the header band, at the
-    /// column's visible left edge, clamped inside the Viewport — outside the scroll
-    /// container, so nothing clips it and no instance shares it.</summary>
+    /// <summary>Where a popover stands (ADR-0018/0040): under the header band, at the
+    /// column's visible left edge, clamped inside the Viewport and bounded by its bottom —
+    /// outside the scroll container, inside the grid's box, so nothing clips it and no
+    /// instance shares it.</summary>
     private string PopoverStyle(int column)
     {
         var geometry = _columnStyles.Geometry;
-        var left = column < geometry.PinnedCount
+        var (left, width) = PopoverAcross(column < geometry.PinnedCount
             ? geometry.OffsetPxOf(column)
-            : geometry.OffsetPxOf(column) - _scrollLeftPx;
-        left = Math.Clamp(left, 0, Math.Max(0, _visibleWidthPx - PopoverMinWidthPx));
-        // min-width rides the instance inline (ADR-0027): the clamp above and the box
-        // the browser lays out must be one number, never a C# constant paired with a
-        // stylesheet literal by a comment.
+            : geometry.OffsetPxOf(column) - _scrollLeftPx);
+        // max-height keeps it inside the grid's box downwards, as PopoverAcross does across,
+        // so no ancestor that shows the grid can cut it; taller contents scroll (ADR-0040).
         return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx}px; min-width: {PopoverMinWidthPx}px");
+            $"left: {left}px; top: {BandHeightPx}px; {width}; max-height: {Math.Max(0, _visibleHeightPx - BandHeightPx)}px");
     }
 
-    /// <summary>The narrowest usable popover — what the clamp keeps on screen and what
-    /// the browser is told to lay out, from this one number (ADR-0027).</summary>
+    /// <summary>The narrowest usable popover, and the widest any may grow — what the
+    /// clamp keeps inside the grid and what the browser is told to lay out, from these
+    /// numbers alone (ADR-0027/0040).</summary>
     private const double PopoverMinWidthPx = 200;
+
+    private const double PopoverMaxWidthPx = 320;
 
     /// <summary>Whether the header cells carry a menu button: only where some command
     /// could reach a Consumer at all (ADR-0010).</summary>
@@ -3119,10 +3428,13 @@
     {
         if (!Columns[column].IsQueryable)
             return null;
-        foreach (var sort in _sorts)
+        // By index, not foreach: through the interface, foreach over a sort that is applied
+        // allocates an enumerator, and this runs for every header cell on every render of
+        // the root (PF-3).
+        for (var s = 0; s < _sorts.Count; s++)
         {
-            if (sort.Column == Columns[column].Name)
-                return sort.Direction == SortDirection.Ascending ? "ascending" : "descending";
+            if (_sorts[s].Column == Columns[column].Name)
+                return _sorts[s].Direction == SortDirection.Ascending ? "ascending" : "descending";
         }
         return "none";
     }
@@ -3518,7 +3830,7 @@
         // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite.
         if (_editMode != EditMode.None)
         {
-            await OnEditingKeyAsync(key, ctrl, shift);
+            await OnEditingKeyAsync(GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary));
             return;
         }
 
@@ -3566,6 +3878,10 @@
                 // the pointer's path is a Blazor DOM event and renders on its own.
                 StateHasChanged();
                 return;
+            case GridKeyKind.OpenColumnMenu:
+                await OpenColumnMenuFromKeyAsync();
+                StateHasChanged();
+                return;
             case GridKeyKind.Leave:
                 // Escape peels the outermost layer first: an open popover closes and
                 // the grid keeps the keyboard — one press, one dismissal. Only with
@@ -3573,9 +3889,15 @@
                 // (ADR-0012), releasing the grid's DOM focus.
                 if (_menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null)
                 {
-                    CloseMenus();
+                    // The keyboard comes back after the render that removes the popover,
+                    // never before it: a control inside it can still answer this Escape
+                    // for itself while the grid waits — a MudSelect puts DOM focus back
+                    // on itself — and removing the popover then would leave focus on the
+                    // page's body (KB-32, ADR-0039).
                     if (fromDescendant)
-                        await ReclaimFocusAsync();
+                        ClosePopoverAndReturnFocus();
+                    else
+                        CloseMenus();
                     StateHasChanged();
                     return;
                 }
@@ -3855,9 +4177,16 @@
         }
     }
 
-    private async Task OnEditingKeyAsync(string key, bool ctrl, bool shift)
+    /// <param name="canonical">The key in <see cref="GridKeys.Canonical"/>'s form, as it is
+    /// read outside editing: Command folds into Control only where it is Command
+    /// (ADR-0012), so Cmd+Enter fills on a Mac and Win+Enter is nobody's here. A form not
+    /// named below is not the editor's and does nothing. <b>The cases mirror
+    /// <c>editingKeys</c> / <c>overwriteKeys</c> in <c>ex-grid.js</c></b> — the two must
+    /// move together.</param>
+    private async Task OnEditingKeyAsync(string canonical)
     {
-        switch (key)
+        var backward = canonical.StartsWith("Shift+", StringComparison.Ordinal);
+        switch (canonical)
         {
             case "Escape":
                 // Cancel discards: the uncommitted text was the grid's and dies with
@@ -3872,16 +4201,18 @@
                 RequestEditorFocus();
                 StateHasChanged();
                 return;
-            case "Enter" when ctrl:
+            case "Control+Enter":
                 // Ctrl+Enter fills the whole selection with the committed value — one
                 // Edit Intent carrying all cells, the paste machinery's shape (ADR-0007/0014).
                 await CommitFillAsync();
                 return;
             case "Enter":
-                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.ColumnMajor, shift, Extent));
+            case "Shift+Enter":
+                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.ColumnMajor, backward, Extent));
                 return;
             case "Tab":
-                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.RowMajor, shift, Extent));
+            case "Shift+Tab":
+                await CommitAndMoveAsync(next => next.CycleFocus(CycleOrder.RowMajor, backward, Extent));
                 return;
             case "ArrowUp":
                 await CommitAndMoveAsync(next => next.Move(GridDirection.Up, Extent));
@@ -4734,15 +5065,54 @@
         var cached = pinned ? _columnStyles.PinnedCell(column) : _columnStyles.Cell(column);
         if (_headerLayout.TierCount == 0)
             return cached;
+        ForgetTieredStylesIfStale();
+        return _leafHeaderStyles[column] ??= ComposeLeafHeaderStyle(column, cached);
+    }
+
+    private string ComposeLeafHeaderStyle(int column, string cached)
+    {
         var heightPx = _headerLayout.LeafTierSpanOf(column) * _metrics.HeaderHeightPx;
         return FormattableString.Invariant(
             $"{cached}; align-self: flex-end; height: {heightPx}px; line-height: {heightPx}px");
     }
 
+    // A tiered header's styles — each leaf's height and each rectangle's box — cached
+    // alongside the three things that produce them: the column geometry, the resolved
+    // layout and the tier height (ADR-0027 P5). The root renders on every scroll frame,
+    // and composed there, they were a string per leaf and per rectangle per frame (PF-3).
+    // A pinned leaf and a scrollable one never share an index, so one slot per column is
+    // enough.
+    private ColumnStyles? _tieredStylesGeometry;
+    private HeaderGroupLayout? _tieredStylesLayout;
+    private double _tieredStylesTierPx = double.NaN;
+    private string?[] _leafHeaderStyles = [];
+    private string?[] _groupStyles = [];
+
+    private void ForgetTieredStylesIfStale()
+    {
+        if (ReferenceEquals(_tieredStylesGeometry, _columnStyles)
+            && ReferenceEquals(_tieredStylesLayout, _headerLayout)
+            && _tieredStylesTierPx == _metrics.HeaderHeightPx)
+        {
+            return;
+        }
+        _tieredStylesGeometry = _columnStyles;
+        _tieredStylesLayout = _headerLayout;
+        _tieredStylesTierPx = _metrics.HeaderHeightPx;
+        _leafHeaderStyles = new string?[_columnStyles.Geometry.Count];
+        _groupStyles = new string?[_headerLayout.Groups.Count];
+    }
+
     /// <summary>One rectangle's box, from the numbers layout already has (ADR-0032):
     /// <c>left = OffsetPxOf(first member)</c>, width to past-last, height in tiers —
     /// standing correctly whether or not its leaves are in the DOM.</summary>
-    private string GroupStyle(ResolvedHeaderGroup group)
+    private string GroupStyle(int index)
+    {
+        ForgetTieredStylesIfStale();
+        return _groupStyles[index] ??= ComposeGroupStyle(_headerLayout.Groups[index]);
+    }
+
+    private string ComposeGroupStyle(ResolvedHeaderGroup group)
     {
         var geometry = _columnStyles.Geometry;
         var leftPx = geometry.OffsetPxOf(group.FirstColumn);
@@ -4768,4 +5138,34 @@
     }
 
     private static string Px(double value) => FormattableString.Invariant($"{value}px");
+}
+
+@code {
+    /// <summary>
+    /// The built-in menus' items — the column menu's and the Context Menu's alike
+    /// (ADR-0010/0036). The keys are the items' own once they hold DOM focus (ADR-0039),
+    /// and what each one means is <see cref="MenuKeys"/>' — the table every Chrome answers
+    /// to. Every key's default is prevented: an arrow, Home or End would otherwise scroll
+    /// the page under the menu, and Enter and Space run the item here rather than through
+    /// the button's own click. An enabled item is captured so the arrows can move to it; a
+    /// disabled one cannot hold focus at all.
+    /// </summary>
+    private void BuiltInMenuItems(RenderTreeBuilder __builder, IReadOnlyList<GridCommand> commands)
+    {
+        for (var i = 0; i < commands.Count; i++)
+        {
+            var item = i;
+            var command = commands[i];
+            if (command.Enabled)
+            {
+                <button type="button" role="menuitem" @ref="_menuItems[item]"
+                        @onclick="command.Invoke"
+                        @onkeydown="e => OnMenuItemKeyAsync(e, commands, item)" @onkeydown:preventDefault>@LabelOf(command)</button>
+            }
+            else
+            {
+                <button type="button" role="menuitem" disabled>@LabelOf(command)</button>
+            }
+        }
+    }
 }

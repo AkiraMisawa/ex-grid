@@ -1,32 +1,16 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.mjs';
 
 // The interaction surface, driven with real keys and the real clipboard against the
 // /features page: the Cell Editor's two states (ADR-0010), the clipboard's two formats
 // and its refusals (ADR-0005/0014/0016), the keys the grid must NOT take (ADR-0012),
 // and the one-tab-stop contract (ADR-0033). Console and page errors fail the run
-// (CON-1/2): this component displays money, and something the browser is complaining
-// about may be something the reader is already seeing wrong.
-
-let consoleErrors;
-let pageErrors;
+// (CON-1/2, in fixtures.mjs): this component displays money, and something the browser
+// is complaining about may be something the reader is already seeing wrong.
 
 test.beforeEach(async ({ page, context }) => {
-    consoleErrors = [];
-    pageErrors = [];
-    page.on('console', (message) => {
-        if (message.type() === 'error') {
-            consoleErrors.push(message.text());
-        }
-    });
-    page.on('pageerror', (error) => pageErrors.push(String(error)));
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/features');
     await expect(page.locator('.ex-grid').first().locator('.ex-row').first()).toBeVisible();
-});
-
-test.afterEach(() => {
-    expect(consoleErrors, 'zero console errors across the run (CON-1)').toEqual([]);
-    expect(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
 });
 
 function grid(page) {
@@ -205,53 +189,6 @@ test('a refusal is announced, not only painted (A11Y-16, ADR-0035)', async ({ pa
     await expect(page.locator('#paste-refused-status')).not.toHaveText(first);
 });
 
-test('a secondary click opens the grid\'s menu, not the browser\'s (CTX-1/CTX-5, ADR-0036)', async ({ page }) => {
-    await clickCell(page, 0, 1);
-    const prevented = page.evaluate(() => new Promise((resolve) => {
-        window.addEventListener('contextmenu', (e) => resolve(e.defaultPrevented), { once: true });
-    }));
-
-    await grid(page).locator("[id$='r0c1']").click({ button: 'right', force: true });
-
-    // The browser's own menu is suppressed declaratively on the element — no listener
-    // the grid installed, so the allowlist stays at four (ADR-0021).
-    expect(await prevented).toBe(true);
-    const items = grid(page).locator('[role=menu] button[role=menuitem]');
-    await expect(items).toHaveText(['Copy', 'Copy with headers', 'open-trade']);
-});
-
-test('a secondary click outside the selection moves it first (CTX-1, ADR-0036)', async ({ page }) => {
-    await clickCell(page, 0, 1);
-    const before = await grid(page).getAttribute('aria-activedescendant');
-
-    await grid(page).locator("[id$='r3c2']").click({ button: 'right', force: true });
-
-    // What a command will act on is what the user can see.
-    await expect(grid(page)).not.toHaveAttribute('aria-activedescendant', before ?? '');
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r3c2$/);
-});
-
-test('a Consumer command receives the clicked row and the selection (CTX-3, ADR-0036)', async ({ page }) => {
-    await clickCell(page, 2, 1);
-    await page.keyboard.press('Shift+ArrowDown');
-
-    await grid(page).locator("[id$='r2c1']").click({ button: 'right', force: true });
-    await grid(page).locator('[role=menu] button[role=menuitem]').last().click();
-
-    await expect(page.locator('#context-status')).toContainText('2 cells selected');
-});
-
-test('the ContextMenu key opens it on the Focus (CTX-4, ADR-0036)', async ({ page }) => {
-    await clickCell(page, 1, 1);
-
-    await page.keyboard.press('ContextMenu');
-
-    await expect(grid(page).locator('[role=menu] button[role=menuitem]').first()).toHaveText('Copy');
-    // Escape peels the menu before it leaves the grid (ADR-0012's layering).
-    await page.keyboard.press('Escape');
-    await expect(grid(page).locator('[role=menu]')).toHaveCount(0);
-});
-
 test('a menu copy writes without a prompt, and with headers (CP-19/CP-17, ADR-0005/0036)', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await clickCell(page, 0, 1);
@@ -414,28 +351,6 @@ test('a header click sorts and the selection is untouched by it (SR-1)', async (
     // The click did not select the column: the selection is still the one cell.
     const active = await grid(page).getAttribute('aria-activedescendant');
     expect(active).toMatch(/c0$/);
-});
-
-test('popovers are not clipped by the scroll container and stay per instance (UX-11)', async ({ page }) => {
-    // The rightmost column's menu of the first grid.
-    const buttons = grid(page).locator('.ex-menu-button');
-    await buttons.last().click();
-
-    const popover = page.locator('.ex-popover');
-    await expect(popover).toHaveCount(1);
-    await expect(popover).toBeVisible();
-    // Escape dismisses it and the grid keeps the keyboard; a second press on the
-    // button would toggle it the same way.
-    await popover.press('Escape');
-    await expect(popover).toHaveCount(0);
-    await buttons.last().click();
-    await expect(page.locator('.ex-popover')).toHaveCount(1);
-    const box = await popover.boundingBox();
-    const gridBox = await grid(page).boundingBox();
-    // Fully visible inside the viewport, not cut off at the scroller's edge.
-    expect(box.x + box.width).toBeLessThanOrEqual(gridBox.x + gridBox.width + 1);
-    // And it belongs to the first grid alone: the second grid shows none.
-    expect(await page.locator('.ex-grid').nth(1).locator('.ex-popover').count()).toBe(0);
 });
 
 // The /cells page is the other half of the key-gate contract: a grid with NO editable

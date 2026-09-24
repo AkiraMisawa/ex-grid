@@ -26,6 +26,29 @@ public class OverflowRuleTests
         Assert.DoesNotContain(decision.DisplayText, c => c != '#');
     }
 
+    [Fact] // PF-3 / ADR-0027 P5: a run of #### is the width's string, interned — never composed per cell
+    public void The_same_run_of_hashes_is_the_same_string()
+    {
+        var one = OverflowRules.Decide(ColumnType.Number, "1,234.56", 40, Metrics);
+        var another = OverflowRules.Decide(ColumnType.Number, "9,876.54", 40, Metrics);
+
+        Assert.Same(one.DisplayText, another.DisplayText);
+    }
+
+    [Fact] // ADR-0027 P5: interning a very long run costs that run, not every shorter one on the way
+    public void A_very_wide_hashed_cell_costs_only_its_own_run()
+    {
+        var text = new string('9', 10_000);
+        // Some 5,000 hashes: a table that filled every shorter run as it grew would spend
+        // about 25 MB of characters reaching this one.
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        var decision = OverflowRules.Decide(ColumnType.Number, text, 35_000, Metrics);
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.True(decision.IsHashed);
+        Assert.True(allocated < 1_000_000, $"reaching one run of {decision.DisplayText.Length} allocated {allocated:N0} bytes");
+    }
+
     [Fact] // ADR-0016 / ADR-0005: exactly fitting still shows — hashing is strictly past the bound
     public void An_exactly_fitting_number_shows_and_a_hair_less_hashes()
     {

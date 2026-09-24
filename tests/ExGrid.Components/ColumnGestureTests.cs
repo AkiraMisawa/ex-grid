@@ -1,4 +1,5 @@
 using Bunit;
+using ExGrid.Cells;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Selection;
@@ -35,6 +36,36 @@ public class ColumnGestureTests : GridTestContext
             if (onSort is not null)
                 ps.Add(g => g.OnSortChanged, onSort);
         });
+
+    [Fact] // PF-3 / ADR-0003: a header's menu button and grip keep their handlers across renders of the root
+    public void Header_buttons_keep_their_handlers_across_renders()
+    {
+        // Pinned and scrollable alike: the two header blocks are separate markup.
+        var cut = RenderGrid(onWidth: _ => { }, onSort: _ => { }, pinned: 1);
+        string?[] Handlers() =>
+        [
+            .. cut.FindAll(".ex-menu-button").Select(b => b.GetAttribute("blazor:onclick")),
+            .. cut.FindAll(".ex-resize-grip").Select(g => g.GetAttribute("blazor:onmousedown")),
+        ];
+        var before = Handlers();
+        Assert.Equal(2 * cut.FindAll(".ex-header-cell").Count, before.Length);
+        Assert.All(before, Assert.NotNull); // or an all-null pair would compare equal
+        var rows = cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToArray();
+
+        // The root renders on every scroll frame; this is one such render with nothing
+        // in the header changed. The rows re-rendering is the proof that it happened
+        // (the root's own RenderCount is no count of the root's renders: bUnit adds its
+        // children's to it).
+        cut.Render(ps => ps.Add(g => g.CellState, (_, _) => CellState.Normal));
+
+        Assert.All(
+            cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).Zip(rows),
+            pair => Assert.Equal(pair.Second + 1, pair.First));
+        // The same handlers, not equal ones: rebuilt per render, each would be a changed
+        // attribute the diff re-registers and sends to the browser — every header button,
+        // every frame.
+        Assert.Equal(before, Handlers());
+    }
 
     [Fact] // ADR-0016: grips render only when somebody listens
     public void Grips_render_only_with_a_handler()

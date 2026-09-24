@@ -63,6 +63,12 @@ container, so placing them inside clips them. **Use the Popover API and CSS Anch
 Chrome and Edge). Clipping and stacking order become the browser's problem, there is no need to
 portal to `document.body`, and **coordinates and z-index do not tangle across instances**.
 
+*(Replaced on 2026-09-24 by [ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md), for the
+reasons recorded there and in ADR-0017. The heading survives the change: a popover stands under
+its own root, outside the scroll container, and never extends past its grid's box. So
+coordinates and stacking still never tangle across instances, and no ancestor that shows the
+grid can cut it.)*
+
 ## Consequences
 
 - **The selection overlay and the cell editor live in the same coordinate space as the root**

@@ -1,0 +1,27 @@
+{
+  "chrome": {
+    "PST-6": {
+      "sourceCells": 400,
+      "bytes": 10400400,
+      "parseAndIntentMs": 2593,
+      "nextKeyMs": 6
+    },
+    "DOM-5": {
+      "elements": 246,
+      "cells": 210,
+      "rows": 21
+    },
+    "BIG-7": {
+      "mountToFirstPaintedRowMs": 443,
+      "totalRows": 100000
+    }
+  },
+  "layer2": {
+    "MEM-7": {
+      "bytesPerOneRowScrollFrame": 51014,
+      "paintedRows": 6,
+      "paintedColumns": 2,
+      "renderer": "bUnit (its own batch handling included)"
+    }
+  }
+}

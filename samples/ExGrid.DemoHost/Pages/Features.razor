@@ -1,6 +1,25 @@
 @page "/features"
+@implements IDisposable
 @using ExGrid.Chrome
 @using ExGrid.Clipboard
+@using global::ExGrid.MudBlazor
+@* global::, for the reason MudApp.razor gives (AGENTS.md, the name collisions). *@
+@using global::MudBlazor
+
+@* ?chrome=mud runs this page's grids with ExGrid.MudBlazor's Chrome instead of the
+   built-in one, so the same browser tests can be run under both (FN-17, WR-5): the
+   Chrome is the only thing that changes — no paper, no presentation defaults — and what
+   MudBlazor's own controls need to render comes with it: its stylesheet and the theme
+   and popover providers. Without the parameter nothing here renders and the page is
+   what it always was. *@
+@if (_mudChrome)
+{
+    <HeadContent>
+        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    </HeadContent>
+    <MudThemeProvider />
+    <MudPopoverProvider />
+}
 
 <nav class="demo-nav">
     <a href="">Row identity</a>
@@ -54,7 +73,8 @@
         OnPinnedCountChanged="OnPinned"
         ContextCommands="ContextCommands"
         CellState="_rules.State"
-        CellMessageOf="_rules.Message" />
+        CellMessageOf="_rules.Message"
+        Chrome="_chrome" />
 
 <h2>A second, independent instance</h2>
 <p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
@@ -64,9 +84,48 @@
         Columns="_secondColumns"
         RowHeight="20"
         ViewportHeight="140"
-        ViewportWidth="480" />
+        ViewportWidth="480"
+        Chrome="_chrome" />
 
 @code {
+    /// <summary>Which Chrome the grids run with: absent or <c>builtin</c> is the core's
+    /// own (null), <c>mud</c> is <see cref="MudGridChrome.Default"/>. Anything else is
+    /// refused by name rather than quietly run as the built-in one — a mistyped value
+    /// would otherwise make a test "under both Chromes" pass twice against the same
+    /// one.</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    /// <summary>
+    /// <c>?modal=1</c> turns on MudBlazor's <c>ModalOverlay</c> — a Consumer's app-wide
+    /// setting, under which a press outside an open popup is swallowed by MudBlazor's
+    /// overlay and only the popup closes (ADR-0039, FN-21). Set on the options object the
+    /// app registered, and set back when the page goes, so no other page inherits it.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "modal")]
+    public string? ModalOverlay { get; set; }
+
+    [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
+
+    private IGridChrome? _chrome;
+    private bool _mudChrome;
+
+    public void Dispose() => MudPopovers.Value.ModalOverlay = false;
+
+    protected override void OnParametersSet()
+    {
+        MudPopovers.Value.ModalOverlay = ModalOverlay == "1";
+        _mudChrome = ChromeName == "mud";
+        _chrome = ChromeName switch
+        {
+            null or "builtin" => null,
+            "mud" => MudGridChrome.Default,
+            _ => throw new ArgumentException(
+                $"Unknown chrome '{ChromeName}': this page runs with ?chrome=builtin (the default) or ?chrome=mud.",
+                nameof(ChromeName)),
+        };
+    }
+
     private InMemoryGridSource<DemoTrade> _source = default!;
     private InMemoryGridSource<DemoTrade> _second = default!;
     /// <summary>The bundled ruleset (ADR-0034): owned and driven here, shipped with the

@@ -1,28 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.mjs';
 
 // The presentation contract, measured (ADR-0027/0028/0029/0031): tokens win where the
 // contract says they win, the painted geometry equals the declared geometry, nothing
 // under the Viewport animates, forced colors keep every state tellable, and the grid
 // stays an LTR island inside an RTL page. Console errors fail the run, as everywhere.
-
-let consoleErrors;
-let pageErrors;
-
-test.beforeEach(({ page }) => {
-    consoleErrors = [];
-    pageErrors = [];
-    page.on('console', (m) => {
-        if (m.type() === 'error') {
-            consoleErrors.push(m.text());
-        }
-    });
-    page.on('pageerror', (e) => pageErrors.push(String(e)));
-});
-
-test.afterEach(() => {
-    expect(consoleErrors, 'zero console errors (CON-1)').toEqual([]);
-    expect(pageErrors, 'zero page errors (CON-2)').toEqual([]);
-});
 
 function grid(page) {
     return page.locator('.ex-grid').first();
