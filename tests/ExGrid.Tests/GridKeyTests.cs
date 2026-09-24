@@ -99,15 +99,26 @@ public class GridKeyTests
     {
         // The clipboard and the editor are not wired yet, and the browser's own must not
         // be swallowed by a grid that happens to have focus.
+        // (Alt+↓ stood in this list until ADR-0039 claimed it for the column menu.)
         foreach (var action in new[]
         {
             Key("c", ctrl: true), Key("v", ctrl: true), Key("F2"), Key("f", ctrl: true),
-            Key("x"), Key("F5"), Key("Alt+ArrowDown"),
-            Key("ArrowDown", alt: true),
+            Key("x"), Key("F5"), Key("ArrowUp", alt: true), Key("ArrowDown", alt: true, shift: true),
         })
         {
             Assert.Equal(GridKeyKind.None, action.Kind);
         }
+    }
+
+    [Fact] // ADR-0039 / KB-28: Alt+↓ opens the Focus column's menu — Excel's key for a header's drop-down
+    public void Alt_down_opens_the_column_menu_and_nothing_near_it_does()
+    {
+        Assert.Equal(GridKeyKind.OpenColumnMenu, Key("ArrowDown", alt: true).Kind);
+        // Not with another modifier added: Ctrl+Alt+↓ and Shift+Alt+↓ are other chords,
+        // and Alt+↑ closes nothing — a popover standing open holds DOM focus.
+        Assert.Equal(GridKeyKind.None, Key("ArrowDown", alt: true, ctrl: true).Kind);
+        Assert.Equal(GridKeyKind.None, Key("ArrowDown", alt: true, shift: true).Kind);
+        Assert.Equal(GridKeyKind.None, Key("ArrowUp", alt: true).Kind);
     }
 
     [Theory] // ADR-0012: PageUp / PageDown move Focus and Viewport together; Shift extends

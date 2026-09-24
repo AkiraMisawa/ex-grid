@@ -143,6 +143,11 @@ public static class GridKeys
         table["ContextMenu"] = new(GridKeyKind.OpenContextMenu);
         table["Shift+F10"] = new(GridKeyKind.OpenContextMenu);
 
+        // The column menu, from the keyboard (ADR-0039): Excel's key for a header's
+        // drop-down, aimed at the Focus's column. Without it a keyboard-only user could
+        // not reach sorting or filtering at all.
+        table["Alt+ArrowDown"] = new(GridKeyKind.OpenColumnMenu);
+
         return table;
     }
 }

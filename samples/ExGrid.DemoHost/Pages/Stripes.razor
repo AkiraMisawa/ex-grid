@@ -1,0 +1,100 @@
+@page "/stripes"
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <a href="wide">Wide</a>
+    <a href="cells">Cells and rows</a>
+    <span>Row Stripes</span>
+    <a href="server">Server</a>
+</nav>
+
+<h1>Row Stripes</h1>
+
+<p>
+    Every second row of the result wears a stripe (ADR-0038). It is decided from the
+    row's position in the whole result, never from its place on the screen, so it stays
+    with its row however far the grid scrolls. The pinned <i>Name</i> column is striped
+    with the rest of the row. A group or total row — and a missing value — paints its own
+    ground over the stripe, and still counts, so the rows after it keep their places.
+    The hover band, the selection and the Focus paint above it all.
+</p>
+
+<ExGrid TRow="StripeRow"
+        Window="Rows"
+        Columns="Columns"
+        CellState="StateOf"
+        RowKind="KindOf"
+        StripeRows="true"
+        HighlightHoverRow="true"
+        RowHeight="28"
+        ViewportHeight="420"
+        ViewportWidth="720"
+        PinnedColumnCount="1" />
+
+@code {
+    /// <summary>One row of this page's result. The role is stored on the row because
+    /// this Consumer computed the subtotals itself; the grid is only told the role
+    /// (ADR-0024).</summary>
+    public sealed class StripeRow
+    {
+        public string Name = "";
+        public decimal Amount;
+        public int Quantity;
+        public string Desk = "";
+        public RowKind Kind;
+        public bool AmountMissing;
+    }
+
+    // Positions chosen for what they show: a group row at an odd position (it would
+    // otherwise be striped) and one at an even position, to compare the two; a total at
+    // an odd position; a missing value on a striped row and on an unstriped one.
+    private const int OddGroup = 3;
+    private const int EvenGroup = 12;
+    private const int OddTotal = 7;
+    private const int StripedMissing = 5;
+    private const int PlainMissing = 8;
+
+    private static readonly StripeRow[] Rows = BuildRows(200);
+
+    private static readonly GridColumn<StripeRow>[] Columns =
+    [
+        new("Name", ColumnType.Text, r => r.Name, width: new ColumnWidthSpec(ColumnWidth.Fixed(160))),
+        new("Amount", ColumnType.Number, r => r.AmountMissing ? null : r.Amount,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
+        new("Quantity", ColumnType.Number, r => r.Quantity, width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
+        new("Desk", ColumnType.Text, r => r.Desk, width: new ColumnWidthSpec(ColumnWidth.Fixed(160))),
+    ];
+
+    // Held in fields, never rebuilt per render: a new delegate would hand every row a
+    // changed parameter and defeat memoisation (ADR-0003).
+    private static readonly Func<StripeRow, RowKind> KindOf = row => row.Kind;
+
+    private static readonly CellStateOf<StripeRow> StateOf = (row, column) =>
+        column.Name == "Amount" && row.AmountMissing ? CellState.Missing : CellState.Normal;
+
+    private static StripeRow[] BuildRows(int count)
+    {
+        string[] desks = ["Rates", "Credit", "FX", "Equity"];
+        var rows = new StripeRow[count];
+        for (var i = 0; i < count; i++)
+        {
+            rows[i] = new StripeRow
+            {
+                Name = $"Book {i:D3}",
+                Amount = 1_000m + (i * 37.5m),
+                Quantity = 10 + (i % 17),
+                Desk = desks[i % desks.Length],
+                Kind = i switch
+                {
+                    OddGroup or EvenGroup => RowKind.Group,
+                    OddTotal => RowKind.Total,
+                    _ => RowKind.Detail,
+                },
+                AmountMissing = i is StripedMissing or PlainMissing,
+            };
+        }
+
+        return rows;
+    }
+}

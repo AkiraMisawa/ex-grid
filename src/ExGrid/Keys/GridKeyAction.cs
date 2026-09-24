@@ -53,6 +53,10 @@ public enum GridKeyKind
     /// cell (ADR-0036). A menu only a mouse can reach would fail the same test ADR-0034's
     /// error popover has to pass.</summary>
     OpenContextMenu,
+
+    /// <summary>Alt+↓: open the column menu of the Focus's column — the key Excel opens a
+    /// header's filter drop-down with (ADR-0039). Before it, only a pointer on ▾ could.</summary>
+    OpenColumnMenu,
 }
 
 /// <summary>

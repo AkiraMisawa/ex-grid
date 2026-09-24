@@ -91,7 +91,18 @@ hide it.
   never firing (KB-20/21/22); Space putting the caret in a Template's own field and
   Escape bringing the keyboard back (KB-23/24); a held Space firing once (KB-26);
   Shift+Tab from after the grid landing on the root with buttons on the page
-  (A11Y-17); the chosen action outlined under forced colors too (UX-14).
+  (A11Y-17); the chosen action outlined under forced colors too (UX-14). And the
+  popovers' keyboard (ADR-0039): `Alt+↓` opening the Focus column's menu (KB-28), every
+  popover taking DOM focus by key or pointer (KB-29), the menu keys — arrows over the
+  enabled items with wrap, Home/End, Enter/Space run, Tab closes (KB-30) — the panel's
+  Tab wrapping inside it and Enter in its value field applying what OK applies (KB-31),
+  and every close handing the keyboard back to the root (KB-32).
+- `stripes.spec.mjs` — Row Stripes on `/stripes` (ADR-0038), read as painted colours
+  from a screenshot rather than as computed styles: a pinned and a scrollable cell of
+  one striped row paint the same ground, and the stripe moves with its row (UX-15); a
+  group or total row's ground and a Cell State's paint over the stripe, the roles still
+  count in the parity, the overlays paint above it, and forced colours paint none
+  (UX-16).
 - `presentation.spec.mjs` — the presentation contract, measured: inline Geometry
   Tokens beat the supported override routes (UX-2), painted geometry equals declared
   (UX-3/ST-3), Visual Tokens recolour from an ancestor (UX-5), nothing under the

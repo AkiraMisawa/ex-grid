@@ -633,3 +633,230 @@ test('a press dragged off an action leaves no button holding the keyboard, and E
     await expect(page.locator('#action-status')).toContainText("Pressed 'open' in column 'Actions'");
     await expect(page.locator('#action-status')).toContainText('Presses so far: 1.');
 });
+
+// A popover takes the keyboard when it opens and gives it back when it closes
+// (ADR-0039): before it, nothing opened the column menu from the keyboard, and no
+// popover's items or controls could be reached without a pointer.
+
+async function activeIsInPopover(page) {
+    return page.evaluate(() => {
+        const active = document.activeElement;
+        const popover = active?.closest('.ex-popover');
+        return popover ? { role: popover.getAttribute('role'), tag: active.tagName, text: active.textContent } : null;
+    });
+}
+
+async function activeIsRoot(page) {
+    return page.evaluate(() => document.activeElement === document.querySelector('.ex-grid'));
+}
+
+test('Alt+↓ opens the Focus column\'s menu, and the menu takes the keyboard (KB-28/KB-29, ADR-0039)', async ({ page }) => {
+    await clickCell(page, 1, 0);
+
+    await page.keyboard.press('Alt+ArrowDown');
+
+    const menu = grid(page).locator('.ex-popover[role=menu]');
+    await expect(menu).toBeVisible();
+    await expect(menu).toHaveAttribute('aria-label', 'Book');
+    await expect.poll(() => activeIsInPopover(page)).toEqual({ role: 'menu', tag: 'BUTTON', text: 'Sort ascending' });
+});
+
+test('every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039)', async ({ page }) => {
+    // The column menu, by its ▾.
+    await grid(page).locator('.ex-menu-button').first().click();
+    await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu', tag: 'BUTTON' });
+
+    // The filter panel, from the menu: its first control once the value list has landed.
+    await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Filter' }).click();
+    await expect(grid(page).locator('.ex-popover[role=dialog]')).toBeVisible();
+    await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+
+    // Escape from inside closes it, and the keyboard is the grid's again.
+    await page.keyboard.press('Escape');
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await expect.poll(() => activeIsRoot(page)).toBe(true);
+
+    // The Context Menu, by key.
+    await clickCell(page, 1, 1);
+    await page.keyboard.press('Shift+F10');
+    await expect.poll(() => activeIsInPopover(page)).toEqual({ role: 'menu', tag: 'BUTTON', text: 'Copy' });
+});
+
+test('however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039)', async ({ page }) => {
+    const focusAfterDown = async () => {
+        const before = await grid(page).getAttribute('aria-activedescendant');
+        await page.keyboard.press('ArrowDown');
+        await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).not.toBe(before);
+    };
+
+    // A command run.
+    await clickCell(page, 1, 0);
+    await page.keyboard.press('Alt+ArrowDown');
+    await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Sort ascending' }).click();
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await expect.poll(() => activeIsRoot(page)).toBe(true);
+    await clickCell(page, 1, 0);
+    await focusAfterDown();
+
+    // The panel's Cancel.
+    await page.keyboard.press('Alt+ArrowDown');
+    await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Filter' }).click();
+    await grid(page).locator('.ex-popover[role=dialog] button', { hasText: 'Cancel' }).click();
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await expect.poll(() => activeIsRoot(page)).toBe(true);
+    await focusAfterDown();
+
+    // The ▾ pressed again.
+    const button = grid(page).locator('.ex-menu-button').first();
+    await button.click();
+    await button.click();
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await expect.poll(() => activeIsRoot(page)).toBe(true);
+
+    // Escape from inside a menu.
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+    await page.keyboard.press('Escape');
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await expect.poll(() => activeIsRoot(page)).toBe(true);
+    await focusAfterDown();
+});
+
+// Inside a popover (ADR-0039's table): the keys are the contents' once they hold DOM
+// focus, and what each means is fixed. KB-30 for the menus, KB-31 for the filter panel;
+// these run against the built-in Chrome, and WR-5 runs the same outcomes against the
+// Wrapper's.
+
+async function enabledMenuItems(page) {
+    return grid(page).locator('.ex-popover[role=menu] button[role=menuitem]:not([disabled])').allTextContents();
+}
+
+async function activeText(page) {
+    return page.evaluate(() => document.activeElement?.textContent ?? null);
+}
+
+test('in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039)', async ({ page }) => {
+    await clickCell(page, 1, 0);
+    await page.keyboard.press('Alt+ArrowDown');
+    const items = await enabledMenuItems(page);
+    expect(items.length, 'a menu with something to move among').toBeGreaterThan(2);
+    await expect.poll(() => activeText(page)).toBe(items[0]);
+
+    // Down through every enabled item, and round to the first again.
+    for (const item of [...items.slice(1), items[0]]) {
+        await page.keyboard.press('ArrowDown');
+        await expect.poll(() => activeText(page)).toBe(item);
+    }
+    // Up from the first wraps to the last.
+    await page.keyboard.press('ArrowUp');
+    await expect.poll(() => activeText(page)).toBe(items[items.length - 1]);
+    await page.keyboard.press('Home');
+    await expect.poll(() => activeText(page)).toBe(items[0]);
+    await page.keyboard.press('End');
+    await expect.poll(() => activeText(page)).toBe(items[items.length - 1]);
+
+    // None of it moved the page or the Focus underneath.
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
+});
+
+for (const key of ['Enter', ' ']) {
+    test(`in a menu ${key === ' ' ? 'Space' : key} runs the item and closes it (KB-30, ADR-0039)`, async ({ page }) => {
+        await clickCell(page, 1, 0);
+        await page.keyboard.press('Alt+ArrowDown');
+        await expect.poll(() => activeText(page)).toBe('Sort ascending');
+        await page.keyboard.press('ArrowDown');
+        await expect.poll(() => activeText(page)).toBe('Sort descending');
+
+        await page.keyboard.press(key === ' ' ? 'Space' : key);
+
+        await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+        await expect(grid(page).locator('.ex-header-cell[aria-sort=descending]')).toHaveCount(1);
+        await expect.poll(() => activeIsRoot(page)).toBe(true);
+    });
+}
+
+for (const key of ['Tab', 'Shift+Tab']) {
+    test(`in a menu ${key} closes it as a Cancel (KB-30, ADR-0039)`, async ({ page }) => {
+        await clickCell(page, 1, 0);
+        await page.keyboard.press('Alt+ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await expect.poll(() => activeText(page)).toBe('Sort descending');
+
+        await page.keyboard.press(key);
+
+        await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+        await expect(grid(page).locator('.ex-header-cell[aria-sort=descending]')).toHaveCount(0);
+        await expect.poll(() => activeIsRoot(page)).toBe(true);
+    });
+}
+
+test('the Context Menu answers the same keys (KB-30, ADR-0039)', async ({ page }) => {
+    await clickCell(page, 1, 1);
+    await page.keyboard.press('Shift+F10');
+    const items = await enabledMenuItems(page);
+    await expect.poll(() => activeText(page)).toBe(items[0]);
+    await page.keyboard.press('End');
+    await expect.poll(() => activeText(page)).toBe(items[items.length - 1]);
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(() => activeText(page)).toBe(items[0]);
+    await page.keyboard.press('Tab');
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await expect.poll(() => activeIsRoot(page)).toBe(true);
+});
+
+async function openNotionalPanel(page) {
+    await clickCell(page, 1, 2);
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect.poll(() => activeText(page)).toBe('Sort ascending');
+    await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Filter' }).click();
+    const panel = grid(page).locator('.ex-popover[role=dialog]');
+    await expect(panel).toBeVisible();
+    await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'SELECT' });
+    return panel;
+}
+
+test('in the filter panel Tab and Shift+Tab wrap inside it (KB-31, ADR-0039)', async ({ page }) => {
+    await openNotionalPanel(page);
+
+    // Operator, value, OK, Cancel, Clear — and round to the operator: twice over, and
+    // DOM focus is never anywhere but the panel.
+    const seen = [];
+    for (let i = 0; i < 10; i++) {
+        await page.keyboard.press('Tab');
+        await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog' });
+        seen.push((await activeIsInPopover(page)).tag + ':' + (await activeText(page)));
+    }
+    await expect.poll(() => activeIsInPopover(page)).toMatchObject({ tag: 'SELECT' });
+    expect(seen.filter((s) => s.startsWith('SELECT')).length, 'the wrap reached the operator again').toBeGreaterThan(0);
+
+    // Shift+Tab off the operator goes to the last control, not out of the panel.
+    await page.keyboard.press('Shift+Tab');
+    await expect.poll(() => activeText(page)).toBe('Clear');
+    await expect(grid(page).locator('.ex-popover[role=dialog]')).toBeVisible();
+});
+
+// The rows left after a Notional > 3,000,000 condition (the page's notionals run from
+// 1,000,000 up), applied by `apply`. The source re-answers after the panel closes, so the
+// count is waited for, not read at once.
+async function rowCountAfterFilter(page, apply) {
+    const before = await grid(page).getAttribute('aria-rowcount');
+    const panel = await openNotionalPanel(page);
+    await panel.locator('select').selectOption('GreaterThan');
+    await panel.locator('input:not([type])').fill('3000000');
+    await apply(panel);
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await expect.poll(() => activeIsRoot(page)).toBe(true);
+    await expect.poll(() => grid(page).getAttribute('aria-rowcount'), 'the condition filters something out')
+        .not.toBe(before);
+    return grid(page).getAttribute('aria-rowcount');
+}
+
+test('Enter in the value field applies exactly what OK applies (KB-31, ADR-0039)', async ({ page }) => {
+    const byOk = await rowCountAfterFilter(page, (panel) => panel.locator('button', { hasText: 'OK' }).click());
+
+    await page.reload();
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    const byEnter = await rowCountAfterFilter(page, (panel) => panel.locator('input:not([type])').press('Enter'));
+    expect(byEnter).toBe(byOk);
+});

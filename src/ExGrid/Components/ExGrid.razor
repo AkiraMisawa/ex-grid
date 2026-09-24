@@ -264,7 +264,7 @@
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
                                        CellState="CellState" RowKind="RowKind"
-                                       RowIndex="row" IdPrefix="@_idPrefix"
+                                       RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)" />
                         }
@@ -273,7 +273,7 @@
                             @* No row behind this position at all, so not even a Pinned
                                Column has anything to paint. aria-busy, because a value
                                that has not arrived must not read as one (ADR-0004/0033). *@
-                            <div class="ex-row ex-placeholder" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"></div>
+                            <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"></div>
                         }
                     }
                 }
@@ -286,18 +286,41 @@
            substituted — only lays them out. Outside the scroll container, so nothing
            clips it and instances never share one (ADR-0017/0018). *@
         var menuContext = BuildMenuContext(_menuColumn);
-        <div class="ex-popover" style="@PopoverStyle(_menuColumn)" role="menu">
+        @* Named by the column's own header text — the Consumer's words, so the core still
+           holds no sentence (ADR-0036/0039). Keyed by the opening, as every popover is:
+           one column's menu opened straight over another's would otherwise keep the
+           same buttons through the diff, and a kept element's reference is not captured
+           again — the new menu would open with nothing asked to take the keyboard. A new
+           opening is new contents, for a substituted Chrome's too. *@
+        <div class="ex-popover" style="@PopoverStyle(_menuColumn)" role="menu" aria-label="@Columns[_menuColumn].Header"
+             @key="_popoverFocusRequest">
             @if (Chrome?.ColumnMenu(menuContext) is { } menuFragment)
             {
                 @menuFragment
             }
             else
             {
-                @foreach (var command in menuContext.Commands)
+                @* The keys are the items' own once they hold DOM focus (ADR-0039), and what
+                   each one means is MenuKeys' — the table every Chrome answers to. Every
+                   key's default is prevented: an arrow, Home or End would otherwise scroll
+                   the page under the menu, and Enter and Space run the item here rather
+                   than through the button's own click. An enabled item is captured so the
+                   arrows can move to it; a disabled one cannot hold focus at all. *@
+                var menuCommands = menuContext.Commands;
+                @for (var i = 0; i < menuCommands.Count; i++)
                 {
-                    var invoked = command;
-                    <button type="button" role="menuitem" disabled="@(!command.Enabled)"
-                            @onclick="() => RunCommandAsync(invoked)">@LabelOf(command)</button>
+                    var item = i;
+                    var command = menuCommands[i];
+                    @if (command.Enabled)
+                    {
+                        <button type="button" role="menuitem" @ref="_menuItems[item]"
+                                @onclick="() => RunCommandAsync(command)"
+                                @onkeydown="e => OnMenuItemKeyAsync(e, menuCommands, item)" @onkeydown:preventDefault>@LabelOf(command)</button>
+                    }
+                    else
+                    {
+                        <button type="button" role="menuitem" disabled>@LabelOf(command)</button>
+                    }
                 }
             }
         </div>
@@ -306,18 +329,30 @@
          && contextSlice >= 0 && contextSlice < _window.Count && contextCell.Column < Columns.Count)
     {
         var contextMenu = BuildContextMenuContext(contextCell, contextSlice);
-        <div class="ex-popover" style="@ContextPopoverStyle()" role="menu">
+        <div class="ex-popover" style="@ContextPopoverStyle()" role="menu" @key="_popoverFocusRequest">
             @if (Chrome?.ContextMenu(contextMenu) is { } contextFragment)
             {
                 @contextFragment
             }
             else
             {
-                @foreach (var command in contextMenu.Commands)
+                @* The column menu's items and keys, over the selection's commands
+                   (ADR-0036/0039). *@
+                var contextCommands = contextMenu.Commands;
+                @for (var i = 0; i < contextCommands.Count; i++)
                 {
-                    var invoked = command;
-                    <button type="button" role="menuitem" disabled="@(!command.Enabled)"
-                            @onclick="() => RunCommandAsync(invoked)">@LabelOf(command)</button>
+                    var item = i;
+                    var command = contextCommands[i];
+                    @if (command.Enabled)
+                    {
+                        <button type="button" role="menuitem" @ref="_menuItems[item]"
+                                @onclick="() => RunCommandAsync(command)"
+                                @onkeydown="e => OnMenuItemKeyAsync(e, contextCommands, item)" @onkeydown:preventDefault>@LabelOf(command)</button>
+                    }
+                    else
+                    {
+                        <button type="button" role="menuitem" disabled>@LabelOf(command)</button>
+                    }
                 }
             }
         </div>
@@ -344,7 +379,8 @@
     {
         var panelContext = BuildPanelContext(_panelColumn);
         var panelColumn = _panelColumn;
-        <div class="ex-popover" style="@PopoverStyle(_panelColumn)">
+        <div class="ex-popover" style="@PopoverStyle(_panelColumn)" role="dialog" aria-label="@Columns[_panelColumn].Header"
+             @key="_popoverFocusRequest">
             @if (Chrome?.FilterPanel(panelContext) is { } panelFragment)
             {
                 @panelFragment
@@ -353,43 +389,62 @@
             {
                 @* The built-in panel (ADR-0009): Excel's shape — a value list where the
                    column declared one and the domain arrived, and the degraded
-                   search-and-condition form where it did not. Applied on OK. *@
-                @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
-                {
-                    <input type="search" placeholder="Search" value="@_panelSearch"
-                           @oninput="e => _panelSearch = e.Value?.ToString() ?? string.Empty" />
-                    <div class="ex-popover-list">
-                        @foreach (var value in domain.Values)
-                        {
-                            var text = value is null
-                                ? "(Blanks)"
-                                : Columns[panelColumn].Format is { } format ? format(value) : value.ToString() ?? "";
-                            if (_panelSearch.Length > 0 && !text.Contains(_panelSearch, StringComparison.OrdinalIgnoreCase))
-                                continue;
-                            var item = value;
-                            <label>
-                                <input type="checkbox" checked="@chosen.Contains(item)"
-                                       @onchange="e => { if (e.Value is true) chosen.Add(item); else chosen.Remove(item); }" />
-                                @text
-                            </label>
-                        }
+                   search-and-condition form where it did not. Applied on OK, or by Enter in
+                   a value field (ADR-0039).
+
+                   Enter is the browser's implicit submission of a form, not a key handler:
+                   the form holds one text field and no submit button, so Enter in that
+                   field submits it — and the browser does not submit on the Enter that
+                   confirms an IME's candidate, which Blazor's key event could not tell
+                   apart (it carries no isComposing). A composing IME is left alone, as
+                   ADR-0010 requires of every key the grid hears.
+
+                   Tab wraps inside the panel while it stands (ADR-0039) through two
+                   focusable sentinels, one either side of the controls: Tab off the last
+                   control lands on the far one, which hands focus to the first control,
+                   and Shift+Tab off the first lands on the near one, which hands it to the
+                   last. Blazor's own focus events — no script, and no key the panel's
+                   controls would have to give up. *@
+                <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
+                    <span class="ex-focus-wrap" tabindex="0" @onfocus="FocusPanelLastAsync"></span>
+                    @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
+                    {
+                        <input type="search" placeholder="Search" value="@_panelSearch" @ref="_popoverFirst"
+                               @oninput="e => _panelSearch = e.Value?.ToString() ?? string.Empty" />
+                        <div class="ex-popover-list">
+                            @foreach (var value in domain.Values)
+                            {
+                                var text = value is null
+                                    ? "(Blanks)"
+                                    : Columns[panelColumn].Format is { } format ? format(value) : value.ToString() ?? "";
+                                if (_panelSearch.Length > 0 && !text.Contains(_panelSearch, StringComparison.OrdinalIgnoreCase))
+                                    continue;
+                                var item = value;
+                                <label>
+                                    <input type="checkbox" checked="@chosen.Contains(item)"
+                                           @onchange="e => { if (e.Value is true) chosen.Add(item); else chosen.Remove(item); }" />
+                                    @text
+                                </label>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <select value="@_panelOperator" @ref="_popoverFirst" @onchange="e => _panelOperator = Enum.Parse<FilterOperator>((string)e.Value!)">
+                            @foreach (var op in panelContext.Allowed)
+                            {
+                                <option value="@op">@op</option>
+                            }
+                        </select>
+                        <input value="@_panelValueText" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
+                    }
+                    <div class="ex-popover-actions">
+                        <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
+                        <button type="button" @onclick="CancelPanel">Cancel</button>
+                        <button type="button" @ref="_panelLast" @onclick="panelContext.Clear">Clear</button>
                     </div>
-                }
-                else
-                {
-                    <select value="@_panelOperator" @onchange="e => _panelOperator = Enum.Parse<FilterOperator>((string)e.Value!)">
-                        @foreach (var op in panelContext.Allowed)
-                        {
-                            <option value="@op">@op</option>
-                        }
-                    </select>
-                    <input value="@_panelValueText" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
-                }
-                <div class="ex-popover-actions">
-                    <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
-                    <button type="button" @onclick="CloseMenus">Cancel</button>
-                    <button type="button" @onclick="panelContext.Clear">Clear</button>
-                </div>
+                    <span class="ex-focus-wrap" tabindex="0" @onfocus="FocusPanelFirstAsync"></span>
+                </form>
             }
         </div>
     }
@@ -665,6 +720,16 @@
     [Parameter] public bool HighlightHoverRow { get; set; }
 
     /// <summary>
+    /// Paints a Row Stripe on every second row of the result (ADR-0038) — appearance only,
+    /// off unless asked for. Counted by the row's position in the whole result, so a
+    /// stripe stays with its row while scrolling, across a pager's pages and on a
+    /// Placeholder; Row Kind and Cell State paint over it, and the overlays above it. The
+    /// colour is <c>--ex-row-stripe-background</c>. An explicit value beats a Wrapper's
+    /// cascaded <see cref="GridPresentationDefaults.StripeRows"/>.
+    /// </summary>
+    [Parameter] public bool StripeRows { get; set; }
+
+    /// <summary>
     /// What a Wrapper hands down (ADR-0030): the glyph widths of the font its Theme
     /// sets, and the Density its density word maps onto. Read only where the
     /// corresponding parameter was not written — an explicit parameter still wins,
@@ -878,6 +943,20 @@
     private string _panelValueText = "";
     private string _panelSearch = "";
 
+    // A popover takes the keyboard when it opens and gives it back when it closes
+    // (ADR-0039). The count is handed to every popover's context: contents the core did
+    // not render focus themselves whenever it changes; the built-in contents are focused
+    // here — a menu through its enabled items, keyed by position, which the arrows move
+    // among; the panel through its first control, and its last for Tab's wrap.
+    private int _popoverFocusRequest;
+    private bool _popoverFocusPending;
+    private ElementReference _popoverFirst;
+    private ElementReference _panelLast;
+    private readonly Dictionary<int, ElementReference> _menuItems = [];
+    private bool _panelAwaitingValues;
+    private bool _reclaimFocusPending;
+    private Action? _closeFromChrome;
+
     private IGridSource<TRow>? _boundSource;
     private IReadOnlyList<GridColumn<TRow>>? _boundColumns;
     private bool _applying;
@@ -945,11 +1024,22 @@
     private bool _cellMetricsSupplied;
     private bool _densitySupplied;
     private bool _hoverSupplied;
+    private bool _stripesSupplied;
 
     /// <summary>Whether the hover band is on: the parameter where it was written, the
     /// Wrapper's cascaded default where it was not (ADR-0030), off otherwise.</summary>
     private bool HoverEnabled
         => _hoverSupplied ? HighlightHoverRow : Presentation?.HighlightHoverRow ?? HighlightHoverRow;
+
+    /// <summary>Row Stripes, on where the grid says so or where a Wrapper's cascaded
+    /// default does and the grid says nothing (ADR-0038/0030).</summary>
+    private bool StripesEnabled
+        => _stripesSupplied ? StripeRows : Presentation?.StripeRows ?? StripeRows;
+
+    /// <summary>Whether the row at this position in the whole result wears a stripe:
+    /// the second, the fourth, … — counted in the result, never on the screen, so a
+    /// stripe stays with its row however far the Viewport scrolls (ADR-0038).</summary>
+    private bool StripeAt(int row) => StripesEnabled && (row & 1) == 1;
 
     // The row under the pointer, resolved from JavaScript's last row-change report
     // (ADR-0021's fifth entry): absolute, or -1 for none.
@@ -1174,6 +1264,7 @@
         _cellMetricsSupplied |= parameters.TryGetValue<CellTextMetrics>(nameof(CellMetrics), out _);
         _densitySupplied |= parameters.TryGetValue<GridDensity>(nameof(Density), out _);
         _hoverSupplied |= parameters.TryGetValue<bool>(nameof(HighlightHoverRow), out _);
+        _stripesSupplied |= parameters.TryGetValue<bool>(nameof(StripeRows), out _);
 
         var sourceSupplied = parameters.TryGetValue<IGridSource<TRow>?>(nameof(Source), out _);
         var supplied = new List<string>();
@@ -1826,6 +1917,7 @@
             {
             }
         }
+        await SettlePopoverFocusAsync();
 
         // A geometry change re-anchors on the first visible row (ADR-0028): the model
         // has already moved; this is the browser being told, through the allowlisted
@@ -2604,7 +2696,7 @@
             new("size-to-fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
                 () => SizeToFitAsync(column)),
         };
-        return new ColumnMenuContext(declared.Name, declared.Type, commands, CloseMenus);
+        return new ColumnMenuContext(declared.Name, declared.Type, commands, CloseFromChrome, _popoverFocusRequest);
     }
 
     /// <summary>
@@ -2644,6 +2736,7 @@
         _menuColumn = -1;
         _panelColumn = -1;
         _contextCell = cell;
+        BeginPopoverFocus();
         // The offsets are relative to the Viewport, whose left edge is the content's and
         // whose top edge is the first painted row — the convention CellUnder works in.
         // The popovers are laid out in viewport space, so both axes convert here,
@@ -2671,6 +2764,7 @@
         _menuColumn = -1;
         _panelColumn = -1;
         _contextCell = focus;
+        BeginPopoverFocus();
     }
 
     /// <summary>
@@ -2831,7 +2925,7 @@
         };
         var context = new ContextMenuContext<TRow>(
             _window[slice], declared.Name, declared.Type,
-            _selection.Selection.Ranges, _sequenceVersion, core, CloseMenus);
+            _selection.Selection.Ranges, _sequenceVersion, core, CloseFromChrome, _popoverFocusRequest);
         if (ContextCommands?.Invoke(context) is { } extra)
         {
             var added = extra as IReadOnlyList<GridCommand> ?? [.. extra];
@@ -2889,9 +2983,10 @@
     private async Task RunCommandAsync(GridCommand command)
     {
         await command.Invoke();
-        // The filter command replaces the menu with the panel; everything else closes.
+        // The filter command replaces the menu with the panel; everything else closes,
+        // and the keyboard goes back to the root (ADR-0039).
         if (_panelColumn < 0)
-            CloseMenus();
+            ClosePopoverAndReturnFocus();
         else
             _menuColumn = -1;
     }
@@ -2941,11 +3036,26 @@
         }
         if (_menuColumn == column)
         {
-            CloseMenus();
+            ClosePopoverAndReturnFocus();
             return;
         }
         _menuColumn = column;
         _panelColumn = -1;
+        _contextCell = null;
+        BeginPopoverFocus();
+    }
+
+    /// <summary>Alt+↓ (ADR-0039): the Focus's column menu, opened — never toggled shut,
+    /// since a menu standing open holds DOM focus and this key cannot reach the root then.
+    /// With no Focus, or on a grid whose headers carry no menu, it does nothing.</summary>
+    private async Task OpenColumnMenuFromKeyAsync()
+    {
+        if (_selection.Selection.IsEmpty || !ShowMenuButtons)
+            return;
+        var column = _selection.Selection.Focus.Column;
+        if (column >= Columns.Count || _menuColumn == column)
+            return;
+        await OpenMenuAsync(column);
     }
 
     private void CloseMenus()
@@ -2955,7 +3065,121 @@
         _panelColumn = -1;
         _panelValues = null;
         _panelChecked = null;
+        _panelAwaitingValues = false;
+        _popoverFocusPending = false;
     }
+
+    /// <summary>
+    /// Every opening asks the popover's contents to take DOM focus (ADR-0039): the count
+    /// the contexts carry moves on, and the built-in contents are focused after the render
+    /// that paints them. The references are cleared first, so a substituted Chrome — which
+    /// binds none — leaves them empty and the core, holding nothing it did not render,
+    /// focuses nothing.
+    /// </summary>
+    private void BeginPopoverFocus()
+    {
+        _popoverFocusRequest++;
+        _popoverFocusPending = true;
+        _popoverFirst = default;
+        _panelLast = default;
+        _menuItems.Clear();
+        _reclaimFocusPending = false;
+    }
+
+    /// <summary>
+    /// Closes whatever popover stands and hands the keyboard back to the root after the
+    /// render that removes it (ADR-0039) — however it closed: a command run, Apply, Cancel,
+    /// Clear, the ▾ pressed again, or the Chrome's own affordance. DOM focus may be inside
+    /// the popover or inside an Inner Popup its design system drew outside the root, and
+    /// either way it would otherwise be left on an element that is about to disappear.
+    /// A pointer-down that dismisses does not come through here: it keeps its own meaning,
+    /// and where it lands decides focus (ADR-0010).
+    /// </summary>
+    private void ClosePopoverAndReturnFocus()
+    {
+        var wasOpen = _menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null;
+        CloseMenus();
+        if (wasOpen)
+            _reclaimFocusPending = true;
+    }
+
+    /// <summary>The contexts' <c>Close</c>: what a Chrome's own × or backdrop invokes. It
+    /// arrives from the Chrome's event, not the grid's, so the grid renders itself.</summary>
+    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() =>
+    {
+        ClosePopoverAndReturnFocus();
+        StateHasChanged();
+    });
+
+    /// <summary>The built-in panel's Cancel: a discard, and the keyboard back (ADR-0009/0039).</summary>
+    private void CancelPanel() => ClosePopoverAndReturnFocus();
+
+    private async Task SettlePopoverFocusAsync()
+    {
+        if (_disposed)
+            return;
+        if (_reclaimFocusPending)
+        {
+            _reclaimFocusPending = false;
+            await ReclaimFocusAsync();
+            return;
+        }
+        // The built-in panel paints its condition form while a value list is on its way,
+        // and swaps it for the list when the answer lands: focusing the first control
+        // before then would put DOM focus on an element about to be removed.
+        if (!_popoverFocusPending || _panelAwaitingValues)
+            return;
+        _popoverFocusPending = false;
+        // Only enabled items are captured, so the lowest position is the first enabled
+        // item (MenuKeys.First) — and a substituted Chrome captured nothing at all.
+        var first = _popoverFirst;
+        if (first.Id is null && _menuItems.Count > 0)
+            first = _menuItems[_menuItems.Keys.Min()];
+        await FocusQuietlyAsync(first);
+    }
+
+    /// <summary>Focuses an element the core rendered, if it is still there to focus. A
+    /// popover can close between the render that painted it and this call, and a closed
+    /// circuit cannot focus anything; neither is worth an exception.</summary>
+    private static async Task FocusQuietlyAsync(ElementReference element)
+    {
+        if (element.Id is null)
+            return;
+        try
+        {
+            await element.FocusAsync();
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        {
+        }
+    }
+
+    /// <summary>
+    /// A key on one of the built-in menu's items (ADR-0039): what it means is
+    /// <see cref="MenuKeys"/>' to say, the same table a substituted Chrome answers to.
+    /// </summary>
+    private async Task OnMenuItemKeyAsync(KeyboardEventArgs e, IReadOnlyList<GridCommand> commands, int item)
+    {
+        var meaning = MenuKeys.Resolve(e.Key, e.ShiftKey, e.CtrlKey || e.AltKey || e.MetaKey, commands, item);
+        switch (meaning.Kind)
+        {
+            case MenuKeyKind.Move when _menuItems.TryGetValue(meaning.Item, out var target):
+                await FocusQuietlyAsync(target);
+                break;
+            case MenuKeyKind.Run:
+                await RunCommandAsync(commands[meaning.Item]);
+                break;
+            case MenuKeyKind.Close:
+                ClosePopoverAndReturnFocus();
+                break;
+        }
+    }
+
+    // The two ends of the panel's Tab wrap (ADR-0039): focus arriving on a sentinel is
+    // passed on to the control at the other end.
+    private Task FocusPanelFirstAsync() => FocusQuietlyAsync(_popoverFirst);
+
+    private Task FocusPanelLastAsync() => FocusQuietlyAsync(_panelLast);
 
     /// <summary>
     /// Opens the filter panel on one column (ADR-0009): the value list is fetched
@@ -2965,12 +3189,15 @@
     private async Task OpenPanelAsync(int column)
     {
         _menuColumn = -1;
+        _contextCell = null;
         _panelColumn = column;
         _panelValues = null;
         _panelChecked = null;
         _panelSearch = "";
         _panelValueText = "";
         var declared = Columns[column];
+        BeginPopoverFocus();
+        _panelAwaitingValues = declared.FilterUi != FilterUiMode.Condition;
         _panelOperator = FilterOperators.AllowedFor(declared.Type)[0];
 
         var current = CurrentSpecOf(declared.Name);
@@ -2987,6 +3214,7 @@
         if (_disposed || _panelColumn != column)
             return;
         _panelValues = answer;
+        _panelAwaitingValues = false;
         if (answer.IsTooMany)
         {
             // The degraded form is Excel's own: a search box (ADR-0009). Contains is
@@ -3036,7 +3264,8 @@
             () => RequestDistinctValuesAsync(declared.Name),
             spec => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, spec)),
             () => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, null)),
-            CloseMenus);
+            CloseFromChrome,
+            _popoverFocusRequest);
     }
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
@@ -3055,7 +3284,7 @@
             ? null
             : new GridFilter(columns, _filter?.Opaque);
 
-        CloseMenus();
+        ClosePopoverAndReturnFocus();
         if (Source is not null)
             Source.OnFilterChanged(next);
         else if (OnFilterChanged.HasDelegate)
@@ -3610,6 +3839,10 @@
                 OpenContextMenuAtFocus();
                 // A key arrives through interop, so nothing renders unless this says so —
                 // the pointer's path is a Blazor DOM event and renders on its own.
+                StateHasChanged();
+                return;
+            case GridKeyKind.OpenColumnMenu:
+                await OpenColumnMenuFromKeyAsync();
                 StateHasChanged();
                 return;
             case GridKeyKind.Leave:

@@ -84,7 +84,7 @@ public class RenderAllocationTests : GridTestContext
     /// </summary>
     private (long Bytes, int Cells) LeastAllocatedByReRenders(
         GridColumn<TestRow>[] columns, IReadOnlyList<SortSpec>? sorts, IReadOnlyList<HeaderGroup>? groups,
-        int renders = 10, int runs = 10)
+        bool stripes = false, int renders = 10, int runs = 10)
     {
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Many(50))
@@ -92,6 +92,7 @@ public class RenderAllocationTests : GridTestContext
             .Add(g => g.Columns, columns)
             .Add(g => g.Sorts, sorts)
             .Add(g => g.HeaderGroups, groups)
+            .Add(g => g.StripeRows, stripes)
             .Add(g => g.RowHeight, 20d)
             .Add(g => g.ViewportHeight, 120)
             // Every column painted, so the cell count is rows × columns exactly.
@@ -117,24 +118,24 @@ public class RenderAllocationTests : GridTestContext
     /// between a grid of 4 columns and one of 16.</summary>
     private double PerCellPerRender(
         Func<int, GridColumn<TestRow>[]> columns, IReadOnlyList<SortSpec>? sorts = null,
-        Func<int, HeaderGroup[]>? groups = null)
+        Func<int, HeaderGroup[]>? groups = null, bool stripes = false)
     {
         const int renders = 10;
         // One throwaway pass at each size: the JIT's first compilations land on whoever
         // goes first.
-        LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), renders);
-        LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), renders);
+        LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders);
+        LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders);
 
-        var few = LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), renders);
-        var many = LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), renders);
+        var few = LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders);
+        var many = LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders);
         return (double)(many.Bytes - few.Bytes) / ((many.Cells - few.Cells) * renders);
     }
 
     private void AssertNothingPerCell(
         Func<int, GridColumn<TestRow>[]> columns, IReadOnlyList<SortSpec>? sorts = null,
-        Func<int, HeaderGroup[]>? groups = null)
+        Func<int, HeaderGroup[]>? groups = null, bool stripes = false)
     {
-        var perCellPerRender = PerCellPerRender(columns, sorts, groups);
+        var perCellPerRender = PerCellPerRender(columns, sorts, groups, stripes);
         Assert.True(
             perCellPerRender < 1,
             $"a re-render allocated {perCellPerRender:N1} bytes per painted cell (PF-3).");
@@ -156,6 +157,10 @@ public class RenderAllocationTests : GridTestContext
     [Fact] // PF-3 / ADR-0032: tiered headers — a leaf's height, a rectangle's box and span — are cached, not composed
     public void Re_rendering_under_header_groups_allocates_nothing_per_cell()
         => AssertNothingPerCell(TextColumns, groups: Pairs);
+
+    [Fact] // PF-3 / RR-13 / ADR-0038: a Row Stripe is one interned class on the row, never composed per render
+    public void Re_rendering_striped_rows_allocates_nothing_per_cell()
+        => AssertNothingPerCell(TextColumns, stripes: true);
 
     [Fact] // PF-3 / ADR-0033: a header's aria-sort is answered without allocating, sorted or not
     public void Re_rendering_a_sorted_grid_allocates_nothing_per_cell()

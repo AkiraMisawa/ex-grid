@@ -351,8 +351,19 @@ clean. The property is unchanged: the dependency points one way.
    could be used without a pointer — and may hold Inner Popups, replacing ADR-0030's "never a
    `MudPopover`"), and the rewritten passages of ADR-0010/0012/0021/0027/0029/0030/0036. The
    criteria are FN-17/21, UX-15/16, A11Y-19, KB-28..32, RR-13 and the new §23 (WR-1..9); the
-   work is to be ticketed as vertical slices and built against a proof-of-concept MudBlazor
-   page in the DemoHost.
+   work is ticketed as vertical slices (GitHub issues #3–#12) and built against a
+   proof-of-concept MudBlazor page in the DemoHost. **Built so far:** the core half of
+   ADR-0039 — `Alt+↓`, `FocusRequest` on the three popover contexts, the built-in Chrome
+   focusing its first item, focus returned to the root on every close, the menus' and
+   panel's roles and names (KB-28/29/32, A11Y-19), and the keys inside the built-in menus
+   and panel (KB-30/31): the table is `MenuKeys`, public so a substituted Chrome answers to
+   the same one; the panel's Tab wraps through two focus sentinels, and its Enter is the
+   browser's implicit form submission, which leaves a composing IME alone where a Blazor key
+   handler could not tell (`MenuKeysTests`, `PopoverKeyboardTests`, `features.spec.mjs`).
+   Each popover is now keyed by its opening: one column's menu opened straight over
+   another's kept the same buttons through the diff, and nothing took the keyboard. And Row
+   Stripes in the core (UX-15/16, RR-13; `RowStripeTests`, `stripes.spec.mjs` on the new
+   `/stripes` page, which reads the painted colours from a screenshot).
 
 ## Where the exit criteria stand
 

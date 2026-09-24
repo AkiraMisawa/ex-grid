@@ -68,6 +68,11 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// Everything a filter panel substitute needs (ADR-0009): the column, the condition in
 /// force, the operators the core allows, the declared UI mode, the pull for distinct
 /// values, and the three exits. A substitute compiles against this alone.
+///
+/// <para><see cref="FocusRequest"/> counts the openings (ADR-0039): the panel's contents
+/// put DOM focus on their first control whenever it changes. The core holds no reference
+/// to a control it did not render, and does not try — the same rule as
+/// <see cref="CellEditorContext.FocusRequest"/>.</para>
 /// </summary>
 public sealed record FilterPanelContext(
     string Column,
@@ -78,14 +83,18 @@ public sealed record FilterPanelContext(
     Func<Task<DistinctValues>> RequestDistinctValues,
     Action<FilterSpec?> Apply,
     Action Clear,
-    Action Close);
+    Action Close,
+    int FocusRequest = 0);
 
-/// <summary>The column menu's contract (ADR-0010): the core decides the items.</summary>
+/// <summary>The column menu's contract (ADR-0010): the core decides the items.
+/// <see cref="FocusRequest"/> counts the openings; the menu puts DOM focus on its first
+/// enabled item whenever it changes (ADR-0039).</summary>
 public sealed record ColumnMenuContext(
     string Column,
     ColumnType Type,
     IReadOnlyList<GridCommand> Commands,
-    Action Close);
+    Action Close,
+    int FocusRequest = 0);
 
 /// <summary>
 /// The context menu's contract (ADR-0036). The core decides the items and the Consumer
@@ -97,6 +106,9 @@ public sealed record ColumnMenuContext(
 /// cannot be: a selection legitimately covers rows outside the Window and rows never
 /// fetched. The Consumer holds the data, so resolving an index into a row is its
 /// question, asked of the source it already has.
+///
+/// <para><see cref="FocusRequest"/> counts the openings; the menu puts DOM focus on its
+/// first enabled item whenever it changes (ADR-0039).</para>
 /// </summary>
 public sealed record ContextMenuContext<TRow>(
     TRow Row,
@@ -105,7 +117,8 @@ public sealed record ContextMenuContext<TRow>(
     IReadOnlyList<SelectionRange> Selection,
     int RowSequenceVersion,
     IReadOnlyList<GridCommand> Commands,
-    Action Close);
+    Action Close,
+    int FocusRequest = 0);
 
 /// <summary>
 /// A cell's message, while it is showing (ADR-0034): the Consumer's sentence for a
