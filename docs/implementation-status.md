@@ -572,8 +572,14 @@ clean. The property is unchanged: the dependency points one way.
      other failures were tests reading a Focus or a paint straight after a click, and they
      now wait for it.
 
-   Until SRV-2 has run on `chrome` and `msedge`, the §24 claim is not
-   made (ADR-0017 still states the WebAssembly premise).
+   **SRV-2 met on 2026-09-25** by CI's Server-host layer-3 job (run 36195865300, commit
+   `9172049`). That was `chrome` and `msedge` on Linux, headed. Everything passed; the only
+   tests skipped were the three the WebAssembly run skips too: SRV-6, which runs when asked
+   for; the MEM-5/MEM-6 soak, which runs weekly; and VZ-14, which is Windows only.
+   Still owed before the §24 claim is made:
+   - The soak on the Server host, which is MEM-6 read from the server process. It comes
+     with CI's next long run.
+   - The declaration ADR, which also rewrites ADR-0017's WebAssembly premise.
 
 ## Where the exit criteria stand
 
