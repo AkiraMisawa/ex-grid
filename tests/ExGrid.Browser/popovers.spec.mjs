@@ -398,6 +398,9 @@ for (const chrome of CHROMES) {
             const panel = grid(page).locator('.ex-popover');
             await expect(panel).toHaveAttribute('role', 'dialog');
             await expect(panel).toHaveAttribute('aria-label', 'Book');
+            // Opened by pointer, the panel takes the keyboard a round trip later on the
+            // Server host, and a key pressed before then lands on nothing (ADR-0039).
+            await expect.poll(async () => (await activeIsInPopover(page))?.role).toBe('dialog');
             await page.keyboard.press('Escape');
 
             await clickCell(page, 1, 1);
@@ -488,6 +491,10 @@ test.describe('Inner Popups under the mud Chrome', () => {
             await openPanel(page, column);
             await open(page);
             await expect(openPopups(page)).not.toHaveCount(0);
+            // MudBlazor's date picker moves DOM focus from its button to its input once the
+            // calendar is open, and ignores an Escape until then — a round trip on the
+            // Server host. That wait is the design system's, not the grid's (KB-35).
+            await expect.poll(() => page.evaluate(() => document.activeElement?.tagName)).not.toBe('BUTTON');
 
             await page.keyboard.press('Escape');
 

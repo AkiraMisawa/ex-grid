@@ -102,15 +102,30 @@ public sealed record FilterPanelContext(
 /// enabled item whenever it changes (ADR-0039). Invoking a command also closes the menu
 /// — or replaces it with the filter panel — and hands the keyboard back: the Chrome only
 /// invokes, and calls <see cref="Close"/> for a dismissal of its own. What each key
-/// means on an item is <see cref="MenuKeys"/>'. A popup the menu's contents open of their
-/// own is reported through <see cref="InnerPopupChanged"/>, as in the filter panel.</summary>
+/// means on an item is <see cref="MenuKeys"/>', asked through <see cref="ResolveKey"/>:
+/// the core keeps the menu's place, so a key is answered against where the keys have
+/// moved it, not against whichever item holds DOM focus when it lands — on a Blazor
+/// Server circuit focus follows a round trip behind (ADR-0039). A popup the menu's
+/// contents open of their own is reported through <see cref="InnerPopupChanged"/>, as in
+/// the filter panel.</summary>
 public sealed record ColumnMenuContext(
     string Column,
     ColumnType Type,
     IReadOnlyList<GridCommand> Commands,
     Action Close,
     int FocusRequest = 0,
-    Action<bool>? InnerPopupChanged = null);
+    Action<bool>? InnerPopupChanged = null,
+    MenuKeyResolver? ResolveKey = null);
+
+/// <summary>
+/// A key pressed on a menu's item, answered by the core against the place it keeps for
+/// the open menu (ADR-0039): <paramref name="key"/> is <c>KeyboardEvent.key</c>,
+/// <paramref name="shift"/> the Shift state, and <paramref name="controlAltOrMeta"/>
+/// whether any other modifier was held. A <see cref="MenuKeyKind.Move"/> has already
+/// moved that place; the contents focus the item it names, invoke the command a
+/// <see cref="MenuKeyKind.Run"/> names, and close on a <see cref="MenuKeyKind.Close"/>.
+/// </summary>
+public delegate MenuKey MenuKeyResolver(string key, bool shift, bool controlAltOrMeta);
 
 /// <summary>
 /// The context menu's contract (ADR-0036). The core decides the items and the Consumer
@@ -137,7 +152,8 @@ public sealed record ContextMenuContext<TRow>(
     IReadOnlyList<GridCommand> Commands,
     Action Close,
     int FocusRequest = 0,
-    Action<bool>? InnerPopupChanged = null);
+    Action<bool>? InnerPopupChanged = null,
+    MenuKeyResolver? ResolveKey = null);
 
 /// <summary>
 /// A cell's message, while it is showing (ADR-0034): the Consumer's sentence for a

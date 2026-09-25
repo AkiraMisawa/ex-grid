@@ -126,6 +126,57 @@ test('keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5
         .toMatch(/^Trader\r?\n/);
 });
 
+test('keys typed straight after a key that opens a menu reach the menu (KB-33, ADR-0010/0039)', async ({ page }) => {
+    await openFeatures(page);
+    await clickCell(page, 1, 0);
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c0$/);
+    await setRoundTrip(150);
+
+    // Alt+↓ opens Book's menu a round trip later; ↓ and Enter typed with it are the
+    // menu's — Sort descending — not the grid's, which would move the Focus.
+    await page.keyboard.press('Alt+ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+
+    // Descending, not ascending: had the ↓ reached the grid, the Enter would have run the
+    // menu's first item. (The sort then drops the selection, as ADR-0011 has it.)
+    await expect(grid(page).locator('.ex-header-cell').first()).toHaveAttribute('aria-sort', 'descending');
+});
+
+for (const [what, column, open, closes] of [
+    ['the operator list', 2, async (page) => grid(page).getByRole('combobox', { name: 'Operator' }).click(), true],
+    ['the date calendar', 4, async (page) => grid(page).locator('.mud-ex-grid-filter-operand button').first().click(), false],
+]) {
+    test(`an Escape pressed straight after ${what} opens is not the grid's (KB-35, ADR-0039)`, async ({ page }) => {
+        await page.goto('/features?chrome=mud');
+        await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        await clickCell(page, 1, column);
+        await page.keyboard.press('Alt+ArrowDown');
+        await grid(page).locator('.ex-popover [role=menuitem]', { hasText: 'Filter' }).click();
+        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+        if (column === 4) {
+            await page.keyboard.press('Tab');
+        }
+        await setRoundTrip(150);
+
+        await open(page);
+        await expect(page.locator('.mud-popover-open')).not.toHaveCount(0);
+        await page.keyboard.press('Escape');
+
+        // Had the grid taken it, the panel would close a round trip later. Absence cannot
+        // be waited for, so four round trips are given for it to happen — then the panel
+        // must still stand.
+        await page.waitForTimeout(600);
+        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+        // Whether the popup closes on it is the design system's: MudBlazor's select closes
+        // its list; its date picker ignores an Escape while DOM focus is still on the
+        // button that opened the calendar — which, a round trip in, it is.
+        if (closes) {
+            await expect(page.locator('.mud-popover-open')).toHaveCount(0);
+        }
+    });
+}
+
 test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
     // The document as the server sends it, before any script has run.

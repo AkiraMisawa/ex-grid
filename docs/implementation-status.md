@@ -282,8 +282,8 @@ it has met `chrome` or `msedge`.
 - Layer 3 on Server: the specs that were only ever passing because WebAssembly answers
   within the same frame — a Focus, an editor, a menu or a clipboard read straight after
   the gesture — now wait for the answer; with that, what still fails on Server is the
-  four defects listed under "What is left" (6), plus the MudBlazor pages' web font, which
-  the container's egress fails intermittently on either host (`ERR_TOO_MANY_RETRIES`).
+  items listed under "What is left" (6), plus the MudBlazor pages' web font, which the
+  container's egress fails intermittently on either host (`ERR_TOO_MANY_RETRIES`).
 - One more circuit-only defect found by that run and fixed: a Server circuit going away
   cancels every JS call still pending, and the cancellation of the grid's own disposal
   calls was not among the failures it expected, so it ended the circuit with an error in
@@ -477,28 +477,34 @@ clean. The property is unchanged: the dependency points one way.
      candidate does not apply a filter rests on the browser's implicit-submission rule, and
      is owed a manual check with a Japanese IME on both browsers.
 
-6. **Blazor Server — four defects found by layer 3 on 2026-09-25, awaiting decisions.**
-   Each is a keyboard or focus hand-off that WebAssembly completes within one frame and a
-   circuit completes a round trip later; each is Server-only, and none is fixed yet,
-   because each widens a decision (ADR-0010's hold, or ADR-0039's menu keys):
-   - **A key pressed straight after a key that opens a popover** (`Alt+↓`, `Shift+F10`,
-     `ContextMenu`) reaches the grid rather than the popover: `Alt+↓`, `↓` moves the Focus
-     instead of the menu's item (`popovers.spec.mjs`, "in a menu Tab closes it as a
-     Cancel"; A11Y-19's Escape).
-   - **A menu resolves its keys against the item that holds DOM focus** (`MenuKeys`,
-     ADR-0039). A `↓` moves that focus a round trip later, so `↓` `Enter` typed together
-     runs the item above the one the user moved to — `Copy` for `Copy with headers`. Not
-     yet pinned by a test.
-   - **A focus request from an earlier render can land after a newer gesture**: the
-     MudBlazor menu focuses its first item after the user has already dismissed it by
-     pressing elsewhere, and DOM focus ends up on nothing (KB-17 under the mud Chrome).
-   - **An Escape pressed straight after an Inner Popup opens** is taken by the grid's gate,
-     which is told about the popup a round trip later (ADR-0039's `setInnerPopup`), so it
-     is not the popup's to close (FN-21's "Escape closes the date calendar first", under
-     the mud Chrome).
+6. **Blazor Server — what layer 3 found on 2026-09-25, and where each stands.** Each is a
+   keyboard, focus or scroll hand-off that WebAssembly completes within one frame and a
+   circuit completes a round trip later.
+   - ~~**A key pressed straight after a key that opens a popover**~~ reached the grid. Fixed
+     (ADR-0010 widened, KB-33): those keys are held until the popover holds DOM focus, then
+     handed to it — and the hold now lasts until focus has landed even when the answer
+     arrives first, which a 1-in-10 race had shown it did not.
+   - ~~**A menu resolved its keys against the item holding DOM focus**~~, so `↓` `Enter`
+     ran `Copy` for `Copy with headers`. Fixed (ADR-0039, KB-34): the core keeps the menu's
+     place and the contexts carry `ResolveKey`; the MudBlazor Wrapper asks it too.
+   - ~~**A focus request from an earlier render landing after a newer gesture**~~. Fixed
+     (ADR-0039): a dismissing press also hands the keyboard back after the render that
+     removes the popover.
+   - **An Escape straight after an Inner Popup opens**: the predicted cause — the gate taking
+     it — was wrong, and the fix decided for it (reading `aria-expanded`) was withdrawn
+     unbuilt (ADR-0039 records why). What layer 3 saw is MudBlazor's date picker ignoring an
+     Escape while DOM focus is still on its own button. KB-35 holds the grid to its half.
+   - **Open: `Ctrl+End` then `Ctrl+Home` pressed faster than the scroll round trip can leave
+     the Focus off screen.** `scrollbar.spec.mjs`, "at every zoom level, after moving again",
+     fails about one run in six on the Server host and never on WebAssembly. A trace of the
+     scroll events shows the second `Ctrl+Home` producing no scroll at all, the Focus on
+     (0, 0) and the view at the last row — ADR-0012's "the Focus is always visible", broken.
+     Suspected: the C# mirror of the scroll offset, which a circuit updates a round trip
+     late, judges the Focus already visible and no reveal is written. Not yet root-caused;
+     the next step is to log the mirror against the browser's offset per key.
 
-   Until they are settled the §24 claim is not made (ADR-0017 still states the WebAssembly
-   premise). SRV-2 also owes its run on `chrome` and `msedge`.
+   Until the last is settled, and SRV-2 has run on `chrome` and `msedge`, the §24 claim is not
+   made (ADR-0017 still states the WebAssembly premise).
 
 ## Where the exit criteria stand
 

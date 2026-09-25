@@ -2222,7 +2222,14 @@
         // changes nothing.
         var dismissed = _menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null;
         if (dismissed)
+        {
             CloseMenus();
+            // The press puts DOM focus on the root, as it lands in the grid — but on a
+            // circuit the popover's own request to focus its first item can land after it,
+            // on an item the close is removing. The core hands the keyboard back after that
+            // render, and so has the last word (ADR-0039).
+            _reclaimFocusPending = true;
+        }
         // A press anywhere in the body leaves an Interactive cell (ADR-0037) and keeps its
         // own meaning. Like the dismissal, the chosen button's paint has to go even when
         // the press itself moves nothing.
@@ -2724,8 +2731,9 @@
             new("size-to-fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
                 () => SizeToFitAsync(column)),
         };
-        return new ColumnMenuContext(declared.Name, declared.Type, Closing(commands), CloseFromChrome,
-            _popoverFocusRequest, InnerPopupChangedFromChrome);
+        var closing = Closing(commands);
+        return new ColumnMenuContext(declared.Name, declared.Type, closing, CloseFromChrome,
+            _popoverFocusRequest, InnerPopupChangedFromChrome, MenuKeysOver(closing));
     }
 
     /// <summary>
@@ -2982,7 +2990,8 @@
         var commands = new List<GridCommand>(core);
         if (ContextCommands?.Invoke(context) is { } extra)
             commands.AddRange(extra);
-        return context with { Commands = Closing(commands) };
+        var closing = Closing(commands);
+        return context with { Commands = closing, ResolveKey = MenuKeysOver(closing) };
     }
 
     /// <summary>
@@ -3158,6 +3167,7 @@
     {
         _popoverFocusRequest++;
         _popoverFocusPending = true;
+        _menuCursor = -1;
         _popoverFirst = default;
         _panelLast = default;
         _menuItems.Clear();
@@ -3274,9 +3284,9 @@
     /// A key on one of the built-in menu's items (ADR-0039): what it means is
     /// <see cref="MenuKeys"/>' to say, the same table a substituted Chrome answers to.
     /// </summary>
-    private async Task OnMenuItemKeyAsync(KeyboardEventArgs e, IReadOnlyList<GridCommand> commands, int item)
+    private async Task OnMenuItemKeyAsync(KeyboardEventArgs e, IReadOnlyList<GridCommand> commands)
     {
-        var meaning = MenuKeys.Resolve(e.Key, e.ShiftKey, e.CtrlKey || e.AltKey || e.MetaKey, commands, item);
+        var meaning = ResolveMenuKey(commands, e.Key, e.ShiftKey, e.CtrlKey || e.AltKey || e.MetaKey);
         switch (meaning.Kind)
         {
             case MenuKeyKind.Move when _menuItems.TryGetValue(meaning.Item, out var target):
@@ -3290,6 +3300,28 @@
                 break;
         }
     }
+
+    /// <summary>
+    /// The open menu's place (ADR-0039): where the keys have moved it, which is not
+    /// necessarily the item holding DOM focus — on a circuit that follows a round trip
+    /// behind, and a key resolved against it would run the item the user moved away from.
+    /// -1 until the first key, which starts from the first enabled item, as focus does.
+    /// </summary>
+    private int _menuCursor = -1;
+
+    private MenuKey ResolveMenuKey(IReadOnlyList<GridCommand> commands, string key, bool shift, bool chord)
+    {
+        if (_menuCursor < 0 || _menuCursor >= commands.Count)
+            _menuCursor = MenuKeys.First(commands);
+        var meaning = MenuKeys.Resolve(key, shift, chord, commands, _menuCursor);
+        if (meaning.Kind == MenuKeyKind.Move)
+            _menuCursor = meaning.Item;
+        return meaning;
+    }
+
+    /// <summary>The contexts' <c>ResolveKey</c> over the commands they hand out.</summary>
+    private MenuKeyResolver MenuKeysOver(IReadOnlyList<GridCommand> commands)
+        => (key, shift, chord) => ResolveMenuKey(commands, key, shift, chord);
 
     // The two ends of the panel's Tab wrap (ADR-0039): focus arriving on a sentinel is
     // passed on to the control at the other end.
@@ -5274,7 +5306,7 @@
             {
                 <button type="button" role="menuitem" @ref="_menuItems[item]"
                         @onclick="command.Invoke"
-                        @onkeydown="e => OnMenuItemKeyAsync(e, commands, item)" @onkeydown:preventDefault>@LabelOf(command)</button>
+                        @onkeydown="e => OnMenuItemKeyAsync(e, commands)" @onkeydown:preventDefault>@LabelOf(command)</button>
             }
             else
             {

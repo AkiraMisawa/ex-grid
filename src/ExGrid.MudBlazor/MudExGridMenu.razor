@@ -2,7 +2,11 @@
    exactly the core's commands, in its order, each with its Enabled state, as MudButtons
    with role="menuitem" — the core's popover around them is the menu, named by the core.
    Nothing here decides anything: a command closes its menu when invoked, and what a key
-   means on an item is MenuKeys', the same table the built-in menu answers to.
+   means on an item is the core's answer through ResolveKey — MenuKeys, the table the
+   built-in menu answers to, against the place the core keeps for the open menu. Not
+   against the item this component last saw focused: on a Blazor Server circuit focus
+   follows a key a round trip behind, and Enter typed with a ↓ would run the item above
+   the one the ↓ chose (ADR-0039).
 
    The keys are handled on this element, not on the buttons: a component cannot carry
    :preventDefault, and every key's default has to go — an arrow, Home or End would
@@ -37,6 +41,10 @@
     /// <summary>The context's count of openings: each new one asks for DOM focus.</summary>
     [Parameter] public int FocusRequest { get; set; }
 
+    /// <summary>The core's answer to a key on an item (ADR-0039). Absent only when this
+    /// menu is rendered outside a grid, where the item last focused is all there is.</summary>
+    [Parameter] public MenuKeyResolver? ResolveKey { get; set; }
+
     /// <summary>Where the wording and the icons come from.</summary>
     [Parameter, EditorRequired] public MudGridChrome Chrome { get; set; } = default!;
 
@@ -59,7 +67,10 @@
 
     private async Task OnKeyAsync(KeyboardEventArgs e)
     {
-        var meaning = MenuKeys.Resolve(e.Key, e.ShiftKey, e.CtrlKey || e.AltKey || e.MetaKey, Commands, _current);
+        var chord = e.CtrlKey || e.AltKey || e.MetaKey;
+        var meaning = ResolveKey is { } resolve
+            ? resolve(e.Key, e.ShiftKey, chord)
+            : MenuKeys.Resolve(e.Key, e.ShiftKey, chord, Commands, _current);
         switch (meaning.Kind)
         {
             case MenuKeyKind.Move:

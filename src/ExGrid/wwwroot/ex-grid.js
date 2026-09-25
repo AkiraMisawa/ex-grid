@@ -56,8 +56,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     const overwriteKeys = new Set([
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
 
-    // What the gate decides a key is for (ADR-0010): 'mode' — the core's, and it can
-    // change the editing mode, so the keys after it are held until it is answered;
+    // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
+    // round trip later on a circuit, and a key typed in between must be the popover's, not
+    // the grid's (ADR-0010's hold, widened).
+    const popoverOpeners = new Set(['Alt+ArrowDown', 'Shift+F10', 'ContextMenu']);
+
+    // What the gate decides a key is for (ADR-0010): 'popover' — the core's, and it opens a
+    // popover, so the keys after it are held until the popover holds DOM focus; 'mode' — the
+    // core's, and it can change the editing mode, so the keys after it are held until it is
+    // answered;
     // 'core' — the core's, and changes no mode; 'drop' — taken and never forwarded;
     // null — the browser's, or a control's inside the grid. Read from a snapshot of the
     // event rather than the event itself, so a held key can be gated again, against the
@@ -128,6 +135,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             if (!taken.has(canonical)) {
                 return null;
             }
+            if (popoverOpeners.has(canonical)) {
+                return 'popover';
+            }
             return canonical === ' ' ? 'mode' : 'core';
         }
 
@@ -184,6 +194,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         return active instanceof Element && root.contains(active) && active.closest('.ex-editor') !== null;
     };
 
+    // Whether one of this grid's popovers holds DOM focus — where the keys held behind a key
+    // that opened one are handed.
+    const popoverFocused = () => {
+        const active = document.activeElement;
+        return active instanceof Element && root.contains(active) && active.closest('.ex-popover') !== null;
+    };
+    let awaitingPopover = false;
+
     // The editor the answer opened, once its element is there — the render that made it
     // and the answer travel separately, and the answer can arrive first.
     const editorInput = () => {
@@ -200,7 +218,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         const look = () => {
             // Two seconds is past any round trip the grid is usable over; after it the
             // held keys are replayed against whatever there is, rather than held forever.
-            if (!core || editing === 'none' || editorFocused() || performance.now() - started > 2000) {
+            const editorReady = editing === 'none' || editorFocused();
+            const popoverReady = !awaitingPopover || popoverFocused();
+            if (!core || (editorReady && popoverReady) || performance.now() - started > 2000) {
+                awaitingPopover = false;
                 resolve();
             } else {
                 requestAnimationFrame(look);
@@ -239,16 +260,42 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         input.dispatchEvent(new Event('input', { bubbles: true }));
     };
 
+    // A held key handed to the popover that now holds DOM focus, as the keydown it would
+    // have received: what it means there is the popover's (ADR-0039) — its own handlers
+    // run, and the core answers the menu's keys against its own place. Marked, so this
+    // listener lets it through instead of holding it again.
+    let replaying = false;
+    const replayInto = (target, k) => {
+        replaying = true;
+        try {
+            target.dispatchEvent(new KeyboardEvent('keydown', {
+                key: k.key, ctrlKey: k.ctrlKey, shiftKey: k.shiftKey, altKey: k.altKey, metaKey: k.metaKey,
+                bubbles: true, cancelable: true,
+            }));
+        } finally {
+            replaying = false;
+        }
+    };
+
     const drain = async () => {
+        // Settled before anything else, even with nothing held yet: the answer can arrive
+        // before the popover or the editor has taken DOM focus, and a key typed in that
+        // gap must still be held, not gated against the root.
+        await editorSettled();
         while (held.length > 0 && core) {
-            await editorSettled();
             const k = held.shift();
+            if (popoverFocused()) {
+                replayInto(document.activeElement, k);
+                continue;
+            }
             // Aimed at the grid when it was pressed; after the answer, the grid's
             // keyboard is the editor if one stands, and the root if not.
             const rebased = { ...k, onRoot: editing === 'none', inEditor: editing !== 'none' };
             const verdict = gate(rebased);
-            if (verdict === 'mode') {
+            if (verdict === 'mode' || verdict === 'popover') {
+                awaitingPopover = verdict === 'popover';
                 await forward(rebased);
+                await editorSettled();
             } else if (verdict === 'core') {
                 forward(rebased);
             } else if (verdict === null && editing !== 'none') {
@@ -271,12 +318,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         const k = snapshot(event);
         // Held while a mode change is unanswered, and also while editing is on but the
         // editor has not yet taken DOM focus — the answer can land before the focus does.
-        if (answering || (editing !== 'none' && k.onRoot && !editorFocused())) {
-            // Held only if it was aimed at the grid or its editor: a Template's control
-            // keeps its own keys, as it does at any other moment.
-            if (!k.onRoot && !k.inEditor) {
-                return;
-            }
+        // Every key under the root is held then, whatever it was aimed at: one that went
+        // straight to a popover that had just taken focus would overtake the keys typed
+        // before it. A key this listener is handing on itself is let through.
+        if (!replaying && (answering || (editing !== 'none' && k.onRoot && !editorFocused()))) {
             event.preventDefault();
             event.stopPropagation();
             held.push(k);
@@ -296,8 +341,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             return;
         }
         const answer = forward(k);
-        if (verdict === 'mode') {
+        if (verdict === 'mode' || verdict === 'popover') {
             answering = true;
+            awaitingPopover = verdict === 'popover';
             answer.then(drain);
         }
     };
