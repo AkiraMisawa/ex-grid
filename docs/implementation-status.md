@@ -277,13 +277,15 @@ Playwright-bundled Chromium 1194 **headed under Xvfb** (so native scrollbars occ
 with `ignoreHTTPSErrors` for the container's egress proxy, in an uncommitted config. None of
 it has met `chrome` or `msedge`.
 
-- Layers 1 and 2: **476 + 490 (1 skipped by name) + 51**.
-- Layer 3 on WebAssembly: **133 pass, 5 skipped by name**, 0 failed.
+- Layers 1 and 2: **476 + 495 (1 skipped by name) + 52**.
+- Layer 3 on WebAssembly: **137 pass, 5 skipped by name**, 0 failed.
 - Layer 3 on Server: the specs that were only ever passing because WebAssembly answers
   within the same frame — a Focus, an editor, a menu or a clipboard read straight after
-  the gesture — now wait for the answer; with that, what still fails on Server is the
-  items listed under "What is left" (6), plus the MudBlazor pages' web font, which the
-  container's egress fails intermittently on either host (`ERR_TOO_MANY_RETRIES`).
+  the gesture — now wait for the answer. The last full run: **128 pass, 3 skipped by
+  name, 11 failed**. Ten of the failures are the MudBlazor pages' web font, which the
+  container's egress fails intermittently on either host (`ERR_TOO_MANY_RETRIES`, CON-1).
+  The eleventh was one more test reading the Focus straight after a click (DIR-2), now
+  waiting for it and passing 8 of 8. None is the grid's.
 - One more circuit-only defect found by that run and fixed: a Server circuit going away
   cancels every JS call still pending, and the cancellation of the grid's own disposal
   calls was not among the failures it expected, so it ended the circuit with an error in
