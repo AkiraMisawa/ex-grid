@@ -290,8 +290,8 @@ like a different, perfectly valid number**
 _Avoid_: truncation, ellipsis (that names the permitted behaviour, not the state)
 
 **Prerendered**:
-A grid painted before anything can reach it — its rows are on screen, but no key, pointer or
-scroll is heard yet. It shows it is not ready rather than looking live
+A grid painted before it can hear what it will hear — its rows are on screen, but a key pressed
+into it would be lost: a server's prerender, and the moment after it before the grid is listening. It shows it is not ready rather than looking live
 ([ADR-0029](./docs/adr/0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md),
 [ADR-0033](./docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)).
 _Avoid_: not interactive, static (both collide — see Flagged ambiguities)

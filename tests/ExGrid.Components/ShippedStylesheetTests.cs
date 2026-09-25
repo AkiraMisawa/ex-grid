@@ -80,6 +80,6 @@ public class ShippedStylesheetTests
         // filter has to exist in the capture-phase listener, because auto-repeat is only
         // visible there — by the time a key reaches .NET, a repeat looks like a press.
         // Layer 3 holds the key for real.
-        Assert.Matches(new Regex(@"canonical === ' ' && event\.repeat"), script.Text);
+        Assert.Matches(new Regex(@"canonical === ' ' && k\.repeat"), script.Text);
     }
 }

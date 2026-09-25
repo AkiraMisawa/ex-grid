@@ -57,6 +57,12 @@ nix develop -c dotnet run --project samples/ExGrid.DemoHost
 Stop it with `kill $(lsof -ti tcp:5299)` — not `pkill -f`, which matches the calling
 shell's own command line and kills it.
 
+The same pages run under Blazor Server from the second host, on <http://localhost:5298>:
+
+```sh
+nix develop -c dotnet run --project samples/ExGrid.DemoHost.Server
+```
+
 > **Nix gotcha:** flakes only see git-tracked files. `git add` any new file before
 > building (committing is not required), or the build will not see it.
 
@@ -85,7 +91,9 @@ your environment alone.
 | [`docs/adr/`](docs/adr/) | Architecture decision records — the specification and the reasons behind it |
 | [`src/ExGrid/`](src/ExGrid/) | The ExGrid package: pure-logic core and the Blazor components |
 | [`tests/`](tests/) | The gating test layers: `ExGrid.Tests` (xUnit) and `ExGrid.Components` (bUnit) |
-| [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | Runnable Consumer for manual verification; the browser layer's fixture. Not shipped |
+| [`samples/ExGrid.DemoPages/`](samples/ExGrid.DemoPages/) | The demo pages both hosts serve, and the browser layer's fixture. Not shipped |
+| [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | The standalone WebAssembly host for those pages — the default. Not shipped |
+| [`samples/ExGrid.DemoHost.Server/`](samples/ExGrid.DemoHost.Server/) | The Blazor Server host for the same pages (`InteractiveServer`, prerendered). Not shipped |
 | [`spikes/render-bench/`](spikes/render-bench/) | Disposable render-cost measurement harness (see its README) |
 | [`AGENTS.md`](AGENTS.md) | Working rules for AI agents; useful reading for humans too |
 

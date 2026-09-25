@@ -85,7 +85,9 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
     await grid.cycle();
     const baseline = await grid.counters();
     const byFramework = added(freshOnDocument, await grid.listenersOn('document'));
-    expect(byFramework.every((l) => /@blazor\.webassembly(\.\w+)?\.js$/.test(l)), byFramework.join(', ')).toBe(true);
+    // Blazor's own script is blazor.webassembly.js on the WebAssembly host and
+    // blazor.web.js on the Server host (§24).
+    expect(byFramework.every((l) => /@blazor\.(webassembly|web)(\.\w+)?\.js$/.test(l)), byFramework.join(', ')).toBe(true);
     expect(baseline.listeners - fresh.listeners, `the first cycle added only ${byFramework.join(', ')}`)
         .toBe(byFramework.length);
     expect(baseline.nodes, 'the first cycle left no nodes').toBe(fresh.nodes);
@@ -141,7 +143,7 @@ test('a ten-minute scripted scroll does not grow the JS heap (MEM-5, MEM-6)', as
     await expect(page.locator(".ex-grid [id$='-r0c0']")).toHaveText('K-000000');
     const client = await page.context().newCDPSession(page);
     await client.send('Performance.enable');
-    const managedHeap = () => page.evaluate(() => DotNet.invokeMethodAsync('ExGrid.DemoHost', 'ManagedHeapBytes'));
+    const managedHeap = () => page.evaluate(() => DotNet.invokeMethodAsync('ExGrid.DemoPages', 'ManagedHeapBytes'));
     const managedBefore = await managedHeap();
 
     // The script: ordinary scrolling a row a frame, bouncing between the ends of a

@@ -17,6 +17,34 @@ verification**: VZ-10's real clause is about platforms whose scrollbars take spa
 A machine without Edge fails the `msedge` project by name — the honest outcome
 (ADR-0017 requires both browsers; passing on one does not satisfy it).
 
+## The two hosts
+
+The same pages are served by two hosts (ADR-0019): the standalone WebAssembly DemoHost,
+which is the default, and the Blazor Server host, which the suite drives with
+`EXGRID_HOSTING=server` (Definition of Done §24):
+
+```sh
+EXGRID_HOSTING=server npx playwright test
+```
+
+On Server the browser does not reach the host directly. `latency-proxy.mjs` sits in front
+of it (the browser at 5298, the host at 6298, the proxy's control at 7298 — every port is
+derived in `hosting.mjs` from `EXGRID_BASE_URL`), delaying every chunk in both directions
+by half a round trip that starts at 0. A test that needs a real round trip sets one with
+`setRoundTrip(ms)` from `fixtures.mjs`, and the fixture puts it back to 0 afterwards. The
+browser's own network throttling is not used because it is not reliably applied to the
+WebSocket that carries the circuit, which is the one connection that matters.
+
+The Server host's log is not the browser console. The host appends every Warning and
+above to a file `hosting.mjs` names, and the fixture reads what each test added to it for
+CON-6: a line naming an unhandled exception, or any Error or Critical line, fails the
+test.
+
+`circuit.spec.mjs` holds what only a circuit can fail — keys typed faster than a round
+trip (ED-22), a paste past the hub's message limit (CP-21), a write the browser rejects
+(CP-23), the Prerendered paint (A11Y-20), two users over one store (SRV-3). It runs on
+both hosts; a test that has no meaning on WebAssembly is skipped there by name.
+
 ## Installing the browsers
 
 The flake ships none on purpose, and `flake.nix` says why: `channel: 'chrome'` means the

@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Components;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Selection;
@@ -45,7 +46,40 @@ public class AccessibilityTests : GridTestContext
         Assert.Contains("ex-loading", root.ClassList);   // ADR-0029: the loading state
     }
 
-    [Fact] // ADR-0033 / A11Y-20: once interactive, the grid is one tab stop and not busy
+    private sealed class NoListenerYet : BunitContext
+    {
+        // Interactive, but the module has not come back: on a circuit that is a module
+        // import and a call away. Every call is left unanswered.
+        public NoListenerYet()
+        {
+            Services.AddSingleton<Microsoft.JSInterop.IJSRuntime>(new Unanswered());
+            SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+        }
+
+        private sealed class Unanswered : Microsoft.JSInterop.IJSRuntime
+        {
+            public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) =>
+                new(new TaskCompletionSource<TValue>().Task);
+
+            public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) =>
+                new(new TaskCompletionSource<TValue>().Task);
+        }
+    }
+
+    [Fact] // ADR-0033 / A11Y-20: interactive but not yet listening is still Prerendered — a key would be lost
+    public void An_interactive_grid_without_its_listener_is_still_busy()
+    {
+        using var context = new NoListenerYet();
+
+        var root = context.Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.Columns, TestRows.Wide(3))).Find(".ex-grid");
+
+        Assert.False(root.HasAttribute("tabindex"));
+        Assert.Equal("true", root.GetAttribute("aria-busy"));
+    }
+
+    [Fact] // ADR-0033 / A11Y-20: once its listener is attached, the grid is one tab stop and not busy
     public void An_interactive_grid_is_one_tab_stop_and_not_busy()
     {
         var root = RenderGrid().Find(".ex-grid");

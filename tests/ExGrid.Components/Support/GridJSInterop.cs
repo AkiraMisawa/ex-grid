@@ -17,6 +17,7 @@ internal sealed class GridJSInterop
     private readonly JSRuntimeInvocationHandler<ScrollOffset> _offset;
     private readonly JSRuntimeInvocationHandler _setOffset;
     private readonly JSRuntimeInvocationHandler _blur;
+    private BunitJSModuleInterop? _module;
 
     private GridJSInterop(
         JSRuntimeInvocationHandler<ScrollOffset> offset,
@@ -41,6 +42,13 @@ internal sealed class GridJSInterop
     /// call by design, so this counting is the contract: two reads per scroll would mean
     /// the rows and the columns were painted from different moments.</summary>
     internal int OffsetReads => _offset.Invocations.Count;
+
+    /// <summary>The id of the root the listener was attached to (ADR-0018). Read off the
+    /// attach call rather than the markup: bUnit writes an element's reference id into
+    /// the markup only at the render that created it, and the render that follows the
+    /// attach (ADR-0033's Prerendered state lifting) is not that one.</summary>
+    internal string RootReferenceId =>
+        ((Microsoft.AspNetCore.Components.ElementReference)_module!.Invocations["attach"][^1].Arguments[0]!).Id;
 
     /// <summary>Where the grid has told the browser to scroll — how Focus-follows-scroll
     /// is observed without a browser (ADR-0012).</summary>
@@ -91,6 +99,7 @@ internal sealed class GridJSInterop
         dispose.SetVoidResult();
         return new GridJSInterop(offset, setOffset, blur, dispose)
         {
+            _module = module,
             PointerReporting = setPointerReporting,
             PointerForgotten = forgetPointer,
             InnerPopupTold = setInnerPopup,

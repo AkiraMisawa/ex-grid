@@ -107,10 +107,10 @@ public class PopoverKeyboardTests : GridTestContext
 
     private string? LastFocused() => Focused().LastOrDefault();
 
-    /// <summary>The root's reference, read at the render that created it: bUnit writes a
-    /// reference's id into the markup only when the element is new, and the root is
-    /// retained by every render after the first.</summary>
-    private static string RootRef(IRenderedComponent<ExGrid<TestRow>> cut) => RefOf(cut.Find(".ex-grid"));
+    /// <summary>The root's reference, as the listener was attached to it: bUnit writes a
+    /// reference's id into the markup only when the element is new, and by the time a
+    /// test runs the root has been rendered again (the attach lifts Prerendered).</summary>
+    private string RootRef(IRenderedComponent<ExGrid<TestRow>> cut) => Js.RootReferenceId;
 
     [Fact] // ADR-0039 / KB-28: Alt+↓ opens the menu of the Focus's column, named by its header
     public async Task Alt_down_opens_the_menu_of_the_focus_column()
