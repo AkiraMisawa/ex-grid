@@ -3229,10 +3229,19 @@
     /// either way it would otherwise be left on an element that is about to disappear.
     /// A pointer-down that dismisses does not come through here: it keeps its own meaning,
     /// and where it lands decides focus (ADR-0010).
+    ///
+    /// The root is also asked for focus now, before the render that removes the popover,
+    /// and the call reaches the browser ahead of that render. After it alone, a Server
+    /// circuit leaves a round trip in which the element that held focus is gone, DOM focus
+    /// is on <c>body</c>, and the capture-phase listener on the root hears nothing: a key
+    /// typed straight after Escape was lost. The request after the render stays, so that
+    /// the core still has the last word (ADR-0039).
     /// </summary>
     private void ClosePopoverAndReturnFocus()
     {
         var wasOpen = _menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null;
+        if (wasOpen)
+            _ = ReclaimFocusAsync();
         CloseMenus();
         if (wasOpen)
             _reclaimFocusPending = true;

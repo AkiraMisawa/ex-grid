@@ -334,6 +334,32 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(root, LastFocused());
     }
 
+    [Fact] // ADR-0039: the keyboard goes back to the root before the popover holding it is
+           // removed — after, a Server circuit leaves a round trip in which DOM focus is on
+           // <body> and every key pressed goes nowhere
+    public async Task The_root_is_focused_while_the_closing_popover_still_stands()
+    {
+        var cut = RenderGrid();
+        var root = RootRef(cut);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+        // What was on screen at each moment the grid asked for the root to be focused.
+        var popoversAtRootFocus = new List<int>();
+        JSInterop.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier == Focus && ((ElementReference)invocation.Arguments[0]!).Id == root)
+                popoversAtRootFocus.Add(cut.FindAll(".ex-popover").Count);
+            return false;
+        });
+
+        await KeyAsync(cut, "Escape", fromDescendant: true);
+
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Contains(1, popoversAtRootFocus);
+        // And the core still has the last word, after the render (ADR-0039).
+        Assert.Equal(root, LastFocused());
+    }
+
     [Fact] // ADR-0039 / A11Y-19: the menus are menus, the panel a dialog, each column's named by its header
     public async Task Each_popover_is_named()
     {

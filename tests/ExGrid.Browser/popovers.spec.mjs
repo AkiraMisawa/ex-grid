@@ -402,6 +402,9 @@ for (const chrome of CHROMES) {
             // Server host, and a key pressed before then lands on nothing (ADR-0039).
             await expect.poll(async () => (await activeIsInPopover(page))?.role).toBe('dialog');
             await page.keyboard.press('Escape');
+            // The panel stands over cell (1, 1) until the Escape is answered — a round trip
+            // on the Server host — and a click before then lands in the panel, not the cell.
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
 
             await clickCell(page, 1, 1);
             await page.keyboard.press('Shift+F10');

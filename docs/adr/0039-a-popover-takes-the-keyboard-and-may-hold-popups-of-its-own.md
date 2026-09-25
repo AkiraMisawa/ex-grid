@@ -96,6 +96,16 @@ included, since the root is where that press puts focus anyway. A key pressed af
 opened **by pointer** but before it took focus lands on nothing and is lost — visibly, as a key
 that did nothing; one pressed after a popover opened by key is held (ADR-0010).
 
+*(Added 2026-09-25, from the Server run after `main` was merged.)* **And the first word too,
+when the core closes it.** Handed back only after that render, the keyboard spent a round trip
+nowhere. The element that held focus was removed, DOM focus fell to `body`, and the
+capture-phase listener on the root heard nothing: under the MudBlazor Chrome, `Shift+F10`
+typed straight after the Escape that closed a panel opened nothing. So a popover the core
+closes — Escape, a command, Apply, Cancel, the Chrome's own `Close` — also asks for the root's
+focus **before** the render that removes it, and the request reaches the browser ahead of that
+render. The request after the render stays, for the reason above. A pointer-down that
+dismisses is still left to where it lands.
+
 ## Inner Popups
 
 An **Inner Popup** is a popup that a seam's contents open for themselves and that their design

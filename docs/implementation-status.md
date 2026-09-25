@@ -554,6 +554,13 @@ clean. The property is unchanged: the dependency points one way.
      Fixed (ADR-0012): a read that a write overtook is set aside and asked again. The same
      answer could also pull an edge auto-scroll's model back mid-drag. Layer 2 pins it
      (`GoToStartTests`); the test passes 20 runs in 20 on the Server host.
+   - ~~**A key typed straight after the Escape that closed a popover**~~ was lost: the core
+     handed focus back only after the render that removed the popover, and for that round
+     trip DOM focus was on `body`, where the root's listener cannot hear it. Found after
+     `main` was merged: A11Y-19 under the mud Chrome failed 3 runs in 6 on the Server host.
+     Fixed (ADR-0039): the core also asks for the root's focus before that render. Layer 2
+     pins it (`PopoverKeyboardTests`), and the test now waits for the panel to close before
+     clicking the cell under it. It passes 30 runs in 30 on the Server host.
 
    Until SRV-2 has run on `chrome` and `msedge`, the §24 claim is not
    made (ADR-0017 still states the WebAssembly premise).
