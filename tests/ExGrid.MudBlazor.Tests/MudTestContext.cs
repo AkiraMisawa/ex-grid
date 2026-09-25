@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using ExGrid.Columns;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -16,6 +17,34 @@ public abstract class MudTestContext : BunitContext
     {
         Services.AddMudServices();
         JSInterop.Mode = JSRuntimeMode.Loose;
+    }
+
+    // An interactive renderer, as a Consumer's page has once connected; the grid reads it
+    // to tell a Prerendered paint (ADR-0033). Set at the first render rather than in the
+    // constructor: telling bUnit builds the renderer, which closes the service
+    // collection a test may still add to.
+    private bool _rendererInfoSet;
+
+    private void EnsureRendererInfo()
+    {
+        if (_rendererInfoSet)
+            return;
+        _rendererInfoSet = true;
+        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+    }
+
+    public new IRenderedComponent<TComponent> Render<TComponent>(
+        Action<ComponentParameterCollectionBuilder<TComponent>>? parameterBuilder = null)
+        where TComponent : IComponent
+    {
+        EnsureRendererInfo();
+        return base.Render(parameterBuilder);
+    }
+
+    public new IRenderedComponent<Bunit.Rendering.ContainerFragment> Render(RenderFragment renderFragment)
+    {
+        EnsureRendererInfo();
+        return base.Render(renderFragment);
     }
 
     internal sealed class Trade

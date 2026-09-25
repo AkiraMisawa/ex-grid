@@ -284,14 +284,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             'text/plain': flavour('text/plain', 'text'),
             'text/html': flavour('text/html', 'html'),
         })]).catch((error) => {
-            // A refusal from the core or a denied clipboard permission: nothing landed,
-            // which is the refusing grid's contract (ADR-0005) — the reason has already
-            // been raised (OnCopyRefused on the C# side, or the console line above).
-            // Anything else is a failure and is said so.
+            // A refusal from the core: nothing landed, which is the refusing grid's
+            // contract (ADR-0005), and the reason has already been raised (OnCopyRefused
+            // on the C# side, or the console line above). Anything else is a failure and
+            // is said so.
             if (error instanceof Error && error.message === 'the copy was refused') {
                 return;
             }
+            // The browser would not let the grid write. Nothing landed either — but no
+            // reason has been raised yet, and a user told nothing pastes the old
+            // clipboard believing it is the copy. It is a Refusal of its own (ADR-0005).
             if (error instanceof DOMException && error.name === 'NotAllowedError') {
+                if (core) {
+                    core.invokeMethodAsync('OnCopyWriteRejectedAsync').catch((reportError) => {
+                        if (core) {
+                            console.error('[ex-grid] the grid failed to report a rejected copy', reportError);
+                        }
+                    });
+                }
                 return;
             }
             if (core) {
@@ -351,9 +361,20 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // in C# (ADR-0014). preventDefault regardless: pasting into a non-editable
         // element does nothing by default, and must not start doing something later.
         event.preventDefault();
-        const text = event.clipboardData.getData('text/plain');
-        const html = event.clipboardData.getData('text/html');
-        core.invokeMethodAsync('OnPasteAsync', text, html)
+        // Handed over as streams, never as two strings in one call (ADR-0005): on a
+        // Blazor Server circuit that call is one hub message, and a message past the
+        // hub's receive limit — 32 KB unless the application raised it — closes the
+        // connection. Excel's HTML for a few hundred cells is past it. A stream is
+        // Blazor's own route for large interop data and is not subject to that limit;
+        // its length travels with it, so C# can refuse a paste past the grid's ceiling
+        // without reading a byte. An empty flavour is sent as nothing at all.
+        const encoder = new TextEncoder();
+        const stream = (value) => (value
+            ? DotNet.createJSStreamReference(encoder.encode(value))
+            : null);
+        const text = stream(event.clipboardData.getData('text/plain'));
+        const html = stream(event.clipboardData.getData('text/html'));
+        core.invokeMethodAsync('OnPasteStreamsAsync', text, html)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);

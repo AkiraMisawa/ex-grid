@@ -12,7 +12,7 @@ namespace ExGrid.Components.Tests;
 public class OverflowRenderingTests : GridTestContext
 {
     private static IRenderedComponent<ExGrid<TestRow>> RenderGrid(
-        BunitContext ctx, TestRow[] rows, GridColumn<TestRow>[] columns)
+        GridTestContext ctx, TestRow[] rows, GridColumn<TestRow>[] columns)
         => ctx.Render<ExGrid<TestRow>>(ps => ps.Add(g => g.Window, rows).Add(g => g.Columns, columns));
 
     [Fact] // ADR-0016: a Number that does not fit becomes ####, not an ellipsis

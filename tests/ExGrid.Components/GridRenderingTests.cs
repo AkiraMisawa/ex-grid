@@ -8,7 +8,7 @@ namespace ExGrid.Components.Tests;
 public class GridRenderingTests : GridTestContext
 {
     private static IRenderedComponent<ExGrid<TestRow>> RenderGrid(
-        BunitContext ctx, TestRow[] rows, GridColumn<TestRow>[] columns, double? rowHeight = null)
+        GridTestContext ctx, TestRow[] rows, GridColumn<TestRow>[] columns, double? rowHeight = null)
         => ctx.Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Window, rows).Add(g => g.Columns, columns);

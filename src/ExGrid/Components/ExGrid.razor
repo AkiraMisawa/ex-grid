@@ -37,8 +37,10 @@
    claim, and aria-activedescendant pointing at the Focus cell — cleared while the
    Focus is not painted, so it never names a missing id. No element anywhere carries
    aria-selected; the live region below announces the extent instead. *@
-<div class="@RootClass" style="@RootStyle()" tabindex="0" dir="ltr" @ref="_root"
-     role="grid" aria-multiselectable="true"
+@* A Prerendered grid is painted before anything can reach it, so it takes no tab stop
+   and says it is busy; the first interactive render lifts both (ADR-0033). *@
+<div class="@RootClass" style="@RootStyle()" tabindex="@(Prerendered ? null : "0")" dir="ltr" @ref="_root"
+     role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
      aria-activedescendant="@ActiveDescendant()"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
@@ -775,6 +777,18 @@
     /// </summary>
     [Parameter] public long CopyCellCap { get; set; } = ClipboardRules.DefaultCellCap;
 
+    /// <summary>The default <see cref="PasteByteCap"/>: 16 MB (ADR-0005).</summary>
+    public const long DefaultPasteByteCap = 16L * 1024 * 1024;
+
+    /// <summary>
+    /// The paste ceiling, in UTF-8 bytes across both flavours (ADR-0005). A paste crosses
+    /// to .NET as streams, and a stream needs a ceiling; past it the paste is refused
+    /// whole, before any of it is read — never pasted from the <c>text/plain</c> flavour
+    /// alone, which is the display format and already rounded. On Blazor Server it is
+    /// also what keeps one client from filling the server's memory.
+    /// </summary>
+    [Parameter] public long PasteByteCap { get; set; } = DefaultPasteByteCap;
+
     /// <summary>
     /// The one Edit Intent a paste raises (ADR-0007/0014): all cells in one
     /// notification. The grid writes nothing — the screen changes when the Consumer
@@ -1187,7 +1201,13 @@
     private RowRange? _measuredVisible;
     private bool _measured;
 
-    private string RootClass => (_loading, _editMode != EditMode.None) switch
+    /// <summary>Painted, but not yet able to hear a key, a pointer or a scroll — a
+    /// server's prerender, before its circuit connects (CONTEXT.md <b>Prerendered</b>).
+    /// It wears the loading state (ADR-0029): it too waits on an answer that has not
+    /// arrived.</summary>
+    private bool Prerendered => !RendererInfo.IsInteractive;
+
+    private string RootClass => (_loading || Prerendered, _editMode != EditMode.None) switch
     {
         (true, true) => "ex-grid ex-loading ex-editing",
         (true, false) => "ex-grid ex-loading",
@@ -1292,8 +1312,15 @@
     {
         if (!ReferenceEquals(_boundSource, Source))
         {
+            // A bundled source belongs to one circuit (ADR-0018 §5): attached before the
+            // swap, so a refusal leaves the grid bound to what it had.
+            if (Source is IBindsToOneCircuit bindsTo)
+                bindsTo.Binding.Attach(this, SynchronizationContext.Current);
             if (_boundSource is not null)
+            {
                 _boundSource.StateChanged -= OnSourceStateChanged;
+                (_boundSource as IBindsToOneCircuit)?.Binding.Detach(this);
+            }
             _boundSource = Source;
             _boundColumns = null;
             if (_boundSource is not null)
@@ -1474,6 +1501,11 @@
                 $"{BandHeightPx + (scrolledRows * _metrics.RowHeightPx)}px of scrollable " +
                 $"area — past the {ViewportGeometry.MaxScrollHeightPx}px a browser can scroll, so the last rows " +
                 "could never be reached. Use a shorter row height, or page the result (ADR-0013/0015).");
+        }
+        if (PasteByteCap < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(PasteByteCap), PasteByteCap,
+                "The paste ceiling is at least one byte; the Consumer may raise it, not disable pasting with it (ADR-0005).");
         }
         if (CopyCellCap < 1)
         {
@@ -3703,11 +3735,44 @@
     }
 
     /// <summary>
-    /// The <c>paste</c> event's block, both flavours (ADR-0005/0014). Nothing tabular
-    /// consults no rule; a refusal says which rule it hit; an approval is one Edit
-    /// Intent carrying every cell (ADR-0007).
+    /// The <c>paste</c> event's two flavours, as streams (ADR-0005): a paste handed over
+    /// as strings is one interop message, and on Blazor Server a message past the hub's
+    /// receive limit (32 KB by default) ends the circuit. Past <see cref="PasteByteCap"/>
+    /// the paste is refused whole and neither stream is opened. The references are the
+    /// JS side's to release, and are released here either way.
     /// </summary>
     [JSInvokable]
+    public async Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html)
+    {
+        await using var textReference = text;
+        await using var htmlReference = html;
+        if (_disposed)
+            return;
+
+        if ((text?.Length ?? 0) + (html?.Length ?? 0) > PasteByteCap)
+        {
+            if (OnPasteRefused.HasDelegate)
+                await OnPasteRefused.InvokeAsync(PasteRefusalReason.TooLarge);
+            return;
+        }
+        await OnPasteAsync(await ReadAsync(text), await ReadAsync(html));
+
+        static async Task<string?> ReadAsync(IJSStreamReference? reference)
+        {
+            if (reference is null)
+                return null;
+            await using var stream = await reference.OpenReadStreamAsync(maxAllowedSize: reference.Length);
+            using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
+            return await reader.ReadToEndAsync();
+        }
+    }
+
+    /// <summary>
+    /// The <c>paste</c> event's block, both flavours in hand (ADR-0005/0014). Nothing
+    /// tabular consults no rule; a refusal says which rule it hit; an approval is one Edit
+    /// Intent carrying every cell (ADR-0007). The browser reaches it through
+    /// <see cref="OnPasteStreamsAsync"/>, never directly.
+    /// </summary>
     public async Task OnPasteAsync(string? text, string? html)
     {
         if (_disposed)
@@ -3812,6 +3877,18 @@
     /// </summary>
     [JSInvokable]
     public bool Ping() => true;
+
+    /// <summary>
+    /// The browser rejected the asynchronous clipboard write (ADR-0005): nothing landed.
+    /// Called by the instance's own clipboard wiring, which knows it only once the write
+    /// has failed — so it is a Refusal raised after the fact, with its own reason.
+    /// </summary>
+    [JSInvokable]
+    public Task OnCopyWriteRejectedAsync()
+    {
+        NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable);
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// A key the core claimed (ADR-0010). Called from the instance's own capture-phase
@@ -4976,6 +5053,7 @@
         if (_boundSource is not null)
         {
             _boundSource.StateChanged -= OnSourceStateChanged;
+            (_boundSource as IBindsToOneCircuit)?.Binding.Detach(this);
             _boundSource = null;
         }
         try

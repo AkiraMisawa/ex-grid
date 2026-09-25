@@ -12,8 +12,10 @@ namespace ExGrid;
 /// A refused change leaves the source exactly as it was: every change is computed
 /// first and committed only on success.
 /// </summary>
-public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>
+public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCircuit
 {
+    CircuitBinding IBindsToOneCircuit.Binding { get; } = new();
+
     private readonly TRow[] _rows;
     private IReadOnlyList<ColumnInfo<TRow>>? _columns;
 

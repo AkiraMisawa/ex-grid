@@ -71,6 +71,17 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(CopyRefusalReason.EmptySelection, refused);
     }
 
+    [Fact] // ADR-0005 / CP-23: a write the browser rejects is a Refusal, raised once — never a silence
+    public async Task A_write_the_browser_rejects_is_refused_by_name()
+    {
+        var refusals = new List<CopyRefusalReason>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnCopyRefused, (CopyRefusalReason r) => refusals.Add(r)));
+
+        await cut.InvokeAsync(() => cut.Instance.OnCopyWriteRejectedAsync());
+
+        Assert.Equal([CopyRefusalReason.ClipboardUnavailable], refusals);
+    }
+
     [Fact] // ADR-0005 / CP-2: refusal is strictly past the cap
     public async Task The_cap_refuses_strictly_past_it()
     {
@@ -178,6 +189,71 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(2, intent.CellCount);
         Assert.Equal("x", intent.ValueFor(new CellPosition(0, 0)));
         Assert.Equal("y", intent.ValueFor(new CellPosition(1, 0)));
+    }
+
+    [Fact] // ADR-0005 / CP-21: a paste arrives as streams and means exactly what the strings meant
+    public async Task A_paste_arrives_as_streams()
+    {
+        var intents = new List<GridPasteIntent>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i)));
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+        // Excel's HTML flavour wins over the text, which is the display format (ADR-0005).
+        var text = FakeJSStream.Of("1\r\n2\r\n");
+        var html = FakeJSStream.Of("<table><tr><td x:num=\"1.25\">1</td></tr><tr><td x:num=\"2.5\">2</td></tr></table>");
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(text, html));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal("1.25", intent.ValueFor(new CellPosition(0, 0)));
+        Assert.Equal("2.5", intent.ValueFor(new CellPosition(1, 0)));
+        Assert.True(text.Disposed && html.Disposed);
+    }
+
+    [Fact] // ADR-0005 / CP-22: past the byte cap the paste is refused whole, and nothing is read
+    public async Task A_paste_past_the_byte_cap_is_refused_unread()
+    {
+        var intents = new List<GridPasteIntent>();
+        PasteRefusalReason? refused = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteByteCap, 100L)
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused = r));
+        await ClickCellAsync(cut, 50, 10);
+        // The text alone would fit. Only the HTML carries the raw value, so falling back
+        // to the text would paste the rounded display format — never done (ADR-0005).
+        var text = FakeJSStream.OfLength(40);
+        var html = FakeJSStream.OfLength(61);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(text, html));
+
+        Assert.Equal(PasteRefusalReason.TooLarge, refused);
+        Assert.Empty(intents);
+        Assert.False(text.Opened);
+        Assert.False(html.Opened);
+        Assert.True(text.Disposed && html.Disposed);
+    }
+
+    [Fact] // ADR-0005 / CP-22: exactly on the cap is not past it
+    public async Task A_paste_exactly_on_the_byte_cap_is_read()
+    {
+        var intents = new List<GridPasteIntent>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteByteCap, 4L)
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i)));
+        await ClickCellAsync(cut, 50, 10);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(FakeJSStream.Of("fill"), null));
+
+        Assert.Equal("fill", Assert.Single(intents).ValueFor(new CellPosition(0, 0)));
+    }
+
+    [Fact] // ADR-0005: the default ceiling is 16 MB across both flavours
+    public void The_default_paste_byte_cap_is_sixteen_megabytes()
+    {
+        var cut = RenderGrid();
+
+        Assert.Equal(16L * 1024 * 1024, cut.Instance.PasteByteCap);
     }
 
     [Fact] // ADR-0014 / PST-2: rows not in the Window are included in the target — intended

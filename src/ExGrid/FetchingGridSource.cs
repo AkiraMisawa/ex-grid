@@ -13,8 +13,10 @@ namespace ExGrid;
 /// has been told is empty — "nothing to show is not a range" (ADR-0001) — so a source
 /// that starts with nothing has to break its own cold start.</para>
 /// </summary>
-public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable
+public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, IBindsToOneCircuit
 {
+    CircuitBinding IBindsToOneCircuit.Binding { get; } = new();
+
     /// <summary>How many rows the first fetch asks for, before the grid has said how
     /// tall it is. Wide enough for an ordinary Viewport; the grid's own request replaces
     /// it as soon as one arrives.</summary>
