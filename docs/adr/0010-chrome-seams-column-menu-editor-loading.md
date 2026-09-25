@@ -217,7 +217,9 @@ cannot afford to:
 A number that is not the one typed, on a screen that looks normal, is the failure this
 component's first principle refuses. **Decision: while a key that can change the editing
 mode is being answered, every key after it is held in the listener, in order, and replayed
-against the mode the answer leaves.** A key that can change the mode is one the gate takes
+against the mode the answer leaves** — and, when the answer is an open editor, until that
+editor holds DOM focus: the answer and the render that paints the editor travel separately,
+and a key landing on the root in between would find no mode that claims it. A key that can change the mode is one the gate takes
 to open the Cell Editor (F2, a printable key, Space) and, while editing, every key it
 claims (each commits, cancels, moves or switches). On replay a held key goes through the
 gate again: a key the core claims in the new mode is forwarded (and may hold the rest
