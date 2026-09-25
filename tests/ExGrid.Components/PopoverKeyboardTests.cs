@@ -160,6 +160,19 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(RefOf(Item(cut, "Sort ascending")), LastFocused());
     }
 
+    [Fact] // ADR-0039 / SRV-5: the opening focus does not scroll the menu — on a Server circuit it
+           // lands a round trip after the menu is shown, and would undo a scroll the user made
+    public async Task The_opening_focus_keeps_the_menus_scroll()
+    {
+        var cut = RenderGrid();
+
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+
+        var opening = JSInterop.Invocations.Last(i => i.Identifier == Focus);
+        Assert.Equal(RefOf(Item(cut, "Sort ascending")), ((ElementReference)opening.Arguments[0]!).Id);
+        Assert.Equal(true, opening.Arguments[1]);
+    }
+
     [Fact] // ADR-0039 / KB-29: the built-in panel focuses its first control once its contents have settled
     public async Task The_built_in_panel_focuses_its_first_control()
     {

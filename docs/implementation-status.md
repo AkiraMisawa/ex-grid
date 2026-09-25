@@ -577,6 +577,11 @@ clean. The property is unchanged: the dependency points one way.
      Both are fixed (ADR-0039) and pinned at a 150 ms round trip in `circuit.spec.mjs`. The
      other failures were tests reading a Focus or a paint straight after a click, and they
      now wait for it.
+   - ~~**A menu taking the keyboard pulled back a scroll the user had given it**~~. Found by
+     a later CI run, UX-11 on `msedge`: opened by pointer, a menu is focused a round trip
+     late, and `focus()` scrolled a menu taller than its grid back to its top. The opening
+     focus no longer scrolls, under both Chromes (ADR-0039). It is pinned in layer 2 in
+     both suites, and at a 150 ms round trip in `circuit.spec.mjs`.
 
    **SRV-2 met on 2026-09-25** by CI's Server-host layer-3 job (run 36195865300, commit
    `9172049`). That was `chrome` and `msedge` on Linux, headed. Everything passed; the only

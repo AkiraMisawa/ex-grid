@@ -226,6 +226,25 @@ test('Escape, Escape straight after an Inner Popup closes it and then the panel 
     await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
 });
 
+test('a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5)', async ({ page }) => {
+    await page.goto('/features?chrome=mud');
+    const short = page.locator('.ex-grid').nth(1);
+    await expect(short).toHaveAttribute('tabindex', '0');
+    await setRoundTrip(150);
+
+    // The second grid is 140px tall, so its column menu scrolls (UX-11). Opened by pointer,
+    // it takes the keyboard a round trip later; the user has already scrolled to its end.
+    await short.locator('.ex-menu-button').first().click();
+    const popover = short.locator('.ex-popover');
+    await expect(popover.locator('[role=menuitem]').first()).toBeVisible();
+    const last = popover.locator('[role=menuitem]').last();
+    await last.scrollIntoViewIfNeeded();
+
+    // Two round trips for the focus request to land; the view must not have moved.
+    await page.waitForTimeout(600);
+    await expect(last).toBeInViewport();
+});
+
 test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
     // The document as the server sends it, before any script has run.

@@ -140,6 +140,22 @@ public class MudMenuTests : MudTestContext
         Assert.Equal(ItemRefs(cut)[1], LastFocused());
     }
 
+    [Fact] // ADR-0039 / SRV-5: the opening focus does not scroll the menu, which the user may
+           // already have scrolled by the time it lands on a Server circuit; an arrow's does,
+           // so the item it moves to is shown
+    public async Task The_opening_focus_keeps_the_scroll_and_an_arrows_does_not()
+    {
+        var cut = RenderMenu(MudGridChrome.Default);
+        var opening = JSInterop.Invocations.Last(i => i.Identifier == Focus);
+        Assert.Equal(true, opening.Arguments[1]);
+
+        await Items(cut)[1].FocusAsync(new FocusEventArgs());
+        await cut.Find(".mud-ex-grid-menu").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+
+        var moved = JSInterop.Invocations.Last(i => i.Identifier == Focus);
+        Assert.Equal(false, moved.Arguments[1]);
+    }
+
     [Fact] // KB-30 / ADR-0039: the arrows follow MenuKeys — over the disabled items, wrapping
     public async Task The_arrows_move_among_the_enabled_items()
     {

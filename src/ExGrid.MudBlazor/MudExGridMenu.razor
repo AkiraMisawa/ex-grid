@@ -17,15 +17,34 @@
     {
         var item = i;
         var command = Commands[i];
-        <MudButton @ref="_items[item]" role="menuitem" Variant="Variant.Text" FullWidth="true"
-                   Class="mud-ex-grid-menu-item" Size="Size.Small" Disabled="@(!command.Enabled)"
-                   StartIcon="@Chrome.IconFor(command.Id)" OnClick="command.Invoke"
-                   @onfocus="() => _current = item">@LabelOf(command.Id)</MudButton>
+        @MenuItem(item, command)
     }
 </div>
 
 @code {
-    private readonly Dictionary<int, MudButton> _items = [];
+    private readonly Dictionary<int, MudExGridMenuItem> _items = [];
+
+    // Each item is a MudButton that can be focused without scrolling. Built here rather
+    // than in markup: Razor finds only public components, and the item is this package's
+    // own, not a part of its public surface.
+    private RenderFragment MenuItem(int item, GridCommand command) => builder =>
+    {
+        builder.OpenComponent<MudExGridMenuItem>(0);
+        builder.AddAttribute(1, "role", "menuitem");
+        builder.AddComponentParameter(2, nameof(MudButton.Variant), Variant.Text);
+        builder.AddComponentParameter(3, nameof(MudButton.FullWidth), true);
+        builder.AddComponentParameter(4, nameof(MudButton.Class), "mud-ex-grid-menu-item");
+        builder.AddComponentParameter(5, nameof(MudButton.Size), Size.Small);
+        builder.AddComponentParameter(6, nameof(MudButton.Disabled), !command.Enabled);
+        builder.AddComponentParameter(7, nameof(MudButton.StartIcon), Chrome.IconFor(command.Id));
+        builder.AddComponentParameter(8, nameof(MudButton.OnClick),
+            EventCallback.Factory.Create<MouseEventArgs>(this, command.Invoke));
+        builder.AddAttribute(9, "onfocus", EventCallback.Factory.Create<FocusEventArgs>(this, () => _current = item));
+        builder.AddComponentParameter(10, nameof(MudButton.ChildContent),
+            (RenderFragment)(label => label.AddContent(0, LabelOf(command.Id))));
+        builder.AddComponentReferenceCapture(11, reference => _items[item] = (MudExGridMenuItem)reference);
+        builder.CloseComponent();
+    };
     private int _current = -1;
     private int _focusedRequest = -1;
     private bool _needsFocus;
@@ -62,7 +81,10 @@
             return;
         _needsFocus = false;
         _focusedRequest = FocusRequest;
-        await FocusItemAsync(MenuKeys.First(Commands));
+        // Without scrolling: on a Server circuit the opening focus lands a round trip after
+        // the menu is shown, and would pull a menu the user has already scrolled back to
+        // its top (ADR-0039/0040). An arrow's focus still scrolls its item into view.
+        await FocusItemAsync(MenuKeys.First(Commands), preventScroll: true);
     }
 
     private async Task OnKeyAsync(KeyboardEventArgs e)
@@ -85,15 +107,15 @@
         }
     }
 
-    private async Task FocusItemAsync(int item)
+    private async Task FocusItemAsync(int item, bool preventScroll = false)
     {
         if (!_items.TryGetValue(item, out var button))
             return;
         try
         {
-            // MudBlazor's own FocusAsync on its button — focus stays out of JavaScript
-            // this package would own (ADR-0021/0039).
-            await button.FocusAsync();
+            // Blazor's own FocusAsync on the button's element — focus stays out of
+            // JavaScript this package would own (ADR-0021/0039).
+            await button.FocusAsync(preventScroll);
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

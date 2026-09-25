@@ -3311,19 +3311,22 @@
         var first = _popoverFirst;
         if (first.Id is null && _menuItems.Count > 0)
             first = _menuItems[_menuItems.Keys.Min()];
-        await FocusQuietlyAsync(first);
+        // Without scrolling: on a Server circuit this lands a round trip after the popover
+        // is shown, and a menu taller than its grid (ADR-0040) may already have been
+        // scrolled by the user, whose view it would pull back to the top.
+        await FocusQuietlyAsync(first, preventScroll: true);
     }
 
     /// <summary>Focuses an element the core rendered, if it is still there to focus. A
     /// popover can close between the render that painted it and this call, and a closed
     /// circuit cannot focus anything; neither is worth an exception.</summary>
-    private static async Task FocusQuietlyAsync(ElementReference element)
+    private static async Task FocusQuietlyAsync(ElementReference element, bool preventScroll = false)
     {
         if (element.Id is null)
             return;
         try
         {
-            await element.FocusAsync();
+            await element.FocusAsync(preventScroll);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

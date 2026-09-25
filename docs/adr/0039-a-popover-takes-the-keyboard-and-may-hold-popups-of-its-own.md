@@ -146,6 +146,12 @@ found in a real browser and fixed as follows.
   nothing. The form's default button is now a hidden one that is never disabled. Apply
   refuses on the circuit while it is unavailable, and there the value has already arrived
   (WR-2 unchanged: Apply still shows it is unavailable).
+- **Taking the keyboard does not move the menu.** A menu opened by pointer takes focus a round
+  trip after it is shown. A menu taller than its grid scrolls (ADR-0040), and one the user
+  had already scrolled was pulled back to its top by that focus. The opening focus is now
+  asked for without scrolling, under both Chromes. The Wrapper's item is a `MudButton`
+  subclass that reaches its own element, since MudBlazor's `FocusAsync` always scrolls. A
+  focus an arrow moves still scrolls its item into view.
 
 **No JavaScript is added**: every focus move is Blazor's `FocusAsync`, and the allowlist does not
 grow. The reported Inner Popup is one more state of the capture-phase listener the allowlist
