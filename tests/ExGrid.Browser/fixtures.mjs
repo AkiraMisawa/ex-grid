@@ -112,6 +112,27 @@ export const test = base.extend({
         page.on('pageerror', (e) => pageErrors.push(String(e)));
         const hostLogFrom = hostLogSize();
 
+        // On the Server host every page is prerendered first: painted, and deaf until its
+        // circuit connects and each grid has attached its listener (A11Y-20). A user who
+        // acts before that loses the input — the grid says it is busy for exactly that
+        // reason — so every navigation here waits, as that user would, for the page to
+        // be interactive and no grid to be Prerendered. WebAssembly has no prerender and
+        // the wait is immediate.
+        if (SERVER) {
+            const ready = async () => {
+                await page.locator('#demo-interactive').waitFor({ state: 'attached' });
+                await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
+            };
+            for (const name of ['goto', 'reload']) {
+                const navigate = page[name].bind(page);
+                page[name] = async (...args) => {
+                    const response = await navigate(...args);
+                    await ready();
+                    return response;
+                };
+            }
+        }
+
         await use(page);
 
         // A test that raised the round trip leaves it where the next one expects it.

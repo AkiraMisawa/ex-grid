@@ -5,3 +5,10 @@
         <RouteView RouteData="@routeData" />
     </Found>
 </Router>
+@* Present once the pages can handle events — at once on WebAssembly, after the circuit
+   connects on Server. Layer 3 waits for it before it acts, as a user waits for a page
+   that is still Prerendered (the grids say so themselves; this covers the buttons). *@
+@if (RendererInfo.IsInteractive)
+{
+    <span id="demo-interactive" hidden></span>
+}

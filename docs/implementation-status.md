@@ -251,6 +251,44 @@ kept in an uncommitted config. So none of the new MUSTs has met `chrome` or `mse
 numbers were not filed under `verification/`, because software rendering belongs to no trend
 (for scale only: settle repaint 20 ms on / 120 ms off, drag step 5.4 ms median).
 
+**2026-09-25, the grid under Blazor Server.** Decided in a grilling session and recorded
+before it was built: ADR-0022 rewritten (the packages target `net10.0`), and additions to
+ADR-0005/0010/0018/0019/0021/0029/0033, the glossary's **Prerendered**, and the Definition
+of Done's A11Y-20, ED-22, CP-21..23, ST-5 and new §24 (SRV). Built:
+
+- `samples/ExGrid.DemoPages` holds the pages; the WebAssembly DemoHost only mounts them;
+  `samples/ExGrid.DemoHost.Server` serves them in `InteractiveServer` with prerendering
+  on. `/server` is `/fetch`; `/shared` is SRV-3's two-users-one-store page.
+- Paste crosses as JS stream references under `PasteByteCap` (CP-21/22); a clipboard write
+  the browser rejects is `ClipboardUnavailable` (CP-23); a bundled Grid Source refuses a
+  second circuit (ST-5); a Prerendered grid is busy and takes no tab stop until its
+  listener is attached (A11Y-20).
+- Two defects only a circuit shows, each reproduced in layer 3 at a 150 ms round trip and
+  then fixed: typing `1500` onto a cell committed `1` (the key gate now holds keys through
+  a mode change, ED-22); and a key arriving between a render and its acknowledgement made
+  an earlier render's callback focus an editor it did not contain, which threw and ended
+  the circuit (the focus now waits for the render that paints the input).
+- Layer 3 chooses its host with `EXGRID_HOSTING`, puts `latency-proxy.mjs` in front of the
+  Server host, reads the host's log for CON-6, and on Server waits for a page to be
+  interactive before acting on it, as a user must.
+
+**Where this ran.** A Linux cloud container, .NET 10.0.401 installed directly, the
+Playwright-bundled Chromium 1194 **headed under Xvfb** (so native scrollbars occupy layout),
+with `ignoreHTTPSErrors` for the container's egress proxy, in an uncommitted config. None of
+it has met `chrome` or `msedge`.
+
+- Layers 1 and 2: **476 + 490 (1 skipped by name) + 51**.
+- Layer 3 on WebAssembly: **133 pass, 5 skipped by name**, 0 failed.
+- Layer 3 on Server: the specs that were only ever passing because WebAssembly answers
+  within the same frame — a Focus, an editor, a menu or a clipboard read straight after
+  the gesture — now wait for the answer; with that, what still fails on Server is the
+  three defects listed under "What is left" (6), plus the MudBlazor pages' web font, which
+  the container's egress fails intermittently on either host (`ERR_TOO_MANY_RETRIES`).
+- SRV-6 (observational, container, not a trend): the band stands on the row a round trip
+  plus about 20 ms after the pointer crosses onto it — 20 / 67 / 172 ms median at 0 / 50 /
+  150 ms — and a sweep while scrolling carries 47–55 frames a second up the circuit
+  whatever the round trip, so the reports are not per frame.
+
 ## Working through to the component
 
 | ADR | | Pinned by |
@@ -336,10 +374,10 @@ clean. The property is unchanged: the dependency points one way.
 2. ~~**VZ-14 at 125%.**~~ Discharged on 2026-09-24 on a Windows desktop at 125%, on both
    browsers. (The Edge run and VZ-10, which this item used to hold, were discharged on
    2026-09-01.)
-3. The hover band's owed numbers — a `spikes/render-bench` mode for the band's paint,
-   and a Blazor Server host to measure the pointer report under (ADR-0021, fifth entry;
-   none exists in the repository). *(Interactive mode's keyboard entry, which headed this
-   item, is built — ADR-0037.)*
+3. The hover band's owed numbers — a `spikes/render-bench` mode for the band's paint.
+   *(The Blazor Server host this item also asked for exists since 2026-09-25, and SRV-6 has
+   been measured on it in a container; a run on real hardware is still owed. Interactive
+   mode's keyboard entry, which headed this item, is built — ADR-0037.)*
 4. ~~**ADR-0037's layer 3 on the two target browsers.**~~ Discharged on 2026-09-23 by
    the Windows run: KB-20 to KB-27, A11Y-17 and UX-14 pass on `chrome` and `msedge`.
 5. **`ExGrid.MudBlazor`'s remaining seams, and Row Stripes — decided and built
@@ -433,6 +471,25 @@ clean. The property is unchanged: the dependency points one way.
    - A real IME is not reachable from the container: the claim that Enter confirming a
      candidate does not apply a filter rests on the browser's implicit-submission rule, and
      is owed a manual check with a Japanese IME on both browsers.
+
+6. **Blazor Server — three defects found by layer 3 on 2026-09-25, awaiting decisions.**
+   Each is a keyboard or focus hand-off that WebAssembly completes within one frame and a
+   circuit completes a round trip later; each is Server-only, and none is fixed yet,
+   because each widens a decision (ADR-0010's hold, or ADR-0039's menu keys):
+   - **A key pressed straight after a key that opens a popover** (`Alt+↓`, `Shift+F10`,
+     `ContextMenu`) reaches the grid rather than the popover: `Alt+↓`, `↓` moves the Focus
+     instead of the menu's item (`popovers.spec.mjs`, "in a menu Tab closes it as a
+     Cancel"; A11Y-19's Escape).
+   - **A menu resolves its keys against the item that holds DOM focus** (`MenuKeys`,
+     ADR-0039). A `↓` moves that focus a round trip later, so `↓` `Enter` typed together
+     runs the item above the one the user moved to — `Copy` for `Copy with headers`. Not
+     yet pinned by a test.
+   - **A focus request from an earlier render can land after a newer gesture**: the
+     MudBlazor menu focuses its first item after the user has already dismissed it by
+     pressing elsewhere, and DOM focus ends up on nothing (KB-17 under the mud Chrome).
+
+   Until they are settled the §24 claim is not made (ADR-0017 still states the WebAssembly
+   premise). SRV-2 also owes its run on `chrome` and `msedge`.
 
 ## Where the exit criteria stand
 

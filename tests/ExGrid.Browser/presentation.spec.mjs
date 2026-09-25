@@ -185,6 +185,8 @@ test("the editor's box is exactly the cell's (ED-9)", async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r0c1']").click({ force: true });
     await page.keyboard.press('F2');
+    // Painted by the render F2 asked for — a round trip away on the Server host.
+    await expect(grid(page).locator('.ex-editor')).toHaveCount(1);
 
     const boxes = await page.evaluate(() => {
         const g = document.querySelector('.ex-grid');

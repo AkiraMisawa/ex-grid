@@ -261,6 +261,10 @@ test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039
     await page.keyboard.press('Shift+ArrowRight');
     await page.keyboard.press('Shift+ArrowDown');
     await clickCell(orders(page), 1, 1);
+    // The state to compare against is the one these gestures painted — a round trip
+    // away on the Server host.
+    await expect(positions(page).locator('.ex-range')).not.toHaveCount(0);
+    await expect(orders(page)).toHaveAttribute('aria-activedescendant', /r1c1$/);
     const snapshot = async () => ({
         positions: await positions(page).evaluate((root) => ({
             active: root.getAttribute('aria-activedescendant'),

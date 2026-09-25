@@ -269,6 +269,8 @@ for (const chrome of CHROMES) {
         test('in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039)', async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
+            // Read once it is drawn — a round trip away on the Server host.
+            await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
             const items = await enabledMenuItems(page);
             expect(items.length, 'a menu with something to move among').toBeGreaterThan(2);
             await expect.poll(() => activeText(page)).toBe(items[0]);
@@ -325,6 +327,7 @@ for (const chrome of CHROMES) {
         test('the Context Menu answers the same keys (KB-30, ADR-0039)', async ({ page }) => {
             await clickCell(page, 1, 1);
             await page.keyboard.press('Shift+F10');
+            await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
             const items = await enabledMenuItems(page);
             await expect.poll(() => activeText(page)).toBe(items[0]);
             await page.keyboard.press('End');
@@ -429,6 +432,9 @@ test.describe('Inner Popups under the mud Chrome', () => {
 
     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
         await second(page).locator("[id$='r2c1']").click({ force: true });
+        // The click's Focus is painted by the render it asked for — a round trip away on
+        // the Server host.
+        await expect(second(page)).toHaveAttribute('aria-activedescendant', /r2c1$/);
         const other = await second(page).getAttribute('aria-activedescendant');
         await openPanel(page, 2);
         const focus = await grid(page).getAttribute('aria-activedescendant');
