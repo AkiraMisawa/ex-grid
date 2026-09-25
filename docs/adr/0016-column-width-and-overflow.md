@@ -274,8 +274,22 @@ It costs a slightly early `####` on the narrower families, which is the directio
 Windows and macOS are measured by hand, like the other checks only a person can run, and the
 numbers are recorded here. Until they are, the defaults are the widest measured so far.
 
-*(Open: which class `−`, `+` and `#` belong to, and how Latin letters in a header are charged.
-Both are with the user.)*
+**`−`, `+` and `#` move to the wide class** *(decided with the user, 2026-09-25)*. At 11.731px
+they break the digit class by more than a quarter, and the wide class already covers them. On a
+family where they are digit-sized, the cost is about 5px of early `####` per sign, and a number
+carries at most one sign. A separate sign class would be more exact but would add a fourth number
+for every Wrapper to hand back. **The `####` fill counts `#` at its own width**, so the hashes fit
+the cell they stand in.
+
+**A header is charged one full-width em of slack** *(decided with the user, 2026-09-25)*. A header
+is proportional letters, and no per-class charge can bound them: `W` is 15.44px, `m` 14.59px and
+`i` about 4px in the same family. Charged at the digit width, ordinary mixed-case labels come out
+over (`Commission`, `Market Value`, `Counterparty`), but short and capitalised ones come out under
+(`Amount` by 3.2px, `MARKET VALUE` by 6.9px). One em covers every shortfall measured. It makes
+every header-sized column that much wider, which is harmless for a label. A longer all-capitals
+label can still come out short. It is then cut with a visible ellipsis, like any Text, and never
+quietly wrong. Measuring the label in JavaScript was rejected: it is the text measurement
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) keeps out.
 
 ## Size to fit on a double-click, and what a fit has to count — decided
 

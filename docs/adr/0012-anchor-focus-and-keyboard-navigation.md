@@ -135,6 +135,27 @@ Rejected:
 - **Split the header into regions** (the text sorts, a thin strip selects) — both become single
   clicks, but the hit target is fiddly and users never discover the strip.
 
+### Whole columns stay whole, and Shift+click on a header extends them
+
+*(Decided with the user, 2026-09-25, while comparing column resizing with Excel. Resizing
+several whole columns at once
+([ADR-0016](./0016-column-width-and-overflow.md)) depends on both.)*
+
+**A range spanning every row keeps spanning every row under Shift+← / Shift+→**, and a range
+spanning every column keeps spanning every column under Shift+↑ / Shift+↓. This is what Excel
+does. Before this, Shift+→ after Ctrl+Space redrew the range between the Anchor and the Focus,
+which are two cells, and the whole-column selection collapsed to one row. A user extending a
+column selection never asked for that. Only the axis the range already spans in full is kept;
+the other axis moves the Focus as it always has.
+
+**Shift+click on a column header selects whole columns**, from the Anchor's column to the
+clicked one. This is Excel's gesture, and it is the mouse route to several whole columns. The
+plain click stays a sort, as decided above; the modifier had no meaning on a header before. It
+takes the gesture many data grids give to multi-column sorting. That is acceptable because
+multi-column sorting here is expressed through the `Sorts` model or the column menu, never
+through a header click (see "What one header click does to the Sorts list" below). A Shift+click
+does not sort. From Empty, or with nothing anchored, it selects the clicked column alone.
+
 ## What the implementation settled
 
 *(Written while wiring the keyboard. Three of these are decisions this ADR did not make.)*
