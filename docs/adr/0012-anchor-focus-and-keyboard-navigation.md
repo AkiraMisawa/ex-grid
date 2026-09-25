@@ -327,6 +327,14 @@ handlers ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)'s economy).
   geometry before any of these transitions are computed
   ([ADR-0013](./0013-fixed-row-height.md), [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)),
   and `tests/ExGrid.Browser/scrollbar.spec.mjs` is what holds it.)*
+  *(Scoped with the user, 2026-09-25.)* **"Always visible" is a rule about the moves the grid
+  makes, not about the box.** When the box shrinks, because the window is resized or a Drawer
+  opens, the Focus may end up outside the Viewport, and **the grid does not chase it**. The
+  scroll offset stays, so what was at the top left stays at the top left. The next key that moves
+  the Focus reveals it where it lands. Chasing it would make the Viewport jump on every frame of a
+  window drag, which is the user resizing, not the user moving. One case stays revealed: a
+  scrollbar that appears because the content began to overflow, and covers the Focus where it
+  stood. Nobody asked for that change, so the grid owes the reveal.
 - **When the Focus leaves the Window, a Range Request is raised**
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). A range taller than the
   Window will move the Focus onto rows that have not been fetched. The Focus cell is a Placeholder

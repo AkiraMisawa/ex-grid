@@ -152,6 +152,8 @@ so conformance is a set comparison rather than a judgement of taste.
 | **UX-9** | MUST | The focus outline and the selection fill remain visible under the default Theme and under a stub Wrapper Theme (ADR-0030) | Layer 3: contrast of `ex-focus` outline against the cell ground | ≥ 3:1 |
 | **UX-10** | SHOULD | `--ex-scrollbar-width` narrows the bar, the gutter changes, and the geometry follows (ADR-0029) | Layer 3 | the Focus stays inside the readable area after the change (the `scrollbar.spec.mjs` invariant) |
 | **UX-11** | MUST | Popovers (filter panel, column menu, Context Menu) are never cut — not by the scroll container, and not by any ancestor that shows the grid whole: each stays inside its grid's box and scrolls within itself when its contents are taller; they do not tangle across instances (ADR-0017/0018/0040) | Layer 2: the inline `max-height` from the geometry; Layer 3: open the filter on the rightmost column of two grids, and a menu in a short grid inside a `MudDialog` | fully visible; each grid's popover is its own; a menu taller than the grid scrolls |
+| **UX-11a** | MUST | A popover whose room falls below one `RowHeight` when the box shrinks closes as a Cancel, and the keyboard returns to the root (ADR-0040, 2026-09-25) | Layer 2 with a reported size change; Layer 3 narrowing the page with the column menu open | the popover is gone; the next key reaches the grid |
+| **UX-11b** | MUST | Columns narrower than the box are not stretched; a resize changes no column's painted width (ADR-0043) | Layer 3 resizing the page | every column's painted width equals its resolved width before and after |
 | **UX-12** | MUST | Accessibility semantics as ADR-0033 specifies them | see **§4.1** | every row of §4.1 passes |
 | **UX-13** | MUST | The row under the pointer is highlighted by an overlay band filled with `--ex-row-hover-background`, on hover alone — no row carries a class, and the band vanishes on leave (ADR-0029, ADR-0021 fifth entry) | Layer 3: real mouse moved down a column of two grids | one band, in the hovered instance only, following the pointer row; none after `mouseleave` |
 | **UX-14** | MUST | The chosen action of an Interactive cell is tellable — outlined through `--ex-focus-outline`, and restated in the forced-colors block like every other state (ADR-0029/0037) | Layer 3 on `/cells`, with and without forced colors | the chosen button's computed outline is non-`none` in both, and no other button's is |
@@ -355,6 +357,7 @@ The grid renders the filter UI and never evaluates a filter.
 | **KB-12** | MUST | `:focus-visible` on the root makes the live grid tellable (ADR-0018/0029) | Layer 3 | the outline appears for keyboard focus and not for a click |
 | **KB-13** | MUST | PageUp / PageDown move Focus **and** Viewport by the same N — the Focus keeps its position on screen (ADR-0012) | Layer 2 at a viewport of known height, pressed three times | N = fully visible rows; the Focus's offset within the Viewport is identical after presses 2 and 3 |
 | **KB-14** | MUST | At the top and bottom the scroll clamps and the transition degrades to a reveal — the Focus is still fully visible (ADR-0012) | Layer 2, PageDown until the end | Focus inside the visible box at every step; never behind the header or a gutter |
+| **KB-14a** | MUST | A shrinking box does not chase the Focus: the scroll offset stays, and the next key that moves the Focus reveals it; a scrollbar appearing over the Focus still reveals it (ADR-0012, 2026-09-25) | Layer 2 with reported size changes | no scroll on the shrink; a reveal on the next arrow; a reveal on a gutter appearing |
 | **KB-15** | MUST | `Ctrl`+PageUp / `Ctrl`+PageDown are neither handled nor `preventDefault`-ed (ADR-0012) | Layer 3, observe `defaultPrevented` | `false`; the selection does not move |
 | **KB-16** | MUST | No identifier in the keyboard surface is named "page" — `CONTEXT.md` puts it on the `_Avoid_` list under **Window** | `grep -ri "page" src/ExGrid/Keys/` | matches only the browser's own `PageUp`/`PageDown` key strings |
 | **KB-17** | MUST | An open popover is dismissable three ways: the ▾ that opened it, Escape from wherever focus sits, and a pointer-down anywhere else in the instance — which keeps its own meaning (ADR-0009/0010/0012) | Layer 2 `FilterChromeTests` + Layer 3 | closing without OK discards; the grid is not blurred by the close |
@@ -627,7 +630,10 @@ release.
   provisional and neither has been measured".
 - **The Density preset numbers** — ADR-0028, "declared, not measured", against Excel at several
   zoom levels.
-- **Whether `Fill` needs debouncing** — ADR-0028.
+- **Whether `Fill` needs debouncing** — ADR-0028. *(Sharpened 2026-09-25, ADR-0043.)* The case
+  that needs measuring is a window drag on a **Server circuit with latency**, where the frame
+  painted from the previous size lasts a round trip: a `spikes/render-bench` mode that drags the
+  window under injected latency and records how long the stale band shows.
 - **The auto-scroll band (20px) and its rate range (1 to 8 rows per tick)** — ADR-0008, provisional
   in exactly the way the fling threshold is. The *shape* is decided and gated by SL-12..SL-15; the
   three numbers are recorded and compared, not gated.

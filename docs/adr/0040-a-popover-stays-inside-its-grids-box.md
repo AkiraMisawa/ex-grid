@@ -51,6 +51,14 @@ Measured in Chromium on the proof-of-concept page, with the column menu of a gri
   open are their design system's, drawn outside the root, and stack above the dialog as that
   design system's own popups do.
 - **No script is added**, and the grid still never measures.
+- **A popover with no room closes** *(decided with the user, 2026-09-25)*. The `max-height` is
+  recomputed when the box changes size. Shrink the box far enough and the room falls to nothing:
+  the popover would stay open, invisible, and still holding the keyboard
+  ([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)). **When a
+  popover's room falls below one `RowHeight`, it closes as a Cancel** and the keyboard returns to
+  the root. A popover that cannot show one item is unusable, so nothing is lost. Closing every
+  popover on any size change was rejected: a Drawer opening or a banner pushing the layout
+  changes the box without the user doing anything to the popover.
 
 ## What it costs
 

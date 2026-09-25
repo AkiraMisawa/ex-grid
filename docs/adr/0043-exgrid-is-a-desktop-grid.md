@@ -32,6 +32,19 @@ about it changes with the width. Column widths are not squeezed to fit. When the
 wider than the box, a horizontal scrollbar appears, as in Excel. Density is the Consumer's
 choice, and the grid does not switch it by width.
 
+**Columns narrower than the box are not stretched.** The space to their right stays empty, as an
+empty sheet does in Excel. Stretching them, as `MudDataGrid` does, would make a column's width
+depend on the window. A number readable at one window size would then show `####` at another,
+and the width painted would stop being the width recorded in View State
+([ADR-0016](./0016-column-width-and-overflow.md)).
+
+What a resize does to the rest is decided where each thing lives: the Focus is not chased
+(ADR-0012), a popover with no room closes
+([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)), and the first frame after a
+change is painted from the previous size (ADR-0028). On a Server circuit that first frame lasts a
+round trip rather than a frame. How long, during a window drag, has not been measured. It is
+listed with the other unmeasured numbers in the Definition of Done.
+
 **There is no stacked layout, and the Wrapper keeps refusing `Breakpoint`.** Every rule this
 grid is built on is defined on a two-dimensional grid of cells: selection as rectangles in index
 space ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)),
