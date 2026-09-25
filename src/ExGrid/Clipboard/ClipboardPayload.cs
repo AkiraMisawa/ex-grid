@@ -8,11 +8,18 @@ namespace ExGrid.Clipboard;
 /// <c>"async"</c> — the selection runs beyond the Window, ask again through the
 /// asynchronous route.
 /// </summary>
+/// <param name="Kind"><c>"none"</c>, <c>"data"</c> or <c>"async"</c>.</param>
+/// <param name="Text">The TSV for <c>text/plain</c>; present only with <c>"data"</c>.</param>
+/// <param name="Html">The HTML table for <c>text/html</c>; present only with <c>"data"</c>.</param>
 public sealed record ClipboardPayload(string Kind, string? Text = null, string? Html = null)
 {
+    /// <summary><c>"none"</c>: the copy is refused, and the clipboard stays untouched.</summary>
     public static ClipboardPayload None { get; } = new("none");
 
+    /// <summary><c>"async"</c>: the selection runs beyond the Window; ask again through
+    /// the asynchronous route.</summary>
     public static ClipboardPayload Async { get; } = new("async");
 
+    /// <summary><c>"data"</c>: both formats, ready to set on the clipboard.</summary>
     public static ClipboardPayload Data(string text, string html) => new("data", text, html);
 }

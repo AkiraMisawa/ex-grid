@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <!-- An application that takes ExGrid the way a Consumer does: from the packages, never from
+       the projects (ADR-0042). It is outside the solution, and check.sh is the only way in:
+       it packs both packages into .feed/ and passes the version it packed. Everything the
+       DemoHost gets from a ProjectReference — the static web assets, the dependency ranges,
+       the README's example compiling at all — is exercised here as a package delivers it.
+
+       net10.0, the floor a Consumer may sit on (ADR-0022). The root namespace is not under
+       ExGrid, as no Consumer's is. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>PackageSmoke</RootNamespace>
+    <AssemblyName>PackageSmoke</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.7" />
+    <PackageReference Include="ExGrid" Version="$(ExGridVersion)" />
+    <PackageReference Include="ExGrid.MudBlazor" Version="$(ExGridVersion)" />
+  </ItemGroup>
+
+  <Target Name="RequireThePackedVersion" BeforeTargets="CollectPackageReferences">
+    <Error Condition=" '$(ExGridVersion)' == '' "
+           Text="Run tests/ExGrid.PackageSmoke/check.sh: it packs the packages and passes ExGridVersion." />
+  </Target>
+
+</Project>

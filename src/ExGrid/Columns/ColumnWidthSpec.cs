@@ -1,19 +1,30 @@
 namespace ExGrid.Columns;
 
 /// <summary>
-/// The width declaration a column carries: Auto or Fixed, bounded by
-/// [<see cref="MinWidthPx"/>, <see cref="MaxWidthPx"/>] (ADR-0016). MaxWidth is what
-/// gives <c>####</c> meaning — without an upper bound the column would keep growing and
-/// overflow could never occur. A declared Fixed width outside the bounds is refused,
-/// not clamped: a declaration that contradicts its own bounds is an error, not an
-/// intent. (<c>default(ColumnWidthSpec)</c> has zero bounds and is not a valid spec —
-/// the same tolerated struct-default hole as <c>default(SelectionRange)</c>.)
+/// The width declaration a column carries: Auto or Fixed, with a
+/// <see cref="MinWidthPx"/> under everything and a <see cref="MaxWidthPx"/> over what the
+/// grid computes (ADR-0016). MaxWidth is what gives an Auto column's <c>####</c> meaning:
+/// without an upper bound the column would keep growing and overflow could never occur.
+/// It does not bound a Fixed width, which is the user's: a drag goes past it, and the
+/// Consumer records the drag as a Fixed width, so a Fixed width above MaxWidth is kept.
+/// A Fixed width below MinWidth is refused, not clamped — by the <see cref="GridColumn{TRow}"/>
+/// it is given to, which can say which column it is (FN-12). (<c>default(ColumnWidthSpec)</c>
+/// has zero bounds and is not a valid spec; a column refuses it the same way.)
 /// </summary>
 public readonly record struct ColumnWidthSpec
 {
+    /// <summary>The MinWidth when none is declared — three <c>#</c> glyphs at typical
+    /// metrics (ADR-0016).</summary>
     public const double DefaultMinWidthPx = 40;
+
+    /// <summary>The MaxWidth when none is declared — roughly 48 digits at typical
+    /// metrics, so an untouched Auto column effectively never hashes (ADR-0016).</summary>
     public const double DefaultMaxWidthPx = 400;
 
+    /// <summary>A width with its bounds. The bounds are checked here; a Fixed width below
+    /// <paramref name="minWidthPx"/> is refused by the column the spec is given to, naming
+    /// it, and one above <paramref name="maxWidthPx"/> is kept, because MaxWidth bounds
+    /// only what the grid computes (ADR-0016).</summary>
     public ColumnWidthSpec(
         ColumnWidth width,
         double minWidthPx = DefaultMinWidthPx,
@@ -25,29 +36,31 @@ public readonly record struct ColumnWidthSpec
         if (!double.IsFinite(maxWidthPx) || maxWidthPx < minWidthPx)
             throw new ArgumentOutOfRangeException(nameof(maxWidthPx), maxWidthPx,
                 "MaxWidth is finite and at least MinWidth.");
-        if (!width.IsAuto && (width.FixedPx < minWidthPx || width.FixedPx > maxWidthPx))
-            throw new ArgumentOutOfRangeException(nameof(width), width.FixedPx,
-                $"A declared Fixed width must lie within [{minWidthPx}, {maxWidthPx}] — refused, not clamped (ADR-0016).");
 
         Width = width;
         MinWidthPx = minWidthPx;
         MaxWidthPx = maxWidthPx;
     }
 
+    /// <summary>The declared width: Auto or Fixed.</summary>
     public ColumnWidth Width { get; }
 
     /// <summary>Also the lower bound for dragging — a column cannot be crushed until it
     /// disappears; hiding is an explicit column-menu intent (ADR-0016).</summary>
     public double MinWidthPx { get; }
 
+    /// <summary>The upper bound on what the grid computes — the Auto width and Size to
+    /// fit. It does not stop a user's drag, and it does not bound a Fixed width, which is
+    /// how the Consumer records one (ADR-0016).</summary>
     public double MaxWidthPx { get; }
 
+    /// <summary>A width brought within [<see cref="MinWidthPx"/>, <see cref="MaxWidthPx"/>].</summary>
     public double Clamp(double px) => Math.Clamp(px, MinWidthPx, MaxWidthPx);
 
     /// <summary>
     /// "Size to fit": fixes the width at the content of this moment, clamped — an
     /// approximation over the fetched rows (ADR-0016). Takes the widest value's full
-    /// required cell width (<see cref="CellTextMetrics.EstimatePx"/> output, padding
+    /// required cell width (<see cref="CellTextMetrics.EstimatePx(string)"/> output, padding
     /// included — the same unit <see cref="AutoWidth.Observe"/> takes). Always yields a
     /// Fixed width, and it MAY be narrower than the current one: this is the only way
     /// an Auto column narrows.

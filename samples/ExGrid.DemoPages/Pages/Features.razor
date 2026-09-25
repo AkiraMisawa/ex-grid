@@ -365,7 +365,9 @@
         _columns = _columns
             .Select(c => c.Name == change.Column
                 ? new GridColumn<DemoTrade>(c.Name, c.Type, c.Value, c.Header,
-                    new ColumnWidthSpec(ColumnWidth.Fixed(Math.Max(40, change.WidthPx)), maxWidthPx: Math.Max(400, change.WidthPx)),
+                    // As it came, with the column's own bounds: MaxWidth bounds only what
+                    // the grid computes, so a drag past it is recorded as it is (ADR-0016).
+                    new ColumnWidthSpec(ColumnWidth.Fixed(change.WidthPx), c.Width.MinWidthPx, c.Width.MaxWidthPx),
                     editable: c.Editable, filterUi: c.FilterUi, align: c.Align, headerAlign: c.HeaderAlign,
                     validate: c.Validate, format: c.Format, tone: c.Tone)
                 : c)

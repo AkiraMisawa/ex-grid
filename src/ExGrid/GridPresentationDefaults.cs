@@ -23,6 +23,10 @@ namespace ExGrid;
 /// </summary>
 public sealed record GridPresentationDefaults
 {
+    /// <summary>The three glyph widths of the Theme's font, measured at
+    /// <paramref name="fontSizePx"/>, and optionally the Density, hover band and Row
+    /// Stripes the Wrapper's own words map onto — null leaves each to the grid. Widths the
+    /// Cell Metrics would refuse are refused here, where they were written.</summary>
     public GridPresentationDefaults(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fontSizePx,
         GridDensity? density = null, bool? highlightHoverRow = null, bool? stripeRows = null)

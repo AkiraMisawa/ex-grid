@@ -22,6 +22,13 @@ that depend on them are marked `BLOCKED` rather than guessed at.**
 | **SHOULD** | Expected to hold. A failure needs a written reason in the release notes naming which criterion and why it was accepted. |
 | **OBSERVATIONAL** | Recorded and compared against the previous run. **No fixed threshold, and never a gate.** A large move is a prompt to investigate, not a failure. |
 
+**"Release" means a version without a prerelease suffix.** A prerelease — `0.1.0-beta.N` — ships
+before the sign-off, on the terms of
+[ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md): every
+layer green in CI, the commit on `main`, and release notes naming what this document still owes.
+It is not a release in this document's sense, and nothing here is relaxed for it. *(Added
+2026-09-24.)*
+
 Every criterion has an **ID**, a **statement**, a **verification** (the exact command or scenario)
 and a **pass condition** (what result counts). If a verification cannot be run, the criterion is
 **not** passed — "could not check" is a fail, recorded as such.
@@ -110,7 +117,7 @@ says; the areas that need more than one line get their own section below.
 | **FN-9** | MUST | Action and Template Columns render as plain markup with one handler per cell region, not a component per cell (ADR-0020/0003) | Layer 2 render-count test | component instance count is a function of painted rows only |
 | **FN-10** | MUST | `####` for numbers and dates that do not fit; ellipsis for text and boolean; never a truncated number (ADR-0016) | Layer 1 (`OverflowRules`) + Layer 2 | the decision is total over column types and matches ADR-0016's table |
 | **FN-11** | MUST | Auto width only ever grows, is clamped to `[MinWidth, MaxWidth]` (defaults 40 / 400), and is never persisted (ADR-0016) | Layer 1 + Layer 2 | monotone under any observation order; a narrower screen never narrows a column |
-| **FN-12** | MUST | A `Fixed` width outside its own `[MinWidth, MaxWidth]` is refused at construction, not clamped (ADR-0016) | Layer 1 | throws, naming the column |
+| **FN-12** | MUST | A `Fixed` width below its own `MinWidth` is refused when the column is constructed, not clamped; one above `MaxWidth` is the user's and is kept, since `MaxWidth` bounds only what the grid computes (ADR-0016, rewritten 2026-09-25) | Layer 1 + Layer 2 | throws below, naming the column, for every kind of column; a drag past `MaxWidth`, recorded as `Fixed(px)` with the default bounds, paints at that width |
 | **FN-13** | MUST | Sort and Filter travel as a serialisable structured model; no `Expression<Func<TRow,bool>>` appears in public API (ADR-0002) | inspect public surface; round-trip a `GridQuery` through `System.Text.Json` | round-trips equal; no `Expression` type in any public signature |
 | **FN-14** | MUST | `GridSource.From` is the reference implementation of filter and sort semantics, pinned exhaustively for null ordering, case sensitivity and culture (ADR-0001/0023) | Layer 1 | every clause of ADR-0023 has a named test |
 | **FN-15** | MUST | The Consumer's sort and filter state travels in and the grid never sorts or filters (ADR-0001) | inspect: no ordering or predicate evaluation inside `ExGrid.razor` | grep finds no `OrderBy` / `Where` over `Window` in the component |
@@ -801,7 +808,10 @@ gate, as a note.
 - **every reservation in §21.11 still has its trigger unfired, or has been settled with the feature
   that fired it.** A reservation whose feature shipped without settling it is a gap wearing a
   trigger's clothes;
-- the toolchain, OS and browser versions used are recorded.
+- the toolchain, OS and browser versions used are recorded;
+- ADR-0042's own prerequisites for a stable version hold: the public C# surface has been
+  reviewed and decided in an ADR, and the release workflow's prerelease-only refusal comes out
+  in the same change that rewrites ADR-0042.
 
 **A criterion that could not be verified is not passed.** Write `blocked` and say why.
 

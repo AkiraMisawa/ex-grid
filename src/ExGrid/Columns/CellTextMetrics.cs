@@ -24,6 +24,9 @@ public readonly record struct CellTextMetrics
     {
     }
 
+    /// <summary>The per-class form (ADR-0016): the wide, digit and narrow widths, and the
+    /// padding on one side. Refuses a narrow width wider than the digit, or a wide width
+    /// narrower than it.</summary>
     public CellTextMetrics(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double cellHorizontalPaddingPx)
     {
@@ -50,6 +53,8 @@ public readonly record struct CellTextMetrics
     /// the digit: charging it here overshoots, which is the safe direction.</summary>
     public double WideWidthPx { get; }
 
+    /// <summary>What a tabular digit costs — and every character not classed wide or
+    /// narrow. One <c>#</c> of an overflowing cell is charged at it too.</summary>
     public double DigitWidthPx { get; }
 
     /// <summary>What the separators cost — <c>. , ( ) / :</c> and the space.</summary>

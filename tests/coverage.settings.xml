@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What CI's coverage counts (ADR-0041): the shipped assemblies only — the core and the
+     MudBlazor Wrapper — never the test projects, the DemoHost or the spikes. Read by the
+     Microsoft.Testing.Extensions.CodeCoverage extension through its settings option. -->
+<Configuration>
+  <CodeCoverage>
+    <ModulePaths>
+      <Include>
+        <ModulePath>.*[\\/]ExGrid\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExGrid\.MudBlazor\.dll$</ModulePath>
+      </Include>
+    </ModulePaths>
+    <Attributes>
+      <Exclude>
+        <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+        <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+      </Exclude>
+    </Attributes>
+  </CodeCoverage>
+</Configuration>

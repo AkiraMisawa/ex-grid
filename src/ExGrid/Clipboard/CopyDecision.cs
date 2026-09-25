@@ -19,10 +19,24 @@ namespace ExGrid.Clipboard;
 /// </summary>
 public enum CopyRefusalReason
 {
+    /// <summary>Nothing is selected, so there is nothing to copy.</summary>
     EmptySelection,
+
+    /// <summary>The ranges do not line up into one block: they neither share a column
+    /// span with disjoint rows nor share a row span with disjoint columns (ADR-0011).</summary>
     MisalignedShape,
+
+    /// <summary>The block, with its header row when one is asked for, is past the cell
+    /// cap; point at export instead (ADR-0005).</summary>
     TooLarge,
+
+    /// <summary>The selection runs beyond the Window and the rows could not be had.
+    /// Raised by the component, never by <see cref="ClipboardRules"/>.</summary>
     RowsUnavailable,
+
+    /// <summary>The browser rejected the clipboard write, so nothing landed and the
+    /// clipboard still holds what it held before. Raised by the component, after the
+    /// fact (ADR-0005).</summary>
     ClipboardUnavailable,
 }
 
@@ -33,7 +47,10 @@ public enum CopyRefusalReason
 /// </summary>
 public enum CopyOrientation
 {
+    /// <summary>The segments share a column span and stack top to bottom.</summary>
     Vertical,
+
+    /// <summary>The segments share a row span and sit side by side, left to right.</summary>
     Horizontal,
 }
 
@@ -64,12 +81,18 @@ public sealed class CopyPlan
         TotalColumns = totalColumns;
     }
 
+    /// <summary>The rectangles to emit, in position order: by top row when
+    /// <see cref="CopyOrientation.Vertical"/>, by left column when
+    /// <see cref="CopyOrientation.Horizontal"/>.</summary>
     public IReadOnlyList<SelectionRange> Segments { get; }
 
+    /// <summary>How the segments combine into one block.</summary>
     public CopyOrientation Orientation { get; }
 
+    /// <summary>The block's height in rows, not counting a header row.</summary>
     public int TotalRows { get; }
 
+    /// <summary>The block's width in columns.</summary>
     public int TotalColumns { get; }
 }
 
@@ -93,12 +116,16 @@ public sealed class CopyDecision
 
     internal static CopyDecision Refuse(CopyRefusalReason reason) => new(null, reason);
 
+    /// <summary>Whether the copy is refused: read <see cref="Reason"/> if so, and
+    /// <see cref="Plan"/> if not.</summary>
     public bool IsRefused => _plan is null;
 
+    /// <summary>Why the copy is refused. Throws when it was approved.</summary>
     public CopyRefusalReason Reason => _plan is null
         ? _reason
         : throw new InvalidOperationException("The copy was approved; there is no refusal reason.");
 
+    /// <summary>The approved copy. Throws when it was refused.</summary>
     public CopyPlan Plan => _plan
         ?? throw new InvalidOperationException(
             "The copy was refused; read Reason instead (ADR-0005: say which one when refusing).");

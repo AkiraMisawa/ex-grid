@@ -75,7 +75,11 @@ mode this whole ADR is about.
 - **Layer 3 does not gate automatically, because there is no CI.** It is run by hand, and
   the ways it can lie are guarded inside the tests themselves — a scrollbar that occupies
   no space makes every assertion trivially true, so each test checks the forcing took
-  before checking anything else.
+  before checking anything else. *(Replaced on 2026-09-24 by
+  [ADR-0041](./0041-ci-runs-every-layer-and-layer-three-gates-on-linux.md): CI now runs this
+  suite on Linux, headed under xvfb, on the runner's installed Chrome and Edge, and it gates
+  there. The guards inside the tests are what make that run mean something, and they stay.
+  Windows and a real IME remain by hand.)*
 - **The three suites still in a scratchpad (keys, cells, server) move in next.** This
   directory is the ground they move onto; until they do, `AGENTS.md`'s layer 3 row names
   what is actually there and what is still to come.

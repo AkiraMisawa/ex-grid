@@ -16,6 +16,8 @@
     private int _focusedRequest = -1;
     private bool _needsFocus;
 
+    /// <summary>The core's contract for the editor (ADR-0010): the text to start from, where
+    /// typed text goes, the standing Reject's message (ADR-0034) and the focus request.</summary>
     [Parameter, EditorRequired] public CellEditorContext Context { get; set; } = default!;
 
     private void OnInput(ChangeEventArgs e) => Context.TextChanged(e.Value?.ToString() ?? "");

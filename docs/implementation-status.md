@@ -359,7 +359,7 @@ it has met `chrome` or `msedge`.
 |---|---|---|
 | 1 | `tests/ExGrid.Tests` | 46 files, **449 pass** (2026-09-24) |
 | 2 | `tests/ExGrid.Components` | 43 files, **420 pass, 1 skipped by name** (2026-09-24): ST-1's 10⁶ case, which runs under `EXGRID_ST1_MILLION=1` (§22 Step 5). Including ST-1's randomised 500-operation run at 10³ rows, MEM-1's allocation invariant, PF-3's `RenderAllocationTests`, MEM-3's `ResourceDisposalTests` and ADR-0037's `InteractiveTests` |
-| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And on macOS, `chrome` only (Chrome 153, headed): **69 pass** on 2026-09-23 after the Cmd+Enter fix the Windows run could not have seen, and again on 2026-09-24 after the layer-2 harness's fixes, which touch the action buttons, the header and every cell's id — so those fixes have not yet met `msedge`. The harness's layer-3 half (**8 specs, 78 tests**) has run only on the container's bundled Chromium: **76 pass, 2 skipped**, and the soak separately (2026-09-24) |
+| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And on macOS, `chrome` only (Chrome 153, headed): **69 pass** on 2026-09-23 after the Cmd+Enter fix the Windows run could not have seen, and again on 2026-09-24 after the layer-2 harness's fixes, which touch the action buttons, the header and every cell's id — so those fixes have not yet met `msedge`. The harness's layer-3 half (**8 specs, 78 tests**) had run only on the container's bundled Chromium: **76 pass, 2 skipped**, and the soak separately (2026-09-24). **Then in CI** (ADR-0041), on Linux, headed under xvfb, on the runner's installed `chrome` and `msedge`: **256 pass, 4 skipped** — VZ-14 and the soak, once per browser — on 2026-09-24, on PR #15's head and again on `main` after its merge. That is the first run of everything added on 2026-09-24 on the two target browsers |
 | — | `verification/2026-09-01/` | layer logs + `results.md` with the pass/blocked ledger |
 | — | `verification/2026-09-23-windows/` | the Windows layer-3 run: `results.md`, the 150% and 125% logs, `metrics.json` |
 | — | `verification/2026-09-23-macos/`, `verification/2026-09-24-macos/` | the macOS `chrome` runs' `metrics.json` — the second with MEM-7 under `layer2` |
@@ -377,7 +377,10 @@ clean. The property is unchanged: the dependency points one way.
    Step 4 run on `chrome` and `msedge`, on Windows or Linux, with the soak (`EXGRID_SOAK=1`)
    once per browser and `metrics.json` / `console.json` filed. That run also takes the
    2026-09-24 layer-2 fixes to `msedge` for the first time. Then a fresh `spikes/render-bench`
-   entry (PF-8), on real hardware.
+   entry (PF-8), on real hardware. *(2026-09-24: CI has since run the harness on `chrome` and
+   `msedge` on Linux, headed, and kept `console.json` and `metrics.json` as the run's
+   artifacts — the 2026-09-24 fixes have met `msedge`. Still owed: the soak on both browsers,
+   which the weekly long run does, and the filed record, which a CI artifact is not.)*
 2. ~~**VZ-14 at 125%.**~~ Discharged on 2026-09-24 on a Windows desktop at 125%, on both
    browsers. (The Edge run and VZ-10, which this item used to hold, were discharged on
    2026-09-01.)
@@ -469,17 +472,58 @@ clean. The property is unchanged: the dependency points one way.
    rebuilt on every render.
 
    **Runs still owed, not passed:**
-   - Every layer-3 test added on 2026-09-24 has run only on the container's bundled
-     Chromium, headless, with the two local settings that are not the project's. That is
-     `popovers.spec.mjs`, `stripes.spec.mjs`, the new `mud-app.spec.mjs` and the ADR-0039
-     half of `features.spec.mjs`. They still owe a `chrome` and an `msedge` run on Windows or
-     Linux (Step 4), headed.
+   - ~~Every layer-3 test added on 2026-09-24 has run only on the container's bundled
+     Chromium.~~ Discharged the same day by CI: `popovers.spec.mjs`, `stripes.spec.mjs`,
+     `mud-app.spec.mjs` and the ADR-0039 half of `features.spec.mjs` pass on `chrome` and
+     `msedge`, on Linux, headed (the Verification table).
    - The soak (`EXGRID_SOAK=1`), per browser.
    - A real IME is not reachable from the container: the claim that Enter confirming a
      candidate does not apply a filter rests on the browser's implicit-submission rule, and
      is owed a manual check with a Japanese IME on both browsers.
 
-6. **Blazor Server — what layer 3 found on 2026-09-25, and where each stands.** Each is a
+6. **The first prerelease, `0.1.0-beta.1`: published 2026-09-25**
+   ([ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+   Decided with the user: a version with a prerelease suffix ships before Step 7, and one
+   without waits for it. The line is `0.1.0-beta.N`, under MIT, published by Trusted
+   Publishing. Built on 2026-09-24:
+   - `LICENSE` and the package metadata;
+   - a readme per package, whose examples `tests/ExGrid.PackageSmoke` compiles from the packed
+     packages;
+   - the Wrapper's dependency on exactly its core version;
+   - an XML doc comment on every public member;
+   - CI's `package` job, and `release.yml`.
+
+   The tag's run (`release.yml`, run 36074956853) passed every layer. It then pushed both
+   packages and their symbol packages to nuget.org. Both restore from nuget.org with the
+   readme, the XML documentation and the static web assets. The run's last step failed.
+   The tag had been made on GitHub's release page, which made a release with it, and the
+   workflow refused to make a second one. That release has neither the packages nor the note.
+   The workflow now completes such a release instead. The one for `0.1.0-beta.1` needs deleting
+   (the tag stays) and the failed job re-running; the re-run's push skips the packages
+   nuget.org already has.
+
+   A stable version still owes a review of the public C# surface, which nothing has decided
+   yet (ADR-0042).
+
+7. **`MaxWidth` bounds only what the grid computes (ADR-0016, FN-12 rewritten 2026-09-25).**
+   Decided with the user. The contradiction came up while documenting the public API. ADR-0016
+   let a drag go past `MaxWidth`, but FN-12 refused any Fixed width above it. So a Consumer who
+   recorded the drag as a Fixed width got an exception, and so did restoring a saved view. The
+   DemoHost worked around it by raising `MaxWidth` with each drag. Now a Fixed width is refused
+   only below `MinWidth`. The workaround is gone: the DemoHost records the drag with the
+   column's own bounds. Pinned by `ColumnWidthTests` (layer 1), by a round trip in
+   `ColumnGestureTests` (layer 2), and by a real drag to 500px in `gestures.spec.mjs` (layer 3,
+   run on the container's Chromium only; it fails with the core change reverted).
+
+   **Closed the same day:** FN-12's pass condition says the refusal names the column. That had
+   never held, because the spec is built before its column. Decided with the user: the column
+   refuses now, naming itself, and a `default(ColumnWidthSpec)` too (`GridColumnTests`,
+   `ActionAndTemplateColumnTests`). This also turned up an older defect: an Auto
+   `ColumnWidth` could not be printed. The record's own `ToString` read `FixedPx`, which
+   throws for Auto, so logging a width, or the refusal's own message, threw instead. It
+   prints `Auto` or `Fixed(120px)` now.
+
+8. **Blazor Server — what layer 3 found on 2026-09-25, and where each stands.** Each is a
    keyboard, focus or scroll hand-off that WebAssembly completes within one frame and a
    circuit completes a round trip later.
    - ~~**A key pressed straight after a key that opens a popover**~~ reached the grid. Fixed

@@ -12,15 +12,24 @@ public enum FilterUiMode
     /// <summary>The safe default: no enumeration is ever asked for.</summary>
     Condition = 0,
 
+    /// <summary>A list of the column's distinct values to tick, asked for when the panel
+    /// opens; a TooMany answer degrades the panel to its condition form (ADR-0009).</summary>
     ValueList,
 
+    /// <summary>The value list and the condition form both. The distinct values are asked
+    /// for as with <see cref="ValueList"/>.</summary>
     Both,
 }
 
 /// <summary>The two editing states the arrow keys mean different things in (ADR-0010).</summary>
 public enum CellEditMode
 {
+    /// <summary>Entered by typing onto a selected cell: the original value is replaced,
+    /// and the arrow keys commit and move to the neighbouring cell.</summary>
     Overwrite,
+
+    /// <summary>Entered with F2 or a double click: the original value stays, and the
+    /// arrow keys move the caret within the text.</summary>
     Caret,
 }
 
@@ -37,14 +46,19 @@ public sealed class DistinctValues
         Values = values;
     }
 
+    /// <summary>The answer that the column has too many distinct values to list. The
+    /// panel degrades to its condition form rather than breaking (ADR-0009).</summary>
     public static DistinctValues TooMany { get; } = new(true, []);
 
+    /// <summary>The distinct values themselves — under every applied filter except the
+    /// column's own (ADR-0009). A null entry stands for the Blanks.</summary>
     public static DistinctValues Of(IReadOnlyList<object?> values)
     {
         ArgumentNullException.ThrowIfNull(values);
         return new(false, values);
     }
 
+    /// <summary>Whether this is the <see cref="TooMany"/> answer.</summary>
     public bool IsTooMany { get; }
 
     /// <summary>Empty when <see cref="IsTooMany"/> — an unanswerable list is not an
@@ -52,15 +66,15 @@ public sealed class DistinctValues
     public IReadOnlyList<object?> Values { get; }
 }
 
-/// <summary>One command in the column menu (ADR-0010). The core decides the list;
-/// Chrome only lays them out. <see cref="Id"/> is stable — the hook for icons and for
-/// a Consumer substituting a particular command.</summary>
 /// <summary>
 /// One item of a menu the core decides (ADR-0010/0036). It carries no label: the core
 /// names a command and says whether it is available, and what it is called is
 /// rendering, which is Chrome's. A substituted Chrome resolves the wording from the
 /// <paramref name="Id"/>; the built-in menu resolves it through
 /// <c>ExGrid.CommandLabel</c>, falling back to <see cref="BuiltInCommandLabels"/>.
+///
+/// <para><paramref name="Id"/> is stable — the hook for icons and for a Consumer
+/// substituting a particular command.</para>
 /// </summary>
 public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 

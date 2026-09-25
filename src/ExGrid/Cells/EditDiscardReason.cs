@@ -3,7 +3,7 @@ namespace ExGrid.Cells;
 /// <summary>
 /// Why the grid threw away text a user had typed and not yet committed (ADR-0011).
 /// Both cases are the grid deciding it cannot place the value — a Refusal in the sense
-/// `CONTEXT.md` gives the word, judging the operation and never the text — and neither
+/// <c>CONTEXT.md</c> gives the word, judging the operation and never the text — and neither
 /// is the user's own doing, which is why they are announced rather than assumed.
 /// </summary>
 public enum EditDiscardReason
@@ -25,7 +25,7 @@ public enum EditDiscardReason
     RowLeftTheWindow,
 
     /// <summary>The column stopped being Editable while its editor was open — a
-    /// Consumer revoking a permission mid-edit. `Editable` means a write may land here
+    /// Consumer revoking a permission mid-edit. <c>Editable</c> means a write may land here
     /// (ADR-0035), and it is asked again at the commit, not only when the editor
     /// opened.</summary>
     ColumnNoLongerEditable,

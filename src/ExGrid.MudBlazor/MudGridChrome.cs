@@ -111,6 +111,9 @@ public sealed class MudGridChrome : IGridChrome
         _ => null,
     };
 
+    /// <summary>The Cell Editor: a bare input filling the box the core floats over the
+    /// cell, with Material's underline painted — in the error colour while a Reject
+    /// stands — and DOM focus taken for each focus request (ADR-0010/0030/0034).</summary>
     public RenderFragment? CellEditor(CellEditorContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -122,6 +125,9 @@ public sealed class MudGridChrome : IGridChrome
         };
     }
 
+    /// <summary>The loading bar: an indeterminate <c>MudProgressLinear</c> in
+    /// <see cref="LoadingProgressColor"/> while the grid is loading, and nothing
+    /// otherwise. The Placeholder rows stay the core's (ADR-0004/0030).</summary>
     public RenderFragment? LoadingIndicator(LoadingContext context)
     {
         ArgumentNullException.ThrowIfNull(context);

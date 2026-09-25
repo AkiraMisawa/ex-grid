@@ -2,7 +2,7 @@ namespace ExGrid;
 
 /// <summary>
 /// The whole of what the grid asks a Grid Source for: which range, under which Sort,
-/// under which Filter (`CONTEXT.md`, Query). Every part of it is a serialisable model
+/// under which Filter (<c>CONTEXT.md</c>, Query). Every part of it is a serialisable model
 /// rather than a delegate, so it can cross to a server unchanged
 /// (<see cref="GridFilter"/>, ADR-0002).
 ///

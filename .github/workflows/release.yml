@@ -1,0 +1,134 @@
+# Publishes a prerelease of ExGrid and ExGrid.MudBlazor from a v* tag (ADR-0042).
+#
+#   git tag v0.1.0-beta.1 <a commit on main> && git push origin v0.1.0-beta.1
+#
+# or GitHub's release page, which makes the tag and a release with it; the last step then
+# completes that release rather than making another.
+#
+# It refuses a version without a prerelease suffix, which is a release in the Definition of
+# Done's sense and waits for its sign-off, and a commit that is not on main. It runs the
+# whole of ci.yml on the tag, then pushes to nuget.org the very packages ci.yml's package job
+# tested. The key is a one-hour one from Trusted Publishing: nuget.org holds a policy naming
+# this repository and this file, and the secret NUGET_USER holds the nuget.org profile name.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  admit:
+    name: A prerelease, on main
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: version
+        name: Read the version from the tag
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*$ ]]; then
+            echo "::error::$GITHUB_REF_NAME is not a prerelease. A version without a suffix is a release, and waits for the Definition of Done's sign-off (ADR-0042)."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_REF_NAME points at a commit that is not on main (ADR-0042)."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  verify:
+    name: Every layer, and the packages
+    needs: admit
+    uses: ./.github/workflows/ci.yml
+    with:
+      version: ${{ needs.admit.outputs.version }}
+    # ci.yml's badges job asks for contents: write. It never runs on a tag, but a called
+    # workflow may not ask for more than its caller grants.
+    permissions:
+      contents: write
+
+  publish:
+    name: Publish to nuget.org
+    needs: [admit, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # A required reviewer can be added to this environment in the repository's settings.
+    environment: nuget
+    permissions:
+      contents: write   # the GitHub release
+      id-token: write   # Trusted Publishing
+    env:
+      VERSION: ${{ needs.admit.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: packages
+
+      - name: Exactly the packages the package job tested
+        run: |
+          set -euo pipefail
+          ls -l packages
+          for id in ExGrid ExGrid.MudBlazor; do
+            for ext in nupkg snupkg; do
+              [ -f "packages/$id.$VERSION.$ext" ] || { echo "::error::packages/$id.$VERSION.$ext is missing"; exit 1; }
+            done
+          done
+          [ "$(ls packages | wc -l)" -eq 4 ] || { echo "::error::the artifact holds more than the four expected files"; exit 1; }
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Sign in to nuget.org
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      # The symbol packages go with them. --skip-duplicate lets a re-run finish a push
+      # that stopped halfway; nuget.org never replaces a version that is already there.
+      - name: Push
+        run: >
+          dotnet nuget push "packages/*.nupkg"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      # Whoever made the tag may have made its release too — GitHub's release page does both
+      # at once. Then that release is completed, not refused: marked prerelease, the packages
+      # attached, and the note ADR-0042 asks of a beta put above whatever it already says.
+      - name: The GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          status="https://github.com/${REPO}/blob/${GITHUB_SHA}/docs/implementation-status.md"
+          note="A prerelease (ADR-0042): every test layer passed in CI on this commit, but the Definition of Done has not been signed off. What it still owes is listed in [docs/implementation-status.md at this commit]($status)."
+          if gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
+            body=$(gh release view "$TAG" --repo "$REPO" --json body --jq .body)
+            case "$body" in
+              *"(ADR-0042)"*) ;;
+              *) body="${note}"$'\n\n'"${body}" ;;
+            esac
+            gh release edit "$TAG" --repo "$REPO" --prerelease --notes "$body"
+            gh release upload "$TAG" packages/* --repo "$REPO" --clobber
+          else
+            gh release create "$TAG" packages/* --repo "$REPO" \
+              --verify-tag --prerelease --title "$TAG" --generate-notes --notes "$note"
+          fi

@@ -14,6 +14,9 @@ namespace ExGrid;
 /// </summary>
 public sealed record GridPage<TRow>
 {
+    /// <summary>An answer of <paramref name="rows"/> starting at position
+    /// <paramref name="start"/> of a filtered result <paramref name="totalCount"/> rows
+    /// long. Refused when the rows run past that total.</summary>
     public GridPage(IReadOnlyList<TRow> rows, int start, int totalCount)
     {
         ArgumentNullException.ThrowIfNull(rows);
@@ -31,6 +34,8 @@ public sealed record GridPage<TRow>
         TotalCount = totalCount;
     }
 
+    /// <summary>The rows of the answer, in the query's order — possibly fewer than were
+    /// asked for (ADR-0025).</summary>
     public IReadOnlyList<TRow> Rows { get; }
 
     /// <summary>The position of <see cref="Rows"/>[0] in the whole filtered result.</summary>

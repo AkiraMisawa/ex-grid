@@ -20,6 +20,8 @@ public sealed class ColumnStyles
     private readonly string[] _pinnedCells;
     private readonly string[] _gaps;
 
+    /// <summary>Writes every column's style strings from <paramref name="geometry"/>,
+    /// once.</summary>
     public ColumnStyles(ColumnGeometry geometry)
     {
         ArgumentNullException.ThrowIfNull(geometry);
@@ -49,6 +51,9 @@ public sealed class ColumnStyles
         }
     }
 
+    /// <summary>The geometry these strings were written from. A new instance is built
+    /// only when a width actually moved, so a row can compare it by reference
+    /// (ADR-0003/0016).</summary>
     public ColumnGeometry Geometry { get; }
 
     /// <summary>The width of an ordinary cell or header cell.</summary>

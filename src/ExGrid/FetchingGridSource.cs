@@ -51,8 +51,12 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         _distinctValues = distinctValues;
     }
 
+    /// <summary>The rows of the last answer that landed. Empty before the first answer,
+    /// and again after a Sort or Filter change until the new query's first page lands.</summary>
     public IReadOnlyList<TRow> Window { get; private set; } = [];
 
+    /// <summary>The position of <see cref="Window"/>[0] in the whole result, as the last
+    /// answer reported it (ADR-0001).</summary>
     public int WindowStart { get; private set; }
 
     /// <summary>Zero rather than null until the first answer: null would claim this empty
@@ -60,21 +64,31 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     /// it (ADR-0001).</summary>
     public int? TotalCount { get; private set; } = 0;
 
+    /// <summary>Whether a fetch is in flight: set when one starts, cleared when the
+    /// answer the source is waiting for lands or fails (ADR-0001).</summary>
     public bool IsLoading { get; private set; }
 
-    /// <summary>Bumped by a Sort or Filter change and by nothing else. Scrolling to
-    /// another slice of the same query is not a reorder, and dropping the selection for
-    /// it would make a long selection impossible to build (ADR-0011).</summary>
+    /// <summary>Bumped by a Sort or Filter change, and by an answer whose total is smaller
+    /// than the last one's — the positions then name different rows. Scrolling to another
+    /// slice of the same query is not a reorder, and dropping the selection for it would
+    /// make a long selection impossible to build (ADR-0011).</summary>
     public int RowSequenceVersion { get; private set; }
 
+    /// <summary>The Sort in force, outermost first; empty for the server's own order. A
+    /// copy of the list last handed to <see cref="OnSortChanged"/>.</summary>
     public IReadOnlyList<SortSpec> Sorts { get; private set; } = [];
 
+    /// <summary>The Filter in force, or null for none — a structural copy of the one last
+    /// handed to <see cref="OnFilterChanged"/>, so the Consumer's own collections behind
+    /// it can change without reaching this (ADR-0023).</summary>
     public GridFilter? Filter { get; private set; }
 
     /// <summary>The last failure, kept so a Consumer can show it without subscribing.
     /// Cleared by the next answer that lands.</summary>
     public Exception? LastError { get; private set; }
 
+    /// <summary>Raised when something the grid paints moved: a fetch started or failed,
+    /// an answer landed, or a Sort or Filter change dropped the Window.</summary>
     public event Action? StateChanged;
 
     /// <summary>
@@ -99,6 +113,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         StartDetached(first, first);
     }
 
+    /// <summary>Takes a new Sort. A list equal to the one in force is a no-op; any other
+    /// drops the Window, bumps <see cref="RowSequenceVersion"/> and fetches the first page
+    /// under the new query (ADR-0025).</summary>
     public void OnSortChanged(IReadOnlyList<SortSpec> sorts)
     {
         ArgumentNullException.ThrowIfNull(sorts);
@@ -108,6 +125,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         Restart();
     }
 
+    /// <summary>Takes a new Filter, compared structurally. An equal one is a no-op; any
+    /// other drops the Window, bumps <see cref="RowSequenceVersion"/> and fetches the
+    /// first page under the new query (ADR-0025).</summary>
     public void OnFilterChanged(GridFilter? filter)
     {
         // Structurally, and stored as a copy: a Consumer's GridFilter is typically backed
@@ -120,6 +140,13 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         Restart();
     }
 
+    /// <summary>
+    /// The grid needs these rows. A range the Window already covers asks nothing;
+    /// otherwise the range widened by the read-ahead is fetched and supersedes whatever
+    /// was in flight — unless it is that same range, whose fetch is handed back rather
+    /// than restarted (ADR-0025). Awaiting the task carries a failure to the grid when
+    /// nobody handles <see cref="FetchFailed"/>.
+    /// </summary>
     public Task OnRangeNeededAsync(RowRange range)
     {
         // The grid asks for what is on screen, so this is also how the source learns how

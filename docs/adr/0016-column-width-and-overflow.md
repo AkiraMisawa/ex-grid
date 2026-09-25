@@ -99,6 +99,7 @@ digits at maximum, so an untouched Auto column effectively never hashes — `###
 the user or the Consumer narrows a column, as in Excel. Both are per-column overridable. A
 declared `Fixed` width outside `[MinWidth, MaxWidth]` is refused at construction, not
 clamped — a declaration that contradicts its own bounds is an error, not an intent.)*
+*(Narrowed on 2026-09-25 to the lower bound; see the end of "Resizing by dragging".)*
 
 **"Size to fit" is an approximation.** It can only fit the rows that have been fetched, not all of
 them. The column menu entry in
@@ -140,6 +141,26 @@ overruling an explicit request with a number written for a different purpose.
 Auto computation and `SizeToFit`, and goes on refusing a *declared* Fixed width outside the bounds
 — `ColumnWidthSpec`'s message already says **declared**, and the check is narrowed to match the
 word it already uses.
+
+*(Rewritten on 2026-09-25, decided with the user.)* That last clause did not hold up. The grid
+reports a drag and changes nothing. The Consumer records it, and the only way to record a width
+is a Fixed `ColumnWidthSpec`. So a drag past `MaxWidth` became a declaration outside the bounds,
+and the constructor refused it. The same refusal met a saved view when it was restored. The
+DemoHost worked round it by raising `MaxWidth` with every drag, which moved the ceiling on Auto
+and `SizeToFit` as well. A declared Fixed width and a recorded drag cannot be told apart, and
+should not be: both are a width somebody asked for. **So `MaxWidth` bounds only what the grid
+computes — Auto and `SizeToFit` — and a Fixed width is refused only below `MinWidth`.** Above
+`MaxWidth` it is kept. That is the rule this section states for the gesture, now also stated for
+the value the gesture leaves behind. A Consumer's typo such as `Fixed(4000)` is no longer
+refused. It shows as a column plainly too wide, not as something quietly wrong.
+
+*(Also decided with the user, the same day: where the refusal happens.)* `ColumnWidthSpec` is
+built before the column it goes into, so its refusal could not say which column it was. That
+matters for a ladder of generated columns. **The column refuses a Fixed width below its
+`MinWidth`, naming itself.** It also refuses a `default(ColumnWidthSpec)`, which has no bounds.
+The spec still checks its own bounds (`MinWidth` positive, `MaxWidth` at least `MinWidth`),
+since those need no column. A spec on its own may therefore hold a Fixed width below its
+`MinWidth` until it is given to a column. The grid only ever uses a spec through a column.
 
 The asymmetry is not an oversight, and the rule behind it is worth stating on its own: **the bound
 that stops a gesture is the one the same gesture cannot undo.** A column crushed to 2px has no grip

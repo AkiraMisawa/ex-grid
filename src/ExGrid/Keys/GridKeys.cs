@@ -11,10 +11,11 @@ namespace ExGrid.Keys;
 /// <para><b>The same table is read twice.</b> <see cref="Taken"/> is handed to the JS
 /// listener at attach time so it can <c>preventDefault</c> <em>synchronously</em> — the
 /// interop call is asynchronous, and by the time an answer came back the event would be
-/// over. <see cref="Resolve"/> then decides what the key means, from the raw fields the
-/// listener forwards. <b>This side is the authority</b>: if the two ever disagree, a key
-/// is taken and nothing happens, which is visible — rather than a key meaning something
-/// different in the two places, which is not.</para>
+/// over. <see cref="Resolve(string, bool, bool, bool, bool, bool)"/> then decides what
+/// the key means, from the raw fields the listener forwards. <b>This side is the
+/// authority</b>: if the two ever disagree, a key is taken and nothing happens, which is
+/// visible — rather than a key meaning something different in the two places, which is
+/// not.</para>
 ///
 /// <para>The canonical form is <c>[Control+][Shift+][Alt+]{key}</c>. Control is the
 /// <b>primary modifier</b>: always the Control key, and the Meta key as well <b>only where
@@ -26,20 +27,22 @@ namespace ExGrid.Keys;
 /// </summary>
 public static class GridKeys
 {
-    /// <summary>
-    /// The keys the core takes. Handed to the JS listener, which takes exactly these and
-    /// lets everything else through — a grid that swallowed Ctrl+F or Cmd+R would be
-    /// taking the browser's keys, not its own.
-    ///
-    /// <para>Not here, deliberately: Ctrl+C / Ctrl+V (the clipboard rides the browser's
-    /// own <c>copy</c> and <c>paste</c> events — taking the keys would suppress the very
-    /// events that make the route prompt-free, ADR-0005), and F2 and printable
-    /// characters (no editor yet, ADR-0010).</para>
-    /// </summary>
     // Declared before Taken on purpose: static field initialisers run in textual order,
     // and a Taken built above this line would read a null table.
     private static readonly Dictionary<string, GridKeyAction> Table = BuildTable();
 
+    /// <summary>
+    /// The keys the core takes, in canonical form. Handed to the JS listener, which takes
+    /// exactly these and lets everything else through — a grid that swallowed Ctrl+F or
+    /// Cmd+R would be taking the browser's keys, not its own.
+    ///
+    /// <para>Not here, deliberately: Ctrl+C / Ctrl+V (the clipboard rides the browser's
+    /// own <c>copy</c> and <c>paste</c> events — taking the keys would suppress the very
+    /// events that make the route prompt-free, ADR-0005), and F2 and printable
+    /// characters, which open the Cell Editor and which the listener takes only on a grid
+    /// with an editable column — a display-only grid must not take the page's keys
+    /// (ADR-0010).</para>
+    /// </summary>
     public static IReadOnlyList<string> Taken { get; } = [.. Table.Keys];
 
     /// <summary>
@@ -47,6 +50,13 @@ public static class GridKeys
     /// <see cref="GridKeyKind.None"/> — including keys nobody has heard of, because the
     /// browser is free to send <c>Unidentified</c>, a dead key, or an IME's own.
     /// </summary>
+    /// <param name="key">The event's <c>key</c> field as the browser reported it. Null
+    /// resolves to <see cref="GridKeyAction.None"/>.</param>
+    /// <param name="ctrl">Whether the Control key was held.</param>
+    /// <param name="shift">Whether the Shift key was held.</param>
+    /// <param name="alt">Whether the Alt key was held.</param>
+    /// <param name="meta">Whether the Meta key was held — Command on an Apple keyboard,
+    /// the OS's own key elsewhere.</param>
     /// <param name="metaIsPrimary">Whether the Meta key is this platform's primary
     /// modifier — true on an Apple platform, where it is Command. Only the browser can
     /// answer it, so it is asked once and passed in.</param>

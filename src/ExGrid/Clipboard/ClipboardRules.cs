@@ -24,6 +24,14 @@ public static class ClipboardRules
     /// </summary>
     public const long DefaultCellCap = 1_000_000;
 
+    /// <summary>
+    /// The copy rules (ADR-0005/0011): an empty selection is refused, then a misaligned
+    /// one, then one past the cap. Otherwise the plan names the rectangles to emit and
+    /// how they combine into one block.
+    /// </summary>
+    /// <param name="selection">What is selected, in positions of the current order.</param>
+    /// <param name="cellCap">The most cells a copy may carry; at least one. Exactly at the
+    /// cap still copies.</param>
     /// <param name="withHeaders">Whether a header row will be emitted above the block
     /// (ADR-0005). It counts against the cap, because the cap is applied to what is
     /// actually copied and not to the selection: a selection sitting exactly on the cap

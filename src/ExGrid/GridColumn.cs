@@ -16,6 +16,13 @@ namespace ExGrid;
 /// </summary>
 public sealed record GridColumn<TRow>
 {
+    /// <summary>
+    /// A column that paints its value as text — the ordinary kind. <paramref name="name"/>
+    /// addresses it and <paramref name="value"/> extracts its value from a row; every
+    /// other argument sets the property of the same name and may be left out: the header
+    /// is then the name, the width Auto, the column not Editable, its filter
+    /// condition-only, both alignments Auto, and there is no verdict, Format or Tone.
+    /// </summary>
     public GridColumn(
         string name,
         ColumnType type,
@@ -66,6 +73,15 @@ public sealed record GridColumn<TRow>
         Info = new ColumnInfo<TRow>(name, type, value, queryable);
         Header = header ?? name;
         Width = width ?? new ColumnWidthSpec(ColumnWidth.Auto);
+        // Refused here rather than in the spec, which is built before the column and cannot
+        // say which one it belongs to — and a ladder of generated columns needs the name
+        // (ADR-0016, FN-12).
+        if (Width.MinWidthPx <= 0)
+            throw new ArgumentOutOfRangeException(nameof(width), Width, FormattableString.Invariant(
+                $"Column '{name}': default(ColumnWidthSpec) has no bounds and is not a width; leave the width out for Auto (ADR-0016)."));
+        if (!Width.Width.IsAuto && Width.Width.FixedPx < Width.MinWidthPx)
+            throw new ArgumentOutOfRangeException(nameof(width), Width.Width.FixedPx, FormattableString.Invariant(
+                $"Column '{name}': a Fixed width of {Width.Width.FixedPx} is below its MinWidth ({Width.MinWidthPx}) — refused, not clamped (ADR-0016)."));
         Actions = actions;
         Template = template;
         Editable = editable;
@@ -117,7 +133,7 @@ public sealed record GridColumn<TRow>
     /// <summary>
     /// A column whose cell contents the Consumer paints (ADR-0020). <b>The value accessor
     /// is still required</b>: sorting, filtering and copy all read the value, never the
-    /// template — this is the hole `MudDataGrid` fell into, where Consumers had to walk
+    /// template — this is the hole <c>MudDataGrid</c> fell into, where Consumers had to walk
     /// the rendered columns to map a column back to a property (ADR-0009).
     ///
     /// <para>Hold the fragment on the column declaration; do not construct it per render.
@@ -147,10 +163,17 @@ public sealed record GridColumn<TRow>
     /// <summary>The slice filtering and sorting need — handed to the engine as-is.</summary>
     public ColumnInfo<TRow> Info { get; }
 
+    /// <summary>What the column is addressed by — in the Sorts list, the Filter and every
+    /// notification that names a column. Unique among a grid's columns.</summary>
     public string Name => Info.Name;
 
+    /// <summary>The declared type: it decides which filter operators exist, how values
+    /// compare, and whether a value too wide for the column becomes <c>####</c>
+    /// (ADR-0016/0023).</summary>
     public ColumnType Type => Info.Type;
 
+    /// <summary>How the value is extracted from a row — what Filter, Sort, copy and the
+    /// painted text all read. Null is a Blank (ADR-0023).</summary>
     public Func<TRow, object?> Value => Info.Value;
 
     /// <summary>The label the header row paints. Defaults to <see cref="Name"/>.</summary>
@@ -164,7 +187,8 @@ public sealed record GridColumn<TRow>
     public Func<TRow, string, EditVerdict>? Validate { get; }
 
     /// <summary>Never <c>default(ColumnWidthSpec)</c>: an unspecified width means Auto
-    /// within the default bounds.</summary>
+    /// within the default bounds, and the constructor refuses a default spec, or a Fixed
+    /// width below its MinWidth, naming the column (ADR-0016, FN-12).</summary>
     public ColumnWidthSpec Width { get; }
 
     /// <summary>The actions this column's cells carry — empty for every other column

@@ -5,6 +5,8 @@
          carries a net10.0 build, so the Wrapper keeps the core's floor. -->
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>ExGrid.MudBlazor</RootNamespace>
+    <Description>MudBlazor for ExGrid: a paper, a Chrome and a stylesheet that put the grid inside a MudBlazor application, with MudBlazor's own controls in the grid's menus, filter panel and editor. Ships at the same version as ExGrid and depends on exactly that version.</Description>
+    <PackageTags>$(PackageTags);mudblazor;material</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,5 +22,16 @@
          nothing in the core knows this package exists. -->
     <ProjectReference Include="..\ExGrid\ExGrid.csproj" />
   </ItemGroup>
+
+  <!-- The Wrapper depends on exactly the core version it was built with (ADR-0042): the two
+       ship together, and a Consumer who upgrades one alone is told so at restore (NU1608 or
+       NU1107) rather than left with a Wrapper running against a core it never met. NuGet offers no range on a
+       ProjectReference, so the version pack computed is made exact here; CI's package job
+       reads it back from the .nuspec, so a change in the SDK cannot drop it silently. -->
+  <Target Name="DependOnExactlyThisCore" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
 
 </Project>

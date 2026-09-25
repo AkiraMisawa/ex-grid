@@ -3,6 +3,7 @@
   <PropertyGroup>
     <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
     <TargetFramework>net10.0</TargetFramework>
+    <Description>An Excel-like grid for Blazor: virtualised on both axes, with pinned columns, rectangular selection, the keyboard and the clipboard as a spreadsheet user expects them. The Consumer owns the data, sorting and filtering; the grid displays and notifies.</Description>
   </PropertyGroup>
 
   <ItemGroup>

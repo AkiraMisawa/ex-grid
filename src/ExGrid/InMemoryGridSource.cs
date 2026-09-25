@@ -27,6 +27,8 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         Window = _rows;
     }
 
+    /// <summary>The whole result: the rows under the Filter and Sorts in force, or the
+    /// input order until the columns arrive (ADR-0023).</summary>
     public IReadOnlyList<TRow> Window { get; private set; }
 
     /// <summary>Always 0: everything is in hand, so the Window is the whole result and
@@ -38,10 +40,16 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     /// count display should not have to know that convention.</summary>
     public int? TotalCount => Window.Count;
 
+    /// <summary>The Sort in force, outermost first; empty for the input order. A copy of
+    /// the list last applied.</summary>
     public IReadOnlyList<SortSpec> Sorts { get; private set; } = [];
 
+    /// <summary>The Filter in force, or null for none — a structural copy of the one last
+    /// applied, so the Consumer's own collections behind it can change without reaching
+    /// this (ADR-0023).</summary>
     public GridFilter? Filter { get; private set; }
 
+    /// <summary>Always false: everything is in hand, so no answer is ever in flight.</summary>
     public bool IsLoading => false;
 
     /// <summary>
@@ -51,15 +59,25 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     /// </summary>
     public int RowSequenceVersion { get; private set; }
 
-    /// <summary>Raised after any change is applied; the binding layer repushes from here.</summary>
+    /// <summary>Raised after a change the grid paints is applied — a new Sort or Filter,
+    /// a moved sequence, a replaced row; the binding layer repushes from here. A no-op
+    /// raises nothing.</summary>
     public event Action? StateChanged;
 
+    /// <summary>Takes the grid's columns and requeries under the Filter and Sorts in
+    /// force. The same columns again are a no-op, and new ones raise
+    /// <see cref="StateChanged"/> only when the visible sequence moved — the grid pushed
+    /// them, so it already knows.</summary>
     public void OnColumnsChanged(IReadOnlyList<ColumnInfo<TRow>> columns)
     {
         ArgumentNullException.ThrowIfNull(columns);
         Commit(columns, Filter, Sorts);
     }
 
+    /// <summary>Applies a new Sort by requerying, bumping
+    /// <see cref="RowSequenceVersion"/> only when the visible sequence actually moved. An
+    /// equal list is a no-op; before the columns have arrived the change is refused
+    /// (ADR-0023).</summary>
     public void OnSortChanged(IReadOnlyList<SortSpec> sorts)
     {
         ArgumentNullException.ThrowIfNull(sorts);
@@ -67,6 +85,10 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         Commit(_columns!, Filter, sorts);
     }
 
+    /// <summary>Applies a new Filter by requerying, bumping
+    /// <see cref="RowSequenceVersion"/> only when the visible sequence actually moved. An
+    /// equal Filter is a no-op; before the columns have arrived the change is refused
+    /// (ADR-0023).</summary>
     public void OnFilterChanged(GridFilter? filter)
     {
         RequireColumns();

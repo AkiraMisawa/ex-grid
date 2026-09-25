@@ -10,6 +10,14 @@ while designing the Blazor Server host, but it does not depend on it: nothing in
 needs an API newer than net8. What changed is the floor, not a need. The file was renamed
 with the title; the old name was `0022-packages-target-net8-and-run-on-everything-newer.md`.)*
 
+*(Corrected when this rewrite met `main`, the same day. "No release had been published" was
+true on the branch where the decision was taken, and not by the time it merged: `0.1.0-beta.1`
+went to nuget.org on 2026-09-25 targeting `net8.0`
+([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+So the floor is raised under a published prerelease, not before any release. The first
+version after it needs .NET 10. That leaves a Consumer on .NET 8 or 9 on `0.1.0-beta.1` —
+a prerelease, on a runtime whose support ends six weeks later.)*
+
 The shipped NuGet packages (`ExGrid`, the integration packages, later `ExSheet`) target
 **`net10.0`, single-target**. A `net10.0` Razor class library loads into net10 and every newer
 application unchanged — NuGet unifies `Microsoft.AspNetCore.Components.*` to the

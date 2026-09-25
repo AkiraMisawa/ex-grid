@@ -13,10 +13,14 @@ namespace ExGrid.Selection;
 /// </summary>
 public static class EdgeBand
 {
+    /// <summary>How far the band reaches into the Viewport from each edge.</summary>
     public const double DepthPx = 20;
 
+    /// <summary>The rate at the band's inner lip, in rows per tick.</summary>
     public const int MinRowsPerTick = 1;
 
+    /// <summary>The rate at the Viewport's outer edge, in rows per tick — lowered further
+    /// when a Viewport holds fewer than nine rows, to stay under the fling threshold.</summary>
     public const int MaxRowsPerTick = 8;
 
     /// <summary>

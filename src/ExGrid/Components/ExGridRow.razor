@@ -98,8 +98,12 @@
 </div>
 
 @code {
+    /// <summary>The row to paint. Its identity is the change signal: a new instance
+    /// repaints, a row rewritten in place does not (ADR-0003).</summary>
     [Parameter, EditorRequired] public TRow Row { get; set; } = default!;
 
+    /// <summary>The grid's visible Columns in display order — the list instance the grid
+    /// holds, compared by reference (ADR-0003).</summary>
     [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
 
     /// <summary>The resolved column widths and the strings they reach CSS as, index-aligned
@@ -120,6 +124,9 @@
     /// </summary>
     [Parameter] public bool Placeholder { get; set; }
 
+    /// <summary>The Cell Metrics a value's text is measured with, to decide whether it
+    /// fits its column or becomes <c>####</c> (ADR-0016). A value, compared by
+    /// content.</summary>
     [Parameter] public CellTextMetrics Metrics { get; set; }
 
     /// <summary>The row's absolute, 0-based position in the whole result — what

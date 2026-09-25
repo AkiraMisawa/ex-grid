@@ -24,6 +24,15 @@ public class ColumnWidthTests
         Assert.Throws<InvalidOperationException>(() => ColumnWidth.Auto.FixedPx);
     }
 
+    [Fact] // ADR-0016: an Auto width prints — reading it for a message or a log must not throw
+    public void Widths_and_specs_print_whether_auto_or_fixed()
+    {
+        Assert.Equal("Auto", ColumnWidth.Auto.ToString());
+        Assert.Equal("Fixed(120px)", ColumnWidth.Fixed(120).ToString());
+        Assert.Contains("Auto", new ColumnWidthSpec(ColumnWidth.Auto).ToString());
+        Assert.Contains("Fixed(120px)", new ColumnWidthSpec(ColumnWidth.Fixed(120)).ToString());
+    }
+
     [Fact] // ADR-0016: the spec's bounds must be coherent
     public void Spec_refuses_incoherent_bounds()
     {
@@ -33,16 +42,29 @@ public class ColumnWidthTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new ColumnWidthSpec(ColumnWidth.Auto, maxWidthPx: double.PositiveInfinity));
     }
 
-    [Fact] // ADR-0016: a Fixed declaration outside its own bounds is refused, not clamped
-    public void A_fixed_width_outside_the_bounds_is_refused_not_clamped()
+    [Fact] // ADR-0016 / FN-12: the spec leaves the MinWidth refusal to the column, which can name itself
+    public void A_spec_leaves_the_min_width_refusal_to_its_column()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => new ColumnWidthSpec(ColumnWidth.Fixed(10), minWidthPx: 40, maxWidthPx: 400));
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => new ColumnWidthSpec(ColumnWidth.Fixed(500), minWidthPx: 40, maxWidthPx: 400));
+        // A declaration, not yet a column's: GridColumnTests pins where it is refused.
+        var below = new ColumnWidthSpec(ColumnWidth.Fixed(10), minWidthPx: 40, maxWidthPx: 400);
+        Assert.Equal(10d, below.Width.FixedPx);
 
         var valid = new ColumnWidthSpec(ColumnWidth.Fixed(120));
         Assert.Equal(120d, valid.Width.FixedPx);
+    }
+
+    [Fact] // ADR-0016 / FN-12: MaxWidth bounds what the grid computes, not what the user asked for
+    public void A_fixed_width_above_max_width_is_the_users_and_is_kept()
+    {
+        // A drag past MaxWidth, recorded by the Consumer as it came, and read back.
+        var dragged = new ColumnWidthSpec(ColumnWidth.Fixed(500), minWidthPx: 40, maxWidthPx: 400);
+
+        Assert.Equal(500d, dragged.Width.FixedPx);
+        Assert.Equal(500d, dragged.ResolveWidthPx(new AutoWidth(dragged).Observe(900)));
+        Assert.Equal(400d, dragged.MaxWidthPx);
+
+        // What the grid computes on its own stays bounded: Size to fit still stops at MaxWidth.
+        Assert.Equal(ColumnWidth.Fixed(400), dragged.SizeToFit(900));
     }
 
     [Fact] // ADR-0016: the default bounds — MaxWidth must exist for #### to be possible

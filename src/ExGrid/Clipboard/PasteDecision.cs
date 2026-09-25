@@ -19,11 +19,26 @@ namespace ExGrid.Clipboard;
 /// </summary>
 public enum PasteRefusalReason
 {
+    /// <summary>Nothing is selected: nowhere to paste, and nothing happens.</summary>
     EmptySelection,
+
+    /// <summary>A block of several cells onto one cell, which would spill outside the
+    /// selection. Reselecting a target of the block's shape will work.</summary>
     SingleCellTarget,
+
+    /// <summary>The target is not a whole multiple of the block, in rows or in columns.</summary>
     ShapeMismatch,
+
+    /// <summary>A block of several cells onto a selection of several ranges; only a single
+    /// value fills more than one range.</summary>
     DisjointTarget,
+
+    /// <summary>The target covers a column that is not Editable (ADR-0035). No reselection
+    /// of the same shape would be accepted, so Chrome must not advise one.</summary>
     TargetNotEditable,
+
+    /// <summary>The clipboard is past the grid's <c>PasteByteCap</c>, so it was not read
+    /// at all. Raised by the component, never by the pure rules (ADR-0005).</summary>
     TooLarge,
 }
 
@@ -46,6 +61,7 @@ public sealed class PastePlan
     /// <summary>The ranges to fill. More than one only with a 1×1 source (ADR-0014).</summary>
     public IReadOnlyList<SelectionRange> Targets { get; }
 
+    /// <summary>The block on the clipboard, tiled from each target range's top-left.</summary>
     public PasteShape Source { get; }
 
     /// <summary>
@@ -88,12 +104,16 @@ public sealed class PasteDecision
 
     internal static PasteDecision Refuse(PasteRefusalReason reason) => new(null, reason);
 
+    /// <summary>Whether the paste is refused: read <see cref="Reason"/> if so, and
+    /// <see cref="Plan"/> if not.</summary>
     public bool IsRefused => _plan is null;
 
+    /// <summary>Why the paste is refused. Throws when it was approved.</summary>
     public PasteRefusalReason Reason => _plan is null
         ? _reason
         : throw new InvalidOperationException("The paste was approved; there is no refusal reason.");
 
+    /// <summary>The approved paste. Throws when it was refused.</summary>
     public PastePlan Plan => _plan
         ?? throw new InvalidOperationException(
             "The paste was refused; read Reason instead (ADR-0014: say which one when refusing).");
