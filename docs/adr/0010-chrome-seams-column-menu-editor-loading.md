@@ -242,6 +242,17 @@ This stays inside the capture-phase entry of
 [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md): the listener already decides
 per key whether to take it; it now also decides *when* a taken key is forwarded.
 
+**Widened the same day: a mode change is any change of who holds the keyboard.** Layer 3 on
+the Server host found the same loss one step over. `Alt+↓` then `↓`, typed together, moved
+the Focus instead of the menu's item: the menu takes DOM focus a round trip after `Alt+↓`
+([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)), and
+the `↓` landed on the root first. So the keys that open a popover from the root — `Alt+↓`,
+`Shift+F10`, `ContextMenu` — are mode-changing keys too, and the keys after them are held
+until the popover holds DOM focus. They are then handed to the element that holds it, in
+order, as the keydown it would have received; what they mean there is the popover's
+(ADR-0039's table). The hold ends after two seconds whatever happens, as it does for the
+editor, rather than hold keys forever for a popover that never took focus.
+
 ## Consequences
 
 - **The core carries a small amount of JavaScript.** A capture-phase listener can only be attached

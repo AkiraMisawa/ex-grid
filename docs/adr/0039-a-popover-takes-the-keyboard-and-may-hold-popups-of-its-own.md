@@ -58,6 +58,20 @@ table by running the same browser tests against it (FN-17).
 | | Enter in a value field | Apply |
 | either | Escape | closes it, as a Cancel (ADR-0012's layering, unchanged) |
 
+**The core keeps the menu's place, not DOM focus** *(added 2026-09-25, found by layer 3 on the
+Blazor Server host)*. A menu used to resolve a key against the item holding DOM focus. A `↓`
+moves that focus with `FocusAsync`, which on a circuit lands a round trip later, so `↓` then
+`Enter` typed together ran the item **above** the one the user moved to — `Copy` for `Copy
+with headers`, with nothing on screen to say so. Now the core holds a **cursor** for the open
+menu: it starts on the first enabled item, and every key moves it or reads it. The contexts
+carry **`ResolveKey`**, which answers `MenuKeys`' question against that cursor and moves it on
+a `Move`; the contents — the built-in Chrome's and any substitute's — send each key there and
+act on the answer: focus the item a `Move` names, invoke the command a `Run` names, `Close`
+on a `Close`. Keys reach the core in the order they were pressed, so the answer is right
+however far behind DOM focus is; focus only follows it, for the eye and for assistive
+technology. `MenuKeys.Resolve` stays the pure table, and a Chrome that resolved against its
+own idea of the current item is the defect this replaces.
+
 **A popover that takes DOM focus is named.** The menus keep `role="menu"` with `menuitem` items;
 the filter panel is `role="dialog"`. A column's menu and panel carry `aria-label` set to **that
 column's own header text** — the Consumer's words, so the core still holds no sentence
@@ -73,6 +87,15 @@ popover closed, **an Inner Popup included**. The next arrow moves the Focus, as 
 popover opened. The one exception is the one ADR-0010 already makes: a pointer-down that
 dismissed the popover keeps its own meaning, and where that press lands decides focus.
 
+*(Added 2026-09-25.)* **The core has the last word.** On a circuit a focus request travels a
+round trip, and one the contents made for their first item could land after the user had
+already dismissed the popover — on an item about to be removed, leaving DOM focus on nothing.
+So focus is handed back **after the render that removes the popover**, which on a circuit comes
+after any request the contents made while it stood; a pointer-down landing inside the grid is
+included, since the root is where that press puts focus anyway. A key pressed after a popover
+opened **by pointer** but before it took focus lands on nothing and is lost — visibly, as a key
+that did nothing; one pressed after a popover opened by key is held (ADR-0010).
+
 ## Inner Popups
 
 An **Inner Popup** is a popup that a seam's contents open for themselves and that their design
@@ -82,7 +105,7 @@ own script. What that does to the grid, read from MudBlazor 9.9's source rather 
 
 | ADR-0010's promise | With an Inner Popup open |
 |---|---|
-| Escape closes the popover | **The Inner Popup closes first**, and the next Escape closes the popover — innermost first, which is what a user expects of nested popups. *(Corrected 2026-09-24; the prediction was wrong.)* It said DOM focus would be inside the popup, outside the root, so the grid would never see that Escape. In the browser, MudBlazor 9.9's `MudSelect` and `MudDatePicker` both keep DOM focus **on their own control, inside the popover**, while their list or calendar is open. The gate took the Escape, and one press closed both. So the contents now **report** their popup. Every popover context carries **`InnerPopupChanged`**, which the contents call with `true` when a popup of theirs opens and `false` when it closes. While one is open, the capture-phase gate leaves a descendant's Escape to the control, and the design system closes its popup. Innermost first is now kept by being told, not by where focus happens to sit |
+| Escape closes the popover | **The Inner Popup closes first**, and the next Escape closes the popover — innermost first, which is what a user expects of nested popups. *(Corrected 2026-09-24; the prediction was wrong.)* It said DOM focus would be inside the popup, outside the root, so the grid would never see that Escape. In the browser, MudBlazor 9.9's `MudSelect` and `MudDatePicker` both keep DOM focus **on their own control, inside the popover**, while their list or calendar is open. The gate took the Escape, and one press closed both. So the contents now **report** their popup. Every popover context carries **`InnerPopupChanged`**, which the contents call with `true` when a popup of theirs opens and `false` when it closes. While one is open, the capture-phase gate leaves a descendant's Escape to the control, and the design system closes its popup. Innermost first is now kept by being told, not by where focus happens to sit. *(Added 2026-09-25: the telling travels a round trip on a circuit, and an Escape pressed straight after the popup opened reached the gate first. The gate now also reads the focused control's own `aria-expanded` — the combobox pattern's statement that its popup is open, a state the control keeps, not a measurement — and leaves the Escape to the control if either says so.)* |
 | a pointer-down elsewhere in the instance closes it and keeps its own meaning | **Under MudBlazor's default (`ModalOverlay = false`) it still does**: the design system closes its popup from a document-level listener it holds only while the popup is open, and the press goes on to reach the grid. **Under `ModalOverlay = true`** — a Consumer's global setting — the press is swallowed by the design system's overlay and only the Inner Popup closes. The grid acts on what reaches it; it does not reach past a design system's overlay to recover a press that system chose to consume, and that choice is recorded as the Consumer's |
 | the ▾ toggle closes it | unchanged, and closing the popover removes its contents — **the Inner Popup goes with them** |
 | instances stay independent (ADR-0018) | **the grid's own elements stay under its root**, without exception. What a Consumer's or Wrapper's Chrome opens is that design system's, and the core **does not assume** that everything its Chrome shows lies under the root — the rule above that returns focus from outside it is that non-assumption in practice |
