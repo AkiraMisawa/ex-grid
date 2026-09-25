@@ -30,7 +30,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -73,7 +73,7 @@ jobs:
     env:
       VERSION: ${{ needs.admit.outputs.version }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: packages
           path: packages
@@ -89,7 +89,7 @@ jobs:
           done
           [ "$(ls packages | wc -l)" -eq 4 ] || { echo "::error::the artifact holds more than the four expected files"; exit 1; }
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 

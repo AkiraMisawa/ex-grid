@@ -140,7 +140,7 @@ watch the trend in `spikes/render-bench/results/` instead):
 
 **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml),
 [ADR-0041](docs/adr/0041-ci-runs-every-layer-and-layer-three-gates-on-linux.md)) runs all
-three on every push to `main` and `dev/claude-code` and on every pull request. Layer 3 runs
+three on every push to `main` and on every pull request. Layer 3 runs
 on Linux, headed under xvfb, on the runner's installed Chrome and Edge. The soak and ST-1 at
 10⁶ rows run weekly, or on demand from the Actions tab. Coverage counts the shipped
 assemblies only and is reported, never gated: each run's summary carries the table, and the

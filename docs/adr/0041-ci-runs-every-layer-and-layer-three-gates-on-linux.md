@@ -15,8 +15,10 @@ scrollbars take their width out of the layout, which is the property ADR-0026 ne
 
 ## Decision
 
-**GitHub Actions runs all three layers on every push to `main` and `dev/claude-code`, and on
-every pull request. All three gate.**
+**GitHub Actions runs all three layers on every push to `main`, and on every pull request. All
+three gate.** *(Until 2026-09-25 this also named `dev/claude-code`, the branch work was gathered
+on before `main` took the merges. It was retired then, with the user's agreement: it held
+nothing `main` did not, and a second integration branch would only fall behind.)*
 
 - **Build, then layers 1 and 2**, on `ubuntu-latest`. The SDK comes from `global.json`, and the
   .NET 8 runtime is installed beside it, because the gating tests execute on `net8.0`

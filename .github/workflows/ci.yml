@@ -1,4 +1,4 @@
-# Every layer, on every push to main and dev/claude-code and on every pull request
+# Every layer, on every push to main and on every pull request
 # (ADR-0041). Layers 1 and 2 with coverage; layer 3 on the runner's installed Chrome and
 # Edge, headed under xvfb, as ADR-0026 asks. All three gate; coverage is reported, never
 # gated. The weekly run adds the soak and ST-1 at 10⁶ rows. The packages are packed and
@@ -8,7 +8,7 @@ name: CI
 
 on:
   push:
-    branches: [main, dev/claude-code]
+    branches: [main]
   pull_request:
   schedule:
     # Weekly long run: Monday 03:17 UTC.
@@ -49,9 +49,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
           # The gating tests execute on net8.0, the oldest supported runtime (ADR-0022).
@@ -81,7 +81,7 @@ jobs:
       - name: Coverage into the run's summary
         run: cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage/
@@ -92,13 +92,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 75
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -125,7 +125,7 @@ jobs:
 
       - name: Keep the run's records
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: layer3-records
           path: |
@@ -139,9 +139,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
           dotnet-version: 8.0.x
@@ -154,7 +154,7 @@ jobs:
       # What the release publishes: these files, not a rebuild. The feed is a dot directory,
       # so MSBuild's default globs leave it alone, and upload-artifact skips hidden paths
       # unless told otherwise.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages
           path: tests/ExGrid.PackageSmoke/.feed/
@@ -170,7 +170,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: coverage
           path: coverage
