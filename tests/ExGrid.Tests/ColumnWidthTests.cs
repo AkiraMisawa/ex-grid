@@ -24,6 +24,15 @@ public class ColumnWidthTests
         Assert.Throws<InvalidOperationException>(() => ColumnWidth.Auto.FixedPx);
     }
 
+    [Fact] // ADR-0016: an Auto width prints — reading it for a message or a log must not throw
+    public void Widths_and_specs_print_whether_auto_or_fixed()
+    {
+        Assert.Equal("Auto", ColumnWidth.Auto.ToString());
+        Assert.Equal("Fixed(120px)", ColumnWidth.Fixed(120).ToString());
+        Assert.Contains("Auto", new ColumnWidthSpec(ColumnWidth.Auto).ToString());
+        Assert.Contains("Fixed(120px)", new ColumnWidthSpec(ColumnWidth.Fixed(120)).ToString());
+    }
+
     [Fact] // ADR-0016: the spec's bounds must be coherent
     public void Spec_refuses_incoherent_bounds()
     {
@@ -33,11 +42,12 @@ public class ColumnWidthTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new ColumnWidthSpec(ColumnWidth.Auto, maxWidthPx: double.PositiveInfinity));
     }
 
-    [Fact] // ADR-0016 / FN-12: a Fixed width below its own MinWidth is refused, not clamped
-    public void A_fixed_width_below_min_width_is_refused_not_clamped()
+    [Fact] // ADR-0016 / FN-12: the spec leaves the MinWidth refusal to the column, which can name itself
+    public void A_spec_leaves_the_min_width_refusal_to_its_column()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => new ColumnWidthSpec(ColumnWidth.Fixed(10), minWidthPx: 40, maxWidthPx: 400));
+        // A declaration, not yet a column's: GridColumnTests pins where it is refused.
+        var below = new ColumnWidthSpec(ColumnWidth.Fixed(10), minWidthPx: 40, maxWidthPx: 400);
+        Assert.Equal(10d, below.Width.FixedPx);
 
         var valid = new ColumnWidthSpec(ColumnWidth.Fixed(120));
         Assert.Equal(120d, valid.Width.FixedPx);

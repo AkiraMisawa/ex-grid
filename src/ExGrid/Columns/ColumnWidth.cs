@@ -34,4 +34,10 @@ public readonly record struct ColumnWidth
         ? throw new InvalidOperationException(
             "An Auto width has no fixed pixel value; resolve it through its AutoWidth tracker (ADR-0016).")
         : _px;
+
+    /// <summary><c>Auto</c> or <c>Fixed(120px)</c>. Written by hand: the record's own
+    /// would read <see cref="FixedPx"/>, which throws for Auto, so printing a width for a
+    /// message or a log would throw instead.</summary>
+    public override string ToString()
+        => IsAuto ? "Auto" : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Fixed({_px}px)");
 }

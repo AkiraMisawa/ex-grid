@@ -154,6 +154,14 @@ computes — Auto and `SizeToFit` — and a Fixed width is refused only below `M
 the value the gesture leaves behind. A Consumer's typo such as `Fixed(4000)` is no longer
 refused. It shows as a column plainly too wide, not as something quietly wrong.
 
+*(Also decided with the user, the same day: where the refusal happens.)* `ColumnWidthSpec` is
+built before the column it goes into, so its refusal could not say which column it was. That
+matters for a ladder of generated columns. **The column refuses a Fixed width below its
+`MinWidth`, naming itself.** It also refuses a `default(ColumnWidthSpec)`, which has no bounds.
+The spec still checks its own bounds (`MinWidth` positive, `MaxWidth` at least `MinWidth`),
+since those need no column. A spec on its own may therefore hold a Fixed width below its
+`MinWidth` until it is given to a column. The grid only ever uses a spec through a column.
+
 The asymmetry is not an oversight, and the rule behind it is worth stating on its own: **the bound
 that stops a gesture is the one the same gesture cannot undo.** A column crushed to 2px has no grip
 left to grab; a column dragged too wide is dragged back. `MinWidth` protects against something

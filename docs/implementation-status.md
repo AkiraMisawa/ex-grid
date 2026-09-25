@@ -470,9 +470,13 @@ clean. The property is unchanged: the dependency points one way.
    `ColumnGestureTests` (layer 2), and by a real drag to 500px in `gestures.spec.mjs` (layer 3,
    run on the container's Chromium only; it fails with the core change reverted).
 
-   **Still open:** FN-12's pass condition says the refusal names the column, and it does not.
-   The spec is built before the column it goes into, so the message names the value and
-   `MinWidth`, not the column. This gap predates the rewrite.
+   **Closed the same day:** FN-12's pass condition says the refusal names the column. That had
+   never held, because the spec is built before its column. Decided with the user: the column
+   refuses now, naming itself, and a `default(ColumnWidthSpec)` too (`GridColumnTests`,
+   `ActionAndTemplateColumnTests`). This also turned up an older defect: an Auto
+   `ColumnWidth` could not be printed. The record's own `ToString` read `FixedPx`, which
+   throws for Auto, so logging a width, or the refusal's own message, threw instead. It
+   prints `Auto` or `Fixed(120px)` now.
 
 ## Where the exit criteria stand
 
