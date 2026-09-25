@@ -46,7 +46,12 @@ release in the Definition of Done's sense, and waits for Step 7.**
   2. It runs the whole of `ci.yml` on that commit: layers 1–3, and the `package` job below.
   3. It publishes **the very files that job tested**, not a rebuild, to nuget.org, along with the
      symbol packages.
-  4. It creates a GitHub prerelease for the tag, with the packages attached.
+  4. It creates a GitHub prerelease for the tag, with the packages attached. If the tag came
+     with a release of its own, which is what GitHub's release page makes, it completes that
+     one instead. It marks it prerelease, attaches the packages, and puts this note above what
+     the release already says. *(Added 2026-09-25: the first tag was made that way. The
+     workflow refused the second release after the packages were already on nuget.org, and
+     the release it left behind carried neither the packages nor the note.)*
 - **Trusted Publishing, not a stored key.** The publish job exchanges GitHub's OIDC token for a
   nuget.org key that lives an hour (`NuGet/login`). The only standing configuration:
   - a policy on nuget.org naming this repository and `release.yml`;
