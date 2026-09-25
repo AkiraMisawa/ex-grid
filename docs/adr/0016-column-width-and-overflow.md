@@ -243,6 +243,79 @@ were measured against. A Wrapper overrides the token and pays the obligation, ex
 and [ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md) already
 describe — nothing in the Wrapper contract changes except that it now hands back three numbers.
 
+### The defaults have to hold on every platform, not on one machine — decided
+
+*(Decided with the user, 2026-09-25.)* The paragraph above calls `system-ui, sans-serif` "the
+stack the widths above were measured against". **A stack is not a font.** `system-ui` is a
+different family on each operating system, so the table above holds for the machine it was
+measured on and says nothing about the others. Measured again on Linux (Chromium 141, headless,
+`system-ui` resolving to **DejaVu Sans**, 14px, tabular digits):
+
+| glyph | weight 400 | weight 600 | against the defaults |
+|---|---|---|---|
+| `0`–`9`, `$`, `¥`, `£`, `€` | 8.908 | **9.742** | digit class under by 0.68 |
+| **`−`, `+`, `#`** | **11.731** | **11.731** | **digit class under by 2.67** |
+| `%` | 13.303 | **14.028** | wide class under by 0.19 |
+| `-` (hyphen-minus) | — | 5.811 | narrow class under by 0.18 |
+| `,` `.` `(` `)` `/` `:` | up to 5.463 | up to **6.398** | narrow class under by 0.77 |
+| full-width (`評`, `あ`, `１`, …) | 14.000 | 14.000 | charged as a digit: under by 4.94 |
+
+This is the failure the whole ADR exists to prevent. A total row's `123,456,789,012.50` paints
+**157.7px** against an estimate of **155.0px**. The core decides it fits, the stylesheet cuts it,
+and the reader sees a number ending in an ellipsis. `#` at 11.731px breaks the fill as well:
+`floor(content width / digit width)` hashes are wider than the cell, so the `####` itself gets an
+ellipsis.
+
+**Each default is the widest value measured for its class on any platform the grid supports**
+(Chrome and Edge on Windows, macOS and Linux —
+[ADR-0017](./0017-target-chromium-browsers-only.md)). That is this ADR's rule — an early `####`
+costs a hover, a clipped number costs a misread — applied across platforms instead of inside one.
+It costs a slightly early `####` on the narrower families, which is the direction the rule allows.
+Windows and macOS are measured by hand, like the other checks only a person can run, and the
+numbers are recorded here. Until they are, the defaults are the widest measured so far.
+
+*(Open: which class `−`, `+` and `#` belong to, and how Latin letters in a header are charged.
+Both are with the user.)*
+
+## Size to fit on a double-click, and what a fit has to count — decided
+
+*(Decided with the user, 2026-09-25, after comparing the gestures with Excel's.)*
+
+**A double-click on a column's grip is Size to fit**, the same command as the column menu's. It
+is bounded by `[MinWidth, MaxWidth]`, like the menu entry. The user asked for a fit, but the
+width is one the grid computed, and `MaxWidth` bounds what the grid computes (see "Resizing by
+dragging" above). The consequence is accepted knowingly. A column dragged out to 600px (above the
+default `MaxWidth` of 400) comes back to 400 on a double-click, and a value needing 500 shows
+`####` again. The bound exists for text: a description column double-clicked to 2000px is the
+case it prevents. A number needing more than about 48 digits does not occur in practice. Excel's
+AutoFit has no bound; this is a deliberate difference.
+
+**A press and release on the grip without movement reports nothing.** The threshold is the 4px
+the reorder gesture already uses
+([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)). Before
+this, a click reported the column's current width, which turns an Auto column Fixed and puts it
+in the saved view — rewriting the view behind the user's back, as rejected at the top of this
+ADR. A double-click would do it on every first click.
+
+**Several whole columns move together**, as in Excel. When the grabbed column is covered by a
+whole-column range (every row, [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)'s
+Ctrl+Space), a drag gives every column covered by a whole-column range the new width, and a
+double-click fits each of them to its own content. The grid reports one `ColumnWidthChange` per
+column, so the Consumer's side does not change. A range that does not span every row selects
+cells, not columns, and does not take part.
+
+**What a fit counts in the header.** The header's required width is its label, **plus the menu
+button's band**, **plus the sort indicator's room when the column can be sorted**, whether it is
+sorted now or not. Auto counted the band and Size to fit did not; neither counted the indicator.
+The indicator is always counted because a column that grew when it was sorted would move every
+column to its right on a header click, and one that did not would chop its label.
+
+**Full-width characters are a fourth class, charged at 1em** — the font size. These are the
+characters whose East Asian Width is Wide or Fullwidth. CJK fonts are drawn on the em square, so
+this is the one width that does not depend on the family: 14.000px at 14px in every weight
+measured. Charged as a digit, they were 35% short, which chopped every Japanese header and left
+every Japanese text value's Auto width short.
+
 ## Columns appearing and disappearing, and saved views
 
 Data-derived columns come and go at runtime. Representing them is not a problem — **Column is a

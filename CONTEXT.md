@@ -390,6 +390,13 @@ format that replaces the default, and the width (`Auto | Fixed` plus `MinWidth` 
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
 _Avoid_: field, column definition
 
+**Size to fit**:
+Fixing a column's width at what its header and the fetched values need at that moment, bounded by
+its `MinWidth` / `MaxWidth`. It is asked for by the user, through a double-click on the column's
+edge or the column menu, and **it leaves a Fixed width**, unlike Auto, which is the grid's own and
+is not persisted ([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)).
+_Avoid_: autofit, auto-size (Excel's word, easily confused with an **Auto** width)
+
 **Pinned Column**:
 A column held against the Viewport's edge while the others pan under it — Excel's frozen panes.
 It stands **outside virtualisation and is always painted**, so it is the landmark that survives
