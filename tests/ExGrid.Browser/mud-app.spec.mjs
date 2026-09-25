@@ -212,10 +212,12 @@ test('WR-7: a Drawer toggle resizes the Fill grid and its geometry follows (ADR-
 test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018)', async ({ page }) => {
     await open(page);
 
+    // Each click is answered a round trip later on the Server host, so each is waited for.
     await clickCell(positions(page), 1, 1);
+    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
     await clickCell(orders(page), 1, 1);
+    await expect(orders(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
     const positionsFocus = await positions(page).getAttribute('aria-activedescendant');
-    expect(positionsFocus).toMatch(/-r1c1$/);
 
     // Keys in Orders move Orders alone: the capture-phase listener is on each root, never
     // on the document (ADR-0018).

@@ -104,7 +104,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 // keeping DOM focus on the control. That Escape is the popup's to close, and
                 // the next one is the grid's (ADR-0039). The popover's contents report the
                 // popup; C# tells this listener.
-                return innerPopup ? null : 'core';
+                //
+                // Counted here, not waited for: the report that the popup closed comes a
+                // round trip after this Escape on a Server circuit, and a second Escape
+                // typed inside it was left to a popup that was no longer there, so nothing
+                // closed the panel. A popup that ignores its Escape still gives up the
+                // next one, which is the rule as ADR-0039 states it.
+                if (innerPopup) {
+                    innerPopup = false;
+                    return null;
+                }
+                return 'core';
             }
             // A held Space engages once (ADR-0037). Space is a key that DOES
             // something — it fires a single action — and auto-repeat would fire it

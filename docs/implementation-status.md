@@ -561,6 +561,16 @@ clean. The property is unchanged: the dependency points one way.
      Fixed (ADR-0039): the core also asks for the root's focus before that render. Layer 2
      pins it (`PopoverKeyboardTests`), and the test now waits for the panel to close before
      clicking the cell under it. It passes 30 runs in 30 on the Server host.
+   - ~~**Found by CI's first Server-host run (on `chrome` and `msedge`)**~~. 274 passed and
+     6 failed, all on MudBlazor pages. Two failures were real, each on both browsers:
+     - Escape, Escape straight after an Inner Popup left the panel standing. The gate learned
+       of the popup's closing a round trip late.
+     - A value typed with its Enter applied nothing. Enter waited on Apply's disabled
+       button, which the circuit enables a round trip after the value.
+
+     Both are fixed (ADR-0039) and pinned at a 150 ms round trip in `circuit.spec.mjs`. The
+     other failures were tests reading a Focus or a paint straight after a click, and they
+     now wait for it.
 
    Until SRV-2 has run on `chrome` and `msedge`, the §24 claim is not
    made (ADR-0017 still states the WebAssembly premise).

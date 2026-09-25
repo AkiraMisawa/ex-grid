@@ -177,6 +177,55 @@ for (const [what, column, open, closes] of [
     });
 }
 
+// The Wrapper's filter panel, on Notional (a condition, so an operator), with the keyboard
+// in the operator.
+async function openMudNotionalPanel(page) {
+    await page.goto('/features?chrome=mud');
+    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    await clickCell(page, 1, 2);
+    await page.keyboard.press('Alt+ArrowDown');
+    await grid(page).locator('.ex-popover [role=menuitem]', { hasText: 'Filter' }).click();
+    const panel = grid(page).locator('.mud-ex-grid-filter');
+    await expect(panel).toBeVisible();
+    return panel;
+}
+
+test('a value typed and Enter pressed at once apply the condition (KB-31, SRV-5)', async ({ page }) => {
+    const panel = await openMudNotionalPanel(page);
+    const before = await grid(page).getAttribute('aria-rowcount');
+    await panel.getByRole('combobox', { name: 'Operator' }).click();
+    await page.locator('.mud-popover-open .mud-list-item', { hasText: /^>$/ }).click();
+    await expect(page.locator('.mud-popover-open .mud-list-item')).toHaveCount(0);
+    await setRoundTrip(150);
+
+    // Apply is unavailable until the value is given (WR-2), and the value reaches the
+    // circuit a round trip after it is typed. The Enter typed with it is the user's
+    // request to apply that value, not a key to drop because the button had not caught up.
+    const operand = panel.locator('.mud-ex-grid-filter-operand input');
+    await operand.fill('3000000');
+    await operand.press('Enter');
+
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await expect.poll(() => grid(page).getAttribute('aria-rowcount')).not.toBe(before);
+});
+
+test('Escape, Escape straight after an Inner Popup closes it and then the panel (ADR-0039, SRV-5)', async ({ page }) => {
+    const panel = await openMudNotionalPanel(page);
+    await panel.getByRole('combobox', { name: 'Operator' }).click();
+    await expect(page.locator('.mud-popover-open .mud-list-item').first()).toBeVisible();
+    // The report that the list is open has reached the key gate before the round trip grows.
+    await page.waitForTimeout(300);
+    await setRoundTrip(150);
+
+    // The first is the list's; the second, typed before the list's closing could be
+    // reported back, is the grid's (ADR-0039).
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+
+    await expect(page.locator('.mud-popover-open')).toHaveCount(0);
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+});
+
 test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
     // The document as the server sends it, before any script has run.

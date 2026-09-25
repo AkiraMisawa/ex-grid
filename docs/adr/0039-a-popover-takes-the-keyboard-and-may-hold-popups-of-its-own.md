@@ -132,6 +132,21 @@ under both `ModalOverlay` settings, with two grids on the page and with one insi
 If a row of the table above turns out wrong in a real browser, it is corrected here, as the
 prediction it replaces was.
 
+*(Refined 2026-09-25, when CI first ran layer 3 against the Blazor Server host.)* Two things the
+table promises were being lost on a circuit. Neither prediction had considered it; both were
+found in a real browser and fixed as follows.
+- **The Escape after an Inner Popup's own is the grid's, counted by the gate.** The report
+  that the popup closed arrives a round trip after the Escape that closed it. A second Escape
+  typed inside that round trip was still left to a popup that was gone, so the panel stood.
+  The gate now clears its record of the popup when it leaves an Escape to it. The next Escape
+  is the grid's whatever the report says, which is the row above as it was written.
+- **Enter in a value field applies a value typed with it.** The Wrapper's Enter was the
+  browser's implicit submission, gated by Apply's `disabled` button. On a circuit the button
+  is enabled a round trip after the value, so an Enter typed with the value submitted
+  nothing. The form's default button is now a hidden one that is never disabled. Apply
+  refuses on the circuit while it is unavailable, and there the value has already arrived
+  (WR-2 unchanged: Apply still shows it is unavailable).
+
 **No JavaScript is added**: every focus move is Blazor's `FocusAsync`, and the allowlist does not
 grow. The reported Inner Popup is one more state of the capture-phase listener the allowlist
 already holds — set from C#, as the editor's mode is — and not a new use.
