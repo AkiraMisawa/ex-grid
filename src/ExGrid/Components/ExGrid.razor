@@ -1912,7 +1912,7 @@
             {
                 await _scrollHandle.InvokeVoidAsync("setCanEdit", canEdit);
             }
-            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
             }
         }
@@ -1932,7 +1932,7 @@
                 if (!_editorIsChrome)
                     await _editorElement.FocusAsync();
             }
-            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
             }
         }
@@ -2013,7 +2013,7 @@
             _listening = true;
             StateHasChanged();
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -2050,7 +2050,7 @@
             // order; looping on the flag lands the last position and drops the rest.
             while (_scrollPending && !_disposed);
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
         finally
@@ -2119,7 +2119,7 @@
         {
             await _scrollHandle.InvokeVoidAsync("forgetPointer");
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -2181,7 +2181,7 @@
         {
             await _scrollHandle.InvokeVoidAsync("setPointerReporting", rows, rest);
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -2428,7 +2428,7 @@
         {
             await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left);
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -3021,7 +3021,7 @@
         {
             await _scrollHandle.InvokeVoidAsync("writeCopy", withHeaders);
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
             // The circuit or the module is gone; the clipboard stays as it was, which is
             // the refusing grid's contract (ADR-0005).
@@ -3222,7 +3222,7 @@
         {
             await _scrollHandle.InvokeVoidAsync("setInnerPopup", _innerPopupOpen);
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -3265,7 +3265,7 @@
         {
             await element.FocusAsync();
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -4269,7 +4269,7 @@
                 _ => "none",
             });
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -4756,7 +4756,7 @@
         {
             await _root.FocusAsync(preventScroll: true);
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -4769,7 +4769,7 @@
         {
             await _scrollHandle.InvokeVoidAsync("blur");
         }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -5081,18 +5081,31 @@
         }
         try
         {
-            if (_scrollHandle is not null)
+            try
             {
-                // Releasing the .NET reference does not run the handle's own dispose;
-                // a grid gives back what it took (ADR-0018).
-                await _scrollHandle.InvokeVoidAsync("dispose");
-                await _scrollHandle.DisposeAsync();
+                if (_scrollHandle is not null)
+                {
+                    // Releasing the .NET reference does not run the handle's own dispose;
+                    // a grid gives back what it took (ADR-0018).
+                    await _scrollHandle.InvokeVoidAsync("dispose");
+                    await _scrollHandle.DisposeAsync();
+                }
             }
-            if (_module is not null)
-                await _module.DisposeAsync();
-        }
-        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
-        {
+            // OperationCanceledException: a Blazor Server circuit going away cancels
+            // every JS call still pending, these among them — as benign as a disconnect,
+            // and left unhandled it ended the circuit with an error in the host log
+            // (CON-6). Caught per resource, so one failing does not skip the next.
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
+            try
+            {
+                if (_module is not null)
+                    await _module.DisposeAsync();
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
         }
         finally
         {

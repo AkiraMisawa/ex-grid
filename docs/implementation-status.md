@@ -282,8 +282,13 @@ it has met `chrome` or `msedge`.
 - Layer 3 on Server: the specs that were only ever passing because WebAssembly answers
   within the same frame — a Focus, an editor, a menu or a clipboard read straight after
   the gesture — now wait for the answer; with that, what still fails on Server is the
-  three defects listed under "What is left" (6), plus the MudBlazor pages' web font, which
+  four defects listed under "What is left" (6), plus the MudBlazor pages' web font, which
   the container's egress fails intermittently on either host (`ERR_TOO_MANY_RETRIES`).
+- One more circuit-only defect found by that run and fixed: a Server circuit going away
+  cancels every JS call still pending, and the cancellation of the grid's own disposal
+  calls was not among the failures it expected, so it ended the circuit with an error in
+  the host log. The core and the Wrapper now treat a canceled call as a disconnect, and
+  each disposal is attempted on its own.
 - SRV-6 (observational, container, not a trend): the band stands on the row a round trip
   plus about 20 ms after the pointer crosses onto it — 20 / 67 / 172 ms median at 0 / 50 /
   150 ms — and a sweep while scrolling carries 47–55 frames a second up the circuit
@@ -472,7 +477,7 @@ clean. The property is unchanged: the dependency points one way.
      candidate does not apply a filter rests on the browser's implicit-submission rule, and
      is owed a manual check with a Japanese IME on both browsers.
 
-6. **Blazor Server — three defects found by layer 3 on 2026-09-25, awaiting decisions.**
+6. **Blazor Server — four defects found by layer 3 on 2026-09-25, awaiting decisions.**
    Each is a keyboard or focus hand-off that WebAssembly completes within one frame and a
    circuit completes a round trip later; each is Server-only, and none is fixed yet,
    because each widens a decision (ADR-0010's hold, or ADR-0039's menu keys):
@@ -487,6 +492,10 @@ clean. The property is unchanged: the dependency points one way.
    - **A focus request from an earlier render can land after a newer gesture**: the
      MudBlazor menu focuses its first item after the user has already dismissed it by
      pressing elsewhere, and DOM focus ends up on nothing (KB-17 under the mud Chrome).
+   - **An Escape pressed straight after an Inner Popup opens** is taken by the grid's gate,
+     which is told about the popup a round trip later (ADR-0039's `setInnerPopup`), so it
+     is not the popup's to close (FN-21's "Escape closes the date calendar first", under
+     the mud Chrome).
 
    Until they are settled the §24 claim is not made (ADR-0017 still states the WebAssembly
    premise). SRV-2 also owes its run on `chrome` and `msedge`.

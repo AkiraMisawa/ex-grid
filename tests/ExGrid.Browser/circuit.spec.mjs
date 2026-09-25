@@ -104,6 +104,28 @@ test('a clipboard write the browser rejects is refused by name (CP-23)', async (
     await expect(page.locator('#copy-status')).toContainText('ClipboardUnavailable');
 });
 
+test('keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5)', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await openFeatures(page);
+    await clickCell(page, 0, 1);
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('Shift+F10');
+    const menu = grid(page).locator('.ex-popover[role=menu]');
+    await expect(menu).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.activeElement?.textContent?.trim())).toBe('Copy');
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+    await setRoundTrip(150);
+
+    // ↓ chooses "Copy with headers"; Enter, typed straight after, runs it. The menu's own
+    // DOM focus moves a round trip after the ↓, and a key resolved against the item that
+    // holds focus when it lands would run "Copy" instead — the other copy, quietly.
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 })
+        .toMatch(/^Trader\r?\n/);
+});
+
 test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
     // The document as the server sends it, before any script has run.

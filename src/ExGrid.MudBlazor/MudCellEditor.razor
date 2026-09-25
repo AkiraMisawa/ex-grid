@@ -40,7 +40,7 @@
             // Blazor's own FocusAsync — focus stays out of JavaScript (ADR-0021).
             await _input.FocusAsync();
         }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
