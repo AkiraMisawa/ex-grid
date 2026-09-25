@@ -10,9 +10,9 @@ Every entry names the reason it cannot be done from Blazor.
 
 | Interop | Why Blazor cannot do it |
 |---|---|
-| **Capture-phase `keydown` on the grid root** (with `blur()` on that same root — see below) | Blazor's `@onkeydown` only sees the bubble phase, by which point the cell editor has already moved the caret. Capture is the whole point ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)), and the listener must be scoped to the instance root, not `document` ([ADR-0018](./0018-multiple-instances-must-be-independent.md)). |
+| **Capture-phase `keydown` on the grid root** (with `blur()` on that same root — see below) | Blazor's `@onkeydown` only sees the bubble phase, by which point the cell editor has already moved the caret. Capture is the whole point ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)), and the listener must be scoped to the instance root, not `document` ([ADR-0018](./0018-multiple-instances-must-be-independent.md)). *(Since 2026-09-25 it also holds the keys that follow a mode-changing key until C# has answered, and replays them in order — ADR-0010. When a taken key is forwarded is the same decision as whether it is: it cannot wait for a round trip.)* |
 | **Reading and setting `scrollTop` / `scrollLeft`** | Blazor's scroll event args carry no scroll offset, and there is no way to set it from C#. Virtualisation needs both directions ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md), [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md) — Focus must stay visible). |
-| **Clipboard: `copy` / `paste` events and the async Clipboard API** | Writing two MIME types in one operation, and resolving a `ClipboardItem` from a promise, have no C# equivalent ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md), [ADR-0017](./0017-target-chromium-browsers-only.md)). |
+| **Clipboard: `copy` / `paste` events and the async Clipboard API** | Writing two MIME types in one operation, and resolving a `ClipboardItem` from a promise, have no C# equivalent ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md), [ADR-0017](./0017-target-chromium-browsers-only.md)). *(Since 2026-09-25 a paste crosses as JS stream references rather than two strings in one call, so a Blazor Server hub's message limit cannot end the circuit — ADR-0005.)* |
 | **A `ResizeObserver` reporting the Scrollbar Gutter** | Added while wiring the keyboard; the paragraph below is the argument. |
 | **A `mousemove` listener reporting the pointer — when it moves onto another row, and when it comes to rest** | Added when two decisions needed it at once; the section after the gutter's is the argument. Blazor's `@onmousemove` has no client-side predicate: every event crosses to .NET, and on Blazor Server every crossing is a wire round trip. |
 
@@ -130,10 +130,16 @@ predicate on `@onmousemove`. That is ground 1 of the two below, not ground 2.
 change costs one call per row crossed — a fast vertical sweep is perhaps twenty to thirty a
 second, and each paints one overlay element per layer, the Focus band's mechanism, which
 ADR-0008 measured at 2.1 ms worst case. The number that is *not* known is a Server host under
-a sweep while scrolling, and it is still not known: the repository has no Blazor Server host —
-the DemoHost's "Server" page is a WebAssembly page driving a fetching source — so the
-measurement waits for one, and a `spikes/render-bench` mode for the band's own paint is still
-to be added. Both are recorded here as owed. Timing never gates
+a sweep while scrolling. *(Until 2026-09-25 the repository had no Blazor Server host — the
+DemoHost's "Server" page was a WebAssembly page driving a fetching source, and is now named
+`/fetch`. `samples/ExGrid.DemoHost.Server` now exists
+([ADR-0019](./0019-one-repository-many-packages.md)), and the measurement is an opt-in layer-3
+spec, `EXGRID_MEASURE=pointer`, run against it: the calls that cross the circuit per second of
+a sweep, and the lag from the pointer crossing a row to the band repainting, at an injected
+round trip of 0, 50 and 150 ms — a loopback TCP proxy delays both directions, since the
+browser's own network throttling is not reliably applied to a WebSocket. The numbers are
+recorded in `verification/`, never as a gate.)* A `spikes/render-bench` mode for the band's own
+paint is still to be added, and is still owed. Timing never gates
 ([definition of done](../definition-of-done.md)); if the measured cost is bad on Server, the
 answer is the switch each report already has, not a return to per-frame events.
 

@@ -223,6 +223,50 @@ meets every day. **Layer 3 is where that answer lives**: the suite asserts that 
 writes without a prompt on Chrome and on Edge, and if one appears that is a finding, recorded
 against this section, not a surprise in the field.
 
+## What the Blazor Server host settled *(added 2026-09-25)*
+
+The routes above were wired and verified on WebAssembly only. Designing the Server host
+(the grilling session that also produced [ADR-0019](./0019-one-repository-many-packages.md)'s
+second host) read them against a circuit and found two ways each could fail quietly, and one
+way paste could take the whole session down. Nothing above is reversed; three things are
+added.
+
+**Paste crosses as a stream, on both hosts.** The `paste` event handed both flavours to .NET
+as two strings in one interop call. On a circuit that call is one incoming hub message, and
+SignalR closes the connection on a message over its receive limit — 32 KB unless the
+Consumer's application raises it. Excel's `text/html` for an ordinary few hundred cells is
+past that, so the most ordinary paste this component exists for would have ended the user's
+session. The flavours now cross as JS stream references (Blazor's own mechanism for large
+interop data), which the hub limit does not apply to. One route for both hosts, because a
+branch by host is a second path that only one host's tests would exercise. This is a change
+of wiring inside the clipboard entry of
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md), not a new use.
+
+**A stream needs a ceiling, and a paste past it is refused whole** — `PasteByteCap`, 16 MB
+across both flavours by default, a Consumer parameter like the copy cap, raised as a
+**Refusal** with its own reason (`PasteRefusalReason.TooLarge`) before any of it is read on
+the .NET side. On Server the ceiling is also what stops one client from filling the server's
+memory. **There is no fallback to `text/plain` when only the HTML flavour is too large.** The
+HTML flavour is preferred because Excel's `x:num` carries the raw value at full precision
+(the paste section above); the text flavour is the display format, already rounded. Falling back would paste rounded money exactly where
+the paste is largest and least checkable — the smaller number, quietly. The cap sits on what
+cannot be executed, not on the selection
+([ADR-0014](./0014-paste-shape-rules-and-selection-count.md)).
+
+**A write the browser refuses is a Refusal, not a silence.** `navigator.clipboard.write`
+rejecting with `NotAllowedError` was swallowed on the reasoning that nothing landed, which
+is this ADR's contract. But this ADR's refusals are *named*: a user told nothing believes the
+copy happened and pastes whatever the clipboard held before. It is raised through
+`OnCopyRefused` with its own reason (`CopyRefusalReason.ClipboardUnavailable`). Every host
+can meet it; a Server host meets it more often, because a menu copy's write starts only after
+the click has made a round trip.
+
+**The event route does not exist on Server, as already recorded above** — the sync channel
+is WebAssembly's. So on a Server host every copy, however small, takes the asynchronous route
+and CP-6's "the `copy` event route" is a WebAssembly criterion; what it protects — no
+permission prompt on an everyday copy — is asserted on Server instead (§24 of the
+[Definition of Done](../definition-of-done.md)).
+
 ## Consequences
 
 - **It presupposes the selection model** — rectangular ranges (anchor plus focus), whole rows and

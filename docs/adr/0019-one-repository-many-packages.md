@@ -34,6 +34,19 @@ is in the solution and under the repository-wide build properties, because letti
 layer's fixture rot would break that layer. It is not shipped, so ADR-0022's target pin does
 not apply to it; it targets the SDK-bundled ASP.NET Core runtime.)*
 
+*(Refined 2026-09-25, when the grid was first run under Blazor Server: **one set of pages, two
+hosts.** The pages and their data moved into `samples/ExGrid.DemoPages`, a Razor class
+library. `samples/ExGrid.DemoHost` stays exactly what it was — a standalone WebAssembly
+host, the first Consumer's shape ([ADR-0017](./0017-target-chromium-browsers-only.md)) — and
+now only hosts those pages. `samples/ExGrid.DemoHost.Server` hosts the same pages as a Blazor
+Web App in `InteractiveServer` render mode with prerendering on, which is what a Consumer gets
+by default. Rejected: **converting the DemoHost into a Blazor Web App serving both modes** —
+the WebAssembly fixture would silently become a hosted one, and what layer 3 verified would
+change under it; and **a separate Server host with pages of its own** — two copies of every
+page, one of which rots. Both hosts follow the reference rule above; nothing references
+either. The browser layer chooses its host with `EXGRID_HOSTING`, and WebAssembly stays the
+default.)*
+
 ## Reasons
 
 **Far more is shared than differs.** Early in the design, three options were left open — a shared
