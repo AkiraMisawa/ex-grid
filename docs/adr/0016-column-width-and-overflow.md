@@ -33,7 +33,17 @@ Rejected:
   notifying width changes and **rewriting the user's saved view without their knowledge**.
 - **Drop the formatting** (remove thousands separators, use exponent notation) — `1.23E+09` is
   unreadable as a monetary amount, and losing the thousands separator invites a different
-  misreading of its own.
+  misreading of its own. *(Checked against Excel on 2026-09-25, with the user.)* This is the
+  one place Excel and this grid look different, and less different than it seems. Excel does
+  this only for the **General** format. It rounds, then switches to exponent notation, and it
+  still shows `####` for any number with a fixed format and for every date. This grid has no
+  General format. Every column carries its format, so Excel's own rule for a formatted number
+  is the rule here.
+- **Let text spill into the empty cell to its right**, as Excel does *(rejected with the user,
+  2026-09-25)*. Whether a value is readable would then depend on its neighbour being empty, so
+  the same column reads differently row by row, and a neighbour scrolled out of the Viewport
+  would still change what is painted. Text is cut with an ellipsis: visibly cut, and the same
+  in every row.
 
 ## Three ways to see the real value behind `####`
 
@@ -107,6 +117,12 @@ them. The column menu entry in
 would require the Consumer to compute the maximum width server-side and pass it in; that is
 overkill for now.
 
+*(Settled with the user on 2026-09-25.)* "Fetched" means **the whole Window**, not only the rows
+being painted. Auto measures the painted rows because it runs on every push. Size to fit runs
+once, when somebody asks for it, so a pass over the Window costs nothing that matters. Measuring
+only the painted rows would fit the column and then show `####` a few rows further down. After an
+explicit "fit", that is the wrong surprise.
+
 ## Resizing by dragging — decided
 
 The three assumptions above are now a gesture. **A grip in the right-hand edge of the header cell;
@@ -116,6 +132,11 @@ painted row's markup on every `pointermove`. The guide line is one absolutely po
 moving over the top — the same mechanism, and the same reason, as the selection Overlay
 ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). It is also what Excel does, which is
 the operability this component's name claims.
+
+Excel also shows the width as a number beside the pointer ("Width: 8.43 (64 pixels)"). **This
+grid does not** *(decided with the user, 2026-09-25)*. Setting a width by its number is
+something people do when laying out a sheet for print, not when reading a grid. The guide line
+already shows where the edge will land.
 
 `new width = width at drag start + (clientX − clientX at drag start)` needs no layout read, so
 [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) is untouched. A drag ends a column's
