@@ -1,13 +1,15 @@
 namespace ExGrid.Columns;
 
 /// <summary>
-/// The width declaration a column carries: Auto or Fixed, bounded by
-/// [<see cref="MinWidthPx"/>, <see cref="MaxWidthPx"/>] (ADR-0016). MaxWidth is what
-/// gives <c>####</c> meaning — without an upper bound the column would keep growing and
-/// overflow could never occur. A declared Fixed width outside the bounds is refused,
-/// not clamped: a declaration that contradicts its own bounds is an error, not an
-/// intent. (<c>default(ColumnWidthSpec)</c> has zero bounds and is not a valid spec —
-/// the same tolerated struct-default hole as <c>default(SelectionRange)</c>.)
+/// The width declaration a column carries: Auto or Fixed, with a
+/// <see cref="MinWidthPx"/> under everything and a <see cref="MaxWidthPx"/> over what the
+/// grid computes (ADR-0016). MaxWidth is what gives an Auto column's <c>####</c> meaning:
+/// without an upper bound the column would keep growing and overflow could never occur.
+/// It does not bound a Fixed width, which is the user's: a drag goes past it, and the
+/// Consumer records the drag as a Fixed width, so a Fixed width above MaxWidth is kept.
+/// A Fixed width below MinWidth is refused, not clamped. (<c>default(ColumnWidthSpec)</c>
+/// has zero bounds and is not a valid spec — the same tolerated struct-default hole as
+/// <c>default(SelectionRange)</c>.)
 /// </summary>
 public readonly record struct ColumnWidthSpec
 {
@@ -19,9 +21,9 @@ public readonly record struct ColumnWidthSpec
     /// metrics, so an untouched Auto column effectively never hashes (ADR-0016).</summary>
     public const double DefaultMaxWidthPx = 400;
 
-    /// <summary>A width bounded by [<paramref name="minWidthPx"/>,
-    /// <paramref name="maxWidthPx"/>]. A declared Fixed width outside the bounds is
-    /// refused, not clamped (ADR-0016).</summary>
+    /// <summary>A width with its bounds. A Fixed width below <paramref name="minWidthPx"/>
+    /// is refused, not clamped; one above <paramref name="maxWidthPx"/> is kept, because
+    /// MaxWidth bounds only what the grid computes (ADR-0016).</summary>
     public ColumnWidthSpec(
         ColumnWidth width,
         double minWidthPx = DefaultMinWidthPx,
@@ -33,9 +35,9 @@ public readonly record struct ColumnWidthSpec
         if (!double.IsFinite(maxWidthPx) || maxWidthPx < minWidthPx)
             throw new ArgumentOutOfRangeException(nameof(maxWidthPx), maxWidthPx,
                 "MaxWidth is finite and at least MinWidth.");
-        if (!width.IsAuto && (width.FixedPx < minWidthPx || width.FixedPx > maxWidthPx))
+        if (!width.IsAuto && width.FixedPx < minWidthPx)
             throw new ArgumentOutOfRangeException(nameof(width), width.FixedPx,
-                $"A declared Fixed width must lie within [{minWidthPx}, {maxWidthPx}] — refused, not clamped (ADR-0016).");
+                $"A Fixed width must be at least MinWidth ({minWidthPx}) — refused, not clamped (ADR-0016).");
 
         Width = width;
         MinWidthPx = minWidthPx;
@@ -50,7 +52,8 @@ public readonly record struct ColumnWidthSpec
     public double MinWidthPx { get; }
 
     /// <summary>The upper bound on what the grid computes — the Auto width and Size to
-    /// fit — and on a declared Fixed width. It does not stop a user's drag (ADR-0016).</summary>
+    /// fit. It does not stop a user's drag, and it does not bound a Fixed width, which is
+    /// how the Consumer records one (ADR-0016).</summary>
     public double MaxWidthPx { get; }
 
     /// <summary>A width brought within [<see cref="MinWidthPx"/>, <see cref="MaxWidthPx"/>].</summary>

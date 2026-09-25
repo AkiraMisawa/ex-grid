@@ -109,6 +109,27 @@ public class ColumnGestureTests : GridTestContext
         Assert.Equal(700, change.WidthPx); // 100 + 600 — past MaxWidth, deliberately
     }
 
+    [Fact] // ADR-0016 / FN-12: a drag past MaxWidth, recorded as it came, is painted at that width
+    public async Task A_width_dragged_past_max_width_round_trips_through_the_consumer()
+    {
+        ColumnWidthChange? change = null;
+        var cut = RenderGrid(onWidth: c => change = c);
+
+        await cut.FindAll(".ex-resize-grip")[1].MouseDownAsync(new MouseEventArgs { Button = 0, ClientX = 200 });
+        await cut.Find(".ex-grid").MouseUpAsync(new MouseEventArgs { Button = 0, ClientX = 800 });
+        Assert.Equal(700, change!.WidthPx);
+
+        // The Consumer records the drag the obvious way — a Fixed width with the default
+        // bounds, whose MaxWidth (400) the drag went past — and pushes the columns back.
+        var columns = TestRows.Wide(6);
+        columns[1] = new GridColumn<TestRow>(columns[1].Name, columns[1].Type, columns[1].Value,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(change.WidthPx)));
+        cut.Render(ps => ps.Add(g => g.Columns, columns));
+
+        var header = cut.FindAll(".ex-header-cell")[1].GetAttribute("style")!;
+        Assert.Contains("width: 700px", header);
+    }
+
     [Fact] // ADR-0011: a header drag past the threshold reorders; the grid only notifies
     public async Task A_header_drag_reorders_on_release()
     {

@@ -460,6 +460,20 @@ clean. The property is unchanged: the dependency points one way.
    A stable version still owes a review of the public C# surface, which nothing has decided
    yet (ADR-0042).
 
+7. **`MaxWidth` bounds only what the grid computes (ADR-0016, FN-12 rewritten 2026-09-25).**
+   Decided with the user. The contradiction came up while documenting the public API. ADR-0016
+   let a drag go past `MaxWidth`, but FN-12 refused any Fixed width above it. So a Consumer who
+   recorded the drag as a Fixed width got an exception, and so did restoring a saved view. The
+   DemoHost worked around it by raising `MaxWidth` with each drag. Now a Fixed width is refused
+   only below `MinWidth`. The workaround is gone: the DemoHost records the drag with the
+   column's own bounds. Pinned by `ColumnWidthTests` (layer 1), by a round trip in
+   `ColumnGestureTests` (layer 2), and by a real drag to 500px in `gestures.spec.mjs` (layer 3,
+   run on the container's Chromium only; it fails with the core change reverted).
+
+   **Still open:** FN-12's pass condition says the refusal names the column, and it does not.
+   The spec is built before the column it goes into, so the message names the value and
+   `MinWidth`, not the column. This gap predates the rewrite.
+
 ## Where the exit criteria stand
 
 **No open question in §21.** Settled this run, each with its trigger: the Action-Column

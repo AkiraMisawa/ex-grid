@@ -68,6 +68,23 @@ test('a resize drag with a real mouse applies on release (ADR-0016)', async ({ p
     await expect(grid(page).locator('.ex-header-cell').nth(1)).toHaveAttribute('aria-sort', 'none');
 });
 
+test('a drag past MaxWidth is recorded as it came and painted at that width (ADR-0016, FN-12)', async ({ page }) => {
+    await open(page);
+    const cell = await grid(page).locator('.ex-header-cell').nth(1).boundingBox();
+
+    // Trader is 120px under the default bounds [40, 400]; 380px more takes it to 500.
+    await page.mouse.move(cell.x + cell.width - 2, cell.y + cell.height - 10);
+    await page.mouse.down();
+    await page.mouse.move(cell.x + cell.width + 378, cell.y + cell.height - 10, { steps: 6 });
+    await page.mouse.up();
+
+    // The page records it as Fixed(500) with the column's own bounds — no raised MaxWidth —
+    // and the grid paints what it was given.
+    await expect(page.locator('#width-status')).toContainText('Trader=500');
+    await expect.poll(async () => Math.round((await grid(page).locator('.ex-header-cell').nth(1).boundingBox()).width))
+        .toBe(500);
+});
+
 test('pasting onto an off-screen selection works, and the indicator showed first (PST-3)', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page);
