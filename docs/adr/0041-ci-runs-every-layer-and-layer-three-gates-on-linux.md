@@ -28,6 +28,10 @@ nothing `main` did not, and a second integration branch would only fall behind.)
 - **Layer 3 on the installed Chrome and Edge, headed**, under `xvfb`: the project's own
   `playwright.config.mjs`, both projects, unchanged. Headed matters for the reason ADR-0026
   gives: headless keeps overlay scrollbars on some platforms. A failure turns the run red.
+  *(Since 2026-09-25 there are two such jobs. The second runs the same suite against the Blazor
+  Server host (`EXGRID_HOSTING=server`, ADR-0019), and it gates too. That run is the Definition
+  of Done's SRV-2, on both browsers. It is a job of its own, not a matrix entry, so the
+  WebAssembly job keeps its check name.)*
   - The **observational** specs still only record: each asserts that it measured something and
     never gates on the number (ADR-0026, "performance never gates").
   - The records a run writes — `console.json`, `metrics.json` — and any failure's trace are

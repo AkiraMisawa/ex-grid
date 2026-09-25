@@ -196,7 +196,7 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   `tests/ExGrid.Browser`, or `nix develop .#browser -c npx playwright test`. It needs Chrome and
   Edge installed and starts the DemoHost itself, and it runs **deliberately on Windows or
   Linux**, where the platform's own scrollbars occupy layout and the assertions are not
-  tautologies. CI runs it on Linux on every push; **Windows (VZ-14) and a real IME are still
+  tautologies. CI runs it on Linux on every push, against both hosts; **Windows (VZ-14) and a real IME are still
   runs by hand**, and a CI artifact does not file the Step 4 record in `verification/`.
   `tests/ExGrid.Browser/README.md` says what it asserts and what it deliberately does not.
 

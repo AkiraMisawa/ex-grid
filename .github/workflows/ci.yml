@@ -133,6 +133,57 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+  # The same suite against the Blazor Server host (ADR-0019, Definition of Done SRV-2):
+  # every page served over a circuit, prerendered, behind latency-proxy.mjs, with the host's
+  # own log read for CON-6. A job of its own rather than a matrix entry, so the WebAssembly
+  # job keeps its check name.
+  browser-server:
+    name: Layer 3 on Chrome and Edge against the Server host (Linux, headed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
+
+      - name: The installed browsers the suite resolves by channel
+        run: |
+          google-chrome --version
+          microsoft-edge --version
+
+      - name: Install the suite
+        working-directory: tests/ExGrid.Browser
+        run: npm ci
+
+      - name: Build the Server host
+        run: dotnet build samples/ExGrid.DemoHost.Server
+
+      - name: Layer 3 against the Server host, headed under xvfb
+        working-directory: tests/ExGrid.Browser
+        env:
+          EXGRID_HOSTING: server
+          EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" npx playwright test
+
+      - name: Keep the run's records
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: layer3-records-server
+          path: |
+            verification/
+            tests/ExGrid.Browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
   package:
     name: Packages, taken as a Consumer takes them
     runs-on: ubuntu-latest

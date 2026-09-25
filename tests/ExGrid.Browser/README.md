@@ -19,7 +19,7 @@ A machine without Edge fails the `msedge` project by name — the honest outcome
 
 **CI runs this suite on every push and pull request** (ADR-0041): Linux, the runner's
 installed Chrome and Edge, headed under `xvfb-run`, with this directory's own config
-unchanged. A failure turns the run red. Each run keeps `console.json`, `metrics.json` and any
+unchanged — once against each host, in two jobs. A failure in either turns the run red. Each run keeps `console.json`, `metrics.json` and any
 failure's trace as artifacts. The weekly run, or a dispatch asking for the long run, adds the
 soak (`EXGRID_SOAK=1`). The VZ-14 test still skips itself off Windows, so it stays a run by
 hand.
