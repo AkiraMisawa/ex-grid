@@ -263,3 +263,19 @@ rules that make this safe:
 - **Do not stop at an intermediate task while unblocked work remains.** Finishing a step is not
   finishing the task. If something is genuinely blocked, name what blocks it and carry on with
   everything that is not.
+
+## Agent skills
+
+Project skills from [mattpocock/skills](https://github.com/mattpocock/skills) live in
+`.claude/skills/`: `/grill-with-docs` (with `grilling` and `domain-modeling`), `tdd` (with
+`codebase-design`), `/to-spec`, and `/setup-matt-pocock-skills`. They are ordinary files; where
+one disagrees with this document, this document wins.
+
+### Issue tracker
+
+Specs and tickets are markdown files under `docs/specs/<feature-slug>/`. See
+`docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
