@@ -18,6 +18,7 @@ internal sealed class GridJSInterop
     private readonly JSRuntimeInvocationHandler _setOffset;
     private readonly JSRuntimeInvocationHandler _blur;
     private BunitJSModuleInterop? _module;
+    private BunitJSModuleInterop? _handle;
 
     private GridJSInterop(
         JSRuntimeInvocationHandler<ScrollOffset> offset,
@@ -100,6 +101,7 @@ internal sealed class GridJSInterop
         return new GridJSInterop(offset, setOffset, blur, dispose)
         {
             _module = module,
+            _handle = handle,
             PointerReporting = setPointerReporting,
             PointerForgotten = forgetPointer,
             InnerPopupTold = setInnerPopup,
@@ -117,6 +119,13 @@ internal sealed class GridJSInterop
     /// <summary>Every pair the grid told the browser: whether to report row changes
     /// (on with <c>HighlightHoverRow</c>) and rests (on with <c>CellMessageOf</c>).</summary>
     internal JSRuntimeInvocationHandler PointerReporting { get; private init; } = default!;
+
+    /// <summary>A <c>getScrollOffset</c> the browser has not answered yet, answered when
+    /// the test says — how a read crossing a write on a Server circuit's wire is staged
+    /// (ADR-0012). Every read the grid makes from here on lands on it, until a later call
+    /// stands up another.</summary>
+    internal JSRuntimeInvocationHandler<ScrollOffset> UnansweredScrollRead()
+        => _handle!.Setup<ScrollOffset>("getScrollOffset");
 
     /// <summary>What the next <c>getScrollOffset</c> answers — the browser scroll
     /// position the grid is about to read, on both axes at once.</summary>

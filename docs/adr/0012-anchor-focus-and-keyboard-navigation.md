@@ -257,6 +257,19 @@ nothing ever armed a recovery. The no-op check therefore reads the newer of "las
 and "last write" (a move that truly needs no scroll still writes nothing, which is the
 economy the tests pin).
 
+*(Refined 2026-09-25, when the grid first ran under Blazor Server.)* **"Newer" is what the
+answer describes, not when it arrived.** On a circuit a read of the offsets and a write can
+cross on the wire: the browser answers the read before a write sent after it has arrived,
+and the answer reaches the grid after the write. Taken as the last event, it reset "where
+the scroller is going" to where it had been. `Ctrl+End` then `Ctrl+Home` faster than a round
+trip left the view at the last row with the Focus on the first, which is the same failure
+this paragraph closed, reopened by arrival order. On WebAssembly it cannot happen, because
+the answer to a read cannot overtake an earlier write. The grid therefore counts its writes.
+A read that a write overtook is set aside and asked again, and the new read reaches the
+browser behind the write. A crossed answer is not half-applied either: the event mirror is
+also the model an edge auto-scroll compounds on (ADR-0008), and an old offset would pull a
+drag back.
+
 **What one header click does to the Sorts list** *(settled while wiring the click; "clicking a
 column header sorts" above says nothing about the cycle)*. The cycle is **unsorted → ascending →
 descending → unsorted**, and a click **replaces the whole list** with at most that one column. The

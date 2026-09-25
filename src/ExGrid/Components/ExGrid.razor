@@ -998,6 +998,11 @@
     // next reveal look redundant, be dropped, and be overtaken by that very write.
     private double _expectedScrollTopPx;
     private double _expectedScrollLeftPx;
+    // How many writes this instance has pushed. A read that a write overtook is told
+    // apart by it: on a Server circuit the browser can answer a read before a write
+    // issued after it has arrived, and the answer then reaches the grid after the write
+    // — "later" by arrival, older by what it describes (ADR-0012).
+    private long _scrollWrites;
     private ViewportGeometry _geometry = new(DefaultRowHeightPx, DefaultViewportHeightPx - DefaultRowHeightPx, 0);
     private ColumnStyles _columnStyles = new(new ColumnGeometry([], 0, DefaultViewportWidthPx));
 
@@ -2038,12 +2043,25 @@
             do
             {
                 _scrollPending = false;
+                var writes = _scrollWrites;
                 var offset = await _scrollHandle.InvokeAsync<ScrollOffset>("getScrollOffset");
                 // Disposal can have overtaken the read, and a released handle answers
                 // zero — applying that would jump the model back to the top and touch a
                 // component and a timer that are already gone.
                 if (_disposed)
                     return;
+                // A write went out while this read was on the wire, so the answer may
+                // say where the scroller was before that write landed. Taken as where
+                // it is going, it made the next reveal a no-op and left the Focus off
+                // screen (Ctrl+End, Ctrl+Home faster than a Server round trip); taken
+                // as the model an edge auto-scroll compounds on, it pulled the drag
+                // back. It is set aside and asked again: the new read reaches the
+                // browser behind the write, so its answer includes it (ADR-0012).
+                if (_scrollWrites != writes)
+                {
+                    _scrollPending = true;
+                    continue;
+                }
                 ApplyScrollOffset(offset);
             }
             // Reads are awaited, so a burst would otherwise apply stale offsets out of
@@ -2431,6 +2449,7 @@
             return;
         _expectedScrollTopPx = top;
         _expectedScrollLeftPx = left;
+        _scrollWrites++;
         try
         {
             await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left);

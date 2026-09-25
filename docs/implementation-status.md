@@ -494,16 +494,22 @@ clean. The property is unchanged: the dependency points one way.
      it — was wrong, and the fix decided for it (reading `aria-expanded`) was withdrawn
      unbuilt (ADR-0039 records why). What layer 3 saw is MudBlazor's date picker ignoring an
      Escape while DOM focus is still on its own button. KB-35 holds the grid to its half.
-   - **Open: `Ctrl+End` then `Ctrl+Home` pressed faster than the scroll round trip can leave
-     the Focus off screen.** `scrollbar.spec.mjs`, "at every zoom level, after moving again",
-     fails about one run in six on the Server host and never on WebAssembly. A trace of the
-     scroll events shows the second `Ctrl+Home` producing no scroll at all, the Focus on
-     (0, 0) and the view at the last row — ADR-0012's "the Focus is always visible", broken.
-     Suspected: the C# mirror of the scroll offset, which a circuit updates a round trip
-     late, judges the Focus already visible and no reveal is written. Not yet root-caused;
-     the next step is to log the mirror against the browser's offset per key.
+   - ~~**`Ctrl+End` then `Ctrl+Home` pressed faster than the scroll round trip**~~ left the
+     Focus on (0, 0) and the view at the last row. `scrollbar.spec.mjs`, "at every zoom
+     level, after moving again", failed 7 runs in 12 on the Server host and never on
+     WebAssembly. Root cause, from a log of the grid's reads, writes and reveals: a read of
+     the scroll offset and a write crossed on the circuit's wire. The browser answered the
+     read (the top, after `Ctrl+Home`) before the write for the next `Ctrl+End` reached it,
+     and the answer reached the grid after that write was sent. So the grid took it as the
+     newest word on where the scroller was going. The next `Ctrl+Home` then judged the top
+     "already there" and wrote nothing, and a Focus that no longer changes arms no second
+     reveal. It is the in-flight-write gap ADR-0012 closed for WebAssembly, reopened by
+     arrival order: there, a read cannot be answered before an earlier write has run.
+     Fixed (ADR-0012): a read that a write overtook is set aside and asked again. The same
+     answer could also pull an edge auto-scroll's model back mid-drag. Layer 2 pins it
+     (`GoToStartTests`); the test passes 20 runs in 20 on the Server host.
 
-   Until the last is settled, and SRV-2 has run on `chrome` and `msedge`, the §24 claim is not
+   Until SRV-2 has run on `chrome` and `msedge`, the §24 claim is not
    made (ADR-0017 still states the WebAssembly premise).
 
 ## Where the exit criteria stand
