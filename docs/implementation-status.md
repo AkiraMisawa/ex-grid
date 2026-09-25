@@ -272,7 +272,7 @@ numbers were not filed under `verification/`, because software rendering belongs
 | 0017 / 0026 | Both browser projects declared (`chrome`, `msedge`) | `playwright.config.mjs` |
 | 0018 | Instance independence, per-instance ids | `features.spec.mjs` (two grids) |
 | 0020 | Action and Template Columns | both layers |
-| 0022 | `net8.0`, single-target | the project file |
+| 0022 | `net10.0`, single-target (rewritten from `net8.0` on 2026-09-25) | the project file |
 | 0025 | `FetchingGridSource` (+ copy rows, + distinct values delegate); `InMemoryGridSource.ReplaceRow` — the in-memory Consumer's apply (deliberately *not* ADR-0007's Overlay application; recorded there) | `GridSourceFetchTests`, `ReplaceRowTests` |
 | 0027 / 0028 / 0029 | **`GridMetrics`, `GridDensity`, `ViewportSize.Fill`**, inline Geometry Tokens, the token vocabulary, the forced-colors block | `GridMetricsTests`, `GridMetricsWiringTests` |
 | 0031 | `dir="ltr"` on the root | `GridRenderingTests` |

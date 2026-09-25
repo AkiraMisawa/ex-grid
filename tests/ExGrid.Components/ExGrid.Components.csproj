@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- net8.0 so the gating tests execute on the oldest supported runtime (ADR-0022). -->
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- net10.0 so the gating tests execute on the shipped target's runtime (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
     <!-- Same xunit.v3 / Microsoft.Testing.Platform shape as ExGrid.Tests: VSTest's
-         testhost misses the nix-combined net8 runtime. -->
+         testhost misses the nix-combined runtime. -->
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <!-- No native apphost, for the reason set out in tests/Directory.Build.targets:
-         the SDK's net8 apphost starts under the host loader and then dlopens the nix
+         the SDK's net8 apphost started under the host loader and then dlopened the nix
          runtime's libcoreclr.so, putting two glibcs in one process. Going through the
          muxer keeps one. -->
     <UseAppHost>false</UseAppHost>
@@ -21,7 +21,7 @@
          with xunit.v3 on Microsoft.Testing.Platform. -->
     <PackageReference Include="bunit" Version="2.9.0" />
     <!-- FakeTimeProvider drives the settle delay (ADR-0004) deterministically. The
-         abstraction it fakes, TimeProvider, is in the net8 BCL, so the core stays
+         abstraction it fakes, TimeProvider, is in the BCL, so the core stays
          dependency-free (ADR-0019) and only the tests take this package. -->
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
   </ItemGroup>

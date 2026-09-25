@@ -128,10 +128,10 @@ directive — `@onmousedown:stopPropagation`, `:preventDefault` — has Blazor c
 attribute's internal name on every render, some 100 bytes a directive, and an Action or
 Template cell carries several, as does a header's menu button. That cost is the framework's,
 and it stays. The only way round it is to write the internal name out pre-composed, and that
-name is interpreted by whichever Blazor the **host** runs: this package is built on net8.0 and
-runs on everything newer ([ADR-0022](./0022-packages-target-net8-and-run-on-everything-newer.md)),
+name is interpreted by whichever Blazor the **host** runs: this package is built on net10.0 and
+runs on everything newer ([ADR-0022](./0022-packages-target-net10-and-run-on-everything-newer.md)),
 so a rename in a later release would let a press on an action through to the Viewport — the
-selection moving under it, with no error — and nothing run on net8.0 would notice. Being
+selection moving under it, with no error — and nothing run on net10.0 would notice. Being
 quietly wrong is refused in favour of a small allocation.
 
 **P8 is the one that will look like an arbitrary restriction.** Rows are recycled: the element

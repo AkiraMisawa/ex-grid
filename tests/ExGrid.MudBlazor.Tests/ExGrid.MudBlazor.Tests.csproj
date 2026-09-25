@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- net8.0 so the Wrapper's tests execute on the oldest supported runtime
+    <!-- net10.0 so the Wrapper's tests execute on the shipped target's runtime
          (ADR-0022), in the same xunit.v3 / bunit shape as ExGrid.Components. -->
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>

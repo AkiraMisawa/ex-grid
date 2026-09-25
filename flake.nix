@@ -11,12 +11,12 @@
     {
       devShells = forAllSystems (pkgs:
         let
-          # SDK 10 builds every TFM at or below itself (ADR-0022); the net8
-          # runtime is included so the gating tests execute on the oldest
-          # supported runtime, not just build against it.
+          # SDK 10, whose bundled runtime is also the shipped packages' target
+          # (ADR-0022), so the gating tests execute on it without a second
+          # runtime alongside. (Until 2026-09-25 the target was net8.0 and the
+          # net8 runtime was combined in here.)
           dotnet = pkgs.dotnetCorePackages.combinePackages [
             pkgs.dotnet-sdk_10
-            pkgs.dotnetCorePackages.runtime_8_0
           ];
         in
         {
@@ -25,7 +25,7 @@
           shellHook = ''
             # Child processes (the test host) resolve frameworks from DOTNET_ROOT;
             # without it they follow the muxer's real path into the SDK-only store
-            # path and miss the combined net8 runtime.
+            # path and miss the combined runtime.
             export DOTNET_ROOT=${dotnet}/share/dotnet
             export DOTNET_CLI_TELEMETRY_OPTOUT=1
             export DOTNET_NOLOGO=1

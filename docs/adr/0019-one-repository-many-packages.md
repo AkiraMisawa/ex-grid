@@ -31,7 +31,7 @@ that exercises the component as a real Consumer, serves manual verification, and
 fixture `tests/ExGrid.Browser` drives. It follows the same one-directional reference rule as
 every Consumer — it references `ExGrid` and nothing references it — and, unlike the spikes, it
 is in the solution and under the repository-wide build properties, because letting the browser
-layer's fixture rot would break that layer. It is not shipped, so ADR-0022's `net8.0` pin does
+layer's fixture rot would break that layer. It is not shipped, so ADR-0022's target pin does
 not apply to it; it targets the SDK-bundled ASP.NET Core runtime.)*
 
 ## Reasons

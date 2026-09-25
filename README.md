@@ -21,9 +21,9 @@ in [`docs/adr/`](docs/adr/) (37 decision records) and the domain glossary in
 The toolchain is the **.NET 10 SDK** (version pinned via [`global.json`](global.json)).
 You can get it through Nix or install it yourself — both are supported.
 
-The **shipped packages target `net8.0`**, so consuming applications need .NET 8 or newer
-([ADR-0022](docs/adr/0022-packages-target-net8-and-run-on-everything-newer.md)); the .NET 10
-SDK builds that target just fine.
+The **shipped packages target `net10.0`**, so consuming applications need .NET 10 or newer
+([ADR-0022](docs/adr/0022-packages-target-net10-and-run-on-everything-newer.md)); the SDK and
+the target are the same .NET 10 today.
 
 ### Option A — Nix (reproducible toolchain)
 

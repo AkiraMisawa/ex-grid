@@ -76,10 +76,10 @@ nix develop -c dotnet test ...
 nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Browser
 ```
 
-- **Shipped packages target `net8.0`** (single-target; newer runtimes load it as-is —
-  [ADR-0022](docs/adr/0022-packages-target-net8-and-run-on-everything-newer.md)). The **SDK**
-  is .NET 10 — SDK version and target framework are independent. The code is therefore C# 12;
-  do not raise `LangVersion`
+- **Shipped packages target `net10.0`** (single-target; newer runtimes load it as-is —
+  [ADR-0022](docs/adr/0022-packages-target-net10-and-run-on-everything-newer.md)). The **SDK**
+  is .NET 10 too — SDK version and target framework are independent, and coincide today. The
+  code is therefore C# 14; do not raise `LangVersion`
 - **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
   see it (committing is not required)
 - **Do not commit or push unless asked**
