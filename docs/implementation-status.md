@@ -286,6 +286,12 @@ it has met `chrome` or `msedge`.
   container's egress fails intermittently on either host (`ERR_TOO_MANY_RETRIES`, CON-1).
   The eleventh was one more test reading the Focus straight after a click (DIR-2), now
   waiting for it and passing 8 of 8. None is the grid's.
+  *(Since then the demo pages serve Roboto themselves, and nothing in layer 3 reaches a
+  third-party host. The files are those Google Fonts serves, with its `@font-face` rules,
+  under `samples/ExGrid.DemoPages/wwwroot/fonts/roboto/` with the OFL. Loading it from
+  Google was only ever a way of getting the font the Wrapper's widths describe (ADR-0030),
+  and it made the container's runs depend on an external host. The MudBlazor specs pass
+  36 of 36 on each host with no request leaving localhost.)*
 - One more circuit-only defect found by that run and fixed: a Server circuit going away
   cancels every JS call still pending, and the cancellation of the grid's own disposal
   calls was not among the failures it expected, so it ended the circuit with an error in
