@@ -436,11 +436,11 @@ clean. The property is unchanged: the dependency points one way.
      candidate does not apply a filter rests on the browser's implicit-submission rule, and
      is owed a manual check with a Japanese IME on both browsers.
 
-6. **The first prerelease, `0.1.0-beta.1` — prepared, not yet published**
-   ([ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md),
-   2026-09-24). Decided with the user: a version with a prerelease suffix ships before Step 7,
-   and one without waits for it. The line is `0.1.0-beta.N`, under MIT, published by Trusted
-   Publishing. Built:
+6. **The first prerelease, `0.1.0-beta.1`: published 2026-09-25**
+   ([ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+   Decided with the user: a version with a prerelease suffix ships before Step 7, and one
+   without waits for it. The line is `0.1.0-beta.N`, under MIT, published by Trusted
+   Publishing. Built on 2026-09-24:
    - `LICENSE` and the package metadata;
    - a readme per package, whose examples `tests/ExGrid.PackageSmoke` compiles from the packed
      packages;
@@ -448,9 +448,17 @@ clean. The property is unchanged: the dependency points one way.
    - an XML doc comment on every public member;
    - CI's `package` job, and `release.yml`.
 
-   Owed by a person, once: a Trusted Publishing policy on nuget.org for this repository and
-   `release.yml`, the `NUGET_USER` secret, and pushing the tag. A stable version additionally
-   owes a review of the public C# surface, which nothing has decided yet (ADR-0042).
+   The tag's run (`release.yml`, run 36074956853) passed every layer. It then pushed both
+   packages and their symbol packages to nuget.org. Both restore from nuget.org with the
+   readme, the XML documentation and the static web assets. The run's last step failed.
+   The tag had been made on GitHub's release page, which made a release with it, and the
+   workflow refused to make a second one. That release has neither the packages nor the note.
+   The workflow now completes such a release instead. The one for `0.1.0-beta.1` needs deleting
+   (the tag stays) and the failed job re-running; the re-run's push skips the packages
+   nuget.org already has.
+
+   A stable version still owes a review of the public C# surface, which nothing has decided
+   yet (ADR-0042).
 
 ## Where the exit criteria stand
 
