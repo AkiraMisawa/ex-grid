@@ -1201,11 +1201,18 @@
     private RowRange? _measuredVisible;
     private bool _measured;
 
-    /// <summary>Painted, but not yet able to hear a key, a pointer or a scroll — a
-    /// server's prerender, before its circuit connects (CONTEXT.md <b>Prerendered</b>).
-    /// It wears the loading state (ADR-0029): it too waits on an answer that has not
-    /// arrived.</summary>
-    private bool Prerendered => !RendererInfo.IsInteractive;
+    /// <summary>Painted, but not yet able to hear what it will hear (CONTEXT.md
+    /// <b>Prerendered</b>): a server's prerender, before its circuit connects — and then
+    /// the interactive paint before the key listener has attached, which on a circuit is
+    /// a module import and a call away, some hundreds of milliseconds over a real round
+    /// trip. A key pressed in either is lost, so the grid says it is not ready until the
+    /// listener is there (ADR-0033). It wears the loading state (ADR-0029): it too waits
+    /// on an answer that has not arrived.</summary>
+    private bool Prerendered => !RendererInfo.IsInteractive || !_listening;
+
+    // Whether the capture-phase listener is attached (ADR-0010/0021) — set once, by the
+    // attach, whose render lifts the Prerendered state.
+    private bool _listening;
 
     private string RootClass => (_loading || Prerendered, _editMode != EditMode.None) switch
     {
@@ -1880,7 +1887,9 @@
             _focusRequest = null;
         }
 
-        if (firstRender)
+        // A prerender's OnAfterRender does not run at all; this guard is for a renderer
+        // that renders statically and still calls it.
+        if (firstRender && RendererInfo.IsInteractive)
             await AttachScrollAsync();
 
         if (_announcePending is { } pending)
@@ -1907,7 +1916,13 @@
             {
             }
         }
-        if (_editorNeedsFocus)
+        // Focused only once the input is painted. On Blazor Server this callback runs
+        // when the browser acknowledges a batch, a round trip after it was rendered, and
+        // a key arriving in that gap can open the editor after the batch this call is
+        // for: the input is not in it, and its reference is still unset. Focusing that
+        // threw, and the unhandled throw ended the circuit. The request waits instead for
+        // the render that paints the input, which is already on its way.
+        if (_editorNeedsFocus && (_editorIsChrome || _editorElement.Context is not null))
         {
             _editorNeedsFocus = false;
             try
@@ -1992,6 +2007,11 @@
             // landed were skipped by design. Read the position once so the first paint
             // matches what the browser is actually showing.
             ApplyScrollOffset(await handle.InvokeAsync<ScrollOffset>("getScrollOffset"));
+
+            // The listener is attached: the grid can hear keys now, and says so — a tab
+            // stop, and no longer busy (ADR-0033).
+            _listening = true;
+            StateHasChanged();
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException)
         {
@@ -4439,6 +4459,9 @@
         _editText = "";
         _editError = null;
         _editorNeedsFocus = false;
+        // The input goes with the mode: a reference kept past it would name an element
+        // the next editor is not, and the focus above would land nowhere.
+        _editorElement = default;
         await PushEditingModeAsync();
         await ReclaimFocusAsync();
     }

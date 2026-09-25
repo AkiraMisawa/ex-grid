@@ -1,6 +1,6 @@
 using Microsoft.JSInterop;
 
-namespace ExGrid.DemoHost;
+namespace ExGrid.DemoPages;
 
 /// <summary>
 /// What layer 3 reads from the host that the browser cannot report. The WebAssembly

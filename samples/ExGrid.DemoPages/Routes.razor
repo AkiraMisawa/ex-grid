@@ -1,0 +1,7 @@
+@* The router both hosts mount: the pages live in this assembly, so the WebAssembly
+   host's root and the Server host's document route through the same table (ADR-0019). *@
+<Router AppAssembly="@typeof(Routes).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" />
+    </Found>
+</Router>
