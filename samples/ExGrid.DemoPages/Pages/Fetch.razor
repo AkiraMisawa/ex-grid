@@ -1,0 +1,100 @@
+@page "/fetch"
+@implements IDisposable
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <a href="wide">Wide</a>
+    <a href="cells">Cells and rows</a>
+    <span>Fetching source</span>
+</nav>
+
+<h1>Fetching source — 100,000 rows, one Window at a time</h1>
+
+<p>
+    The pull entry point (ADR-0001): <code>GridSource.Fetch</code> holds the Window and
+    answers Range Requests, so this page holds no rows of its own. The "server" waits
+    @DelayMs ms before answering, which is what makes the Placeholders and the loading
+    state visible. Scroll fast and let go: only the range you landed on is painted —
+    the answers to the ranges you passed through are discarded, never applied
+    (ADR-0025).
+</p>
+
+<div class="demo-toolbar">
+    <button id="fail-next" @onclick="() => _failNext = true" disabled="@_failNext">
+        Make the next fetch fail
+    </button>
+    <button id="clear-error" @onclick="() => { _failNext = false; _error = null; }">
+        Clear
+    </button>
+</div>
+
+<p class="demo-status">
+    <span id="fetch-status">Fetches: @_fetches@(_source.IsLoading ? " (loading)" : "")</span>
+    <span id="fetch-error">@(_error is null ? "" : $"Last failure: {_error}")</span>
+</p>
+
+<ExGrid TRow="DemoServerRow"
+        Source="_source"
+        Columns="DemoData.ServerColumns"
+        RowHeight="28"
+        ViewportHeight="600"
+        ViewportWidth="700"
+        PinnedColumnCount="1" />
+
+@code {
+    private const int Total = 100_000;
+    private const int DelayMs = 150;
+
+    private int _fetches;
+    private bool _failNext;
+    private string? _error;
+
+    // Built once and held: a source rebuilt per render would refetch everything, and the
+    // grid would swap its subscription on every parameter push (ADR-0003's discipline,
+    // applied to the Source).
+    private readonly FetchingGridSource<DemoServerRow> _source = default!;
+
+    public Fetch()
+    {
+        _source = GridSource.Fetch<DemoServerRow>(FetchAsync, readAheadRows: 60);
+        // Subscribed, so the failure is shown rather than rethrown into the host's error
+        // UI — which is exactly what happens to a Consumer who wires up nothing
+        // (ADR-0025).
+        _source.FetchFailed += OnFetchFailed;
+        _source.StateChanged += OnSourceChanged;
+    }
+
+    private async ValueTask<GridPage<DemoServerRow>> FetchAsync(GridQuery query, CancellationToken cancellation)
+    {
+        _fetches++;
+        if (_failNext)
+        {
+            _failNext = false;
+            await Task.Delay(DelayMs, cancellation);
+            throw new InvalidOperationException("the server refused this range");
+        }
+
+        return await DemoData.FetchAsync(query, Total, DelayMs, cancellation);
+    }
+
+    // The grid repaints itself from the source; this page repaints for its own status
+    // line, which the source knows nothing about.
+    private void OnSourceChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnFetchFailed(Exception error)
+    {
+        _error = error.Message;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        // Disposed first, then unsubscribed. The other order leaves a fetch in flight
+        // with nobody listening for its failure, which is precisely when the source
+        // rethrows — onto the dispatcher of a page that has gone (ADR-0025).
+        _source.Dispose();
+        _source.FetchFailed -= OnFetchFailed;
+        _source.StateChanged -= OnSourceChanged;
+    }
+}

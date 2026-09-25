@@ -2,7 +2,11 @@
    exactly the core's commands, in its order, each with its Enabled state, as MudButtons
    with role="menuitem" — the core's popover around them is the menu, named by the core.
    Nothing here decides anything: a command closes its menu when invoked, and what a key
-   means on an item is MenuKeys', the same table the built-in menu answers to.
+   means on an item is the core's answer through ResolveKey — MenuKeys, the table the
+   built-in menu answers to, against the place the core keeps for the open menu. Not
+   against the item this component last saw focused: on a Blazor Server circuit focus
+   follows a key a round trip behind, and Enter typed with a ↓ would run the item above
+   the one the ↓ chose (ADR-0039).
 
    The keys are handled on this element, not on the buttons: a component cannot carry
    :preventDefault, and every key's default has to go — an arrow, Home or End would
@@ -13,15 +17,34 @@
     {
         var item = i;
         var command = Commands[i];
-        <MudButton @ref="_items[item]" role="menuitem" Variant="Variant.Text" FullWidth="true"
-                   Class="mud-ex-grid-menu-item" Size="Size.Small" Disabled="@(!command.Enabled)"
-                   StartIcon="@Chrome.IconFor(command.Id)" OnClick="command.Invoke"
-                   @onfocus="() => _current = item">@LabelOf(command.Id)</MudButton>
+        @MenuItem(item, command)
     }
 </div>
 
 @code {
-    private readonly Dictionary<int, MudButton> _items = [];
+    private readonly Dictionary<int, MudExGridMenuItem> _items = [];
+
+    // Each item is a MudButton that can be focused without scrolling. Built here rather
+    // than in markup: Razor finds only public components, and the item is this package's
+    // own, not a part of its public surface.
+    private RenderFragment MenuItem(int item, GridCommand command) => builder =>
+    {
+        builder.OpenComponent<MudExGridMenuItem>(0);
+        builder.AddAttribute(1, "role", "menuitem");
+        builder.AddComponentParameter(2, nameof(MudButton.Variant), Variant.Text);
+        builder.AddComponentParameter(3, nameof(MudButton.FullWidth), true);
+        builder.AddComponentParameter(4, nameof(MudButton.Class), "mud-ex-grid-menu-item");
+        builder.AddComponentParameter(5, nameof(MudButton.Size), Size.Small);
+        builder.AddComponentParameter(6, nameof(MudButton.Disabled), !command.Enabled);
+        builder.AddComponentParameter(7, nameof(MudButton.StartIcon), Chrome.IconFor(command.Id));
+        builder.AddComponentParameter(8, nameof(MudButton.OnClick),
+            EventCallback.Factory.Create<MouseEventArgs>(this, command.Invoke));
+        builder.AddAttribute(9, "onfocus", EventCallback.Factory.Create<FocusEventArgs>(this, () => _current = item));
+        builder.AddComponentParameter(10, nameof(MudButton.ChildContent),
+            (RenderFragment)(label => label.AddContent(0, LabelOf(command.Id))));
+        builder.AddComponentReferenceCapture(11, reference => _items[item] = (MudExGridMenuItem)reference);
+        builder.CloseComponent();
+    };
     private int _current = -1;
     private int _focusedRequest = -1;
     private bool _needsFocus;
@@ -36,6 +59,10 @@
 
     /// <summary>The context's count of openings: each new one asks for DOM focus.</summary>
     [Parameter] public int FocusRequest { get; set; }
+
+    /// <summary>The core's answer to a key on an item (ADR-0039). Absent only when this
+    /// menu is rendered outside a grid, where the item last focused is all there is.</summary>
+    [Parameter] public MenuKeyResolver? ResolveKey { get; set; }
 
     /// <summary>Where the wording and the icons come from.</summary>
     [Parameter, EditorRequired] public MudGridChrome Chrome { get; set; } = default!;
@@ -54,12 +81,18 @@
             return;
         _needsFocus = false;
         _focusedRequest = FocusRequest;
-        await FocusItemAsync(MenuKeys.First(Commands));
+        // Without scrolling: on a Server circuit the opening focus lands a round trip after
+        // the menu is shown, and would pull a menu the user has already scrolled back to
+        // its top (ADR-0039/0040). An arrow's focus still scrolls its item into view.
+        await FocusItemAsync(MenuKeys.First(Commands), preventScroll: true);
     }
 
     private async Task OnKeyAsync(KeyboardEventArgs e)
     {
-        var meaning = MenuKeys.Resolve(e.Key, e.ShiftKey, e.CtrlKey || e.AltKey || e.MetaKey, Commands, _current);
+        var chord = e.CtrlKey || e.AltKey || e.MetaKey;
+        var meaning = ResolveKey is { } resolve
+            ? resolve(e.Key, e.ShiftKey, chord)
+            : MenuKeys.Resolve(e.Key, e.ShiftKey, chord, Commands, _current);
         switch (meaning.Kind)
         {
             case MenuKeyKind.Move:
@@ -74,17 +107,17 @@
         }
     }
 
-    private async Task FocusItemAsync(int item)
+    private async Task FocusItemAsync(int item, bool preventScroll = false)
     {
         if (!_items.TryGetValue(item, out var button))
             return;
         try
         {
-            // MudBlazor's own FocusAsync on its button — focus stays out of JavaScript
-            // this package would own (ADR-0021/0039).
-            await button.FocusAsync();
+            // Blazor's own FocusAsync on the button's element — focus stays out of
+            // JavaScript this package would own (ADR-0021/0039).
+            await button.FocusAsync(preventScroll);
         }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }

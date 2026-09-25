@@ -269,6 +269,8 @@ for (const chrome of CHROMES) {
         test('in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039)', async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
+            // Read once it is drawn — a round trip away on the Server host.
+            await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
             const items = await enabledMenuItems(page);
             expect(items.length, 'a menu with something to move among').toBeGreaterThan(2);
             await expect.poll(() => activeText(page)).toBe(items[0]);
@@ -325,6 +327,7 @@ for (const chrome of CHROMES) {
         test('the Context Menu answers the same keys (KB-30, ADR-0039)', async ({ page }) => {
             await clickCell(page, 1, 1);
             await page.keyboard.press('Shift+F10');
+            await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
             const items = await enabledMenuItems(page);
             await expect.poll(() => activeText(page)).toBe(items[0]);
             await page.keyboard.press('End');
@@ -395,7 +398,13 @@ for (const chrome of CHROMES) {
             const panel = grid(page).locator('.ex-popover');
             await expect(panel).toHaveAttribute('role', 'dialog');
             await expect(panel).toHaveAttribute('aria-label', 'Book');
+            // Opened by pointer, the panel takes the keyboard a round trip later on the
+            // Server host, and a key pressed before then lands on nothing (ADR-0039).
+            await expect.poll(async () => (await activeIsInPopover(page))?.role).toBe('dialog');
             await page.keyboard.press('Escape');
+            // The panel stands over cell (1, 1) until the Escape is answered — a round trip
+            // on the Server host — and a click before then lands in the panel, not the cell.
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
 
             await clickCell(page, 1, 1);
             await page.keyboard.press('Shift+F10');
@@ -429,6 +438,9 @@ test.describe('Inner Popups under the mud Chrome', () => {
 
     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
         await second(page).locator("[id$='r2c1']").click({ force: true });
+        // The click's Focus is painted by the render it asked for — a round trip away on
+        // the Server host.
+        await expect(second(page)).toHaveAttribute('aria-activedescendant', /r2c1$/);
         const other = await second(page).getAttribute('aria-activedescendant');
         await openPanel(page, 2);
         const focus = await grid(page).getAttribute('aria-activedescendant');
@@ -482,6 +494,10 @@ test.describe('Inner Popups under the mud Chrome', () => {
             await openPanel(page, column);
             await open(page);
             await expect(openPopups(page)).not.toHaveCount(0);
+            // MudBlazor's date picker moves DOM focus from its button to its input once the
+            // calendar is open, and ignores an Escape until then — a round trip on the
+            // Server host. That wait is the design system's, not the grid's (KB-35).
+            await expect.poll(() => page.evaluate(() => document.activeElement?.tagName)).not.toBe('BUTTON');
 
             await page.keyboard.press('Escape');
 

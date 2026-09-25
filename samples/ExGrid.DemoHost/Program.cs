@@ -11,5 +11,9 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // components, but MudThemeProvider — which emits the palette variables the Wrapper's
 // stylesheet reads — needs them.
 builder.Services.AddMudServices();
+// The /shared page's store (ADR-0018 §5). One per process — on WebAssembly that is one
+// per tab, so the page has nobody to share with here; the Server host is where it
+// matters.
+builder.Services.AddSingleton<global::ExGrid.DemoPages.SharedTradeStore>();
 
 await builder.Build().RunAsync();

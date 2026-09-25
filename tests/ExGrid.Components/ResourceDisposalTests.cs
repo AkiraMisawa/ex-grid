@@ -77,6 +77,19 @@ public class ResourceDisposalTests : GridTestContext
         AssertNothingHeld(modules: 1, handles: 1);
     }
 
+    [Fact] // MEM-3 / CON-6: a Server circuit going away cancels the calls disposal makes, and disposal survives it
+    public async Task Disposal_survives_a_circuit_that_is_going_away()
+    {
+        RenderGrid();
+        _js.CircuitGone = true;
+
+        var failure = await Record.ExceptionAsync(() => DisposeComponentsAsync());
+
+        // Unhandled, the cancellation ended the circuit with an error in the host log.
+        Assert.Null(failure);
+        AssertNothingHeld(modules: 1, handles: 1);
+    }
+
     [Fact] // MEM-3: disposal overtaking the module's import still gives the module back
     public async Task Disposal_before_the_module_lands_still_releases_it()
     {

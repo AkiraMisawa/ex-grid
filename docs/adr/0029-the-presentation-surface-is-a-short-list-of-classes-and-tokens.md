@@ -12,7 +12,7 @@ meaning, without an ADR. It marks a **meaning**, never a mechanism.
 
 | Class | Marks |
 |---|---|
-| `ex-grid` | the instance root; `ex-loading` joins it while an answer is in flight |
+| `ex-grid` | the instance root; `ex-loading` joins it while an answer is in flight, and while the grid is **Prerendered** (added 2026-09-25) |
 | `ex-header`, `ex-header-cell` | the header band and its cells |
 | `ex-header-group` | a Header Group's rectangle ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)) |
 | `ex-align-left`, `ex-align-center`, `ex-align-right` | an explicit alignment (`Auto` adds nothing — ADR-0016) |
@@ -130,6 +130,7 @@ interned classes** (Cell State, Row Kind, alignment, tone) for per-column and pe
 | a gain / a loss | tone classes, from the Column's rule | the Consumer says when; the theme says what colour; the grid derives nothing from a sign on its own ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | pending / dirty / disabled / anything else | **mapped onto Cell State by the Consumer or Wrapper** | ADR-0006: the Consumer's vocabulary does not enter the grid — a design system's does not either. `dirty` is `modified`; `pending` is `stale` or `missing`; a state that maps to none of the five is a Template Column or a case for amending ADR-0006, not a per-wrapper class |
 | loading | `ex-loading` + Placeholder rows | one mechanism ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)) |
+| Prerendered | `ex-loading` on the root | *(added 2026-09-25, with the Blazor Server host.)* A prerendered grid is painted before anything can reach it — no key, no pointer, no scroll. It is waiting for the same thing a loading grid waits for, an answer that has not arrived, so it wears the same state rather than a second one a Wrapper would have to style twice. [ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md) says what it tells assistive technology |
 | row role | Row Kind classes | |
 | row stripe | `ex-row-stripe`, from the row's absolute position | the position is a parameter every row already re-renders on (ADR-0033), so the class costs no render; `:nth-child()` would count painted siblings and crawl ([ADR-0038](./0038-row-stripes-are-painted-from-the-rows-absolute-position.md)) |
 

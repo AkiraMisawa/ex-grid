@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- net8.0 so the gating tests execute on the oldest supported runtime (ADR-0022). -->
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- net10.0 so the gating tests execute on the shipped target's runtime (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
     <!-- xunit v3 / Microsoft.Testing.Platform: the test project is its own executable.
          Chosen over the VSTest stack because VSTest's testhost re-resolves the runtime
-         through the nix store's symlinks and misses the combined net8 runtime. -->
+         through the nix store's symlinks and misses the combined runtime. -->
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <!-- Lets `dotnet test` drive the executable instead of VSTest's testhost. -->
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <!-- No native apphost. The one the SDK emits for net8.0 comes from a NuGet
+    <!-- No native apphost. The one the SDK emitted for net8.0 came from a NuGet
          template stamped with the host ELF interpreter, so it starts under the host
          loader and then dlopens the nix runtime's libcoreclr.so — two glibcs in one
          process, and on WSL2 Ubuntu the load fails. Without it, `dotnet test` runs

@@ -31,6 +31,10 @@ internal sealed class CountingJSRuntime : IJSRuntime
     /// <summary>What <c>getScrollOffset</c> answers.</summary>
     internal ScrollOffset ScrollOffset { get; set; }
 
+    /// <summary>A Blazor Server circuit going away: every JS call still pending is
+    /// canceled, a reference's own dispose among them.</summary>
+    internal bool CircuitGone { get; set; }
+
     public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
         => InvokeAsync<TValue>(identifier, CancellationToken.None, args);
 
@@ -57,8 +61,10 @@ internal sealed class CountingJSRuntime : IJSRuntime
 }
 
 /// <summary>A JavaScript object reference that counts its disposals.</summary>
-internal abstract class CountingReference : IJSObjectReference
+internal abstract class CountingReference(CountingJSRuntime runtime) : IJSObjectReference
 {
+    protected CountingJSRuntime Runtime => runtime;
+
     internal int Disposals { get; private set; }
 
     public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
@@ -70,34 +76,36 @@ internal abstract class CountingReference : IJSObjectReference
     public ValueTask DisposeAsync()
     {
         Disposals++;
-        return ValueTask.CompletedTask;
+        return runtime.CircuitGone
+            ? ValueTask.FromException(new TaskCanceledException())
+            : ValueTask.CompletedTask;
     }
 }
 
 /// <summary>The imported module: it answers <c>attach</c> and nothing else.</summary>
-internal sealed class CountingModule(CountingJSRuntime runtime) : CountingReference
+internal sealed class CountingModule(CountingJSRuntime runtime) : CountingReference(runtime)
 {
     public override async ValueTask<TValue> InvokeAsync<TValue>(
         string identifier, CancellationToken cancellationToken, object?[]? args)
     {
         if (identifier != "attach")
             throw new InvalidOperationException($"The grid called '{identifier}' on the module.");
-        var handle = runtime.Attach(args);
-        if (runtime.AttachGate is { } gate)
+        var handle = Runtime.Attach(args);
+        if (Runtime.AttachGate is { } gate)
             await gate.Task;
         return (TValue)(object)handle;
     }
 }
 
 /// <summary>The per-instance handle <c>attach</c> returns (ADR-0018).</summary>
-internal sealed class CountingHandle(CountingJSRuntime runtime) : CountingReference
+internal sealed class CountingHandle(CountingJSRuntime runtime) : CountingReference(runtime)
 {
     public override ValueTask<TValue> InvokeAsync<TValue>(
         string identifier, CancellationToken cancellationToken, object?[]? args)
         => ValueTask.FromResult(identifier switch
         {
             "metaIsPrimary" => (TValue)(object)false,
-            "getScrollOffset" => (TValue)(object)runtime.ScrollOffset,
+            "getScrollOffset" => (TValue)(object)Runtime.ScrollOffset,
             // A void call (InvokeVoidAsync asks for IJSVoidResult) needs no answer; any other
             // question this stand-in has not been taught is refused, rather than answered
             // with a default the grid would take for the browser's.

@@ -12,6 +12,10 @@ namespace ExGrid.Clipboard;
 /// be asked for the rows — a push Consumer that passed no provider, or one whose
 /// answer did not cover the selection. Component-level, never produced by the pure
 /// rules: refusing by name beats copying the fraction in hand (ADR-0005).
+/// <see cref="ClipboardUnavailable"/>: the browser rejected the write — nothing landed,
+/// and the clipboard still holds whatever it held before. Raised after the fact, from
+/// the asynchronous route: a user told nothing would paste the old contents believing
+/// they were the copy (ADR-0005).
 /// </summary>
 public enum CopyRefusalReason
 {
@@ -29,6 +33,11 @@ public enum CopyRefusalReason
     /// <summary>The selection runs beyond the Window and the rows could not be had.
     /// Raised by the component, never by <see cref="ClipboardRules"/>.</summary>
     RowsUnavailable,
+
+    /// <summary>The browser rejected the clipboard write, so nothing landed and the
+    /// clipboard still holds what it held before. Raised by the component, after the
+    /// fact (ADR-0005).</summary>
+    ClipboardUnavailable,
 }
 
 /// <summary>

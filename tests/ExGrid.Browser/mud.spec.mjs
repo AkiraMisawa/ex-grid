@@ -88,6 +88,9 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         // cells are pointer-events: none by design and the Viewport is the target
         // (README, "Traps this suite has already hit").
         await gridA(page).locator('.ex-row').nth(2).locator('.ex-cell').nth(2).click({ force: true });
+        // Painted a round trip after the click on the Server host.
+        await expect(gridA(page).locator('.ex-range')).not.toHaveCount(0);
+        await expect(gridA(page).locator('.ex-focus')).not.toHaveCount(0);
         const colours = await gridA(page).evaluate((g) => ({
             outline: getComputedStyle(g.querySelector('.ex-focus')).outlineColor,
             ground: getComputedStyle(g.querySelector('.ex-cell')).backgroundColor,

@@ -22,11 +22,16 @@ nothing `main` did not, and a second integration branch would only fall behind.)
 
 - **Build, then layers 1 and 2**, on `ubuntu-latest`. The SDK comes from `global.json`, and the
   .NET 8 runtime is installed beside it, because the gating tests execute on `net8.0`
-  ([ADR-0022](./0022-packages-target-net8-and-run-on-everything-newer.md)). This is
+  ([ADR-0022](./0022-packages-target-net10-and-run-on-everything-newer.md)). *(Since 2026-09-25, when ADR-0022 moved the target to `net10.0`,
+  the SDK's own runtime is the one they execute on, and no second runtime is installed.)* This is
   `dotnet test ExGrid.slnx`, the command the Definition of Done gates on, run with coverage on.
 - **Layer 3 on the installed Chrome and Edge, headed**, under `xvfb`: the project's own
   `playwright.config.mjs`, both projects, unchanged. Headed matters for the reason ADR-0026
   gives: headless keeps overlay scrollbars on some platforms. A failure turns the run red.
+  *(Since 2026-09-25 there are two such jobs. The second runs the same suite against the Blazor
+  Server host (`EXGRID_HOSTING=server`, ADR-0019), and it gates too. That run is the Definition
+  of Done's SRV-2, on both browsers. It is a job of its own, not a matrix entry, so the
+  WebAssembly job keeps its check name.)*
   - The **observational** specs still only record: each asserts that it measured something and
     never gates on the number (ADR-0026, "performance never gates").
   - The records a run writes — `console.json`, `metrics.json` — and any failure's trace are

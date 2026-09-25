@@ -1,0 +1,80 @@
+@page "/virtual"
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <span>Virtualised</span>
+    <a href="wide">Wide</a>
+    <a href="cells">Cells and rows</a>
+    <a href="fetch">Fetching source</a>
+</nav>
+
+<h1>Virtualised — 100,000 rows</h1>
+
+<p>
+    The grid holds none of these rows. It paints the Window it is given, and when the
+    Viewport moves past what that Window covers it raises a Range Request and keeps
+    painting Placeholders until an answer arrives (ADR-0001/0004). This page answers
+    after 300&nbsp;ms, as a server would, and answers with more rows than were asked
+    for — read-ahead is the Consumer's judgement, not the grid's.
+</p>
+
+<p class="demo-status">
+    @if (_window.Count == 0)
+    {
+        <text>Window: nothing pushed yet, of @Total rows.</text>
+    }
+    else
+    {
+        <text>Window: rows @_windowStart–@(_windowStart + _window.Count - 1) of @Total.</text>
+    }
+    @if (_isLoading)
+    {
+        <strong>Loading…</strong>
+    }
+</p>
+
+<ExGrid TRow="DemoTrade"
+        Window="_window"
+        WindowStart="_windowStart"
+        TotalCount="Total"
+        Columns="DemoData.Columns"
+        RowHeight="24"
+        ViewportHeight="480"
+        IsLoading="_isLoading"
+        OnRangeNeeded="OnRangeNeededAsync" />
+
+@code {
+    private const int Total = 100_000;
+
+    /// <summary>Rows either side of the Viewport to answer with, so ordinary scrolling
+    /// does not ask again immediately (ADR-0001: read-ahead belongs to the Consumer).</summary>
+    private const int ReadAhead = 40;
+
+    private static readonly DemoTrade[] AllRows = DemoData.Window(Total, seed: 7);
+
+    private IReadOnlyList<DemoTrade> _window = [];
+    private int _windowStart;
+    private bool _isLoading;
+    private RowRange? _outstanding;
+
+    private async Task OnRangeNeededAsync(RowRange range)
+    {
+        _outstanding = range;
+        _isLoading = true;
+
+        // Where a server call would go. The wait is what makes the Placeholders visible
+        // long enough to watch.
+        await Task.Delay(300);
+
+        // A later request overtook this one: discarding the stale answer is the
+        // Consumer's job too.
+        if (_outstanding != range)
+            return;
+
+        var start = Math.Max(0, range.Start - ReadAhead);
+        var end = Math.Min(Total, range.Start + range.Count + ReadAhead);
+        _windowStart = start;
+        _window = AllRows[start..end];
+        _isLoading = false;
+    }
+}

@@ -231,14 +231,20 @@ public class MudFilterPanelTests : MudTestContext
         Assert.All(cut.FindAll(".mud-ex-grid-focus-wrap"), s => Assert.Equal("0", s.GetAttribute("tabindex")));
     }
 
-    [Fact] // WR-2 / KB-31: Apply is the form's one submit button, so Enter in a value field is Apply
-    public void Apply_is_the_forms_submit_button()
+    [Fact] // KB-31 / SRV-5: Enter in a value field submits whatever Apply's state — the default
+           // button it clicks is never disabled. Gated on Apply's own disabled button, an Enter
+           // typed with the value was dropped on a Server circuit, where the button is enabled
+           // a round trip later.
+    public void The_default_button_is_never_disabled()
     {
-        var cut = RenderPanel(Context());
+        var cut = RenderPanel(Context(ColumnType.Text, FilterUiMode.Condition));
 
         var submits = cut.Find("form").QuerySelectorAll("button[type=submit]");
-        Assert.Single(submits);
-        Assert.Contains("mud-ex-grid-filter-apply", submits[0].ClassName);
+        Assert.Contains("mud-ex-grid-filter-default", submits[0].ClassName);
+        Assert.False(submits[0].HasAttribute("disabled"));
+        Assert.True(submits[0].HasAttribute("hidden"));
+        // Apply itself still shows it is unavailable (WR-2), and a submit then applies nothing.
+        Assert.True(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
     }
 
     // ---- The condition form (WR-1's TooMany degrade, WR-2).
@@ -276,6 +282,16 @@ public class MudFilterPanelTests : MudTestContext
         var flag = RenderPanel(Context(ColumnType.Boolean, FilterUiMode.Condition));
         Assert.Null(flag.FindComponent<MudSelect<bool?>>().Instance.GetState(x => x.Value));
         Assert.True(Button(flag, "mud-ex-grid-filter-apply").HasAttribute("disabled"));
+    }
+
+    [Fact] // WR-2: the Enter that submits while Apply is unavailable applies nothing
+    public async Task A_submit_before_the_operand_applies_nothing()
+    {
+        var cut = RenderPanel(Context(ColumnType.Text, FilterUiMode.Condition));
+
+        await cut.Find("form").SubmitAsync();
+
+        Assert.Empty(_applied);
     }
 
     [Fact] // WR-2 / ADR-0009: a condition applies as FilterPanelChoices says — the typed operand, one clause

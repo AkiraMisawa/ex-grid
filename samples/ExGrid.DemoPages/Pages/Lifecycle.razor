@@ -1,0 +1,64 @@
+@page "/lifecycle"
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <a href="wide">Wide</a>
+    <a href="cells">Cells and rows</a>
+    <a href="fetch">Fetching source</a>
+    <span>Lifecycle</span>
+</nav>
+
+<h1>Lifecycle — mount it, dispose it, and nothing stays behind</h1>
+
+<p>
+    A grid that comes and goes. Each mount attaches the module's per-instance handle:
+    the capture-phase key listener, the pointer listener, the clipboard listeners and
+    the ResizeObserver (ADR-0018/0021), and binds an in-memory source. Each dispose has
+    to take all of it back — layer 3 mounts and disposes this fifty times and reads the
+    browser's own node and listener counts before and after (MEM-2, MEM-4).
+</p>
+
+<div class="demo-toolbar">
+    <button id="toggle-grid" @onclick="Toggle">
+        @(_mounted ? "Dispose the grid" : "Mount the grid")
+    </button>
+</div>
+
+<p class="demo-status">
+    <span id="lifecycle-status">Mounted: @(_mounted ? "yes" : "no"), @_mounts mounts so far.</span>
+</p>
+
+@if (_mounted)
+{
+    <ExGrid TRow="DemoTrade"
+            Source="_source"
+            Columns="DemoData.Columns"
+            RowHeight="24"
+            ViewportHeight="300"
+            HighlightHoverRow="true" />
+}
+
+@code {
+    private static readonly DemoTrade[] Rows = DemoData.Window(1_000, seed: 7);
+
+    private InMemoryGridSource<DemoTrade>? _source;
+    private bool _mounted;
+    private int _mounts;
+
+    private void Toggle()
+    {
+        _mounted = !_mounted;
+        if (_mounted)
+        {
+            // A fresh source per mount, as a page that owns its grid would make one: the
+            // source's binding to the grid is part of what a dispose has to release.
+            _source = GridSource.From(Rows);
+            _mounts++;
+        }
+        else
+        {
+            _source = null;
+        }
+    }
+}

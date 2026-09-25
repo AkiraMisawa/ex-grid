@@ -13,6 +13,9 @@ namespace ExGrid.Clipboard;
 /// target covers a column the Consumer declared non-editable, so the write may not land
 /// however it is shaped. Chrome must not offer the "reselect the same shape" advice for
 /// it — no reselection of that shape would be accepted.
+/// <see cref="TooLarge"/> is not about shape either (ADR-0005): the clipboard is past the
+/// grid's byte ceiling, so it was not read at all. Component-level, never produced by the
+/// pure rules.
 /// </summary>
 public enum PasteRefusalReason
 {
@@ -33,6 +36,10 @@ public enum PasteRefusalReason
     /// <summary>The target covers a column that is not Editable (ADR-0035). No reselection
     /// of the same shape would be accepted, so Chrome must not advise one.</summary>
     TargetNotEditable,
+
+    /// <summary>The clipboard is past the grid's <c>PasteByteCap</c>, so it was not read
+    /// at all. Raised by the component, never by the pure rules (ADR-0005).</summary>
+    TooLarge,
 }
 
 /// <summary>

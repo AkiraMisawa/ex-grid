@@ -76,10 +76,10 @@ nix develop -c dotnet test ...
 nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Browser
 ```
 
-- **Shipped packages target `net8.0`** (single-target; newer runtimes load it as-is —
-  [ADR-0022](docs/adr/0022-packages-target-net8-and-run-on-everything-newer.md)). The **SDK**
-  is .NET 10 — SDK version and target framework are independent. The code is therefore C# 12;
-  do not raise `LangVersion`
+- **Shipped packages target `net10.0`** (single-target; newer runtimes load it as-is —
+  [ADR-0022](docs/adr/0022-packages-target-net10-and-run-on-everything-newer.md)). The **SDK**
+  is .NET 10 too — SDK version and target framework are independent, and coincide today. The
+  code is therefore C# 14; do not raise `LangVersion`
 - **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
   see it (committing is not required)
 - **Do not commit or push unless asked**
@@ -196,12 +196,12 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   `tests/ExGrid.Browser`, or `nix develop .#browser -c npx playwright test`. It needs Chrome and
   Edge installed and starts the DemoHost itself, and it runs **deliberately on Windows or
   Linux**, where the platform's own scrollbars occupy layout and the assertions are not
-  tautologies. CI runs it on Linux on every push; **Windows (VZ-14) and a real IME are still
+  tautologies. CI runs it on Linux on every push, against both hosts; **Windows (VZ-14) and a real IME are still
   runs by hand**, and a CI artifact does not file the Step 4 record in `verification/`.
   `tests/ExGrid.Browser/README.md` says what it asserts and what it deliberately does not.
 
 - **The packages are checked as a Consumer takes them.** `tests/ExGrid.PackageSmoke/check.sh`
-  packs `ExGrid` and `ExGrid.MudBlazor`, reads back each `.nuspec`, and publishes a `net8.0`
+  packs `ExGrid` and `ExGrid.MudBlazor`, reads back each `.nuspec`, and publishes a `net10.0`
   application that restores them from the packed files alone. CI runs it as its `package` job.
   The DemoHost's project references skip exactly what it checks (ADR-0042).
 
@@ -274,3 +274,19 @@ rules that make this safe:
 - **Do not stop at an intermediate task while unblocked work remains.** Finishing a step is not
   finishing the task. If something is genuinely blocked, name what blocks it and carry on with
   everything that is not.
+
+## Agent skills
+
+Project skills from [mattpocock/skills](https://github.com/mattpocock/skills) live in
+`.claude/skills/`: `/grill-with-docs` (with `grilling` and `domain-modeling`), `tdd` (with
+`codebase-design`), `/to-spec`, and `/setup-matt-pocock-skills`. They are ordinary files; where
+one disagrees with this document, this document wins.
+
+### Issue tracker
+
+Specs and tickets are markdown files under `docs/specs/<feature-slug>/`. See
+`docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.

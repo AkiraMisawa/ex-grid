@@ -1,5 +1,6 @@
 using AngleSharp.Dom;
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
@@ -19,6 +20,38 @@ public abstract class GridTestContext : BunitContext
     }
 
     internal FakeTimeProvider Clock { get; } = new();
+
+    // What every grid test means unless it says otherwise: a grid that has connected and
+    // hears events. A Prerendered grid is its own case (ADR-0033, A11Y-20). Set at the
+    // first render rather than here: telling bUnit the renderer's info builds the
+    // renderer, which closes the service collection a test may still be adding to.
+    private bool _rendererInfoSet;
+
+    private void EnsureRendererInfo()
+    {
+        if (!_rendererInfoSet)
+            SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+    }
+
+    public new void SetRendererInfo(RendererInfo rendererInfo)
+    {
+        _rendererInfoSet = true;
+        base.SetRendererInfo(rendererInfo);
+    }
+
+    public new IRenderedComponent<TComponent> Render<TComponent>(
+        Action<ComponentParameterCollectionBuilder<TComponent>>? parameterBuilder = null)
+        where TComponent : IComponent
+    {
+        EnsureRendererInfo();
+        return base.Render(parameterBuilder);
+    }
+
+    public new IRenderedComponent<Bunit.Rendering.ContainerFragment> Render(RenderFragment renderFragment)
+    {
+        EnsureRendererInfo();
+        return base.Render(renderFragment);
+    }
 
     internal GridJSInterop Js { get; }
 

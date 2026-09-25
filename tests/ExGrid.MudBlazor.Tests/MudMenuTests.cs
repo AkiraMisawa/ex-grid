@@ -140,6 +140,22 @@ public class MudMenuTests : MudTestContext
         Assert.Equal(ItemRefs(cut)[1], LastFocused());
     }
 
+    [Fact] // ADR-0039 / SRV-5: the opening focus does not scroll the menu, which the user may
+           // already have scrolled by the time it lands on a Server circuit; an arrow's does,
+           // so the item it moves to is shown
+    public async Task The_opening_focus_keeps_the_scroll_and_an_arrows_does_not()
+    {
+        var cut = RenderMenu(MudGridChrome.Default);
+        var opening = JSInterop.Invocations.Last(i => i.Identifier == Focus);
+        Assert.Equal(true, opening.Arguments[1]);
+
+        await Items(cut)[1].FocusAsync(new FocusEventArgs());
+        await cut.Find(".mud-ex-grid-menu").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+
+        var moved = JSInterop.Invocations.Last(i => i.Identifier == Focus);
+        Assert.Equal(false, moved.Arguments[1]);
+    }
+
     [Fact] // KB-30 / ADR-0039: the arrows follow MenuKeys — over the disabled items, wrapping
     public async Task The_arrows_move_among_the_enabled_items()
     {
@@ -209,5 +225,29 @@ public class MudMenuTests : MudTestContext
 
         Assert.Equal([new SortSpec("Amount", SortDirection.Descending)], sorted);
         Assert.Empty(cut.FindAll(".ex-popover"));
+    }
+
+    [Fact] // WR-4 / KB-34 / ADR-0039: in the grid the Mud menu asks the core, so keys typed together run the item they chose
+    public async Task In_the_grid_keys_typed_together_run_the_item_they_chose()
+    {
+        IReadOnlyList<SortSpec>? sorted = null;
+        var cut = Render<ExGrid<Trade>>(ps => ps
+            .Add(g => g.Window, Rows(5))
+            .Add(g => g.TotalCount, 5)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 400)
+            .Add(g => g.Chrome, MudGridChrome.Default)
+            .Add(g => g.OnSortChanged, s => sorted = s));
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+
+        // No focus event in between: on a circuit DOM focus follows the ↓ a round trip
+        // later, so the Enter typed with it lands while the first item still has it.
+        var menu = cut.Find(".mud-ex-grid-menu");
+        await menu.KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+        await cut.Find(".mud-ex-grid-menu").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+
+        Assert.Equal([new SortSpec("Amount", SortDirection.Descending)], sorted);
     }
 }

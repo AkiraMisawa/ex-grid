@@ -1,11 +1,56 @@
 import { defineConfig } from '@playwright/test';
+import fs from 'node:fs';
+import { BASE_URL, HOST_LOG, HOST_PORT, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
 
-const BASE_URL = process.env.EXGRID_BASE_URL ?? 'http://localhost:5299';
 // The host is started on whatever port BASE_URL names, so two checkouts — one per
 // parallel agent — do not share a port: with reuseExistingServer a second runner on
 // the same port would be driving the OTHER checkout's DemoHost and passing (AGENTS.md,
-// "Working in parallel").
-const HOST_URL = new URL(BASE_URL).origin;
+// "Working in parallel"). Which host, and every port derived from it, is hosting.mjs's.
+const HOST_URL = `http://localhost:${HOST_PORT}`;
+
+// A fresh log per run: CON-6 reads what each test appended to it. The config is loaded
+// again in every worker, and a worker is replaced after each failing test, so only the
+// runner itself clears it — a worker doing so would erase the lines it is meant to read.
+if (SERVER && process.env.TEST_WORKER_INDEX === undefined) {
+    fs.rmSync(HOST_LOG, { force: true });
+}
+
+// Started here so `npx playwright test` is the whole command on any machine. An
+// already-running host is reused, which is what makes an edit-and-rerun loop quick.
+//
+// Into the run's own output, which §22 Step 4 tees into layer3.log. On WebAssembly the
+// log the renderer writes is the browser console, which fixtures.mjs reads, and this is
+// the dev server's side. On Server the circuit's log is this process's, and the host
+// also appends it to HOST_LOG so the fixture can read it per test (CON-6). A reused
+// host was started elsewhere and its output is wherever that was.
+const webServer = SERVER
+    ? [
+        {
+            command: `dotnet run --project ../../samples/ExGrid.DemoHost.Server --urls ${HOST_URL}`,
+            url: `${HOST_URL}/wide`,
+            env: { EXGRID_HOST_LOG: HOST_LOG },
+            reuseExistingServer: true,
+            timeout: 180_000,
+            stdout: 'pipe',
+            stderr: 'pipe',
+        },
+        {
+            // The browser reaches the Server host through this, at 0 ms until a test
+            // sets a round trip (ED-22, SRV-5, SRV-6).
+            command: `node latency-proxy.mjs ${new URL(BASE_URL).port} ${HOST_PORT} ${new URL(LATENCY_CONTROL_URL).port}`,
+            url: `${BASE_URL}/wide`,
+            reuseExistingServer: true,
+            timeout: 180_000,
+        },
+    ]
+    : {
+        command: `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
+        url: `${BASE_URL}/wide`,
+        reuseExistingServer: true,
+        timeout: 180_000,
+        stdout: 'pipe',
+        stderr: 'pipe',
+    };
 
 export default defineConfig({
     testDir: '.',
@@ -43,19 +88,5 @@ export default defineConfig({
         baseURL: BASE_URL,
         trace: 'retain-on-failure',
     },
-    // Started here so `npx playwright test` is the whole command on any machine. An
-    // already-running host is reused, which is what makes an edit-and-rerun loop quick.
-    webServer: {
-        command: `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
-        url: `${BASE_URL}/wide`,
-        reuseExistingServer: true,
-        timeout: 180_000,
-        // Into the run's own output, which §22 Step 4 tees into layer3.log: CON-6 reads
-        // the DemoHost's output captured during the run. (The host is WebAssembly, so
-        // the log its renderer writes is the browser console, which fixtures.mjs reads;
-        // this is the dev server's side. A reused host was started elsewhere and its
-        // output is wherever that was.)
-        stdout: 'pipe',
-        stderr: 'pipe',
-    },
+    webServer,
 });

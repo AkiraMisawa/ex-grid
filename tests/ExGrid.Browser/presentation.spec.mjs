@@ -141,6 +141,8 @@ test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async 
 
     // The overlay still lands on its cell to within a pixel.
     await grid(page).locator("[id$='r1c1']").click({ force: true });
+    // On a Server circuit the Focus is painted a round trip after the click.
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c1$/);
     const alignment = await page.evaluate(() => {
         const g = document.querySelector('.ex-grid');
         const cell = g.querySelector("[id$='r1c1']");
@@ -185,6 +187,8 @@ test("the editor's box is exactly the cell's (ED-9)", async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r0c1']").click({ force: true });
     await page.keyboard.press('F2');
+    // Painted by the render F2 asked for — a round trip away on the Server host.
+    await expect(grid(page).locator('.ex-editor')).toHaveCount(1);
 
     const boxes = await page.evaluate(() => {
         const g = document.querySelector('.ex-grid');

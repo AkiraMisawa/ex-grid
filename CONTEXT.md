@@ -289,6 +289,13 @@ like a different, perfectly valid number**
 ([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)).
 _Avoid_: truncation, ellipsis (that names the permitted behaviour, not the state)
 
+**Prerendered**:
+A grid painted before it can hear what it will hear — its rows are on screen, but a key pressed
+into it would be lost: a server's prerender, and the moment after it before the grid is listening. It shows it is not ready rather than looking live
+([ADR-0029](./docs/adr/0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md),
+[ADR-0033](./docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)).
+_Avoid_: not interactive, static (both collide — see Flagged ambiguities)
+
 ### Editing
 
 **Overlay**:
@@ -338,7 +345,8 @@ _Avoid_: cancel (that is Escape), rollback, revert
 **Refusal**:
 The grid's own "no", raised on **the operation** — its target, its shape, its size — and never on
 the value being written: a copy cap, a misaligned selection, a paste shape, a target covering a
-column that is not Editable. Because a Refusal never looked at what the user typed, it stops only
+column that is not Editable, a paste past its size ceiling, a clipboard the browser would not let
+it write. Because a Refusal never looked at what the user typed, it stops only
 the operation it named: a fill refused for covering a non-editable column leaves the editor open
 and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject, which judges the
 value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),
@@ -460,6 +468,11 @@ _Avoid_: custom column, render column
   Template's control takes DOM focus inside the Focus cell (**Interactive**). Write "DOM focus"
   whenever the browser's is meant; `FocusRequest` in the Chrome and template contexts asks for
   DOM focus, not for a Focus move.
+- **"Interactive" names a cell mode here, and a render mode in Blazor.** Blazor calls a
+  component that has connected and can handle events "interactive", and its render modes are
+  `InteractiveServer` / `InteractiveWebAssembly`. In this project **Interactive** is only the
+  in-cell mode. A grid that is painted but not yet connected is **Prerendered**; write the
+  render mode's full name (`InteractiveServer`) when the render mode is meant.
 
 ## Example: a conversation between a Consumer developer and the component designer
 

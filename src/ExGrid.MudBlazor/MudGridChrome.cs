@@ -64,17 +64,18 @@ public sealed class MudGridChrome : IGridChrome
     public RenderFragment? ColumnMenu(ColumnMenuContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        return Menu(context.Commands, context.Close, context.FocusRequest);
+        return Menu(context.Commands, context.Close, context.FocusRequest, context.ResolveKey);
     }
 
     /// <summary>The Context Menu: the same items over the selection's commands (ADR-0036).</summary>
     public RenderFragment? ContextMenu<TRow>(ContextMenuContext<TRow> context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        return Menu(context.Commands, context.Close, context.FocusRequest);
+        return Menu(context.Commands, context.Close, context.FocusRequest, context.ResolveKey);
     }
 
-    private RenderFragment Menu(IReadOnlyList<GridCommand> commands, Action close, int focusRequest)
+    private RenderFragment Menu(
+        IReadOnlyList<GridCommand> commands, Action close, int focusRequest, MenuKeyResolver? resolveKey)
         => builder =>
         {
             builder.OpenComponent<MudExGridMenu>(0);
@@ -82,6 +83,7 @@ public sealed class MudGridChrome : IGridChrome
             builder.AddComponentParameter(2, nameof(MudExGridMenu.Close), close);
             builder.AddComponentParameter(3, nameof(MudExGridMenu.FocusRequest), focusRequest);
             builder.AddComponentParameter(4, nameof(MudExGridMenu.Chrome), this);
+            builder.AddComponentParameter(5, nameof(MudExGridMenu.ResolveKey), resolveKey);
             builder.CloseComponent();
         };
 

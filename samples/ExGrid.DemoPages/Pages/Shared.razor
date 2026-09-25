@@ -1,0 +1,72 @@
+@page "/shared"
+@implements IDisposable
+@inject SharedTradeStore Store
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="fetch">Fetching source</a>
+    <span>Shared data</span>
+</nav>
+
+<h1>Shared data — one store, a Grid Source per user</h1>
+
+<p>
+    Several users seeing the same data (ADR-0018 §5). The store is one per process, so
+    on a Blazor Server host every user's circuit reads it; each circuit has its own Grid
+    Source over it, and so its own Sort, Filter, selection and scroll. A change to the
+    store reaches every user's grid. Sorting here reorders nobody else's.
+</p>
+
+<div class="demo-toolbar">
+    <button id="revalue" @onclick="() => Store.Revalue(0)">
+        Revalue the first trade in the store (every user sees it)
+    </button>
+    <button id="attach-shared" @onclick="() => _attachShared = true" disabled="@_attachShared">
+        Attach the one Grid Source every user shares (refused for the second user)
+    </button>
+</div>
+
+<div id="shared-grid">
+    <ExGrid TRow="DemoTrade" Source="_source" Columns="DemoData.Columns"
+            ViewportWidth="720" ViewportHeight="260" />
+</div>
+
+@if (_attachShared)
+{
+    <ErrorBoundary>
+        <ChildContent>
+            <div id="one-source-grid">
+                <ExGrid TRow="DemoTrade" Source="Store.OneSourceForEveryone" Columns="DemoData.Columns"
+                        ViewportWidth="720" ViewportHeight="160" />
+            </div>
+        </ChildContent>
+        <ErrorContent Context="refusal">
+            <p id="shared-refusal" role="alert">@refusal.Message</p>
+        </ErrorContent>
+    </ErrorBoundary>
+}
+
+@code {
+    private InMemoryGridSource<DemoTrade>? _source;
+    private Action<DemoTrade, DemoTrade>? _onReplaced;
+    private bool _attachShared;
+
+    protected override void OnInitialized()
+    {
+        // Held in a field, so the store unsubscribes the same delegate it subscribed.
+        _onReplaced = OnReplaced;
+        _source = GridSource.From(Store.Subscribe(_onReplaced));
+    }
+
+    // The store raises this on whichever thread revalued it — another user's circuit,
+    // on Server. The source is this circuit's, so the change is applied on this
+    // circuit's dispatcher (ADR-0018 §5).
+    private void OnReplaced(DemoTrade old, DemoTrade replacement) =>
+        _ = InvokeAsync(() => _source?.ReplaceRow(old, replacement));
+
+    public void Dispose()
+    {
+        if (_onReplaced is not null)
+            Store.Unsubscribe(_onReplaced);
+    }
+}

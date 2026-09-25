@@ -1,0 +1,402 @@
+@page "/features"
+@implements IDisposable
+@using ExGrid.Chrome
+@using ExGrid.Clipboard
+@using global::ExGrid.MudBlazor
+@* global::, for the reason MudApp.razor gives (AGENTS.md, the name collisions). *@
+@using global::MudBlazor
+
+@* ?chrome=mud runs this page's grids with ExGrid.MudBlazor's Chrome instead of the
+   built-in one, so the same browser tests can be run under both (FN-17, WR-5): the
+   Chrome is the only thing that changes — no paper, no presentation defaults — and what
+   MudBlazor's own controls need to render comes with it: its stylesheet and the theme
+   and popover providers. Without the parameter nothing here renders and the page is
+   what it always was. *@
+@if (_mudChrome)
+{
+    <HeadContent>
+        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    </HeadContent>
+    <MudThemeProvider />
+    <MudPopoverProvider />
+}
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <a href="wide">Wide</a>
+    <a href="cells">Cells and rows</a>
+    <a href="fetch">Fetching source</a>
+    <span>Features</span>
+</nav>
+
+<h1>Features — editing, clipboard, sorting, filtering, Header Groups</h1>
+
+<p>
+    The interaction surface on one page, for the browser layer to drive: an editable
+    source-bound grid with tiered headers, the clipboard, the pager-free selection
+    status, and every gesture notification written to the status lines below.
+</p>
+
+<p class="demo-status">
+    <span id="edit-status">Edited: @_editStatus</span>
+    <span id="paste-status">Pasted: @_pasteStatus</span>
+    <span id="copy-status">Copy refused: @_copyStatus</span>
+    @* A refusal is the grid telling the user their write did not happen, and the grid holds no
+       string to announce it with (ADR-0035, A11Y-16). Announcing it is Chrome's, so this one is
+       a live region where the confirmations above are not: they report what did happen. *@
+    <span id="paste-refused-status" role="status">Paste refused: @_pasteRefusedStatus</span>
+    <span id="edit-discarded-status" role="status">Edit discarded: @_editDiscardedStatus</span>
+    <span id="context-status">Context: @_contextStatus</span>
+    <span id="order-status">Order: @string.Join(",", _columns.Select(c => c.Name))</span>
+    <span id="width-status">Width: @_widthStatus</span>
+</p>
+
+<ExGrid TRow="DemoTrade"
+        Source="_source"
+        Columns="_columns"
+        RowHeight="24"
+        HeaderHeight="28"
+        ViewportHeight="320"
+        ViewportWidth="720"
+        PinnedColumnCount="_pinned"
+        HeaderGroups="_groups"
+        HighlightFocusRow="true"
+        OnEdit="OnEdit"
+        OnPaste="OnPaste"
+        OnCopyRefused="OnCopyRefused"
+        OnPasteRefused="OnPasteRefused"
+        OnEditDiscarded="OnEditDiscarded"
+        OnColumnWidthChanged="OnWidthChanged"
+        OnColumnOrderChanged="OnOrderChanged"
+        OnColumnHidden="OnHidden"
+        OnPinnedCountChanged="OnPinned"
+        ContextCommands="ContextCommands"
+        CellState="_rules.State"
+        CellMessageOf="_rules.Message"
+        Chrome="_chrome" />
+
+<h2>A second, independent instance</h2>
+<p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
+
+<ExGrid TRow="DemoTrade"
+        Source="_second"
+        Columns="_secondColumns"
+        RowHeight="20"
+        ViewportHeight="140"
+        ViewportWidth="480"
+        Chrome="_chrome" />
+
+@code {
+    /// <summary>Which Chrome the grids run with: absent or <c>builtin</c> is the core's
+    /// own (null), <c>mud</c> is <see cref="MudGridChrome.Default"/>. Anything else is
+    /// refused by name rather than quietly run as the built-in one — a mistyped value
+    /// would otherwise make a test "under both Chromes" pass twice against the same
+    /// one.</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    /// <summary>
+    /// <c>?modal=1</c> turns on MudBlazor's <c>ModalOverlay</c> — a Consumer's app-wide
+    /// setting, under which a press outside an open popup is swallowed by MudBlazor's
+    /// overlay and only the popup closes (ADR-0039, FN-21). Set on the options object the
+    /// app registered, and set back when the page goes, so no other page inherits it.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "modal")]
+    public string? ModalOverlay { get; set; }
+
+    [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
+
+    private IGridChrome? _chrome;
+    private bool _mudChrome;
+
+    public void Dispose() => MudPopovers.Value.ModalOverlay = false;
+
+    protected override void OnParametersSet()
+    {
+        MudPopovers.Value.ModalOverlay = ModalOverlay == "1";
+        _mudChrome = ChromeName == "mud";
+        _chrome = ChromeName switch
+        {
+            null or "builtin" => null,
+            "mud" => MudGridChrome.Default,
+            _ => throw new ArgumentException(
+                $"Unknown chrome '{ChromeName}': this page runs with ?chrome=builtin (the default) or ?chrome=mud.",
+                nameof(ChromeName)),
+        };
+    }
+
+    private InMemoryGridSource<DemoTrade> _source = default!;
+    private InMemoryGridSource<DemoTrade> _second = default!;
+    /// <summary>The bundled ruleset (ADR-0034): owned and driven here, shipped with the
+    /// library. It answers both display channels, so a value that arrived by paste wears
+    /// the same mark as one that was typed.</summary>
+    private readonly GridRuleset<DemoTrade> _rules = new();
+
+    private IReadOnlyList<GridColumn<DemoTrade>> _columns = default!;
+    private IReadOnlyList<GridColumn<DemoTrade>> _secondColumns = default!;
+    private IReadOnlyList<HeaderGroup> _groups = default!;
+
+    protected override void OnInitialized()
+    {
+        var rows = new DemoTrade[400];
+        string[] books = ["Alpha", "Beta", "Gamma", "Delta"];
+        // The last name is Arabic on purpose: RTL content renders correctly inside
+        // the LTR island (ADR-0031), and the browser layer asserts exactly that.
+        string[] traders = ["Ishikawa", "Novak", "Osei", "\u0639\u0645\u0631"];
+        for (var i = 0; i < rows.Length; i++)
+        {
+            rows[i] = new DemoTrade
+            {
+                Book = books[i % books.Length],
+                Trader = traders[(i / 3) % traders.Length],
+                Notional = 1_000_000m + (i * 12_345.67m),
+                TradeDate = new DateTime(2026, 1, 1).AddDays(i % 200),
+                Confirmed = i % 3 != 0,
+            };
+        }
+
+        _source = GridSource.From(rows);
+        _second = GridSource.From(rows.Take(20).ToArray());
+        _rules
+            .Column("Notional", (_, text) => !decimal.TryParse(text, out var value)
+                ? EditVerdict.Reject($"'{text}' is not a number")
+                : value < 0
+                    ? EditVerdict.Flag("a negative notional needs approval")
+                    : EditVerdict.Accept);
+        _columns = BuildColumns();
+        _rules.Evaluate(rows, _columns);
+        _secondColumns =
+        [
+            new GridColumn<DemoTrade>("Book", ColumnType.Text, t => t.Book),
+            new GridColumn<DemoTrade>("Trader", ColumnType.Text, t => t.Trader),
+        ];
+        _groups =
+        [
+            new HeaderGroup("Who", ["Book", "Trader"]),
+            new HeaderGroup("What", ["Notional", "Narrow", "TradeDate", "Confirmed"]),
+        ];
+    }
+
+    private GridColumn<DemoTrade>[] BuildColumns() =>
+    [
+        new("Book", ColumnType.Text, t => t.Book,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(110)), filterUi: FilterUiMode.Both),
+        new("Trader", ColumnType.Text, t => t.Trader,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), editable: true, filterUi: FilterUiMode.Both),
+        // The verdict seam (ADR-0034), wired to the bundled ruleset: an unparseable text
+        // Rejects and the editor holds, a negative notional Flags and is applied wearing
+        // its mark. Which is which is this side's convention, not the grid's.
+        new("Notional", ColumnType.Number, t => t.Notional,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true,
+            validate: _rules.ValidatorFor("Notional")),
+        // Deliberately too narrow for its values: what #### looks like, and what the
+        // clipboard must never receive (ADR-0016 / CP-5). The label is the full word,
+        // so the header's own ellipsis is the real thing and widening the column
+        // restores it along with the values.
+        new("Narrow", ColumnType.Number, t => t.Notional,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(48))),
+        // ISO, and the widths sum under the Viewport minus its scrollbar gutter: a
+        // horizontal bar here would sit exactly where the browser suite drags into the
+        // bottom edge band (SL-14/15), the CLAUDE.md gutter trap in its purest form.
+        new("TradeDate", ColumnType.Date, t => t.TradeDate,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), format: IsoDate),
+        new("Confirmed", ColumnType.Boolean, t => t.Confirmed,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
+    ];
+
+    private static string IsoDate(object value)
+        => ((DateTime)value).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+    private string _editStatus = "—";
+    private string _pasteStatus = "—";
+    private string _copyStatus = "—";
+    private string _pasteRefusedStatus = "—";
+    private string _editDiscardedStatus = "—";
+    private string _contextStatus = "—";
+    private string _widthStatus = "—";
+
+    private void OnEdit(GridEditIntent<DemoTrade> intent)
+    {
+        _editStatus = $"{intent.Column}={intent.Value} on {intent.Row.Book}/{intent.Row.Trader}";
+        // The Consumer's half of ADR-0007: a NEW instance carrying the change goes
+        // back through the source, and the screen follows the identity change. An
+        // unparseable value applies nothing — validation is the Consumer's.
+        if (Edited(intent.Row, intent.Column, intent.Value) is { } replacement)
+        {
+            _source.ReplaceRow(intent.Row, replacement);
+            // Re-judged after applying, which is the only moment a row rule can be judged
+            // at all (ADR-0034). One call for the rows now held.
+            _rules.Evaluate(_source.Window, _columns);
+        }
+        else
+        {
+            _editStatus += " (not applied: unparseable)";
+        }
+    }
+
+    private void OnPaste(GridPasteIntent intent)
+    {
+        _pasteStatus = $"{intent.CellCount} cells from {intent.Plan.Source.Rows}x{intent.Plan.Source.Columns}";
+        // Positions are the current order's, so every (row, column, value) is resolved
+        // against the Window FIRST — applying as we go could reorder mid-loop under a
+        // sort on the edited column (ADR-0011/0014).
+        var window = _source.Window;
+        var resolved = new List<(DemoTrade Row, string Column, string Value)>();
+        foreach (var target in intent.Plan.Targets)
+        {
+            for (var row = target.TopRow; row <= target.BottomRow; row++)
+            {
+                if (row >= window.Count)
+                    continue;
+                for (var column = target.LeftColumn; column <= target.RightColumn; column++)
+                {
+                    if (column >= _columns.Count)
+                        continue;
+                    resolved.Add((window[row], _columns[column].Name,
+                        intent.ValueFor(new ExGrid.Selection.CellPosition(row, column))));
+                }
+            }
+        }
+        var applied = 0;
+        foreach (var (row, column, value) in resolved)
+        {
+            // The instance may already have been replaced by an earlier cell of this
+            // same paste (two targets on one row): follow it through the window.
+            var current = _source.Window.FirstOrDefault(r => ReferenceEquals(r, row)) ?? row;
+            if (Edited(current, column, value) is { } replacement)
+            {
+                try
+                {
+                    _source.ReplaceRow(current, replacement);
+                    applied++;
+                }
+                catch (ArgumentException)
+                {
+                    // The row left the result mid-apply (a filter the paste itself
+                    // falsified); skipping it is the honest outcome for a demo.
+                }
+            }
+        }
+        _pasteStatus += $", {applied} applied";
+        // Re-judged, as a typed edit is. Without this the ruleset's own promise — that one
+        // implementation runs whether a change arrived by an edit, a paste or program code
+        // — would be false in the reference Consumer, and a pasted -5 would wear no mark
+        // until an unrelated edit happened to re-evaluate (ADR-0034).
+        _rules.Evaluate(_source.Window, _columns);
+    }
+
+    /// <summary>A new instance with one field changed — identity is the change signal
+    /// (ADR-0003). Null where the value does not parse or the column is not editable
+    /// by this Consumer.</summary>
+    private static DemoTrade? Edited(DemoTrade row, string column, string value) => column switch
+    {
+        "Trader" => new DemoTrade
+        {
+            Book = row.Book, Trader = value, Notional = row.Notional,
+            TradeDate = row.TradeDate, Confirmed = row.Confirmed,
+        },
+        "Notional" => decimal.TryParse(value, out var notional)
+            ? new DemoTrade
+            {
+                Book = row.Book, Trader = row.Trader, Notional = notional,
+                TradeDate = row.TradeDate, Confirmed = row.Confirmed,
+            }
+            : null,
+        _ => null,
+    };
+
+    private void OnCopyRefused(CopyRefusalReason reason)
+        => Status(reason, reason.ToString(), s => _copyStatus = s);
+
+    /// <summary>Where a Consumer puts its snackbar (ADR-0010/0035): the grid names the
+    /// rule, the wording is ours. TargetNotEditable arrives here for a paste and for a
+    /// Ctrl+Enter fill alike, and is the one refusal reselecting cannot fix.</summary>
+    private void OnPasteRefused(PasteRefusalReason reason)
+        => Status(reason, reason switch
+        {
+            PasteRefusalReason.TargetNotEditable =>
+                "TargetNotEditable — the selection covers a column that is not editable",
+            PasteRefusalReason.SingleCellTarget =>
+                "SingleCellTarget — reselect a target of the same shape",
+            _ => reason.ToString(),
+        }, s => _pasteRefusedStatus = s);
+
+    /// <summary>The typing is already gone when this arrives; what a Consumer owes the
+    /// user is the reason (ADR-0011). Announced, not merely painted — nobody asked for
+    /// this to happen, so nobody is watching for it.</summary>
+    private void OnEditDiscarded(EditDiscardReason reason)
+        => Status(reason, reason switch
+        {
+            EditDiscardReason.OrderChanged =>
+                "OrderChanged — the rows were reordered while you were typing, so the entry was dropped",
+            EditDiscardReason.RowLeftTheWindow =>
+                "RowLeftTheWindow — that row is no longer loaded, so the entry could not be placed",
+            _ => reason.ToString(),
+        }, s => _editDiscardedStatus = s);
+
+    /// <summary>What a Consumer adds to the context menu (ADR-0036). It is handed the
+    /// clicked row and the selection as rectangles plus the version they are written in;
+    /// resolving the rest of the selection into rows is this side's question, because
+    /// this side owns the data. The demo does the one-row case, which is the one the
+    /// design was argued from — open what this row is about.</summary>
+    private IEnumerable<GridCommand> ContextCommands(ContextMenuContext<DemoTrade> context)
+    {
+        var row = context.Row;
+        var cells = context.Selection.Sum(r => r.CellCount);
+        return
+        [
+            new GridCommand("open-trade", true, () =>
+            {
+                _contextStatus = $"open {row.Book}/{row.Trader} ({cells} cells selected, v{context.RowSequenceVersion})";
+                // A command's Invoke is a plain delegate, not an EventCallback: Blazor
+                // re-renders the grid that handled the click, and nothing tells this page
+                // that its own field moved. The Consumer says so — the same obligation as
+                // for any callback it hands to a component (ADR-0010).
+                StateHasChanged();
+                return Task.CompletedTask;
+            }),
+        ];
+    }
+
+    private void OnWidthChanged(ColumnWidthChange change)
+    {
+        _widthStatus = $"{change.Column}={change.WidthPx:0}";
+        _columns = _columns
+            .Select(c => c.Name == change.Column
+                ? new GridColumn<DemoTrade>(c.Name, c.Type, c.Value, c.Header,
+                    // As it came, with the column's own bounds: MaxWidth bounds only what
+                    // the grid computes, so a drag past it is recorded as it is (ADR-0016).
+                    new ColumnWidthSpec(ColumnWidth.Fixed(change.WidthPx), c.Width.MinWidthPx, c.Width.MaxWidthPx),
+                    editable: c.Editable, filterUi: c.FilterUi, align: c.Align, headerAlign: c.HeaderAlign,
+                    validate: c.Validate, format: c.Format, tone: c.Tone)
+                : c)
+            .ToArray();
+    }
+
+    private void OnOrderChanged(IReadOnlyList<string> order)
+        => _columns = order.Select(name => _columns.First(c => c.Name == name)).ToArray();
+
+    private void OnHidden(string column)
+        => _columns = _columns.Where(c => c.Name != column).ToArray();
+
+    private int _pinned;
+
+    private void OnPinned(int count) => _pinned = count;
+
+    private readonly Dictionary<string, int> _statusRepeats = [];
+
+    /// <summary>A live region announces on mutation, so writing the same sentence twice
+    /// says nothing the second time — and the second refusal is exactly the one a user
+    /// needs to hear, having just tried again. The grid promises a refused write is
+    /// always reported (ADR-0035, A11Y-16), and it is Chrome that would break that
+    /// promise here. The count makes the repeat a change, and says it happened again
+    /// rather than pretending it did not.</summary>
+    private void Status<T>(T reason, string text, Action<string> set)
+    {
+        var key = $"{typeof(T).Name}:{reason}";
+        var seen = _statusRepeats.TryGetValue(key, out var n) ? n + 1 : 1;
+        _statusRepeats[key] = seen;
+        set(seen > 1 ? $"{text} (×{seen})" : text);
+    }
+}

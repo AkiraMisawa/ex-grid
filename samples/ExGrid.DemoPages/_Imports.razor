@@ -1,0 +1,14 @@
+@* This project's root namespace (ExGrid.DemoPages) nests inside the ExGrid namespace,
+   so product usings are written with global:: — Razor emits usings INSIDE the
+   generated namespace, where a plain "ExGrid.Components" can be shadow-resolved
+   against sibling types (the CS0426 trap recorded in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Columns
+@using global::ExGrid.Components
+@using global::ExGrid.Rows
+@using global::ExGrid.Selection
+@using global::ExGrid.Validation

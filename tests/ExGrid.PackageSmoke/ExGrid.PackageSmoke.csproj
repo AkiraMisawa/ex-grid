@@ -6,16 +6,16 @@
        DemoHost gets from a ProjectReference — the static web assets, the dependency ranges,
        the README's example compiling at all — is exercised here as a package delivers it.
 
-       net8.0, the floor a Consumer may sit on (ADR-0022). The root namespace is not under
+       net10.0, the floor a Consumer may sit on (ADR-0022). The root namespace is not under
        ExGrid, as no Consumer's is. -->
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PackageSmoke</RootNamespace>
     <AssemblyName>PackageSmoke</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.7" />
     <PackageReference Include="ExGrid" Version="$(ExGridVersion)" />
     <PackageReference Include="ExGrid.MudBlazor" Version="$(ExGridVersion)" />
   </ItemGroup>

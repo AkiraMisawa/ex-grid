@@ -20,11 +20,13 @@ truncated, and a number that does not fit shows `####`.
 
 ## Requirements
 
-- **.NET 8 or newer.** The package targets `net8.0` and loads unchanged in newer applications.
+- **.NET 10 or newer.** The package targets `net10.0` and loads unchanged in newer applications.
+  (`0.1.0-beta.1` targeted `net8.0`; every later version targets `net10.0`.)
 - **Chrome or Edge.** They are the supported browsers; Safari and Firefox are out of scope.
 - **An interactive render mode.** The grid handles keys, the pointer and the clipboard. It is
-  verified under WebAssembly. Blazor Server is part of the design, but has not been exercised
-  yet.
+  verified under WebAssembly. Under Blazor Server every browser test also runs, against a
+  Server host with a simulated round trip, but support is not declared until the last runs it
+  owes are in.
 
 ## Install
 

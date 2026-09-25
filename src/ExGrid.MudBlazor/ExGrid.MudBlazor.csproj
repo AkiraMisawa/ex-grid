@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <!-- Single-target net8.0, like every shipped package (ADR-0022). MudBlazor 9
-         targets net8.0 itself, so the Wrapper keeps the core's floor. -->
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Single-target net10.0, like every shipped package (ADR-0022). MudBlazor 9
+         carries a net10.0 build, so the Wrapper keeps the core's floor. -->
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>ExGrid.MudBlazor</RootNamespace>
     <Description>MudBlazor for ExGrid: a paper, a Chrome and a stylesheet that put the grid inside a MudBlazor application, with MudBlazor's own controls in the grid's menus, filter panel and editor. Ships at the same version as ExGrid and depends on exactly that version.</Description>
     <PackageTags>$(PackageTags);mudblazor;material</PackageTags>
@@ -11,10 +11,9 @@
 
   <ItemGroup>
     <!-- The lowest 9.x: the application resolves it upward (ADR-0022's rule applied to
-         the one dependency this package adds). Its net8.0 build asks for
-         Microsoft.AspNetCore.Components.Web 8.0.12, so this package's effective floor
-         is 8.0.12 where the core's is 8.0.0 — MudBlazor's floor, not a choice made
-         here. -->
+         the one dependency this package adds). Where its net10.0 build asks for a
+         higher Microsoft.AspNetCore.Components.Web than the core's 10.0.0, that is
+         MudBlazor's floor, not a choice made here. -->
     <PackageReference Include="MudBlazor" Version="9.0.0" />
   </ItemGroup>
 

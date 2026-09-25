@@ -1,5 +1,3 @@
-<Router AppAssembly="@typeof(App).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" />
-    </Found>
-</Router>
+@* The WebAssembly host's root: the pages are ExGrid.DemoPages', shared with the Server
+   host (ADR-0019), so this host only mounts their router. *@
+<Routes />

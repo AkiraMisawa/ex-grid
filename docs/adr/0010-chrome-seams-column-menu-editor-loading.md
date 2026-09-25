@@ -198,6 +198,61 @@ report). Mid-composition Enter, Escape and the arrows choose and commit a candid
 them there breaks typing in any language that needs an IME, and moves the grid under a
 half-finished word.
 
+### Keys that follow a mode change are held until it lands *(added 2026-09-25)*
+
+The gate decides from the mode it was **last told**. The mode is C#'s, and C# tells the
+listener after the fact. On WebAssembly the telling is in-process and lands before the next
+keystroke can; on a Blazor Server circuit it is at least one round trip. Read against a
+circuit while designing the Server host, that gap loses keys in the one place this component
+cannot afford to:
+
+- **Typing into a cell.** `1` opens Overwrite. `5`, `0`, `0` follow before the listener hears
+  "overwrite": it still sees the root in no mode, takes them as editor-opening keys and
+  forwards them, and C# — now editing — has no meaning for a printable key and drops them.
+  `1500` becomes `1`, and whatever lands once the editor has DOM focus is appended to that:
+  `10`.
+- **Continuous entry.** `150`, Enter, `200`, Enter. The first Enter is forwarded; the `2`
+  typed before its answer lands in the editor that is about to close, and is lost with it.
+
+A number that is not the one typed, on a screen that looks normal, is the failure this
+component's first principle refuses. **Decision: while a key that can change the editing
+mode is being answered, every key after it is held in the listener, in order, and replayed
+against the mode the answer leaves** — and, when the answer is an open editor, until that
+editor holds DOM focus: the answer and the render that paints the editor travel separately,
+and a key landing on the root in between would find no mode that claims it. A key that can change the mode is one the gate takes
+to open the Cell Editor (F2, a printable key, Space) and, while editing, every key it
+claims (each commits, cancels, moves or switches). On replay a held key goes through the
+gate again: a key the core claims in the new mode is forwarded (and may hold the rest
+again); a printable key while the editor stands is typed into it at its caret, as if it had
+been pressed there; anything else is the browser's, as it would have been. If the answer is
+that nothing opened — the Focus cell is not Editable, say — the held keys replay as ordinary
+keys, which is exactly what they would have done had the answer come first.
+
+Plain navigation is not held. An arrow outside editing changes no mode; holding behind it
+would pace a held-down arrow key to one row per round trip on Server, for no correctness
+gained.
+
+Rejected: **appending on the C# side** — C# receiving the printable keys and adding them to
+the editor's text. Keys typed after the editor has DOM focus go straight into its input,
+while keys still in flight arrive later and are appended behind them: `1500` can come out
+`1050`. Order can only be kept where the keys originate. And **accepting it as a property of
+Server hosting** — it is a quietly wrong number.
+
+This stays inside the capture-phase entry of
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md): the listener already decides
+per key whether to take it; it now also decides *when* a taken key is forwarded.
+
+**Widened the same day: a mode change is any change of who holds the keyboard.** Layer 3 on
+the Server host found the same loss one step over. `Alt+↓` then `↓`, typed together, moved
+the Focus instead of the menu's item: the menu takes DOM focus a round trip after `Alt+↓`
+([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)), and
+the `↓` landed on the root first. So the keys that open a popover from the root — `Alt+↓`,
+`Shift+F10`, `ContextMenu` — are mode-changing keys too, and the keys after them are held
+until the popover holds DOM focus. They are then handed to the element that holds it, in
+order, as the keydown it would have received; what they mean there is the popover's
+(ADR-0039's table). The hold ends after two seconds whatever happens, as it does for the
+editor, rather than hold keys forever for a popover that never took focus.
+
 ## Consequences
 
 - **The core carries a small amount of JavaScript.** A capture-phase listener can only be attached

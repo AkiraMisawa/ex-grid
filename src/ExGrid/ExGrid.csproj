@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <!-- Single-target net8.0; newer runtimes load it as-is (ADR-0022). -->
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
     <Description>An Excel-like grid for Blazor: virtualised on both axes, with pinned columns, rectangular selection, the keyboard and the clipboard as a spreadsheet user expects them. The Consumer owns the data, sorting and filtering; the grid displays and notifies.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The lowest 8.0.x: the consumer's application resolves it upward, and a higher
+    <!-- The lowest 10.0.x: the consumer's application resolves it upward, and a higher
          version here would silently raise the real floor (ADR-0022). The only
          dependency — ExGrid has no others (ADR-0019). -->
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
   </ItemGroup>
 
 </Project>
