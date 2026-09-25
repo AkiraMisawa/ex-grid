@@ -753,7 +753,7 @@ about a minute, nearly all of it the reference source sorting and filtering a mi
 Step 2 skips it by name and this step is the run that sets it:
 
 ```sh
-EXGRID_ST1_MILLION=1 nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net8.0/ExGrid.Components.dll \
+EXGRID_ST1_MILLION=1 nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll \
   -class "ExGrid.Components.Tests.ConsistencyTests" 2>&1 | tee verification/<date>/st1.log
 ```
 
@@ -762,7 +762,7 @@ Pass: every case passes and none is skipped.
 ### Step 6 — Observational numbers
 
 Record `metrics.json` and add a `spikes/render-bench` entry (PF-8). MEM-7 is layer 2's: after
-Step 2's build, read it from `nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net8.0/ExGrid.Components.dll -method
+Step 2's build, read it from `nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll -method
 "ExGrid.Components.Tests.AllocationTests.Bytes_per_scroll_frame_are_recorded" -showLiveOutput` and
 copy it into `metrics.json` by hand — layer 2 runs too often to write into `verification/` itself. Compare with the previous
 verification directory and **write one sentence per number that moved more than 20%** — not as a
