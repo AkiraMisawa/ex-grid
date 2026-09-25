@@ -3,19 +3,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/25/2026 - 12:27:50 |
+| Generated on: | 09/25/2026 - 12:59:47 |
 | Parser: | MultiReport (3x Cobertura) |
 | Assemblies: | 2 |
 | Classes: | 101 |
 | Files: | 76 |
-| **Line coverage:** | 92.8% (5945 of 6402) |
-| Covered lines: | 5945 |
+| **Line coverage:** | 92.8% (5949 of 6406) |
+| Covered lines: | 5949 |
 | Uncovered lines: | 457 |
-| Coverable lines: | 6402 |
-| Total lines: | 13110 |
-| **Branch coverage:** | 85.8% (3246 of 3781) |
-| Covered branches: | 3246 |
-| Total branches: | 3781 |
+| Coverable lines: | 6406 |
+| Total lines: | 13124 |
+| **Branch coverage:** | 85.8% (3250 of 3785) |
+| Covered branches: | 3250 |
+| Total branches: | 3785 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -86,7 +86,7 @@
 |ExGrid.FilterOperators|96.5%|80%|
 |ExGrid.FilterSpec|100%||
 |ExGrid.GridColumn<TRow>|66.6%||
-|ExGrid.GridColumn<TRow>|95%|84.3%|
+|ExGrid.GridColumn<TRow>|95.3%|86.8%|
 |ExGrid.GridFilter|100%||
 |ExGrid.GridFilters|92.3%|83.3%|
 |ExGrid.GridMetrics|96.8%|89.4%|
