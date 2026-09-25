@@ -15,6 +15,17 @@ public class ActionAndTemplateColumnTests
     private static readonly RenderFragment<TemplateCellContext<Trade>> Bar =
         cell => builder => builder.AddContent(0, cell.Row.Book);
 
+    [Fact] // ADR-0016 / FN-12: every kind of column refuses a Fixed width below MinWidth by name
+    public void Action_and_template_columns_refuse_a_width_below_min_width_by_name()
+    {
+        var narrow = new ColumnWidthSpec(ColumnWidth.Fixed(10), minWidthPx: 40);
+
+        Assert.Contains("'Actions'", Assert.Throws<ArgumentOutOfRangeException>(
+            () => GridColumn<Trade>.ActionColumn("Actions", [Open], width: narrow)).Message);
+        Assert.Contains("'Book'", Assert.Throws<ArgumentOutOfRangeException>(
+            () => GridColumn<Trade>.TemplateColumn("Book", ColumnType.Text, r => r.Book, Bar, width: narrow)).Message);
+    }
+
     [Fact] // ADR-0020: an Action Column has no value, and says so
     public void An_action_column_is_not_queryable()
     {

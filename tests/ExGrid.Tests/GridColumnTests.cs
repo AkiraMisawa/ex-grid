@@ -23,6 +23,32 @@ public class GridColumnTests
         Assert.Equal("Alpha", column.Value(new Row { Book = "Alpha" }));
     }
 
+    [Fact] // ADR-0016 / FN-12: a Fixed width below MinWidth is refused, not clamped, naming the column
+    public void A_fixed_width_below_min_width_is_refused_naming_the_column()
+    {
+        var refused = Assert.Throws<ArgumentOutOfRangeException>(() => new GridColumn<Row>(
+            "Tenor 5Y", ColumnType.Text, r => r.Book,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(10), minWidthPx: 40)));
+
+        Assert.Contains("'Tenor 5Y'", refused.Message);
+        Assert.Contains("MinWidth (40)", refused.Message);
+
+        // At MinWidth itself it stands, and above MaxWidth too (the user's width).
+        Assert.Equal(40d, new GridColumn<Row>("Book", ColumnType.Text, r => r.Book,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(40), minWidthPx: 40)).Width.Width.FixedPx);
+        Assert.Equal(900d, new GridColumn<Row>("Book", ColumnType.Text, r => r.Book,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(900))).Width.Width.FixedPx);
+    }
+
+    [Fact] // ADR-0016: a width with no bounds is not a width; the column says which one was given it
+    public void A_default_width_spec_is_refused_naming_the_column()
+    {
+        var refused = Assert.Throws<ArgumentOutOfRangeException>(() => new GridColumn<Row>(
+            "Book", ColumnType.Text, r => r.Book, width: default(ColumnWidthSpec)));
+
+        Assert.Contains("'Book'", refused.Message);
+    }
+
     [Fact] // CONTEXT.md "Column": the header label defaults to the name
     public void The_header_defaults_to_the_name()
     {

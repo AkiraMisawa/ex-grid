@@ -73,6 +73,15 @@ public sealed record GridColumn<TRow>
         Info = new ColumnInfo<TRow>(name, type, value, queryable);
         Header = header ?? name;
         Width = width ?? new ColumnWidthSpec(ColumnWidth.Auto);
+        // Refused here rather than in the spec, which is built before the column and cannot
+        // say which one it belongs to — and a ladder of generated columns needs the name
+        // (ADR-0016, FN-12).
+        if (Width.MinWidthPx <= 0)
+            throw new ArgumentOutOfRangeException(nameof(width), Width, FormattableString.Invariant(
+                $"Column '{name}': default(ColumnWidthSpec) has no bounds and is not a width; leave the width out for Auto (ADR-0016)."));
+        if (!Width.Width.IsAuto && Width.Width.FixedPx < Width.MinWidthPx)
+            throw new ArgumentOutOfRangeException(nameof(width), Width.Width.FixedPx, FormattableString.Invariant(
+                $"Column '{name}': a Fixed width of {Width.Width.FixedPx} is below its MinWidth ({Width.MinWidthPx}) — refused, not clamped (ADR-0016)."));
         Actions = actions;
         Template = template;
         Editable = editable;
@@ -178,7 +187,8 @@ public sealed record GridColumn<TRow>
     public Func<TRow, string, EditVerdict>? Validate { get; }
 
     /// <summary>Never <c>default(ColumnWidthSpec)</c>: an unspecified width means Auto
-    /// within the default bounds.</summary>
+    /// within the default bounds, and the constructor refuses a default spec, or a Fixed
+    /// width below its MinWidth, naming the column (ADR-0016, FN-12).</summary>
     public ColumnWidthSpec Width { get; }
 
     /// <summary>The actions this column's cells carry — empty for every other column

@@ -7,9 +7,9 @@ namespace ExGrid.Columns;
 /// without an upper bound the column would keep growing and overflow could never occur.
 /// It does not bound a Fixed width, which is the user's: a drag goes past it, and the
 /// Consumer records the drag as a Fixed width, so a Fixed width above MaxWidth is kept.
-/// A Fixed width below MinWidth is refused, not clamped. (<c>default(ColumnWidthSpec)</c>
-/// has zero bounds and is not a valid spec — the same tolerated struct-default hole as
-/// <c>default(SelectionRange)</c>.)
+/// A Fixed width below MinWidth is refused, not clamped — by the <see cref="GridColumn{TRow}"/>
+/// it is given to, which can say which column it is (FN-12). (<c>default(ColumnWidthSpec)</c>
+/// has zero bounds and is not a valid spec; a column refuses it the same way.)
 /// </summary>
 public readonly record struct ColumnWidthSpec
 {
@@ -21,9 +21,10 @@ public readonly record struct ColumnWidthSpec
     /// metrics, so an untouched Auto column effectively never hashes (ADR-0016).</summary>
     public const double DefaultMaxWidthPx = 400;
 
-    /// <summary>A width with its bounds. A Fixed width below <paramref name="minWidthPx"/>
-    /// is refused, not clamped; one above <paramref name="maxWidthPx"/> is kept, because
-    /// MaxWidth bounds only what the grid computes (ADR-0016).</summary>
+    /// <summary>A width with its bounds. The bounds are checked here; a Fixed width below
+    /// <paramref name="minWidthPx"/> is refused by the column the spec is given to, naming
+    /// it, and one above <paramref name="maxWidthPx"/> is kept, because MaxWidth bounds
+    /// only what the grid computes (ADR-0016).</summary>
     public ColumnWidthSpec(
         ColumnWidth width,
         double minWidthPx = DefaultMinWidthPx,
@@ -35,9 +36,6 @@ public readonly record struct ColumnWidthSpec
         if (!double.IsFinite(maxWidthPx) || maxWidthPx < minWidthPx)
             throw new ArgumentOutOfRangeException(nameof(maxWidthPx), maxWidthPx,
                 "MaxWidth is finite and at least MinWidth.");
-        if (!width.IsAuto && width.FixedPx < minWidthPx)
-            throw new ArgumentOutOfRangeException(nameof(width), width.FixedPx,
-                $"A Fixed width must be at least MinWidth ({minWidthPx}) — refused, not clamped (ADR-0016).");
 
         Width = width;
         MinWidthPx = minWidthPx;
