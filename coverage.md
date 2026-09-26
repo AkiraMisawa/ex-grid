@@ -3,29 +3,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/25/2026 - 23:21:10 |
+| Generated on: | 09/26/2026 - 13:13:12 |
 | Parser: | MultiReport (3x Cobertura) |
 | Assemblies: | 2 |
-| Classes: | 103 |
-| Files: | 78 |
-| **Line coverage:** | 92.9% (6067 of 6524) |
-| Covered lines: | 6067 |
-| Uncovered lines: | 457 |
-| Coverable lines: | 6524 |
-| Total lines: | 13448 |
-| **Branch coverage:** | 86% (3302 of 3839) |
-| Covered branches: | 3302 |
-| Total branches: | 3839 |
+| Classes: | 120 |
+| Files: | 86 |
+| **Line coverage:** | 93.1% (6704 of 7195) |
+| Covered lines: | 6704 |
+| Uncovered lines: | 491 |
+| Coverable lines: | 7195 |
+| Total lines: | 14787 |
+| **Branch coverage:** | 85.6% (3656 of 4267) |
+| Covered branches: | 3656 |
+| Total branches: | 4267 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExGrid - 93.2%</summary>
+<details><summary>ExGrid - 93.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**93.2%**|**86.2%**|
+|**ExGrid**|**93.4%**|**85.8%**|
 |ExGrid.Cells.EditVerdict|100%||
 |ExGrid.Cells.GridActionEventArgs<TRow>|100%||
 |ExGrid.Cells.GridEditIntent<TRow>|100%||
@@ -73,25 +73,25 @@
 |ExGrid.Components.CellEngagement|100%||
 |ExGrid.Components.CellIds|100%||
 |ExGrid.Components.ColumnStyles|100%|100%|
-|ExGrid.Components.ExGrid<TRow>|86.4%|82.2%|
-|ExGrid.Components.ExGrid<TRow>|92.7%|84.2%|
+|ExGrid.Components.ExGrid<TRow>|86.5%|82.3%|
+|ExGrid.Components.ExGrid<TRow>|92.7%|83.5%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
-|ExGrid.Components.ExGridRow<TRow>|98%|94.7%|
+|ExGrid.Components.ExGridRow<TRow>|98.3%|93.8%|
 |ExGrid.Components.RowClasses|96.5%|92.8%|
 |ExGrid.Components.ScrollOffset|100%||
 |ExGrid.Components.SelectionStyles|100%|100%|
-|ExGrid.FetchingGridSource<TRow>|57.8%|50%|
-|ExGrid.FetchingGridSource<TRow>|97.4%|81.2%|
+|ExGrid.FetchingGridSource<TRow>|73.5%|61.5%|
+|ExGrid.FetchingGridSource<TRow>|97.3%|81.4%|
 |ExGrid.FilterClause|100%||
 |ExGrid.FilterOperators|96.5%|80%|
 |ExGrid.FilterSpec|100%||
-|ExGrid.GridColumn<TRow>|66.6%||
-|ExGrid.GridColumn<TRow>|95.3%|86.8%|
+|ExGrid.GridColumn<TRow>|50%||
+|ExGrid.GridColumn<TRow>|95.6%|88.6%|
 |ExGrid.GridFilter|100%||
 |ExGrid.GridFilters|92.3%|83.3%|
 |ExGrid.GridMetrics|96.8%|89.4%|
-|ExGrid.GridPage<TRow>|89.4%|100%|
+|ExGrid.GridPage<TRow>|94.7%|100%|
 |ExGrid.GridPresentationDefaults|88.2%|75%|
 |ExGrid.GridQuery|100%||
 |ExGrid.GridQueryEngine|96.3%|93.7%|
@@ -99,12 +99,29 @@
 |ExGrid.GridQueryEngine.PreparedColumn<TRow>|100%||
 |ExGrid.GridQueryEngine<TRow>|96.3%|93.7%|
 |ExGrid.GridSource|100%||
+|ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource<TRow>|100%||
-|ExGrid.InMemoryGridSource<TRow>|93.4%|94%|
+|ExGrid.InMemoryGridSource<TRow>|93.7%|94%|
 |ExGrid.InternedStrings|100%|100%|
 |ExGrid.Keys.GridKeyAction|100%||
 |ExGrid.Keys.GridKeys|100%|100%|
 |ExGrid.RowRange|100%||
+|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
+|ExGrid.Rows.InMemoryRowMarks<TRow>|92.3%|84.1%|
+|ExGrid.Rows.RowMarkAdapter<TRow>|100%||
+|ExGrid.Rows.RowMarkCounts|100%||
+|ExGrid.Rows.RowMarkIntent.AllRows<TRow>|100%||
+|ExGrid.Rows.RowMarkIntent.OneRow<TRow>|100%||
+|ExGrid.Rows.RowMarkIntent.Positions<TRow>|100%||
+|ExGrid.Rows.RowMarkIntent<TRow>|75%||
+|ExGrid.Rows.RowMarkRules|100%|100%|
+|ExGrid.Rows.RowMarkSnapshot|100%||
+|ExGrid.Rows.RowMarkState|100%|93.7%|
+|ExGrid.Rows.RowMarkState.Index|100%|83.3%|
+|ExGrid.Rows.RowMarkStep|87.5%||
+|ExGrid.Rows.RowMarkStep.AllOf|100%||
+|ExGrid.Rows.RowMarkStep.OneKey|100%||
 |ExGrid.Selection.CellPosition|100%||
 |ExGrid.Selection.ColumnRange|100%||
 |ExGrid.Selection.EdgeBand|100%|87.5%|
