@@ -23,6 +23,9 @@ function header(page, name) {
 async function clickCell(page, row, column) {
     // Cells are pointer-events: none by design; the Viewport is the delegated target.
     await grid(page).locator(`[id$='r${row}c${column}']`).click({ force: true });
+    // On a circuit the Focus lands a round trip after the click; the next key or
+    // Shift+click is measured from it.
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', new RegExp(`-r${row}c${column}$`));
 }
 
 // Whether an element's content overflows its box: what an ellipsis, or a clipped run of
@@ -151,11 +154,14 @@ test('a window narrower than the pinned block suspends pinning, and widening res
     await clickCell(page, 0, 0);
     for (let i = 0; i < 3; i++)
         await page.keyboard.press('ArrowRight');
-    const scroller = await grid(page).locator('.ex-scroller').boundingBox();
-    const focusId = await grid(page).getAttribute('aria-activedescendant');
-    const focused = await page.locator(`[id='${focusId}']`).boundingBox();
-    expect(focused.x).toBeGreaterThanOrEqual(scroller.x - 0.5);
-    expect(focused.x + focused.width).toBeLessThanOrEqual(scroller.x + scroller.width + 0.5);
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /-r0c3$/);
+    // The reveal's scroll lands a frame after the attribute, or a round trip on a circuit.
+    await expect.poll(async () => {
+        const scroller = await grid(page).locator('.ex-scroller').boundingBox();
+        const focusId = await grid(page).getAttribute('aria-activedescendant');
+        const focused = await page.locator(`[id='${focusId}']`).boundingBox();
+        return focused.x >= scroller.x - 0.5 && focused.x + focused.width <= scroller.x + scroller.width + 0.5;
+    }, { message: 'the Focus is whole on screen' }).toBe(true);
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect(grid(page).locator('.ex-cell.ex-pinned').first()).toBeVisible();

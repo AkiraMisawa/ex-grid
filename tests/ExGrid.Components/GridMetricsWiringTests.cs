@@ -1,4 +1,6 @@
 using Bunit;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
 using Xunit;
@@ -148,8 +150,8 @@ public class GridMetricsWiringTests : GridTestContext
             .Add(g => g.ViewportWidth, 350)));
     }
 
-    [Fact] // ADR-0028: a Fill axis writes no inline size — the Consumer's CSS owns it
-    public void A_fill_axis_leaves_the_scroller_unsized()
+    [Fact] // ADR-0028 / VZ-12a: a Fill height takes the parent's height: the root fills it as a column, the scroller takes the rest
+    public void A_fill_height_takes_the_parents_height()
     {
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Window())
@@ -157,9 +159,84 @@ public class GridMetricsWiringTests : GridTestContext
             .Add(g => g.ViewportHeight, ViewportSize.Fill)
             .Add(g => g.ViewportWidth, 350));
 
-        var style = cut.Find(".ex-scroller").GetAttribute("style") ?? "";
-        Assert.DoesNotContain("height", style);
-        Assert.Contains("width: 350px", style);
+        var root = cut.Find(".ex-grid").GetAttribute("style")!;
+        Assert.Contains("height: 100%", root);
+        Assert.Contains("flex: 1 1 auto", root);
+        Assert.Contains("min-height: 0", root);
+        Assert.Contains("display: flex; flex-direction: column", root);
+        var scroller = cut.Find(".ex-scroller").GetAttribute("style") ?? "";
+        Assert.Contains("flex: 1 1 auto; min-height: 0", scroller);
+        Assert.DoesNotContain("height:", scroller.Replace("min-height:", ""));
+        Assert.Contains("width: 350px", scroller);
+    }
+
+    [Fact] // ADR-0028: a Fill width may shrink in a flex row; a declared grid carries none of it
+    public void A_fill_width_may_shrink_and_a_declared_grid_carries_no_fill_values()
+    {
+        var fillWidth = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, ViewportSize.Fill));
+        var declared = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 350));
+
+        var root = fillWidth.Find(".ex-grid").GetAttribute("style")!;
+        Assert.Contains("min-width: 0", root);
+        Assert.DoesNotContain("height: 100%", root);
+        var plain = declared.Find(".ex-grid").GetAttribute("style")!;
+        Assert.DoesNotContain("min-width", plain);
+        Assert.DoesNotContain("100%", plain);
+    }
+
+    [Fact] // ADR-0028 / VZ-12b: a parent with no height is named once, and a real height afterwards paints
+    public async Task A_parent_with_no_height_is_named_once_until_a_real_height_arrives()
+    {
+        var log = new CapturingLoggerProvider();
+        Services.AddLogging(builder => builder.AddProvider(log));
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, ViewportSize.Fill)
+            .Add(g => g.ViewportWidth, 350));
+
+        // The scroller is as tall as its content, which is the header band alone.
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 350, 20));
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 350, 20));
+
+        var warning = Assert.Single(log.Warnings);
+        Assert.Contains("parent", warning);
+        Assert.Contains("definite height", warning);
+        Assert.Empty(cut.FindAll(".ex-row"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 350, 200));
+        Assert.NotEmpty(cut.FindAll(".ex-row"));
+        Assert.Single(log.Warnings);
+
+        // Lost again after a real height: named again.
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 350, 20));
+        Assert.Equal(2, log.Warnings.Count);
+    }
+
+    [Fact] // ADR-0028: a hidden tab reports 0, which is a Tuesday, not a missing height
+    public async Task A_reported_zero_writes_no_warning()
+    {
+        var log = new CapturingLoggerProvider();
+        Services.AddLogging(builder => builder.AddProvider(log));
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.ViewportHeight, ViewportSize.Fill)
+            .Add(g => g.ViewportWidth, 350));
+
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 0, 0));
+
+        Assert.Empty(log.Warnings);
     }
 
 

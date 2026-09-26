@@ -127,7 +127,9 @@ to record.
 its parent's height ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md),
 "Which element takes the box"), and inside the paper that parent is the paper. So
 `.mud-ex-grid` lays out as a column: the toolbar keeps its own height, and a Fill-height grid
-takes what is left, through the `flex` values the core writes on its own root. Several Fill
+takes what is left, through the `flex` values the core writes on its own root. *(Found while
+implementing: the paper was already an `inline-flex` column. What changed is that the toolbar
+no longer shrinks.)* Several Fill
 grids share what is left equally. A grid with a declared height lays out exactly as before, and
 the paper's own height is the Consumer's to give, on the outer element, which is theirs. A
 `FillHeight` switch on the paper was rejected. Filling a panel under a toolbar is what a paper is

@@ -217,6 +217,12 @@ parent's size.** It writes inline, as it writes every other piece of geometry
   `flex: 1 1 auto; min-height: 0` on the root;
 - on a Fill **width**: `min-width: 0` on the root, since a block already takes its parent's width.
 
+*(Refined while implementing, 2026-09-26: the pager and the status line stand under the
+scroller inside the root, so a scroller at `height: 100%` would push them out of the parent.
+Under a Fill height the root is therefore a column, `display: flex; flex-direction: column`,
+and the scroller takes what they leave with `flex: 1 1 auto; min-height: 0` in place of
+`height: 100%`.)*
+
 The `flex` and `min-` values do nothing in an ordinary block parent. In a flex parent they let
 the grid take what is left beside a toolbar and shrink below its content. So one declaration
 serves both of the layouts a Consumer actually writes. **The Consumer's side of the contract is

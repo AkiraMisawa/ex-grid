@@ -10,6 +10,7 @@
 @using global::ExGrid.Selection
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.Components.Rendering
+@using Microsoft.Extensions.Logging
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject IServiceProvider Services
@@ -93,7 +94,7 @@
                        vertical scroll frame (PF-3). *@
                     <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
                         {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                        {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                        {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                 }
                 @if (_scrollable is { } headerColumns)
                 {
@@ -105,7 +106,7 @@
                     {
                         <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
                             {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                            {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                            {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                     }
                 }
                 @* A rectangle stands correctly whether or not its leaves are in the
@@ -1022,6 +1023,7 @@
     // cached beside it — rebuilt only when the metrics move.
     private GridMetrics _metrics = GridMetrics.Resolve(GridDensity.Compact);
     private string _rootStyle = "";
+    private (bool Width, bool Height) _rootStyleFill;
     private bool _rowHeightSupplied;
     private bool _cellMetricsSupplied;
     private bool _densitySupplied;
@@ -2488,6 +2490,10 @@
         SetDragging(false);
     }
 
+    // A click on a grip is never the header's: stopped in the browser, because on a circuit
+    // the mouse-up that would mark it as a gesture's tail can arrive before the handler
+    // that hears it is attached, and the header would then sort by the column under the
+    // grip's own offsets — the first one (ADR-0016, found on the Server host).
     /// <summary>A resize drag begins on a grip (ADR-0016): the guide line follows the
     /// pointer and the width is applied on release — never live, which would rebuild
     /// every painted row's markup on every move.</summary>
@@ -3863,6 +3869,7 @@
             || (ViewportHeight.IsFill && heightPx != _reportedHeightPx);
         _reportedWidthPx = widthPx;
         _reportedHeightPx = heightPx;
+        NameAParentWithNoHeight(heightPx);
         if (!guttersChanged && !sizeChanged)
             return;
 
@@ -3888,6 +3895,34 @@
             await DispatchExceptionAsync(ex);
         }
     }
+
+    /// <summary>
+    /// A Fill-height grid whose parent has no definite height is as tall as its content,
+    /// which before any row is painted is the header band alone — the exact signature
+    /// (ADR-0028, "A parent with no height is named"). Named once, through the host's
+    /// logger, until a real height arrives: a layout can pass through this state, so it is
+    /// never thrown. A hidden tab reports 0 and is not this.
+    /// </summary>
+    private void NameAParentWithNoHeight(double heightPx)
+    {
+        if (!ViewportHeight.IsFill)
+            return;
+        if (heightPx > BandHeightPx + 0.5)
+        {
+            _namedParentWithNoHeight = false;
+            return;
+        }
+        if (_namedParentWithNoHeight || heightPx < BandHeightPx - 0.5)
+            return;
+        _namedParentWithNoHeight = true;
+        var logger = (Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory)?.CreateLogger("ExGrid.Components.ExGrid");
+        logger?.LogWarning(
+            "ExGrid: ViewportHeight is Fill, but the grid's parent gives it no height, so it is only as tall as its header " +
+            "and no row can be painted. Give the parent a definite height: pixels, a percentage of something definite, " +
+            "a grid track, or a flex item with min-height: 0 (ADR-0028).");
+    }
+
+    private bool _namedParentWithNoHeight;
 
     /// <summary>
     /// The <c>copy</c> event's synchronous question (ADR-0005): refused, in hand, or
@@ -5365,14 +5400,32 @@
     /// </summary>
     private string RootStyle()
     {
-        if (_rootStyle.Length == 0)
+        var fill = (ViewportWidth.IsFill, ViewportHeight.IsFill);
+        if (_rootStyle.Length == 0 || fill != _rootStyleFill)
         {
+            _rootStyleFill = fill;
             _rootStyle = string.Create(
                 CultureInfo.InvariantCulture,
-                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px");
+                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{FillRootStyle(fill.Item1, fill.Item2)}");
         }
         return _rootStyle;
     }
+
+    /// <summary>
+    /// Under Fill the core gives its own elements the parent's size (ADR-0028, "Which
+    /// element takes the box"). A Fill height makes the root a column as tall as its parent,
+    /// in which the scroller takes what the pager and the status line leave; the flex
+    /// values let it take what a toolbar leaves in a flex parent, and do nothing in a block
+    /// one. A Fill width only has to be allowed to shrink in a flex row, since a block
+    /// already takes its parent's width.
+    /// </summary>
+    private static string FillRootStyle(bool fillWidth, bool fillHeight) => (fillWidth, fillHeight) switch
+    {
+        (true, true) => "; display: flex; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0; min-width: 0",
+        (false, true) => "; display: flex; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0",
+        (true, false) => "; min-width: 0",
+        _ => "",
+    };
 
     /// <summary>The rows' own layer: its offset transform, and — while tiers exist —
     /// the band it starts under, which the stylesheet's one-tier default cannot know
@@ -5485,12 +5538,14 @@
     /// Consumer's CSS, whose answer comes back through the report (ADR-0028).</summary>
     private string ScrollerStyle()
     {
+        // Under a Fill height the scroller takes what is left of the root's column
+        // (ADR-0028): never its content's height, which is where the empty loop settled.
         if (ViewportWidth.IsFill && ViewportHeight.IsFill)
-            return "";
+            return "flex: 1 1 auto; min-height: 0";
         if (ViewportWidth.IsFill)
             return FormattableString.Invariant($"height: {ViewportHeight.Px}px");
         if (ViewportHeight.IsFill)
-            return FormattableString.Invariant($"width: {ViewportWidth.Px}px");
+            return FormattableString.Invariant($"width: {ViewportWidth.Px}px; flex: 1 1 auto; min-height: 0");
         return FormattableString.Invariant($"width: {ViewportWidth.Px}px; height: {ViewportHeight.Px}px");
     }
 

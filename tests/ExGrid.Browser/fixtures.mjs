@@ -101,9 +101,14 @@ export const test = base.extend({
     // not CON-6 failures; each must appear, so the refusal is asserted, not excused.
     // Anything else in the log still fails the test.
     expectedHostLog: [[], { option: true }],
+    // A warning the grid writes by decision — the Fill-height parent with no height it
+    // names (ADR-0028) — is provoked on purpose by the test that pins it, and named here
+    // the same way: not a CON-3 failure, and asserted to appear, in the console on
+    // WebAssembly or in the host's log on the Server host.
+    expectedWarnings: [[], { option: true }],
     // Every page a test drives is listened to from before its first navigation, so
     // nothing the app says while booting escapes the record.
-    page: async ({ page, expectedHostLog }, use, testInfo) => {
+    page: async ({ page, expectedHostLog, expectedWarnings }, use, testInfo) => {
         const messages = [];
         const pageErrors = [];
         page.on('console', (m) => {
@@ -181,7 +186,13 @@ export const test = base.extend({
 
         expect(errors.map((m) => m.text), 'zero console errors (CON-1)').toEqual([]);
         expect(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
-        expect(warnings.filter(isExGrids).map((m) => m.text), 'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
+        const named = (text) => expectedWarnings.some((pattern) => pattern.test(text));
+        for (const pattern of expectedWarnings) {
+            expect([...warnings.map((m) => m.text), ...hostLog].some((line) => pattern.test(line)),
+                `the grid warned ${pattern}`).toBe(true);
+        }
+        expect(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
+            'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
         expect(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
     },
 });

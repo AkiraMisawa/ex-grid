@@ -594,7 +594,10 @@ clean. The property is unchanged: the dependency points one way.
      with CI's next long run.
    - The declaration ADR, which also rewrites ADR-0017's WebAssembly premise.
 
-9. **Found on 2026-09-26, not fixed: `ViewportHeight = Fill` paints no rows in a sized box.**
+9. ~~**Found on 2026-09-26, not fixed: `ViewportHeight = Fill` paints no rows in a sized box.**~~
+   *Fixed the same day (ADR-0028 rewritten with the user): the core gives its own elements the
+   parent's size, names a parent with no height in a warning, and the paper's toolbar no longer
+   shrinks. `fill.spec.mjs` pins it (VZ-12a, VZ-12b, WR-7a, and UX-11a at last), on both hosts.*
    A grid with a Fill height inside a 300px box settled at a 28px scroller, header only, with no
    row painted (checked on the container's Chromium against de5e62c, before this run's changes).
    The scroller takes its height from its content, and under Fill the reported height is that
