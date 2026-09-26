@@ -15,5 +15,6 @@ builder.Services.AddMudServices();
 // per tab, so the page has nobody to share with here; the Server host is where it
 // matters.
 builder.Services.AddSingleton<global::ExGrid.DemoPages.SharedTradeStore>();
+builder.Services.AddSingleton<global::ExGrid.DemoPages.InspectorTradeStore>();
 
 await builder.Build().RunAsync();

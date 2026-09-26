@@ -1,0 +1,22 @@
+@using global::MudBlazor
+
+@* The modal inspector: a MudDialog opened through the dialog service with the row as a
+   parameter — how a Consumer ordinarily opens "the dialog for this row". *@
+<MudDialog>
+    <TitleContent>Trade @Row.Id</TitleContent>
+    <DialogContent>
+        <RowInspector Row="Row" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Class="demo-inspector-close" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+
+    /// <summary>The trade shown.</summary>
+    [Parameter, EditorRequired] public DemoBlotterTrade Row { get; set; } = default!;
+
+    private void Close() => Dialog.Close();
+}

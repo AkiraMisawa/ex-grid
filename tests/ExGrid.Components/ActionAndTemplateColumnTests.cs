@@ -74,6 +74,19 @@ public class ActionAndTemplateColumnTests : GridTestContext
         Assert.Equal("boom", cut.Find(".caught").TextContent);
     }
 
+    [Fact] // ADR-0037 (amended) / KB-36: a pressed action asks for no focus — what the handler opened keeps the keyboard
+    public void Pressing_an_action_moves_no_focus()
+    {
+        var raised = 0;
+        var cut = RenderGrid(WithActions(new GridAction("open", "Open")), _ => raised++);
+        var focusCalls = JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+
+        cut.FindAll(".ex-action")[1].Click();
+
+        Assert.Equal(1, raised);
+        Assert.Equal(focusCalls, JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus"));
+    }
+
     [Fact] // ADR-0020: one button per declared action, painted as plain markup in the row
     public void An_action_column_paints_one_button_per_declared_action()
     {

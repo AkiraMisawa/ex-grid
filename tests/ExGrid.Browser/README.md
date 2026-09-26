@@ -205,6 +205,27 @@ hide it.
   (WR-6). The console rules hold across the app's own controls (WR-9). And `/features?chrome=mud` — the switch that runs `/features`
   under `MudGridChrome` so its tests can run under both Chromes (WR-5) — is shown to
   take (the Wrapper's editor appears) and to open the column menu.
+- `navigation.spec.mjs` — the DemoHost's page index at `/` (docs/specs/row-inspectors):
+  it lists every route the pages declare, read from their `@page` directives, so a page
+  missing from `DemoPageList` fails by name; every page opens from it with a clean
+  console, names itself in its navigation bar and links back; the Row Identity demo that
+  used to be `/` is at `/identity`. It asserts nothing about the grid.
+- `inspectors.spec.mjs` — row inspectors on `/inspectors` (docs/specs/row-inspectors,
+  page A): an Action Column press opens that row's inspector, and **where the keyboard
+  is afterwards** — inside the inspector, modal or floating, by click or by Space, with a
+  handler that returns once the dialog is shown and one that awaits its result; once a
+  modal closes, back where it was before the press — the grid's root only if it was there
+  (ADR-0020/0037, KB-36). Floating inspectors: the same row
+  brings its inspector to the front, a title-bar drag moves one, each closes alone. Row
+  Marks open one inspector each, survive a sort, name the out-of-filter count, and above
+  the cap of ten are refused by count (ADR-0043).
+- `inspector-edits.spec.mjs` — changing a row from its inspector on `/inspector-edits`
+  (page B), over a store that is one per process: an approval reaches the grid with no
+  banner; a change elsewhere raises the banner, keeps the old values shown and disables
+  the actions until reloaded; a deletion says so; an approval pressed while the news of a
+  change is held back is refused by the store's version check; a note records the
+  version it was written against. On the Server host a second browser context approves
+  and the first shows the banner.
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error

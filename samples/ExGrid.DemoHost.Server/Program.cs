@@ -11,6 +11,7 @@ builder.Services.AddMudServices();
 // One store for the whole process — every user's circuit reads it — with a Grid Source
 // per circuit on top (ADR-0018 §5). The /shared page is its fixture.
 builder.Services.AddSingleton<SharedTradeStore>();
+builder.Services.AddSingleton<InspectorTradeStore>();
 
 // CON-6 reads this host's log: a circuit's unhandled exception is written here, not to
 // the browser console as it is on WebAssembly. Layer 3 names the file.

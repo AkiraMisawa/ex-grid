@@ -152,12 +152,52 @@ Keeping the keyboard on the root only holds if nothing else can take it, and two
   on an action the user had just declined. The buttons' `mousedown` default is now prevented, so
   the pointer never focuses them. The click itself still lands — preventing the press's default
   does not stop it — and the grid takes the keyboard back after every action, as it already did.
+  *(Superseded 2026-09-26, below: the grid no longer takes the keyboard back after an action.)*
 
 A grid button is therefore only ever *pressed*, never *focused*. A Consumer's control inside a
 template is different — it is meant to be focused — but it should carry `tabindex="-1"` for the tab
 stop's sake. The core cannot rewrite the Consumer's markup and does not try; the demo does it, and
 the rule is stated here so that a Template Column that breaks the one tab stop is visibly the
 Consumer's choice.
+
+## An action leaves the keyboard where it was *(amended 2026-09-26, decided with the user)*
+
+The paragraph above ended "the grid takes the keyboard back after every action, as it already did":
+after the Consumer's `OnAction` handler returned, the core focused its own root. That was written
+when a clicked button kept the keys. Once the buttons' `mousedown` default was prevented, a press
+no longer moved the keyboard at all, and the reclaim was left doing one thing only — **taking the
+keyboard from wherever it was and bringing it to the root**.
+
+That is the wrong thing whenever the action opened something. The DemoHost's row inspectors
+(docs/specs/row-inspectors) measured it: a floating inspector opened by Space, which focuses itself
+as a Consumer's panel ordinarily does, lost the keyboard to the grid's root **three runs out of
+three on WebAssembly** — a panel that looks usable while the keys go to the grid behind it. Every
+other combination passed, but only by order: a `MudDialog` focuses itself late enough to land after
+the reclaim, and on the Server host the messages happened to arrive the right way round. A rule
+that holds by the order of messages is not a rule.
+
+**Decision: after an action fires, the core moves no focus.** The keyboard is where it was before
+the press — on the root, if the user was in the grid; in whatever the handler opened, if it took
+the keyboard; wherever else it was, if it was elsewhere. The grid reports the press and does
+nothing else, which is ADR-0020's own sentence, now true of the keyboard too.
+
+What is given up: a user whose keyboard was **outside** the grid — in a search field, another
+grid, an inspector — who clicks an action button no longer finds the arrows moving the grid
+afterwards. They find them where they left them. Little is lost: a press on a button has never
+moved the Focus to that row (ADR-0020: the press stops before the Viewport's arithmetic), so the
+arrows were always resuming from wherever the Focus already was, and a click on any cell still gives
+the grid the keyboard.
+
+Rejected:
+- **Reclaim only while the root still holds the keyboard.** Right in every case, but knowing where
+  the keyboard is means reading the active element, which is a synchronous read by script — a new
+  entry on ADR-0021's allowlist to keep an optimisation nobody needs.
+- **Stop reclaiming after Space only.** The smallest change, and the failing case passes — but the
+  click path would keep passing by the order of messages alone, which is what this amendment exists
+  to stop relying on.
+
+Escape from inside a cell's control is unaffected: there the keyboard is leaving a control the
+grid's own cell holds, and handing it back to the root is the point (ADR-0020).
 
 ## A held Space engages once
 
@@ -224,4 +264,8 @@ none; Space on an editable cell opens Overwrite containing a space; action butto
 `tabindex="-1"`. Layer 3 on `/cells`: the same keys, pressed for real, move the chosen action and
 fire it; Space puts a real caret in the note field and Escape brings the keyboard back; a held Space
 fires a one-action cell once; Shift+Tab from after the grid lands on the root; a press dragged off an
-action leaves no button focused, and Enter afterwards fires nothing.
+action leaves no button focused, and Enter afterwards fires nothing. *(Added 2026-09-26:)* Layer 2: firing an
+action, by pointer or by Space, asks for no focus. Layer 3 on `/inspectors`: an inspector opened by
+an action keeps the keyboard, modal or floating, by click or by Space (RI-4 … RI-7); once a modal
+closes, the keyboard is back where it was before the press — the grid's root if it was there
+(RI-4), not the root if it was elsewhere (RI-26). The dialog gives it back; the grid takes nothing.

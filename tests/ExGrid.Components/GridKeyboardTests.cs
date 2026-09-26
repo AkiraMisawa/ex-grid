@@ -232,6 +232,29 @@ public class GridKeyboardTests : GridTestContext
         Assert.Equal("open", args.ActionName);
     }
 
+    [Fact] // ADR-0037 (amended) / KB-36: Space fires an action and asks for no focus — the keyboard stays where the handler left it
+    public async Task Space_firing_an_action_moves_no_focus()
+    {
+        var raised = 0;
+        GridColumn<TestRow>[] columns =
+        [
+            new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(100))),
+            GridColumn<TestRow>.ActionColumn("Actions", [new GridAction("open", "Open")],
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(100))),
+        ];
+        var cut = RenderGrid(columns: columns, onAction: _ => raised++);
+        await ClickAsync(cut, 150, 10);
+        var focusCalls = FocusCalls();
+
+        await PressAsync(cut, " ");
+
+        Assert.Equal(1, raised);
+        Assert.Equal(focusCalls, FocusCalls());
+    }
+
+    private int FocusCalls()
+        => JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+
     [Fact] // ADR-0020: Space on an ordinary cell waits for the editor — it does not act
     public async Task Space_on_a_value_cell_does_nothing_yet()
     {

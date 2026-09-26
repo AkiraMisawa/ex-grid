@@ -1,0 +1,57 @@
+@page "/identity"
+
+<DemoNav />
+
+<h1>Row identity — two instances, and what reaches the screen</h1>
+
+<p>
+    Two independent instances on one page (ADR-0018). The buttons act on the first row
+    of grid A and demonstrate the Row Identity contract (ADR-0003): a replaced instance
+    reaches the screen, an in-place rewrite does not.
+</p>
+
+<div class="demo-toolbar">
+    <button id="replace-row" @onclick="ReplaceRowInstance">Replace a row instance (repaints)</button>
+    <button id="rewrite-row" @onclick="RewriteRowInPlace">Rewrite a row in place (does not repaint)</button>
+</div>
+
+<section class="demo-pane">
+    <h2>Grid A — RowHeight 28 (default)</h2>
+    <ExGrid TRow="DemoTrade" Window="_windowA" Columns="DemoData.Columns" />
+</section>
+
+<section class="demo-pane">
+    <h2>Grid B — RowHeight 36</h2>
+    <ExGrid TRow="DemoTrade" Window="_windowB" Columns="DemoData.Columns" RowHeight="36" />
+</section>
+
+@code {
+    // Cached in fields, never rebuilt per render: a fresh Window array or columns
+    // array on every render would defeat row memoisation (ADR-0003).
+    private DemoTrade[] _windowA = DemoData.Window(30, seed: 1);
+    private readonly DemoTrade[] _windowB = DemoData.Window(30, seed: 2);
+
+    private void ReplaceRowInstance()
+    {
+        // A different instance is the change signal: clone the window, swap in a new
+        // row object, and the grid repaints exactly that row.
+        var next = (DemoTrade[])_windowA.Clone();
+        var old = next[0];
+        next[0] = new DemoTrade
+        {
+            Book = old.Book,
+            Trader = old.Trader,
+            Notional = old.Notional + 1_000m,
+            TradeDate = old.TradeDate,
+            Confirmed = old.Confirmed,
+        };
+        _windowA = next;
+    }
+
+    private void RewriteRowInPlace()
+    {
+        // Same instance, rewritten contents: the grid deliberately does not repaint
+        // this — the screen keeps the old Notional (ADR-0003).
+        _windowA[0].Notional += 1_000m;
+    }
+}
