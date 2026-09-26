@@ -279,8 +279,22 @@ rules that make this safe:
 
 Project skills from [mattpocock/skills](https://github.com/mattpocock/skills) live in
 `.claude/skills/`: `/grill-with-docs` (with `grilling` and `domain-modeling`), `tdd` (with
-`codebase-design`), `/to-spec`, and `/setup-matt-pocock-skills`. They are ordinary files; where
-one disagrees with this document, this document wins.
+`codebase-design`), `/to-spec`, `/implement`, and `/setup-matt-pocock-skills`. They are ordinary
+files; where one disagrees with this document, this document wins.
+
+### Implement
+
+`/implement` works a spec or ticket under `docs/specs/` through `tdd`. Its generic steps map
+onto this repo as follows:
+
+- **"Typechecking"** is `nix develop -c dotnet build ExGrid.slnx`; **a single test file** is
+  `nix develop -c dotnet test <project> --filter <class>`; **the full suite** is the one in
+  "What counts as verified", plus layer 3 when the change faces the UI. A green build is still
+  not a result.
+- **Invoking `/implement` is the request to commit** its work to the current branch. It is not a
+  request to push.
+- **A ticket that turns out to need a decision stops there.** Record the ADR first (or, as a
+  background agent, return the proposal), as in "Working in parallel".
 
 ### Issue tracker
 
