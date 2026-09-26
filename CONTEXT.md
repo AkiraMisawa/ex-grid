@@ -392,10 +392,19 @@ _Avoid_: origin, base cell
 A row the user has singled out for an action that follows — the checkbox beside a row.
 **Distinct from Selection**: a Selection is positions in the current order and is dropped on
 reorder; a Row Mark belongs to the row's identity, is **held by the Consumer**, and survives
-sorting and scrolling. The grid reports the intent to mark; it does not hold the marks. Marking
-"all" from the header means every row of the current result — after filtering — whether or not
-it is on screen.
+sorting and scrolling. The grid reports the intent to mark and **asks, row by row, whether a row
+is marked**; it does not hold the marks. Marking "all" from the header means every row of the
+current result — after filtering — whether or not it is on screen; under a pager it marks the page
+first and offers the whole result explicitly, as Ctrl+A does
+([ADR-0015](./docs/adr/0015-paging-is-another-driver-for-range-requests.md)).
 _Avoid_: checked row, selected row, tick (a "selected" row is Selection's word)
+
+**Mark Column**:
+The one column per grid whose cells show and toggle **Row Marks**, and whose header marks all.
+Its meaning belongs to the core, like an **Action Column**'s, and it is painted as plain markup.
+Space on it applies to every selected row at once. Not a boolean field shown as a checkbox —
+that is the row's data, not a Row Mark.
+_Avoid_: checkbox column, selection column
 
 ### Columns
 
