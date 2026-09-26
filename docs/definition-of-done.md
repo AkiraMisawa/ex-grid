@@ -656,7 +656,19 @@ release.
   record how long the stale band shows. *(Corrected 2026-09-26.)* `spikes/render-bench` cannot
   hold it, since it renders its own markup and not the grid, and the DemoHost is WebAssembly
   only. No host in the repository runs the grid on a Server circuit, so the measurement waits
-  on one.
+  on one. *(Measured 2026-09-26, once the Server host existed:
+  `EXGRID_HOSTING=server EXGRID_MEASURE=fill` in `measure.spec.mjs`, on `/fill?parent=window`,
+  the window dragged from 420px to 820px tall in 20px steps over about 0.75 s, bundled
+  Chromium under xvfb on Linux, three runs.)* At a 0 ms round trip, 3 or 4 of the drag's
+  ~45 frames showed a gap below the painted rows, at most 12px, gone as the drag stopped. At
+  50 ms, 18 to 28 frames, at most 32 to 40px, gone as it stopped. At 150 ms, 37 to 41 frames,
+  at most 92 to 96px (four rows), gone 55 to 69 ms after it stopped. The circuit carried 35 to
+  38 frames from the browser during the drag, whatever the round trip. So the band is the
+  round trip times the drag's speed, and outlives the drag by about half a round trip. A
+  debounce would hold the render back for its delay as well as the round trip, so on these
+  numbers it lengthens the band rather than shortening it, and what it saves is those ~37
+  frames. Whether that saving is wanted is still open, and so the item stays here until it is
+  decided in ADR-0028.
 - **The auto-scroll band (20px) and its rate range (1 to 8 rows per tick)** — ADR-0008, provisional
   in exactly the way the fling threshold is. The *shape* is decided and gated by SL-12..SL-15; the
   three numbers are recorded and compared, not gated.
