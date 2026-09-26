@@ -86,8 +86,16 @@ as marked — the question the design turned on, because a header that says "all
 says "not" is a lie on screen.
 
 The natural representation is **"every row of query Q as of T, except these"** — the form webmail
-uses for "all conversations selected". `GridSource.From` and `GridSource.Fetch` implement it, so a
-Consumer on the bundled Sources writes nothing.
+uses for "all conversations selected". `GridSource.From` and `GridSource.Fetch` implement it.
+
+*(Refined while writing the spec: this said "so a Consumer on the bundled Sources writes nothing",
+which holds for `GridSource.From` only. `From` sees every row replacement through `ReplaceRow`, so
+it carries a mark from the old instance to the new one and reference identity is enough. `Fetch`
+receives new instances on every answer, and only the server can count "all of Q as of T, except"
+or say which rows arrived after T. So a Consumer on `Fetch` supplies a mark adapter — how to read a
+row's key, and how to answer those counts and the as-of question — and **a Mark Column over a
+`Fetch` Source without one is refused by name**, rather than painted with counts the Source cannot
+know.)*
 
 Rejected:
 - **The Consumer enumerates every identity when "all" is pressed.** Trivial in memory; a million
