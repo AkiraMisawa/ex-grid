@@ -123,6 +123,16 @@ Nothing in the table required the core to reference a MudBlazor type, and nothin
 cascaded presentation default required a core change. That is the check this section exists
 to record.
 
+**The paper is a flex column** *(decided with the user, 2026-09-26)*. A Fill-height grid takes
+its parent's height ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md),
+"Which element takes the box"), and inside the paper that parent is the paper. So
+`.mud-ex-grid` lays out as a column: the toolbar keeps its own height, and a Fill-height grid
+takes what is left, through the `flex` values the core writes on its own root. Several Fill
+grids share what is left equally. A grid with a declared height lays out exactly as before, and
+the paper's own height is the Consumer's to give, on the outer element, which is theirs. A
+`FillHeight` switch on the paper was rejected. Filling a panel under a toolbar is what a paper is
+used for, so a switch would only be something to forget.
+
 **One thing the palette could not supply.** The Focus outline was first mapped onto the
 palette's primary, which is what Material draws its focus indicators in. The browser suite
 measured it against the dark surface at **2.83:1**, under the 3:1 the Definition of Done's

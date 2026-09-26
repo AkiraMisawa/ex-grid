@@ -232,6 +232,28 @@ Rejected:
 - **`Class` / `Style` on the root.** Refused by ADR-0029 for reasons that still hold.
 - **`position: absolute; inset: 0` on the root.** It needs a positioned parent and takes the grid
   out of the flow, so a toolbar above it would have to be positioned too.
+
+### A parent with no height is named, not guessed at — decided
+
+*(Decided with the user, 2026-09-26.)* `height: 100%` of a parent whose own height is `auto`
+is `auto`. A flex item left at its default `min-height: auto` can behave the same way. The
+scroller is then as tall as its content, the loop above settles on the header band, and nothing
+is painted. **The grid paints nothing and writes one warning** naming the cause and the fix: the
+parent of a Fill-height grid has no definite height. The signature is exact: under a Fill
+height, the reported height equals the header band. It is written through Blazor's own
+`ILogger`, once per instance until a real height arrives, so no script is added
+([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)). A correct layout never writes
+it, which keeps CON-3 at zero.
+
+Rejected:
+- **Throwing, as a declared height too small for a row does.** A declared number is wrong when
+  it is written. A reported one passes through states: a parent sized a moment after the grid,
+  or a collapse animated through the band's height. An exception would take the grid down on a
+  transient, and a layout that settles a frame later would never recover.
+- **A minimum of a few rows.** Something usable would show, at a size nobody asked for, and the
+  layout mistake would stay hidden.
+- **Nothing at all.** An empty grid is not a plausible wrong value, so this was never quietly
+  wrong. But it was silent about why, and the fix is one line the grid can name.
 - A reported size of zero — the grid is in a hidden tab, a `display: none` ancestor — paints
   nothing and throws nothing. Today's validation ("ViewportHeight must exceed RowHeight") is
   right for a number a Consumer *wrote* and wrong for one the browser reported: a declared 12px is

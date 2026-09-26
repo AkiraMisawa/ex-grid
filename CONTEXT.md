@@ -54,6 +54,12 @@ The rectangle of rows × columns the grid is actually painting. Render cost is d
 fits in here, not by the size of the data.
 _Avoid_: visible area, visible range, window
 
+**Fill**:
+A Viewport axis taken from the parent's box instead of declared as a number. The browser reports
+the size, and the parent must have a definite size on that axis
+([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)).
+_Avoid_: auto (that is a column width), 100%, responsive (that is ADR-0043's "following the box")
+
 **Scrollbar Gutter**:
 How much of the declared Viewport its own scrollbars occupy. A classic scrollbar is drawn
 **inside** the box the element declares and takes about 15px off that axis; an overlay scrollbar
