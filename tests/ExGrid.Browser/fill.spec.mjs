@@ -77,7 +77,7 @@ test.describe('in a box that follows the window', () => {
         await expect(page.locator('#window-box .ex-row').first()).toBeVisible();
     });
 
-    test('the Viewport follows the window, both ways (VZ-12a, ADR-0028/0043)', async ({ page }) => {
+    test('the Viewport follows the window, both ways (VZ-12a, ADR-0028/0045)', async ({ page }) => {
         const tall = await rowsIn(page, '#window-box');
         await page.setViewportSize({ width: 1280, height: 500 });
         await expect.poll(async () => rowsIn(page, '#window-box')).toBeLessThan(tall);

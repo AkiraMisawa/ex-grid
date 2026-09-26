@@ -41,7 +41,7 @@ public sealed class ColumnGeometry
     /// pinned, laid out in <paramref name="viewportWidthPx"/>. A total width past
     /// <see cref="MaxScrollWidthPx"/> is refused rather than clamped out of reach. A
     /// Pinned block that would leave the scrollable columns less than
-    /// <see cref="MinScrollableBandPx"/> is suspended (ADR-0043).</summary>
+    /// <see cref="MinScrollableBandPx"/> is suspended (ADR-0045).</summary>
     public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx)
     {
         ArgumentNullException.ThrowIfNull(widthsPx);
@@ -85,14 +85,14 @@ public sealed class ColumnGeometry
         // and leaves a Focus moved into a scrollable column underneath it — unseen, which
         // breaks ADR-0012 without anything looking wrong. So while it would leave less than
         // a column's default floor, every column scrolls together. The request stands:
-        // this is how the grid paints, not what was asked for (ADR-0043).
+        // this is how the grid paints, not what was asked for (ADR-0045).
         IsPinningSuspended = pinnedCount > 0 && viewportWidthPx - _offsets[pinnedCount] < MinScrollableBandPx;
         PinnedCount = IsPinningSuspended ? 0 : pinnedCount;
         ViewportWidthPx = viewportWidthPx;
     }
 
     /// <summary>The narrowest band the Pinned block may leave the scrollable columns
-    /// before pinning is suspended — a column's default <c>MinWidth</c> (ADR-0043).</summary>
+    /// before pinning is suspended — a column's default <c>MinWidth</c> (ADR-0045).</summary>
     public const double MinScrollableBandPx = ColumnWidthSpec.DefaultMinWidthPx;
 
     /// <summary>
@@ -109,15 +109,15 @@ public sealed class ColumnGeometry
 
     /// <summary>How many leading columns are pinned — always painted, outside
     /// virtualisation, and costing directly (ADR-0004). Zero while pinning is suspended;
-    /// every other member reads this, so they all agree on it (ADR-0043).</summary>
+    /// every other member reads this, so they all agree on it (ADR-0045).</summary>
     public int PinnedCount { get; }
 
     /// <summary>How many leading columns the View State asked to pin, whether or not
-    /// they are pinned now (ADR-0043).</summary>
+    /// they are pinned now (ADR-0045).</summary>
     public int RequestedPinnedCount { get; }
 
     /// <summary>Whether the requested Pinned block is suspended because it would leave
-    /// the scrollable columns less than <see cref="MinScrollableBandPx"/> (ADR-0043).</summary>
+    /// the scrollable columns less than <see cref="MinScrollableBandPx"/> (ADR-0045).</summary>
     public bool IsPinningSuspended { get; }
 
     /// <summary>The width the columns are painted in, the pinned block included. The grid

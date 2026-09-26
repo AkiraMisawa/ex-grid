@@ -58,7 +58,7 @@ _Avoid_: visible area, visible range, window
 A Viewport axis taken from the parent's box instead of declared as a number. The browser reports
 the size, and the parent must have a definite size on that axis
 ([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)).
-_Avoid_: auto (that is a column width), 100%, responsive (that is ADR-0043's "following the box")
+_Avoid_: auto (that is a column width), 100%, responsive (that is ADR-0045's "following the box")
 
 **Scrollbar Gutter**:
 How much of the declared Viewport its own scrollbars occupy. A classic scrollbar is drawn
@@ -393,6 +393,29 @@ ranges, Shift+arrow extends **the range the Anchor belongs to**. After Ctrl+clic
 cell, Anchor and Focus stand **detached** — on that cell, outside every range — and the next
 extension starts a new range ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)).
 _Avoid_: origin, base cell
+
+**Row Mark**:
+A row the user has singled out for an action that follows — the checkbox beside a row.
+**Distinct from Selection**: a Selection is positions in the current order and is dropped on
+reorder; a Row Mark belongs to the row's identity, is **held by the Consumer**, and survives
+sorting and scrolling. The grid reports the intent to mark and **asks, row by row, whether a row
+is marked**; it does not hold the marks. Marking "all" from the header means every row of the
+current result — after filtering — whether or not it is on screen; under a pager it marks the page
+first and offers the whole result explicitly, as Ctrl+A does
+([ADR-0015](./docs/adr/0015-paging-is-another-driver-for-range-requests.md)).
+"All" is **the result as it stood when the header was pressed**: a row that arrives later is not
+marked, and the header shows "some". Changing the filter keeps the marks, and **marks outside the
+current result are always counted aloud**, never acted on silently
+([ADR-0043](./docs/adr/0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)).
+_Avoid_: checked row, selected row, tick (a "selected" row is Selection's word)
+
+**Mark Column**:
+The one column per grid whose cells show and toggle **Row Marks**, and whose header marks all.
+Its meaning belongs to the core, like an **Action Column**'s, and it is painted as plain markup.
+Space on it applies to every selected row at once. Only Detail rows carry a mark. Not a boolean
+field shown as a checkbox — that is the row's data, not a Row Mark
+([ADR-0043](./docs/adr/0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)).
+_Avoid_: checkbox column, selection column
 
 ### Columns
 

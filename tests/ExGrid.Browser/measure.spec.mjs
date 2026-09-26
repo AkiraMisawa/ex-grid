@@ -7,7 +7,7 @@ import { SERVER } from './hosting.mjs';
 //
 //   EXGRID_HOSTING=server EXGRID_MEASURE=pointer npx playwright test measure.spec.mjs
 //
-// And §21.9's Fill question (ADR-0028/0043): how long the stale band stands while the
+// And §21.9's Fill question (ADR-0028/0045): how long the stale band stands while the
 // window is dragged taller over a Fill grid on a circuit — the rows painted for the old
 // size until the new size's render lands, a round trip later:
 //

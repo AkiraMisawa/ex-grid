@@ -175,6 +175,16 @@
     /// </summary>
     [Parameter] public CellEngagement Engagement { get; set; } = CellEngagement.None;
 
+    /// <summary>Whether this row carries a Row Mark (ADR-0043) — the Consumer's answer,
+    /// asked by the grid for this row. A value, so only a row whose answer moved
+    /// re-renders.</summary>
+    [Parameter] public bool Marked { get; set; }
+
+    /// <summary>Where a press on this row's Mark Column checkbox is reported: the row and
+    /// the state it asks for. Held by the parent in a field, compared by reference, for
+    /// the reason <see cref="OnAction"/> is (ADR-0003).</summary>
+    [Parameter] public Func<TRow, bool, Task>? OnMark { get; set; }
+
     private TRow? _renderedRow;
     private IReadOnlyList<GridColumn<TRow>>? _renderedColumns;
     private ColumnStyles? _renderedStyles;
@@ -187,6 +197,8 @@
     private int _renderedRowIndex;
     private bool _renderedStripe;
     private CellEngagement _renderedEngagement = CellEngagement.None;
+    private bool _renderedMarked;
+    private Func<TRow, bool, Task>? _renderedOnMark;
 
     protected override void OnInitialized()
     {
@@ -214,7 +226,9 @@
             && ReferenceEquals(_renderedOnAction, OnAction)
             && _renderedRowIndex == RowIndex
             && _renderedStripe == Stripe
-            && _renderedEngagement == Engagement)
+            && _renderedEngagement == Engagement
+            && _renderedMarked == Marked
+            && ReferenceEquals(_renderedOnMark, OnMark))
         {
             return false;
         }
@@ -237,6 +251,8 @@
         _renderedRowIndex = RowIndex;
         _renderedStripe = Stripe;
         _renderedEngagement = Engagement;
+        _renderedMarked = Marked;
+        _renderedOnMark = OnMark;
     }
 
     // Each cell's id, composed the first time the cell is painted in this row and kept
@@ -322,6 +338,11 @@
 
     private void PaintCellContent(RenderTreeBuilder builder, GridColumn<TRow> column, int index)
     {
+        if (column.IsMarkColumn)
+        {
+            PaintMark(builder);
+            return;
+        }
         if (column.Template is { } template)
         {
             // The focus request reaches this cell's content on the one render that hands
@@ -374,6 +395,36 @@
             builder.CloseElement();
         }
     }
+
+    // Held for the row's life, so the checkbox keeps its registered event across renders
+    // (PF-3); it reads Marked when pressed, not when built.
+    private Func<Task>? _toggleMark;
+
+    /// <summary>
+    /// The Mark Column's checkbox (ADR-0043): on Detail rows only — a Group or Total row
+    /// has no defined target for an action. A button carrying the checkbox role rather
+    /// than a native checkbox: a native one flips its own state on the press, before the
+    /// Consumer has answered, and would show a mark nobody holds.
+    /// </summary>
+    private void PaintMark(RenderTreeBuilder builder)
+    {
+        if ((RowKind?.Invoke(Row) ?? global::ExGrid.Rows.RowKind.Detail) != global::ExGrid.Rows.RowKind.Detail)
+            return;
+        builder.OpenElement(0, "button");
+        builder.AddAttribute(1, "type", "button");
+        builder.AddAttribute(2, "class", "ex-mark");
+        builder.AddAttribute(3, "role", "checkbox");
+        builder.AddAttribute(4, "aria-checked", Marked ? "true" : "false");
+        builder.AddAttribute(5, "aria-label", "Mark row");
+        // Never holding the keyboard, as an action's button does not (ADR-0033/0037).
+        builder.AddAttribute(6, "tabindex", "-1");
+        builder.AddEventPreventDefaultAttribute(7, "onmousedown", true);
+        builder.AddAttribute(8, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _toggleMark ??= ToggleMarkAsync));
+        builder.CloseElement();
+    }
+
+    // The grid reports; the Consumer holds the mark (ADR-0043).
+    private Task ToggleMarkAsync() => OnMark?.Invoke(Row, !Marked) ?? Task.CompletedTask;
 
     private static string ActionClass(GridAction action)
         => action.CssClass is null ? "ex-action" : "ex-action " + action.CssClass;

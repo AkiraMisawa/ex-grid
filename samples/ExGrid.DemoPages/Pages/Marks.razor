@@ -1,0 +1,104 @@
+@page "/marks"
+@implements IDisposable
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <a href="wide">Wide</a>
+    <a href="cells">Cells and rows</a>
+    <a href="fetch">Fetching source</a>
+    <span>Row Marks</span>
+</nav>
+
+<h1>Row Marks — 1,000,000 rows through a fetching source</h1>
+
+<p>
+    The Mark Column (ADR-0043). The header marks every row of the current result, as it
+    stands at the press, whether or not it is on screen; Space with the Focus in the Mark
+    Column brings the selected rows into line. The marks belong to each row's identity and
+    are kept by the source, as keys and snapshots the server can count and act on — never
+    as positions. Filtering keeps them, and the count says how many lie outside the filter.
+</p>
+
+<div class="demo-toolbar">
+    <button id="filter-alpha" @onclick="() => _source.OnFilterChanged(AlphaOnly)">Show desk Alpha only</button>
+    <button id="filter-none" @onclick="() => _source.OnFilterChanged(null)">Show every desk</button>
+    <button id="add-row" @onclick="AddRowElsewhere">Add a row elsewhere</button>
+    <button id="delete-row" @onclick="DeleteRowElsewhere">Delete row 3 elsewhere</button>
+    <button id="approve" @onclick="Approve">Approve the marked rows</button>
+</div>
+
+<p class="demo-status">
+    <span id="approve-result">@_result</span>
+    <span id="fetch-error">@(_error is null ? "" : $"Last failure: {_error}")</span>
+</p>
+
+<ExGrid TRow="DemoMarkRow"
+        Source="_source"
+        Columns="DemoMarkServer.Columns"
+        RowHeight="28"
+        ViewportHeight="600"
+        ViewportWidth="500" />
+
+@code {
+    private const int Total = 1_000_000;
+    private const int DelayMs = 30;
+
+    private static readonly GridFilter AlphaOnly = new(new Dictionary<string, FilterSpec>
+    {
+        ["Desk"] = new([new FilterClause(FilterOperator.Equals, "Alpha")]),
+    });
+
+    private readonly DemoMarkServer _server = new(Total);
+    private readonly FetchingGridSource<DemoMarkRow> _source;
+    private string _result = "";
+    private string? _error;
+
+    public Marks()
+    {
+        _source = GridSource.Fetch<DemoMarkRow>(FetchAsync, readAheadRows: 60, marks: _server.Adapter());
+        _source.FetchFailed += OnFetchFailed;
+    }
+
+    private async ValueTask<GridPage<DemoMarkRow>> FetchAsync(GridQuery query, CancellationToken cancellation)
+    {
+        await Task.Delay(DelayMs, cancellation);
+        return _server.Fetch(query);
+    }
+
+    private async Task AddRowElsewhere()
+    {
+        _server.Add();
+        // News only the server has: the page tells the marks to count again, and the
+        // header turns to "some" if everything had been marked (ADR-0043).
+        await _source.Marks!.RecountAsync();
+    }
+
+    private async Task DeleteRowElsewhere()
+    {
+        _server.Delete(3);
+        await _source.Marks!.RecountAsync();
+    }
+
+    // Run by identity, verified where the data lives, and reported as it went: a partial
+    // result is never passed off as success (ADR-0043).
+    private void Approve()
+    {
+        var (applied, gone) = _server.Approve(_source.Marks!.State);
+        _result = gone == 0
+            ? $"Approved {applied:N0} rows."
+            : $"Approved {applied:N0} of {applied + gone:N0} marked rows; {gone:N0} no longer exist.";
+    }
+
+    private void OnFetchFailed(Exception error)
+    {
+        _error = error.Message;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        _source.Dispose();
+        _source.FetchFailed -= OnFetchFailed;
+    }
+}

@@ -111,7 +111,7 @@ says; the areas that need more than one line get their own section below.
 | **FN-4** | MUST | `GridSource.From` and `GridSource.Fetch` drive the same push path — one behavioural path, not two (ADR-0001) | Layer 2: same scenario through both entry points | identical painted output and identical render counts |
 | **FN-5** | MUST | The bundled fetching Source breaks its own cold start, coalesces, and discards superseded answers (ADR-0025) | Layer 1 | as ADR-0025's clauses, each with its own test |
 | **FN-6** | MUST | Pinned Columns are the leading N, always painted, and never virtualised away (ADR-0004) | Layer 2 + Layer 3 | pinned cells present at every scroll offset including mid-fling |
-| **FN-6a** | MUST | While the Pinned block leaves the scrollable columns a band narrower than 40px, every column scrolls together; pinning returns when the box widens; the pinned count in View State is untouched (ADR-0043) | Layer 1 (`ColumnGeometry`) + Layer 3 narrowing the page | a Focus arrowed into a scrollable column is on screen; no `OnColumn…` or View State notification is raised by the suspension |
+| **FN-6a** | MUST | While the Pinned block leaves the scrollable columns a band narrower than 40px, every column scrolls together; pinning returns when the box widens; the pinned count in View State is untouched (ADR-0045) | Layer 1 (`ColumnGeometry`) + Layer 3 narrowing the page | a Focus arrowed into a scrollable column is on screen; no `OnColumn…` or View State notification is raised by the suspension |
 | **FN-7** | MUST | Cell State (`Normal/Stale/Missing/Error/Modified`) reaches the DOM as the closed class vocabulary and nothing else (ADR-0006/0029) | Layer 2 | exactly the `ex-state-*` classes; no Consumer vocabulary crosses the boundary |
 | **FN-7a** | MUST | The Column's tone rule (`None/Positive/Negative`) reaches the DOM as the closed class vocabulary and nothing else; the grid derives no tone of its own, a null value is never offered to the rule, and the text, copy and raw forms are untouched by it (ADR-0006/0029) | Layer 2; Layer 3 under the Wrapper | exactly the `ex-tone-*` classes; a negative in a column without a rule is an ordinary cell; under the Wrapper a `Negative` cell is the palette's error colour and its neighbour the ink |
 | **FN-8** | MUST | Row Kind (`Detail/Group/Total`) paints as a declared role carrying no depth and no aggregate (ADR-0024) | Layer 2 | `ex-row-group` / `ex-row-total` classes; no hierarchy API exists |
@@ -155,7 +155,7 @@ so conformance is a set comparison rather than a judgement of taste.
 | **UX-10** | SHOULD | `--ex-scrollbar-width` narrows the bar, the gutter changes, and the geometry follows (ADR-0029) | Layer 3 | the Focus stays inside the readable area after the change (the `scrollbar.spec.mjs` invariant) |
 | **UX-11** | MUST | Popovers (filter panel, column menu, Context Menu) are never cut — not by the scroll container, and not by any ancestor that shows the grid whole: each stays inside its grid's box and scrolls within itself when its contents are taller; they do not tangle across instances (ADR-0017/0018/0040) | Layer 2: the inline `max-height` from the geometry; Layer 3: open the filter on the rightmost column of two grids, and a menu in a short grid inside a `MudDialog` | fully visible; each grid's popover is its own; a menu taller than the grid scrolls |
 | **UX-11a** | MUST | A popover whose room falls below one `RowHeight` when the box shrinks closes as a Cancel, and the keyboard returns to the root (ADR-0040, 2026-09-25) | Layer 2 with a reported size change; Layer 3 narrowing the page with the column menu open | the popover is gone; the next key reaches the grid |
-| **UX-11b** | MUST | Columns narrower than the box are not stretched; a resize changes no column's painted width (ADR-0043) | Layer 3 resizing the page | every column's painted width equals its resolved width before and after |
+| **UX-11b** | MUST | Columns narrower than the box are not stretched; a resize changes no column's painted width (ADR-0045) | Layer 3 resizing the page | every column's painted width equals its resolved width before and after |
 | **UX-12** | MUST | Accessibility semantics as ADR-0033 specifies them | see **§4.1** | every row of §4.1 passes |
 | **UX-13** | MUST | The row under the pointer is highlighted by an overlay band filled with `--ex-row-hover-background`, on hover alone — no row carries a class, and the band vanishes on leave (ADR-0029, ADR-0021 fifth entry) | Layer 3: real mouse moved down a column of two grids | one band, in the hovered instance only, following the pointer row; none after `mouseleave` |
 | **UX-14** | MUST | The chosen action of an Interactive cell is tellable — outlined through `--ex-focus-outline`, and restated in the forced-colors block like every other state (ADR-0029/0037) | Layer 3 on `/cells`, with and without forced colors | the chosen button's computed outline is non-`none` in both, and no other button's is |
@@ -650,7 +650,7 @@ release.
   provisional and neither has been measured".
 - **The Density preset numbers** — ADR-0028, "declared, not measured", against Excel at several
   zoom levels.
-- **Whether `Fill` needs debouncing** — ADR-0028. *(Sharpened 2026-09-25, ADR-0043.)* The case
+- **Whether `Fill` needs debouncing** — ADR-0028. *(Sharpened 2026-09-25, ADR-0045.)* The case
   that needs measuring is a window drag on a **Server circuit with latency**, where the frame
   painted from the previous size lasts a round trip: drag the window under injected latency and
   record how long the stale band shows. *(Corrected 2026-09-26.)* `spikes/render-bench` cannot
@@ -904,3 +904,26 @@ pointed at it with `EXGRID_HOSTING=server`.
 | **SRV-4** | MUST | The console rules hold on the Server host, reading CON-6 from the Server host's own output (CON-1..8) | the shared fixture during SRV-2's run | as the core's |
 | **SRV-5** | MUST | Keys, paste and the clipboard hold under a real round trip: ED-22, KB-33..35, CP-21 and CP-23 pass with 150 ms injected between the browser and the Server host (ADR-0005/0010/0039) | Layer 3 through the loopback latency proxy | as those criteria |
 | **SRV-6** | OBSERVATIONAL | What the pointer reports cost on a circuit: calls crossing per second during a sweep while scrolling, and the lag from crossing a row to the band repainting, at 0, 50 and 150 ms round trip (ADR-0021's owed number) | `EXGRID_MEASURE=pointer`, written to `metrics.json` | recorded per round trip; if the cost is bad, ADR-0021's answer is the switch each report already has |
+
+---
+
+## 25. Row Marks (MK)
+
+*(Added 2026-09-26, with
+[ADR-0043](adr/0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md).)* The Mark
+Column and the Row Marks it shows. The marks are the Consumer's; these criteria hold the core to
+what it decides — what a gesture means and what it paints — and hold the bundled Grid Sources to
+the Consumer's half of the contract, since they are the reference a Consumer copies. The public
+shape of the notification and of the per-row question is still to be implemented; nothing here
+depends on which shape it takes.
+
+| ID | Level | Statement | Verification | Pass |
+|---|---|---|---|---|
+| **MK-1** | MUST | Space with the Focus in the Mark Column brings every row with a selected cell in that column into line: all marked if any was unmarked, all unmarked only if all were marked; with the Focus elsewhere Space keeps its ADR-0020 meaning (ADR-0043) | Layer 1, over all-marked, none-marked and mixed selections, and with the Focus on a data cell | as stated; a mixed selection never comes out mixed |
+| **MK-2** | MUST | The header's three states come from the counts the Consumer answers — marked Detail rows in the current result against Detail rows in it — never from the Window; Group and Total rows carry no checkbox and are neither marked nor counted (ADR-0043/0024) | Layer 1 for the state; Layer 2 with a Window of fully marked rows inside a larger, partly marked result, and with Group and Total rows in the Window | the header shows "some", not "all"; no checkbox is painted on a Group or Total row |
+| **MK-3** | MUST | A Space, a header press and one checkbox each raise **one** notification; Space's carries the rectangles and the Row Sequence Version they were made under, and the bundled Sources refuse to resolve it under a different version (ADR-0043/0011/0014) | Layer 2, counting invocations over a 10⁶-row selection; Layer 1 on the Sources with a bumped version | one invocation each; the stale intent marks nothing |
+| **MK-4** | MUST | A changed mark repaints only the rows whose mark changed; every other row still skips its render (ADR-0043/0003) | Layer 2, `RenderCount` per row around one checkbox press | one row re-rendered; the rest unchanged |
+| **MK-5** | MUST | Marks survive a sort: the same rows are marked after the Row Sequence Version changes, at their new positions (ADR-0043) | Layer 2 through `GridSource.From` | the marked rows by identity are unchanged; the selection is dropped as ADR-0011 says, the marks are not |
+| **MK-6** | MUST | After "mark all", a row scrolled into view for the first time is painted marked — at 10⁶ rows, through `GridSource.Fetch`, far from where the header was pressed (ADR-0043) | Layer 3, on both browsers | every painted Detail row in the new Viewport shows its checkbox marked |
+| **MK-7** | MUST | Marks outside the current filter are counted aloud: after marking and narrowing the filter, the count display names how many marks lie outside it (ADR-0043/0014) | Layer 3 | the display reads the total and the outside count; widening the filter back shows the same rows marked |
+| **MK-8** | MUST | "All" is the result as it stood when the header was pressed: a row that arrives afterwards is not marked, and the header turns to "some" (ADR-0043) | Layer 2, pushing a Window with a new row after the press | the new row answers unmarked; the header shows "some" |

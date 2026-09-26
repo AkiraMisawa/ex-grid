@@ -1,5 +1,8 @@
 # ExGrid is a desktop grid. Narrow means a smaller desktop, not a phone
 
+*(Numbered 0043 when it was written. Row Marks reached the main branch first under that number,
+so this one became 0045 on the merge, 2026-09-26; nothing in it changed.)*
+
 *(Decided with the user, 2026-09-25, after comparing ExGrid with MudBlazor's `MudTable` and
 `MudDataGrid`. Both switch to a stacked "small-device mode" below a `Breakpoint`, `Xs` by default.
 The question was what this grid does instead.)*

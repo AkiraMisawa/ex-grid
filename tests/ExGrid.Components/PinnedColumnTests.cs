@@ -132,7 +132,7 @@ public class PinnedColumnTests : GridTestContext
         Assert.Equal(["C03"], ScrollableColumnsOf(cut));
     }
 
-    [Fact] // ADR-0043 (replacing ADR-0004's "only pinned cells"): pinning past the Viewport is suspended
+    [Fact] // ADR-0045 (replacing ADR-0004's "only pinned cells"): pinning past the Viewport is suspended
     public void Pinning_more_than_the_viewport_holds_is_suspended()
     {
         // Until 2026-09-25 this painted only the four pinned columns, and nothing the
@@ -231,7 +231,7 @@ public class PinnedColumnTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-pinned"));
     }
 
-    [Fact] // ADR-0043 / FN-6a: a Fill box too narrow for its Pinned block paints nothing pinned, and pins again when it widens
+    [Fact] // ADR-0045 / FN-6a: a Fill box too narrow for its Pinned block paints nothing pinned, and pins again when it widens
     public async Task A_box_narrowed_under_the_pinned_block_suspends_pinning_until_it_widens()
     {
         int? reportedPinned = null;
@@ -258,7 +258,7 @@ public class PinnedColumnTests : GridTestContext
         Assert.Null(reportedPinned);
     }
 
-    [Fact] // ADR-0043 / FN-6a: suspended, an arrow into a scrollable column scrolls it into view
+    [Fact] // ADR-0045 / FN-6a: suspended, an arrow into a scrollable column scrolls it into view
     public async Task A_focus_moved_right_while_suspended_is_revealed()
     {
         var cut = Render<ExGrid<TestRow>>(ps => ps

@@ -17,7 +17,7 @@ pure-logic core and the component layer exist, virtualised on both axes, with pi
 columns, selection, the keyboard (including entering a cell), the Cell Editor and the
 clipboard. What is left is recorded in
 [`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
-in [`docs/adr/`](docs/adr/) (42 decision records) and the domain glossary in
+in [`docs/adr/`](docs/adr/) (43 decision records) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
 ## Using the packages

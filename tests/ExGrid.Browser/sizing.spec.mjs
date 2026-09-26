@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures.mjs';
 
-// Column widths and a box that narrows, against the /sizing page (ADR-0016 and ADR-0043,
+// Column widths and a box that narrows, against the /sizing page (ADR-0016 and ADR-0045,
 // decided 2026-09-25). The estimates are checked against what the browser paints: a
 // header or a value the estimate says fits must not come out cut, which only a real
 // layout can show. The page's grid fills the window's width; its two pinned columns are
@@ -122,7 +122,7 @@ async function headerWidths(page) {
         Object.fromEntries(cells.map((c) => [c.textContent, c.getBoundingClientRect().width])));
 }
 
-test('columns narrower than a wide box are not stretched, and a resize changes no column width (UX-11b, ADR-0043)', async ({ page }) => {
+test('columns narrower than a wide box are not stretched, and a resize changes no column width (UX-11b, ADR-0045)', async ({ page }) => {
     const wide = await headerWidths(page);
     expect(Object.keys(wide)).toHaveLength(6);
     // Every painted width is the resolved one written inline, not a share of the box.
@@ -142,7 +142,7 @@ test('columns narrower than a wide box are not stretched, and a resize changes n
         expect(width, name).toBeCloseTo(wide[name], 1);
 });
 
-test('a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0043)', async ({ page }) => {
+test('a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045)', async ({ page }) => {
     await expect(grid(page).locator('.ex-cell.ex-pinned').first()).toBeVisible();
     const bookWidth = (await header(page, 'Book').boundingBox()).width;
 

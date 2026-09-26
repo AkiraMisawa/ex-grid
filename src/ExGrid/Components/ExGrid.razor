@@ -92,7 +92,8 @@
                        diff a new handler per render — re-registered and sent to the browser
                        for every header button on every render of the root, which is every
                        vertical scroll frame (PF-3). *@
-                    <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
+                    <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
+                        {@HeaderMark}@if (ShowMenuButtons)
                         {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                         {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                 }
@@ -104,7 +105,8 @@
                     }
                     @for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
                     {
-                        <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
+                        <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
+                            {@HeaderMark}@if (ShowMenuButtons)
                             {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                             {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                     }
@@ -275,7 +277,8 @@
                                        CellState="CellState" RowKind="RowKind"
                                        RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
-                                       Engagement="EngagementFor(row)" />
+                                       Engagement="EngagementFor(row)"
+                                       Marked="@MarkedAt(data)" OnMark="@(_onMark ??= RaiseRowMarkAsync)" />
                         }
                         else
                         {
@@ -479,20 +482,32 @@
             <button type="button" @onclick="() => TurnPageAsync(1)" disabled="@(_pageIndex >= PageCount - 1)">›</button>
         </div>
     }
-    @if (!_selection.Selection.IsEmpty && (PageSize is not null || !SelectionIntersectsView()))
+    @if ((!_selection.Selection.IsEmpty && (PageSize is not null || !SelectionIntersectsView())) || ShowsMarkStatus)
     {
         @* The selection count, the off-screen indicator that closes the invisible-paste
            hole — for paging and scrolling alike — and, under a pager, the explicit way
-           past the page's context (ADR-0014/0015). *@
+           past the page's context (ADR-0014/0015). The Row Marks' count sits beside it,
+           saying aloud how many lie outside the current filter (ADR-0043). *@
         <div class="ex-status" role="presentation">
-            <span>@_selection.Selection.CellCount cells selected@(SelectionIntersectsView() ? "" : " (outside the visible range)")</span>
-            @if (!SelectionIntersectsView())
+            @if (!_selection.Selection.IsEmpty && (PageSize is not null || !SelectionIntersectsView()))
             {
-                <button type="button" @onclick="GoToSelectionAsync">Go to selection</button>
+                <span>@_selection.Selection.CellCount cells selected@(SelectionIntersectsView() ? "" : " (outside the visible range)")</span>
+                @if (!SelectionIntersectsView())
+                {
+                    <button type="button" @onclick="GoToSelectionAsync">Go to selection</button>
+                }
+                @if (PageSize is not null)
+                {
+                    <button type="button" @onclick="SelectWholeResultAsync">Select all @TotalRows rows</button>
+                }
             }
-            @if (PageSize is not null)
+            @if (MarkCountText() is { } markCount)
             {
-                <button type="button" @onclick="SelectWholeResultAsync">Select all @TotalRows rows</button>
+                <span class="ex-mark-count">@markCount</span>
+            }
+            @if (PageSize is not null && _markColumn >= 0)
+            {
+                <button type="button" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
             }
         </div>
     }
@@ -824,6 +839,14 @@
     /// row is not possible anyway (ADR-0013).
     /// </summary>
     [Parameter] public EventCallback<GridActionEventArgs<TRow>> OnAction { get; set; }
+
+    /// <summary>
+    /// The Row Marks on the push form (ADR-0043): who holds them, answers whether a row
+    /// is marked, counts them, and takes each marking gesture. Needed only when a Mark
+    /// Column is declared; a Source keeps its own, and passing both is refused — one of
+    /// the two would have to silently win.
+    /// </summary>
+    [Parameter] public IRowMarks<TRow>? Marks { get; set; }
 
     /// <summary>
     /// The copy cap, in cells (ADR-0005). Past it the grid does not copy at all — it
@@ -1390,6 +1413,7 @@
         try
         {
             BindSource();
+            BindMarks();
             ApplyState();
         }
         finally
@@ -2691,7 +2715,7 @@
             _reordering = true;
             var contentX = _dragStartContentX + (e.ClientX - _dragStartClientX);
             // The boundary a drag may not cross is the View State's, suspended or not: a
-            // drop across it would change what is pinned once the box widens (ADR-0011/0043).
+            // drop across it would change what is pinned once the box widens (ADR-0011/0045).
             var boundaries = HeaderReorder.AllowedBoundaries(
                 _headerLayout, Columns.Count, _columnStyles.Geometry.RequestedPinnedCount, _dragUnitFirst, _dragUnitCount);
             var best = boundaries[0];
@@ -5123,6 +5147,14 @@
             return;
         var column = Columns[focus.Column];
 
+        // The Mark Column acts on the selection's rows, not on the one under the Focus,
+        // and needs none of them in hand: they are named by position (ADR-0043).
+        if (column.IsMarkColumn)
+        {
+            await MarkSelectedRowsAsync();
+            return;
+        }
+
         // The row has to be in hand: a Focus over a Placeholder has no row to act on, and
         // ADR-0012 already says editing waits for the data to arrive.
         var slice = focus.Row - _windowStart;
@@ -5577,6 +5609,248 @@
             await OnRangeNeeded.InvokeAsync(range);
     }
 
+    // ---- Row Marks (ADR-0043) -------------------------------------------------------
+
+    // The Mark Column's index, or -1; and who holds the marks — the Marks parameter on
+    // the push form, the Source's own on the pull form. Resolved per push, off the render
+    // path.
+    private int _markColumn = -1;
+    private IRowMarks<TRow>? _marks;
+    private IRowMarks<TRow>? _boundMarks;
+    private Func<TRow, RowKind>? _toldRowKind;
+    private bool _rowKindTold;
+
+    // Held in fields so every row and every render hands over the same instance: a method
+    // group is a new delegate each time, and a row compares OnMark by reference (ADR-0003);
+    // a header or status button handed a new one would re-register its event (PF-3).
+    private Func<TRow, bool, Task>? _onMark;
+    private Func<Task>? _onHeaderMarkField;
+    private Func<Task>? _onMarkWholeResultField;
+    private RenderFragment? _headerMark;
+
+    private Func<Task> _onHeaderMark => _onHeaderMarkField ??= PressHeaderMarkAsync;
+    private Func<Task> _onMarkWholeResult => _onMarkWholeResultField ??= MarkWholeResultAsync;
+
+    /// <summary>
+    /// Finds the Mark Column and who holds its marks, refusing by name what cannot be
+    /// painted honestly: two Mark Columns ("all" would not say which marks), a Mark Column
+    /// nobody holds marks for, and marks from both the parameter and the Source.
+    /// </summary>
+    private void BindMarks()
+    {
+        _markColumn = -1;
+        for (var i = 0; i < Columns.Count; i++)
+        {
+            if (!Columns[i].IsMarkColumn)
+                continue;
+            if (_markColumn >= 0)
+            {
+                throw new InvalidOperationException(
+                    $"Columns '{Columns[_markColumn].Name}' and '{Columns[i].Name}' are both Mark Columns. A grid has " +
+                    "at most one: the header's \"all\", its state and the count would not say which marks they " +
+                    "meant (ADR-0043).");
+            }
+            _markColumn = i;
+        }
+
+        var sourceMarks = Source?.Marks;
+        if (Marks is not null && sourceMarks is not null)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(Marks)} was passed together with a Source that keeps its own Row Marks. One of the two " +
+                "would have to silently win; pass the Source alone, or a Source without marks (ADR-0043).");
+        }
+        var marks = Marks ?? sourceMarks;
+        if (_markColumn >= 0 && marks is null)
+        {
+            throw new InvalidOperationException(
+                $"Column '{Columns[_markColumn].Name}' is a Mark Column, but nobody holds the marks. Pass " +
+                $"{nameof(Marks)}, or a Source that keeps them — GridSource.From does; GridSource.Fetch does when " +
+                "it is given a mark adapter (ADR-0043).");
+        }
+        _marks = _markColumn >= 0 ? marks : null;
+
+        if (!ReferenceEquals(_boundMarks, _marks))
+        {
+            if (_boundMarks is not null)
+                _boundMarks.Changed -= OnMarksChanged;
+            _boundMarks = _marks;
+            _rowKindTold = false;
+            if (_boundMarks is not null)
+                _boundMarks.Changed += OnMarksChanged;
+        }
+        // The roles are pushed, as the columns are to a Source: the declaration stays the
+        // grid's, and the marks leave Group and Total rows out of "all" and the counts.
+        if (_marks is not null && (!_rowKindTold || !ReferenceEquals(_toldRowKind, RowKind)))
+        {
+            _toldRowKind = RowKind;
+            _rowKindTold = true;
+            _marks.OnRowKindChanged(RowKind);
+        }
+    }
+
+    private void OnMarksChanged()
+    {
+        if (_disposed)
+            return;
+        // Marshalled, as a Source's change is: marks kept by a fetching Source answer
+        // their counts from whatever thread the server's answer arrived on.
+        _ = InvokeAsync(() =>
+        {
+            if (!_disposed)
+                StateHasChanged();
+        });
+    }
+
+    /// <summary>Whether the row at this data is marked — asked only while a Mark Column
+    /// exists, so a grid without one asks nothing.</summary>
+    private bool MarkedAt(TRow row) => _marks is not null && _marks.IsMarked(row);
+
+    private Task RaiseRowMarkAsync(TRow row, bool marked)
+        => _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.OneRow(row, marked)) ?? Task.CompletedTask;
+
+    /// <summary>The Detail rows "Mark all N rows" offers: the Consumer's count where it
+    /// has answered, the result's row count until then.</summary>
+    private int MarkableRows => _marks?.Counts?.RowsInResult ?? TotalRows;
+
+    private bool ShowsMarkStatus => _markColumn >= 0 && (PageSize is not null || MarkCountText() is not null);
+
+    /// <summary>"N marked", with the clause that names the marks outside the current
+    /// filter whenever there are any (ADR-0043) — or null while nothing is marked, or
+    /// while the counts are not known.</summary>
+    private string? MarkCountText()
+    {
+        if (_markColumn < 0 || _marks?.Counts is not { } counts || counts.Marked == 0)
+            return null;
+        return counts.MarkedOutsideResult == 0
+            ? string.Create(CultureInfo.InvariantCulture, $"{counts.Marked} marked")
+            : string.Create(CultureInfo.InvariantCulture,
+                $"{counts.Marked} marked ({counts.MarkedOutsideResult} outside the current filter)");
+    }
+
+    /// <summary>The rows of the current page, as positions in the whole result.</summary>
+    private RowRange? PageRows()
+    {
+        if (PageSize is not { } size)
+            return null;
+        var count = Math.Min(size, TotalRows - _pageStartRow);
+        return count > 0 ? new RowRange(_pageStartRow, count) : null;
+    }
+
+    /// <summary>
+    /// What the header checkbox shows (ADR-0043). Under a pager, the page — which is
+    /// wholly in hand, so its rows are asked one by one and nothing is guessed. Otherwise
+    /// the Consumer's counts, never the Window: a fully marked Window inside a larger
+    /// result is "some". Counts not yet known claim neither none nor all.
+    /// </summary>
+    private string HeaderMarkChecked()
+    {
+        if (PageSize is not null)
+        {
+            if (PageRows() is not { } page)
+                return "false";
+            var marked = 0;
+            var rows = 0;
+            for (var r = page.Start; r < page.Start + page.Count; r++)
+            {
+                var slice = r - _windowStart;
+                if (slice < 0 || slice >= _window.Count)
+                    return "mixed";
+                var data = _window[slice];
+                if ((RowKind?.Invoke(data) ?? global::ExGrid.Rows.RowKind.Detail) != global::ExGrid.Rows.RowKind.Detail)
+                    continue;
+                rows++;
+                if (MarkedAt(data))
+                    marked++;
+            }
+            return marked == 0 ? "false" : marked == rows ? "true" : "mixed";
+        }
+        if (_marks?.Counts is not { } counts)
+            return "mixed";
+        return RowMarkRules.HeaderState(counts) switch
+        {
+            RowMarkHeaderState.None => "false",
+            RowMarkHeaderState.All => "true",
+            _ => "mixed",
+        };
+    }
+
+    /// <summary>The header's checkbox: painted inside the Mark Column's header cell,
+    /// stopping its press there so the header's own click — a sort — never sees it.</summary>
+    private RenderFragment HeaderMark => _headerMark ??= builder =>
+    {
+        builder.OpenElement(0, "button");
+        builder.AddAttribute(1, "type", "button");
+        builder.AddAttribute(2, "class", "ex-mark ex-mark-all");
+        builder.AddAttribute(3, "role", "checkbox");
+        builder.AddAttribute(4, "aria-checked", HeaderMarkChecked());
+        builder.AddAttribute(5, "aria-label", "Mark all rows");
+        builder.AddAttribute(6, "tabindex", "-1");
+        builder.AddEventPreventDefaultAttribute(7, "onmousedown", true);
+        builder.AddEventStopPropagationAttribute(8, "onmousedown", true);
+        builder.AddEventStopPropagationAttribute(9, "onclick", true);
+        builder.AddAttribute(10, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _onHeaderMark));
+        builder.CloseElement();
+    };
+
+    /// <summary>
+    /// The header press (ADR-0043). Under a pager it lines up the page's rows — a single
+    /// gesture does not vault past the page (ADR-0015) — and the whole result is offered
+    /// beside the count. Otherwise it marks every row of the current result, as it stands
+    /// now, unless all are marked already.
+    /// </summary>
+    private Task PressHeaderMarkAsync()
+    {
+        if (_marks is null)
+            return Task.CompletedTask;
+        if (PageSize is not null)
+        {
+            return PageRows() is { } page
+                ? _marks.OnMarkIntentAsync(new RowMarkIntent<TRow>.Positions([page], _sequenceVersion))
+                : Task.CompletedTask;
+        }
+        var state = _marks.Counts is { } counts ? RowMarkRules.HeaderState(counts) : RowMarkHeaderState.Some;
+        return _marks.OnMarkIntentAsync(new RowMarkIntent<TRow>.AllRows(RowMarkRules.HeaderPress(state), _sequenceVersion));
+    }
+
+    /// <summary>"Mark all N rows", under a pager: the explicit step past the page.</summary>
+    private Task MarkWholeResultAsync()
+        => _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.AllRows(true, _sequenceVersion)) ?? Task.CompletedTask;
+
+    /// <summary>
+    /// Space with the Focus in the Mark Column (ADR-0043): every row with a selected cell
+    /// in that column, once each, as positions under the order they were taken in — past
+    /// the Window the grid has no identity to name them by. The Consumer lines them up.
+    /// </summary>
+    private Task MarkSelectedRowsAsync()
+    {
+        if (_marks is null)
+            return Task.CompletedTask;
+        var spans = new List<(int Start, int End)>();
+        foreach (var range in _selection.Selection.Ranges)
+        {
+            if (range.LeftColumn <= _markColumn && _markColumn < range.LeftColumn + range.ColumnCount)
+                spans.Add((range.TopRow, range.TopRow + range.RowCount));
+        }
+        if (spans.Count == 0)
+            return Task.CompletedTask;
+        spans.Sort();
+        var merged = new List<RowRange>();
+        var (start, end) = spans[0];
+        foreach (var (s, e) in spans.Skip(1))
+        {
+            if (s <= end)
+            {
+                end = Math.Max(end, e);
+                continue;
+            }
+            merged.Add(new RowRange(start, end - start));
+            (start, end) = (s, e);
+        }
+        merged.Add(new RowRange(start, end - start));
+        return _marks.OnMarkIntentAsync(new RowMarkIntent<TRow>.Positions(merged, _sequenceVersion));
+    }
+
     /// <summary>
     /// Stops the grid's timers, unsubscribes from the Source — which the Consumer built,
     /// and so disposes itself (ADR-0025) — and releases this instance's handle in the
@@ -5594,6 +5868,11 @@
             _boundSource.StateChanged -= OnSourceStateChanged;
             (_boundSource as IBindsToOneCircuit)?.Binding.Detach(this);
             _boundSource = null;
+        }
+        if (_boundMarks is not null)
+        {
+            _boundMarks.Changed -= OnMarksChanged;
+            _boundMarks = null;
         }
         try
         {
@@ -5752,7 +6031,7 @@
     }
 
     /// <summary>A group inside the pinned block is held at the left edge, unless pinning is
-    /// suspended and every column scrolls (ADR-0032/0043).</summary>
+    /// suspended and every column scrolls (ADR-0032/0045).</summary>
     private bool IsGroupHeld(ResolvedHeaderGroup group)
         => group.Pinned && !_columnStyles.Geometry.IsPinningSuspended;
 

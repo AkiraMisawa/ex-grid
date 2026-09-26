@@ -47,7 +47,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 44 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 45 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -90,7 +90,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 44 ADRs. **A new decision that follows these will not
+The principles that run through all 45 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -279,8 +279,22 @@ rules that make this safe:
 
 Project skills from [mattpocock/skills](https://github.com/mattpocock/skills) live in
 `.claude/skills/`: `/grill-with-docs` (with `grilling` and `domain-modeling`), `tdd` (with
-`codebase-design`), `/to-spec`, and `/setup-matt-pocock-skills`. They are ordinary files; where
-one disagrees with this document, this document wins.
+`codebase-design`), `/to-spec`, `/implement`, and `/setup-matt-pocock-skills`. They are ordinary
+files; where one disagrees with this document, this document wins.
+
+### Implement
+
+`/implement` works a spec or ticket under `docs/specs/` through `tdd`. Its generic steps map
+onto this repo as follows:
+
+- **"Typechecking"** is `nix develop -c dotnet build ExGrid.slnx`; **a single test file** is
+  `nix develop -c dotnet test <project> --filter <class>`; **the full suite** is the one in
+  "What counts as verified", plus layer 3 when the change faces the UI. A green build is still
+  not a result.
+- **Invoking `/implement` is the request to commit** its work to the current branch. It is not a
+  request to push.
+- **A ticket that turns out to need a decision stops there.** Record the ADR first (or, as a
+  background agent, return the proposal), as in "Working in parallel".
 
 ### Issue tracker
 

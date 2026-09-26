@@ -51,6 +51,7 @@ public sealed record GridColumn<TRow>
         IReadOnlyList<GridAction> actions,
         RenderFragment<TemplateCellContext<TRow>>? template,
         bool queryable,
+        bool mark = false,
         bool editable = false,
         FilterUiMode filterUi = FilterUiMode.Condition,
         CellAlign align = CellAlign.Auto,
@@ -84,6 +85,7 @@ public sealed record GridColumn<TRow>
                 $"Column '{name}': a Fixed width of {Width.Width.FixedPx} is below its MinWidth ({Width.MinWidthPx}) — refused, not clamped (ADR-0016)."));
         Actions = actions;
         Template = template;
+        IsMarkColumn = mark;
         Editable = editable;
         FilterUi = filterUi;
         Align = align;
@@ -160,6 +162,26 @@ public sealed record GridColumn<TRow>
         return new GridColumn<TRow>(name, type, value, header, width, [], template, queryable: true, format: format);
     }
 
+    /// <summary>
+    /// The Mark Column (ADR-0043): a checkbox on every Detail row, and one in the header
+    /// that marks every row of the current result. The marks are the Consumer's — the
+    /// grid reports each gesture and asks each painted row whether it is marked — so a grid
+    /// declaring this column needs someone holding them: its Source's marks, or the
+    /// <c>Marks</c> parameter. At most one per grid; a second is refused by name, because
+    /// "all" and the counts would not say which marks they meant.
+    ///
+    /// <para>Not a boolean field shown as a checkbox: a Row Mark is not the row's data and
+    /// is never written to it. Like an Action Column it has no value, so it is unsortable,
+    /// unfilterable, and copies as an empty cell.</para>
+    /// </summary>
+    public static GridColumn<TRow> MarkColumn(
+        string name = "Mark",
+        string? header = null,
+        ColumnWidthSpec? width = null)
+        => new(name, ColumnType.Text, static _ => null, header ?? "", width,
+            [], template: null, queryable: false, mark: true,
+            align: CellAlign.Center, headerAlign: CellAlign.Center);
+
     /// <summary>The slice filtering and sorting need — handed to the engine as-is.</summary>
     public ColumnInfo<TRow> Info { get; }
 
@@ -195,12 +217,16 @@ public sealed record GridColumn<TRow>
     /// (ADR-0020).</summary>
     public IReadOnlyList<GridAction> Actions { get; }
 
+    /// <summary>Whether this is the grid's Mark Column (ADR-0043), declared through
+    /// <see cref="MarkColumn"/>.</summary>
+    public bool IsMarkColumn { get; }
+
     /// <summary>What the Consumer paints in this column's cells, or null (ADR-0020) — handed
     /// the row and the core's focus request for the cell (ADR-0037).</summary>
     public RenderFragment<TemplateCellContext<TRow>>? Template { get; }
 
     /// <summary>Whether the query engine will sort or filter on this column. False only
-    /// for an Action Column, which has no value to order by (ADR-0020).</summary>
+    /// for an Action or Mark Column, which has no value to order by (ADR-0020/0043).</summary>
     public bool IsQueryable => Info.IsQueryable;
 
     /// <summary>The cells' alignment (ADR-0016): Auto derives from the type — the
@@ -246,10 +272,10 @@ public sealed record GridColumn<TRow>
     public bool Editable { get; }
 
     /// <summary>
-    /// Whether this column's cells paint their value as text. False for Action and
-    /// Template columns, and that is what takes them out of the Overflow decision and
+    /// Whether this column's cells paint their value as text. False for Action, Template
+    /// and Mark columns, and that is what takes them out of the Overflow decision and
     /// the Auto width observation: <c>####</c> is about a value that does not fit
     /// (ADR-0016), and there is no text here to measure or to hash.
     /// </summary>
-    public bool PaintsValue => Template is null && Actions.Count == 0;
+    public bool PaintsValue => Template is null && Actions.Count == 0 && !IsMarkColumn;
 }
