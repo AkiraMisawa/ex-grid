@@ -42,14 +42,25 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     internal FetchingGridSource(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
         int readAheadRows,
-        Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null)
+        Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null,
+        Rows.RowMarkAdapter<TRow>? marks = null)
     {
         ArgumentNullException.ThrowIfNull(fetch);
         ArgumentOutOfRangeException.ThrowIfNegative(readAheadRows);
         _fetch = fetch;
         _readAheadRows = readAheadRows;
         _distinctValues = distinctValues;
+        Marks = marks is null ? null : new Rows.FetchingRowMarks<TRow>(this, marks);
     }
+
+    /// <summary>The Row Marks of this source, when it was given a
+    /// <see cref="Rows.RowMarkAdapter{TRow}"/> — or null, and a Mark Column bound to it is
+    /// refused by name (ADR-0043): the source receives new instances with every answer and
+    /// cannot count beyond its Window, so without the Consumer's key and server it could
+    /// only guess.</summary>
+    public Rows.FetchingRowMarks<TRow>? Marks { get; }
+
+    Rows.IRowMarks<TRow>? IGridSource<TRow>.Marks => Marks;
 
     /// <summary>The rows of the last answer that landed. Empty before the first answer,
     /// and again after a Sort or Filter change until the new query's first page lands.</summary>
@@ -111,6 +122,16 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         _started = true;
         var first = new RowRange(0, _pageRows);
         StartDetached(first, first);
+        Recount();
+    }
+
+    /// <summary>The counts depend on the Filter and on what the server holds; asked for
+    /// again, detached, whenever either may have moved. A failure surfaces as a fetch's
+    /// does, and the counts stay unknown rather than stale.</summary>
+    private void Recount()
+    {
+        if (Marks is not null && !_disposed)
+            _ = SurfaceAsync(Marks.RecountAsync());
     }
 
     /// <summary>Takes a new Sort. A list equal to the one in force is a no-op; any other
@@ -207,6 +228,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         // screen under the new filter, with a selection ADR-0011 says must be dropped.
         var first = new RowRange(0, _pageRows);
         StartDetached(first, first, notify: true);
+        Recount();
     }
 
     private void StartDetached(RowRange wanted, RowRange needed, bool notify = false)
@@ -310,6 +332,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         if (TotalCount is int previous && page.TotalCount < previous)
             RowSequenceVersion++;
 
+        var totalMoved = TotalCount != page.TotalCount;
         _inFlight = null;
         IsLoading = false;
         LastError = null;
@@ -317,6 +340,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         WindowStart = page.Start;
         TotalCount = page.TotalCount;
         StateChanged?.Invoke();
+        // A result that grew or shrank changed what the counts are made of.
+        if (totalMoved)
+            Recount();
     }
 
     /// <summary>

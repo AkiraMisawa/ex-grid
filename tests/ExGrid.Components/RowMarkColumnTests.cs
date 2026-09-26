@@ -275,6 +275,31 @@ public class RowMarkColumnTests : GridTestContext
         Assert.Contains(nameof(ExGrid<TestRow>.Marks), ex.Message, StringComparison.Ordinal);
     }
 
+    [Fact] // ADR-0043: a Mark Column over GridSource.Fetch without a mark adapter is refused by name
+    public void A_mark_column_over_a_fetching_source_without_an_adapter_is_refused()
+    {
+        using var source = GridSource.Fetch<TestRow>((_, _) => ValueTask.FromResult(GridPage<TestRow>.Empty));
+
+        var ex = Assert.Throws<InvalidOperationException>(() => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns)));
+
+        Assert.Contains("mark adapter", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0043: marks from both the parameter and the Source are refused — one would silently win
+    public void Marks_from_both_the_parameter_and_the_source_are_refused()
+    {
+        var source = GridSource.From(TestRows.Window());
+
+        var ex = Assert.Throws<InvalidOperationException>(() => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns)
+            .Add(g => g.Marks, new RecordingMarks())));
+
+        Assert.Contains(nameof(ExGrid<TestRow>.Marks), ex.Message, StringComparison.Ordinal);
+    }
+
     [Fact] // ADR-0043 (MK-7): the count display says how many marks lie outside the current filter
     public void The_count_display_names_the_marks_outside_the_filter()
     {
