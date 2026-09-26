@@ -397,6 +397,9 @@ is marked**; it does not hold the marks. Marking "all" from the header means eve
 current result — after filtering — whether or not it is on screen; under a pager it marks the page
 first and offers the whole result explicitly, as Ctrl+A does
 ([ADR-0015](./docs/adr/0015-paging-is-another-driver-for-range-requests.md)).
+"All" is **the result as it stood when the header was pressed**: a row that arrives later is not
+marked, and the header shows "some". Changing the filter keeps the marks, and **marks outside the
+current result are always counted aloud**, never acted on silently.
 _Avoid_: checked row, selected row, tick (a "selected" row is Selection's word)
 
 **Mark Column**:
