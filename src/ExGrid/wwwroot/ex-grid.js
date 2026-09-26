@@ -390,6 +390,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             && target.tagName !== 'SELECT' && role !== 'combobox' && role !== 'listbox';
     };
 
+    // A control of the grid's own that holds DOM focus — in a popover, or a Template
+    // Column's field that Space has just handed the keyboard (ADR-0037) — is where a held
+    // key goes, as the keydown it would have received (ADR-0010). The root, its scroller
+    // and the Cell Editor are the gate's.
+    const focusedControl = () => {
+        const active = document.activeElement;
+        return active instanceof Element && root.contains(active) && !isRoot(active)
+            && active.closest('.ex-editor') === null ? active : null;
+    };
+
     const handToPopover = (target, k) => {
         if (isTextField(target) && !k.ctrlKey && !k.metaKey && !k.altKey) {
             if (k.key === 'Enter' && target.form) {
@@ -410,10 +420,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         await editorSettled();
         while (held.length > 0 && core) {
             const k = held.shift();
-            if (popoverFocused()) {
+            const target = focusedControl();
+            if (target) {
                 // A held key that itself sends the keyboard across the popover holds the
                 // rest again, until DOM focus has followed it.
-                const target = document.activeElement;
                 if (!reproducible(target, k)) {
                     held.length = 0;
                     break;
@@ -461,7 +471,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // before it. A key this listener is handing on itself is let through.
         // A key landing on a sentinel is held too, until the commands have DOM focus.
         const sentinel = !replaying && !answering && onSentinel(event.target);
-        if (!replaying && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused()))) {
+        // A hold behind a move or a close is over the moment DOM focus has followed, though
+        // its check runs a frame later: a key typed in between is the new holder's already.
+        const holdOver = answering && awaitingMove !== null && held.length === 0 && moved();
+        if (!replaying && !holdOver && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused()))) {
             event.preventDefault();
             event.stopPropagation();
             held.push(k);
@@ -485,10 +498,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             if (move.into) {
                 event.preventDefault();
             }
-            answering = true;
             holdStartedAt = performance.now();
             awaitingMove = move;
-            drain();
+            // Behind a hold that is over but not yet cleared, its drain takes this one too.
+            if (!answering) {
+                answering = true;
+                drain();
+            }
             return;
         }
         const verdict = gate(k);
