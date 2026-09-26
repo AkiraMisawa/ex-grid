@@ -17,26 +17,43 @@ let halfTripMs = 0;
 
 const delayed = (from, to) => {
     let releaseAt = 0;
-    // Chunks waiting on a timer. A timer fires late, so a chunk whose own wait has already
-    // run out must still go behind every chunk ahead of it: written at once while an
-    // earlier one was pending, it overtook it, and the circuit's WebSocket read a torn
-    // message ("Incomplete message") on a busy run.
-    let pending = 0;
+    // One queue per direction and one timer draining it from the head. A timer per chunk
+    // does not keep order: Node fires timers of the same duration in the order they were
+    // set, but two chunks due at the same moment through timers of different durations —
+    // the second arriving a millisecond later with a millisecond less to wait — can fire
+    // the other way round, and the circuit's WebSocket then reads a torn message
+    // ("Incomplete message").
+    const queue = [];
+    let timer = null;
+    const drain = () => {
+        timer = null;
+        while (queue.length > 0 && queue[0].at <= Date.now()) {
+            const next = queue.shift();
+            if (next.end) {
+                to.end();
+            } else {
+                to.write(next.chunk);
+            }
+        }
+        if (queue.length > 0) {
+            timer = setTimeout(drain, Math.max(0, queue[0].at - Date.now()));
+        }
+    };
     from.on('data', (chunk) => {
         // Never earlier than the chunk before it, even if the delay was lowered since.
         releaseAt = Math.max(Date.now() + halfTripMs, releaseAt);
-        const wait = releaseAt - Date.now();
-        if (wait <= 0 && pending === 0) {
-            to.write(chunk);
-        } else {
-            pending += 1;
-            setTimeout(() => {
-                pending -= 1;
-                to.write(chunk);
-            }, Math.max(0, wait));
+        queue.push({ chunk, at: releaseAt });
+        if (timer === null) {
+            drain();
         }
     });
-    from.on('end', () => setTimeout(() => to.end(), Math.max(0, releaseAt - Date.now())));
+    // The end goes behind the last chunk, through the same queue.
+    from.on('end', () => {
+        queue.push({ end: true, at: Math.max(Date.now(), releaseAt) });
+        if (timer === null) {
+            drain();
+        }
+    });
 };
 
 net.createServer((client) => {
