@@ -26,6 +26,7 @@ meaning, without an ADR. It marks a **meaning**, never a mechanism.
 | `ex-range`, `ex-focus` | a selection rectangle and the Focus outline ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) |
 | `ex-action`, `ex-interactive` | the grid's own action button; a Consumer's control that takes its own pointer events ([ADR-0020](./0020-action-and-template-columns.md)) |
 | `ex-action-chosen` | the one action Space will fire, while a cell with several actions is Interactive — on that button alone, and only then ([ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)) |
+| `ex-mark` | a Row Mark's checkbox — on each Detail row of the Mark Column, and in its header, where `ex-mark-all` joins it; whether it is ticked is `aria-checked` (`true` / `false` / `mixed`), never a class *(added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md))* |
 | `ex-editor` | the floating Cell Editor; `ex-editing` joins the root while it stands ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) |
 | `ex-resize-guide` | the vertical guide a column resize drags, applied on release ([ADR-0016](./0016-column-width-and-overflow.md)) |
 | `ex-drop-indicator` | where a dragged header will land; it stops at the pinned boundary rather than promising a drop that is refused ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) |
@@ -33,7 +34,7 @@ meaning, without an ADR. It marks a **meaning**, never a mechanism.
 ## The internal classes — and why the line sits exactly there
 
 `ex-scroller`, `ex-spacer`, `ex-viewport`, `ex-gap`, `ex-selection`, `ex-selection-pinned`,
-`ex-header-groups-pinned`, `ex-focus-row`, `ex-pager`, `ex-status`, `ex-resize-grip`,
+`ex-header-groups-pinned`, `ex-focus-row`, `ex-pager`, `ex-status`, `ex-mark-count`, `ex-resize-grip`,
 `ex-menu-button`, `ex-popover`, `ex-popover-list`, `ex-popover-actions`, `ex-editor-pinned`,
 `ex-announce` are
 **implementation detail**. They may be renamed, merged or removed by any commit — the Focus
@@ -100,6 +101,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Editor | `--ex-editor-background`, `--ex-editor-color`, `--ex-editor-outline` |
 | Column gestures | `--ex-resize-guide-color`, `--ex-drop-indicator-color` — the guide and the indicator are painted, not laid out, so neither is metrics-bearing (ADR-0011/0016) |
 | Scrollbar | `--ex-scrollbar-width`, `--ex-scrollbar-color` |
+| Row Mark | `--ex-mark-background`, `--ex-mark-border-color`, `--ex-mark-checked-background`, `--ex-mark-checked-color` — the box sizes in `em` from the font-size token, so it carries no length of its own *(added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md))* |
 
 Defaults stay on system colours (`Canvas`, `Highlight`, `currentColor`) so the bare grid follows
 the host's colour scheme and forced-colors settings (ADR-0027). `--ex-font-family` and

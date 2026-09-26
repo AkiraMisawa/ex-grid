@@ -88,3 +88,8 @@ so one Ctrl+Z, ADR-0007).
   It is the first that is a declaration ("may not") rather than a shape ("cannot"), so it is
   checked *before* the shape rules, whose "reselect a target of the same shape" advice would
   otherwise send the user after something that can never succeed.
+- *(Added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md):)* **The count display gains a line for Row Marks**, and it
+  says aloud how many lie outside the current filter — `120 marked (70 outside the current
+  filter)`. The marks are counted by the Consumer, which holds them; displaying is Chrome's, as
+  above. Space over a selection in the Mark Column is a positional intent in the same way a bulk
+  paste is.

@@ -25,7 +25,15 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         // passed in, so the Window and the version diff baseline cannot drift silently.
         _rows = rows.ToArray();
         Window = _rows;
+        Marks = new Rows.InMemoryRowMarks<TRow>(this, _rows);
     }
+
+    /// <summary>The Row Marks of this source (ADR-0043): kept per row of the base, by
+    /// identity, and carried across <see cref="ReplaceRow"/>. What a Mark Column bound to
+    /// this source reads and reports to.</summary>
+    public Rows.InMemoryRowMarks<TRow> Marks { get; }
+
+    Rows.IRowMarks<TRow>? IGridSource<TRow>.Marks => Marks;
 
     /// <summary>The whole result: the rows under the Filter and Sorts in force, or the
     /// input order until the columns arrive (ADR-0023).</summary>
@@ -136,6 +144,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         RequireColumns();
 
         _rows[index] = replacement;
+        Marks.Replaced(index, row, replacement);
         var next = GridQueryEngine.Apply(_rows, _columns!, Filter, Sorts);
         var sequenceChanged = next.Count != Window.Count;
         if (!sequenceChanged)

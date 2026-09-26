@@ -31,9 +31,13 @@ public static class GridSource
     /// a DISTINCT of one column with the handed Filter — the other columns' conditions,
     /// this one's already removed — applied. Null degrades every value list to
     /// TooMany, which is condition mode.</param>
+    /// <param name="marks">What the source needs from the Consumer to keep Row Marks — a
+    /// row's key, and the server's answers about snapshots and counts (ADR-0043). Null
+    /// keeps none, and a Mark Column bound to this source is refused by name.</param>
     public static FetchingGridSource<TRow> Fetch<TRow>(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
         int readAheadRows = 60,
-        Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null)
-        => new(fetch, readAheadRows, distinctValues);
+        Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null,
+        Rows.RowMarkAdapter<TRow>? marks = null)
+        => new(fetch, readAheadRows, distinctValues, marks);
 }

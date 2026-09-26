@@ -214,3 +214,7 @@ ADR-0016), the column menu is not, because there is no column menu yet.
 - **Action Column headers tend to be empty.** Whether the column menu (ADR-0010) and width
   handling should be identical to a value-bearing column is worth revisiting during
   implementation.
+- *(Added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md):)* **A fourth kind joins the Space table: the Mark Column.** With the
+  Focus in it, Space brings the Row Mark of every row with a selected cell in that column into
+  line — all marked if any was unmarked, all unmarked only if all were marked. With the Focus
+  elsewhere, Space keeps the meaning this table gives it.

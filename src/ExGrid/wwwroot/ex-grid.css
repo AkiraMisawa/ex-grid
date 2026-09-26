@@ -169,7 +169,30 @@
    button would otherwise reach the Viewport handler carrying offsets measured from the
    button. `ex-interactive` is the class a Consumer puts on its own control inside a
    Template Column; the grid owns the buttons in an Action Column. */
-.ex-action, .ex-interactive { pointer-events: auto; }
+.ex-action, .ex-interactive, .ex-mark { pointer-events: auto; }
+/* The Mark Column's checkbox (ADR-0043), on a Detail row and in the header. Its state is
+   aria-checked — the one attribute assistive technology reads — so the stylesheet reads it
+   too rather than a second, class-borne copy that could disagree. Sized in em, from the
+   font-size Geometry Token the core already writes, so it scales with the Density and adds
+   no length of its own; the tick is painted, not laid out. */
+.ex-mark {
+    appearance: none;
+    box-sizing: border-box;
+    width: 1em;
+    height: 1em;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    line-height: 1;
+    border: var(--ex-action-border-width, 1px) solid var(--ex-mark-border-color, currentColor);
+    background: var(--ex-mark-background, Canvas);
+    color: var(--ex-mark-checked-color, HighlightText);
+    cursor: pointer;
+}
+.ex-mark[aria-checked="true"], .ex-mark[aria-checked="mixed"] { background: var(--ex-mark-checked-background, Highlight); }
+.ex-mark[aria-checked="true"]::after { content: "\2713"; }
+.ex-mark[aria-checked="mixed"]::after { content: "\2013"; }
+.ex-header .ex-mark { pointer-events: auto; }
 /* The button's own box comes from the action Geometry Tokens, which are what an Auto
    Action Column's width is measured from (ADR-0016/0028) — the pairing is structural,
    so the column cannot stop fitting its own buttons. */
