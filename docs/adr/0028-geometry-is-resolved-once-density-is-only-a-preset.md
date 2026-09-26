@@ -304,3 +304,10 @@ Rejected:
   one**. The observer fires at most once a frame, a report is one root render, and the rows
   skip (ADR-0003). If a window drag stutters on real hardware, that measurement — not this
   reasoning — adds the debounce (the ADR-0003/0008 rule).
+  *(Measured and settled with the user, 2026-09-26: **no debounce**.)* On the Server host
+  behind a 150 ms round trip, a window drag over a Fill grid leaves at most four rows' height
+  unpainted below the rows, gone about half a round trip after the drag stops, and costs ~37
+  frames on the circuit per drag whatever the latency (the Definition of Done's §21.9 keeps the
+  numbers). The band is the round trip times the drag's speed. A debounce would add its own
+  delay to the round trip before the new size is painted, so it would lengthen the band, and
+  the frames it would save are not a cost worth that.

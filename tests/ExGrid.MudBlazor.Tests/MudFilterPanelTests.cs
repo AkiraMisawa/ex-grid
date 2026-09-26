@@ -257,6 +257,16 @@ public class MudFilterPanelTests : MudTestContext
         throw new InvalidOperationException("MudButton holds no element reference");
     }
 
+    [Fact] // ADR-0044 / FL-15: asked for the search field, the condition form focuses its value, not its operator
+    public void Asked_for_the_search_field_the_condition_form_focuses_its_value()
+    {
+        var cut = RenderPanel(Context(ColumnType.Text, FilterUiMode.Condition, focusRequest: 0) with { SearchRequest = 1 });
+
+        var value = cut.FindComponents<MudTextField<string>>().Single(f => f.Instance.Class == "mud-ex-grid-filter-operand");
+        var focused = Assert.Single(JSInterop.Invocations, i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(value.Instance.InputReference?.ElementReference.Id ?? "none", ((ElementReference)focused.Arguments[0]!).Id);
+    }
+
     [Fact] // ADR-0044 / KB-31: the panel draws no Tab wrap of its own — the core's sentinels stand around it
     public void The_panel_has_no_sentinels_of_its_own()
     {

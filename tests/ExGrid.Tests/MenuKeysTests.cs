@@ -139,11 +139,11 @@ public class MenuKeysTests
         Assert.Equal(MenuKey.Nothing, PressInColumn("s", commands: unsortable));
     }
 
-    [Fact] // ADR-0044 / FL-15: E moves to the filter's search box — when a filter stands below
+    [Fact] // ADR-0044 / FL-15: E moves to the field a search is typed into — when a filter stands below
     public void E_moves_to_the_filter_when_there_is_one()
     {
-        Assert.Equal(new MenuKey(MenuKeyKind.FilterFirst), PressInColumn("e"));
-        Assert.Equal(new MenuKey(MenuKeyKind.FilterFirst), PressInColumn("E"));
+        Assert.Equal(new MenuKey(MenuKeyKind.FilterSearch), PressInColumn("e"));
+        Assert.Equal(new MenuKey(MenuKeyKind.FilterSearch), PressInColumn("E"));
         Assert.Equal(MenuKey.Nothing, PressInColumn("e", filterBelow: false));
     }
 
@@ -184,7 +184,7 @@ public class MenuKeysTests
     public void The_value_list_answers_the_letters_alone()
     {
         Assert.Equal(new MenuKey(MenuKeyKind.Run, 0), MenuKeys.Letter("s", false, Column, filterBelow: true));
-        Assert.Equal(new MenuKey(MenuKeyKind.FilterFirst), MenuKeys.Letter("e", false, Column, filterBelow: true));
+        Assert.Equal(new MenuKey(MenuKeyKind.FilterSearch), MenuKeys.Letter("e", false, Column, filterBelow: true));
         Assert.Equal(MenuKey.Nothing, MenuKeys.Letter("ArrowDown", false, Column, filterBelow: true));
         Assert.Equal(MenuKey.Nothing, MenuKeys.Letter(" ", false, Column, filterBelow: true));
         Assert.Equal(MenuKey.Nothing, MenuKeys.Letter("Tab", false, Column, filterBelow: true));

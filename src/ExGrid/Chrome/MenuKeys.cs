@@ -16,14 +16,20 @@ public enum MenuKeyKind
     Close,
 
     /// <summary>The keyboard moves to the first control of the filter below the commands —
-    /// Tab, or E for its search box (ADR-0044). The core moves it, through the filter's
-    /// <c>FocusRequest</c>; the menu's contents do nothing.</summary>
+    /// Tab (ADR-0044). The core moves it, through the filter's <c>FocusRequest</c>; the menu's
+    /// contents do nothing.</summary>
     FilterFirst,
 
     /// <summary>The keyboard moves to the last control of the filter below the commands —
     /// Shift+Tab, wrapping backwards (ADR-0044). The core moves it; the menu's contents do
     /// nothing.</summary>
     FilterLast,
+
+    /// <summary>The keyboard moves to the field a search is typed into — E, as Excel's
+    /// search box: the value list's search, or the condition's value where no list stands
+    /// (ADR-0044). The core moves it, through the filter's <c>SearchRequest</c>; the menu's
+    /// contents do nothing.</summary>
+    FilterSearch,
 }
 
 /// <summary>A key's meaning in a menu: what to do, and for a move, which item.</summary>
@@ -51,8 +57,8 @@ public readonly record struct MenuKey(MenuKeyKind Kind, int Item = -1)
 /// column's filter, moves to the filter's first / last control (ADR-0044)</description></item>
 /// <item><term>S / O / C</term><description>in the column menu, runs sort ascending, sort
 /// descending or clear filter, when enabled — Excel's drop-down letters (ADR-0044)</description></item>
-/// <item><term>E</term><description>in the column menu over a filter, moves to the filter's
-/// first control, its search box</description></item>
+/// <item><term>E</term><description>in the column menu over a filter, moves to the field a
+/// search is typed into: the search box, or the condition's value</description></item>
 /// </list>
 ///
 /// Escape is not here: the grid's own gate takes it, from anywhere under the root, and
@@ -102,8 +108,8 @@ public static class MenuKeys
 
     /// <summary>
     /// Excel's letters in the column's drop-down (ADR-0044): S, O and C run sort ascending,
-    /// sort descending and clear filter when they are enabled; E moves to the filter's first
-    /// control, its search box, when a filter stands below. Either case, Shift or not — Caps
+    /// sort descending and clear filter when they are enabled; E moves to the field a search
+    /// is typed into, when a filter stands below. Either case, Shift or not — Caps
     /// Lock is not a different key. Answered for a key on a command and for a key on the value
     /// list alike; in a text field a letter is text, and nothing asks this.
     /// </summary>
@@ -114,7 +120,7 @@ public static class MenuKeys
             return MenuKey.Nothing;
         var letter = char.ToUpperInvariant(key[0]);
         if (letter == 'E')
-            return filterBelow ? new(MenuKeyKind.FilterFirst) : MenuKey.Nothing;
+            return filterBelow ? new(MenuKeyKind.FilterSearch) : MenuKey.Nothing;
         for (var i = 0; i < commands.Count; i++)
         {
             if (LetterOf(commands[i].Id) == letter)

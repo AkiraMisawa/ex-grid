@@ -393,7 +393,7 @@
                                         <option value="@op">@op</option>
                                     }
                                 </select>
-                                <input value="@_panelValueText" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
+                                <input value="@_panelValueText" @ref="_panelValueField" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
                                 @* A second condition, joined by And or Or, as Excel's Custom AutoFilter
                                    (ADR-0009). Left at "(none)" it applies nothing of its own. *@
                                 <div class="ex-popover-join" role="radiogroup">
@@ -989,9 +989,11 @@
     private int _menuFocusRequest;
     private int _panelFocusRequest;
     private int _panelFocusLastRequest;
+    private int _panelSearchRequest;
     private PopoverFocus _popoverFocusPending;
     private ElementReference _panelFirst;
     private ElementReference _panelLast;
+    private ElementReference _panelValueField;
     private readonly Dictionary<int, ElementReference> _menuItems = [];
     private bool _panelAwaitingValues;
     private bool _reclaimFocusPending;
@@ -1003,6 +1005,7 @@
         FirstCommand,
         PanelFirst,
         PanelLast,
+        PanelSearch,
     }
 
     // A popup the popover's contents opened of their own (ADR-0039): reported by them,
@@ -3368,10 +3371,12 @@
         _menuFocusRequest++;
         _panelFocusRequest = 0;
         _panelFocusLastRequest = 0;
+        _panelSearchRequest = 0;
         _popoverFocusPending = PopoverFocus.FirstCommand;
         _menuCursor = -1;
         _panelFirst = default;
         _panelLast = default;
+        _panelValueField = default;
         _menuItems.Clear();
         _reclaimFocusPending = false;
         // A new opening starts clean, however the last one ended: a panel still waiting
@@ -3497,7 +3502,7 @@
         // and swaps it for the list when the answer lands: focusing one of its controls
         // before then would put DOM focus on an element about to be removed.
         if (target == PopoverFocus.None
-            || (_panelAwaitingValues && target is PopoverFocus.PanelFirst or PopoverFocus.PanelLast))
+            || (_panelAwaitingValues && target is PopoverFocus.PanelFirst or PopoverFocus.PanelLast or PopoverFocus.PanelSearch))
             return;
         _popoverFocusPending = PopoverFocus.None;
         // Only enabled items are captured, so the lowest position is the first enabled
@@ -3506,6 +3511,9 @@
         {
             PopoverFocus.PanelFirst => _panelFirst,
             PopoverFocus.PanelLast => _panelLast,
+            // The search box is the value list's first control; the condition's value is
+            // where a search is typed when no list stands.
+            PopoverFocus.PanelSearch => _panelValues is { IsTooMany: false } ? _panelFirst : _panelValueField,
             _ => _menuItems.Count > 0 ? _menuItems[_menuItems.Keys.Min()] : default,
         };
         // Without scrolling: on a Server circuit this lands a round trip after the popover
@@ -3594,8 +3602,8 @@
         IReadOnlyList<GridCommand> commands, bool filterBelow, string key, bool shift, bool chord)
     {
         var meaning = MenuKeys.ResolveInColumnMenu(key, shift, chord, commands, MenuCursorOn(commands), filterBelow);
-        if (meaning.Kind is MenuKeyKind.FilterFirst or MenuKeyKind.FilterLast)
-            MoveKeyboardToFilter(last: meaning.Kind == MenuKeyKind.FilterLast);
+        if (meaning.Kind is MenuKeyKind.FilterFirst or MenuKeyKind.FilterLast or MenuKeyKind.FilterSearch)
+            MoveKeyboardToFilter(meaning.Kind);
         return MovedCursor(meaning);
     }
 
@@ -3609,18 +3617,29 @@
 
     /// <summary>
     /// Sends the keyboard from the commands to the filter below them (ADR-0044): its first
-    /// control — Tab, or E for the search box — or its last, for Shift+Tab's wrap. The
-    /// built-in filter is focused after the render; a substituted one is asked through its
-    /// context's count. The key reached the core through a Chrome's handler as often as
-    /// through its own, so the grid renders itself.
+    /// control for Tab, its last for Shift+Tab's wrap, and for E the field a search is typed
+    /// into — the value list's search box, or the condition's value. The built-in filter is
+    /// focused after the render; a substituted one is asked through its context's count. The
+    /// key reached the core through a Chrome's handler as often as through its own, so the
+    /// grid renders itself.
     /// </summary>
-    private void MoveKeyboardToFilter(bool last)
+    private void MoveKeyboardToFilter(MenuKeyKind where)
     {
-        if (last)
-            _panelFocusLastRequest++;
-        else
-            _panelFocusRequest++;
-        _popoverFocusPending = last ? PopoverFocus.PanelLast : PopoverFocus.PanelFirst;
+        switch (where)
+        {
+            case MenuKeyKind.FilterLast:
+                _panelFocusLastRequest++;
+                _popoverFocusPending = PopoverFocus.PanelLast;
+                break;
+            case MenuKeyKind.FilterSearch:
+                _panelSearchRequest++;
+                _popoverFocusPending = PopoverFocus.PanelSearch;
+                break;
+            default:
+                _panelFocusRequest++;
+                _popoverFocusPending = PopoverFocus.PanelFirst;
+                break;
+        }
         _ = InvokeAsync(StateHasChanged);
     }
 
@@ -3640,7 +3659,7 @@
 
     /// <summary>
     /// A key on the filter's value list (ADR-0044): Excel's letters act here as on the
-    /// commands — S, O and C run their command, E goes to the search box — and every other
+    /// commands — S, O and C run their command, E goes back to the search box — and every other
     /// key is the list's own. The built-in list and a substituted panel's hand it here alike,
     /// the latter through its context, so the grid renders itself.
     /// </summary>
@@ -3657,7 +3676,7 @@
         if (meaning.Kind == MenuKeyKind.Run)
             _ = commands[meaning.Item].Invoke();
         else
-            MoveKeyboardToFilter(last: false);
+            MoveKeyboardToFilter(meaning.Kind);
         return true;
     }
 
@@ -3784,7 +3803,8 @@
             declared.Format,
             InnerPopupChangedFromChrome,
             _panelFocusLastRequest,
-            ValueListKeyFromChrome);
+            ValueListKeyFromChrome,
+            _panelSearchRequest);
     }
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec

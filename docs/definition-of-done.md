@@ -278,7 +278,7 @@ The grid renders the filter UI and never evaluates a filter.
 | **FL-12** | MUST | `Alt+↓` and the ▾ open one popover: the column's commands above its filter; no "Filter" command; OK, Cancel, a command, Escape or a dismissing press closes the whole; Tab wraps through both halves (ADR-0044) | Layer 2 + Layer 3 under both Chromes | one popover element; the filter's controls are reachable by Tab from the commands and back |
 | **FL-13** | MUST | While a search is active on a column with a value filter, "Add current selection to filter" is offered, off by default; on, OK applies the filter in force together with the matching checked values (ADR-0009, 2026-09-26) | Layer 1 (`FilterPanelChoices`) + Layer 2 under both Chromes | off: replaced by the matches; on: the union; absent without a search or without a value filter |
 | **FL-14** | MUST | The built-in condition form offers a second condition joined by AND or OR, applied as one `FilterSpec` of two clauses (ADR-0009, 2026-09-26) | Layer 2 | the applied spec has both clauses and the chosen combinator |
-| **FL-15** | MUST | In the one popover, S, O, C and E sort ascending, sort descending, clear the column's filter and move to the search box, while focus is on a command or on the value list; in a text field a letter is text; the built-in labels show each letter underlined or as "(S)" (ADR-0044) | Layer 2 through `ResolveKey`; Layer 3 under both Chromes | each letter does its one thing; typing "e" in the search box types it |
+| **FL-15** | MUST | In the one popover, S, O, C and E sort ascending, sort descending, clear the column's filter and move to the search box — the condition's value where no value list stands — while focus is on a command or on the value list; in a text field a letter is text; the built-in labels show each letter underlined or as "(S)" (ADR-0044) | Layer 2 through `ResolveKey`; Layer 3 under both Chromes | each letter does its one thing; typing "e" in the search box types it |
 | **FL-16** | MUST | "Clear filter" is a command, enabled only while the column has a filter; the filter half shows OK and Cancel only (ADR-0044) | Layer 2 under both Chromes | disabled with no filter; running it clears and closes |
 
 ---
@@ -667,8 +667,8 @@ release.
   round trip times the drag's speed, and outlives the drag by about half a round trip. A
   debounce would hold the render back for its delay as well as the round trip, so on these
   numbers it lengthens the band rather than shortening it, and what it saves is those ~37
-  frames. Whether that saving is wanted is still open, and so the item stays here until it is
-  decided in ADR-0028.
+  frames. *(Decided with the user, 2026-09-26: no debounce — ADR-0028. The item stays here
+  as the record of what was measured; it no longer waits on anything.)*
 - **The auto-scroll band (20px) and its rate range (1 to 8 rows per tick)** — ADR-0008, provisional
   in exactly the way the fling threshold is. The *shape* is decided and gated by SL-12..SL-15; the
   three numbers are recorded and compared, not gated.

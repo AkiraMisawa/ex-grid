@@ -25,8 +25,9 @@
    check there sees what was typed.
 
    The popover opens with the keyboard on the commands above, and this panel takes it only
-   when asked: its first control for each change of the context's FocusRequest — Tab or E
-   from the commands — and Cancel, its last, for each change of FocusLastRequest. Tab off
+   when asked: its first control for each change of the context's FocusRequest — Tab from the
+   commands — Cancel, its last, for each change of FocusLastRequest, and for SearchRequest —
+   E — the field a search is typed into: the search box, or the first condition's value. Tab off
    either end is the core's, whose sentinels around the panel wrap to the commands (KB-31).
    Excel's letters on the value list are handed to the core through ValueListKey; clearing
    the filter is the command above, so the actions are Apply and Cancel (ADR-0044). *@
@@ -113,6 +114,13 @@
         public decimal? Number;
         public DateTime? Date;
         public bool? Flag;
+
+        // The field that edits it, whichever the column's type draws: what E focuses where
+        // no value list stands (ADR-0044).
+        public MudTextField<string>? TextField;
+        public MudNumericField<decimal?>? NumberField;
+        public MudDatePicker? DateField;
+        public MudSelect<bool?>? FlagField;
     }
 
     private DistinctValues? _domain;
@@ -133,12 +141,14 @@
     // instance of this component, and zero is a request not made (ADR-0044).
     private int _focusedRequest;
     private int _focusedLastRequest;
+    private int _focusedSearchRequest;
 
     private enum DomFocusTarget
     {
         None,
         FirstControl,
         LastControl,
+        SearchField,
     }
 
     [Inject] private ILocalizationInterceptor Localizer { get; set; } = default!;
@@ -188,22 +198,22 @@
     /// <summary>A condition's value field, of the column's type, over the state it edits.</summary>
     private RenderFragment OperandField(OperandState state) => Context.Type switch
     {
-        ColumnType.Number => @<MudNumericField T="decimal?" Value="state.Number" ValueChanged="@(v => state.Number = v)" Immediate="true" HideSpinButtons="true"
+        ColumnType.Number => @<MudNumericField @ref="state.NumberField" T="decimal?" Value="state.Number" ValueChanged="@(v => state.Number = v)" Immediate="true" HideSpinButtons="true"
                                                Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                Culture="CultureInfo.InvariantCulture" Class="mud-ex-grid-filter-operand" />,
-        ColumnType.Date => @<MudDatePicker Date="state.Date" DateChanged="@(v => state.Date = v)" Editable="true"
+        ColumnType.Date => @<MudDatePicker @ref="state.DateField" Date="state.Date" DateChanged="@(v => state.Date = v)" Editable="true"
                                            PickerOpened="() => ReportPopup(true)" PickerClosed="() => ReportPopup(false)"
                                            Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                            Class="mud-ex-grid-filter-operand" />,
         // Nothing chosen at first: a true or false the user did not pick would apply a
         // filter they never asked for (WR-2).
-        ColumnType.Boolean => @<MudSelect T="bool?" Value="state.Flag" ValueChanged="@(v => state.Flag = v)" Label="@Mud("MudDataGrid_Value")"
+        ColumnType.Boolean => @<MudSelect @ref="state.FlagField" T="bool?" Value="state.Flag" ValueChanged="@(v => state.Flag = v)" Label="@Mud("MudDataGrid_Value")"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
                                           OpenChanged="ReportPopup" Class="mud-ex-grid-filter-operand">
                                    <MudSelectItem T="bool?" Value="true">@Mud("MudDataGrid_True")</MudSelectItem>
                                    <MudSelectItem T="bool?" Value="false">@Mud("MudDataGrid_False")</MudSelectItem>
                                </MudSelect>,
-        _ => @<MudTextField T="string" Value="state.Text" ValueChanged="@(v => state.Text = v)" Immediate="true"
+        _ => @<MudTextField @ref="state.TextField" T="string" Value="state.Text" ValueChanged="@(v => state.Text = v)" Immediate="true"
                             Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
                             Class="mud-ex-grid-filter-operand" />,
     };
@@ -227,6 +237,11 @@
         {
             _focusedLastRequest = Context.FocusLastRequest;
             _domFocusOwed = DomFocusTarget.LastControl;
+        }
+        if (Context.SearchRequest != _focusedSearchRequest)
+        {
+            _focusedSearchRequest = Context.SearchRequest;
+            _domFocusOwed = DomFocusTarget.SearchField;
         }
     }
 
@@ -311,6 +326,8 @@
         _domFocusOwed = DomFocusTarget.None;
         if (target == DomFocusTarget.FirstControl)
             await FocusFirstAsync();
+        else if (target == DomFocusTarget.SearchField)
+            await FocusSearchAsync();
         else
             await FocusLastAsync();
     }
@@ -323,6 +340,28 @@
                 await _search.FocusAsync();
             else if (_operatorField is not null)
                 await _operatorField.FocusAsync();
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
+    }
+
+    /// <summary>Where a search is typed (ADR-0044): the search box over a value list, the
+    /// first condition's value in the condition form — or its operator, while that operator
+    /// takes no value.</summary>
+    private async Task FocusSearchAsync()
+    {
+        if (_chosen is not null || !FilterPanelChoices.TakesOperand(_operator))
+        {
+            await FocusFirstAsync();
+            return;
+        }
+        try
+        {
+            var focusing = _first.TextField?.FocusAsync() ?? _first.NumberField?.FocusAsync()
+                ?? _first.DateField?.FocusAsync() ?? _first.FlagField?.FocusAsync();
+            if (focusing is { } pending)
+                await pending;
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

@@ -123,10 +123,12 @@ are recorded in [ADR-0009](./0009-filter-panel-contract.md).
   its letter, or appends "(S)". `ExGrid.MudBlazor`'s menu marks none: a Material menu shows no
   mnemonics, and the letters act the same under it. The Context Menu answers no letter, so it
   marks none either, even on a Consumer's command that shares a sort's id.
-- **E where no value list stands.** The condition form has no search box. E goes to the filter's
-  first control, the condition's operator. *(Open: whether E should go to the condition's value
-  instead, the field that is typed into. That would need a request of its own in
-  `FilterPanelContext`.)*
+- **E where no value list stands** *(decided with the user, 2026-09-26)*. The condition form has
+  no search box, so E goes to the field a search is typed into there: the condition's value,
+  not its operator — typed letters in a select would choose an operator instead. It is asked
+  through its own count, `FilterPanelContext.SearchRequest`, and `MenuKeys` answers E with
+  `MenuKeyKind.FilterSearch`. While the operator takes no value (is blank), E goes to the
+  operator.
 - **Opening costs a value-list query.** The built-in filter asks for the column's distinct values
   when the popover opens, where it used to ask when Filter was chosen: once per opening, as
   ADR-0009 has it, and now also when the popover was opened only to sort. A substituted panel

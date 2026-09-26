@@ -634,7 +634,8 @@ public class FilterChromeTests : GridTestContext
         Assert.Equal(0, chrome.Panel!.FocusRequest);
 
         await cut.InvokeAsync(() => chrome.Panel!.ValueListKey!(new KeyboardEventArgs { Key = "e" }));
-        cut.WaitForAssertion(() => Assert.Equal(1, chrome.Panel!.FocusRequest));
+        cut.WaitForAssertion(() => Assert.Equal(1, chrome.Panel!.SearchRequest));
+        Assert.Equal(0, chrome.Panel!.FocusRequest);
 
         await cut.InvokeAsync(() => chrome.Menu!.ResolveKey!("Tab", true, false));
         cut.WaitForAssertion(() => Assert.Equal(1, chrome.Panel!.FocusLastRequest));
@@ -647,4 +648,16 @@ public class FilterChromeTests : GridTestContext
     private string? LastFocusedId()
         => JSInterop.Invocations.Where(i => i.Identifier == "Blazor._internal.domWrapper.focus")
             .Select(i => ((ElementReference)i.Arguments[0]!).Id).LastOrDefault();
+
+    [Fact] // ADR-0044 / FL-15: where no value list stands, E goes to the condition's value — where a search is typed — not its operator
+    public async Task E_on_a_condition_column_goes_to_its_value()
+    {
+        var cut = RenderGrid(PushedSource(), columns: Columns(FilterUiMode.Condition));
+        await OpenMenuAsync(cut);
+        var value = cut.Find(".ex-popover form input:not([type])").GetAttribute("blazor:elementreference");
+
+        await KeyOnAsync(Command(cut, "Sort ascending"), "e");
+
+        Assert.Equal(value, LastFocusedId());
+    }
 }
