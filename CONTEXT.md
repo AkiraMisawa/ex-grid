@@ -18,10 +18,12 @@ aggregation are its territory. **This is the one that is specified.**
 _Avoid_: DataGrid (fine as a common noun, but the product is ExGrid), table, list, list view
 
 **ExSheet**:
-A grid whose main purpose is to reproduce Excel's **editing** behaviour. It owns a mutable cell
-model of its own and may have a fill handle, row/column insertion and deletion, and formulas.
-**Future.**
-_Avoid_: Sheet (fine as a common noun), spreadsheet, worksheet
+A grid whose main purpose is to reproduce Excel's **editing** behaviour, for general use rather
+than for one screen's data. It holds a **Sheet** — cells addressed `A1`, their **Entries**, and
+a formula engine that computes their **Values** — and it is drawn by ExGrid, as that grid's
+**Consumer**: ExSheet holds and computes, ExGrid paints and reports. It may have a fill handle,
+row/column insertion and deletion, and **Formulas**. **Being specified.**
+_Avoid_: spreadsheet, worksheet, and **Sheet**, which names what ExSheet holds, not the product
 
 > **How far do formulas go?** What people call "a formula" splits three ways, and **two of them
 > are already possible in ExGrid**.
@@ -306,7 +308,7 @@ _Avoid_: not interactive, static (both collide — see Flagged ambiguities)
 
 **Overlay**:
 A sparse diff laid over an immutable base. It holds only the overridden columns and never copies
-rows. Reset is **deleting an entry** (the original is still in the base, so nothing needs
+rows. Reset is **deleting the override** (the original is still in the base, so nothing needs
 saving).
 _Avoid_: diff, patch, change set, draft
 
@@ -486,6 +488,52 @@ when the core asks
 ([ADR-0037](./docs/adr/0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)).
 _Avoid_: custom column, render column
 
+### Sheets
+
+**Sheet**:
+The grid of cells ExSheet holds, addressed by column letter and row number (`A1`) over Excel's
+extent. The product is **ExSheet**; a Sheet is what it holds.
+_Avoid_: worksheet, tab, spreadsheet
+
+**Entry**:
+What a user put into a cell — a constant (`42`, `Tokyo`, `TRUE`) or a **Formula**. It is what a
+**Sheet Document** records, and what the user sees again when they edit the cell. Distinct from
+the **Value** the cell shows.
+_Avoid_: input (that is the Cell Editor's element), content, raw value (that is a copy's
+unformatted value)
+
+**Value**:
+What a cell evaluates to: a number, text, a boolean, or an **Error Value**. A constant Entry is
+its own Value; a Formula's Value is its result. A date is a number shown with a date format, as
+in Excel. It is never recorded — it is computed again wherever a Sheet Document is opened.
+_Avoid_: result, cached value, computed value
+
+**Formula**:
+An Entry beginning with `=`, written in Excel's syntax, that computes a Value from other cells'
+Values. A function ExSheet does not know yields `#NAME?`; it is never guessed at.
+_Avoid_: expression, calculation, computed column (that is ExGrid's — a Column whose accessor
+computes)
+
+**Reference**:
+The part of a Formula that names cells — `A1`, `$A$1`, `A1:B2`, and with the Sheet named,
+`Sheet2!A1`. A relative Reference shifts when its Formula is copied or filled. Inserting or
+deleting rows and columns rewrites every Reference so that it keeps naming the same cells; one
+whose cells are deleted becomes `#REF!`.
+_Avoid_: link, pointer, address (an address is where a cell is; a Reference is how a Formula
+names it)
+
+**Error Value**:
+A Value that is an error — `#DIV/0!`, `#NAME?`, `#REF!`, `#VALUE!`, `#N/A` and the rest of
+Excel's set — produced by a Formula and carried into every Formula that uses it. It is data, like
+a number. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
+never computed.
+_Avoid_: error (that is a Cell State), exception
+
+**Sheet Document**:
+The serialisable form of a Sheet that ExSheet hands to its Consumer and takes back. It holds
+Entries, never Values. The Consumer persists it; ExSheet does not.
+_Avoid_: file, workbook, snapshot, save data
+
 ## Flagged ambiguities
 
 - **"Grid" on its own does not say whether ExGrid or ExSheet is meant.** When it is ambiguous,
@@ -493,6 +541,9 @@ _Avoid_: custom column, render column
   noun (`ag-grid` has none either).
 - **"User" gets used two ways** — the developer embedding this component, and the end user
   touching the screen. The former is the **Consumer**; the latter is the **user**.
+- **"Consumer" has two levels once ExSheet is involved.** ExSheet is ExGrid's Consumer, and the
+  application embedding ExSheet is ExSheet's. Unqualified, **Consumer** is always the
+  application; write "ExSheet, as ExGrid's Consumer" when that relationship is meant.
 - **"Seam" means two things.** A **Chrome seam** is one of the places Chrome is substituted
   into. In talk about tests, a seam is the public boundary a test observes behaviour through —
   write **test seam** for that, and never "seam" alone where either could be meant.
