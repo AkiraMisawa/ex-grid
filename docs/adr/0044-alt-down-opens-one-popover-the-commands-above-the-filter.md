@@ -39,11 +39,36 @@ Rejected:
 - **A filter-only drop-down with the commands elsewhere.** Sorting from the same drop-down is
   half of what Excel's is used for.
 
-## Open
+### The letters are Excel's — decided
 
-- The letters: Excel's accelerators (S, O, C, E) and whether the built-in labels show them.
-- "Clear filter" as a command, as Excel's "Clear Filter From", in place of the panel's Clear.
-- "Add current selection to filter", and a condition filter as rich as Excel's.
+*(Decided with the user, 2026-09-26.)* **S sorts ascending, O sorts descending, C clears the
+column's filter, and E moves to the search box**, as in Excel's drop-down. The letters are fixed,
+whatever language the labels are in: a Consumer translating "Sort ascending" does not move its
+key, just as Japanese Excel keeps S beside 昇順. They act while focus is on a command or on the
+value list. In a text field a letter is text. The built-in Chrome shows each one the way
+Excel does: underlined where the label contains the letter, as English Excel does, and appended
+as "(S)" where it does not, as Japanese Excel does. The commands Excel's drop-down does not have
+— hide, pin, unpin, Size to fit — get no letter. Borrowing one would give a letter a meaning an
+Excel user does not expect.
+
+### "Clear filter" is a command — decided
+
+*(Decided with the user, 2026-09-26.)* As Excel's "Clear Filter From", **clearing the column's
+filter is a command in the list**, key C, enabled only while the column has a filter. The filter
+half keeps OK and Cancel and loses its own Clear button. `FilterPanelContext.Clear` stays, for a
+substituted panel shown on its own.
+
+The filter half's own decisions — "Add current selection to filter", and a second condition —
+are recorded in [ADR-0009](./0009-filter-panel-contract.md).
+
+## Not taken
+
+- **Sort by colour and Filter by colour.** Excel's colours are the cell's formatting. This grid's
+  colours are Cell State and tone, which are the Consumer's meaning. Filtering by them is
+  filtering by the Consumer's own data, which the Consumer can already offer as a column.
+- **Named condition submenus ("Number Filters ▸", Top 10, Above Average).** The two-condition form
+  covers the named comparisons. Top 10 and the averages are computed over the whole result, which
+  the grid neither holds nor executes ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)).
 
 ## Consequences
 

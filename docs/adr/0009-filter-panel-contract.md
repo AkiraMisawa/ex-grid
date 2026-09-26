@@ -92,6 +92,18 @@ every value is, clear when none is, and shows the mixed state in between. While 
 active it reads "(Select All Search Results)" and acts on the matching values only. Its wording
 is the Chrome's, like every label.
 
+**"Add current selection to filter", as in Excel** *(decided with the user, 2026-09-26)*. While
+a search is active on a column that already has a value filter, the panel offers the choice to
+add rather than replace. It is off by default, so OK replaces the filter with the matching checked
+values, as above. Turned on, OK applies the filter already in force together with the matching
+checked values. This is how a second search adds to the first without losing it. It lives in
+`FilterPanelChoices` with the search rule.
+
+**A condition can have a second, joined by AND or OR**, as in Excel's Custom AutoFilter
+*(decided with the user, 2026-09-26)*. `FilterSpec` already holds several clauses with one
+combinator (ADR-0002). Only the built-in form offered one. It now offers a second row and the
+AND / OR choice between the two.
+
 **The value list stays declared per column** *(re-examined with the user, 2026-09-26, against
 Excel's always-present list)*. Making it the default would have every price column enumerate its
 whole domain each time its filter opens — the cost section 1 exists to avoid. Excel-likeness is
