@@ -28,6 +28,7 @@ public class RowMarkFetchTests
         private int _stamp;
         public List<Deal> Rows { get; } = [];
         public TaskCompletionSource<RowMarkCounts>? HeldCount { get; set; }
+        public int PageCap { get; set; } = int.MaxValue;
         public int Counted { get; private set; }
 
         public Server(int rows)
@@ -37,6 +38,8 @@ public class RowMarkFetchTests
         }
 
         public void Add(decimal amount) => Rows.Add(new Deal(Rows.Count, ++_stamp, amount));
+
+        public void RemoveLast(int count) => Rows.RemoveRange(Rows.Count - count, count);
 
         private IReadOnlyList<Deal> Result(GridFilter? filter)
             => filter is null ? Rows : GridQueryEngine.Apply(Rows, Columns, filter, []);
@@ -53,7 +56,7 @@ public class RowMarkFetchTests
                 {
                     var result = Result(query.Filter);
                     var start = Math.Min(query.Range.Start, result.Count);
-                    var count = Math.Min(query.Range.Count, result.Count - start);
+                    var count = Math.Min(Math.Min(query.Range.Count, PageCap), result.Count - start);
                     var rows = result.Skip(start).Take(count).Select(d => d with { }).ToArray();
                     return ValueTask.FromResult(new GridPage<Deal>(rows, start, result.Count));
                 },
@@ -244,5 +247,102 @@ public class RowMarkFetchTests
         Assert.Same(failures[0], source.LastError);
         Assert.True(marks.IsMarked(source.Window[0]));
         Assert.Null(marks.Counts);
+    }
+
+    [Fact] // ADR-0043: a Consumer's own null is its bug, thrown back — never reported as the server failing
+    public async Task A_null_row_or_range_is_thrown_back_not_reported()
+    {
+        var server = new Server(10);
+        var source = server.Source();
+        var marks = source.Marks!;
+        var failures = new List<Exception>();
+        source.FetchFailed += failures.Add;
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.OneRow(null!, true)));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions(null!, source.RowSequenceVersion)));
+
+        Assert.Empty(failures);
+        Assert.Null(source.LastError);
+    }
+
+    [Fact] // ADR-0043/0005: a short answer for positions past the Window marks nothing, and says so
+    public async Task A_short_answer_for_positions_marks_nothing_and_is_reported()
+    {
+        var server = new Server(1_000);
+        var source = server.Source();
+        var marks = source.Marks!;
+        var failures = new List<Exception>();
+        source.FetchFailed += failures.Add;
+        server.PageCap = 50;
+
+        await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions([new RowRange(0, 10), new RowRange(500, 200)], source.RowSequenceVersion));
+
+        Assert.Equal(RowMarkState.Empty, marks.State);
+        Assert.Contains("200", Assert.Single(failures).Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0043/0011: a result that shrank under the positions is a reorder — refused quietly, not a failure
+    public async Task Positions_over_a_result_that_shrank_mark_nothing_and_report_nothing()
+    {
+        var server = new Server(1_000);
+        var source = server.Source();
+        var marks = source.Marks!;
+        var failures = new List<Exception>();
+        source.FetchFailed += failures.Add;
+        server.RemoveLast(50);
+
+        await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions([new RowRange(900, 100)], source.RowSequenceVersion));
+
+        Assert.Equal(RowMarkState.Empty, marks.State);
+        Assert.Empty(failures);
+        Assert.Null(source.LastError);
+    }
+
+    [Fact] // ADR-0043: a range reaching past the end marks the rows that exist, as GridSource.From does
+    public async Task Positions_past_the_end_mark_the_rows_that_exist()
+    {
+        var server = new Server(1_000);
+        var source = server.Source();
+        var marks = source.Marks!;
+
+        await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions([new RowRange(990, 20)], source.RowSequenceVersion));
+
+        Assert.Equal(10, marks.State.Steps.Count);
+    }
+
+    [Fact] // ADR-0043/0025: a failure met while marking is cleared by the next marking that succeeds
+    public async Task A_marking_failure_is_cleared_by_the_next_success()
+    {
+        var server = new Server(1_000);
+        var source = server.Source();
+        var marks = source.Marks!;
+        source.FetchFailed += _ => { };
+        server.PageCap = 50;
+        await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions([new RowRange(500, 200)], source.RowSequenceVersion));
+        Assert.NotNull(source.LastError);
+
+        await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.OneRow(source.Window[0], true));
+
+        Assert.Null(source.LastError);
+    }
+
+    [Fact] // ADR-0043/0025: a marking that finishes late never clears a failure reported after it began
+    public async Task A_late_success_leaves_a_newer_failure_standing()
+    {
+        var server = new Server(1_000);
+        var source = server.Source();
+        var marks = source.Marks!;
+        source.FetchFailed += _ => { };
+        server.HeldCount = new TaskCompletionSource<RowMarkCounts>();
+        var slow = marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.OneRow(source.Window[0], true));
+
+        server.PageCap = 50;
+        await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions([new RowRange(500, 200)], source.RowSequenceVersion));
+        var newer = source.LastError;
+        server.HeldCount.SetResult(new RowMarkCounts(1, 1_000, 0));
+        await slow;
+
+        Assert.NotNull(newer);
+        Assert.Same(newer, source.LastError);
     }
 }

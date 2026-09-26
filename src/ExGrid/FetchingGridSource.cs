@@ -160,9 +160,34 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         if (_disposed || FetchFailed is not { } handler)
             return false;
         LastError = error;
+        _marksFailure = error;
         StateChanged?.Invoke();
         handler(error);
         return true;
+    }
+
+    // The failure the marks last reported, so the marks' next success can clear it — and
+    // only it: a failed fetch stays until an answer lands, as it always has.
+    private Exception? _marksFailure;
+
+    /// <summary>The failure the marks last reported, or null.</summary>
+    internal Exception? MarksFailure => _marksFailure;
+
+    /// <summary>A marking went through: the failure the marks had reported when it
+    /// began no longer describes the source, and a Consumer showing
+    /// <see cref="LastError"/> would go on saying it is failing while everything works.
+    /// Only that one — a failure reported while this marking was still counting is newer
+    /// than its success, and stands.</summary>
+    internal void ClearMarksFailure(Exception? seenAtStart)
+    {
+        if (seenAtStart is null || !ReferenceEquals(_marksFailure, seenAtStart))
+            return;
+        _marksFailure = null;
+        if (ReferenceEquals(LastError, seenAtStart))
+        {
+            LastError = null;
+            StateChanged?.Invoke();
+        }
     }
 
     /// <summary>Takes a new Sort. A list equal to the one in force is a no-op; any other
@@ -411,6 +436,15 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     /// in the way a painted Window can.
     /// </summary>
     public async Task<IReadOnlyList<TRow>> GetRowsAsync(RowRange range, CancellationToken cancellationToken)
+        => (await FetchRangeAsync(range, cancellationToken).ConfigureAwait(true)).Rows;
+
+    /// <summary>
+    /// The rows of one range, trimmed to it, with the total the answer reported — which is
+    /// what tells a result that shrank under the range (its positions now name other rows)
+    /// from a server that answered short (ADR-0025).
+    /// </summary>
+    internal async Task<(IReadOnlyList<TRow> Rows, int TotalCount)> FetchRangeAsync(
+        RowRange range, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         var page = await _fetch(new GridQuery(range, Sorts, Filter), cancellationToken).ConfigureAwait(true);
@@ -419,12 +453,12 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         // make the caller guess which of its rows were the ones asked for.
         var skip = range.Start - page.Start;
         if (skip < 0 || skip > page.Rows.Count)
-            return [];
+            return ([], page.TotalCount);
         var count = Math.Min(range.Count, page.Rows.Count - skip);
         var rows = new TRow[count];
         for (var i = 0; i < count; i++)
             rows[i] = page.Rows[skip + i];
-        return rows;
+        return (rows, page.TotalCount);
     }
 
     /// <summary>

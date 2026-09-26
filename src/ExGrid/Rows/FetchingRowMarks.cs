@@ -63,14 +63,28 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
     /// <inheritdoc />
     public async Task OnMarkIntentAsync(RowMarkIntent<TRow> intent)
     {
+        // The Consumer's own mistakes are thrown back here, before anything that can fail
+        // on its server runs: a null is its bug, never a server failure to report.
         ArgumentNullException.ThrowIfNull(intent);
-        if (intent is not (RowMarkIntent<TRow>.OneRow or RowMarkIntent<TRow>.AllRows or RowMarkIntent<TRow>.Positions))
-            throw new ArgumentOutOfRangeException(nameof(intent), intent, "An unknown Row Mark intent.");
+        switch (intent)
+        {
+            case RowMarkIntent<TRow>.OneRow one:
+                ArgumentNullException.ThrowIfNull(one.Row, nameof(intent));
+                break;
+            case RowMarkIntent<TRow>.Positions positions:
+                ArgumentNullException.ThrowIfNull(positions.Ranges, nameof(intent));
+                break;
+            case RowMarkIntent<TRow>.AllRows:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(intent), intent, "An unknown Row Mark intent.");
+        }
 
         // What fails from here on is the Consumer's server — the snapshot, a fetch past the
         // Window, the count — and it is reported the way a failed fetch is (ADR-0025): to
         // FetchFailed when someone listens, rather than thrown into the click or the key
         // that caused it, where on a circuit it would end the session. Whatever its type.
+        var failureAtStart = _source.MarksFailure;
         try
         {
             var changed = intent switch
@@ -78,13 +92,14 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
                 RowMarkIntent<TRow>.OneRow one => MarkOne(one.Row, one.Marked),
                 RowMarkIntent<TRow>.AllRows all => await MarkResultAsync(all.Marked, all.RowSequenceVersion).ConfigureAwait(true),
                 RowMarkIntent<TRow>.Positions positions => await MarkPositionsAsync(positions.Ranges, positions.RowSequenceVersion).ConfigureAwait(true),
-                _ => false,
+                _ => throw new System.Diagnostics.UnreachableException(),
             };
             if (!changed)
                 return;
             _state = new RowMarkState(_steps.Select(entry => entry.Step).ToArray());
             Changed?.Invoke();
             await RecountAsync().ConfigureAwait(true);
+            _source.ClearMarksFailure(failureAtStart);
         }
         catch (Exception ex)
         {
@@ -118,7 +133,6 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
 
     private bool MarkOne(TRow row, bool marked)
     {
-        ArgumentNullException.ThrowIfNull(row);
         if (!IsDetail(row))
             return false;
         Append(new RowMarkStep.OneKey(_adapter.Key(row), marked));
@@ -142,7 +156,6 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
 
     private async Task<bool> MarkPositionsAsync(IReadOnlyList<RowRange> ranges, int version)
     {
-        ArgumentNullException.ThrowIfNull(ranges);
         if (version != _source.RowSequenceVersion)
             return false;
 
@@ -160,7 +173,30 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
             }
             else
             {
-                rows.AddRange(await _source.GetRowsAsync(range, CancellationToken.None).ConfigureAwait(true));
+                var known = _source.TotalCount ?? 0;
+                var (answered, total) = await _source.FetchRangeAsync(range, CancellationToken.None).ConfigureAwait(true);
+                // Checked first: an answer that raced a reorder is a refusal, like every
+                // other gesture made under an order that has since changed.
+                if (version != _source.RowSequenceVersion)
+                    return false;
+                // The result shrank under the range: the positions name other rows now, which
+                // is a reorder in all but the version (ADR-0011) — refused, quietly, as one is.
+                if (total < known)
+                    return false;
+                // A range reaching past the end marks the rows that exist, as GridSource.From
+                // does. Fewer than those is a server answering short: marking the part that
+                // came back would leave the rest of the selection unmarked without saying so,
+                // so nothing is marked and the failure is reported (ADR-0043, refusing whole as
+                // a copy past the Window does under ADR-0005).
+                var expected = Math.Max(0, Math.Min(range.Count, total - range.Start));
+                if (answered.Count < expected)
+                {
+                    throw new InvalidOperationException(
+                        $"Marking {expected} rows at {range.Start} needed them from the server, and it answered " +
+                        $"{answered.Count} of a result of {total}. Nothing was marked: marking the part that came back " +
+                        "would leave the rest of the selection unmarked without saying so (ADR-0043, ADR-0005).");
+                }
+                rows.AddRange(answered);
             }
             if (version != _source.RowSequenceVersion)
                 return false;
