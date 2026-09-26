@@ -56,12 +56,12 @@
             Chrome="MudGridChrome.Default" />
 </div>
 
-@foreach (var inspector in _open)
+@foreach (var inspector in _floatingInspectors.Open)
 {
-    <FloatingPanel @key="inspector.Row.Id" Key="@inspector.Row.Id" Title="@($"Trade {inspector.Row.Id}")"
-                   InitialX="inspector.X" InitialY="inspector.Y" Stack="inspector.Stack"
+    <FloatingPanel @key="inspector.Key" Key="@inspector.Key" Title="@($"Trade {inspector.Key}")"
+                   InitialX="inspector.X" InitialY="inspector.Y" ZIndex="inspector.ZIndex"
                    FocusRequest="inspector.FocusRequest"
-                   OnFront="() => BringToFront(inspector)" OnClose="() => _open.Remove(inspector)">
+                   OnFront="() => _floatingInspectors.BringToFront(inspector)" OnClose="() => _floatingInspectors.Close(inspector)">
         <RowInspector Row="inspector.Row" />
     </FloatingPanel>
 }
@@ -99,20 +99,10 @@
     private static readonly DialogOptions ModalOptions = new() { MaxWidth = MaxWidth.Small, CloseOnEscapeKey = true };
 
     private readonly InMemoryGridSource<DemoBlotterTrade> _source = GridSource.From(Trades);
-    private readonly List<FloatingInspector> _open = [];
+    private readonly FloatingInspectors<DemoBlotterTrade> _floatingInspectors = new(t => t.Id, left: 820, top: 320);
     private EventCallback<GridActionEventArgs<DemoBlotterTrade>> _onAction;
     private bool _floating;
     private string _status = "";
-    private int _stack;
-
-    private sealed class FloatingInspector(DemoBlotterTrade row, double x, double y)
-    {
-        public DemoBlotterTrade Row { get; } = row;
-        public double X { get; } = x;
-        public double Y { get; } = y;
-        public int Stack { get; set; }
-        public int FocusRequest { get; set; }
-    }
 
     protected override void OnInitialized()
     {
@@ -145,7 +135,7 @@
         _status = "";
         if (_floating)
         {
-            OpenFloating(args.Row);
+            _floatingInspectors.Show(args.Row);
             return;
         }
         var reference = await ShowModalAsync(args.Row);
@@ -178,7 +168,7 @@
         if (_floating)
         {
             foreach (var row in marked)
-                OpenFloating(row);
+                _floatingInspectors.Show(row);
             return;
         }
         // One modal at a time, in turn; Escape ends the queue.
@@ -190,21 +180,6 @@
                 break;
         }
     }
-
-    private void OpenFloating(DemoBlotterTrade row)
-    {
-        var inspector = _open.FirstOrDefault(i => i.Row.Id == row.Id);
-        if (inspector is null)
-        {
-            var offset = 28 * (_open.Count % 8);
-            inspector = new FloatingInspector(row, 820 + offset, 320 + offset);
-            _open.Add(inspector);
-        }
-        BringToFront(inspector);
-        inspector.FocusRequest++;
-    }
-
-    private void BringToFront(FloatingInspector inspector) => inspector.Stack = ++_stack;
 
     private void SortByNotional()
         => _source.OnSortChanged([new SortSpec("Notional", global::ExGrid.SortDirection.Descending)]);

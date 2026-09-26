@@ -369,3 +369,28 @@ approval (a note decided on a stale view is refused, not recorded); appending a 
 not change the trade's values, so it does not move the version, and a note appended
 elsewhere is taken into an open inspector without a banner. In modal mode the marked rows
 open one after another, and Escape ends the queue.
+
+**2026-09-26 — reviewed (standards and spec), and fixed.** Every browser test now carries an
+id, RI-1 … RI-25, with an ADR number only where one decided what it pins; the version-check
+refusal has no ADR of its own and no longer borrows ADR-0043's. The reviews found three
+defects, each fixed with a test:
+
+- A deletion did not stay said: a held change released after the deletion turned the banner
+  back into "Changed elsewhere", and Reload re-enabled the actions (RI-24).
+- The page rebuilt its grid from the store's rows, which already held changes whose news was
+  held back, and a freshly opened inspector read the store the same way — both went round
+  the news the demo exists to hold back. The page now keeps the rows as it has been told of
+  them, and an inspector starts from the row the grid showed (RI-25).
+- The store announced outside its lock, so two circuits changing it at once could deliver
+  their news crossed. It announces under the lock now.
+
+Added tests the reviews asked for: Enter on the Inspect cell opens nothing (RI-14), a modal
+leaves the grid unpressable (RI-15), and Escape ends the modal queue (RI-13).
+
+Where the build departs from the text above, and stays so: page B's inspector is its own
+component (`EditableInspector`), sharing the floating shell (`FloatingPanel`) and the
+open-inspector bookkeeping (`FloatingInspectors`) with page A rather than one component
+taking a mode; page B opens floating inspectors only. The banner reads "Changed elsewhere —
+notional now …, status …" with a Reload button. Nothing asserts in a test that the pages add
+no script or that rows still skip their render there; the diff adds no script, and the rows
+are the grid's own.

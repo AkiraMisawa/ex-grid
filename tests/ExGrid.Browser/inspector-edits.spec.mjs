@@ -44,7 +44,7 @@ async function inspect(page, row = 0) {
     return inspector(page, id);
 }
 
-test('an approval from the inspector reaches the grid, and the inspector shows it without a banner', async ({ page }) => {
+test('RI-16: an approval from the inspector reaches the grid as a new instance, and the inspector shows it without a banner (ADR-0003)', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     await panel.locator('.demo-inspector-approve').click();
@@ -56,7 +56,7 @@ test('an approval from the inspector reaches the grid, and the inspector shows i
     await expect(panel.locator('.demo-inspector-refusal')).toHaveCount(0);
 });
 
-test('a change elsewhere raises the banner with the new value, keeps the old one shown, and disables the actions until reloaded', async ({ page }) => {
+test('RI-17: a change elsewhere raises the banner with the new value, keeps the old one shown, and disables the actions until reloaded', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     const before = await panel.locator('.demo-inspector-notional').textContent();
@@ -76,7 +76,7 @@ test('a change elsewhere raises the banner with the new value, keeps the old one
     await expect(panel.locator('.demo-inspector-approve')).toBeEnabled();
 });
 
-test('a row deleted elsewhere says so, and its inspector acts on nothing', async ({ page }) => {
+test('RI-18: a row deleted elsewhere says so, and its inspector acts on nothing', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     await page.locator('#delete-now').click();
@@ -86,7 +86,7 @@ test('a row deleted elsewhere says so, and its inspector acts on nothing', async
     await expect(cell(page, 0, 0)).toHaveText('E-002');
 });
 
-test('an approval pressed before the news of a change arrives is refused by the store, and says why (ADR-0043)', async ({ page }) => {
+test('RI-19: an approval pressed before the news of a change arrives is refused by the store, and says why', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     const before = await cell(page, 0, 3).textContent();
@@ -109,7 +109,35 @@ test('an approval pressed before the news of a change arrives is refused by the 
     await expect(cell(page, 0, 5)).toHaveText('2');
 });
 
-test('a note records the version it was written against, and is marked once the trade has moved on', async ({ page }) => {
+test('RI-24: a deletion stays said, whatever news about the trade arrives after it', async ({ page }) => {
+    await open(page);
+    const panel = await inspect(page);
+    await page.locator('#change-held').click();
+    await page.locator('#delete-now').click();
+    const banner = panel.locator('.demo-inspector-banner');
+    await expect(banner).toContainText('Deleted elsewhere');
+
+    // The held change to the deleted trade is announced after the deletion.
+    await page.locator('#release-held').click();
+    await expect(page.locator('#held-count')).toHaveText('0');
+    await expect(banner).toContainText('Deleted elsewhere');
+    await expect(banner.locator('.demo-inspector-reload')).toHaveCount(0);
+    await expect(panel.locator('.demo-inspector-approve')).toBeDisabled();
+});
+
+test('RI-25: an inspector opened while news is held back shows what the grid showed, and learns of the change when it is announced', async ({ page }) => {
+    await open(page);
+    const before = await cell(page, 0, 3).textContent();
+    await page.locator('#change-held').click();
+    const panel = await inspect(page);
+    await expect(panel.locator('.demo-inspector-notional')).toHaveText(before);
+    await expect(panel.locator('.demo-inspector-banner')).toHaveCount(0);
+
+    await page.locator('#release-held').click();
+    await expect(panel.locator('.demo-inspector-banner')).toContainText('Changed elsewhere');
+});
+
+test('RI-20: a note records the version it was written against, and is marked once the trade has moved on', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     await panel.locator('.demo-inspector-note-text').fill('Checked against the confirmation');
@@ -126,7 +154,7 @@ test('a note records the version it was written against, and is marked once the 
     await expect(note.locator('.demo-inspector-note-stale')).toHaveText('written against version 1');
 });
 
-test('the inspector follows its trade when an approval moves it under the sort (ADR-0011)', async ({ page }) => {
+test('RI-21: the inspector follows its trade by key when an approval moves it under the sort', async ({ page }) => {
     await open(page);
     await page.locator('#sort-status').click();
     // Z to A: the Pending trades first. E-001 is Booked, so the sort has landed once it
@@ -143,13 +171,13 @@ test('the inspector follows its trade when an approval moves it under the sort (
     await expect(panel).toHaveAttribute('data-inspector-key', id);
 });
 
-test('on WebAssembly the page says there is nobody to share the store with', async ({ page }) => {
+test('RI-22: on WebAssembly the page says there is nobody to share the store with', async ({ page }) => {
     test.skip(SERVER, 'the Server host shares the store; the next test covers it');
     await open(page);
     await expect(page.locator('#store-scope')).toContainText('only this tab');
 });
 
-test('on the Server host, an approval in another tab raises the banner in this one (ADR-0018)', async ({ page, browser }) => {
+test('RI-23: on the Server host, an approval in another tab raises the banner in this one (ADR-0018)', async ({ page, browser }) => {
     test.skip(!SERVER, 'a WebAssembly host has one user per process');
     await open(page);
     const mine = await inspect(page, 1);

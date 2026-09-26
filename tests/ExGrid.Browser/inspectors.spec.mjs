@@ -85,7 +85,7 @@ for (const handler of ['shown', 'await']) {
     const query = handler === 'await' ? '?handler=await' : '';
     const style = handler === 'await' ? 'awaiting the dialog\'s result' : 'returning once the dialog is shown';
 
-    test(`modal, by click, handler ${style}: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037)`, async ({ page }) => {
+    test(`RI-4: modal, by click, handler ${style}: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037)`, async ({ page }) => {
         await open(page, query);
         await inspectButton(page, 3).click();
         const dialog = page.locator('.mud-dialog');
@@ -97,7 +97,7 @@ for (const handler of ['shown', 'await']) {
         await expect(grid(page)).toBeFocused();
     });
 
-    test(`modal, by Space, handler ${style}: the keyboard is in the inspector (ADR-0020/0037)`, async ({ page }) => {
+    test(`RI-5: modal, by Space, handler ${style}: the keyboard is in the inspector (ADR-0020/0037)`, async ({ page }) => {
         await open(page, query);
         await spaceOnInspect(page, 5);
         await expect(page.locator(`.mud-dialog [data-inspector-key="${id(5)}"]`)).toBeVisible();
@@ -105,7 +105,7 @@ for (const handler of ['shown', 'await']) {
     });
 }
 
-test('floating, by click: the keyboard is in the inspector just opened (ADR-0020/0037)', async ({ page }) => {
+test('RI-6: floating, by click: the keyboard is in the inspector just opened (ADR-0020/0037)', async ({ page }) => {
     await open(page);
     await useFloating(page);
     await inspectButton(page, 1).click();
@@ -117,7 +117,7 @@ test('floating, by click: the keyboard is in the inspector just opened (ADR-0020
     await expectKeyboardIn(page, `.demo-floating-inspector[data-inspector-key="${id(4)}"]`, 'the keyboard is inside the second inspector');
 });
 
-test('floating, by Space: the keyboard is in the inspector (ADR-0020/0037)', async ({ page }) => {
+test('RI-7: floating, by Space: the keyboard is in the inspector (ADR-0020/0037)', async ({ page }) => {
     await open(page);
     await useFloating(page);
     await spaceOnInspect(page, 2);
@@ -125,7 +125,7 @@ test('floating, by Space: the keyboard is in the inspector (ADR-0020/0037)', asy
     await expectKeyboardIn(page, '.demo-floating-inspector', 'the keyboard is inside the inspector');
 });
 
-test('floating: a row whose inspector is open brings it to the front instead of opening another', async ({ page }) => {
+test('RI-8: floating: a row whose inspector is open brings it to the front instead of opening another', async ({ page }) => {
     await open(page);
     await useFloating(page);
     await inspectButton(page, 1).click();
@@ -138,7 +138,7 @@ test('floating: a row whose inspector is open brings it to the front instead of 
     await expect.poll(() => front(page)).toBe(id(1));
 });
 
-test('floating: an inspector is dragged by its title bar, and closes on its own', async ({ page }) => {
+test('RI-9: floating: an inspector is dragged by its title bar, and closes on its own', async ({ page }) => {
     await open(page);
     await useFloating(page);
     await inspectButton(page, 0).click();
@@ -164,7 +164,7 @@ test('floating: an inspector is dragged by its title bar, and closes on its own'
     await expect(floating(page)).toHaveAttribute('data-inspector-key', id(1));
 });
 
-test('the marked rows open as inspectors, one each, and the count names the ones outside the filter (ADR-0043)', async ({ page }) => {
+test('RI-10: the marked rows open as inspectors, one each, and the count names the ones outside the filter (ADR-0043)', async ({ page }) => {
     await open(page);
     await useFloating(page);
     for (const row of [0, 2, 4]) {
@@ -183,7 +183,7 @@ test('the marked rows open as inspectors, one each, and the count names the ones
     expect(keys.sort()).toEqual([id(0), id(2), id(4)]);
 });
 
-test('the marks survive a sort, so the rows opened are the rows ticked (ADR-0043)', async ({ page }) => {
+test('RI-11: the marks survive a sort, so the rows opened are the rows ticked (ADR-0043)', async ({ page }) => {
     await open(page);
     await useFloating(page);
     for (const row of [1, 3]) {
@@ -198,7 +198,7 @@ test('the marks survive a sort, so the rows opened are the rows ticked (ADR-0043
     expect(keys.sort()).toEqual([id(1), id(3)]);
 });
 
-test('above the cap the marked rows are refused by count, and nothing opens (spine 1, spine 5)', async ({ page }) => {
+test('RI-12: above the cap the marked rows are refused by count, and nothing opens', async ({ page }) => {
     await open(page);
     await useFloating(page);
     await grid(page).locator('.ex-header .ex-mark').click();
@@ -211,7 +211,7 @@ test('above the cap the marked rows are refused by count, and nothing opens (spi
     await expect(floating(page)).toHaveCount(0);
 });
 
-test('modal: the marked rows open one after another', async ({ page }) => {
+test('RI-13: modal: the marked rows open one after another, and Escape ends the queue', async ({ page }) => {
     await open(page);
     for (const row of [0, 1]) {
         await cell(page, row, 0).locator('.ex-mark').click();
@@ -224,4 +224,38 @@ test('modal: the marked rows open one after another', async ({ page }) => {
     await expect(dialog.locator(`[data-inspector-key="${id(1)}"]`)).toBeVisible();
     await dialog.locator('.demo-inspector-close').click();
     await expect(dialog).toHaveCount(0);
+
+    // Three marked, Escape on the first: the queue ends there.
+    await cell(page, 2, 0).locator('.ex-mark').click();
+    await page.locator('#open-marked').click();
+    await expect(dialog.locator(`[data-inspector-key="${id(0)}"]`)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await page.waitForTimeout(300);
+    await expect(dialog).toHaveCount(0);
+});
+
+test('RI-14: Enter on the Inspect cell moves down and opens nothing (ADR-0020)', async ({ page }) => {
+    await open(page);
+    await cell(page, 0, 1).click({ force: true });
+    await page.keyboard.press('ArrowRight');
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c2$/);
+    await page.keyboard.press('Enter');
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c2$/);
+    await page.waitForTimeout(300);
+    await expect(page.locator('.mud-dialog')).toHaveCount(0);
+});
+
+test('RI-15: while a modal inspector stands, the grid behind it cannot be pressed', async ({ page }) => {
+    await open(page);
+    await inspectButton(page, 0).click();
+    const dialog = page.locator('.mud-dialog');
+    await expect(dialog.locator(`[data-inspector-key="${id(0)}"]`)).toBeVisible();
+
+    // The press lands on the dialog's backdrop, which MudBlazor answers by closing the
+    // dialog — never on the row's button underneath.
+    const box = await inspectButton(page, 6).boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForTimeout(500);
+    await expect(page.locator(`[data-inspector-key="${id(6)}"]`)).toHaveCount(0);
 });

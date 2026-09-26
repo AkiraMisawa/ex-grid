@@ -47,12 +47,12 @@
             ViewportHeight="420" />
 </div>
 
-@foreach (var inspector in _open)
+@foreach (var inspector in _floatingInspectors.Open)
 {
-    <FloatingPanel @key="inspector.Id" Key="@inspector.Id" Title="@($"Trade {inspector.Id}")"
-                   InitialX="inspector.X" InitialY="inspector.Y" Stack="inspector.Stack"
+    <FloatingPanel @key="inspector.Key" Key="@inspector.Key" Title="@($"Trade {inspector.Key}")"
+                   InitialX="inspector.X" InitialY="inspector.Y" ZIndex="inspector.ZIndex"
                    FocusRequest="inspector.FocusRequest"
-                   OnFront="() => inspector.Stack = ++_stack" OnClose="() => _open.Remove(inspector)">
+                   OnFront="() => _floatingInspectors.BringToFront(inspector)" OnClose="() => _floatingInspectors.Close(inspector)">
         <EditableInspector Row="inspector.Row" />
     </FloatingPanel>
 }
@@ -71,22 +71,14 @@
         new("Version", ColumnType.Number, t => t.Version, width: Fixed(80)),
     ];
 
-    private readonly List<OpenInspector> _open = [];
+    private readonly FloatingInspectors<EditableTrade> _floatingInspectors = new(t => t.Id, left: 700, top: 320);
+    // The trades as this page has been told of them — not the store's rows, which may
+    // already hold a change whose news is held back. The grid is built from these.
+    private List<EditableTrade> _announced = [];
     private InMemoryGridSource<EditableTrade> _source = default!;
     private EventCallback<GridActionEventArgs<EditableTrade>> _onAction;
     private Action<StoreChange>? _onChanged;
     private Action? _onReset;
-    private int _stack;
-
-    private sealed class OpenInspector(EditableTrade row, double x, double y)
-    {
-        public string Id => Row.Id;
-        public EditableTrade Row { get; } = row;
-        public double X { get; } = x;
-        public double Y { get; } = y;
-        public int Stack { get; set; }
-        public int FocusRequest { get; set; }
-    }
 
     protected override void OnInitialized()
     {
@@ -95,7 +87,8 @@
         _onAction = EventCallback.Factory.Create<GridActionEventArgs<EditableTrade>>(this, OnAction);
         _onChanged = change => _ = InvokeAsync(() => Apply(change));
         _onReset = () => _ = InvokeAsync(OnReset);
-        _source = GridSource.From(Store.Subscribe(_onChanged, _onReset));
+        _announced = [.. Store.Subscribe(_onChanged, _onReset)];
+        _source = GridSource.From(_announced);
     }
 
     public void Dispose()
@@ -109,42 +102,41 @@
     // dispatcher (ADR-0018 §5).
     private void Apply(StoreChange change)
     {
-        if (change.Replacement is { } replacement && _source.Window.Any(row => ReferenceEquals(row, change.Old)))
+        var index = _announced.FindIndex(row => ReferenceEquals(row, change.Old));
+        if (index < 0)
+            return;
+        if (change.Replacement is { } replacement)
+        {
+            _announced[index] = replacement;
             _source.ReplaceRow(change.Old, replacement);
+        }
         else
+        {
+            // The bundled source replaces rows but does not remove them: start it again
+            // from what this page has been told, keeping the sort the user chose.
+            _announced.RemoveAt(index);
             Rebuild();
+        }
         StateHasChanged();
     }
 
     private void OnReset()
     {
-        _open.Clear();
+        _floatingInspectors.Clear();
+        _announced = [.. Store.Rows];
         Rebuild();
         StateHasChanged();
     }
 
-    // A deletion, or news the source has fallen out of step with: start again from the
-    // store's rows, keeping the sort the user chose.
     private void Rebuild()
     {
         var sorts = _source.Sorts;
-        _source = GridSource.From(Store.Rows);
+        _source = GridSource.From(_announced);
         if (sorts.Count > 0)
             _source.OnSortChanged(sorts);
     }
 
-    private void OnAction(GridActionEventArgs<EditableTrade> args)
-    {
-        var inspector = _open.FirstOrDefault(i => i.Id == args.Row.Id);
-        if (inspector is null)
-        {
-            var offset = 28 * (_open.Count % 8);
-            inspector = new OpenInspector(args.Row, 700 + offset, 320 + offset);
-            _open.Add(inspector);
-        }
-        inspector.Stack = ++_stack;
-        inspector.FocusRequest++;
-    }
+    private void OnAction(GridActionEventArgs<EditableTrade> args) => _floatingInspectors.Show(args.Row);
 
     private void SortByStatus()
         => _source.OnSortChanged([new SortSpec("Status", SortDirection.Descending)]);

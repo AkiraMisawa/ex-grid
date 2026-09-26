@@ -47,7 +47,7 @@ public sealed class InspectorTradeStore
 
     /// <summary>The rows as they are now, and a subscription to every change after —
     /// taken together, so no change falls between the snapshot and the subscription.</summary>
-    public IReadOnlyList<EditableTrade> Subscribe(Action<StoreChange> onChanged, Action onReset)
+    public IReadOnlyList<EditableTrade> Subscribe(Action<StoreChange> onChanged, Action? onReset = null)
     {
         lock (_gate)
         {
@@ -57,7 +57,7 @@ public sealed class InspectorTradeStore
         }
     }
 
-    public void Unsubscribe(Action<StoreChange> onChanged, Action onReset)
+    public void Unsubscribe(Action<StoreChange> onChanged, Action? onReset = null)
     {
         lock (_gate)
         {
@@ -70,13 +70,6 @@ public sealed class InspectorTradeStore
     public IReadOnlyList<EditableTrade> Rows
     {
         get { lock (_gate) return _rows; }
-    }
-
-    /// <summary>The trade as it now stands, or null when it has been deleted.</summary>
-    public EditableTrade? Find(string id)
-    {
-        lock (_gate)
-            return _rows.FirstOrDefault(row => row.Id == id);
     }
 
     /// <summary>Changes made and not yet announced.</summary>
@@ -100,7 +93,6 @@ public sealed class InspectorTradeStore
     /// nobody has been told.</summary>
     public void ChangeElsewhere(string id, bool announce)
     {
-        StoreChange change;
         lock (_gate)
         {
             var index = IndexOf(id);
@@ -109,60 +101,53 @@ public sealed class InspectorTradeStore
             var old = _rows[index];
             var replacement = old with { Notional = old.Notional + 1_000_000m, Version = old.Version + 1 };
             _rows = With(index, replacement);
-            change = new StoreChange(old, replacement, Origin: null);
-            if (!announce)
-            {
+            var change = new StoreChange(old, replacement, Origin: null);
+            if (announce)
+                Announce(change);
+            else
                 _held.Add(change);
-                return;
-            }
         }
-        Announce([change]);
     }
 
     /// <summary>Somebody else deletes the trade. Announced at once.</summary>
     public void DeleteElsewhere(string id)
     {
-        StoreChange change;
         lock (_gate)
         {
             var index = IndexOf(id);
             if (index < 0)
                 return;
-            change = new StoreChange(_rows[index], null, Origin: null);
+            var change = new StoreChange(_rows[index], null, Origin: null);
             _rows = [.. _rows.Where((_, i) => i != index)];
+            Announce(change);
         }
-        Announce([change]);
     }
 
     /// <summary>Announces the held changes, in the order they were made.</summary>
     public void ReleaseHeld()
     {
-        StoreChange[] held;
         lock (_gate)
         {
-            held = [.. _held];
+            foreach (var change in _held)
+                Announce(change);
             _held.Clear();
         }
-        Announce(held);
     }
 
     /// <summary>Puts every trade back as it started, for the browser tests and for anyone
     /// who has changed too much to follow.</summary>
     public void Reset()
     {
-        Action? subscribers;
         lock (_gate)
         {
             _rows = Seed();
             _held.Clear();
-            subscribers = WasReset;
+            WasReset?.Invoke();
         }
-        subscribers?.Invoke();
     }
 
     private StoreAnswer Change(string id, int version, Guid origin, Func<EditableTrade, EditableTrade> change)
     {
-        StoreChange announced;
         lock (_gate)
         {
             var index = IndexOf(id);
@@ -176,20 +161,15 @@ public sealed class InspectorTradeStore
             }
             var replacement = change(current);
             _rows = With(index, replacement);
-            announced = new StoreChange(current, replacement, origin);
+            Announce(new StoreChange(current, replacement, origin));
+            return new StoreAnswer(replacement, null);
         }
-        Announce([announced]);
-        return new StoreAnswer(announced.Replacement, null);
     }
 
-    private void Announce(IReadOnlyList<StoreChange> changes)
-    {
-        Action<StoreChange>? subscribers;
-        lock (_gate)
-            subscribers = Changed;
-        foreach (var change in changes)
-            subscribers?.Invoke(change);
-    }
+    // Called under the lock, so every subscriber hears the changes in the order they were
+    // made: two circuits changing the store at once cannot deliver their news crossed.
+    // Subscribers only post to their own dispatcher, so nothing runs long in here.
+    private void Announce(StoreChange change) => Changed?.Invoke(change);
 
     private int IndexOf(string id) => Array.FindIndex(_rows, row => row.Id == id);
 

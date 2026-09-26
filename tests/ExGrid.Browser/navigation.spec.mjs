@@ -30,7 +30,7 @@ async function indexEntries(page) {
         links.map((link) => ({ href: link.getAttribute('href'), title: link.textContent.trim() })));
 }
 
-test('the index at / lists every routed page, once', async ({ page }) => {
+test('RI-1: the index at / lists every routed page, once', async ({ page }) => {
     const entries = await indexEntries(page);
     const listed = entries.map((entry) => entry.href);
     expect(new Set(listed).size).toBe(listed.length);
@@ -44,14 +44,14 @@ test('the index at / lists every routed page, once', async ({ page }) => {
     }
 });
 
-test('the Row Identity demo that was at / is at /identity', async ({ page }) => {
+test('RI-2: the Row Identity demo that was at / is at /identity', async ({ page }) => {
     await page.goto('/identity');
     await expect(page.locator('#demo-interactive')).toBeAttached();
     await expect(page.locator('#replace-row')).toBeVisible();
     await expect(page.locator('#rewrite-row')).toBeVisible();
 });
 
-test('every page opens from the index, names itself, and leads back to it (clean console)', async ({ page }) => {
+test('RI-3: every page opens from the index, names itself, and leads back to it (clean console)', async ({ page }) => {
     test.setTimeout(180_000);
     const entries = await indexEntries(page);
     expect(entries.length).toBe(routedPages().length);

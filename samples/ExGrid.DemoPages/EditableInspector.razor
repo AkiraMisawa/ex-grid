@@ -12,13 +12,13 @@
     @if (_pending is { } pending)
     {
         <div class="demo-inspector-banner" role="alert">
-            @if (pending.Deleted)
+            @if (pending.Row is null)
             {
                 <span>Deleted elsewhere. Nothing here can act on it.</span>
             }
             else
             {
-                <span>Changed elsewhere — notional now @Money(pending.Row!.Notional), status @pending.Row.Status.</span>
+                <span>Changed elsewhere — notional now @Money(pending.Row.Notional), status @pending.Row.Status.</span>
                 <button class="demo-inspector-reload" @onclick="Reload">Reload</button>
             }
         </div>
@@ -67,29 +67,31 @@
     // origin, and are not someone else's news.
     private readonly Guid _origin = Guid.NewGuid();
     private EditableTrade _base = default!;
-    private (bool Deleted, EditableTrade? Row)? _pending;
+    // News held behind the banner: the trade as it now stands, or a null Row for a trade
+    // deleted elsewhere.
+    private Pending? _pending;
     private string? _refusal;
     private string _note = "";
     private Action<StoreChange>? _onChanged;
-    private Action? _onReset;
+
+    private sealed record Pending(EditableTrade? Row);
 
     /// <summary>The trade as the grid had it when the inspector opened.</summary>
     [Parameter, EditorRequired] public EditableTrade Row { get; set; } = default!;
 
     protected override void OnInitialized()
     {
+        // The base is the row the grid showed. The inspector learns of later changes the
+        // way the grid does — by announcement — and never reads round the news.
         _base = Row;
         _onChanged = change => _ = InvokeAsync(() => OnChanged(change));
-        _onReset = () => { };
-        Store.Subscribe(_onChanged, _onReset);
-        // Opened from a grid that may already be behind the store: say so at once.
-        Compare(Store.Find(_base.Id));
+        Store.Subscribe(_onChanged);
     }
 
     public void Dispose()
     {
-        if (_onChanged is not null && _onReset is not null)
-            Store.Unsubscribe(_onChanged, _onReset);
+        if (_onChanged is not null)
+            Store.Unsubscribe(_onChanged);
     }
 
     private void OnChanged(StoreChange change)
@@ -104,20 +106,20 @@
     // pending behind the banner; a note appended elsewhere changes no value, and is taken in.
     private void Compare(EditableTrade? current)
     {
-        if (current is null)
-        {
-            _pending = (true, null);
+        // A deletion is final: no later news about the trade brings it back.
+        if (_pending is { Row: null })
             return;
-        }
-        if (current.Version > _base.Version)
-            _pending = (false, current);
+        if (current is null)
+            _pending = new Pending(null);
+        else if (current.Version > _base.Version)
+            _pending = new Pending(current);
         else if (current.Version == _base.Version && _pending is null)
             _base = current;
     }
 
     private void Reload()
     {
-        if (_pending is { Deleted: false, Row: { } row })
+        if (_pending is { Row: { } row })
             _base = row;
         _pending = null;
         _refusal = null;
@@ -145,8 +147,6 @@
         _refusal = answer.Refusal;
         // The refusal carries the news the announcement has not brought yet.
         Compare(answer.Row);
-        if (answer.Row is null)
-            _pending = (true, null);
         return false;
     }
 

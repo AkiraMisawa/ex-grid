@@ -6,7 +6,7 @@
    the DOM would take the keyboard out of it. No script: the drag is Blazor's own pointer
    events (ADR-0021), so on the Server host every move is a round trip. *@
 <section @ref="_element" class="demo-floating-inspector" tabindex="-1" data-inspector-key="@Key"
-         style="@($"left: {Px(_x)}px; top: {Px(_y)}px; z-index: {Stack};")"
+         style="@($"left: {Px(_x)}px; top: {Px(_y)}px; z-index: {ZIndex};")"
          @onpointerdown="OnFront">
     <header class="demo-inspector-title" @onpointerdown="BeginDrag">
         <span>@Title</span>
@@ -44,8 +44,8 @@
     /// <summary>See <see cref="InitialX"/>.</summary>
     [Parameter] public double InitialY { get; set; }
 
-    /// <summary>The z-index — the page's stacking order.</summary>
-    [Parameter] public int Stack { get; set; }
+    /// <summary>The page's stacking order, painted as z-index.</summary>
+    [Parameter] public int ZIndex { get; set; }
 
     /// <summary>Counts up each time the page wants the keyboard in this panel.</summary>
     [Parameter] public int FocusRequest { get; set; }
