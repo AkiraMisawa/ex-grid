@@ -3,29 +3,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/26/2026 - 13:13:12 |
+| Generated on: | 09/26/2026 - 15:10:50 |
 | Parser: | MultiReport (3x Cobertura) |
 | Assemblies: | 2 |
 | Classes: | 120 |
 | Files: | 86 |
-| **Line coverage:** | 93.1% (6704 of 7195) |
-| Covered lines: | 6704 |
-| Uncovered lines: | 491 |
-| Coverable lines: | 7195 |
-| Total lines: | 14787 |
-| **Branch coverage:** | 85.6% (3656 of 4267) |
-| Covered branches: | 3656 |
-| Total branches: | 4267 |
+| **Line coverage:** | 94.3% (7881 of 8352) |
+| Covered lines: | 7881 |
+| Uncovered lines: | 471 |
+| Coverable lines: | 8352 |
+| Total lines: | 15816 |
+| **Branch coverage:** | 85.7% (4035 of 4704) |
+| Covered branches: | 4035 |
+| Total branches: | 4704 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExGrid - 93.4%</summary>
+<details><summary>ExGrid - 93.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**93.4%**|**85.8%**|
+|**ExGrid**|**93.9%**|**86.1%**|
 |ExGrid.Cells.EditVerdict|100%||
 |ExGrid.Cells.GridActionEventArgs<TRow>|100%||
 |ExGrid.Cells.GridEditIntent<TRow>|100%||
@@ -36,13 +36,13 @@
 |ExGrid.Chrome.ColumnMenuContext|75%||
 |ExGrid.Chrome.ContextMenuContext<TRow>|63.6%||
 |ExGrid.Chrome.DistinctValues|100%||
-|ExGrid.Chrome.FilterPanelChoices|97.9%|90.4%|
-|ExGrid.Chrome.FilterPanelContext|92.3%||
+|ExGrid.Chrome.FilterPanelChoices|97.6%|93.7%|
+|ExGrid.Chrome.FilterPanelContext|87.5%||
 |ExGrid.Chrome.GridCommand|100%||
 |ExGrid.Chrome.IGridChrome|0%||
 |ExGrid.Chrome.LoadingContext|100%||
 |ExGrid.Chrome.MenuKey|100%||
-|ExGrid.Chrome.MenuKeys|97.9%|79.4%|
+|ExGrid.Chrome.MenuKeys|98.8%|87.1%|
 |ExGrid.CircuitBinding|100%|100%|
 |ExGrid.Clipboard.ClipboardData|91.6%|84.3%|
 |ExGrid.Clipboard.ClipboardParse|92.3%|69%|
@@ -55,10 +55,10 @@
 |ExGrid.Clipboard.PastePlan|100%|100%|
 |ExGrid.Clipboard.PasteShape|100%|100%|
 |ExGrid.Clipboard.SourceCell|100%||
-|ExGrid.ColumnGeometry|99.2%|94.6%|
+|ExGrid.ColumnGeometry|98.6%|93.3%|
 |ExGrid.ColumnInfo<TRow>|100%||
 |ExGrid.Columns.AutoWidth|100%|100%|
-|ExGrid.Columns.CellTextMetrics|100%|90%|
+|ExGrid.Columns.CellTextMetrics|100%|66.3%|
 |ExGrid.Columns.ColumnWidth|100%|100%|
 |ExGrid.Columns.ColumnWidthSpec|100%|100%|
 |ExGrid.Columns.GridAction|91.6%||
@@ -73,8 +73,8 @@
 |ExGrid.Components.CellEngagement|100%||
 |ExGrid.Components.CellIds|100%||
 |ExGrid.Components.ColumnStyles|100%|100%|
-|ExGrid.Components.ExGrid<TRow>|86.5%|82.3%|
-|ExGrid.Components.ExGrid<TRow>|92.7%|83.5%|
+|ExGrid.Components.ExGrid<TRow>|87.1%|83.1%|
+|ExGrid.Components.ExGrid<TRow>|94.2%|85.1%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|98.3%|93.8%|
@@ -90,9 +90,9 @@
 |ExGrid.GridColumn<TRow>|95.6%|88.6%|
 |ExGrid.GridFilter|100%||
 |ExGrid.GridFilters|92.3%|83.3%|
-|ExGrid.GridMetrics|96.8%|89.4%|
+|ExGrid.GridMetrics|97.3%|91.3%|
 |ExGrid.GridPage<TRow>|94.7%|100%|
-|ExGrid.GridPresentationDefaults|88.2%|75%|
+|ExGrid.GridPresentationDefaults|88.5%|75%|
 |ExGrid.GridQuery|100%||
 |ExGrid.GridQueryEngine|96.3%|93.7%|
 |ExGrid.GridQueryEngine.PreparedClause|100%||
@@ -106,8 +106,8 @@
 |ExGrid.Keys.GridKeyAction|100%||
 |ExGrid.Keys.GridKeys|100%|100%|
 |ExGrid.RowRange|100%||
-|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.InMemoryRowMarks<TRow>|92.3%|84.1%|
 |ExGrid.Rows.RowMarkAdapter<TRow>|100%||
 |ExGrid.Rows.RowMarkCounts|100%||
@@ -126,7 +126,7 @@
 |ExGrid.Selection.ColumnRange|100%||
 |ExGrid.Selection.EdgeBand|100%|87.5%|
 |ExGrid.Selection.GridExtent|100%||
-|ExGrid.Selection.GridSelection|94.5%|87.9%|
+|ExGrid.Selection.GridSelection|94.2%|88.2%|
 |ExGrid.Selection.HeldSelection|100%|100%|
 |ExGrid.Selection.SelectionRange|100%|100%|
 |ExGrid.SortCycle|100%|100%|
@@ -139,19 +139,19 @@
 |ExGrid.ViewportSize|100%|75%|
 
 </details>
-<details><summary>ExGrid.MudBlazor - 89%</summary>
+<details><summary>ExGrid.MudBlazor - 96.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.MudBlazor**|**89%**|**82.9%**|
+|**ExGrid.MudBlazor**|**96.8%**|**80.9%**|
 |ExGrid.MudBlazor.MudCellEditor|88%|75%|
-|ExGrid.MudBlazor.MudExGridFilterPanel|81.6%|86.5%|
+|ExGrid.MudBlazor.MudExGridFilterPanel|98.2%|81.6%|
 |ExGrid.MudBlazor.MudExGridFont|100%||
-|ExGrid.MudBlazor.MudExGridMenu|94.1%|83.3%|
+|ExGrid.MudBlazor.MudExGridMenu|95.5%|91.6%|
 |ExGrid.MudBlazor.MudExGridMenuItem|100%||
 |ExGrid.MudBlazor.MudExGridPaper|100%|96.8%|
 |ExGrid.MudBlazor.MudExGridPresentation|91.3%|100%|
-|ExGrid.MudBlazor.MudExGridWords|85.1%|83.3%|
-|ExGrid.MudBlazor.MudGridChrome|91.4%|64.5%|
+|ExGrid.MudBlazor.MudExGridWords|87%|77.8%|
+|ExGrid.MudBlazor.MudGridChrome|91.4%|66.6%|
 
 </details>
