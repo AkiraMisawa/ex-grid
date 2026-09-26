@@ -154,3 +154,36 @@ the pre-edit instance is gone from the base. The single library-provided **Overl
 application this ADR promises — and the bundled undo stack with it — remains to be built, and
 its trigger is the first scenario-backed Consumer, where the base is fetched and the diff is
 what gets persisted. `ReplaceRow` neither replaces that obligation nor prejudges its shape.
+
+## The forwarding this ADR promised was never wired — settled 2026-09-26
+
+*(Recorded when a comparison against Excel found it.)* "The grid only forwards Ctrl+Z" was
+written here, and nothing forwarded it: `GridKeys` had no entry for the key, the listener let it
+through to the browser, and a Consumer that had built an undo stack had no way to hear the one
+gesture every Excel user reaches for first. The ADR and the code disagreed, and the ADR is the
+authority, so the code was the defect.
+
+**The forwarding does not wait for the bundled undo stack.** Forwarding is a key and a
+notification; the stack is a data structure the Consumer drives. Tying the first to the second
+left a Consumer that already owns history — the case this ADR says is normal — with no key at all.
+The bundled stack keeps its trigger (the first scenario-backed Consumer, above); the key does not.
+
+**Decision:**
+
+- **Two notifications with no payload, `OnUndo` and `OnRedo`.** There is nothing the grid could
+  put in them: it holds no history and does not know what the last step was. One command
+  notification carrying a direction was the alternative; two callbacks let a Consumer wire only
+  undo, and let the key table claim each key only for the half that has a listener.
+- **Undo is Ctrl+Z. Redo is both Ctrl+Y and Ctrl+Shift+Z, on every platform.** Excel on Windows
+  answers Ctrl+Y, and Excel on a Mac answers Cmd+Shift+Z as well; the Primary Modifier rule
+  (ADR-0012) already folds Command into Control on an Apple platform, so the two spellings cover
+  both habits without a platform branch.
+- **A key is claimed only when its notification has a listener.** A grid whose Consumer did not
+  wire undo lets Ctrl+Z through to the page, exactly as a display-only grid lets printable keys
+  through (ADR-0010/0020). Claiming the key and doing nothing would take a key from the page for
+  no one.
+- **Inside the Cell Editor the keys stay the editor's.** The line above about uncommitted typing
+  is unchanged: the gate forwards no Ctrl+Z while editing, and the input undoes its own text.
+- **The grid does nothing else on the key.** No selection change, no refusal: what the history
+  does and what the screen shows afterwards are the Consumer's, and the new row instances it
+  returns reach the screen through the ordinary path.

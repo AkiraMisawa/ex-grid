@@ -54,11 +54,13 @@ The rectangle of rows × columns the grid is actually painting. Render cost is d
 fits in here, not by the size of the data.
 _Avoid_: visible area, visible range, window
 
-**Fill**:
+**Stretch**:
 A Viewport axis taken from the parent's box instead of declared as a number. The browser reports
 the size, and the parent must have a definite size on that axis
-([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)).
-_Avoid_: auto (that is a column width), 100%, responsive (that is ADR-0045's "following the box")
+([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)). Named
+**Fill** until 2026-09-26, when that word went to Excel's gesture.
+_Avoid_: Fill (that is the editing gesture), auto (that is a column width), 100%, responsive
+(that is ADR-0045's "following the box")
 
 **Scrollbar Gutter**:
 How much of the declared Viewport its own scrollbars occupy. A classic scrollbar is drawn
@@ -322,6 +324,22 @@ The notification the grid raises when a user commits an edit — (row identity, 
 The grid changes nothing itself. The screen changes when the Consumer returns new row instances.
 _Avoid_: change event, commit, update
 
+**Fill**:
+Excel's gesture of writing one value, or one row or column of values, over the rest of a
+selection: Ctrl+Enter writes the editor's text into every selected cell, Ctrl+D copies a range's
+top row down it and Ctrl+R its left column across it. The grid assembles the values and raises
+them as one paste intent, judged by the paste gate
+([ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)). The fill
+*handle* — the drag from a range's corner — is reserved, not built.
+_Avoid_: copy down, autofill, stretch (that is a Viewport axis)
+
+**Clear Intent**:
+The notification Delete raises over the Selection: these positions should hold **no value**. It
+carries no value at all, which is what separates it from a paste of empty text — on an amount
+column the two mean different things
+([ADR-0046](./docs/adr/0046-delete-raises-a-clear-intent-not-a-paste-of-nothing.md)).
+_Avoid_: delete (that is the key, and suggests removing rows), erase, empty paste
+
 **Edit Verdict**:
 The Consumer's judgement on one commit, asked by the grid at the moment of committing —
 **Accept** / **Flag** (applied, painted as Error with a message) / **Reject** (the editor stays
@@ -359,6 +377,14 @@ value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),
 [ADR-0014](./docs/adr/0014-paste-shape-rules-and-selection-count.md),
 [ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
 _Avoid_: rejection, validation failure, error (that is a Cell State), denial
+
+**Find**:
+Moving the Focus to the next cell whose displayed text matches what the user typed, searching
+every row — not only the painted ones. The grid asks and the Consumer answers with a position,
+as it answers for sort and filter; the grid only moves the Focus
+([ADR-0047](./docs/adr/0047-find-is-asked-of-the-consumer-like-sort-and-filter.md)).
+_Avoid_: search (that is the filter panel's box over the value list), filter (that hides rows;
+Find hides nothing), lookup
 
 ### Selection
 
