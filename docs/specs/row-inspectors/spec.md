@@ -50,9 +50,10 @@ hand-written navigation bar listing a different subset, and one page is linked f
 Three additions to the DemoHost, each a model a Consumer can copy.
 
 **A page index at `/`.** Every page, grouped by theme, with a one-line description. The Row
-Identity demo that lives at `/` today moves to its own route. Every page's navigation bar is
-generated from the same single list, so a page added to the list appears everywhere and a page
-missing from it is visible as missing.
+Identity demo that lives at `/` today moves to its own route. Every page carries the same
+navigation bar — a link back to the index and the page's own name — drawn from the same single
+list, so a page added to the list appears in the index and names itself, and a page missing from
+it is caught by a test.
 
 **Page A — opening inspectors.** A MudBlazor page with one grid over in-memory positions:
 
@@ -101,8 +102,8 @@ underneath it:
 3. As a developer, I want the pages grouped by theme, so that related demos sit together.
 4. As a developer, I want every page's navigation bar to link back to the index, so that I am
    never stranded on a page.
-5. As a developer, I want the navigation bar to be the same on every page, so that I learn it
-   once.
+5. As a developer, I want the navigation bar to be the same on every page, and to name the page
+   I am on, so that I learn it once and always know where I am.
 6. As a maintainer adding a page, I want to add it to one list, so that it appears in the index
    and in every navigation bar at once.
 7. As a maintainer, I want a page that exists but is missing from the list to be caught by a test,
@@ -211,7 +212,10 @@ underneath it:
 - **Everything lives in the demo pages library**, served by both hosts. No change to `src/` is
   planned; the one possible change is gated on a decision (see "Further Notes").
 - **The page list is one piece of data**: route, title, one-line description, group. The index
-  page renders it grouped; a shared navigation component renders it on every page. The Row
+  page renders it grouped; a shared navigation component on every page renders the link back to
+  the index and the page's own title from it. The bar deliberately does not list every page:
+  fourteen links would wrap to a second line and move every grid below it, and the layout tests
+  on those pages would be measuring a different page. The Row
   Identity demo moves from `/` to `/identity`. The existing per-page navigation bars are
   replaced; nothing else on those pages changes.
 - **Page A** has its own MudBlazor providers (theme, popover, dialog), as `/mud-app` does. The
@@ -262,7 +266,7 @@ underneath it:
   open and in what order, what the banner and the refusal say, which element `toBeFocused` — never
   page state or the order of internal calls.
 - **The page index:** every route in the list opens with a clean console; every page's navigation
-  bar holds the same links as the index; `/identity` shows the Row Identity demo. A route served
+  bar links back to the index and names the page with the index's title; `/identity` shows the Row Identity demo. A route served
   by the router but missing from the list fails a test. Prior art: none for navigation; the
   console-clean pattern of the existing MudBlazor app test.
 - **Page A — focus after an action fires**, for modal and floating, by click and by Space: after
@@ -312,7 +316,8 @@ underneath it:
     test then has to check.
 
   The user decides between them with the result in hand. The ticket that would implement either
-  one is written as `needs-info` until then.
+  one is written as `needs-info` until then. *(Answered 2026-09-26: it reproduces — see
+  Comments.)*
 - **The race cannot be closed by the banner.** Between a change elsewhere and its notification,
   the user can press Approve. Only the store's version check prevents the approval from landing on
   a value nobody saw — the same shape as ADR-0043's deleted-row race, which the grid cannot close
@@ -324,3 +329,43 @@ underneath it:
   "Implement").
 
 ## Comments
+
+**2026-09-26 — page index implemented** (the first of the three additions), through
+`/implement`. `DemoPageList` is the one list; `/` renders it, `DemoNav` renders the way back
+and the page's name on every page, and the Row Identity demo moved to `/identity`. The
+`/mud-app` blotter keeps its application's own drawer, which already links to the index.
+`navigation.spec.mjs` passes against both hosts — on the bundled Chromium, headless, in a
+container without Chrome or Edge, which is not the layer-3 run ADR-0026 asks for; CI's run is
+the one that counts. The navigation bar was narrowed while implementing, from "every page" to
+"the index and this page" (see Implementation Decisions).
+
+**2026-09-26 — pages A and B implemented; the open question answered, and it reproduces.**
+`/inspectors` and `/inspector-edits` are built as specified, with `inspectors.spec.mjs` and
+`inspector-edits.spec.mjs`. Run on the bundled Chromium, headless, against both hosts (not the
+ADR-0026 run; CI's is the one that counts):
+
+| Where the keyboard is after the inspector opens | WebAssembly | Server |
+|---|---|---|
+| Modal, by click, either handler style | inside the dialog | inside the dialog |
+| Modal, by Space, either handler style | inside the dialog | inside the dialog |
+| Modal closed | the grid's root | the grid's root |
+| Floating, by click | inside the inspector | inside the inspector |
+| **Floating, by Space** | **the grid's root** — three runs out of three | inside the inspector |
+
+So the grid does take the keyboard back from what the Consumer opened, in one path: the
+Space path, on WebAssembly, when the Consumer focuses its own element synchronously after
+the handler. The modal escapes only because MudBlazor focuses its dialog later; the Server
+host escapes only by the order its messages happen to arrive in. That test is left failing,
+as this spec requires, until the decision in "Further Notes" is made.
+
+One fact the options above did not know: **half of the second option already exists.**
+ADR-0037 prevents the action buttons' `mousedown` default, so a press never focuses a grid
+button, and the keyboard stays wherever it was. The reclaim after the handler is therefore
+no longer what keeps a clicked button from holding the keys; what it still does is take the
+keyboard to the root when it was somewhere else — which is exactly this failure.
+
+Refined while implementing, without a new decision: a note is version-checked like an
+approval (a note decided on a stale view is refused, not recorded); appending a note does
+not change the trade's values, so it does not move the version, and a note appended
+elsewhere is taken into an open inspector without a banner. In modal mode the marked rows
+open one after another, and Escape ends the queue.

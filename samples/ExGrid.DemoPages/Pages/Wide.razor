@@ -1,13 +1,7 @@
 @page "/wide"
 @using System.Globalization
 
-<nav class="demo-nav">
-    <a href="">Row identity</a>
-    <a href="virtual">Virtualised</a>
-    <span>Wide</span>
-    <a href="cells">Cells and rows</a>
-    <a href="fetch">Fetching source</a>
-</nav>
+<DemoNav />
 
 <h1>Wide — @_total.ToString("N0", CultureInfo.InvariantCulture) rows × 100 columns</h1>
 

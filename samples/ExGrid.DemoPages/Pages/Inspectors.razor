@@ -1,0 +1,213 @@
+@page "/inspectors"
+@implements IDisposable
+@using System.Globalization
+@using global::ExGrid.MudBlazor
+@* global::, because inside this project's namespace a bare "MudBlazor" resolves to
+   ExGrid.MudBlazor (CLAUDE.md, the name collisions). *@
+@using global::MudBlazor
+@inject IDialogService Dialogs
+
+<HeadContent>
+    <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
+</HeadContent>
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+
+<DemoNav />
+
+<h1>Row inspectors — opening a row's details from the grid</h1>
+
+<p>
+    The <i>Inspect</i> Action Column opens that row's inspector (ADR-0020): the grid reports
+    the press — by click or by Space — and does nothing else; what opens, and how many, is
+    this page's decision. <b>Modal</b> is a <code>MudDialog</code> opened through the dialog
+    service, one at a time. <b>Floating</b> is a panel this page draws, several at once,
+    dragged by its title bar; the same row twice brings its inspector to the front. The
+    Mark Column's marks open as inspectors from the toolbar (ADR-0043), at most
+    @Cap at a time, counting the marks the filter hides. No script: the drag is Blazor's
+    own pointer events, so on the Server host every move is a round trip.
+    The handler here @(AwaitResult ? "awaits the dialog's result" : "returns once the dialog is shown")
+    (<a href="inspectors@(AwaitResult ? "" : "?handler=await")">switch</a>).
+</p>
+
+<div class="demo-toolbar">
+    <span>Inspector: <b id="inspector-mode">@(_floating ? "Floating" : "Modal")</b></span>
+    <button id="mode-modal" @onclick="() => _floating = false" disabled="@(!_floating)">Modal</button>
+    <button id="mode-floating" @onclick="() => _floating = true" disabled="@_floating">Floating</button>
+    <button id="open-marked" @onclick="OpenMarkedAsync">@OpenMarkedLabel</button>
+    <button id="hide-first" @onclick="() => _source.OnFilterChanged(HideFirst)">Hide the first trade</button>
+    <button id="show-all" @onclick="() => _source.OnFilterChanged(null)">Show every trade</button>
+    <button id="sort-notional" @onclick="SortByNotional">Sort by notional, largest first</button>
+</div>
+
+<p id="inspector-status" class="demo-status" role="status">@_status</p>
+
+<div id="inspector-grid">
+    <ExGrid TRow="DemoBlotterTrade"
+            Source="_source"
+            Columns="Columns"
+            OnAction="_onAction"
+            ViewportWidth="760"
+            ViewportHeight="420"
+            Chrome="MudGridChrome.Default" />
+</div>
+
+@foreach (var inspector in _open)
+{
+    <FloatingPanel @key="inspector.Row.Id" Key="@inspector.Row.Id" Title="@($"Trade {inspector.Row.Id}")"
+                   InitialX="inspector.X" InitialY="inspector.Y" Stack="inspector.Stack"
+                   FocusRequest="inspector.FocusRequest"
+                   OnFront="() => BringToFront(inspector)" OnClose="() => _open.Remove(inspector)">
+        <RowInspector Row="inspector.Row" />
+    </FloatingPanel>
+}
+
+@code {
+    /// <summary>At most this many inspectors from one press of the marks button. Above it
+    /// the press is refused by count; opening the first ten would quietly leave the rest
+    /// out (spine 1), and a cap belongs on what cannot be done (spine 5).</summary>
+    private const int Cap = 10;
+
+    [SupplyParameterFromQuery(Name = "handler")]
+    public string? Handler { get; set; }
+
+    private bool AwaitResult => Handler == "await";
+
+    private static readonly IReadOnlyList<GridColumn<DemoBlotterTrade>> Columns =
+    [
+        GridColumn<DemoBlotterTrade>.MarkColumn(width: new ColumnWidthSpec(ColumnWidth.Fixed(40))),
+        new("Id", ColumnType.Text, t => t.Id, width: Fixed(100)),
+        GridColumn<DemoBlotterTrade>.ActionColumn("Inspect", [new GridAction("inspect", "Inspect")], width: Fixed(90)),
+        new("Book", ColumnType.Text, t => t.Book, width: Fixed(120)),
+        new("Trader", ColumnType.Text, t => t.Trader, width: Fixed(110)),
+        new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(140),
+            format: v => ((decimal)v).ToString("N0", CultureInfo.InvariantCulture)),
+        new("Status", ColumnType.Text, t => t.Status, width: Fixed(110)),
+    ];
+
+    private static readonly DemoBlotterTrade[] Trades = DemoData.Blotter(60, seed: 21);
+
+    private static readonly GridFilter HideFirst = new(new Dictionary<string, FilterSpec>
+    {
+        ["Id"] = new([new FilterClause(global::ExGrid.FilterOperator.NotEquals, Trades[0].Id)]),
+    });
+
+    private static readonly DialogOptions ModalOptions = new() { MaxWidth = MaxWidth.Small, CloseOnEscapeKey = true };
+
+    private readonly InMemoryGridSource<DemoBlotterTrade> _source = GridSource.From(Trades);
+    private readonly List<FloatingInspector> _open = [];
+    private EventCallback<GridActionEventArgs<DemoBlotterTrade>> _onAction;
+    private bool _floating;
+    private string _status = "";
+    private int _stack;
+
+    private sealed class FloatingInspector(DemoBlotterTrade row, double x, double y)
+    {
+        public DemoBlotterTrade Row { get; } = row;
+        public double X { get; } = x;
+        public double Y { get; } = y;
+        public int Stack { get; set; }
+        public int FocusRequest { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        // Held in a field: a method group would be a new delegate on every render and slip
+        // past the grid's ShouldRender comparison (CLAUDE.md, the Blazor traps).
+        _onAction = EventCallback.Factory.Create<GridActionEventArgs<DemoBlotterTrade>>(this, OnActionAsync);
+        _source.Marks.Changed += OnMarksChanged;
+    }
+
+    public void Dispose() => _source.Marks.Changed -= OnMarksChanged;
+
+    private void OnMarksChanged() => InvokeAsync(StateHasChanged);
+
+    private string OpenMarkedLabel
+    {
+        get
+        {
+            var counts = _source.Marks.Counts;
+            if (counts is not { } c)
+                return "Open inspectors (0)";
+            return c.MarkedOutsideResult == 0
+                ? $"Open inspectors ({c.Marked})"
+                : $"Open inspectors ({c.Marked}, {c.MarkedOutsideResult} outside the filter)";
+        }
+    }
+
+    // The grid reports which row; everything after that is this page's (ADR-0020).
+    private async Task OnActionAsync(GridActionEventArgs<DemoBlotterTrade> args)
+    {
+        _status = "";
+        if (_floating)
+        {
+            OpenFloating(args.Row);
+            return;
+        }
+        var reference = await ShowModalAsync(args.Row);
+        if (AwaitResult)
+            await reference.Result;
+    }
+
+    private Task<IDialogReference> ShowModalAsync(DemoBlotterTrade row)
+        => Dialogs.ShowAsync<RowInspectorDialog>(
+            string.Empty,
+            new DialogParameters<RowInspectorDialog> { { d => d.Row, row } },
+            ModalOptions);
+
+    private async Task OpenMarkedAsync()
+    {
+        // The marks are the Consumer's — held by the source, by identity, so a sort since
+        // marking changes nothing about which rows these are (ADR-0043).
+        var marked = _source.Marks.MarkedRows;
+        if (marked.Count > Cap)
+        {
+            _status = $"{marked.Count} rows are marked; inspectors open for at most {Cap} at a time. Nothing was opened.";
+            return;
+        }
+        if (marked.Count == 0)
+        {
+            _status = "No rows are marked.";
+            return;
+        }
+        _status = "";
+        if (_floating)
+        {
+            foreach (var row in marked)
+                OpenFloating(row);
+            return;
+        }
+        // One modal at a time, in turn; Escape ends the queue.
+        foreach (var row in marked)
+        {
+            var reference = await ShowModalAsync(row);
+            var result = await reference.Result;
+            if (result is null || result.Canceled)
+                break;
+        }
+    }
+
+    private void OpenFloating(DemoBlotterTrade row)
+    {
+        var inspector = _open.FirstOrDefault(i => i.Row.Id == row.Id);
+        if (inspector is null)
+        {
+            var offset = 28 * (_open.Count % 8);
+            inspector = new FloatingInspector(row, 820 + offset, 320 + offset);
+            _open.Add(inspector);
+        }
+        BringToFront(inspector);
+        inspector.FocusRequest++;
+    }
+
+    private void BringToFront(FloatingInspector inspector) => inspector.Stack = ++_stack;
+
+    private void SortByNotional()
+        => _source.OnSortChanged([new SortSpec("Notional", global::ExGrid.SortDirection.Descending)]);
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+}

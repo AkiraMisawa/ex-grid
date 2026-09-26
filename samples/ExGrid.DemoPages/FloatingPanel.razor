@@ -1,0 +1,97 @@
+@using System.Globalization
+
+@* A floating inspector's shell (docs/specs/row-inspectors): a title bar to drag it by, a
+   close button, and whatever it holds. Placed in the window with position: fixed and
+   stacked by the z-index its page hands it — never by DOM order, since moving a node in
+   the DOM would take the keyboard out of it. No script: the drag is Blazor's own pointer
+   events (ADR-0021), so on the Server host every move is a round trip. *@
+<section @ref="_element" class="demo-floating-inspector" tabindex="-1" data-inspector-key="@Key"
+         style="@($"left: {Px(_x)}px; top: {Px(_y)}px; z-index: {Stack};")"
+         @onpointerdown="OnFront">
+    <header class="demo-inspector-title" @onpointerdown="BeginDrag">
+        <span>@Title</span>
+        <button class="demo-inspector-close" aria-label="Close" @onclick="OnClose"
+                @onpointerdown:stopPropagation>×</button>
+    </header>
+    @ChildContent
+</section>
+
+@if (_drag is not null)
+{
+    @* While a drag lasts, this layer covers the page and takes the moves, so the pointer
+       may leave the title bar — the job pointer capture would do, without the script
+       capture would need. *@
+    <div class="demo-drag-layer" @onpointermove="Drag" @onpointerup="EndDrag" @onpointercancel="EndDrag"></div>
+}
+
+@code {
+    private ElementReference _element;
+    private double _x;
+    private double _y;
+    private int _focused;
+    private (double StartX, double StartY, double FromX, double FromY)? _drag;
+
+    /// <summary>The Consumer's key of the row shown.</summary>
+    [Parameter, EditorRequired] public string Key { get; set; } = "";
+
+    /// <summary>The title bar's text.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>Where the panel first appears, in window coordinates. Read once: after
+    /// that the panel is where the user dragged it.</summary>
+    [Parameter] public double InitialX { get; set; }
+
+    /// <summary>See <see cref="InitialX"/>.</summary>
+    [Parameter] public double InitialY { get; set; }
+
+    /// <summary>The z-index — the page's stacking order.</summary>
+    [Parameter] public int Stack { get; set; }
+
+    /// <summary>Counts up each time the page wants the keyboard in this panel.</summary>
+    [Parameter] public int FocusRequest { get; set; }
+
+    /// <summary>Raised on any press on the panel: bring it to the front.</summary>
+    [Parameter] public EventCallback OnFront { get; set; }
+
+    /// <summary>Raised by the close button.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>What the panel holds.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _x = InitialX;
+        _y = InitialY;
+    }
+
+    private void BeginDrag(PointerEventArgs e)
+    {
+        if (e.Button == 0)
+            _drag = (e.ClientX, e.ClientY, _x, _y);
+    }
+
+    private void Drag(PointerEventArgs e)
+    {
+        if (_drag is not { } drag)
+            return;
+        _x = drag.FromX + (e.ClientX - drag.StartX);
+        _y = drag.FromY + (e.ClientY - drag.StartY);
+    }
+
+    private void EndDrag(PointerEventArgs e)
+    {
+        Drag(e);
+        _drag = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (FocusRequest == _focused)
+            return;
+        _focused = FocusRequest;
+        await _element.FocusAsync();
+    }
+
+    private static string Px(double value) => value.ToString("0.#", CultureInfo.InvariantCulture);
+}

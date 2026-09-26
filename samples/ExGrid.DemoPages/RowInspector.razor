@@ -1,0 +1,22 @@
+@using System.Globalization
+@* What an inspector shows of one trade — the same content whether a modal MudDialog or a
+   floating panel holds it (docs/specs/row-inspectors). The key it carries is the
+   Consumer's own (the trade id), not anything the grid handed out: Row Identity is the
+   grid's test for sameness, not a key (CONTEXT.md). *@
+<dl class="demo-inspector-fields" data-inspector-key="@Row.Id">
+    <dt>Book</dt><dd>@Row.Book</dd>
+    <dt>Trader</dt><dd>@Row.Trader</dd>
+    <dt>Counterparty</dt><dd>@Row.Counterparty</dd>
+    <dt>Currency</dt><dd>@Row.Currency</dd>
+    <dt>Notional</dt><dd class="demo-inspector-number">@Row.Notional.ToString("N2", CultureInfo.InvariantCulture)</dd>
+    <dt>Price</dt><dd class="demo-inspector-number">@Row.Price.ToString("N4", CultureInfo.InvariantCulture)</dd>
+    <dt>Quantity</dt><dd class="demo-inspector-number">@Row.Quantity.ToString("N0", CultureInfo.InvariantCulture)</dd>
+    <dt>Trade date</dt><dd>@Row.TradeDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</dd>
+    <dt>Status</dt><dd>@Row.Status</dd>
+    <dt>Desk</dt><dd>@Row.Desk</dd>
+</dl>
+
+@code {
+    /// <summary>The trade shown, as the instance the inspector was opened with.</summary>
+    [Parameter, EditorRequired] public DemoBlotterTrade Row { get; set; } = default!;
+}

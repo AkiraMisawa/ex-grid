@@ -1,0 +1,153 @@
+@page "/inspector-edits"
+@implements IDisposable
+@using System.Globalization
+@inject InspectorTradeStore Store
+
+<DemoNav />
+
+<h1>Inspector edits — acting on a row that changes underneath you</h1>
+
+<p>
+    Each trade's <i>Inspect</i> action opens an inspector that can approve the trade or add
+    a note (docs/specs/row-inspectors). The store is the Consumer's: it holds the trades by
+    their own id, and when a trade changes the grid is handed a new instance (ADR-0003)
+    while an open inspector keeps what it showed and raises a banner, its actions disabled
+    until reloaded. Every action carries the version its inspector shows, and the store
+    refuses one decided on a version that is no longer current — the only guard for the
+    moment between a change and its announcement, which the banner cannot see. A note
+    records the version it was written against.
+</p>
+
+<p id="store-scope" class="demo-status">
+    @if (OperatingSystem.IsBrowser())
+    {
+        <text>On WebAssembly the store lives in this tab's process: it is shared with only this tab. The buttons below stand in for another user.</text>
+    }
+    else
+    {
+        <text>On the Server host the store is one per process: another tab on this page changes the same trades.</text>
+    }
+</p>
+
+<div class="demo-toolbar">
+    <button id="change-now" @onclick="() => Store.ChangeElsewhere(First, announce: true)">Change E-001 elsewhere</button>
+    <button id="change-held" @onclick="() => Store.ChangeElsewhere(First, announce: false)">Change E-001 elsewhere, news held back</button>
+    <button id="release-held" @onclick="Store.ReleaseHeld">Release the held news (<span id="held-count">@Store.HeldCount</span>)</button>
+    <button id="delete-now" @onclick="() => Store.DeleteElsewhere(First)">Delete E-001 elsewhere</button>
+    <button id="sort-status" @onclick="SortByStatus">Sort by status, Z to A</button>
+    <button id="reset-store" @onclick="Store.Reset">Reset the store</button>
+</div>
+
+<div id="edit-grid">
+    <ExGrid TRow="EditableTrade"
+            Source="_source"
+            Columns="Columns"
+            OnAction="_onAction"
+            ViewportWidth="640"
+            ViewportHeight="420" />
+</div>
+
+@foreach (var inspector in _open)
+{
+    <FloatingPanel @key="inspector.Id" Key="@inspector.Id" Title="@($"Trade {inspector.Id}")"
+                   InitialX="inspector.X" InitialY="inspector.Y" Stack="inspector.Stack"
+                   FocusRequest="inspector.FocusRequest"
+                   OnFront="() => inspector.Stack = ++_stack" OnClose="() => _open.Remove(inspector)">
+        <EditableInspector Row="inspector.Row" />
+    </FloatingPanel>
+}
+
+@code {
+    private const string First = "E-001";
+
+    private static readonly IReadOnlyList<GridColumn<EditableTrade>> Columns =
+    [
+        new("Id", ColumnType.Text, t => t.Id, width: Fixed(80)),
+        GridColumn<EditableTrade>.ActionColumn("Inspect", [new GridAction("inspect", "Inspect")], width: Fixed(90)),
+        new("Book", ColumnType.Text, t => t.Book, width: Fixed(120)),
+        new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(140),
+            format: v => ((decimal)v).ToString("N2", CultureInfo.InvariantCulture)),
+        new("Status", ColumnType.Text, t => t.Status, width: Fixed(100)),
+        new("Version", ColumnType.Number, t => t.Version, width: Fixed(80)),
+    ];
+
+    private readonly List<OpenInspector> _open = [];
+    private InMemoryGridSource<EditableTrade> _source = default!;
+    private EventCallback<GridActionEventArgs<EditableTrade>> _onAction;
+    private Action<StoreChange>? _onChanged;
+    private Action? _onReset;
+    private int _stack;
+
+    private sealed class OpenInspector(EditableTrade row, double x, double y)
+    {
+        public string Id => Row.Id;
+        public EditableTrade Row { get; } = row;
+        public double X { get; } = x;
+        public double Y { get; } = y;
+        public int Stack { get; set; }
+        public int FocusRequest { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        // Held in fields: the store unsubscribes the same delegates, and the grid sees the
+        // same callback on every render (CLAUDE.md, the Blazor traps).
+        _onAction = EventCallback.Factory.Create<GridActionEventArgs<EditableTrade>>(this, OnAction);
+        _onChanged = change => _ = InvokeAsync(() => Apply(change));
+        _onReset = () => _ = InvokeAsync(OnReset);
+        _source = GridSource.From(Store.Subscribe(_onChanged, _onReset));
+    }
+
+    public void Dispose()
+    {
+        if (_onChanged is not null && _onReset is not null)
+            Store.Unsubscribe(_onChanged, _onReset);
+    }
+
+    // The store announces on whichever thread changed it — another user's circuit, on
+    // Server. The source is this circuit's, so the change is applied on this circuit's
+    // dispatcher (ADR-0018 §5).
+    private void Apply(StoreChange change)
+    {
+        if (change.Replacement is { } replacement && _source.Window.Any(row => ReferenceEquals(row, change.Old)))
+            _source.ReplaceRow(change.Old, replacement);
+        else
+            Rebuild();
+        StateHasChanged();
+    }
+
+    private void OnReset()
+    {
+        _open.Clear();
+        Rebuild();
+        StateHasChanged();
+    }
+
+    // A deletion, or news the source has fallen out of step with: start again from the
+    // store's rows, keeping the sort the user chose.
+    private void Rebuild()
+    {
+        var sorts = _source.Sorts;
+        _source = GridSource.From(Store.Rows);
+        if (sorts.Count > 0)
+            _source.OnSortChanged(sorts);
+    }
+
+    private void OnAction(GridActionEventArgs<EditableTrade> args)
+    {
+        var inspector = _open.FirstOrDefault(i => i.Id == args.Row.Id);
+        if (inspector is null)
+        {
+            var offset = 28 * (_open.Count % 8);
+            inspector = new OpenInspector(args.Row, 700 + offset, 320 + offset);
+            _open.Add(inspector);
+        }
+        inspector.Stack = ++_stack;
+        inspector.FocusRequest++;
+    }
+
+    private void SortByStatus()
+        => _source.OnSortChanged([new SortSpec("Status", SortDirection.Descending)]);
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+}

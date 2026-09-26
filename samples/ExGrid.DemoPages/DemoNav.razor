@@ -1,0 +1,19 @@
+@inject NavigationManager Navigation
+
+@* The navigation bar every demo page carries: the way back to the index, and the page's
+   own name from the one list (DemoPageList). Nothing else, so it is the same on every
+   page and one line tall wherever it sits. *@
+<nav class="demo-nav">
+    <a href="">All pages</a>
+    @if (_page is not null)
+    {
+        <span aria-current="page">@_page.Title</span>
+    }
+</nav>
+
+@code {
+    private DemoPage? _page;
+
+    protected override void OnInitialized()
+        => _page = DemoPageList.For(Navigation.ToBaseRelativePath(Navigation.Uri));
+}
