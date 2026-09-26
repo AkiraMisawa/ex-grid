@@ -394,3 +394,11 @@ taking a mode; page B opens floating inspectors only. The banner reads "Changed 
 notional now …, status …" with a Reload button. Nothing asserts in a test that the pages add
 no script or that rows still skip their render there; the diff adds no script, and the rows
 are the grid's own.
+
+**2026-09-26 — the open question decided (option A of the three put to the user) and
+implemented.** ADR-0037 is amended: after an action fires, the core moves no focus. The
+reclaim after `OnAction` is gone; KB-36 states the criterion. RI-7 now passes on both hosts.
+RI-4 had passed only because the old reclaim put the keyboard in the grid at the press: it now
+starts with the keyboard in the grid and checks the dialog gives it back there, and RI-26 checks
+that a press made from outside the grid does not end with the grid holding the keyboard.
+

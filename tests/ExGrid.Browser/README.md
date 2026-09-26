@@ -213,8 +213,9 @@ hide it.
 - `inspectors.spec.mjs` — row inspectors on `/inspectors` (docs/specs/row-inspectors,
   page A): an Action Column press opens that row's inspector, and **where the keyboard
   is afterwards** — inside the inspector, modal or floating, by click or by Space, with a
-  handler that returns once the dialog is shown and one that awaits its result; back on
-  the grid's root when a modal closes (ADR-0020/0037). Floating inspectors: the same row
+  handler that returns once the dialog is shown and one that awaits its result; once a
+  modal closes, back where it was before the press — the grid's root only if it was there
+  (ADR-0020/0037, KB-36). Floating inspectors: the same row
   brings its inspector to the front, a title-bar drag moves one, each closes alone. Row
   Marks open one inspector each, survive a sort, name the out-of-filter count, and above
   the cap of ten are refused by count (ADR-0043).

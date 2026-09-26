@@ -87,14 +87,30 @@ for (const handler of ['shown', 'await']) {
 
     test(`RI-4: modal, by click, handler ${style}: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037)`, async ({ page }) => {
         await open(page, query);
+        // The keyboard starts in the grid, on the row about to be inspected.
+        await cell(page, 3, 1).click({ force: true });
+        await expect(grid(page)).toBeFocused();
         await inspectButton(page, 3).click();
         const dialog = page.locator('.mud-dialog');
         await expect(dialog.locator(`[data-inspector-key="${id(3)}"]`)).toBeVisible();
         await expectKeyboardIn(page, '.mud-dialog', 'the keyboard is inside the modal inspector');
 
+        // Closed, the keyboard goes back where it was before the press: the grid (ADR-0037,
+        // amended — the grid does not take it; the dialog gives it back).
         await dialog.locator('.demo-inspector-close').click();
         await expect(dialog).toHaveCount(0);
         await expect(grid(page)).toBeFocused();
+    });
+
+    test(`RI-26: modal, by click from outside the grid, handler ${style}: closing gives the keyboard back to where it was, not to the grid (ADR-0037)`, async ({ page }) => {
+        await open(page, query);
+        await page.locator('#show-all').focus();
+        await inspectButton(page, 3).click();
+        const dialog = page.locator('.mud-dialog');
+        await expectKeyboardIn(page, '.mud-dialog', 'the keyboard is inside the modal inspector');
+        await dialog.locator('.demo-inspector-close').click();
+        await expect(dialog).toHaveCount(0);
+        await expect(grid(page)).not.toBeFocused();
     });
 
     test(`RI-5: modal, by Space, handler ${style}: the keyboard is in the inspector (ADR-0020/0037)`, async ({ page }) => {
@@ -229,6 +245,7 @@ test('RI-13: modal: the marked rows open one after another, and Escape ends the 
     await cell(page, 2, 0).locator('.ex-mark').click();
     await page.locator('#open-marked').click();
     await expect(dialog.locator(`[data-inspector-key="${id(0)}"]`)).toBeVisible();
+    await expectKeyboardIn(page, '.mud-dialog', 'the keyboard is inside the first of the queue');
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
     await page.waitForTimeout(300);

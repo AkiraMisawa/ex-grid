@@ -4094,9 +4094,11 @@
             _suppressRender = false;
             StateHasChanged();
         }
+        // And nothing else: no focus is moved (ADR-0037, amended). A press never focused the
+        // button, so the keyboard is still where it was — or in whatever the handler opened,
+        // which taking it back to the root would rob.
         if (OnAction.HasDelegate)
             await OnAction.InvokeAsync(args);
-        await ReclaimFocusAsync();
     }
 
     /// <summary>
@@ -5285,11 +5287,10 @@
     }
 
     /// <summary>
-    /// Called after one of the grid's own action buttons fires. Clicking a button gives it
-    /// DOM focus, and the keys then belong to it rather than to the grid — which is right
-    /// while it is focused and wrong the moment it has finished. Handing the keyboard back
-    /// keeps "click a button, then carry on with the arrows" working. A Consumer's own
-    /// control in a Template Column is left alone: it may well want to keep the focus.
+    /// Hands the keyboard back to the root when something of the grid's own that held it
+    /// goes — a popover, the editor, a status-line command — and when Escape leaves a
+    /// control inside a cell (ADR-0020/0039). Never after an action fires: the keyboard is
+    /// then where the user or the handler put it (ADR-0037, amended 2026-09-26).
     /// </summary>
     private async Task ReclaimFocusAsync()
     {
