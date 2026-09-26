@@ -64,10 +64,13 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
     public async Task OnMarkIntentAsync(RowMarkIntent<TRow> intent)
     {
         ArgumentNullException.ThrowIfNull(intent);
-        // What fails here is the Consumer's server — the snapshot, a fetch past the Window,
-        // the count — and it is reported the way a failed fetch is (ADR-0025): to
+        if (intent is not (RowMarkIntent<TRow>.OneRow or RowMarkIntent<TRow>.AllRows or RowMarkIntent<TRow>.Positions))
+            throw new ArgumentOutOfRangeException(nameof(intent), intent, "An unknown Row Mark intent.");
+
+        // What fails from here on is the Consumer's server — the snapshot, a fetch past the
+        // Window, the count — and it is reported the way a failed fetch is (ADR-0025): to
         // FetchFailed when someone listens, rather than thrown into the click or the key
-        // that caused it, where on a circuit it would end the session.
+        // that caused it, where on a circuit it would end the session. Whatever its type.
         try
         {
             var changed = intent switch
@@ -75,7 +78,7 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
                 RowMarkIntent<TRow>.OneRow one => MarkOne(one.Row, one.Marked),
                 RowMarkIntent<TRow>.AllRows all => await MarkResultAsync(all.Marked, all.RowSequenceVersion).ConfigureAwait(true),
                 RowMarkIntent<TRow>.Positions positions => await MarkPositionsAsync(positions.Ranges, positions.RowSequenceVersion).ConfigureAwait(true),
-                _ => throw new ArgumentOutOfRangeException(nameof(intent), intent, "An unknown Row Mark intent."),
+                _ => false,
             };
             if (!changed)
                 return;
@@ -83,8 +86,12 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
             Changed?.Invoke();
             await RecountAsync().ConfigureAwait(true);
         }
-        catch (Exception ex) when (ex is not ArgumentException && _source.TryReportFailure(ex))
+        catch (Exception ex)
         {
+            // Reported from the catch body, not a filter: a handler that throws inside a
+            // filter is swallowed by the runtime, and the original would be thrown as well.
+            if (!_source.TryReportFailure(ex))
+                throw;
         }
     }
 

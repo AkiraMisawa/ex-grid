@@ -142,8 +142,12 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         {
             await marks.RecountAsync().ConfigureAwait(true);
         }
-        catch (Exception ex) when (TryReportFailure(ex))
+        catch (Exception ex)
         {
+            // In the catch body, never a filter: a throwing handler inside a filter is
+            // swallowed by the runtime.
+            if (!TryReportFailure(ex))
+                throw;
         }
     }
 

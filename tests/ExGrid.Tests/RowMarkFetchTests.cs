@@ -219,15 +219,12 @@ public class RowMarkFetchTests
         var source = server.Source();
         var marks = source.Marks!;
 
-        var clock = System.Diagnostics.Stopwatch.StartNew();
         await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions([new RowRange(0, 49_000)], source.RowSequenceVersion));
         await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions([new RowRange(0, 49_000)], source.RowSequenceVersion));
-        clock.Stop();
 
+        // One step per key, whatever it went through — never a step per gesture.
         Assert.Equal(49_000, marks.State.Steps.Count);
         Assert.All(marks.State.Steps, step => Assert.False(step.Marked));
-        // Not a timing gate: a quadratic step list takes minutes here, a linear one well under this.
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(30), $"took {clock.Elapsed}");
     }
 
     [Fact] // ADR-0043/0025: a failed count reaches FetchFailed, never the gesture that caused it

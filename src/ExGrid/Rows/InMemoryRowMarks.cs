@@ -234,22 +234,37 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
 
     private bool IsDetail(TRow row) => _rowKind is null || _rowKind(row) == RowKind.Detail;
 
+    // Which instances a count has already met, by chain head, stamped with the count's
+    // number so the array is cleared by moving on rather than by writing it.
+    private int[] _seen = [];
+    private int _seenStamp;
+
+    /// <summary>
+    /// The counts, one per row by identity: an instance handed over twice is one row, so it
+    /// is counted once — as <see cref="MarkedRows"/> lists it once, and as the action it
+    /// feeds runs over it once (ADR-0043/0003).
+    /// </summary>
     private RowMarkCounts Count(IReadOnlyList<TRow> window)
     {
+        if (_seen.Length != _rows.Count)
+            _seen = new int[_rows.Count];
+        var stamp = ++_seenStamp;
         var inResult = 0;
         var rowsInResult = 0;
         foreach (var row in window)
         {
-            if (row is null || !IsDetail(row))
+            if (row is null || !IsDetail(row) || !_slots.TryGetValue(row, out var slot) || _seen[slot] == stamp)
                 continue;
+            _seen[slot] = stamp;
             rowsInResult++;
-            if (_slots.TryGetValue(row, out var slot) && _marked[slot])
+            if (_marked[slot])
                 inResult++;
         }
         var total = 0;
         for (var i = 0; i < _rows.Count; i++)
         {
-            if (_marked[i] && IsDetail(_rows[i]))
+            // Counted at the head of its chain only: once per instance.
+            if (_marked[i] && _rows[i] is { } row && _slots.TryGetValue(row, out var head) && head == i && IsDetail(_rows[i]))
                 total++;
         }
         return new RowMarkCounts(inResult, rowsInResult, total - inResult);

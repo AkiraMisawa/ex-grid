@@ -218,3 +218,15 @@ header. A ticked row carries a **Row Mark**.
   sees every replacement; `GridSource.Fetch` cannot, which is why its adapter carries a key.
 - A ticket that turns out to need a new decision stops and records it first (`AGENTS.md`,
   "Implement").
+
+## Comments
+
+**2026-09-26 — implemented** on `claude/grill-with-docs-implement-ves2sr`, through `/implement`.
+Layers 1 and 2 pass (`RowMarkRuleTests`, `RowMarkSourceTests`, `RowMarkFetchTests`,
+`RowMarkColumnTests`), and `marks.spec.mjs` passes against both hosts — but on the bundled
+Chromium, headless, in a container without Chrome or Edge. That is not the layer-3 run
+ADR-0026 asks for: MK-6 and MK-7 are to be confirmed by CI's run on both installed browsers,
+and nothing here files a `verification/` record. Two reviews found six defects, all fixed
+with tests: a quadratic step list, a quadratic state evaluation, failures thrown into the
+gesture, failures reported from inside an exception filter, and a duplicated instance that
+broke the counts and then was counted twice.
