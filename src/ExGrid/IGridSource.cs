@@ -85,4 +85,11 @@ public interface IGridSource<TRow>
     /// cannot or should not be enumerated.
     /// </summary>
     Task<Chrome.DistinctValues> GetDistinctValuesAsync(string column, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The Consumer's half of Row Marks, when this source keeps them (ADR-0043), or null.
+    /// A Mark Column bound to a source that answers null, with no marks handed to the grid
+    /// directly, is refused by name.
+    /// </summary>
+    Rows.IRowMarks<TRow>? Marks => null;
 }
