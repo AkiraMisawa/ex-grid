@@ -171,6 +171,34 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+test('a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5)', async ({ page }) => {
+    await page.goto('/features');
+    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    const all = await grid(page).getAttribute('aria-rowcount');
+    await clickCell(page, 1, 0);
+    await page.keyboard.press('Alt+ArrowDown');
+    const search = grid(page).locator('.ex-popover input[type=search]');
+    await expect(search).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role=menu]') !== null)).toBe(true);
+    await setRoundTrip(150);
+
+    // Meant: search "Alpha", Tab on to the list, Space to untick, Enter. The Tab reaches
+    // the search box as a key held behind E, where only the browser could have moved
+    // focus with it: it and the Space and Enter behind it are dropped, so no " " lands in
+    // the search and nothing is applied.
+    await page.keyboard.press('e');
+    await page.keyboard.type('Alpha');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
+
+    await expect(search).toHaveValue('Alpha');
+    await page.waitForTimeout(600);
+    await expect(search).toHaveValue('Alpha');
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+    expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+});
+
 for (const [what, column, open, closes] of [
     ['the operator list', 2, async (page) => grid(page).getByRole('combobox', { name: 'Operator' }).click(), true],
     ['the date calendar', 4, async (page) => grid(page).locator('.mud-ex-grid-filter-operand button').first().click(), false],

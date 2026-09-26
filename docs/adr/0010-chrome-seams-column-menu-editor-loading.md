@@ -259,9 +259,14 @@ Inside a column's popover the keyboard moves again, from the commands to the fil
 move is a change of who holds the keyboard, and the keys after it are held the same way.
 A keydown dispatched from script types nothing, so a held key handed to a text field is typed
 at its caret, as a held key is in the Cell Editor, and a held Enter submits the field's form.
-A held Tab or Space handed to another control moves or toggles nothing, and is lost: doing it
-from script would move DOM focus from script, which
-[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) keeps out.
+A held key whose effect is the browser's own — Tab moving DOM focus, Space ticking a checkbox,
+an arrow in a select — does nothing when dispatched from script, and doing it from script would
+move DOM focus from script, which [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)
+keeps out. *(Decided with the user, 2026-09-26.)* **Such a key, and every key held behind it, is
+dropped.** Handing the rest on would put them in a field they were not meant for: "Alpha", Tab,
+Space, Enter would search for "Alpha " and apply it. The typing stops short instead, visibly,
+and nothing is applied that was not typed where it was meant. It happens only faster than a
+round trip, so on a Server circuit.
 
 ## Consequences
 

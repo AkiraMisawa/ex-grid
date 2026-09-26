@@ -338,6 +338,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         }
     };
 
+    // Whether a held key can be handed on as it would have acted. A menu's keys and the
+    // value list's letters are handlers' to answer, and a text field's are typed here; a key
+    // whose effect is the browser's own — Tab moving DOM focus, Space ticking a checkbox,
+    // an arrow in a select — does nothing when dispatched from script, and moving focus
+    // from script is what ADR-0021 keeps out. Such a key, and every key held behind it, is
+    // dropped: the typing stops short rather than going on in a field it was not meant for
+    // ("Alpha", Tab, Space, Enter would otherwise search for "Alpha " and apply it).
+    const caretKeys = new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', 'Escape']);
+    const reproducible = (target, k) => {
+        if (k.key === 'Escape' || target.closest('[role=menu]')) {
+            return true;
+        }
+        if (isTextField(target)) {
+            return !k.ctrlKey && !k.metaKey && !k.altKey && (k.key.length === 1 || caretKeys.has(k.key));
+        }
+        const role = target.getAttribute('role');
+        return k.key.length === 1 && k.key !== ' ' && !k.ctrlKey && !k.metaKey && !k.altKey
+            && target.tagName !== 'SELECT' && role !== 'combobox' && role !== 'listbox';
+    };
+
     const handToPopover = (target, k) => {
         if (isTextField(target) && !k.ctrlKey && !k.metaKey && !k.altKey) {
             if (k.key === 'Enter' && target.form) {
@@ -362,6 +382,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 // A held key that itself sends the keyboard across the popover holds the
                 // rest again, until DOM focus has followed it.
                 const target = document.activeElement;
+                if (!reproducible(target, k)) {
+                    held.length = 0;
+                    break;
+                }
                 const move = sendsKeyboard(target, k);
                 handToPopover(target, k);
                 if (move) {

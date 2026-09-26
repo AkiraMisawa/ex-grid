@@ -114,11 +114,12 @@ are recorded in [ADR-0009](./0009-filter-panel-contract.md).
 - **E is not typed where it sends the keyboard.** On WebAssembly the core moves DOM focus inside
   E's own keydown, and the browser typed the E into the search box it had just reached. The
   listener cancels that key's default.
-- **What a held key cannot do.** A dispatched key has no default action. A held Tab handed to one
-  of the filter's own controls therefore moves nothing, and a held Space toggles no checkbox:
-  both are lost. Moving DOM focus or toggling a control from script is what
-  [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) keeps out. Nothing wrong is
-  shown either way.
+- **What a held key cannot do** *(decided with the user, 2026-09-26)*. A dispatched key has no
+  default action, so a held Tab handed to one of the filter's own controls cannot move DOM
+  focus, nor a held Space tick a checkbox, and moving focus from script is what
+  [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) keeps out. That key and every
+  key held behind it are dropped (ADR-0010): the typing stops short rather than landing in the
+  wrong field. Only typing faster than a round trip reaches it, so only a Server circuit.
 - **The letters' marks are the built-in Chrome's.** `MenuKeys.SplitAtLetter` splits a label at
   its letter, or appends "(S)". `ExGrid.MudBlazor`'s menu marks none: a Material menu shows no
   mnemonics, and the letters act the same under it. The Context Menu answers no letter, so it
