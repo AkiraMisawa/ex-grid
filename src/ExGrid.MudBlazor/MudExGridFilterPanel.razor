@@ -51,7 +51,7 @@
             <MudCheckBox T="bool" @bind-Value="_addToCurrent" Label="@Own(MudExGridWords.AddToFilter)"
                          Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-add" />
         }
-        <div class="mud-ex-grid-filter-values" @onkeydown="OnValueListKey">
+        <div class="mud-ex-grid-filter-values ex-value-list" @onkeydown="OnValueListKeyAsync">
             @* "(Select All)" over the values shown, with Excel's mixed state (ADR-0009). *@
             <MudCheckBox T="bool?" TriState="true" Value="@SelectAllValue(shown, chosen)"
                          ValueChanged="@(_ => FilterPanelChoices.ToggleAll(shown, chosen))"
@@ -290,7 +290,7 @@
 
     /// <summary>A key on the value list: Excel's letters are the core's (ADR-0044), and
     /// every other key is the checkbox's own.</summary>
-    private void OnValueListKey(KeyboardEventArgs e) => Context.ValueListKey?.Invoke(e);
+    private Task OnValueListKeyAsync(KeyboardEventArgs e) => Context.ValueListKey?.Invoke(e) ?? Task.CompletedTask;
 
     /// <summary>A select's list or the date's calendar opened or closed: an Inner Popup,
     /// reported so that Escape closes it before the panel (ADR-0039).</summary>
@@ -332,49 +332,30 @@
             await FocusLastAsync();
     }
 
-    private async Task FocusFirstAsync()
-    {
-        try
-        {
-            if (_search is not null && _chosen is not null)
-                await _search.FocusAsync();
-            else if (_operatorField is not null)
-                await _operatorField.FocusAsync();
-        }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-        {
-        }
-    }
+    private Task FocusFirstAsync()
+        => FocusQuietlyAsync(_search is not null && _chosen is not null ? _search.FocusAsync() : _operatorField?.FocusAsync());
 
     /// <summary>Where a search is typed (ADR-0044): the search box over a value list, the
     /// first condition's value in the condition form — or its operator, while that operator
     /// takes no value.</summary>
-    private async Task FocusSearchAsync()
-    {
-        if (_chosen is not null || !FilterPanelChoices.TakesOperand(_operator))
-        {
-            await FocusFirstAsync();
-            return;
-        }
-        try
-        {
-            var focusing = _first.TextField?.FocusAsync() ?? _first.NumberField?.FocusAsync()
-                ?? _first.DateField?.FocusAsync() ?? _first.FlagField?.FocusAsync();
-            if (focusing is { } pending)
-                await pending;
-        }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-        {
-        }
-    }
+    private Task FocusSearchAsync()
+        => _chosen is not null || !FilterPanelChoices.TakesOperand(_operator)
+            ? FocusFirstAsync()
+            : FocusQuietlyAsync(_first.TextField?.FocusAsync() ?? _first.NumberField?.FocusAsync()
+                ?? _first.DateField?.FocusAsync() ?? _first.FlagField?.FocusAsync());
 
-    private async Task FocusLastAsync()
+    private Task FocusLastAsync() => FocusQuietlyAsync(_cancel?.FocusAsync());
+
+    /// <summary>A focus the panel asked for, if there was a control to ask: a popover can
+    /// close before the call lands, and a closed circuit focuses nothing; neither is worth
+    /// an exception.</summary>
+    private static async Task FocusQuietlyAsync(ValueTask? focusing)
     {
-        if (_cancel is null)
+        if (focusing is not { } pending)
             return;
         try
         {
-            await _cancel.FocusAsync();
+            await pending;
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

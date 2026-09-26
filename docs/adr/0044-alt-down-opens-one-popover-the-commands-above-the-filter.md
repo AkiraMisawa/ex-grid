@@ -110,7 +110,12 @@ are recorded in [ADR-0009](./0009-filter-panel-contract.md).
   "ple". Now the key listener treats Tab, Shift+Tab and E on a command, E on the value list, and
   any key landing on a wrap sentinel as that change, and holds what follows until DOM focus has
   moved. In a text field a held key is typed at the caret, as in the Cell Editor, and a held
-  Enter submits the field's form. The core no longer guards anything itself.
+  Enter submits the field's form. The core no longer guards anything itself. *(Widened after the
+  second review, decided with the user.)* A key that closes the popover — a command run, Enter
+  in the filter's field — holds the keys behind it too, until the popover is gone
+  ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)). E held on a checkbox outside
+  the value list ("Add current selection to filter") holds nothing: only the Chrome's element
+  marked `ex-value-list` answers letters.
 - **E is not typed where it sends the keyboard.** On WebAssembly the core moves DOM focus inside
   E's own keydown, and the browser typed the E into the search box it had just reached. The
   listener cancels that key's default.

@@ -218,37 +218,64 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     };
     let awaitingPopover = false;
 
-    // The keyboard sent across a column's popover (ADR-0044): Tab, Shift+Tab or E on a
-    // command moves it into the filter below, E on the value list to the search box, and a
-    // sentinel either side of the filter hands it back to the commands. Each lands a round
-    // trip later on a circuit, and it is a change of who holds the keyboard, so ADR-0010's
-    // rule holds as it does for opening a popover: the keys after it are held until DOM
-    // focus has moved, then handed on in order. Which keys move it is the mirror of
-    // MenuKeys.ResolveInColumnMenu and MenuKeys.Letter — the two must move together.
+    // The keyboard handed on inside a popover, or out of it (ADR-0044): Tab, Shift+Tab or E on
+    // a command moves it into the filter below, E on the value list to the search box, and a
+    // sentinel either side of the filter hands it back to the commands; a command run — Enter
+    // or Space on an item, a column's letter — or Enter in the filter's text field closes the
+    // popover and gives it back to the root. Each lands a round trip later on a circuit, and
+    // each is a change of who holds the keyboard, so ADR-0010's rule holds as it does for
+    // opening a popover: the keys after it are held until DOM focus has moved, or the popover
+    // is gone, then handed on in order. Which letters run a command is written by the core
+    // on the commands (data-ex-letters: the enabled ones), and the value list is the element
+    // its Chrome marks ex-value-list; only Tab, Shift+Tab and E are this listener's own
+    // mirror of MenuKeys.ResolveInColumnMenu — the two must move together.
     let awaitingMove = null;
-    const inPopoverWithFilter = (target) => {
+    const popoverOf = (target) => {
         const popover = target instanceof Element ? target.closest('.ex-popover') : null;
-        return !!popover && root.contains(popover) && popover.querySelector('.ex-popover-filter') !== null;
+        return popover && root.contains(popover) ? popover : null;
     };
-    const sendsKeyboard = (target, k) => {
-        if (k.ctrlKey || k.altKey || k.metaKey || !inPopoverWithFilter(target)) {
+    const plain = (k) => !k.ctrlKey && !k.altKey && !k.metaKey;
+    const runsLetter = (popover, k) => {
+        const letters = popover.querySelector('.ex-popover-commands')?.getAttribute('data-ex-letters') ?? '';
+        return k.key.length === 1 && letters.includes(k.key.toUpperCase());
+    };
+    const handsOver = (target, k) => {
+        const popover = popoverOf(target);
+        if (!popover || !plain(k)) {
             return null;
         }
+        const closes = { from: target, closes: popover };
+        const withFilter = popover.querySelector('.ex-popover-filter') !== null;
         const letterE = k.key === 'e' || k.key === 'E';
-        if (target.closest('.ex-popover-commands')) {
-            return k.key === 'Tab' || letterE ? { from: target, into: '.ex-popover-filter' } : null;
+        if (target.closest('[role=menu]')) {
+            if (withFilter && (k.key === 'Tab' || letterE)) {
+                return { from: target, into: '.ex-popover-filter' };
+            }
+            if (target.matches('[role=menuitem]') && ((k.key === 'Enter' && !k.shiftKey) || (k.key === ' ' && !k.shiftKey))) {
+                return closes;
+            }
+            return target.closest('.ex-popover-commands') && runsLetter(popover, k) ? closes : null;
         }
-        // The value list's entries are checkboxes, under either Chrome.
-        return letterE && target.closest('.ex-popover-filter') && target.matches('input[type=checkbox], [role=checkbox]')
-            ? { from: target, into: '.ex-popover-filter' }
-            : null;
+        if (target.closest('.ex-value-list')) {
+            if (letterE) {
+                return { from: target, into: '.ex-popover-filter' };
+            }
+            return runsLetter(popover, k) ? closes : null;
+        }
+        return k.key === 'Enter' && isTextField(target) && target.closest('.ex-popover-filter') ? closes : null;
     };
     const onSentinel = (target) => target instanceof Element && target.classList.contains('ex-focus-wrap')
-        && inPopoverWithFilter(target);
+        && popoverOf(target) !== null;
     const moved = () => {
+        if (!awaitingMove) {
+            return true;
+        }
+        if (awaitingMove.closes) {
+            return !awaitingMove.closes.isConnected;
+        }
         const active = document.activeElement;
-        return !awaitingMove || (active instanceof Element && active !== awaitingMove.from
-            && root.contains(active) && active.closest(awaitingMove.into) !== null);
+        return active instanceof Element && active !== awaitingMove.from
+            && root.contains(active) && active.closest(awaitingMove.into) !== null;
     };
 
     // The editor the answer opened, once its element is there — the render that made it
@@ -262,14 +289,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             ? editor
             : editor.querySelector('input, textarea');
     };
+    // When the hold that is standing began: two seconds from it, whatever the keys held
+    // since have asked for, the rest is handed on (ADR-0010).
+    let holdStartedAt = 0;
     const editorSettled = () => new Promise((resolve) => {
-        const started = performance.now();
         const look = () => {
             // Two seconds is past any round trip the grid is usable over; after it the
             // held keys are replayed against whatever there is, rather than held forever.
             const editorReady = editing === 'none' || editorFocused();
             const popoverReady = !awaitingPopover || popoverFocused();
-            if (!core || (editorReady && popoverReady && moved()) || performance.now() - started > 2000) {
+            if (!core || (editorReady && popoverReady && moved()) || performance.now() - holdStartedAt > 2000) {
                 awaitingPopover = false;
                 awaitingMove = null;
                 resolve();
@@ -315,8 +344,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
 
     // The text fields a held key can be typed into: those with a caret the selection API
     // reaches.
-    const isTextField = (element) => element instanceof HTMLTextAreaElement
-        || (element instanceof HTMLInputElement && ['text', 'search', 'url', 'tel', 'password'].includes(element.type));
+    // Not a read-only one — a picker's display, say — whose text a held key must not change,
+    // nor one a design system dresses as a select.
+    const isTextField = (element) => (element instanceof HTMLTextAreaElement
+        || (element instanceof HTMLInputElement && ['text', 'search', 'url', 'tel', 'password'].includes(element.type)))
+        && !element.readOnly && !element.disabled && element.getAttribute('role') !== 'combobox';
 
     // A held key handed to the popover that now holds DOM focus, as the keydown it would
     // have received: what it means there is the popover's (ADR-0039) — its own handlers
@@ -345,7 +377,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // from script is what ADR-0021 keeps out. Such a key, and every key held behind it, is
     // dropped: the typing stops short rather than going on in a field it was not meant for
     // ("Alpha", Tab, Space, Enter would otherwise search for "Alpha " and apply it).
-    const caretKeys = new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', 'Escape']);
+    const caretKeys = new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter']);
     const reproducible = (target, k) => {
         if (k.key === 'Escape' || target.closest('[role=menu]')) {
             return true;
@@ -386,7 +418,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                     held.length = 0;
                     break;
                 }
-                const move = sendsKeyboard(target, k);
+                const move = handsOver(target, k);
                 handToPopover(target, k);
                 if (move) {
                     awaitingMove = move;
@@ -435,6 +467,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             held.push(k);
             if (!answering) {
                 answering = true;
+                holdStartedAt = performance.now();
                 if (sentinel) {
                     awaitingMove = { from: event.target, into: '.ex-popover-commands' };
                 }
@@ -442,14 +475,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             }
             return;
         }
-        // A key that sends the keyboard across a column's popover is the popover's to
-        // answer; only the keys after it wait. Its own default goes: on WebAssembly the core
-        // moves DOM focus within this very keydown, and the E would be typed into the search
-        // box it has just been sent to.
-        const move = replaying ? null : sendsKeyboard(event.target, k);
+        // A key that hands the keyboard on inside a popover, or out of it, is the popover's
+        // to answer; only the keys after it wait. A move's own default goes: on WebAssembly
+        // the core moves DOM focus within this very keydown, and the E would be typed into
+        // the search box it has just been sent to. A close keeps it — Enter in the filter's
+        // field submits its form by it.
+        const move = replaying ? null : handsOver(event.target, k);
         if (move) {
-            event.preventDefault();
+            if (move.into) {
+                event.preventDefault();
+            }
             answering = true;
+            holdStartedAt = performance.now();
             awaitingMove = move;
             drain();
             return;
@@ -466,6 +503,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         const answer = forward(k);
         if (verdict === 'mode' || verdict === 'popover') {
             answering = true;
+            holdStartedAt = performance.now();
             awaitingPopover = verdict === 'popover';
             answer.then(drain);
         }

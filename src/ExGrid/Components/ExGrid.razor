@@ -307,10 +307,14 @@
            keyboard. A new opening is new contents, for a substituted Chrome's too. *@
         var menuColumn = _menuColumn;
         var menuContext = BuildMenuContext(menuColumn);
+        _shownMenuCommands = menuContext.Commands;
         var filterBelow = IsFilterable(menuColumn);
         <div class="ex-popover" style="@PopoverStyle(menuColumn)" role="@(filterBelow ? "dialog" : "none")"
              aria-label="@(filterBelow ? Columns[menuColumn].Header : null)" @key="_popoverFocusRequest">
-            <div class="ex-popover-commands" role="menu" aria-label="@Columns[menuColumn].Header">
+            @* The letters that run a command here, enabled ones only, for the key listener to
+               hold the keys typed behind them while the popover closes (ADR-0010/0044). *@
+            <div class="ex-popover-commands" role="menu" aria-label="@Columns[menuColumn].Header"
+                 data-ex-letters="@EnabledLetters(menuContext.Commands)">
                 @if (Chrome?.ColumnMenu(menuContext) is { } menuFragment)
                 {
                     @menuFragment
@@ -367,7 +371,7 @@
                                         Add current selection to filter
                                     </label>
                                 }
-                                <div class="ex-popover-list" @onkeydown="OnBuiltInValueListKey">
+                                <div class="ex-popover-list ex-value-list" @onkeydown="OnBuiltInValueListKeyAsync">
                                     @* "(Select All)" over the values shown, with Excel's mixed state: a
                                        checkbox role on a button, because a native checkbox's mixed
                                        state is a property only script can set (ADR-0021). *@
@@ -2842,24 +2846,24 @@
         var sortable = declared.IsQueryable && (Source is not null || OnSortChanged.HasDelegate);
         var commands = new List<GridCommand>
         {
-            new("sort-ascending", sortable,
+            new(GridCommandIds.SortAscending, sortable,
                 () => ApplySortsAsync([new SortSpec(declared.Name, SortDirection.Ascending)])),
-            new("sort-descending", sortable,
+            new(GridCommandIds.SortDescending, sortable,
                 () => ApplySortsAsync([new SortSpec(declared.Name, SortDirection.Descending)])),
-            new("clear-filter", IsFilterable(column) && CurrentSpecOf(declared.Name) is not null,
+            new(GridCommandIds.ClearFilter, IsFilterable(column) && CurrentSpecOf(declared.Name) is not null,
                 () => ApplyFilterSpecAsync(declared.Name, null)),
-            new("hide", OnColumnHidden.HasDelegate,
+            new(GridCommandIds.Hide, OnColumnHidden.HasDelegate,
                 () => OnColumnHidden.InvokeAsync(declared.Name)),
             // Never a pin the grid would refuse: a boundary through a Header Group
             // cannot be drawn honestly (ADR-0032), so the command is disabled there.
-            new("pin",
+            new(GridCommandIds.Pin,
                 OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.RequestedPinnedCount != column + 1
                     && _headerLayout.AllowsPinnedCount(column + 1),
                 () => OnPinnedCountChanged.InvokeAsync(column + 1)),
-            new("unpin",
+            new(GridCommandIds.Unpin,
                 OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.RequestedPinnedCount > 0,
                 () => OnPinnedCountChanged.InvokeAsync(0)),
-            new("size-to-fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
+            new(GridCommandIds.SizeToFit, OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
                 () => SizeToFitAsync(column)),
         };
         var closing = Closing(commands);
@@ -3129,8 +3133,8 @@
         var canCopy = !_selection.Selection.IsEmpty;
         var core = new List<GridCommand>
         {
-            new("copy", canCopy, () => MenuCopyAsync(withHeaders: false)),
-            new("copy-with-headers", canCopy, () => MenuCopyAsync(withHeaders: true)),
+            new(GridCommandIds.Copy, canCopy, () => MenuCopyAsync(withHeaders: false)),
+            new(GridCommandIds.CopyWithHeaders, canCopy, () => MenuCopyAsync(withHeaders: true)),
         };
         var context = new ContextMenuContext<TRow>(
             _window[slice], declared.Name, declared.Type,
@@ -3145,7 +3149,8 @@
 
     /// <summary>
     /// The commands as a menu hands them out (ADR-0010/0039/0044): invoking one runs it and
-    /// then closes the popover it stands in, and hands the keyboard back to the root, whichever Chrome invoked it and however: a click, Enter or Space.
+    /// then closes the popover it stands in, and hands the keyboard back to the root,
+    /// whichever Chrome invoked it and however: a click, Enter or Space.
     /// What closes a popover is the core's to decide, so a substituted Chrome only calls
     /// <see cref="GridCommand.Invoke"/>, and the grid renders itself, since the event that
     /// invoked it may have been the Chrome's rather than the grid's.
@@ -3351,6 +3356,7 @@
         _innerPopupOpen = false;
         _contextCell = null;
         _menuColumn = -1;
+        _shownMenuCommands = null;
         _panelValues = null;
         _panelChecked = null;
         _panelAwaitingValues = false;
@@ -3512,8 +3518,11 @@
             PopoverFocus.PanelFirst => _panelFirst,
             PopoverFocus.PanelLast => _panelLast,
             // The search box is the value list's first control; the condition's value is
-            // where a search is typed when no list stands.
-            PopoverFocus.PanelSearch => _panelValues is { IsTooMany: false } ? _panelFirst : _panelValueField,
+            // where a search is typed when no list stands — or its operator, while that
+            // operator takes no value.
+            PopoverFocus.PanelSearch => _panelValues is { IsTooMany: false } || !FilterPanelChoices.TakesOperand(_panelOperator)
+                ? _panelFirst
+                : _panelValueField,
             _ => _menuItems.Count > 0 ? _menuItems[_menuItems.Keys.Min()] : default,
         };
         // Without scrolling: on a Server circuit this lands a round trip after the popover
@@ -3570,11 +3579,11 @@
     private int _menuCursor = -1;
 
     private MenuKey ResolveMenuKey(IReadOnlyList<GridCommand> commands, string key, bool shift, bool chord)
-        => MovedCursor(MenuKeys.Resolve(key, shift, chord, commands, MenuCursorOn(commands)));
+        => MovedCursor(MenuKeys.Resolve(key, shift, chord, commands, PlaceMenuCursor(commands)));
 
-    /// <summary>The menu's place over <paramref name="commands"/>: the first enabled item
-    /// until a key has moved it.</summary>
-    private int MenuCursorOn(IReadOnlyList<GridCommand> commands)
+    /// <summary>Settles the menu's place over <paramref name="commands"/> and answers it: the
+    /// first enabled item until a key has moved it.</summary>
+    private int PlaceMenuCursor(IReadOnlyList<GridCommand> commands)
     {
         if (_menuCursor < 0 || _menuCursor >= commands.Count)
             _menuCursor = MenuKeys.First(commands);
@@ -3601,7 +3610,7 @@
     private MenuKey ResolveColumnMenuKey(
         IReadOnlyList<GridCommand> commands, bool filterBelow, string key, bool shift, bool chord)
     {
-        var meaning = MenuKeys.ResolveInColumnMenu(key, shift, chord, commands, MenuCursorOn(commands), filterBelow);
+        var meaning = MenuKeys.ResolveInColumnMenu(key, shift, chord, commands, PlaceMenuCursor(commands), filterBelow);
         if (meaning.Kind is MenuKeyKind.FilterFirst or MenuKeyKind.FilterLast or MenuKeyKind.FilterSearch)
             MoveKeyboardToFilter(meaning.Kind);
         return MovedCursor(meaning);
@@ -3663,34 +3672,51 @@
     /// key is the list's own. The built-in list and a substituted panel's hand it here alike,
     /// the latter through its context, so the grid renders itself.
     /// </summary>
-    private bool OnValueListKey(KeyboardEventArgs e)
+    private async Task<bool> OnValueListKeyAsync(KeyboardEventArgs e)
     {
         // Only a single character can be a letter: an arrow, Tab or Space on a checkbox
-        // builds no commands to be told so.
+        // is not one.
         if (_menuColumn < 0 || _menuColumn >= Columns.Count || e.Key is not { Length: 1 } || IsChord(e))
             return false;
-        var commands = BuildMenuContext(_menuColumn).Commands;
+        var commands = _shownMenuCommands ?? BuildMenuContext(_menuColumn).Commands;
         var meaning = MenuKeys.Letter(e.Key, controlAltOrMeta: false, commands, filterBelow: true);
         if (meaning.Kind == MenuKeyKind.None)
             return false;
         if (meaning.Kind == MenuKeyKind.Run)
-            _ = commands[meaning.Item].Invoke();
+            await commands[meaning.Item].Invoke();
         else
             MoveKeyboardToFilter(meaning.Kind);
         return true;
     }
 
     /// <summary>The filter context's <c>ValueListKey</c>: one delegate, whatever renders.</summary>
-    private Action<KeyboardEventArgs> ValueListKeyFromChrome => _valueListKey ??= e => OnValueListKey(e);
+    private Func<KeyboardEventArgs, Task> ValueListKeyFromChrome => _valueListKey ??= e => OnValueListKeyAsync(e);
 
-    private Action<KeyboardEventArgs>? _valueListKey;
+    private Func<KeyboardEventArgs, Task>? _valueListKey;
+
+    // The commands the open column popover shows, as its last render built them: what a
+    // letter on the value list runs, without building them again per key.
+    private IReadOnlyList<GridCommand>? _shownMenuCommands;
 
     /// <summary>The built-in list's keys: a key that means nothing to the grid — an arrow,
     /// Space on a checkbox — changes nothing on screen, and does not render it.</summary>
-    private void OnBuiltInValueListKey(KeyboardEventArgs e)
+    private async Task OnBuiltInValueListKeyAsync(KeyboardEventArgs e)
     {
-        if (!OnValueListKey(e))
+        if (!await OnValueListKeyAsync(e))
             _suppressRender = true;
+    }
+
+    /// <summary>The letters that run one of <paramref name="commands"/> while it is enabled,
+    /// for the key listener (ADR-0044).</summary>
+    private static string EnabledLetters(IReadOnlyList<GridCommand> commands)
+    {
+        var letters = "";
+        foreach (var command in commands)
+        {
+            if (command.Enabled && MenuKeys.LetterOf(command.Id) is { } letter)
+                letters += letter;
+        }
+        return letters;
     }
 
     /// <summary>

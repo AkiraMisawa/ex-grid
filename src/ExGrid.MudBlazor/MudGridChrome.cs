@@ -99,15 +99,15 @@ public sealed class MudGridChrome : IGridChrome
     /// Material icon of each of the core's commands.</summary>
     internal string? IconFor(string id) => Icon?.Invoke(id) ?? id switch
     {
-        "sort-ascending" => Icons.Material.Filled.ArrowUpward,
-        "sort-descending" => Icons.Material.Filled.ArrowDownward,
-        "clear-filter" => Icons.Material.Filled.FilterListOff,
-        "hide" => Icons.Material.Filled.VisibilityOff,
-        "pin" => Icons.Material.Filled.PushPin,
-        "unpin" => Icons.Material.Outlined.PushPin,
-        "size-to-fit" => Icons.Material.Filled.FitScreen,
-        "copy" => Icons.Material.Filled.ContentCopy,
-        "copy-with-headers" => Icons.Material.Filled.CopyAll,
+        GridCommandIds.SortAscending => Icons.Material.Filled.ArrowUpward,
+        GridCommandIds.SortDescending => Icons.Material.Filled.ArrowDownward,
+        GridCommandIds.ClearFilter => Icons.Material.Filled.FilterListOff,
+        GridCommandIds.Hide => Icons.Material.Filled.VisibilityOff,
+        GridCommandIds.Pin => Icons.Material.Filled.PushPin,
+        GridCommandIds.Unpin => Icons.Material.Outlined.PushPin,
+        GridCommandIds.SizeToFit => Icons.Material.Filled.FitScreen,
+        GridCommandIds.Copy => Icons.Material.Filled.ContentCopy,
+        GridCommandIds.CopyWithHeaders => Icons.Material.Filled.CopyAll,
         _ => null,
     };
 

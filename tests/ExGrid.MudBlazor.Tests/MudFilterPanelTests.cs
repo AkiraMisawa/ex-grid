@@ -36,7 +36,7 @@ public class MudFilterPanelTests : MudTestContext
             () => Task.FromResult(answer ?? DistinctValues.Of(["Alpha", "Beta", null, "Gamma"])),
             spec => _applied.Add(spec), () => _cleared++, () => _closed++, focusRequest,
             InnerPopupChanged: _popups.Add, FocusLastRequest: focusLastRequest,
-            ValueListKey: e => _listKeys.Add(e.Key));
+            ValueListKey: e => { _listKeys.Add(e.Key); return Task.CompletedTask; });
 
     // MudBlazor's selects and pickers draw their popups into the page's provider — every
     // MudBlazor app has one — so the tests render one too.
@@ -280,6 +280,8 @@ public class MudFilterPanelTests : MudTestContext
     {
         var cut = RenderPanel(Context());
 
+        // The list is marked for the grid's key listener (ADR-0010/0044).
+        Assert.Contains("ex-value-list", cut.Find(".mud-ex-grid-filter-values").ClassName);
         await cut.Find(".mud-ex-grid-filter-values").KeyDownAsync(new KeyboardEventArgs { Key = "s" });
         await cut.Find(".mud-ex-grid-filter-search input").KeyDownAsync(new KeyboardEventArgs { Key = "e" });
 

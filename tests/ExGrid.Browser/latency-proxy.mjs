@@ -17,14 +17,23 @@ let halfTripMs = 0;
 
 const delayed = (from, to) => {
     let releaseAt = 0;
+    // Chunks waiting on a timer. A timer fires late, so a chunk whose own wait has already
+    // run out must still go behind every chunk ahead of it: written at once while an
+    // earlier one was pending, it overtook it, and the circuit's WebSocket read a torn
+    // message ("Incomplete message") on a busy run.
+    let pending = 0;
     from.on('data', (chunk) => {
         // Never earlier than the chunk before it, even if the delay was lowered since.
         releaseAt = Math.max(Date.now() + halfTripMs, releaseAt);
         const wait = releaseAt - Date.now();
-        if (wait <= 0) {
+        if (wait <= 0 && pending === 0) {
             to.write(chunk);
         } else {
-            setTimeout(() => to.write(chunk), wait);
+            pending += 1;
+            setTimeout(() => {
+                pending -= 1;
+                to.write(chunk);
+            }, Math.max(0, wait));
         }
     });
     from.on('end', () => setTimeout(() => to.end(), Math.max(0, releaseAt - Date.now())));

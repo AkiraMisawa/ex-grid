@@ -135,9 +135,9 @@ public static class MenuKeys
     /// get none, since a borrowed letter would mean something an Excel user does not expect.</summary>
     public static char? LetterOf(string commandId) => commandId switch
     {
-        "sort-ascending" => 'S',
-        "sort-descending" => 'O',
-        "clear-filter" => 'C',
+        GridCommandIds.SortAscending => 'S',
+        GridCommandIds.SortDescending => 'O',
+        GridCommandIds.ClearFilter => 'C',
         _ => null,
     };
 

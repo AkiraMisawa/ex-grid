@@ -171,6 +171,25 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+test('a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5)', async ({ page }) => {
+    await page.goto('/features');
+    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    await clickCell(page, 1, 0);
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect.poll(() => page.evaluate(() => document.activeElement?.textContent?.trim())).toBe('Sort ascending');
+    await setRoundTrip(150);
+
+    // O sorts descending and closes the popover a round trip later. The Enter typed with
+    // it, reaching the menu first, would run the command it stands on — Sort ascending —
+    // and undo the sort; held until the popover is gone, it is the grid's.
+    await page.keyboard.press('o');
+    await page.keyboard.press('Enter');
+
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await page.waitForTimeout(600);
+    await expect(grid(page).locator('.ex-header-cell').first()).toHaveAttribute('aria-sort', 'descending');
+});
+
 test('a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5)', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page)).toHaveAttribute('tabindex', '0');

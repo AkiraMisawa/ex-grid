@@ -660,4 +660,35 @@ public class FilterChromeTests : GridTestContext
 
         Assert.Equal(value, LastFocusedId());
     }
+
+    [Fact] // ADR-0044 / FN-17: while the operator takes no value, E goes to the operator, as under the Wrapper
+    public async Task E_goes_to_the_operator_while_it_takes_no_value()
+    {
+        var cut = RenderGrid(PushedSource(), columns: Columns(FilterUiMode.Condition));
+        await OpenMenuAsync(cut);
+        // Read at the render that made them: bUnit writes a reference only there.
+        var op = cut.Find(".ex-popover form select").GetAttribute("blazor:elementreference");
+        var value = cut.Find(".ex-popover form input:not([type])").GetAttribute("blazor:elementreference");
+        Assert.False(string.IsNullOrEmpty(op));
+        Assert.False(string.IsNullOrEmpty(value));
+        await cut.Find(".ex-popover form select").ChangeAsync(new ChangeEventArgs { Value = nameof(FilterOperator.IsBlank) });
+
+        await KeyOnAsync(Command(cut, "Sort ascending"), "e");
+
+        Assert.Equal(op, LastFocusedId());
+    }
+
+    [Fact] // ADR-0010 / ADR-0044: the commands carry the letters that run one of them now — enabled ones only — for the key listener
+    public async Task The_commands_carry_their_enabled_letters()
+    {
+        var cut = RenderGrid(PushedSource());
+        await OpenMenuAsync(cut);
+        Assert.Equal("SO", cut.Find(".ex-popover-commands").GetAttribute("data-ex-letters"));
+        await OpenMenuAsync(cut);
+
+        var filtered = RenderGrid(FilteredSource());
+        await OpenMenuAsync(filtered);
+        Assert.Equal("SOC", filtered.Find(".ex-popover-commands").GetAttribute("data-ex-letters"));
+        Assert.NotNull(filtered.Find(".ex-popover-list.ex-value-list"));
+    }
 }

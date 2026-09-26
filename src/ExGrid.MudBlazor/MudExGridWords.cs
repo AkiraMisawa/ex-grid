@@ -72,8 +72,8 @@ public static class MudExGridWords
     /// <summary>MudBlazor's key for a command's word, where it has one.</summary>
     internal static string? MudKeyForCommand(string id) => id switch
     {
-        "clear-filter" => "MudDataGrid_ClearFilter",
-        "hide" => "MudDataGrid_Hide",
+        GridCommandIds.ClearFilter => "MudDataGrid_ClearFilter",
+        GridCommandIds.Hide => "MudDataGrid_Hide",
         _ => null,
     };
 

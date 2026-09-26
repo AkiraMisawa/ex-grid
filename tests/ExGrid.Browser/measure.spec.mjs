@@ -108,7 +108,7 @@ test('what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip
     console.log(`SRV-6 ${JSON.stringify(results)}`);
 });
 
-test('how long the stale band stands while the window is dragged over a Fill grid, at 0, 50 and 150 ms round trip (§21.9)', async ({ page }, testInfo) => {
+test('how long the stale band stands while the window is dragged over a Fill grid, at 0, 50 and 150 ms round trip (§21.9, ADR-0028)', async ({ page }, testInfo) => {
     test.skip(MEASURE !== 'fill', 'EXGRID_MEASURE=fill');
     test.setTimeout(180_000);
     const results = {};

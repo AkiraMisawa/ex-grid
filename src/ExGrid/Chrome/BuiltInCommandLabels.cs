@@ -20,15 +20,15 @@ public static class BuiltInCommandLabels
     /// without a label is shown by name rather than blank, which says what happened.</summary>
     public static string For(string id) => id switch
     {
-        "sort-ascending" => "Sort ascending",
-        "sort-descending" => "Sort descending",
-        "clear-filter" => "Clear filter",
-        "hide" => "Hide this column",
-        "pin" => "Pin up to this column",
-        "unpin" => "Unpin all columns",
-        "size-to-fit" => "Size to fit",
-        "copy" => "Copy",
-        "copy-with-headers" => "Copy with headers",
+        GridCommandIds.SortAscending => "Sort ascending",
+        GridCommandIds.SortDescending => "Sort descending",
+        GridCommandIds.ClearFilter => "Clear filter",
+        GridCommandIds.Hide => "Hide this column",
+        GridCommandIds.Pin => "Pin up to this column",
+        GridCommandIds.Unpin => "Unpin all columns",
+        GridCommandIds.SizeToFit => "Size to fit",
+        GridCommandIds.Copy => "Copy",
+        GridCommandIds.CopyWithHeaders => "Copy with headers",
         _ => id,
     };
 }

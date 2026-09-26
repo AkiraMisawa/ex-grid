@@ -460,6 +460,54 @@ for (const chrome of CHROMES) {
             await expect.poll(() => activeIsRoot(page)).toBe(true);
         });
 
+        test('where no value list stands, E goes to the condition\'s value, where a search is typed (FL-15, ADR-0044)', async ({ page }) => {
+            await clickCell(page, 1, 2);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover[role=dialog]')).toBeVisible();
+
+            await page.keyboard.press('e');
+
+            await expect.poll(() => page.evaluate(() => {
+                const active = document.activeElement;
+                return !!active && (active.matches('.ex-popover form input:not([type])')
+                    || active.closest('.mud-ex-grid-filter-operand') !== null);
+            })).toBe(true);
+            await page.keyboard.type('5');
+            expect(await page.evaluate(() => document.activeElement?.value)).toBe('5');
+        });
+
+        test('E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044)', async ({ page }) => {
+            // A filter in force on Book, so that a search offers "Add current selection".
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
+            await page.keyboard.press('e');
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            await page.keyboard.type('Alpha');
+            await page.keyboard.press('Enter');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
+            await page.keyboard.press('e');
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            await page.keyboard.type('Be');
+            const add = grid(page).locator('.ex-popover-add input, .mud-ex-grid-filter-add input');
+            await expect(add).toBeVisible();
+            await add.focus();
+
+            await page.keyboard.press('e');
+            await page.keyboard.press('Space');
+
+            // Held behind an E the grid does not answer there, the Space would wait two
+            // seconds and then be dropped.
+            await expect(add).toBeChecked({ timeout: 700 });
+        });
+
         test('Enter in the value field applies exactly what OK applies (KB-31, ADR-0039)', async ({ page }) => {
             const byOk = await rowCountAfterFilter(page, chrome, (panel) => CONDITION[chrome].apply(panel).click());
 

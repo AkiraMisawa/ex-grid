@@ -257,6 +257,15 @@ editor, rather than hold keys forever for a popover that never took focus.
 Inside a column's popover the keyboard moves again, from the commands to the filter below them
 (Tab, Shift+Tab, E) and back (the sentinels the core renders either side of the filter). Each
 move is a change of who holds the keyboard, and the keys after it are held the same way.
+*(Decided with the user the same day, after review.)* **So is closing a popover by a key**:
+Enter or Space on an item, a column's letter that runs a command, Enter in the filter's text
+field. The popover closes a round trip later on a circuit, and a key typed behind it reached
+the menu first: O then Enter sorted descending, and then ran the item the Enter stood on,
+Sort ascending. The keys behind a closing key are held until the popover is gone and are then
+the grid's. The core writes the letters that run an enabled command on the commands
+(`data-ex-letters`), and a Chrome marks its value list `ex-value-list`, so the listener mirrors
+nothing but Tab, Shift+Tab and E. The two seconds count from the start of the hold, however
+many moves it holds behind.
 A keydown dispatched from script types nothing, so a held key handed to a text field is typed
 at its caret, as a held key is in the Cell Editor, and a held Enter submits the field's form.
 A held key whose effect is the browser's own — Tab moving DOM focus, Space ticking a checkbox,

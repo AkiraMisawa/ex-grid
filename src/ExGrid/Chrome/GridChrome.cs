@@ -109,8 +109,10 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// list — its checkboxes, "(Select All)" — for Excel's letters (ADR-0044): S, O and C run
 /// the commands above and close the popover, and E moves to the search box through
 /// <see cref="SearchRequest"/>. The core decides, by <see cref="MenuKeys.Letter"/>,
-/// and every other key means nothing to it. A key in a text field is never handed over: a
-/// letter there is text.</para>
+/// and every other key means nothing to it; the task completes when what the key ran has.
+/// A key in a text field is never handed over: a letter there is text. The element that
+/// hands them over carries the class <c>ex-value-list</c>, by which the grid's key listener
+/// knows the keys typed behind a letter there are to be held while it acts (ADR-0010).</para>
 ///
 /// <para><see cref="Clear"/> removes the column's filter and closes. The one popover offers
 /// it as the "clear-filter" command above the panel, so the panels this package and
@@ -130,7 +132,7 @@ public sealed record FilterPanelContext(
     Func<object, string>? Format = null,
     Action<bool>? InnerPopupChanged = null,
     int FocusLastRequest = 0,
-    Action<KeyboardEventArgs>? ValueListKey = null,
+    Func<KeyboardEventArgs, Task>? ValueListKey = null,
     int SearchRequest = 0);
 
 /// <summary>The column menu's contract (ADR-0010): the core decides the items. They stand
