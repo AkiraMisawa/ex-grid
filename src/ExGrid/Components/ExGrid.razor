@@ -310,17 +310,14 @@
         var filterBelow = IsFilterable(menuColumn);
         <div class="ex-popover" style="@PopoverStyle(menuColumn)" role="@(filterBelow ? "dialog" : "none")"
              aria-label="@(filterBelow ? Columns[menuColumn].Header : null)" @key="_popoverFocusRequest">
-            @* A press on a command puts the keyboard back on the commands, whatever Tab or E
-               had asked of the filter (ADR-0044). *@
-            <div class="ex-popover-commands" role="menu" aria-label="@Columns[menuColumn].Header"
-                 @onmousedown="KeyboardBackOnCommands">
+            <div class="ex-popover-commands" role="menu" aria-label="@Columns[menuColumn].Header">
                 @if (Chrome?.ColumnMenu(menuContext) is { } menuFragment)
                 {
                     @menuFragment
                 }
                 else
                 {
-                    BuiltInMenuItems(__builder, menuContext.Commands, menuContext.ResolveKey!);
+                    BuiltInMenuItems(__builder, menuContext.Commands, menuContext.ResolveKey!, lettered: true);
                 }
             </div>
             @if (filterBelow)
@@ -331,97 +328,98 @@
                    side of the filter: Tab off its last control lands on the far one and
                    Shift+Tab off its first on the near one, and each hands the keyboard back to
                    the first command. Tab and Shift+Tab on a command are the menu's keys, which
-                   ask the filter for its first or last control. Blazor's own focus events — no
-                   script, and no key the filter's controls would have to give up. *@
+                   ask the filter for its first or last control. Blazor's own focus events, and
+                   no key the filter's controls would have to give up; the keys typed while
+                   either hand-off is under way are held by the key listener (ADR-0010). *@
                 <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToCommandsAsync"></span>
-                <div class="ex-popover-filter" @attributes="_filterArrival">
+                <div class="ex-popover-filter">
                     @if (Chrome?.FilterPanel(panelContext) is { } panelFragment)
                     {
                         @panelFragment
                     }
                     else
                     {
-                    @* The built-in panel (ADR-0009): Excel's shape — a value list where the
-                       column declared one and the domain arrived, and the degraded
-                       search-and-condition form where it did not. Applied on OK, or by Enter in
-                       a value field (ADR-0039).
+                        @* The built-in panel (ADR-0009): Excel's shape — a value list where the
+                           column declared one and the domain arrived, and the degraded
+                           search-and-condition form where it did not. Applied on OK, or by Enter in
+                           a value field (ADR-0039).
 
-                       Enter is the browser's implicit submission of a form, not a key handler:
-                       the form holds one text field and no submit button, so Enter in that
-                       field submits it — and the browser does not submit on the Enter that
-                       confirms an IME's candidate, which Blazor's key event could not tell
-                       apart (it carries no isComposing). A composing IME is left alone, as
-                       ADR-0010 requires of every key the grid hears. Clearing is the
-                       "clear-filter" command above it (ADR-0044), so the actions are OK and
-                       Cancel. *@
-                    <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
-                        @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
-                        {
-                            var shown = domain.Values.Where(v => FilterPanelChoices.Matches(_panelSearch, PanelText(v, panelColumn))).ToArray();
-                            <input type="search" placeholder="Search" value="@_panelSearch" @ref="_panelFirst"
-                                   @oninput="e => _panelSearch = e.Value?.ToString() ?? string.Empty" />
-                            @* Excel's "Add current selection to filter" (ADR-0009): only while a
-                               search stands over a column already filtered by its values. *@
-                            @if (FilterPanelChoices.OffersAddToFilter(panelContext.Current, _panelSearch))
+                           Enter is the browser's implicit submission of a form, not a key handler:
+                           the form holds one text field and no submit button, so Enter in that
+                           field submits it — and the browser does not submit on the Enter that
+                           confirms an IME's candidate, which Blazor's key event could not tell
+                           apart (it carries no isComposing). A composing IME is left alone, as
+                           ADR-0010 requires of every key the grid hears. Clearing is the
+                           "clear-filter" command above it (ADR-0044), so the actions are OK and
+                           Cancel. *@
+                        <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
+                            @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                             {
-                                <label class="ex-popover-add">
-                                    <input type="checkbox" checked="@_panelAddToCurrent" @onchange="e => _panelAddToCurrent = e.Value is true" />
-                                    Add current selection to filter
-                                </label>
-                            }
-                            <div class="ex-popover-list" @onkeydown="OnBuiltInValueListKey">
-                                @* "(Select All)" over the values shown, with Excel's mixed state: a
-                                   checkbox role on a button, because a native checkbox's mixed
-                                   state is a property only script can set (ADR-0021). *@
-                                <button type="button" role="checkbox" class="ex-select-all"
-                                        aria-checked="@AriaCheckedOf(FilterPanelChoices.StateOfAll(shown, chosen))"
-                                        @onclick="() => FilterPanelChoices.ToggleAll(shown, chosen)">@(_panelSearch.Length > 0 ? "(Select All Search Results)" : "(Select All)")</button>
-                                @foreach (var value in shown)
+                                var shown = domain.Values.Where(v => FilterPanelChoices.Matches(_panelSearch, PanelText(v, panelColumn))).ToArray();
+                                <input type="search" placeholder="Search" value="@_panelSearch" @ref="_panelFirst"
+                                       @oninput="e => _panelSearch = e.Value?.ToString() ?? string.Empty" />
+                                @* Excel's "Add current selection to filter" (ADR-0009): only while a
+                                   search stands over a column already filtered by its values. *@
+                                @if (FilterPanelChoices.OffersAddToFilter(panelContext.Current, _panelSearch))
                                 {
-                                    var item = value;
-                                    <label>
-                                        <input type="checkbox" checked="@chosen.Contains(item)"
-                                               @onchange="e => { if (e.Value is true) chosen.Add(item); else chosen.Remove(item); }" />
-                                        @PanelText(item, panelColumn)
+                                    <label class="ex-popover-add">
+                                        <input type="checkbox" checked="@_panelAddToCurrent" @onchange="e => _panelAddToCurrent = e.Value is true" />
+                                        Add current selection to filter
                                     </label>
                                 }
-                            </div>
-                        }
-                        else
-                        {
-                            <select value="@_panelOperator" @ref="_panelFirst" @onchange="e => _panelOperator = Enum.Parse<FilterOperator>((string)e.Value!)">
-                                @foreach (var op in panelContext.Allowed)
-                                {
-                                    <option value="@op">@op</option>
-                                }
-                            </select>
-                            <input value="@_panelValueText" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
-                            @* A second condition, joined by And or Or, as Excel's Custom AutoFilter
-                               (ADR-0009). Left at "(none)" it applies nothing of its own. *@
-                            <div class="ex-popover-join" role="radiogroup">
-                                <label><input type="radio" name="@(_idPrefix + "join")" checked="@(_panelCombinator == FilterCombinator.And)"
-                                              @onchange="() => _panelCombinator = FilterCombinator.And" />And</label>
-                                <label><input type="radio" name="@(_idPrefix + "join")" checked="@(_panelCombinator == FilterCombinator.Or)"
-                                              @onchange="() => _panelCombinator = FilterCombinator.Or" />Or</label>
-                            </div>
-                            <select class="ex-popover-second" value="@(_panelSecondOperator?.ToString() ?? "")"
-                                    @onchange="e => _panelSecondOperator = e.Value is string { Length: > 0 } chosenOp ? Enum.Parse<FilterOperator>(chosenOp) : null">
-                                <option value="">(none)</option>
-                                @foreach (var op in panelContext.Allowed)
-                                {
-                                    <option value="@op">@op</option>
-                                }
-                            </select>
-                            @if (_panelSecondOperator is { } second && FilterPanelChoices.TakesOperand(second))
-                            {
-                                <input class="ex-popover-second" value="@_panelSecondValueText" @oninput="e => _panelSecondValueText = e.Value?.ToString() ?? string.Empty" />
+                                <div class="ex-popover-list" @onkeydown="OnBuiltInValueListKey">
+                                    @* "(Select All)" over the values shown, with Excel's mixed state: a
+                                       checkbox role on a button, because a native checkbox's mixed
+                                       state is a property only script can set (ADR-0021). *@
+                                    <button type="button" role="checkbox" class="ex-select-all"
+                                            aria-checked="@AriaCheckedOf(FilterPanelChoices.StateOfAll(shown, chosen))"
+                                            @onclick="() => FilterPanelChoices.ToggleAll(shown, chosen)">@(_panelSearch.Length > 0 ? "(Select All Search Results)" : "(Select All)")</button>
+                                    @foreach (var value in shown)
+                                    {
+                                        var item = value;
+                                        <label>
+                                            <input type="checkbox" checked="@chosen.Contains(item)"
+                                                   @onchange="e => { if (e.Value is true) chosen.Add(item); else chosen.Remove(item); }" />
+                                            @PanelText(item, panelColumn)
+                                        </label>
+                                    }
+                                </div>
                             }
-                        }
-                        <div class="ex-popover-actions">
-                            <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
-                            <button type="button" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
-                        </div>
-                    </form>
+                            else
+                            {
+                                <select value="@_panelOperator" @ref="_panelFirst" @onchange="e => _panelOperator = Enum.Parse<FilterOperator>((string)e.Value!)">
+                                    @foreach (var op in panelContext.Allowed)
+                                    {
+                                        <option value="@op">@op</option>
+                                    }
+                                </select>
+                                <input value="@_panelValueText" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
+                                @* A second condition, joined by And or Or, as Excel's Custom AutoFilter
+                                   (ADR-0009). Left at "(none)" it applies nothing of its own. *@
+                                <div class="ex-popover-join" role="radiogroup">
+                                    <label><input type="radio" name="@(_idPrefix + "join")" checked="@(_panelCombinator == FilterCombinator.And)"
+                                                  @onchange="() => _panelCombinator = FilterCombinator.And" />And</label>
+                                    <label><input type="radio" name="@(_idPrefix + "join")" checked="@(_panelCombinator == FilterCombinator.Or)"
+                                                  @onchange="() => _panelCombinator = FilterCombinator.Or" />Or</label>
+                                </div>
+                                <select class="ex-popover-second" value="@(_panelSecondOperator?.ToString() ?? "")"
+                                        @onchange="e => _panelSecondOperator = e.Value is string { Length: > 0 } chosenOp ? Enum.Parse<FilterOperator>(chosenOp) : null">
+                                    <option value="">(none)</option>
+                                    @foreach (var op in panelContext.Allowed)
+                                    {
+                                        <option value="@op">@op</option>
+                                    }
+                                </select>
+                                @if (_panelSecondOperator is { } second && FilterPanelChoices.TakesOperand(second))
+                                {
+                                    <input class="ex-popover-second" value="@_panelSecondValueText" @oninput="e => _panelSecondValueText = e.Value?.ToString() ?? string.Empty" />
+                                }
+                            }
+                            <div class="ex-popover-actions">
+                                <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
+                                <button type="button" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
+                            </div>
+                        </form>
                     }
                 </div>
                 <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToCommandsAsync"></span>
@@ -441,7 +439,7 @@
             {
                 @* The column menu's items and keys, over the selection's commands
                    (ADR-0036/0039). *@
-                BuiltInMenuItems(__builder, contextMenu.Commands, contextMenu.ResolveKey!);
+                BuiltInMenuItems(__builder, contextMenu.Commands, contextMenu.ResolveKey!, lettered: false);
             }
         </div>
     }
@@ -998,19 +996,6 @@
     private bool _panelAwaitingValues;
     private bool _reclaimFocusPending;
     private Action? _closeFromChrome;
-
-    // The keyboard has been sent from the commands to the filter below and has not arrived
-    // yet (ADR-0044). On a circuit it arrives a round trip later, and a key typed in
-    // between — the first letter of a search after E — still lands on the command or the
-    // value list it is leaving, where S or O would sort and close the popover. Until focus
-    // is seen in the filter, such a key means nothing.
-    private bool _keysHeldForFilter;
-
-    // Focus arriving in the filter is listened for only while the keys are held: a focus
-    // move inside the filter is otherwise a message on a circuit for nothing. The same
-    // splat as the drag's mousemove, for the same reason, and the delegate is cached.
-    private readonly Dictionary<string, object> _filterArrival = new();
-    private Action<FocusEventArgs>? _arrivedInFilter;
 
     private enum PopoverFocus
     {
@@ -3156,9 +3141,8 @@
     }
 
     /// <summary>
-    /// The commands as a menu hands them out (ADR-0010/0039): invoking one runs it and then
-    /// closes the menu — or leaves standing the panel it opened — and hands the keyboard
-    /// back to the root, whichever Chrome invoked it and however: a click, Enter or Space.
+    /// The commands as a menu hands them out (ADR-0010/0039/0044): invoking one runs it and
+    /// then closes the popover it stands in, and hands the keyboard back to the root, whichever Chrome invoked it and however: a click, Enter or Space.
     /// What closes a popover is the core's to decide, so a substituted Chrome only calls
     /// <see cref="GridCommand.Invoke"/>, and the grid renders itself, since the event that
     /// invoked it may have been the Chrome's rather than the grid's.
@@ -3368,7 +3352,6 @@
         _panelChecked = null;
         _panelAwaitingValues = false;
         _popoverFocusPending = PopoverFocus.None;
-        HoldKeysForFilter(false);
     }
 
     /// <summary>
@@ -3386,7 +3369,6 @@
         _panelFocusRequest = 0;
         _panelFocusLastRequest = 0;
         _popoverFocusPending = PopoverFocus.FirstCommand;
-        HoldKeysForFilter(false);
         _menuCursor = -1;
         _panelFirst = default;
         _panelLast = default;
@@ -3556,7 +3538,7 @@
     /// </summary>
     private async Task OnMenuItemKeyAsync(KeyboardEventArgs e, IReadOnlyList<GridCommand> commands, MenuKeyResolver resolve)
     {
-        var meaning = resolve(e.Key, e.ShiftKey, e.CtrlKey || e.AltKey || e.MetaKey);
+        var meaning = resolve(e.Key, e.ShiftKey, IsChord(e));
         switch (meaning.Kind)
         {
             case MenuKeyKind.Move when _menuItems.TryGetValue(meaning.Item, out var target):
@@ -3580,36 +3562,41 @@
     private int _menuCursor = -1;
 
     private MenuKey ResolveMenuKey(IReadOnlyList<GridCommand> commands, string key, bool shift, bool chord)
+        => MovedCursor(MenuKeys.Resolve(key, shift, chord, commands, MenuCursorOn(commands)));
+
+    /// <summary>The menu's place over <paramref name="commands"/>: the first enabled item
+    /// until a key has moved it.</summary>
+    private int MenuCursorOn(IReadOnlyList<GridCommand> commands)
     {
         if (_menuCursor < 0 || _menuCursor >= commands.Count)
             _menuCursor = MenuKeys.First(commands);
-        var meaning = MenuKeys.Resolve(key, shift, chord, commands, _menuCursor);
+        return _menuCursor;
+    }
+
+    /// <summary>A <see cref="MenuKeyKind.Move"/> moves the menu's place; the answer is
+    /// passed on as it is.</summary>
+    private MenuKey MovedCursor(MenuKey meaning)
+    {
         if (meaning.Kind == MenuKeyKind.Move)
             _menuCursor = meaning.Item;
         return meaning;
     }
 
+    private static bool IsChord(KeyboardEventArgs e) => e.CtrlKey || e.AltKey || e.MetaKey;
+
     /// <summary>
-    /// A key on the column menu (ADR-0044): its table has Excel's letters, and Tab, E and
-    /// Shift+Tab move the keyboard into the filter below, which the core carries out here —
-    /// the contents only focus, run and close. A key typed while the keyboard is on its way
-    /// to the filter is not the menu's (<see cref="_keysHeldForFilter"/>); only one that asks
-    /// for the filter again still counts.
+    /// A key on the column menu (ADR-0044), answered and — for the filter — carried out: its
+    /// table has Excel's letters, and Tab, E and Shift+Tab move the keyboard into the filter
+    /// below, which the core does here; the contents only focus, run and close. The keys
+    /// typed while the keyboard is on its way are held by the key listener (ADR-0010).
     /// </summary>
     private MenuKey ResolveColumnMenuKey(
         IReadOnlyList<GridCommand> commands, bool filterBelow, string key, bool shift, bool chord)
     {
-        if (_menuCursor < 0 || _menuCursor >= commands.Count)
-            _menuCursor = MenuKeys.First(commands);
-        var meaning = MenuKeys.ResolveInColumnMenu(key, shift, chord, commands, _menuCursor, filterBelow);
-        var toFilter = meaning.Kind is MenuKeyKind.FilterFirst or MenuKeyKind.FilterLast;
-        if (_keysHeldForFilter && !toFilter)
-            return MenuKey.Nothing;
-        if (meaning.Kind == MenuKeyKind.Move)
-            _menuCursor = meaning.Item;
-        else if (toFilter)
+        var meaning = MenuKeys.ResolveInColumnMenu(key, shift, chord, commands, MenuCursorOn(commands), filterBelow);
+        if (meaning.Kind is MenuKeyKind.FilterFirst or MenuKeyKind.FilterLast)
             MoveKeyboardToFilter(last: meaning.Kind == MenuKeyKind.FilterLast);
-        return meaning;
+        return MovedCursor(meaning);
     }
 
     /// <summary>The Context Menu's <c>ResolveKey</c> over the commands it hands out.</summary>
@@ -3629,36 +3616,12 @@
     /// </summary>
     private void MoveKeyboardToFilter(bool last)
     {
-        HoldKeysForFilter(true);
         if (last)
             _panelFocusLastRequest++;
         else
             _panelFocusRequest++;
         _popoverFocusPending = last ? PopoverFocus.PanelLast : PopoverFocus.PanelFirst;
         _ = InvokeAsync(StateHasChanged);
-    }
-
-    private void HoldKeysForFilter(bool held)
-    {
-        _keysHeldForFilter = held;
-        if (held)
-            _filterArrival["onfocusin"] = _arrivedInFilter ??= KeyboardArrivedInFilter;
-        else
-            _filterArrival.Remove("onfocusin");
-    }
-
-    /// <summary>Focus has arrived in the filter: the keys are its own again. The render
-    /// that follows takes the listener away.</summary>
-    private void KeyboardArrivedInFilter(FocusEventArgs e) => HoldKeysForFilter(false);
-
-    /// <summary>A press on the commands takes the keyboard back to them, wherever Tab or E
-    /// had sent it. Unless the listener has to go, nothing on screen changes.</summary>
-    private void KeyboardBackOnCommands()
-    {
-        if (_keysHeldForFilter)
-            HoldKeysForFilter(false);
-        else
-            _suppressRender = true;
     }
 
     /// <summary>
@@ -3669,7 +3632,6 @@
     /// </summary>
     private async Task ReturnKeyboardToCommandsAsync()
     {
-        HoldKeysForFilter(false);
         _menuCursor = -1;
         _menuFocusRequest++;
         if (_menuItems.Count > 0)
@@ -3684,11 +3646,13 @@
     /// </summary>
     private bool OnValueListKey(KeyboardEventArgs e)
     {
-        if (_menuColumn < 0 || _menuColumn >= Columns.Count)
+        // Only a single character can be a letter: an arrow, Tab or Space on a checkbox
+        // builds no commands to be told so.
+        if (_menuColumn < 0 || _menuColumn >= Columns.Count || e.Key is not { Length: 1 } || IsChord(e))
             return false;
         var commands = BuildMenuContext(_menuColumn).Commands;
-        var meaning = MenuKeys.Letter(e.Key, e.CtrlKey || e.AltKey || e.MetaKey, commands, filterBelow: true);
-        if (meaning.Kind == MenuKeyKind.None || (_keysHeldForFilter && meaning.Kind != MenuKeyKind.FilterFirst))
+        var meaning = MenuKeys.Letter(e.Key, controlAltOrMeta: false, commands, filterBelow: true);
+        if (meaning.Kind == MenuKeyKind.None)
             return false;
         if (meaning.Kind == MenuKeyKind.Run)
             _ = commands[meaning.Item].Invoke();
@@ -5795,7 +5759,8 @@
     /// the button's own click. An enabled item is captured so the arrows can move to it; a
     /// disabled one cannot hold focus at all.
     /// </summary>
-    private void BuiltInMenuItems(RenderTreeBuilder __builder, IReadOnlyList<GridCommand> commands, MenuKeyResolver resolve)
+    private void BuiltInMenuItems(
+        RenderTreeBuilder __builder, IReadOnlyList<GridCommand> commands, MenuKeyResolver resolve, bool lettered)
     {
         for (var i = 0; i < commands.Count; i++)
         {
@@ -5805,11 +5770,11 @@
             {
                 <button type="button" role="menuitem" @ref="_menuItems[item]"
                         @onclick="command.Invoke"
-                        @onkeydown="e => OnMenuItemKeyAsync(e, commands, resolve)" @onkeydown:preventDefault>@Labelled(command)</button>
+                        @onkeydown="e => OnMenuItemKeyAsync(e, commands, resolve)" @onkeydown:preventDefault>@LabelWithLetter(command, lettered)</button>
             }
             else
             {
-                <button type="button" role="menuitem" disabled>@Labelled(command)</button>
+                <button type="button" role="menuitem" disabled>@LabelWithLetter(command, lettered)</button>
             }
         }
     }
@@ -5817,16 +5782,17 @@
     /// <summary>
     /// A command's label, with the letter it answers to the way Excel shows it (ADR-0044):
     /// underlined where the label has it, appended as "(S)" where it does not. Only the
-    /// column menu's sort and clear-filter commands have one; the underline is the markup's
-    /// own, so a theme that restyles <c>u</c> restyles it.
+    /// column menu's sort and clear-filter commands have one — the Context Menu answers no
+    /// letter, so it marks none; the underline is the markup's own, so a theme that
+    /// restyles <c>u</c> restyles it.
     /// </summary>
-    private RenderFragment Labelled(GridCommand command) => __builder =>
+    private RenderFragment LabelWithLetter(GridCommand command, bool lettered) => __builder =>
     {
         var label = LabelOf(command);
-        if (MenuKeys.LetterOf(command.Id) is { } letter)
+        if (lettered && MenuKeys.LetterOf(command.Id) is { } letter)
         {
-            var (before, key, after) = MenuKeys.Marked(label, letter);
-            @before<u class="ex-accesskey">@key</u>@after
+            var (before, key, after) = MenuKeys.SplitAtLetter(label, letter);
+            @before<u>@key</u>@after
         }
         else
         {

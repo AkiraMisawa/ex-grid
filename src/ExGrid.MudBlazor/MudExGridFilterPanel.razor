@@ -1,10 +1,10 @@
 @using System.Globalization
 @using FilterOperator = global::ExGrid.FilterOperator
 @using FilterCombinator = global::ExGrid.FilterCombinator
-@* The filter panel under MudBlazor (ADR-0009/0030/0039): MudBlazor's own controls under
-   the column's commands in the core's one popover (ADR-0044). A value list with a search and a Blank entry where the column
-   declares one and the answer arrives; the condition form where it declares that, or where
-   the answer is TooMany. It keeps a working state and asks FilterPanelChoices what that
+@* The filter panel under MudBlazor (ADR-0009/0030/0039): MudBlazor's own controls under the
+   column's commands in the core's one popover (ADR-0044). A value list with a search and a
+   Blank entry where the column declares one and the answer arrives; the condition form where
+   it declares that, or where the answer is TooMany. It keeps a working state and asks FilterPanelChoices what that
    state means — the rules the built-in panel applies by — so the same choices make the
    same FilterSpec under either Chrome (WR-1).
 
@@ -128,17 +128,17 @@
     private MudTextField<string>? _search;
     private MudSelect<FilterOperator>? _operatorField;
     private MudButton? _cancel;
-    private Focus _needsFocus;
+    private DomFocusTarget _domFocusOwed;
     // Zero at each opening: the core's popover is keyed by the opening, so each is a new
     // instance of this component, and zero is a request not made (ADR-0044).
     private int _focusedRequest;
     private int _focusedLastRequest;
 
-    private enum Focus
+    private enum DomFocusTarget
     {
         None,
-        First,
-        Last,
+        FirstControl,
+        LastControl,
     }
 
     [Inject] private ILocalizationInterceptor Localizer { get; set; } = default!;
@@ -221,12 +221,12 @@
         if (Context.FocusRequest != _focusedRequest)
         {
             _focusedRequest = Context.FocusRequest;
-            _needsFocus = Focus.First;
+            _domFocusOwed = DomFocusTarget.FirstControl;
         }
         if (Context.FocusLastRequest != _focusedLastRequest)
         {
             _focusedLastRequest = Context.FocusLastRequest;
-            _needsFocus = Focus.Last;
+            _domFocusOwed = DomFocusTarget.LastControl;
         }
     }
 
@@ -305,11 +305,11 @@
         // A requested control takes DOM focus once the contents have settled — not while
         // the value list is on its way, when the control about to be shown is not there
         // yet (ADR-0039, KB-29).
-        if (_needsFocus == Focus.None || _awaiting)
+        if (_domFocusOwed == DomFocusTarget.None || _awaiting)
             return;
-        var target = _needsFocus;
-        _needsFocus = Focus.None;
-        if (target == Focus.First)
+        var target = _domFocusOwed;
+        _domFocusOwed = DomFocusTarget.None;
+        if (target == DomFocusTarget.FirstControl)
             await FocusFirstAsync();
         else
             await FocusLastAsync();

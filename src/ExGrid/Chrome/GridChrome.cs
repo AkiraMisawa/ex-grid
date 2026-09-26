@@ -141,11 +141,10 @@ public sealed record FilterPanelContext(
 /// key means on an item is <see cref="MenuKeys"/>' column-menu table, asked through
 /// <see cref="ResolveKey"/> — Excel's letters, and Tab into the filter, which the core
 /// carries out itself (<see cref="MenuKeyKind.FilterFirst"/>). The core keeps the menu's
-/// place, so a key is answered against where the keys have
-/// moved it, not against whichever item holds DOM focus when it lands — on a Blazor
-/// Server circuit focus follows a round trip behind (ADR-0039). A popup the menu's
-/// contents open of their own is reported through <see cref="InnerPopupChanged"/>, as in
-/// the filter panel.</summary>
+/// place, so a key is answered against where the keys have moved it, not against whichever
+/// item holds DOM focus when it lands — on a Blazor Server circuit focus follows a round
+/// trip behind (ADR-0039). A popup the menu's contents open of their own is reported
+/// through <see cref="InnerPopupChanged"/>, as in the filter panel.</summary>
 public sealed record ColumnMenuContext(
     string Column,
     ColumnType Type,

@@ -144,9 +144,10 @@ test('keys typed straight after a key that opens a menu reach the menu (KB-33, A
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`letters typed straight after E are the search's, never a command's (ADR-0044, SRV-5, ${chrome})`, async ({ page }) => {
+    test(`a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, ${chrome})`, async ({ page }) => {
         await page.goto(`/features?chrome=${chrome}`);
         await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        const all = await grid(page).getAttribute('aria-rowcount');
         await clickCell(page, 1, 0);
         await page.keyboard.press('Alt+ArrowDown');
         const search = grid(page).locator('.ex-popover input[type=search], .ex-popover .mud-ex-grid-filter-search input');
@@ -154,16 +155,19 @@ for (const chrome of ['builtin', 'mud']) {
         await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role=menu]') !== null)).toBe(true);
         await setRoundTrip(150);
 
-        // E asks for the search box, which takes DOM focus a round trip later; the S and O
-        // typed meanwhile still land on the command, where they would sort and close.
+        // E sends the keyboard to the search box, which takes DOM focus a round trip later.
+        // The keys typed meanwhile are held and handed on in order: the search is "elta",
+        // whole — never a command's S or O, never a search missing its first letters — and
+        // the Enter typed with them applies it.
         await page.keyboard.press('e');
-        await page.keyboard.type('so');
+        await page.keyboard.type('elta');
+        await page.keyboard.press('Enter');
 
-        await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.ex-popover [role=dialog], .ex-popover[role=dialog]') !== null
-            && document.activeElement?.tagName === 'INPUT')).toBe(true);
-        await page.waitForTimeout(600);
-        await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+        await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+        await expect.poll(() => grid(page).getAttribute('aria-rowcount')).not.toBe(all);
         await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending], .ex-header-cell[aria-sort=descending]')).toHaveCount(0);
+        // Delta alone: the four books share the rows evenly.
+        expect(Number(await grid(page).getAttribute('aria-rowcount'))).toBe(Number(all) / 4);
     });
 }
 

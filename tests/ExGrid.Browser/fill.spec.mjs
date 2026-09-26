@@ -85,6 +85,24 @@ test.describe('in a box that follows the window', () => {
         await expect.poll(async () => rowsIn(page, '#window-box')).toBe(tall);
     });
 
+    test('a column that cannot be filtered shows its commands alone, and Tab closes them as a Cancel (KB-30, ADR-0039/0044)', async ({ page }) => {
+        // This grid sorts and has no filter sink: the popover is the menu alone.
+        const grid = page.locator('#window-box .ex-grid');
+        await grid.locator("[id$='r1c1']").click({ force: true });
+        await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+        await page.keyboard.press('Alt+ArrowDown');
+        await expect(grid.locator('.ex-popover [role=menu]')).toBeVisible();
+        await expect(grid.locator('.ex-popover-filter')).toHaveCount(0);
+        await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role=menu]') !== null)).toBe(true);
+
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Tab');
+
+        await expect(grid.locator('.ex-popover')).toHaveCount(0);
+        await expect(grid).toBeFocused();
+        await expect(page.locator('#sort-status')).toHaveText('Sorts: none');
+    });
+
     test('a column menu with less than a row of room closes, and the keyboard is the grid\'s (UX-11a, ADR-0040)', async ({ page }) => {
         const grid = page.locator('#window-box .ex-grid');
         await grid.locator("[id$='r1c1']").click({ force: true });

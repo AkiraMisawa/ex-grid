@@ -143,8 +143,9 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   *(Found by layer 3 on the Server host, 2026-09-26.)* On a circuit that hand-off lands a round
   trip after the press, and the capture-phase listener read a key typed in between as a
   descendant's — a Consumer control's — and let it go: a number typed straight after a click
-  was lost (ED-22). The listener now reads a key on the grid's own scroller as a key on the
-  root. The allowlisted keydown listener changes; no use is added.
+  was lost (ED-22). A copy or a paste in that gap was ignored the same way (CP-1/CP-3). The
+  keydown, copy and paste listeners now read an event on the grid's own scroller as one on
+  the root. Those listeners change; no allowlisted use is added.
 - **Layer 3 owns the verification.** Counts and indices are assertable in bUnit, but "the Focus is
   reachable by one tab, and the announcement is made once per settled selection" is a real-browser
   question. It joins the list in [ADR-0026](./0026-layer-three-runs-on-playwright-against-the-installed-chrome.md).

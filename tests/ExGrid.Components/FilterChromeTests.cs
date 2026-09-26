@@ -549,6 +549,25 @@ public class FilterChromeTests : GridTestContext
         Assert.Null(Command(cut, "Size to fit").QuerySelector("u"));
     }
 
+    [Fact] // ADR-0036 / ADR-0044: the Context Menu answers no letter, so marks none — even on a Consumer's command named like a sort
+    public async Task The_context_menu_marks_no_letter()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, PushedSource())
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ContextCommands, (ContextMenuContext<TestRow> _) =>
+                (IEnumerable<GridCommand>)[new GridCommand("sort-ascending", true, () => Task.CompletedTask)]));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 10 });
+
+        await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { Button = 2, OffsetX = 50, OffsetY = 10 });
+
+        Assert.Contains(cut.FindAll(".ex-popover button[role=menuitem]"), b => b.TextContent == "Sort ascending");
+        Assert.Empty(cut.FindAll(".ex-popover u"));
+    }
+
     [Theory] // ADR-0044 / FL-15: S and O sort from any command, and close the popover
     [InlineData("s", SortDirection.Ascending)]
     [InlineData("O", SortDirection.Descending)]
@@ -600,44 +619,9 @@ public class FilterChromeTests : GridTestContext
         await KeyOnAsync(Command(cut, "Sort ascending"), "e");
         Assert.Equal(search, LastFocusedId());
 
-        await cut.Find(".ex-popover-filter").FocusInAsync(new FocusEventArgs());
         await KeyOnAsync(cut.Find(".ex-popover-list"), "E");
         Assert.Equal(2, JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus"
             && ((ElementReference)i.Arguments[0]!).Id == search));
-    }
-
-    [Fact] // ADR-0044: a key typed while the keyboard is on its way to the filter is not the menu's — S after E does not sort
-    public async Task A_letter_on_the_way_to_the_filter_does_not_sort()
-    {
-        var source = FilteredSource();
-        var cut = RenderGrid(source);
-        await OpenMenuAsync(cut);
-
-        await KeyOnAsync(Command(cut, "Sort ascending"), "e");
-        // On a circuit, the next letter still lands on the command focus is leaving.
-        await KeyOnAsync(Command(cut, "Sort ascending"), "s");
-        await KeyOnAsync(cut.Find(".ex-popover-list"), "s");
-        Assert.Empty(source.SortChanges);
-        Assert.Single(cut.FindAll(".ex-popover"));
-
-        // Once focus is seen in the filter, the letters are the list's again.
-        await cut.Find(".ex-popover-filter").FocusInAsync(new FocusEventArgs());
-        await KeyOnAsync(cut.Find(".ex-popover-list"), "s");
-        Assert.Equal([new SortSpec("Book", SortDirection.Ascending)], source.Sorts);
-    }
-
-    [Fact] // ADR-0044: focus arriving in the filter is listened for only while the keys are held
-    public async Task The_filter_is_watched_only_while_the_keys_are_held()
-    {
-        var cut = RenderGrid(FilteredSource());
-        await OpenMenuAsync(cut);
-        Assert.False(cut.Find(".ex-popover-filter").HasAttribute("blazor:onfocusin"));
-
-        await KeyOnAsync(Command(cut, "Sort ascending"), "e");
-        Assert.True(cut.Find(".ex-popover-filter").HasAttribute("blazor:onfocusin"));
-
-        await cut.Find(".ex-popover-filter").FocusInAsync(new FocusEventArgs());
-        Assert.False(cut.Find(".ex-popover-filter").HasAttribute("blazor:onfocusin"));
     }
 
     [Fact] // ADR-0044 / FL-15: a substituted panel hands its value list's keys to the core, which answers the letters
@@ -655,7 +639,6 @@ public class FilterChromeTests : GridTestContext
         await cut.InvokeAsync(() => chrome.Menu!.ResolveKey!("Tab", true, false));
         cut.WaitForAssertion(() => Assert.Equal(1, chrome.Panel!.FocusLastRequest));
 
-        await cut.Find(".ex-popover-filter").FocusInAsync(new FocusEventArgs());
         await cut.InvokeAsync(() => chrome.Panel!.ValueListKey!(new KeyboardEventArgs { Key = "o" }));
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover")));
         Assert.Equal([new SortSpec("Book", SortDirection.Descending)], source.Sorts);

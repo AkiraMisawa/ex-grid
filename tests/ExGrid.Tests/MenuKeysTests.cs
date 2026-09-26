@@ -212,9 +212,9 @@ public class MenuKeysTests
     [Fact] // ADR-0044 / FL-15: a label shows its letter where it has it, as English Excel; appended, as Japanese Excel
     public void A_label_is_marked_at_its_letter_or_given_it()
     {
-        Assert.Equal(("", "S", "ort ascending"), MenuKeys.Marked("Sort ascending", 'S'));
-        Assert.Equal(("S", "o", "rt descending"), MenuKeys.Marked("Sort descending", 'O'));
-        Assert.Equal(("", "C", "lear filter"), MenuKeys.Marked("Clear filter", 'C'));
-        Assert.Equal(("昇順(", "S", ")"), MenuKeys.Marked("昇順", 'S'));
+        Assert.Equal(("", "S", "ort ascending"), MenuKeys.SplitAtLetter("Sort ascending", 'S'));
+        Assert.Equal(("S", "o", "rt descending"), MenuKeys.SplitAtLetter("Sort descending", 'O'));
+        Assert.Equal(("", "C", "lear filter"), MenuKeys.SplitAtLetter("Clear filter", 'C'));
+        Assert.Equal(("昇順(", "S", ")"), MenuKeys.SplitAtLetter("昇順", 'S'));
     }
 }

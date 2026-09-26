@@ -249,6 +249,28 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(context + 1, ((ContextMenuContext<TestRow>)chrome.Context!).FocusRequest);
     }
 
+    [Fact] // ADR-0044 / KB-29: a substituted menu is asked again when Tab wraps back to it, and the filter only when the keyboard moves there
+    public async Task The_substituted_halves_are_asked_as_the_keyboard_moves()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+        var menu = chrome.Menu!.FocusRequest;
+        Assert.Equal(0, chrome.Panel!.FocusRequest);
+        Assert.Equal(0, chrome.Panel!.FocusLastRequest);
+
+        await cut.InvokeAsync(() => chrome.Menu!.ResolveKey!("Tab", false, false));
+        cut.WaitForAssertion(() => Assert.Equal(1, chrome.Panel!.FocusRequest));
+        await cut.InvokeAsync(() => chrome.Menu!.ResolveKey!("Tab", true, false));
+        cut.WaitForAssertion(() => Assert.Equal(1, chrome.Panel!.FocusLastRequest));
+
+        // Tab off the filter's end lands on a sentinel: the menu is asked once more.
+        await cut.FindAll(".ex-popover .ex-focus-wrap")[1].FocusAsync(new FocusEventArgs());
+        Assert.Equal(menu + 1, chrome.Menu!.FocusRequest);
+        Assert.Equal(1, chrome.Panel!.FocusRequest);
+    }
+
     [Fact] // ADR-0039 / ADR-0037: the core never reaches into contents it did not render
     public async Task A_substituted_chrome_is_asked_and_never_focused_by_the_core()
     {

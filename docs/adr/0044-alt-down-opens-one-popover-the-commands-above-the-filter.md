@@ -102,16 +102,31 @@ are recorded in [ADR-0009](./0009-filter-panel-contract.md).
 - **The value list's letters go through the core.** The panel hands a key on its value list to
   `FilterPanelContext.ValueListKey`, and the core answers it with `MenuKeys.Letter`, the table the
   commands use. A text field hands nothing over, so a letter there is text.
-- **A key on its way to the filter is nobody's.** On a circuit, E moves the keyboard to the search
-  box a round trip later, and the next letters typed still land on the command or the value list
-  being left, where S or O would sort and close the popover. Until focus is seen in the filter —
-  a `focusin` the core listens for only while this is so — a key there means nothing, except one
-  that asks for the filter again. Those letters are dropped, not typed into the search box. A
-  script could replay them, and the allowlist has no entry for that
-  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
-- **The letters' marks are the built-in Chrome's.** `MenuKeys.Marked` splits a label at its letter,
-  or appends "(S)". `ExGrid.MudBlazor`'s menu marks none: a Material menu shows no mnemonics, and
-  the letters act the same under it.
+- **A key on its way is held, not lost** *(corrected the same day, by review)*. On a circuit, E
+  moves the keyboard to the search box a round trip later, and the letters typed after it still
+  land on the command or the value list being left. The first build dropped them, which
+  contradicted [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md): a change of who
+  holds the keyboard holds the keys after it and hands them on in order. "E apple" searched for
+  "ple". Now the key listener treats Tab, Shift+Tab and E on a command, E on the value list, and
+  any key landing on a wrap sentinel as that change, and holds what follows until DOM focus has
+  moved. In a text field a held key is typed at the caret, as in the Cell Editor, and a held
+  Enter submits the field's form. The core no longer guards anything itself.
+- **E is not typed where it sends the keyboard.** On WebAssembly the core moves DOM focus inside
+  E's own keydown, and the browser typed the E into the search box it had just reached. The
+  listener cancels that key's default.
+- **What a held key cannot do.** A dispatched key has no default action. A held Tab handed to one
+  of the filter's own controls therefore moves nothing, and a held Space toggles no checkbox:
+  both are lost. Moving DOM focus or toggling a control from script is what
+  [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) keeps out. Nothing wrong is
+  shown either way.
+- **The letters' marks are the built-in Chrome's.** `MenuKeys.SplitAtLetter` splits a label at
+  its letter, or appends "(S)". `ExGrid.MudBlazor`'s menu marks none: a Material menu shows no
+  mnemonics, and the letters act the same under it. The Context Menu answers no letter, so it
+  marks none either, even on a Consumer's command that shares a sort's id.
+- **E where no value list stands.** The condition form has no search box. E goes to the filter's
+  first control, the condition's operator. *(Open: whether E should go to the condition's value
+  instead, the field that is typed into. That would need a request of its own in
+  `FilterPanelContext`.)*
 - **Opening costs a value-list query.** The built-in filter asks for the column's distinct values
   when the popover opens, where it used to ask when Filter was chosen: once per opening, as
   ADR-0009 has it, and now also when the popover was opened only to sort. A substituted panel

@@ -218,6 +218,9 @@ public class MudMenuTests : MudTestContext
         await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
         var menu = cut.Find(".ex-popover [role=menu]");
         Assert.Equal("Amount", menu.GetAttribute("aria-label"));
+        // A11Y-19 / ADR-0044: with no filter to stand below, the menu stands alone.
+        Assert.Equal("none", cut.Find(".ex-popover").GetAttribute("role"));
+        Assert.Null(cut.Find(".ex-popover").GetAttribute("aria-label"));
         Assert.NotEmpty(menu.QuerySelectorAll(".mud-ex-grid-menu button.mud-button-root[role=menuitem]"));
 
         await cut.FindAll(".mud-ex-grid-menu button[role=menuitem]")
@@ -276,7 +279,10 @@ public class MudMenuTests : MudTestContext
         await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
 
         var popover = Assert.Single(cut.FindAll(".ex-popover"));
+        // A11Y-19: a dialog holding the menu, both named by the column's header.
         Assert.Equal("dialog", popover.GetAttribute("role"));
+        Assert.Equal("Amount", popover.GetAttribute("aria-label"));
+        Assert.Equal("Amount", popover.QuerySelector("[role=menu]")!.GetAttribute("aria-label"));
         var menu = popover.QuerySelector(".mud-ex-grid-menu");
         var panel = popover.QuerySelector("form.mud-ex-grid-filter");
         Assert.NotNull(menu);
@@ -311,5 +317,28 @@ public class MudMenuTests : MudTestContext
             JSInterop.Invocations.Count(i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase)) > before));
         Assert.Single(cut.FindAll(".ex-popover"));
         Assert.Equal(0, _closed);
+    }
+
+    [Fact] // WR-4 / ADR-0044 / FL-16: in the grid the Mud menu's Clear filter is disabled with no filter, and clears and closes with one
+    public async Task In_the_grid_clear_filter_clears_and_closes()
+    {
+        var filtered = new List<GridFilter?>();
+        var cut = RenderFilterableGrid(_ => { }, f => filtered.Add(f));
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+        IElement ClearFilter() => cut.FindAll(".mud-ex-grid-menu button[role=menuitem]").Single(b => b.TextContent.Trim() == "Clear filter");
+        Assert.True(ClearFilter().HasAttribute("disabled"));
+        Assert.Empty(cut.FindAll(".mud-ex-grid-filter-clear"));
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+
+        cut.Render(ps => ps.Add(g => g.Filters, new GridFilter(new Dictionary<string, FilterSpec>
+        {
+            ["Amount"] = new([new FilterClause(FilterOperator.GreaterThan, 100m)]),
+        })));
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+        Assert.False(ClearFilter().HasAttribute("disabled"));
+        await ClearFilter().ClickAsync(new MouseEventArgs());
+
+        Assert.Null(Assert.Single(filtered));
+        Assert.Empty(cut.FindAll(".ex-popover"));
     }
 }

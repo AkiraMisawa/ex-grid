@@ -253,6 +253,16 @@ order, as the keydown it would have received; what they mean there is the popove
 (ADR-0039's table). The hold ends after two seconds whatever happens, as it does for the
 editor, rather than hold keys forever for a popover that never took focus.
 
+*(Added 2026-09-26, with [ADR-0044](./0044-alt-down-opens-one-popover-the-commands-above-the-filter.md).)*
+Inside a column's popover the keyboard moves again, from the commands to the filter below them
+(Tab, Shift+Tab, E) and back (the sentinels the core renders either side of the filter). Each
+move is a change of who holds the keyboard, and the keys after it are held the same way.
+A keydown dispatched from script types nothing, so a held key handed to a text field is typed
+at its caret, as a held key is in the Cell Editor, and a held Enter submits the field's form.
+A held Tab or Space handed to another control moves or toggles nothing, and is lost: doing it
+from script would move DOM focus from script, which
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) keeps out.
+
 ## Consequences
 
 - **The core carries a small amount of JavaScript.** A capture-phase listener can only be attached

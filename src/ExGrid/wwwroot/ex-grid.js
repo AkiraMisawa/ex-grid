@@ -168,7 +168,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // The scroll container is the grid's own, not a control inside it: it carries
     // tabindex -1 so that Chrome makes no tab stop of it (ADR-0033), which also lets a press
     // on the rows give it DOM focus, and C# hands focus on to the root — a round trip later
-    // on a circuit. A key typed in between is the root's, as it would have been a moment on.
+    // on a circuit. A key, a copy or a paste in between is the root's, as it would have
+    // been a moment on.
+    const isRoot = (target) => target === root || (!!scroller && target === scroller);
     const snapshot = (event) => ({
         key: event.key,
         ctrlKey: event.ctrlKey,
@@ -176,7 +178,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         altKey: event.altKey,
         metaKey: event.metaKey,
         repeat: event.repeat,
-        onRoot: event.target === root || (!!scroller && event.target === scroller),
+        onRoot: isRoot(event.target),
         inEditor: event.target instanceof Element && event.target.closest('.ex-editor') !== null,
     });
 
@@ -216,6 +218,39 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     };
     let awaitingPopover = false;
 
+    // The keyboard sent across a column's popover (ADR-0044): Tab, Shift+Tab or E on a
+    // command moves it into the filter below, E on the value list to the search box, and a
+    // sentinel either side of the filter hands it back to the commands. Each lands a round
+    // trip later on a circuit, and it is a change of who holds the keyboard, so ADR-0010's
+    // rule holds as it does for opening a popover: the keys after it are held until DOM
+    // focus has moved, then handed on in order. Which keys move it is the mirror of
+    // MenuKeys.ResolveInColumnMenu and MenuKeys.Letter — the two must move together.
+    let awaitingMove = null;
+    const inPopoverWithFilter = (target) => {
+        const popover = target instanceof Element ? target.closest('.ex-popover') : null;
+        return !!popover && root.contains(popover) && popover.querySelector('.ex-popover-filter') !== null;
+    };
+    const sendsKeyboard = (target, k) => {
+        if (k.ctrlKey || k.altKey || k.metaKey || !inPopoverWithFilter(target)) {
+            return null;
+        }
+        const letterE = k.key === 'e' || k.key === 'E';
+        if (target.closest('.ex-popover-commands')) {
+            return k.key === 'Tab' || letterE ? { from: target, into: '.ex-popover-filter' } : null;
+        }
+        // The value list's entries are checkboxes, under either Chrome.
+        return letterE && target.closest('.ex-popover-filter') && target.matches('input[type=checkbox], [role=checkbox]')
+            ? { from: target, into: '.ex-popover-filter' }
+            : null;
+    };
+    const onSentinel = (target) => target instanceof Element && target.classList.contains('ex-focus-wrap')
+        && inPopoverWithFilter(target);
+    const moved = () => {
+        const active = document.activeElement;
+        return !awaitingMove || (active instanceof Element && active !== awaitingMove.from
+            && root.contains(active) && active.closest(awaitingMove.into) !== null);
+    };
+
     // The editor the answer opened, once its element is there — the render that made it
     // and the answer travel separately, and the answer can arrive first.
     const editorInput = () => {
@@ -234,8 +269,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             // held keys are replayed against whatever there is, rather than held forever.
             const editorReady = editing === 'none' || editorFocused();
             const popoverReady = !awaitingPopover || popoverFocused();
-            if (!core || (editorReady && popoverReady) || performance.now() - started > 2000) {
+            if (!core || (editorReady && popoverReady && moved()) || performance.now() - started > 2000) {
                 awaitingPopover = false;
+                awaitingMove = null;
                 resolve();
             } else {
                 requestAnimationFrame(look);
@@ -244,14 +280,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         look();
     });
 
-    // A held key the editor would have handled itself, handled as it would have: text is
+    // A held key a text field would have handled itself, handled as it would have: text is
     // typed at the caret, a deletion deletes, a caret key moves the caret. Anything else
-    // was the browser's, and its moment has passed.
-    const typeIntoEditor = (k) => {
-        const input = editorInput();
-        if (!input || k.ctrlKey || k.metaKey) {
-            return;
-        }
+    // was the browser's, and its moment has passed. Whether it was one of these is answered.
+    const typeInto = (input, k) => {
         const start = input.selectionStart ?? input.value.length;
         const end = input.selectionEnd ?? start;
         if (k.key.length === 1) {
@@ -266,18 +298,33 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 : k.key === 'ArrowLeft' ? Math.max(0, start - 1)
                 : Math.min(input.value.length, end + 1);
             input.setSelectionRange(at, at);
-            return;
+            return true;
         } else {
-            return;
+            return false;
         }
-        // The editor hears it as it hears typing (its @oninput).
+        // The field hears it as it hears typing (its @oninput).
         input.dispatchEvent(new Event('input', { bubbles: true }));
+        return true;
     };
+    const typeIntoEditor = (k) => {
+        const input = editorInput();
+        if (input && !k.ctrlKey && !k.metaKey) {
+            typeInto(input, k);
+        }
+    };
+
+    // The text fields a held key can be typed into: those with a caret the selection API
+    // reaches.
+    const isTextField = (element) => element instanceof HTMLTextAreaElement
+        || (element instanceof HTMLInputElement && ['text', 'search', 'url', 'tel', 'password'].includes(element.type));
 
     // A held key handed to the popover that now holds DOM focus, as the keydown it would
     // have received: what it means there is the popover's (ADR-0039) — its own handlers
     // run, and the core answers the menu's keys against its own place. Marked, so this
-    // listener lets it through instead of holding it again.
+    // listener lets it through instead of holding it again. A keydown dispatched from here
+    // types nothing and submits nothing, so in a text field the key is typed at the caret,
+    // as the editor's are, and Enter submits the field's form, as the key itself would
+    // (ADR-0010).
     let replaying = false;
     const replayInto = (target, k) => {
         replaying = true;
@@ -291,6 +338,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         }
     };
 
+    const handToPopover = (target, k) => {
+        if (isTextField(target) && !k.ctrlKey && !k.metaKey && !k.altKey) {
+            if (k.key === 'Enter' && target.form) {
+                target.form.requestSubmit();
+                return;
+            }
+            if (typeInto(target, k)) {
+                return;
+            }
+        }
+        replayInto(target, k);
+    };
+
     const drain = async () => {
         // Settled before anything else, even with nothing held yet: the answer can arrive
         // before the popover or the editor has taken DOM focus, and a key typed in that
@@ -299,7 +359,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         while (held.length > 0 && core) {
             const k = held.shift();
             if (popoverFocused()) {
-                replayInto(document.activeElement, k);
+                // A held key that itself sends the keyboard across the popover holds the
+                // rest again, until DOM focus has followed it.
+                const target = document.activeElement;
+                const move = sendsKeyboard(target, k);
+                handToPopover(target, k);
+                if (move) {
+                    awaitingMove = move;
+                    await editorSettled();
+                }
                 continue;
             }
             // Aimed at the grid when it was pressed; after the answer, the grid's
@@ -335,14 +403,31 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // Every key under the root is held then, whatever it was aimed at: one that went
         // straight to a popover that had just taken focus would overtake the keys typed
         // before it. A key this listener is handing on itself is let through.
-        if (!replaying && (answering || (editing !== 'none' && k.onRoot && !editorFocused()))) {
+        // A key landing on a sentinel is held too, until the commands have DOM focus.
+        const sentinel = !replaying && !answering && onSentinel(event.target);
+        if (!replaying && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused()))) {
             event.preventDefault();
             event.stopPropagation();
             held.push(k);
             if (!answering) {
                 answering = true;
+                if (sentinel) {
+                    awaitingMove = { from: event.target, into: '.ex-popover-commands' };
+                }
                 drain();
             }
+            return;
+        }
+        // A key that sends the keyboard across a column's popover is the popover's to
+        // answer; only the keys after it wait. Its own default goes: on WebAssembly the core
+        // moves DOM focus within this very keydown, and the E would be typed into the search
+        // box it has just been sent to.
+        const move = replaying ? null : sendsKeyboard(event.target, k);
+        if (move) {
+            event.preventDefault();
+            answering = true;
+            awaitingMove = move;
+            drain();
             return;
         }
         const verdict = gate(k);
@@ -509,7 +594,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     const onCopy = (event) => {
         // Only when the root itself holds the keyboard: a control inside a Template
         // Column keeps its own clipboard behaviour (ADR-0020).
-        if (!core || event.target !== root) {
+        if (!core || !isRoot(event.target)) {
             return;
         }
         // The event is synchronous, so the payload is asked for synchronously —
@@ -550,7 +635,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         writeAsync(false);
     };
     const onPaste = (event) => {
-        if (!core || event.target !== root) {
+        if (!core || !isRoot(event.target)) {
             return;
         }
         // clipboardData is only readable inside the event, so both flavours are read

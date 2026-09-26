@@ -141,7 +141,7 @@ public static class MenuKeys
     /// appended as "(S)" where it does not — a label in another script keeps its letter. The
     /// Chrome underlines <c>Letter</c>.
     /// </summary>
-    public static (string Before, string Letter, string After) Marked(string label, char letter)
+    public static (string Before, string Letter, string After) SplitAtLetter(string label, char letter)
     {
         ArgumentNullException.ThrowIfNull(label);
         var at = label.IndexOf(letter.ToString(), StringComparison.OrdinalIgnoreCase);
