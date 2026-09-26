@@ -425,6 +425,41 @@ for (const chrome of CHROMES) {
             await expect.poll(() => activeIsRoot(page)).toBe(true);
         });
 
+        test('on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044)', async ({ page }) => {
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
+            const inList = () => page.evaluate(() => !!document.activeElement?.closest('.ex-popover-list, .mud-ex-grid-filter-values'));
+            const active = () => page.evaluate(() => document.activeElement?.outerHTML);
+            const tabIntoList = async () => {
+                for (let i = 0; i < 4 && !(await inList()); i++) {
+                    const before = await active();
+                    await page.keyboard.press('Tab');
+                    await expect.poll(active).not.toBe(before);
+                }
+                expect(await inList(), 'Tab from the search box reaches the value list').toBe(true);
+            };
+
+            // E to the search box, and Tab on to the list's first entry, "(Select All)".
+            await page.keyboard.press('e');
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            await tabIntoList();
+
+            // E on the list goes back to the search box.
+            await page.keyboard.press('e');
+            await expect.poll(inList).toBe(false);
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            expect(await grid(page).locator('.ex-popover input[type=search], .ex-popover .mud-ex-grid-filter-search input').inputValue()).toBe('');
+
+            // O on the list sorts descending and closes, as it does on a command.
+            await tabIntoList();
+            await page.keyboard.press('o');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+            await expect(grid(page).locator('.ex-header-cell[aria-sort=descending]')).toHaveCount(1);
+            await expect.poll(() => activeIsRoot(page)).toBe(true);
+        });
+
         test('Enter in the value field applies exactly what OK applies (KB-31, ADR-0039)', async ({ page }) => {
             const byOk = await rowCountAfterFilter(page, chrome, (panel) => CONDITION[chrome].apply(panel).click());
 
