@@ -78,17 +78,20 @@ public class ColumnGeometryTests
         Assert.Equal(new ColumnRange(3, 2), Geometry(pinnedCount: 2).ScrollableSliceAt(150, virtualise: true));
     }
 
-    [Fact] // ADR-0004: pinning costs directly — pinned wider than the Viewport leaves nothing to virtualise
-    public void Pinned_columns_filling_the_viewport_leave_no_scrollable_slice()
+    [Fact] // ADR-0043 (replacing ADR-0004's "nothing to virtualise"): a Pinned block filling the Viewport is suspended
+    public void Pinned_columns_filling_the_viewport_are_suspended_and_everything_slices()
     {
-        Assert.Null(Geometry(pinnedCount: 4, viewportWidthPx: 350).ScrollableSliceAt(0, virtualise: true));
+        // Until 2026-09-25 this sliced nothing: the user saw only pinned columns, and a
+        // Focus arrowed into column 4 stood under the block, unseen.
+        Assert.Equal(new ColumnRange(0, 4),
+            Geometry(pinnedCount: 4, viewportWidthPx: 350).ScrollableSliceAt(0, virtualise: true));
     }
 
-    [Fact] // Every column pinned is a grid with nothing to scroll, not an error
+    [Fact] // Every column pinned, with room to spare, is a grid with nothing to scroll, not an error
     public void Pinning_every_column_leaves_no_slice_at_all()
     {
-        Assert.Null(Geometry(pinnedCount: 5).ScrollableSliceAt(0, virtualise: true));
-        Assert.Null(Geometry(pinnedCount: 5).ScrollableSliceAt(0, virtualise: false));
+        Assert.Null(Geometry(pinnedCount: 5, viewportWidthPx: 600).ScrollableSliceAt(0, virtualise: true));
+        Assert.Null(Geometry(pinnedCount: 5, viewportWidthPx: 600).ScrollableSliceAt(0, virtualise: false));
     }
 
     [Fact] // ADR-0004: everything fitting means everything is painted
@@ -276,10 +279,12 @@ public class ColumnGeometryTests
     [Fact] // ADR-0004: pin everything and every pixel on screen is a pinned one
     public void With_everything_pinned_every_pixel_is_pinned()
     {
-        var geometry = Geometry(pinnedCount: 5);
+        // Wide enough that pinning holds (ADR-0043): with everything pinned inside the
+        // Viewport there is nothing to scroll, so the offset clamps to 0.
+        var geometry = Geometry(pinnedCount: 5, viewportWidthPx: 600);
 
-        Assert.Equal(0, geometry.ColumnAt(150, scrollLeftPx: 150));
-        Assert.Equal(2, geometry.ColumnAt(400, scrollLeftPx: 150));
+        Assert.Equal(1, geometry.ColumnAt(150, scrollLeftPx: 150));
+        Assert.Equal(4, geometry.ColumnAt(400, scrollLeftPx: 150));
 
         // Past the pinned block, where there is no scrollable run to fall through to. The
         // Viewport can be wider than the columns, so this is the empty strip beside them
@@ -321,5 +326,50 @@ public class ColumnGeometryTests
         Assert.Throws<ArgumentOutOfRangeException>(() => Geometry().WidthPxOf(5));
         Assert.Throws<ArgumentOutOfRangeException>(() => Geometry().ScrollLeftToReveal(5, 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => Geometry().ScrollLeftToReveal(0, double.NaN));
+    }
+
+    [Fact] // ADR-0043 / FN-6a: a Pinned block leaving under 40px to scroll in is suspended
+    public void Pinning_is_suspended_while_the_scrollable_band_is_under_min_width()
+    {
+        // Two pinned 100px columns in a 230px Viewport leave a 30px band.
+        var geometry = Geometry(pinnedCount: 2, viewportWidthPx: 230);
+
+        Assert.True(geometry.IsPinningSuspended);
+        Assert.Equal(0, geometry.PinnedCount);
+        Assert.Equal(2, geometry.RequestedPinnedCount);
+        Assert.Equal(0, geometry.PinnedWidthPx);
+    }
+
+    [Fact] // ADR-0043 / FN-6a: a band of exactly MinWidth still pins
+    public void A_band_of_exactly_min_width_keeps_pinning()
+    {
+        var geometry = Geometry(pinnedCount: 2, viewportWidthPx: 240);
+
+        Assert.False(geometry.IsPinningSuspended);
+        Assert.Equal(2, geometry.PinnedCount);
+        Assert.Equal(2, geometry.RequestedPinnedCount);
+    }
+
+    [Fact] // ADR-0043 / FN-6a: suspended, every column scrolls — the slice and the reveal agree
+    public void Suspended_pinning_slices_and_reveals_as_if_nothing_were_pinned()
+    {
+        var geometry = Geometry(pinnedCount: 3, viewportWidthPx: 250);
+
+        // Column 0 is in the scrollable slice now, and at scroll 150 it is gone.
+        Assert.Equal(new ColumnRange(0, 3), geometry.ScrollableSliceAt(0, virtualise: true));
+        Assert.Equal(new ColumnRange(1, 3), geometry.ScrollableSliceAt(150, virtualise: true));
+        // A Focus in column 4 is brought fully on screen, not left under a pinned block.
+        Assert.Equal(250, geometry.ScrollLeftToReveal(4, 0));
+        // The pixel at the Viewport's left edge belongs to whatever has scrolled there.
+        Assert.Equal(1, geometry.ColumnAt(160, 150));
+    }
+
+    [Fact] // ADR-0043: nothing pinned is never suspended — there is nothing to suspend
+    public void An_unpinned_grid_is_never_suspended()
+    {
+        var geometry = Geometry(pinnedCount: 0, viewportWidthPx: 50);
+
+        Assert.False(geometry.IsPinningSuspended);
+        Assert.Equal(0, geometry.RequestedPinnedCount);
     }
 }

@@ -69,7 +69,7 @@
                         @for (var g = 0; g < _headerLayout.Groups.Count; g++)
                         {
                             var group = _headerLayout.Groups[g];
-                            @if (group.Pinned)
+                            @if (IsGroupHeld(group))
                             {
                                 <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
                             }
@@ -86,7 +86,7 @@
                        vertical scroll frame (PF-3). *@
                     <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
                         {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                        {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation></div>}</div>
+                        {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                 }
                 @if (_scrollable is { } headerColumns)
                 {
@@ -98,7 +98,7 @@
                     {
                         <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (ShowMenuButtons)
                             {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                            {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation></div>}</div>
+                            {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                     }
                 }
                 @* A rectangle stands correctly whether or not its leaves are in the
@@ -107,7 +107,7 @@
                 @for (var g = 0; g < _headerLayout.Groups.Count; g++)
                 {
                     var group = _headerLayout.Groups[g];
-                    @if (!group.Pinned)
+                    @if (!IsGroupHeld(group))
                     {
                         <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
                     }
@@ -507,13 +507,13 @@
 
     /// <summary>
     /// The metrics behind width observation and the overflow decision until a theme
-    /// layer supplies real ones — the three measured numbers of ADR-0016, not guesses:
-    /// Chrome, the stylesheet's <c>system-ui</c> at 14px, tabular digits, at the 600
-    /// weight the group and total rows paint. A theme that changes the font supplies
-    /// its own <see cref="CellMetrics"/>.
+    /// layer supplies real ones — the measured numbers of ADR-0016, not guesses: the
+    /// widest of each class on any supported platform, the stylesheet's <c>system-ui</c>
+    /// at 14px, tabular digits, at the 600 weight the group and total rows paint, and
+    /// the em for full-width characters. The Compact preset's own. A theme that changes
+    /// the font supplies its own <see cref="CellMetrics"/>.
     /// </summary>
-    public static readonly CellTextMetrics DefaultCellMetrics = new(
-        wideWidthPx: 13.836, digitWidthPx: 9.058, narrowWidthPx: 5.63, cellHorizontalPaddingPx: 8);
+    public static readonly CellTextMetrics DefaultCellMetrics = GridMetrics.Resolve(GridDensity.Compact).CellMetrics;
 
     // One key object per row instance, so @key is reference identity even when TRow
     // overrides Equals (a record row model): value-equal rows are still different rows
@@ -1522,10 +1522,11 @@
                 if (spec.Width.IsAuto)
                 {
                     // The menu button stands inside the header cell, over the text's
-                    // room — an estimate that ignores it resolves a short header to a
-                    // width whose label ends under the ▾ (ADR-0016/0028).
-                    auto = auto.Observe(_metrics.CellMetrics.EstimatePx(Columns[i].Header)
-                        + (ShowMenuButtons ? _metrics.MenuButtonBandPx : 0));
+                    // room, and a sorted header grows an indicator — an estimate that
+                    // ignores either resolves a short header to a width whose label ends
+                    // under the ▾ or the ▲ (ADR-0016/0028). One rule, shared with Size
+                    // to fit, so the two agree on what a header needs.
+                    auto = auto.Observe(HeaderRequiredPx(i));
                     // An Action Column paints no value, so the rows can never grow it
                     // and its header is usually empty (ADR-0020) — left at that it would
                     // stand at MinWidth with its buttons clipped. What it does declare
@@ -1697,6 +1698,11 @@
         _visibleHeightPx = ViewportHeight.IsFill
             ? Math.Max(0, _reportedHeightPx)
             : ViewportBox.VisibleHeightOf(ViewportHeight.Px, _gutterHeightPx);
+        // A popover's max-height follows the box (ADR-0040). Shrunk below one row of room
+        // it could show no item, yet it would stay open, invisible, holding the keyboard
+        // (ADR-0039): it closes as a Cancel instead, and the keyboard returns to the root.
+        if (PopoverRoomPx() is { } room && room < _metrics.RowHeightPx)
+            ClosePopoverAndReturnFocus();
 
         if (_visibleHeightPx <= BandHeightPx || _visibleWidthPx <= 0)
         {
@@ -1828,7 +1834,7 @@
     {
         var geometry = _columnStyles.Geometry;
         if (geometry.Count == Columns.Count
-            && geometry.PinnedCount == PinnedColumnCount
+            && geometry.RequestedPinnedCount == PinnedColumnCount
             && geometry.ViewportWidthPx == _visibleWidthPx)
         {
             var moved = false;
@@ -2527,15 +2533,17 @@
         }
         if (_dragUnitFirst >= 0)
         {
-            if (!_reordering && Math.Abs(e.ClientX - _dragStartClientX) <= 4)
+            if (!_reordering && Math.Abs(e.ClientX - _dragStartClientX) <= DragThresholdPx)
             {
                 _suppressRender = true;
                 return;
             }
             _reordering = true;
             var contentX = _dragStartContentX + (e.ClientX - _dragStartClientX);
+            // The boundary a drag may not cross is the View State's, suspended or not: a
+            // drop across it would change what is pinned once the box widens (ADR-0011/0043).
             var boundaries = HeaderReorder.AllowedBoundaries(
-                _headerLayout, Columns.Count, _columnStyles.Geometry.PinnedCount, _dragUnitFirst, _dragUnitCount);
+                _headerLayout, Columns.Count, _columnStyles.Geometry.RequestedPinnedCount, _dragUnitFirst, _dragUnitCount);
             var best = boundaries[0];
             var bestDistance = double.MaxValue;
             foreach (var boundary in boundaries)
@@ -2567,14 +2575,27 @@
         if (_resizeColumn >= 0)
         {
             var column = _resizeColumn;
-            var widthPx = Math.Max(
-                Columns[column].Width.MinWidthPx,
-                _resizeStartWidthPx + (e.ClientX - _resizeStartClientX));
+            var deltaPx = e.ClientX - _resizeStartClientX;
             DetachRootGesture();
             _gestureConsumedClick = true;
-            if (OnColumnWidthChanged.HasDelegate)
-                _ = InvokeAsync(() => OnColumnWidthChanged.InvokeAsync(
-                    new ColumnWidthChange(Columns[column].Name, widthPx)));
+            // A press that barely moved is a click, or half of a double-click: it reports
+            // nothing, or it would turn an Auto column Fixed and write it into the saved
+            // view behind the user's back. The reorder gesture's threshold (ADR-0016/0011).
+            if (Math.Abs(deltaPx) <= DragThresholdPx || !OnColumnWidthChanged.HasDelegate)
+                return;
+            var widthPx = Math.Max(Columns[column].Width.MinWidthPx, _resizeStartWidthPx + deltaPx);
+            // Every whole column takes the grabbed one's new width, as in Excel, each
+            // bounded below by its own MinWidth (FN-12c). Decided now, before the first
+            // report lets the Consumer push new Columns.
+            var changes = ColumnsResizedWith(column)
+                .Select(target => new ColumnWidthChange(
+                    Columns[target].Name, Math.Max(Columns[target].Width.MinWidthPx, widthPx)))
+                .ToArray();
+            _ = InvokeAsync(async () =>
+            {
+                foreach (var change in changes)
+                    await OnColumnWidthChanged.InvokeAsync(change);
+            });
             return;
         }
         if (_dragUnitFirst >= 0 && _reordering)
@@ -2626,19 +2647,28 @@
         // is the wrong answer for a click that landed on nothing.
         if (e.Button != 0
             || e.OffsetX < 0 || e.OffsetX >= _columnStyles.Geometry.TotalWidthPx
-            || _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx) is not { } column
-            || !Columns[column].IsQueryable)
+            || _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx) is not { } column)
         {
             return;
         }
         // A click on a Header Group's rectangle is not a click on the leaf under it
-        // (ADR-0032): only the column's own header sorts — its leaf tier, and whatever
-        // uncovered tiers that leaf stretches through.
+        // (ADR-0032): only the column's own header sorts or selects — its leaf tier, and
+        // whatever uncovered tiers that leaf stretches through.
         if (_headerLayout.TierCount > 0
             && e.OffsetY < BandHeightPx - (_headerLayout.LeafTierSpanOf(column) * _metrics.HeaderHeightPx))
         {
             return;
         }
+        // Shift+click selects whole columns from the Anchor's to this one, and does not
+        // sort: Excel's gesture, and the mouse route to several whole columns. Selection
+        // is positional, so an unsortable column is selected like any other (ADR-0012).
+        if (e.ShiftKey)
+        {
+            Apply(_selection.Selection.ExtendToColumn(column, Extent));
+            return;
+        }
+        if (!Columns[column].IsQueryable)
+            return;
 
         await ApplySortsAsync(SortCycle.Next(_sorts, Columns[column].Name));
     }
@@ -2678,11 +2708,11 @@
             // Never a pin the grid would refuse: a boundary through a Header Group
             // cannot be drawn honestly (ADR-0032), so the command is disabled there.
             new("pin",
-                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount != column + 1
+                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.RequestedPinnedCount != column + 1
                     && _headerLayout.AllowsPinnedCount(column + 1),
                 () => OnPinnedCountChanged.InvokeAsync(column + 1)),
             new("unpin",
-                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.PinnedCount > 0,
+                OnPinnedCountChanged.HasDelegate && _columnStyles.Geometry.RequestedPinnedCount > 0,
                 () => OnPinnedCountChanged.InvokeAsync(0)),
             new("size-to-fit", OnColumnWidthChanged.HasDelegate && declared.PaintsValue,
                 () => SizeToFitAsync(column)),
@@ -3004,25 +3034,56 @@
         => CommandLabel?.Invoke(command.Id) ?? BuiltInCommandLabels.For(command.Id);
 
     /// <summary>"Size to fit" fixes the width at the content of this moment (ADR-0016):
-    /// an estimate over the painted rows and the header, clamped by the declaration.</summary>
-    private Task SizeToFitAsync(int column)
+    /// the header's full need and every value in the Window — not only the painted rows,
+    /// or a column fitted a moment ago shows <c>####</c> a few rows down — bounded by the
+    /// declaration. It runs once, when asked, so a pass over the Window costs nothing
+    /// that matters. From the column menu it fits the one column; from a grip it fits
+    /// every whole column the grip's column is among (FN-12c).</summary>
+    private Task SizeToFitAsync(int column) => SizeToFitAsync([column]);
+
+    private async Task SizeToFitAsync(IReadOnlyList<int> columns)
     {
-        var declared = Columns[column];
-        var required = _metrics.CellMetrics.EstimatePx(declared.Header);
-        if (_visible is { } visible)
+        // Every width is decided before the first is reported: a Consumer answering the
+        // first by pushing new Columns or a new Window must not change what the rest
+        // were measured against.
+        var changes = new List<ColumnWidthChange>(columns.Count);
+        foreach (var column in columns)
         {
-            for (var row = visible.Start; row < visible.Start + visible.Count; row++)
+            var declared = Columns[column];
+            if (!declared.PaintsValue)
+                continue;
+            var required = HeaderRequiredPx(column);
+            foreach (var row in _window)
             {
-                var slice = row - _windowStart;
-                if (slice < 0 || slice >= _window.Count)
-                    continue;
                 required = Math.Max(
                     required,
-                    _metrics.CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(declared, _window[slice])));
+                    _metrics.CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(declared, row)));
             }
+            changes.Add(new ColumnWidthChange(declared.Name, declared.Width.SizeToFit(required).FixedPx));
         }
-        var width = declared.Width.SizeToFit(required);
-        return OnColumnWidthChanged.InvokeAsync(new ColumnWidthChange(declared.Name, width.FixedPx));
+        foreach (var change in changes)
+            await OnColumnWidthChanged.InvokeAsync(change);
+    }
+
+    /// <summary>What a column's header needs (ADR-0016): its label, an em of slack, the
+    /// menu band when the header carries the button, and the sort indicator's room when
+    /// the column can be sorted.</summary>
+    private double HeaderRequiredPx(int column)
+        => _metrics.HeaderRequiredPx(Columns[column].Header, ShowMenuButtons, Columns[column].IsQueryable);
+
+    /// <summary>The columns a gesture on <paramref name="grabbed"/>'s grip acts on: every
+    /// column a whole-column range covers when the grabbed one is among them, and the
+    /// grabbed one alone otherwise (ADR-0016, FN-12c). A range short of any row selects
+    /// cells, not columns.</summary>
+    private IReadOnlyList<int> ColumnsResizedWith(int grabbed)
+    {
+        var whole = _selection.Selection.WholeColumns(Extent);
+        foreach (var column in whole)
+        {
+            if (column == grabbed)
+                return whole;
+        }
+        return [grabbed];
     }
 
     private async Task RunCommandAsync(GridCommand command)
@@ -3045,6 +3106,11 @@
     // comparing by position, registers that one afresh.
     private Func<Task>?[] _menuOpeners = [];
     private Action<MouseEventArgs>?[] _gripDowns = [];
+    private Func<Task>?[] _gripFitters = [];
+
+    /// <summary>How far a header press must travel before it is a drag — a resize or a
+    /// reorder — rather than a click (ADR-0011/0016).</summary>
+    private const double DragThresholdPx = 4;
 
     private Func<Task> MenuOpener(int column)
     {
@@ -3060,11 +3126,24 @@
         return _gripDowns[column] ??= GripDownFor(column);
     }
 
+    private Func<Task> GripFitter(int column)
+    {
+        if (column >= _gripFitters.Length)
+            Array.Resize(ref _gripFitters, Math.Max(column + 1, Columns.Count));
+        return _gripFitters[column] ??= GripFitterFor(column);
+    }
+
     // Their own methods so that only a miss captures anything: a lambda capturing a
     // parameter allocates its closure on entry to the method, cache hit or not.
     private Func<Task> MenuOpenerFor(int column) => () => OpenMenuAsync(column);
 
     private Action<MouseEventArgs> GripDownFor(int column) => e => OnResizeGripDown(column, e);
+
+    /// <summary>A double-click on a grip is Size to fit, the column menu's command
+    /// (ADR-0016, FN-12a).</summary>
+    private Func<Task> GripFitterFor(int column) => () => OnColumnWidthChanged.HasDelegate
+        ? SizeToFitAsync(ColumnsResizedWith(column))
+        : Task.CompletedTask;
 
     /// <summary>The menu button is a toggle: the second press on the same column's
     /// button closes what the first opened — a popover the user cannot dismiss is a
@@ -3149,6 +3228,21 @@
     /// A pointer-down that dismisses does not come through here: it keeps its own meaning,
     /// and where it lands decides focus (ADR-0010).
     /// </summary>
+    /// <summary>How tall the open popover may be — the same numbers its style is written
+    /// from — or null when none is open. The Context Menu opens on the side with more
+    /// room, so that side is its room (ADR-0040).</summary>
+    private double? PopoverRoomPx()
+    {
+        if (_menuColumn >= 0 || _panelColumn >= 0)
+            return _visibleHeightPx - BandHeightPx;
+        if (_contextCell is not null)
+        {
+            var at = Math.Clamp(BandHeightPx + _contextTopPx, 0, _visibleHeightPx);
+            return Math.Max(_visibleHeightPx - at, at);
+        }
+        return null;
+    }
+
     private void ClosePopoverAndReturnFocus()
     {
         var wasOpen = _menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null;
@@ -5151,6 +5245,11 @@
     /// <summary>One rectangle's box, from the numbers layout already has (ADR-0032):
     /// <c>left = OffsetPxOf(first member)</c>, width to past-last, height in tiers —
     /// standing correctly whether or not its leaves are in the DOM.</summary>
+    /// <summary>A group inside the pinned block is held at the left edge, unless pinning is
+    /// suspended and every column scrolls (ADR-0032/0043).</summary>
+    private bool IsGroupHeld(ResolvedHeaderGroup group)
+        => group.Pinned && !_columnStyles.Geometry.IsPinningSuspended;
+
     private string GroupStyle(int index)
     {
         ForgetTieredStylesIfStale();

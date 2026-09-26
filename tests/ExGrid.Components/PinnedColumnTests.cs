@@ -122,14 +122,25 @@ public class PinnedColumnTests : GridTestContext
             cut.FindAll(".ex-header-cell").Select(h => h.TextContent));
     }
 
-    [Fact] // ADR-0004: pinning costs directly — pin enough and there is nothing left to virtualise
-    public void Pinning_more_than_the_viewport_holds_leaves_only_pinned_cells()
+    [Fact] // ADR-0004: pinning costs directly — the pinned block is painted whole, whatever the Viewport leaves
+    public void Pinning_most_of_the_viewport_paints_the_pinned_block_whole()
     {
+        // Three pinned columns leave a 50px band: one scrollable column shows in it.
+        var cut = RenderGrid(pinnedColumnCount: 3);
+
+        Assert.Equal(["C00", "C01", "C02"], PinnedColumnsOf(cut));
+        Assert.Equal(["C03"], ScrollableColumnsOf(cut));
+    }
+
+    [Fact] // ADR-0043 (replacing ADR-0004's "only pinned cells"): pinning past the Viewport is suspended
+    public void Pinning_more_than_the_viewport_holds_is_suspended()
+    {
+        // Until 2026-09-25 this painted only the four pinned columns, and nothing the
+        // user did could bring a fifth into view.
         var cut = RenderGrid(pinnedColumnCount: 4);
 
-        Assert.Equal(["C00", "C01", "C02", "C03"], PinnedColumnsOf(cut));
-        Assert.Empty(ScrollableColumnsOf(cut));
-        Assert.Empty(cut.FindAll(".ex-gap"));
+        Assert.Empty(PinnedColumnsOf(cut));
+        Assert.Equal(["C00", "C01", "C02", "C03"], ScrollableColumnsOf(cut));
     }
 
     [Fact] // ADR-0004: a Pinned Column blinking out on every fling is what pinning exists to prevent
@@ -218,5 +229,55 @@ public class PinnedColumnTests : GridTestContext
             .Add(g => g.ViewportWidth, ViewportWidthPx));
 
         Assert.Empty(cut.FindAll(".ex-pinned"));
+    }
+
+    [Fact] // ADR-0043 / FN-6a: a Fill box too narrow for its Pinned block paints nothing pinned, and pins again when it widens
+    public async Task A_box_narrowed_under_the_pinned_block_suspends_pinning_until_it_widens()
+    {
+        int? reportedPinned = null;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(200))
+            .Add(g => g.TotalCount, 200)
+            .Add(g => g.Columns, TestRows.Wide(100))
+            .Add(g => g.RowHeight, RowHeightPx)
+            .Add(g => g.ViewportHeight, ViewportHeightPx)
+            .Add(g => g.ViewportWidth, ViewportSize.Fill)
+            .Add(g => g.PinnedColumnCount, 2)
+            .Add(g => g.OnPinnedCountChanged, n => reportedPinned = n));
+
+        // The two pinned 100px columns leave 30px of a 230px box.
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 230, ViewportHeightPx));
+
+        Assert.Empty(cut.FindAll(".ex-cell.ex-pinned"));
+        Assert.Equal(["C00", "C01", "C02"], ScrollableColumnsOf(cut));
+        Assert.Null(reportedPinned); // the View State is not written: nothing was asked for
+
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 350, ViewportHeightPx));
+
+        Assert.Equal(["C00", "C01"], PinnedColumnsOf(cut));
+        Assert.Null(reportedPinned);
+    }
+
+    [Fact] // ADR-0043 / FN-6a: suspended, an arrow into a scrollable column scrolls it into view
+    public async Task A_focus_moved_right_while_suspended_is_revealed()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(200))
+            .Add(g => g.TotalCount, 200)
+            .Add(g => g.Columns, TestRows.Wide(100))
+            .Add(g => g.RowHeight, RowHeightPx)
+            .Add(g => g.ViewportHeight, ViewportHeightPx)
+            .Add(g => g.ViewportWidth, ViewportSize.Fill)
+            .Add(g => g.PinnedColumnCount, 2));
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 230, ViewportHeightPx));
+
+        await cut.FindAll(".ex-cell")[0].MouseDownAsync(new() { Button = 0, Buttons = 1, OffsetX = 10, OffsetY = 5 });
+        for (var i = 0; i < 3; i++)
+            await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, false, false, false, false));
+
+        // Column 3 spans 300-400; right-aligned in a 230px box it needs a scroll of 170.
+        // With the 200px block still pinned, the reveal would have left-aligned it at 100,
+        // just clear of the block, in a 30px band that shows less than a third of it.
+        Assert.Equal(170d, Js.ScrolledTo[^1].Left);
     }
 }

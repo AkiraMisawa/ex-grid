@@ -189,9 +189,11 @@ public sealed record GridSelection
 
     /// <summary>Shift+arrow: the Focus moves one step and the Anchor's range grows or
     /// shrinks — shrinking back through the Anchor flips it (ADR-0012). When the Focus is
-    /// not in the Anchor's range, re-anchors at the Focus and starts a new range.</summary>
+    /// not in the Anchor's range, re-anchors at the Focus and starts a new range. A range
+    /// spanning every row stays so under ← / →, and one spanning every column under
+    /// ↑ / ↓ (ADR-0012, 2026-09-25).</summary>
     public GridSelection Extend(GridDirection direction, GridExtent extent)
-        => ExtendFocusTo(extent, focus => Step(focus, direction, extent));
+        => ExtendFocusTo(extent, IsHorizontal(direction), focus => Step(focus, direction, extent));
 
     /// <summary>Ctrl+arrow: collapses and jumps to the last / first row or column — not
     /// Excel's block edge, which the grid cannot find without the data (ADR-0011).</summary>
@@ -201,7 +203,7 @@ public sealed record GridSelection
     /// <summary>Shift+Ctrl+arrow: extends the range to the edge (ADR-0012). From the
     /// first row, Ctrl+Shift+Down is effectively a whole-column selection.</summary>
     public GridSelection ExtendToEdge(GridDirection direction, GridExtent extent)
-        => ExtendFocusTo(extent, focus => EdgeOf(focus, direction, extent));
+        => ExtendFocusTo(extent, IsHorizontal(direction), focus => EdgeOf(focus, direction, extent));
 
     /// <summary>PageUp / PageDown (ADR-0012): collapse and move the Focus by one
     /// Viewport of rows. How many rows that is is view geometry the model never holds,
@@ -212,7 +214,7 @@ public sealed record GridSelection
     /// <summary>Shift+PageUp / Shift+PageDown (ADR-0012): the Focus moves by one
     /// Viewport of rows and the Anchor's range is redrawn between them.</summary>
     public GridSelection ExtendByViewport(int rowDelta, GridExtent extent)
-        => ExtendFocusTo(extent, focus => StepRows(focus, rowDelta, extent));
+        => ExtendFocusTo(extent, horizontal: false, focus => StepRows(focus, rowDelta, extent));
 
     /// <summary>
     /// Ctrl+A: every row after filtering across every visible column, as one rectangle —
@@ -362,7 +364,8 @@ public sealed record GridSelection
         return Collapse(destination(_focus));
     }
 
-    private GridSelection ExtendFocusTo(GridExtent extent, Func<CellPosition, CellPosition> destination)
+    private GridSelection ExtendFocusTo(
+        GridExtent extent, bool horizontal, Func<CellPosition, CellPosition> destination)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -374,7 +377,16 @@ public sealed record GridSelection
         if (!_anchorDetached && _focusRangeIndex == Ranges.Count - 1)
         {
             // Anchor and Focus share the last range: redraw it between them (ADR-0012).
-            var ranges = ReplaceLast(Ranges, SelectionRange.FromCorners(_anchor, moved));
+            // Anchor and Focus are two cells, so a range that spans a whole axis would
+            // collapse to their rows; a sideways move keeps every row, a vertical one
+            // every column — the axis the range already spans in full is kept.
+            var last = Ranges[^1];
+            var redrawn = SelectionRange.FromCorners(_anchor, moved);
+            if (horizontal && last.TopRow == 0 && last.RowCount == extent.RowCount)
+                redrawn = new SelectionRange(0, redrawn.LeftColumn, extent.RowCount, redrawn.ColumnCount);
+            else if (!horizontal && last.LeftColumn == 0 && last.ColumnCount == extent.ColumnCount)
+                redrawn = new SelectionRange(redrawn.TopRow, 0, redrawn.RowCount, extent.ColumnCount);
+            var ranges = ReplaceLast(Ranges, redrawn);
             return new(ranges, _anchor, moved, anchorDetached: false, ranges.Length - 1);
         }
 
@@ -384,6 +396,58 @@ public sealed record GridSelection
         var appended = Append(Ranges, SelectionRange.FromCorners(_focus, moved));
         return new(appended, _focus, moved, anchorDetached: false, appended.Length - 1);
     }
+
+    /// <summary>
+    /// Shift+click on a column header (ADR-0012, 2026-09-25): whole columns from the
+    /// Anchor's column to <paramref name="column"/>. The Anchor stays and the Focus moves
+    /// to the clicked column on the Anchor's row, as Shift+click on a cell moves it to the
+    /// cell. The Anchor's range is replaced, or from a detached Anchor a new one starts;
+    /// the other ranges stand. From Empty, the clicked column alone, anchored at its top.
+    /// </summary>
+    public GridSelection ExtendToColumn(int column, GridExtent extent)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (column < 0 || column >= extent.ColumnCount)
+            throw new ArgumentOutOfRangeException(nameof(column), column,
+                $"Outside the grid ({extent.ColumnCount} columns).");
+        if (IsEmpty)
+        {
+            var top = new CellPosition(0, column);
+            return new([new SelectionRange(0, column, extent.RowCount, 1)], top, top,
+                anchorDetached: false, focusRangeIndex: 0);
+        }
+        RequireFits(extent);
+
+        var left = Math.Min(_anchor.Column, column);
+        var whole = new SelectionRange(0, left, extent.RowCount, Math.Abs(column - _anchor.Column) + 1);
+        var focus = new CellPosition(_anchor.Row, column);
+        var ranges = _anchorDetached ? Append(Ranges, whole) : ReplaceLast(Ranges, whole);
+        return new(ranges, _anchor, focus, anchorDetached: false, ranges.Length - 1);
+    }
+
+    /// <summary>
+    /// The columns covered by a range that spans every row, ascending, each once — what
+    /// resizing several whole columns at once acts on (ADR-0016, 2026-09-25). A range
+    /// short of any row selects cells, not columns, and contributes nothing.
+    /// </summary>
+    public IReadOnlyList<int> WholeColumns(GridExtent extent)
+    {
+        if (IsEmpty || IsDegenerate(extent))
+            return [];
+        var columns = new SortedSet<int>();
+        foreach (var range in Ranges)
+        {
+            if (range.TopRow != 0 || range.RowCount != extent.RowCount)
+                continue;
+            for (var c = range.LeftColumn; c <= range.RightColumn; c++)
+                columns.Add(c);
+        }
+        return [.. columns];
+    }
+
+    private static bool IsHorizontal(GridDirection direction)
+        => direction is GridDirection.Left or GridDirection.Right;
 
     private GridSelection GrowAxis(
         GridExtent extent,

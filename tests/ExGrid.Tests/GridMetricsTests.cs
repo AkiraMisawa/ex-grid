@@ -15,17 +15,17 @@ public class GridMetricsTests
         Assert.Equal(28, metrics.RowHeightPx);
         Assert.Equal(28, metrics.HeaderHeightPx);
         Assert.Equal(14, metrics.FontSizePx);
-        Assert.Equal(9.058, metrics.DigitWidthPx);
+        Assert.Equal(9.742, metrics.DigitWidthPx);
         Assert.Equal(8, metrics.CellPaddingXPx);
         // The action chrome ex-grid.css always used: 6px padding, 1px border, 4px gap.
         Assert.Equal((6 * 2) + (1 * 2) + 4, metrics.ActionButtonChromePx);
     }
 
     [Theory] // ADR-0028: each preset is a complete, self-consistent metric set
-    [InlineData(GridDensity.Comfortable, 40, 14, 9.058, 12)]
-    [InlineData(GridDensity.Standard, 32, 14, 9.058, 8)]
-    [InlineData(GridDensity.Compact, 28, 14, 9.058, 8)]
-    [InlineData(GridDensity.Excel, 20, 12, 7.77, 4)]
+    [InlineData(GridDensity.Comfortable, 40, 14, 9.742, 12)]
+    [InlineData(GridDensity.Standard, 32, 14, 9.742, 8)]
+    [InlineData(GridDensity.Compact, 28, 14, 9.742, 8)]
+    [InlineData(GridDensity.Excel, 20, 12, 8.351, 4)]
     public void Each_preset_resolves_whole(
         GridDensity density, double row, double font, double digit, double padding)
     {
@@ -46,7 +46,7 @@ public class GridMetricsTests
         // A 22px row with Excel's font, padding and digit width — the ADR's own example.
         Assert.Equal(22, metrics.RowHeightPx);
         Assert.Equal(12, metrics.FontSizePx);
-        Assert.Equal(7.77, metrics.DigitWidthPx);
+        Assert.Equal(8.351, metrics.DigitWidthPx);
         Assert.Equal(4, metrics.CellPaddingXPx);
     }
 
@@ -87,5 +87,55 @@ public class GridMetricsTests
         Assert.Throws<ArgumentOutOfRangeException>(() => GridMetrics.Resolve(GridDensity.Compact, rowHeightPx: 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => GridMetrics.Resolve(GridDensity.Compact, headerHeightPx: -1));
         Assert.Throws<ArgumentOutOfRangeException>(() => GridMetrics.Resolve(GridDensity.Compact, rowHeightPx: double.NaN));
+    }
+
+    [Theory] // ADR-0016 (2026-09-25): each default is the widest measured for its class on any platform
+    [InlineData(GridDensity.Compact, 14.028, 9.742, 6.398, 14)]
+    [InlineData(GridDensity.Standard, 14.028, 9.742, 6.398, 14)]
+    [InlineData(GridDensity.Comfortable, 14.028, 9.742, 6.398, 14)]
+    [InlineData(GridDensity.Excel, 12.024, 8.351, 5.484, 12)]
+    public void The_default_widths_cover_the_widest_platform_measured(
+        GridDensity density, double wide, double digit, double narrow, double fullWidth)
+    {
+        var metrics = GridMetrics.Resolve(density).CellMetrics;
+
+        Assert.Equal(wide, metrics.WideWidthPx);
+        Assert.Equal(digit, metrics.DigitWidthPx);
+        Assert.Equal(narrow, metrics.NarrowWidthPx);
+        Assert.Equal(fullWidth, metrics.FullWidthPx);
+    }
+
+    [Fact] // ADR-0016: DejaVu Sans Bold paints "123,456,789,012.50" at 157.66px; the default must not under-charge it
+    public void The_default_estimate_covers_a_bold_amount_on_linux()
+    {
+        var metrics = GridMetrics.Resolve(GridDensity.Compact).CellMetrics;
+
+        Assert.True(metrics.TextWidthPx("123,456,789,012.50") >= 157.66);
+    }
+
+    [Fact] // ADR-0016 (2026-09-25): a header is its label, one em of slack, the menu band and the sort room
+    public void A_header_requires_its_label_slack_menu_band_and_sort_room()
+    {
+        var metrics = GridMetrics.Resolve(GridDensity.Compact);
+        var label = metrics.CellMetrics.EstimatePx("Amount");
+
+        Assert.Equal(label + 14, metrics.HeaderRequiredPx("Amount", menuButton: false, sortable: false));
+        Assert.Equal(label + 14 + metrics.MenuButtonBandPx,
+            metrics.HeaderRequiredPx("Amount", menuButton: true, sortable: false));
+        // The indicator " ▲" is charged as a space and one full-width glyph: ▲ is
+        // ambiguous-width, drawn at an em in a CJK family.
+        Assert.Equal(label + 14 + 6.398 + 14,
+            metrics.HeaderRequiredPx("Amount", menuButton: false, sortable: true), 9);
+    }
+
+    [Fact] // ADR-0016: DejaVu Sans Bold paints "Amount" at 61.7px and "MARKET VALUE" at 120.5px; neither may be cut
+    public void The_measured_short_headers_fit_their_required_width()
+    {
+        var metrics = GridMetrics.Resolve(GridDensity.Compact);
+        var padding = 2 * metrics.CellPaddingXPx;
+
+        Assert.True(metrics.HeaderRequiredPx("Amount", false, false) - padding >= 61.7);
+        Assert.True(metrics.HeaderRequiredPx("MARKET VALUE", false, false) - padding >= 120.5);
+        Assert.True(metrics.HeaderRequiredPx("評価額", false, false) - padding >= 42.0);
     }
 }

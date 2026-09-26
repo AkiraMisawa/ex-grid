@@ -632,8 +632,11 @@ release.
   zoom levels.
 - **Whether `Fill` needs debouncing** — ADR-0028. *(Sharpened 2026-09-25, ADR-0043.)* The case
   that needs measuring is a window drag on a **Server circuit with latency**, where the frame
-  painted from the previous size lasts a round trip: a `spikes/render-bench` mode that drags the
-  window under injected latency and records how long the stale band shows.
+  painted from the previous size lasts a round trip: drag the window under injected latency and
+  record how long the stale band shows. *(Corrected 2026-09-26.)* `spikes/render-bench` cannot
+  hold it, since it renders its own markup and not the grid, and the DemoHost is WebAssembly
+  only. No host in the repository runs the grid on a Server circuit, so the measurement waits
+  on one.
 - **The auto-scroll band (20px) and its rate range (1 to 8 rows per tick)** — ADR-0008, provisional
   in exactly the way the fling threshold is. The *shape* is decided and gated by SL-12..SL-15; the
   three numbers are recorded and compared, not gated.

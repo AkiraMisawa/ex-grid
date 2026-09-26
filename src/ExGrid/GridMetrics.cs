@@ -82,6 +82,30 @@ public sealed record GridMetrics
     /// stands with its label under the ▾ (ADR-0016/0028).</summary>
     public double MenuButtonBandPx => MenuButtonWidthPx + MenuButtonInsetPx;
 
+    /// <summary>What the sort indicator the stylesheet appends to a sorted header
+    /// (<c>" ▲"</c>) is charged: a space and one full-width glyph. The triangle is
+    /// ambiguous-width, drawn at an em in a CJK face and narrower elsewhere, so the em
+    /// covers it in every family (ADR-0016).</summary>
+    public double SortIndicatorPx => CellMetrics.NarrowWidthPx + CellMetrics.FullWidthPx;
+
+    /// <summary>
+    /// The full cell width a header needs (ADR-0016, 2026-09-25): its label, one
+    /// full-width em of slack, the menu button's band when there is one, and the sort
+    /// indicator's room when the column can be sorted — whether or not it is sorted now,
+    /// so a header click never chops its label nor moves the columns to its right. The
+    /// slack is there because a label is proportional letters no per-class charge can
+    /// bound (<c>W</c> is 15.44px where <c>i</c> is 4). Auto and Size to fit both read
+    /// this, so they agree on what a header needs.
+    /// </summary>
+    public double HeaderRequiredPx(string label, bool menuButton, bool sortable)
+    {
+        ArgumentNullException.ThrowIfNull(label);
+        return CellMetrics.EstimatePx(label)
+            + CellMetrics.FullWidthPx
+            + (menuButton ? MenuButtonBandPx : 0)
+            + (sortable ? SortIndicatorPx : 0);
+    }
+
     /// <summary>
     /// The tallest row a result of <paramref name="totalRowCount"/> rows can carry
     /// under the browser's scroll ceiling (ADR-0013/0028) — what a Consumer offering a
@@ -110,19 +134,21 @@ public sealed record GridMetrics
         GridPresentationDefaults? defaults = null)
     {
         // The preset table (ADR-0028), with the character-class widths of ADR-0016:
-        // wide/digit/narrow measured in Chrome at the stylesheet's system-ui 14px, 600
-        // weight (13.836 / 9.058 / 5.63); Excel's 12px trio is that measurement scaled,
-        // provisional the way the whole preset is. The action chrome is the 6px/1px/4px
+        // wide/digit/narrow are the widest measured for each class on any supported
+        // platform at the stylesheet's system-ui 14px, 600 weight — DejaVu Sans on Linux
+        // (14.028 / 9.742 / 6.398), which is wider than the first machine measured
+        // (13.836 / 9.058 / 5.63). Full-width is the em: the font size. Excel's 12px set
+        // is that measurement scaled, rounded up, provisional the way the whole preset is. The action chrome is the 6px/1px/4px
         // ex-grid.css always used, scaled down only where the whole preset is — and the
         // menu button's 16px/6px travels the same way, so the header estimate and the
         // stylesheet read one number (the pairing ADR-0027/0028 dissolved).
         var (row, header, font, wide, digit, narrow, padding, actionPad, actionBorder, actionGap, menuWidth, menuInset)
             = density switch
         {
-            GridDensity.Comfortable => (40d, 40d, 14d, 13.836, 9.058, 5.63, 12d, 6d, 1d, 4d, 16d, 6d),
-            GridDensity.Standard => (32d, 32d, 14d, 13.836, 9.058, 5.63, 8d, 6d, 1d, 4d, 16d, 6d),
-            GridDensity.Compact => (28d, 28d, 14d, 13.836, 9.058, 5.63, 8d, 6d, 1d, 4d, 16d, 6d),
-            GridDensity.Excel => (20d, 20d, 12d, 11.86, 7.77, 4.83, 4d, 4d, 1d, 2d, 14d, 4d),
+            GridDensity.Comfortable => (40d, 40d, 14d, 14.028, 9.742, 6.398, 12d, 6d, 1d, 4d, 16d, 6d),
+            GridDensity.Standard => (32d, 32d, 14d, 14.028, 9.742, 6.398, 8d, 6d, 1d, 4d, 16d, 6d),
+            GridDensity.Compact => (28d, 28d, 14d, 14.028, 9.742, 6.398, 8d, 6d, 1d, 4d, 16d, 6d),
+            GridDensity.Excel => (20d, 20d, 12d, 12.024, 8.351, 5.484, 4d, 4d, 1d, 2d, 14d, 4d),
             _ => throw new ArgumentOutOfRangeException(nameof(density), density, "Unknown density preset."),
         };
 
@@ -146,7 +172,7 @@ public sealed record GridMetrics
             resolvedRow,
             resolvedHeader,
             font,
-            cellMetrics ?? defaults?.CellMetricsAt(font, padding) ?? new CellTextMetrics(wide, digit, narrow, padding),
+            cellMetrics ?? defaults?.CellMetricsAt(font, padding) ?? new CellTextMetrics(wide, digit, narrow, font, padding),
             actionPad, actionBorder, actionGap,
             menuWidth, menuInset);
     }
