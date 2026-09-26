@@ -60,6 +60,11 @@
 @code {
     private const string First = "E-001";
 
+    /// <summary><c>?reset=1</c> puts the store back before this page reads it — the
+    /// browser tests' way to start from a known store, since it is one per process.</summary>
+    [SupplyParameterFromQuery(Name = "reset")]
+    public string? ResetOnLoad { get; set; }
+
     private static readonly IReadOnlyList<GridColumn<EditableTrade>> Columns =
     [
         new("Id", ColumnType.Text, t => t.Id, width: Fixed(80)),
@@ -87,6 +92,8 @@
         _onAction = EventCallback.Factory.Create<GridActionEventArgs<EditableTrade>>(this, OnAction);
         _onChanged = change => _ = InvokeAsync(() => Apply(change));
         _onReset = () => _ = InvokeAsync(OnReset);
+        if (ResetOnLoad == "1")
+            Store.Reset();
         _announced = [.. Store.Subscribe(_onChanged, _onReset)];
         _source = GridSource.From(_announced);
     }

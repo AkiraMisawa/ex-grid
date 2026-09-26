@@ -25,13 +25,10 @@ function inspector(page, id = 'E-001') {
 }
 
 async function open(page) {
-    await page.goto('/inspector-edits');
-    await expect(page.locator('#demo-interactive')).toBeAttached();
-    await page.locator('#reset-store').click();
-    await expect(page.locator('#held-count')).toHaveText('0');
-    // Loaded again, so this page starts from the reset store rather than racing the
-    // reset's own announcement.
-    await page.goto('/inspector-edits');
+    // Reset as the page loads, before it reads the store: a reset button pressed and then
+    // a reload raced — the reload could read the store before the reset reached it, and
+    // start from the previous test's trades.
+    await page.goto('/inspector-edits?reset=1');
     await expect(page.locator('#demo-interactive')).toBeAttached();
     await expect(cell(page, 0, 0)).toHaveText('E-001');
     await expect(cell(page, 0, 5)).toHaveText('1');
