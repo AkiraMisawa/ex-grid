@@ -165,6 +165,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         return claimed.has(canonical) ? 'mode' : null;
     };
 
+    // The scroll container is the grid's own, not a control inside it: it carries
+    // tabindex -1 so that Chrome makes no tab stop of it (ADR-0033), which also lets a press
+    // on the rows give it DOM focus, and C# hands focus on to the root — a round trip later
+    // on a circuit. A key typed in between is the root's, as it would have been a moment on.
     const snapshot = (event) => ({
         key: event.key,
         ctrlKey: event.ctrlKey,
@@ -172,7 +176,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         altKey: event.altKey,
         metaKey: event.metaKey,
         repeat: event.repeat,
-        onRoot: event.target === root,
+        onRoot: event.target === root || (!!scroller && event.target === scroller),
         inEditor: event.target instanceof Element && event.target.closest('.ex-editor') !== null,
     });
 

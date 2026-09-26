@@ -48,6 +48,10 @@ public static class MudExGridWords
     /// <summary>The second condition's operator left unset: no second condition.</summary>
     public const string NoSecondCondition = "no-second-condition";
 
+    /// <summary>The second condition's operator select — named apart from the first's
+    /// "Operator", so the two are not one name twice to a screen reader.</summary>
+    public const string SecondCondition = "second-condition";
+
     private static string English(string id) => id switch
     {
         Search => "Search",
@@ -61,13 +65,14 @@ public static class MudExGridWords
         JoinAnd => "And",
         JoinOr => "Or",
         NoSecondCondition => "(none)",
+        SecondCondition => "Second condition",
         _ => BuiltInCommandLabels.For(id),
     };
 
     /// <summary>MudBlazor's key for a command's word, where it has one.</summary>
     internal static string? MudKeyForCommand(string id) => id switch
     {
-        "filter" => "MudDataGrid_Filter",
+        "clear-filter" => "MudDataGrid_ClearFilter",
         "hide" => "MudDataGrid_Hide",
         _ => null,
     };

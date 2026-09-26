@@ -1,8 +1,8 @@
 @using System.Globalization
 @using FilterOperator = global::ExGrid.FilterOperator
 @using FilterCombinator = global::ExGrid.FilterCombinator
-@* The filter panel under MudBlazor (ADR-0009/0030/0039): MudBlazor's own controls inside
-   the core's popover. A value list with a search and a Blank entry where the column
+@* The filter panel under MudBlazor (ADR-0009/0030/0039): MudBlazor's own controls under
+   the column's commands in the core's one popover (ADR-0044). A value list with a search and a Blank entry where the column
    declares one and the answer arrives; the condition form where it declares that, or where
    the answer is TooMany. It keeps a working state and asks FilterPanelChoices what that
    state means — the rules the built-in panel applies by — so the same choices make the
@@ -22,11 +22,15 @@
    disabled button instead dropped it on a Server circuit: the button is enabled a round
    trip after the value is typed, and an Enter typed with the value found it still
    disabled and submitted nothing. The submit reaches the circuit behind the value, so the
-   check there sees what was typed. Tab wraps inside the
-   panel through two focus sentinels, one either side of the controls, as in the built-in
-   panel (KB-31). *@
+   check there sees what was typed.
+
+   The popover opens with the keyboard on the commands above, and this panel takes it only
+   when asked: its first control for each change of the context's FocusRequest — Tab or E
+   from the commands — and Cancel, its last, for each change of FocusLastRequest. Tab off
+   either end is the core's, whose sentinels around the panel wrap to the commands (KB-31).
+   Excel's letters on the value list are handed to the core through ValueListKey; clearing
+   the filter is the command above, so the actions are Apply and Cancel (ADR-0044). *@
 <form class="mud-ex-grid-filter" @onsubmit="Apply" @onsubmit:preventDefault>
-    <span class="mud-ex-grid-focus-wrap" tabindex="0" @onfocus="FocusLastAsync"></span>
     @* The form's default button: the first submit button, which implicit submission clicks. *@
     <button type="submit" class="mud-ex-grid-filter-default" hidden tabindex="-1" aria-hidden="true"></button>
     @if (_awaiting)
@@ -46,7 +50,7 @@
             <MudCheckBox T="bool" @bind-Value="_addToCurrent" Label="@Own(MudExGridWords.AddToFilter)"
                          Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-add" />
         }
-        <div class="mud-ex-grid-filter-values">
+        <div class="mud-ex-grid-filter-values" @onkeydown="OnValueListKey">
             @* "(Select All)" over the values shown, with Excel's mixed state (ADR-0009). *@
             <MudCheckBox T="bool?" TriState="true" Value="@SelectAllValue(shown, chosen)"
                          ValueChanged="@(_ => FilterPanelChoices.ToggleAll(shown, chosen))"
@@ -80,7 +84,7 @@
             <MudRadio T="FilterCombinator" Value="FilterCombinator.Or" Dense="true" Size="Size.Small">@Own(MudExGridWords.JoinOr)</MudRadio>
         </MudRadioGroup>
         <MudSelect T="FilterOperator?" @bind-Value="_secondOperator"
-                   Label="@Mud("MudDataGrid_Operator")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                   Label="@Own(MudExGridWords.SecondCondition)" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
                    OpenChanged="ReportPopup" Class="mud-ex-grid-filter-second">
             <MudSelectItem T="FilterOperator?" Value="@((FilterOperator?)null)">@Own(MudExGridWords.NoSecondCondition)</MudSelectItem>
             @foreach (var op in Context.Allowed)
@@ -96,10 +100,8 @@
     <div class="mud-ex-grid-filter-actions">
         <MudButton ButtonType="ButtonType.Submit" Disabled="@(!CanApply)" Color="Color.Primary" Size="Size.Small"
                    Class="mud-ex-grid-filter-apply">@Mud("MudDataGrid_Apply")</MudButton>
-        <MudButton OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel">@Mud("MudDataGrid_Cancel")</MudButton>
-        <MudButton @ref="_clear" OnClick="Context.Clear" Size="Size.Small" Class="mud-ex-grid-filter-clear">@Mud("MudDataGrid_Clear")</MudButton>
+        <MudButton @ref="_cancel" OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel">@Mud("MudDataGrid_Cancel")</MudButton>
     </div>
-    <span class="mud-ex-grid-focus-wrap" tabindex="0" @onfocus="FocusFirstAsync"></span>
 </form>
 
 @code {
@@ -125,9 +127,19 @@
     private FilterCombinator _combinator;
     private MudTextField<string>? _search;
     private MudSelect<FilterOperator>? _operatorField;
-    private MudButton? _clear;
-    private bool _needsFocus;
-    private int _focusedRequest = -1;
+    private MudButton? _cancel;
+    private Focus _needsFocus;
+    // Zero at each opening: the core's popover is keyed by the opening, so each is a new
+    // instance of this component, and zero is a request not made (ADR-0044).
+    private int _focusedRequest;
+    private int _focusedLastRequest;
+
+    private enum Focus
+    {
+        None,
+        First,
+        Last,
+    }
 
     [Inject] private ILocalizationInterceptor Localizer { get; set; } = default!;
 
@@ -204,11 +216,17 @@
 
     protected override void OnParametersSet()
     {
-        // Each opening asks once (ADR-0039); the first control takes focus for it.
+        // Each request asks once (ADR-0039/0044): the first control, or the last for
+        // Shift+Tab's wrap from the commands.
         if (Context.FocusRequest != _focusedRequest)
         {
             _focusedRequest = Context.FocusRequest;
-            _needsFocus = true;
+            _needsFocus = Focus.First;
+        }
+        if (Context.FocusLastRequest != _focusedLastRequest)
+        {
+            _focusedLastRequest = Context.FocusLastRequest;
+            _needsFocus = Focus.Last;
         }
     }
 
@@ -232,7 +250,6 @@
             _operator = FilterPanelChoices.InitialOperator(Context.Type, current, tooMany: true);
         else
             _chosen = FilterPanelChoices.InitiallyChosen(current, answer);
-        _needsFocus = true;
     }
 
     private static void SetOperand(OperandState state, object? operand)
@@ -255,6 +272,10 @@
     }
 
     private void OnOperatorChanged(FilterOperator op) => _operator = op;
+
+    /// <summary>A key on the value list: Excel's letters are the core's (ADR-0044), and
+    /// every other key is the checkbox's own.</summary>
+    private void OnValueListKey(KeyboardEventArgs e) => Context.ValueListKey?.Invoke(e);
 
     /// <summary>A select's list or the date's calendar opened or closed: an Inner Popup,
     /// reported so that Escape closes it before the panel (ADR-0039).</summary>
@@ -281,13 +302,17 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // The panel's first control takes DOM focus once its contents have settled — not
-        // while the value list is on its way, when the control about to be shown is not
-        // there yet (ADR-0039, KB-29).
-        if (!_needsFocus || _awaiting)
+        // A requested control takes DOM focus once the contents have settled — not while
+        // the value list is on its way, when the control about to be shown is not there
+        // yet (ADR-0039, KB-29).
+        if (_needsFocus == Focus.None || _awaiting)
             return;
-        _needsFocus = false;
-        await FocusFirstAsync();
+        var target = _needsFocus;
+        _needsFocus = Focus.None;
+        if (target == Focus.First)
+            await FocusFirstAsync();
+        else
+            await FocusLastAsync();
     }
 
     private async Task FocusFirstAsync()
@@ -306,11 +331,11 @@
 
     private async Task FocusLastAsync()
     {
-        if (_clear is null)
+        if (_cancel is null)
             return;
         try
         {
-            await _clear.FocusAsync();
+            await _cancel.FocusAsync();
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

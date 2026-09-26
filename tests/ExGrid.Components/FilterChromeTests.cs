@@ -11,9 +11,9 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// The filter panel and the column menu (ADR-0009/0010): the core decides the items
-/// and the operators, the panel applies on OK, and a substituted Chrome changes
-/// rendering and nothing about behaviour.
+/// The filter panel and the column menu (ADR-0009/0010), stacked in the column's one
+/// popover (ADR-0044): the core decides the items and the operators, the panel applies on
+/// OK, and a substituted Chrome changes rendering and nothing about behaviour.
 /// </summary>
 public class FilterChromeTests : GridTestContext
 {
@@ -75,14 +75,11 @@ public class FilterChromeTests : GridTestContext
     private static Task OpenMenuAsync(IRenderedComponent<ExGrid<TestRow>> cut, int column = 0)
         => cut.FindAll(".ex-menu-button")[column].ClickAsync(new MouseEventArgs());
 
-    private static async Task OpenPanelAsync(IRenderedComponent<ExGrid<TestRow>> cut, int column = 0)
-    {
-        await OpenMenuAsync(cut, column);
-        await cut.FindAll(".ex-popover button[role=menuitem]")
-            .Single(b => b.TextContent == "Filter").ClickAsync(new MouseEventArgs());
-    }
+    /// <summary>The filter stands below the commands as the popover opens (ADR-0044).</summary>
+    private static Task OpenPanelAsync(IRenderedComponent<ExGrid<TestRow>> cut, int column = 0)
+        => OpenMenuAsync(cut, column);
 
-    [Fact] // ADR-0036: the core names the commands and does not name them in a language
+    [Fact] // ADR-0036 / ADR-0044: the core names the commands and does not name them in a language; a letter the label lacks is appended
     public async Task A_consumer_renames_a_command_without_replacing_the_menu()
     {
         var cut = RenderGrid(PushedSource(), commandLabel: id => id switch
@@ -96,12 +93,12 @@ public class FilterChromeTests : GridTestContext
 
         var labels = cut.FindAll(".ex-popover button[role=menuitem]").Select(b => b.TextContent).ToList();
         Assert.Equal(
-            ["昇順で並べ替え", "Sort descending", "Filter", "この列を隠す",
+            ["昇順で並べ替え(S)", "Sort descending", "Clear filter", "この列を隠す",
              "Pin up to this column", "Unpin all columns", "Size to fit"],
             labels);
     }
 
-    [Fact] // ADR-0010 / FN-18: the core decides the menu's commands; Chrome only lays them out
+    [Fact] // ADR-0010 / ADR-0044 / FN-18: the core decides the menu's commands; Chrome only lays them out
     public async Task The_menu_commands_are_the_cores()
     {
         var cut = RenderGrid(PushedSource());
@@ -110,7 +107,7 @@ public class FilterChromeTests : GridTestContext
 
         var labels = cut.FindAll(".ex-popover button[role=menuitem]").Select(b => b.TextContent).ToList();
         Assert.Equal(
-            ["Sort ascending", "Sort descending", "Filter", "Hide this column",
+            ["Sort ascending", "Sort descending", "Clear filter", "Hide this column",
              "Pin up to this column", "Unpin all columns", "Size to fit"],
             labels);
         // Commands whose sink nobody wired are disabled, not absent.
@@ -268,8 +265,8 @@ public class FilterChromeTests : GridTestContext
             .Single(c => c.Id == "sort-ascending").Invoke());
         Assert.Equal([new SortSpec("Book", SortDirection.Ascending)], source.Sorts);
 
-        await cut.InvokeAsync(() => chrome.Menu.Commands.Single(c => c.Id == "filter").Invoke());
-        cut.Render();
+        // The panel stood below the menu from the opening (ADR-0044).
+        await OpenMenuAsync(cut);
         Assert.NotNull(cut.Find(".ex-stub-panel"));
         Assert.NotNull(chrome.Panel);
         // The allowed operators are the core's decision (ADR-0009).
@@ -495,4 +492,176 @@ public class FilterChromeTests : GridTestContext
         Assert.Equal([FilterOperator.StartsWith, FilterOperator.EndsWith], spec.Clauses.Select(c => c.Operator));
         Assert.Equal(["Al", "ma"], spec.Clauses.Select(c => c.Value));
     }
+
+    // ---- The one popover's own (ADR-0044): Clear filter is a command, and Excel's letters.
+
+    private static IElement Command(IRenderedComponent<ExGrid<TestRow>> cut, string label)
+        => cut.FindAll(".ex-popover button[role=menuitem]").Single(b => b.TextContent == label);
+
+    private static Task KeyOnAsync(IElement element, string key)
+        => element.KeyDownAsync(new KeyboardEventArgs { Key = key });
+
+    private static TestSource FilteredSource()
+    {
+        var source = PushedSource();
+        source.OnFilterChanged(new GridFilter(new Dictionary<string, FilterSpec>
+        {
+            ["Book"] = new([new FilterClause(FilterOperator.In, Values: new object?[] { "Alpha" })]),
+        }));
+        source.DistinctAnswer = DistinctValues.Of(["Alpha", "Beta"]);
+        return source;
+    }
+
+    [Fact] // ADR-0044 / FL-16: Clear filter is disabled with no filter, and the panel has OK and Cancel only
+    public async Task Clear_filter_is_disabled_without_a_filter()
+    {
+        var cut = RenderGrid(PushedSource());
+
+        await OpenMenuAsync(cut);
+
+        Assert.True(Command(cut, "Clear filter").HasAttribute("disabled"));
+        Assert.Equal(["OK", "Cancel"], cut.FindAll(".ex-popover-actions button").Select(b => b.TextContent));
+    }
+
+    [Fact] // ADR-0044 / FL-16: running Clear filter removes the column's filter and closes the popover
+    public async Task Clear_filter_clears_and_closes()
+    {
+        var source = FilteredSource();
+        var cut = RenderGrid(source);
+        await OpenMenuAsync(cut);
+
+        await Command(cut, "Clear filter").ClickAsync(new MouseEventArgs());
+
+        Assert.Null(source.FilterChanges[^1]);
+        Assert.Empty(cut.FindAll(".ex-popover"));
+    }
+
+    [Fact] // ADR-0044 / FL-15: the built-in labels show their letter underlined
+    public async Task The_letters_are_underlined()
+    {
+        var cut = RenderGrid(PushedSource());
+
+        await OpenMenuAsync(cut);
+
+        Assert.Equal("S", Command(cut, "Sort ascending").QuerySelector("u")!.TextContent);
+        Assert.Equal("o", Command(cut, "Sort descending").QuerySelector("u")!.TextContent);
+        Assert.Equal("C", Command(cut, "Clear filter").QuerySelector("u")!.TextContent);
+        Assert.Null(Command(cut, "Size to fit").QuerySelector("u"));
+    }
+
+    [Theory] // ADR-0044 / FL-15: S and O sort from any command, and close the popover
+    [InlineData("s", SortDirection.Ascending)]
+    [InlineData("O", SortDirection.Descending)]
+    public async Task S_and_o_sort_from_a_command(string key, SortDirection direction)
+    {
+        var source = PushedSource();
+        var cut = RenderGrid(source);
+        await OpenMenuAsync(cut);
+
+        await KeyOnAsync(Command(cut, "Sort descending"), key);
+
+        Assert.Equal([new SortSpec("Book", direction)], source.Sorts);
+        Assert.Empty(cut.FindAll(".ex-popover"));
+    }
+
+    [Fact] // ADR-0044 / FL-15: C clears the filter from a command
+    public async Task C_clears_from_a_command()
+    {
+        var source = FilteredSource();
+        var cut = RenderGrid(source);
+        await OpenMenuAsync(cut);
+
+        await KeyOnAsync(Command(cut, "Sort ascending"), "c");
+
+        Assert.Null(source.FilterChanges[^1]);
+        Assert.Empty(cut.FindAll(".ex-popover"));
+    }
+
+    [Fact] // ADR-0044 / FL-15: the letters act on the value list too — S sorts from a checkbox
+    public async Task The_letters_act_on_the_value_list()
+    {
+        var source = FilteredSource();
+        var cut = RenderGrid(source);
+        await OpenMenuAsync(cut);
+
+        await KeyOnAsync(cut.Find(".ex-popover-list"), "s");
+
+        Assert.Equal([new SortSpec("Book", SortDirection.Ascending)], source.Sorts);
+        Assert.Empty(cut.FindAll(".ex-popover"));
+    }
+
+    [Fact] // ADR-0044 / FL-15: E moves the keyboard to the search box, from a command and from the value list
+    public async Task E_moves_to_the_search_box()
+    {
+        var cut = RenderGrid(FilteredSource());
+        await OpenMenuAsync(cut);
+        var search = cut.Find(".ex-popover input[type=search]").GetAttribute("blazor:elementreference");
+
+        await KeyOnAsync(Command(cut, "Sort ascending"), "e");
+        Assert.Equal(search, LastFocusedId());
+
+        await cut.Find(".ex-popover-filter").FocusInAsync(new FocusEventArgs());
+        await KeyOnAsync(cut.Find(".ex-popover-list"), "E");
+        Assert.Equal(2, JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus"
+            && ((ElementReference)i.Arguments[0]!).Id == search));
+    }
+
+    [Fact] // ADR-0044: a key typed while the keyboard is on its way to the filter is not the menu's — S after E does not sort
+    public async Task A_letter_on_the_way_to_the_filter_does_not_sort()
+    {
+        var source = FilteredSource();
+        var cut = RenderGrid(source);
+        await OpenMenuAsync(cut);
+
+        await KeyOnAsync(Command(cut, "Sort ascending"), "e");
+        // On a circuit, the next letter still lands on the command focus is leaving.
+        await KeyOnAsync(Command(cut, "Sort ascending"), "s");
+        await KeyOnAsync(cut.Find(".ex-popover-list"), "s");
+        Assert.Empty(source.SortChanges);
+        Assert.Single(cut.FindAll(".ex-popover"));
+
+        // Once focus is seen in the filter, the letters are the list's again.
+        await cut.Find(".ex-popover-filter").FocusInAsync(new FocusEventArgs());
+        await KeyOnAsync(cut.Find(".ex-popover-list"), "s");
+        Assert.Equal([new SortSpec("Book", SortDirection.Ascending)], source.Sorts);
+    }
+
+    [Fact] // ADR-0044: focus arriving in the filter is listened for only while the keys are held
+    public async Task The_filter_is_watched_only_while_the_keys_are_held()
+    {
+        var cut = RenderGrid(FilteredSource());
+        await OpenMenuAsync(cut);
+        Assert.False(cut.Find(".ex-popover-filter").HasAttribute("blazor:onfocusin"));
+
+        await KeyOnAsync(Command(cut, "Sort ascending"), "e");
+        Assert.True(cut.Find(".ex-popover-filter").HasAttribute("blazor:onfocusin"));
+
+        await cut.Find(".ex-popover-filter").FocusInAsync(new FocusEventArgs());
+        Assert.False(cut.Find(".ex-popover-filter").HasAttribute("blazor:onfocusin"));
+    }
+
+    [Fact] // ADR-0044 / FL-15: a substituted panel hands its value list's keys to the core, which answers the letters
+    public async Task A_substituted_panel_hands_its_letters_to_the_core()
+    {
+        var source = FilteredSource();
+        var chrome = new StubChrome();
+        var cut = RenderGrid(source, chrome);
+        await OpenMenuAsync(cut);
+        Assert.Equal(0, chrome.Panel!.FocusRequest);
+
+        await cut.InvokeAsync(() => chrome.Panel!.ValueListKey!(new KeyboardEventArgs { Key = "e" }));
+        cut.WaitForAssertion(() => Assert.Equal(1, chrome.Panel!.FocusRequest));
+
+        await cut.InvokeAsync(() => chrome.Menu!.ResolveKey!("Tab", true, false));
+        cut.WaitForAssertion(() => Assert.Equal(1, chrome.Panel!.FocusLastRequest));
+
+        await cut.Find(".ex-popover-filter").FocusInAsync(new FocusEventArgs());
+        await cut.InvokeAsync(() => chrome.Panel!.ValueListKey!(new KeyboardEventArgs { Key = "o" }));
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover")));
+        Assert.Equal([new SortSpec("Book", SortDirection.Descending)], source.Sorts);
+    }
+
+    private string? LastFocusedId()
+        => JSInterop.Invocations.Where(i => i.Identifier == "Blazor._internal.domWrapper.focus")
+            .Select(i => ((ElementReference)i.Arguments[0]!).Id).LastOrDefault();
 }

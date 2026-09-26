@@ -328,6 +328,19 @@
     color: var(--ex-state-error-color, #b3261e);
     outline: 1px solid var(--ex-state-error-color, #b3261e);
 }
+/* The column's one popover (ADR-0044): its commands, and below them its filter, set off by a
+   rule. Each half is a column of the popover's column; the filter is what gives when the
+   room is short, through its value list (ADR-0040). */
+.ex-popover-commands { display: flex; flex-direction: column; flex-shrink: 0; }
+.ex-popover-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-top: 4px;
+    border-top: var(--ex-rule-width, 1px) solid var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
+}
 .ex-popover button { font: inherit; text-align: left; padding: 2px var(--ex-action-padding-x, 6px); cursor: pointer; }
 .ex-popover button:disabled { cursor: default; opacity: 0.5; }
 /* In a bounded popover the value list is what gives (ADR-0040): it shrinks, to a floor
@@ -344,7 +357,7 @@
 .ex-select-all[aria-checked="false"]::before { content: "\2610"; }
 .ex-select-all[aria-checked="mixed"]::before { content: "\25A3"; }
 .ex-popover-join { display: flex; gap: 12px; }
-/* The filter panel's Tab-wrap sentinels (ADR-0039): focusable, and nothing else. Absolute,
+/* The popover's Tab-wrap sentinels (ADR-0039/0044): focusable, and nothing else. Absolute,
    so they take no place in the popover's flex column and add no gap to it. */
 .ex-focus-wrap { position: absolute; width: 0; height: 0; overflow: hidden; outline: none; }
 /* The panel's form exists for Enter's implicit submission (ADR-0039) and has no box of its

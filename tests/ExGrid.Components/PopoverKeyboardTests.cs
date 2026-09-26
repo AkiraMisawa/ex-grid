@@ -11,8 +11,9 @@ namespace ExGrid.Components.Tests;
 
 /// <summary>
 /// A popover takes the keyboard when it opens and gives it back when it closes
-/// (ADR-0039): Alt+↓ opens the column menu, every opening asks the contents to take DOM
-/// focus, every close returns it to the root, and each popover is named.
+/// (ADR-0039): Alt+↓ opens the column's one popover — its commands above its filter
+/// (ADR-0044) — every opening asks the commands to take DOM focus, every close returns it
+/// to the root, and each popover is named.
 /// </summary>
 public class PopoverKeyboardTests : GridTestContext
 {
@@ -58,7 +59,7 @@ public class PopoverKeyboardTests : GridTestContext
     }
 
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
-        IGridChrome? chrome = null, bool withSource = true, TestSource? source = null)
+        IGridChrome? chrome = null, bool withSource = true, TestSource? source = null, bool sortsOnly = false)
         => Render<ExGrid<TestRow>>(ps =>
         {
             if (withSource)
@@ -70,6 +71,9 @@ public class PopoverKeyboardTests : GridTestContext
             else
             {
                 ps.Add(g => g.Window, TestRows.Window()).Add(g => g.TotalCount, 3);
+                // Sorts have somewhere to go and filters do not: the commands stand alone.
+                if (sortsOnly)
+                    ps.Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> _) => { });
             }
             ps.Add(g => g.Columns, Columns())
               .Add(g => g.RowHeight, 20d)
@@ -120,7 +124,7 @@ public class PopoverKeyboardTests : GridTestContext
 
         await AltDownAsync(cut);
 
-        var menu = cut.Find(".ex-popover[role=menu]");
+        var menu = cut.Find(".ex-popover [role=menu]");
         Assert.Equal("Amount", menu.GetAttribute("aria-label"));
         Assert.Contains(cut.FindAll(".ex-popover button[role=menuitem]"), b => b.TextContent == "Sort ascending");
     }
@@ -173,21 +177,37 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(true, opening.Arguments[1]);
     }
 
-    [Fact] // ADR-0039 / KB-29: the built-in panel focuses its first control once its contents have settled
-    public async Task The_built_in_panel_focuses_its_first_control()
+    [Fact] // ADR-0044 / KB-29: the built-in filter takes the keyboard only when asked, at its first control once its contents have settled
+    public async Task The_built_in_filter_focuses_its_first_control_when_asked()
     {
-        var cut = RenderGrid();
+        var source = new TestSource { DistinctPending = new() };
+        var cut = RenderGrid(source: source);
 
-        // A value-list column: the list arrives, and its search field is the first control.
-        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
-        await Item(cut, "Filter").ClickAsync(new MouseEventArgs());
-        Assert.Equal(RefOf(cut.Find(".ex-popover[role=dialog] input[type=search]")), LastFocused());
+        // A value-list column, its list still on its way: the opening focuses the first
+        // command, and E waits for the search field the list brings.
+        OpenPanelWhileTheListIsPending(cut);
+        var command = Focused().Length;
+        await PressAsync(Item(cut, "Sort ascending"), "e");
+        Assert.Equal(command, Focused().Length);
+        // The field's reference, read as it is focused: the click that opened the popover
+        // renders once more when its handler completes, and bUnit writes a reference only
+        // into the render that created the element.
+        var searchAtFocus = new List<string?>();
+        JSInterop.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier == Focus)
+                searchAtFocus.Add(cut.FindAll(".ex-popover input[type=search]").SingleOrDefault()?.GetAttribute("blazor:elementreference"));
+            return false;
+        });
+        await cut.InvokeAsync(() => source.DistinctPending.SetResult(DistinctValues.Of(["Alpha"])));
+        Assert.Equal(searchAtFocus.Single(), LastFocused());
 
-        // A condition column: the operator is.
+        // A condition column: Tab reaches the operator.
         await cut.Find(".ex-popover[role=dialog] .ex-popover-actions button:nth-child(2)").ClickAsync(new MouseEventArgs());
         await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
-        await Item(cut, "Filter").ClickAsync(new MouseEventArgs());
-        Assert.Equal(RefOf(cut.Find(".ex-popover[role=dialog] select")), LastFocused());
+        var select = RefOf(cut.Find(".ex-popover[role=dialog] select"));
+        await PressAsync(Item(cut, "Sort ascending"), "Tab");
+        Assert.Equal(select, LastFocused());
     }
 
     [Fact] // ADR-0039 / KB-29: the Context Menu opened by key takes the keyboard as well
@@ -217,14 +237,16 @@ public class PopoverKeyboardTests : GridTestContext
         await KeyAsync(cut, "Escape", fromDescendant: true);
         await AltDownAsync(cut);
         Assert.Equal(first + 1, chrome.Menu!.FocusRequest);
-
-        await cut.InvokeAsync(() => chrome.Menu!.Commands.Single(c => c.Id == "filter").Invoke());
-        cut.Render();
-        Assert.Equal(first + 2, chrome.Panel!.FocusRequest);
+        // The filter below is asked nothing at an opening: the commands take the keyboard
+        // (ADR-0044).
+        Assert.Equal(0, chrome.Panel!.FocusRequest);
 
         await KeyAsync(cut, "Escape", fromDescendant: true);
         await KeyAsync(cut, "F10", shift: true);
-        Assert.Equal(first + 3, ((ContextMenuContext<TestRow>)chrome.Context!).FocusRequest);
+        var context = ((ContextMenuContext<TestRow>)chrome.Context!).FocusRequest;
+        await KeyAsync(cut, "Escape", fromDescendant: true);
+        await KeyAsync(cut, "F10", shift: true);
+        Assert.Equal(context + 1, ((ContextMenuContext<TestRow>)chrome.Context!).FocusRequest);
     }
 
     [Fact] // ADR-0039 / ADR-0037: the core never reaches into contents it did not render
@@ -254,16 +276,14 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(root, LastFocused());
     }
 
-    [Theory] // ADR-0039 / KB-32: Apply, Cancel and Clear each close the panel and hand the keyboard back
+    [Theory] // ADR-0039 / KB-32: OK and Cancel each close the popover and hand the keyboard back
     [InlineData("OK")]
     [InlineData("Cancel")]
-    [InlineData("Clear")]
     public async Task Closing_the_panel_returns_the_keyboard_to_the_root(string button)
     {
         var cut = RenderGrid();
         var root = RootRef(cut);
         await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
-        await Item(cut, "Filter").ClickAsync(new MouseEventArgs());
 
         await cut.FindAll(".ex-popover[role=dialog] .ex-popover-actions button")
             .Single(b => b.TextContent == button).ClickAsync(new MouseEventArgs());
@@ -303,18 +323,35 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(root, LastFocused());
     }
 
-    [Fact] // ADR-0010 / ADR-0039: the filter command a Chrome invokes replaces the menu with the panel
-    public async Task The_filter_command_run_by_a_chrome_leaves_the_panel_standing()
+    [Fact] // ADR-0044 / FL-12: one popover, a substituted Chrome's menu above its panel, and no Filter command
+    public async Task The_one_popover_stacks_the_chromes_menu_above_its_panel()
     {
         var chrome = new StubChrome();
         var cut = RenderGrid(chrome);
         await ClickCellAsync(cut, 150, 10);
         await AltDownAsync(cut);
 
-        await cut.InvokeAsync(() => chrome.Menu!.Commands.Single(c => c.Id == "filter").Invoke());
+        var popover = Assert.Single(cut.FindAll(".ex-popover"));
+        var menu = popover.QuerySelector(".ex-stub-menu");
+        var panel = popover.QuerySelector(".ex-stub-panel");
+        Assert.NotNull(menu);
+        Assert.NotNull(panel);
+        Assert.True(menu!.CompareDocumentPosition(panel!).HasFlag(DocumentPositions.Following));
+        Assert.DoesNotContain(chrome.Menu!.Commands, c => c.Id == "filter");
+    }
 
-        Assert.NotNull(cut.Find(".ex-stub-panel"));
-        Assert.Empty(cut.FindAll(".ex-stub-menu"));
+    [Fact] // ADR-0044: a column that cannot be filtered shows its commands alone, as a menu
+    public async Task A_column_that_cannot_be_filtered_shows_its_commands_alone()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome, withSource: false, sortsOnly: true);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+
+        Assert.NotNull(cut.Find(".ex-stub-menu"));
+        Assert.Empty(cut.FindAll(".ex-stub-panel"));
+        Assert.Null(chrome.Panel);
+        Assert.Equal("none", cut.Find(".ex-popover").GetAttribute("role"));
     }
 
     [Fact] // ADR-0039 / KB-32: a Chrome's own Close closes the popover, re-renders the grid, and hands the keyboard back
@@ -373,19 +410,16 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(root, LastFocused());
     }
 
-    [Fact] // ADR-0039 / A11Y-19: the menus are menus, the panel a dialog, each column's named by its header
+    [Fact] // ADR-0039 / ADR-0044 / A11Y-19: a column's popover is a dialog holding a menu, both named by its header; the Context Menu a menu
     public async Task Each_popover_is_named()
     {
         var cut = RenderGrid();
         await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
-        var menu = cut.Find(".ex-popover");
-        Assert.Equal("menu", menu.GetAttribute("role"));
+        var popover = cut.Find(".ex-popover");
+        Assert.Equal("dialog", popover.GetAttribute("role"));
+        Assert.Equal("Book", popover.GetAttribute("aria-label"));
+        var menu = cut.Find(".ex-popover [role=menu]");
         Assert.Equal("Book", menu.GetAttribute("aria-label"));
-
-        await Item(cut, "Filter").ClickAsync(new MouseEventArgs());
-        var panel = cut.Find(".ex-popover");
-        Assert.Equal("dialog", panel.GetAttribute("role"));
-        Assert.Equal("Book", panel.GetAttribute("aria-label"));
 
         await KeyAsync(cut, "Escape", fromDescendant: true);
         await ClickCellAsync(cut, 50, 10);
@@ -396,8 +430,9 @@ public class PopoverKeyboardTests : GridTestContext
     }
 
     // ---- Inside a popover (ADR-0039's table, KB-30/31), under the built-in Chrome. With a
-    // Source and nothing else wired, the column menu's enabled items are Sort ascending,
-    // Sort descending and Filter; Hide, Pin, Unpin and Size to fit are disabled.
+    // Source and nothing else wired, the column menu's enabled items are Sort ascending and
+    // Sort descending; Clear filter (no filter in force), Hide, Pin, Unpin and Size to fit
+    // are disabled.
 
     private static Task PressAsync(IElement element, string key, bool shift = false)
         => element.KeyDownAsync(new KeyboardEventArgs { Key = key, ShiftKey = shift });
@@ -414,19 +449,17 @@ public class PopoverKeyboardTests : GridTestContext
         await ClickCellAsync(cut, 150, 10);
         await AltDownAsync(cut);
         var refs = EnabledItemRefs(cut);
-        Assert.Equal(["Sort ascending", "Sort descending", "Filter"], refs.Keys);
+        Assert.Equal(["Sort ascending", "Sort descending"], refs.Keys);
 
         await PressAsync(Item(cut, "Sort ascending"), "ArrowDown");
         Assert.Equal(refs["Sort descending"], LastFocused());
 
-        // Past the last enabled item, over the four disabled ones, and round to the first.
+        // Past the last enabled item, over the five disabled ones, and round to the first.
         await PressAsync(Item(cut, "Sort descending"), "ArrowDown");
-        Assert.Equal(refs["Filter"], LastFocused());
-        await PressAsync(Item(cut, "Filter"), "ArrowDown");
         Assert.Equal(refs["Sort ascending"], LastFocused());
 
         await PressAsync(Item(cut, "Sort ascending"), "ArrowUp");
-        Assert.Equal(refs["Filter"], LastFocused());
+        Assert.Equal(refs["Sort descending"], LastFocused());
     }
 
     [Fact] // ADR-0039 / KB-30: Home and End go to the first and last enabled items
@@ -437,10 +470,10 @@ public class PopoverKeyboardTests : GridTestContext
         await AltDownAsync(cut);
         var refs = EnabledItemRefs(cut);
 
-        await PressAsync(Item(cut, "Sort descending"), "End");
-        Assert.Equal(refs["Filter"], LastFocused());
+        await PressAsync(Item(cut, "Sort ascending"), "End");
+        Assert.Equal(refs["Sort descending"], LastFocused());
 
-        await PressAsync(Item(cut, "Filter"), "Home");
+        await PressAsync(Item(cut, "Sort descending"), "Home");
         Assert.Equal(refs["Sort ascending"], LastFocused());
     }
 
@@ -515,22 +548,48 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal("sort-descending", commands[enter.Item].Id);
     }
 
-    [Theory] // ADR-0039 / KB-30: Tab and Shift+Tab close the menu as a Cancel — nothing runs
+    [Theory] // ADR-0039 / ADR-0044 / KB-30: with no filter below, Tab and Shift+Tab close the menu as a Cancel — nothing runs
     [InlineData(false)]
     [InlineData(true)]
     public async Task Tab_closes_the_menu_as_a_cancel(bool shift)
     {
-        var source = new TestSource();
-        var cut = RenderGrid(source: source);
+        var sorts = 0;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window()).Add(g => g.TotalCount, 3)
+            .Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> _) => sorts++)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350));
         var root = RootRef(cut);
         await ClickCellAsync(cut, 150, 10);
         await AltDownAsync(cut);
+        Assert.Empty(cut.FindAll(".ex-popover form"));
+
+        await PressAsync(Item(cut, "Sort descending"), "Tab", shift);
+
+        Assert.Equal(0, sorts);
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Equal(root, LastFocused());
+    }
+
+    [Theory] // ADR-0044 / FL-12: over a filter, Tab on a command moves to its first control and Shift+Tab to its last — nothing runs, nothing closes
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Tab_on_a_command_moves_into_the_filter(bool shift)
+    {
+        var source = new TestSource();
+        var cut = RenderGrid(source: source);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+        var first = RefOf(cut.Find(".ex-popover form select"));
+        var last = RefOf(cut.FindAll(".ex-popover .ex-popover-actions button").Single(b => b.TextContent == "Cancel"));
 
         await PressAsync(Item(cut, "Sort descending"), "Tab", shift);
 
         Assert.Empty(source.SortChanges);
-        Assert.Empty(cut.FindAll(".ex-popover"));
-        Assert.Equal(root, LastFocused());
+        Assert.Single(cut.FindAll(".ex-popover"));
+        Assert.Equal(shift ? last : first, LastFocused());
     }
 
     [Fact] // ADR-0039 / KB-30: the Context Menu answers the same keys
@@ -559,20 +618,19 @@ public class PopoverKeyboardTests : GridTestContext
 
         await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
 
-        Assert.Equal("Amount", cut.Find(".ex-popover[role=menu]").GetAttribute("aria-label"));
+        Assert.Equal("Amount", cut.Find(".ex-popover [role=menu]").GetAttribute("aria-label"));
         Assert.Equal(asked + 1, Focused().Length);
         Assert.Equal(RefOf(Item(cut, "Sort ascending")), LastFocused());
     }
 
-    /// <summary>The panel of one column, opened by pointer — and the root's reference,
-    /// read before anything re-rendered it.</summary>
+    /// <summary>One column's popover, opened by pointer, its filter below the commands
+    /// (ADR-0044) — and the root's reference, read before anything re-rendered it.</summary>
     private async Task<(IRenderedComponent<ExGrid<TestRow>> Cut, string Root)> OpenPanelAsync(
         int column, TestSource? source = null)
     {
         var cut = RenderGrid(source: source);
         var root = RootRef(cut);
         await cut.FindAll(".ex-menu-button")[column].ClickAsync(new MouseEventArgs());
-        await Item(cut, "Filter").ClickAsync(new MouseEventArgs());
         return (cut, root);
     }
 
@@ -637,23 +695,28 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Empty(form.QuerySelectorAll("button:not([type=button]), input[type=submit]"));
     }
 
-    [Fact] // ADR-0039 / KB-31: Tab wraps inside the panel — off the last control to the first, and back
-    public async Task Tab_wraps_inside_the_panel()
+    [Fact] // ADR-0044 / KB-31: Tab wraps through both halves — off either end of the filter, back to the first command
+    public async Task Tab_wraps_through_both_halves()
     {
-        var (cut, _) = await OpenPanelAsync(1);
-        var operatorRef = RefOf(cut.Find(".ex-popover[role=dialog] select"));
-        var clearRef = RefOf(cut.FindAll(".ex-popover[role=dialog] .ex-popover-actions button")
-            .Single(b => b.TextContent == "Clear"));
+        var source = new TestSource();
+        var (cut, _) = await OpenPanelAsync(1, source);
+        var firstCommand = RefOf(Item(cut, "Sort ascending"));
         var sentinels = cut.FindAll(".ex-popover[role=dialog] .ex-focus-wrap");
         Assert.Equal(2, sentinels.Count);
+        await PressAsync(Item(cut, "Sort ascending"), "ArrowDown");
 
-        // Tab off Clear lands on the far sentinel, which passes focus to the first control.
+        // Tab off Cancel, the filter's last control, lands on the far sentinel.
         await sentinels[1].FocusAsync(new FocusEventArgs());
-        Assert.Equal(operatorRef, LastFocused());
+        Assert.Equal(firstCommand, LastFocused());
 
-        // Shift+Tab off the first control lands on the near one, which passes it to Clear.
+        // Shift+Tab off the filter's first control lands on the near one.
         await cut.FindAll(".ex-popover[role=dialog] .ex-focus-wrap")[0].FocusAsync(new FocusEventArgs());
-        Assert.Equal(clearRef, LastFocused());
+        Assert.Equal(firstCommand, LastFocused());
+
+        // And the menu's place went back with the keyboard: Enter runs the first command,
+        // not the one ↓ had chosen before Tab left.
+        await PressAsync(Item(cut, "Sort ascending"), "Enter");
+        Assert.Equal([new SortSpec("Amount", SortDirection.Ascending)], source.Sorts);
     }
 
     // ---- A popover stays inside its grid's box (ADR-0040), and a popup inside it keeps
@@ -673,12 +736,8 @@ public class PopoverKeyboardTests : GridTestContext
         var cut = RenderGrid();
 
         await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
-        var menu = cut.Find(".ex-popover").GetAttribute("style")!;
-        Assert.Equal(120, Px(menu, "top") + Px(menu, "max-height"));
-
-        await Item(cut, "Filter").ClickAsync(new MouseEventArgs());
-        var panel = cut.Find(".ex-popover").GetAttribute("style")!;
-        Assert.Equal(120, Px(panel, "top") + Px(panel, "max-height"));
+        var popover = cut.Find(".ex-popover").GetAttribute("style")!;
+        Assert.Equal(120, Px(popover, "top") + Px(popover, "max-height"));
     }
 
     [Fact] // ADR-0040: the Context Menu opens on the side of the pointer with more room, bounded by it
@@ -707,8 +766,6 @@ public class PopoverKeyboardTests : GridTestContext
         var cut = RenderGrid(chrome);
         await ClickCellAsync(cut, 150, 10);
         await AltDownAsync(cut);
-        await cut.InvokeAsync(() => chrome.Menu!.Commands.Single(c => c.Id == "filter").Invoke());
-        cut.Render();
 
         await cut.InvokeAsync(() => chrome.Panel!.InnerPopupChanged!(true));
         Assert.Equal([true], Js.InnerPopupTold.Invocations.Select(i => (bool)i.Arguments[0]!));
@@ -740,12 +797,13 @@ public class PopoverKeyboardTests : GridTestContext
 
     // ---- Review round (2026-09-24): an opening starts clean, whatever the last one left.
 
-    /// <summary>The Filter command, run while the Consumer's value-list query is still
-    /// running: in a browser the event's handler renders the panel and waits on; bUnit would
-    /// wait for the whole handler, so the click is started and the panel waited for.</summary>
+    /// <summary>The first column's popover, opened while the Consumer's value-list query is
+    /// still running: in a browser the event's handler renders the popover and waits on;
+    /// bUnit would wait for the whole handler, so the click is started and the popover waited
+    /// for.</summary>
     private static void OpenPanelWhileTheListIsPending(IRenderedComponent<ExGrid<TestRow>> cut)
     {
-        _ = Item(cut, "Filter").ClickAsync(new MouseEventArgs());
+        _ = cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find(".ex-popover[role=dialog]")));
     }
 
@@ -754,16 +812,16 @@ public class PopoverKeyboardTests : GridTestContext
     {
         var source = new TestSource { DistinctPending = new() };
         var cut = RenderGrid(source: source);
-        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
         OpenPanelWhileTheListIsPending(cut);
 
         await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
 
-        Assert.Equal("Amount", cut.Find(".ex-popover[role=menu]").GetAttribute("aria-label"));
+        Assert.Equal("Amount", cut.Find(".ex-popover [role=menu]").GetAttribute("aria-label"));
         Assert.Equal(RefOf(Item(cut, "Sort ascending")), LastFocused());
-        // The answer that arrives for the panel left behind changes nothing.
+        // The answer that arrives for the popover left behind changes nothing.
         await cut.InvokeAsync(() => source.DistinctPending.SetResult(DistinctValues.Of(["Alpha"])));
-        Assert.Equal("Amount", cut.Find(".ex-popover[role=menu]").GetAttribute("aria-label"));
+        Assert.Equal("Amount", cut.Find(".ex-popover [role=menu]").GetAttribute("aria-label"));
+        Assert.Empty(cut.FindAll(".ex-popover-list"));
     }
 
     [Fact] // ADR-0009: what the user chose in the condition form while the list was on its way survives TooMany
@@ -771,7 +829,6 @@ public class PopoverKeyboardTests : GridTestContext
     {
         var source = new TestSource { DistinctPending = new() };
         var cut = RenderGrid(source: source);
-        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
         OpenPanelWhileTheListIsPending(cut);
 
         await cut.Find(".ex-popover select").ChangeAsync(new ChangeEventArgs { Value = nameof(FilterOperator.StartsWith) });
@@ -785,7 +842,6 @@ public class PopoverKeyboardTests : GridTestContext
     {
         var source = new TestSource { DistinctPending = new() };
         var cut = RenderGrid(source: source);
-        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
         OpenPanelWhileTheListIsPending(cut);
 
         await cut.InvokeAsync(() => source.DistinctPending.SetResult(DistinctValues.TooMany));
@@ -800,9 +856,8 @@ public class PopoverKeyboardTests : GridTestContext
         var source = new TestSource();
         var cut = RenderGrid(chrome, source: source);
         await ClickCellAsync(cut, 50, 10);
-        await AltDownAsync(cut);
 
-        await cut.InvokeAsync(() => chrome.Menu!.Commands.Single(c => c.Id == "filter").Invoke());
+        await AltDownAsync(cut);
 
         Assert.NotNull(cut.Find(".ex-stub-panel"));
         Assert.Empty(source.DistinctRequested);

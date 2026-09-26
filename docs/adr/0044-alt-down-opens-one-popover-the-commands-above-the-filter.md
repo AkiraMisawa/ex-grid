@@ -80,6 +80,43 @@ are recorded in [ADR-0009](./0009-filter-panel-contract.md).
   distinct dates falls back to the search form anyway (ADR-0009's TooMany), and the tree adds a
   level of keyboard handling to a popover that has just been rebuilt.
 
+## As implemented
+
+*(2026-09-26, both Chromes. What the decision left open, settled while building it.)*
+
+- **The roles.** A column's popover is `role="dialog"`, named by the column's header, and holds
+  the commands' `role="menu"`, named the same. A column that cannot be filtered shows the menu
+  alone, and the popover around it carries no role of its own.
+- **Tab is the core's at both ends.** On a command, Tab and Shift+Tab are menu keys, and
+  `MenuKeys.ResolveInColumnMenu` answers them `FilterFirst` / `FilterLast`: the core sends the
+  keyboard to the filter's first or last control. Off either end of the filter, Tab lands on one
+  of two sentinels the core renders around the filter half, which hand the keyboard back to the
+  **first** command. The menu's place goes back with it, so Enter there runs the first command,
+  not the one ↓ had chosen before Tab left. The panels draw no sentinels and no Clear of their
+  own.
+- **The filter is asked, not opened.** `FilterPanelContext.FocusRequest` starts from zero at each
+  opening, where nothing is asked, and counts Tab and E; `FocusLastRequest` counts Shift+Tab.
+  `ColumnMenuContext.FocusRequest` counts the opening and each return to the commands. A
+  substituted panel written against the old contract — focus on the first render — would take
+  the keyboard from the commands, which is why the contract says zero is no request.
+- **The value list's letters go through the core.** The panel hands a key on its value list to
+  `FilterPanelContext.ValueListKey`, and the core answers it with `MenuKeys.Letter`, the table the
+  commands use. A text field hands nothing over, so a letter there is text.
+- **A key on its way to the filter is nobody's.** On a circuit, E moves the keyboard to the search
+  box a round trip later, and the next letters typed still land on the command or the value list
+  being left, where S or O would sort and close the popover. Until focus is seen in the filter —
+  a `focusin` the core listens for only while this is so — a key there means nothing, except one
+  that asks for the filter again. Those letters are dropped, not typed into the search box. A
+  script could replay them, and the allowlist has no entry for that
+  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
+- **The letters' marks are the built-in Chrome's.** `MenuKeys.Marked` splits a label at its letter,
+  or appends "(S)". `ExGrid.MudBlazor`'s menu marks none: a Material menu shows no mnemonics, and
+  the letters act the same under it.
+- **Opening costs a value-list query.** The built-in filter asks for the column's distinct values
+  when the popover opens, where it used to ask when Filter was chosen: once per opening, as
+  ADR-0009 has it, and now also when the popover was opened only to sort. A substituted panel
+  pulls the list itself, as before.
+
 ## Consequences
 
 - **The Definition of Done's menu rows change with it**: the built-in menu's item list (FN-18)

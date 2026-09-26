@@ -45,9 +45,9 @@ public sealed class MudGridChrome : IGridChrome
     /// supplies it (ADR-0010/0036).</summary>
     public Func<string, string?>? Icon { get; init; }
 
-    /// <summary>The filter panel, from MudBlazor's controls inside the core's popover
-    /// (ADR-0009/0030): a value list with a search and a Blank entry where the column
-    /// declares one and the answer arrives, the condition form otherwise.</summary>
+    /// <summary>The filter panel, from MudBlazor's controls under the column's commands in the
+    /// core's one popover (ADR-0009/0030/0044): a value list with a search and a Blank entry
+    /// where the column declares one and the answer arrives, the condition form otherwise.</summary>
     public RenderFragment? FilterPanel(FilterPanelContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -101,7 +101,7 @@ public sealed class MudGridChrome : IGridChrome
     {
         "sort-ascending" => Icons.Material.Filled.ArrowUpward,
         "sort-descending" => Icons.Material.Filled.ArrowDownward,
-        "filter" => Icons.Material.Filled.FilterList,
+        "clear-filter" => Icons.Material.Filled.FilterListOff,
         "hide" => Icons.Material.Filled.VisibilityOff,
         "pin" => Icons.Material.Filled.PushPin,
         "unpin" => Icons.Material.Outlined.PushPin,

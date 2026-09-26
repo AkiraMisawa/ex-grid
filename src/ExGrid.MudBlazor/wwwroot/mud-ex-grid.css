@@ -160,12 +160,3 @@
     gap: 4px;
     flex-shrink: 0;
 }
-/* The Tab wrap's two sentinels (ADR-0039): focusable, and nothing else. Absolute, so they
-   take no place in the panel's column and add no gap to it. */
-.mud-ex-grid-focus-wrap {
-    position: absolute;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-    outline: none;
-}

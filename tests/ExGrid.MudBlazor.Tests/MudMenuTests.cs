@@ -32,7 +32,7 @@ public class MudMenuTests : MudTestContext
     // The column menu's seven core commands, two of them disabled, and a Consumer's own.
     private GridCommand[] Commands() =>
     [
-        Command("sort-ascending"), Command("sort-descending"), Command("filter", enabled: false),
+        Command("sort-ascending"), Command("sort-descending"), Command("clear-filter", enabled: false),
         Command("hide"), Command("pin", enabled: false), Command("unpin"), Command("size-to-fit"),
         Command("open-report"),
     ];
@@ -75,7 +75,7 @@ public class MudMenuTests : MudTestContext
         Assert.Equal(8, items.Count);
         Assert.All(items, i => Assert.Contains("mud-button-root", i.ClassName));
         Assert.Equal(
-            ["Sort ascending", "Sort descending", "Filter", "Hide", "Pin up to this column", "Unpin all columns", "Size to fit", "open-report"],
+            ["Sort ascending", "Sort descending", "Clear filter", "Hide", "Pin up to this column", "Unpin all columns", "Size to fit", "open-report"],
             items.Select(i => i.TextContent.Trim()));
         Assert.Equal(
             [false, false, true, false, true, false, false, false],
@@ -104,11 +104,11 @@ public class MudMenuTests : MudTestContext
         Services.AddSingleton<ILocalizationInterceptor>(new FrenchInterceptor());
         var chrome = new MudGridChrome
         {
-            // Asked for what MudBlazor has no key for; never for Filter or Hide.
+            // Asked for what MudBlazor has no key for; never for Clear filter or Hide.
             Label = id => id switch
             {
                 "sort-ascending" => "Tri croissant",
-                "filter" => "never asked",
+                "clear-filter" => "never asked",
                 _ => null,
             },
         };
@@ -117,7 +117,7 @@ public class MudMenuTests : MudTestContext
 
         Assert.Equal("Tri croissant", items[0].TextContent.Trim());
         Assert.Equal("Sort descending", items[1].TextContent.Trim());
-        Assert.Equal("Filtrer", items[2].TextContent.Trim());
+        Assert.Equal("Effacer le filtre", items[2].TextContent.Trim());
         Assert.Equal("Masquer", items[3].TextContent.Trim());
     }
 
@@ -125,7 +125,7 @@ public class MudMenuTests : MudTestContext
     {
         public LocalizedString Handle(string key, params object[] arguments) => key switch
         {
-            "MudDataGrid_Filter" => new(key, "Filtrer"),
+            "MudDataGrid_ClearFilter" => new(key, "Effacer le filtre"),
             "MudDataGrid_Hide" => new(key, "Masquer"),
             _ => new(key, key, resourceNotFound: true),
         };
@@ -134,7 +134,7 @@ public class MudMenuTests : MudTestContext
     [Fact] // KB-29 / ADR-0039: each opening puts DOM focus on the first enabled item
     public void The_menu_focuses_its_first_enabled_item()
     {
-        GridCommand[] fenced = [Command("sort-ascending", enabled: false), Command("sort-descending"), Command("filter")];
+        GridCommand[] fenced = [Command("sort-ascending", enabled: false), Command("sort-descending"), Command("clear-filter")];
         var cut = RenderMenu(MudGridChrome.Default, fenced);
 
         Assert.Equal(ItemRefs(cut)[1], LastFocused());
@@ -216,7 +216,7 @@ public class MudMenuTests : MudTestContext
             .Add(g => g.OnSortChanged, s => sorted = s));
 
         await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
-        var menu = cut.Find(".ex-popover[role=menu]");
+        var menu = cut.Find(".ex-popover [role=menu]");
         Assert.Equal("Amount", menu.GetAttribute("aria-label"));
         Assert.NotEmpty(menu.QuerySelectorAll(".mud-ex-grid-menu button.mud-button-root[role=menuitem]"));
 
@@ -249,5 +249,67 @@ public class MudMenuTests : MudTestContext
         await cut.Find(".mud-ex-grid-menu").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
 
         Assert.Equal([new SortSpec("Amount", SortDirection.Descending)], sorted);
+    }
+
+    // The Mud panel's selects draw their popups into the page's provider — every MudBlazor
+    // app has one — so a grid with a filter below its commands renders one too.
+    private IRenderedComponent<ExGrid<Trade>> RenderFilterableGrid(Action<IReadOnlyList<SortSpec>> sorted, Action<GridFilter?> filtered)
+    {
+        Render<MudPopoverProvider>();
+        return Render<ExGrid<Trade>>(ps => ps
+            .Add(g => g.Window, Rows(5))
+            .Add(g => g.TotalCount, 5)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 400)
+            .Add(g => g.Chrome, MudGridChrome.Default)
+            .Add(g => g.OnSortChanged, s => sorted(s))
+            .Add(g => g.OnFilterChanged, f => filtered(f)));
+    }
+
+    [Fact] // WR-4 / ADR-0044 / FL-12: in the grid the Mud menu stands above the Mud panel, in one popover
+    public async Task In_the_grid_the_mud_menu_stands_above_the_mud_panel()
+    {
+        var cut = RenderFilterableGrid(_ => { }, _ => { });
+
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+
+        var popover = Assert.Single(cut.FindAll(".ex-popover"));
+        Assert.Equal("dialog", popover.GetAttribute("role"));
+        var menu = popover.QuerySelector(".mud-ex-grid-menu");
+        var panel = popover.QuerySelector("form.mud-ex-grid-filter");
+        Assert.NotNull(menu);
+        Assert.NotNull(panel);
+        Assert.True(menu!.CompareDocumentPosition(panel!).HasFlag(AngleSharp.Dom.DocumentPositions.Following));
+        Assert.Contains(cut.FindAll(".mud-ex-grid-menu button[role=menuitem]"), b => b.TextContent.Trim() == "Clear filter");
+    }
+
+    [Fact] // WR-4 / ADR-0044 / FL-15: in the grid the Mud menu answers Excel's letters through the core
+    public async Task In_the_grid_the_mud_menu_answers_the_letters()
+    {
+        IReadOnlyList<SortSpec>? sorted = null;
+        var cut = RenderFilterableGrid(s => sorted = s, _ => { });
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+
+        await cut.Find(".mud-ex-grid-menu").KeyDownAsync(new KeyboardEventArgs { Key = "o" });
+
+        Assert.Equal([new SortSpec("Amount", SortDirection.Descending)], sorted);
+        Assert.Empty(cut.FindAll(".ex-popover"));
+    }
+
+    [Fact] // WR-4 / ADR-0044 / KB-31: Tab on a Mud command moves the keyboard to the Mud panel, and nothing closes
+    public async Task In_the_grid_tab_moves_from_the_mud_menu_to_the_mud_panel()
+    {
+        var cut = RenderFilterableGrid(_ => { }, _ => { });
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+        var before = JSInterop.Invocations.Count(i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase));
+
+        await cut.Find(".mud-ex-grid-menu").KeyDownAsync(new KeyboardEventArgs { Key = "Tab" });
+
+        cut.WaitForAssertion(() => Assert.True(
+            JSInterop.Invocations.Count(i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase)) > before));
+        Assert.Single(cut.FindAll(".ex-popover"));
+        Assert.Equal(0, _closed);
     }
 }

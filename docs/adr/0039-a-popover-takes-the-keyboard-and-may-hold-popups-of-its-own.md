@@ -28,7 +28,9 @@ while a popover stands, and what happens when its contents open something of the
   filter drop-down. It joins the key table, so the capture-phase gate takes it
   ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)); on a column with no menu it does
   nothing. The filter panel is reached from the menu's Filter command, as it is by pointer. The
-  Context Menu keeps `ContextMenu` and `Shift+F10`.
+  Context Menu keeps `ContextMenu` and `Shift+F10`. *(Superseded 2026-09-26 by
+  [ADR-0044](./0044-alt-down-opens-one-popover-the-commands-above-the-filter.md): `Alt+↓` and the
+  ▾ open one popover, the column's commands above its filter, and there is no Filter command.)*
 - **Every popover asks its contents to take DOM focus when it opens**, by key or by pointer.
   `ColumnMenuContext`, `ContextMenuContext` and `FilterPanelContext` gain a **`FocusRequest`**,
   counted up once per opening. The contents — the built-in Chrome's and any substitute's — focus
@@ -38,6 +40,13 @@ while a popover stands, and what happens when its contents open something of the
   and `TemplateCellContext.FocusRequest`
   ([ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)),
   applied to the popovers.
+  *(Amended 2026-09-26 with [ADR-0044](./0044-alt-down-opens-one-popover-the-commands-above-the-filter.md).)*
+  In the one popover the opening asks the **commands** — the menu context's `FocusRequest`, which
+  also counts up when Tab wraps back to them. The filter below is asked only when the keyboard
+  moves there: its `FocusRequest` starts from zero at each opening, where nothing is asked, and
+  counts Tab and E from the commands; its `FocusLastRequest` counts Shift+Tab, for the last
+  control. The rule is unchanged — each count names a request, and the core reaches into nothing
+  it did not render.
 
 ## Inside a popover
 
@@ -53,8 +62,9 @@ table by running the same browser tests against it (FN-17).
 | a menu | ↑ / ↓ | the previous / next **enabled** item, wrapping at the ends |
 | | Home / End | the first / last enabled item |
 | | Enter / Space | runs the item; the menu closes |
-| | Tab / Shift+Tab | closes the menu, as a Cancel |
-| the filter panel | Tab / Shift+Tab | the next / previous control, **wrapping inside the panel** while it stands |
+| | Tab / Shift+Tab | closes the menu, as a Cancel — *over a column's filter, moves to its first / last control ([ADR-0044](./0044-alt-down-opens-one-popover-the-commands-above-the-filter.md))* |
+| | S / O / C / E | *in a column's menu: Excel's letters ([ADR-0044](./0044-alt-down-opens-one-popover-the-commands-above-the-filter.md))* |
+| the filter panel | Tab / Shift+Tab | the next / previous control, **wrapping inside the panel** while it stands — *in the one popover, off either end of the filter to the first command (ADR-0044)* |
 | | Enter in a value field | Apply |
 | either | Escape | closes it, as a Cancel (ADR-0012's layering, unchanged) |
 
@@ -82,7 +92,8 @@ Context Menu needs none beyond its role. The root keeps owning the rest of the s
 ## Closing, and giving the keyboard back
 
 However a popover closes — Escape, its ▾ pressed again, a pointer-down elsewhere in the instance,
-a command run, Apply, Cancel, Clear — **DOM focus returns to the root**, wherever it was when the
+a command run, Apply, Cancel, Clear (since ADR-0044 a command, "Clear filter") — **DOM focus
+returns to the root**, wherever it was when the
 popover closed, **an Inner Popup included**. The next arrow moves the Focus, as it did before the
 popover opened. The one exception is the one ADR-0010 already makes: a pointer-down that
 dismissed the popover keeps its own meaning, and where that press lands decides focus.

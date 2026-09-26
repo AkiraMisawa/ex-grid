@@ -22,7 +22,7 @@ public static class BuiltInCommandLabels
     {
         "sort-ascending" => "Sort ascending",
         "sort-descending" => "Sort descending",
-        "filter" => "Filter",
+        "clear-filter" => "Clear filter",
         "hide" => "Hide this column",
         "pin" => "Pin up to this column",
         "unpin" => "Unpin all columns",

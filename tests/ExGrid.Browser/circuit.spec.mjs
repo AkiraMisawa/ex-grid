@@ -143,6 +143,30 @@ test('keys typed straight after a key that opens a menu reach the menu (KB-33, A
     await expect(grid(page).locator('.ex-header-cell').first()).toHaveAttribute('aria-sort', 'descending');
 });
 
+for (const chrome of ['builtin', 'mud']) {
+    test(`letters typed straight after E are the search's, never a command's (ADR-0044, SRV-5, ${chrome})`, async ({ page }) => {
+        await page.goto(`/features?chrome=${chrome}`);
+        await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        await clickCell(page, 1, 0);
+        await page.keyboard.press('Alt+ArrowDown');
+        const search = grid(page).locator('.ex-popover input[type=search], .ex-popover .mud-ex-grid-filter-search input');
+        await expect(search).toBeVisible();
+        await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role=menu]') !== null)).toBe(true);
+        await setRoundTrip(150);
+
+        // E asks for the search box, which takes DOM focus a round trip later; the S and O
+        // typed meanwhile still land on the command, where they would sort and close.
+        await page.keyboard.press('e');
+        await page.keyboard.type('so');
+
+        await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.ex-popover [role=dialog], .ex-popover[role=dialog]') !== null
+            && document.activeElement?.tagName === 'INPUT')).toBe(true);
+        await page.waitForTimeout(600);
+        await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+        await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending], .ex-header-cell[aria-sort=descending]')).toHaveCount(0);
+    });
+}
+
 for (const [what, column, open, closes] of [
     ['the operator list', 2, async (page) => grid(page).getByRole('combobox', { name: 'Operator' }).click(), true],
     ['the date calendar', 4, async (page) => grid(page).locator('.mud-ex-grid-filter-operand button').first().click(), false],
@@ -152,8 +176,12 @@ for (const [what, column, open, closes] of [
         await expect(grid(page)).toHaveAttribute('tabindex', '0');
         await clickCell(page, 1, column);
         await page.keyboard.press('Alt+ArrowDown');
-        await grid(page).locator('.ex-popover [role=menuitem]', { hasText: 'Filter' }).click();
         await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+        // Tab from the commands into the panel's operator (ADR-0044), and on to the date's
+        // field for the calendar.
+        await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
+        await page.keyboard.press('Tab');
+        await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
         if (column === 4) {
             await page.keyboard.press('Tab');
         }
@@ -178,15 +206,17 @@ for (const [what, column, open, closes] of [
 }
 
 // The Wrapper's filter panel, on Notional (a condition, so an operator), with the keyboard
-// in the operator.
+// moved into the operator by Tab from the commands above it (ADR-0044).
 async function openMudNotionalPanel(page) {
     await page.goto('/features?chrome=mud');
     await expect(grid(page)).toHaveAttribute('tabindex', '0');
     await clickCell(page, 1, 2);
     await page.keyboard.press('Alt+ArrowDown');
-    await grid(page).locator('.ex-popover [role=menuitem]', { hasText: 'Filter' }).click();
     const panel = grid(page).locator('.mud-ex-grid-filter');
     await expect(panel).toBeVisible();
+    await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
+    await page.keyboard.press('Tab');
+    await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
     return panel;
 }
 
