@@ -150,6 +150,13 @@ hide it.
   group or total row's ground and a Cell State's paint over the stripe, the roles still
   count in the parity, the overlays paint above it, and forced colours paint none
   (UX-16).
+- `marks.spec.mjs` — Row Marks on `/marks` (ADR-0043), 10⁶ rows through
+  `GridSource.Fetch` with a mark adapter: after "mark all", rows scrolled to far away
+  paint ticked (MK-6); a filter keeps the marks and the count names those outside it,
+  and widening it back shows them ticked (MK-7); Space in the Mark Column brings a
+  mixed block into line and unmarks an all-marked one (MK-1); a row added after "mark
+  all" turns the header to "some" (MK-8); an action over a mark whose row was deleted
+  elsewhere reports it as gone.
 - `presentation.spec.mjs` — the presentation contract, measured: inline Geometry
   Tokens beat the supported override routes (UX-2), painted geometry equals declared
   (UX-3/ST-3), Visual Tokens recolour from an ancestor (UX-5), nothing under the

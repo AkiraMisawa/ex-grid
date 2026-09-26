@@ -122,10 +122,15 @@ header. A ticked row carries a **Row Mark**.
   - the header, or "Mark all N rows": "mark all" or "unmark all" over the current result, with the
     Row Sequence Version it was pressed under — the as-of point;
   - Space: the selection's rectangles restricted to the Mark Column, the Row Sequence Version they
-    were made under, and the target state already decided by the line-up rule.
+    were made under, and no target state: the rows past the Window are the grid's only by
+    position, so it cannot know whether they are marked. The Consumer resolves the positions and
+    applies the line-up rule to what it holds. *(Refined while implementing: this said the grid
+    decided the target.)*
+  The header press under a pager takes the same positional shape, over the page.
   None is ever one call per row.
 - **The pure rules live in their own module** — the new test seam. It decides:
-  - Space's line-up: given the marked state of the covered rows (as counts), the target state;
+  - Space's line-up: given how many of the covered rows are marked, the target state — applied
+    by whoever resolves the positions;
   - the header's state: from "marked Detail rows in the current result" and "Detail rows in the
     current result", none / some / all;
   - the header press: from the header's state, mark all or unmark all.

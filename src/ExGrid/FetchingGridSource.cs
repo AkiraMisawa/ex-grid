@@ -131,7 +131,23 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     private void Recount()
     {
         if (Marks is not null && !_disposed)
-            _ = SurfaceAsync(Marks.RecountAsync());
+            _ = SurfaceAsync(RecountReportingAsync(Marks));
+    }
+
+    // A failed count is reported the way a failed fetch is: to FetchFailed when someone
+    // listens, rethrown on the source's context when nobody does.
+    private async Task RecountReportingAsync(Rows.FetchingRowMarks<TRow> marks)
+    {
+        try
+        {
+            await marks.RecountAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex) when (FetchFailed is not null && !_disposed)
+        {
+            LastError = ex;
+            StateChanged?.Invoke();
+            FetchFailed?.Invoke(ex);
+        }
     }
 
     /// <summary>Takes a new Sort. A list equal to the one in force is a no-op; any other
