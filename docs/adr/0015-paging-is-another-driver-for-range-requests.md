@@ -116,3 +116,6 @@ It is not a paging-specific fix; it closes a hole that was already there.
 - **The "select all N rows" offer may live in Chrome.** Counting is the core's, displaying is
   Chrome's, per [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).
 - **Show the off-screen indicator while scrolling as well.** Do not make it paging-specific.
+- *(Added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md):)* **The header of a Mark Column follows the Ctrl+A rule.** Under a
+  pager it marks the page, and the whole filtered result is offered explicitly — "mark all N"
+  beside "select all N".

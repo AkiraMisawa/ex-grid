@@ -399,14 +399,16 @@ first and offers the whole result explicitly, as Ctrl+A does
 ([ADR-0015](./docs/adr/0015-paging-is-another-driver-for-range-requests.md)).
 "All" is **the result as it stood when the header was pressed**: a row that arrives later is not
 marked, and the header shows "some". Changing the filter keeps the marks, and **marks outside the
-current result are always counted aloud**, never acted on silently.
+current result are always counted aloud**, never acted on silently
+([ADR-0043](./docs/adr/0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)).
 _Avoid_: checked row, selected row, tick (a "selected" row is Selection's word)
 
 **Mark Column**:
 The one column per grid whose cells show and toggle **Row Marks**, and whose header marks all.
 Its meaning belongs to the core, like an **Action Column**'s, and it is painted as plain markup.
-Space on it applies to every selected row at once. Not a boolean field shown as a checkbox —
-that is the row's data, not a Row Mark.
+Space on it applies to every selected row at once. Only Detail rows carry a mark. Not a boolean
+field shown as a checkbox — that is the row's data, not a Row Mark
+([ADR-0043](./docs/adr/0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md)).
 _Avoid_: checkbox column, selection column
 
 ### Columns

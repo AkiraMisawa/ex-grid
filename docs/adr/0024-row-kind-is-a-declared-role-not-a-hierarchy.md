@@ -86,3 +86,6 @@ per cell.
   ([ADR-0020](./0020-action-and-template-columns.md)) — the likely shape is an Action
   Column the Consumer puts first, not a new mechanism. Also open: pinning a grand total to
   the bottom edge, which is a Viewport question, not a Row Kind one.
+- *(Added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md):)* **Only Detail rows carry a Row Mark.** A Group or Total row paints
+  no checkbox in the Mark Column, is skipped by "mark all" and by Space, and does not count
+  towards the header's state.

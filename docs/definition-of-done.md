@@ -864,3 +864,26 @@ pointed at it with `EXGRID_HOSTING=server`.
 | **SRV-4** | MUST | The console rules hold on the Server host, reading CON-6 from the Server host's own output (CON-1..8) | the shared fixture during SRV-2's run | as the core's |
 | **SRV-5** | MUST | Keys, paste and the clipboard hold under a real round trip: ED-22, KB-33..35, CP-21 and CP-23 pass with 150 ms injected between the browser and the Server host (ADR-0005/0010/0039) | Layer 3 through the loopback latency proxy | as those criteria |
 | **SRV-6** | OBSERVATIONAL | What the pointer reports cost on a circuit: calls crossing per second during a sweep while scrolling, and the lag from crossing a row to the band repainting, at 0, 50 and 150 ms round trip (ADR-0021's owed number) | `EXGRID_MEASURE=pointer`, written to `metrics.json` | recorded per round trip; if the cost is bad, ADR-0021's answer is the switch each report already has |
+
+---
+
+## 25. Row Marks (MK)
+
+*(Added 2026-09-26, with
+[ADR-0043](adr/0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md).)* The Mark
+Column and the Row Marks it shows. The marks are the Consumer's; these criteria hold the core to
+what it decides — what a gesture means and what it paints — and hold the bundled Grid Sources to
+the Consumer's half of the contract, since they are the reference a Consumer copies. The public
+shape of the notification and of the per-row question is still to be implemented; nothing here
+depends on which shape it takes.
+
+| ID | Level | Statement | Verification | Pass |
+|---|---|---|---|---|
+| **MK-1** | MUST | Space with the Focus in the Mark Column brings every row with a selected cell in that column into line: all marked if any was unmarked, all unmarked only if all were marked; with the Focus elsewhere Space keeps its ADR-0020 meaning (ADR-0043) | Layer 1, over all-marked, none-marked and mixed selections, and with the Focus on a data cell | as stated; a mixed selection never comes out mixed |
+| **MK-2** | MUST | The header's three states come from the counts the Consumer answers — marked Detail rows in the current result against Detail rows in it — never from the Window; Group and Total rows carry no checkbox and are neither marked nor counted (ADR-0043/0024) | Layer 1 for the state; Layer 2 with a Window of fully marked rows inside a larger, partly marked result, and with Group and Total rows in the Window | the header shows "some", not "all"; no checkbox is painted on a Group or Total row |
+| **MK-3** | MUST | A Space, a header press and one checkbox each raise **one** notification; Space's carries the rectangles and the Row Sequence Version they were made under, and the bundled Sources refuse to resolve it under a different version (ADR-0043/0011/0014) | Layer 2, counting invocations over a 10⁶-row selection; Layer 1 on the Sources with a bumped version | one invocation each; the stale intent marks nothing |
+| **MK-4** | MUST | A changed mark repaints only the rows whose mark changed; every other row still skips its render (ADR-0043/0003) | Layer 2, `RenderCount` per row around one checkbox press | one row re-rendered; the rest unchanged |
+| **MK-5** | MUST | Marks survive a sort: the same rows are marked after the Row Sequence Version changes, at their new positions (ADR-0043) | Layer 2 through `GridSource.From` | the marked rows by identity are unchanged; the selection is dropped as ADR-0011 says, the marks are not |
+| **MK-6** | MUST | After "mark all", a row scrolled into view for the first time is painted marked — at 10⁶ rows, through `GridSource.Fetch`, far from where the header was pressed (ADR-0043) | Layer 3, on both browsers | every painted Detail row in the new Viewport shows its checkbox marked |
+| **MK-7** | MUST | Marks outside the current filter are counted aloud: after marking and narrowing the filter, the count display names how many marks lie outside it (ADR-0043/0014) | Layer 3 | the display reads the total and the outside count; widening the filter back shows the same rows marked |
+| **MK-8** | MUST | "All" is the result as it stood when the header was pressed: a row that arrives afterwards is not marked, and the header turns to "some" (ADR-0043) | Layer 2, pushing a Window with a new row after the press | the new row answers unmarked; the header shows "some" |
