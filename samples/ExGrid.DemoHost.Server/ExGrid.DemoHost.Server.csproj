@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!-- The Blazor Server host (ADR-0019): the same pages as the WebAssembly DemoHost, in
+         InteractiveServer render mode with prerendering on — what a Consumer gets by
+         default. Not shipped; targets what the SDK provides (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ExGrid.DemoPages\ExGrid.DemoPages.csproj" />
+  </ItemGroup>
+
+</Project>

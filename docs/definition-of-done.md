@@ -73,7 +73,9 @@ Without that directory, the verification did not happen.
 written as properties of the *core's contract*, verifiable with a stub Wrapper, and do not require
 a real one. **`ExGrid.MudBlazor`'s own release is judged by §23**, which holds the Wrapper to the
 core's criteria with a real design system and adds the criteria only a real one can fail
-(added 2026-09-24).
+(added 2026-09-24). **Whether ExGrid may be said to run on Blazor Server is judged by §24**
+(added 2026-09-25): the core's criteria are the same on both hosts, and §24 says how they are
+run on the second one and adds the ones only a circuit can fail.
 
 **"Finished" means every ADR from 0001 to 0030 is implemented.** This was asked as an open
 question and answered deliberately: the narrower alternatives — shipping the display-only slice
@@ -88,7 +90,7 @@ any of them is open.
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
 | **PRE-1** | MUST | The whole solution builds with zero warnings | `nix develop -c dotnet build ExGrid.slnx` | `0 Warning(s)` and `0 Error(s)` |
-| **PRE-2** | MUST | The shipped package targets `net8.0` only, and raises no `LangVersion` (ADR-0022) | inspect `src/ExGrid/ExGrid.csproj` | single `<TargetFramework>net8.0` and no `LangVersion` above the default for the SDK's C# 12 |
+| **PRE-2** | MUST | The shipped package targets `net10.0` only, and raises no `LangVersion` (ADR-0022) | inspect `src/ExGrid/ExGrid.csproj` | single `<TargetFramework>net10.0` and no `LangVersion` set |
 | **PRE-3** | MUST | `ExGrid` has no package dependency (ADR-0019) | `dotnet list src/ExGrid/ExGrid.csproj package` | no top-level package other than framework references |
 | **PRE-4** | MUST | The core, `src/ExGrid/`, references no Wrapper and no design system (ADR-0019/0030); the Wrapper packages beside it in `src/` depend on the core, never the reverse | `dotnet list src/ExGrid/ExGrid.csproj reference`, and grep `src/ExGrid/` for a `using` of `MudBlazor` or `Fluxor` | no project reference; no match. *(Rewritten 2026-09-24: it used to grep all of `src/` for the bare words, which `src/ExGrid.MudBlazor/` — the Wrapper, living there by ADR-0019 — matches throughout, and so does a comment in the core naming `MudDataGrid`. What it asks is unchanged: that the dependency points one way)* |
 | **PRE-5** | MUST | The layer-3 project declares **both** target browsers (ADR-0017, ADR-0026) | inspect `tests/ExGrid.Browser/playwright.config.mjs` | a `projects` array naming `chrome` and `msedge`; a single-browser config fails this outright |
@@ -194,6 +196,7 @@ them. *(Interactive mode's were settled with the mode, ADR-0037: A11Y-17 and A11
 | **A11Y-17** | MUST | The grid's own action buttons are outside the page's tab sequence (`tabindex="-1"`), so the root stays the one tab stop with an Action Column on screen (ADR-0033/0037) | Layer 2 + Layer 3 on `/cells`: Shift+Tab from the element after the grid | every `.ex-action` carries `tabindex="-1"`; focus lands on the root, not on a button |
 | **A11Y-18** | MUST | While a cell with several actions is Interactive, `aria-activedescendant` names the chosen action's button, whose accessible name is its declared label; leaving restores the Focus cell's id, and the attribute is cleared while that button is not painted (ADR-0033/0037) | Layer 2 | the id resolves to the chosen `.ex-action`; after Escape it resolves to the cell again |
 | **A11Y-19** | MUST | A popover that takes DOM focus is named: the menus are `role="menu"` with `menuitem` items, the filter panel `role="dialog"`, and a column's menu and panel carry `aria-label` set to that column's own header text — no sentence of the core's (ADR-0033/0036/0039) | Layer 2, under the built-in Chrome and `ExGrid.MudBlazor`'s | roles and names as stated under both |
+| **A11Y-20** | MUST | A **Prerendered** grid carries `aria-busy="true"` on its root, has no `tabindex`, and wears `ex-loading` — from the prerender until its key listener is attached, which on a circuit is after the first interactive render; the render that follows the attach lifts all three (ADR-0029/0033) | Layer 2 with the renderer reporting it is not interactive yet, and with an interactive renderer whose module has not come back; Layer 3 on the Server host, reading the page before its circuit connects | the three present while Prerendered, none of them after |
 
 ### 4.2 Header Groups (HG) — ADR-0032
 
@@ -313,6 +316,7 @@ The grid renders the filter UI and never evaluates a filter.
 | **ED-19** | MUST | A fill refused for covering a non-editable column holds the editor open with the typed text intact, and the gestures the refusal did not name keep their meaning — Enter still commits the one cell (ADR-0035) | Layer 2 + Layer 3 | the editor survives the refusal; Enter then raises one Edit Intent, and the fill raises none |
 | **ED-20** | MUST | A Ctrl+Enter fill **is** judged on value: the verdict runs once, against the row the editor was opened on, and a Reject holds the editor and raises no paste intent — the Editable refusal is asked before it (ADR-0034/0035) | Layer 2 | exactly one validate call per fill; under a Reject the editor survives and `OnPaste` never fires; under a refusal validate is not called at all |
 | **ED-21** | MUST | Text typed and not committed that the grid throws away is **announced with the reason that is true of it** — the order changed, the columns changed, the row left the Window, or the column stopped being Editable (ADR-0011/0035) | Layer 2, one per path | `OnEditDiscarded` carries `OrderChanged` / `ColumnsChanged` / `RowLeftTheWindow` / `ColumnNoLongerEditable`, never a neighbour's reason; no Edit Intent is raised in any of them |
+| **ED-22** | MUST | Keys typed while a mode-changing key is being answered are **neither lost nor reordered**: they are held and replayed against the mode the answer leaves (ADR-0010) | Layer 3 on the Server host with a 150 ms round trip injected: type `1500` onto an editable cell at full speed, then Enter; type `150` Enter `200` Enter; type a printable key then ArrowDown onto a cell that is not Editable | `1500` committed; `150` and `200` in consecutive cells; the Focus moved down one row and no editor opened |
 
 ---
 
@@ -376,6 +380,9 @@ The grid renders the filter UI and never evaluates a filter.
 | **KB-30** | MUST | In a menu, ↑ / ↓ move among the **enabled** items and wrap, Home / End go to the first and last, Enter / Space run the item and close the menu, Tab / Shift+Tab close it as a Cancel (ADR-0039) | Layer 3, the same test against the built-in Chrome and against `ExGrid.MudBlazor`'s (FN-17) | identical outcomes under both |
 | **KB-31** | MUST | In the filter panel, Tab / Shift+Tab move among its controls and wrap inside it while it stands; Enter in a value field applies (ADR-0039) | Layer 3 under both Chromes | focus never leaves the panel by Tab; the filter applied equals the one OK applies |
 | **KB-32** | MUST | However a popover closes — Escape, its ▾, a pointer-down elsewhere in the instance, a command run, Apply, Cancel, Clear — DOM focus returns to the root, **including from inside an Inner Popup**; a dismissing pointer-down keeps its own meaning (ADR-0039/0010) | Layer 3 under both Chromes | `document.activeElement` is the root and the next arrow moves the Focus |
+| **KB-33** | MUST | Keys typed straight after a key that opens a popover (`Alt+↓`, `Shift+F10`, `ContextMenu`) reach the popover, in order, once it holds DOM focus — never the grid underneath (ADR-0010/0039) | Layer 3 on the Server host with a 150 ms round trip: `Alt+↓` `↓` `Enter` typed together | the column is sorted descending — the menu's second item, which only the ↓ reaching the menu chooses |
+| **KB-34** | MUST | A menu resolves each key against the place the keys have moved it to, not the item holding DOM focus: `↓` `Enter` typed together run the second item (ADR-0039) | Layer 2 through a context's `ResolveKey`; Layer 3 on the Server host with a 150 ms round trip, under both Chromes | `Copy with headers` ran, never `Copy` |
+| **KB-35** | MUST | An Escape pressed straight after an Inner Popup opens is **not taken by the grid**: it reaches the control, and the popover stands (ADR-0039). Whether the control closes its popup on it is its design system's *(rewritten the day it was written: it first said "closes that popup", which promised the design system's half — MudBlazor's date picker ignores an Escape while DOM focus is still on the button that opened its calendar, and a round trip in, it is)* | Layer 3 on the Server host with a 150 ms round trip, under the mud Chrome, for the operator list and the date calendar | the panel stands four round trips later; the list closes |
 
 ---
 
@@ -403,6 +410,9 @@ The grid renders the filter UI and never evaluates a filter.
 | **CP-18** | MUST | The header row **counts against the copy cap**: a selection exactly on the cap copies plainly and refuses with headers (ADR-0005) | Layer 1 at the boundary | `Copy` approves, `Copy with headers` refuses with the cap's own reason |
 | **CP-19** | MUST | A clipboard command invoked from a menu writes **without a permission prompt** on Chrome and on Edge, taking the asynchronous route whatever the selection's size (ADR-0005/0017/0036) | Layer 3, both browser projects | the clipboard holds the payload and no prompt was shown; a prompt is a recorded finding, not a pass |
 | **CP-20** | MUST | **No delimiter is ever guessed**: a tab and an HTML table cell are the only cell boundaries, a line break the only row boundary — `1,234` is one cell however many lines share its shape (ADR-0005) | Layer 1 `ClipboardParseTests` | comma-grouped numbers parse as one column; a tab in the same text still splits |
+| **CP-21** | MUST | A paste crosses to .NET as a stream, so a payload past a Blazor Server hub's default receive limit (32 KB) arrives whole and the circuit stays up (ADR-0005) | Layer 3 on **both** hosts: paste an Excel-shaped payload of about 200 KB | the intent covers the whole payload; no reconnect; CON-1..6 clean |
+| **CP-22** | MUST | A paste past `PasteByteCap` (16 MB across both flavours by default) is **refused whole** with `TooLarge`, before .NET reads it, and never falls back to the `text/plain` flavour (ADR-0005) | Layer 2 with streams whose declared lengths straddle the cap | one past the cap: `OnPasteRefused(TooLarge)`, no intent, neither stream read; exactly on the cap: parsed |
+| **CP-23** | MUST | A clipboard write the browser rejects is a Refusal: `OnCopyRefused(ClipboardUnavailable)` is raised and nothing lands (ADR-0005) | Layer 2 through the handle's report; Layer 3 with `clipboard-write` denied | the reason is raised once; the clipboard is unchanged |
 | **CTX-1** | MUST | A secondary click **outside** the selection collapses it onto the cell it lands on before the menu opens; **inside**, the selection stands (ADR-0036) | Layer 2 + Layer 3 | the commands act on what the user can see |
 | **CTX-2** | MUST | The menu's items are the core's — the clipboard's — with the Consumer's appended, and Chrome only lays them out (ADR-0010/0036) | Layer 2 | `Copy`, `Copy with headers`, then whatever `ContextCommands` returned |
 | **CTX-3** | MUST | A command is handed the clicked **row instance**, the column, and the selection as **rectangles plus the Row Sequence Version** — never rows (ADR-0011/0036) | Layer 2 | the context's `Selection` is ranges; no row beyond the Window is resolved |
@@ -470,7 +480,7 @@ that looks like success.
 | **CON-3** | MUST | Zero `warning` messages originating from ExGrid's own code | same capture, filtered by source file | empty; third-party warnings listed in `results.md` |
 | **CON-4** | MUST | No `ResizeObserver loop completed with undelivered notifications` at any point, including during a window resize and a density change (ADR-0013) | same capture | absent |
 | **CON-5** | MUST | The Blazor error UI never appears | Layer 3: `#blazor-error-ui` computed `display` | `none` throughout |
-| **CON-6** | MUST | No unhandled exception reaches the host log during any scenario | inspect the DemoHost output captured during the run | no `Unhandled exception` line |
+| **CON-6** | MUST | No unhandled exception reaches the host log during any scenario | inspect the host's output captured during the run — the WebAssembly DemoHost's is the browser console; the Server host's is its own process output, where a circuit's exceptions go *(generalised from "the DemoHost output" on 2026-09-25, when a second host arrived)* | no `Unhandled exception` line |
 | **CON-7** | MUST | No unobserved `Task` exception | a `TaskScheduler.UnobservedTaskException` handler installed in the test host, plus a forced `GC.Collect(); WaitForPendingFinalizers()` at the end of Layer 2 | zero events |
 | **CON-8** | MUST | Nothing is logged to the console by ExGrid on a healthy path — and a **failed copy is never silent**: a genuine .NET failure on either copy route is reported, distinguished from "no sync channel" by the attach-time probe, never by catching (ADR-0005) | Layer 3 | the only permitted console writes are the `console.error` failure paths in `ex-grid.js` (a key, a viewport report, a paste, a copy that the core failed to build or write), and none fires on a healthy path |
 
@@ -502,7 +512,7 @@ Structural invariants gate; milliseconds do not (§1).
 | **MEM-3** | MUST | Every `DotNetObjectReference`, `IJSObjectReference`, `ITimer` and `CancellationTokenSource` the component creates is disposed exactly once | Layer 2 with counting stubs | create count equals dispose count; no double dispose |
 | **MEM-4** | MUST | Disposal removes the key listener and disconnects the ResizeObserver (ADR-0018/0021) | Layer 2 asserting the handle's `dispose`; Layer 3 checking listener count | listener count returns to baseline |
 | **MEM-5** | MUST | A 10-minute scripted scroll does not grow the JS heap monotonically | Layer 3: sample `JSHeapUsedSize` every 30 s with a forced GC | the last sample is within 20% of the median of the run |
-| **MEM-6** | OBSERVATIONAL | Managed heap after the same scripted run | Layer 3 / host counters | recorded |
+| **MEM-6** | OBSERVATIONAL | Managed heap after the same scripted run | Layer 3 / host counters — on the Server host, the server process's heap with the one test circuit open | recorded, with the host named |
 | **MEM-7** | OBSERVATIONAL | Bytes allocated per scroll frame | Layer 2 | recorded |
 
 ---
@@ -555,6 +565,7 @@ ADR-0027 P3 states the expectation precisely, which makes this the most mechanic
 | **ST-2** | MUST | The grid holds no committed data: after any sequence, removing the Consumer's state leaves the grid with nothing to paint (ADR-0001/0007) | Layer 2: push an empty Window at the end | the grid paints nothing and throws nothing |
 | **ST-3** | MUST | The arithmetic's Row Height and the painted Row Height are the same number after every geometry change (ADR-0027 P6) | Layer 3 after each density change | equal |
 | **ST-4** | MUST | View State is serialisable and round-trips: widths, order, pinned count, sort, filter (`CONTEXT.md`, ADR-0002) | Layer 1 through `System.Text.Json` | round-trips equal; Auto widths are **not** present, only the Auto intent (ADR-0016) |
+| **ST-5** | MUST | A bundled Grid Source attached by a grid on another dispatcher while its first grid is live is refused by name; two grids on one dispatcher share it as before; once the first grid is disposed, another dispatcher may attach it (ADR-0018) | Layer 2 with two renderers | the exception names the cause; the same-renderer case and the after-disposal case attach without one |
 
 ---
 
@@ -763,6 +774,14 @@ EXGRID_SOAK=1 npx playwright test memory.spec.mjs 2>&1 | tee ../../verification/
 
 A skipped soak is `not run` in `results.md`, never a pass.
 
+**Then the same suite against the Blazor Server host** (§24):
+
+```sh
+EXGRID_HOSTING=server npx playwright test 2>&1 | tee ../../verification/<date>/layer3-server.log
+EXGRID_HOSTING=server EXGRID_MEASURE=pointer npx playwright test measure.spec.mjs 2>&1 \
+  | tee ../../verification/<date>/measure-server.log
+```
+
 Discharges UX-2..11/15/16, VZ-1/10, ED-2/3/4/9/11, KB-1/8/11/12/28..32, CP-4/5/6/10/14, BIG,
 PST-3/5, CON-1..6/8, DOM, ST-3, FN-21, and §23's layer-3 rows — the Wrapper's specs run in the
 same command, against the proof-of-concept page.
@@ -777,7 +796,7 @@ about a minute, nearly all of it the reference source sorting and filtering a mi
 Step 2 skips it by name and this step is the run that sets it:
 
 ```sh
-EXGRID_ST1_MILLION=1 nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net8.0/ExGrid.Components.dll \
+EXGRID_ST1_MILLION=1 nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll \
   -class "ExGrid.Components.Tests.ConsistencyTests" 2>&1 | tee verification/<date>/st1.log
 ```
 
@@ -786,7 +805,7 @@ Pass: every case passes and none is skipped.
 ### Step 6 — Observational numbers
 
 Record `metrics.json` and add a `spikes/render-bench` entry (PF-8). MEM-7 is layer 2's: after
-Step 2's build, read it from `nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net8.0/ExGrid.Components.dll -method
+Step 2's build, read it from `nix develop -c dotnet tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll -method
 "ExGrid.Components.Tests.AllocationTests.Bytes_per_scroll_frame_are_recorded" -showLiveOutput` and
 copy it into `metrics.json` by hand — layer 2 runs too often to write into `verification/` itself. Compare with the previous
 verification directory and **write one sentence per number that moved more than 20%** — not as a
@@ -833,10 +852,32 @@ holding nothing of any real Consumer's domain.
 | **WR-1** | MUST | The filter panel is the Wrapper's own, built from MudBlazor controls inside the core's popover, and uses the whole `FilterPanelContext`: a value list with a search and a Blank entry where the column declares one and the answer arrives; the condition form where it declares that, or where the answer is TooMany; Apply, Cancel, Clear (ADR-0009/0030) | Layer 2 on `MudGridChrome.FilterPanel`; Layer 3 on the proof-of-concept page | the same choices produce the same `FilterSpec` through the Wrapper's panel as through the built-in one |
 | **WR-2** | MUST | A condition's operator is a `MudSelect` offering exactly `Allowed`, in the core's order; its value is a `MudTextField` for text, a `MudNumericField` for a number, an editable `MudDatePicker` for a date, and a `MudSelect` of true / false **with nothing chosen at first** for a boolean; Apply is unavailable until the operator's value is given (ADR-0009/0039) | Layer 2 per column type | the controls and the gating as stated |
 | **WR-3** | MUST | The wording is MudBlazor's localised text wherever MudBlazor has a key, and the Chrome's own label function — English by default — for the rest; the Blank entry and its operator are the Chrome's own words and never say "empty" (CONTEXT.md **Blank**) | Layer 2 with a non-English `MudLocalizer` registered | the keyed words change; the Blank wording is the Chrome's |
-| **WR-4** | MUST | The column menu and the Context Menu list exactly the core's commands, in its order, each with its `Enabled` state, as `MudButton`s with `role="menuitem"`; each core command id has a Material icon, and a Consumer's command has none unless the Chrome's icon function supplies one (ADR-0010/0036) | Layer 2 | items, order, state, roles and icons as stated |
+| **WR-4** | MUST | The column menu and the Context Menu list exactly the core's commands, in its order, each with its `Enabled` state, as `MudButton`s with `role="menuitem"`; each core command id has a Material icon, and a Consumer's command has none unless the Chrome's icon function supplies one; a key on an item is answered through the context's `ResolveKey`, never against the Wrapper's own idea of the current item (ADR-0010/0036/0039) | Layer 2 | items, order, state, roles and icons as stated; the keys follow `ResolveKey` |
 | **WR-5** | MUST | Behaviour is the core's: every layer-3 test of KB-17, KB-28..32, FN-21, A11Y-19, UX-11 and CTX-1..4 passes with `MudGridChrome` exactly as it does with the built-in Chrome (FN-17, ADR-0010) | Layer 3, each such test run under both Chromes | identical outcomes |
 | **WR-6** | MUST | `Striped` on `MudExGridPaper` turns Row Stripes on as a default the grid's own `StripeRows` beats, and the stripe takes the palette's table-stripe colour in both schemes; a scheme switch re-renders no row (ADR-0030/0038, RR-1) | Layer 2 for the cascade; Layer 3 for the colour and the render count | as stated |
 | **WR-7** | MUST | The proof-of-concept page holds: a grid in a tab that was hidden paints correctly once shown; a Drawer toggle resizes a `Fill` grid and its geometry follows; a grid in a `MudDialog` opens its popovers whole — inside the grid's box, never cut by the dialog — and its Inner Popups above the dialog; the toolbar's `MudSelect` and a grid panel's never interfere; the two grids stay independent (ADR-0018/0028/0030/0039) | Layer 3 | every clause observed |
 | **WR-8** | MUST | The Wrapper adds no script: no `.js` in the package and no interop call of its own; what MudBlazor's components run for themselves is MudBlazor's (ADR-0021 as narrowed by ADR-0039) | inspect the package; grep for `IJSRuntime`, `IJSObjectReference`, `.js` | none |
 | **WR-9** | MUST | The Wrapper's own suites hold the core's console rules: zero errors, zero page errors, zero warnings from ExGrid's or the Wrapper's code, no unhandled exception (CON-1/2/3/6) | the shared layer-3 fixture; layer 2's unobserved-exception handler | as the core's |
 
+---
+
+## 24. Blazor Server (SRV)
+
+*(Added 2026-09-25, when the grid was first run under Blazor Server — ADR-0005, ADR-0010,
+ADR-0018, ADR-0019, ADR-0021.)* The criteria above are the grid's on any host. This section says
+how they are run on the second host, which of them are WebAssembly's by definition, and adds what
+only a circuit can fail. **The claim that ExGrid runs on Blazor Server is made by an ADR, and only
+once every MUST here passes**; until then the Server host is a fixture, not a promise.
+
+The host is `samples/ExGrid.DemoHost.Server`: the same pages as the WebAssembly DemoHost, from
+`samples/ExGrid.DemoPages`, in `InteractiveServer` render mode with prerendering on. Layer 3 is
+pointed at it with `EXGRID_HOSTING=server`.
+
+| ID | Level | Statement | Verification | Pass |
+|---|---|---|---|---|
+| **SRV-1** | MUST | Both hosts serve the same pages from `ExGrid.DemoPages`; the Server host runs `InteractiveServer` with prerendering on, and neither host references the other (ADR-0019) | inspect the three projects | one set of pages; the render mode and prerender as stated; no project reference between hosts |
+| **SRV-2** | MUST | Every layer-3 test passes against the Server host, on both browsers, with the same outcome as on WebAssembly — except where a criterion is WebAssembly's by definition, and those are only: **CP-6**'s "the `copy` event route" (on Server every copy takes the asynchronous route, ADR-0005; its no-prompt property is asserted instead), and the host counters behind **MEM-6** (read from the server process, as MEM-6 says) | `EXGRID_HOSTING=server npx playwright test`, §22 Step 4; CI's Server-host layer-3 job (ADR-0041) | all pass; a test skipped on Server names one of the two exceptions |
+| **SRV-3** | MUST | Two users, one store: on the `/shared` page, a change to the Consumer's store reaches both circuits' grids; a sort in one leaves the other's order and selection untouched; and one bundled Grid Source attached from both circuits is refused by name (ADR-0018) | Layer 3, two browser contexts, Server host only | as stated |
+| **SRV-4** | MUST | The console rules hold on the Server host, reading CON-6 from the Server host's own output (CON-1..8) | the shared fixture during SRV-2's run | as the core's |
+| **SRV-5** | MUST | Keys, paste and the clipboard hold under a real round trip: ED-22, KB-33..35, CP-21 and CP-23 pass with 150 ms injected between the browser and the Server host (ADR-0005/0010/0039) | Layer 3 through the loopback latency proxy | as those criteria |
+| **SRV-6** | OBSERVATIONAL | What the pointer reports cost on a circuit: calls crossing per second during a sweep while scrolling, and the lag from crossing a row to the band repainting, at 0, 50 and 150 ms round trip (ADR-0021's owed number) | `EXGRID_MEASURE=pointer`, written to `metrics.json` | recorded per round trip; if the cost is bad, ADR-0021's answer is the switch each report already has |

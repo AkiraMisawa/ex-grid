@@ -107,10 +107,10 @@ public class PopoverKeyboardTests : GridTestContext
 
     private string? LastFocused() => Focused().LastOrDefault();
 
-    /// <summary>The root's reference, read at the render that created it: bUnit writes a
-    /// reference's id into the markup only when the element is new, and the root is
-    /// retained by every render after the first.</summary>
-    private static string RootRef(IRenderedComponent<ExGrid<TestRow>> cut) => RefOf(cut.Find(".ex-grid"));
+    /// <summary>The root's reference, as the listener was attached to it: bUnit writes a
+    /// reference's id into the markup only when the element is new, and by the time a
+    /// test runs the root has been rendered again (the attach lifts Prerendered).</summary>
+    private string RootRef(IRenderedComponent<ExGrid<TestRow>> cut) => Js.RootReferenceId;
 
     [Fact] // ADR-0039 / KB-28: Alt+↓ opens the menu of the Focus's column, named by its header
     public async Task Alt_down_opens_the_menu_of_the_focus_column()
@@ -158,6 +158,19 @@ public class PopoverKeyboardTests : GridTestContext
         await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
 
         Assert.Equal(RefOf(Item(cut, "Sort ascending")), LastFocused());
+    }
+
+    [Fact] // ADR-0039 / SRV-5: the opening focus does not scroll the menu — on a Server circuit it
+           // lands a round trip after the menu is shown, and would undo a scroll the user made
+    public async Task The_opening_focus_keeps_the_menus_scroll()
+    {
+        var cut = RenderGrid();
+
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+
+        var opening = JSInterop.Invocations.Last(i => i.Identifier == Focus);
+        Assert.Equal(RefOf(Item(cut, "Sort ascending")), ((ElementReference)opening.Arguments[0]!).Id);
+        Assert.Equal(true, opening.Arguments[1]);
     }
 
     [Fact] // ADR-0039 / KB-29: the built-in panel focuses its first control once its contents have settled
@@ -334,6 +347,32 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(root, LastFocused());
     }
 
+    [Fact] // ADR-0039: the keyboard goes back to the root before the popover holding it is
+           // removed — after, a Server circuit leaves a round trip in which DOM focus is on
+           // <body> and every key pressed goes nowhere
+    public async Task The_root_is_focused_while_the_closing_popover_still_stands()
+    {
+        var cut = RenderGrid();
+        var root = RootRef(cut);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+        // What was on screen at each moment the grid asked for the root to be focused.
+        var popoversAtRootFocus = new List<int>();
+        JSInterop.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier == Focus && ((ElementReference)invocation.Arguments[0]!).Id == root)
+                popoversAtRootFocus.Add(cut.FindAll(".ex-popover").Count);
+            return false;
+        });
+
+        await KeyAsync(cut, "Escape", fromDescendant: true);
+
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Contains(1, popoversAtRootFocus);
+        // And the core still has the last word, after the render (ADR-0039).
+        Assert.Equal(root, LastFocused());
+    }
+
     [Fact] // ADR-0039 / A11Y-19: the menus are menus, the panel a dialog, each column's named by its header
     public async Task Each_popover_is_named()
     {
@@ -381,6 +420,8 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(refs["Sort descending"], LastFocused());
 
         // Past the last enabled item, over the four disabled ones, and round to the first.
+        await PressAsync(Item(cut, "Sort descending"), "ArrowDown");
+        Assert.Equal(refs["Filter"], LastFocused());
         await PressAsync(Item(cut, "Filter"), "ArrowDown");
         Assert.Equal(refs["Sort ascending"], LastFocused());
 
@@ -414,11 +455,64 @@ public class PopoverKeyboardTests : GridTestContext
         await ClickCellAsync(cut, 150, 10);
         await AltDownAsync(cut);
 
+        // The keys choose the item (ADR-0039): ↓ to Sort descending, then the key runs it.
+        await PressAsync(Item(cut, "Sort ascending"), "ArrowDown");
         await PressAsync(Item(cut, "Sort descending"), key);
 
         Assert.Equal([new SortSpec("Amount", SortDirection.Descending)], source.Sorts);
         Assert.Empty(cut.FindAll(".ex-popover"));
         Assert.Equal(root, LastFocused());
+    }
+
+    [Fact] // ADR-0039 / KB-17: a pointer-down that dismisses leaves the core the last word on focus
+    public async Task A_dismissing_press_on_the_rows_hands_the_keyboard_back_after_the_close()
+    {
+        // On a circuit the menu's own request to focus its first item can land after the
+        // press that dismissed it, on an item about to be removed. The core's hand-back,
+        // made after the render that removes the menu, comes after it.
+        var cut = RenderGrid();
+        var root = RootRef(cut);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+
+        await ClickCellAsync(cut, 50, 30);
+
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Equal(root, LastFocused());
+    }
+
+    [Fact] // ADR-0039 / KB-34: keys typed together run the item the keys chose, wherever DOM focus still is
+    public async Task Keys_typed_together_in_a_menu_run_the_item_they_chose()
+    {
+        // On a circuit DOM focus follows a ↓ a round trip later, so the Enter typed with it
+        // arrives on the item that still holds focus — the first. It must run the second.
+        var source = new TestSource();
+        var cut = RenderGrid(source: source);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+        var first = Item(cut, "Sort ascending");
+
+        await PressAsync(first, "ArrowDown");
+        await PressAsync(Item(cut, "Sort ascending"), "Enter");
+
+        Assert.Equal([new SortSpec("Amount", SortDirection.Descending)], source.Sorts);
+    }
+
+    [Fact] // ADR-0039 / KB-34: a substituted Chrome asks the core, which keeps the menu's place
+    public async Task A_substituted_chrome_resolves_keys_through_the_context()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        await ClickCellAsync(cut, 150, 10);
+        await AltDownAsync(cut);
+        var commands = chrome.Menu!.Commands;
+
+        var down = await cut.InvokeAsync(() => chrome.Menu!.ResolveKey!("ArrowDown", false, false));
+        var enter = await cut.InvokeAsync(() => chrome.Menu!.ResolveKey!("Enter", false, false));
+
+        Assert.Equal(MenuKeyKind.Move, down.Kind);
+        Assert.Equal(new MenuKey(MenuKeyKind.Run, down.Item), enter);
+        Assert.Equal("sort-descending", commands[enter.Item].Id);
     }
 
     [Theory] // ADR-0039 / KB-30: Tab and Shift+Tab close the menu as a Cancel — nothing runs

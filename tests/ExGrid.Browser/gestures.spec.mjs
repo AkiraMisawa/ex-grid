@@ -136,6 +136,9 @@ test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded)', a
 test('the focus outline holds 3:1 against the cell ground under the default theme (UX-9)', async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r1c1']").click({ force: true });
+    // The Focus outline is painted by the render the click asked for — a round trip away
+    // on the Server host.
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c1$/);
 
     const contrast = await page.evaluate(() => {
         const focus = [...document.querySelectorAll('.ex-focus')]
@@ -189,6 +192,7 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
 test('a composing IME keydown is never taken (ED-11, the listener guard)', async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r0c1']").click({ force: true });
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
     const before = await grid(page).getAttribute('aria-activedescendant');
 
     // A synthetic composing keydown: the capture listener must let it pass — taking

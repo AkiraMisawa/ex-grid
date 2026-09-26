@@ -18,6 +18,11 @@
        the only net8 executables here, so they are the only things that hit it — the
        DemoHost is a Blazor WebAssembly project and emits no apphost at all.
 
+       (Written while the tests targeted net8.0. Since ADR-0022 moved them to net10.0 the
+       apphost would come from the SDK's own template, which nixpkgs does patch; the
+       override stays until that is seen to work under nix on every platform, since the
+       failure only ever showed on WSL2.)
+
        With no apphost, `dotnet test` runs the test dll through the nix muxer, which
        already carries the nix interpreter: one glibc throughout, and the same path taken
        on every platform rather than a Linux-only patch.

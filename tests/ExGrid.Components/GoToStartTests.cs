@@ -181,5 +181,33 @@ public class GoToStartTests : GridTestContext
         var tops = Js.ScrolledTo.Select(w => w.Top).ToList();
         Assert.Equal([FarBottomPx, 0, FarBottomPx], tops[^3..]);
     }
-}
 
+    [Fact] // ADR-0012: an answer the browser gave before the grid's last write reached it
+           // says where the scroller WAS — judged as "where it is going", it drops the
+           // next reveal (Server only: a read and a write cross on the circuit's wire)
+    public async Task A_read_that_crossed_a_write_does_not_drop_the_next_reveal()
+    {
+        var cut = RenderGrid(pinnedColumnCount: 0);
+        await cut.Find(".ex-viewport").MouseDownAsync(
+            new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 10 });
+        await PressAsync(cut, "End", ctrl: true);
+        await PressAsync(cut, "Home", ctrl: true);
+
+        // The browser scrolls to the top and says so; the grid asks where it is. Before
+        // the answer is back, Ctrl+End writes the far corner — and the browser, which
+        // read its offset before that write arrived, answers "the top".
+        var read = Js.UnansweredScrollRead();
+        var scrolling = cut.InvokeAsync(() => cut.Find(".ex-scroller").TriggerEventAsync("onscroll", EventArgs.Empty));
+        await PressAsync(cut, "End", ctrl: true);
+        var reread = Js.UnansweredScrollRead();
+        read.SetResult(new ScrollOffset(0, 0));
+        // The write lands, and whatever the grid asks now is answered from the corner.
+        reread.SetResult(new ScrollOffset(FarBottomPx, FarRightPx));
+        await scrolling;
+
+        await PressAsync(cut, "Home", ctrl: true);
+
+        var tops = Js.ScrolledTo.Select(w => w.Top).ToList();
+        Assert.Equal([FarBottomPx, 0, FarBottomPx, 0], tops);
+    }
+}

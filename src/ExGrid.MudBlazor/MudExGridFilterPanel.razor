@@ -14,14 +14,20 @@
    take that Escape and close the panel with it. The next Escape reaches the grid and
    closes the panel.
 
-   Enter in a value field is the browser's implicit submission: Apply is this form's
-   submit button, so Enter submits wherever a text field has focus — and the browser does
-   not submit on the Enter that confirms an IME's candidate. While Apply is unavailable,
-   the default button is disabled and Enter submits nothing (WR-2). Tab wraps inside the
+   Enter in a value field is the browser's implicit submission, so Enter submits wherever
+   a text field has focus — and the browser does not submit on the Enter that confirms an
+   IME's candidate. The default button it clicks is a hidden one that is never disabled,
+   and Apply refuses the submit while it is unavailable (WR-2). Gating Enter on Apply's
+   disabled button instead dropped it on a Server circuit: the button is enabled a round
+   trip after the value is typed, and an Enter typed with the value found it still
+   disabled and submitted nothing. The submit reaches the circuit behind the value, so the
+   check there sees what was typed. Tab wraps inside the
    panel through two focus sentinels, one either side of the controls, as in the built-in
    panel (KB-31). *@
 <form class="mud-ex-grid-filter" @onsubmit="Apply" @onsubmit:preventDefault>
     <span class="mud-ex-grid-focus-wrap" tabindex="0" @onfocus="FocusLastAsync"></span>
+    @* The form's default button: the first submit button, which implicit submission clicks. *@
+    <button type="submit" class="mud-ex-grid-filter-default" hidden tabindex="-1" aria-hidden="true"></button>
     @if (_awaiting)
     {
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mud-ex-grid-filter-loading" />
@@ -243,7 +249,7 @@
             else if (_operatorField is not null)
                 await _operatorField.FocusAsync();
         }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }
@@ -256,7 +262,7 @@
         {
             await _clear.FocusAsync();
         }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException)
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
         }
     }

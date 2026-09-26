@@ -17,6 +17,8 @@ internal sealed class GridJSInterop
     private readonly JSRuntimeInvocationHandler<ScrollOffset> _offset;
     private readonly JSRuntimeInvocationHandler _setOffset;
     private readonly JSRuntimeInvocationHandler _blur;
+    private BunitJSModuleInterop? _module;
+    private BunitJSModuleInterop? _handle;
 
     private GridJSInterop(
         JSRuntimeInvocationHandler<ScrollOffset> offset,
@@ -41,6 +43,13 @@ internal sealed class GridJSInterop
     /// call by design, so this counting is the contract: two reads per scroll would mean
     /// the rows and the columns were painted from different moments.</summary>
     internal int OffsetReads => _offset.Invocations.Count;
+
+    /// <summary>The id of the root the listener was attached to (ADR-0018). Read off the
+    /// attach call rather than the markup: bUnit writes an element's reference id into
+    /// the markup only at the render that created it, and the render that follows the
+    /// attach (ADR-0033's Prerendered state lifting) is not that one.</summary>
+    internal string RootReferenceId =>
+        ((Microsoft.AspNetCore.Components.ElementReference)_module!.Invocations["attach"][^1].Arguments[0]!).Id;
 
     /// <summary>Where the grid has told the browser to scroll — how Focus-follows-scroll
     /// is observed without a browser (ADR-0012).</summary>
@@ -91,6 +100,8 @@ internal sealed class GridJSInterop
         dispose.SetVoidResult();
         return new GridJSInterop(offset, setOffset, blur, dispose)
         {
+            _module = module,
+            _handle = handle,
             PointerReporting = setPointerReporting,
             PointerForgotten = forgetPointer,
             InnerPopupTold = setInnerPopup,
@@ -108,6 +119,13 @@ internal sealed class GridJSInterop
     /// <summary>Every pair the grid told the browser: whether to report row changes
     /// (on with <c>HighlightHoverRow</c>) and rests (on with <c>CellMessageOf</c>).</summary>
     internal JSRuntimeInvocationHandler PointerReporting { get; private init; } = default!;
+
+    /// <summary>A <c>getScrollOffset</c> the browser has not answered yet, answered when
+    /// the test says — how a read crossing a write on a Server circuit's wire is staged
+    /// (ADR-0012). Every read the grid makes from here on lands on it, until a later call
+    /// stands up another.</summary>
+    internal JSRuntimeInvocationHandler<ScrollOffset> UnansweredScrollRead()
+        => _handle!.Setup<ScrollOffset>("getScrollOffset");
 
     /// <summary>What the next <c>getScrollOffset</c> answers — the browser scroll
     /// position the grid is about to read, on both axes at once.</summary>

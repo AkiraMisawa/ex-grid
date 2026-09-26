@@ -41,9 +41,9 @@ test layer in CI. The Definition of Done's sign-off is what a stable version wai
 The toolchain is the **.NET 10 SDK** (version pinned via [`global.json`](global.json)).
 You can get it through Nix or install it yourself — both are supported.
 
-The **shipped packages target `net8.0`**, so consuming applications need .NET 8 or newer
-([ADR-0022](docs/adr/0022-packages-target-net8-and-run-on-everything-newer.md)); the .NET 10
-SDK builds that target just fine.
+The **shipped packages target `net10.0`**, so consuming applications need .NET 10 or newer
+([ADR-0022](docs/adr/0022-packages-target-net10-and-run-on-everything-newer.md)); the SDK and
+the target are the same .NET 10 today.
 
 ### Option A — Nix (reproducible toolchain)
 
@@ -77,6 +77,12 @@ nix develop -c dotnet run --project samples/ExGrid.DemoHost
 Stop it with `kill $(lsof -ti tcp:5299)` — not `pkill -f`, which matches the calling
 shell's own command line and kills it.
 
+The same pages run under Blazor Server from the second host, on <http://localhost:5298>:
+
+```sh
+nix develop -c dotnet run --project samples/ExGrid.DemoHost.Server
+```
+
 > **Nix gotcha:** flakes only see git-tracked files. `git add` any new file before
 > building (committing is not required), or the build will not see it.
 
@@ -107,7 +113,9 @@ your environment alone.
 | [`src/ExGrid.MudBlazor/`](src/ExGrid.MudBlazor/) | The ExGrid.MudBlazor package: the Wrapper for MudBlazor applications |
 | [`tests/`](tests/) | The gating test layers — `ExGrid.Tests` (xUnit), `ExGrid.Components` and `ExGrid.MudBlazor.Tests` (bUnit), `ExGrid.Browser` (Playwright) — and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
 | [`.github/workflows/`](.github/workflows/) | CI (`ci.yml`) and the prerelease publish (`release.yml`) |
-| [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | Runnable Consumer for manual verification; the browser layer's fixture. Not shipped |
+| [`samples/ExGrid.DemoPages/`](samples/ExGrid.DemoPages/) | The demo pages both hosts serve, and the browser layer's fixture. Not shipped |
+| [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | The standalone WebAssembly host for those pages — the default. Not shipped |
+| [`samples/ExGrid.DemoHost.Server/`](samples/ExGrid.DemoHost.Server/) | The Blazor Server host for the same pages (`InteractiveServer`, prerendered). Not shipped |
 | [`spikes/render-bench/`](spikes/render-bench/) | Disposable render-cost measurement harness (see its README) |
 | [`AGENTS.md`](AGENTS.md) | Working rules for AI agents; useful reading for humans too |
 

@@ -1,0 +1,35 @@
+@* The document a Blazor Web App serves. Every page is interactive on the circuit, and is
+   prerendered first — the default a Consumer gets (ADR-0019). The pages and the router
+   are ExGrid.DemoPages', shared with the WebAssembly host. *@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ExGrid demo host (Blazor Server)</title>
+    <base href="/" />
+    @* No icon ships with the host; without this line the browser requests /favicon.ico,
+       and its 404 fails the layer-3 console capture (CON-1). *@
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="@Assets["_content/ExGrid/ex-grid.css"]" />
+    <link rel="stylesheet" href="@Assets["_content/ExGrid.DemoPages/app.css"]" />
+    <ImportMap />
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveServer" />
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    @* MudBlazor's script, for the /mud pages' theme provider — after Blazor's, as
+       MudBlazor asks of a Web App. *@
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+</body>
+
+</html>

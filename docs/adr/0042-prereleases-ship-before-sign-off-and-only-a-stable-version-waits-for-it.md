@@ -71,7 +71,8 @@ skips. So **`ci.yml` gains a `package` job, on every push and pull request:**
   deterministic build.
 - It checks each `.nuspec`: the licence, the readme, the repository and commit, and the
   dependencies — `Microsoft.AspNetCore.Components.Web` at 8.0.0 for the core
-  ([ADR-0022](./0022-packages-target-net8-and-run-on-everything-newer.md)), and the core at
+  ([ADR-0022](./0022-packages-target-net10-and-run-on-everything-newer.md); 10.0.0 since ADR-0022 moved the target to `net10.0`, after
+  `0.1.0-beta.1`), and the core at
   exactly this version for the Wrapper.
 - A Consumer project that sits outside the solution, `tests/ExGrid.PackageSmoke`, restores both
   from the packed files alone. It builds with warnings as errors, against a page that uses the

@@ -74,7 +74,7 @@ public class PopoverRoomTests : GridTestContext
     public async Task A_context_menu_with_no_room_closes_and_the_root_takes_the_keyboard()
     {
         var cut = RenderGrid();
-        var root = cut.Find(".ex-grid").GetAttribute("blazor:elementreference");
+        var root = Js.RootReferenceId;
         await Report(cut, 300);
         await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { OffsetX = 50, OffsetY = 30 });
         Assert.Single(cut.FindAll(".ex-popover"));

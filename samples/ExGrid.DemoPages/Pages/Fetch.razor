@@ -1,4 +1,4 @@
-@page "/server"
+@page "/fetch"
 @implements IDisposable
 
 <nav class="demo-nav">
@@ -6,10 +6,10 @@
     <a href="virtual">Virtualised</a>
     <a href="wide">Wide</a>
     <a href="cells">Cells and rows</a>
-    <span>Server</span>
+    <span>Fetching source</span>
 </nav>
 
-<h1>Server — 100,000 rows, one Window at a time</h1>
+<h1>Fetching source — 100,000 rows, one Window at a time</h1>
 
 <p>
     The pull entry point (ADR-0001): <code>GridSource.Fetch</code> holds the Window and
@@ -55,7 +55,7 @@
     // applied to the Source).
     private readonly FetchingGridSource<DemoServerRow> _source = default!;
 
-    public Server()
+    public Fetch()
     {
         _source = GridSource.Fetch<DemoServerRow>(FetchAsync, readAheadRows: 60);
         // Subscribed, so the failure is shown rather than rethrown into the host's error

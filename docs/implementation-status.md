@@ -251,6 +251,57 @@ kept in an uncommitted config. So none of the new MUSTs has met `chrome` or `mse
 numbers were not filed under `verification/`, because software rendering belongs to no trend
 (for scale only: settle repaint 20 ms on / 120 ms off, drag step 5.4 ms median).
 
+**2026-09-25, the grid under Blazor Server.** Decided in a grilling session and recorded
+before it was built: ADR-0022 rewritten (the packages target `net10.0`), and additions to
+ADR-0005/0010/0018/0019/0021/0029/0033, the glossary's **Prerendered**, and the Definition
+of Done's A11Y-20, ED-22, CP-21..23, ST-5 and new §24 (SRV). Built:
+
+- `samples/ExGrid.DemoPages` holds the pages; the WebAssembly DemoHost only mounts them;
+  `samples/ExGrid.DemoHost.Server` serves them in `InteractiveServer` with prerendering
+  on. `/server` is `/fetch`; `/shared` is SRV-3's two-users-one-store page.
+- Paste crosses as JS stream references under `PasteByteCap` (CP-21/22); a clipboard write
+  the browser rejects is `ClipboardUnavailable` (CP-23); a bundled Grid Source refuses a
+  second circuit (ST-5); a Prerendered grid is busy and takes no tab stop until its
+  listener is attached (A11Y-20).
+- Two defects only a circuit shows, each reproduced in layer 3 at a 150 ms round trip and
+  then fixed: typing `1500` onto a cell committed `1` (the key gate now holds keys through
+  a mode change, ED-22); and a key arriving between a render and its acknowledgement made
+  an earlier render's callback focus an editor it did not contain, which threw and ended
+  the circuit (the focus now waits for the render that paints the input).
+- Layer 3 chooses its host with `EXGRID_HOSTING`, puts `latency-proxy.mjs` in front of the
+  Server host, reads the host's log for CON-6, and on Server waits for a page to be
+  interactive before acting on it, as a user must.
+
+**Where this ran.** A Linux cloud container, .NET 10.0.401 installed directly, the
+Playwright-bundled Chromium 1194 **headed under Xvfb** (so native scrollbars occupy layout),
+with `ignoreHTTPSErrors` for the container's egress proxy, in an uncommitted config. None of
+it has met `chrome` or `msedge`.
+
+- Layers 1 and 2: **476 + 495 (1 skipped by name) + 52**.
+- Layer 3 on WebAssembly: **137 pass, 5 skipped by name**, 0 failed.
+- Layer 3 on Server: the specs that were only ever passing because WebAssembly answers
+  within the same frame — a Focus, an editor, a menu or a clipboard read straight after
+  the gesture — now wait for the answer. The last full run: **128 pass, 3 skipped by
+  name, 11 failed**. Ten of the failures are the MudBlazor pages' web font, which the
+  container's egress fails intermittently on either host (`ERR_TOO_MANY_RETRIES`, CON-1).
+  The eleventh was one more test reading the Focus straight after a click (DIR-2), now
+  waiting for it and passing 8 of 8. None is the grid's.
+  *(Since then the demo pages serve Roboto themselves, and nothing in layer 3 reaches a
+  third-party host. The files are those Google Fonts serves, with its `@font-face` rules,
+  under `samples/ExGrid.DemoPages/wwwroot/fonts/roboto/` with the OFL. Loading it from
+  Google was only ever a way of getting the font the Wrapper's widths describe (ADR-0030),
+  and it made the container's runs depend on an external host. The MudBlazor specs pass
+  36 of 36 on each host with no request leaving localhost.)*
+- One more circuit-only defect found by that run and fixed: a Server circuit going away
+  cancels every JS call still pending, and the cancellation of the grid's own disposal
+  calls was not among the failures it expected, so it ended the circuit with an error in
+  the host log. The core and the Wrapper now treat a canceled call as a disconnect, and
+  each disposal is attempted on its own.
+- SRV-6 (observational, container, not a trend): the band stands on the row a round trip
+  plus about 20 ms after the pointer crosses onto it — 20 / 67 / 172 ms median at 0 / 50 /
+  150 ms — and a sweep while scrolling carries 47–55 frames a second up the circuit
+  whatever the round trip, so the reports are not per frame.
+
 ## Working through to the component
 
 | ADR | | Pinned by |
@@ -272,7 +323,7 @@ numbers were not filed under `verification/`, because software rendering belongs
 | 0017 / 0026 | Both browser projects declared (`chrome`, `msedge`) | `playwright.config.mjs` |
 | 0018 | Instance independence, per-instance ids | `features.spec.mjs` (two grids) |
 | 0020 | Action and Template Columns | both layers |
-| 0022 | `net8.0`, single-target | the project file |
+| 0022 | `net10.0`, single-target (rewritten from `net8.0` on 2026-09-25) | the project file |
 | 0025 | `FetchingGridSource` (+ copy rows, + distinct values delegate); `InMemoryGridSource.ReplaceRow` — the in-memory Consumer's apply (deliberately *not* ADR-0007's Overlay application; recorded there) | `GridSourceFetchTests`, `ReplaceRowTests` |
 | 0027 / 0028 / 0029 | **`GridMetrics`, `GridDensity`, `ViewportSize.Fill`**, inline Geometry Tokens, the token vocabulary, the forced-colors block | `GridMetricsTests`, `GridMetricsWiringTests` |
 | 0031 | `dir="ltr"` on the root | `GridRenderingTests` |
@@ -341,10 +392,10 @@ clean. The property is unchanged: the dependency points one way.
 2. ~~**VZ-14 at 125%.**~~ Discharged on 2026-09-24 on a Windows desktop at 125%, on both
    browsers. (The Edge run and VZ-10, which this item used to hold, were discharged on
    2026-09-01.)
-3. The hover band's owed numbers — a `spikes/render-bench` mode for the band's paint,
-   and a Blazor Server host to measure the pointer report under (ADR-0021, fifth entry;
-   none exists in the repository). *(Interactive mode's keyboard entry, which headed this
-   item, is built — ADR-0037.)*
+3. The hover band's owed numbers — a `spikes/render-bench` mode for the band's paint.
+   *(The Blazor Server host this item also asked for exists since 2026-09-25, and SRV-6 has
+   been measured on it in a container; a run on real hardware is still owed. Interactive
+   mode's keyboard entry, which headed this item, is built — ADR-0037.)*
 4. ~~**ADR-0037's layer 3 on the two target browsers.**~~ Discharged on 2026-09-23 by
    the Windows run: KB-20 to KB-27, A11Y-17 and UX-14 pass on `chrome` and `msedge`.
 5. **`ExGrid.MudBlazor`'s remaining seams, and Row Stripes — decided and built
@@ -480,7 +531,70 @@ clean. The property is unchanged: the dependency points one way.
    throws for Auto, so logging a width, or the refusal's own message, threw instead. It
    prints `Auto` or `Fixed(120px)` now.
 
-8. **Found on 2026-09-26, not fixed: `ViewportHeight = Fill` paints no rows in a sized box.**
+8. **Blazor Server — what layer 3 found on 2026-09-25, and where each stands.** Each is a
+   keyboard, focus or scroll hand-off that WebAssembly completes within one frame and a
+   circuit completes a round trip later.
+   - ~~**A key pressed straight after a key that opens a popover**~~ reached the grid. Fixed
+     (ADR-0010 widened, KB-33): those keys are held until the popover holds DOM focus, then
+     handed to it — and the hold now lasts until focus has landed even when the answer
+     arrives first, which a 1-in-10 race had shown it did not.
+   - ~~**A menu resolved its keys against the item holding DOM focus**~~, so `↓` `Enter`
+     ran `Copy` for `Copy with headers`. Fixed (ADR-0039, KB-34): the core keeps the menu's
+     place and the contexts carry `ResolveKey`; the MudBlazor Wrapper asks it too.
+   - ~~**A focus request from an earlier render landing after a newer gesture**~~. Fixed
+     (ADR-0039): a dismissing press also hands the keyboard back after the render that
+     removes the popover.
+   - **An Escape straight after an Inner Popup opens**: the predicted cause — the gate taking
+     it — was wrong, and the fix decided for it (reading `aria-expanded`) was withdrawn
+     unbuilt (ADR-0039 records why). What layer 3 saw is MudBlazor's date picker ignoring an
+     Escape while DOM focus is still on its own button. KB-35 holds the grid to its half.
+   - ~~**`Ctrl+End` then `Ctrl+Home` pressed faster than the scroll round trip**~~ left the
+     Focus on (0, 0) and the view at the last row. `scrollbar.spec.mjs`, "at every zoom
+     level, after moving again", failed 7 runs in 12 on the Server host and never on
+     WebAssembly. Root cause, from a log of the grid's reads, writes and reveals: a read of
+     the scroll offset and a write crossed on the circuit's wire. The browser answered the
+     read (the top, after `Ctrl+Home`) before the write for the next `Ctrl+End` reached it,
+     and the answer reached the grid after that write was sent. So the grid took it as the
+     newest word on where the scroller was going. The next `Ctrl+Home` then judged the top
+     "already there" and wrote nothing, and a Focus that no longer changes arms no second
+     reveal. It is the in-flight-write gap ADR-0012 closed for WebAssembly, reopened by
+     arrival order: there, a read cannot be answered before an earlier write has run.
+     Fixed (ADR-0012): a read that a write overtook is set aside and asked again. The same
+     answer could also pull an edge auto-scroll's model back mid-drag. Layer 2 pins it
+     (`GoToStartTests`); the test passes 20 runs in 20 on the Server host.
+   - ~~**A key typed straight after the Escape that closed a popover**~~ was lost: the core
+     handed focus back only after the render that removed the popover, and for that round
+     trip DOM focus was on `body`, where the root's listener cannot hear it. Found after
+     `main` was merged: A11Y-19 under the mud Chrome failed 3 runs in 6 on the Server host.
+     Fixed (ADR-0039): the core also asks for the root's focus before that render. Layer 2
+     pins it (`PopoverKeyboardTests`), and the test now waits for the panel to close before
+     clicking the cell under it. It passes 30 runs in 30 on the Server host.
+   - ~~**Found by CI's first Server-host run (on `chrome` and `msedge`)**~~. 274 passed and
+     6 failed, all on MudBlazor pages. Two failures were real, each on both browsers:
+     - Escape, Escape straight after an Inner Popup left the panel standing. The gate learned
+       of the popup's closing a round trip late.
+     - A value typed with its Enter applied nothing. Enter waited on Apply's disabled
+       button, which the circuit enables a round trip after the value.
+
+     Both are fixed (ADR-0039) and pinned at a 150 ms round trip in `circuit.spec.mjs`. The
+     other failures were tests reading a Focus or a paint straight after a click, and they
+     now wait for it.
+   - ~~**A menu taking the keyboard pulled back a scroll the user had given it**~~. Found by
+     a later CI run, UX-11 on `msedge`: opened by pointer, a menu is focused a round trip
+     late, and `focus()` scrolled a menu taller than its grid back to its top. The opening
+     focus no longer scrolls, under both Chromes (ADR-0039). It is pinned in layer 2 in
+     both suites, and at a 150 ms round trip in `circuit.spec.mjs`.
+
+   **SRV-2 met on 2026-09-25** by CI's Server-host layer-3 job (run 36195865300, commit
+   `9172049`). That was `chrome` and `msedge` on Linux, headed. Everything passed; the only
+   tests skipped were the three the WebAssembly run skips too: SRV-6, which runs when asked
+   for; the MEM-5/MEM-6 soak, which runs weekly; and VZ-14, which is Windows only.
+   Still owed before the §24 claim is made:
+   - The soak on the Server host, which is MEM-6 read from the server process. It comes
+     with CI's next long run.
+   - The declaration ADR, which also rewrites ADR-0017's WebAssembly premise.
+
+9. **Found on 2026-09-26, not fixed: `ViewportHeight = Fill` paints no rows in a sized box.**
    A grid with a Fill height inside a 300px box settled at a 28px scroller, header only, with no
    row painted (checked on the container's Chromium against de5e62c, before this run's changes).
    The scroller takes its height from its content, and under Fill the reported height is that
@@ -489,7 +603,7 @@ clean. The property is unchanged: the dependency points one way.
    also why UX-11a has no layer-3 test yet. Which element takes the box's height is a decision
    for ADR-0028, not a fix to make quietly.
 
-9. **Observed on 2026-09-26: the column menu buttons are tab stops.** On `/features`, Shift+Tab
+10. **Observed on 2026-09-26: the column menu buttons are tab stops.** On `/features`, Shift+Tab
    from after the grid lands on a ▾, not on the root. A11Y-4's test tolerates this ("the next
    stop can be … the menu buttons"), but its criterion says focus "leaves the grid entirely".
    The criterion and the test disagree, and the disagreement is not resolved here.

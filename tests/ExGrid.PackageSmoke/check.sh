@@ -37,13 +37,13 @@ for id in ExGrid ExGrid.MudBlazor; do
   grep -qE '<repository type="git" url="https://github.com/AkiraMisawa/ex-grid"[^>]* commit="[0-9a-f]{40}"' <<<"$spec" \
     || fail "$id does not name its repository and commit"
   files=$(entries "$id")
-  for f in README.md "lib/net8.0/$id.dll" "lib/net8.0/$id.xml"; do
+  for f in README.md "lib/net10.0/$id.dll" "lib/net10.0/$id.xml"; do
     grep -qxF "$f" <<<"$files" || fail "$id is missing $f"
   done
 done
 # The core's one dependency, at the floor ADR-0022 fixes.
-grep -q '<dependency id="Microsoft.AspNetCore.Components.Web" version="8.0.0"' <<<"$(nuspec ExGrid)" \
-  || fail "ExGrid's dependency on Microsoft.AspNetCore.Components.Web is not 8.0.0"
+grep -q '<dependency id="Microsoft.AspNetCore.Components.Web" version="10.0.0"' <<<"$(nuspec ExGrid)" \
+  || fail "ExGrid's dependency on Microsoft.AspNetCore.Components.Web is not 10.0.0"
 # The Wrapper takes exactly this core (ADR-0042) and MudBlazor from its floor.
 grep -qF "<dependency id=\"ExGrid\" version=\"[$version]\"" <<<"$(nuspec ExGrid.MudBlazor)" \
   || fail "ExGrid.MudBlazor does not depend on exactly ExGrid $version"

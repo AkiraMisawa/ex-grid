@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Components;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Selection;
@@ -32,6 +33,61 @@ public class AccessibilityTests : GridTestContext
 
     private static Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
         => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y });
+
+    [Fact] // ADR-0033 / A11Y-20: a Prerendered grid says it is not ready, and takes no tab stop
+    public void A_prerendered_grid_is_busy_and_out_of_the_tab_sequence()
+    {
+        SetRendererInfo(new RendererInfo("Static", isInteractive: false));
+
+        var root = RenderGrid().Find(".ex-grid");
+
+        Assert.False(root.HasAttribute("tabindex"));
+        Assert.Equal("true", root.GetAttribute("aria-busy"));
+        Assert.Contains("ex-loading", root.ClassList);   // ADR-0029: the loading state
+    }
+
+    private sealed class NoListenerYet : BunitContext
+    {
+        // Interactive, but the module has not come back: on a circuit that is a module
+        // import and a call away. Every call is left unanswered.
+        public NoListenerYet()
+        {
+            Services.AddSingleton<Microsoft.JSInterop.IJSRuntime>(new Unanswered());
+            SetRendererInfo(new RendererInfo("Server", isInteractive: true));
+        }
+
+        private sealed class Unanswered : Microsoft.JSInterop.IJSRuntime
+        {
+            public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) =>
+                new(new TaskCompletionSource<TValue>().Task);
+
+            public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) =>
+                new(new TaskCompletionSource<TValue>().Task);
+        }
+    }
+
+    [Fact] // ADR-0033 / A11Y-20: interactive but not yet listening is still Prerendered — a key would be lost
+    public void An_interactive_grid_without_its_listener_is_still_busy()
+    {
+        using var context = new NoListenerYet();
+
+        var root = context.Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.Columns, TestRows.Wide(3))).Find(".ex-grid");
+
+        Assert.False(root.HasAttribute("tabindex"));
+        Assert.Equal("true", root.GetAttribute("aria-busy"));
+    }
+
+    [Fact] // ADR-0033 / A11Y-20: once its listener is attached, the grid is one tab stop and not busy
+    public void An_interactive_grid_is_one_tab_stop_and_not_busy()
+    {
+        var root = RenderGrid().Find(".ex-grid");
+
+        Assert.Equal("0", root.GetAttribute("tabindex"));
+        Assert.False(root.HasAttribute("aria-busy"));
+        Assert.DoesNotContain("ex-loading", root.ClassList);
+    }
 
     [Fact] // A11Y-1: the grid pattern's roles, on every painted element of each kind
     public void The_roles_are_present()
@@ -239,7 +295,7 @@ public class AccessibilityTests : GridTestContext
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Window())
             .Add(g => g.Columns, TestRows.Columns()));
-        var root = cut.Find(".ex-grid").GetAttribute("blazor:elementreference");
+        var root = Js.RootReferenceId;
         var scroller = cut.Find(".ex-scroller");
 
         Assert.Equal("-1", scroller.GetAttribute("tabindex"));

@@ -85,9 +85,15 @@ test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/C
     // The narrowed cell really paints ####.
     await expect(grid(page).locator("[id$='r0c3']")).toContainText('#');
 
+    // A sentinel first, plain text only: a clipboard left holding both flavours by an
+    // earlier test must not pass for this copy.
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await page.keyboard.press('ControlOrMeta+C');
 
-    const clipboard = await page.evaluate(async () => {
+    // On WebAssembly this copy took the event route and has landed already; on the Server
+    // host there is no synchronous channel, and every copy takes the asynchronous route
+    // (ADR-0005) — the write lands a round trip later. Read once it has.
+    const readClipboard = () => page.evaluate(async () => {
         const items = await navigator.clipboard.read();
         const result = {};
         for (const item of items) {
@@ -97,7 +103,9 @@ test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/C
         }
         return result;
     });
-    expect(Object.keys(clipboard)).toEqual(expect.arrayContaining(['text/plain', 'text/html']));
+    await expect.poll(async () => Object.keys(await readClipboard()), { timeout: 5000 })
+        .toEqual(expect.arrayContaining(['text/plain', 'text/html']));
+    const clipboard = await readClipboard();
     // CP-5: the raw value, never the hashes — in either flavour.
     expect(clipboard['text/plain']).not.toContain('#');
     expect(clipboard['text/html']).toContain('1000000');
@@ -273,6 +281,9 @@ test('a pasted value wears the same mark as a typed one (ADR-0034)', async ({ pa
 
 test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) => {
     await clickCell(page, 0, 1);
+    // The click's Focus is painted by the render it asked for — a round trip away on the
+    // Server host.
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
     const focusBefore = await grid(page).getAttribute('aria-activedescendant');
 
     // Registered and awaited before the key is sent, and NOT `once`: a chord arrives
@@ -532,6 +543,9 @@ test('the chosen action is outlined, with and without forced colors (UX-14, ADR-
         await page.emulateMedia({ forcedColors });
         const cells = await openCellsAt(page, 6);
         await page.keyboard.press(' ');
+        // The chosen button is painted by the render Space asked for — a round trip away
+        // on the Server host, so read once it has landed.
+        await expect(cells.locator("[id$='r0c6'] .ex-action-chosen")).toHaveCount(1);
 
         const outlines = await cells.locator("[id$='r0c6'] .ex-action").evaluateAll((buttons) =>
             buttons.map((b) => ({ chosen: b.classList.contains('ex-action-chosen'), style: getComputedStyle(b).outlineStyle })));

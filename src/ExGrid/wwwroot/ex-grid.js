@@ -56,32 +56,36 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     const overwriteKeys = new Set([
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
 
-    const onKeyDown = (event) => {
-        if (!core) {
-            return;
-        }
-        // Mid-composition an IME owns Enter, Escape and the arrows — they choose and
-        // commit a candidate. Taking them there breaks typing in any language that needs
-        // one, and the grid would move under a half-finished word.
-        if (event.isComposing || event.keyCode === 229) {
-            return;
-        }
+    // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
+    // round trip later on a circuit, and a key typed in between must be the popover's, not
+    // the grid's (ADR-0010's hold, widened).
+    const popoverOpeners = new Set(['Alt+ArrowDown', 'Shift+F10', 'ContextMenu']);
+
+    // What the gate decides a key is for (ADR-0010): 'popover' — the core's, and it opens a
+    // popover, so the keys after it are held until the popover holds DOM focus; 'mode' — the
+    // core's, and it can change the editing mode, so the keys after it are held until it is
+    // answered;
+    // 'core' — the core's, and changes no mode; 'drop' — taken and never forwarded;
+    // null — the browser's, or a control's inside the grid. Read from a snapshot of the
+    // event rather than the event itself, so a held key can be gated again, against the
+    // mode its predecessor's answer left.
+    const gate = (k) => {
         // The mirror of GridKeys.Canonical — the two must move together. It exists here
         // only to decide whether to take the key: preventDefault has to happen now, and
         // invokeMethodAsync's answer would arrive long after the event is over. What the
         // key MEANS is resolved on the C# side, from the raw fields sent below, so a
         // disagreement between the two shows up as a key that does nothing rather than as
         // a key that does something else.
-        const control = event.ctrlKey || (event.metaKey && metaIsPrimary);
+        const control = k.ctrlKey || (k.metaKey && metaIsPrimary);
         // Meta held where it is not primary still appears in the form, so it cannot pass
         // for an unmodified key: nothing in the set carries it, and the browser keeps it.
-        const foreign = event.metaKey && !metaIsPrimary;
+        const foreign = k.metaKey && !metaIsPrimary;
         const prefix = (control ? 'Control+' : '') + (foreign ? 'Meta+' : '')
-            + (event.shiftKey ? 'Shift+' : '') + (event.altKey ? 'Alt+' : '');
-        const canonical = prefix + event.key;
+            + (k.shiftKey ? 'Shift+' : '') + (k.altKey ? 'Alt+' : '');
+        const canonical = prefix + k.key;
 
         if (editing === 'none') {
-            if (event.target !== root) {
+            if (!k.onRoot) {
                 // A focusable descendant holds the keyboard — a Consumer's control in a
                 // Template Column, whether clicked or entered by Space (ADR-0037). (Not
                 // one of the grid's own action buttons: over its own actions the core
@@ -93,76 +97,265 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 // selection instead of a caret and Ctrl+A would select the grid instead
                 // of the field's text.
                 if (canonical !== 'Escape') {
-                    return;
+                    return null;
                 }
                 // …unless the control has a popup of its own open — a select's list, a
                 // picker's calendar — which its design system draws outside this root while
                 // keeping DOM focus on the control. That Escape is the popup's to close, and
                 // the next one is the grid's (ADR-0039). The popover's contents report the
                 // popup; C# tells this listener.
+                //
+                // Counted here, not waited for: the report that the popup closed comes a
+                // round trip after this Escape on a Server circuit, and a second Escape
+                // typed inside it was left to a popup that was no longer there, so nothing
+                // closed the panel. A popup that ignores its Escape still gives up the
+                // next one, which is the rule as ADR-0039 states it.
                 if (innerPopup) {
-                    return;
+                    innerPopup = false;
+                    return null;
                 }
-            } else {
-                // A held Space engages once (ADR-0037). Space is a key that DOES
-                // something — it fires a single action — and auto-repeat would fire it
-                // again for every repeat, on the same row, for as long as it is held.
-                // The repeat is taken (so the page does not scroll by it either) and
-                // never forwarded. Shift+Space and Ctrl+Space name whole regions and
-                // repeat harmlessly, so only the plain key is filtered.
-                if (canonical === ' ' && event.repeat) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    return;
+                return 'core';
+            }
+            // A held Space engages once (ADR-0037). Space is a key that DOES
+            // something — it fires a single action — and auto-repeat would fire it
+            // again for every repeat, on the same row, for as long as it is held.
+            // The repeat is taken (so the page does not scroll by it either) and
+            // never forwarded. Shift+Space and Ctrl+Space name whole regions and
+            // repeat harmlessly, so only the plain key is filtered.
+            if (canonical === ' ' && k.repeat) {
+                return 'drop';
+            }
+            // F2 and a printable character open the Cell Editor (ADR-0010) — only
+            // on a grid that has an editable column at all: a display-only grid
+            // must not eat the page's keys, round-tripping every keystroke. Whether
+            // the focused cell actually edits is still resolved in C#. An AltGr
+            // chord reports Control+Alt together on Windows, and is how the
+            // German, French and Nordic layouts type @ { [ € — so both-held passes
+            // where either alone is a shortcut and stays the browser's. Space opens
+            // Overwrite on an editable cell and Interactive on a cell with several
+            // actions: it is a mode change either way.
+            if (canEdit && !foreign) {
+                if (!control && !k.altKey && (k.key === 'F2' || k.key.length === 1)) {
+                    return 'mode';
                 }
-                let take = taken.has(canonical);
-                // F2 and a printable character open the Cell Editor (ADR-0010) — only
-                // on a grid that has an editable column at all: a display-only grid
-                // must not eat the page's keys, round-tripping every keystroke. Whether
-                // the focused cell actually edits is still resolved in C#. An AltGr
-                // chord reports Control+Alt together on Windows, and is how the
-                // German, French and Nordic layouts type @ { [ € — so both-held passes
-                // where either alone is a shortcut and stays the browser's.
-                if (!take && canEdit && !foreign) {
-                    if (!control && !event.altKey) {
-                        take = event.key === 'F2' || event.key.length === 1;
-                    } else if (event.ctrlKey && event.altKey) {
-                        take = event.key.length === 1;
-                    }
-                }
-                if (!take) {
-                    return;
+                if (k.ctrlKey && k.altKey && k.key.length === 1) {
+                    return 'mode';
                 }
             }
-        } else {
-            // Overwrite or Caret: the editor normally holds DOM focus, but a click can
-            // park it on a Consumer's control mid-edit — from there the control keeps
-            // its keys, exactly as it does outside editing. closest, not classList: a
-            // substituted Chrome editor is a .ex-editor DIV whose focused control is a
-            // descendant (ADR-0010).
-            if (event.target !== root
-                && !(event.target instanceof Element && event.target.closest('.ex-editor'))) {
-                return;
+            if (!taken.has(canonical)) {
+                return null;
             }
-            const claimed = editing === 'overwrite' ? overwriteKeys : editingKeys;
-            if (!claimed.has(canonical)) {
-                return;
+            if (popoverOpeners.has(canonical)) {
+                return 'popover';
             }
+            return canonical === ' ' ? 'mode' : 'core';
         }
 
+        // Overwrite or Caret: the editor normally holds DOM focus, but a click can
+        // park it on a Consumer's control mid-edit — from there the control keeps
+        // its keys, exactly as it does outside editing. closest, not classList: a
+        // substituted Chrome editor is a .ex-editor DIV whose focused control is a
+        // descendant (ADR-0010).
+        if (!k.onRoot && !k.inEditor) {
+            return null;
+        }
+        const claimed = editing === 'overwrite' ? overwriteKeys : editingKeys;
+        // Every key the core claims while editing commits, cancels, moves or switches
+        // the mode: each is a mode change.
+        return claimed.has(canonical) ? 'mode' : null;
+    };
+
+    const snapshot = (event) => ({
+        key: event.key,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        metaKey: event.metaKey,
+        repeat: event.repeat,
+        onRoot: event.target === root,
+        inEditor: event.target instanceof Element && event.target.closest('.ex-editor') !== null,
+    });
+
+    const forward = (k) => core.invokeMethodAsync(
+        'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot)
+        .catch((error) => {
+            // Disposal can overtake a key in flight, and that is not a fault. Anything
+            // else is reported: a swallowed failure here means keys that silently stop
+            // working.
+            if (core) {
+                console.error('[ex-grid] the grid failed to handle a key', error);
+            }
+        });
+
+    // Keys that follow a mode change are held until it lands (ADR-0010). The mode is
+    // C#'s, and it tells this listener after the fact: in-process on WebAssembly, a round
+    // trip later on a Blazor Server circuit. Gated against the mode it was last told, a
+    // key typed in that gap would be forwarded as the wrong thing — `1500` typed onto a
+    // cell would open Overwrite with `1` and lose `500` — so while a mode-changing key is
+    // unanswered every key after it waits here, in order, and is gated again once the
+    // answer has landed. Plain navigation changes no mode and is never held behind.
+    const held = [];
+    let answering = false;
+
+    // Whether the editor holds DOM focus. Until it does, a key typed with editing on lands
+    // on the root, where no editing mode claims a printable key — it would be lost.
+    const editorFocused = () => {
+        const active = document.activeElement;
+        return active instanceof Element && root.contains(active) && active.closest('.ex-editor') !== null;
+    };
+
+    // Whether one of this grid's popovers holds DOM focus — where the keys held behind a key
+    // that opened one are handed.
+    const popoverFocused = () => {
+        const active = document.activeElement;
+        return active instanceof Element && root.contains(active) && active.closest('.ex-popover') !== null;
+    };
+    let awaitingPopover = false;
+
+    // The editor the answer opened, once its element is there — the render that made it
+    // and the answer travel separately, and the answer can arrive first.
+    const editorInput = () => {
+        const editor = root && root.querySelector('.ex-editor');
+        if (!editor) {
+            return null;
+        }
+        return editor instanceof HTMLInputElement || editor instanceof HTMLTextAreaElement
+            ? editor
+            : editor.querySelector('input, textarea');
+    };
+    const editorSettled = () => new Promise((resolve) => {
+        const started = performance.now();
+        const look = () => {
+            // Two seconds is past any round trip the grid is usable over; after it the
+            // held keys are replayed against whatever there is, rather than held forever.
+            const editorReady = editing === 'none' || editorFocused();
+            const popoverReady = !awaitingPopover || popoverFocused();
+            if (!core || (editorReady && popoverReady) || performance.now() - started > 2000) {
+                awaitingPopover = false;
+                resolve();
+            } else {
+                requestAnimationFrame(look);
+            }
+        };
+        look();
+    });
+
+    // A held key the editor would have handled itself, handled as it would have: text is
+    // typed at the caret, a deletion deletes, a caret key moves the caret. Anything else
+    // was the browser's, and its moment has passed.
+    const typeIntoEditor = (k) => {
+        const input = editorInput();
+        if (!input || k.ctrlKey || k.metaKey) {
+            return;
+        }
+        const start = input.selectionStart ?? input.value.length;
+        const end = input.selectionEnd ?? start;
+        if (k.key.length === 1) {
+            input.setRangeText(k.key, start, end, 'end');
+        } else if (k.key === 'Backspace') {
+            input.setRangeText('', start === end ? Math.max(0, start - 1) : start, end, 'end');
+        } else if (k.key === 'Delete') {
+            input.setRangeText('', start, start === end ? Math.min(input.value.length, end + 1) : end, 'end');
+        } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight' || k.key === 'Home' || k.key === 'End') {
+            const at = k.key === 'Home' ? 0
+                : k.key === 'End' ? input.value.length
+                : k.key === 'ArrowLeft' ? Math.max(0, start - 1)
+                : Math.min(input.value.length, end + 1);
+            input.setSelectionRange(at, at);
+            return;
+        } else {
+            return;
+        }
+        // The editor hears it as it hears typing (its @oninput).
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    // A held key handed to the popover that now holds DOM focus, as the keydown it would
+    // have received: what it means there is the popover's (ADR-0039) — its own handlers
+    // run, and the core answers the menu's keys against its own place. Marked, so this
+    // listener lets it through instead of holding it again.
+    let replaying = false;
+    const replayInto = (target, k) => {
+        replaying = true;
+        try {
+            target.dispatchEvent(new KeyboardEvent('keydown', {
+                key: k.key, ctrlKey: k.ctrlKey, shiftKey: k.shiftKey, altKey: k.altKey, metaKey: k.metaKey,
+                bubbles: true, cancelable: true,
+            }));
+        } finally {
+            replaying = false;
+        }
+    };
+
+    const drain = async () => {
+        // Settled before anything else, even with nothing held yet: the answer can arrive
+        // before the popover or the editor has taken DOM focus, and a key typed in that
+        // gap must still be held, not gated against the root.
+        await editorSettled();
+        while (held.length > 0 && core) {
+            const k = held.shift();
+            if (popoverFocused()) {
+                replayInto(document.activeElement, k);
+                continue;
+            }
+            // Aimed at the grid when it was pressed; after the answer, the grid's
+            // keyboard is the editor if one stands, and the root if not.
+            const rebased = { ...k, onRoot: editing === 'none', inEditor: editing !== 'none' };
+            const verdict = gate(rebased);
+            if (verdict === 'mode' || verdict === 'popover') {
+                awaitingPopover = verdict === 'popover';
+                await forward(rebased);
+                await editorSettled();
+            } else if (verdict === 'core') {
+                forward(rebased);
+            } else if (verdict === null && editing !== 'none') {
+                typeIntoEditor(rebased);
+            }
+        }
+        answering = false;
+    };
+
+    const onKeyDown = (event) => {
+        if (!core) {
+            return;
+        }
+        // Mid-composition an IME owns Enter, Escape and the arrows — they choose and
+        // commit a candidate. Taking them there breaks typing in any language that needs
+        // one, and the grid would move under a half-finished word.
+        if (event.isComposing || event.keyCode === 229) {
+            return;
+        }
+        const k = snapshot(event);
+        // Held while a mode change is unanswered, and also while editing is on but the
+        // editor has not yet taken DOM focus — the answer can land before the focus does.
+        // Every key under the root is held then, whatever it was aimed at: one that went
+        // straight to a popover that had just taken focus would overtake the keys typed
+        // before it. A key this listener is handing on itself is let through.
+        if (!replaying && (answering || (editing !== 'none' && k.onRoot && !editorFocused()))) {
+            event.preventDefault();
+            event.stopPropagation();
+            held.push(k);
+            if (!answering) {
+                answering = true;
+                drain();
+            }
+            return;
+        }
+        const verdict = gate(k);
+        if (verdict === null) {
+            return;
+        }
         event.preventDefault();
         event.stopPropagation();
-        core.invokeMethodAsync(
-            'OnKeyAsync', event.key, event.ctrlKey, event.shiftKey, event.altKey, event.metaKey, metaIsPrimary,
-            event.target !== root)
-            .catch((error) => {
-                // Disposal can overtake a key in flight, and that is not a fault. Anything
-                // else is reported: a swallowed failure here means keys that silently stop
-                // working.
-                if (core) {
-                    console.error('[ex-grid] the grid failed to handle a key', error);
-                }
-            });
+        if (verdict === 'drop') {
+            return;
+        }
+        const answer = forward(k);
+        if (verdict === 'mode' || verdict === 'popover') {
+            answering = true;
+            awaitingPopover = verdict === 'popover';
+            answer.then(drain);
+        }
     };
 
     // The fifth allowlist entry (ADR-0021): the moves are heard here, and two things —
@@ -284,14 +477,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             'text/plain': flavour('text/plain', 'text'),
             'text/html': flavour('text/html', 'html'),
         })]).catch((error) => {
-            // A refusal from the core or a denied clipboard permission: nothing landed,
-            // which is the refusing grid's contract (ADR-0005) — the reason has already
-            // been raised (OnCopyRefused on the C# side, or the console line above).
-            // Anything else is a failure and is said so.
+            // A refusal from the core: nothing landed, which is the refusing grid's
+            // contract (ADR-0005), and the reason has already been raised (OnCopyRefused
+            // on the C# side, or the console line above). Anything else is a failure and
+            // is said so.
             if (error instanceof Error && error.message === 'the copy was refused') {
                 return;
             }
+            // The browser would not let the grid write. Nothing landed either — but no
+            // reason has been raised yet, and a user told nothing pastes the old
+            // clipboard believing it is the copy. It is a Refusal of its own (ADR-0005).
             if (error instanceof DOMException && error.name === 'NotAllowedError') {
+                if (core) {
+                    core.invokeMethodAsync('OnCopyWriteRejectedAsync').catch((reportError) => {
+                        if (core) {
+                            console.error('[ex-grid] the grid failed to report a rejected copy', reportError);
+                        }
+                    });
+                }
                 return;
             }
             if (core) {
@@ -351,9 +554,20 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // in C# (ADR-0014). preventDefault regardless: pasting into a non-editable
         // element does nothing by default, and must not start doing something later.
         event.preventDefault();
-        const text = event.clipboardData.getData('text/plain');
-        const html = event.clipboardData.getData('text/html');
-        core.invokeMethodAsync('OnPasteAsync', text, html)
+        // Handed over as streams, never as two strings in one call (ADR-0005): on a
+        // Blazor Server circuit that call is one hub message, and a message past the
+        // hub's receive limit — 32 KB unless the application raised it — closes the
+        // connection. Excel's HTML for a few hundred cells is past it. A stream is
+        // Blazor's own route for large interop data and is not subject to that limit;
+        // its length travels with it, so C# can refuse a paste past the grid's ceiling
+        // without reading a byte. An empty flavour is sent as nothing at all.
+        const encoder = new TextEncoder();
+        const stream = (value) => (value
+            ? DotNet.createJSStreamReference(encoder.encode(value))
+            : null);
+        const text = stream(event.clipboardData.getData('text/plain'));
+        const html = stream(event.clipboardData.getData('text/html'));
+        core.invokeMethodAsync('OnPasteStreamsAsync', text, html)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);

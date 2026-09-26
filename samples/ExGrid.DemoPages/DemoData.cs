@@ -2,7 +2,7 @@ using ExGrid.Cells;
 using ExGrid.Columns;
 using ExGrid.Rows;
 
-namespace ExGrid.DemoHost;
+namespace ExGrid.DemoPages;
 
 /// <summary>
 /// Deliberately mutable: the home page's "rewrite in place" button exists to show that
@@ -66,7 +66,7 @@ public sealed class DemoBlotterTrade
     public string Desk = "";
 }
 
-/// <summary>A row of the server page. Values are derived from the position, so the
+/// <summary>A row of the fetching-source page. Values are derived from the position, so the
 /// "server" can answer any range without holding ten million values.</summary>
 public sealed class DemoServerRow
 {
