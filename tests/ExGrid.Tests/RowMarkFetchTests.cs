@@ -211,4 +211,41 @@ public class RowMarkFetchTests
             step => Assert.Equal(new RowMarkStep.AllOf(new RowMarkSnapshot(null, 10), true), step),
             step => Assert.Equal(new RowMarkStep.OneKey(3, false), step));
     }
+
+    [Fact] // ADR-0043: a key marked many times over is one step, and marking many keys stays linear
+    public async Task Marking_many_rows_keeps_one_step_per_key()
+    {
+        var server = new Server(50_000);
+        var source = server.Source();
+        var marks = source.Marks!;
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions([new RowRange(0, 49_000)], source.RowSequenceVersion));
+        await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.Positions([new RowRange(0, 49_000)], source.RowSequenceVersion));
+        clock.Stop();
+
+        Assert.Equal(49_000, marks.State.Steps.Count);
+        Assert.All(marks.State.Steps, step => Assert.False(step.Marked));
+        // Not a timing gate: a quadratic step list takes minutes here, a linear one well under this.
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(30), $"took {clock.Elapsed}");
+    }
+
+    [Fact] // ADR-0043/0025: a failed count reaches FetchFailed, never the gesture that caused it
+    public async Task A_failed_count_after_a_gesture_is_reported_to_fetch_failed()
+    {
+        var server = new Server(10);
+        var source = server.Source();
+        var marks = source.Marks!;
+        var failures = new List<Exception>();
+        source.FetchFailed += failures.Add;
+        server.HeldCount = new TaskCompletionSource<RowMarkCounts>();
+        server.HeldCount.SetException(new InvalidOperationException("the count failed"));
+
+        await marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.OneRow(source.Window[0], true));
+
+        Assert.Equal("the count failed", Assert.Single(failures).Message);
+        Assert.Same(failures[0], source.LastError);
+        Assert.True(marks.IsMarked(source.Window[0]));
+        Assert.Null(marks.Counts);
+    }
 }

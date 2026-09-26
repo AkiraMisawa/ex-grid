@@ -144,7 +144,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         RequireColumns();
 
         _rows[index] = replacement;
-        Marks.Replaced(row, replacement);
+        Marks.Replaced(index, row, replacement);
         var next = GridQueryEngine.Apply(_rows, _columns!, Filter, Sorts);
         var sequenceChanged = next.Count != Window.Count;
         if (!sequenceChanged)

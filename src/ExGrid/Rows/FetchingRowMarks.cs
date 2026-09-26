@@ -10,7 +10,13 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
 {
     private readonly FetchingGridSource<TRow> _source;
     private readonly RowMarkAdapter<TRow> _adapter;
-    private readonly List<RowMarkStep> _steps = [];
+    // The steps in the order they were taken, with each key's one step findable at once:
+    // a Space over half a million rows is half a million steps, and neither adding one nor
+    // asking a painted row may walk them all.
+    private readonly LinkedList<(long Order, RowMarkStep Step)> _steps = new();
+    private readonly Dictionary<object, LinkedListNode<(long Order, RowMarkStep Step)>> _keys = [];
+    private readonly List<(long Order, RowMarkStep.AllOf Step)> _snapshots = [];
+    private long _order;
     private Func<TRow, RowKind>? _rowKind;
     private RowMarkState _state = RowMarkState.Empty;
     private RowMarkCounts? _counts;
@@ -37,7 +43,18 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
     {
         if (row is null || _steps.Count == 0 || !IsDetail(row))
             return false;
-        return _state.IsMarked(_adapter.Key(row), snapshot => _adapter.BelongsTo(row, snapshot));
+        // RowMarkState.IsMarked's rule — the latest step covering the row decides — made
+        // without walking the keys: the row's own step is looked up, and only snapshots
+        // taken after it can override it.
+        var (order, marked) = _keys.TryGetValue(_adapter.Key(row), out var node)
+            ? (node.Value.Order, node.Value.Step.Marked)
+            : (-1L, false);
+        for (var i = _snapshots.Count - 1; i >= 0 && _snapshots[i].Order > order; i--)
+        {
+            if (_adapter.BelongsTo(row, _snapshots[i].Step.Snapshot))
+                return _snapshots[i].Step.Marked;
+        }
+        return marked;
     }
 
     /// <inheritdoc />
@@ -47,18 +64,28 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
     public async Task OnMarkIntentAsync(RowMarkIntent<TRow> intent)
     {
         ArgumentNullException.ThrowIfNull(intent);
-        var changed = intent switch
+        // What fails here is the Consumer's server — the snapshot, a fetch past the Window,
+        // the count — and it is reported the way a failed fetch is (ADR-0025): to
+        // FetchFailed when someone listens, rather than thrown into the click or the key
+        // that caused it, where on a circuit it would end the session.
+        try
         {
-            RowMarkIntent<TRow>.OneRow one => MarkOne(one.Row, one.Marked),
-            RowMarkIntent<TRow>.AllRows all => await MarkResultAsync(all.Marked, all.RowSequenceVersion).ConfigureAwait(true),
-            RowMarkIntent<TRow>.Positions positions => await MarkPositionsAsync(positions.Ranges, positions.RowSequenceVersion).ConfigureAwait(true),
-            _ => throw new ArgumentOutOfRangeException(nameof(intent), intent, "An unknown Row Mark intent."),
-        };
-        if (!changed)
-            return;
-        _state = new RowMarkState(_steps.ToArray());
-        Changed?.Invoke();
-        await RecountAsync().ConfigureAwait(true);
+            var changed = intent switch
+            {
+                RowMarkIntent<TRow>.OneRow one => MarkOne(one.Row, one.Marked),
+                RowMarkIntent<TRow>.AllRows all => await MarkResultAsync(all.Marked, all.RowSequenceVersion).ConfigureAwait(true),
+                RowMarkIntent<TRow>.Positions positions => await MarkPositionsAsync(positions.Ranges, positions.RowSequenceVersion).ConfigureAwait(true),
+                _ => throw new ArgumentOutOfRangeException(nameof(intent), intent, "An unknown Row Mark intent."),
+            };
+            if (!changed)
+                return;
+            _state = new RowMarkState(_steps.Select(entry => entry.Step).ToArray());
+            Changed?.Invoke();
+            await RecountAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is not ArgumentException && _source.TryReportFailure(ex))
+        {
+        }
     }
 
     /// <summary>
@@ -145,9 +172,19 @@ public sealed class FetchingRowMarks<TRow> : IRowMarks<TRow>
     /// toggled a thousand times is one step, not a thousand.</summary>
     private void Append(RowMarkStep step)
     {
-        if (step is RowMarkStep.OneKey one)
-            _steps.RemoveAll(existing => existing is RowMarkStep.OneKey old && old.Key.Equals(one.Key));
-        _steps.Add(step);
+        var order = ++_order;
+        switch (step)
+        {
+            case RowMarkStep.OneKey one:
+                if (_keys.Remove(one.Key, out var previous))
+                    _steps.Remove(previous);
+                _keys[one.Key] = _steps.AddLast((order, step));
+                break;
+            case RowMarkStep.AllOf all:
+                _steps.AddLast((order, step));
+                _snapshots.Add((order, all));
+                break;
+        }
     }
 
     private bool IsDetail(TRow row) => _rowKind is null || _rowKind(row) == RowKind.Detail;

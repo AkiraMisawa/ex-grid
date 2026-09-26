@@ -142,12 +142,23 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         {
             await marks.RecountAsync().ConfigureAwait(true);
         }
-        catch (Exception ex) when (FetchFailed is not null && !_disposed)
+        catch (Exception ex) when (TryReportFailure(ex))
         {
-            LastError = ex;
-            StateChanged?.Invoke();
-            FetchFailed?.Invoke(ex);
         }
+    }
+
+    /// <summary>A failure of the Consumer's own server met while keeping the marks,
+    /// reported as a failed fetch is: held in <see cref="LastError"/> and handed to
+    /// <see cref="FetchFailed"/>. False when nobody listens, and the caller rethrows —
+    /// the failure must reach the host rather than vanish (ADR-0025).</summary>
+    internal bool TryReportFailure(Exception error)
+    {
+        if (_disposed || FetchFailed is not { } handler)
+            return false;
+        LastError = error;
+        StateChanged?.Invoke();
+        handler(error);
+        return true;
     }
 
     /// <summary>Takes a new Sort. A list equal to the one in force is a no-op; any other

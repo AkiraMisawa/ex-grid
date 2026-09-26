@@ -14,7 +14,12 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
 {
     private readonly InMemoryGridSource<TRow> _source;
     private readonly IReadOnlyList<TRow> _rows;
+    // An instance's first position in the base, and each position's next one holding the
+    // same instance (-1 ends the chain). One instance handed over twice is one row by
+    // identity (ADR-0003), so its positions share a mark; the chain is what lets a
+    // replacement at one of them take the mark with it and leave the other its own.
     private readonly Dictionary<object, int> _slots;
+    private readonly int[] _nextSame;
     private readonly bool[] _marked;
     private Func<TRow, RowKind>? _rowKind;
 
@@ -29,10 +34,44 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
         _source = source;
         _rows = rows;
         _marked = new bool[rows.Count];
+        _nextSame = new int[rows.Count];
         _slots = new Dictionary<object, int>(rows.Count, ReferenceEqualityComparer.Instance);
-        for (var i = 0; i < rows.Count; i++)
+        for (var i = rows.Count - 1; i >= 0; i--)
+        {
+            _nextSame[i] = -1;
             if (rows[i] is { } row)
-                _slots.TryAdd(row, i);
+                Link(row, i);
+        }
+    }
+
+    /// <summary>Puts a position at the head of its instance's chain.</summary>
+    private void Link(object row, int index)
+    {
+        _nextSame[index] = _slots.TryGetValue(row, out var first) ? first : -1;
+        _slots[row] = index;
+    }
+
+    /// <summary>Takes a position out of its instance's chain.</summary>
+    private void Unlink(object row, int index)
+    {
+        if (!_slots.TryGetValue(row, out var first))
+            return;
+        if (first == index)
+        {
+            if (_nextSame[index] < 0)
+                _slots.Remove(row);
+            else
+                _slots[row] = _nextSame[index];
+        }
+        else
+        {
+            var at = first;
+            while (_nextSame[at] >= 0 && _nextSame[at] != index)
+                at = _nextSame[at];
+            if (_nextSame[at] == index)
+                _nextSame[at] = _nextSame[index];
+        }
+        _nextSame[index] = -1;
     }
 
     /// <inheritdoc />
@@ -60,15 +99,17 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
 
     /// <summary>The marked rows, as the instances the source holds now, in the order the
     /// rows were handed to the source — what an action runs over. Rows, never positions
-    /// (ADR-0043): positions name other rows after a sort.</summary>
+    /// (ADR-0043): positions name other rows after a sort. An instance handed over twice
+    /// is one row, listed once.</summary>
     public IReadOnlyList<TRow> MarkedRows
     {
         get
         {
             var marked = new List<TRow>();
+            var listed = new HashSet<object>(ReferenceEqualityComparer.Instance);
             for (var i = 0; i < _rows.Count; i++)
             {
-                if (_marked[i] && IsDetail(_rows[i]))
+                if (_marked[i] && _rows[i] is { } row && IsDetail(_rows[i]) && listed.Add(row))
                     marked.Add(_rows[i]);
             }
             return marked;
@@ -103,13 +144,18 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
         return Task.CompletedTask;
     }
 
-    /// <summary>The source replaced a row by a new instance: the mark belongs to the row,
-    /// so it moves with it.</summary>
-    internal void Replaced(TRow row, TRow replacement)
+    /// <summary>The source replaced the row at one position of its base by a new
+    /// instance: the mark belongs to the row, so the replacement carries it. A copy of the
+    /// old instance at another position keeps its own. Should the replacement already
+    /// stand elsewhere, it is one row by identity, and takes the mark that moved.</summary>
+    internal void Replaced(int index, TRow row, TRow replacement)
     {
-        if (row is null || replacement is null || !_slots.Remove(row, out var slot))
+        if (row is null || replacement is null)
             return;
-        _slots[replacement] = slot;
+        var marked = _marked[index];
+        Unlink(row, index);
+        Link(replacement, index);
+        Set(_slots[replacement], marked);
         _countsStale = true;
     }
 
@@ -146,7 +192,7 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
             return false;
 
         var window = _source.Window;
-        var slots = new List<int>();
+        var slots = new HashSet<int>();
         var markedNow = 0;
         foreach (var range in ranges)
         {
@@ -154,9 +200,8 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
             for (var i = range.Start; i < end; i++)
             {
                 var row = window[i];
-                if (row is null || !IsDetail(row) || !_slots.TryGetValue(row, out var slot))
+                if (row is null || !IsDetail(row) || !_slots.TryGetValue(row, out var slot) || !slots.Add(slot))
                     continue;
-                slots.Add(slot);
                 if (_marked[slot])
                     markedNow++;
             }
@@ -171,12 +216,20 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
         return changed;
     }
 
+    /// <summary>Marks or unmarks every position of the instance whose chain starts at
+    /// <paramref name="slot"/>. True when anything moved.</summary>
     private bool Set(int slot, bool marked)
     {
-        if (_marked[slot] == marked)
-            return false;
-        _marked[slot] = marked;
-        return true;
+        var changed = false;
+        for (var at = slot; at >= 0; at = _nextSame[at])
+        {
+            if (_marked[at] != marked)
+            {
+                _marked[at] = marked;
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     private bool IsDetail(TRow row) => _rowKind is null || _rowKind(row) == RowKind.Detail;
@@ -190,7 +243,7 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
             if (row is null || !IsDetail(row))
                 continue;
             rowsInResult++;
-            if (_marked[_slots[row]])
+            if (_slots.TryGetValue(row, out var slot) && _marked[slot])
                 inResult++;
         }
         var total = 0;

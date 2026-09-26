@@ -210,4 +210,22 @@ public class RowMarkSourceTests
 
         Assert.Equal([rows[1], rows[3]], source.Marks.MarkedRows);
     }
+
+    [Fact] // ADR-0043/0003: an instance handed over twice is one row by identity, and counts stay consistent
+    public async Task A_duplicated_instance_counts_consistently_and_survives_a_replacement()
+    {
+        var shared = new Deal("Twice", 5);
+        var source = GridSource.From([shared, new Deal("Once", 1), shared]);
+        source.OnColumnsChanged(Columns);
+
+        await source.Marks.OnMarkIntentAsync(new RowMarkIntent<Deal>.OneRow(shared, true));
+        Assert.Equal(new RowMarkCounts(2, 3, 0), CountsOf(source));
+
+        var replacement = shared with { Amount = 6 };
+        source.ReplaceRow(shared, replacement);
+
+        Assert.True(source.Marks.IsMarked(replacement));
+        Assert.True(source.Marks.IsMarked(shared));
+        Assert.Equal(new RowMarkCounts(2, 3, 0), CountsOf(source));
+    }
 }

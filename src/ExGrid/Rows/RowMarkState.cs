@@ -63,16 +63,42 @@ public sealed record RowMarkState(IReadOnlyList<RowMarkStep> Steps)
     {
         ArgumentNullException.ThrowIfNull(key);
         ArgumentNullException.ThrowIfNull(belongsTo);
-        for (var i = Steps.Count - 1; i >= 0; i--)
+        // Asked once per row by whoever counts, so it must not walk every step: the key's
+        // own step is looked up, and only the snapshots taken after it are tried.
+        var index = Indexes.GetValue(this, static state => new Index(state.Steps));
+        var (step, marked) = index.Keys.TryGetValue(key, out var own) ? own : (-1, false);
+        for (var i = index.Snapshots.Count - 1; i >= 0 && index.Snapshots[i].Step > step; i--)
         {
-            switch (Steps[i])
+            if (belongsTo(index.Snapshots[i].All.Snapshot))
+                return index.Snapshots[i].All.Marked;
+        }
+        return marked;
+    }
+
+    // Built once per state and held beside it rather than in it: a field would take part
+    // in the record's equality.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<RowMarkState, Index> Indexes = new();
+
+    private sealed class Index
+    {
+        public Index(IReadOnlyList<RowMarkStep> steps)
+        {
+            for (var i = 0; i < steps.Count; i++)
             {
-                case RowMarkStep.OneKey one when one.Key.Equals(key):
-                    return one.Marked;
-                case RowMarkStep.AllOf all when belongsTo(all.Snapshot):
-                    return all.Marked;
+                switch (steps[i])
+                {
+                    case RowMarkStep.OneKey one:
+                        Keys[one.Key] = (i, one.Marked);
+                        break;
+                    case RowMarkStep.AllOf all:
+                        Snapshots.Add((i, all));
+                        break;
+                }
             }
         }
-        return false;
+
+        public Dictionary<object, (int Step, bool Marked)> Keys { get; } = [];
+
+        public List<(int Step, RowMarkStep.AllOf All)> Snapshots { get; } = [];
     }
 }
