@@ -63,12 +63,22 @@ are recorded in [ADR-0009](./0009-filter-panel-contract.md).
 
 ## Not taken
 
+*(Both confirmed with the user, 2026-09-26.)*
+
 - **Sort by colour and Filter by colour.** Excel's colours are the cell's formatting. This grid's
   colours are Cell State and tone, which are the Consumer's meaning. Filtering by them is
   filtering by the Consumer's own data, which the Consumer can already offer as a column.
 - **Named condition submenus ("Number Filters ▸", Top 10, Above Average).** The two-condition form
   covers the named comparisons. Top 10 and the averages are computed over the whole result, which
   the grid neither holds nor executes ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)).
+
+## Reserved
+
+- **Excel's year ▸ month ▸ day tree over a date column's value list.** It would be presentation
+  only: the distinct dates are already in hand, and what applies stays an `In` list. It waits for
+  its trigger, a Consumer declaring a value list on a date column. A date column with many
+  distinct dates falls back to the search form anyway (ADR-0009's TooMany), and the tree adds a
+  level of keyboard handling to a popover that has just been rebuilt.
 
 ## Consequences
 
