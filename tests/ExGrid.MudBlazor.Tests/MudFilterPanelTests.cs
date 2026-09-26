@@ -364,4 +364,71 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Equal(expected.Value.Clauses[0].Operator, actual.Value.Clauses[0].Operator);
         Assert.Equal(expected.Value.Clauses[0].Values!, actual.Value.Clauses[0].Values!);
     }
+
+    private static IElement SelectAll(IRenderedComponent<ContainerFragment> cut)
+        => cut.Find(".mud-ex-grid-filter-all input[type=checkbox]");
+
+    [Fact] // FL-10 / ADR-0009: with a search, the submit applies the matching checked values and no hidden one
+    public async Task A_search_narrows_what_the_submit_applies()
+    {
+        var cut = RenderPanel(Context());
+
+        await cut.Find(".mud-ex-grid-filter-search input").InputAsync(new ChangeEventArgs { Value = "ph" });
+        await cut.Find("form").SubmitAsync();
+
+        var clause = Assert.Single(Assert.Single(_applied)!.Clauses);
+        Assert.Equal(["Alpha"], clause.Values!);
+    }
+
+    [Fact] // FL-11 / ADR-0009: (Select All) is a tri-state MudCheckBox over the values shown
+    public async Task Select_all_is_tri_state_over_the_values_shown()
+    {
+        var cut = RenderPanel(Context());
+        var all = cut.FindComponent<MudCheckBox<bool?>>();
+        Assert.True(all.Instance.GetState(x => x.Value));
+        Assert.Equal("(Select All)", cut.Find(".mud-ex-grid-filter-all").TextContent.Trim());
+
+        await ValueBoxes(cut)[1].ChangeAsync(new ChangeEventArgs { Value = false });
+        Assert.Null(cut.FindComponent<MudCheckBox<bool?>>().Instance.GetState(x => x.Value)); // mixed
+
+        await SelectAll(cut).ChangeAsync(new ChangeEventArgs { Value = true });
+        Assert.All(ValueBoxes(cut), box => Assert.True(box.IsChecked()));
+        await SelectAll(cut).ChangeAsync(new ChangeEventArgs { Value = false });
+        Assert.All(ValueBoxes(cut), box => Assert.False(box.IsChecked()));
+
+        await cut.Find(".mud-ex-grid-filter-search input").InputAsync(new ChangeEventArgs { Value = "amm" });
+        Assert.Equal("(Select All Search Results)", cut.Find(".mud-ex-grid-filter-all").TextContent.Trim());
+    }
+
+    [Fact] // FL-13 / ADR-0009: while searching a filtered column, the matches can join the filter in force
+    public async Task Add_current_selection_joins_the_filter_in_force()
+    {
+        var cut = RenderPanel(Context(current: new FilterSpec([new FilterClause(FilterOperator.In, Values: ["Beta"])])));
+        Assert.Empty(cut.FindAll(".mud-ex-grid-filter-add"));
+
+        await cut.Find(".mud-ex-grid-filter-search input").InputAsync(new ChangeEventArgs { Value = "amm" });
+        await ValueBoxes(cut)[0].ChangeAsync(new ChangeEventArgs { Value = true }); // Gamma, the one shown
+        await cut.Find(".mud-ex-grid-filter-add input").ChangeAsync(new ChangeEventArgs { Value = true });
+        await cut.Find("form").SubmitAsync();
+
+        var clause = Assert.Single(Assert.Single(_applied)!.Clauses);
+        Assert.Equal(["Beta", "Gamma"], clause.Values!);
+    }
+
+    [Fact] // FL-14 / ADR-0009: a two-condition filter reopens as its two conditions and applies as one spec
+    public async Task Two_conditions_round_trip()
+    {
+        var current = new FilterSpec(
+            [new FilterClause(FilterOperator.StartsWith, "Al"), new FilterClause(FilterOperator.EndsWith, "ma")],
+            FilterCombinator.Or);
+        var cut = RenderPanel(Context(mode: FilterUiMode.Condition, current: current));
+
+        Assert.Equal(FilterOperator.EndsWith, cut.FindComponent<MudSelect<FilterOperator?>>().Instance.GetState(x => x.Value));
+        await cut.Find("form").SubmitAsync();
+
+        var spec = Assert.Single(_applied)!;
+        Assert.Equal(FilterCombinator.Or, spec.Combinator);
+        Assert.Equal([FilterOperator.StartsWith, FilterOperator.EndsWith], spec.Clauses.Select(c => c.Operator));
+        Assert.Equal(["Al", "ma"], spec.Clauses.Select(c => c.Value));
+    }
 }

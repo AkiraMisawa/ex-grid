@@ -112,4 +112,143 @@ public class FilterPanelChoicesTests
         Assert.Equal(true, FilterPanelChoices.ParseOperand(ColumnType.Boolean, "true"));
         Assert.Equal("x", FilterPanelChoices.ParseOperand(ColumnType.Text, "x"));
     }
+
+    private static string TextOf(object? value) => value?.ToString() ?? "(Blanks)";
+
+    [Fact] // ADR-0009 / FL-10: with a search, OK applies the checked values among those that match
+    public void A_search_applies_only_the_matching_checked_values()
+    {
+        // Everything is checked; the search shows Alpha and Gamma ("a" matches both, and Beta).
+        var chosen = new HashSet<object?>(["Alpha", "Beta", null, "Gamma"]);
+
+        var spec = FilterPanelChoices.FromValueList(Domain, chosen, TextOf, search: "mm", addToCurrent: false, current: null);
+
+        Assert.Equal(InList("Gamma"), spec, FilterSpecComparer.Instance);
+    }
+
+    [Fact] // ADR-0009 / FL-10: a checked value the search hides is not applied
+    public void A_hidden_checked_value_is_not_applied()
+    {
+        var chosen = new HashSet<object?>(["Alpha", "Gamma"]);
+
+        var spec = FilterPanelChoices.FromValueList(Domain, chosen, TextOf, search: "alp", addToCurrent: false, current: null);
+
+        Assert.Equal(InList("Alpha"), spec, FilterSpecComparer.Instance);
+    }
+
+    [Fact] // ADR-0009 / FL-13: added to the filter in force, the matches join it
+    public void Added_to_the_filter_in_force_the_matches_join_it()
+    {
+        var chosen = new HashSet<object?>(["Alpha", "Beta", null, "Gamma"]);
+
+        var spec = FilterPanelChoices.FromValueList(
+            Domain, chosen, TextOf, search: "gam", addToCurrent: true, current: InList("Beta"));
+
+        Assert.Equal(InList("Beta", "Gamma"), spec, FilterSpecComparer.Instance);
+    }
+
+    [Fact] // ADR-0009 / FL-13: adding keeps a value in force that the domain no longer shows
+    public void Adding_keeps_what_was_in_force_even_outside_the_domain()
+    {
+        var spec = FilterPanelChoices.FromValueList(
+            Domain, new HashSet<object?>(["Alpha"]), TextOf, search: "alp", addToCurrent: true, current: InList("Delta"));
+
+        Assert.Equal(InList("Alpha", "Delta"), spec, FilterSpecComparer.Instance);
+    }
+
+    [Theory] // ADR-0009 / FL-13: add is offered only while searching a column with a value filter
+    [InlineData("gam", true, true)]
+    [InlineData("", true, false)]
+    [InlineData("gam", false, false)]
+    public void Add_is_offered_while_searching_a_value_filter(string search, bool valueFilter, bool offered)
+    {
+        FilterSpec? current = valueFilter ? InList("Beta") : new FilterSpec([new FilterClause(FilterOperator.Contains, "a")]);
+
+        Assert.Equal(offered, FilterPanelChoices.OffersAddToFilter(current, search));
+    }
+
+    [Fact] // ADR-0009: with no search, what is checked is what applies, as before
+    public void Without_a_search_the_checked_values_apply()
+    {
+        var spec = FilterPanelChoices.FromValueList(
+            Domain, new HashSet<object?>(["Beta"]), TextOf, search: "", addToCurrent: true, current: InList("Alpha"));
+
+        Assert.Equal(InList("Beta"), spec, FilterSpecComparer.Instance);
+    }
+
+    [Fact] // ADR-0009 / FL-11: (Select All) reads the values shown — checked, clear or mixed
+    public void Select_all_reads_the_values_shown()
+    {
+        object?[] shown = ["Alpha", "Gamma"];
+
+        Assert.Equal(SelectAllState.Checked, FilterPanelChoices.StateOfAll(shown, new HashSet<object?>(["Alpha", "Gamma", "Beta"])));
+        Assert.Equal(SelectAllState.Unchecked, FilterPanelChoices.StateOfAll(shown, new HashSet<object?>(["Beta"])));
+        Assert.Equal(SelectAllState.Mixed, FilterPanelChoices.StateOfAll(shown, new HashSet<object?>(["Gamma"])));
+    }
+
+    [Fact] // ADR-0009 / FL-11: toggling (Select All) checks every value shown, or clears them when all were checked
+    public void Toggling_select_all_acts_on_the_values_shown_only()
+    {
+        var chosen = new HashSet<object?>(["Beta"]);
+
+        FilterPanelChoices.ToggleAll(["Alpha", "Gamma"], chosen);
+        Assert.Equal(3, chosen.Count);
+
+        FilterPanelChoices.ToggleAll(["Alpha", "Gamma"], chosen);
+        Assert.Equal(["Beta"], chosen);
+    }
+
+    [Fact] // ADR-0009 / FL-14: two conditions make one spec of two clauses with the chosen combinator
+    public void Two_conditions_make_one_spec_with_their_combinator()
+    {
+        var spec = FilterPanelChoices.FromConditions(
+            FilterOperator.GreaterThan, 10m, FilterCombinator.Or, FilterOperator.LessThan, 2m);
+
+        Assert.Equal(
+            new FilterSpec([new FilterClause(FilterOperator.GreaterThan, 10m), new FilterClause(FilterOperator.LessThan, 2m)], FilterCombinator.Or),
+            spec, FilterSpecComparer.Instance);
+    }
+
+    [Fact] // ADR-0009 / FL-14: an unfinished second condition leaves the first alone
+    public void An_unfinished_second_condition_leaves_the_first()
+    {
+        var spec = FilterPanelChoices.FromConditions(
+            FilterOperator.GreaterThan, 10m, FilterCombinator.And, FilterOperator.LessThan, null);
+
+        Assert.Equal(new FilterSpec([new FilterClause(FilterOperator.GreaterThan, 10m)]), spec, FilterSpecComparer.Instance);
+        Assert.Null(FilterPanelChoices.FromConditions(FilterOperator.Equals, null, FilterCombinator.And, null, null));
+    }
+
+    [Fact] // ADR-0009 / FL-14: a two-clause filter in force reopens as its two conditions
+    public void A_two_clause_filter_reopens_as_two_conditions()
+    {
+        var current = new FilterSpec(
+            [new FilterClause(FilterOperator.GreaterThan, 10m), new FilterClause(FilterOperator.LessThan, 2m)], FilterCombinator.Or);
+
+        Assert.Equal(FilterOperator.GreaterThan, FilterPanelChoices.InitialOperator(ColumnType.Number, current, tooMany: false));
+        Assert.Equal(10m, FilterPanelChoices.InitialOperand(current));
+        Assert.Equal((FilterOperator.LessThan, 2m, FilterCombinator.Or), FilterPanelChoices.InitialSecond(current));
+        Assert.Equal((null, null, FilterCombinator.And), FilterPanelChoices.InitialSecond(InList("Beta")));
+    }
+}
+
+/// <summary>FilterSpec holds lists, so records compare them by reference; this compares
+/// what they say.</summary>
+internal sealed class FilterSpecComparer : IEqualityComparer<FilterSpec?>
+{
+    internal static readonly FilterSpecComparer Instance = new();
+
+    public bool Equals(FilterSpec? x, FilterSpec? y)
+    {
+        if (x is null || y is null)
+            return x is null && y is null;
+        return x.Combinator == y.Combinator
+            && x.Clauses.Count == y.Clauses.Count
+            && x.Clauses.Zip(y.Clauses).All(pair =>
+                pair.First.Operator == pair.Second.Operator
+                && Equals(pair.First.Value, pair.Second.Value)
+                && (pair.First.Values ?? []).SequenceEqual(pair.Second.Values ?? []));
+    }
+
+    public int GetHashCode(FilterSpec? obj) => 0;
 }

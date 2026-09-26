@@ -1,3 +1,4 @@
+using AngleSharp.Dom;
 using Bunit;
 using ExGrid.Chrome;
 using ExGrid.Columns;
@@ -378,5 +379,120 @@ public class FilterChromeTests : GridTestContext
         await OpenMenuAsync(cut);
 
         Assert.Contains("min-width: 200px", cut.Find(".ex-popover").GetAttribute("style"));
+    }
+
+    private static Task OkAsync(IRenderedComponent<ExGrid<TestRow>> cut)
+        => cut.FindAll(".ex-popover-actions button").Single(b => b.TextContent == "OK").ClickAsync(new MouseEventArgs());
+
+    private static IReadOnlyList<object?> AppliedValues(TestSource source)
+        => Assert.Single(source.FilterChanges[^1]!.Columns["Book"].Clauses).Values!;
+
+    private static IElement ValueBox(IRenderedComponent<ExGrid<TestRow>> cut, string label)
+        => cut.FindAll(".ex-popover-list label").Single(l => l.TextContent.Trim() == label).QuerySelector("input")!;
+
+    [Fact] // ADR-0009 / FL-10: with a search, OK applies the matching checked values and no hidden one
+    public async Task A_search_narrows_what_ok_applies()
+    {
+        var source = PushedSource();
+        source.DistinctAnswer = DistinctValues.Of(["Alpha", "Beta", "Gamma"]);
+        var cut = RenderGrid(source);
+        await OpenPanelAsync(cut);
+
+        await cut.Find(".ex-popover input[type=search]").InputAsync(new ChangeEventArgs { Value = "alp" });
+        await OkAsync(cut);
+
+        Assert.Equal(["Alpha"], AppliedValues(source));
+    }
+
+    [Fact] // ADR-0009 / FL-11: (Select All) reads and toggles the values shown, with the mixed state
+    public async Task Select_all_reads_and_toggles_the_values_shown()
+    {
+        var source = PushedSource();
+        source.DistinctAnswer = DistinctValues.Of(["Alpha", "Beta", "Gamma"]);
+        var cut = RenderGrid(source);
+        await OpenPanelAsync(cut);
+        IElement All() => cut.Find(".ex-popover .ex-select-all");
+
+        Assert.Equal("true", All().GetAttribute("aria-checked"));
+        Assert.Equal("(Select All)", All().TextContent);
+        await ValueBox(cut, "Beta").ChangeAsync(new ChangeEventArgs { Value = false });
+        Assert.Equal("mixed", All().GetAttribute("aria-checked"));
+
+        await All().ClickAsync(new MouseEventArgs()); // mixed → everything shown checked
+        Assert.Equal("true", All().GetAttribute("aria-checked"));
+        await All().ClickAsync(new MouseEventArgs()); // all → none
+        Assert.Equal("false", All().GetAttribute("aria-checked"));
+
+        await cut.Find(".ex-popover input[type=search]").InputAsync(new ChangeEventArgs { Value = "gam" });
+        Assert.Equal("(Select All Search Results)", All().TextContent);
+        await All().ClickAsync(new MouseEventArgs());
+        await OkAsync(cut);
+        Assert.Equal(["Gamma"], AppliedValues(source));
+    }
+
+    [Fact] // ADR-0009 / FL-13: while searching a filtered column, the matches can be added to the filter in force
+    public async Task Add_current_selection_joins_the_filter_in_force()
+    {
+        var source = PushedSource();
+        source.DistinctAnswer = DistinctValues.Of(["Alpha", "Beta", "Gamma", "Delta"]);
+        var cut = RenderGrid(source);
+
+        // First filter: Alpha alone.
+        await OpenPanelAsync(cut);
+        await cut.Find(".ex-popover input[type=search]").InputAsync(new ChangeEventArgs { Value = "alp" });
+        Assert.Empty(cut.FindAll(".ex-popover-add")); // nothing in force yet to add to
+        await OkAsync(cut);
+        Assert.Equal(["Alpha"], AppliedValues(source));
+        source.Raise();
+
+        // Second: search Gamma, check it, and add it.
+        await OpenPanelAsync(cut);
+        await cut.Find(".ex-popover input[type=search]").InputAsync(new ChangeEventArgs { Value = "gam" });
+        await ValueBox(cut, "Gamma").ChangeAsync(new ChangeEventArgs { Value = true });
+        await cut.Find(".ex-popover-add input").ChangeAsync(new ChangeEventArgs { Value = true });
+        await OkAsync(cut);
+
+        Assert.Equal(["Alpha", "Gamma"], AppliedValues(source));
+    }
+
+    [Fact] // ADR-0009 / FL-13: left off, a search replaces the filter in force, as Excel does by default
+    public async Task Without_add_a_search_replaces_the_filter()
+    {
+        var source = PushedSource();
+        source.DistinctAnswer = DistinctValues.Of(["Alpha", "Beta", "Gamma", "Delta"]);
+        var cut = RenderGrid(source);
+        await OpenPanelAsync(cut);
+        await ValueBox(cut, "Beta").ChangeAsync(new ChangeEventArgs { Value = false });
+        await ValueBox(cut, "Gamma").ChangeAsync(new ChangeEventArgs { Value = false });
+        await ValueBox(cut, "Delta").ChangeAsync(new ChangeEventArgs { Value = false });
+        await OkAsync(cut);
+        source.Raise();
+
+        await OpenPanelAsync(cut);
+        await cut.Find(".ex-popover input[type=search]").InputAsync(new ChangeEventArgs { Value = "gam" });
+        await ValueBox(cut, "Gamma").ChangeAsync(new ChangeEventArgs { Value = true });
+        await OkAsync(cut);
+
+        Assert.Equal(["Gamma"], AppliedValues(source));
+    }
+
+    [Fact] // ADR-0009 / FL-14: two conditions joined by Or apply as one spec of two clauses
+    public async Task Two_conditions_apply_as_one_spec()
+    {
+        var source = PushedSource();
+        var cut = RenderGrid(source, columns: Columns(FilterUiMode.Condition));
+        await OpenPanelAsync(cut);
+
+        await cut.Find(".ex-popover select").ChangeAsync(new ChangeEventArgs { Value = nameof(FilterOperator.StartsWith) });
+        await cut.Find(".ex-popover input").InputAsync(new ChangeEventArgs { Value = "Al" });
+        await cut.FindAll(".ex-popover-join input")[1].ChangeAsync(new ChangeEventArgs { Value = "on" });
+        await cut.Find(".ex-popover select.ex-popover-second").ChangeAsync(new ChangeEventArgs { Value = nameof(FilterOperator.EndsWith) });
+        await cut.Find(".ex-popover input.ex-popover-second").InputAsync(new ChangeEventArgs { Value = "ma" });
+        await OkAsync(cut);
+
+        var spec = source.FilterChanges[^1]!.Columns["Book"];
+        Assert.Equal(FilterCombinator.Or, spec.Combinator);
+        Assert.Equal([FilterOperator.StartsWith, FilterOperator.EndsWith], spec.Clauses.Select(c => c.Operator));
+        Assert.Equal(["Al", "ma"], spec.Clauses.Select(c => c.Value));
     }
 }

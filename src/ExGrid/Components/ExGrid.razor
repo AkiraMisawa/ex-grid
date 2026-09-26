@@ -382,21 +382,32 @@
                     <span class="ex-focus-wrap" tabindex="0" @onfocus="FocusPanelLastAsync"></span>
                     @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                     {
+                        var shown = domain.Values.Where(v => FilterPanelChoices.Matches(_panelSearch, PanelText(v, panelColumn))).ToArray();
                         <input type="search" placeholder="Search" value="@_panelSearch" @ref="_popoverFirst"
                                @oninput="e => _panelSearch = e.Value?.ToString() ?? string.Empty" />
+                        @* Excel's "Add current selection to filter" (ADR-0009): only while a
+                           search stands over a column already filtered by its values. *@
+                        @if (FilterPanelChoices.OffersAddToFilter(panelContext.Current, _panelSearch))
+                        {
+                            <label class="ex-popover-add">
+                                <input type="checkbox" checked="@_panelAddToCurrent" @onchange="e => _panelAddToCurrent = e.Value is true" />
+                                Add current selection to filter
+                            </label>
+                        }
                         <div class="ex-popover-list">
-                            @foreach (var value in domain.Values)
+                            @* "(Select All)" over the values shown, with Excel's mixed state: a
+                               checkbox role on a button, because a native checkbox's mixed
+                               state is a property only script can set (ADR-0021). *@
+                            <button type="button" role="checkbox" class="ex-select-all"
+                                    aria-checked="@AriaCheckedOf(FilterPanelChoices.StateOfAll(shown, chosen))"
+                                    @onclick="() => FilterPanelChoices.ToggleAll(shown, chosen)">@(_panelSearch.Length > 0 ? "(Select All Search Results)" : "(Select All)")</button>
+                            @foreach (var value in shown)
                             {
-                                var text = value is null
-                                    ? "(Blanks)"
-                                    : Columns[panelColumn].Format is { } format ? format(value) : value.ToString() ?? "";
-                                if (_panelSearch.Length > 0 && !text.Contains(_panelSearch, StringComparison.OrdinalIgnoreCase))
-                                    continue;
                                 var item = value;
                                 <label>
                                     <input type="checkbox" checked="@chosen.Contains(item)"
                                            @onchange="e => { if (e.Value is true) chosen.Add(item); else chosen.Remove(item); }" />
-                                    @text
+                                    @PanelText(item, panelColumn)
                                 </label>
                             }
                         </div>
@@ -410,6 +421,26 @@
                             }
                         </select>
                         <input value="@_panelValueText" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
+                        @* A second condition, joined by And or Or, as Excel's Custom AutoFilter
+                           (ADR-0009). Left at "(none)" it applies nothing of its own. *@
+                        <div class="ex-popover-join" role="radiogroup">
+                            <label><input type="radio" name="@(_idPrefix + "join")" checked="@(_panelCombinator == FilterCombinator.And)"
+                                          @onchange="() => _panelCombinator = FilterCombinator.And" />And</label>
+                            <label><input type="radio" name="@(_idPrefix + "join")" checked="@(_panelCombinator == FilterCombinator.Or)"
+                                          @onchange="() => _panelCombinator = FilterCombinator.Or" />Or</label>
+                        </div>
+                        <select class="ex-popover-second" value="@(_panelSecondOperator?.ToString() ?? "")"
+                                @onchange="e => _panelSecondOperator = e.Value is string { Length: > 0 } chosenOp ? Enum.Parse<FilterOperator>(chosenOp) : null">
+                            <option value="">(none)</option>
+                            @foreach (var op in panelContext.Allowed)
+                            {
+                                <option value="@op">@op</option>
+                            }
+                        </select>
+                        @if (_panelSecondOperator is { } second && FilterPanelChoices.TakesOperand(second))
+                        {
+                            <input class="ex-popover-second" value="@_panelSecondValueText" @oninput="e => _panelSecondValueText = e.Value?.ToString() ?? string.Empty" />
+                        }
                     }
                     <div class="ex-popover-actions">
                         <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
@@ -933,6 +964,10 @@
     private FilterOperator _panelOperator;
     private string _panelValueText = "";
     private string _panelSearch = "";
+    private bool _panelAddToCurrent;
+    private FilterOperator? _panelSecondOperator;
+    private string _panelSecondValueText = "";
+    private FilterCombinator _panelCombinator;
 
     // A popover takes the keyboard when it opens and gives it back when it closes
     // (ADR-0039). The count is handed to every popover's context: contents the core did
@@ -3525,6 +3560,7 @@
         _panelChecked = null;
         _panelSearch = "";
         _panelValueText = "";
+        _panelAddToCurrent = false;
         var declared = Columns[column];
         BeginPopoverFocus();
         _panelAwaitingValues = declared.FilterUi != FilterUiMode.Condition;
@@ -3534,6 +3570,10 @@
         var current = CurrentSpecOf(declared.Name);
         _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: false);
         _panelValueText = FilterPanelChoices.InitialOperand(current)?.ToString() ?? "";
+        var (secondOperator, secondOperand, combinator) = FilterPanelChoices.InitialSecond(current);
+        _panelSecondOperator = secondOperator;
+        _panelSecondValueText = secondOperand?.ToString() ?? "";
+        _panelCombinator = combinator;
         var startedOn = _panelOperator;
         StateHasChanged();
 
@@ -3562,6 +3602,29 @@
             _panelChecked = FilterPanelChoices.InitiallyChosen(current, answer);
         StateHasChanged();
     }
+
+    private static bool TryReadOperand(ColumnType type, FilterOperator op, string text, out object? operand)
+    {
+        operand = null;
+        if (!FilterPanelChoices.TakesOperand(op) || string.IsNullOrEmpty(text))
+            return true;
+        operand = FilterPanelChoices.ParseOperand(type, text);
+        return operand is not null;
+    }
+
+    /// <summary>A value as the built-in panel lists it, and as its search matches it: the
+    /// column's own format, and Blank in the built-in Chrome's words.</summary>
+    private string PanelText(object? value, int column)
+        => value is null
+            ? "(Blanks)"
+            : Columns[column].Format is { } format ? format(value) : value.ToString() ?? "";
+
+    private static string AriaCheckedOf(SelectAllState state) => state switch
+    {
+        SelectAllState.Checked => "true",
+        SelectAllState.Unchecked => "false",
+        _ => "mixed",
+    };
 
     private FilterSpec? CurrentSpecOf(string column)
         => _filter is not null && _filter.Columns.TryGetValue(column, out var spec) ? spec : null;
@@ -3627,15 +3690,20 @@
     {
         var declared = Columns[column];
         if (_panelValues is { IsTooMany: false } values && _panelChecked is { } chosen)
-            return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromValueList(values, chosen));
+        {
+            return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromValueList(
+                values, chosen, v => PanelText(v, column), _panelSearch, _panelAddToCurrent, CurrentSpecOf(declared.Name)));
+        }
 
-        if (!FilterPanelChoices.TakesOperand(_panelOperator))
-            return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromCondition(_panelOperator, null));
-        if (string.IsNullOrEmpty(_panelValueText))
-            return ApplyFilterSpecAsync(declared.Name, null);
-        if (FilterPanelChoices.ParseOperand(declared.Type, _panelValueText) is not { } parsed)
-            return Task.CompletedTask; // an unparseable operand applies nothing; the panel stands
-        return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromCondition(_panelOperator, parsed));
+        // Each condition's operand read as the column's type. Empty is an unfinished
+        // condition, left out; text that does not read applies nothing, and the panel stands.
+        if (!TryReadOperand(declared.Type, _panelOperator, _panelValueText, out var first))
+            return Task.CompletedTask;
+        object? second = null;
+        if (_panelSecondOperator is { } secondOperator && !TryReadOperand(declared.Type, secondOperator, _panelSecondValueText, out second))
+            return Task.CompletedTask;
+        return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromConditions(
+            _panelOperator, first, _panelCombinator, _panelSecondOperator, second));
     }
 
     /// <summary>Where a popover stands (ADR-0018/0040): under the header band, at the

@@ -30,6 +30,24 @@ public static class MudExGridWords
     /// <summary>The <c>IsNotBlank</c> operator, for the same reason.</summary>
     public const string IsNotBlank = "operator-is-not-blank";
 
+    /// <summary>The value list's "(Select All)" (ADR-0009).</summary>
+    public const string SelectAll = "select-all";
+
+    /// <summary>"(Select All)" while a search stands: it acts on the matching values only.</summary>
+    public const string SelectAllSearchResults = "select-all-search-results";
+
+    /// <summary>Excel's "Add current selection to filter" (ADR-0009).</summary>
+    public const string AddToFilter = "add-to-filter";
+
+    /// <summary>The AND joining a second condition to the first (ADR-0009).</summary>
+    public const string JoinAnd = "join-and";
+
+    /// <summary>The OR joining a second condition to the first.</summary>
+    public const string JoinOr = "join-or";
+
+    /// <summary>The second condition's operator left unset: no second condition.</summary>
+    public const string NoSecondCondition = "no-second-condition";
+
     private static string English(string id) => id switch
     {
         Search => "Search",
@@ -37,6 +55,12 @@ public static class MudExGridWords
         IsOneOf => "is one of",
         IsBlank => "is blank",
         IsNotBlank => "is not blank",
+        SelectAll => "(Select All)",
+        SelectAllSearchResults => "(Select All Search Results)",
+        AddToFilter => "Add current selection to filter",
+        JoinAnd => "And",
+        JoinOr => "Or",
+        NoSecondCondition => "(none)",
         _ => BuiltInCommandLabels.For(id),
     };
 

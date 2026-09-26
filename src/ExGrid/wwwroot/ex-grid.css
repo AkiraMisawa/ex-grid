@@ -336,6 +336,14 @@
    nothing in C# computes with it. */
 .ex-popover-list { max-height: 240px; min-height: 48px; flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; }
 .ex-popover-actions { display: flex; gap: 4px; justify-content: flex-end; flex-shrink: 0; }
+/* "(Select All)" is a button with the checkbox role, because a native checkbox's mixed state
+   is a property only script can set (ADR-0009/0021). Its box is drawn from aria-checked. */
+.ex-popover .ex-select-all { padding-left: 0; background: none; border: 0; }
+.ex-select-all::before { display: inline-block; width: 1.2em; }
+.ex-select-all[aria-checked="true"]::before { content: "\2611"; }
+.ex-select-all[aria-checked="false"]::before { content: "\2610"; }
+.ex-select-all[aria-checked="mixed"]::before { content: "\25A3"; }
+.ex-popover-join { display: flex; gap: 12px; }
 /* The filter panel's Tab-wrap sentinels (ADR-0039): focusable, and nothing else. Absolute,
    so they take no place in the popover's flex column and add no gap to it. */
 .ex-focus-wrap { position: absolute; width: 0; height: 0; overflow: hidden; outline: none; }
