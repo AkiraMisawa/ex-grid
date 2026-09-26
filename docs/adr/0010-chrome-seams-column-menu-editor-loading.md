@@ -253,6 +253,30 @@ order, as the keydown it would have received; what they mean there is the popove
 (ADR-0039's table). The hold ends after two seconds whatever happens, as it does for the
 editor, rather than hold keys forever for a popover that never took focus.
 
+*(Added 2026-09-26, with [ADR-0044](./0044-alt-down-opens-one-popover-the-commands-above-the-filter.md).)*
+Inside a column's popover the keyboard moves again, from the commands to the filter below them
+(Tab, Shift+Tab, E) and back (the sentinels the core renders either side of the filter). Each
+move is a change of who holds the keyboard, and the keys after it are held the same way.
+*(Decided with the user the same day, after review.)* **So is closing a popover by a key**:
+Enter or Space on an item, a column's letter that runs a command, Enter in the filter's text
+field. The popover closes a round trip later on a circuit, and a key typed behind it reached
+the menu first: O then Enter sorted descending, and then ran the item the Enter stood on,
+Sort ascending. The keys behind a closing key are held until the popover is gone and are then
+the grid's. The core writes the letters that run an enabled command on the commands
+(`data-ex-letters`), and a Chrome marks its value list `ex-value-list`, so the listener mirrors
+nothing but Tab, Shift+Tab and E. The two seconds count from the start of the hold, however
+many moves it holds behind.
+A keydown dispatched from script types nothing, so a held key handed to a text field is typed
+at its caret, as a held key is in the Cell Editor, and a held Enter submits the field's form.
+A held key whose effect is the browser's own — Tab moving DOM focus, Space ticking a checkbox,
+an arrow in a select — does nothing when dispatched from script, and doing it from script would
+move DOM focus from script, which [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)
+keeps out. *(Decided with the user, 2026-09-26.)* **Such a key, and every key held behind it, is
+dropped.** Handing the rest on would put them in a field they were not meant for: "Alpha", Tab,
+Space, Enter would search for "Alpha " and apply it. The typing stops short instead, visibly,
+and nothing is applied that was not typed where it was meant. It happens only faster than a
+round trip, so on a Server circuit.
+
 ## Consequences
 
 - **The core carries a small amount of JavaScript.** A capture-phase listener can only be attached

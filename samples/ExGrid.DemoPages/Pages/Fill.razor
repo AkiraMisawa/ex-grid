@@ -1,0 +1,106 @@
+@page "/fill"
+@using global::ExGrid.MudBlazor
+@* global::, for the reason Mud.razor gives (AGENTS.md, the name collisions). *@
+@using global::MudBlazor
+
+@* The Wrapper's stylesheets and font, for the paper below; loaded by this page alone. *@
+<HeadContent>
+    <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
+</HeadContent>
+<MudThemeProvider />
+<MudPopoverProvider />
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <a href="wide">Wide</a>
+    <a href="sizing">Sizing</a>
+    <span>Fill</span>
+</nav>
+
+<h1>Fill — a Viewport that takes its parent's box</h1>
+
+<p>
+    <code>ViewportHeight="ViewportSize.Fill"</code> takes the parent's height instead of a
+    number (ADR-0028). The parent's side of the contract is one sentence: give it a definite
+    height. Each grid here fills a parent that does: a sized box, the rest of a flex column
+    under a toolbar, and a Material paper under its toolbar (ADR-0030).
+    <code>?parent=window</code> shows one grid whose box follows the window's height, and
+    <code>?parent=auto</code> one whose parent has no height, which the grid names in a
+    warning rather than guessing at.
+</p>
+
+<p class="demo-status">
+    <span id="sort-status">Sorts: @_sortStatus</span>
+</p>
+
+@switch (Parent)
+{
+    case "auto":
+        <section id="auto-box">
+            <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
+                    ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill" />
+        </section>
+        break;
+    case "window":
+        @* The box follows the window's height, so a resize is a change of Viewport. *@
+        <section id="window-box" style="height: calc(100vh - 220px); min-height: 0">
+            <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
+                    ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill"
+                    OnSortChanged="OnSortChanged" />
+        </section>
+        break;
+    default:
+        <section id="fixed-box" style="height: 300px">
+            <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
+                    ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill" />
+        </section>
+
+        <section id="flex-box" style="display: flex; flex-direction: column; height: 360px; margin-top: 16px">
+            <div id="flex-toolbar" style="height: 60px; flex: none">A toolbar the grid sits under</div>
+            <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
+                    ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill" />
+        </section>
+
+        @* The paper's height is the Consumer's, on the outer element, which is theirs
+           (ADR-0030); the Fill grid takes what the toolbar leaves. *@
+        <MudExGridPaper id="fill-paper" Style="display: flex; width: 640px; height: 320px; margin-top: 16px">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Positions</MudText>
+            </ToolBarContent>
+            <ChildContent>
+                <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns"
+                        ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill" />
+            </ChildContent>
+        </MudExGridPaper>
+
+        @* A declared height in a paper lays out as it always did. *@
+        <MudExGridPaper id="declared-paper" Style="margin-top: 16px">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Orders</MudText>
+            </ToolBarContent>
+            <ChildContent>
+                <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns"
+                        ViewportHeight="200" ViewportWidth="560" />
+            </ChildContent>
+        </MudExGridPaper>
+        break;
+}
+
+@code {
+    /// <summary>Which parent the page shows: the three definite ones by default,
+    /// <c>window</c> for a box that follows the window's height, <c>auto</c> for one with
+    /// no height at all.</summary>
+    [SupplyParameterFromQuery(Name = "parent")]
+    public string? Parent { get; set; }
+
+    // Held in a field, never rebuilt per render (ADR-0003).
+    private readonly DemoTrade[] _rows = DemoData.Window(500, seed: 3);
+
+    private string _sortStatus = "none";
+
+    private void OnSortChanged(IReadOnlyList<SortSpec> sorts)
+        => _sortStatus = sorts.Count == 0 ? "none" : string.Join(",", sorts.Select(s => $"{s.Column} {s.Direction}"));
+}

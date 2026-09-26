@@ -92,8 +92,8 @@ public static class MudExGridPresentation
 /// </summary>
 /// <param name="Family">The CSS <c>font-family</c> value the paper writes as
 /// <c>--ex-font-family</c>.</param>
-/// <param name="WideWidthPx">The wide class — <c>%</c> and <c>€</c> — in this font
-/// (ADR-0016).</param>
+/// <param name="WideWidthPx">The wide class — <c>%</c>, <c>€</c>, <c>−</c>, <c>+</c> and
+/// <c>#</c> — in this font (ADR-0016).</param>
 /// <param name="DigitWidthPx">A tabular digit in this font.</param>
 /// <param name="NarrowWidthPx">The widest separator in this font.</param>
 /// <param name="MeasuredAtPx">The font size the three widths were measured at.</param>

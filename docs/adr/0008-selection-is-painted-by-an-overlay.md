@@ -124,7 +124,9 @@ The gestures ADR-0012 names are wired; two things around them are deliberately n
 
 Touch and pen are out of scope for the same reason the browser target is narrow
 ([ADR-0017](./0017-target-chromium-browsers-only.md)): this is a desktop grid, and a touch drag is
-a different gesture vocabulary rather than the same one with a different device.
+a different gesture vocabulary rather than the same one with a different device. *(The
+desktop scope as a whole is now stated in one place:
+[ADR-0045](./0045-exgrid-is-a-desktop-grid.md).)*
 
 ## Dragging at the edge scrolls, and the pointer leaving stops it
 

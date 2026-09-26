@@ -47,7 +47,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 43 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 45 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -90,7 +90,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 43 ADRs. **A new decision that follows these will not
+The principles that run through all 45 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and

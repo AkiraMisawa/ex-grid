@@ -93,15 +93,24 @@ test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/C
     // On WebAssembly this copy took the event route and has landed already; on the Server
     // host there is no synchronous channel, and every copy takes the asynchronous route
     // (ADR-0005) — the write lands a round trip later. Read once it has.
+    // A read that overlaps the write is refused by the browser ("Clipboard data has
+    // changed"); that is the write landing, not a result, so it reads as nothing yet.
     const readClipboard = () => page.evaluate(async () => {
-        const items = await navigator.clipboard.read();
-        const result = {};
-        for (const item of items) {
-            for (const type of item.types) {
-                result[type] = await (await item.getType(type)).text();
+        try {
+            const items = await navigator.clipboard.read();
+            const result = {};
+            for (const item of items) {
+                for (const type of item.types) {
+                    result[type] = await (await item.getType(type)).text();
+                }
             }
+            return result;
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'InvalidStateError') {
+                return {};
+            }
+            throw error;
         }
-        return result;
     });
     await expect.poll(async () => Object.keys(await readClipboard()), { timeout: 5000 })
         .toEqual(expect.arrayContaining(['text/plain', 'text/html']));

@@ -137,8 +137,12 @@
 /* The sort indicator is painted from the same attribute the accessibility tree reads
    (ADR-0033), so the two cannot disagree. A glyph, not a class: the stable class list
    is closed (ADR-0029) and this earns no entry in it. */
-.ex-header-cell[aria-sort="ascending"]::after { content: " ▲"; opacity: 0.6; }
-.ex-header-cell[aria-sort="descending"]::after { content: " ▼"; opacity: 0.6; }
+/* The sort mark stands in a box C# sizes, as the menu button does: the header estimate
+   charges exactly this width, so a sorted label is never cut by its own mark (ADR-0016). */
+.ex-header-cell[aria-sort="ascending"]::after,
+.ex-header-cell[aria-sort="descending"]::after { display: inline-block; width: var(--ex-sort-mark-width, 20px); text-align: right; opacity: 0.6; }
+.ex-header-cell[aria-sort="ascending"]::after { content: "▲"; }
+.ex-header-cell[aria-sort="descending"]::after { content: "▼"; }
 .ex-cell-numeric { text-align: right; }
 /* A Header Group's rectangle (ADR-0032): a caption over its members, centred, on the
    header's own ground. Absolutely positioned from the geometry, so it stands whether
@@ -347,6 +351,19 @@
     color: var(--ex-state-error-color, #b3261e);
     outline: 1px solid var(--ex-state-error-color, #b3261e);
 }
+/* The column's one popover (ADR-0044): its commands, and below them its filter, set off by a
+   rule. Each half is a column of the popover's column; the filter is what gives when the
+   room is short, through its value list (ADR-0040). */
+.ex-popover-commands { display: flex; flex-direction: column; flex-shrink: 0; }
+.ex-popover-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-top: 4px;
+    border-top: var(--ex-rule-width, 1px) solid var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
+}
 .ex-popover button { font: inherit; text-align: left; padding: 2px var(--ex-action-padding-x, 6px); cursor: pointer; }
 .ex-popover button:disabled { cursor: default; opacity: 0.5; }
 /* In a bounded popover the value list is what gives (ADR-0040): it shrinks, to a floor
@@ -355,7 +372,15 @@
    nothing in C# computes with it. */
 .ex-popover-list { max-height: 240px; min-height: 48px; flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; }
 .ex-popover-actions { display: flex; gap: 4px; justify-content: flex-end; flex-shrink: 0; }
-/* The filter panel's Tab-wrap sentinels (ADR-0039): focusable, and nothing else. Absolute,
+/* "(Select All)" is a button with the checkbox role, because a native checkbox's mixed state
+   is a property only script can set (ADR-0009/0021). Its box is drawn from aria-checked. */
+.ex-popover .ex-select-all { padding-left: 0; background: none; border: 0; }
+.ex-select-all::before { display: inline-block; width: 1.2em; }
+.ex-select-all[aria-checked="true"]::before { content: "\2611"; }
+.ex-select-all[aria-checked="false"]::before { content: "\2610"; }
+.ex-select-all[aria-checked="mixed"]::before { content: "\25A3"; }
+.ex-popover-join { display: flex; gap: 12px; }
+/* The popover's Tab-wrap sentinels (ADR-0039/0044): focusable, and nothing else. Absolute,
    so they take no place in the popover's flex column and add no gap to it. */
 .ex-focus-wrap { position: absolute; width: 0; height: 0; overflow: hidden; outline: none; }
 /* The panel's form exists for Enter's implicit submission (ADR-0039) and has no box of its

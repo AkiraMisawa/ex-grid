@@ -131,6 +131,22 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   what a screen reader then says is still owed a real one, like the wording below). Only a
   Template's control takes DOM focus, which it already did when clicked; leaving it by Escape
   puts both back.)*
+- **The scroller is not a tab stop either** *(found while implementing, 2026-09-26)*. Chrome makes
+  a scroll container with no tabbable content a tab stop of its own once it overflows, so every
+  overflowing display-only grid had a second stop inside it — `/wide` at any size, and `/cells`
+  once its headers were charged their full need. Shift+Tab from after the grid landed on the
+  scroller, not the root. The scroller now carries `tabindex="-1"`, which takes it out of the
+  sequence. That also makes it focusable by a click, and focus there would take the keys and
+  `aria-activedescendant` away from the root, so focus arriving on it is handed straight to the
+  root. That uses Blazor's own focus call, the one popovers already return focus with, so no
+  script is added ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
+  *(Found by layer 3 on the Server host, 2026-09-26.)* On a circuit that hand-off lands a round
+  trip after the press, and the capture-phase listener read a key typed in between as a
+  descendant's — a Consumer control's — and let it go: a number typed straight after a click
+  was lost (ED-22). A copy or a paste in that gap was ignored the same way — the copy-refusal test on the Server
+  host, which copies straight after a click, found it. The
+  keydown, copy and paste listeners now read an event on the grid's own scroller as one on
+  the root. Those listeners change; no allowlisted use is added.
 - **Layer 3 owns the verification.** Counts and indices are assertable in bUnit, but "the Focus is
   reachable by one tab, and the announcement is made once per settled selection" is a real-browser
   question. It joins the list in [ADR-0026](./0026-layer-three-runs-on-playwright-against-the-installed-chrome.md).

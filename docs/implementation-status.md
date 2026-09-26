@@ -316,10 +316,10 @@ it has met `chrome` or `msedge`.
 | 0008 | Selection overlay, the mouse, **the edge-band auto-scroll**, **the Focus band** | `SelectionTests`, `EdgeAutoScrollTests`, `FocusBandTests` |
 | 0009 / 0010 | **The Chrome seams** — filter panel, column menu, editor, loading; `IGridChrome`; distinct values with the Excel exclusion rule; popovers dismiss by toggle, Escape and click-away | `FilterChromeTests`, `DistinctValueTests` |
 | 0011 | Index-space selection; **column reordering by dragging** (blocks and groups clamp) | `HeaderReorderTests`, `ColumnGestureTests` |
-| 0012 | The keyboard — including **PageUp / PageDown** (`MoveByViewport`) and **header-click sorting** with the settled cycle | `GridKeyboardTests`, `MoveByViewportTests`, `SortWiringTests` |
+| 0012 | The keyboard — including **PageUp / PageDown** (`MoveByViewport`) and **header-click sorting** with the settled cycle; **whole columns stay whole** under Shift+arrow, and **Shift+click on a header selects whole columns** (2026-09-25) | `GridKeyboardTests`, `MoveByViewportTests`, `SortWiringTests`, `WholeRangeSelectionTests`, `HeaderColumnSelectionTests`, `sizing.spec.mjs` |
 | 0013 / 0021 | Fixed row height, `ViewportBox`, the Scrollbar Gutter | `ScrollbarGutterTests`, `scrollbar.spec.mjs` |
 | 0015 | **The pager**, the page-context Ctrl+A, the off-screen-selection status line | `PagerTests` |
-| 0016 | Auto width, `####`, **resize by dragging**, **the three-width `CellTextMetrics`**, **the alignment enum** | `AutoWidthTests`, `CellTextMetricsClassTests`, `ColumnGestureTests` |
+| 0016 | Auto width, `####`, **resize by dragging**, **the per-class `CellTextMetrics`** (with the full-width class and `−` `+` `#` charged wide, 2026-09-25), **defaults that cover the widest platform measured**, **Size to fit on a double-click over the whole Window**, **a press without movement reports nothing**, **whole columns resize together**, **the header's full need** (menu band, sort room, an em of slack), **the alignment enum** | `AutoWidthTests`, `CellTextMetricsClassTests`, `GridMetricsTests`, `ColumnGestureTests`, `SizeToFitTests`, `sizing.spec.mjs` |
 | 0017 / 0026 | Both browser projects declared (`chrome`, `msedge`) | `playwright.config.mjs` |
 | 0018 | Instance independence, per-instance ids | `features.spec.mjs` (two grids) |
 | 0020 | Action and Template Columns | both layers |
@@ -328,13 +328,16 @@ it has met `chrome` or `msedge`.
 | 0027 / 0028 / 0029 | **`GridMetrics`, `GridDensity`, `ViewportSize.Fill`**, inline Geometry Tokens, the token vocabulary, the forced-colors block | `GridMetricsTests`, `GridMetricsWiringTests` |
 | 0031 | `dir="ltr"` on the root | `GridRenderingTests` |
 | 0032 | **Header Groups** — rectangles, refusals, the band, group/leaf drag units | `HeaderGroupTests`, `HeaderGroupRenderingTests` |
-| 0033 | **ARIA** — the root surface, absolute indices, `aria-activedescendant`, the live region | `AccessibilityTests` |
+| 0033 | **ARIA** — the root surface, absolute indices, `aria-activedescendant`, the live region; **the scroller kept out of the tab sequence**, with focus that reaches it handed to the root, and a key typed on it before then read as the root's (2026-09-26) | `AccessibilityTests`, `features.spec.mjs` (A11Y-17), `circuit.spec.mjs` (ED-22 on the Server host) |
 | 0034 | **The verdict seam** — Accept/Flag/Reject at the commit, the editor holding under a Reject, the message channel and its popover, the fill's verdict, and the bundled ruleset. Not the hover trigger (ED-17b) | `ValidationTests`, `GridRulesetTests`, `features.spec.mjs` |
 | 0043 | **Row Marks** — `GridColumn.MarkColumn`, a checkbox per Detail row and one in the header; `IRowMarks` as the Consumer's half and the `Marks` parameter on the push form; `RowMarkRules` (line-up, header state); `GridSource.From` keeping marks per base row and carrying them across `ReplaceRow`; `GridSource.Fetch` with a `RowMarkAdapter` (keys and snapshots as `RowMarkState`, counts from the server) and refused without one; Space in the Mark Column, the pager's "Mark all N rows", the count naming marks outside the filter; the `/marks` page's action reporting a partial result (added 2026-09-26) | `RowMarkRuleTests`, `RowMarkSourceTests`, `RowMarkFetchTests`, `RowMarkColumnTests`, `marks.spec.mjs` |
 | 0036 | **The context menu** — the secondary click's meaning, the core's clipboard commands and the Consumer's, the keyboard trigger, and `GridCommand` losing its label | `ContextMenuTests`, `FilterChromeTests`, `features.spec.mjs` |
 | 0035 | **The Editable declaration gates writes** — a paste or Ctrl+Enter fill covering a non-editable column is refused whole, and the fill refusal is no longer silent (CP-16) | `PasteRuleTests`, `ClipboardWiringTests`, `CellEditorTests` |
 | 0021 (fifth entry) / 0029 | **The hover band** — the pointer reported by JavaScript only when it moves onto another row (offsets; the cell is resolved in C#), the band painted by the overlay like the Focus band, `HighlightHoverRow`, `--ex-row-hover-background` made real; off by default and then not even computed | `HoverBandTests`, `mud.spec.mjs` (UX-13, real mouse) |
 | 0037 | **Entering a cell by key** — Space on a cell with several actions makes it Interactive with the keyboard left on the root (the arrows, Home and End choose; Space fires once and leaves; Enter, Tab and every other key leave and keep their meaning; `aria-activedescendant` names the chosen button, painted `ex-action-chosen`); Space on a Template cell hands its content one `FocusRequest` through `TemplateCellContext` and the Consumer's control focuses itself; Space on an editable cell opens Overwrite with the space; a held Space engages once; the action buttons leave the tab sequence | `InteractiveTests`, `ShippedStylesheetTests`, `features.spec.mjs` (real keys on `/cells`) |
+| 0040 | Popovers inside the grid's box; **a popover with less than a row of room closes as a Cancel** (2026-09-25) | `PopoverKeyboardTests`, `PopoverRoomTests` |
+| 0009 / 0044 | **The column's one popover** — `Alt+↓` and the ▾ open the commands above the filter; Excel's letters S, O, C and E; "Clear filter" as a command; Tab wrapping through both halves; the filter's search narrowing OK, "(Select All)", "Add current selection to filter" and a second condition (2026-09-26) | `MenuKeysTests`, `FilterPanelChoicesTests`, `FilterChromeTests`, `PopoverKeyboardTests`, `MudMenuTests`, `MudFilterPanelTests`, `popovers.spec.mjs`, `circuit.spec.mjs` |
+| 0045 | **Pinning is suspended** while the Pinned block would leave the scrollable columns under 40px; the View State's count stands, and reorder and the pin commands keep reading it | `ColumnGeometryTests`, `PinnedColumnTests`, `sizing.spec.mjs` |
 | 0030 | **`GridPresentationDefaults`** — the one cascaded value a Wrapper hands down: glyph widths at their measured size, a default Density, a default for the hover switch; an explicit parameter beats each | `GridPresentationDefaultsTests`, `PresentationDefaultsWiringTests` |
 
 ## Not in the core, by decision
@@ -592,6 +595,23 @@ clean. The property is unchanged: the dependency points one way.
    - The soak on the Server host, which is MEM-6 read from the server process. It comes
      with CI's next long run.
    - The declaration ADR, which also rewrites ADR-0017's WebAssembly premise.
+
+9. ~~**Found on 2026-09-26, not fixed: `ViewportHeight = Fill` paints no rows in a sized box.**~~
+   *Fixed the same day (ADR-0028 rewritten with the user): the core gives its own elements the
+   parent's size, names a parent with no height in a warning, and the paper's toolbar no longer
+   shrinks. `fill.spec.mjs` pins it (VZ-12a, VZ-12b, WR-7a, and UX-11a at last), on both hosts.*
+   A grid with a Fill height inside a 300px box settled at a 28px scroller, header only, with no
+   row painted (checked on the container's Chromium against de5e62c, before this run's changes).
+   The scroller takes its height from its content, and under Fill the reported height is that
+   same box, so the loop settles on the header. Only CSS on the grid's internal elements breaks
+   it, which ADR-0029/0030 keep off-limits. The DemoHost has no Fill-height page, and that is
+   also why UX-11a has no layer-3 test yet. Which element takes the box's height is a decision
+   for ADR-0028, not a fix to make quietly.
+
+10. **Observed on 2026-09-26: the column menu buttons are tab stops.** On `/features`, Shift+Tab
+   from after the grid lands on a ▾, not on the root. A11Y-4's test tolerates this ("the next
+   stop can be … the menu buttons"), but its criterion says focus "leaves the grid entirely".
+   The criterion and the test disagree, and the disagreement is not resolved here.
 
 ## Where the exit criteria stand
 

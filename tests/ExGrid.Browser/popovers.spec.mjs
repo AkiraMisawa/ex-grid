@@ -4,8 +4,9 @@ import { test, expect } from './fixtures.mjs';
 // Chrome and ExGrid.MudBlazor's (/features?chrome=mud) must give identical outcomes,
 // because what a popover's contents do is the core's to decide (ADR-0010/0039). The
 // dismissals (KB-17), the keyboard in and out (KB-28..32), the roles and names (A11Y-19),
-// the scroll container not clipping (UX-11) and the Context Menu (CTX-1..4). The
-// filter panel is the built-in one under both until the Wrapper fills it.
+// the scroll container not clipping (UX-11), the Context Menu (CTX-1..4), and the column's
+// one popover — its commands above its filter, Excel's letters and Clear filter (FL-12,
+// FL-15, FL-16, ADR-0044).
 
 const CHROMES = ['builtin', 'mud'];
 
@@ -21,12 +22,17 @@ async function clickCell(page, row, column) {
 }
 
 // Where DOM focus is: inside which popover, on what — or on the root. A popover takes the
-// keyboard when it opens and gives it back when it closes (ADR-0039).
+// keyboard when it opens and gives it back when it closes (ADR-0039). A column's popover is
+// a dialog holding a menu (ADR-0044): on a command the role is the menu's, on the filter
+// the dialog's.
 async function activeIsInPopover(page) {
     return page.evaluate(() => {
         const active = document.activeElement;
         const popover = active?.closest('.ex-popover');
-        return popover ? { role: popover.getAttribute('role'), tag: active.tagName, text: active.textContent } : null;
+        const within = active?.closest('[role=menu], [role=dialog]');
+        return popover && within && popover.contains(within)
+            ? { role: within.getAttribute('role'), tag: active.tagName, text: active.textContent }
+            : null;
     });
 }
 
@@ -35,30 +41,32 @@ async function activeIsRoot(page) {
 }
 
 async function enabledMenuItems(page) {
-    return grid(page).locator('.ex-popover[role=menu] button[role=menuitem]:not([disabled])').allTextContents();
+    return grid(page).locator('.ex-popover button[role=menuitem]:not([disabled])').allTextContents();
 }
 
 async function activeText(page) {
     return page.evaluate(() => document.activeElement?.textContent?.trim() ?? null);
 }
 
-// Whether DOM focus is on the condition form's operator: a native select in the built-in
-// panel, a MudSelect's combobox in the Wrapper's.
+// Whether DOM focus is on the condition form's (first) operator: a native select in the
+// built-in panel, a MudSelect's combobox named Operator in the Wrapper's.
 async function activeIsOperator(page) {
     return page.evaluate(() => {
         const active = document.activeElement;
         return !!active?.closest('.ex-popover[role=dialog]')
-            && (active.tagName === 'SELECT' || active.getAttribute('role') === 'combobox');
+            && ((active.tagName === 'SELECT' && !active.classList.contains('ex-popover-second'))
+                || (active.getAttribute('role') === 'combobox' && active.getAttribute('aria-label') === 'Operator'));
     });
 }
 
+// Notional's popover, and Tab from its commands into the filter below (ADR-0044).
 async function openNotionalPanel(page) {
     await clickCell(page, 1, 2);
     await page.keyboard.press('Alt+ArrowDown');
     await expect.poll(() => activeText(page)).toBe('Sort ascending');
-    await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Filter' }).click();
     const panel = grid(page).locator('.ex-popover[role=dialog]');
     await expect(panel).toBeVisible();
+    await page.keyboard.press('Tab');
     await expect.poll(() => activeIsOperator(page)).toBe(true);
     return panel;
 }
@@ -68,7 +76,7 @@ async function openNotionalPanel(page) {
 // whose word for "greater than" is MudBlazor's.
 const CONDITION = {
     builtin: {
-        choose: (page, panel) => panel.locator('select').selectOption('GreaterThan'),
+        choose: (page, panel) => panel.locator('select').first().selectOption('GreaterThan'),
         operand: (panel) => panel.locator('input:not([type])'),
         apply: (panel) => panel.locator('button', { hasText: 'OK' }),
     },
@@ -199,7 +207,7 @@ for (const chrome of CHROMES) {
 
             await page.keyboard.press('Alt+ArrowDown');
 
-            const menu = grid(page).locator('.ex-popover[role=menu]');
+            const menu = grid(page).locator('.ex-popover [role=menu]');
             await expect(menu).toBeVisible();
             await expect(menu).toHaveAttribute('aria-label', 'Book');
             await expect.poll(() => activeIsInPopover(page)).toEqual({ role: 'menu', tag: 'BUTTON', text: 'Sort ascending' });
@@ -210,9 +218,10 @@ for (const chrome of CHROMES) {
             await grid(page).locator('.ex-menu-button').first().click();
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu', tag: 'BUTTON' });
 
-            // The filter panel, from the menu: its first control once the value list has landed.
-            await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Filter' }).click();
-            await expect(grid(page).locator('.ex-popover[role=dialog]')).toBeVisible();
+            // The filter below, by E from the commands: its search box, once the value list
+            // has landed (ADR-0044).
+            await expect(grid(page).locator('.ex-popover[role=dialog] input[type=search], .ex-popover[role=dialog] .mud-ex-grid-filter-search input')).toBeVisible();
+            await page.keyboard.press('e');
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
 
             // Escape from inside closes it, and the keyboard is the grid's again.
@@ -242,9 +251,8 @@ for (const chrome of CHROMES) {
             await clickCell(page, 1, 0);
             await focusAfterDown();
 
-            // The panel's Cancel.
+            // The filter's Cancel.
             await page.keyboard.press('Alt+ArrowDown');
-            await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Filter' }).click();
             await grid(page).locator('.ex-popover[role=dialog] button', { hasText: 'Cancel' }).click();
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
             await expect.poll(() => activeIsRoot(page)).toBe(true);
@@ -270,7 +278,7 @@ for (const chrome of CHROMES) {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
             // Read once it is drawn — a round trip away on the Server host.
-            await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
+            await expect(grid(page).locator('.ex-popover [role=menu]')).toBeVisible();
             const items = await enabledMenuItems(page);
             expect(items.length, 'a menu with something to move among').toBeGreaterThan(2);
             await expect.poll(() => activeText(page)).toBe(items[0]);
@@ -290,7 +298,7 @@ for (const chrome of CHROMES) {
 
             // None of it moved the page or the Focus underneath.
             expect(await page.evaluate(() => window.scrollY)).toBe(0);
-            await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
+            await expect(grid(page).locator('.ex-popover [role=menu]')).toBeVisible();
         });
 
         for (const key of ['Enter', ' ']) {
@@ -309,22 +317,26 @@ for (const chrome of CHROMES) {
             });
         }
 
-        for (const key of ['Tab', 'Shift+Tab']) {
-            test(`in a menu ${key} closes it as a Cancel (KB-30, ADR-0039)`, async ({ page }) => {
+        for (const [key, lands] of [['Tab', 'the search box'], ['Shift+Tab', 'Cancel']]) {
+            test(`over a filter, ${key} on a command moves to ${lands} — nothing runs, nothing closes (FL-12, KB-30, ADR-0044)`, async ({ page }) => {
                 await clickCell(page, 1, 0);
                 await page.keyboard.press('Alt+ArrowDown');
                 await page.keyboard.press('ArrowDown');
                 await expect.poll(() => activeText(page)).toBe('Sort descending');
+                await expect(grid(page).locator('.ex-popover[role=dialog] input[type=search], .ex-popover[role=dialog] .mud-ex-grid-filter-search input')).toBeVisible();
 
                 await page.keyboard.press(key);
 
-                await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+                if (key === 'Tab')
+                    await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+                else
+                    await expect.poll(() => activeText(page)).toBe('Cancel');
+                await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
                 await expect(grid(page).locator('.ex-header-cell[aria-sort=descending]')).toHaveCount(0);
-                await expect.poll(() => activeIsRoot(page)).toBe(true);
             });
         }
 
-        test('the Context Menu answers the same keys (KB-30, ADR-0039)', async ({ page }) => {
+        test('the Context Menu answers the same keys, and Tab closes it (KB-30, ADR-0039)', async ({ page }) => {
             await clickCell(page, 1, 1);
             await page.keyboard.press('Shift+F10');
             await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
@@ -339,26 +351,161 @@ for (const chrome of CHROMES) {
             await expect.poll(() => activeIsRoot(page)).toBe(true);
         });
 
-        test('in the filter panel Tab and Shift+Tab wrap inside it (KB-31, ADR-0039)', async ({ page }) => {
+        test('Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044)', async ({ page }) => {
             await openNotionalPanel(page);
 
-            // Operator, value, Apply (while it is available), Cancel, Clear — and round to
-            // the operator: twice over, and DOM focus is never anywhere but the panel.
-            let reachedOperator = 0;
-            for (let i = 0; i < 10; i++) {
+            // Forward from the operator through the filter — the value, the join, the second
+            // condition, OK — to Cancel, its last control, one settled step at a time: DOM
+            // focus is never anywhere but the popover.
+            const active = () => page.evaluate(() => document.activeElement?.outerHTML);
+            for (let i = 0; i < 10 && (await activeText(page)) !== 'Cancel'; i++) {
+                const before = await active();
                 await page.keyboard.press('Tab');
-                await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog' });
-                if (await activeIsOperator(page))
-                    reachedOperator++;
+                await expect.poll(active).not.toBe(before);
+                expect(await activeIsInPopover(page)).not.toBeNull();
             }
-            expect(reachedOperator, 'the wrap reached the operator again').toBeGreaterThan(0);
+            await expect.poll(() => activeText(page)).toBe('Cancel');
 
-            // Shift+Tab off the operator goes to the last control, not out of the panel.
-            while (!(await activeIsOperator(page)))
-                await page.keyboard.press('Tab');
+            // Tab off Cancel wraps to the first command, and Tab from there is the filter's.
+            await page.keyboard.press('Tab');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await page.keyboard.press('Tab');
+            await expect.poll(() => activeIsOperator(page)).toBe(true);
+
+            // Shift+Tab off the operator goes back to the first command, and Shift+Tab on a
+            // command to the filter's last control.
             await page.keyboard.press('Shift+Tab');
-            await expect.poll(() => activeText(page)).toBe('Clear');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await page.keyboard.press('Shift+Tab');
+            await expect.poll(() => activeText(page)).toBe('Cancel');
             await expect(grid(page).locator('.ex-popover[role=dialog]')).toBeVisible();
+        });
+
+        test('the letters: S sorts, E goes to the search box where "e" is text, C clears (FL-15, FL-16, ADR-0044)', async ({ page }) => {
+            // S from a command sorts ascending and closes.
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await page.keyboard.press('ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort descending');
+            await page.keyboard.press('s');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+            await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending]')).toHaveCount(1);
+            await expect.poll(() => activeIsRoot(page)).toBe(true);
+
+            // E goes to the search box, and a letter typed there is text — "elta" searches, and
+            // neither its E nor anything after it is a letter of the commands. The sort
+            // dropped the selection (ADR-0011), so the Focus is given again first.
+            const all = await grid(page).getAttribute('aria-rowcount');
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            const search = grid(page).locator('.ex-popover input[type=search], .ex-popover .mud-ex-grid-filter-search input');
+            await expect(search).toBeVisible();
+            await expect(grid(page).locator('.ex-popover button[role=menuitem]', { hasText: /Clear filter/ })).toBeDisabled();
+            await page.keyboard.press('e');
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            await page.keyboard.type('elta');
+            await expect(search).toHaveValue('elta');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+            // Enter applies the search's matches, Delta alone (FL-10).
+            await page.keyboard.press('Enter');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+            await expect.poll(() => grid(page).getAttribute('aria-rowcount')).not.toBe(all);
+
+            // Clear filter is enabled now, and C clears it. The filter dropped the selection
+            // too (FL-8).
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover button[role=menuitem]', { hasText: /Clear filter/ })).toBeEnabled();
+            await page.keyboard.press('c');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+            await expect.poll(() => grid(page).getAttribute('aria-rowcount')).toBe(all);
+            await expect.poll(() => activeIsRoot(page)).toBe(true);
+        });
+
+        test('on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044)', async ({ page }) => {
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
+            const inList = () => page.evaluate(() => !!document.activeElement?.closest('.ex-popover-list, .mud-ex-grid-filter-values'));
+            const active = () => page.evaluate(() => document.activeElement?.outerHTML);
+            const tabIntoList = async () => {
+                for (let i = 0; i < 4 && !(await inList()); i++) {
+                    const before = await active();
+                    await page.keyboard.press('Tab');
+                    await expect.poll(active).not.toBe(before);
+                }
+                expect(await inList(), 'Tab from the search box reaches the value list').toBe(true);
+            };
+
+            // E to the search box, and Tab on to the list's first entry, "(Select All)".
+            await page.keyboard.press('e');
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            await tabIntoList();
+
+            // E on the list goes back to the search box.
+            await page.keyboard.press('e');
+            await expect.poll(inList).toBe(false);
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            expect(await grid(page).locator('.ex-popover input[type=search], .ex-popover .mud-ex-grid-filter-search input').inputValue()).toBe('');
+
+            // O on the list sorts descending and closes, as it does on a command.
+            await tabIntoList();
+            await page.keyboard.press('o');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+            await expect(grid(page).locator('.ex-header-cell[aria-sort=descending]')).toHaveCount(1);
+            await expect.poll(() => activeIsRoot(page)).toBe(true);
+        });
+
+        test('where no value list stands, E goes to the condition\'s value, where a search is typed (FL-15, ADR-0044)', async ({ page }) => {
+            await clickCell(page, 1, 2);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover[role=dialog]')).toBeVisible();
+
+            await page.keyboard.press('e');
+
+            await expect.poll(() => page.evaluate(() => {
+                const active = document.activeElement;
+                return !!active && (active.matches('.ex-popover form input:not([type])')
+                    || active.closest('.mud-ex-grid-filter-operand') !== null);
+            })).toBe(true);
+            await page.keyboard.type('5');
+            expect(await page.evaluate(() => document.activeElement?.value)).toBe('5');
+        });
+
+        test('E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044)', async ({ page }) => {
+            // A filter in force on Book, so that a search offers "Add current selection".
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
+            await page.keyboard.press('e');
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            await page.keyboard.type('Alpha');
+            await page.keyboard.press('Enter');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
+            await page.keyboard.press('e');
+            await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
+            await page.keyboard.type('Be');
+            const add = grid(page).locator('.ex-popover-add input, .mud-ex-grid-filter-add input');
+            await expect(add).toBeVisible();
+            await add.focus();
+
+            await page.keyboard.press('e');
+            await page.keyboard.press('Space');
+
+            // Held behind an E the grid does not answer there, the Space would wait two
+            // seconds and then be dropped.
+            await expect(add).toBeChecked({ timeout: 700 });
         });
 
         test('Enter in the value field applies exactly what OK applies (KB-31, ADR-0039)', async ({ page }) => {
@@ -373,7 +520,7 @@ for (const chrome of CHROMES) {
         test('a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039)', async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
-            await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
+            await expect(grid(page).locator('.ex-popover [role=menu]')).toBeVisible();
 
             // Well clear of the menu, which stands under the first column's header: a press
             // that lands on an item runs it, which is not this test.
@@ -387,20 +534,17 @@ for (const chrome of CHROMES) {
             await expect.poll(() => activeIsRoot(page)).toBe(true);
         });
 
-        test("the menus are menus and the panel a dialog, a column's named by its header (A11Y-19, ADR-0039)", async ({ page }) => {
+        test("a column's popover is a dialog holding a menu, both named by its header; the Context Menu a menu (A11Y-19, ADR-0039/0044)", async ({ page }) => {
             await grid(page).locator('.ex-menu-button').first().click();
-            const menu = grid(page).locator('.ex-popover');
-            await expect(menu).toHaveAttribute('role', 'menu');
+            const popover = grid(page).locator('.ex-popover');
+            await expect(popover).toHaveAttribute('role', 'dialog');
+            await expect(popover).toHaveAttribute('aria-label', 'Book');
+            const menu = popover.locator('[role=menu]');
             await expect(menu).toHaveAttribute('aria-label', 'Book');
             await expect(menu.locator('[role=menuitem]').first()).toBeVisible();
-
-            await menu.locator('[role=menuitem]', { hasText: 'Filter' }).click();
-            const panel = grid(page).locator('.ex-popover');
-            await expect(panel).toHaveAttribute('role', 'dialog');
-            await expect(panel).toHaveAttribute('aria-label', 'Book');
-            // Opened by pointer, the panel takes the keyboard a round trip later on the
+            // Opened by pointer, the popover takes the keyboard a round trip later on the
             // Server host, and a key pressed before then lands on nothing (ADR-0039).
-            await expect.poll(async () => (await activeIsInPopover(page))?.role).toBe('dialog');
+            await expect.poll(async () => (await activeIsInPopover(page))?.role).toBe('menu');
             await page.keyboard.press('Escape');
             // The panel stands over cell (1, 1) until the Escape is answered — a round trip
             // on the Server host — and a click before then lands in the panel, not the cell.
@@ -429,11 +573,14 @@ test.describe('Inner Popups under the mud Chrome', () => {
     const second = (page) => page.locator('.ex-grid').nth(1);
     const openPopups = (page) => page.locator('.mud-popover-open');
 
+    // The column's popover, and Tab from its commands into the Mud panel (ADR-0044).
     async function openPanel(page, column) {
         await clickCell(page, 1, column);
         await page.keyboard.press('Alt+ArrowDown');
-        await grid(page).locator('.ex-popover [role=menuitem]', { hasText: 'Filter' }).click();
         await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+        await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+        await page.keyboard.press('Tab');
+        await expect.poll(() => activeIsOperator(page)).toBe(true);
     }
 
     test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {

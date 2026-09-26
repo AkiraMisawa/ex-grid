@@ -75,12 +75,15 @@ Geometry tokens (written inline by C#, read-only — ADR-0027/0028):
 ```
 --ex-row-height   --ex-header-height   --ex-font-size   --ex-cell-padding-x
 --ex-action-padding-x   --ex-action-border-width   --ex-action-gap
---ex-menu-button-width   --ex-menu-button-inset
+--ex-menu-button-width   --ex-menu-button-inset   --ex-sort-mark-width
 ```
 
 *(The menu-button pair was added when review found the ▾'s 16px/6px living as a CSS
 literal beside a C# estimate that ignored it — the exact pairing defect ADR-0027/0028
-dissolved, re-entering through a new element.)*
+dissolved, re-entering through a new element. `--ex-sort-mark-width` was added for the same
+reason on 2026-09-26: the header estimate began charging the sort mark
+([ADR-0016](./0016-column-width-and-overflow.md)), and the mark's `" ▲"` was a stylesheet
+literal.)*
 
 Visual tokens (defaults in `ex-grid.css`, overridden on any ancestor). The existing eleven are
 kept with their names and defaults; the vocabulary this ADR fixes is:

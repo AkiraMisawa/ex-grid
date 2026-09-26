@@ -361,8 +361,8 @@ test('WR-7: a grid in a MudDialog opens its popovers whole inside its box, and i
 
     // The filter panel's Inner Popup — the operator's list — stands above the dialog: its
     // first entry is what the pointer would press.
-    await dialogGrid.locator('.ex-menu-button').nth(3).click(); // Notional: a condition, so an operator
-    await popover.locator('[role=menuitem]', { hasText: 'Filter' }).click();
+    // Notional: a condition, so an operator, below the commands in the one popover (ADR-0044).
+    await dialogGrid.locator('.ex-menu-button').nth(3).click();
     const operator = popover.getByRole('combobox', { name: 'Operator' });
     await expect(operator).toBeVisible();
     await operator.click();

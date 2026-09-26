@@ -143,6 +143,81 @@ test('keys typed straight after a key that opens a menu reach the menu (KB-33, A
     await expect(grid(page).locator('.ex-header-cell').first()).toHaveAttribute('aria-sort', 'descending');
 });
 
+for (const chrome of ['builtin', 'mud']) {
+    test(`a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, ${chrome})`, async ({ page }) => {
+        await page.goto(`/features?chrome=${chrome}`);
+        await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        const all = await grid(page).getAttribute('aria-rowcount');
+        await clickCell(page, 1, 0);
+        await page.keyboard.press('Alt+ArrowDown');
+        const search = grid(page).locator('.ex-popover input[type=search], .ex-popover .mud-ex-grid-filter-search input');
+        await expect(search).toBeVisible();
+        await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role=menu]') !== null)).toBe(true);
+        await setRoundTrip(150);
+
+        // E sends the keyboard to the search box, which takes DOM focus a round trip later.
+        // The keys typed meanwhile are held and handed on in order: the search is "elta",
+        // whole — never a command's S or O, never a search missing its first letters — and
+        // the Enter typed with them applies it.
+        await page.keyboard.press('e');
+        await page.keyboard.type('elta');
+        await page.keyboard.press('Enter');
+
+        await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+        await expect.poll(() => grid(page).getAttribute('aria-rowcount')).not.toBe(all);
+        await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending], .ex-header-cell[aria-sort=descending]')).toHaveCount(0);
+        // Delta alone: the four books share the rows evenly.
+        expect(Number(await grid(page).getAttribute('aria-rowcount'))).toBe(Number(all) / 4);
+    });
+}
+
+test('a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5)', async ({ page }) => {
+    await page.goto('/features');
+    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    await clickCell(page, 1, 0);
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect.poll(() => page.evaluate(() => document.activeElement?.textContent?.trim())).toBe('Sort ascending');
+    await setRoundTrip(150);
+
+    // O sorts descending and closes the popover a round trip later. The Enter typed with
+    // it, reaching the menu first, would run the command it stands on — Sort ascending —
+    // and undo the sort; held until the popover is gone, it is the grid's.
+    await page.keyboard.press('o');
+    await page.keyboard.press('Enter');
+
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await page.waitForTimeout(600);
+    await expect(grid(page).locator('.ex-header-cell').first()).toHaveAttribute('aria-sort', 'descending');
+});
+
+test('a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5)', async ({ page }) => {
+    await page.goto('/features');
+    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    const all = await grid(page).getAttribute('aria-rowcount');
+    await clickCell(page, 1, 0);
+    await page.keyboard.press('Alt+ArrowDown');
+    const search = grid(page).locator('.ex-popover input[type=search]');
+    await expect(search).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role=menu]') !== null)).toBe(true);
+    await setRoundTrip(150);
+
+    // Meant: search "Alpha", Tab on to the list, Space to untick, Enter. The Tab reaches
+    // the search box as a key held behind E, where only the browser could have moved
+    // focus with it: it and the Space and Enter behind it are dropped, so no " " lands in
+    // the search and nothing is applied.
+    await page.keyboard.press('e');
+    await page.keyboard.type('Alpha');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Enter');
+
+    await expect(search).toHaveValue('Alpha');
+    await page.waitForTimeout(600);
+    await expect(search).toHaveValue('Alpha');
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+    expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+});
+
 for (const [what, column, open, closes] of [
     ['the operator list', 2, async (page) => grid(page).getByRole('combobox', { name: 'Operator' }).click(), true],
     ['the date calendar', 4, async (page) => grid(page).locator('.mud-ex-grid-filter-operand button').first().click(), false],
@@ -152,8 +227,12 @@ for (const [what, column, open, closes] of [
         await expect(grid(page)).toHaveAttribute('tabindex', '0');
         await clickCell(page, 1, column);
         await page.keyboard.press('Alt+ArrowDown');
-        await grid(page).locator('.ex-popover [role=menuitem]', { hasText: 'Filter' }).click();
         await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
+        // Tab from the commands into the panel's operator (ADR-0044), and on to the date's
+        // field for the calendar.
+        await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
+        await page.keyboard.press('Tab');
+        await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
         if (column === 4) {
             await page.keyboard.press('Tab');
         }
@@ -178,15 +257,17 @@ for (const [what, column, open, closes] of [
 }
 
 // The Wrapper's filter panel, on Notional (a condition, so an operator), with the keyboard
-// in the operator.
+// moved into the operator by Tab from the commands above it (ADR-0044).
 async function openMudNotionalPanel(page) {
     await page.goto('/features?chrome=mud');
     await expect(grid(page)).toHaveAttribute('tabindex', '0');
     await clickCell(page, 1, 2);
     await page.keyboard.press('Alt+ArrowDown');
-    await grid(page).locator('.ex-popover [role=menuitem]', { hasText: 'Filter' }).click();
     const panel = grid(page).locator('.mud-ex-grid-filter');
     await expect(panel).toBeVisible();
+    await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
+    await page.keyboard.press('Tab');
+    await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
     return panel;
 }
 

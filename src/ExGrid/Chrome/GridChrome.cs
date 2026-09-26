@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 using ExGrid.Selection;
 
@@ -83,10 +84,17 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// force, the operators the core allows, the declared UI mode, the pull for distinct
 /// values, and the three exits. A substitute compiles against this alone.
 ///
-/// <para><see cref="FocusRequest"/> counts the openings (ADR-0039): the panel's contents
-/// put DOM focus on their first control whenever it changes. The core holds no reference
-/// to a control it did not render, and does not try — the same rule as
-/// <see cref="CellEditorContext.FocusRequest"/>.</para>
+/// <para>The panel stands under the column's commands in the one popover Alt+↓ and the ▾
+/// open (ADR-0044), which opens with the keyboard on the commands. <see cref="FocusRequest"/>
+/// counts the requests for the panel to take it — Tab from the commands — from zero at each
+/// opening, where nothing is asked: whenever it changes, the panel's contents put DOM focus on
+/// their first control. <see cref="FocusLastRequest"/> is the same for their last control,
+/// where Shift+Tab from the commands wraps, and <see cref="SearchRequest"/> for the field a
+/// search is typed into — Excel's E: the value list's search box, or the condition's value
+/// where no list stands. The core holds no reference to a control it did not render, and does
+/// not try — the same rule as <see cref="CellEditorContext.FocusRequest"/> (ADR-0039). Tab
+/// off either end of the panel is the core's: it renders the popover's wrap around the
+/// contents, so the contents need none of their own.</para>
 ///
 /// <para><see cref="Format"/> is the column's own, so a value list shows each value as the
 /// cells show it — null where the column declares none. What the choices mean is
@@ -96,6 +104,19 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// a select's list, a picker's calendar — opening (<c>true</c>) and closing (<c>false</c>).
 /// While one is open, Escape is the popup's: the grid leaves it to the control, and the next
 /// one closes the panel (ADR-0039). Contents that open no popup never call it.</para>
+///
+/// <para><see cref="ValueListKey"/> is where the contents hand a key pressed on their value
+/// list — its checkboxes, "(Select All)" — for Excel's letters (ADR-0044): S, O and C run
+/// the commands above and close the popover, and E moves to the search box through
+/// <see cref="SearchRequest"/>. The core decides, by <see cref="MenuKeys.Letter"/>,
+/// and every other key means nothing to it; the task completes when what the key ran has.
+/// A key in a text field is never handed over: a letter there is text. The element that
+/// hands them over carries the class <c>ex-value-list</c>, by which the grid's key listener
+/// knows the keys typed behind a letter there are to be held while it acts (ADR-0010).</para>
+///
+/// <para><see cref="Clear"/> removes the column's filter and closes. The one popover offers
+/// it as the "clear-filter" command above the panel, so the panels this package and
+/// <c>ExGrid.MudBlazor</c> ship draw no Clear of their own (ADR-0044).</para>
 /// </summary>
 public sealed record FilterPanelContext(
     string Column,
@@ -109,19 +130,26 @@ public sealed record FilterPanelContext(
     Action Close,
     int FocusRequest = 0,
     Func<object, string>? Format = null,
-    Action<bool>? InnerPopupChanged = null);
+    Action<bool>? InnerPopupChanged = null,
+    int FocusLastRequest = 0,
+    Func<KeyboardEventArgs, Task>? ValueListKey = null,
+    int SearchRequest = 0);
 
-/// <summary>The column menu's contract (ADR-0010): the core decides the items.
-/// <see cref="FocusRequest"/> counts the openings; the menu puts DOM focus on its first
-/// enabled item whenever it changes (ADR-0039). Invoking a command also closes the menu
-/// — or replaces it with the filter panel — and hands the keyboard back: the Chrome only
-/// invokes, and calls <see cref="Close"/> for a dismissal of its own. What each key
-/// means on an item is <see cref="MenuKeys"/>', asked through <see cref="ResolveKey"/>:
-/// the core keeps the menu's place, so a key is answered against where the keys have
-/// moved it, not against whichever item holds DOM focus when it lands — on a Blazor
-/// Server circuit focus follows a round trip behind (ADR-0039). A popup the menu's
-/// contents open of their own is reported through <see cref="InnerPopupChanged"/>, as in
-/// the filter panel.</summary>
+/// <summary>The column menu's contract (ADR-0010): the core decides the items. They stand
+/// at the top of the one popover Alt+↓ and the ▾ open, above the column's filter where it
+/// can be filtered (ADR-0044). <see cref="FocusRequest"/> counts the requests for the menu to
+/// take the keyboard — each opening, and each time Tab wraps back to the commands from the
+/// filter below; the menu puts DOM focus on its first enabled item whenever it changes
+/// (ADR-0039). Invoking a command also closes the popover and hands the keyboard back: the
+/// Chrome only invokes, and calls <see cref="Close"/> for a dismissal of its own. What each
+/// key means on an item is <see cref="MenuKeys"/>' column-menu table, asked through
+/// <see cref="ResolveKey"/> — Excel's letters, and Tab into the filter, which the core
+/// carries out itself (<see cref="MenuKeyKind.FilterFirst"/>, <see cref="MenuKeyKind.FilterLast"/>,
+/// <see cref="MenuKeyKind.FilterSearch"/>). The core keeps the menu's
+/// place, so a key is answered against where the keys have moved it, not against whichever
+/// item holds DOM focus when it lands — on a Blazor Server circuit focus follows a round
+/// trip behind (ADR-0039). A popup the menu's contents open of their own is reported
+/// through <see cref="InnerPopupChanged"/>, as in the filter panel.</summary>
 public sealed record ColumnMenuContext(
     string Column,
     ColumnType Type,

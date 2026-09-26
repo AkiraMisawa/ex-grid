@@ -80,6 +80,35 @@ grid, committed to the Consumer" applies unchanged.
 Columns combine with **AND**. OR exists only within a column (an `IN` list, or "A or B" in a
 custom condition).
 
+**A search narrows what OK applies, as in Excel** *(decided with the user, 2026-09-26)*. With
+search text in the box, OK applies the checked values **among those that match**. The values the
+search hides are not applied, even if they are checked. The first build applied every checked
+value and used the search only to hide rows of the list. So a value nobody could see went into
+the filter, which is what FL-9's "OK applies what the panel shows" was written to prevent. The
+rule lives in `FilterPanelChoices`, so every Chrome applies it the same way.
+
+**The list opens with "(Select All)"** *(decided with the user, 2026-09-26)*. It is checked when
+every value is, clear when none is, and shows the mixed state in between. While a search is
+active it reads "(Select All Search Results)" and acts on the matching values only. Its wording
+is the Chrome's, like every label.
+
+**"Add current selection to filter", as in Excel** *(decided with the user, 2026-09-26)*. While
+a search is active on a column that already has a value filter, the panel offers the choice to
+add rather than replace. It is off by default, so OK replaces the filter with the matching checked
+values, as above. Turned on, OK applies the filter already in force together with the matching
+checked values. This is how a second search adds to the first without losing it. It lives in
+`FilterPanelChoices` with the search rule.
+
+**A condition can have a second, joined by AND or OR**, as in Excel's Custom AutoFilter
+*(decided with the user, 2026-09-26)*. `FilterSpec` already holds several clauses with one
+combinator (ADR-0002). Only the built-in form offered one. It now offers a second row and the
+AND / OR choice between the two.
+
+**The value list stays declared per column** *(re-examined with the user, 2026-09-26, against
+Excel's always-present list)*. Making it the default would have every price column enumerate its
+whole domain each time its filter opens — the cost section 1 exists to avoid. Excel-likeness is
+met where a column declares the list.
+
 ### 4. Fetching distinct values is pull, deliberately
 
 `RequestDistinctValues` returns a `Task`. **This looks like a contradiction with ADR-0001's push

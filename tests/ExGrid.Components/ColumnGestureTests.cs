@@ -46,9 +46,10 @@ public class ColumnGestureTests : GridTestContext
         [
             .. cut.FindAll(".ex-menu-button").Select(b => b.GetAttribute("blazor:onclick")),
             .. cut.FindAll(".ex-resize-grip").Select(g => g.GetAttribute("blazor:onmousedown")),
+            .. cut.FindAll(".ex-resize-grip").Select(g => g.GetAttribute("blazor:ondblclick")),
         ];
         var before = Handlers();
-        Assert.Equal(2 * cut.FindAll(".ex-header-cell").Count, before.Length);
+        Assert.Equal(3 * cut.FindAll(".ex-header-cell").Count, before.Length);
         Assert.All(before, Assert.NotNull); // or an all-null pair would compare equal
         var rows = cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToArray();
 

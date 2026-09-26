@@ -62,7 +62,7 @@ public abstract class MudTestContext : BunitContext
     }
 
     // A twelve-digit amount in a 112px column: fits at Roboto's 8.0px digit, hashes
-    // at the system default's 9.058px (ADR-0016) — the observable that says whose
+    // at the system default's 9.742px (ADR-0016) — the observable that says whose
     // widths the grid is using.
     internal static GridColumn<Trade>[] Columns() =>
     [

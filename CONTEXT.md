@@ -54,6 +54,12 @@ The rectangle of rows × columns the grid is actually painting. Render cost is d
 fits in here, not by the size of the data.
 _Avoid_: visible area, visible range, window
 
+**Fill**:
+A Viewport axis taken from the parent's box instead of declared as a number. The browser reports
+the size, and the parent must have a definite size on that axis
+([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)).
+_Avoid_: auto (that is a column width), 100%, responsive (that is ADR-0045's "following the box")
+
 **Scrollbar Gutter**:
 How much of the declared Viewport its own scrollbars occupy. A classic scrollbar is drawn
 **inside** the box the element declares and takes about 15px off that axis; an overlay scrollbar
@@ -420,6 +426,13 @@ format that replaces the default, and the width (`Auto | Fixed` plus `MinWidth` 
 `MaxWidth`). A statically listed column and a column generated
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
 _Avoid_: field, column definition
+
+**Size to fit**:
+Fixing a column's width at what its header and the fetched values need at that moment, bounded by
+its `MinWidth` / `MaxWidth`. It is asked for by the user, through a double-click on the column's
+edge or the column menu, and **it leaves a Fixed width**, unlike Auto, which is the grid's own and
+is not persisted ([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)).
+_Avoid_: autofit, auto-size (Excel's word, easily confused with an **Auto** width)
 
 **Pinned Column**:
 A column held against the Viewport's edge while the others pan under it — Excel's frozen panes.

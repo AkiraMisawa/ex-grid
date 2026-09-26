@@ -52,7 +52,14 @@ public class GridPresentationDefaultsTests
     {
         var metrics = GridMetrics.Resolve(GridDensity.Compact);
 
-        Assert.Equal(9.058, metrics.DigitWidthPx);
+        Assert.Equal(9.742, metrics.DigitWidthPx);
+    }
+
+    [Fact] // ADR-0016 (2026-09-25): full-width is an em, so a Wrapper's metrics charge it at the resolved font size
+    public void The_full_width_class_is_the_resolved_font_size()
+    {
+        Assert.Equal(14, Roboto.CellMetricsAt(14, 8).FullWidthPx);
+        Assert.Equal(12, Roboto.CellMetricsAt(12, 4).FullWidthPx);
     }
 
     [Theory] // ADR-0016: a bad measurement fails where it was written

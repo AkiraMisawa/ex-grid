@@ -75,9 +75,8 @@ public class ColumnFormatTests : GridTestContext
         source.DistinctAnswer = DistinctValues.Of([new DateTime(2026, 1, 5), new DateTime(2026, 1, 6), null]);
         var cut = RenderGrid(source);
 
+        // The filter stands below the commands as the popover opens (ADR-0044).
         await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
-        await cut.FindAll(".ex-popover button[role=menuitem]")
-            .Single(b => b.TextContent == "Filter").ClickAsync(new MouseEventArgs());
 
         var labels = cut.FindAll(".ex-popover-list label").Select(l => l.TextContent.Trim()).ToList();
         Assert.Equal(["2026-01-05", "2026-01-06", "(Blanks)"], labels);

@@ -179,4 +179,29 @@ public class ScrollbarGutterTests : GridTestContext
 
         await instance.OnViewportReportAsync(GutterPx, GutterPx, 0, 0);
     }
+
+    [Fact] // ADR-0012 / KB-14a: a shrinking box does not chase the Focus; the next arrow reveals it
+    public async Task A_shrinking_box_leaves_the_focus_where_it_is_until_a_key_moves_it()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(200))
+            .Add(g => g.TotalCount, 200)
+            .Add(g => g.Columns, TestRows.Wide(100))
+            .Add(g => g.RowHeight, RowHeightPx)
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.ViewportWidth, ViewportSize.Fill));
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 350, 100));
+        // Column 3 spans 300-400, at the right edge of a 350px box.
+        await cut.FindAll(".ex-cell")[0].MouseDownAsync(new() { Button = 0, Buttons = 1, OffsetX = 310, OffsetY = 5 });
+        var scrolls = Js.ScrolledTo.Count;
+
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 200, 100));
+
+        Assert.Equal(scrolls, Js.ScrolledTo.Count); // not chased: nothing was asked for
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false));
+
+        // Revealed where it landed: column 3 right-aligned in the 200px box.
+        Assert.Equal(200d, Js.ScrolledTo[^1].Left);
+    }
 }

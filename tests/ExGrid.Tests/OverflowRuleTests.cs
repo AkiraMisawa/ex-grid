@@ -96,6 +96,18 @@ public class OverflowRuleTests
         Assert.Equal("###", decision.DisplayText);
     }
 
+    [Fact] // ADR-0016 (2026-09-25): the fill counts # at its own width, so the run fits its cell
+    public void The_hash_fill_counts_the_hash_at_its_own_width()
+    {
+        // # charges wide: 60px column - 16px padding = 44px content; 44 / 14 = 3 hashes.
+        // Counted at the digit (9px) it was 4, and 4 x 11.731px overflowed on DejaVu Sans.
+        var metrics = new CellTextMetrics(14, 9, 5, 8);
+
+        var decision = OverflowRules.Decide(ColumnType.Number, "12,345,678,901", 60, metrics);
+
+        Assert.Equal("###", decision.DisplayText);
+    }
+
     [Fact] // ADR-0016: at least one # even when padding eats the whole width
     public void At_least_one_hash_survives_a_crushed_column()
     {

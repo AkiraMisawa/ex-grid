@@ -79,8 +79,9 @@ public sealed record GridPresentationDefaults
 
     /// <summary>
     /// The metrics at the size the grid resolved — the widths scaled linearly from
-    /// <see cref="FontSizePx"/>, which is how the Excel preset's 12px trio was derived
-    /// from the 14px measurement (ADR-0028) — with the preset's own padding.
+    /// <see cref="FontSizePx"/>, which is how the Excel preset's 12px set was derived
+    /// from the 14px measurement (ADR-0028) — with the preset's own padding. The
+    /// full-width class is the resolved font size itself (ADR-0016).
     /// </summary>
     public CellTextMetrics CellMetricsAt(double fontSizePx, double cellHorizontalPaddingPx)
     {
@@ -90,7 +91,9 @@ public sealed record GridPresentationDefaults
                 "A font size is a finite, positive number of pixels.");
         }
         var scale = fontSizePx / FontSizePx;
+        // Full-width is the em, not a measurement to scale: it is the resolved size.
         return new CellTextMetrics(
-            WideWidthPx * scale, DigitWidthPx * scale, NarrowWidthPx * scale, cellHorizontalPaddingPx);
+            WideWidthPx * scale, DigitWidthPx * scale, NarrowWidthPx * scale,
+            Math.Max(fontSizePx, DigitWidthPx * scale), cellHorizontalPaddingPx);
     }
 }

@@ -24,17 +24,19 @@ public class MudFilterPanelTests : MudTestContext
 {
     private readonly List<FilterSpec?> _applied = [];
     private readonly List<bool> _popups = [];
+    private readonly List<string> _listKeys = [];
     private int _closed;
     private int _cleared;
 
     private FilterPanelContext Context(
         ColumnType type = ColumnType.Text, FilterUiMode mode = FilterUiMode.ValueList,
-        DistinctValues? answer = null, FilterSpec? current = null, int focusRequest = 1)
+        DistinctValues? answer = null, FilterSpec? current = null, int focusRequest = 1, int focusLastRequest = 0)
         => new(
             "Book", type, current, FilterOperators.AllowedFor(type), mode,
             () => Task.FromResult(answer ?? DistinctValues.Of(["Alpha", "Beta", null, "Gamma"])),
             spec => _applied.Add(spec), () => _cleared++, () => _closed++, focusRequest,
-            InnerPopupChanged: _popups.Add);
+            InnerPopupChanged: _popups.Add, FocusLastRequest: focusLastRequest,
+            ValueListKey: e => { _listKeys.Add(e.Key); return Task.CompletedTask; });
 
     // MudBlazor's selects and pickers draw their popups into the page's provider — every
     // MudBlazor app has one — so the tests render one too.
@@ -108,17 +110,18 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Equal(["Alpha"], ValueLabels(cut));
     }
 
-    [Fact] // WR-1: Cancel closes as a discard, Clear removes the column's filter — both the core's
-    public async Task Cancel_and_clear_are_the_cores_exits()
+    [Fact] // WR-1 / ADR-0044 / FL-16: Cancel closes as a discard, and the panel draws no Clear — clearing is the command above it
+    public async Task Cancel_is_the_cores_exit_and_there_is_no_clear()
     {
         var cut = RenderPanel(Context());
 
         await Button(cut, "mud-ex-grid-filter-cancel").ClickAsync(new MouseEventArgs());
-        await Button(cut, "mud-ex-grid-filter-clear").ClickAsync(new MouseEventArgs());
 
         Assert.Equal(1, _closed);
-        Assert.Equal(1, _cleared);
+        Assert.Equal(0, _cleared);
         Assert.Empty(_applied);
+        Assert.Empty(cut.FindAll(".mud-ex-grid-filter-clear"));
+        Assert.Equal(2, cut.FindAll(".mud-ex-grid-filter-actions button").Count);
     }
 
     [Fact] // WR-3: MudBlazor's words where it has keys; the Chrome's own for the rest; Blank never "empty"
@@ -139,7 +142,6 @@ public class MudFilterPanelTests : MudTestContext
 
         Assert.Equal("Appliquer", Button(cut, "mud-ex-grid-filter-apply").TextContent.Trim());
         Assert.Equal("Annuler", Button(cut, "mud-ex-grid-filter-cancel").TextContent.Trim());
-        Assert.Equal("Effacer", Button(cut, "mud-ex-grid-filter-clear").TextContent.Trim());
         Assert.Contains("Rechercher", cut.Find(".mud-ex-grid-filter-search").TextContent);
         Assert.Contains("(Vides)", ValueLabels(cut));
     }
@@ -205,30 +207,85 @@ public class MudFilterPanelTests : MudTestContext
         {
             "MudDataGrid_Apply" => new(key, "Appliquer"),
             "MudDataGrid_Cancel" => new(key, "Annuler"),
-            "MudDataGrid_Clear" => new(key, "Effacer"),
             _ => new(key, key, resourceNotFound: true),
         };
     }
 
-    [Fact] // KB-29 / ADR-0039: once the list has arrived, the search field takes DOM focus
+    private int FocusCalls()
+        => JSInterop.Invocations.Count(i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase));
+
+    [Fact] // KB-29 / ADR-0044: asked, the panel's first control takes DOM focus once the list has arrived
     public void The_first_control_takes_focus_once_the_list_has_arrived()
     {
-        var before = JSInterop.Invocations.Count(i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase));
+        var before = FocusCalls();
 
         RenderPanel(Context());
 
-        Assert.True(JSInterop.Invocations.Count(i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase)) > before);
+        Assert.True(FocusCalls() > before);
     }
 
-    [Fact] // KB-31 / ADR-0039: the panel's Tab wrap — two sentinels, either side of the controls
-    public void Two_sentinels_stand_either_side_of_the_controls()
+    [Fact] // ADR-0044 / KB-29: unasked, the panel takes nothing — the popover opens with the keyboard on the commands above
+    public void Unasked_the_panel_takes_no_focus()
+    {
+        var before = FocusCalls();
+
+        RenderPanel(Context(focusRequest: 0));
+
+        Assert.Equal(before, FocusCalls());
+    }
+
+    [Fact] // ADR-0044 / KB-31: Shift+Tab from the commands asks for the last control, Cancel
+    public void Asked_for_its_last_control_the_panel_focuses_cancel()
+    {
+        var cut = RenderPanel(Context(focusRequest: 0, focusLastRequest: 1));
+
+        var cancel = cut.FindComponents<MudButton>().Single(b => b.Instance.Class == "mud-ex-grid-filter-cancel");
+        var focused = Assert.Single(JSInterop.Invocations, i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(ReferenceOf(cancel.Instance).Id, ((ElementReference)focused.Arguments[0]!).Id);
+    }
+
+    /// <summary>The reference a MudButton focuses through, read from the button itself.</summary>
+    private static ElementReference ReferenceOf(MudButton button)
+    {
+        for (var type = button.GetType(); type is not null; type = type.BaseType)
+        {
+            var field = type.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                .FirstOrDefault(f => f.FieldType == typeof(ElementReference));
+            if (field is not null)
+                return (ElementReference)field.GetValue(button)!;
+        }
+        throw new InvalidOperationException("MudButton holds no element reference");
+    }
+
+    [Fact] // ADR-0044 / FL-15: asked for the search field, the condition form focuses its value, not its operator
+    public void Asked_for_the_search_field_the_condition_form_focuses_its_value()
+    {
+        var cut = RenderPanel(Context(ColumnType.Text, FilterUiMode.Condition, focusRequest: 0) with { SearchRequest = 1 });
+
+        var value = cut.FindComponents<MudTextField<string>>().Single(f => f.Instance.Class == "mud-ex-grid-filter-operand");
+        var focused = Assert.Single(JSInterop.Invocations, i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(value.Instance.InputReference?.ElementReference.Id ?? "none", ((ElementReference)focused.Arguments[0]!).Id);
+    }
+
+    [Fact] // ADR-0044 / KB-31: the panel draws no Tab wrap of its own — the core's sentinels stand around it
+    public void The_panel_has_no_sentinels_of_its_own()
     {
         var cut = RenderPanel(Context());
 
-        var form = cut.Find("form.mud-ex-grid-filter");
-        Assert.Contains("mud-ex-grid-focus-wrap", form.FirstElementChild!.ClassName);
-        Assert.Contains("mud-ex-grid-focus-wrap", form.LastElementChild!.ClassName);
-        Assert.All(cut.FindAll(".mud-ex-grid-focus-wrap"), s => Assert.Equal("0", s.GetAttribute("tabindex")));
+        Assert.Empty(cut.FindAll("span[tabindex]"));
+    }
+
+    [Fact] // ADR-0044 / FL-15: a key on the value list is handed to the core; a key in the search field is not
+    public async Task The_value_list_hands_its_keys_to_the_core()
+    {
+        var cut = RenderPanel(Context());
+
+        // The list is marked for the grid's key listener (ADR-0010/0044).
+        Assert.Contains("ex-value-list", cut.Find(".mud-ex-grid-filter-values").ClassName);
+        await cut.Find(".mud-ex-grid-filter-values").KeyDownAsync(new KeyboardEventArgs { Key = "s" });
+        await cut.Find(".mud-ex-grid-filter-search input").KeyDownAsync(new KeyboardEventArgs { Key = "e" });
+
+        Assert.Equal(["s"], _listKeys);
     }
 
     [Fact] // KB-31 / SRV-5: Enter in a value field submits whatever Apply's state — the default
@@ -337,8 +394,8 @@ public class MudFilterPanelTests : MudTestContext
             .Add(g => g.Chrome, chrome)
             .Add(g => g.OnFilterChanged, f => filter = f)
             .Add(g => g.OnDistinctValuesNeeded, (_, _) => Task.FromResult(DistinctValues.Of(["Book 000", "Book 001", null]))));
+        // The filter stands below the commands as the popover opens (ADR-0044).
         await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
-        await cut.FindAll(".ex-popover [role=menuitem]").Single(b => b.TextContent.Trim() == "Filter").ClickAsync(new MouseEventArgs());
         await choose(cut);
         Assert.Empty(cut.FindAll(".ex-popover"));
         return filter;
@@ -363,5 +420,72 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Equal(expected.Key, actual.Key);
         Assert.Equal(expected.Value.Clauses[0].Operator, actual.Value.Clauses[0].Operator);
         Assert.Equal(expected.Value.Clauses[0].Values!, actual.Value.Clauses[0].Values!);
+    }
+
+    private static IElement SelectAll(IRenderedComponent<ContainerFragment> cut)
+        => cut.Find(".mud-ex-grid-filter-all input[type=checkbox]");
+
+    [Fact] // FL-10 / ADR-0009: with a search, the submit applies the matching checked values and no hidden one
+    public async Task A_search_narrows_what_the_submit_applies()
+    {
+        var cut = RenderPanel(Context());
+
+        await cut.Find(".mud-ex-grid-filter-search input").InputAsync(new ChangeEventArgs { Value = "ph" });
+        await cut.Find("form").SubmitAsync();
+
+        var clause = Assert.Single(Assert.Single(_applied)!.Clauses);
+        Assert.Equal(["Alpha"], clause.Values!);
+    }
+
+    [Fact] // FL-11 / ADR-0009: (Select All) is a tri-state MudCheckBox over the values shown
+    public async Task Select_all_is_tri_state_over_the_values_shown()
+    {
+        var cut = RenderPanel(Context());
+        var all = cut.FindComponent<MudCheckBox<bool?>>();
+        Assert.True(all.Instance.GetState(x => x.Value));
+        Assert.Equal("(Select All)", cut.Find(".mud-ex-grid-filter-all").TextContent.Trim());
+
+        await ValueBoxes(cut)[1].ChangeAsync(new ChangeEventArgs { Value = false });
+        Assert.Null(cut.FindComponent<MudCheckBox<bool?>>().Instance.GetState(x => x.Value)); // mixed
+
+        await SelectAll(cut).ChangeAsync(new ChangeEventArgs { Value = true });
+        Assert.All(ValueBoxes(cut), box => Assert.True(box.IsChecked()));
+        await SelectAll(cut).ChangeAsync(new ChangeEventArgs { Value = false });
+        Assert.All(ValueBoxes(cut), box => Assert.False(box.IsChecked()));
+
+        await cut.Find(".mud-ex-grid-filter-search input").InputAsync(new ChangeEventArgs { Value = "amm" });
+        Assert.Equal("(Select All Search Results)", cut.Find(".mud-ex-grid-filter-all").TextContent.Trim());
+    }
+
+    [Fact] // FL-13 / ADR-0009: while searching a filtered column, the matches can join the filter in force
+    public async Task Add_current_selection_joins_the_filter_in_force()
+    {
+        var cut = RenderPanel(Context(current: new FilterSpec([new FilterClause(FilterOperator.In, Values: ["Beta"])])));
+        Assert.Empty(cut.FindAll(".mud-ex-grid-filter-add"));
+
+        await cut.Find(".mud-ex-grid-filter-search input").InputAsync(new ChangeEventArgs { Value = "amm" });
+        await ValueBoxes(cut)[0].ChangeAsync(new ChangeEventArgs { Value = true }); // Gamma, the one shown
+        await cut.Find(".mud-ex-grid-filter-add input").ChangeAsync(new ChangeEventArgs { Value = true });
+        await cut.Find("form").SubmitAsync();
+
+        var clause = Assert.Single(Assert.Single(_applied)!.Clauses);
+        Assert.Equal(["Beta", "Gamma"], clause.Values!);
+    }
+
+    [Fact] // FL-14 / ADR-0009: a two-condition filter reopens as its two conditions and applies as one spec
+    public async Task Two_conditions_round_trip()
+    {
+        var current = new FilterSpec(
+            [new FilterClause(FilterOperator.StartsWith, "Al"), new FilterClause(FilterOperator.EndsWith, "ma")],
+            FilterCombinator.Or);
+        var cut = RenderPanel(Context(mode: FilterUiMode.Condition, current: current));
+
+        Assert.Equal(FilterOperator.EndsWith, cut.FindComponent<MudSelect<FilterOperator?>>().Instance.GetState(x => x.Value));
+        await cut.Find("form").SubmitAsync();
+
+        var spec = Assert.Single(_applied)!;
+        Assert.Equal(FilterCombinator.Or, spec.Combinator);
+        Assert.Equal([FilterOperator.StartsWith, FilterOperator.EndsWith], spec.Clauses.Select(c => c.Operator));
+        Assert.Equal(["Al", "ma"], spec.Clauses.Select(c => c.Value));
     }
 }

@@ -82,6 +82,10 @@
 .mud-ex-grid .mud-ex-grid-toolbar {
     padding-left: 8px;
     padding-right: 8px;
+    /* The paper is a column: a Fill-height grid takes what the toolbar leaves, through the
+       flex values the core writes on its own root, and the toolbar keeps its height
+       (ADR-0028/0030). */
+    flex: none;
 }
 /* The Cell Editor's content (ADR-0010): fills the box the core floats over the cell —
    the box, its outline and its background are the core's (.ex-editor); this is the
@@ -155,13 +159,4 @@
     justify-content: flex-end;
     gap: 4px;
     flex-shrink: 0;
-}
-/* The Tab wrap's two sentinels (ADR-0039): focusable, and nothing else. Absolute, so they
-   take no place in the panel's column and add no gap to it. */
-.mud-ex-grid-focus-wrap {
-    position: absolute;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-    outline: none;
 }

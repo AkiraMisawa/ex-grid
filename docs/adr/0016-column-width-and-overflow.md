@@ -33,7 +33,17 @@ Rejected:
   notifying width changes and **rewriting the user's saved view without their knowledge**.
 - **Drop the formatting** (remove thousands separators, use exponent notation) — `1.23E+09` is
   unreadable as a monetary amount, and losing the thousands separator invites a different
-  misreading of its own.
+  misreading of its own. *(Checked against Excel on 2026-09-25, with the user.)* This is the
+  one place Excel and this grid look different, and less different than it seems. Excel does
+  this only for the **General** format. It rounds, then switches to exponent notation, and it
+  still shows `####` for any number with a fixed format and for every date. This grid has no
+  General format. Every column carries its format, so Excel's own rule for a formatted number
+  is the rule here.
+- **Let text spill into the empty cell to its right**, as Excel does *(rejected with the user,
+  2026-09-25)*. Whether a value is readable would then depend on its neighbour being empty, so
+  the same column reads differently row by row, and a neighbour scrolled out of the Viewport
+  would still change what is painted. Text is cut with an ellipsis: visibly cut, and the same
+  in every row.
 
 ## Three ways to see the real value behind `####`
 
@@ -107,6 +117,12 @@ them. The column menu entry in
 would require the Consumer to compute the maximum width server-side and pass it in; that is
 overkill for now.
 
+*(Settled with the user on 2026-09-25.)* "Fetched" means **the whole Window**, not only the rows
+being painted. Auto measures the painted rows because it runs on every push. Size to fit runs
+once, when somebody asks for it, so a pass over the Window costs nothing that matters. Measuring
+only the painted rows would fit the column and then show `####` a few rows further down. After an
+explicit "fit", that is the wrong surprise.
+
 ## Resizing by dragging — decided
 
 The three assumptions above are now a gesture. **A grip in the right-hand edge of the header cell;
@@ -116,6 +132,11 @@ painted row's markup on every `pointermove`. The guide line is one absolutely po
 moving over the top — the same mechanism, and the same reason, as the selection Overlay
 ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). It is also what Excel does, which is
 the operability this component's name claims.
+
+Excel also shows the width as a number beside the pointer ("Width: 8.43 (64 pixels)"). **This
+grid does not** *(decided with the user, 2026-09-25)*. Setting a width by its number is
+something people do when laying out a sheet for print, not when reading a grid. The guide line
+already shows where the edge will land.
 
 `new width = width at drag start + (clientX − clientX at drag start)` needs no layout read, so
 [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) is untouched. A drag ends a column's
@@ -221,6 +242,107 @@ glyph widths exactly as firmly as the size does.
 were measured against. A Wrapper overrides the token and pays the obligation, exactly as ADR-0027
 and [ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md) already
 describe — nothing in the Wrapper contract changes except that it now hands back three numbers.
+
+### The defaults have to hold on every platform, not on one machine — decided
+
+*(Decided with the user, 2026-09-25.)* The paragraph above calls `system-ui, sans-serif` "the
+stack the widths above were measured against". **A stack is not a font.** `system-ui` is a
+different family on each operating system, so the table above holds for the machine it was
+measured on and says nothing about the others. Measured again on Linux (Chromium 141, headless,
+`system-ui` resolving to **DejaVu Sans**, 14px, tabular digits):
+
+| glyph | weight 400 | weight 600 | against the defaults |
+|---|---|---|---|
+| `0`–`9`, `$`, `¥`, `£`, `€` | 8.908 | **9.742** | digit class under by 0.68 |
+| **`−`, `+`, `#`** | **11.731** | **11.731** | **digit class under by 2.67** |
+| `%` | 13.303 | **14.028** | wide class under by 0.19 |
+| `-` (hyphen-minus) | — | 5.811 | narrow class under by 0.18 |
+| `,` `.` `(` `)` `/` `:` | up to 5.463 | up to **6.398** | narrow class under by 0.77 |
+| full-width (`評`, `あ`, `１`, …) | 14.000 | 14.000 | charged as a digit: under by 4.94 |
+
+This is the failure the whole ADR exists to prevent. A total row's `123,456,789,012.50` paints
+**157.7px** against an estimate of **155.0px**. The core decides it fits, the stylesheet cuts it,
+and the reader sees a number ending in an ellipsis. `#` at 11.731px breaks the fill as well:
+`floor(content width / digit width)` hashes are wider than the cell, so the `####` itself gets an
+ellipsis.
+
+**Each default is the widest value measured for its class on any platform the grid supports**
+(Chrome and Edge on Windows, macOS and Linux —
+[ADR-0017](./0017-target-chromium-browsers-only.md)). That is this ADR's rule — an early `####`
+costs a hover, a clipped number costs a misread — applied across platforms instead of inside one.
+It costs a slightly early `####` on the narrower families, which is the direction the rule allows.
+Windows and macOS are measured by hand, like the other checks only a person can run, and the
+numbers are recorded here. Until they are, the defaults are the widest measured so far.
+
+**`−`, `+` and `#` move to the wide class** *(decided with the user, 2026-09-25)*. At 11.731px
+they break the digit class by more than a quarter, and the wide class already covers them. On a
+family where they are digit-sized, the cost is about 5px of early `####` per sign, and a number
+carries at most one sign. A separate sign class would be more exact but would add a fourth number
+for every Wrapper to hand back. **The `####` fill counts `#` at its own width**, so the hashes fit
+the cell they stand in.
+
+**A header is charged one full-width em of slack** *(decided with the user, 2026-09-25)*. A header
+is proportional letters, and no per-class charge can bound them: `W` is 15.44px, `m` 14.59px and
+`i` about 4px in the same family. Charged at the digit width, ordinary mixed-case labels come out
+over (`Commission`, `Market Value`, `Counterparty`), but short and capitalised ones come out under
+(`Amount` by 3.2px, `MARKET VALUE` by 6.9px). One em covers every shortfall measured. It makes
+every header-sized column that much wider, which is harmless for a label. A longer all-capitals
+label can still come out short. It is then cut with a visible ellipsis, like any Text, and never
+quietly wrong. Measuring the label in JavaScript was rejected: it is the text measurement
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) keeps out.
+
+## Size to fit on a double-click, and what a fit has to count — decided
+
+*(Decided with the user, 2026-09-25, after comparing the gestures with Excel's.)*
+
+**A double-click on a column's grip is Size to fit**, the same command as the column menu's. It
+is bounded by `[MinWidth, MaxWidth]`, like the menu entry. The user asked for a fit, but the
+width is one the grid computed, and `MaxWidth` bounds what the grid computes (see "Resizing by
+dragging" above). The consequence is accepted knowingly. A column dragged out to 600px (above the
+default `MaxWidth` of 400) comes back to 400 on a double-click, and a value needing 500 shows
+`####` again. The bound exists for text: a description column double-clicked to 2000px is the
+case it prevents. A number needing more than about 48 digits does not occur in practice. Excel's
+AutoFit has no bound; this is a deliberate difference.
+
+**A press and release on the grip without movement reports nothing.** The threshold is the 4px
+the reorder gesture already uses
+([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)). Before
+this, a click reported the column's current width, which turns an Auto column Fixed and puts it
+in the saved view — rewriting the view behind the user's back, as rejected at the top of this
+ADR. A double-click would do it on every first click.
+
+**Several whole columns move together**, as in Excel. When the grabbed column is covered by a
+whole-column range (every row, [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)'s
+Ctrl+Space), a drag gives every column covered by a whole-column range the new width, and a
+double-click fits each of them to its own content. The grid reports one `ColumnWidthChange` per
+column, so the Consumer's side does not change. A range that does not span every row selects
+cells, not columns, and does not take part.
+
+**What a fit counts in the header.** The header's required width is its label, **plus the menu
+button's band**, **plus the sort indicator's room when the column can be sorted**, whether it is
+sorted now or not. Auto counted the band and Size to fit did not; neither counted the indicator.
+The indicator is always counted because a column that grew when it was sorted would move every
+column to its right on a header click, and one that did not would chop its label.
+*(Refined while implementing, 2026-09-26: review found the indicator's glyph living as a
+stylesheet literal, `content: " ▲"`, beside a C# charge for it — the pairing
+[ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md) dissolved. So the mark
+stands in a box C# sizes, `--ex-sort-mark-width`, as the menu button's ▾ does: an em for the
+glyph and a 6px gap, 20px at 14px. The header estimate charges that box, and the stylesheet sizes
+the mark with the same number.)*
+
+**Full-width characters are a fourth class, charged at 1em** — the font size. These are the
+characters whose East Asian Width is Wide or Fullwidth. CJK fonts are drawn on the em square, so
+this is the one width that does not depend on the family: 14.000px at 14px in every weight
+measured. Charged as a digit, they were 35% short, which chopped every Japanese header and left
+every Japanese text value's Auto width short.
+*(Refined while implementing, 2026-09-26.)* The grid knows the em, because it emits the font
+size, so it charges full-width characters at least the font size whatever metrics it was
+given — a theme's explicit `CellMetrics` included. Metrics built on their own, outside a grid,
+cannot know the em: the uniform form keeps its one width for everything, which is its contract,
+and the three-class form charges full-width at twice the digit. A tabular digit is at least half
+an em in the text faces measured (0.636em for DejaVu Sans at weight 400), so twice it covers the
+em without being told it. That fallback is reasoned, not measured across faces, and nothing the
+grid paints depends on it.
 
 ## Columns appearing and disappearing, and saved views
 

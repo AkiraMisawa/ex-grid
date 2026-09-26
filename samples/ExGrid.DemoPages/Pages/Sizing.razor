@@ -1,0 +1,145 @@
+@page "/sizing"
+
+<nav class="demo-nav">
+    <a href="">Row identity</a>
+    <a href="virtual">Virtualised</a>
+    <a href="wide">Wide</a>
+    <a href="cells">Cells and rows</a>
+    <a href="features">Features</a>
+    <span>Sizing</span>
+</nav>
+
+<h1>Sizing — column widths and a box that narrows</h1>
+
+<p>
+    What the column width gestures do and what a narrow box does to the grid (ADR-0016,
+    ADR-0045). Double-click a column's right edge to size it to fit; Shift+click a header
+    to select whole columns, then drag one of their edges to resize them together. The
+    grid fills the width of the window: narrow the window until the two pinned columns
+    would cover it, and pinning is suspended until it widens again.
+</p>
+
+<p class="demo-status">
+    <span id="width-status">Widths: @_widthStatus</span>
+    <span id="sort-status">Sorts: @_sortStatus</span>
+    <span id="selection-status">Selection: @_selectionStatus</span>
+    <span id="pinned-status">Pinned: @_pinned</span>
+</p>
+
+<ExGrid TRow="SizingRow"
+        Window="Rows"
+        TotalCount="Rows.Length"
+        Columns="_columns"
+        Sorts="_sorts"
+        RowKind="KindOf"
+        RowHeight="24"
+        ViewportHeight="300"
+        ViewportWidth="ViewportSize.Fill"
+        PinnedColumnCount="_pinned"
+        OnColumnWidthChanged="OnWidthChanged"
+        OnSortChanged="OnSortChanged"
+        OnPinnedCountChanged="OnPinnedChanged"
+        SelectionChanged="OnSelectionChanged" />
+
+@code {
+    /// <summary>One row of this page. The Row Kind is stored on the row: the last row is
+    /// a total, painted bold, which is where the estimate's digit width is tightest
+    /// (ADR-0016).</summary>
+    public sealed class SizingRow
+    {
+        public string Book = "";
+        public string Trader = "";
+        public decimal Notional;
+        public string Note = "";
+        public RowKind Kind;
+    }
+
+    /// <summary>Where the one long note sits: inside the Window, far below the rows the
+    /// 300px Viewport paints, so a fit that measured only the painted rows would miss
+    /// it (FN-12a).</summary>
+    public const int LongNoteRow = 60;
+
+    private static readonly SizingRow[] Rows = BuildRows(120);
+
+    private static readonly Func<SizingRow, RowKind> KindOf = row => row.Kind;
+
+    private IReadOnlyList<GridColumn<SizingRow>> _columns = BuildColumns();
+    private IReadOnlyList<SortSpec> _sorts = [new SortSpec("Notional", SortDirection.Ascending)];
+    private int _pinned = 2;
+    private string _widthStatus = "";
+    private string _sortStatus = "Notional ascending";
+    private string _selectionStatus = "";
+
+    private static GridColumn<SizingRow>[] BuildColumns() =>
+    [
+        new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(110))),
+        new("Trader", ColumnType.Text, r => r.Trader, width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
+        // Auto, and sorted from the start, so its header carries the indicator whose room
+        // the estimate must count (FN-12d).
+        new("Notional", ColumnType.Number, r => r.Notional),
+        // A Japanese label over short values: the header is the widest thing in its
+        // column, and full-width characters are an em each (FN-12d). Six of them, so the
+        // header's em of slack cannot hide a missing full-width class: charged as digits
+        // they would come to 58px plus 14 against the 84px they paint.
+        new("Amount", ColumnType.Number, r => r.Notional % 1000, header: "評価額（円）"),
+        // Too narrow for its values on purpose: the #### run must fit the cell it stands
+        // in, never be cut into "###…" (FN-12e).
+        new("Narrow", ColumnType.Number, r => r.Notional, width: new ColumnWidthSpec(ColumnWidth.Fixed(60))),
+        new("Note", ColumnType.Text, r => r.Note, width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
+    ];
+
+    private static SizingRow[] BuildRows(int count)
+    {
+        string[] books = ["Alpha", "Beta", "Gamma", "Delta"];
+        string[] traders = ["Ishikawa", "Novak", "Osei", "Varga"];
+        var rows = new SizingRow[count];
+        for (var i = 0; i < count; i++)
+        {
+            rows[i] = new SizingRow
+            {
+                Book = books[i % books.Length],
+                Trader = traders[(i / 3) % traders.Length],
+                Notional = 1_000_000m + (i * 12_345.67m),
+                Note = i == LongNoteRow ? "A note far longer than any other in this column" : "ok",
+                Kind = RowKind.Detail,
+            };
+        }
+        // A twelve-digit total, painted bold: its estimate must not fall short of what
+        // the bold digits paint (FN-12e).
+        rows[^1] = new SizingRow
+        {
+            Book = "Total",
+            Trader = "",
+            Notional = 123_456_789_012.50m,
+            Note = "",
+            Kind = RowKind.Total,
+        };
+        return rows;
+    }
+
+    private void OnWidthChanged(ColumnWidthChange change)
+    {
+        // Every change is kept: a gesture over several whole columns raises one per column.
+        var entry = FormattableString.Invariant($"{change.Column}={change.WidthPx:0.###}");
+        _widthStatus = _widthStatus.Length == 0 ? entry : $"{_widthStatus};{entry}";
+        _columns = _columns
+            .Select(c => c.Name == change.Column
+                ? new GridColumn<SizingRow>(c.Name, c.Type, c.Value, c.Header,
+                    new ColumnWidthSpec(ColumnWidth.Fixed(change.WidthPx), c.Width.MinWidthPx, c.Width.MaxWidthPx))
+                : c)
+            .ToArray();
+    }
+
+    private void OnSortChanged(IReadOnlyList<SortSpec> sorts)
+    {
+        // The page does not reorder its rows: this grid only has to show that a click
+        // asked for a sort, and that a Shift+click did not.
+        _sorts = sorts;
+        _sortStatus = sorts.Count == 0 ? "none" : string.Join(",", sorts.Select(s => $"{s.Column} {s.Direction}".ToLowerInvariant()));
+    }
+
+    private void OnPinnedChanged(int count) => _pinned = count;
+
+    private void OnSelectionChanged(GridSelection selection)
+        => _selectionStatus = string.Join(";", selection.Ranges.Select(r => $"{r.TopRow},{r.LeftColumn},{r.RowCount},{r.ColumnCount}"));
+}

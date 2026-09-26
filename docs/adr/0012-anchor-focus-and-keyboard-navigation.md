@@ -135,6 +135,35 @@ Rejected:
 - **Split the header into regions** (the text sorts, a thin strip selects) — both become single
   clicks, but the hit target is fiddly and users never discover the strip.
 
+### Whole columns stay whole, and Shift+click on a header extends them
+
+*(Decided with the user, 2026-09-25, while comparing column resizing with Excel. Resizing
+several whole columns at once
+([ADR-0016](./0016-column-width-and-overflow.md)) depends on both.)*
+
+**A range spanning every row keeps spanning every row under Shift+← / Shift+→**, and a range
+spanning every column keeps spanning every column under Shift+↑ / Shift+↓. This is what Excel
+does. Before this, Shift+→ after Ctrl+Space redrew the range between the Anchor and the Focus,
+which are two cells, and the whole-column selection collapsed to one row. A user extending a
+column selection never asked for that. Only the axis the range already spans in full is kept;
+the other axis moves the Focus as it always has. *(Refined while implementing, 2026-09-26: the
+same holds for the other extensions along an axis — Ctrl+Shift+arrow runs whole columns to the
+edge, as it does in Excel, and Shift+PageUp / PageDown keeps a whole-row range whole. They are
+the same gesture at a different stride, and leaving them out would collapse the range on one
+key and not the next.)*
+
+**Shift+click on a column header selects whole columns**, from the Anchor's column to the
+clicked one. This is Excel's gesture, and it is the mouse route to several whole columns. The
+plain click stays a sort, as decided above; the modifier had no meaning on a header before. It
+takes the gesture many data grids give to multi-column sorting. That is acceptable because
+multi-column sorting here is expressed through the `Sorts` model or the column menu, never
+through a header click (see "What one header click does to the Sorts list" below). A Shift+click
+does not sort. From Empty it selects the clicked column alone, anchored on the first visible row,
+as the first key after focus is (KB-9), so the Viewport does not move for a header click. From a
+detached Anchor it starts a new range from the Anchor's column, as Shift+click on a cell does.
+*(The last two sentences were settled while implementing, 2026-09-26; the first draft read "from
+Empty, or with nothing anchored", which named neither the row nor the detached case.)*
+
 ## What the implementation settled
 
 *(Written while wiring the keyboard. Three of these are decisions this ADR did not make.)*
@@ -319,6 +348,14 @@ handlers ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)'s economy).
   geometry before any of these transitions are computed
   ([ADR-0013](./0013-fixed-row-height.md), [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)),
   and `tests/ExGrid.Browser/scrollbar.spec.mjs` is what holds it.)*
+  *(Scoped with the user, 2026-09-25.)* **"Always visible" is a rule about the moves the grid
+  makes, not about the box.** When the box shrinks, because the window is resized or a Drawer
+  opens, the Focus may end up outside the Viewport, and **the grid does not chase it**. The
+  scroll offset stays, so what was at the top left stays at the top left. The next key that moves
+  the Focus reveals it where it lands. Chasing it would make the Viewport jump on every frame of a
+  window drag, which is the user resizing, not the user moving. One case stays revealed: a
+  scrollbar that appears because the content began to overflow, and covers the Focus where it
+  stood. Nobody asked for that change, so the grid owes the reveal.
 - **When the Focus leaves the Window, a Range Request is raised**
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). A range taller than the
   Window will move the Focus onto rows that have not been fetched. The Focus cell is a Placeholder

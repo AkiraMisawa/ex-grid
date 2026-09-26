@@ -53,6 +53,14 @@ public readonly record struct SelectionRange
     /// <summary>The column-axis shape — what the copy alignment check compares (ADR-0005).</summary>
     public ColumnRange ColumnSpan => new(LeftColumn, ColumnCount);
 
+    /// <summary>Whether this range is whole columns: it spans every row of
+    /// <paramref name="extent"/> (ADR-0012, ADR-0016).</summary>
+    public bool SpansEveryRow(GridExtent extent) => TopRow == 0 && RowCount == extent.RowCount;
+
+    /// <summary>Whether this range is whole rows: it spans every column of
+    /// <paramref name="extent"/> (ADR-0012).</summary>
+    public bool SpansEveryColumn(GridExtent extent) => LeftColumn == 0 && ColumnCount == extent.ColumnCount;
+
     /// <summary>Normalizes any pair of opposite corners — shrinking a range back through
     /// its Anchor flips it around the Anchor for free (ADR-0012).</summary>
     public static SelectionRange FromCorners(CellPosition a, CellPosition b) => new(

@@ -17,7 +17,7 @@ public class PresentationDefaultsWiringTests : GridTestContext
     private static readonly GridPresentationDefaults Roboto = new(10.4, 8.0, 4.95, 14);
 
     // Twelve digits at Roboto's 8.0px plus 2 × 8px padding is 112px exactly, which
-    // fits; at the system default's 9.058px it is 124.7px, which hashes.
+    // fits; at the system default's 9.742px it is 132.9px, which hashes.
     private static readonly ColumnWidthSpec Width112 = new(ColumnWidth.Fixed(112));
 
     private static GridColumn<TestRow>[] Columns() =>

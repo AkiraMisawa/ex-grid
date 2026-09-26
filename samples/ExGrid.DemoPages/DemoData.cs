@@ -152,7 +152,12 @@ public static class DemoData
             var metric = i;
             columns[i] = new GridColumn<DemoWideRow>($"M{metric - 1:D2}", ColumnType.Number,
                 r => Metric(r.Index, metric),
-                width: new ColumnWidthSpec(ColumnWidth.Fixed(90)));
+                // Just wide enough for the widest metric, "19999.98", at the default
+                // metrics: seven digits and a point come to 90.6px since the defaults cover
+                // the widest platform measured (ADR-0016), so 90px showed ####. No wider:
+                // the browser suite's drags (PF-7) are laid out on seven of these columns
+                // beside the pinned block in a 900px Viewport.
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(91)));
         }
 
         return columns;

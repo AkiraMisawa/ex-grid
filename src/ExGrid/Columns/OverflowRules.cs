@@ -31,8 +31,9 @@ public static class OverflowRules
     /// <summary>
     /// What one cell paints at its resolved width. Text and Boolean always show the
     /// value; a Number or Date shows it when its estimate fits — exactly fitting still
-    /// shows — and otherwise becomes as many <c>#</c> as digits fit the content width,
-    /// at least one. <c>default(CellTextMetrics)</c> is refused.
+    /// shows — and otherwise becomes as many <c>#</c> as fit the content width, each
+    /// charged at its own width so the run fits its cell, at least one.
+    /// <c>default(CellTextMetrics)</c> is refused.
     /// </summary>
     public static OverflowDecision Decide(
         ColumnType type,
@@ -59,7 +60,7 @@ public static class OverflowRules
         if (metrics.EstimatePx(formattedText) <= resolvedWidthPx)
             return OverflowDecision.ShowValue(formattedText); // exactly fitting still shows
         var hashCount = Math.Max(1, (int)Math.Floor(
-            metrics.ContentWidthPx(resolvedWidthPx) / metrics.DigitWidthPx));
+            metrics.ContentWidthPx(resolvedWidthPx) / metrics.WidthOf('#')));
         return OverflowDecision.Hashes(HashRun(hashCount));
     }
 

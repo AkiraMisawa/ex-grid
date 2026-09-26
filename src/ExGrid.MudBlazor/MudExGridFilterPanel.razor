@@ -1,9 +1,10 @@
 @using System.Globalization
 @using FilterOperator = global::ExGrid.FilterOperator
-@* The filter panel under MudBlazor (ADR-0009/0030/0039): MudBlazor's own controls inside
-   the core's popover. A value list with a search and a Blank entry where the column
-   declares one and the answer arrives; the condition form where it declares that, or where
-   the answer is TooMany. It keeps a working state and asks FilterPanelChoices what that
+@using FilterCombinator = global::ExGrid.FilterCombinator
+@* The filter panel under MudBlazor (ADR-0009/0030/0039): MudBlazor's own controls under the
+   column's commands in the core's one popover (ADR-0044). A value list with a search and a
+   Blank entry where the column declares one and the answer arrives; the condition form where
+   it declares that, or where the answer is TooMany. It keeps a working state and asks FilterPanelChoices what that
    state means — the rules the built-in panel applies by — so the same choices make the
    same FilterSpec under either Chrome (WR-1).
 
@@ -21,11 +22,16 @@
    disabled button instead dropped it on a Server circuit: the button is enabled a round
    trip after the value is typed, and an Enter typed with the value found it still
    disabled and submitted nothing. The submit reaches the circuit behind the value, so the
-   check there sees what was typed. Tab wraps inside the
-   panel through two focus sentinels, one either side of the controls, as in the built-in
-   panel (KB-31). *@
+   check there sees what was typed.
+
+   The popover opens with the keyboard on the commands above, and this panel takes it only
+   when asked: its first control for each change of the context's FocusRequest — Tab from the
+   commands — Cancel, its last, for each change of FocusLastRequest, and for SearchRequest —
+   E — the field a search is typed into: the search box, or the first condition's value. Tab off
+   either end is the core's, whose sentinels around the panel wrap to the commands (KB-31).
+   Excel's letters on the value list are handed to the core through ValueListKey; clearing
+   the filter is the command above, so the actions are Apply and Cancel (ADR-0044). *@
 <form class="mud-ex-grid-filter" @onsubmit="Apply" @onsubmit:preventDefault>
-    <span class="mud-ex-grid-focus-wrap" tabindex="0" @onfocus="FocusLastAsync"></span>
     @* The form's default button: the first submit button, which implicit submission clicks. *@
     <button type="submit" class="mud-ex-grid-filter-default" hidden tabindex="-1" aria-hidden="true"></button>
     @if (_awaiting)
@@ -34,19 +40,28 @@
     }
     else if (_domain is { IsTooMany: false } domain && _chosen is { } chosen)
     {
+        var search = _searchText ?? "";
+        var shown = domain.Values.Where(v => FilterPanelChoices.Matches(search, TextOf(v))).ToArray();
         <MudTextField @ref="_search" T="string" @bind-Value="_searchText" Immediate="true"
                       Label="@Own(MudExGridWords.Search)" Variant="Variant.Outlined" Margin="Margin.Dense"
                       Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                       Class="mud-ex-grid-filter-search" />
-        <div class="mud-ex-grid-filter-values">
-            @foreach (var value in domain.Values)
+        @if (FilterPanelChoices.OffersAddToFilter(Context.Current, search))
+        {
+            <MudCheckBox T="bool" @bind-Value="_addToCurrent" Label="@Own(MudExGridWords.AddToFilter)"
+                         Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-add" />
+        }
+        <div class="mud-ex-grid-filter-values ex-value-list" @onkeydown="OnValueListKeyAsync">
+            @* "(Select All)" over the values shown, with Excel's mixed state (ADR-0009). *@
+            <MudCheckBox T="bool?" TriState="true" Value="@SelectAllValue(shown, chosen)"
+                         ValueChanged="@(_ => FilterPanelChoices.ToggleAll(shown, chosen))"
+                         Label="@Own(search.Length > 0 ? MudExGridWords.SelectAllSearchResults : MudExGridWords.SelectAll)"
+                         Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-all" />
+            @foreach (var value in shown)
             {
-                var text = TextOf(value);
-                if (_searchText is { Length: > 0 } search && !text.Contains(search, StringComparison.OrdinalIgnoreCase))
-                    continue;
                 var item = value;
                 <MudCheckBox T="bool" Value="@chosen.Contains(item)" ValueChanged="@(on => Choose(item, on))"
-                             Label="@text" Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-value" />
+                             Label="@TextOf(item)" Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-value" />
             }
         </div>
     }
@@ -62,61 +77,79 @@
         </MudSelect>
         @if (FilterPanelChoices.TakesOperand(_operator))
         {
-            switch (Context.Type)
+            @OperandField(_first)
+        }
+        @* A second condition, joined by And or Or, as Excel's Custom AutoFilter (ADR-0009). *@
+        <MudRadioGroup T="FilterCombinator" @bind-Value="_combinator" Class="mud-ex-grid-filter-join">
+            <MudRadio T="FilterCombinator" Value="FilterCombinator.And" Dense="true" Size="Size.Small">@Own(MudExGridWords.JoinAnd)</MudRadio>
+            <MudRadio T="FilterCombinator" Value="FilterCombinator.Or" Dense="true" Size="Size.Small">@Own(MudExGridWords.JoinOr)</MudRadio>
+        </MudRadioGroup>
+        <MudSelect T="FilterOperator?" @bind-Value="_secondOperator"
+                   Label="@Own(MudExGridWords.SecondCondition)" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                   OpenChanged="ReportPopup" Class="mud-ex-grid-filter-second">
+            <MudSelectItem T="FilterOperator?" Value="@((FilterOperator?)null)">@Own(MudExGridWords.NoSecondCondition)</MudSelectItem>
+            @foreach (var op in Context.Allowed)
             {
-                case ColumnType.Number:
-                    <MudNumericField T="decimal?" @bind-Value="_number" Immediate="true" HideSpinButtons="true"
-                                     Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                     Culture="CultureInfo.InvariantCulture" Class="mud-ex-grid-filter-operand" />
-                    break;
-                case ColumnType.Date:
-                    <MudDatePicker @bind-Date="_date" Editable="true"
-                                   PickerOpened="() => ReportPopup(true)" PickerClosed="() => ReportPopup(false)"
-                                   Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   Class="mud-ex-grid-filter-operand" />
-                    break;
-                case ColumnType.Boolean:
-                    @* Nothing chosen at first: a true or false the user did not pick would
-                       apply a filter they never asked for (WR-2). *@
-                    <MudSelect T="bool?" @bind-Value="_flag" Label="@Mud("MudDataGrid_Value")"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
-                               OpenChanged="ReportPopup" Class="mud-ex-grid-filter-operand">
-                        <MudSelectItem T="bool?" Value="true">@Mud("MudDataGrid_True")</MudSelectItem>
-                        <MudSelectItem T="bool?" Value="false">@Mud("MudDataGrid_False")</MudSelectItem>
-                    </MudSelect>
-                    break;
-                default:
-                    <MudTextField T="string" @bind-Value="_text" Immediate="true"
-                                  Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Class="mud-ex-grid-filter-operand" />
-                    break;
+                <MudSelectItem T="FilterOperator?" Value="@((FilterOperator?)op)">@OperatorWord(op)</MudSelectItem>
             }
+        </MudSelect>
+        @if (_secondOperator is { } second && FilterPanelChoices.TakesOperand(second))
+        {
+            @OperandField(_second)
         }
     }
     <div class="mud-ex-grid-filter-actions">
         <MudButton ButtonType="ButtonType.Submit" Disabled="@(!CanApply)" Color="Color.Primary" Size="Size.Small"
                    Class="mud-ex-grid-filter-apply">@Mud("MudDataGrid_Apply")</MudButton>
-        <MudButton OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel">@Mud("MudDataGrid_Cancel")</MudButton>
-        <MudButton @ref="_clear" OnClick="Context.Clear" Size="Size.Small" Class="mud-ex-grid-filter-clear">@Mud("MudDataGrid_Clear")</MudButton>
+        <MudButton @ref="_cancel" OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel">@Mud("MudDataGrid_Cancel")</MudButton>
     </div>
-    <span class="mud-ex-grid-focus-wrap" tabindex="0" @onfocus="FocusFirstAsync"></span>
 </form>
 
 @code {
+    /// <summary>One condition's operand, typed as the column's values are (ADR-0023). The
+    /// first condition and the second each hold one, and the same field renders either.</summary>
+    private sealed class OperandState
+    {
+        public string? Text;
+        public decimal? Number;
+        public DateTime? Date;
+        public bool? Flag;
+
+        // The field that edits it, whichever the column's type draws: what E focuses where
+        // no value list stands (ADR-0044).
+        public MudTextField<string>? TextField;
+        public MudNumericField<decimal?>? NumberField;
+        public MudDatePicker? DateField;
+        public MudSelect<bool?>? FlagField;
+    }
+
     private DistinctValues? _domain;
     private HashSet<object?>? _chosen;
     private bool _awaiting;
     private string? _searchText;
+    private bool _addToCurrent;
     private FilterOperator _operator;
-    private string? _text;
-    private decimal? _number;
-    private DateTime? _date;
-    private bool? _flag;
+    private readonly OperandState _first = new();
+    private readonly OperandState _second = new();
+    private FilterOperator? _secondOperator;
+    private FilterCombinator _combinator;
     private MudTextField<string>? _search;
     private MudSelect<FilterOperator>? _operatorField;
-    private MudButton? _clear;
-    private bool _needsFocus;
-    private int _focusedRequest = -1;
+    private MudButton? _cancel;
+    private DomFocusTarget _domFocusOwed;
+    // Zero at each opening: the core's popover is keyed by the opening, so each is a new
+    // instance of this component, and zero is a request not made (ADR-0044).
+    private int _focusedRequest;
+    private int _focusedLastRequest;
+    private int _focusedSearchRequest;
+
+    private enum DomFocusTarget
+    {
+        None,
+        FirstControl,
+        LastControl,
+        SearchField,
+    }
 
     [Inject] private ILocalizationInterceptor Localizer { get; set; } = default!;
 
@@ -142,14 +175,47 @@
             ? Own(MudExGridWords.BlankValue)
             : Context.Format is { } format ? format(value) : Convert.ToString(value, CultureInfo.CurrentCulture) ?? "";
 
-    /// <summary>The condition's operand, typed as the column's values are (ADR-0023);
+    /// <summary>A condition's operand, typed as the column's values are (ADR-0023);
     /// null while none is given.</summary>
-    private object? Operand => Context.Type switch
+    private object? OperandOf(OperandState state) => Context.Type switch
     {
-        ColumnType.Number => _number,
-        ColumnType.Date => _date,
-        ColumnType.Boolean => _flag,
-        _ => string.IsNullOrEmpty(_text) ? null : _text,
+        ColumnType.Number => state.Number,
+        ColumnType.Date => state.Date,
+        ColumnType.Boolean => state.Flag,
+        _ => string.IsNullOrEmpty(state.Text) ? null : state.Text,
+    };
+
+    private object? Operand => OperandOf(_first);
+
+    private static bool? SelectAllValue(IEnumerable<object?> shown, IReadOnlySet<object?> chosen)
+        => FilterPanelChoices.StateOfAll(shown, chosen) switch
+        {
+            SelectAllState.Checked => true,
+            SelectAllState.Unchecked => false,
+            _ => null,
+        };
+
+    /// <summary>A condition's value field, of the column's type, over the state it edits.</summary>
+    private RenderFragment OperandField(OperandState state) => Context.Type switch
+    {
+        ColumnType.Number => @<MudNumericField @ref="state.NumberField" T="decimal?" Value="state.Number" ValueChanged="@(v => state.Number = v)" Immediate="true" HideSpinButtons="true"
+                                               Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                               Culture="CultureInfo.InvariantCulture" Class="mud-ex-grid-filter-operand" />,
+        ColumnType.Date => @<MudDatePicker @ref="state.DateField" Date="state.Date" DateChanged="@(v => state.Date = v)" Editable="true"
+                                           PickerOpened="() => ReportPopup(true)" PickerClosed="() => ReportPopup(false)"
+                                           Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                           Class="mud-ex-grid-filter-operand" />,
+        // Nothing chosen at first: a true or false the user did not pick would apply a
+        // filter they never asked for (WR-2).
+        ColumnType.Boolean => @<MudSelect @ref="state.FlagField" T="bool?" Value="state.Flag" ValueChanged="@(v => state.Flag = v)" Label="@Mud("MudDataGrid_Value")"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                                          OpenChanged="ReportPopup" Class="mud-ex-grid-filter-operand">
+                                   <MudSelectItem T="bool?" Value="true">@Mud("MudDataGrid_True")</MudSelectItem>
+                                   <MudSelectItem T="bool?" Value="false">@Mud("MudDataGrid_False")</MudSelectItem>
+                               </MudSelect>,
+        _ => @<MudTextField @ref="state.TextField" T="string" Value="state.Text" ValueChanged="@(v => state.Text = v)" Immediate="true"
+                            Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                            Class="mud-ex-grid-filter-operand" />,
     };
 
     /// <summary>Apply is unavailable until the operator's value is given (WR-2); a value
@@ -160,11 +226,22 @@
 
     protected override void OnParametersSet()
     {
-        // Each opening asks once (ADR-0039); the first control takes focus for it.
+        // Each request asks once (ADR-0039/0044): the first control, or the last for
+        // Shift+Tab's wrap from the commands.
         if (Context.FocusRequest != _focusedRequest)
         {
             _focusedRequest = Context.FocusRequest;
-            _needsFocus = true;
+            _domFocusOwed = DomFocusTarget.FirstControl;
+        }
+        if (Context.FocusLastRequest != _focusedLastRequest)
+        {
+            _focusedLastRequest = Context.FocusLastRequest;
+            _domFocusOwed = DomFocusTarget.LastControl;
+        }
+        if (Context.SearchRequest != _focusedSearchRequest)
+        {
+            _focusedSearchRequest = Context.SearchRequest;
+            _domFocusOwed = DomFocusTarget.SearchField;
         }
     }
 
@@ -172,7 +249,11 @@
     {
         var current = Context.Current;
         _operator = FilterPanelChoices.InitialOperator(Context.Type, current, tooMany: false);
-        SetOperand(FilterPanelChoices.InitialOperand(current));
+        SetOperand(_first, FilterPanelChoices.InitialOperand(current));
+        var (secondOperator, secondOperand, combinator) = FilterPanelChoices.InitialSecond(current);
+        _secondOperator = secondOperator;
+        SetOperand(_second, secondOperand);
+        _combinator = combinator;
         if (Context.Mode == FilterUiMode.Condition)
             return;
 
@@ -184,29 +265,32 @@
             _operator = FilterPanelChoices.InitialOperator(Context.Type, current, tooMany: true);
         else
             _chosen = FilterPanelChoices.InitiallyChosen(current, answer);
-        _needsFocus = true;
     }
 
-    private void SetOperand(object? operand)
+    private static void SetOperand(OperandState state, object? operand)
     {
         switch (operand)
         {
             case decimal number:
-                _number = number;
+                state.Number = number;
                 break;
             case DateTime date:
-                _date = date;
+                state.Date = date;
                 break;
             case bool flag:
-                _flag = flag;
+                state.Flag = flag;
                 break;
             case string text:
-                _text = text;
+                state.Text = text;
                 break;
         }
     }
 
     private void OnOperatorChanged(FilterOperator op) => _operator = op;
+
+    /// <summary>A key on the value list: Excel's letters are the core's (ADR-0044), and
+    /// every other key is the checkbox's own.</summary>
+    private Task OnValueListKeyAsync(KeyboardEventArgs e) => Context.ValueListKey?.Invoke(e) ?? Task.CompletedTask;
 
     /// <summary>A select's list or the date's calendar opened or closed: an Inner Popup,
     /// reported so that Escape closes it before the panel (ADR-0039).</summary>
@@ -225,42 +309,53 @@
         if (!CanApply)
             return;
         Context.Apply(_chosen is not null && _domain is { IsTooMany: false } domain
-            ? FilterPanelChoices.FromValueList(domain, _chosen)
-            : FilterPanelChoices.FromCondition(_operator, Operand));
+            ? FilterPanelChoices.FromValueList(domain, _chosen, TextOf, _searchText ?? "", _addToCurrent, Context.Current)
+            : FilterPanelChoices.FromConditions(
+                _operator, Operand, _combinator, _secondOperator,
+                _secondOperator is { } second && FilterPanelChoices.TakesOperand(second) ? OperandOf(_second) : null));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // The panel's first control takes DOM focus once its contents have settled — not
-        // while the value list is on its way, when the control about to be shown is not
-        // there yet (ADR-0039, KB-29).
-        if (!_needsFocus || _awaiting)
+        // A requested control takes DOM focus once the contents have settled — not while
+        // the value list is on its way, when the control about to be shown is not there
+        // yet (ADR-0039, KB-29).
+        if (_domFocusOwed == DomFocusTarget.None || _awaiting)
             return;
-        _needsFocus = false;
-        await FocusFirstAsync();
+        var target = _domFocusOwed;
+        _domFocusOwed = DomFocusTarget.None;
+        if (target == DomFocusTarget.FirstControl)
+            await FocusFirstAsync();
+        else if (target == DomFocusTarget.SearchField)
+            await FocusSearchAsync();
+        else
+            await FocusLastAsync();
     }
 
-    private async Task FocusFirstAsync()
-    {
-        try
-        {
-            if (_search is not null && _chosen is not null)
-                await _search.FocusAsync();
-            else if (_operatorField is not null)
-                await _operatorField.FocusAsync();
-        }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-        {
-        }
-    }
+    private Task FocusFirstAsync()
+        => FocusQuietlyAsync(_search is not null && _chosen is not null ? _search.FocusAsync() : _operatorField?.FocusAsync());
 
-    private async Task FocusLastAsync()
+    /// <summary>Where a search is typed (ADR-0044): the search box over a value list, the
+    /// first condition's value in the condition form — or its operator, while that operator
+    /// takes no value.</summary>
+    private Task FocusSearchAsync()
+        => _chosen is not null || !FilterPanelChoices.TakesOperand(_operator)
+            ? FocusFirstAsync()
+            : FocusQuietlyAsync(_first.TextField?.FocusAsync() ?? _first.NumberField?.FocusAsync()
+                ?? _first.DateField?.FocusAsync() ?? _first.FlagField?.FocusAsync());
+
+    private Task FocusLastAsync() => FocusQuietlyAsync(_cancel?.FocusAsync());
+
+    /// <summary>A focus the panel asked for, if there was a control to ask: a popover can
+    /// close before the call lands, and a closed circuit focuses nothing; neither is worth
+    /// an exception.</summary>
+    private static async Task FocusQuietlyAsync(ValueTask? focusing)
     {
-        if (_clear is null)
+        if (focusing is not { } pending)
             return;
         try
         {
-            await _clear.FocusAsync();
+            await pending;
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

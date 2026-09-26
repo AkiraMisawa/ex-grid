@@ -45,9 +45,9 @@ public sealed class MudGridChrome : IGridChrome
     /// supplies it (ADR-0010/0036).</summary>
     public Func<string, string?>? Icon { get; init; }
 
-    /// <summary>The filter panel, from MudBlazor's controls inside the core's popover
-    /// (ADR-0009/0030): a value list with a search and a Blank entry where the column
-    /// declares one and the answer arrives, the condition form otherwise.</summary>
+    /// <summary>The filter panel, from MudBlazor's controls under the column's commands in the
+    /// core's one popover (ADR-0009/0030/0044): a value list with a search and a Blank entry
+    /// where the column declares one and the answer arrives, the condition form otherwise.</summary>
     public RenderFragment? FilterPanel(FilterPanelContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -99,15 +99,15 @@ public sealed class MudGridChrome : IGridChrome
     /// Material icon of each of the core's commands.</summary>
     internal string? IconFor(string id) => Icon?.Invoke(id) ?? id switch
     {
-        "sort-ascending" => Icons.Material.Filled.ArrowUpward,
-        "sort-descending" => Icons.Material.Filled.ArrowDownward,
-        "filter" => Icons.Material.Filled.FilterList,
-        "hide" => Icons.Material.Filled.VisibilityOff,
-        "pin" => Icons.Material.Filled.PushPin,
-        "unpin" => Icons.Material.Outlined.PushPin,
-        "size-to-fit" => Icons.Material.Filled.FitScreen,
-        "copy" => Icons.Material.Filled.ContentCopy,
-        "copy-with-headers" => Icons.Material.Filled.CopyAll,
+        GridCommandIds.SortAscending => Icons.Material.Filled.ArrowUpward,
+        GridCommandIds.SortDescending => Icons.Material.Filled.ArrowDownward,
+        GridCommandIds.ClearFilter => Icons.Material.Filled.FilterListOff,
+        GridCommandIds.Hide => Icons.Material.Filled.VisibilityOff,
+        GridCommandIds.Pin => Icons.Material.Filled.PushPin,
+        GridCommandIds.Unpin => Icons.Material.Outlined.PushPin,
+        GridCommandIds.SizeToFit => Icons.Material.Filled.FitScreen,
+        GridCommandIds.Copy => Icons.Material.Filled.ContentCopy,
+        GridCommandIds.CopyWithHeaders => Icons.Material.Filled.CopyAll,
         _ => null,
     };
 
