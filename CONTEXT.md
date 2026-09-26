@@ -388,6 +388,15 @@ cell, Anchor and Focus stand **detached** — on that cell, outside every range 
 extension starts a new range ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)).
 _Avoid_: origin, base cell
 
+**Row Mark**:
+A row the user has singled out for an action that follows — the checkbox beside a row.
+**Distinct from Selection**: a Selection is positions in the current order and is dropped on
+reorder; a Row Mark belongs to the row's identity, is **held by the Consumer**, and survives
+sorting and scrolling. The grid reports the intent to mark; it does not hold the marks. Marking
+"all" from the header means every row of the current result — after filtering — whether or not
+it is on screen.
+_Avoid_: checked row, selected row, tick (a "selected" row is Selection's word)
+
 ### Columns
 
 **Column**:
