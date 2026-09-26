@@ -273,6 +273,9 @@ The grid renders the filter UI and never evaluates a filter.
 | **FL-7** | MUST | An Opaque Filter passes straight through and the grid renders no UI for it (ADR-0002) | Layer 1 + Layer 2 | present in the Query, absent from the panel |
 | **FL-8** | MUST | Applying a filter clears the Selection (ADR-0009/0011) | Layer 2 | selection empty after the new Window with a moved Row Sequence Version |
 | **FL-9** | MUST | OK applies what the panel shows: "everything checked" is set membership over the fetched domain, never a count, and the seed intersects the applied In-list with that domain (ADR-0009) | Layer 2 | a domain shifted by another column's filter narrows the In-list; it never silently removes the filter |
+| **FL-10** | MUST | With search text in the box, OK applies the checked values among those that match, and no hidden value (ADR-0009, 2026-09-26) | Layer 1 (`FilterPanelChoices`) + Layer 2 under both Chromes | a checked value the search hides is absent from the applied `In` list |
+| **FL-11** | MUST | The value list opens with "(Select All)" — checked, clear or mixed — which reads "(Select All Search Results)" and acts on the matching values while a search is active (ADR-0009, 2026-09-26) | Layer 2 under both Chromes | toggling it checks or clears exactly the values it names |
+| **FL-12** | MUST | `Alt+↓` and the ▾ open one popover: the column's commands above its filter; no "Filter" command; OK, Cancel, a command, Escape or a dismissing press closes the whole; Tab wraps through both halves (ADR-0044) | Layer 2 + Layer 3 under both Chromes | one popover element; the filter's controls are reachable by Tab from the commands and back |
 
 ---
 
