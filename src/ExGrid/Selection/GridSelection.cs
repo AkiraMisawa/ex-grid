@@ -382,9 +382,9 @@ public sealed record GridSelection
             // every column — the axis the range already spans in full is kept.
             var last = Ranges[^1];
             var redrawn = SelectionRange.FromCorners(_anchor, moved);
-            if (horizontal && last.TopRow == 0 && last.RowCount == extent.RowCount)
+            if (horizontal && last.SpansEveryRow(extent))
                 redrawn = new SelectionRange(0, redrawn.LeftColumn, extent.RowCount, redrawn.ColumnCount);
-            else if (!horizontal && last.LeftColumn == 0 && last.ColumnCount == extent.ColumnCount)
+            else if (!horizontal && last.SpansEveryColumn(extent))
                 redrawn = new SelectionRange(redrawn.TopRow, 0, redrawn.RowCount, extent.ColumnCount);
             var ranges = ReplaceLast(Ranges, redrawn);
             return new(ranges, _anchor, moved, anchorDetached: false, ranges.Length - 1);
@@ -401,10 +401,12 @@ public sealed record GridSelection
     /// Shift+click on a column header (ADR-0012, 2026-09-25): whole columns from the
     /// Anchor's column to <paramref name="column"/>. The Anchor stays and the Focus moves
     /// to the clicked column on the Anchor's row, as Shift+click on a cell moves it to the
-    /// cell. The Anchor's range is replaced, or from a detached Anchor a new one starts;
-    /// the other ranges stand. From Empty, the clicked column alone, anchored at its top.
+    /// cell. The Anchor's range is replaced, or from a detached Anchor a new one starts
+    /// from the Anchor's column, as <see cref="ExtendTo"/> does; the other ranges stand.
+    /// From Empty, the clicked column alone, anchored on <paramref name="anchorRowIfEmpty"/>
+    /// — the holder passes its first visible row, so the Viewport does not move (KB-9).
     /// </summary>
-    public GridSelection ExtendToColumn(int column, GridExtent extent)
+    public GridSelection ExtendToColumn(int column, GridExtent extent, int anchorRowIfEmpty = 0)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -413,8 +415,8 @@ public sealed record GridSelection
                 $"Outside the grid ({extent.ColumnCount} columns).");
         if (IsEmpty)
         {
-            var top = new CellPosition(0, column);
-            return new([new SelectionRange(0, column, extent.RowCount, 1)], top, top,
+            var anchor = new CellPosition(Math.Clamp(anchorRowIfEmpty, 0, extent.RowCount - 1), column);
+            return new([new SelectionRange(0, column, extent.RowCount, 1)], anchor, anchor,
                 anchorDetached: false, focusRangeIndex: 0);
         }
         RequireFits(extent);
@@ -438,7 +440,7 @@ public sealed record GridSelection
         var columns = new SortedSet<int>();
         foreach (var range in Ranges)
         {
-            if (range.TopRow != 0 || range.RowCount != extent.RowCount)
+            if (!range.SpansEveryRow(extent))
                 continue;
             for (var c = range.LeftColumn; c <= range.RightColumn; c++)
                 columns.Add(c);

@@ -30,14 +30,14 @@ public readonly record struct CellTextMetrics
     /// <summary>The three-class form: the wide, digit and narrow widths, and the padding
     /// on one side. Full-width characters are charged at twice the digit: a tabular digit
     /// is at least half an em in any text face, so twice it covers the em a full-width
-    /// glyph occupies. The five-number form states the em exactly.</summary>
+    /// glyph occupies. The four-class form states the em exactly.</summary>
     public CellTextMetrics(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double cellHorizontalPaddingPx)
         : this(wideWidthPx, digitWidthPx, narrowWidthPx, 2 * digitWidthPx, cellHorizontalPaddingPx)
     {
     }
 
-    /// <summary>The per-class form (ADR-0016): the wide, digit, narrow and full-width
+    /// <summary>The four-class form (ADR-0016): the wide, digit, narrow and full-width
     /// widths, and the padding on one side. The full-width class is an em — the font
     /// size — because CJK faces are drawn on the em square. Refuses a narrow width wider
     /// than the digit, or a wide or full-width width narrower than it.</summary>
@@ -152,6 +152,13 @@ public readonly record struct CellTextMetrics
         ArgumentOutOfRangeException.ThrowIfNegative(characterCount);
         return characterCount * DigitWidthPx + 2 * CellHorizontalPaddingPx;
     }
+
+    /// <summary>These metrics with the full-width class charged at least
+    /// <paramref name="emPx"/>. The grid knows the em — it emits the font size — so it
+    /// lifts whatever a theme or the three-class form supplied (ADR-0016).</summary>
+    internal CellTextMetrics WithFullWidthAtLeast(double emPx) => FullWidthPx >= emPx
+        ? this
+        : new CellTextMetrics(WideWidthPx, DigitWidthPx, NarrowWidthPx, emPx, CellHorizontalPaddingPx);
 
     /// <summary>The width left for content after padding; can be zero or negative in a
     /// crushed column.</summary>

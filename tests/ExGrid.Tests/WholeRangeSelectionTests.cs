@@ -105,14 +105,27 @@ public class WholeRangeSelectionTests
         Assert.Equal([new SelectionRange(0, 1, 100, 4)], selection.Ranges);
     }
 
-    [Fact] // ADR-0012 / SR-2a: from Empty, the clicked column alone, anchored at its top
+    [Fact] // ADR-0012 / SR-2a: from Empty, the clicked column alone, anchored on the row the holder names
     public void Shift_click_on_a_header_from_empty_selects_that_column()
     {
-        var selection = GridSelection.Empty.ExtendToColumn(3, Grid);
+        var selection = GridSelection.Empty.ExtendToColumn(3, Grid, anchorRowIfEmpty: 40);
 
         Assert.Equal([new SelectionRange(0, 3, 100, 1)], selection.Ranges);
-        Assert.Equal(new CellPosition(0, 3), selection.Anchor);
-        Assert.Equal(new CellPosition(0, 3), selection.Focus);
+        Assert.Equal(new CellPosition(40, 3), selection.Anchor);
+        Assert.Equal(new CellPosition(40, 3), selection.Focus);
+    }
+
+    [Fact] // ADR-0012: from a detached Anchor a new whole-column range starts at the Anchor's column, as Shift+click on a cell does
+    public void Shift_click_on_a_header_from_a_detached_anchor_starts_a_new_range()
+    {
+        var selection = GridSelection.Empty
+            .Click(new(2, 2), Grid)
+            .ExtendTo(new(4, 4), Grid)
+            .ToggleRange(new(3, 3), Grid)   // detaches on (3,3)
+            .ExtendToColumn(5, Grid);
+
+        Assert.Equal(new SelectionRange(0, 3, 100, 3), selection.Ranges[^1]);
+        Assert.Equal(new CellPosition(3, 3), selection.Anchor);
     }
 
     [Fact] // ADR-0012: the other ranges stay, as Shift+click on a cell leaves them

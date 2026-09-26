@@ -48,8 +48,13 @@
        Overflow 3), so the body would pan on its own scrollbar while the header stayed
        put — every column read under its neighbour's label — and a sticky offset measured
        against the inner scrollport would not hold the pinned cells at all. *@
-    <div class="ex-scroller" style="@ScrollerStyle()"
-         role="presentation" @ref="_scroller" @onscroll="OnScrollAsync">
+    @* tabindex -1 keeps the scroller out of the tab sequence: Chrome makes a scroller with
+       no tabbable content a tab stop of its own once it overflows, which put a second stop
+       inside the grid (A11Y-4). A scroller that can hold focus would also take it from a
+       click, so focus arriving there is handed straight to the root, where the keys and
+       aria-activedescendant are (ADR-0033). *@
+    <div class="ex-scroller" style="@ScrollerStyle()" tabindex="-1"
+         role="presentation" @ref="_scroller" @onscroll="OnScrollAsync" @onfocus="ReclaimFocusAsync">
         <div class="ex-spacer" style="width: @Px(_columnStyles.Geometry.TotalWidthPx); height: @Px(BandHeightPx + _geometry.ScrollHeightPx)"
              role="presentation">
             @* The header occupies the content's first row height and covers the
@@ -1692,17 +1697,14 @@
         // box to be, which already has the scrollbars taken out (ADR-0028). Both
         // gutters are 0 until the browser reports otherwise, so on a machine with
         // overlay scrollbars a declared axis is the declared size exactly.
+        var previousHeightPx = _visibleHeightPx;
         _visibleWidthPx = ViewportWidth.IsFill
             ? Math.Max(0, _reportedWidthPx)
             : ViewportBox.VisibleWidthOf(ViewportWidth.Px, _gutterWidthPx);
         _visibleHeightPx = ViewportHeight.IsFill
             ? Math.Max(0, _reportedHeightPx)
             : ViewportBox.VisibleHeightOf(ViewportHeight.Px, _gutterHeightPx);
-        // A popover's max-height follows the box (ADR-0040). Shrunk below one row of room
-        // it could show no item, yet it would stay open, invisible, holding the keyboard
-        // (ADR-0039): it closes as a Cancel instead, and the keyboard returns to the root.
-        if (PopoverRoomPx() is { } room && room < _metrics.RowHeightPx)
-            ClosePopoverAndReturnFocus();
+        CloseAPopoverTheBoxNoLongerHolds(previousHeightPx);
 
         if (_visibleHeightPx <= BandHeightPx || _visibleWidthPx <= 0)
         {
@@ -2585,17 +2587,12 @@
                 return;
             var widthPx = Math.Max(Columns[column].Width.MinWidthPx, _resizeStartWidthPx + deltaPx);
             // Every whole column takes the grabbed one's new width, as in Excel, each
-            // bounded below by its own MinWidth (FN-12c). Decided now, before the first
-            // report lets the Consumer push new Columns.
+            // bounded below by its own MinWidth (FN-12c).
             var changes = ColumnsResizedWith(column)
                 .Select(target => new ColumnWidthChange(
                     Columns[target].Name, Math.Max(Columns[target].Width.MinWidthPx, widthPx)))
                 .ToArray();
-            _ = InvokeAsync(async () =>
-            {
-                foreach (var change in changes)
-                    await OnColumnWidthChanged.InvokeAsync(change);
-            });
+            _ = InvokeAsync(() => ReportWidthsAsync(changes));
             return;
         }
         if (_dragUnitFirst >= 0 && _reordering)
@@ -2621,7 +2618,8 @@
     }
 
     /// <summary>
-    /// Clicking a column header sorts, and never selects the column (ADR-0012). The
+    /// Clicking a column header sorts, and never selects the column; Shift+click selects
+    /// whole columns and never sorts (ADR-0012). The
     /// cycle is the pure model's (<see cref="SortCycle"/>); what happens to the result
     /// is not this grid's — a Source requeries itself, and a push Consumer answers with
     /// a new Window and a moved Row Sequence Version (ADR-0001/0011).
@@ -2664,7 +2662,9 @@
         // is positional, so an unsortable column is selected like any other (ADR-0012).
         if (e.ShiftKey)
         {
-            Apply(_selection.Selection.ExtendToColumn(column, Extent));
+            // From nothing selected, anchored on the first visible row, as the first key is
+            // (KB-9): the Viewport does not move for a click on the header.
+            Apply(_selection.Selection.ExtendToColumn(column, Extent, _visible?.Start ?? 0));
             return;
         }
         if (!Columns[column].IsQueryable)
@@ -2936,13 +2936,21 @@
     private string ContextPopoverStyle()
     {
         var (left, width) = PopoverAcross(_contextLeftPx);
-        var at = Math.Clamp(BandHeightPx + _contextTopPx, 0, _visibleHeightPx);
-        var below = _visibleHeightPx - at;
+        var (at, below) = ContextPopoverPlacement();
         return below >= at
             ? FormattableString.Invariant(
                 $"left: {left}px; top: {at}px; {width}; max-height: {below}px")
             : FormattableString.Invariant(
                 $"left: {left}px; top: {at}px; transform: translateY(-100%); {width}; max-height: {at}px");
+    }
+
+    /// <summary>Where the Context Menu stands and how much room lies below it: the pointer's
+    /// height inside the Viewport, clamped to it (ADR-0040). Its style and the no-room
+    /// close read these numbers.</summary>
+    private (double At, double Below) ContextPopoverPlacement()
+    {
+        var at = Math.Clamp(BandHeightPx + _contextTopPx, 0, _visibleHeightPx);
+        return (at, _visibleHeightPx - at);
     }
 
     /// <summary>
@@ -3043,9 +3051,6 @@
 
     private async Task SizeToFitAsync(IReadOnlyList<int> columns)
     {
-        // Every width is decided before the first is reported: a Consumer answering the
-        // first by pushing new Columns or a new Window must not change what the rest
-        // were measured against.
         var changes = new List<ColumnWidthChange>(columns.Count);
         foreach (var column in columns)
         {
@@ -3061,6 +3066,14 @@
             }
             changes.Add(new ColumnWidthChange(declared.Name, declared.Width.SizeToFit(required).FixedPx));
         }
+        await ReportWidthsAsync(changes);
+    }
+
+    /// <summary>Reports widths decided beforehand, one notification per column (ADR-0016):
+    /// a Consumer answering the first by pushing new Columns or a new Window must not change
+    /// what the rest were measured against.</summary>
+    private async Task ReportWidthsAsync(IReadOnlyList<ColumnWidthChange> changes)
+    {
         foreach (var change in changes)
             await OnColumnWidthChanged.InvokeAsync(change);
     }
@@ -3220,6 +3233,37 @@
     }
 
     /// <summary>
+    /// A popover's max-height follows the box (ADR-0040). A box that shrinks until the open
+    /// popover has less than one row of room would leave it showing no item, invisible and
+    /// still holding the keyboard (ADR-0039), so it closes as a Cancel and the keyboard
+    /// returns to the root. Only a shrink does this: a popover opened in a small box is
+    /// the Consumer's box, not a change.
+    /// </summary>
+    private void CloseAPopoverTheBoxNoLongerHolds(double previousHeightPx)
+    {
+        if (_visibleHeightPx < previousHeightPx
+            && PopoverRoomPx() is { } room && room < _metrics.RowHeightPx)
+        {
+            ClosePopoverAndReturnFocus();
+        }
+    }
+
+    /// <summary>How tall the open popover may be, or null when none is open: the same
+    /// room its style is written with. The Context Menu opens on the side with more room,
+    /// so that side is its room (ADR-0040).</summary>
+    private double? PopoverRoomPx()
+    {
+        if (_menuColumn >= 0 || _panelColumn >= 0)
+            return HeaderPopoverRoomPx;
+        if (_contextCell is not null)
+        {
+            var (at, below) = ContextPopoverPlacement();
+            return Math.Max(below, at);
+        }
+        return null;
+    }
+
+    /// <summary>
     /// Closes whatever popover stands and hands the keyboard back to the root after the
     /// render that removes it (ADR-0039) — however it closed: a command run, Apply, Cancel,
     /// Clear, the ▾ pressed again, or the Chrome's own affordance. DOM focus may be inside
@@ -3228,21 +3272,6 @@
     /// A pointer-down that dismisses does not come through here: it keeps its own meaning,
     /// and where it lands decides focus (ADR-0010).
     /// </summary>
-    /// <summary>How tall the open popover may be — the same numbers its style is written
-    /// from — or null when none is open. The Context Menu opens on the side with more
-    /// room, so that side is its room (ADR-0040).</summary>
-    private double? PopoverRoomPx()
-    {
-        if (_menuColumn >= 0 || _panelColumn >= 0)
-            return _visibleHeightPx - BandHeightPx;
-        if (_contextCell is not null)
-        {
-            var at = Math.Clamp(BandHeightPx + _contextTopPx, 0, _visibleHeightPx);
-            return Math.Max(_visibleHeightPx - at, at);
-        }
-        return null;
-    }
-
     private void ClosePopoverAndReturnFocus()
     {
         var wasOpen = _menuColumn >= 0 || _panelColumn >= 0 || _contextCell is not null;
@@ -3501,8 +3530,12 @@
         // max-height keeps it inside the grid's box downwards, as PopoverAcross does across,
         // so no ancestor that shows the grid can cut it; taller contents scroll (ADR-0040).
         return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx}px; {width}; max-height: {Math.Max(0, _visibleHeightPx - BandHeightPx)}px");
+            $"left: {left}px; top: {BandHeightPx}px; {width}; max-height: {HeaderPopoverRoomPx}px");
     }
+
+    /// <summary>A header popover's room: from under the header band to the Viewport's
+    /// bottom (ADR-0040). Its style and the no-room close read this one number.</summary>
+    private double HeaderPopoverRoomPx => Math.Max(0, _visibleHeightPx - BandHeightPx);
 
     /// <summary>The narrowest usable popover, and the widest any may grow — what the
     /// clamp keeps inside the grid and what the browser is told to lay out, from these
@@ -5156,7 +5189,7 @@
         {
             _rootStyle = string.Create(
                 CultureInfo.InvariantCulture,
-                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px");
+                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px");
         }
         return _rootStyle;
     }
@@ -5242,14 +5275,14 @@
         _groupStyles = new string?[_headerLayout.Groups.Count];
     }
 
-    /// <summary>One rectangle's box, from the numbers layout already has (ADR-0032):
-    /// <c>left = OffsetPxOf(first member)</c>, width to past-last, height in tiers —
-    /// standing correctly whether or not its leaves are in the DOM.</summary>
     /// <summary>A group inside the pinned block is held at the left edge, unless pinning is
     /// suspended and every column scrolls (ADR-0032/0043).</summary>
     private bool IsGroupHeld(ResolvedHeaderGroup group)
         => group.Pinned && !_columnStyles.Geometry.IsPinningSuspended;
 
+    /// <summary>One rectangle's box, from the numbers layout already has (ADR-0032):
+    /// <c>left = OffsetPxOf(first member)</c>, width to past-last, height in tiers —
+    /// standing correctly whether or not its leaves are in the DOM.</summary>
     private string GroupStyle(int index)
     {
         ForgetTieredStylesIfStale();

@@ -128,8 +128,8 @@ public class CellTextMetricsClassTests
         Assert.False(OverflowRules.Decide(ColumnType.Date, "2026年9月25日", 111, noPadding).IsHashed);
     }
 
-    [Fact] // ADR-0016: the four-width form charges full-width at twice the digit — at least an em
-    public void The_four_width_form_charges_full_width_at_twice_the_digit()
+    [Fact] // ADR-0016: the three-class form charges full-width at twice the digit — at least an em
+    public void The_three_class_form_charges_full_width_at_twice_the_digit()
     {
         Assert.Equal(18, Metrics.FullWidthPx);
         Assert.Equal(18, Metrics.WidthOf('評'));

@@ -56,7 +56,10 @@ Measured in Chromium on the proof-of-concept page, with the column menu of a gri
   the popover would stay open, invisible, and still holding the keyboard
   ([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)). **When a
   popover's room falls below one `RowHeight`, it closes as a Cancel** and the keyboard returns to
-  the root. A popover that cannot show one item is unusable, so nothing is lost. Closing every
+  the root. Only a shrink closes it: a popover opened in a box already that small is the
+  Consumer's box, and closing it on the next scroll would close it for no change at all. The
+  Context Menu's room is the side of the pointer it opened on, the header band included, so it
+  closes only once the whole box is under a row. A popover that cannot show one item is unusable, so nothing is lost. Closing every
   popover on any size change was rejected: a Drawer opening or a banner pushing the layout
   changes the box without the user doing anything to the popover.
 

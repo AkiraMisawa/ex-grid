@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
 using Microsoft.AspNetCore.Components.Web;
@@ -62,5 +63,41 @@ public class PopoverRoomTests : GridTestContext
         await Report(cut, 120);
 
         Assert.Contains("max-height: 100px", cut.Find(".ex-popover").GetAttribute("style"));
+    }
+
+    private string[] Focused()
+        => [.. JSInterop.Invocations
+            .Where(i => i.Identifier == "Blazor._internal.domWrapper.focus")
+            .Select(i => ((ElementReference)i.Arguments[0]!).Id)];
+
+    [Fact] // ADR-0040 / UX-11a: the Context Menu closes too, and the keyboard goes back to the root
+    public async Task A_context_menu_with_no_room_closes_and_the_root_takes_the_keyboard()
+    {
+        var cut = RenderGrid();
+        var root = cut.Find(".ex-grid").GetAttribute("blazor:elementreference");
+        await Report(cut, 300);
+        await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { OffsetX = 50, OffsetY = 30 });
+        Assert.Single(cut.FindAll(".ex-popover"));
+        var before = Focused().Length;
+
+        // The Context Menu takes whichever side of the pointer has more room, header band
+        // included, so it has less than a row only once the whole box does.
+        await Report(cut, 19);
+
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Equal(root, Focused().Skip(before).Last());
+    }
+
+    [Fact] // ADR-0040: only a shrink closes — a popover opened in a box already that small is the Consumer's box
+    public async Task A_popover_opened_in_a_small_box_stays_through_other_renders()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 20 + 12);
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        Assert.Single(cut.FindAll(".ex-popover"));
+
+        await Report(cut, 20 + 12); // the same size again: a render, not a shrink
+
+        Assert.Single(cut.FindAll(".ex-popover"));
     }
 }

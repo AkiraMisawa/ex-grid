@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Selection;
 using Microsoft.AspNetCore.Components.Web;
@@ -230,5 +231,25 @@ public class AccessibilityTests : GridTestContext
         await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
 
         Assert.Equal(counts, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToList());
+    }
+
+    [Fact] // ADR-0033 / A11Y-4: the scroller is out of the tab sequence, and focus reaching it goes to the root
+    public async Task The_scroller_is_no_tab_stop_and_hands_focus_to_the_root()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, TestRows.Columns()));
+        var root = cut.Find(".ex-grid").GetAttribute("blazor:elementreference");
+        var scroller = cut.Find(".ex-scroller");
+
+        Assert.Equal("-1", scroller.GetAttribute("tabindex"));
+
+        await scroller.FocusAsync(new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
+
+        var focused = JSInterop.Invocations
+            .Where(i => i.Identifier == "Blazor._internal.domWrapper.focus")
+            .Select(i => ((ElementReference)i.Arguments[0]!).Id)
+            .ToArray();
+        Assert.Equal(root, focused.Last());
     }
 }

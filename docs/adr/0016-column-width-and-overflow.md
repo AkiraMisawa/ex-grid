@@ -323,12 +323,26 @@ button's band**, **plus the sort indicator's room when the column can be sorted*
 sorted now or not. Auto counted the band and Size to fit did not; neither counted the indicator.
 The indicator is always counted because a column that grew when it was sorted would move every
 column to its right on a header click, and one that did not would chop its label.
+*(Refined while implementing, 2026-09-26: review found the indicator's glyph living as a
+stylesheet literal, `content: " ▲"`, beside a C# charge for it — the pairing
+[ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md) dissolved. So the mark
+stands in a box C# sizes, `--ex-sort-mark-width`, as the menu button's ▾ does: an em for the
+glyph and a 6px gap, 20px at 14px. The header estimate charges that box, and the stylesheet sizes
+the mark with the same number.)*
 
 **Full-width characters are a fourth class, charged at 1em** — the font size. These are the
 characters whose East Asian Width is Wide or Fullwidth. CJK fonts are drawn on the em square, so
 this is the one width that does not depend on the family: 14.000px at 14px in every weight
 measured. Charged as a digit, they were 35% short, which chopped every Japanese header and left
 every Japanese text value's Auto width short.
+*(Refined while implementing, 2026-09-26.)* The grid knows the em, because it emits the font
+size, so it charges full-width characters at least the font size whatever metrics it was
+given — a theme's explicit `CellMetrics` included. Metrics built on their own, outside a grid,
+cannot know the em: the uniform form keeps its one width for everything, which is its contract,
+and the three-class form charges full-width at twice the digit. A tabular digit is at least half
+an em in the text faces measured (0.636em for DejaVu Sans at weight 400), so twice it covers the
+em without being told it. That fallback is reasoned, not measured across faces, and nothing the
+grid paints depends on it.
 
 ## Columns appearing and disappearing, and saved views
 

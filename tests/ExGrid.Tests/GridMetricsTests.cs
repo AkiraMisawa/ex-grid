@@ -122,9 +122,10 @@ public class GridMetricsTests
         Assert.Equal(label + 14, metrics.HeaderRequiredPx("Amount", menuButton: false, sortable: false));
         Assert.Equal(label + 14 + metrics.MenuButtonBandPx,
             metrics.HeaderRequiredPx("Amount", menuButton: true, sortable: false));
-        // The indicator " ▲" is charged as a space and one full-width glyph: ▲ is
-        // ambiguous-width, drawn at an em in a CJK family.
-        Assert.Equal(label + 14 + 6.398 + 14,
+        // The sort mark's box: an em for ▲, which is ambiguous-width and drawn at an em
+        // in a CJK family, and a 6px gap — the box the stylesheet sizes it with.
+        Assert.Equal(20, metrics.SortMarkWidthPx);
+        Assert.Equal(label + 14 + 20,
             metrics.HeaderRequiredPx("Amount", menuButton: false, sortable: true), 9);
     }
 
@@ -137,5 +138,16 @@ public class GridMetricsTests
         Assert.True(metrics.HeaderRequiredPx("Amount", false, false) - padding >= 61.7);
         Assert.True(metrics.HeaderRequiredPx("MARKET VALUE", false, false) - padding >= 120.5);
         Assert.True(metrics.HeaderRequiredPx("評価額", false, false) - padding >= 42.0);
+    }
+
+    [Fact] // ADR-0016: a full-width character is an em, so the grid charges explicit metrics at least the font size for it
+    public void Explicit_metrics_are_charged_an_em_for_full_width_characters()
+    {
+        var uniform = GridMetrics.Resolve(GridDensity.Compact, cellMetrics: new CellTextMetrics(9, 8));
+        var generous = GridMetrics.Resolve(GridDensity.Compact, cellMetrics: new CellTextMetrics(20, 12, 6, 30, 8));
+
+        Assert.Equal(14, uniform.CellMetrics.FullWidthPx);
+        Assert.Equal(9, uniform.CellMetrics.DigitWidthPx); // nothing else moves
+        Assert.Equal(30, generous.CellMetrics.FullWidthPx); // wider than an em is the theme's to say
     }
 }

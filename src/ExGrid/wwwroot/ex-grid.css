@@ -137,8 +137,12 @@
 /* The sort indicator is painted from the same attribute the accessibility tree reads
    (ADR-0033), so the two cannot disagree. A glyph, not a class: the stable class list
    is closed (ADR-0029) and this earns no entry in it. */
-.ex-header-cell[aria-sort="ascending"]::after { content: " ▲"; opacity: 0.6; }
-.ex-header-cell[aria-sort="descending"]::after { content: " ▼"; opacity: 0.6; }
+/* The sort mark stands in a box C# sizes, as the menu button does: the header estimate
+   charges exactly this width, so a sorted label is never cut by its own mark (ADR-0016). */
+.ex-header-cell[aria-sort="ascending"]::after,
+.ex-header-cell[aria-sort="descending"]::after { display: inline-block; width: var(--ex-sort-mark-width, 20px); text-align: right; opacity: 0.6; }
+.ex-header-cell[aria-sort="ascending"]::after { content: "▲"; }
+.ex-header-cell[aria-sort="descending"]::after { content: "▼"; }
 .ex-cell-numeric { text-align: right; }
 /* A Header Group's rectangle (ADR-0032): a caption over its members, centred, on the
    header's own ground. Absolutely positioned from the geometry, so it stands whether

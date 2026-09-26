@@ -277,7 +277,7 @@ numbers were not filed under `verification/`, because software rendering belongs
 | 0027 / 0028 / 0029 | **`GridMetrics`, `GridDensity`, `ViewportSize.Fill`**, inline Geometry Tokens, the token vocabulary, the forced-colors block | `GridMetricsTests`, `GridMetricsWiringTests` |
 | 0031 | `dir="ltr"` on the root | `GridRenderingTests` |
 | 0032 | **Header Groups** — rectangles, refusals, the band, group/leaf drag units | `HeaderGroupTests`, `HeaderGroupRenderingTests` |
-| 0033 | **ARIA** — the root surface, absolute indices, `aria-activedescendant`, the live region | `AccessibilityTests` |
+| 0033 | **ARIA** — the root surface, absolute indices, `aria-activedescendant`, the live region; **the scroller kept out of the tab sequence**, with focus that reaches it handed to the root (2026-09-26) | `AccessibilityTests`, `features.spec.mjs` (A11Y-17) |
 | 0034 | **The verdict seam** — Accept/Flag/Reject at the commit, the editor holding under a Reject, the message channel and its popover, the fill's verdict, and the bundled ruleset. Not the hover trigger (ED-17b) | `ValidationTests`, `GridRulesetTests`, `features.spec.mjs` |
 | 0036 | **The context menu** — the secondary click's meaning, the core's clipboard commands and the Consumer's, the keyboard trigger, and `GridCommand` losing its label | `ContextMenuTests`, `FilterChromeTests`, `features.spec.mjs` |
 | 0035 | **The Editable declaration gates writes** — a paste or Ctrl+Enter fill covering a non-editable column is refused whole, and the fill refusal is no longer silent (CP-16) | `PasteRuleTests`, `ClipboardWiringTests`, `CellEditorTests` |
@@ -479,6 +479,20 @@ clean. The property is unchanged: the dependency points one way.
    `ColumnWidth` could not be printed. The record's own `ToString` read `FixedPx`, which
    throws for Auto, so logging a width, or the refusal's own message, threw instead. It
    prints `Auto` or `Fixed(120px)` now.
+
+8. **Found on 2026-09-26, not fixed: `ViewportHeight = Fill` paints no rows in a sized box.**
+   A grid with a Fill height inside a 300px box settled at a 28px scroller, header only, with no
+   row painted (checked on the container's Chromium against de5e62c, before this run's changes).
+   The scroller takes its height from its content, and under Fill the reported height is that
+   same box, so the loop settles on the header. Only CSS on the grid's internal elements breaks
+   it, which ADR-0029/0030 keep off-limits. The DemoHost has no Fill-height page, and that is
+   also why UX-11a has no layer-3 test yet. Which element takes the box's height is a decision
+   for ADR-0028, not a fix to make quietly.
+
+9. **Observed on 2026-09-26: the column menu buttons are tab stops.** On `/features`, Shift+Tab
+   from after the grid lands on a ▾, not on the root. A11Y-4's test tolerates this ("the next
+   stop can be … the menu buttons"), but its criterion says focus "leaves the grid entirely".
+   The criterion and the test disagree, and the disagreement is not resolved here.
 
 ## Where the exit criteria stand
 

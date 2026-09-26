@@ -87,7 +87,7 @@ public class ColumnGeometryTests
             Geometry(pinnedCount: 4, viewportWidthPx: 350).ScrollableSliceAt(0, virtualise: true));
     }
 
-    [Fact] // Every column pinned, with room to spare, is a grid with nothing to scroll, not an error
+    [Fact] // ADR-0004/0043: every column pinned, with room to spare, is a grid with nothing to scroll, not an error
     public void Pinning_every_column_leaves_no_slice_at_all()
     {
         Assert.Null(Geometry(pinnedCount: 5, viewportWidthPx: 600).ScrollableSliceAt(0, virtualise: true));

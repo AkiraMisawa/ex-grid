@@ -44,7 +44,16 @@ async function dragGrip(page, name, dx) {
 test('a sorted Auto header and a Japanese Auto header paint whole (FN-12d, ADR-0016)', async ({ page }) => {
     await expect(header(page, 'Notional')).toHaveAttribute('aria-sort', 'ascending');
     expect(await overflows(header(page, 'Notional'))).toBe(false);
-    expect(await overflows(header(page, '評価額'))).toBe(false);
+    expect(await overflows(header(page, '評価額（円）'))).toBe(false);
+});
+
+test('a Japanese header double-clicked to fit paints whole at its fitted width (FN-12d, ADR-0016)', async ({ page }) => {
+    await header(page, '評価額（円）').locator('.ex-resize-grip').dblclick({ force: true });
+
+    await expect(page.locator('#width-status')).toHaveText(/^Widths: Amount=\d/);
+    const fitted = Number((await page.locator('#width-status').textContent()).split('=')[1]);
+    await expect.poll(async () => (await header(page, '評価額（円）').boundingBox()).width).toBeCloseTo(fitted, 0);
+    expect(await overflows(header(page, '評価額（円）'))).toBe(false);
 });
 
 test('a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016)', async ({ page }) => {
@@ -105,13 +114,37 @@ test('dragging the edge of one of several whole columns resizes them all (FN-12c
     await expect(page.locator('#width-status')).toHaveText('Widths: Notional=100;Amount=100;Narrow=100');
 });
 
-test('a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, UX-11b, ADR-0043)', async ({ page }) => {
+async function headerWidths(page) {
+    return grid(page).locator('.ex-header-cell').evaluateAll((cells) =>
+        Object.fromEntries(cells.map((c) => [c.textContent, c.getBoundingClientRect().width])));
+}
+
+test('columns narrower than a wide box are not stretched, and a resize changes no column width (UX-11b, ADR-0043)', async ({ page }) => {
+    const wide = await headerWidths(page);
+    expect(Object.keys(wide)).toHaveLength(6);
+    // Every painted width is the resolved one written inline, not a share of the box.
+    for (const [name, width] of Object.entries(wide)) {
+        const inline = await header(page, name).evaluate((c) => parseFloat(c.style.width));
+        expect(width, name).toBeCloseTo(inline, 1);
+    }
+    // The columns end short of the box: the rest is empty, as an empty sheet is.
+    const scroller = await grid(page).locator('.ex-scroller').boundingBox();
+    const last = await header(page, 'Note').boundingBox();
+    expect(last.x + last.width).toBeLessThan(scroller.x + scroller.width - 100);
+
+    await page.setViewportSize({ width: 700, height: 800 });
+    await expect.poll(async () => (await grid(page).locator('.ex-scroller').boundingBox()).width).toBeLessThan(700);
+    const narrow = await headerWidths(page);
+    for (const [name, width] of Object.entries(narrow))
+        expect(width, name).toBeCloseTo(wide[name], 1);
+});
+
+test('a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0043)', async ({ page }) => {
     await expect(grid(page).locator('.ex-cell.ex-pinned').first()).toBeVisible();
     const bookWidth = (await header(page, 'Book').boundingBox()).width;
 
     await page.setViewportSize({ width: 250, height: 800 });
     await expect(grid(page).locator('.ex-cell.ex-pinned')).toHaveCount(0);
-    // Nothing is stretched or squeezed: the column keeps its width in a narrow box.
     expect((await header(page, 'Book').boundingBox()).width).toBe(bookWidth);
 
     // An arrow into a scrollable column brings it on screen, not under a pinned block.

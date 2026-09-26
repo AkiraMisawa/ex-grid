@@ -146,7 +146,11 @@ spanning every column keeps spanning every column under Shift+↑ / Shift+↓. T
 does. Before this, Shift+→ after Ctrl+Space redrew the range between the Anchor and the Focus,
 which are two cells, and the whole-column selection collapsed to one row. A user extending a
 column selection never asked for that. Only the axis the range already spans in full is kept;
-the other axis moves the Focus as it always has.
+the other axis moves the Focus as it always has. *(Refined while implementing, 2026-09-26: the
+same holds for the other extensions along an axis — Ctrl+Shift+arrow runs whole columns to the
+edge, as it does in Excel, and Shift+PageUp / PageDown keeps a whole-row range whole. They are
+the same gesture at a different stride, and leaving them out would collapse the range on one
+key and not the next.)*
 
 **Shift+click on a column header selects whole columns**, from the Anchor's column to the
 clicked one. This is Excel's gesture, and it is the mouse route to several whole columns. The
@@ -154,7 +158,11 @@ plain click stays a sort, as decided above; the modifier had no meaning on a hea
 takes the gesture many data grids give to multi-column sorting. That is acceptable because
 multi-column sorting here is expressed through the `Sorts` model or the column menu, never
 through a header click (see "What one header click does to the Sorts list" below). A Shift+click
-does not sort. From Empty, or with nothing anchored, it selects the clicked column alone.
+does not sort. From Empty it selects the clicked column alone, anchored on the first visible row,
+as the first key after focus is (KB-9), so the Viewport does not move for a header click. From a
+detached Anchor it starts a new range from the Anchor's column, as Shift+click on a cell does.
+*(The last two sentences were settled while implementing, 2026-09-26; the first draft read "from
+Empty, or with nothing anchored", which named neither the row nor the detached case.)*
 
 ## What the implementation settled
 

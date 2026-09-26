@@ -1,5 +1,4 @@
 @page "/sizing"
-@using global::ExGrid.Sorting
 
 <nav class="demo-nav">
     <a href="">Row identity</a>
@@ -79,8 +78,10 @@
         // the estimate must count (FN-12d).
         new("Notional", ColumnType.Number, r => r.Notional),
         // A Japanese label over short values: the header is the widest thing in its
-        // column, and full-width characters are an em each (FN-12d).
-        new("Amount", ColumnType.Number, r => r.Notional % 1000, header: "評価額"),
+        // column, and full-width characters are an em each (FN-12d). Six of them, so the
+        // header's em of slack cannot hide a missing full-width class: charged as digits
+        // they would come to 58px plus 14 against the 84px they paint.
+        new("Amount", ColumnType.Number, r => r.Notional % 1000, header: "評価額（円）"),
         // Too narrow for its values on purpose: the #### run must fit the cell it stands
         // in, never be cut into "###…" (FN-12e).
         new("Narrow", ColumnType.Number, r => r.Notional, width: new ColumnWidthSpec(ColumnWidth.Fixed(60))),
