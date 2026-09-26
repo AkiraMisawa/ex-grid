@@ -195,9 +195,43 @@ ViewportHeight = Fill   the Consumer sizes the box in CSS however it likes; the 
   told.** One frame is painted from the previous size on every resize, which is the same accepted
   frame the gutter already costs (ADR-0013), and for the same reason: the alternative is a layout
   read before every paint.
+  *(Wrong as written, found 2026-09-26 and rewritten with the user; see "Which element takes the
+  box" below. "The CSS may say anything" named no element it could say it to: the root and the
+  scroller are internal, and [ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)/[0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)
+  keep them off-limits.)*
 - The feedback loop the gutter analysis worried about still cannot form: `.ex-spacer` is sized
   from totals, never from the Viewport, so a reported size changes nothing that would re-change
-  the size.
+  the size. *(Wrong as written, found 2026-09-26: a loop did form, on the height. With no height
+  given to it, the scroller is as tall as its content. Before the first report that content is the
+  header band alone, because nothing is sliced until a positive height arrives. The browser
+  reports the band, the band leaves no room for a row, and the grid settles there, painting
+  nothing, in a 300px box or any other. Measured on the container's Chromium.)*
+
+### Which element takes the box — decided
+
+*(Decided with the user, 2026-09-26.)* **Under `Fill`, the core gives its own elements the
+parent's size.** It writes inline, as it writes every other piece of geometry
+([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)):
+
+- on a Fill **height**: `height: 100%` on the root and on the scroller, and
+  `flex: 1 1 auto; min-height: 0` on the root;
+- on a Fill **width**: `min-width: 0` on the root, since a block already takes its parent's width.
+
+The `flex` and `min-` values do nothing in an ordinary block parent. In a flex parent they let
+the grid take what is left beside a toolbar and shrink below its content. So one declaration
+serves both of the layouts a Consumer actually writes. **The Consumer's side of the contract is
+one sentence: give the parent a definite height** — pixels, a percentage of something definite,
+a grid track, or a flex item.
+
+Measured with those values on the container's Chromium: a 300px box, and the remainder of a
+360px flex column under a 60px toolbar, each paint a 285px Viewport with 11 rows.
+
+Rejected:
+- **CSS on `.ex-grid` or `.ex-scroller` in the Consumer's stylesheet.** It works, and it is the
+  internal-class styling ADR-0029/0030 refuse.
+- **`Class` / `Style` on the root.** Refused by ADR-0029 for reasons that still hold.
+- **`position: absolute; inset: 0` on the root.** It needs a positioned parent and takes the grid
+  out of the flow, so a toolbar above it would have to be positioned too.
 - A reported size of zero — the grid is in a hidden tab, a `display: none` ancestor — paints
   nothing and throws nothing. Today's validation ("ViewportHeight must exceed RowHeight") is
   right for a number a Consumer *wrote* and wrong for one the browser reported: a declared 12px is
