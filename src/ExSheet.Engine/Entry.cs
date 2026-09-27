@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using ExSheet.Engine.Formulas;
 
 namespace ExSheet.Engine;
@@ -27,9 +26,10 @@ public sealed class Entry : IEquatable<Entry>
     public Value? Constant { get; }
 
     /// <summary>
-    /// The Formula in invariant syntax, beginning with <c>=</c>, as the engine writes it back
-    /// (function names and References in upper case, <c>,</c> between arguments, <c>.</c> as the
-    /// decimal separator); <see langword="null"/> when this Entry is a constant.
+    /// The Formula in invariant syntax, beginning with <c>=</c>: the whitespace as it was typed,
+    /// and each token as the engine writes it (function names and References in upper case,
+    /// <c>,</c> between arguments, <c>.</c> as the decimal separator) (ADR-0047);
+    /// <see langword="null"/> when this Entry is a constant.
     /// </summary>
     public string? Formula { get; }
 
@@ -49,18 +49,8 @@ public sealed class Entry : IEquatable<Entry>
     public static Entry FromFormula(string formula)
     {
         ArgumentNullException.ThrowIfNull(formula);
-        var parsed = Parser.Parse(formula);
-        var text = new StringBuilder("=");
-        parsed.WriteTo(text);
-        return new Entry(text.ToString(), parsed);
-    }
-
-    /// <summary>A Formula Entry from a tree the engine built, such as one whose References were rewritten.</summary>
-    internal static Entry FromParsed(Node parsed)
-    {
-        var text = new StringBuilder("=");
-        parsed.WriteTo(text);
-        return new Entry(text.ToString(), parsed);
+        var parsed = Parser.Parse(formula, out var tokens);
+        return new Entry(FormulaText.Normalize(formula, tokens), parsed);
     }
 
     /// <summary>

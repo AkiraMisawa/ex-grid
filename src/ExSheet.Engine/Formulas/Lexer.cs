@@ -21,6 +21,9 @@ internal enum TokenKind
 
 internal sealed record Token(TokenKind Kind, int Position, string Text, bool AfterSpace)
 {
+    /// <summary>How many characters of the Formula the token spans, from <see cref="Position"/>.</summary>
+    public int Length { get; init; }
+
     public double Number { get; init; }
 
     public Reference? Reference { get; init; }
@@ -97,7 +100,7 @@ internal static partial class Lexer
                     text.Append(formula[j]);
                     j++;
                 }
-                tokens.Add(new Token(TokenKind.Text, i, text.ToString(), afterSpace));
+                tokens.Add(new Token(TokenKind.Text, i, text.ToString(), afterSpace) { Length = j + 1 - i });
                 i = j + 1;
                 continue;
             }
@@ -110,7 +113,7 @@ internal static partial class Lexer
                     var spelled = e.ToText();
                     if (string.Compare(formula, i, spelled, 0, spelled.Length, StringComparison.OrdinalIgnoreCase) == 0)
                     {
-                        tokens.Add(new Token(TokenKind.Error, i, spelled, afterSpace) { Error = e });
+                        tokens.Add(new Token(TokenKind.Error, i, spelled, afterSpace) { Error = e, Length = spelled.Length });
                         i += spelled.Length;
                         matched = true;
                         break;
@@ -122,7 +125,7 @@ internal static partial class Lexer
 
             if (c == '(' || c == ')' || c == ',')
             {
-                tokens.Add(new Token(c == '(' ? TokenKind.LeftParenthesis : c == ')' ? TokenKind.RightParenthesis : TokenKind.Comma, i, c.ToString(), afterSpace));
+                tokens.Add(new Token(c == '(' ? TokenKind.LeftParenthesis : c == ')' ? TokenKind.RightParenthesis : TokenKind.Comma, i, c.ToString(), afterSpace) { Length = 1 });
                 i++;
                 continue;
             }
@@ -130,7 +133,7 @@ internal static partial class Lexer
             var reference = ReferencePattern().Match(formula, i);
             if (reference.Success && TryReadReference(reference) is { } parsed)
             {
-                tokens.Add(new Token(TokenKind.Reference, i, reference.Value, afterSpace) { Reference = parsed });
+                tokens.Add(new Token(TokenKind.Reference, i, reference.Value, afterSpace) { Reference = parsed, Length = reference.Length });
                 i += reference.Length;
                 continue;
             }
@@ -141,7 +144,7 @@ internal static partial class Lexer
                 if (!number.Success) throw new FormulaSyntaxException(formula, i, "this is not a number.");
                 var value = double.Parse(number.Value, NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent, CultureInfo.InvariantCulture);
                 if (!double.IsFinite(value)) throw new FormulaSyntaxException(formula, i, "the number is too large.");
-                tokens.Add(new Token(TokenKind.Number, i, number.Value, afterSpace) { Number = value });
+                tokens.Add(new Token(TokenKind.Number, i, number.Value, afterSpace) { Number = value, Length = number.Length });
                 i += number.Length;
                 continue;
             }
@@ -153,11 +156,11 @@ internal static partial class Lexer
                 if (end < formula.Length && formula[end] == '[')
                 {
                     var column = ReadStructuredColumn(formula, end, out var after);
-                    tokens.Add(new Token(TokenKind.StructuredReference, i, column, afterSpace) { TableName = name.Value });
+                    tokens.Add(new Token(TokenKind.StructuredReference, i, column, afterSpace) { TableName = name.Value, Length = after - i });
                     i = after;
                     continue;
                 }
-                tokens.Add(new Token(TokenKind.Name, i, name.Value, afterSpace));
+                tokens.Add(new Token(TokenKind.Name, i, name.Value, afterSpace) { Length = name.Length });
                 i = end;
                 continue;
             }
@@ -165,7 +168,7 @@ internal static partial class Lexer
             var op = Array.Find(Operators, o => string.CompareOrdinal(formula, i, o, 0, o.Length) == 0);
             if (op is not null)
             {
-                tokens.Add(new Token(TokenKind.Operator, i, op, afterSpace));
+                tokens.Add(new Token(TokenKind.Operator, i, op, afterSpace) { Length = op.Length });
                 i += op.Length;
                 continue;
             }

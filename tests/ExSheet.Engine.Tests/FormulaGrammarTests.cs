@@ -76,7 +76,6 @@ public class FormulaGrammarTests
     [InlineData("=5:2", "=2:5")]
     [InlineData("=true", "=TRUE")]
     [InlineData("=#n/a", "=#N/A")]
-    [InlineData("= 1 + 2", "=1+2")]
     [InlineData("=.5", "=0.5")]
     [InlineData("=1.50", "=1.5")]
     public void A_formula_is_recorded_in_excels_spelling(string typed, string recorded)

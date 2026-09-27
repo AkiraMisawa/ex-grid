@@ -45,7 +45,9 @@ change.ValueChanges;                        // C1
 ```
 
 `Enter` reads text as a user typed it: text beginning with `=` is a Formula, and anything else is
-a constant read under the Sheet's culture and recorded already parsed.
+a constant read under the Sheet's culture and recorded already parsed. A Formula keeps the
+whitespace it was typed with; its tokens are written in Excel's spelling (`= sum( a1 )` is kept
+as `= SUM( A1 )`), and rewriting its References changes only the Reference tokens.
 
 A Sheet has a name, `Sheet1` unless it is given one (`new Sheet(culture, "Risk")`), and
 `SheetEdit.Rename` changes it as Excel does, rewriting every Reference qualified with the old
