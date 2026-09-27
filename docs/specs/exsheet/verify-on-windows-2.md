@@ -3,7 +3,8 @@
 Status: ready-for-human
 
 For a Claude Code session on the Windows desktop used on 2026-09-27 (Excel, Chrome, Edge, WSL2
-with nix). The first run's method, rules and tools still apply: read
+with nix). The first run's method and tools still apply, except where this page says otherwise (the user's
+advance authorisation below replaces asking first): read
 [`verify-on-windows.md`](verify-on-windows.md) and [`excel-behaviours.md`](excel-behaviours.md)
 first, and reuse `verification/2026-09-27-windows-excel/excel-driver.ps1` and the probes. **Decide
 nothing. Record everything.** Do not change any ADR, `CONTEXT.md` or
@@ -14,9 +15,16 @@ nothing. Record everything.** Do not change any ADR, `CONTEXT.md` or
 - Fetch `claude/exsheet-start-8cx3v1` and branch **`claude/exsheet-windows-verify-2`** from its tip.
   Record that tip's commit as the verified commit.
 - Build and run layers 1–2 as the first run did (in WSL). Record the counts.
-- Before sending any key or mouse input, tell the user and wait for their go-ahead: the screen must
-  be unlocked, the IME off, and their hands off the keyboard and mouse. Changing the regional format
-  (`Set-Culture`) needs their agreement each time, and it is restored afterwards.
+- **The user has authorised this run in advance** (2026-09-27): sending real keys and mouse input
+  to Excel and the browsers, and changing the Windows regional format (`Set-Culture`) for as long
+  as the oracle needs. **Do not stop to ask.** Say "starting" before the first input and "finished"
+  after the last, so the user knows when to keep their hands off the machine and when they are
+  free again.
+- The regional format is always restored. Export `HKCU\Control Panel\International` before the
+  first change, and check afterwards that it reads back identical. Record both in the results.
+- Keep the screen unlocked with no screensaver and the IME off for the run. If input cannot be sent
+  (a locked screen, another window in front), stop that part, record it as blocked, and go on
+  with what does not need input.
 
 ## Part A — the oracle again, whole corpus
 
