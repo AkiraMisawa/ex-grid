@@ -105,15 +105,21 @@ public class SheetRenderingTests : SheetTestContext
         Assert.True(atCorner <= atTop + 20, $"{atCorner} elements at the corner, {atTop} at the top");
     }
 
-    [Fact] // ADR-0046: ExGrid's sort and filter are not wired — a header click selects, nothing sorts, no column menu
+    [Fact] // ADR-0046: ExGrid's sort and filter are not wired — a header click selects, nothing sorts, the column menu cannot sort
     public async Task Sort_and_filter_are_not_wired()
     {
         var cut = RenderSheet();
 
         await ClickHeaderAsync(cut, 200);
 
-        Assert.Empty(cut.FindAll(".ex-menu-button"));
         Assert.Empty(cut.FindAll("[aria-sort=ascending], [aria-sort=descending]"));
+        Assert.False(Grid(cut).Instance.OnSortChanged.HasDelegate);
+        Assert.False(Grid(cut).Instance.OnFilterChanged.HasDelegate);
+        // The column menu is there because a width change reaches ExSheet (ADR-0016): Size to
+        // fit is its only enabled command, and the sort commands in it are disabled.
+        await cut.Find(".ex-menu-button").ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
+        var enabled = cut.FindAll("[role=menuitem]").Where(i => !i.HasAttribute("disabled")).Select(i => i.TextContent).ToList();
+        Assert.Equal(["Size to fit"], enabled);
     }
 
     [Fact] // ADR-0046: Pinned Columns work on a Sheet — the leading columns stay painted when scrolled sideways

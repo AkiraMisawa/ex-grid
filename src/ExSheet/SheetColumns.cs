@@ -7,7 +7,8 @@ namespace ExSheet;
 /// <summary>
 /// Columns <c>A</c> … <c>XFD</c>, built once for the process (ADR-0046). Every delegate they hold
 /// reads from the row it is handed, never from an instance of the component, so one list serves
-/// every ExSheet on every circuit — and because the list instance never changes, a render of the
+/// every ExSheet on every circuit. An ExSheet hands the grid a <see cref="SheetColumnList"/> over
+/// this list, which changes instance only when a column's width is set, so a render of the
 /// component never looks to a row like a change of columns (ADR-0003).
 /// </summary>
 internal static class SheetColumns
@@ -57,24 +58,31 @@ internal static class SheetColumns
             ? index
             : throw new ArgumentException($"'{column.Name}' is not one of the Sheet's columns.", nameof(column));
 
+    /// <summary>
+    /// Sheet column <paramref name="index"/> at <paramref name="widthPx"/> — what a
+    /// <see cref="SheetColumnList"/> puts in place of the default column once a width is set.
+    /// </summary>
+    internal static GridColumn<SheetRow> At(int index, double widthPx) => Column(index, new ColumnWidthSpec(ColumnWidth.Fixed(widthPx)));
+
     private static GridColumn<SheetRow>[] Build()
     {
         var columns = new GridColumn<SheetRow>[Sheet.ColumnCount];
-        for (var i = 0; i < columns.Length; i++)
-        {
-            var index = i;
-            var name = CellAddress.ColumnName(i);
-            columns[i] = new GridColumn<SheetRow>(
-                name,
-                ColumnType.Text,
-                row => row.At(index),
-                header: name,
-                width: DefaultWidth,
-                editable: true,
-                headerAlign: global::ExGrid.Columns.CellAlign.Center,
-                validate: static (row, typed) => row.Judge(typed),
-                format: FormatText);
-        }
+        for (var i = 0; i < columns.Length; i++) columns[i] = Column(i, DefaultWidth);
         return columns;
+    }
+
+    private static GridColumn<SheetRow> Column(int index, ColumnWidthSpec width)
+    {
+        var name = CellAddress.ColumnName(index);
+        return new GridColumn<SheetRow>(
+            name,
+            ColumnType.Text,
+            row => row.At(index),
+            header: name,
+            width: width,
+            editable: true,
+            headerAlign: global::ExGrid.Columns.CellAlign.Center,
+            validate: static (row, typed) => row.Judge(typed),
+            format: FormatText);
     }
 }

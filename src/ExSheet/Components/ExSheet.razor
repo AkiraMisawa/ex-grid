@@ -14,7 +14,7 @@
 *@
 <ExGrid TRow="SheetRow" @ref="_grid"
         Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
-        Columns="SheetColumns.All"
+        Columns="_columns" OnColumnWidthChanged="_columnWidthChanged"
         RowHeight="RowHeight" ViewportHeight="ViewportHeight" ViewportWidth="ViewportWidth"
         PinnedColumnCount="PinnedColumnCount" Chrome="Chrome"
         OnRangeNeeded="OnRangeNeededAsync" OnEdit="OnEditAsync" SelectionChanged="_selectionChanged"
@@ -73,9 +73,11 @@
     private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _copyRowsNeeded;
     private readonly EventCallback<GridSelection> _selectionChanged;
     private readonly EventCallback _undo;
+    private readonly EventCallback<ColumnWidthChange> _columnWidthChanged;
     private readonly EventCallback _redo;
 
     private ExGrid<SheetRow>? _grid;
+    private SheetColumnList _columns = SheetColumnList.Default;
     private Sheet? _sheet;
     private SheetEdges _edges = new();
     private SheetRow[] _window = [];
@@ -111,7 +113,25 @@
         // an undo re-renders what its change names itself.
         _undo = new EventCallback(null, (Func<Task>)(() => UndoAsync()));
         _redo = new EventCallback(null, (Func<Task>)(() => RedoAsync()));
+        // A resize is the user's: the width is recorded as Fixed, and the column is no longer at
+        // its default width, so an entry never widens it again (ADR-0016, ADR-0047).
+        _columnWidthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)(change =>
+        {
+            if (CellAddress.TryParseColumn(change.Column, out var column))
+            {
+                _columns = _columns.ResizedByUser(column, change.WidthPx);
+                StateHasChanged();
+            }
+            return Task.CompletedTask;
+        }));
     }
+
+    /// <summary>
+    /// What a Wrapper cascades to the grid inside this component (ADR-0030): the glyph widths
+    /// the grid resolves its Cell Metrics from, read here so that a column widened on entry is
+    /// widened in the grid's own measure.
+    /// </summary>
+    [CascadingParameter] private GridPresentationDefaults? Presentation { get; set; }
 
     /// <summary>
     /// The Sheet Document to show (ADR-0048). Handing over a different document replaces the
@@ -341,6 +361,8 @@
         _edges = SheetEdges.Of(_sheet);
         _history.Clear();
         _notice = null;
+        // Widths are this component's, not the document's: a different Sheet starts at the defaults.
+        _columns = SheetColumnList.Default;
         // Every row is new: the rows of the Sheet that was replaced say nothing about this one.
         var (start, count) = _window.Length == 0 ? (0, InitialRows) : (_windowStart, _window.Length);
         _window = [];
@@ -374,7 +396,8 @@
         if (!CellAddress.TryParseColumn(intent.Column, out var column)) return;
         try
         {
-            await PerformAsync(SheetEdit.Enter(new CellAddress(intent.Row.Index, column), intent.Value));
+            var address = new CellAddress(intent.Row.Index, column);
+            await PerformAsync(SheetEdit.Enter(address, intent.Value), widenFor: address);
         }
         catch (FormulaSyntaxException error)
         {
@@ -559,11 +582,35 @@
         return true;
     }
 
-    private async Task PerformAsync(SheetEdit edit)
+    private async Task PerformAsync(SheetEdit edit, CellAddress? widenFor = null)
     {
         var step = CurrentSheet.Do(edit);
         _history.Record(step);
+        if (widenFor is { } address) WidenOnEntry(address);
         await ChangedAsync(step.Change);
+    }
+
+    /// <summary>
+    /// A number or date the user typed into a column still at its default width widens the
+    /// column when it does not fit, as Excel's does (ADR-0047, second round; SH-20). The engine
+    /// says how many characters the entry needs; the width in pixels is what the grid's own
+    /// estimate charges for the text the cell shows at that many characters, in the Cell Metrics
+    /// the grid resolves, so the widened column holds it and the grid does not hash it
+    /// (ADR-0016). A column the user resized is theirs and is never widened. Only the typed
+    /// entry widens: not a paste, a fill or a recalculated Formula.
+    /// </summary>
+    private void WidenOnEntry(CellAddress address)
+    {
+        if (!_columns.IsDefault(address.Column)) return;
+        var sheet = CurrentSheet;
+        if (sheet.GetWidthOnEntry(address) is not { } characters) return;
+        var metrics = GridMetrics.Resolve(Presentation?.Density ?? GridDensity.Compact, defaults: Presentation).CellMetrics;
+        var shown = sheet.GetDisplay(address, characters);
+        var needed = Math.Ceiling(Math.Max(
+            characters * metrics.DigitWidthPx + 2 * metrics.CellHorizontalPaddingPx,
+            metrics.EstimatePx(shown.Text)));
+        if (needed <= _columns.WidthPxOf(address.Column)) return;
+        _columns = _columns.WidenedTo(address.Column, needed);
     }
 
     private async Task ChangedAsync(SheetChange change, bool raiseDocument = true)

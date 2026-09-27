@@ -113,3 +113,36 @@ process (`SheetColumns.CellAlign`), reading only the row it is handed, so an ali
 arrives on the new row instances the engine's change names and no other row renders (ADR-0003).
 Layer 2: `SheetDisplayTests` (General, booleans and Error Values, a user's alignment and its
 undo, the held delegate and the repainted rows).
+
+2026-09-27, component, column widths and widening on entry (SH-20, ADR-0047 second round), in
+part: ExSheet hands the grid its own `SheetColumnList` over the shared `SheetColumns.All`, a new
+instance only when a width is set, so an ordinary edit never looks to a row like a change of
+columns (ADR-0003). It declares `OnColumnWidthChanged`: a resize is recorded as Fixed and makes
+the column the user's. A number or date the user types into a column still at its default width
+widens it when `Sheet.GetWidthOnEntry` exceeds it, to the pixels the grid's own estimate charges
+for the text the cell shows at that many characters, in the Cell Metrics the grid resolves
+(`GridMetrics.Resolve` over the cascaded `GridPresentationDefaults`), so the grid does not hash
+it; a widened column is still at its default width and widens again, and never narrows; a column
+the user resized never widens; only a typed entry widens (not a paste, a fill or a
+recalculation); replacing the document resets the widths. Declaring the width change brings
+ExGrid's column menu button with it (the grips render only with it), whose one enabled command is
+Size to fit; the sort commands in it are disabled (ADR-0046). Layer 2: `ColumnWidthTests`,
+`SheetRenderingTests.Sort_and_filter_are_not_wired`.
+
+**Blocked: General fitted to the column is not painted.** ADR-0047's third round requires the
+painted text to be fitted (`GetDisplay(address, width)`) while the accessible name keeps the
+unfitted text. ExGrid gives a cell an accessible name of its own only when it hashes it
+(`aria-label` on a `####` cell, ExGridRow); on every other cell the painted text is the name.
+Painting `0.333333` would therefore make the screen reader hear `0.333333`, which the ADR rules
+out, and ExGrid's own copy (`text/plain` from the column's `Format`) would carry the fitted text
+until the copy answer (ADR-0050 item 9) is wired. The proposal returned to the orchestrator is a
+core declaration in ADR-0050's pattern: a per-cell painted text that the grid asks for with the
+column's resolved content width, painting the answer and giving the cell the value's own text as
+its accessible name wherever the two differ. The grid holds the resolved width and metrics, so
+the Consumer would neither replicate the metrics resolution nor track widths for this.
+
+Known gaps: widths are the component's, not the Sheet Document's, so they are not saved, and an
+inserted or deleted column does not move them (formats move; widths stay at their index); the
+default width is sized from ExGrid's default Cell Metrics, not a Wrapper's. Whether a column
+widened by an entry narrows again when that entry is undone is Excel's to observe; here it does
+not.
