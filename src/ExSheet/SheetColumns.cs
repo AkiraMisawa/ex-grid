@@ -1,4 +1,5 @@
 using ExGrid;
+using ExGrid.Cells;
 using ExGrid.Columns;
 using ExSheet.Engine;
 
@@ -47,6 +48,22 @@ internal static class SheetColumns
     /// </summary>
     internal static Func<SheetRow, GridColumn<SheetRow>, CellAlign> CellAlign { get; } =
         static (row, column) => row.At(IndexOf(column))?.Align ?? global::ExGrid.Columns.CellAlign.Auto;
+
+    /// <summary>
+    /// The painted text (ADR-0050 item 11): General fitted to the column, as Excel's is
+    /// (ADR-0047). The grid hands the column's content width in pixels, and it is converted to
+    /// Excel's unit — characters of the default font — with the grid's own digit width, charging
+    /// every character one digit (ADR-0047, third round): the inverse of how
+    /// <see cref="DefaultWidthPx"/> is sized. It reads only the row it is handed, so it is one
+    /// instance for the process: a cell whose text changes arrives on a new row instance, and a
+    /// change of width repaints the rows on the grid's side (ADR-0003).
+    /// </summary>
+    internal static PaintedTextOf<SheetRow> PaintedText { get; } =
+        static (row, column, contentWidthPx, metrics) => row.PaintedAt(IndexOf(column), CharactersIn(contentWidthPx, metrics));
+
+    /// <summary>A content width in pixels as Excel's column width: how many of the grid's digits fit in it.</summary>
+    internal static double CharactersIn(double contentWidthPx, CellTextMetrics metrics) =>
+        contentWidthPx <= 0 || metrics.DigitWidthPx <= 0 ? 0 : contentWidthPx / metrics.DigitWidthPx;
 
     /// <summary>The Cell Editor's opening text: the Entry (ADR-0051).</summary>
     internal static Func<SheetRow, GridColumn<SheetRow>, string?> EditorText { get; } =

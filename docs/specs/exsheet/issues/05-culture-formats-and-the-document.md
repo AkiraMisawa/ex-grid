@@ -159,3 +159,22 @@ million cells per column, so it is refused by name and nothing changes. Layer 2:
 `SheetDisplayTests` (whole columns recorded as columns and undone as one step, a later entry in a
 formatted column, whole rows aligned, several ranges as one step, several ranges with whole
 columns refused).
+
+2026-09-27, component, General fitted to the column is painted (SH-20, DC-35; ADR-0047 third
+round, ADR-0050 item 11): the block above is closed. ExSheet hands ExGrid a `PaintedText`
+(`SheetColumns.PaintedText`), one delegate for the process that reads only the row it is handed.
+The grid gives it the column's content width in pixels and its Cell Metrics; ExSheet converts
+that to Excel's unit as `contentWidthPx / DigitWidthPx` (every character charged one digit
+width, the inverse of how the default column is sized) and answers, for a number in General,
+`Sheet.GetDisplay(address, width)`'s text — the run of `#` that becomes `####` where the engine
+says it cannot be shown — and null wherever that equals the value's own text, and for text,
+booleans, Error Values and other formats, which the grid's `####` rule still decides. A row
+keeps each answer per width, and a row the engine's change names arrives as a new instance, so
+an edit repaints only its row. The accessible name is the value's own fifteen-digit text wherever
+the paint differs (the core does this), and a copy is the engine's unfitted Value. So `=1/3`
+reads `0.333333` in a default column and `0.333333333` in one eleven digits wide, and
+`123456789` reads `1.23E+08`. Layer 2: `PaintedTextTests`; `SheetDisplayTests` now pins `####`
+on a formatted number, since General is fitted. **Open:** the engine charges `E`, `+`, `-` and
+`.` one digit width each, while the grid's `####` decision measures their own widths; a
+character wider than a digit could still hash a fitted text. That is ADR-0047's stated estimate
+until the case corpus has observed Excel.

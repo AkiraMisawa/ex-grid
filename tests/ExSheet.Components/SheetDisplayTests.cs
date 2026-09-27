@@ -29,10 +29,14 @@ public class SheetDisplayTests : SheetTestContext
         Assert.Contains("ex-cell-numeric", Cell(cut, "A2").ClassName);
     }
 
-    [Fact] // ADR-0016, SH-10: a number too wide for its column is ####, and its accessible name is the number
+    [Fact] // ADR-0016, SH-10: a formatted number too wide for its column is ####, and its accessible name is the number
     public void A_number_too_wide_is_hashed_by_the_grid()
     {
-        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("A1", "123456789012345"))));
+        // General is fitted to the column instead (ADR-0047 second round; PaintedTextTests).
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("A1"), "123456789012345");
+        sheet.SetFormat([CellAddress.Parse("A1")], NumberFormat.Parse("0"));
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
 
         var cell = Cell(cut, "A1");
         Assert.Matches("^#+$", cell.TextContent);
@@ -47,14 +51,14 @@ public class SheetDisplayTests : SheetTestContext
         Assert.Equal("A heading far wider than its column", CellText(cut, "A1"));
     }
 
-    [Fact] // ADR-0047, SH-10: at most 15 significant digits; the grid hashes what does not fit, never a shorter number
-    public void Fifteen_significant_digits_and_no_shorter_number()
+    [Fact] // ADR-0047 second and third rounds, SH-20: General is painted fitted to the column; the accessible name keeps 15 significant digits
+    public void Fifteen_significant_digits_in_the_name_and_general_fitted_in_the_paint()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("A1", "=1/3"))));
 
         var cell = Cell(cut, "A1");
         Assert.Equal("0.333333333333333", cell.GetAttribute("aria-label"));
-        Assert.Matches("^#+$", cell.TextContent);
+        Assert.Equal("0.333333", cell.TextContent);
     }
 
     [Fact] // ADR-0048: a date typed under ja-JP is a date, shown under the Sheet's culture, right-aligned as a number
