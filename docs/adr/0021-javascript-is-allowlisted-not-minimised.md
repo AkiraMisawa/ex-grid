@@ -260,3 +260,11 @@ have its keyboard taken. The call was already a JavaScript focus call made throu
 condition reads `document.activeElement` and no layout. This is the one decision about focus made
 in JavaScript, and the reason is recorded here: [ADR-0018](./0018-multiple-instances-must-be-independent.md)'s
 independence cannot be kept on a circuit otherwise.)*
+
+*(Added 2026-09-27, decided with the user: a capture-phase `mousedown` and `mouseup` on the
+instance root. They exist so that a primary-button press on the rows keeps its place among held keys.
+While keys are held, or a change of editing mode is being answered, such a press is held too and
+replayed in order behind them. Without this, a click straight after Enter reaches C# before the held
+Enter, and the Enter's move carries the Focus past the clicked cell: a value typed next lands a row
+too low, which was measured on the Server host at 0–60 ms and on WebAssembly at 0 ms. When nothing
+is held, the press passes through untouched. No layout is read.)*

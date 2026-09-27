@@ -296,3 +296,7 @@ round trip, so on a Server circuit.
 - **There is a third mode, Interactive**, for cells whose content is interactive
   ([ADR-0020](./0020-action-and-template-columns.md)). It rides on the same capture-phase key
   handling.
+
+*(Added 2026-09-27: ED-22's promise, that keys are neither lost nor reordered, covers a primary
+press on the rows as well. A press is ordered among held keys by the root's capture-phase pointer
+listener ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).)*
