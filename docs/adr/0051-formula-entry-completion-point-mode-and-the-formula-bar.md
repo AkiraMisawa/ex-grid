@@ -112,3 +112,13 @@ focused cell's full value at all times. The same role as Excel's formula bar".
 - **The Chrome seams grow**: the completion list, the argument hint, and the Formula Bar's two
   fields. Each is painted by Chrome from what the core hands it, under the built-in Chrome and
   `ExGrid.MudBlazor`'s alike ([ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)).
+
+## Added while building *(2026-09-27, decided with the user)*
+
+**Keys held while a mode change is in flight go to the surface that has DOM focus.** The
+capture-phase listener holds keys typed before the round trip that changes the editing mode has
+returned, then types them into an editor. It used to type them into the first `.ex-editor` in the
+markup, which is the cell's editor even when the user was typing in the Formula Bar. Characters
+could then land at the wrong caret. The listener now types them into the editor surface that holds
+DOM focus. This is the same allowlisted listener doing the same job
+([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).

@@ -71,3 +71,15 @@ arrive.
 - **Another ExSheet as a source.** Two ExSheets reading each other are two Sheets of one workbook
   (ADR-0046), and a workbook is where that belongs.
 - **Writing back.** A Linked Table is read-only to Formulas and to the user.
+
+## Settled while building *(2026-09-27, decided with the user)*
+
+- **The Sheet Document records each Linked Table's declaration: its name and its column names,
+  never its rows.** Opening a document therefore shows `#GETTING_DATA` until the Consumer pushes,
+  as this ADR says. It does not show `#NAME?` until the Consumer declares again.
+- **A column the table does not have is `#REF!`.**
+- **A table column used where one value is expected** gives its value when the column has exactly
+  one row, and `#VALUE!` otherwise. Implicit intersection is refused for the same reason
+  [ADR-0047](./0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)
+  refuses it.
+- **In the first version a table is declared once and never undeclared.**

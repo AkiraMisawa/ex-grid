@@ -134,3 +134,22 @@ Sheet has to rewrite the References to it in the other.
 
 - **ExSheet is built alongside ExGrid**, before ExGrid's sign-off. A change ExSheet needs in the
   core is made through an ADR, and it has to be right for a plain ExGrid Consumer as well.
+
+## Settled while building *(2026-09-27, decided with the user)*
+
+- **A cell's kind is per cell.** In Excel one column holds a text heading above a column of
+  amounts. ExGrid decided a value's kind (`ColumnType`) per column, and that kind is what
+  right-aligns a number and turns a number that does not fit into `####`. So ExSheet asks the core
+  for a per-cell kind ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), item 6). The
+  alternatives were rejected. Declaring every column Text would cut amounts with an ellipsis,
+  which is quietly wrong. Template Columns would give Space the Interactive meaning and break
+  entry.
+- **Long text does not overflow into empty neighbours; it is cut with an ellipsis.** This is a
+  known difference from Excel. A truncated text is visibly truncated, so it is the safe side, and
+  painting across cell boundaries would reach outside the row's own cells.
+- **A Sheet has a name**, `Sheet1` by default, recorded in the Sheet Document. A Reference
+  qualified with it resolves; any other qualifier is `#REF!` until there are several Sheets.
+- **An inserted row takes the formatting of the row above it, and an inserted column that of the
+  column to its left**, as Excel's default does. Entries are never copied.
+- **`ExSheet.Engine` is not published by the release workflow** while ExSheet is outside the
+  release (Definition of Done §2). The package smoke check still packs it, on its own feed.

@@ -97,3 +97,25 @@ places.
   insertion, Linked Tables, and recalculating only what changed are most of the work anyway.
 - **A large function library from day one.** Rejected by the admission rule. A hundred functions
   at "mostly Excel" are a hundred places to be quietly wrong.
+
+## Settled while building *(2026-09-27, decided with the user)*
+
+- **A function may be admitted with some argument values refused**, provided every refused value
+  gives an Error Value and never a different answer. `XLOOKUP`'s binary search (`search_mode` 2
+  and −2) answers only over data that is sorted as the mode says, and gives `#VALUE!` otherwise:
+  over unsorted data, which row Excel returns depends on an algorithm that is not documented.
+  Which of several equal keys it returns is to be observed in Excel first.
+- **Spilled arrays are not supported.** A Formula whose result is more than one cell gives
+  `#VALUE!`. Excel 365 would spill it. Implicit intersection, Excel 2019's behaviour, would return
+  one value instead, and was rejected: it would silently change what a Formula means on the day
+  spilling arrives. A refusal can become an answer later without changing any sheet already
+  written. Spilling brings `#SPILL!`, `A1#`, `@` and the functions built for it, so it gets an ADR
+  of its own.
+- **`IFERROR` and `ISERROR` do not catch `#CIRC!`**, as they do not catch `#GETTING_DATA`
+  ([ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)). A cycle is a fault in
+  the Sheet's construction, and `=IFERROR(A1, 0)` over one would show the 0 that this ADR refuses.
+- **A Formula keeps the whitespace it was typed with.** Rewriting References on an insertion or a
+  deletion changes only the Reference tokens.
+- **The example above, `=0.1+0.2-0.3`, is under verification.** Excel is reported to set a final
+  addition or subtraction that nearly cancels to 0. Ticket 19 asks a real Excel, and this ADR is
+  corrected by the answer.

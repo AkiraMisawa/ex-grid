@@ -973,6 +973,9 @@ nothing sees nothing change.
 | **DC-22** | MUST | The Formula Bar is the Cell Editor's second surface: typing in either updates both, a commit from either raises one Edit Intent, Escape from either cancels once, and keys typed in it reach the root's capture listener (ADR-0051/0007/0018) | Layer 2 + Layer 3 | one intent; both surfaces agree after every keystroke |
 | **DC-23** | MUST | The Formula Bar's height is Grid Metrics geometry and the rows take what it leaves; switched off, the geometry is as before (ADR-0028) | Layer 2 | the Viewport arithmetic includes the band exactly |
 | **DC-24** | MUST | The capture-phase `keydown` message's added text and caret are the only change to the JavaScript for ADR-0051 (ADR-0021) | inspect `wwwroot` | nothing else added |
+| **DC-26** | MUST | With a per-cell kind supplied, alignment, the numeric class, `####` and the default format follow the cell's kind; without it, the column's (ADR-0050, item 6) | Layer 1 + Layer 2 | a text cell in a Number column is left-aligned and never `####`; a number in a Text column is right-aligned and becomes `####` when it does not fit |
+| **DC-27** | MUST | After a Fill Intent the Consumer accepts, the Selection is source and target together; after one it refuses, it stays on the source (ADR-0050, item 5) | Layer 2 | as stated |
+| **DC-28** | MUST | Keys held during an editing-mode round trip are typed into the surface holding DOM focus — the Formula Bar when the user was typing there (ADR-0051) | Layer 3 on the Server host with 150 ms injected: F2 then typing into the bar at once | every character lands in the bar's text, in order |
 | **DC-25** | MUST | The declarations are per instance: two grids on one page, one declaring and one not, behave each as its own declarations say (ADR-0018) | Layer 3 | independent |
 
 ---

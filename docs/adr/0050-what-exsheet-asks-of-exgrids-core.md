@@ -111,3 +111,14 @@ the Consumer decides what it means.**
   are ExGrid features that any Consumer can use.
 - **No new JavaScript.** The drag, the header click, the Headings and the edge answer all run on
   events the grid already listens to ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
+
+## Added while building *(2026-09-27, decided with the user)*
+
+**6. A per-cell kind.** A Consumer can supply a cell's `ColumnType` per cell, overriding the
+column's. Alignment, the numeric class, the `####` decision
+([ADR-0016](./0016-column-width-and-overflow.md)) and the default format then follow the cell.
+Sorting and filtering stay per column. Without the declaration, the column's kind decides, as
+before. ADR-0046 says why a Sheet needs it.
+
+**Item 5, refined: after a fill, the Selection is the source and the target together**, as in
+Excel. The Consumer may still refuse the pattern, and then the Selection stays on the source.
