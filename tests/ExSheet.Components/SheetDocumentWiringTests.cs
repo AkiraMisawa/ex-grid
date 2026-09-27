@@ -47,6 +47,65 @@ public class SheetDocumentWiringTests : SheetTestContext
         Assert.Equal("2469", CellText(cut, "A2"));
     }
 
+    /// <summary>
+    /// A document as a Consumer would have saved it, the headless suite's (ExSheet.Engine.Tests'
+    /// HeadlessTests) in version 5: a culture that is not the component's, formats, a date, a
+    /// cycle, an error and a Linked Table nobody declared, with column B wide enough that
+    /// nothing in it is fitted.
+    /// </summary>
+    private const string Saved = """
+        {
+          "version": 5,
+          "name": "Sheet1",
+          "culture": "de-DE",
+          "columnWidths": [ { "at": "B:B", "width": 20, "custom": true } ],
+          "cells": [
+            { "at": "A1", "text": "Nominal" },
+            { "at": "B1", "number": 1234.5, "format": "#,##0.00" },
+            { "at": "A2", "text": "Rate" },
+            { "at": "B2", "number": 0.0375, "format": "0.00%" },
+            { "at": "A3", "text": "Start" },
+            { "at": "B3", "number": 46292, "format": "dd.mm.yyyy" },
+            { "at": "A4", "text": "Interest" },
+            { "at": "B4", "formula": "=ROUND(B1*B2,2)", "format": "#,##0.00" },
+            { "at": "B5", "formula": "=B3+30", "format": "dd.mm.yyyy" },
+            { "at": "B6", "formula": "=IF(B4>40,\"high\",\"low\")" },
+            { "at": "B7", "formula": "=SUM(B1,B4)/COUNT(B1:B4)" },
+            { "at": "B8", "formula": "=XLOOKUP(\"Rate\",A1:A4,B1:B4)" },
+            { "at": "B9", "formula": "=B10+1" },
+            { "at": "B10", "formula": "=B9+1" },
+            { "at": "B11", "formula": "=1/0" },
+            { "at": "B12", "formula": "=IFERROR(B11,-1)" },
+            { "at": "B13", "formula": "=SUM(Positions[PV])" }
+          ]
+        }
+        """;
+
+    [Fact] // ADR-0047/0048, SH-17 (ticket 17): a saved document's Values on screen are the ones ExSheet.Engine alone computes
+    public void A_saved_document_shows_what_the_engine_alone_computes()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, SheetDocument.FromJson(Saved)));
+
+        var alone = Sheet.Open(SheetDocument.FromJson(Saved));
+        var width = alone.GetColumnWidth(1)!.Value.Width;
+        for (var row = 1; row <= 13; row++)
+        {
+            foreach (var (column, name) in new[] { (0, "A"), (1, "B") })
+            {
+                var address = $"{name}{row}";
+                var headless = column == 1
+                    ? alone.GetDisplay(CellAddress.Parse(address), width)
+                    : alone.GetDisplay(CellAddress.Parse(address));
+                Assert.False(headless.CannotShow, address);
+                Assert.Equal(headless.Text, CellText(cut, address));
+            }
+        }
+        // Read on screen, not only compared: the document's own culture, not the component's.
+        Assert.Equal("46,29", CellText(cut, "B4"));
+        Assert.Equal("27.10.2026", CellText(cut, "B5"));
+        Assert.Equal("#DIV/0!", CellText(cut, "B11"));
+    }
+
     [Fact] // ADR-0048: out, in, the same Values
     public async Task The_document_round_trips_through_the_component()
     {
