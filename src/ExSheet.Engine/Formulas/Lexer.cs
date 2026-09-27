@@ -61,6 +61,14 @@ internal static partial class Lexer
 
     private static readonly string[] Operators = ["<>", "<=", ">=", "=", "<", ">", "+", "-", "*", "/", "^", "&", "%"];
 
+    /// <summary>
+    /// The whitespace a Formula may hold between its tokens: a space and a line break. Excel
+    /// refuses a tab (observed, verification/2026-09-27-windows-excel); a carriage return and the
+    /// other space characters are inferred (a carriage return is taken with its line feed, the
+    /// rest are refused).
+    /// </summary>
+    public static bool IsFormulaWhitespace(char c) => c is ' ' or '\n' or '\r';
+
     public static List<Token> Tokenize(string formula, int start)
     {
         var tokens = new List<Token>();
@@ -70,6 +78,10 @@ internal static partial class Lexer
             var afterSpace = false;
             while (i < formula.Length && char.IsWhiteSpace(formula[i]))
             {
+                if (!IsFormulaWhitespace(formula[i]))
+                {
+                    throw new FormulaSyntaxException(formula, i, "a Formula's whitespace is spaces and line breaks; Excel refuses a tab or any other space character.");
+                }
                 i++;
                 afterSpace = true;
             }

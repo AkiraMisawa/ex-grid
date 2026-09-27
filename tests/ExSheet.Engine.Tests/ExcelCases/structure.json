@@ -287,21 +287,30 @@
     },
     {
       "id": "STRUCT-032",
-      "source": "documented",
-      "description": "An insertion rewrites only the Reference tokens, keeping the whitespace around them",
+      "source": "observed",
+      "description": "An insertion rewrites only the Reference tokens, keeping the whitespace around them (the trailing space was dropped on entry)",
       "cells": {"A5": "1", "B1": "= A5 +  SUM( A1:A5 )\n* 2 "},
       "action": {"do": "insertRows", "row": 3, "count": 1},
       "check": "B1",
-      "expect": {"formula": "= A6 +  SUM( A1:A6 )\n* 2 "}
+      "expect": {"formula": "= A6 +  SUM( A1:A6 )\n* 2"}
     },
     {
       "id": "STRUCT-033",
-      "source": "documented",
-      "description": "A deletion writes #REF! in place of the Reference token alone",
+      "source": "observed",
+      "description": "A deletion writes #REF! in place of the Reference token, and the whitespace before it goes with it",
       "cells": {"A5": "1", "B1": "=  A5  *  C1 "},
       "action": {"do": "deleteRows", "row": 5, "count": 1},
       "check": "B1",
-      "expect": {"formula": "=  #REF!  *  C1 "}
+      "expect": {"formula": "=#REF!  *  C1"}
+    },
+    {
+      "id": "STRUCT-034",
+      "source": "uncertain",
+      "description": "The whitespace before a Reference a deletion makes #REF! goes with it after an operator too (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"A5": "1", "B1": "=C1 *  A5 + 1"},
+      "action": {"do": "deleteRows", "row": 5, "count": 1},
+      "check": "B1",
+      "expect": {"formula": "=C1 *#REF! + 1"}
     }
   ]
 }

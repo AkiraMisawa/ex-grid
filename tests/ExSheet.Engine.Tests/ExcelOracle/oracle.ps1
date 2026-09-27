@@ -53,6 +53,8 @@
         Excel writes on the check column, read from a copy of the workbook saved as .xlsx
         (absent is false), before the column's width is changed for reading its text.
       - A case with "oracleSkip" is blocked with that reason.
+      - "refusedEntry": true expects Excel to refuse one of the case's entries (a COM error when
+        the Formula is set); the case agrees when it does, and disagrees when Excel enters it.
       - "columnWidth" sets the check column's ColumnWidth (characters) before anything is entered,
         and its text is read at that width; every other case is read at width 100. The column's
         width after the case's entries is recorded ("columnWidth") and compared with "widens"
@@ -315,6 +317,8 @@ function Read-Answer($Sheet, [string]$Check, [bool]$UseFormula2, [bool]$KeepWidt
 function Compare-Answer($Target, $Answer) {
     $differences = New-Object Collections.Generic.List[string]
     $wantRefused = Has-Prop $Target 'refused'
+    # An expectation that the entry itself is refused is met only in the catch below, where Excel refused it.
+    if (Has-Prop $Target 'refusedEntry') { $differences.Add('expected the entry refused; Excel entered it') }
     if ($wantRefused -and -not $Answer.refused) { $differences.Add("expected a refusal ($($Target.refused)); Excel did it") }
     if (-not $wantRefused -and $Answer.refused) { $differences.Add("Excel refused the action: $($Answer.refusal)") }
     if (Has-Prop $Target 'value2') {
@@ -444,6 +448,7 @@ try {
                     if ($message.StartsWith('excel refused: ')) {
                         $result.excel = [ordered]@{ refusedEntry = $message.Substring(15) }
                         if ($null -eq $target) { $result.status = 'recorded' }
+                        elseif (Has-Prop $target 'refusedEntry') { $result.status = 'agree' }
                         else { $result.status = 'disagree'; $result.differences = @($message.Substring(15)) }
                     }
                     elseif ($message.StartsWith('blocked: ')) { $result.status = 'blocked'; $result.reason = $message.Substring(9) }

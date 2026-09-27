@@ -50,8 +50,10 @@ a constant read under the Sheet's culture and recorded already parsed. Typing in
 can give it a format, as in Excel: a date or a percentage typed as one, and a Formula of simple
 arithmetic (`+`, `-`, single-cell References, parentheses) takes the format of the first
 formatted cell it reads, so `=A1+7` over a date shows a date. It happens once, at entry. A Formula keeps the
-whitespace it was typed with; its tokens are written in Excel's spelling (`= sum( a1 )` is kept
-as `= SUM( A1 )`), and rewriting its References changes only the Reference tokens.
+whitespace it was typed with where Excel keeps it — before a token, but not at the end nor before
+a `,` — and a tab between tokens is refused, as Excel refuses it. Its tokens are written in
+Excel's spelling (`= sum( a1 , 2 ) ` is kept as `= SUM( A1, 2 )`), and rewriting its References
+changes only the Reference tokens; one rewritten to `#REF!` takes the whitespace before it along.
 
 A Sheet has a name, `Sheet1` unless it is given one (`new Sheet(culture, "Risk")`), and
 `SheetEdit.Rename` changes it as Excel does, rewriting every Reference qualified with the old

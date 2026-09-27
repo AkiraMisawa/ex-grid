@@ -318,12 +318,12 @@
     },
     {
       "id": "NAME-035",
-      "source": "documented",
-      "description": "A rename keeps the whitespace of the Formulas it rewrites",
+      "source": "observed",
+      "description": "A rename keeps the whitespace of the Formulas it rewrites (the trailing space was dropped on entry)",
       "cells": {"B1": "= Sheet1!A1 + 1 "},
       "action": {"do": "rename", "name": "My Sheet"},
       "check": "B1",
-      "expect": {"formula": "= 'My Sheet'!A1 + 1 "}
+      "expect": {"formula": "= 'My Sheet'!A1 + 1"}
     },
     {
       "id": "NAME-036",

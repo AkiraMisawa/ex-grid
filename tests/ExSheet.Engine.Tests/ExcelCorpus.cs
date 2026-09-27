@@ -55,7 +55,18 @@ internal static class ExcelCorpus
     /// <summary>Runs the case and returns every way the engine's answer differs from <c>expect</c>; empty when it agrees.</summary>
     public static IReadOnlyList<string> Run(JsonElement c)
     {
-        var sheet = Build(c);
+        // "refusedEntry": Excel refuses one of the case's entries, and the engine must refuse it too.
+        var refusesEntry = c.GetProperty("expect").TryGetProperty("refusedEntry", out var refusedEntry) && refusedEntry.GetBoolean();
+        Sheet sheet;
+        try
+        {
+            sheet = Build(c);
+        }
+        catch (FormulaSyntaxException e)
+        {
+            return refusesEntry ? [] : [$"an entry was refused: {e.Message}"];
+        }
+        if (refusesEntry) return ["expected an entry refused, but every entry was taken"];
         var refusal = Act(sheet, c);
         var at = CellAddress.Parse(c.GetProperty("check").GetString()!);
         var expect = c.GetProperty("expect");

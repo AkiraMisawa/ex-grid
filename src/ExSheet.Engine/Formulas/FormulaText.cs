@@ -4,12 +4,15 @@ using System.Text;
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// A Formula's stored text (ADR-0047). It keeps the whitespace it was typed with, before and
-/// between tokens and at the end; each token is written in the engine's invariant spelling —
-/// declared function names, References, booleans and Error Values in upper case, numbers as the
-/// shortest text that reads back as the same double. Rewriting References, on an insertion, a
-/// deletion, a copy or a fill, replaces only the Reference tokens and leaves every other
-/// character where it was.
+/// A Formula's stored text (ADR-0047). It keeps the whitespace it was typed with where Excel
+/// keeps it, which is before a token: whitespace at the end of the Formula, and before a
+/// <c>,</c>, is dropped, as Excel drops it on entry (observed, verification/2026-09-27-windows-excel).
+/// Each token is written in the engine's invariant spelling — declared function names,
+/// References, booleans and Error Values in upper case, numbers as the shortest text that reads
+/// back as the same double. Rewriting References, on an
+/// insertion, a deletion, a copy or a fill, replaces only the Reference tokens and leaves every
+/// other character where it was — except that a Reference rewritten to <c>#REF!</c> takes the
+/// whitespace before it with it, as Excel's does.
 /// </summary>
 internal static class FormulaText
 {
@@ -21,7 +24,8 @@ internal static class FormulaText
         for (var i = 0; i < tokens.Count; i++)
         {
             var token = tokens[i];
-            text.Append(formula, at, token.Position - at);
+            // Excel keeps whitespace only where a token follows it; the end is not one, nor a comma.
+            if (token.Kind is not (TokenKind.End or TokenKind.Comma)) text.Append(formula, at, token.Position - at);
             WriteToken(text, formula, token, i + 1 < tokens.Count ? tokens[i + 1] : null);
             at = token.Position + token.Length;
         }
@@ -44,9 +48,20 @@ internal static class FormulaText
             var mapped = map(token.Reference!);
             if (mapped is not null && mapped == token.Reference) continue;
             text ??= new StringBuilder(stored.Length + 8);
-            text.Append(stored, at, token.Position - at);
-            if (mapped is null) text.Append(ErrorValue.Ref.ToText());
-            else mapped.WriteTo(text);
+            if (mapped is null)
+            {
+                // The whitespace before a Reference that becomes #REF! goes with it (observed:
+                // "=  A5  *  C1" with row 5 deleted is "=#REF!  *  C1").
+                var kept = token.Position;
+                while (kept > at && Lexer.IsFormulaWhitespace(stored[kept - 1])) kept--;
+                text.Append(stored, at, kept - at);
+                text.Append(ErrorValue.Ref.ToText());
+            }
+            else
+            {
+                text.Append(stored, at, token.Position - at);
+                mapped.WriteTo(text);
+            }
             at = token.Position + token.Length;
         }
         if (text is null) return stored;
