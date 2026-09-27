@@ -11,7 +11,7 @@ namespace ExGrid.Components.Tests;
 /// A popover with no room closes (ADR-0040, decided 2026-09-25): shrink the box far
 /// enough and the max-height falls to nothing, leaving an invisible popover that still
 /// holds the keyboard. Below one row of room it closes as a Cancel. 20px rows under a
-/// 20px header, in a Fill box whose size the browser reports.
+/// 20px header, in a Stretch box whose size the browser reports.
 /// </summary>
 public class PopoverRoomTests : GridTestContext
 {
@@ -21,7 +21,7 @@ public class PopoverRoomTests : GridTestContext
             .Add(g => g.TotalCount, 50)
             .Add(g => g.Columns, TestRows.Wide(6))
             .Add(g => g.RowHeight, 20d)
-            .Add(g => g.ViewportHeight, ViewportSize.Fill)
+            .Add(g => g.ViewportHeight, ViewportSize.Stretch)
             .Add(g => g.ViewportWidth, 350)
             .Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> _) => { }));
 

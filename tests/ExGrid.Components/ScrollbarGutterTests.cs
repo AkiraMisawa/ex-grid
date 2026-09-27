@@ -189,7 +189,7 @@ public class ScrollbarGutterTests : GridTestContext
             .Add(g => g.Columns, TestRows.Wide(100))
             .Add(g => g.RowHeight, RowHeightPx)
             .Add(g => g.ViewportHeight, 100)
-            .Add(g => g.ViewportWidth, ViewportSize.Fill));
+            .Add(g => g.ViewportWidth, ViewportSize.Stretch));
         await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 350, 100));
         // Column 3 spans 300-400, at the right edge of a 350px box.
         await cut.FindAll(".ex-cell")[0].MouseDownAsync(new() { Button = 0, Buttons = 1, OffsetX = 310, OffsetY = 5 });

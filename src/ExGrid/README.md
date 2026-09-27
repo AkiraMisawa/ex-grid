@@ -4,8 +4,10 @@ An Excel-like grid for Blazor, built for reading money and risk numbers:
 
 - virtualised on both axes (a million rows and a hundred columns keep the same DOM)
 - pinned columns and Header Groups
-- rectangular selection, the keyboard, and copy and paste as a spreadsheet user expects them
-- filter panels, a column menu and a Context Menu that a design system can replace
+- rectangular selection, the keyboard, and copy and paste as a spreadsheet user expects them —
+  Delete, Ctrl+D / Ctrl+R and Ctrl+Z included, with your application keeping the history
+- Ctrl+F that searches every row, not only the painted ones
+- filter panels, a column menu, a Context Menu and a find panel that a design system can replace
 
 The grid neither holds nor executes. The data, sorting, filtering and edits belong to your
 application, the Consumer. The grid displays what it is given and tells you what the user asked

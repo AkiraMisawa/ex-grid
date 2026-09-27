@@ -59,7 +59,7 @@
         {
             var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
             var value = column.Value(Row);
-            var text = TextOf(column, value);
+            var text = column.Info.TextFor(value);
             var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
             @* aria-label only when hashed: the accessible name of a #### cell is the
                real value (ADR-0016/0033), and on every other cell the text names itself. *@
@@ -87,7 +87,7 @@
             {
                 var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
                 var value = column.Value(Row);
-                var text = TextOf(column, value);
+                var text = column.Info.TextFor(value);
                 var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
                 <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
@@ -450,14 +450,8 @@
     /// one, the bare ToString where it does not. Null is a Blank and paints empty
     /// (ADR-0023).</summary>
     internal static string CellText(GridColumn<TRow> column, TRow row)
-        => TextOf(column, column.Value(row));
+        => column.Info.TextOf(row);
 
-    /// <summary>The same text from a value already fetched — the row fetches once and
-    /// derives both the text and the tone from it.</summary>
-    internal static string TextOf(GridColumn<TRow> column, object? value)
-        => value is null
-            ? ""
-            : column.Format is { } format ? format(value) : value.ToString() ?? "";
 
     /// <summary>The column's tone for a value (ADR-0006): None without a rule, None for a
     /// null — a Blank has no sign and the rule is never asked about it.</summary>

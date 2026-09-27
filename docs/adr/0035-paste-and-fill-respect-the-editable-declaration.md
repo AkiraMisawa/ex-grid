@@ -131,3 +131,53 @@ forbid a commit the grid has no objection to, turning a mis-sized selection into
   permission system: the Consumer applies the intent and remains the last word (ADR-0007).
 - **The Definition of Done gains ED-19**, and CP-16 keeps its clipboard-side half unchanged: the
   refusal itself, its order among the rules, and the silence that used to follow a fill.
+
+## Ctrl+D, Ctrl+R and Backspace — added 2026-09-26
+
+*(Recorded after a comparison against Excel found the keys missing. Clear, Excel's Delete, is a
+decision of its own: [ADR-0046](./0046-delete-raises-a-clear-intent-not-a-paste-of-nothing.md).)*
+
+**Ctrl+D fills down and Ctrl+R fills right, and each is a paste the grid assembles from the
+selection's own first row or column.** They raise the same `GridPasteIntent` Ctrl+Enter raises,
+through the same gate, so they need no rule of their own for editability — only for where the
+source comes from:
+
+- **The source is the range's top row (Ctrl+D) or left column (Ctrl+R), and the target is the
+  rest of the range.** A source 1 row tall, or 1 column wide, tiles the target exactly — the
+  ADR-0014 arithmetic, unchanged.
+- **A range one row tall fills from the row above it; one column wide, from the column to its
+  left.** That is Excel's Ctrl+D on a single cell. At the top row, or the first column, there is
+  nothing to fill from, and the fill is refused as `NothingToFillFrom` — Excel does nothing
+  there, and a key that does nothing and says nothing is what this component does not do.
+- **One range only.** A multi-range selection is refused as `MultipleRanges`: each range would
+  need a source of its own, and one intent carries one source block. Stitching several intents
+  together would break "one gesture, one Ctrl+Z" (ADR-0007).
+- **The source values are the raw, locale-free form** the clipboard's `text/html` flavour
+  carries ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)) — never the displayed text,
+  which may be rounded, and never `####`. They are read from the Window where it has the rows and
+  asked for through the copy route where it does not; an answer that is short, or nobody to ask,
+  refuses the fill as `SourceUnavailable` rather than filling from a guess. A source larger than
+  the copy cap is refused as `TooLarge`, the paste's own cap reason.
+- **The editability judged is the target's.** For Ctrl+R the source column is read, not written,
+  so it may be non-editable; the columns the fill writes may not.
+- **No verdict.** The value was not typed in an editor; it is already in the data. A fill by key
+  is judged as a paste is, on the operation only (ADR-0034).
+- **Claimed only on a grid with an editable column, and not while editing** — a display-only grid
+  leaves the browser its own Ctrl+D and Ctrl+R (ADR-0010/0020). With no Focus, the key only places
+  one (ADR-0012).
+
+**Backspace on a cell opens Overwrite with nothing in it.** It is Excel's "clear this cell and
+start typing": the editor opens exactly as a printable key opens it, minus the first character
+(ADR-0010). Nothing is written until the editor commits — Escape leaves the cell as it was, which
+is also what Excel does. It is an editor entry and nothing else, so it is judged where every
+editor entry is: on an editable cell whose row is in hand, and not at all on any other cell. It is
+claimed on the same grids as the printable keys.
+
+**The order of the fill keys' refusals** *(settled in review, 2026-09-27)* is this ADR's own:
+the declaration first. `EmptySelection` → `TargetNotEditable` → `MultipleRanges` →
+`NothingToFillFrom` → `TooLarge`. Each range is judged on the target it would have on its own, so
+a range at the first row over a non-editable column is refused for the column — the refusal that
+no reselection will cure — rather than told there is nothing above it.
+
+**Consequences.** `PasteRefusalReason` gains `NothingToFillFrom`, `MultipleRanges` and
+`SourceUnavailable`. Chrome words them (ADR-0010); the grid holds no string.
