@@ -160,3 +160,27 @@ culture. Otherwise `1234.5` from Excel would be misread under `de-DE`.
 
 **A paste over whole columns is not capped.** It is executed and measured (SH-19). Principle 5
 puts caps only on what cannot be executed.
+
+## Added while building, fourth round *(2026-09-27, decided with the user)*
+
+**Item 10, refined.** A field is marked **invariant** when it is a value in a form no culture
+changes: a number, an ISO date, or `TRUE`/`FALSE`. Such fields come from Excel's `x:num="…"` or from
+ExGrid's own HTML. ExGrid marks its own HTML with `<table data-ex-grid="invariant">`, so a paste can
+recognise it. Whether Chrome and Edge keep that attribute on the asynchronous clipboard route is a
+layer-3 check. If they strip it, those fields are read as shown text: slower to trust, never
+misread as a different number.
+
+**11. The painted text may differ from the value's text.** A Consumer can supply a cell's painted
+text, and is given the column's resolved content width and metrics. The grid paints the answer.
+Where it differs from the value's own text, the grid uses the value's text as the accessible name,
+as it does behind `####` ([ADR-0016](./0016-column-width-and-overflow.md)). ExSheet paints General
+fitted to the column this way (ADR-0047). Without the declaration nothing changes.
+
+**12. Resize grips without the column menu.** A Consumer can have the column-width grips painted
+without the column-menu button. A Sheet has Excel's Headings, which carry no menu. Size to fit stays
+on a double-click of the edge.
+
+**A press into the Name Box over a Formula that cannot be read** is Rejected like any other commit
+([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)). The keyboard
+goes back to the editor, and whatever is typed next lands in the Formula, where it can be seen.
+Nothing typed is thrown away, so this is kept.

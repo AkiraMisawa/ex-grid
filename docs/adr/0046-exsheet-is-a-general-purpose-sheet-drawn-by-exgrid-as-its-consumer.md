@@ -154,3 +154,10 @@ Sheet has to rewrite the References to it in the other.
   column to its left**, as Excel's default does. Entries are never copied.
 - **`ExSheet.Engine` is not published by the release workflow** while ExSheet is outside the
   release (Definition of Done §2). The package smoke check still packs it, on its own feed.
+
+- **Column widths are part of the Sheet Document** *(decided the same day)*. In ExGrid a column
+  width is View State, a person's setting over data someone else owns. In a Sheet it is part of the
+  document, as in Excel's files. So widths are recorded, and move with inserted and deleted columns
+  as formats do. A width the user never set stays default and is not recorded.
+- **A style can be applied to several ranges in one step**, whole columns and rows included. It is
+  one undo step, like any other operation.
