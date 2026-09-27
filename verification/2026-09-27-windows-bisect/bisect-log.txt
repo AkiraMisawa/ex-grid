@@ -1,0 +1,16 @@
+# bad: [789b208f81f90864c3bab4cb66fbca648cf772bb] Row inspectors in the DemoHost, a page index, and an action that leaves the keyboard where it was (#24)
+# good: [13311ffadb0156aadea75e7af85ab81227970fe8] Discharge VZ-14 on a Windows desktop at 125%, and stop Playwright hiding the scale
+git bisect start '789b208' '13311ff'
+# bad: [94c806b8f48d4342b364a905b923d030a6264bf1] Move CI to the actions' Node 24 majors, and retire dev/claude-code (#20)
+git bisect bad 94c806b8f48d4342b364a905b923d030a6264bf1
+# bad: [3a80b0992e42a884b30105a133bf1e935d90ceb0] Document the public API of the core (part 2) and the Wrapper
+git bisect bad 3a80b0992e42a884b30105a133bf1e935d90ceb0
+# bad: [35c60f1e0882dae1fc95ffa2aa739f6829fad382] Merge the Definition of Done's row counts and the harness's layer-3 half (#2)
+git bisect bad 35c60f1e0882dae1fc95ffa2aa739f6829fad382
+# good: [b4a32b9497610aa1517f2d0ab8bdcdf6635ffd35] Measure what a render allocates per cell, and stop the grid composing it
+git bisect good b4a32b9497610aa1517f2d0ab8bdcdf6635ffd35
+# bad: [062be53a87e82add40ee1a4917ab05bd8029e81a] Hold the large-data criteria to the Definition of Done's numbers, and write the harness's layer-3 half
+git bisect bad 062be53a87e82add40ee1a4917ab05bd8029e81a
+# good: [7ee1c0c681d442eea8054755cea58cf162ffa05a] Remove the repository copy of the grill-with-docs skill
+git bisect good 7ee1c0c681d442eea8054755cea58cf162ffa05a
+# first bad commit: [062be53a87e82add40ee1a4917ab05bd8029e81a] Hold the large-data criteria to the Definition of Done's numbers, and write the harness's layer-3 half
