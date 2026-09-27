@@ -543,6 +543,63 @@ test('DC-8: a block pasted from the real clipboard onto one cell spills, and bec
     await expect(cell(grid, 'G3')).toHaveText('');
 });
 
+// Excel's HTML flavour for one column of three cells, as a paste event on Windows Chrome hands
+// it over (verification/2026-09-27-windows-excel-2/clipboard-probe-chrome.json): Excel's head
+// and style sheet, each cell's shown text, no x:num.
+const excelColumnHtml = (width, cells) => [
+    '<html xmlns:v="urn:schemas-microsoft-com:vml"\r\nxmlns:o="urn:schemas-microsoft-com:office:office"\r\n',
+    'xmlns:x="urn:schemas-microsoft-com:office:excel"\r\nxmlns="http://www.w3.org/TR/REC-html40">\r\n\r\n<head>\r\n',
+    '<meta http-equiv=Content-Type content="text/html; charset=utf-8">\r\n<meta name=ProgId content=Excel.Sheet>\r\n',
+    '<meta name=Generator content="Microsoft Excel 15">\r\n<style>\r\n<!--table\r\n\t{mso-displayed-decimal-separator:"\\.";\r\n',
+    '\tmso-displayed-thousand-separator:"\\,";}\r\ntd\r\n\t{mso-number-format:General;\r\n\twhite-space:nowrap;}\r\n',
+    '.xl65\r\n\t{mso-number-format:"Short Date";}\r\n.xl66\r\n\t{mso-number-format:Standard;}\r\n-->\r\n</style>\r\n</head>\r\n\r\n',
+    '<body link="#467886" vlink="#96607D">\r\n\r\n',
+    `<table border=0 cellpadding=0 cellspacing=0 width=${width} style='border-collapse:\r\n collapse'>\r\n<!--StartFragment-->\r\n`,
+    ` <col width=${width} style='mso-width-source:userset'>\r\n`,
+    ...cells.map((text, i) => ` <tr height=19 style='height:14.5pt'>\r\n  <td height=19${i ? ` class=xl6${4 + i}` : ''} align=right style='height:14.5pt'>${text}</td>\r\n </tr>\r\n`),
+    '<!--EndFragment-->\r\n</table>\r\n\r\n</body>\r\n\r\n</html>\r\n',
+].join('');
+
+// A paste event carrying every flavour Excel's clipboard showed the page on Windows: text/plain
+// with the values, text/html with the shown text, text/rtf, and a file (the picture of the
+// range). Dispatched on the grid's focused root, where the browser's own paste lands.
+async function pasteAsExcel(grid, cells, width) {
+    await grid.evaluate((root, { text, html }) => {
+        const data = new DataTransfer();
+        data.setData('text/plain', text);
+        data.setData('text/html', html);
+        data.setData('text/rtf', '{\\rtf1\\ansi 6\\par}');
+        data.items.add(new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'image.png', { type: 'image/png' }));
+        root.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+    }, { text: '6\r\n26/09/2026\r\n1,234.50\r\n', html: excelColumnHtml(width, cells) });
+}
+
+test('DC-8/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused, and the notice says why', async ({ page }) => {
+    const grid = sheet(page);
+    await clickCell(grid, 'F7');
+    await pasteAsExcel(grid, ['6', '######', '######'], 49);
+    const notice = page.locator('.ex-sheet-notice');
+    await expect(notice).toContainText('source column was too narrow to show the value');
+    await expect(notice).toContainText('F8');
+    // It stands: the grid placing the spilled block afterwards is the paste's own move.
+    await page.waitForTimeout(500);
+    await expect(notice).toContainText('too narrow');
+    await expect(cell(grid, 'F7')).toHaveText('');
+    await expect(cell(grid, 'F8')).toHaveText('');
+    await expect(cell(grid, 'F9')).toHaveText('');
+});
+
+test('DC-8: Excel\'s column wide enough, with the same flavours, file and RTF included, pastes and spills', async ({ page }) => {
+    const grid = sheet(page);
+    await clickCell(grid, 'F7');
+    await pasteAsExcel(grid, ['6', '26/09/2026', '1,234.50'], 74);
+    await expect(cell(grid, 'F7')).toHaveText('6');
+    await expect(cell(grid, 'F8')).not.toHaveText('');
+    await expect(cell(grid, 'F9')).toHaveText('1,234.50');
+    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'F7', 'F9');
+    await expect(page.locator('.ex-sheet-notice')).toBeEmpty();
+});
+
 // What the grid's own paste handler is given, read from a listener ahead of it: the
 // ADR-0050 fourth-round question is what the browser hands a paste, not what a
 // navigator.clipboard.read() — which sanitises again — would say.

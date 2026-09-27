@@ -92,6 +92,12 @@
     // A notice raised by a commit: the grid moves the Focus after the commit, as part of the
     // same gesture, and that move does not clear it.
     private bool _noticeOutlivesCommitMove;
+    // A notice raised by a paste: after a paste onto one cell the grid makes the spilled block the
+    // Selection (ADR-0050 item 3), whether or not the Sheet wrote it, and that move is the paste's
+    // own. Without this, a refused spill would say nothing (observed on Windows, 2026-09-27).
+    private SelectionRange? _noticeOutlivesSelectionOf;
+    // The range the grid will select once the paste being handled returns; null outside a paste.
+    private SelectionRange? _pasteSelects;
     // The copy this Sheet last wrote, recognised on a paste by its fields (ADR-0050 item 9).
     internal SheetOwnCopy? OwnCopy { get; private set; }
     // The engine's sentence for the copy refused last, for the notice the refusal raises.
@@ -122,6 +128,8 @@
             // A selection change is the user's own action, and clears the notice — except the
             // move that completes the commit gesture whose refusal the notice reports.
             if (_noticeOutlivesCommitMove) _noticeOutlivesCommitMove = false;
+            else if (_noticeOutlivesSelectionOf is { } pasted && selection.Ranges.Count == 1 && selection.Ranges[0] == pasted)
+                _noticeOutlivesSelectionOf = null;
             else if (_notice is not null)
             {
                 ClearNotice();
@@ -449,6 +457,7 @@
     {
         _notice = sentence;
         _noticeOutlivesCommitMove = outlivesCommitMove;
+        _noticeOutlivesSelectionOf = _pasteSelects;
     }
 
     /// <summary>The user acted: what the notice said is behind them.</summary>
@@ -456,6 +465,7 @@
     {
         _notice = null;
         _noticeOutlivesCommitMove = false;
+        _noticeOutlivesSelectionOf = null;
     }
 
     private async Task OnNameBoxEnteredAsync(string typed)
@@ -518,12 +528,29 @@
     /// that cannot be read as a Formula is taken as text, as Excel takes it (ADR-0048). A shown
     /// field that is a run of <c>#</c> is a value too wide for its source column, the value itself
     /// missing, and refuses the whole paste by name (<see cref="SheetClipboard.IsTooNarrowToShow"/>).
+    /// A refusal's notice outlives the grid placing the spilled block as the Selection when this
+    /// returns: that move is the paste's own, not the user's next action.
     /// </summary>
     private async Task OnPasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
     {
         // Rows are places, so the order never moves (ADR-0046); an intent written under any
         // other version names positions that mean something else, and is dropped (ADR-0011).
         if (intent.RowSequenceVersion != 0) return;
+        // One target is the only shape the grid places afterwards (ADR-0050 item 3); when it is
+        // already the Selection, no move follows, and the user's next one clears the notice.
+        _pasteSelects = intent.Plan.Targets.Count == 1 ? intent.Plan.Targets[0] : null;
+        try
+        {
+            await PasteAsync(intent);
+        }
+        finally
+        {
+            _pasteSelects = null;
+        }
+    }
+
+    private async Task PasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
+    {
         if (OwnCopy is { } own && own.IsPastedAs(intent.Values))
         {
             await PasteEntriesAsync(own.Block, intent.Plan.Targets);

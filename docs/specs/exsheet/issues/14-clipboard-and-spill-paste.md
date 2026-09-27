@@ -198,3 +198,17 @@ Context Menu copy on either host — recorded per run in `metrics.json` as `DC-3
 ADR-0050's fallback (fields read as shown text when the marker is stripped) is not reached in
 Chromium; Edge proper has not been checked here. A real Excel copy (DC-33's other half) is not
 available on this machine.
+
+2026-09-27, the refusal of a pasted run of `#` said nothing on Windows
+(verification/2026-09-27-windows-2, "the source column too narrow"). The refusal was computed and
+the notice raised, but the paste was a spill (three cells onto F7), and the grid makes the spilled
+block the Selection once `OnPaste` returns; ExSheet took that move as the user's next action and
+cleared the notice. Every refusal ExSheet raises while handling a spilled paste was lost the same
+way; e361956's tests pasted into a selected range, where the grid does not move. A notice raised
+while a paste is handled now outlives the grid selecting that paste's one target range, and the
+user's next selection still clears it. The Selection still moves to the block after a refused
+spill, since the grid is not told of the refusal. Layer 2: three `ClipboardWiringTests` with
+Excel's HTML as the Windows paste event carried it. Layer 3 (`declarations.spec.mjs`): a
+synthetic paste event carrying text/plain, text/html, text/rtf and a file, too narrow (refused by
+name, the notice still standing 500 ms later) and wide enough (pasted, spilled, selected), on
+Chrome against both hosts.
