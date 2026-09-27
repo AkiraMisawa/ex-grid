@@ -49,18 +49,31 @@ public class ColumnWidthTests : SheetTestContext
         Assert.Equal("2026/09/26", CellText(cut, "A1"));
     }
 
-    [Fact] // ADR-0047 second round: text, a Formula and a number that fits never widen a column
-    public async Task Text_formulas_and_numbers_that_fit_do_not_widen()
+    [Fact] // ADR-0047 second round: text, a Formula whose result is text, and numbers that fit never widen a column
+    public async Task Text_and_numbers_that_fit_do_not_widen()
     {
         var cut = RenderSheet();
 
         await EnterAsync(cut, "A1", "A heading far wider than its column");
-        await EnterAsync(cut, "B1", "=1234567890*10");
+        await EnterAsync(cut, "B1", "=\"A heading far wider than its column\"");
         await EnterAsync(cut, "C1", "1234.5");
+        await EnterAsync(cut, "D1", "=1234*10");
 
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 1));
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 2));
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 3));
+    }
+
+    [Fact] // ADR-0047: a Formula's numeric result widens a default-width column as a typed number does, as Excel was observed to (WD-007)
+    public async Task A_formulas_number_widens_as_a_typed_one_does()
+    {
+        var cut = RenderSheet();
+
+        await EnterAsync(cut, "A1", "=123456789*10");
+
+        Assert.True(WidthOf(cut, 0) > SheetColumns.DefaultWidthPx);
+        Assert.Equal("1234567890", CellText(cut, "A1"));
     }
 
     [Fact] // ADR-0047 second round, ADR-0046 (a recorded width says whether the user set it): a width an entry widened the column to is automatic, and a longer entry widens it again

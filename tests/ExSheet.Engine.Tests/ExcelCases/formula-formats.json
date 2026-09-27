@@ -1,6 +1,6 @@
 {
   "area": "formula-formats",
-  "about": "The format a Formula gives a General cell when it is entered (ADR-0047, second round). Excel is widely observed to give a Formula in simple arithmetic the format of the first formatted cell it reads, so that a date plus a number shows as a date; Microsoft does not document the rule for any function ExSheet declares (it does for DATE, TODAY and NOW, which ExSheet does not have). Every case is therefore uncertain until the oracle asks Excel. The engine applies the rule only to Formulas made of single-cell References, constants, + and - and parentheses, only when the cell's format is General, and only when the Formula is entered; the cases where it gives no format (multiplication, functions, &) record the engine's answer, and Excel may give one there.",
+  "about": "The format a Formula gives a General cell when it is entered (ADR-0047, second round). Microsoft does not document the rule for any function ExSheet declares (it does for DATE, TODAY and NOW, which ExSheet does not have), so the engine applies only what these cases have observed Excel to do: simple arithmetic (single-cell References, constants, + and -, parentheses) takes the format of the first formatted cell it reads, except that a date minus a date gives none; MIN and MAX over References take the format of their first formatted argument; anything else gives none. It applies only when the cell's format is General, and only when the Formula is entered. The uncertain cases record the engine's answer where Excel has not been asked.",
   "cases": [
     {
       "id": "FF-001",
@@ -22,12 +22,12 @@
     },
     {
       "id": "FF-003",
-      "source": "uncertain",
-      "description": "A date minus a date shows as a date, the number of days read as a serial",
+      "source": "observed",
+      "description": "A date minus a date is a number of days, and gives no format",
       "cells": {"A1": "9/26/2026", "A2": "9/20/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1-A2"}},
       "check": "B1",
-      "expect": {"value2": 6, "text": "1/6/1900", "numberFormat": "m/d/yyyy"}
+      "expect": {"value2": 6, "text": "6", "numberFormat": "General"}
     },
     {
       "id": "FF-004",
@@ -104,7 +104,7 @@
     {
       "id": "FF-011",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: multiplication gives no format",
+      "description": "Multiplication gives no format",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1*1"}},
       "check": "B1",
@@ -112,17 +112,17 @@
     },
     {
       "id": "FF-012",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a function gives no format",
+      "source": "observed",
+      "description": "MAX over dates takes the date format",
       "cells": {"A1": "9/26/2026", "A2": "9/27/2026"},
       "action": {"do": "enter", "cells": {"B1": "=MAX(A1:A2)"}},
       "check": "B1",
-      "expect": {"text": "46292", "numberFormat": "General"}
+      "expect": {"text": "9/27/2026", "numberFormat": "m/d/yyyy"}
     },
     {
       "id": "FF-013",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a mixed expression is not simple arithmetic and gives no format",
+      "description": "A mixed expression is not simple arithmetic and gives no format",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1+2*3"}},
       "check": "B1",
@@ -145,6 +145,69 @@
       "action": {"do": "enter", "cells": {"B1": "=A1+A2"}},
       "check": "B1",
       "expect": {"text": "11", "numberFormat": "General"}
+    },
+    {
+      "id": "FF-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a date minus a number is a date",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1-7"}},
+      "check": "B1",
+      "expect": {"text": "9/19/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-017",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: MIN over dates takes the date format",
+      "cells": {"A1": "9/26/2026", "A2": "9/20/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=MIN(A1:A2)"}},
+      "check": "B1",
+      "expect": {"text": "9/20/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-018",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: MAX over dates plus a number takes the date format",
+      "cells": {"A1": "9/26/2026", "A2": "9/20/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=MAX(A1:A2)+1"}},
+      "check": "B1",
+      "expect": {"text": "9/27/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-019",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: MAX takes the format of its first formatted argument, an unformatted one before it passed over",
+      "cells": {"A1": "9/26/2026", "C1": "5"},
+      "action": {"do": "enter", "cells": {"B1": "=MAX(C1,A1)"}},
+      "check": "B1",
+      "expect": {"text": "9/26/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-020",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: SUM over dates gives no format",
+      "cells": {"A1": "9/26/2026", "A2": "9/20/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=SUM(A1:A2)"}},
+      "check": "B1",
+      "expect": {"text": "92576", "numberFormat": "General"}
+    },
+    {
+      "id": "FF-021",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a date minus a date plus a number gives no format: the difference is days, and the number is General",
+      "cells": {"A1": "9/26/2026", "A2": "9/20/2026", "A3": "7"},
+      "action": {"do": "enter", "cells": {"B1": "=A1-A2+A3"}},
+      "check": "B1",
+      "expect": {"text": "13", "numberFormat": "General"}
+    },
+    {
+      "id": "FF-022",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a date minus a date formatted as a percentage is a date",
+      "cells": {"A1": "9/26/2026", "A2": "10%"},
+      "action": {"do": "enter", "cells": {"B1": "=A1-A2"}},
+      "check": "B1",
+      "expect": {"numberFormat": "m/d/yyyy"}
     }
   ]
 }
