@@ -2,15 +2,22 @@ using System.Globalization;
 
 namespace ExSheet.Engine;
 
-/// <summary>Writes a constant back as the text a user would type for it under a culture.</summary>
+/// <summary>
+/// Writes a constant back as the text a user would type for it under a culture, so that the Cell
+/// Editor opens on something that, typed again, gives the same Entry: a date as the culture's
+/// short date, a percentage with <c>%</c>, any other number in General form.
+/// </summary>
 internal static class EntryText
 {
-    public static string Write(Value constant, CultureInfo culture)
+    public static string Write(Value constant, NumberFormat format, CultureInfo culture)
     {
         switch (constant.Kind)
         {
             case ValueKind.Number:
-                return constant.Number.ToString("G15", culture);
+                var number = constant.Number;
+                if (format.IsDate && number >= 0 && number < DateSerial.Maximum + 1) return DateTimeText(number, culture);
+                if (format.IsPercent) return NumberText.General(number * 100, culture) + "%";
+                return NumberText.General(number, culture);
             case ValueKind.Boolean:
             case ValueKind.Error:
                 return constant.ToString();
@@ -23,5 +30,16 @@ internal static class EntryText
                 }
                 return text;
         }
+    }
+
+    private static string DateTimeText(double serial, CultureInfo culture)
+    {
+        var whole = Math.Floor(serial);
+        var hasTime = serial != whole;
+        var twelveHour = culture.DateTimeFormat.LongTimePattern.Contains('t', StringComparison.Ordinal);
+        var time = NumberFormat.Parse(twelveHour ? "h:mm:ss AM/PM" : "h:mm:ss");
+        if (whole == 0 && hasTime) return time.Format(Value.FromNumber(serial), culture).Text;
+        var date = NumberFormat.Parse(ConstantParser.DateCode(culture)).Format(Value.FromNumber(whole), culture).Text;
+        return hasTime ? date + " " + time.Format(Value.FromNumber(serial), culture).Text : date;
     }
 }

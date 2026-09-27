@@ -66,6 +66,8 @@ public sealed class SheetDocument
                         }
                     }
                 }
+                if (!cell.Format.IsGeneral) json.WriteString("format", cell.Format.Code);
+                if (cell.Alignment != HorizontalAlignment.General) json.WriteString("align", AlignmentName(cell.Alignment));
                 json.WriteEndObject();
             }
             json.WriteEndArray();
@@ -156,6 +158,8 @@ public sealed class SheetDocument
         if (element.ValueKind != JsonValueKind.Object) throw new SheetDocumentException("A cell is not a JSON object.");
         CellAddress? address = null;
         Entry? entry = null;
+        var format = NumberFormat.General;
+        var alignment = HorizontalAlignment.General;
         foreach (var property in element.EnumerateObject())
         {
             var value = property.Value;
@@ -199,23 +203,48 @@ public sealed class SheetDocument
                         throw new SheetDocumentException(e.Message, e);
                     }
                     break;
+                case "format":
+                    if (value.ValueKind != JsonValueKind.String || !NumberFormat.TryParse(value.GetString()!, out var parsedFormat, out var why))
+                    {
+                        throw new SheetDocumentException($"'{value}' is not a number format this version reads.");
+                    }
+                    format = parsedFormat;
+                    break;
+                case "align":
+                    alignment = value.ValueKind == JsonValueKind.String ? value.GetString() switch
+                    {
+                        "left" => HorizontalAlignment.Left,
+                        "center" => HorizontalAlignment.Center,
+                        "right" => HorizontalAlignment.Right,
+                        _ => throw new SheetDocumentException($"'{value}' is not an alignment."),
+                    } : throw new SheetDocumentException($"'{value}' is not an alignment.");
+                    break;
                 default:
                     throw new SheetDocumentException($"'{property.Name}' is not part of a version {CurrentVersion} cell.");
             }
         }
         if (address is null) throw new SheetDocumentException("A cell has no address.");
-        if (entry is null) throw new SheetDocumentException($"The cell {address} holds nothing.");
-        return new SheetDocumentCell(address.Value, entry);
+        if (entry is null && format.IsGeneral && alignment == HorizontalAlignment.General) throw new SheetDocumentException($"The cell {address} holds nothing.");
+        return new SheetDocumentCell(address.Value, entry, format, alignment);
     }
+
+    private static string AlignmentName(HorizontalAlignment alignment) => alignment switch
+    {
+        HorizontalAlignment.Left => "left",
+        HorizontalAlignment.Center => "center",
+        _ => "right",
+    };
 
     private static Entry Single(Entry? existing, Entry entry) =>
         existing is null ? entry : throw new SheetDocumentException("A cell holds more than one Entry.");
 }
 
-/// <summary>One cell of a Sheet Document: where it is, and its Entry. Never its Value (ADR-0048).</summary>
+/// <summary>One cell of a Sheet Document: where it is, its Entry and its formatting. Never its Value (ADR-0048).</summary>
 /// <param name="Address">Where the cell is.</param>
-/// <param name="Entry">What the user put into it.</param>
-public sealed record SheetDocumentCell(CellAddress Address, Entry Entry);
+/// <param name="Entry">What the user put into it; <see langword="null"/> for a cell that holds only formatting.</param>
+/// <param name="Format">Its number format.</param>
+/// <param name="Alignment">Its horizontal alignment.</param>
+public sealed record SheetDocumentCell(CellAddress Address, Entry? Entry, NumberFormat Format, HorizontalAlignment Alignment);
 
 /// <summary>A Sheet Document that cannot be read: an unknown version, or anything the version does not define (ADR-0048).</summary>
 public sealed class SheetDocumentException : FormatException

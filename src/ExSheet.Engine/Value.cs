@@ -92,7 +92,7 @@ public readonly struct Value : IEquatable<Value>
 
     /// <summary>
     /// A diagnostic form, culture-invariant (a number round-trips; text is as held). What a cell
-    /// shows is formatted by the Sheet, not this.
+    /// shows is <see cref="Sheet.GetDisplay"/>'s, not this.
     /// </summary>
     public override string ToString() => Kind switch
     {

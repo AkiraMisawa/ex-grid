@@ -45,16 +45,26 @@ public sealed class Sheet
     {
         ArgumentNullException.ThrowIfNull(document);
         var sheet = new Sheet(SheetDocument.ResolveCulture(document.Culture));
-        sheet.SetEntries(document.Cells.Select(c => new KeyValuePair<CellAddress, Entry?>(c.Address, c.Entry)));
+        foreach (var cell in document.Cells)
+        {
+            if (cell.Format.IsGeneral && cell.Alignment == HorizontalAlignment.General) continue;
+            var held = sheet._cells[cell.Address] = new Cell(cell.Address);
+            held.Format = cell.Format;
+            held.Alignment = cell.Alignment;
+        }
+        sheet.SetEntries(document.Cells.Where(c => c.Entry is not null).Select(c => new KeyValuePair<CellAddress, Entry?>(c.Address, c.Entry)));
         return sheet;
     }
 
-    /// <summary>The Sheet as a Sheet Document: its culture and its Entries, never its Values (ADR-0048).</summary>
+    /// <summary>
+    /// The Sheet as a Sheet Document: its culture, its Entries, and each cell's number format and
+    /// alignment — never its Values (ADR-0048).
+    /// </summary>
     public SheetDocument ToDocument() =>
         new(Culture.Name, [.. _cells.Values
-            .Where(c => c.Entry is not null)
+            .Where(c => !c.IsEmpty)
             .OrderBy(c => c.Address)
-            .Select(c => new SheetDocumentCell(c.Address, c.Entry!))]);
+            .Select(c => new SheetDocumentCell(c.Address, c.Entry, c.Format, c.Alignment))]);
 
     /// <summary>The addresses of every cell holding an Entry, in row-major order.</summary>
     public IEnumerable<CellAddress> EntryAddresses =>
@@ -73,7 +83,83 @@ public sealed class Sheet
     public string GetEntryText(CellAddress address)
     {
         if (!_cells.TryGetValue(address, out var cell) || cell.Entry is not { } entry) return "";
-        return entry.Formula ?? EntryText.Write(entry.Constant!.Value, Culture);
+        return entry.Formula ?? EntryText.Write(entry.Constant!.Value, cell.Format, Culture);
+    }
+
+    /// <summary>The cell's number format; <see cref="NumberFormat.General"/> unless one was set or implied by what was typed.</summary>
+    public NumberFormat GetFormat(CellAddress address) => _cells.TryGetValue(address, out var cell) ? cell.Format : NumberFormat.General;
+
+    /// <summary>The cell's horizontal alignment setting.</summary>
+    public HorizontalAlignment GetAlignment(CellAddress address) =>
+        _cells.TryGetValue(address, out var cell) ? cell.Alignment : HorizontalAlignment.General;
+
+    /// <summary>
+    /// What the cell shows: its Value formatted by its number format under the Sheet's culture,
+    /// with its alignment resolved (ADR-0046/0047). Whether it fits is the grid's to decide.
+    /// </summary>
+    public CellDisplay GetDisplay(CellAddress address)
+    {
+        if (!_cells.TryGetValue(address, out var cell) || cell.Value is not { } value)
+        {
+            return new CellDisplay("", Resolve(GetAlignment(address), null), false, false);
+        }
+        var (text, cannotShow) = cell.Format.Format(value, Culture);
+        return new CellDisplay(cannotShow ? "" : text, Resolve(cell.Alignment, value.Kind), value.Kind == ValueKind.Number, cannotShow);
+    }
+
+    private static HorizontalAlignment Resolve(HorizontalAlignment alignment, ValueKind? kind) =>
+        alignment != HorizontalAlignment.General ? alignment : kind switch
+        {
+            ValueKind.Number => HorizontalAlignment.Right,
+            ValueKind.Boolean or ValueKind.Error => HorizontalAlignment.Center,
+            _ => HorizontalAlignment.Left,
+        };
+
+    /// <summary>Sets the number format of cells; <see langword="null"/> is <see cref="NumberFormat.General"/>. No Value changes.</summary>
+    public SheetChange SetFormat(IEnumerable<CellAddress> addresses, NumberFormat? format)
+    {
+        ArgumentNullException.ThrowIfNull(addresses);
+        var applied = format ?? NumberFormat.General;
+        return Restyle(addresses, cell =>
+        {
+            if (cell.Format.Equals(applied)) return false;
+            cell.Format = applied;
+            return true;
+        });
+    }
+
+    /// <summary>Sets one cell's number format.</summary>
+    public SheetChange SetFormat(CellAddress address, NumberFormat? format) => SetFormat([address], format);
+
+    /// <summary>Sets the horizontal alignment of cells. No Value changes.</summary>
+    public SheetChange SetAlignment(IEnumerable<CellAddress> addresses, HorizontalAlignment alignment)
+    {
+        ArgumentNullException.ThrowIfNull(addresses);
+        if (!Enum.IsDefined(alignment)) throw new ArgumentOutOfRangeException(nameof(alignment), alignment, "Not an alignment.");
+        return Restyle(addresses, cell =>
+        {
+            if (cell.Alignment == alignment) return false;
+            cell.Alignment = alignment;
+            return true;
+        });
+    }
+
+    /// <summary>Sets one cell's horizontal alignment.</summary>
+    public SheetChange SetAlignment(CellAddress address, HorizontalAlignment alignment) => SetAlignment([address], alignment);
+
+    private SheetChange Restyle(IEnumerable<CellAddress> addresses, Func<Cell, bool> apply)
+    {
+        var rows = new SortedSet<int>();
+        foreach (var address in addresses)
+        {
+            var existing = _cells.TryGetValue(address, out var cell);
+            cell ??= new Cell(address);
+            if (!apply(cell)) continue;
+            if (cell.IsEmpty) _cells.Remove(address);
+            else if (!existing) _cells[address] = cell;
+            rows.Add(address.Row);
+        }
+        return rows.Count == 0 ? SheetChange.None : new SheetChange([], [], [.. rows]);
     }
 
     /// <summary>Takes text as the user typed it into a cell, read under the Sheet's culture, and recalculates.</summary>
@@ -89,8 +175,33 @@ public sealed class Sheet
     public SheetChange Enter(IEnumerable<KeyValuePair<CellAddress, string>> typed)
     {
         ArgumentNullException.ThrowIfNull(typed);
-        var entries = typed.Select(t => new KeyValuePair<CellAddress, Entry?>(t.Key, Entry.Parse(t.Value, Culture))).ToList();
-        return SetEntries(entries);
+        var entries = new List<KeyValuePair<CellAddress, Entry?>>();
+        var implied = new List<(CellAddress Address, NumberFormat Format)>();
+        foreach (var (address, text) in typed)
+        {
+            ArgumentNullException.ThrowIfNull(text);
+            if (text.Length == 0 || text[0] == '=')
+            {
+                entries.Add(new(address, Entry.Parse(text, Culture)));
+                continue;
+            }
+            // A date or a percentage typed into a General cell gives the cell its format, as in Excel.
+            var (value, format) = ConstantParser.ParseWithFormat(text, Culture);
+            entries.Add(new(address, Entry.FromValue(value)));
+            if (format is not null) implied.Add((address, format));
+        }
+        var rows = new SortedSet<int>();
+        foreach (var (address, format) in implied)
+        {
+            if (!GetFormat(address).IsGeneral) continue;
+            var cell = _cells.TryGetValue(address, out var existing) ? existing : _cells[address] = new Cell(address);
+            cell.Format = format;
+            rows.Add(address.Row);
+        }
+        var change = SetEntries(entries);
+        if (rows.Count == 0) return change;
+        rows.UnionWith(change.Rows);
+        return new SheetChange(change.ValueChanges, change.Recalculated, [.. rows]);
     }
 
     /// <summary>Sets or clears (<see langword="null"/>) one cell's Entry, and recalculates.</summary>
@@ -331,6 +442,10 @@ public sealed class Sheet
 
         public Value? Value { get; set; }
 
-        public bool IsEmpty => Entry is null;
+        public NumberFormat Format { get; set; } = NumberFormat.General;
+
+        public HorizontalAlignment Alignment { get; set; }
+
+        public bool IsEmpty => Entry is null && Format.IsGeneral && Alignment == HorizontalAlignment.General;
     }
 }
