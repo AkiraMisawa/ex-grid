@@ -85,7 +85,13 @@
     private SheetRow[] _window = [];
     private int _windowStart;
     private GridSelection _selection = GridSelection.Empty;
+    // What ExSheet has to tell the user. It stands until the user's own next action — an edit,
+    // a paste, a command, a selection change — and a Consumer's Linked Table push, declaration
+    // or new Sheet Document does not clear it: the user has not yet acted on what it says.
     private string? _notice;
+    // A notice raised by a commit: the grid moves the Focus after the commit, as part of the
+    // same gesture, and that move does not clear it.
+    private bool _noticeOutlivesCommitMove;
     // The copy this Sheet last wrote, recognised on a paste by its fields (ADR-0050 item 9).
     internal SheetOwnCopy? OwnCopy { get; private set; }
     // The engine's sentence for the copy refused last, for the notice the refusal raises.
@@ -113,6 +119,14 @@
         _selectionChanged = new EventCallback<GridSelection>(null, (Func<GridSelection, Task>)(selection =>
         {
             _selection = selection;
+            // A selection change is the user's own action, and clears the notice — except the
+            // move that completes the commit gesture whose refusal the notice reports.
+            if (_noticeOutlivesCommitMove) _noticeOutlivesCommitMove = false;
+            else if (_notice is not null)
+            {
+                ClearNotice();
+                StateHasChanged();
+            }
             return SelectionChanged.InvokeAsync(selection);
         }));
         // Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z while no edit is open (ADR-0050 item 8, ADR-0048):
@@ -319,7 +333,7 @@
             var sheet = CurrentSheet;
             var before = sheet.LinkedTables;
             var change = sheet.DeclareLinkedTable(name, columns);
-            await ChangedAsync(change, raiseDocument: !SameDeclarations(before, sheet.LinkedTables));
+            await ChangedAsync(change, raiseDocument: !SameDeclarations(before, sheet.LinkedTables), byUser: false);
         });
     }
 
@@ -338,7 +352,7 @@
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(rows);
-        return InvokeAsync(() => ChangedAsync(CurrentSheet.PushLinkedTable(name, rows), raiseDocument: false));
+        return InvokeAsync(() => ChangedAsync(CurrentSheet.PushLinkedTable(name, rows), raiseDocument: false, byUser: false));
     }
 
     // What the Sheet Document records of the tables: names and columns, in order (ADR-0049).
@@ -375,7 +389,6 @@
         _sheet = document is null ? new Sheet(Culture ?? CultureInfo.CurrentCulture) : Sheet.Open(document);
         _edges = SheetEdges.Of(_sheet);
         _history.Clear();
-        _notice = null;
         _resizing = null;
         // Widths are the document's (ADR-0046): the Sheet opened brings its own.
         _columns = SheetColumnList.Of(_sheet, CellMetrics);
@@ -419,22 +432,40 @@
         {
             // The column's verdict rejects an unreadable Formula before the intent is raised
             // (ADR-0034); this is the net under it, and it changes nothing either.
-            _notice = SheetWords.FormulaUnreadable(error);
+            Tell(SheetWords.FormulaUnreadable(error), outlivesCommitMove: true);
         }
         catch (SheetRefusedException refused)
         {
-            _notice = SheetWords.Refused(refused.Refusal);
+            Tell(SheetWords.Refused(refused.Refusal), outlivesCommitMove: true);
         }
+    }
+
+    /// <summary>
+    /// Raises a notice. It stands until the user's own next action (an edit, a paste, a command,
+    /// a selection change); a Consumer's programmatic change leaves it. A notice raised by a
+    /// commit outlives the move that completes the commit gesture.
+    /// </summary>
+    private void Tell(string sentence, bool outlivesCommitMove = false)
+    {
+        _notice = sentence;
+        _noticeOutlivesCommitMove = outlivesCommitMove;
+    }
+
+    /// <summary>The user acted: what the notice said is behind them.</summary>
+    private void ClearNotice()
+    {
+        _notice = null;
+        _noticeOutlivesCommitMove = false;
     }
 
     private async Task OnNameBoxEnteredAsync(string typed)
     {
         if (!NameBoxText.TryParse(typed, out var range))
         {
-            _notice = SheetWords.AddressUnreadable(typed);
+            Tell(SheetWords.AddressUnreadable(typed));
             return;
         }
-        _notice = null;
+        ClearNotice();
         var place = new SelectionRange(range.First.Row, range.First.Column, range.RowCount, range.ColumnCount);
         // Rows are places, so the Row Sequence Version never moves from 0 (ADR-0046).
         if (_grid is { } grid) await grid.PlaceSelectionAsync(place, new CellPosition(range.First.Row, range.First.Column), 0);
@@ -469,7 +500,7 @@
         }
         catch (SheetRefusedException refused)
         {
-            _notice = SheetWords.Refused(refused.Refusal);
+            Tell(SheetWords.Refused(refused.Refusal));
             StateHasChanged();
         }
     }
@@ -516,13 +547,13 @@
                     }
                     if (SheetClipboard.IsTooNarrowToShow(field, intent.OriginFor(at)))
                     {
-                        _notice = SheetWords.PasteTooNarrowToShow(field, new CellAddress(row, column));
+                        Tell(SheetWords.PasteTooNarrowToShow(field, new CellAddress(row, column)));
                         StateHasChanged();
                         return;
                     }
                     if (SheetClipboard.TypedFor(field, intent.OriginFor(at), sheet.Culture) is not { } text)
                     {
-                        _notice = SheetWords.PasteReadsDifferently(field, sheet.Culture);
+                        Tell(SheetWords.PasteReadsDifferently(field, sheet.Culture));
                         StateHasChanged();
                         return;
                     }
@@ -557,7 +588,7 @@
         }
         catch (SheetRefusedException refused)
         {
-            _notice = SheetWords.Refused(refused.Refusal);
+            Tell(SheetWords.Refused(refused.Refusal));
             StateHasChanged();
         }
     }
@@ -589,7 +620,7 @@
             var undone = new List<SheetChange>();
             for (var i = steps.Count - 1; i >= 0; i--) undone.Add(steps[i].Undo());
             if (undone.Count > 0) await ChangedAsync(undone, raiseDocument: false);
-            _notice = SheetWords.Refused(refused.Refusal);
+            Tell(SheetWords.Refused(refused.Refusal));
             StateHasChanged();
             return;
         }
@@ -616,7 +647,7 @@
         if (CurrentSheet.Check(edit) is { } refusal)
         {
             intent.Refuse();
-            _notice = SheetWords.Refused(refusal);
+            Tell(SheetWords.Refused(refusal));
             StateHasChanged();
             return;
         }
@@ -634,16 +665,16 @@
 
     private void OnPasteRefused(global::ExGrid.Clipboard.PasteRefusalReason reason)
     {
-        _notice = SheetWords.PasteRefused(reason);
+        Tell(SheetWords.PasteRefused(reason));
         StateHasChanged();
     }
 
     private void OnCopyRefused(global::ExGrid.Clipboard.CopyRefusalReason reason)
     {
         // A refusal of the Sheet's own is said in the engine's words; the grid's by its reason.
-        _notice = reason == global::ExGrid.Clipboard.CopyRefusalReason.RefusedByConsumer && _copyRefusal is { } sentence
+        Tell(reason == global::ExGrid.Clipboard.CopyRefusalReason.RefusedByConsumer && _copyRefusal is { } sentence
             ? sentence
-            : SheetWords.CopyRefused(reason);
+            : SheetWords.CopyRefused(reason));
         StateHasChanged();
     }
 
@@ -758,14 +789,18 @@
         return sheet.Do(SheetEdit.SetAutomaticColumnWidth(CellRange.WholeColumns(address.Column, address.Column), recorded));
     }
 
-    private Task ChangedAsync(SheetChange change, bool raiseDocument = true) => ChangedAsync([change], raiseDocument);
+    private Task ChangedAsync(SheetChange change, bool raiseDocument = true, bool byUser = true) => ChangedAsync([change], raiseDocument, byUser);
 
-    /// <summary>What one operation changed, in the order its engine steps changed it.</summary>
-    private async Task ChangedAsync(IReadOnlyList<SheetChange> changes, bool raiseDocument = true)
+    /// <summary>
+    /// What one operation changed, in the order its engine steps changed it. An operation of the
+    /// user's own clears the notice; a Consumer's programmatic change (<paramref name="byUser"/>
+    /// false — a Linked Table's declaration or snapshot) leaves it standing.
+    /// </summary>
+    private async Task ChangedAsync(IReadOnlyList<SheetChange> changes, bool raiseDocument = true, bool byUser = true)
     {
         var sheet = CurrentSheet;
         foreach (var change in changes) _edges.Update(sheet, change);
-        _notice = null;
+        if (byUser) ClearNotice();
         // The widths the Sheet records follow the change, its undo and redo included (ADR-0046).
         var widths = changes.SelectMany(change => change.Columns).Distinct().ToList();
         if (widths.Count > 0) _columns = _columns.Refreshed(sheet, widths, CellMetrics);
