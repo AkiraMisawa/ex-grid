@@ -137,3 +137,16 @@ places.
 - **A Formula's result takes a format at entry, as Excel's does.** For example, a date plus a
   number shows as a date. The exact inference rule is Excel's, observed by the case corpus. It is
   applied only when the cell's format is General, and only when the Formula is entered.
+
+## Settled while building, third round *(2026-09-27, decided with the user)*
+
+- **The engine takes a column's width in characters of the default font** (Excel's unit; 8.43 by
+  default). The component converts from the grid's resolved pixels and digit metrics. Every
+  character counts as one digit width. That is exact for digits and an estimate for other
+  characters until the case corpus has observed Excel.
+- **The text fitted to a column is for painting only.** The accessible name and a copy take the
+  Value as the engine gives it unfitted, as [ADR-0016](./0016-column-width-and-overflow.md) gives
+  a screen reader the real value behind `####`.
+- **A Formula's format at entry is inferred only where Excel's rule has been observed.** Until the
+  corpus observes more, that is `+`, `-`, single-cell references, constants and parentheses.
+  Everything else stays General.

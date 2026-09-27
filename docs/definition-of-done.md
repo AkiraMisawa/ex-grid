@@ -979,6 +979,9 @@ nothing sees nothing change.
 | **DC-29** | MUST | With a per-cell alignment supplied, a cell is painted with it; without it, the column's and then the kind's (ADR-0050, item 7) | Layer 2 | as stated |
 | **DC-30** | MUST | With undo and redo declared, Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z raise them while no edit is open, and stay the editor's own while one is; without the declaration they stay the browser's (ADR-0050, item 8; ADR-0007) | Layer 2 + Layer 3 | as stated |
 | **DC-31** | MUST | While pointing, Shift+arrows extend the outline; while the completion list is open, ← and → move the caret and only ↑/↓/Tab/Escape are claimed; the caret is reported with each input and whenever it moves (`selectionchange`), placed when an edit opens and after the core rewrites the text (ADR-0051) | Layer 2 for the C# side; Layer 3 with real keys, including repeated letters (`=SS` then completion) | the replaced span is the one at the caret; the caret sits after the inserted text |
+| **DC-32** | MUST | With a copy answer declared, both copy routes ask it with the range, write what it returns, or refuse with the Consumer's sentence; without it, ADR-0005's copy is unchanged (ADR-0050, item 9) | Layer 2 | as stated |
+| **DC-33** | MUST | The paste notification marks each field as an invariant number or shown text; Excel's `x:num` and ExGrid's own HTML are invariant (ADR-0050, item 10) | Layer 1 over the clipboard parser; Layer 3 with a real Excel copy | as stated |
+| **DC-34** | MUST | A click into the Formula Bar's text keeps the caret where it was clicked; moving the caret while pointing enters Caret (ADR-0051, third round) | Layer 2 + Layer 3 | as stated |
 | **DC-25** | MUST | The declarations are per instance: two grids on one page, one declaring and one not, behave each as its own declarations say (ADR-0018) | Layer 3 | independent |
 
 ---

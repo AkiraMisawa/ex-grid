@@ -136,3 +136,27 @@ says the grid forwards Ctrl+Z, but no route existed: the key listener never clai
 - While an edit is open, the keys stay the editor's own, which undo uncommitted typing (ADR-0007's
   last bullet).
 - Without the declaration, the keys stay the browser's.
+
+## Added while building, third round *(2026-09-27, decided with the user)*
+
+**9. The Consumer may answer a copy.** A Consumer can declare a synchronous copy answer. On
+both copy routes the grid asks it, with the range being copied. The answer is either the text and
+HTML flavours to write, or a refusal carrying the Consumer's own sentence.
+- Without the declaration, the grid builds the copy itself, as
+  [ADR-0005](./0005-copy-refuses-rather-than-truncates.md) says.
+- ExSheet uses it for three things: to carry Entries inside itself, to refuse a copy that reaches
+  `#GETTING_DATA` ([ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)), and to
+  write Values exactly as the engine gives them.
+- **ExSheet recognises its own copy by content.** It carries Entries only when the pasted block
+  equals, field for field, the block it last copied. A browser clipboard names no owner, so equal
+  content is the strongest evidence a page has. A false match would need another program to have
+  put exactly that block there, and even then it pastes the Entries that showed exactly those
+  Values.
+
+**10. A paste says where each field came from.** The paste notification marks each field as an
+invariant number (Excel's `x:num` attribute, or ExGrid's own unformatted HTML) or as shown text.
+ExSheet reads an invariant number as a number, and reads shown text as typed under the Sheet's
+culture. Otherwise `1234.5` from Excel would be misread under `de-DE`.
+
+**A paste over whole columns is not capped.** It is executed and measured (SH-19). Principle 5
+puts caps only on what cannot be executed.

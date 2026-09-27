@@ -142,3 +142,10 @@ DOM focus. This is the same allowlisted listener doing the same job
   pointing from a caret that is no longer there, and a Reference would land in the wrong place.
   **Opening an edit places the caret explicitly** at the end of the opening text, rather than
   assuming the browser left it there.
+
+## Added while building, third round *(2026-09-27, decided with the user)*
+
+- **A click into the Formula Bar's text keeps the caret where it was clicked**, as Excel's does.
+  Placing the caret at the end on opening applies only to an edit opened by typing or by F2.
+- **Moving the caret while pointing (←, → or a click in the text) ends pointing and enters
+  Caret**, the equivalent of Excel's Edit mode. It does not enter Overwrite.
