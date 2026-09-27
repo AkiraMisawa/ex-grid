@@ -12,7 +12,10 @@ internal static class ConstantParser
         if (typed.Equals("TRUE", StringComparison.OrdinalIgnoreCase)) return Value.FromBoolean(true);
         if (typed.Equals("FALSE", StringComparison.OrdinalIgnoreCase)) return Value.FromBoolean(false);
         if (ErrorValues.TryParseTyped(typed, out var error)) return Value.FromError(error);
-        if (double.TryParse(typed, NumberStyles.Float, culture, out var number) && double.IsFinite(number)) return Value.FromNumber(number);
+        if (TryParseNumber(typed, culture, out var number)) return Value.FromNumber(number);
         return Value.FromText(typed);
     }
+
+    public static bool TryParseNumber(string text, CultureInfo culture, out double number) =>
+        double.TryParse(text, NumberStyles.Float, culture, out number) && double.IsFinite(number);
 }

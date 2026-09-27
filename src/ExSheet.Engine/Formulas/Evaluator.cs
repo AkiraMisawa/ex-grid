@@ -6,53 +6,113 @@ namespace ExSheet.Engine.Formulas;
 internal interface ICellReader
 {
     Value? Read(CellAddress address);
+
+    /// <summary>The addresses inside <paramref name="area"/> that are not blank, in row-major order.</summary>
+    IEnumerable<CellAddress> NonBlankIn(Area area);
 }
 
 /// <summary>
-/// Evaluates a parsed Formula to a Value, as Excel does: IEEE doubles, a blank read as 0, and an
-/// Error Value carried through (ADR-0047).
+/// Evaluates a parsed Formula to a Value, as Excel does: IEEE doubles, a blank read as 0, Error
+/// Values carried through, left to right (ADR-0047).
 /// </summary>
 internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
 {
-    /// <summary>A Formula's result is never blank: a Formula that reads an empty cell shows 0.</summary>
-    public Value Evaluate(Node node) => Scalar(node) ?? Value.FromNumber(0);
+    public CultureInfo Culture { get; } = culture;
 
-    private Value? Scalar(Node node) => node switch
+    public ICellReader Cells { get; } = cells;
+
+    /// <summary>A Formula's result. It is never blank: a Formula that reads an empty cell shows 0.</summary>
+    public Value Evaluate(Node node) => ScalarOf(Operand(node)) ?? Value.FromNumber(0);
+
+    public Operand Operand(Node node) => node switch
     {
-        NumberNode n => Value.FromNumber(n.Number),
-        ReferenceNode r => cells.Read(new CellAddress(r.Reference.Row1, r.Reference.Column1)),
-        ParenthesesNode p => Scalar(p.Inner),
-        UnaryNode u => Negate(u),
-        BinaryNode b => Arithmetic(b),
+        NumberNode n => Formulas.Operand.Of(Value.FromNumber(n.Number)),
+        TextNode t => Formulas.Operand.Of(Value.FromText(t.Text)),
+        BooleanNode b => Formulas.Operand.Of(Value.FromBoolean(b.Value)),
+        ErrorNode e => Formulas.Operand.Of(e.Error),
+        MissingNode => Formulas.Operand.Missing,
+        // One Sheet exists and has no name to match, so a qualified Reference names nothing (ADR-0046).
+        ReferenceNode r => r.Reference.SheetName is null ? Formulas.Operand.Of(r.Reference.Area) : Formulas.Operand.Of(ErrorValue.Ref),
+        // No Linked Table can be declared yet: an undeclared name is #NAME? (ADR-0049).
+        StructuredReferenceNode => Formulas.Operand.Of(ErrorValue.Name),
+        NameNode => Formulas.Operand.Of(ErrorValue.Name),
+        ParenthesesNode p => Operand(p.Inner),
+        UnaryNode u => Formulas.Operand.Of(Negate(u)),
+        PercentNode p => Formulas.Operand.Of(Percent(p)),
+        BinaryNode b => Formulas.Operand.Of(Binary(b)),
+        FunctionNode f => f.Function is null ? Formulas.Operand.Of(ErrorValue.Name) : f.Function.Invoke(new FunctionCall(this, f.Arguments)),
         _ => throw new InvalidOperationException($"No evaluation for {node.GetType().Name}."),
     };
+
+    /// <summary>
+    /// An operand used as one Value: a single cell is read; a rectangle of more than one cell is
+    /// <c>#VALUE!</c>, because ExSheet has no spilled arrays and will not pick one cell of it
+    /// silently. An empty argument is blank.
+    /// </summary>
+    public Value? ScalarOf(Operand operand) => operand.Kind switch
+    {
+        OperandKind.Scalar => operand.Scalar,
+        OperandKind.Area when operand.Area.IsSingleCell => Cells.Read(new CellAddress(operand.Area.Row1, operand.Area.Column1)),
+        OperandKind.Area => Value.FromError(ErrorValue.Value),
+        _ => null,
+    };
+
+    public Value? Scalar(Node node) => ScalarOf(Operand(node));
 
     private Value Negate(UnaryNode node)
     {
         var operand = ToNumber(Scalar(node.Operand), out var error);
         if (error is { } e) return Value.FromError(e);
-        return node.Operator == '-' ? Value.FromNumber(-operand) : Value.FromNumber(operand);
+        return Value.FromNumber(node.Operator == '-' ? -operand : operand);
     }
 
-    private Value Arithmetic(BinaryNode node)
+    private Value Percent(PercentNode node)
     {
-        var left = ToNumber(Scalar(node.Left), out var leftError);
-        if (leftError is { } le) return Value.FromError(le);
-        var right = ToNumber(Scalar(node.Right), out var rightError);
-        if (rightError is { } re) return Value.FromError(re);
-        double result;
+        var operand = ToNumber(Scalar(node.Operand), out var error);
+        return error is { } e ? Value.FromError(e) : Number(operand / 100);
+    }
+
+    private Value Binary(BinaryNode node)
+    {
+        var left = Scalar(node.Left);
+        var right = Scalar(node.Right);
         switch (node.Operator)
         {
-            case "+": result = left + right; break;
-            case "-": result = left - right; break;
-            case "*": result = left * right; break;
-            case "/":
-                if (right == 0) return Value.FromError(ErrorValue.Div0);
-                result = left / right;
-                break;
+            case "&":
+                if (left is { IsError: true } le) return le;
+                if (right is { IsError: true } re) return re;
+                return Value.FromText(ToText(left) + ToText(right));
+            case "=" or "<>" or "<" or ">" or "<=" or ">=":
+                if (left is { IsError: true } cle) return cle;
+                if (right is { IsError: true } cre) return cre;
+                var order = Compare(left, right);
+                return Value.FromBoolean(node.Operator switch
+                {
+                    "=" => order == 0,
+                    "<>" => order != 0,
+                    "<" => order < 0,
+                    ">" => order > 0,
+                    "<=" => order <= 0,
+                    _ => order >= 0,
+                });
+        }
+
+        var a = ToNumber(left, out var leftError);
+        if (leftError is { } ae) return Value.FromError(ae);
+        var b = ToNumber(right, out var rightError);
+        if (rightError is { } be) return Value.FromError(be);
+        switch (node.Operator)
+        {
+            case "+": return Number(a + b);
+            case "-": return Number(a - b);
+            case "*": return Number(a * b);
+            case "/": return b == 0 ? Value.FromError(ErrorValue.Div0) : Number(a / b);
+            case "^":
+                if (a == 0 && b == 0) return Value.FromError(ErrorValue.Num);
+                if (a == 0 && b < 0) return Value.FromError(ErrorValue.Div0);
+                return Number(Math.Pow(a, b));
             default: throw new InvalidOperationException($"No operator {node.Operator}.");
         }
-        return Number(result);
     }
 
     /// <summary>A result that is not a finite double is <c>#NUM!</c>, as in Excel.</summary>
@@ -60,10 +120,42 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         double.IsFinite(result) ? Value.FromNumber(result) : Value.FromError(ErrorValue.Num);
 
     /// <summary>
-    /// Excel's coercion of an operand to a number: a blank is 0, a boolean 1 or 0, text that reads
-    /// as a number under the Sheet's culture is that number, other text is <c>#VALUE!</c>.
+    /// Excel's comparison: a blank is the empty value of the other side's kind (0, "" or FALSE);
+    /// numbers sort before text, and text before booleans; text compares without regard to case.
     /// </summary>
-    private double ToNumber(Value? value, out ErrorValue? error)
+    internal static int Compare(Value? left, Value? right)
+    {
+        if (left is null && right is null) return 0;
+        var a = left ?? EmptyOf(right!.Value.Kind);
+        var b = right ?? EmptyOf(a.Kind);
+        if (a.Kind != b.Kind) return Rank(a.Kind).CompareTo(Rank(b.Kind));
+        return a.Kind switch
+        {
+            ValueKind.Number => a.Number.CompareTo(b.Number),
+            ValueKind.Text => string.CompareOrdinal(a.Text.ToUpperInvariant(), b.Text.ToUpperInvariant()),
+            _ => a.Boolean.CompareTo(b.Boolean),
+        };
+
+        static int Rank(ValueKind kind) => kind switch
+        {
+            ValueKind.Number => 0,
+            ValueKind.Text => 1,
+            _ => 2,
+        };
+
+        static Value EmptyOf(ValueKind kind) => kind switch
+        {
+            ValueKind.Text => Value.FromText(""),
+            ValueKind.Boolean => Value.FromBoolean(false),
+            _ => Value.FromNumber(0),
+        };
+    }
+
+    /// <summary>
+    /// Excel's coercion of an operand to a number: a blank is 0, a boolean 1 or 0, text that reads
+    /// as a typed number would under the Sheet's culture is that number, other text is <c>#VALUE!</c>.
+    /// </summary>
+    public double ToNumber(Value? value, out ErrorValue? error)
     {
         error = null;
         if (value is not { } v) return 0;
@@ -75,9 +167,19 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
                 error = v.Error;
                 return 0;
             default:
-                if (double.TryParse(v.Text, NumberStyles.Float, culture, out var parsed) && double.IsFinite(parsed)) return parsed;
+                if (ConstantParser.TryParseNumber(v.Text, Culture, out var parsed)) return parsed;
                 error = ErrorValue.Value;
                 return 0;
         }
     }
+
+    /// <summary>Excel's coercion to text: a blank is empty, a number is written as General under the Sheet's culture.</summary>
+    public string ToText(Value? value) => value switch
+    {
+        null => "",
+        { Kind: ValueKind.Text } v => v.Text,
+        { Kind: ValueKind.Number } v => NumberText.General(v.Number, Culture),
+        { Kind: ValueKind.Boolean } v => v.Boolean ? "TRUE" : "FALSE",
+        { } v => v.Error.ToText(),
+    };
 }

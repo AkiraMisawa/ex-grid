@@ -318,6 +318,9 @@ public sealed class Sheet
     {
         public Value? Read(CellAddress address) =>
             staged.TryGetValue(address, out var value) ? value : sheet.GetValue(address);
+
+        public IEnumerable<CellAddress> NonBlankIn(Area area) =>
+            sheet.CellsIn(area).Where(a => Read(a) is not null).Order();
     }
 
     private sealed class Cell(CellAddress address)
