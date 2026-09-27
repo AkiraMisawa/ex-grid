@@ -159,6 +159,11 @@ the kind that still look correct on screen**, so review will not catch them.
 
 - **`pkill -f "Bench.Host"` kills the calling shell**, because the pattern matches the shell's
   own command line. Stop the spike host with `fuser -k 5199/tcp`.
+- **`pgrep -f <pattern>` in a wait loop matches the loop itself.** `until ! pgrep -f "playwright
+  test …"; do sleep 5; done` never ends: the loop's own `bash -c` line contains the pattern. Two
+  loops like that also keep each other alive. Six such loops were left behind by finished agents on
+  2026-09-27. Wait on the PID you started (`wait $pid`, or `while kill -0 $pid`), or write the
+  pattern so it cannot match itself (`[p]laywright`).
 - **Headless Chrome on macOS keeps overlay scrollbars on the horizontal axis** whatever the CSS
   asks for, so a scrollbar test written there passes without testing anything. Layer 3 runs
   headed for that reason (ADR-0026).
