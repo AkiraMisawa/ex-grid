@@ -120,6 +120,21 @@ public abstract class SheetEdit
         return Enter(typed);
     }
 
+    /// <summary>
+    /// A Fill Intent resolved as Excel fills (ADR-0050, item 5): <paramref name="target"/> extends
+    /// <paramref name="source"/> in <paramref name="direction"/>, given as the new cells alone or as
+    /// the whole extended range. Formulas are copied with their References shifted, two or more
+    /// numbers continue as Excel's linear trend, a single date goes on by day, and a single number,
+    /// text without a pattern, booleans, Error Values and blanks are copied. Any other pattern is
+    /// refused (<see cref="SheetRefusalReason.FillPatternNotSupported"/>), never filled with copies;
+    /// <see cref="Sheet.Check"/> says so before anything is written.
+    /// </summary>
+    public static SheetEdit Fill(CellRange source, CellRange target, FillDirection direction)
+    {
+        if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction), direction, "Not a fill direction.");
+        return new FillEdit(source, target, direction);
+    }
+
     /// <summary>Whether the Sheet would refuse this operation as it stands, and why. Changes nothing.</summary>
     internal virtual SheetRefusal? Check(Sheet sheet) => null;
 
@@ -153,6 +168,19 @@ public abstract class SheetEdit
         {
             var placed = states().ToList();
             return new CellsEdit(placed.Select(p => p.Address), s => s.Restore(placed)).Apply(sheet);
+        }
+    }
+
+    /// <summary>A fill, planned against the Sheet as it stands when it is checked or done.</summary>
+    internal sealed class FillEdit(CellRange source, CellRange target, FillDirection direction) : SheetEdit
+    {
+        internal override SheetRefusal? Check(Sheet sheet) => sheet.PlanFill(source, target, direction).Refusal;
+
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var (refusal, states) = sheet.PlanFill(source, target, direction);
+            if (refusal is not null) throw new SheetRefusedException(refusal);
+            return new CellsEdit(states.Select(s => s.Address), s => s.Restore(states)).Apply(sheet);
         }
     }
 
