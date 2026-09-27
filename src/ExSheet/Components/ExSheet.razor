@@ -22,7 +22,8 @@
         HeaderClickSelects="true" HideHeader="!ShowColumnHeadings"
         RowHeadings="(ShowRowHeadings ? RowLabels : null)"
         DataEdge="_dataEdge"
-        ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" OnNameBoxEntered="OnNameBoxEnteredAsync" />
+        ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
+        CompleteEditorText="_complete" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -56,6 +57,7 @@
     private readonly ConditionalWeakTable<SheetDocument, object> _emitted = new();
 
     private readonly Func<CellPosition, GridDirection, CellPosition> _dataEdge;
+    private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
     private readonly EventCallback<GridSelection> _selectionChanged;
 
     private ExGrid<SheetRow>? _grid;
@@ -75,6 +77,9 @@
         // Held in fields: a delegate's identity reaches the grid, and one made per render would
         // look like a change every time (ADR-0003).
         _dataEdge = FindEdge;
+        // Answered synchronously from the engine, so the list shows in the render the keystroke
+        // causes (ADR-0051). It reads this Sheet's Linked Tables, so it is the instance's own.
+        _complete = (text, caret) => ValueTask.FromResult(_sheet is { } sheet ? SheetFormulaAids.Complete(sheet, text, caret) : null);
         // No receiver: a selection change re-renders the grid, not this component.
         _selectionChanged = new EventCallback<GridSelection>(null, (Func<GridSelection, Task>)(selection =>
         {
