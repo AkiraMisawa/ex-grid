@@ -148,7 +148,9 @@ public abstract class SheetEdit
     /// <summary>
     /// Text pasted from another program, each field taken as if the user had typed it into its cell
     /// under the Sheet's culture: <c>=A1+1</c> becomes a Formula and <c>1,234</c> a number under
-    /// <c>en-US</c> (ADR-0048). <paramref name="fields"/> is rectangular, rows of columns, with the
+    /// <c>en-US</c> (ADR-0048). A field beginning with <c>=</c> that cannot be read as a Formula is
+    /// taken as text, as Excel takes a pasted <c>=1+</c>; it is not refused.
+    /// <paramref name="fields"/> is rectangular, rows of columns, with the
     /// top-left field at <paramref name="origin"/>; an empty field clears its cell. A block that
     /// would run past the Sheet's edge is refused by name (ADR-0050).
     /// </summary>
@@ -166,7 +168,19 @@ public abstract class SheetEdit
         {
             for (var c = 0; c < width; c++) typed.Add(new(new CellAddress(origin.Row + r, origin.Column + c), fields[r][c] ?? throw new ArgumentException("A field is null.", nameof(fields))));
         }
-        return Enter(typed);
+        return PasteText(typed);
+    }
+
+    /// <summary>
+    /// Text pasted from another program, given field by field, each taken as <see cref="PasteText(IReadOnlyList{IReadOnlyList{string}}, CellAddress)"/>
+    /// takes it: as if typed under the Sheet's culture, except that a field that cannot be read
+    /// as a Formula is taken as text (ADR-0048). One operation.
+    /// </summary>
+    public static SheetEdit PasteText(IEnumerable<KeyValuePair<CellAddress, string>> fields)
+    {
+        ArgumentNullException.ThrowIfNull(fields);
+        var list = fields.ToList();
+        return new CellsEdit(list.Select(p => p.Key), sheet => sheet.Enter(list, pasted: true));
     }
 
     /// <summary>

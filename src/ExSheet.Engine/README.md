@@ -170,7 +170,8 @@ step.Undo();                                         // Entries, formats and Ref
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each
-  pasted field as if typed under the Sheet's culture. A copy that reaches a `#GETTING_DATA`
+  pasted field as if typed under the Sheet's culture, except that a field that cannot be read as
+  a Formula (`=1+`) is taken as text, as Excel takes it. A copy that reaches a `#GETTING_DATA`
   Value is refused.
 - **Fill.** `SheetEdit.Fill(source, target, direction)` fills as Excel does for copies (with
   References shifted), a linear trend from two or more numbers (held at 15 significant digits,

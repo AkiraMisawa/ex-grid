@@ -158,7 +158,15 @@ public sealed partial class Sheet
     /// given on entry is never changed by a later recalculation (ADR-0047).
     /// </remarks>
     /// <exception cref="FormulaSyntaxException">A text is a Formula that cannot be read.</exception>
-    public SheetChange Enter(IEnumerable<KeyValuePair<CellAddress, string>> typed)
+    public SheetChange Enter(IEnumerable<KeyValuePair<CellAddress, string>> typed) => Enter(typed, pasted: false);
+
+    /// <param name="typed">The texts, by cell.</param>
+    /// <param name="pasted">
+    /// Whether the texts were pasted from another program: then a text beginning with <c>=</c>
+    /// that cannot be read as a Formula is taken as text, as Excel takes a pasted <c>=1+</c>
+    /// (ADR-0048), where typed it is refused.
+    /// </param>
+    internal SheetChange Enter(IEnumerable<KeyValuePair<CellAddress, string>> typed, bool pasted)
     {
         ArgumentNullException.ThrowIfNull(typed);
         var entries = new List<KeyValuePair<CellAddress, Entry?>>();
@@ -168,7 +176,16 @@ public sealed partial class Sheet
             ArgumentNullException.ThrowIfNull(text);
             if (text.Length == 0 || text[0] == '=')
             {
-                entries.Add(new(address, Entry.Parse(text, Culture)));
+                Entry? entry;
+                try
+                {
+                    entry = Entry.Parse(text, Culture);
+                }
+                catch (FormulaSyntaxException) when (pasted)
+                {
+                    entry = Entry.FromValue(Value.FromText(text));
+                }
+                entries.Add(new(address, entry));
                 continue;
             }
             // A date or a percentage typed into a General cell gives the cell its format, as in Excel.
