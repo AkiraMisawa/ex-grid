@@ -135,3 +135,10 @@ DOM focus. This is the same allowlisted listener doing the same job
   caret with each input. After the core rewrites the text (an accepted candidate, a written
   Reference), the listener places the caret where the core says. Neither is a measurement: no
   layout is read ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
+
+- **The caret is reported whenever it moves, not only on input** *(decided with the user the same
+  day)*. The listener also reports the caret on `selectionchange` inside an editor surface. Without
+  that, moving it with ← or → in Caret, or with a click inside the text, would leave the core
+  pointing from a caret that is no longer there, and a Reference would land in the wrong place.
+  **Opening an edit places the caret explicitly** at the end of the opening text, rather than
+  assuming the browser left it there.

@@ -604,6 +604,10 @@ _Avoid_: file, workbook, snapshot, save data
   Template's control takes DOM focus inside the Focus cell (**Interactive**). Write "DOM focus"
   whenever the browser's is meant; `FocusRequest` in the Chrome and template contexts asks for
   DOM focus, not for a Focus move.
+- **"Caret" names an editing state here, and the text cursor in everyday speech.** **Caret**
+  (with Overwrite) is the state F2 enters, in which the arrow keys move within the text. The
+  blinking insertion point itself is the **caret position** — write that, never "the Caret", when
+  the position is meant: completion and Point both act at the caret position, in any state.
 - **"Interactive" names a cell mode here, and a render mode in Blazor.** Blazor calls a
   component that has connected and can handle events "interactive", and its render modes are
   `InteractiveServer` / `InteractiveWebAssembly`. In this project **Interactive** is only the

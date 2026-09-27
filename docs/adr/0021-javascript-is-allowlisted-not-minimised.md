@@ -249,3 +249,6 @@ value is not a measurement: no layout is read.)*
 input, and places the caret after the core rewrites the editor's text. It claims Shift+arrows while
 pointing, and only ↑, ↓, Tab and Escape while a completion list is open. This is still the one
 allowlisted keyboard/editor use. Reading or setting an input's selection reads no layout.)*
+
+*(Added the same day: the editor listener also reports the caret on `selectionchange` inside an
+editor surface, and places it when an edit opens. It is the same use, and reads no layout.)*
