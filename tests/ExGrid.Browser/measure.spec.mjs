@@ -11,7 +11,7 @@ import { SERVER } from './hosting.mjs';
 // window is dragged taller over a Stretch grid on a circuit — the rows painted for the old
 // size until the new size's render lands, a round trip later:
 //
-//   EXGRID_HOSTING=server EXGRID_MEASURE=fill npx playwright test measure.spec.mjs
+//   EXGRID_HOSTING=server EXGRID_MEASURE=stretch npx playwright test measure.spec.mjs
 //
 // Two numbers per round trip. The traffic of a sweep while scrolling — WebSocket frames
 // the circuit carries per second, which is what "a wire round trip per row" costs in
@@ -21,7 +21,7 @@ import { SERVER } from './hosting.mjs';
 const MEASURE = process.env.EXGRID_MEASURE;
 const ROUND_TRIPS = [0, 50, 150];
 
-test.skip(!MEASURE, 'the measurements run only with EXGRID_MEASURE=pointer or EXGRID_MEASURE=fill');
+test.skip(!MEASURE, 'the measurements run only with EXGRID_MEASURE=pointer or EXGRID_MEASURE=stretch');
 test.skip(!!MEASURE && !SERVER, 'the measurements are of a circuit: run them with EXGRID_HOSTING=server');
 
 const median = (values) => {
@@ -109,7 +109,7 @@ test('what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip
 });
 
 test('how long the stale band stands while the window is dragged over a Stretch grid, at 0, 50 and 150 ms round trip (§21.9, ADR-0028)', async ({ page }, testInfo) => {
-    test.skip(MEASURE !== 'fill', 'EXGRID_MEASURE=fill');
+    test.skip(MEASURE !== 'stretch', 'EXGRID_MEASURE=stretch');
     test.setTimeout(180_000);
     const results = {};
     for (const rtt of ROUND_TRIPS) {

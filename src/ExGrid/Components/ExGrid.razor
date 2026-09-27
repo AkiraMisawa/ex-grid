@@ -7,6 +7,7 @@
 @using global::ExGrid.Keys
 @using global::ExGrid.Rows
 @using global::ExGrid.Columns
+@using global::ExGrid.Finding
 @using global::ExGrid.Selection
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.Components.Rendering
@@ -448,6 +449,56 @@
                    (ADR-0036/0039). *@
                 BuiltInMenuItems(__builder, contextMenu.Commands, contextMenu.ResolveKey!, lettered: false);
             }
+        </div>
+    }
+    @if (_findOpen)
+    {
+        @* The find panel (ADR-0047): a popover by every popover rule (ADR-0039/0040), keyed by
+           the opening like the others, with a Tab-wrap sentinel either side that hands the
+           keyboard back to its field. The Chrome's contents, or the built-in form: Enter in the
+           field is the form's implicit submission, which an IME's candidate Enter is not. *@
+        var findContext = BuildFindContext();
+        <div class="ex-popover ex-popover-find" style="@FindPopoverStyle()" role="dialog"
+             aria-label="@Label(FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
+            <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
+            <div class="ex-popover-find-body">
+                @if (Chrome?.FindPanel(findContext) is { } findFragment)
+                {
+                    @findFragment
+                }
+                else
+                {
+                    <form class="ex-popover-form" @onsubmit="SubmitFindAsync" @onsubmit:preventDefault>
+                        <input type="search" class="ex-find-field" aria-label="@Label(FindPanelLabelIds.Field)"
+                               value="@_findText" @ref="_findField"
+                               @oninput="e => _findText = e.Value?.ToString() ?? string.Empty"
+                               @onkeydown="OnFindFieldKeyDown" />
+                        <label>
+                            <input type="checkbox" class="ex-find-match-case" checked="@_findMatchCase"
+                                   @onchange="e => _findMatchCase = e.Value is true" />
+                            @Label(FindPanelLabelIds.MatchCase)
+                        </label>
+                        <label>
+                            <input type="checkbox" class="ex-find-whole-cell" checked="@_findWholeCell"
+                                   @onchange="e => _findWholeCell = e.Value is true" />
+                            @Label(FindPanelLabelIds.WholeCell)
+                        </label>
+                        <div class="ex-popover-actions">
+                            <button type="button" class="ex-find-previous" @onclick="() => FindStepAsync(backward: true)">@Label(FindPanelLabelIds.Previous)</button>
+                            <button type="button" class="ex-find-next" @onclick="() => FindStepAsync(backward: false)">@Label(FindPanelLabelIds.Next)</button>
+                        </div>
+                        @* What the last step came to, announced: a step that moves nothing is
+                           otherwise a key that did nothing and said nothing (ADR-0033). *@
+                        <div class="ex-find-outcome" role="status">@(_findOutcome switch
+                        {
+                            FindOutcome.NotFound => Label(FindPanelLabelIds.NotFound),
+                            FindOutcome.OrderChanged => Label(FindPanelLabelIds.OrderChanged),
+                            _ => "",
+                        })</div>
+                    </form>
+                }
+            </div>
+            <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
         </div>
     }
     @if (MessageOnShow() is var (messageCell, messageText, isEditorError) && messageText is not null)
@@ -944,6 +995,19 @@
     /// </summary>
     [Parameter] public EventCallback<GridClearIntent> OnClear { get; set; }
 
+    /// <summary>
+    /// A push-mode Consumer's answer to a Find step (ADR-0047): the next cell whose displayed
+    /// text matches, in the order the request was read in. A bound <see cref="Source"/> that
+    /// can find answers instead; with neither, Ctrl+F is refused rather than left to the
+    /// browser, whose find sees only the painted rows. A step asked while one is out cancels
+    /// it, and its answer is discarded.
+    /// </summary>
+    [Parameter] public Func<GridFindRequest, CancellationToken, Task<GridFindResult>>? OnFind { get; set; }
+
+    /// <summary>A Find step that moved nothing, saying why (ADR-0047): nothing can search,
+    /// nothing matched, or the order moved while the step was out. Chrome words it.</summary>
+    [Parameter] public EventCallback<FindRefusalReason> OnFindRefused { get; set; }
+
     /// <summary>A refused copy, saying which rule it hit (ADR-0005): the clipboard was
     /// left untouched, and this is where Chrome learns why.</summary>
     [Parameter] public EventCallback<CopyRefusalReason> OnCopyRefused { get; set; }
@@ -1013,6 +1077,21 @@
     /// <summary>The cell the context menu was opened on, or null (ADR-0036).</summary>
     private CellPosition? _contextCell;
 
+    // The find panel (ADR-0047): open or not, and what it holds — kept across a close and
+    // reopen within the instance, as Excel's dialog keeps its last search. The step in
+    // flight is cancelled by the next, and its answer discarded.
+    private bool _findOpen;
+    private string _findText = "";
+    private bool _findMatchCase;
+    private bool _findWholeCell;
+    private FindOutcome _findOutcome;
+    private bool _findBackwardOnSubmit;
+    private CancellationTokenSource? _findCancellation;
+    private ElementReference _findField;
+    // The requests for the panel's field to take DOM focus, for a substituted Chrome: each
+    // opening, and each Tab off either end (ADR-0039).
+    private int _findFocusRequest;
+
     private double _contextLeftPx;
 
     private double _contextTopPx;
@@ -1055,6 +1134,7 @@
         PanelFirst,
         PanelLast,
         PanelSearch,
+        FindField,
     }
 
     // A popup the popover's contents opened of their own (ADR-0039): reported by them,
@@ -2377,7 +2457,7 @@
         // menu is how people close menus everywhere else on the platform. The
         // dismissal is markup, so the render must run even when the press itself
         // changes nothing.
-        var dismissed = _menuColumn >= 0 || _contextCell is not null;
+        var dismissed = AnyPopoverOpen;
         if (dismissed)
         {
             CloseMenus();
@@ -2639,7 +2719,7 @@
         _gestureConsumedClick = false;
         // The same dismissal rule as the body: pressing the header past an open
         // popover closes it, and whatever the press also meant still happens.
-        if (_menuColumn >= 0 || _contextCell is not null)
+        if (AnyPopoverOpen)
             CloseMenus();
         // A press anywhere leaves an Interactive cell (ADR-0037); this handler always
         // renders, so the chosen button's paint goes with it.
@@ -2961,6 +3041,7 @@
         ScheduleMessage(null);
 
         _menuColumn = -1;
+        _findOpen = false;
         _contextCell = cell;
         BeginPopoverFocus();
         // The offsets are relative to the Viewport, whose left edge is the content's and
@@ -2988,6 +3069,7 @@
 
         (_contextLeftPx, _contextTopPx) = CellCorner(focus);
         _menuColumn = -1;
+        _findOpen = false;
         _contextCell = focus;
         BeginPopoverFocus();
     }
@@ -3382,6 +3464,7 @@
         }
         _menuColumn = column;
         _contextCell = null;
+        _findOpen = false;
         BeginPopoverFocus();
         if (IsFilterable(column))
             await BeginFilterAsync(column);
@@ -3400,8 +3483,14 @@
         await OpenMenuAsync(column);
     }
 
+    /// <summary>Whether any popover stands: a column's, the Context Menu or the find panel.</summary>
+    private bool AnyPopoverOpen => _menuColumn >= 0 || _contextCell is not null || _findOpen;
+
     private void CloseMenus()
     {
+        _findOpen = false;
+        _findCancellation?.Cancel();
+        _findCancellation = null;
         // A popup inside the popover goes with it (ADR-0039).
         _innerPopupOpen = false;
         _contextCell = null;
@@ -3464,7 +3553,7 @@
     /// so that side is its room (ADR-0040).</summary>
     private double? PopoverRoomPx()
     {
-        if (_menuColumn >= 0)
+        if (_menuColumn >= 0 || _findOpen)
             return HeaderPopoverRoomPx;
         if (_contextCell is not null)
         {
@@ -3492,7 +3581,7 @@
     /// </summary>
     private void ClosePopoverAndReturnFocus()
     {
-        var wasOpen = _menuColumn >= 0 || _contextCell is not null;
+        var wasOpen = AnyPopoverOpen;
         if (wasOpen)
             _ = ReclaimFocusAsync();
         CloseMenus();
@@ -3518,7 +3607,7 @@
     // and changes nothing.
     private Action<bool> ReportFor(int opening) => open => _ = InvokeAsync(async () =>
     {
-        if (opening != _popoverFocusRequest || (_menuColumn < 0 && _contextCell is null))
+        if (opening != _popoverFocusRequest || !AnyPopoverOpen)
             return;
         _innerPopupOpen = open;
         await SyncInnerPopupAsync();
@@ -3566,6 +3655,7 @@
         var element = target switch
         {
             PopoverFocus.PanelFirst => _panelFirst,
+            PopoverFocus.FindField => _findField,
             PopoverFocus.PanelLast => _panelLast,
             // The search box is the value list's first control; the condition's value is
             // where a search is typed when no list stands — or its operator, while that
@@ -4562,6 +4652,10 @@
                 if (OnRedo.HasDelegate)
                     await OnRedo.InvokeAsync();
                 return;
+            case GridKeyKind.Find:
+                await OpenFindAsync();
+                StateHasChanged();
+                return;
             case GridKeyKind.ClearAndEdit:
                 // Backspace: an editor entry like a printable key, minus the character
                 // (ADR-0035) — judged where every entry is, on the Focus.
@@ -4584,7 +4678,7 @@
                 // the grid keeps the keyboard — one press, one dismissal. Only with
                 // nothing left to dismiss is it the way out of Enter/Tab cycling
                 // (ADR-0012), releasing the grid's DOM focus.
-                if (_menuColumn >= 0 || _contextCell is not null)
+                if (AnyPopoverOpen)
                 {
                     // The keyboard comes back after the render that removes the popover,
                     // never before it: a control inside it can still answer this Escape
@@ -4766,8 +4860,188 @@
     private (GridKeyClaims Keys, bool CanFind) KeyClaims()
         => (new GridKeyClaims(AnyColumnEdits(), OnUndo.HasDelegate, OnRedo.HasDelegate), CanFind());
 
-    /// <summary>Whether anything can answer a Find (ADR-0047). Nothing yet.</summary>
-    private bool CanFind() => false;
+    /// <summary>Whether anything can answer a Find (ADR-0047): the push-mode delegate, or a
+    /// bound Source that says it can.</summary>
+    private bool CanFind() => OnFind is not null || (Source?.CanFind ?? false);
+
+    /// <summary>
+    /// Ctrl+F (ADR-0047): the find panel, taking the keyboard as every popover does
+    /// (ADR-0039) — or, where nothing can search, a refusal and nothing opened, because the
+    /// browser's own find would look complete and see only the painted rows.
+    /// </summary>
+    private async Task OpenFindAsync()
+    {
+        if (!CanFind())
+        {
+            if (OnFindRefused.HasDelegate)
+                await OnFindRefused.InvokeAsync(FindRefusalReason.Unavailable);
+            return;
+        }
+        CloseMenus();
+        _findOpen = true;
+        _findOutcome = FindOutcome.None;
+        BeginPopoverFocus();
+        _findField = default;
+        _findFocusRequest++;
+        _popoverFocusPending = PopoverFocus.FindField;
+    }
+
+    /// <summary>
+    /// One Find step (ADR-0047): asked of the Source or the push-mode delegate, with the
+    /// Focus to start from, the selection as the scope when it is more than one cell, the
+    /// visible columns in their current order and the version they were read in. An answer
+    /// under another version moves nothing; a found cell becomes the Focus and is revealed.
+    /// </summary>
+    private async Task FindStepAsync(bool backward)
+    {
+        if (!_findOpen || _findText.Length == 0 || !CanFind())
+            return;
+        _findCancellation?.Cancel();
+        var cancellation = _findCancellation = new CancellationTokenSource();
+
+        var selection = _selection.Selection;
+        var names = new string[Columns.Count];
+        for (var i = 0; i < Columns.Count; i++)
+            names[i] = Columns[i].Name;
+        var request = new GridFindRequest
+        {
+            Text = _findText,
+            MatchCase = _findMatchCase,
+            WholeCell = _findWholeCell,
+            Backward = backward,
+            From = selection.IsEmpty ? null : selection.Focus,
+            Scope = !selection.IsEmpty && selection.CellCount > 1 ? selection.Ranges : null,
+            Columns = names,
+            RowSequenceVersion = _sequenceVersion,
+        };
+
+        GridFindResult answer;
+        try
+        {
+            answer = OnFind is { } find
+                ? await find(request, cancellation.Token)
+                : await Source!.FindAsync(request, cancellation.Token);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            return;
+        }
+        // Superseded by a later step, or the panel closed while the question was out: the
+        // answer is somebody else's now, and is discarded (ADR-0025's rule).
+        if (_disposed || cancellation.IsCancellationRequested || !ReferenceEquals(cancellation, _findCancellation))
+            return;
+        _findCancellation = null;
+
+        var column = -1;
+        if (answer.IsFound)
+        {
+            for (var i = 0; i < Columns.Count; i++)
+            {
+                if (Columns[i].Name == answer.Column)
+                {
+                    column = i;
+                    break;
+                }
+            }
+        }
+        FindRefusalReason? refused = null;
+        if (request.RowSequenceVersion != _sequenceVersion || (answer.IsFound && column < 0))
+            refused = FindRefusalReason.OrderChanged;
+        else if (!answer.IsFound)
+            refused = FindRefusalReason.NotFound;
+
+        if (refused is { } reason)
+        {
+            _findOutcome = reason == FindRefusalReason.NotFound ? FindOutcome.NotFound : FindOutcome.OrderChanged;
+            _suppressRender = false;
+            StateHasChanged();
+            if (OnFindRefused.HasDelegate)
+                await OnFindRefused.InvokeAsync(reason);
+            return;
+        }
+
+        _findOutcome = FindOutcome.Found;
+        var found = new CellPosition(answer.Row, column);
+        var extent = Extent;
+        if (found.Row >= extent.RowCount)
+        {
+            // A position past the result the grid holds is an answer about another order.
+            _findOutcome = FindOutcome.OrderChanged;
+            _suppressRender = false;
+            StateHasChanged();
+            if (OnFindRefused.HasDelegate)
+                await OnFindRefused.InvokeAsync(FindRefusalReason.OrderChanged);
+            return;
+        }
+        // With a scope the selection stands and only the Focus moves inside it, so the next
+        // step searches the same ranges; without one it collapses onto the match.
+        var next = request.Scope is not null && selection.Contains(found)
+            ? selection.FocusOn(found)
+            : selection.Click(found, extent);
+        if (PageSize is { } pageSize && found.Row / pageSize != _pageIndex)
+        {
+            _pageIndex = found.Row / pageSize;
+            PrepareRender();
+        }
+        Apply(next);
+        _revealFocus = true;
+        _suppressRender = false;
+        StateHasChanged();
+    }
+
+    /// <summary>The find panel's context (ADR-0047), for a substituted Chrome.</summary>
+    private FindContext BuildFindContext() => new(
+        _findText,
+        _findMatchCase,
+        _findWholeCell,
+        _findOutcome,
+        text => _findText = text,
+        value => _findMatchCase = value,
+        value => _findWholeCell = value,
+        () => InvokeAsync(() => FindStepAsync(backward: false)),
+        () => InvokeAsync(() => FindStepAsync(backward: true)),
+        CloseFromChrome,
+        _findFocusRequest,
+        InnerPopupChangedFromChrome);
+
+    /// <summary>Enter in the built-in field is the form's implicit submission — which an IME
+    /// confirming a candidate does not trigger — and Shift says which way it runs.</summary>
+    private void OnFindFieldKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            _findBackwardOnSubmit = e.ShiftKey;
+    }
+
+    private Task SubmitFindAsync()
+    {
+        var backward = _findBackwardOnSubmit;
+        _findBackwardOnSubmit = false;
+        return FindStepAsync(backward);
+    }
+
+    /// <summary>Tab off either end of the find panel comes back to its first control
+    /// (ADR-0039): the built-in field, or the substituted panel's through its request.</summary>
+    private async Task ReturnKeyboardToFindAsync()
+    {
+        _findFocusRequest++;
+        if (_findField.Context is not null)
+            await FocusQuietlyAsync(_findField);
+        else
+            StateHasChanged();
+    }
+
+    /// <summary>The find panel's place (ADR-0040): the grid's top right, under the header,
+    /// inside the grid's box across and downwards.</summary>
+    private string FindPopoverStyle()
+    {
+        var widest = Math.Min(PopoverMaxWidthPx, Math.Max(0, _visibleWidthPx));
+        var narrowest = Math.Min(PopoverMinWidthPx, widest);
+        return FormattableString.Invariant(
+            $"left: {Math.Max(0, _visibleWidthPx)}px; top: {BandHeightPx}px; transform: translateX(-100%); min-width: {narrowest}px; max-width: {widest}px; max-height: {HeaderPopoverRoomPx}px");
+    }
+
+    /// <summary>A word of the built-in panels, through the Consumer's labels first.</summary>
+    private string Label(string id) => CommandLabel?.Invoke(id) ?? BuiltInCommandLabels.For(id);
 
     /// <summary>Whether the Cell Editor opens here: an editable column, and a row that
     /// is in hand — the Focus over a Placeholder waits for the data (ADR-0012/ED-8).</summary>

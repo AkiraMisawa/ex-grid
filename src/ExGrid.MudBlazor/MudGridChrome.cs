@@ -60,6 +60,20 @@ public sealed class MudGridChrome : IGridChrome
         };
     }
 
+    /// <summary>The find panel (ADR-0047): a <c>MudTextField</c>, the two options and the two
+    /// steps, inside the core's popover.</summary>
+    public RenderFragment? FindPanel(FindContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            builder.OpenComponent<MudExGridFindPanel>(0);
+            builder.AddComponentParameter(1, nameof(MudExGridFindPanel.Context), context);
+            builder.AddComponentParameter(2, nameof(MudExGridFindPanel.Chrome), this);
+            builder.CloseComponent();
+        };
+    }
+
     /// <summary>The column menu: the core's commands as <c>MudButton</c> menu items.</summary>
     public RenderFragment? ColumnMenu(ColumnMenuContext context)
     {

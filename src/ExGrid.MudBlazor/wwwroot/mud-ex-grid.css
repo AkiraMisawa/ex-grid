@@ -160,3 +160,19 @@
     gap: 4px;
     flex-shrink: 0;
 }
+/* The find panel (ADR-0047): the filter panel's column, with no list to give way. The outcome
+   line keeps its height when empty, so the panel does not jump when a step finds nothing. */
+.mud-ex-grid-find {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px;
+    min-height: 0;
+}
+.mud-ex-grid-find-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.mud-ex-grid-find-outcome { min-height: 1.4em; }

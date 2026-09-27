@@ -213,6 +213,32 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         return Task.FromResult(Chrome.DistinctValues.Of(values));
     }
 
+    /// <summary>Always: every row is in hand (ADR-0047).</summary>
+    public bool CanFind => true;
+
+    /// <summary>
+    /// The reference Find (ADR-0047): <see cref="Finding.GridFind.Search{TRow}"/> over the
+    /// current result, matching each column's displayed text as the grid handed it over in
+    /// <see cref="ColumnInfo{TRow}.Text"/>. A column this source was not told about, or one
+    /// with no text of its own, is skipped. A request read under another version is answered
+    /// anyway: the grid discards it by the version, which is the one place that knows.
+    /// </summary>
+    public Task<Finding.GridFindResult> FindAsync(Finding.GridFindRequest request, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+        var columns = _columns ?? [];
+        return Task.FromResult(Finding.GridFind.Search(Window, request, name =>
+        {
+            foreach (var column in columns)
+            {
+                if (column.Name == name)
+                    return column.IsQueryable ? column.Text ?? (row => column.Value(row)?.ToString() ?? "") : null;
+            }
+            return null;
+        }));
+    }
+
     /// <summary>Everything is in hand, so a copy beyond the Window cannot arise — but
     /// the answer is honest anyway: the slice of the current result, clamped to what
     /// exists (ADR-0005).</summary>

@@ -316,6 +316,24 @@ public sealed record GridSelection
         return WithFocus(CellAt(range, next, order), index);
     }
 
+    /// <summary>
+    /// Moves the Focus onto a cell inside the selection and leaves the ranges and the Anchor
+    /// where they are — what a Find step does when it searches the selection (ADR-0047): the
+    /// next step searches the same ranges. The range holding the cell becomes the Focus's; with
+    /// the cell in several, the latest-created one, where the Anchor lives. Throws when the cell
+    /// is selected nowhere: moving the Focus out of the selection is <see cref="Click"/>.
+    /// </summary>
+    public GridSelection FocusOn(CellPosition cell)
+    {
+        for (var i = Ranges.Count - 1; i >= 0; i--)
+        {
+            if (Ranges[i].Contains(cell))
+                return WithFocus(cell, i);
+        }
+        throw new ArgumentOutOfRangeException(nameof(cell), cell,
+            "The cell is not in the selection; moving the Focus out of it is Click (ADR-0047).");
+    }
+
     /// <summary>Structural equality: two selections built by identical gestures are equal —
     /// what a ShouldRender-style "did the selection change" comparison needs (ADR-0003).</summary>
     public bool Equals(GridSelection? other)

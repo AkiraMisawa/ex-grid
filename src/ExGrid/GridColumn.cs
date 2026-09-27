@@ -71,7 +71,10 @@ public sealed record GridColumn<TRow>
         // overflow rule throw for the same value much later, naming no origin.
         if (type is not (ColumnType.Text or ColumnType.Number or ColumnType.Date or ColumnType.Boolean))
             throw new ArgumentOutOfRangeException(nameof(type), type, $"Unknown ColumnType for column '{name}'.");
-        Info = new ColumnInfo<TRow>(name, type, value, queryable);
+        // The displayed text travels with the slice, for a Source that finds (ADR-0047): the
+        // same rule the row paints by, so a search matches what the user reads.
+        Info = new ColumnInfo<TRow>(name, type, value, queryable,
+            queryable ? row => value(row) is { } shown ? format is { } f ? f(shown) : shown.ToString() ?? "" : "" : null);
         Header = header ?? name;
         Width = width ?? new ColumnWidthSpec(ColumnWidth.Auto);
         // Refused here rather than in the spec, which is built before the column and cannot

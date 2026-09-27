@@ -664,7 +664,7 @@ release.
   hold it, since it renders its own markup and not the grid, and the DemoHost is WebAssembly
   only. No host in the repository runs the grid on a Server circuit, so the measurement waits
   on one. *(Measured 2026-09-26, once the Server host existed:
-  `EXGRID_HOSTING=server EXGRID_MEASURE=fill` in `measure.spec.mjs`, on `/fill?parent=window`,
+  `EXGRID_HOSTING=server EXGRID_MEASURE=stretch` in `measure.spec.mjs`, on `/stretch?parent=window`,
   the window dragged from 420px to 820px tall in 20px steps over about 0.75 s, bundled
   Chromium under xvfb on Linux, three runs.)* At a 0 ms round trip, 3 or 4 of the drag's
   ~45 frames showed a gap below the painted rows, at most 12px, gone as the drag stopped. At

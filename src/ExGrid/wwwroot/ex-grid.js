@@ -494,7 +494,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 answering = true;
                 holdStartedAt = performance.now();
                 if (sentinel) {
-                    awaitingMove = { from: event.target, into: '.ex-popover-commands' };
+                    // A column's popover wraps back to its commands; the find panel, which
+                    // has none, to its own contents (ADR-0044/0047).
+                    const into = popoverOf(event.target)?.querySelector('.ex-popover-commands')
+                        ? '.ex-popover-commands'
+                        : '.ex-popover-find-body';
+                    awaitingMove = { from: event.target, into };
                 }
                 drain();
             }

@@ -2,6 +2,7 @@
 @implements IDisposable
 @using ExGrid.Chrome
 @using ExGrid.Clipboard
+@using ExGrid.Finding
 @using global::ExGrid.MudBlazor
 @* global::, for the reason MudApp.razor gives (AGENTS.md, the name collisions). *@
 @using global::MudBlazor
@@ -42,6 +43,7 @@
        a live region where the confirmations above are not: they report what did happen. *@
     <span id="paste-refused-status" role="status">Paste refused: @_pasteRefusedStatus</span>
     <span id="edit-discarded-status" role="status">Edit discarded: @_editDiscardedStatus</span>
+    <span id="find-refused-status" role="status">Find: @_findStatus</span>
     <span id="context-status">Context: @_contextStatus</span>
     <span id="order-status">Order: @string.Join(",", _columns.Select(c => c.Name))</span>
     <span id="width-status">Width: @_widthStatus</span>
@@ -65,6 +67,7 @@
         OnCopyRefused="OnCopyRefused"
         OnPasteRefused="OnPasteRefused"
         OnEditDiscarded="OnEditDiscarded"
+        OnFindRefused="OnFindRefused"
         OnColumnWidthChanged="OnWidthChanged"
         OnColumnOrderChanged="OnOrderChanged"
         OnColumnHidden="OnHidden"
@@ -208,6 +211,12 @@
 
     private string _editStatus = "—";
     private string _clearStatus = "—";
+    private string _findStatus = "—";
+
+    /// <summary>Find's refusals (ADR-0047). This page's grid is bound to GridSource.From, which
+    /// searches, so Unavailable never arrives here; the panel words NotFound itself too.</summary>
+    private void OnFindRefused(FindRefusalReason reason)
+        => Status(reason, reason.ToString(), s => _findStatus = s);
     private string _historyStatus = "—";
 
     // The undo stack ADR-0007 says the Consumer owns: one entry per intent — a typed edit,
