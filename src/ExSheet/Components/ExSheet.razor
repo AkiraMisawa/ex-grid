@@ -468,7 +468,9 @@
     /// equal, field for field, the ones this Sheet's last copy wrote, it is that copy, and its
     /// Entries are pasted with their relative References shifted by the distance pasted.
     /// Otherwise every target cell takes its field as typed under the Sheet's culture: shown text
-    /// as it is, an invariant value as that value (<see cref="SheetClipboard.TypedFor"/>). The
+    /// as it is, an invariant value as that value (<see cref="SheetClipboard.TypedFor"/>) — and an
+    /// invariant number as its exact double, every digit it holds
+    /// (<see cref="SheetClipboard.ExactNumberFor"/>). The
     /// grid has already judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a
     /// spilled block becomes the Selection when this returns. A field beginning with <c>=</c>
     /// that cannot be read refuses the whole paste, and nothing is written.
@@ -485,6 +487,7 @@
         }
         var sheet = CurrentSheet;
         var typed = new Dictionary<CellAddress, string>();
+        var exact = new Dictionary<CellAddress, Entry?>();
         foreach (var range in intent.Plan.Targets)
         {
             for (var row = range.TopRow; row <= range.BottomRow; row++)
@@ -493,6 +496,11 @@
                 {
                     var at = new CellPosition(row, column);
                     var field = intent.ValueFor(at);
+                    if (SheetClipboard.ExactNumberFor(field, intent.OriginFor(at)) is { } number)
+                    {
+                        exact[new CellAddress(row, column)] = Entry.FromValue(Value.FromNumber(number));
+                        continue;
+                    }
                     if (SheetClipboard.TypedFor(field, intent.OriginFor(at), sheet.Culture) is not { } text)
                     {
                         _notice = SheetWords.PasteReadsDifferently(field, sheet.Culture);
@@ -505,7 +513,29 @@
         }
         try
         {
-            await PerformAsync(SheetEdit.Enter(typed));
+            if (exact.Count == 0)
+            {
+                await PerformAsync(SheetEdit.Enter(typed));
+                return;
+            }
+            // The typed fields and the exact numbers are one operation on the undo stack
+            // (ADR-0048). The engine takes typed text, whose reading can give a cell a format,
+            // and exact Entries in separate edits, so the paste is two engine steps, typed first:
+            // a Formula that cannot be read refuses it before anything is written.
+            var steps = new List<SheetStep>(2);
+            if (typed.Count > 0) steps.Add(sheet.Do(SheetEdit.Enter(typed)));
+            try
+            {
+                steps.Add(sheet.Do(SheetEdit.SetEntries(exact)));
+            }
+            catch (SheetRefusedException)
+            {
+                // Nothing is half pasted: the typed fields are put back.
+                if (steps.Count > 0) await ChangedAsync(steps[0].Undo(), raiseDocument: false);
+                throw;
+            }
+            _history.Record(steps);
+            await ChangedAsync([.. steps.Select(step => step.Change)]);
         }
         catch (FormulaSyntaxException error)
         {

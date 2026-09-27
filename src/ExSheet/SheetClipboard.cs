@@ -108,25 +108,32 @@ internal static partial class SheetClipboard
     }
 
     /// <summary>
-    /// What a pasted field is typed as under <paramref name="culture"/> (ADR-0048, ADR-0050 item
-    /// 10). Shown text is typed as it is. An invariant field — Excel's <c>x:num</c>, or ExGrid's
-    /// and ExSheet's own unformatted HTML — is its value as it is: a number written with the
-    /// culture's decimal separator, so that <c>1234.5</c> from Excel stays 1234.5 under
-    /// <c>de-DE</c>; an ISO date as the date; <c>TRUE</c> and <c>FALSE</c> as booleans. Any other
-    /// invariant field is text or an Error Value, and is typed as it is. Null when an invariant
-    /// value would not read back under the culture as that same value: the paste is refused
-    /// rather than write a different one.
+    /// The number an invariant pasted field is (ADR-0048, ADR-0050 item 10): Excel's
+    /// <c>x:num</c>, or ExGrid's and ExSheet's own unformatted HTML, holding a finite number. It is
+    /// pasted as that exact double, every digit it holds — not typed, which would cut it to the
+    /// fifteen significant digits a typed number keeps — and so reads the same under every
+    /// culture: <c>1234.5</c> from Excel stays 1234.5 under <c>de-DE</c>. Null for any other field,
+    /// which <see cref="TypedFor"/> types.
+    /// </summary>
+    internal static double? ExactNumberFor(string field, PasteFieldOrigin origin) =>
+        origin == PasteFieldOrigin.Invariant
+        && double.TryParse(field, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+        && double.IsFinite(number)
+            ? number
+            : null;
+
+    /// <summary>
+    /// What a pasted field that is not an exact number (<see cref="ExactNumberFor"/>) is typed as
+    /// under <paramref name="culture"/> (ADR-0048, ADR-0050 item 10). Shown text is typed as it
+    /// is. An invariant field is its value as it is: an ISO date as the date; <c>TRUE</c> and
+    /// <c>FALSE</c> as booleans. Any other invariant field is text or an Error Value, and is typed
+    /// as it is. Null when an invariant date would not read back under the culture as a date: the
+    /// paste is refused rather than write a different value.
     /// </summary>
     internal static string? TypedFor(string field, PasteFieldOrigin origin, CultureInfo culture)
     {
         if (origin != PasteFieldOrigin.Invariant) return field;
         if (field.Equals("TRUE", StringComparison.OrdinalIgnoreCase) || field.Equals("FALSE", StringComparison.OrdinalIgnoreCase)) return field;
-        if (double.TryParse(field, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number))
-        {
-            var invariant = number.ToString("R", CultureInfo.InvariantCulture);
-            var typed = invariant.Replace(".", culture.NumberFormat.NumberDecimalSeparator, StringComparison.Ordinal);
-            return NumberOf(typed, culture) is { } read && NumberOf(invariant, CultureInfo.InvariantCulture) == read ? typed : null;
-        }
         if (IsoDate().IsMatch(field))
         {
             // The engine reads a year-first date, and a time after a space, in every culture.

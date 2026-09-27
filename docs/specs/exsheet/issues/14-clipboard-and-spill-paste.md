@@ -159,3 +159,14 @@ layer 2. **Open:** layer 3 with the real clipboard (SH-14's verification), inclu
 Chrome and Edge keep `data-ex-grid="invariant"` on the asynchronous route (ADR-0050, fourth
 round), so the Status stays. The refusal of an invariant number that reads back differently has
 no case that reaches it under the cultures tested; it is a guard, not a tested path.
+
+2026-09-27, component, an invariant number keeps every digit (ADR-0048, newest bullets; ADR-0050
+item 10): a pasted invariant number — Excel's `x:num`, ExGrid's and ExSheet's own unformatted
+HTML — is no longer typed under the culture, which cut it to fifteen significant digits; it goes
+in as its exact double (`Entry.FromValue(Value.FromNumber(…))` through `SheetEdit.SetEntries`).
+The engine takes typed text (whose reading can give a cell a date or percentage format) and exact
+Entries in separate edits, so a paste mixing them is two engine steps, typed first, recorded as
+one operation on the undo stack, as a paste over several ranges already is; `DocumentChanged` is
+raised once. The guard noted above no longer applies to numbers — an exact double needs no
+reading back — and stays for ISO dates. Layer 2: `ClipboardWiringTests` (a 17-digit `x:num`
+pasted as that double; typed fields and exact numbers undone as one step).
