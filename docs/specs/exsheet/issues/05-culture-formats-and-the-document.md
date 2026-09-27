@@ -75,3 +75,21 @@ Excel); the oracle now sets a case's `columnWidth` and records the width Excel l
 at. FMT-033/036/038 now expect what a wide column shows (`0.333333333`, `1.23457E+14`,
 `0.666666667`) instead of fifteen digits, which Excel never shows in a cell; twelve or more digits
 going scientific is Microsoft's own documentation, the eleven characters are uncertain.
+
+2026-09-27, engine, format levels (SH-21, ADR-0047 second round): number formats and alignment
+live at cell, row and column level, cell over row over column. `SheetEdit.SetFormat(range, …)`
+and `SheetEdit.SetAlignment(range, …)` (and the `Sheet` methods of the same names) record whole
+columns (`CellRange.Parse("B:D")`, `CellRange.WholeColumns`) and whole rows (`"2:4"`,
+`CellRange.WholeRows`) as one entry each, and the whole Sheet (`"A:XFD"`) as one run; a cell in
+them that set its own format takes the new one, as Excel's do, and one step undoes it all exactly.
+A cell records a format only where it differs from what its row or column gives it. The
+per-address `SetFormat`/`SetAlignment` the component calls are unchanged, so **the component can
+drop its 100,000-cell cap for a selection of whole columns or rows by passing the range instead
+of its cells** (its to wire). Insertion gives new rows the row above's row format, new columns
+the column to the left's, and formats move with their rows and columns; deletion drops them;
+undo restores every level. Copy and fill carry the format a cell shows, whichever level set it.
+The Sheet Document is version 3 (`columns` and `rows` as runs, a cell's explicit `General`
+recorded when a level would otherwise show through) and still reads versions 1 and 2;
+`SheetDocumentCell.Format`/`Alignment` are now nullable, null meaning "takes its row's or
+column's". Cases: `ExcelCases/format-levels.json` (insertion's Format Same As Above/Left
+documented, the precedence cases uncertain); C#: `FormatLevelTests`, `SheetDocumentTests`.

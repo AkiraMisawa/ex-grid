@@ -12,7 +12,8 @@ cell from its **Entry**:
   recalculation; a circular reference is `#CIRC!` in every cell of the cycle and every cell that
   depends on it
 
-The **Sheet Document** is the Sheet's serialisable form. It holds Entries and never Values, so
+The **Sheet Document** is the Sheet's serialisable form (version 3, which also reads versions 1
+and 2), with the formats set on its columns, rows and cells. It holds Entries and never Values, so
 anyone who wants a saved Sheet's numbers runs this engine — on a server as in the browser, with
 the same result.
 
@@ -129,8 +130,16 @@ step.Undo();                                         // Entries, formats and Ref
   alike; a range grows or shrinks as Excel's does, and a Reference whose cells are all deleted is
   written `#REF!` in the stored Formula. An insertion that would push an Entry, or the cells a
   Reference names, off the Sheet's edge is refused (`SheetRefusedException`). Inserted rows take
-  the number format and alignment of the row above, and inserted columns those of the column to
-  the left, as Excel's default does; Entries are never copied.
+  the number format and alignment of the row above — its cells' and the row's own — and inserted
+  columns those of the column to the left, as Excel's default does; Entries are never copied.
+  Formats set on rows and columns move with them.
+- **Formats** are set at three levels, cell over row over column, as in Excel.
+  `SheetEdit.SetFormat(range, format)` and `SheetEdit.SetAlignment(range, alignment)` record
+  whole columns (`CellRange.Parse("B:D")`) and whole rows (`"2:4"`) as one entry each, and the
+  whole Sheet (`"A:XFD"`) as one run; a cell inside that set its own format takes the new one,
+  as Excel's do. Any other range sets its cells. `Sheet.GetFormat` and `Sheet.GetAlignment`
+  answer what takes effect; `GetRowFormat`, `GetColumnFormat` and their alignment counterparts
+  what a level sets. The per-cell forms taking addresses keep working.
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each

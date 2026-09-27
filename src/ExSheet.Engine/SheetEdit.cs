@@ -49,6 +49,21 @@ public abstract class SheetEdit
         return new CellsEdit(list, sheet => sheet.SetAlignment(list, alignment));
     }
 
+    /// <summary>
+    /// A number format set on a range (<see cref="Sheet.SetFormat(CellRange, NumberFormat?)"/>);
+    /// <see langword="null"/> is General. Whole columns and whole rows are recorded as one entry
+    /// each, and undoing the step puts back every level exactly (ADR-0047).
+    /// </summary>
+    public static SheetEdit SetFormat(CellRange range, NumberFormat? format) =>
+        new StyleEdit(range, new StylePatch(format ?? NumberFormat.General, null));
+
+    /// <summary>A horizontal alignment set on a range, recorded as <see cref="SetFormat(CellRange, NumberFormat?)"/> records a format.</summary>
+    public static SheetEdit SetAlignment(CellRange range, HorizontalAlignment alignment)
+    {
+        if (!Enum.IsDefined(alignment)) throw new ArgumentOutOfRangeException(nameof(alignment), alignment, "Not an alignment.");
+        return new StyleEdit(range, new StylePatch(null, alignment));
+    }
+
     /// <summary>Rows inserted (<see cref="Sheet.InsertRows"/>).</summary>
     public static SheetEdit InsertRows(int row, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, true));
 
@@ -177,7 +192,7 @@ public abstract class SheetEdit
 
         internal override SheetStep Apply(Sheet sheet)
         {
-            var placed = states().ToList();
+            var placed = sheet.Settle(states());
             return new CellsEdit(placed.Select(p => p.Address), s => s.Restore(placed)).Apply(sheet);
         }
     }
@@ -191,7 +206,21 @@ public abstract class SheetEdit
         {
             var (refusal, states) = sheet.PlanFill(source, target, direction);
             if (refusal is not null) throw new SheetRefusedException(refusal);
-            return new CellsEdit(states.Select(s => s.Address), s => s.Restore(states)).Apply(sheet);
+            var settled = sheet.Settle(states);
+            return new CellsEdit(settled.Select(s => s.Address), s => s.Restore(settled)).Apply(sheet);
+        }
+    }
+
+    /// <summary>
+    /// A format or alignment set on a range: undone by the row and column levels and the cells it
+    /// touched put back exactly, redone by setting it again.
+    /// </summary>
+    internal sealed class StyleEdit(CellRange range, StylePatch patch) : SheetEdit
+    {
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var outcome = sheet.ApplyStyle(range, patch);
+            return new SheetStep(sheet, outcome.Change, s => s.UndoStyle(outcome), s => s.ApplyStyle(range, patch).Change);
         }
     }
 

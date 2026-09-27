@@ -120,6 +120,12 @@ internal static class ExcelCorpus
             if (code != numberFormat.GetString()) differences.Add($"numberFormat: expected \"{numberFormat.GetString()}\", got \"{code}\"");
         }
 
+        if (expect.TryGetProperty("alignment", out var alignment))
+        {
+            var setting = sheet.GetAlignment(at).ToString().ToLowerInvariant();
+            if (setting != alignment.GetString()) differences.Add($"alignment: expected \"{alignment.GetString()}\", got \"{setting}\"");
+        }
+
         return differences;
     }
 
@@ -223,6 +229,8 @@ internal static class ExcelCorpus
                     .Select(r => (IReadOnlyList<string>)[.. r.EnumerateArray().Select(f => f.GetString()!)])];
                 return SheetEdit.PasteText(rows, CellAddress.Parse(a.GetProperty("at").GetString()!));
             case "rename": return SheetEdit.Rename(a.GetProperty("name").GetString()!);
+            case "format": return SheetEdit.SetFormat(Range("range"), NumberFormat.Parse(a.GetProperty("format").GetString()!));
+            case "align": return SheetEdit.SetAlignment(Range("range"), Enum.Parse<HorizontalAlignment>(a.GetProperty("align").GetString()!, ignoreCase: true));
             default: throw new InvalidDataException($"Unknown action \"{what}\".");
         }
     }

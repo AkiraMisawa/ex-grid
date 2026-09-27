@@ -39,6 +39,9 @@
       - "tables" become ListObjects of the same name, columns and rows, placed far to the right
         (column 15000 on). A table still waiting for its data (rows null) has no Excel counterpart.
       - "otherSheets" are added as empty worksheets, so that a Formula naming them is accepted.
+      - "format" and "align" actions set Range.NumberFormat and Range.HorizontalAlignment on the
+        action's range, which may be whole columns (B:B) or whole rows (2:2); "alignment" is
+        read back from Range.HorizontalAlignment.
       - A case with "oracleSkip" is blocked with that reason.
       - "columnWidth" sets the check column's ColumnWidth (characters) before anything is entered,
         and its text is read at that width; every other case is read at width 100. The column's
@@ -82,6 +85,8 @@ $ErrorTexts = @{
     2042 = '#N/A'; 2043 = '#GETTING_DATA'; 2045 = '#SPILL!'; 2046 = '#CONNECT!'; 2047 = '#BLOCKED!'
     2048 = '#UNKNOWN!'; 2049 = '#FIELD!'; 2050 = '#CALC!'
 }
+# Range.HorizontalAlignment's XlHAlign values, by the corpus's names.
+$AlignmentCodes = @{ general = 1; left = -4131; center = -4108; right = -4152 }
 $KnownErrors = @('#NULL!', '#DIV/0!', '#VALUE!', '#REF!', '#NAME?', '#NUM!', '#N/A', '#GETTING_DATA', '#CIRC!', '#SPILL!')
 
 function Read-Json([string]$Path) {
@@ -188,6 +193,10 @@ function Invoke-Action($Excel, $Sheet, $Action, [bool]$UseFormula2) {
             [void]$Sheet.Paste()
         }
         'rename' { $Sheet.Name = [string]$Action.name }
+        # A range such as B:B or 2:2 is Excel's own whole column or row, so a format set on it is
+        # set the way the Format Cells dialog sets it on a selected column or row.
+        'format' { $Sheet.Range([string]$Action.range).NumberFormat = [string]$Action.format }
+        'align' { $Sheet.Range([string]$Action.range).HorizontalAlignment = $AlignmentCodes[[string]$Action.align] }
         'undo' { throw [InvalidOperationException]::new("blocked: Excel's undo does not reach changes made through COM") }
         default { throw [InvalidOperationException]::new("blocked: unknown action $($Action.do)") }
     }
@@ -219,6 +228,9 @@ function Read-Answer($Sheet, [string]$Check, [bool]$UseFormula2, [bool]$KeepWidt
     $answer.text = $text
     $answer.formula = if ($UseFormula2) { [string]$cell.Formula2 } else { [string]$cell.Formula }
     $answer.numberFormat = [string]$cell.NumberFormat
+    $alignment = [int]$cell.HorizontalAlignment
+    $answer.alignment = ($AlignmentCodes.GetEnumerator() | Where-Object { $_.Value -eq $alignment } | Select-Object -First 1).Key
+    if ($null -eq $answer.alignment) { $answer.alignment = "xlHAlign($alignment)" }
     $answer.columnWidth = $width
     $answer.widens = ($width -gt $DefaultColumnWidth + 0.001)
     return $answer
@@ -253,7 +265,7 @@ function Compare-Answer($Target, $Answer) {
         # "widthOnEntry" is the engine's answer in characters; Excel's width is recorded beside it, not compared.
         if ([bool]$Target.widens -ne [bool]$Answer.widens) { $differences.Add("widens: expected $($Target.widens), Excel's column is $($Answer.columnWidth) wide") }
     }
-    foreach ($name in 'text', 'formula', 'numberFormat') {
+    foreach ($name in 'text', 'formula', 'numberFormat', 'alignment') {
         if (Has-Prop $Target $name) {
             $e = [string](Get-Prop $Target $name)
             $a = [string]$Answer[$name]

@@ -57,9 +57,17 @@ public sealed partial class Sheet
         var sheet = new Sheet(SheetDocument.ResolveCulture(document.Culture), document.Name);
         // Declared before any Formula is computed: a reader shows #GETTING_DATA, never #NAME? (ADR-0049).
         foreach (var table in document.LinkedTables) sheet.Declare(table.Name, table.Columns);
+        foreach (var style in document.Columns)
+        {
+            for (var column = style.First; column <= style.Last; column++) sheet._columnStyles[column] = new AxisStyle(style.Format, style.Alignment);
+        }
+        foreach (var style in document.Rows)
+        {
+            for (var row = style.First; row <= style.Last; row++) sheet._rowStyles[row] = new AxisStyle(style.Format, style.Alignment);
+        }
         foreach (var cell in document.Cells)
         {
-            if (cell.Format.IsGeneral && cell.Alignment == HorizontalAlignment.General) continue;
+            if (cell.Format is null && cell.Alignment is null) continue;
             var held = sheet._cells[cell.Address] = new Cell(cell.Address);
             held.Format = cell.Format;
             held.Alignment = cell.Alignment;
@@ -70,14 +78,19 @@ public sealed partial class Sheet
 
     /// <summary>
     /// The Sheet as a Sheet Document: its culture, its name, its Linked Tables' declarations, its
-    /// Entries, and each cell's number format and alignment — never its Values, nor a table's rows
-    /// (ADR-0046, ADR-0048, ADR-0049).
+    /// Entries, and the number formats and alignments set on its columns, rows and cells — never its
+    /// Values, nor a table's rows (ADR-0046, ADR-0047, ADR-0048, ADR-0049). Adjacent columns or
+    /// rows formatted alike are recorded as one entry.
     /// </summary>
     public SheetDocument ToDocument() =>
         new(Culture.Name, Name, TableDeclarations, [.. _cells.Values
             .Where(c => !c.IsEmpty)
             .OrderBy(c => c.Address)
-            .Select(c => new SheetDocumentCell(c.Address, c.Entry, c.Format, c.Alignment))]);
+            .Select(c => new SheetDocumentCell(c.Address, c.Entry, c.Format, c.Alignment))])
+        {
+            Columns = Runs(_columnStyles),
+            Rows = Runs(_rowStyles),
+        };
 
     /// <summary>The addresses of every cell holding an Entry, in row-major order.</summary>
     public IEnumerable<CellAddress> EntryAddresses =>
@@ -96,15 +109,8 @@ public sealed partial class Sheet
     public string GetEntryText(CellAddress address)
     {
         if (!_cells.TryGetValue(address, out var cell) || cell.Entry is not { } entry) return "";
-        return entry.Formula ?? EntryText.Write(entry.Constant!.Value, cell.Format, Culture);
+        return entry.Formula ?? EntryText.Write(entry.Constant!.Value, GetFormat(address), Culture);
     }
-
-    /// <summary>The cell's number format; <see cref="NumberFormat.General"/> unless one was set or implied by what was typed.</summary>
-    public NumberFormat GetFormat(CellAddress address) => _cells.TryGetValue(address, out var cell) ? cell.Format : NumberFormat.General;
-
-    /// <summary>The cell's horizontal alignment setting.</summary>
-    public HorizontalAlignment GetAlignment(CellAddress address) =>
-        _cells.TryGetValue(address, out var cell) ? cell.Alignment : HorizontalAlignment.General;
 
     /// <summary>
     /// What the cell shows at no particular width: its Value formatted by its number format under
@@ -118,8 +124,8 @@ public sealed partial class Sheet
         {
             return new CellDisplay("", Resolve(GetAlignment(address), null), false, false);
         }
-        var (text, cannotShow) = cell.Format.Format(value, Culture);
-        return new CellDisplay(cannotShow ? "" : text, Resolve(cell.Alignment, value.Kind), value.Kind == ValueKind.Number, cannotShow);
+        var (text, cannotShow) = GetFormat(address).Format(value, Culture);
+        return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow);
     }
 
     private static HorizontalAlignment Resolve(HorizontalAlignment alignment, ValueKind? kind) =>
@@ -129,53 +135,6 @@ public sealed partial class Sheet
             ValueKind.Boolean or ValueKind.Error => HorizontalAlignment.Center,
             _ => HorizontalAlignment.Left,
         };
-
-    /// <summary>Sets the number format of cells; <see langword="null"/> is <see cref="NumberFormat.General"/>. No Value changes.</summary>
-    public SheetChange SetFormat(IEnumerable<CellAddress> addresses, NumberFormat? format)
-    {
-        ArgumentNullException.ThrowIfNull(addresses);
-        var applied = format ?? NumberFormat.General;
-        return Restyle(addresses, cell =>
-        {
-            if (cell.Format.Equals(applied)) return false;
-            cell.Format = applied;
-            return true;
-        });
-    }
-
-    /// <summary>Sets one cell's number format.</summary>
-    public SheetChange SetFormat(CellAddress address, NumberFormat? format) => SetFormat([address], format);
-
-    /// <summary>Sets the horizontal alignment of cells. No Value changes.</summary>
-    public SheetChange SetAlignment(IEnumerable<CellAddress> addresses, HorizontalAlignment alignment)
-    {
-        ArgumentNullException.ThrowIfNull(addresses);
-        if (!Enum.IsDefined(alignment)) throw new ArgumentOutOfRangeException(nameof(alignment), alignment, "Not an alignment.");
-        return Restyle(addresses, cell =>
-        {
-            if (cell.Alignment == alignment) return false;
-            cell.Alignment = alignment;
-            return true;
-        });
-    }
-
-    /// <summary>Sets one cell's horizontal alignment.</summary>
-    public SheetChange SetAlignment(CellAddress address, HorizontalAlignment alignment) => SetAlignment([address], alignment);
-
-    private SheetChange Restyle(IEnumerable<CellAddress> addresses, Func<Cell, bool> apply)
-    {
-        var rows = new SortedSet<int>();
-        foreach (var address in addresses)
-        {
-            var existing = _cells.TryGetValue(address, out var cell);
-            cell ??= new Cell(address);
-            if (!apply(cell)) continue;
-            if (cell.IsEmpty) _cells.Remove(address);
-            else if (!existing) _cells[address] = cell;
-            rows.Add(address.Row);
-        }
-        return rows.Count == 0 ? SheetChange.None : new SheetChange([], [], [.. rows]);
-    }
 
     /// <summary>Takes text as the user typed it into a cell, read under the Sheet's culture, and recalculates.</summary>
     /// <exception cref="FormulaSyntaxException">The text is a Formula that cannot be read; nothing changes.</exception>
@@ -463,10 +422,12 @@ public sealed partial class Sheet
 
         public Value? Value { get; set; }
 
-        public NumberFormat Format { get; set; } = NumberFormat.General;
+        /// <summary>The cell's own number format; <see langword="null"/> when it takes its row's or column's (ADR-0047).</summary>
+        public NumberFormat? Format { get; set; }
 
-        public HorizontalAlignment Alignment { get; set; }
+        /// <summary>The cell's own alignment; <see langword="null"/> when it takes its row's or column's (ADR-0047).</summary>
+        public HorizontalAlignment? Alignment { get; set; }
 
-        public bool IsEmpty => Entry is null && Format.IsGeneral && Alignment == HorizontalAlignment.General;
+        public bool IsEmpty => Entry is null && Format is null && Alignment is null;
     }
 }

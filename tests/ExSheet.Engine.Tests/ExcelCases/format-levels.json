@@ -1,0 +1,291 @@
+{
+  "area": "format-levels",
+  "about": "Number formats and alignment at cell, row and column level, cell over row over column, and how insertion and deletion carry them (ADR-0047, ADR-0046, SH-21). A format action on B:B or 2:2 is set on the whole column or row, as the Format Cells dialog sets it on a selected column or row. Microsoft documents that an inserted row takes the formatting of the row above and an inserted column that of the column to its left (the Insert Options button's default, Format Same As Above / Left). Which level wins where a row and a column are both formatted, and what formatting a whole column does to a cell formatted before it, are not documented: those cases are uncertain until the oracle asks Excel.",
+  "cases": [
+    {
+      "id": "LVL-001",
+      "source": "uncertain",
+      "description": "A number in a formatted column shows the column's format",
+      "cells": {"B5": "1.5"},
+      "action": {"do": "format", "range": "B:B", "format": "0.00"},
+      "check": "B5",
+      "expect": {"text": "1.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-002",
+      "source": "uncertain",
+      "description": "A number typed into a column after it was formatted shows the column's format",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "enter", "cells": {"B1000": "2"}}
+      ],
+      "check": "B1000",
+      "expect": {"text": "2.00", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-003",
+      "source": "uncertain",
+      "description": "A blank cell in a formatted row reports the row's format",
+      "cells": {},
+      "action": {"do": "format", "range": "3:3", "format": "0%"},
+      "check": "Q3",
+      "expect": {"numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-004",
+      "source": "uncertain",
+      "description": "A row formatted after its column wins where they cross",
+      "cells": {"B3": "0.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "format", "range": "3:3", "format": "0%"}
+      ],
+      "check": "B3",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-005",
+      "source": "uncertain",
+      "description": "A column formatted after a row wins where they cross: formatting the column formats every cell in it",
+      "cells": {"B3": "0.5"},
+      "action": [
+        {"do": "format", "range": "3:3", "format": "0%"},
+        {"do": "format", "range": "B:B", "format": "0.00"}
+      ],
+      "check": "B3",
+      "expect": {"text": "0.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-006",
+      "source": "uncertain",
+      "description": "The row formatted before a column keeps its format away from the crossing",
+      "cells": {"C3": "0.5"},
+      "action": [
+        {"do": "format", "range": "3:3", "format": "0%"},
+        {"do": "format", "range": "B:B", "format": "0.00"}
+      ],
+      "check": "C3",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-007",
+      "source": "uncertain",
+      "description": "A cell formatted after its column keeps its own format",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "format", "range": "B2", "format": "0%"}
+      ],
+      "check": "B2",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-008",
+      "source": "uncertain",
+      "description": "Formatting a whole column replaces the format of a cell in it formatted before",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "format", "range": "B:B", "format": "0.00"}
+      ],
+      "check": "B2",
+      "expect": {"text": "0.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-009",
+      "source": "uncertain",
+      "description": "A cell set to General inside a formatted column shows General",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "format", "range": "B2", "format": "General"}
+      ],
+      "check": "B2",
+      "expect": {"text": "0.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-010",
+      "source": "uncertain",
+      "description": "A row set to General over a formatted column shows General where they cross",
+      "cells": {"B3": "1.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "format", "range": "3:3", "format": "General"}
+      ],
+      "check": "B3",
+      "expect": {"text": "1.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-011",
+      "source": "uncertain",
+      "description": "Formatting the whole sheet replaces every row's and column's format",
+      "cells": {"B3": "0.5"},
+      "action": [
+        {"do": "format", "range": "3:3", "format": "0%"},
+        {"do": "format", "range": "A:XFD", "format": "0.00"}
+      ],
+      "check": "B3",
+      "expect": {"text": "0.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-012",
+      "source": "uncertain",
+      "description": "A row's alignment is its cells' alignment",
+      "cells": {"D2": "x"},
+      "action": {"do": "align", "range": "2:2", "align": "center"},
+      "check": "D2",
+      "expect": {"alignment": "center"}
+    },
+    {
+      "id": "LVL-013",
+      "source": "uncertain",
+      "description": "A cell's own alignment wins over its column's",
+      "cells": {"D2": "x"},
+      "action": [
+        {"do": "align", "range": "D:D", "align": "right"},
+        {"do": "align", "range": "D2", "align": "left"}
+      ],
+      "check": "D2",
+      "expect": {"alignment": "left"}
+    },
+    {
+      "id": "LVL-014",
+      "source": "uncertain",
+      "description": "Alignment and number format are set independently: aligning a column keeps a cell's format",
+      "cells": {"D2": "0.5"},
+      "action": [
+        {"do": "format", "range": "D2", "format": "0%"},
+        {"do": "align", "range": "D:D", "align": "center"}
+      ],
+      "check": "D2",
+      "expect": {"text": "50%", "numberFormat": "0%", "alignment": "center"}
+    },
+    {
+      "id": "LVL-015",
+      "source": "documented",
+      "description": "A row inserted below a formatted row takes its format (Format Same As Above)",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "insertRows", "row": 3},
+        {"do": "enter", "cells": {"B3": "0.5"}}
+      ],
+      "check": "B3",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-016",
+      "source": "documented",
+      "description": "A formatted row moves down when a row is inserted above it, and the new row takes the unformatted row above",
+      "cells": {"B2": "0.25"},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "insertRows", "row": 2},
+        {"do": "enter", "cells": {"B2": "0.5"}}
+      ],
+      "check": "B3",
+      "expect": {"text": "25%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-017",
+      "source": "documented",
+      "description": "A row inserted above a formatted row takes the row above it, not the formatted one below",
+      "cells": {"B2": "0.25"},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "insertRows", "row": 2},
+        {"do": "enter", "cells": {"B2": "0.5"}}
+      ],
+      "check": "B2",
+      "expect": {"text": "0.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-018",
+      "source": "uncertain",
+      "description": "Deleting a formatted row takes its format with it; the row that moves up brings its own",
+      "cells": {"B3": "0.5"},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "deleteRows", "row": 2}
+      ],
+      "check": "B2",
+      "expect": {"text": "0.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-019",
+      "source": "documented",
+      "description": "A column inserted to the right of a formatted column takes its format (Format Same As Left)",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "insertColumns", "column": "C"},
+        {"do": "enter", "cells": {"C7": "3"}}
+      ],
+      "check": "C7",
+      "expect": {"text": "3.00", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-020",
+      "source": "uncertain",
+      "description": "Deleting a column moves the formatted columns to its right left with their formats",
+      "cells": {"D4": "3"},
+      "action": [
+        {"do": "format", "range": "D:D", "format": "0.00"},
+        {"do": "deleteColumns", "column": "B"}
+      ],
+      "check": "C4",
+      "expect": {"text": "3.00", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-021",
+      "source": "uncertain",
+      "description": "A cell copied out of a formatted column carries the format it showed",
+      "cells": {"B5": "1.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "copy", "source": "B5", "destination": "E5"}
+      ],
+      "check": "E5",
+      "expect": {"text": "1.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-022",
+      "source": "uncertain",
+      "description": "An unformatted cell pasted into a formatted column brings its General with it",
+      "cells": {"E5": "1.5", "B5": "7"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "copy", "source": "E5", "destination": "B5"}
+      ],
+      "check": "B5",
+      "expect": {"text": "1.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-023",
+      "source": "uncertain",
+      "description": "Undoing a column's format puts back the cell formatted before it",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "undo"}
+      ],
+      "check": "B2",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-024",
+      "source": "uncertain",
+      "description": "Undoing a row's deletion puts back its format",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "deleteRows", "row": 2},
+        {"do": "undo"}
+      ],
+      "check": "B2",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    }
+  ]
+}
