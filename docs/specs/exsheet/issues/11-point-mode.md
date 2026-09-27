@@ -18,3 +18,15 @@ editor's text and caret, and the decision is made from them (ADR-0021's note).
 - [ ] Layer 3 on the Server host with a delayed circuit: fast typing never points where the text forbids it
 
 ## Comments
+
+2026-09-27, engine half: the Consumer's answers are pure functions over the text and the caret.
+`FormulaEntry.PointAt(text, caret)` is the Point predicate: a Reference can go at the caret after
+the Formula's `=`, an operator other than `%`, `(` or `,`, outside text in quotes and brackets,
+and with nothing after the caret that it would run into; it returns the insertion site.
+`FormulaEntry.PointedReferenceAt(text, caret)` returns the span of the Reference ending at the
+caret in such a place, which a further arrow key replaces while the component is pointing (only
+the component knows it is pointing: typed by hand, `=A1` is not pointed, and `PointAt` says no).
+`FormulaEntry.ReferenceText(range)` writes `A3` or `B7:C9` from the top-left
+(`FormulaEntryTests`). **What remains is the component's:** the fourth editing state, the
+pointing outline, Shift extending, an operator ending it, F2, the Selection and Focus staying
+put, pointing from the Formula Bar, and the layer 3 test with a delayed circuit.
