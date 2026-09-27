@@ -223,6 +223,157 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.Null(cut.Instance.OwnCopy);
     }
 
+    private static async Task CopyAndPasteAsync(IRenderedComponent<ExSheet> cut, string from, string to)
+    {
+        await GoToAsync(cut, from);
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+        await GoToAsync(cut, to);
+        await PasteAsync(cut, payload.Text!, payload.Html);
+    }
+
+    private static SheetDocument GermanDocument() => new Sheet(CultureInfo.GetCultureInfo("de-DE")).ToDocument();
+
+    [Fact] // ADR-0048, SH-14: inside ExSheet a copy carries Entries, and relative References shift by the distance pasted
+    public async Task Copying_a_formula_from_B1_to_B2_pastes_the_shifted_formula()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("A2", "5"), ("B1", "=A1"))));
+
+        await CopyAndPasteAsync(cut, "B1", "B2");
+
+        Assert.Equal("5", CellText(cut, "B2"));
+        await GoToAsync(cut, "B2");
+        Assert.Equal("=A2", FormulaBar(cut));
+    }
+
+    [Fact] // ADR-0048, ADR-0050 item 3: the own copy spills from one cell, with its formats, and the block is selected
+    public async Task The_own_copy_spills_with_its_entries_and_formats()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("A1"), "0.25");
+        sheet.SetFormat([CellAddress.Parse("A1")], NumberFormat.Parse("0%"));
+        sheet.Enter(CellAddress.Parse("B1"), "=A1*2");
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()).Add(s => s.SelectionChanged, selections.Add));
+
+        await CopyAndPasteAsync(cut, "A1:B1", "C3");
+
+        Assert.Equal("25%", CellText(cut, "C3"));
+        Assert.Equal(new SelectionRange(2, 2, 1, 2), Assert.Single(selections[^1].Ranges));
+        await GoToAsync(cut, "D3");
+        Assert.Equal("=C3*2", FormulaBar(cut));
+    }
+
+    [Fact] // ADR-0048, ADR-0014: the own copy repeats over a range that is a whole multiple of it, shifted for each place
+    public async Task The_own_copy_repeats_over_a_whole_multiple()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("A2", "2"), ("A3", "3"), ("B1", "=A1*10"))));
+
+        await CopyAndPasteAsync(cut, "B1", "B2:B3");
+
+        Assert.Equal("20", CellText(cut, "B2"));
+        Assert.Equal("30", CellText(cut, "B3"));
+    }
+
+    [Fact] // ADR-0048, ADR-0014: one copied cell over several ranges is one paste, undone by one Ctrl+Z
+    public async Task The_own_copy_over_several_ranges_is_one_undo_step()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("A2", "2"), ("C2", "3"), ("B1", "=A1"))));
+        await GoToAsync(cut, "B1");
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+        await GoToAsync(cut, "B2");
+        await CtrlClickAsync(cut, "D2");
+
+        await PasteAsync(cut, payload.Text!, payload.Html);
+
+        Assert.Equal("2", CellText(cut, "B2"));
+        Assert.Equal("3", CellText(cut, "D2"));
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal("", CellText(cut, "B2"));
+        Assert.Equal("", CellText(cut, "D2"));
+        Assert.False(cut.Instance.CanUndo);
+        Assert.True(await cut.Instance.RedoAsync());
+        Assert.Equal("3", CellText(cut, "D2"));
+    }
+
+    [Fact] // ADR-0048: the own copy's paste is one undo step
+    public async Task The_own_copys_paste_is_one_undo_step()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("B1", "=A1"), ("B2", "old"))));
+
+        await CopyAndPasteAsync(cut, "A1:B1", "A2");
+        Assert.True(await cut.Instance.UndoAsync());
+
+        Assert.Equal("old", CellText(cut, "B2"));
+        Assert.False(cut.Instance.CanUndo);
+    }
+
+    [Fact] // ADR-0050 item 9: a block that differs from the last copy by one field is another program's, and is taken as typed
+    public async Task A_block_that_differs_from_the_own_copy_is_taken_as_typed()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "=2+3"))));
+        await GoToAsync(cut, "A1");
+        Grid(cut).Instance.BuildCopyPayload();
+        await GoToAsync(cut, "A2");
+
+        await PasteAsync(cut, "6\r\n");
+
+        Assert.Equal("6", CellText(cut, "A2"));
+        await GoToAsync(cut, "A2");
+        Assert.Equal("6", FormulaBar(cut));
+    }
+
+    [Fact] // ADR-0050 item 10, SH-14: Excel's x:num is invariant, so 1234.5 stays 1234.5 under de-DE
+    public async Task Excels_invariant_number_is_read_as_that_number_under_de_DE()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, GermanDocument()));
+        await GoToAsync(cut, "A1");
+
+        await PasteAsync(cut, "1.234,50\r\n", "<table><tr><td x:num=\"1234.5\">1.234,50</td></tr></table>");
+
+        Assert.Equal("1234,5", CellText(cut, "A1"));
+    }
+
+    [Fact] // ADR-0050 item 10: shown text is read as typed under the Sheet's culture
+    public async Task Shown_text_is_read_as_typed_under_de_DE()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, GermanDocument()));
+        await GoToAsync(cut, "A1");
+
+        await PasteAsync(cut, "1.234,5\r\n");
+
+        Assert.Equal("1234,5", CellText(cut, "A1"));
+    }
+
+    [Fact] // ADR-0050 item 10, ADR-0048: another Sheet's copy is invariant, so an en-US Sheet's 0.5 is 0.5 in a de-DE one
+    public async Task Another_sheets_copy_keeps_its_numbers_across_cultures()
+    {
+        var source = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "0.5"), ("B1", "1234.5"))));
+        await GoToAsync(source, "A1:B1");
+        var payload = Grid(source).Instance.BuildCopyPayload();
+        var target = RenderSheet(ps => ps.Add(s => s.Document, GermanDocument()));
+        await GoToAsync(target, "A1");
+
+        await PasteAsync(target, payload.Text!, payload.Html);
+
+        Assert.Equal("0,5", CellText(target, "A1"));
+        Assert.Equal("1234,5", CellText(target, "B1"));
+    }
+
+    [Fact] // ADR-0050 item 10: an invariant ISO date is that date, and TRUE a boolean, in any culture
+    public async Task Invariant_dates_and_booleans_are_read_as_themselves()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, GermanDocument()));
+        await GoToAsync(cut, "A1");
+
+        const string marker = global::ExGrid.Clipboard.ClipboardData.InvariantMarker;
+        await PasteAsync(cut, "", $"<table {marker}><tr><td>2026-09-26</td><td>TRUE</td><td>text</td></tr></table>");
+
+        await GoToAsync(cut, "A1");
+        Assert.Equal("26.09.2026", FormulaBar(cut));
+        Assert.Equal("TRUE", CellText(cut, "B1"));
+        Assert.Equal("text", CellText(cut, "C1"));
+    }
+
     private static async Task CtrlClickAsync(IRenderedComponent<ExSheet> cut, string address)
     {
         var at = CellAddress.Parse(address);

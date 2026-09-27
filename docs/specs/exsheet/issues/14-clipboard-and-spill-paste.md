@@ -10,7 +10,7 @@ first. A paste is one undo step.
 
 **Blocked by:** 03, 05, 12
 
-- [ ] Copying `=A1` from B1 to B2 pastes `=A2` (ADR-0048)
+- [x] Copying `=A1` from B1 to B2 pastes `=A2` (ADR-0048)
 - [x] Copying to another program gives the Values (ADR-0005)
 - [x] Pasting `=A1+1` and `1,234` from outside makes a Formula and a number under the culture
 - [x] A 3×3 block pasted onto one cell writes 3×3 and selects it (ADR-0050)
@@ -130,3 +130,32 @@ place its References were relative to. Layer 2, in `ClipboardWiringTests`: both 
 Entries kept, the refusal in the engine's words and the last copy kept past it, a Value no format
 can show going out as itself, and several ranges. The second criterion holds in layer 2; layer 3
 with the real clipboard is still open.
+
+2026-09-27, ExSheet wiring, the paste reads its own copy and invariant fields (SH-14, DC-33,
+ADR-0050 items 9 and 10). The decision reported above is settled by ADR-0050's fourth round, and
+wired:
+
+- **Its own copy.** When a paste's fields equal, field for field, the ones the last copy wrote
+  (as `ClipboardParse.ParseBlock` read them back), it is that copy: `SheetEdit.Paste(block,
+  origin)` writes its Entries, formats and alignment with relative References shifted, onto a
+  target of the block's size or a spill, and `SheetEdit.Paste(block, range)` repeats it over a
+  whole multiple. One copied cell over a Selection of several ranges is one engine step per
+  range, and still one operation on the undo stack (`SheetHistory` records an operation as its
+  steps, undone in reverse); a refusal part-way puts back what was written.
+- **Anything else, field by field.** `GridPasteIntent.OriginFor` says where each field came
+  from. Shown text is typed as it is under the Sheet's culture, as before. An invariant field is
+  its value: a number is typed with the culture's decimal separator (`1234.5` from Excel's
+  `x:num` stays 1234.5 under `de-DE`), after checking it reads back as the same number, and the
+  paste is refused by name if it would not; an ISO date is that date; `TRUE` and `FALSE` are
+  booleans; other invariant fields (text, Error Values) are typed as they are. Still one
+  `SheetEdit.Enter`, so one step.
+
+Layer 2, in `ClipboardWiringTests`: `=A1` from B1 to B2 pasting `=A2`, a spill of the own copy
+carrying its format and selected, a repeat over a whole multiple, one cell over two ranges undone
+and redone as one step, the own copy's paste as one step, a differing block taken as typed,
+Excel's `x:num` `1234.5` under `de-DE`, shown text under `de-DE`, another Sheet's copy moving
+from `en-US` to `de-DE`, and invariant dates, booleans and text. Every criterion now holds in
+layer 2. **Open:** layer 3 with the real clipboard (SH-14's verification), including whether
+Chrome and Edge keep `data-ex-grid="invariant"` on the asynchronous route (ADR-0050, fourth
+round), so the Status stays. The refusal of an invariant number that reads back differently has
+no case that reaches it under the cultures tested; it is a guard, not a tested path.

@@ -235,16 +235,16 @@
     /// </summary>
     public Task<bool> UndoAsync() => OnDispatcherAsync(async () =>
     {
-        if (_history.Undo() is not { } change) return false;
-        await ChangedAsync(change);
+        if (_history.Undo() is not { } changes) return false;
+        await ChangedAsync(changes);
         return true;
     });
 
     /// <summary>Redoes the operation undone last. Answers false when there is nothing to redo.</summary>
     public Task<bool> RedoAsync() => OnDispatcherAsync(async () =>
     {
-        if (_history.Redo() is not { } change) return false;
-        await ChangedAsync(change);
+        if (_history.Redo() is not { } changes) return false;
+        await ChangedAsync(changes);
         return true;
     });
 
@@ -459,17 +459,26 @@
     }
 
     /// <summary>
-    /// A paste (ADR-0048, ADR-0050 item 3): every target cell takes its field as if the user had
-    /// typed it, under the Sheet's culture, in one step on the undo stack. The grid has already
-    /// judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a spilled block
-    /// becomes the Selection when this returns. A field beginning with <c>=</c> that cannot be
-    /// read refuses the whole paste, and nothing is written.
+    /// A paste (ADR-0048, ADR-0050 items 3, 9 and 10), one step on the undo stack. When its fields
+    /// equal, field for field, the ones this Sheet's last copy wrote, it is that copy, and its
+    /// Entries are pasted with their relative References shifted by the distance pasted.
+    /// Otherwise every target cell takes its field as typed under the Sheet's culture: shown text
+    /// as it is, an invariant value as that value (<see cref="SheetClipboard.TypedFor"/>). The
+    /// grid has already judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a
+    /// spilled block becomes the Selection when this returns. A field beginning with <c>=</c>
+    /// that cannot be read refuses the whole paste, and nothing is written.
     /// </summary>
     private async Task OnPasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
     {
         // Rows are places, so the order never moves (ADR-0046); an intent written under any
         // other version names positions that mean something else, and is dropped (ADR-0011).
         if (intent.RowSequenceVersion != 0) return;
+        if (OwnCopy is { } own && own.IsPastedAs(intent.Values))
+        {
+            await PasteEntriesAsync(own.Block, intent.Plan.Targets);
+            return;
+        }
+        var sheet = CurrentSheet;
         var typed = new Dictionary<CellAddress, string>();
         foreach (var range in intent.Plan.Targets)
         {
@@ -477,7 +486,15 @@
             {
                 for (var column = range.LeftColumn; column <= range.RightColumn; column++)
                 {
-                    typed[new CellAddress(row, column)] = intent.ValueFor(new CellPosition(row, column));
+                    var at = new CellPosition(row, column);
+                    var field = intent.ValueFor(at);
+                    if (SheetClipboard.TypedFor(field, intent.OriginFor(at), sheet.Culture) is not { } text)
+                    {
+                        _notice = SheetWords.PasteReadsDifferently(field, sheet.Culture);
+                        StateHasChanged();
+                        return;
+                    }
+                    typed[new CellAddress(row, column)] = text;
                 }
             }
         }
@@ -495,6 +512,41 @@
             _notice = SheetWords.Refused(refused.Refusal);
             StateHasChanged();
         }
+    }
+
+    /// <summary>
+    /// This Sheet's own copy pasted back (ADR-0048): its Entries, formats and alignment, with
+    /// relative References shifted by the distance pasted, written over each target range the
+    /// grid approved — from its top-left when the range is the block's size, repeated over it
+    /// when the range is a whole multiple of it. Several ranges exist only for a block of one
+    /// cell (ADR-0014); they are several engine steps and one operation on the undo stack.
+    /// </summary>
+    private async Task PasteEntriesAsync(SheetBlock block, IReadOnlyList<SelectionRange> targets)
+    {
+        var sheet = CurrentSheet;
+        var steps = new List<SheetStep>(targets.Count);
+        try
+        {
+            foreach (var target in targets)
+            {
+                var edit = target.RowCount == block.RowCount && target.ColumnCount == block.ColumnCount
+                    ? SheetEdit.Paste(block, new CellAddress(target.TopRow, target.LeftColumn))
+                    : SheetEdit.Paste(block, SheetFormulaAids.RangeOf(target));
+                steps.Add(sheet.Do(edit));
+            }
+        }
+        catch (SheetRefusedException refused)
+        {
+            // Nothing is half pasted: what was written before the refusal is put back.
+            var undone = new List<SheetChange>();
+            for (var i = steps.Count - 1; i >= 0; i--) undone.Add(steps[i].Undo());
+            if (undone.Count > 0) await ChangedAsync(undone, raiseDocument: false);
+            _notice = SheetWords.Refused(refused.Refusal);
+            StateHasChanged();
+            return;
+        }
+        _history.Record(steps);
+        await ChangedAsync([.. steps.Select(step => step.Change)]);
     }
 
     /// <summary>
@@ -632,17 +684,20 @@
         _columns = _columns.WidenedTo(address.Column, needed);
     }
 
-    private async Task ChangedAsync(SheetChange change, bool raiseDocument = true)
+    private Task ChangedAsync(SheetChange change, bool raiseDocument = true) => ChangedAsync([change], raiseDocument);
+
+    /// <summary>What one operation changed, in the order its engine steps changed it.</summary>
+    private async Task ChangedAsync(IReadOnlyList<SheetChange> changes, bool raiseDocument = true)
     {
         var sheet = CurrentSheet;
-        _edges.Update(sheet, change);
+        foreach (var change in changes) _edges.Update(sheet, change);
         _notice = null;
-        if (change.Rows.Count > 0)
+        if (changes.Any(change => change.Rows.Count > 0))
         {
             // A new instance for every row the change names, the same instance for every other
             // row, so only the changed rows repaint (ADR-0003, SH-4).
             var rows = (SheetRow[])_window.Clone();
-            foreach (var row in change.Rows)
+            foreach (var row in changes.SelectMany(change => change.Rows).Distinct())
             {
                 var at = row - _windowStart;
                 if (at >= 0 && at < rows.Length) rows[at] = new SheetRow(sheet, row);

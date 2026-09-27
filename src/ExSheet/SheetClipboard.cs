@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using ExGrid.Clipboard;
 using ExGrid.Selection;
 using ExSheet.Engine;
@@ -34,7 +36,7 @@ internal sealed record SheetOwnCopy(SheetBlock Block, IReadOnlyList<IReadOnlyLis
 /// ExSheet's answer to a copy (ADR-0050 item 9, ADR-0048, ADR-0049): the engine's copy of the
 /// range, written exactly as the engine gives it, or the engine's refusal in its own words.
 /// </summary>
-internal static class SheetClipboard
+internal static partial class SheetClipboard
 {
     private const string EngineTableOpen = "<table>";
 
@@ -104,6 +106,41 @@ internal static class SheetClipboard
         }
         return "<table " + ClipboardData.InvariantMarker + ">" + html[EngineTableOpen.Length..];
     }
+
+    /// <summary>
+    /// What a pasted field is typed as under <paramref name="culture"/> (ADR-0048, ADR-0050 item
+    /// 10). Shown text is typed as it is. An invariant field — Excel's <c>x:num</c>, or ExGrid's
+    /// and ExSheet's own unformatted HTML — is its value as it is: a number written with the
+    /// culture's decimal separator, so that <c>1234.5</c> from Excel stays 1234.5 under
+    /// <c>de-DE</c>; an ISO date as the date; <c>TRUE</c> and <c>FALSE</c> as booleans. Any other
+    /// invariant field is text or an Error Value, and is typed as it is. Null when an invariant
+    /// value would not read back under the culture as that same value: the paste is refused
+    /// rather than write a different one.
+    /// </summary>
+    internal static string? TypedFor(string field, PasteFieldOrigin origin, CultureInfo culture)
+    {
+        if (origin != PasteFieldOrigin.Invariant) return field;
+        if (field.Equals("TRUE", StringComparison.OrdinalIgnoreCase) || field.Equals("FALSE", StringComparison.OrdinalIgnoreCase)) return field;
+        if (double.TryParse(field, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number))
+        {
+            var invariant = number.ToString("R", CultureInfo.InvariantCulture);
+            var typed = invariant.Replace(".", culture.NumberFormat.NumberDecimalSeparator, StringComparison.Ordinal);
+            return NumberOf(typed, culture) is { } read && NumberOf(invariant, CultureInfo.InvariantCulture) == read ? typed : null;
+        }
+        if (IsoDate().IsMatch(field))
+        {
+            // The engine reads a year-first date, and a time after a space, in every culture.
+            var typed = field.Replace('T', ' ');
+            return NumberOf(typed, culture) is not null ? typed : null;
+        }
+        return field;
+    }
+
+    private static double? NumberOf(string typed, CultureInfo culture) =>
+        Entry.Parse(typed, culture)?.Constant is { Kind: ValueKind.Number } value ? value.Number : null;
+
+    [GeneratedRegex(@"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex IsoDate();
 
     private static CellRange RangeOf(SelectionRange range) => SheetFormulaAids.RangeOf(range);
 }
