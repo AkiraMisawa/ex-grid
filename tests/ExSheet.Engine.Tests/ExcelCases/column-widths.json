@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "CW-001",
-      "source": "documented",
+      "source": "observed",
       "description": "A column nobody set is at the standard width, and records none",
       "cells": {"B2": "1"},
       "check": "B2",
@@ -12,7 +12,7 @@
     },
     {
       "id": "CW-002",
-      "source": "documented",
+      "source": "observed",
       "description": "A width set on a column is that column's width",
       "cells": {},
       "action": {"do": "setColumnWidth", "range": "B:B", "width": 20},
@@ -21,7 +21,7 @@
     },
     {
       "id": "CW-003",
-      "source": "documented",
+      "source": "observed",
       "description": "A width set on a range of cells is set on every column the range spans",
       "cells": {},
       "action": {"do": "setColumnWidth", "range": "B2:D3", "width": 15},
@@ -30,7 +30,7 @@
     },
     {
       "id": "CW-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Setting one column's width leaves its neighbour at the standard width",
       "cells": {},
       "action": {"do": "setColumnWidth", "range": "B:B", "width": 20},
@@ -39,7 +39,7 @@
     },
     {
       "id": "CW-005",
-      "source": "documented",
+      "source": "observed",
       "description": "A column put back at the standard width records none",
       "cells": {},
       "action": [
@@ -51,7 +51,7 @@
     },
     {
       "id": "CW-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "An inserted column takes the width of the column to its left, as it takes its formats",
       "cells": {},
       "action": [
@@ -63,7 +63,7 @@
     },
     {
       "id": "CW-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A column's width moves right with it when columns are inserted before it",
       "cells": {},
       "action": [
@@ -75,7 +75,7 @@
     },
     {
       "id": "CW-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A column inserted after a column at the standard width is at the standard width, whatever the column it pushed right",
       "cells": {},
       "action": [
@@ -87,7 +87,7 @@
     },
     {
       "id": "CW-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A column inserted at A has no column to its left, and is at the standard width",
       "cells": {},
       "action": [
@@ -99,7 +99,7 @@
     },
     {
       "id": "CW-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Deleting a column moves the widths to its right left with their columns",
       "cells": {},
       "action": [
@@ -112,7 +112,7 @@
     },
     {
       "id": "CW-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Deleting columns drops their widths: the column that moves into their place brings its own",
       "cells": {},
       "action": [
@@ -124,7 +124,7 @@
     },
     {
       "id": "CW-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Inserting rows leaves the column widths alone",
       "cells": {},
       "action": [
@@ -161,7 +161,7 @@
     },
     {
       "id": "CW-015",
-      "source": "documented",
+      "source": "observed",
       "description": "The widest column Excel allows is 255 characters",
       "cells": {},
       "action": {"do": "setColumnWidth", "range": "B:B", "width": 255},
@@ -170,7 +170,7 @@
     },
     {
       "id": "CW-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A width the user sets is custom",
       "cells": {},
       "action": {"do": "setColumnWidth", "range": "B:B", "width": 20},
@@ -179,7 +179,7 @@
     },
     {
       "id": "CW-017",
-      "source": "documented",
+      "source": "observed",
       "description": "A column nobody set records no width, and is not custom",
       "cells": {"B2": "1"},
       "check": "B2",
@@ -195,7 +195,7 @@
     },
     {
       "id": "CW-019",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Size to fit is a width the user set: custom, like a drag (the engine is handed the width the component fitted; Excel fits its own, so only the flag is compared)",
       "cells": {"B2": "1234567890"},
       "action": {"do": "setColumnWidth", "range": "B:B", "width": 11, "sizeToFit": true},
@@ -204,7 +204,7 @@
     },
     {
       "id": "CW-020",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A column put back at the standard width is no longer custom",
       "cells": {},
       "action": [
@@ -249,7 +249,7 @@
     },
     {
       "id": "CW-024",
-      "source": "uncertain",
+      "source": "observed",
       "description": "An inserted column takes the custom width of the column to its left, and it stays custom",
       "cells": {},
       "action": [

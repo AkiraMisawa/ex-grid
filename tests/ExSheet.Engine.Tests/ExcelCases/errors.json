@@ -770,7 +770,7 @@
     },
     {
       "id": "ERR-094",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a typed Error Value is read in any case",
       "cells": {"A1": "#div/0!"},
       "check": "A1",
@@ -778,7 +778,7 @@
     },
     {
       "id": "ERR-095",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a typed #NULL! is the Error Value",
       "cells": {"A1": "#NULL!"},
       "check": "A1",
@@ -786,7 +786,7 @@
     },
     {
       "id": "ERR-096",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an Error Value Excel added after the declared set (#SPILL!) has no ExSheet counterpart, so typed it is text",
       "cells": {"A1": "#SPILL!"},
       "check": "A1",
@@ -794,7 +794,7 @@
     },
     {
       "id": "ERR-097",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: #CALC! has no ExSheet counterpart, so typed it is text",
       "cells": {"A1": "#CALC!"},
       "check": "A1",

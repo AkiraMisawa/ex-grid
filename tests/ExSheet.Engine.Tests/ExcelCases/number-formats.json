@@ -606,7 +606,7 @@
     },
     {
       "id": "FMT-067",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative number that rounds to zero under a format with a negative section still takes that section",
       "cells": {"A1": "-0.001"},
       "formats": {"A1": "0.00;(0.00)"},
@@ -615,7 +615,7 @@
     },
     {
       "id": "FMT-068",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative percentage that rounds to zero shows no minus sign",
       "cells": {"A1": "-0.00001"},
       "formats": {"A1": "0.0%"},
@@ -624,7 +624,7 @@
     },
     {
       "id": "FMT-069",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative number that rounds to zero under #,##0 shows no minus sign",
       "cells": {"A1": "-0.4"},
       "formats": {"A1": "#,##0"},
@@ -633,7 +633,7 @@
     },
     {
       "id": "FMT-070",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: AM/PM in mixed case is rewritten AM/PM",
       "cells": {"A1": "0.25"},
       "formats": {"A1": "h:mm Am/Pm"},
@@ -642,7 +642,7 @@
     },
     {
       "id": "FMT-071",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: A/P keeps the case it is written in",
       "cells": {"A1": "0.75"},
       "formats": {"A1": "h:mm a/p"},
@@ -651,7 +651,7 @@
     },
     {
       "id": "FMT-072",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: am/pm inside quotes is literal text and is not rewritten",
       "cells": {"A1": "0.75"},
       "formats": {"A1": "h:mm \"am/pm\""},
@@ -660,7 +660,7 @@
     },
     {
       "id": "FMT-073",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a colour section is kept in the code; a negative shows in parentheses (the colour itself is not painted, ADR-0047)",
       "cells": {"A1": "-5"},
       "formats": {"A1": "$#,##0_);[Red]($#,##0)"},
@@ -669,7 +669,7 @@
     },
     {
       "id": "FMT-074",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a colour on the first section does not change the digits shown",
       "cells": {"A1": "1234.567"},
       "formats": {"A1": "[Blue]#,##0.00"},

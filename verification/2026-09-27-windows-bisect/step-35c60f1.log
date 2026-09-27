@@ -1,0 +1,209 @@
+commit 35c60f1e0882dae1fc95ffa2aa739f6829fad382
+start 2026-09-27 23:27:07 BST
+
+Running 10 tests using 1 worker
+
+  x   1 [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars (1.6s)
+  x   2 [chrome] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout (1.6s)
+  x   3 [chrome] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again (1.6s)
+  x   4 [chrome] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (1.6s)
+  x   5 [chrome] › virtualisation.spec.mjs:39:1 › the far corner is reachable and painted at 10⁶ rows (BIG-1) (16.6s)
+  ok  6 [chrome] › virtualisation.spec.mjs:53:1 › the element count is the same at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1) (3.0s)
+  x   7 [chrome] › virtualisation.spec.mjs:66:1 › the first and the last row paint their own data, there and back again (BIG-5) (16.5s)
+  ok  8 [chrome] › virtualisation.spec.mjs:85:1 › scrolling changes which rows exist, not how many elements do (ADR-0004 P1, across a scroll) (1.6s)
+  ok  9 [chrome] › virtualisation.spec.mjs:101:1 › Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next key is answered (BIG-3, SL-6, DOM-2) (768ms)
+  ok 10 [chrome] › virtualisation.spec.mjs:202:1 › a scroll frame makes at most one interop call, whatever is painted (PF-1) (4.1s)
+
+
+  1) [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    898.1979370117188
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\scrollbar.spec.mjs:217:9
+
+    Error Context: test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chrome] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    899.53125
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\scrollbar.spec.mjs:229:9
+
+    Error Context: test-results\scrollbar-the-Focus-is-nev-c4074-rollbars-that-occupy-layout-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-c4074-rollbars-that-occupy-layout-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-c4074-rollbars-that-occupy-layout-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chrome] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    899.53125
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\scrollbar.spec.mjs:278:13
+
+    Error Context: test-results\scrollbar-the-Focus-is-nev-7cc92-om-level-after-moving-again-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-7cc92-om-level-after-moving-again-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-7cc92-om-level-after-moving-again-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chrome] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    898.1979370117188
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\scrollbar.spec.mjs:348:9
+
+    Error Context: test-results\scrollbar-on-a-Windows-des-51cba-th-the-OS-doing-the-scaling-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-on-a-Windows-des-51cba-th-the-OS-doing-the-scaling-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-on-a-Windows-des-51cba-th-the-OS-doing-the-scaling-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chrome] › virtualisation.spec.mjs:39:1 › the far corner is reachable and painted at 10⁶ rows (BIG-1) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid [id$=\'-r999999c99\']')
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r999999c99\']')
+
+
+      44 |
+      45 |     // The last row lands and paints real cells; the pinned columns are present.
+    > 46 |     await expect(cell(page, ROWS - 1, 99)).toBeVisible({ timeout: 15_000 });
+         |                                            ^
+      47 |     await expect(grid.locator('.ex-cell.ex-pinned').first()).toBeVisible();
+      48 |
+      49 |     await page.keyboard.press('ControlOrMeta+Home');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\virtualisation.spec.mjs:46:44
+
+    Error Context: test-results\virtualisation-the-far-cor-ca327--painted-at-10⁶-rows-BIG-1--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\virtualisation-the-far-cor-ca327--painted-at-10⁶-rows-BIG-1--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\virtualisation-the-far-cor-ca327--painted-at-10⁶-rows-BIG-1--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chrome] › virtualisation.spec.mjs:66:1 › the first and the last row paint their own data, there and back again (BIG-5) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('.ex-grid [id$=\'-r999999c0\']')
+    Expected: "K-999999"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r999999c0\']')
+
+
+      22 | /** What /wide's data says a row holds (DemoData.WideColumns), checked against what is painted. */
+      23 | async function expectRowPainted(page, row) {
+    > 24 |     await expect(cell(page, row, 0)).toHaveText(`K-${String(row).padStart(6, '0')}`, { timeout: 15_000 });
+         |                                      ^
+      25 |     await expect(cell(page, row, 1)).toHaveText(BOOKS[row % BOOKS.length]);
+      26 |     // M01, the first scrollable column: ((row·7919 + 2·104729) mod 1,999,999) / 100.
+      27 |     const expected = ((row * 7919 + 2 * 104729) % 1_999_999) / 100;
+        at expectRowPainted (C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\virtualisation.spec.mjs:24:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\bisect\tests\ExGrid.Browser\virtualisation.spec.mjs:73:11
+
+    Error Context: test-results\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6 failed
+    [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars 
+    [chrome] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout 
+    [chrome] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again 
+    [chrome] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling 
+    [chrome] › virtualisation.spec.mjs:39:1 › the far corner is reachable and painted at 10⁶ rows (BIG-1) 
+    [chrome] › virtualisation.spec.mjs:66:1 › the first and the last row paint their own data, there and back again (BIG-5) 
+  4 passed (58.6s)
+end 2026-09-27 23:28:06 BST
