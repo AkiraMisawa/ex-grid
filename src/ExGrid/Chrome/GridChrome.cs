@@ -246,11 +246,60 @@ public sealed record CellEditorContext(
 }
 
 /// <summary>
+/// The Formula Bar's Name Box seam (ADR-0051, ADR-0010/0030). The core owns the box, its
+/// width, the form whose implicit submission is Enter, and what the text means; the Chrome
+/// renders the control. <see cref="Text"/> is what the box shows: what the user has typed
+/// there and not yet entered, or otherwise the Consumer's label for the Focus. The control
+/// reports what is typed through <see cref="TextChanged"/>, and Enter submits the core's form,
+/// which hands the text to the Consumer. <see cref="Focused"/> is a press into the control:
+/// an open edit commits first, as a press anywhere past the editor does, and a Reject takes
+/// the keyboard back to the editor (ADR-0034). <see cref="Blurred"/> abandons what was typed.
+/// The grid holds no sentence, so the control's accessible name is the Chrome's.
+/// </summary>
+/// <param name="Text">What the control shows.</param>
+/// <param name="TextChanged">The control's text, as it changes.</param>
+/// <param name="Focused">The control took DOM focus.</param>
+/// <param name="Blurred">The control lost DOM focus.</param>
+public sealed record NameBoxContext(
+    string Text,
+    Action<string> TextChanged,
+    Func<Task> Focused,
+    Action Blurred);
+
+/// <summary>
+/// The Formula Bar's text field seam (ADR-0051, ADR-0010/0030): the Cell Editor's second
+/// surface, holding the one uncommitted text. The core owns the box, which wears the
+/// editor's <c>ex-editor</c> class so the root's capture listener gates the keys typed in it
+/// as the editor's (ADR-0018): Enter and Tab commit once, Escape cancels once, F2 switches
+/// the mode. The Chrome renders the control inside it.
+///
+/// <para><see cref="Text"/> is the Focus cell's text: the uncommitted text while an edit is
+/// open, otherwise the Consumer's opening text or the full value (ADR-0016). While
+/// <see cref="ReadOnly"/>, the Focus cell does not edit and the control takes no typing.
+/// <see cref="Focused"/> is a press into the control, which opens Caret on the Focus cell
+/// when none is open. What is typed is reported through <see cref="TextChanged"/> and is
+/// shown in the cell's editor on the next render. <see cref="FocusRequest"/> counts the core's
+/// requests that the control take DOM focus while the user works in the bar, as
+/// <see cref="CellEditorContext.FocusRequest"/> does for the cell.</para>
+/// </summary>
+/// <param name="Text">What the control shows.</param>
+/// <param name="ReadOnly">Whether the control takes typing.</param>
+/// <param name="Focused">The control took DOM focus.</param>
+/// <param name="TextChanged">The control's text, as it changes.</param>
+/// <param name="FocusRequest">Changes whenever the control is to take DOM focus.</param>
+public sealed record FormulaBarTextContext(
+    string Text,
+    bool ReadOnly,
+    Func<Task> Focused,
+    Action<string> TextChanged,
+    int FocusRequest = 0);
+
+/// <summary>
 /// The substitutable UI seams (ADR-0009/0010): the filter panel, the column menu, the
-/// cell editor and the loading indicator. One rule throughout: Chrome renders and
-/// calls back; it does not decide meaning — the commands, the allowed operators and
-/// what a filter means are the core's, which is why substituting Chrome cannot change
-/// behaviour.
+/// cell editor, the loading indicator, and the Formula Bar's two fields (ADR-0051). One
+/// rule throughout: Chrome renders and calls back; it does not decide meaning — the
+/// commands, the allowed operators and what a filter means are the core's, which is why
+/// substituting Chrome cannot change behaviour.
 /// </summary>
 public interface IGridChrome
 {
@@ -277,4 +326,16 @@ public interface IGridChrome
     /// <summary>Null falls back to the core's own loading presentation (the
     /// <c>ex-loading</c> class and the Placeholder rows).</summary>
     RenderFragment? LoadingIndicator(LoadingContext context);
+
+    /// <summary>The Formula Bar's Name Box (ADR-0051). Null falls back to the core's own
+    /// input. A fragment is rendered inside the core's <c>ex-name-box</c> box, inside the
+    /// form whose submission is Enter; the control fills the box.</summary>
+    RenderFragment? NameBox(NameBoxContext context) => null;
+
+    /// <summary>The Formula Bar's text field (ADR-0051). Null falls back to the core's own
+    /// input. A fragment is rendered inside the core's <c>ex-editor</c> box in the bar, and
+    /// <b>focuses its own control</b> whenever
+    /// <see cref="FormulaBarTextContext.FocusRequest"/> changes, as the Cell Editor's
+    /// does.</summary>
+    RenderFragment? FormulaBarText(FormulaBarTextContext context) => null;
 }

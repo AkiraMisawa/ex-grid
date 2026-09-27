@@ -348,15 +348,36 @@
            gates the editor's — Enter and Tab commit once, Escape cancels once, F2 switches
            the mode (ADR-0018). The Name Box's Enter is its form's implicit submission, as the
            filter panel's is: no key handler, and an IME's confirming Enter is left alone. *@
+        @* Each field is a Chrome seam (ADR-0051/0010/0030): the core owns the boxes, the
+           form, the keys and what the text means, and a Chrome that paints a field paints
+           its control inside the core's box — the text field's box wearing ex-editor, as
+           the Cell Editor's does. A Chrome that paints neither leaves the built-in inputs. *@
+        var nameBoxChrome = Chrome?.NameBox(BuildNameBoxContext());
+        var barChrome = Chrome?.FormulaBarText(BuildFormulaBarTextContext());
+        _formulaBarIsChrome = barChrome is not null;
         <div class="ex-formula-bar" style="@FormulaBarStyle()" role="presentation">
             <form class="ex-name-box-form" @onsubmit="_onNameBoxSubmit ??= SubmitNameBoxAsync" @onsubmit:preventDefault>
-                <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="Name Box"
-                       @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync" @oninput="_onNameBoxInput ??= OnNameBoxInput"
-                       @onblur="_onNameBoxBlur ??= OnNameBoxBlur" />
+                @if (nameBoxChrome is not null)
+                {
+                    <div class="ex-name-box" style="@NameBoxStyle()">@nameBoxChrome</div>
+                }
+                else
+                {
+                    <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="Name Box"
+                           @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync" @oninput="_onNameBoxInput ??= OnNameBoxInput"
+                           @onblur="_onNameBoxBlur ??= OnNameBoxBlur" />
+                }
             </form>
-            <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="Formula Bar"
-                   @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync" @oninput="_onFormulaBarInput ??= OnFormulaBarInput"
-                   @ref="_formulaBarElement" />
+            @if (barChrome is not null)
+            {
+                <div class="ex-editor ex-formula-bar-text">@barChrome</div>
+            }
+            else
+            {
+                <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="Formula Bar"
+                       @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync" @oninput="_onFormulaBarInput ??= OnFormulaBarInput"
+                       @ref="_formulaBarElement" />
+            }
         </div>
     }
     @if (_menuColumn >= 0 && _menuColumn < Columns.Count)
@@ -1404,6 +1425,17 @@
     private Action<ChangeEventArgs>? _onNameBoxInput;
     private Action? _onNameBoxBlur;
     private Func<Task>? _onNameBoxSubmit;
+    // The same handlers as a Chrome's control calls them (ADR-0051/0030): its events are its
+    // own component's, so each renders the root as an event on the root would.
+    private Func<Task>? _chromeNameBoxFocused;
+    private Action<string>? _chromeNameBoxTextChanged;
+    private Action? _chromeNameBoxBlurred;
+    private Func<Task>? _chromeFormulaBarFocused;
+    private Action<string>? _chromeFormulaBarTextChanged;
+    // Whether a Chrome paints the bar's text field, and its focus requests — the core holds
+    // no reference to a control it did not render (ADR-0010/0030).
+    private bool _formulaBarIsChrome;
+    private int _formulaBarFocusRequest;
     private CellPosition _editingCell;
     private string _editText = "";
     private ElementReference _editorElement;
@@ -2331,7 +2363,10 @@
         // the user works there goes back to the bar, never across to the cell.
         if (_editorNeedsFocus && _editSurface == EditSurface.Bar)
         {
-            if (_formulaBarElement.Context is not null)
+            // A Chrome's control focuses itself on its context's request number.
+            if (_formulaBarIsChrome)
+                _editorNeedsFocus = false;
+            else if (_formulaBarElement.Context is not null)
             {
                 _editorNeedsFocus = false;
                 try
@@ -5688,7 +5723,47 @@
         // in the Formula Bar, it must not take the keyboard from there (ADR-0051).
         if (_editSurface == EditSurface.Cell)
             _editorFocusRequest++;
+        else
+            _formulaBarFocusRequest++;
     }
+
+    /// <summary>The Name Box seam's contract (ADR-0051/0030): what it shows, and the core's
+    /// own handlers as the Chrome's control calls them.</summary>
+    private NameBoxContext BuildNameBoxContext()
+        => new(
+            _nameBoxText ?? NameBoxText(),
+            _chromeNameBoxTextChanged ??= text => FromChrome(() => _nameBoxText = text),
+            _chromeNameBoxFocused ??= () => FromChromeAsync(OnNameBoxFocusAsync),
+            _chromeNameBoxBlurred ??= () => FromChrome(OnNameBoxBlur));
+
+    /// <summary>The Formula Bar text field seam's contract (ADR-0051/0030): the Focus cell's
+    /// text, whether it takes typing, the core's handlers, and the focus requests.</summary>
+    private FormulaBarTextContext BuildFormulaBarTextContext()
+        => new(
+            FormulaBarText(),
+            !FormulaBarEditable,
+            _chromeFormulaBarFocused ??= () => FromChromeAsync(OnFormulaBarFocusAsync),
+            _chromeFormulaBarTextChanged ??= text => FromChrome(() => OnFormulaBarInput(new ChangeEventArgs { Value = text })),
+            _formulaBarFocusRequest);
+
+    /// <summary>A handler reached from a Chrome's control rather than from an event on the
+    /// root: run on the renderer's context, then rendered as the root's own event would be —
+    /// <see cref="ShouldRender"/> still consumes a suppression the handler armed.</summary>
+    private Task FromChromeAsync(Func<Task> handler)
+        => InvokeAsync(async () =>
+        {
+            if (_disposed)
+                return;
+            await handler();
+            StateHasChanged();
+        });
+
+    private void FromChrome(Action handler)
+        => _ = FromChromeAsync(() =>
+        {
+            handler();
+            return Task.CompletedTask;
+        });
 
     /// <summary>The editor seam's contract (ADR-0010): the core owns the box, the keys
     /// and the text's lifecycle; a substitute renders the control and reports its text

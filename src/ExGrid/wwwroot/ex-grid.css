@@ -304,7 +304,8 @@
     background: transparent;
     color: inherit;
 }
-.ex-formula-bar > .ex-editor:focus { outline: var(--ex-editor-outline, 2px solid Highlight); outline-offset: -2px; }
+.ex-formula-bar > .ex-editor:focus,
+.ex-formula-bar > .ex-editor:focus-within { outline: var(--ex-editor-outline, 2px solid Highlight); outline-offset: -2px; }
 .ex-name-box-form { display: contents; }
 .ex-row-heading { z-index: 4; }
 .ex-headings-corner { z-index: 7; }

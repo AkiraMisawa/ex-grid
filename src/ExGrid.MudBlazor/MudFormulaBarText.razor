@@ -1,0 +1,51 @@
+@* The Formula Bar's text field seam (ADR-0051/0030): a bare input filling the core's
+   ex-editor box in the bar — the Cell Editor's second surface, so it is painted as the Cell
+   Editor's content is, with Material's underline while it takes typing. The core owns the
+   box, the keys and the one uncommitted text; this paints the control, reports what is
+   typed, and takes DOM focus for each request. *@
+<input class="@(Context.ReadOnly ? "mud-ex-formula-bar-text" : "mud-ex-formula-bar-text mud-ex-formula-bar-text-editable")"
+       value="@Context.Text" readonly="@Context.ReadOnly" tabindex="-1" aria-label="@Label"
+       @onfocus="OnFocus" @oninput="OnInput" @ref="_input" />
+
+@code {
+    private ElementReference _input;
+    private int? _focusedRequest;
+    private bool _needsFocus;
+
+    /// <summary>The core's contract for the bar's text field (ADR-0051): the text, whether it
+    /// takes typing, where a focus and what is typed go, and the focus request.</summary>
+    [Parameter, EditorRequired] public FormulaBarTextContext Context { get; set; } = default!;
+
+    /// <summary>The control's accessible name, in the Chrome's words (WR-3).</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+
+    private Task OnFocus() => Context.Focused();
+
+    private void OnInput(ChangeEventArgs e) => Context.TextChanged(e.Value?.ToString() ?? "");
+
+    protected override void OnParametersSet()
+    {
+        // Unlike the Cell Editor, the bar stands before anything asks for it: the first
+        // request is the first change from the number it was painted with.
+        if (_focusedRequest is null)
+            _focusedRequest = Context.FocusRequest;
+        else if (Context.FocusRequest != _focusedRequest)
+            _needsFocus = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_needsFocus)
+            return;
+        _needsFocus = false;
+        _focusedRequest = Context.FocusRequest;
+        try
+        {
+            // Blazor's own FocusAsync — focus stays out of JavaScript (ADR-0021).
+            await _input.FocusAsync();
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
+    }
+}
