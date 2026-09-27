@@ -39,7 +39,37 @@ computes, ExGrid paints, selects, navigates and reports.
 
 What the user gets: typing constants and Formulas, the Formula shown when a cell is edited and in
 the Formula Bar, a Name Box that says where the Focus is and takes an address to go to, column and
-row selection from the Headings, and Ctrl+arrow stopping where a block of values ends.
+row selection from the Headings, and Ctrl+arrow stopping where a block of values ends. While a
+Formula is typed, function names are completed (Tab accepts), the argument hint shows the
+function's arguments, and the arrows and the mouse point at cells to write their References. The
+Context Menu inserts and deletes the rows or columns the Selection spans; References keep naming
+the same cells, and a deleted target is `#REF!`. `CommandLabel` words the menu, by the ids in
+`SheetCommandIds` and the grid's own. A paste may spill from one cell, as in Excel; the pasted block becomes the
+Selection, and each field is read as if typed under the Sheet's culture. A copy carries the Values:
+as shown in `text/plain`, unformatted in `text/html`. The fill handle fills as Excel does: Formulas with their
+References shifted, a series from two or more numbers, and dates by day. Any other pattern is
+refused, and the user is told why.
+
+## Linked Tables
+
+A Formula can read the application's own data as a **Linked Table**, by key or by column, in
+Excel's syntax (ADR-0049):
+
+```csharp
+await sheet.DeclareLinkedTableAsync("Positions", ["Id", "Book", "PV"]);
+await sheet.PushLinkedTableAsync("Positions", positions.Select(p =>
+    (IReadOnlyList<Value?>)[Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)]));
+```
+
+```
+=SUM(Positions[PV])
+=XLOOKUP("R-4471", Positions[Id], Positions[PV])
+```
+
+Until the first snapshot arrives, a Formula reading the table shows `#GETTING_DATA`, and
+`IFERROR` does not hide it. Each push replaces the whole table, and only the Formulas reading it
+recalculate. The declaration is recorded in the Sheet Document. The rows never are, so a Consumer
+pushes again after opening a document.
 
 ## Commands and the undo stack
 

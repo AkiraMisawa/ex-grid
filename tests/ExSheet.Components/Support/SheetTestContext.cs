@@ -67,9 +67,45 @@ public abstract class SheetTestContext : BunitContext
         return grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
     }
 
+    /// <summary>
+    /// A key as the capture listener forwards it while an edit is open: with the editor's text
+    /// and caret as the browser has them (ADR-0051), from the Formula Bar when
+    /// <paramref name="fromBar"/>.
+    /// </summary>
+    internal static Task PressInEditorAsync(
+        IRenderedComponent<SheetComponent> cut, string key, string text, int caret, bool shift = false, bool fromBar = false)
+    {
+        var grid = Grid(cut);
+        return grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, false, shift, false, false, false, fromDescendant: fromBar, editorText: text, editorCaret: caret));
+    }
+
+    /// <summary>What the Cell Editor holds, as painted.</summary>
+    internal static string EditorText(IRenderedComponent<SheetComponent> cut) =>
+        cut.Find(".ex-viewport .ex-editor").GetAttribute("value") ?? "";
+
     /// <summary>What the user has typed into the open Cell Editor so far.</summary>
-    internal static Task TypeAsync(IRenderedComponent<SheetComponent> cut, string text) =>
-        cut.Find(".ex-viewport .ex-editor").InputAsync(new ChangeEventArgs { Value = text });
+    internal static async Task TypeAsync(IRenderedComponent<SheetComponent> cut, string text)
+    {
+        await cut.Find(".ex-viewport .ex-editor").InputAsync(new ChangeEventArgs { Value = text });
+        await ReportCaretAsync(cut, text);
+    }
+
+    /// <summary>
+    /// What the browser's listener does after each input: reports the caret position, which the
+    /// core waits for before it asks for completion or points (ADR-0051, second round).
+    /// </summary>
+    internal static Task ReportCaretAsync(IRenderedComponent<SheetComponent> cut, string text, int? caret = null)
+    {
+        var grid = Grid(cut);
+        return grid.InvokeAsync(() => grid.Instance.OnEditorCaretAsync(text, caret ?? text.Length));
+    }
+
+    /// <summary>Types into the Formula Bar's surface, then reports the caret as the listener would.</summary>
+    internal static async Task TypeInBarAsync(IRenderedComponent<SheetComponent> cut, string text)
+    {
+        await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = text });
+        await ReportCaretAsync(cut, text);
+    }
 
     /// <summary>Types an address into the Name Box and presses Enter (ADR-0051).</summary>
     internal static async Task GoToAsync(IRenderedComponent<SheetComponent> cut, string address)

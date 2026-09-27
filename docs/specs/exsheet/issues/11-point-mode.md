@@ -11,10 +11,10 @@ editor's text and caret, and the decision is made from them (ADR-0021's note).
 **Blocked by:** 03, 09
 
 - [ ] `=` ↓ ↓ writes `A3`; Shift+↓ writes a range; a click writes the clicked cell (ADR-0051)
-- [ ] Typing a constant, the arrows still commit and move (ADR-0012)
-- [ ] F2 switches between moving the caret and pointing
-- [ ] The Selection and the Focus do not move while pointing
-- [ ] Pointing works from the Formula Bar
+- [x] Typing a constant, the arrows still commit and move (ADR-0012)
+- [x] F2 switches between moving the caret and pointing
+- [x] The Selection and the Focus do not move while pointing
+- [x] Pointing works from the Formula Bar
 - [ ] Layer 3 on the Server host with a delayed circuit: fast typing never points where the text forbids it
 
 ## Comments
@@ -77,3 +77,14 @@ caret after a mid-text Reference), DC-20 on the Server host, and the ExSheet wir
 left and returned as a proposal: a caret moved without an input (← / → in Caret, a click in the
 text) is not reported, so a click on a cell right after it points from the caret of the last
 input or key.
+
+2026-09-27, ExSheet wiring: ExSheet passes `PointAt`, which is `FormulaEntry.PointAt(text, caret)
+is not null`, and `ReferenceText`, which is `FormulaEntry.ReferenceText` of the pointed
+`SelectionRange` read as a `CellRange` (`SheetFormulaAids`). Both are static delegates held in
+fields. Layer 2, in `FormulaEntryWiringTests`: `=` ↓ ↓ writes `A3` while the Name Box stays on
+`A1`, and Enter commits `=A3`. Shift+→ Shift+↓ write `B2:C3`. A click on C4 writes `C4`. F2
+twice returns to pointing. The Formula Bar points (`=SUM(B1)`). A constant, and `=1+2` after an
+operand, commit and move. **Still open.** The first criterion's Shift+↓ reaches the core only
+through `OnKeyAsync`: the gate's `point` set (ADR-0051, second round) is the core's to add, and
+until it lands a real Shift+↓ selects text in the input. Layer 3 with a delayed circuit (DC-20)
+is also open.

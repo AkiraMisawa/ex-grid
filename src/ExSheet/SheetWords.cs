@@ -1,4 +1,5 @@
 using System.Globalization;
+using ExGrid.Clipboard;
 using ExSheet.Engine;
 
 namespace ExSheet;
@@ -20,6 +21,35 @@ internal static class SheetWords
     internal static string TooManyCells(long cells, long cap) =>
         string.Create(CultureInfo.InvariantCulture,
             $"The selection holds {cells:N0} cells, and formatting is applied to at most {cap:N0} at once. Select fewer cells.");
+
+    internal static string PasteUnreadable(FormulaSyntaxException error) =>
+        string.Create(CultureInfo.InvariantCulture,
+            $"Nothing was pasted: a pasted Formula cannot be read at character {error.Position + 1}: {error.Reason}");
+
+    internal static string PasteRefused(PasteRefusalReason reason) => reason switch
+    {
+        PasteRefusalReason.EmptySelection => "Select a cell to paste into.",
+        PasteRefusalReason.SingleCellTarget => "Nothing was pasted: select a range of the copied block's shape.",
+        PasteRefusalReason.ShapeMismatch =>
+            "Nothing was pasted: the selection is not a whole multiple of the copied block. Select one cell, or a range the block repeats over exactly.",
+        PasteRefusalReason.DisjointTarget =>
+            "Nothing was pasted: a block of several cells cannot be pasted into a selection of several ranges. Select one range.",
+        PasteRefusalReason.TargetNotEditable => "Nothing was pasted: the selection covers cells that cannot be written.",
+        PasteRefusalReason.TooLarge => "Nothing was pasted: the clipboard holds more than a paste reads at once.",
+        PasteRefusalReason.SpillPastExtent => "Nothing was pasted: the block would run past the Sheet's edge (XFD1048576).",
+        _ => "Nothing was pasted.",
+    };
+
+    internal static string CopyRefused(CopyRefusalReason reason) => reason switch
+    {
+        CopyRefusalReason.EmptySelection => "Select the cells to copy.",
+        CopyRefusalReason.MisalignedShape =>
+            "Nothing was copied: the selected ranges do not line up into one block. Select ranges that share their rows or their columns.",
+        CopyRefusalReason.TooLarge => "Nothing was copied: the selection holds more cells than a copy carries.",
+        CopyRefusalReason.RowsUnavailable => "Nothing was copied: the rows of the selection could not be read.",
+        CopyRefusalReason.ClipboardUnavailable => "Nothing was copied: the browser refused the clipboard, which still holds what it held before.",
+        _ => "Nothing was copied.",
+    };
 
     internal static string NothingToUndo => "There is nothing to undo.";
 

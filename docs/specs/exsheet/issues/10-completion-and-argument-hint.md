@@ -10,11 +10,11 @@ names. Candidates that come back for text that has since changed are dropped.
 
 **Blocked by:** 04, 09
 
-- [ ] `=SU` offers every declared function starting with `SU` (today `SUM`), and `=X` offers `XLOOKUP`; Tab accepts (ADR-0051)
-- [ ] Escape closes the list and leaves the edit open
+- [x] `=SU` offers every declared function starting with `SU` (today `SUM`), and `=X` offers `XLOOKUP`; Tab accepts (ADR-0051)
+- [x] Escape closes the list and leaves the edit open
 - [ ] The list stays inside the grid's box (ADR-0040) under the built-in Chrome and `ExGrid.MudBlazor`'s
-- [ ] A stale candidate list is never shown (layer 2 with a delayed answer)
-- [ ] Works from the Formula Bar as from the cell
+- [x] A stale candidate list is never shown (layer 2 with a delayed answer)
+- [x] Works from the Formula Bar as from the cell
 
 ## Comments
 
@@ -83,3 +83,18 @@ caret, a report ahead of its input, the caret placed mid-text), `CompletionTests
 with real keys (DC-31): `=SS` then completion replaces the span at the caret, the caret sits
 after the inserted text, and ←/→ with the list open move the caret; plus the earlier
 layer 3 items and the ExSheet wiring.
+
+2026-09-27, ExSheet wiring: ExSheet passes `CompleteEditorText`, answered synchronously from the
+engine (`SheetFormulaAids.Complete`). Text that is not a Formula gets nothing. `Sheet.Complete`
+gives the candidates, the declared functions and this Sheet's Linked Tables: each maps to a
+`CompletionCandidate` labelled with the name, over the engine's span, writing the engine's
+`InsertText` (`SUM(` or a table's name). `FormulaEntry.HintAt` gives the hint: the function's
+`Signature`, with the argument the caret is in set off. Its place is counted over the argument
+names, never searched for as text. Past the last argument, nothing is set off. The delegate is
+held in a field, and it reads the instance's own Sheet. Layer 2, in `FormulaEntryWiringTests`:
+`=SU` offers `SUM`, `=x` offers `XLOOKUP`, and Tab writes `=1+SUM(` and the hint follows. The
+hint sets off `num_digits` in `=ROUND(A1,`. Escape leaves `=SU` open, a constant gets no box,
+and the Formula Bar completes. The stale-list criterion is the core's `CompletionTests` (DC-18),
+because ExSheet always answers synchronously. **Still open:** the third criterion, the box inside
+the grid's box under both Chromes in layer 3 (DC-17's layer 3 half). The core's layer 2 covers it
+under both Chromes. Ticket 16 adds the table names to completion.

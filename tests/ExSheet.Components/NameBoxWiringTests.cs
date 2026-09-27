@@ -42,7 +42,7 @@ public class NameBoxWiringTests : SheetTestContext
         await GoToAsync(cut, "B1");
 
         await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
-        await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "=A1+1" });
+        await TypeInBarAsync(cut, "=A1+1");
         await PressAsync(cut, "Enter");
 
         Assert.Equal("22", CellText(cut, "B1"));
