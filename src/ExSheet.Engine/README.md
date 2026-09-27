@@ -76,7 +76,10 @@ answer:
 - **No spilled arrays.** A Formula whose result would be a multi-cell range, or an operator applied
   to one, is `#VALUE!`; so is an `XLOOKUP` whose return array is more than one cell across.
   `IFERROR` and `ISERROR` do not turn that refusal into a fallback.
-- **`XLOOKUP`'s binary search** (`search_mode` 2 and −2) is `#VALUE!`.
+- **`XLOOKUP`'s binary search** (`search_mode` 2 and −2) answers only over a lookup array sorted
+  as the mode says — one kind of value, no blanks, text of ASCII letters, digits and spaces — and
+  only when the matching key appears once; it is `#VALUE!` otherwise. Which of several equal keys
+  Excel returns has not been observed yet, so a duplicated key is refused rather than guessed.
 - **`#CIRC!`** is shown by every cell of a circular reference and every Formula that reads one,
   where Excel shows 0. `IFERROR` does not catch it.
 - **`#GETTING_DATA`**, a Linked Table's data on its way, is not an error to `IFERROR` and
