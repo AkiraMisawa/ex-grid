@@ -55,6 +55,14 @@ public sealed class Entry : IEquatable<Entry>
         return new Entry(text.ToString(), parsed);
     }
 
+    /// <summary>A Formula Entry from a tree the engine built, such as one whose References were rewritten.</summary>
+    internal static Entry FromParsed(Node parsed)
+    {
+        var text = new StringBuilder("=");
+        parsed.WriteTo(text);
+        return new Entry(text.ToString(), parsed);
+    }
+
     /// <summary>
     /// Reads text as a user typed it into a cell: text beginning with <c>=</c> is a Formula in
     /// invariant syntax; anything else is a constant read under <paramref name="culture"/> and
