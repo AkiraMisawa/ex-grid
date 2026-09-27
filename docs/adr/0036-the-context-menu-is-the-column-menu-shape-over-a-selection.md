@@ -142,3 +142,8 @@ translation impossible without replacing Chrome wholesale.
   own wording, and the seam exists for the Consumer who keeps the built-in menu and wants it in
   their own language. An unknown id renders as the id — a Consumer command reaching the built-in
   menu unlabelled says what happened rather than showing a blank.
+
+*(Added 2026-09-27: the Formula Bar and the Name Box
+([ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md)) take their
+accessible names through the same `CommandLabel` seam. The core holds no English of its own there
+either.)*
