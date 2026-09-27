@@ -1,6 +1,6 @@
 # 13: Inserting and deleting rows and columns
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** Commands on the Context Menu insert and delete rows and columns. References are rewritten to keep
 naming the same cells, and a deleted target is `#REF!`. Because rows and columns are places, the
@@ -12,7 +12,7 @@ step.
 - [x] Inserting above a referenced cell rewrites every Reference to it (ADR-0046/0047)
 - [x] Deleting a referenced cell makes the Formula `#REF!`
 - [x] The Selection stays in place after an insertion, as in Excel (ADR-0011/0046)
-- [ ] One Ctrl+Z restores the structure and every Reference
+- [x] One Ctrl+Z restores the structure and every Reference
 
 ## Comments
 
@@ -56,3 +56,14 @@ by the page's button and one by the Context Menu's "Insert rows above" keep `=SU
 `=B2*C2` naming their cells (`=SUM(B4:B6)` after both), and one Ctrl+Z per insertion restores the
 structure and every Reference. Only row insertion is driven in the browser; deletion and columns
 are not, so the last criterion stays open here.
+
+2026-09-27, layer 3, the rest: `sheet.spec.mjs` now drives the other three commands from the
+Context Menu on `/sheet`. Deleting row 3 moves the total up and shrinks it (`=SUM(B2:B3)`, 32),
+turns a Formula naming the deleted row into `=#REF!`, and leaves the Selection on B3; inserting a
+column left of C (Selection C2:C3) keeps Amount multiplying Qty by Price (`=B2*D2`,
+`=SUM(E2:E4)`) and leaves the Selection over C2:C3; deleting column C writes `=B2*#REF!` and
+leaves the Selection on C2. After each command the grid has the keyboard, one Ctrl+Z restores the
+structure and every Reference (read back in the Formula Bar), and Ctrl+Y redoes it. Run locally
+under xvfb with Playwright's Chromium (build 1194) against the WebAssembly host and the Server
+host behind the latency proxy: `sheet.spec.mjs` 13/13 on each. The committed config's `chrome`
+and `msedge` projects are CI's to run. All four criteria are met.

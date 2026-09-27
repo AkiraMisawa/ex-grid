@@ -290,6 +290,111 @@ test('SH-18: inserting a row keeps every Reference naming its cell, and one Ctrl
     await expect(cell(grid, 'B5')).toHaveText('39');
 });
 
+// The other three structure commands, from the Context Menu (ticket 13): References rewritten,
+// a deleted target written #REF!, the Selection left where it was (the Row Sequence Version does
+// not move: rows and columns are places, ADR-0011/0046), and one Ctrl+Z per command restoring
+// the structure and every Reference. The menu hands the keyboard back to the grid, so the
+// Ctrl+Z is pressed straight after the command, with no press on a cell between.
+
+test('SH-5/SH-18: deleting a row rewrites the References below it, a deleted target is #REF!, and one Ctrl+Z restores it', async ({ page }) => {
+    const grid = sheet(page);
+    // A Formula naming a cell of the row about to go.
+    await enter(page, grid, 'F1', '=A3');
+    await expect(cell(grid, 'F1')).toHaveText('Pears');
+
+    await clickCell(grid, 'B3');
+    await cell(grid, 'B3').click({ force: true, button: 'right' });
+    await page.getByRole('menuitem', { name: 'Delete rows' }).click();
+    await expect(cell(grid, 'A3')).toHaveText('Plums');
+    // The Selection stays where it was: the same address, now over the row that moved up.
+    await expectFocusAt(grid, 'B3');
+    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'B3', 'B3');
+    await expect(grid).toBeFocused();
+    // The total moved up a row and shrank with its range; the row below kept its own cells.
+    await expect(cell(grid, 'B4')).toHaveText('32');
+    await expect(cell(grid, 'D3')).toHaveText('4');
+    // The Reference to the deleted row is #REF!, in the Value and in the stored Formula.
+    await expect(cell(grid, 'F1')).toHaveText('#REF!');
+
+    // One Ctrl+Z restores the row and every Reference.
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(cell(grid, 'A3')).toHaveText('Pears');
+    await expect(cell(grid, 'F1')).toHaveText('Pears');
+    await expect(cell(grid, 'B5')).toHaveText('39');
+
+    // Read back after the undo, and, redone, the stored Formulas as the deletion wrote them.
+    await clickCell(grid, 'F1');
+    await expect(bar(grid)).toHaveValue('=A3');
+    await clickCell(grid, 'B5');
+    await expect(bar(grid)).toHaveValue('=SUM(B2:B4)');
+    await page.keyboard.press('ControlOrMeta+Y');
+    await expect(cell(grid, 'A3')).toHaveText('Plums');
+    await clickCell(grid, 'F1');
+    await expect(bar(grid)).toHaveValue('=#REF!');
+    await clickCell(grid, 'B4');
+    await expect(bar(grid)).toHaveValue('=SUM(B2:B3)');
+});
+
+test('SH-5/SH-18: inserting a column rewrites every Reference across it, and one Ctrl+Z restores it', async ({ page }) => {
+    const grid = sheet(page);
+    // Two rows of column C: the command acts on the columns the Selection spans, one here.
+    await clickCell(grid, 'C2');
+    await clickCell(grid, 'C3', { modifiers: ['Shift'] });
+    await cell(grid, 'C2').click({ force: true, button: 'right' });
+    await page.getByRole('menuitem', { name: 'Insert columns to the left' }).click();
+    await expect(cell(grid, 'C1')).toHaveText('');
+    await expect(cell(grid, 'D1')).toHaveText('Price');
+    // The Selection stays over C2:C3, now the new blank column.
+    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'C2', 'C3');
+    await expect(grid).toBeFocused();
+    // Amount moved right and still multiplies Qty by Price.
+    await expect(cell(grid, 'E2')).toHaveText('6');
+    await expect(cell(grid, 'E5')).toHaveText('15.25');
+
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(cell(grid, 'C1')).toHaveText('Price');
+    await expect(cell(grid, 'D2')).toHaveText('6');
+
+    await clickCell(grid, 'D2');
+    await expect(bar(grid)).toHaveValue('=B2*C2');
+    await clickCell(grid, 'D5');
+    await expect(bar(grid)).toHaveValue('=SUM(D2:D4)');
+    await page.keyboard.press('ControlOrMeta+Y');
+    await expect(cell(grid, 'D1')).toHaveText('Price');
+    await clickCell(grid, 'E2');
+    await expect(bar(grid)).toHaveValue('=B2*D2');
+    await clickCell(grid, 'E5');
+    await expect(bar(grid)).toHaveValue('=SUM(E2:E4)');
+});
+
+test('SH-5/SH-18: deleting a column makes a Reference to it #REF!, and one Ctrl+Z restores it', async ({ page }) => {
+    const grid = sheet(page);
+    await clickCell(grid, 'C2');
+    await cell(grid, 'C2').click({ force: true, button: 'right' });
+    await page.getByRole('menuitem', { name: 'Delete columns' }).click();
+    // Amount moved into C; its Price operand is gone.
+    await expect(cell(grid, 'C1')).toHaveText('Amount');
+    await expectFocusAt(grid, 'C2');
+    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'C2', 'C2');
+    await expect(grid).toBeFocused();
+    await expect(cell(grid, 'C2')).toHaveText('#REF!');
+    await expect(cell(grid, 'C5')).toHaveText('#REF!');
+    // Qty, left of the deletion, is untouched, and so is its total.
+    await expect(cell(grid, 'B5')).toHaveText('39');
+
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(cell(grid, 'C1')).toHaveText('Price');
+    await expect(cell(grid, 'D2')).toHaveText('6');
+    await expect(cell(grid, 'D5')).toHaveText('15.25');
+
+    await clickCell(grid, 'D2');
+    await expect(bar(grid)).toHaveValue('=B2*C2');
+    await page.keyboard.press('ControlOrMeta+Y');
+    await expect(cell(grid, 'C1')).toHaveText('Amount');
+    await clickCell(grid, 'C2');
+    await expect(bar(grid)).toHaveValue('=B2*#REF!');
+});
+
 test('SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot, then the values', async ({ page }) => {
     const grid = sheet(page);
     // The page pushes the first snapshot 1.5 s after the Sheet opens (SheetPage.razor).

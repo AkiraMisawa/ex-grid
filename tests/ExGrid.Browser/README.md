@@ -235,7 +235,9 @@ hide it.
   committing an open edit and handing an unreadable Formula back to its editor (DC-11); the
   Formula Bar and the Cell Editor agreeing after every keystroke and committing and cancelling
   once (DC-22); a row inserted by button and by the Context Menu keeping every Reference, one
-  Ctrl+Z each; the Linked Table reading `#GETTING_DATA` until its snapshot (SH-16); the Focus
+  Ctrl+Z each; a row deleted, a column inserted and a column deleted by the Context Menu, with
+  the References rewritten, a deleted target `#REF!`, the Selection left in place, and one
+  Ctrl+Z restoring each (SH-5, ticket 13); the Linked Table reading `#GETTING_DATA` until its snapshot (SH-16); the Focus
   at XFD1048576 with the DOM no larger than at A1 (SH-2).
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
