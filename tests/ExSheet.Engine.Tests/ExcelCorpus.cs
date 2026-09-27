@@ -111,8 +111,16 @@ internal static class ExcelCorpus
         {
             // The check column's recorded width in characters; null where none is (Excel's standard width).
             double? expected = width.ValueKind == JsonValueKind.Null ? null : width.GetDouble();
-            var actual = sheet.GetColumnWidth(at.Column);
+            var actual = sheet.GetColumnWidth(at.Column)?.Width;
             if (actual != expected) differences.Add($"width: expected {expected?.ToString(CultureInfo.InvariantCulture) ?? "null"}, got {actual?.ToString(CultureInfo.InvariantCulture) ?? "null"}");
+        }
+
+        if (expect.TryGetProperty("custom", out var custom))
+        {
+            // Whether the check column's width is one the user set (Excel's customWidth); a column
+            // with no recorded width is not custom (ADR-0046).
+            var actual = sheet.GetColumnWidth(at.Column)?.IsCustom ?? false;
+            if (actual != custom.GetBoolean()) differences.Add($"custom: expected {custom.GetBoolean()}, got {actual}");
         }
 
         if (expect.TryGetProperty("formula", out var formula))
@@ -238,6 +246,9 @@ internal static class ExcelCorpus
                 return SheetEdit.PasteText(rows, CellAddress.Parse(a.GetProperty("at").GetString()!));
             case "setColumnWidth":
                 var w = a.GetProperty("width");
+                // "automatic" is a width an entry widened the columns to (ADR-0046); "sizeToFit"
+                // is the user's size to fit, a width the user set like any other.
+                if (a.TryGetProperty("automatic", out var automatic) && automatic.GetBoolean()) return SheetEdit.SetAutomaticColumnWidth(Range("range"), w.GetDouble());
                 return SheetEdit.SetColumnWidth(Range("range"), w.ValueKind == JsonValueKind.Null ? null : w.GetDouble());
             case "rename": return SheetEdit.Rename(a.GetProperty("name").GetString()!);
             case "format" or "align" or "style":

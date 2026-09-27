@@ -12,13 +12,13 @@ public class SheetDocumentTests
     {
         var json = NewSheet().ToDocument().ToJson();
 
-        Assert.Equal("""{"version":4,"culture":"en-US","name":"Sheet1","cells":[]}""", json);
+        Assert.Equal("""{"version":5,"culture":"en-US","name":"Sheet1","cells":[]}""", json);
     }
 
     [Theory] // ADR-0048 (SH-12): a document of an unknown version is refused, not guessed at
-    [InlineData("""{"version":5,"culture":"en-US","name":"Sheet1","cells":[]}""", 5)]
+    [InlineData("""{"version":6,"culture":"en-US","name":"Sheet1","cells":[]}""", 6)]
     [InlineData("""{"version":0,"culture":"en-US","cells":[]}""", 0)]
-    [InlineData("""{"version":5,"culture":"en-US","cells":[{"at":"A1","number":1}],"sheets":[]}""", 5)]
+    [InlineData("""{"version":6,"culture":"en-US","cells":[{"at":"A1","number":1}],"sheets":[]}""", 6)]
     public void An_unknown_version_is_refused(string json, int version)
     {
         var refusal = Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
@@ -69,6 +69,11 @@ public class SheetDocumentTests
     [InlineData("""{"version":4,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":20},{"at":"C:D","width":12}],"cells":[]}""")]
     [InlineData("""{"version":4,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"hidden":true}],"cells":[]}""")]
     [InlineData("""{"version":4,"culture":"en-US","name":"Sheet1","columnWidths":{"B:B":20},"cells":[]}""")]
+    [InlineData("""{"version":4,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"custom":true}],"cells":[]}""")]
+    [InlineData("""{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20}],"cells":[]}""")]
+    [InlineData("""{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"custom":"yes"}],"cells":[]}""")]
+    [InlineData("""{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"custom":1}],"cells":[]}""")]
+    [InlineData("""{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"custom":null}],"cells":[]}""")]
     [InlineData("""[1]""")]
     [InlineData("""not json""")]
     public void Anything_its_version_does_not_define_is_refused(string json)
@@ -164,7 +169,7 @@ public class SheetDocumentTests
 
         Assert.Equal("Sheet1", sheet.Name);
         Assert.Equal(6, sheet.Number("A2"));
-        Assert.StartsWith("""{"version":4,"culture":"en-US","name":"Sheet1",""", sheet.ToDocument().ToJson());
+        Assert.StartsWith("""{"version":5,"culture":"en-US","name":"Sheet1",""", sheet.ToDocument().ToJson());
     }
 
     [Fact] // ADR-0048, ADR-0047: a version 2 document still opens; its cells' formats are the cells' own
@@ -184,7 +189,7 @@ public class SheetDocumentTests
         Assert.Empty(document.Columns);
         Assert.Empty(document.Rows);
         Assert.Equal(
-            """{"version":4,"culture":"en-US","name":"Book","cells":[{"at":"A1","number":0.25,"format":"0%","align":"center"},{"at":"B1","align":"right"}]}""",
+            """{"version":5,"culture":"en-US","name":"Book","cells":[{"at":"A1","number":0.25,"format":"0%","align":"center"},{"at":"B1","align":"right"}]}""",
             sheet.ToDocument().ToJson());
     }
 
@@ -202,7 +207,7 @@ public class SheetDocumentTests
         var json = sheet.ToDocument().ToJson();
 
         Assert.Equal(
-            """{"version":4,"culture":"en-US","name":"Sheet1","columns":[{"at":"B:D","format":"0.00"},{"at":"F:F","align":"center"}],"rows":[{"at":"3:4","format":"0%"}],"cells":[{"at":"C3","number":0.5},{"at":"C5","number":0.5,"format":"General"}]}""",
+            """{"version":5,"culture":"en-US","name":"Sheet1","columns":[{"at":"B:D","format":"0.00"},{"at":"F:F","align":"center"}],"rows":[{"at":"3:4","format":"0%"}],"cells":[{"at":"C3","number":0.5},{"at":"C5","number":0.5,"format":"General"}]}""",
             json);
         var reopened = Sheet.Open(SheetDocument.FromJson(json));
         Assert.Equal("50%", reopened.GetDisplay(CellAddress.Parse("C3")).Text);

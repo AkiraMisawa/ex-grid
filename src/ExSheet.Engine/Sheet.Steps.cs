@@ -65,7 +65,7 @@ public sealed partial class Sheet
         var recalculated = new List<CellAddress>(Restructure(edit.Inverse, formatInserted: false).Change.Recalculated);
         _rowStyles = new Dictionary<int, AxisStyle>(outcome.RowsBefore);
         _columnStyles = new Dictionary<int, AxisStyle>(outcome.ColumnsBefore);
-        _columnWidths = new Dictionary<int, double>(outcome.WidthsBefore);
+        _columnWidths = new Dictionary<int, SheetColumnWidth>(outcome.WidthsBefore);
         var states = new List<(CellAddress, CellState)>();
         foreach (var (address, entry) in outcome.Rewritten) states.Add((address, StateOf(address).Recorded with { Entry = entry }));
         states.AddRange(outcome.Dropped.Select(d => (d.Address, d.State.Recorded)));

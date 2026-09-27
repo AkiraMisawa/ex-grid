@@ -28,8 +28,9 @@ public sealed partial class Sheet
     /// <summary>
     /// Inserts columns, as <see cref="InsertRows"/> does rows: each new cell takes the number format
     /// and alignment of the cell to its left, and each column the format and the width set on the
-    /// column to its left (ADR-0046, ADR-0047); columns inserted at <c>A</c> take none. A width set
-    /// on a column moves with it, and one pushed off the right edge is dropped.
+    /// column to its left, automatic or custom as it is (ADR-0046, ADR-0047); columns inserted at
+    /// <c>A</c> take none. A width set on a column moves with it, and one pushed off the right edge
+    /// is dropped.
     /// </summary>
     /// <exception cref="SheetRefusedException">Something would be pushed off the Sheet's right edge. Nothing changes.</exception>
     public SheetChange InsertColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, true)).Change;
@@ -44,7 +45,7 @@ public sealed partial class Sheet
         IReadOnlyList<(CellAddress Address, Entry Entry)> Rewritten,
         Dictionary<int, AxisStyle> RowsBefore,
         Dictionary<int, AxisStyle> ColumnsBefore,
-        Dictionary<int, double> WidthsBefore);
+        Dictionary<int, SheetColumnWidth> WidthsBefore);
 
     /// <summary>Whether <paramref name="edit"/> would be refused, and why; nothing changes either way.</summary>
     internal SheetRefusal? CheckStructural(StructuralEdit edit)

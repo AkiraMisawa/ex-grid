@@ -80,13 +80,23 @@ public abstract class SheetEdit
     }
 
     /// <summary>
-    /// A width set on every column <paramref name="columns"/> spans, in characters
-    /// (<see cref="Sheet.SetColumnWidth"/>); <see langword="null"/> puts them back at the default
-    /// width. Undoing the step puts back every column's width exactly (ADR-0046).
+    /// A width the user set on every column <paramref name="columns"/> spans, in characters
+    /// (<see cref="Sheet.SetColumnWidth"/>): custom, so an entry never widens them;
+    /// <see langword="null"/> puts them back at the default width. Undoing the step puts back every
+    /// column's width, and whether it was custom, exactly (ADR-0046).
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="Sheet.MaxColumnWidth"/>.</exception>
     public static SheetEdit SetColumnWidth(CellRange columns, double? width) =>
-        new ColumnWidthEdit(columns, Sheet.CheckColumnWidth(width));
+        new ColumnWidthEdit(columns, Sheet.CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, IsCustom: true) : null);
+
+    /// <summary>
+    /// A width an entry widened every column <paramref name="columns"/> spans to, in characters
+    /// (<see cref="Sheet.SetAutomaticColumnWidth"/>): automatic, so a longer entry widens them
+    /// again (ADR-0046). Undoing the step puts back every column's width exactly.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="Sheet.MaxColumnWidth"/>.</exception>
+    public static SheetEdit SetAutomaticColumnWidth(CellRange columns, double width) =>
+        new ColumnWidthEdit(columns, new SheetColumnWidth(Sheet.CheckColumnWidth(width)!.Value, IsCustom: false));
 
     /// <summary>Rows inserted (<see cref="Sheet.InsertRows"/>).</summary>
     public static SheetEdit InsertRows(int row, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, true));
@@ -259,7 +269,7 @@ public abstract class SheetEdit
     }
 
     /// <summary>A width set on columns: undone by every column's width put back, redone by the widths it left.</summary>
-    internal sealed class ColumnWidthEdit(CellRange columns, double? width) : SheetEdit
+    internal sealed class ColumnWidthEdit(CellRange columns, SheetColumnWidth? width) : SheetEdit
     {
         internal override SheetStep Apply(Sheet sheet)
         {

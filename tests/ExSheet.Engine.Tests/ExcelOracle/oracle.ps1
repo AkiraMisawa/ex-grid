@@ -47,6 +47,11 @@
       - "setColumnWidth" sets Range.ColumnWidth on the action's range (every column it spans), or,
         for a null width, Range.UseStandardWidth. "width" is compared with the check column's
         ColumnWidth as read before anything else changes it; null means the sheet's StandardWidth.
+        With "sizeToFit" it is EntireColumn.AutoFit instead, and the width it gives is Excel's own.
+        With "automatic" (a width an entry widened the column to) the case is blocked: Excel sets
+        such a width only by widening on entry. "custom" is compared with the customWidth flag
+        Excel writes on the check column, read from a copy of the workbook saved as .xlsx
+        (absent is false), before the column's width is changed for reading its text.
       - A case with "oracleSkip" is blocked with that reason.
       - "columnWidth" sets the check column's ColumnWidth (characters) before anything is entered,
         and its text is read at that width; every other case is read at width 100. The column's
@@ -199,7 +204,9 @@ function Invoke-Action($Excel, $Sheet, $Action, [bool]$UseFormula2) {
         }
         'rename' { $Sheet.Name = [string]$Action.name }
         'setColumnWidth' {
-            if ($null -eq $Action.width) { $Sheet.Range([string]$Action.range).EntireColumn.UseStandardWidth = $true }
+            if ((Has-Prop $Action 'automatic') -and $Action.automatic) { throw [InvalidOperationException]::new("blocked: Excel records an automatic width only when an entry widens the column; nothing sets one") }
+            if ((Has-Prop $Action 'sizeToFit') -and $Action.sizeToFit) { [void]$Sheet.Range([string]$Action.range).EntireColumn.AutoFit() }
+            elseif ($null -eq $Action.width) { $Sheet.Range([string]$Action.range).EntireColumn.UseStandardWidth = $true }
             else { $Sheet.Range([string]$Action.range).EntireColumn.ColumnWidth = (To-Double $Action.width) }
         }
         # A range such as B:B or 2:2 is Excel's own whole column or row, so a format set on it is
@@ -218,11 +225,38 @@ function Invoke-Action($Excel, $Sheet, $Action, [bool]$UseFormula2) {
 
 function Get-Count($Action) { if (Has-Prop $Action 'count') { return [int]$Action.count } else { return 1 } }
 
-function Read-Answer($Sheet, [string]$Check, [bool]$UseFormula2, [bool]$KeepWidth) {
+function Read-CustomWidth($Sheet, [int]$Column) {
+    # Whether Excel marks the column's width as the user's (customWidth), which no COM property
+    # says: read from a copy of the workbook saved as .xlsx. The check sheet is the first sheet.
+    $path = Join-Path ([IO.Path]::GetTempPath()) ('oracle-{0}.xlsx' -f [Guid]::NewGuid())
+    try {
+        $Sheet.Parent.SaveCopyAs($path)
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $zip = [IO.Compression.ZipFile]::OpenRead($path)
+        try {
+            $reader = New-Object IO.StreamReader($zip.GetEntry('xl/worksheets/sheet1.xml').Open())
+            try { [xml]$xml = $reader.ReadToEnd() } finally { $reader.Dispose() }
+        }
+        finally { $zip.Dispose() }
+        $ns = New-Object Xml.XmlNamespaceManager($xml.NameTable)
+        $ns.AddNamespace('s', 'http://schemas.openxmlformats.org/spreadsheetml/2006/main')
+        foreach ($col in $xml.SelectNodes('//s:cols/s:col', $ns)) {
+            if ([int]$col.min -le $Column -and $Column -le [int]$col.max) {
+                return ($col.GetAttribute('customWidth') -eq '1' -or $col.GetAttribute('customWidth') -eq 'true')
+            }
+        }
+        return $false
+    }
+    finally { Remove-Item -LiteralPath $path -ErrorAction SilentlyContinue }
+}
+
+function Read-Answer($Sheet, [string]$Check, [bool]$UseFormula2, [bool]$KeepWidth, [bool]$ReadCustom) {
     $cell = $Sheet.Range($Check)
     # The width Excel left the column at, before anything here changes it: a column still at its
     # default width that an entry widened says so here ("widens").
     $width = [double]$cell.EntireColumn.ColumnWidth
+    # Whether that width is the user's, read before the width is changed below.
+    $custom = if ($ReadCustom) { Read-CustomWidth $Sheet ([int]$cell.Column) } else { $null }
     # Range.Text shows #### when the column is too narrow; a case that sets "columnWidth" asks
     # what that width shows, and every other case is read in a column 100 characters wide.
     if (-not $KeepWidth) { $cell.EntireColumn.ColumnWidth = 100 }
@@ -248,6 +282,7 @@ function Read-Answer($Sheet, [string]$Check, [bool]$UseFormula2, [bool]$KeepWidt
     $answer.columnWidth = $width
     $answer.standardWidth = [double]$Sheet.StandardWidth
     $answer.widens = ($width -gt $DefaultColumnWidth + 0.001)
+    if ($ReadCustom) { $answer.custom = $custom }
     return $answer
 }
 
@@ -284,6 +319,9 @@ function Compare-Answer($Target, $Answer) {
         # null is a column nobody set: Excel reports the sheet's standard width for it.
         $expected = if ($null -eq $Target.width) { $Answer.standardWidth } else { To-Double $Target.width }
         if ([Math]::Abs($expected - $Answer.columnWidth) -gt 0.005) { $differences.Add("width: expected $($Target.width), Excel's column is $($Answer.columnWidth) wide") }
+    }
+    if (Has-Prop $Target 'custom') {
+        if ([bool]$Target.custom -ne [bool]$Answer.custom) { $differences.Add("custom: expected $($Target.custom), Excel's customWidth says $($Answer.custom)") }
     }
     foreach ($name in 'text', 'formula', 'numberFormat', 'alignment') {
         if (Has-Prop $Target $name) {
@@ -362,7 +400,7 @@ try {
                         catch [Runtime.InteropServices.COMException] { $refused = $true; $refusal = $_.Exception.Message; break }
                     }
                     $excel.Calculate()
-                    $answer = Read-Answer $sheet ([string]$case.check) $useFormula2 $keepWidth
+                    $answer = Read-Answer $sheet ([string]$case.check) $useFormula2 $keepWidth ((Has-Prop $target 'custom'))
                     $answer.refused = $refused
                     if ($refused) { $answer.refusal = $refusal }
                     $result.excel = $answer

@@ -212,3 +212,21 @@ whole columns or whole rows among them records each whole range as one entry and
 cells, and is undone as one step. The refusal of such a Selection (noted above) and its sentence
 are removed. Layer 2: `SheetDisplayTests` (several ranges with whole columns, several with a
 whole row, each one step).
+
+2026-09-27, engine, a recorded width says whether the user set it (SH-22; ADR-0046's last
+bullet): the engine side of the open item above. A recorded width is a `SheetColumnWidth` —
+`Width` and `IsCustom`. `SheetEdit.SetColumnWidth(range, width)` (and `Sheet.SetColumnWidth`)
+keeps its meaning and records a custom width; `SheetEdit.SetAutomaticColumnWidth(range, width)`
+(and `Sheet.SetAutomaticColumnWidth`) records an automatic one, the width an entry widened the
+column to. `Sheet.GetColumnWidth(column)` answers both, or null. Insertion carries the left
+column's origin with its width, deletion and insertion move each width with its origin, and undo
+and redo put both back; `SheetChange.Columns` also names a column whose width stayed the same but
+whose origin changed. The Sheet Document is version 5: each width run says `"custom"`, adjacent
+columns are one run only when alike in width and origin; versions 1 to 4 still read, and a
+version 4 width reads as custom, which is what version 4 meant. Corpus: `column-widths.json`
+gains CW-016 to CW-026 and an expect key `custom` (a column with no recorded width is not
+custom); a setColumnWidth action may say `"automatic": true` or `"sizeToFit": true`. The oracle
+reads Excel's `customWidth` flag from a saved `.xlsx` copy, does `sizeToFit` as `AutoFit`, and
+blocks `automatic` actions (only an entry sets one in Excel). All the new cases are uncertain
+except CW-017 (absent `customWidth` is false, per ECMA-376). Layer 1: `ColumnWidthTests`,
+`SheetDocumentTests`.

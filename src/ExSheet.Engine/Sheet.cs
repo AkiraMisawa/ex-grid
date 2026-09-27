@@ -63,7 +63,7 @@ public sealed partial class Sheet
         }
         foreach (var run in document.ColumnWidths)
         {
-            for (var column = run.First; column <= run.Last; column++) sheet._columnWidths[column] = run.Width;
+            for (var column = run.First; column <= run.Last; column++) sheet._columnWidths[column] = new SheetColumnWidth(run.Width, run.IsCustom);
         }
         foreach (var style in document.Rows)
         {

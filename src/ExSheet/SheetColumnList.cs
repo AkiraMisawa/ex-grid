@@ -61,7 +61,7 @@ internal sealed class SheetColumnList : IReadOnlyList<GridColumn<SheetRow>>
         var set = _set;
         foreach (var column in columns)
         {
-            if (sheet.GetColumnWidth(column) is { } characters)
+            if (sheet.GetColumnWidth(column)?.Width is { } characters)
             {
                 var px = SheetColumns.PxOf(characters, metrics);
                 if (!(set.TryGetValue(column, out var held) && held.Width.Width.FixedPx == px)) set = set.SetItem(column, SheetColumns.At(column, px));

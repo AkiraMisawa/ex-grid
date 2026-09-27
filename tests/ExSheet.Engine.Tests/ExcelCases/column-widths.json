@@ -1,6 +1,6 @@
 {
   "area": "column-widths",
-  "about": "Column widths set on columns, and how insertion and deletion carry them (ADR-0046, ADR-0047, SH-22). A width is in Excel's unit, characters of the default font; setColumnWidth sets the columns its range spans, as Range.ColumnWidth does, and a null width puts them back at the standard width (Range.UseStandardWidth). width is the check column's recorded width, null where none is recorded, which Excel reports as its standard width (8.43). Microsoft documents Range.ColumnWidth in characters, setting it on every column of a range, 8.43 as the default and 255 as the widest; Excel snaps a width to whole pixels, so the cases use whole numbers. Microsoft documents that an inserted column takes the formatting of the column to its left (Insert Options, Format Same As Left), but not whether its width is part of that, nor how deletion moves widths: those cases are uncertain until the oracle asks Excel.",
+  "about": "Column widths set on columns, and how insertion and deletion carry them (ADR-0046, ADR-0047, SH-22). A width is in Excel's unit, characters of the default font; setColumnWidth sets the columns its range spans, as Range.ColumnWidth does, and a null width puts them back at the standard width (Range.UseStandardWidth). width is the check column's recorded width, null where none is recorded, which Excel reports as its standard width (8.43). Microsoft documents Range.ColumnWidth in characters, setting it on every column of a range, 8.43 as the default and 255 as the widest; Excel snaps a width to whole pixels, so the cases use whole numbers. Microsoft documents that an inserted column takes the formatting of the column to its left (Insert Options, Format Same As Left), but not whether its width is part of that, nor how deletion moves widths: those cases are uncertain until the oracle asks Excel. custom says whether the check column's width is one the user set (ADR-0046): a drag, a size to fit (sizeToFit, which the oracle does as AutoFit) or a command, as opposed to a width an entry widened the column to (automatic, which only an entry sets in Excel, so the oracle blocks those cases). Excel keeps the distinction as the customWidth attribute of a column in its files, which ECMA-376 documents as false when absent; the oracle reads it from a saved copy. Whether Range.ColumnWidth and AutoFit set it, and whether widening on entry leaves it unset, is not documented: those cases are uncertain.",
   "cases": [
     {
       "id": "CW-001",
@@ -167,6 +167,122 @@
       "action": {"do": "setColumnWidth", "range": "B:B", "width": 255},
       "check": "B1",
       "expect": {"width": 255}
+    },
+    {
+      "id": "CW-016",
+      "source": "uncertain",
+      "description": "A width the user sets is custom",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 20},
+      "check": "B1",
+      "expect": {"width": 20, "custom": true}
+    },
+    {
+      "id": "CW-017",
+      "source": "documented",
+      "description": "A column nobody set records no width, and is not custom",
+      "cells": {"B2": "1"},
+      "check": "B2",
+      "expect": {"width": null, "custom": false}
+    },
+    {
+      "id": "CW-018",
+      "source": "uncertain",
+      "description": "A number that widens its column leaves the width automatic, not custom (the engine leaves the widening to the component and records nothing here; Excel's flag is what is asked)",
+      "cells": {"B2": "1234567890"},
+      "check": "B2",
+      "expect": {"widens": true, "custom": false}
+    },
+    {
+      "id": "CW-019",
+      "source": "uncertain",
+      "description": "Size to fit is a width the user set: custom, like a drag (the engine is handed the width the component fitted; Excel fits its own, so only the flag is compared)",
+      "cells": {"B2": "1234567890"},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 11, "sizeToFit": true},
+      "check": "B2",
+      "expect": {"custom": true}
+    },
+    {
+      "id": "CW-020",
+      "source": "uncertain",
+      "description": "A column put back at the standard width is no longer custom",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "setColumnWidth", "range": "B:B", "width": null}
+      ],
+      "check": "B1",
+      "expect": {"width": null, "custom": false}
+    },
+    {
+      "id": "CW-021",
+      "source": "uncertain",
+      "description": "A width an entry widened the column to is recorded, and is automatic",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
+      "check": "B1",
+      "expect": {"width": 11, "custom": false}
+    },
+    {
+      "id": "CW-022",
+      "source": "uncertain",
+      "description": "The user setting an automatic width makes it custom",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
+        {"do": "setColumnWidth", "range": "B:B", "width": 11}
+      ],
+      "check": "B1",
+      "expect": {"width": 11, "custom": true}
+    },
+    {
+      "id": "CW-023",
+      "source": "uncertain",
+      "description": "An inserted column takes the automatic width of the column to its left, and it stays automatic",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
+        {"do": "insertColumns", "column": "C"}
+      ],
+      "check": "C1",
+      "expect": {"width": 11, "custom": false}
+    },
+    {
+      "id": "CW-024",
+      "source": "uncertain",
+      "description": "An inserted column takes the custom width of the column to its left, and it stays custom",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "insertColumns", "column": "C"}
+      ],
+      "check": "C1",
+      "expect": {"width": 20, "custom": true}
+    },
+    {
+      "id": "CW-025",
+      "source": "uncertain",
+      "description": "Deleting a column moves an automatic width to its right left, still automatic",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "C:C", "width": 11, "automatic": true},
+        {"do": "deleteColumns", "column": "B"}
+      ],
+      "check": "B1",
+      "expect": {"width": 11, "custom": false}
+    },
+    {
+      "id": "CW-026",
+      "source": "uncertain",
+      "description": "Undoing the user's width over an automatic one puts the automatic width back",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "undo"}
+      ],
+      "check": "B1",
+      "expect": {"width": 11, "custom": false}
     }
   ]
 }
