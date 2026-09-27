@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>The formula engine of ExSheet: a Sheet of Entries, Excel's formula syntax and a declared set of functions that answer as Excel does or give #NAME?, incremental recalculation, number formats, and the versioned Sheet Document. No UI and no dependency: a server computes the same Values the screen shows.</Description>
+    <PackageTags>excel;spreadsheet;formula;sheet</PackageTags>
+  </PropertyGroup>
+
+  <!-- No package and no project references, deliberately (ADR-0047, SH-1): the engine runs
+       wherever a saved Sheet Document's Values are needed, a server included. -->
+
+</Project>
