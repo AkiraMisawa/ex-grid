@@ -67,6 +67,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
     const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
     const claimedWhile = { overwrite: overwriteKeys, point: pointKeys, completion: completionKeys };
+    const listShown = () => !!root && root.querySelector('.ex-completion[data-ex-list]') !== null;
 
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
     // round trip later on a circuit, and a key typed in between must be the popover's, not
@@ -171,7 +172,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         if (!k.onRoot && !k.inEditor) {
             return null;
         }
-        const claimed = claimedWhile[editing] ?? editingKeys;
+        // A list of candidates painted is open, whatever the gate was last told: on a circuit
+        // the render that paints it and the message that tells the gate are two messages, and a
+        // ← typed between them would be claimed as Overwrite's and swallowed. The core marks
+        // the list on its box (data-ex-list) in the render itself; read, not measured.
+        const claimed = listShown() ? completionKeys : (claimedWhile[editing] ?? editingKeys);
         // Every key the core claims while editing commits, cancels, moves or switches
         // the mode: each is a mode change.
         return claimed.has(canonical) ? 'mode' : null;

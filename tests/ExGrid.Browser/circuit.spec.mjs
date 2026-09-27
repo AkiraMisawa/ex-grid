@@ -502,3 +502,43 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
         expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
     });
 });
+
+// A ← typed as the completion list is painted is the editor's (ADR-0051, ADR-0010). On a circuit
+// the render that paints the list and the message that tells the key gate are two messages; a
+// key between them was gated as Overwrite's and swallowed (ticket 18's notes). The gate now reads
+// the list's own mark, which lands with the paint. The key is dispatched from a MutationObserver,
+// so it lands exactly in that gap: on WebAssembly there is no gap, and the test is the case
+// without one.
+test('a ← typed as the completion list is painted is left to the editor (ADR-0051, ADR-0010)', async ({ page }) => {
+    await page.goto('/sheet');
+    const sheet = grid(page);
+    await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
+    await expect(sheet).toHaveAttribute('tabindex', '0');
+    await sheet.locator("[id$='-r4c5']").click({ force: true });
+    await page.keyboard.type('=');
+    const editor = sheet.locator('input.ex-editor:not(.ex-formula-bar-text)');
+    await expect(editor).toHaveValue('=');
+    await expect(editor).toBeFocused();
+    await page.evaluate(() => {
+        window.__arrowTaken = null;
+        const root = document.querySelector('.ex-grid');
+        const observer = new MutationObserver(() => {
+            if (window.__arrowTaken !== null || !root.querySelector('.ex-completion [role=listbox]')) {
+                return;
+            }
+            observer.disconnect();
+            const arrow = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true });
+            document.activeElement.dispatchEvent(arrow);
+            window.__arrowTaken = arrow.defaultPrevented;
+        });
+        observer.observe(root, { childList: true, subtree: true });
+    });
+
+    await page.keyboard.type('S');
+
+    await expect.poll(() => page.evaluate(() => window.__arrowTaken)).toBe(false);
+    // Not forwarded: the list the ← would have closed is still open.
+    await expect(sheet.locator('.ex-completion-list')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+});

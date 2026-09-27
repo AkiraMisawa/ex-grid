@@ -575,7 +575,10 @@
            like every popover. A press in it keeps DOM focus in the editor: the editor still
            holds the keyboard, and ↑/↓, Tab and Escape reach the core through the capture
            listener as the editor's keys. Chrome paints the contents (ADR-0010/0030). *@
-        <div class="ex-completion" style="@CompletionStyle()" role="presentation"
+        @* data-ex-list marks a list of candidates, as against a hint alone: the key gate reads
+           it, so ← and → are the editor's from the render that paints the list, not from the
+           later message that tells the gate (ADR-0051, ADR-0010). *@
+        <div class="ex-completion" style="@CompletionStyle()" role="presentation" data-ex-list="@(completion.Candidates.Count > 0)"
              @onmousedown:preventDefault @onmousedown:stopPropagation>
             @if (Chrome?.EditorCompletion(completionContext) is { } completionFragment)
             {

@@ -159,6 +159,9 @@ public class ShippedStylesheetTests
             script.Text);
         Assert.Matches(new Regex(@"const completionKeys = new Set\(\[\.\.\.editingKeys, 'ArrowUp', 'ArrowDown'\]\);"), script.Text);
         Assert.Matches(new Regex(@"const claimedWhile = \{ overwrite: overwriteKeys, point: pointKeys, completion: completionKeys \};"), script.Text);
-        Assert.Matches(new Regex(@"const claimed = claimedWhile\[editing\] \?\? editingKeys;"), script.Text);
+        // A list painted is open from its own render, before the gate is told (ADR-0051/0010):
+        // read off the mark the core writes on the list's box, and nothing measured.
+        Assert.Matches(new Regex(@"const listShown = \(\) => !!root && root\.querySelector\('\.ex-completion\[data-ex-list\]'\) !== null;"), script.Text);
+        Assert.Matches(new Regex(@"const claimed = listShown\(\) \? completionKeys : \(claimedWhile\[editing\] \?\? editingKeys\);"), script.Text);
     }
 }

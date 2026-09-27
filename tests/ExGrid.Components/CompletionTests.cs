@@ -453,4 +453,19 @@ public class CompletionTests : GridTestContext
         await cut.InvokeAsync(() => chrome.Handed!.Accept(0));
         cut.WaitForAssertion(() => Assert.Equal("=SUM(", EditorText(cut)));
     }
+
+    [Fact] // ADR-0051/0010: the list is marked on its box in the render that paints it, for the key gate; a hint alone is not
+    public async Task The_box_marks_a_list_of_candidates_for_the_key_gate()
+    {
+        var cut = RenderGrid(Synchronous());
+        await TypeFormulaAsync(cut, "=SU");
+
+        // Read by the listener as the list's own paint lands, so ← and → are the editor's from
+        // that moment, not from the later message that tells the gate "completion".
+        Assert.True(cut.Find(".ex-completion").HasAttribute("data-ex-list"));
+
+        await TypeAsync(cut, "=SUM(");
+        Assert.Equal("SUM(number1, [number2], …)", cut.Find(".ex-completion .ex-completion-hint").TextContent);
+        Assert.False(cut.Find(".ex-completion").HasAttribute("data-ex-list"));
+    }
 }
