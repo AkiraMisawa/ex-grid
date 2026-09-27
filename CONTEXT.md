@@ -403,11 +403,20 @@ Identity ([ADR-0008](./docs/adr/0008-selection-is-painted-by-an-overlay.md)).
 _Avoid_: highlight, active cell (the single point inside a Selection is **Focus**)
 
 **Focus**:
-The one cell that keyboard operations start from. The **moving** end of range extension; the
-fixed end is the **Anchor**. Enter / Tab cycling moves only the Focus, and **the range stays
-selected** ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)). It must always
-be visible; if it leaves the Viewport the grid scrolls to it.
-_Avoid_: cursor, current cell, selected cell
+The one cell a user is on — Excel's **active cell**. Typing enters it, the Cell Editor opens on it,
+the Name Box names it and the Formula Bar edits it; Enter / Tab cycling moves it within the
+Selection, and **the range stays selected**. While a range is extended, the Focus is the end that
+stays fixed; the end that moves is the **Extent**. It must always be visible; if it leaves the
+Viewport the grid scrolls to it
+([ADR-0052](./docs/adr/0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md),
+which redefines ADR-0012's Focus; the implementation follows once Excel's remaining answers are in).
+_Avoid_: cursor, current cell, selected cell, active cell (Excel's name for it — say Focus)
+
+**Extent**:
+The end of a range that moves while it is extended — by Shift+arrow, Shift+click, Ctrl+Shift+arrow
+or a drag. The grid keeps it in view while extending, as Excel does. The fixed end is the Focus
+([ADR-0052](./docs/adr/0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
+_Avoid_: anchor (retired), moving end, cursor
 
 **Held Selection**:
 A Selection paired with the Row Sequence Version it was made under. Reconciling it
@@ -416,12 +425,11 @@ this pairing, not in each holder's discipline
 ([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
 _Avoid_: selection snapshot, selection cache (nothing is restored from it)
 
-**Anchor**:
-The **fixed** end of range extension. Moved by a click and by Ctrl+click. When there are disjoint
-ranges, Shift+arrow extends **the range the Anchor belongs to**. After Ctrl+click deselects a
-cell, Anchor and Focus stand **detached** — on that cell, outside every range — and the next
-extension starts a new range ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)).
-_Avoid_: origin, base cell
+**Anchor** *(retired by ADR-0052)*:
+ADR-0012's name for the fixed end of range extension. Under ADR-0052 the fixed end is the
+**Focus** and the moving end is the **Extent**; until that lands in the code, older ADRs and
+criteria still say Anchor and mean the fixed end.
+_Avoid_: using it for anything new
 
 **Row Mark**:
 A row the user has singled out for an action that follows — the checkbox beside a row.

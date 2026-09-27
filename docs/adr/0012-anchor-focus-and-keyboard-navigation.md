@@ -378,3 +378,8 @@ answer for Ctrl+arrow**, so it stops where the data ends rather than at the grid
 mode**, in which the arrow keys point at cells for a Formula instead of committing. It applies
 only while the Consumer's predicate says the caret is at a place where a Reference can go.
 Everything above stands for a display grid. ExSheet is the Consumer that makes these declarations.
+
+*(2026-09-27: [ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)
+reverses this ADR's Focus and Anchor. The Focus becomes Excel's active cell, the fixed end, and the
+moving end becomes the Extent. This ADR stands as written until that change lands in the code, and
+is rewritten then.)*
