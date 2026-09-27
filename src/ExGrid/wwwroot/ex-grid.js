@@ -1,8 +1,10 @@
 // The five permitted uses of JavaScript (ADR-0021): the capture-phase keydown listener,
 // reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
 // out of the box, and being told about the pointer — when it moves onto another row, and
-// when it comes to rest. Anything else — text measurement, overlay geometry, popovers —
-// stays in C#; adding to this file needs an ADR.
+// when it comes to rest. Beside them, the notes ADR-0021 has added since: a capture-phase
+// mousedown and mouseup that keep a press on the rows in its place among held keys, and the
+// root taking the keyboard back only while DOM focus is still its own. Anything else — text
+// measurement, overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
@@ -1071,6 +1073,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             if (scroller) {
                 scroller.scrollTop = top;
                 scroller.scrollLeft = left;
+            }
+        },
+        // The keyboard back to this grid's root, asked for by the core a round trip after the
+        // gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus is still inside
+        // this root, or on nothing. A second grid the user has pressed in the meantime keeps
+        // its keyboard. The condition reads document.activeElement and no layout; this is the
+        // one decision about focus made in script.
+        reclaimFocus: () => {
+            const active = document.activeElement;
+            if (root && (!active || active === document.body || active === document.documentElement
+                || root.contains(active))) {
+                root.focus({ preventScroll: true });
             }
         },
         // Escape's way out of Enter/Tab cycling. Setting focus is Blazor's FocusAsync;

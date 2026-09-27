@@ -302,10 +302,24 @@ public class AccessibilityTests : GridTestContext
 
         await scroller.FocusAsync(new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
 
-        var focused = JSInterop.Invocations
-            .Where(i => i.Identifier == "Blazor._internal.domWrapper.focus")
-            .Select(i => ((ElementReference)i.Arguments[0]!).Id)
-            .ToArray();
+        var focused = Js.Focused;
         Assert.Equal(root, focused.Last());
+    }
+
+    [Fact] // ADR-0021/0018: the keyboard goes back to the root only through the handle's conditional reclaim, never Blazor's unconditional focus
+    public async Task The_root_is_asked_for_through_the_conditional_reclaim_only()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, TestRows.Columns()));
+        var root = Js.RootReferenceId;
+
+        await cut.Find(".ex-scroller").FocusAsync(new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
+
+        // The browser decides whether DOM focus is still this grid's to take (a second grid
+        // pressed a round trip earlier keeps it); the core only asks.
+        Assert.Single(Js.FocusReclaimed.Invocations);
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == GridJSInterop.BlazorFocus
+            && ((ElementReference)i.Arguments[0]!).Id == root);
     }
 }

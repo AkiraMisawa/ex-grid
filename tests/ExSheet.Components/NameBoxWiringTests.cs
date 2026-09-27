@@ -96,12 +96,12 @@ public class NameBoxWiringTests : SheetTestContext
         await GoToAsync(cut, "B1");
         await PressAsync(cut, "=");
         await TypeAsync(cut, "=1+2");
-        var focusCalls = JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+        var focusCalls = JSInterop.Invocations.Count(i => i.Identifier is "Blazor._internal.domWrapper.focus" or "reclaimFocus");
 
         await cut.Find(".ex-name-box").FocusAsync(new FocusEventArgs());
         // The press keeps its meaning: the keyboard stays in the Name Box, so the address
         // typed next is the Name Box's, not a key on the grid that opens Overwrite.
-        Assert.Equal(focusCalls, JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus"));
+        Assert.Equal(focusCalls, JSInterop.Invocations.Count(i => i.Identifier is "Blazor._internal.domWrapper.focus" or "reclaimFocus"));
         await GoToAsync(cut, "D200");
 
         Assert.Equal(new SelectionRange(199, 3, 1, 1), Assert.Single(selections[^1].Ranges));

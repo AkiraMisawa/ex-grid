@@ -98,7 +98,7 @@ public class InteractiveTests : GridTestContext
     private Dictionary<int, int> RowRenders(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.FindComponents<ExGridRow<TestRow>>().ToDictionary(row => row.Instance.RowIndex, row => row.RenderCount);
 
-    private int FocusCalls => JSInterop.Invocations.Count(invocation => invocation.Identifier == FocusIdentifier);
+    private int FocusCalls => Js.FocusCalls;
 
     /// <summary>Scrolls, and lets the fling settle (ADR-0004): a jump of more than a
     /// Viewport paints Placeholders until the delay passes, and a Placeholder is not a

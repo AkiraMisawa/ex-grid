@@ -646,8 +646,7 @@ public class FilterChromeTests : GridTestContext
     }
 
     private string? LastFocusedId()
-        => JSInterop.Invocations.Where(i => i.Identifier == "Blazor._internal.domWrapper.focus")
-            .Select(i => ((ElementReference)i.Arguments[0]!).Id).LastOrDefault();
+        => Js.Focused.LastOrDefault();
 
     [Fact] // ADR-0044 / FL-15: where no value list stands, E goes to the condition's value — where a search is typed — not its operator
     public async Task E_on_a_condition_column_goes_to_its_value()

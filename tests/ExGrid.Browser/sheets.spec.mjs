@@ -1,5 +1,4 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
-import { SERVER } from './hosting.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, enter, candidates, typeSteadily,
 } from './sheet-helpers.mjs';
@@ -122,13 +121,12 @@ test('ADR-0018: a Context Menu opens in the Sheet it was asked of, and its comma
 
 // Found by this suite on the Server host (2026-09-27): Escape cancels an edit, and the core
 // hands DOM focus back to that grid's root a round trip later (ReclaimFocusAsync). A press on
-// another Sheet inside that round trip gives the keyboard to the other Sheet — and then the
-// late focus call takes it back, so the keys typed next go to the Sheet the user left. At
-// 150 ms it happens every time. ADR-0018: keys must never cross instances. Left failing on the
-// Server host, by name, until a focus the core asked for no longer lands once the user has put
-// the keyboard somewhere else (focus stays out of JavaScript by ADR-0021, so this is a decision).
+// another Sheet inside that round trip gives the keyboard to the other Sheet — and the late
+// focus call took it back, so the keys typed next went to the Sheet the user left. At 150 ms
+// it happened every time. ADR-0018: keys must never cross instances. The hand-back now lands
+// only while DOM focus is still inside that grid's root or on nothing (ADR-0021, added
+// 2026-09-27).
 test('ADR-0018: a Sheet the user has pressed keeps the keyboard when the other one finishes a cancel late', async ({ page }) => {
-    test.fail(SERVER, 'ADR-0018: a late focus reclaim from the left Sheet takes the keyboard back from the right one');
     const left = sheet(page, 0);
     const right = sheet(page, 1);
     await clickCell(left, 'D1');

@@ -66,9 +66,7 @@ public class PopoverRoomTests : GridTestContext
     }
 
     private string[] Focused()
-        => [.. JSInterop.Invocations
-            .Where(i => i.Identifier == "Blazor._internal.domWrapper.focus")
-            .Select(i => ((ElementReference)i.Arguments[0]!).Id)];
+        => [.. Js.Focused];
 
     [Fact] // ADR-0040 / UX-11a: the Context Menu closes too, and the keyboard goes back to the root
     public async Task A_context_menu_with_no_room_closes_and_the_root_takes_the_keyboard()

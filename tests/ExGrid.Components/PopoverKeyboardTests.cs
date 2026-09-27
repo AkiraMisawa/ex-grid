@@ -103,11 +103,9 @@ public class PopoverKeyboardTests : GridTestContext
         => element.GetAttribute("blazor:elementreference")
            ?? throw new InvalidOperationException("the element binds no reference");
 
-    /// <summary>Every element the grid has asked the browser to focus, in order.</summary>
-    private string[] Focused()
-        => [.. JSInterop.Invocations
-            .Where(i => i.Identifier == Focus)
-            .Select(i => ((ElementReference)i.Arguments[0]!).Id)];
+    /// <summary>Every element the grid has asked the browser to focus, in order — the root
+    /// by the handle's conditional reclaim (ADR-0021/0018), anything else by Blazor's.</summary>
+    private string[] Focused() => [.. Js.Focused];
 
     private string? LastFocused() => Focused().LastOrDefault();
 
@@ -417,12 +415,7 @@ public class PopoverKeyboardTests : GridTestContext
         await AltDownAsync(cut);
         // What was on screen at each moment the grid asked for the root to be focused.
         var popoversAtRootFocus = new List<int>();
-        JSInterop.SetupVoid(invocation =>
-        {
-            if (invocation.Identifier == Focus && ((ElementReference)invocation.Arguments[0]!).Id == root)
-                popoversAtRootFocus.Add(cut.FindAll(".ex-popover").Count);
-            return false;
-        });
+        Js.OnFocusReclaimed(() => popoversAtRootFocus.Add(cut.FindAll(".ex-popover").Count));
 
         await KeyAsync(cut, "Escape", fromDescendant: true);
 

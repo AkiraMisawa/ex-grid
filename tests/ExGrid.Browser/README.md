@@ -249,9 +249,7 @@ hide it.
   both copy routes (SH-14/DC-33 — recorded in `metrics.json`); Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z
   with and without an edit open, and the positions grid, which declares nothing, leaving them
   to the browser (DC-30); grips without the menu button (DC-36); the positions grid keeping
-  ExGrid's own behaviour beside the Sheet (DC-25). Three tests are marked `test.fail` on the
-  Server host, each naming the criterion it fails (SRV-5/ED-22, DC-28, ADR-0007): see the
-  comments above them.
+  ExGrid's own behaviour beside the Sheet (DC-25).
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
   Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
   stack stay with the Sheet that has the keyboard.

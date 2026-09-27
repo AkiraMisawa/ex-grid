@@ -102,6 +102,26 @@ internal sealed class GridJSInterop
         // the strict stub has to know the call or the first menu Copy throws.
         var writeCopy = handle.SetupVoid("writeCopy", _ => true);
         writeCopy.SetVoidResult();
+        // The keyboard handed back to the root, only while focus is still inside it or on
+        // nothing (ADR-0021/0018): the condition is the browser's; the request is asserted.
+        // Every focus the core asks for — the root's through the handle, any other element's
+        // through Blazor's FocusAsync — is logged here as it is made: the two travel by
+        // different routes, and only a log kept at the moment of the call orders them.
+        var focusLog = new List<string?>();
+        context.JSInterop.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier == BlazorFocus)
+                focusLog.Add(((Microsoft.AspNetCore.Components.ElementReference)invocation.Arguments[0]!).Id);
+            return false;
+        });
+        var reclaimFocus = handle.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier != "reclaimFocus")
+                return false;
+            focusLog.Add(null);
+            return true;
+        });
+        reclaimFocus.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
         return new GridJSInterop(offset, setOffset, blur, dispose)
@@ -113,8 +133,36 @@ internal sealed class GridJSInterop
             InnerPopupTold = setInnerPopup,
             TakenTold = setTaken,
             CaretPlaced = setCaret,
+            FocusReclaimed = reclaimFocus,
+            _focusLog = focusLog,
         };
     }
+
+    /// <summary>Every time the core asked for the keyboard back on its root (ADR-0021/0018) —
+    /// granted by the browser only while DOM focus is still inside the root or on nothing.</summary>
+    internal JSRuntimeInvocationHandler FocusReclaimed { get; private init; } = default!;
+
+    /// <summary>Blazor's own <c>FocusAsync</c>, as bUnit records it.</summary>
+    internal const string BlazorFocus = "Blazor._internal.domWrapper.focus";
+
+    private List<string?> _focusLog = [];
+
+    /// <summary>Every element the core has asked the browser to focus, in the order asked: the
+    /// root, by the handle's conditional reclaim, and any other element by Blazor's.</summary>
+    internal IReadOnlyList<string> Focused => [.. _focusLog.Select(id => id ?? RootReferenceId)];
+
+    /// <summary>How many times the core has asked for DOM focus anywhere, by either route.</summary>
+    internal int FocusCalls => _focusLog.Count;
+
+    /// <summary>Runs <paramref name="heard"/> at each reclaim as the core makes it, so a test
+    /// can see what stood on screen at that moment.</summary>
+    internal void OnFocusReclaimed(Action heard)
+        => _handle!.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier == "reclaimFocus")
+                heard();
+            return false;
+        });
 
     /// <summary>Every (text, caret) the listener was told to place the caret at (ADR-0051).</summary>
     internal JSRuntimeInvocationHandler CaretPlaced { get; private init; } = default!;

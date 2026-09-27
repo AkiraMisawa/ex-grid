@@ -195,7 +195,7 @@ public class FormulaBarEditingTests : GridTestContext
     }
 
     private int RootFocusCalls()
-        => JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+        => Js.FocusCalls;
 
     [Fact] // ADR-0010/0051: the press into the Name Box keeps its own meaning — the commit does not take the keyboard back to the root
     public async Task Committing_by_a_press_into_the_name_box_leaves_the_keyboard_there()

@@ -253,7 +253,7 @@ public class GridKeyboardTests : GridTestContext
     }
 
     private int FocusCalls()
-        => JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+        => Js.FocusCalls;
 
     [Fact] // ADR-0020: Space on an ordinary cell waits for the editor — it does not act
     public async Task Space_on_a_value_cell_does_nothing_yet()
