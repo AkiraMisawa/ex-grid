@@ -140,25 +140,26 @@ export const test = base.extend({
         page.on('pageerror', (e) => pageErrors.push(String(e)));
         const hostLogFrom = hostLogSize();
 
-        // On the Server host every page is prerendered first: painted, and deaf until its
-        // circuit connects and each grid has attached its listener (A11Y-20). A user who
+        // A grid is painted before it can hear a key: its listener attaches only once the
+        // module import has landed, and until then the grid is Prerendered — no tab stop,
+        // aria-busy (A11Y-20) — and a key pressed at it is lost. On the Server host the
+        // whole page is prerendered and deaf until its circuit connects as well. A user who
         // acts before that loses the input — the grid says it is busy for exactly that
-        // reason — so every navigation here waits, as that user would, for the page to
-        // be interactive and no grid to be Prerendered. WebAssembly has no prerender and
-        // the wait is immediate.
-        if (SERVER) {
-            const ready = async () => {
-                await page.locator('#demo-interactive').waitFor({ state: 'attached' });
-                await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
+        // reason — so every navigation here waits, as that user would, for the page to be
+        // interactive and no grid to be Prerendered. On WebAssembly this used to be skipped
+        // as immediate; it is not: rows paint before the import resolves, and a test that
+        // clicked and typed in that gap lost its keys on a slow runner.
+        const ready = async () => {
+            await page.locator('#demo-interactive').waitFor({ state: 'attached' });
+            await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
+        };
+        for (const name of ['goto', 'reload']) {
+            const navigate = page[name].bind(page);
+            page[name] = async (...args) => {
+                const response = await navigate(...args);
+                await ready();
+                return response;
             };
-            for (const name of ['goto', 'reload']) {
-                const navigate = page[name].bind(page);
-                page[name] = async (...args) => {
-                    const response = await navigate(...args);
-                    await ready();
-                    return response;
-                };
-            }
         }
 
         await use(page);
