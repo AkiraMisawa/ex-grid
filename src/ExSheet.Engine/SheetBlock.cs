@@ -77,7 +77,9 @@ public sealed class SheetCopy
 
     /// <summary>
     /// The <c>text/html</c> flavour: a table of the unformatted Values, invariant — a number in
-    /// full precision, which is what Excel reads when both flavours are there (ADR-0005).
+    /// full precision, which is what Excel reads when both flavours are there (ADR-0005) — in
+    /// Excel's markup: a number's Value in <c>x:num</c> and a format that is not General in
+    /// <c>mso-number-format</c>, so a copy to Excel carries formats (ADR-0048).
     /// </summary>
     public string? Html { get; }
 }

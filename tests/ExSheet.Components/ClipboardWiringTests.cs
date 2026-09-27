@@ -122,7 +122,42 @@ public class ClipboardWiringTests : SheetTestContext
 
         Assert.Equal("data", payload.Kind);
         Assert.Equal("50%\thello\t1\r\n", payload.Text);
-        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>0.5</td><td>hello</td><td>1</td></tr></table>", payload.Html);
+        Assert.Equal("<table data-ex-grid=\"invariant\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><tr><td x:num=\"0.5\" style='mso-number-format:\"0%\"'>0.5</td><td>hello</td><td x:num=\"1\">1</td></tr></table>", payload.Html);
+    }
+
+    [Fact] // ADR-0048 (observed in Excel): a copy to Excel carries formats — x:num with the unformatted Value, mso-number-format with the code — and stays ExGrid's invariant table
+    public async Task A_copy_carries_each_cells_format_in_excels_markup()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("A1"), "9/26/2026");
+        sheet.Enter(CellAddress.Parse("B1"), "1234.5");
+        sheet.SetFormat([CellAddress.Parse("B1")], NumberFormat.Parse("#,##0.00"));
+        sheet.Enter(CellAddress.Parse("C1"), "$5");
+        sheet.Enter(CellAddress.Parse("D1"), "a <b> & c");
+        sheet.Enter(CellAddress.Parse("E1"), "7");
+        sheet.SetFormat([CellAddress.Parse("E1")], NumberFormat.Parse("0 \"it's\""));
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+        await GoToAsync(cut, "A1:E1");
+
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+
+        Assert.Equal("9/26/2026\t1,234.50\t$5 \ta <b> & c\t7 it's\r\n", payload.Text);
+        Assert.Equal(
+            "<table data-ex-grid=\"invariant\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><tr>"
+            + "<td x:num=\"46291\" style='mso-number-format:\"m\\/d\\/yyyy\"'>46291</td>"
+            + "<td x:num=\"1234.5\" style='mso-number-format:\"\\#\\,\\#\\#0\\.00\"'>1234.5</td>"
+            + "<td x:num=\"5\" style='mso-number-format:\"\\$\\#\\,\\#\\#0_\\)\\;\\[Red\\]\\(\\$\\#\\,\\#\\#0\\)\"'>5</td>"
+            + "<td>a &lt;b&gt; &amp; c</td>"
+            + "<td x:num=\"7\" style='mso-number-format:\"0 \\0022it\\0027s\\0022\"'>7</td>"
+            + "</tr></table>",
+            payload.Html);
+
+        // The grid's own paste parse reads it back as invariant fields, the x:num Values, so a
+        // paste back into this Sheet is still recognised as this copy.
+        var parsed = ExGrid.Clipboard.ClipboardParse.ParseBlock(payload.Html, payload.Text)!;
+        Assert.Equal(["46291", "1234.5", "5", "a <b> & c", "7"], parsed.Values[0]);
+        Assert.All(parsed.Origins[0], o => Assert.Equal(ExGrid.Clipboard.PasteFieldOrigin.Invariant, o));
+        Assert.True(cut.Instance.OwnCopy!.IsPastedAs(parsed.Values));
     }
 
     [Fact] // ADR-0050 item 9, ADR-0005: a copy running beyond the Window is answered by the engine on the synchronous route
@@ -149,7 +184,7 @@ public class ClipboardWiringTests : SheetTestContext
         var payload = await grid.InvokeAsync(() => grid.Instance.BuildCopyPayloadAsync());
 
         Assert.Equal("50%\r\n0.333333333333333\r\n", payload!.Text);
-        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>0.5</td></tr><tr><td>0.3333333333333333</td></tr></table>", payload.Html);
+        Assert.Equal("<table data-ex-grid=\"invariant\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><tr><td x:num=\"0.5\" style='mso-number-format:\"0%\"'>0.5</td></tr><tr><td x:num=\"0.3333333333333333\">0.3333333333333333</td></tr></table>", payload.Html);
     }
 
     [Fact] // ADR-0048, ADR-0050 item 9: a copy keeps its Entries, and the fields the grid's paste would read back from it

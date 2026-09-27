@@ -38,7 +38,7 @@ internal sealed record SheetOwnCopy(SheetBlock Block, IReadOnlyList<IReadOnlyLis
 /// </summary>
 internal static partial class SheetClipboard
 {
-    private const string EngineTableOpen = "<table>";
+    private const string EngineTableOpen = "<table ";
 
     /// <summary>
     /// The answer to <paramref name="request"/>, and the copy to recognise on a later paste, or
@@ -47,7 +47,9 @@ internal static partial class SheetClipboard
     /// <item>A copy reaching a <c>#GETTING_DATA</c> cell is refused with the engine's sentence
     /// (ADR-0049), and the clipboard is left alone.</item>
     /// <item>One range is the engine's <see cref="Sheet.Copy"/>: the Values as shown for
-    /// <c>text/plain</c>, the unformatted Values for <c>text/html</c>, whose table carries
+    /// <c>text/plain</c>, the unformatted Values for <c>text/html</c> in Excel's markup — a
+    /// number's Value in <c>x:num</c>, a format in <c>mso-number-format</c>, so a copy to Excel
+    /// carries formats (ADR-0048) — whose table carries
     /// ExGrid's <see cref="ClipboardData.InvariantMarker"/> so that a paste reads its fields as
     /// invariant (ADR-0050 item 10). Its Entries are kept for a paste back into this Sheet.</item>
     /// <item>Several ranges combined into one block, or a copy with the headers, carry the same
@@ -102,9 +104,9 @@ internal static partial class SheetClipboard
         if (!html.StartsWith(EngineTableOpen, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                "The engine's copy no longer opens with a bare <table>, so ExSheet cannot mark it as invariant; a paste would read its numbers as shown text.");
+                "The engine's copy no longer opens with <table and its attributes, so ExSheet cannot mark it as invariant; a paste would read its numbers as shown text.");
         }
-        return "<table " + ClipboardData.InvariantMarker + ">" + html[EngineTableOpen.Length..];
+        return EngineTableOpen + ClipboardData.InvariantMarker + " " + html[EngineTableOpen.Length..];
     }
 
     /// <summary>

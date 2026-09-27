@@ -105,7 +105,7 @@ public class ClipboardTests
 
         Assert.False(copy.IsRefused);
         Assert.Equal("1,234.50\t2469\t\r\n\"a\tb\"\t#DIV/0!\t\r\nTRUE\t\"say \"\"hi\"\"\"\t\r\n", copy.Text);
-        Assert.Equal("<table><tr><td>1234.5</td><td>2469</td><td></td></tr><tr><td>a\tb</td><td>#DIV/0!</td><td></td></tr><tr><td>TRUE</td><td>say \"hi\"</td><td></td></tr></table>", copy.Html);
+        Assert.Equal("<table xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><tr><td x:num=\"1234.5\" style='mso-number-format:\"\\#\\,\\#\\#0\\.00\"'>1234.5</td><td x:num=\"2469\">2469</td><td></td></tr><tr><td>a\tb</td><td>#DIV/0!</td><td></td></tr><tr><td>TRUE</td><td>say \"hi\"</td><td></td></tr></table>", copy.Html);
     }
 
     [Fact] // ADR-0016/0048: a Value its format cannot show goes out as the Value, never as ####

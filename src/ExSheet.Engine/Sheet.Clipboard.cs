@@ -25,7 +25,7 @@ public sealed partial class Sheet
 
         var states = new CellState[range.CellCount];
         var text = new StringBuilder();
-        var html = new StringBuilder("<table>");
+        var html = new StringBuilder("<table ").Append(ExcelNamespace).Append('>');
         var i = 0;
         for (var row = range.First.Row; row <= range.Last.Row; row++)
         {
@@ -40,13 +40,65 @@ public sealed partial class Sheet
                 var display = GetDisplay(address);
                 // What a cell that cannot be shown holds is its Value, never the #### it paints (ADR-0016).
                 text.Append(QuoteForTsv(display.CannotShow ? raw : display.Text));
-                html.Append("<td>").Append(EscapeHtml(raw)).Append("</td>");
+                AppendCell(html, value, raw, GetFormat(address));
             }
             text.Append("\r\n");
             html.Append("</tr>");
         }
         html.Append("</table>");
         return new SheetCopy(new SheetBlock(range, states), text.ToString(), html.ToString());
+    }
+
+    /// <summary>The namespace Excel's own HTML declares for its <c>x:</c> attributes.</summary>
+    private const string ExcelNamespace = "xmlns:x=\"urn:schemas-microsoft-com:office:excel\"";
+
+    /// <summary>
+    /// One cell of the <c>text/html</c> flavour, in Excel's own markup (ADR-0048, "What the
+    /// observation settled"): a number carries its unformatted Value in <c>x:num</c>, and a cell
+    /// whose format is not General carries the format code in <c>mso-number-format</c>, so a date
+    /// arrives in Excel as a date and <c>#,##0.00</c> as itself. The content stays the unformatted
+    /// Value (ADR-0016). Whether Excel takes both as intended is verified in the next Windows run.
+    /// </summary>
+    private static void AppendCell(StringBuilder html, Value? value, string raw, NumberFormat format)
+    {
+        html.Append("<td");
+        if (value is { Kind: ValueKind.Number }) html.Append(" x:num=\"").Append(raw).Append('"');
+        if (!format.IsGeneral) html.Append(" style='mso-number-format:\"").Append(CssFormatCode(format.Code)).Append("\"'");
+        html.Append('>').Append(EscapeHtml(raw)).Append("</td>");
+    }
+
+    /// <summary>
+    /// A format code as Excel's HTML writes it inside <c>mso-number-format:"…"</c>: letters,
+    /// digits, characters outside ASCII, the space and <c>_ * ? % -</c> as they are, as Excel
+    /// leaves them (<c>_\(\0022$\0022* \#\,\#\#0\.00_\)</c> is Excel's own accounting format);
+    /// every other ASCII character escaped with a backslash (<c>#,##0.00</c> is
+    /// <c>\#\,\#\#0\.00</c>, <c>m/d/yyyy</c> is <c>m\/d\/yyyy</c>); and the characters that would
+    /// end the CSS string or the single-quoted attribute around it — <c>"</c>, <c>'</c>,
+    /// <c>&amp;</c>, <c>&lt;</c>, <c>&gt;</c> — as CSS hex escapes, as Excel writes a quote
+    /// <c>\0022</c>.
+    /// </summary>
+    internal static string CssFormatCode(string code)
+    {
+        var css = new StringBuilder(code.Length * 2);
+        for (var i = 0; i < code.Length; i++)
+        {
+            var c = code[i];
+            if (char.IsAsciiLetterOrDigit(c) || c > '\x7F' || c is '_' or '*' or '?' or '%' or '-' or ' ')
+            {
+                css.Append(c);
+            }
+            else if (c is '"' or '\'' or '&' or '<' or '>')
+            {
+                css.Append('\\').Append(((int)c).ToString("X4", System.Globalization.CultureInfo.InvariantCulture));
+                // A hex escape runs on through hex digits and swallows one space after it.
+                if (i + 1 < code.Length && (char.IsAsciiHexDigit(code[i + 1]) || code[i + 1] == ' ')) css.Append(' ');
+            }
+            else
+            {
+                css.Append('\\').Append(c);
+            }
+        }
+        return css.ToString();
     }
 
     /// <summary>Excel's TSV: a field holding a tab, a line break or a quote is quoted, inner quotes doubled.</summary>
