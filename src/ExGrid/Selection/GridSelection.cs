@@ -205,6 +205,55 @@ public sealed record GridSelection
     public GridSelection ExtendToEdge(GridDirection direction, GridExtent extent)
         => ExtendFocusTo(extent, IsHorizontal(direction), focus => EdgeOf(focus, direction, extent));
 
+    /// <summary>Ctrl+arrow with the Consumer's edge answer (ADR-0050, item 2): collapses and
+    /// moves the Focus to the cell <paramref name="edge"/> names for the Focus and the
+    /// direction — where the data ends, which only the Consumer can know. Null is
+    /// <see cref="MoveToEdge(GridDirection, GridExtent)"/>: the grid's edge (ADR-0012). An
+    /// answer off the Focus's line, behind it, or outside the grid is refused by name
+    /// rather than followed.</summary>
+    public GridSelection MoveToEdge(
+        GridDirection direction, GridExtent extent, Func<CellPosition, GridDirection, CellPosition>? edge)
+        => edge is null
+            ? MoveToEdge(direction, extent)
+            : MoveFocusTo(extent, focus => Answered(edge, focus, direction, extent));
+
+    /// <summary>Ctrl+Shift+arrow with the Consumer's edge answer (ADR-0050, item 2): the
+    /// range extends to the cell <paramref name="edge"/> names for the Focus, as
+    /// <see cref="ExtendToEdge(GridDirection, GridExtent)"/> extends to the grid's edge —
+    /// whole columns and whole rows stay whole the same way. Null is the grid's edge.</summary>
+    public GridSelection ExtendToEdge(
+        GridDirection direction, GridExtent extent, Func<CellPosition, GridDirection, CellPosition>? edge)
+        => edge is null
+            ? ExtendToEdge(direction, extent)
+            : ExtendFocusTo(extent, IsHorizontal(direction), focus => Answered(edge, focus, direction, extent));
+
+    /// <summary>The Consumer's edge answer, checked: on the Focus's own row or column, not
+    /// behind it, inside the grid. Anything else would move the Focus somewhere the key
+    /// never pointed, which is worse than refusing (the spine's first rule).</summary>
+    private static CellPosition Answered(
+        Func<CellPosition, GridDirection, CellPosition> edge, CellPosition focus, GridDirection direction, GridExtent extent)
+    {
+        var answer = edge(focus, direction);
+        var inside = answer.Row >= 0 && answer.Row < extent.RowCount
+            && answer.Column >= 0 && answer.Column < extent.ColumnCount;
+        var onLine = direction switch
+        {
+            GridDirection.Up => answer.Column == focus.Column && answer.Row <= focus.Row,
+            GridDirection.Down => answer.Column == focus.Column && answer.Row >= focus.Row,
+            GridDirection.Left => answer.Row == focus.Row && answer.Column <= focus.Column,
+            GridDirection.Right => answer.Row == focus.Row && answer.Column >= focus.Column,
+            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null),
+        };
+        if (!inside || !onLine)
+        {
+            throw new InvalidOperationException(
+                $"The edge answer for {direction} from {focus} was {answer}, which is " +
+                (inside ? "not on the Focus's line in that direction" : $"outside the grid ({extent.RowCount} rows × {extent.ColumnCount} columns)") +
+                ". Ctrl+arrow moves along one line only; answer a cell on it, or the Focus itself (ADR-0050).");
+        }
+        return answer;
+    }
+
     /// <summary>PageUp / PageDown (ADR-0012): collapse and move the Focus by one
     /// Viewport of rows. How many rows that is is view geometry the model never holds,
     /// so the caller passes the signed delta; the grid edge clamps it.</summary>

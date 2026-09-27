@@ -1030,6 +1030,17 @@
     /// </summary>
     [Parameter] public bool HideHeader { get; set; }
 
+    /// <summary>
+    /// A Consumer declaration (ADR-0050, item 2): where Ctrl+arrow stops. Handed the Focus
+    /// and the direction, it answers the cell on that line where the data ends — the grid
+    /// does not hold the data, so it cannot know. Asked synchronously, on Ctrl+arrow and
+    /// Ctrl+Shift+arrow only (Home and End keep their meaning); the Focus moves to the
+    /// answer, or the range extends to it. An answer off the Focus's line, behind it or
+    /// outside the grid is refused by name. Null — the default — goes to the grid's edge,
+    /// as ADR-0012 has it.
+    /// </summary>
+    [Parameter] public Func<CellPosition, GridDirection, CellPosition>? DataEdge { get; set; }
+
     // What the grid actually paints, resolved from the Source when there is one and
     // from the push parameters when there is not. Every reader below goes through these,
     // so binding a Source adds no branch to the pipeline — only one more way to fill it.
@@ -4746,8 +4757,10 @@
         {
             GridKeyKind.Move => current.Move(action.Direction, extent),
             GridKeyKind.Extend => current.Extend(action.Direction, extent),
-            GridKeyKind.MoveToEdge => current.MoveToEdge(action.Direction, extent),
-            GridKeyKind.ExtendToEdge => current.ExtendToEdge(action.Direction, extent),
+            // The Consumer's edge answer is asked on the arrows only (ADR-0050, item 2):
+            // Home and End resolve to the same transitions and keep ADR-0012's meaning.
+            GridKeyKind.MoveToEdge => current.MoveToEdge(action.Direction, extent, EdgeAnswerFor(key)),
+            GridKeyKind.ExtendToEdge => current.ExtendToEdge(action.Direction, extent, EdgeAnswerFor(key)),
             GridKeyKind.Cycle => current.CycleFocus(action.Order, action.Backward, extent),
             GridKeyKind.SelectAll => SelectAllInContext(current, extent),
             GridKeyKind.SelectWholeColumns => current.SelectWholeColumns(extent),
@@ -4799,6 +4812,11 @@
         _revealFocus = true;
         StateHasChanged();
     }
+
+    /// <summary>The Consumer's edge answer for this key, or null: only an arrow asks it
+    /// (ADR-0050, item 2).</summary>
+    private Func<CellPosition, GridDirection, CellPosition>? EdgeAnswerFor(string key)
+        => DataEdge is not null && key.StartsWith("Arrow", StringComparison.Ordinal) ? DataEdge : null;
 
     /// <summary>
     /// How far PageUp / PageDown move, as a signed row count: the rows fully visible in
