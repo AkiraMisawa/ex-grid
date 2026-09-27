@@ -1275,6 +1275,17 @@
     [Parameter] public bool HideHeader { get; set; }
 
     /// <summary>
+    /// A Consumer declaration (ADR-0050, item 12): the column headers carry no column-menu
+    /// button, and Alt+↓ opens no column menu, while the resize grips stay wherever
+    /// <see cref="OnColumnWidthChanged"/> has a delegate. A double-click on a column's edge
+    /// still sizes it to fit (ADR-0016), and a header's required width no longer reserves
+    /// the button's band. A Sheet's Headings are Excel's, which carry no menu. Off — the
+    /// default — the button is painted exactly as before, wherever some command could reach
+    /// a Consumer.
+    /// </summary>
+    [Parameter] public bool HideColumnMenu { get; set; }
+
+    /// <summary>
     /// A Consumer declaration (ADR-0050, item 2): where Ctrl+arrow stops. Handed the Focus
     /// and the direction, it answers the cell on that line where the data ends — the grid
     /// does not hold the data, so it cannot know. Asked synchronously, on Ctrl+arrow and
@@ -4624,11 +4635,12 @@
     private const double PopoverMaxWidthPx = 320;
 
     /// <summary>Whether the header cells carry a menu button: only where some command
-    /// could reach a Consumer at all (ADR-0010).</summary>
+    /// could reach a Consumer at all (ADR-0010), and never where the Consumer declared
+    /// grips without the menu (ADR-0050, item 12).</summary>
     private bool ShowMenuButtons
-        => Source is not null || OnSortChanged.HasDelegate || OnFilterChanged.HasDelegate
+        => !HideColumnMenu && (Source is not null || OnSortChanged.HasDelegate || OnFilterChanged.HasDelegate
             || OnColumnHidden.HasDelegate || OnPinnedCountChanged.HasDelegate
-            || OnColumnWidthChanged.HasDelegate;
+            || OnColumnWidthChanged.HasDelegate);
 
     private int CountPlaceholders()
     {
