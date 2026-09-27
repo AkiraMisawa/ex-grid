@@ -305,7 +305,7 @@
     },
     {
       "id": "STRUCT-034",
-      "source": "uncertain",
+      "source": "observed",
       "description": "The whitespace before a Reference a deletion makes #REF! goes with it after an operator too (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
       "cells": {"A5": "1", "B1": "=C1 *  A5 + 1"},
       "action": {"do": "deleteRows", "row": 5, "count": 1},
@@ -314,7 +314,7 @@
     },
     {
       "id": "STRUCT-035",
-      "source": "uncertain",
+      "source": "observed",
       "description": "An insertion that grows a range to every row writes it as whole columns (inferred from Excel's observed A:XFD and A1:A1048576 (verification/2026-09-27-windows-excel), not yet asked of Excel)",
       "cells": {"B1": "=SUM(A1:A1048575)"},
       "action": {"do": "insertRows", "row": 5, "count": 1},
@@ -350,7 +350,7 @@
     },
     {
       "id": "STRUCT-039",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A range cut at the edge down to one cell stays a range (inferred from Excel's observed rows (verification/2026-09-27-windows-excel item 3), not yet asked of Excel)",
       "cells": {"B1": "=SUM(A1048575:A1048576)"},
       "action": {"do": "insertRows", "row": 1, "count": 1},
@@ -359,7 +359,7 @@
     },
     {
       "id": "STRUCT-040",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A column inserted pushes a Reference off the right edge: it is #REF!, and the insertion done (inferred from Excel's observed rows (verification/2026-09-27-windows-excel item 3), not yet asked of Excel)",
       "cells": {"A1": "=XFD1*2"},
       "action": {"do": "insertColumns", "column": "A", "count": 1},
@@ -368,7 +368,7 @@
     },
     {
       "id": "STRUCT-041",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Whole rows an insertion pushes partly off the Sheet are cut at the edge (inferred from Excel's observed rows (verification/2026-09-27-windows-excel item 3), not yet asked of Excel)",
       "cells": {"B1": "=SUM(2:1048576)"},
       "action": {"do": "insertRows", "row": 1, "count": 1},

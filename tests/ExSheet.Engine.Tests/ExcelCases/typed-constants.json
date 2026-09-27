@@ -285,7 +285,7 @@
     },
     {
       "id": "TYPED-033",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a + alone is text",
       "cells": {"A1": "+"},
       "check": "A1",
@@ -293,7 +293,7 @@
     },
     {
       "id": "TYPED-034",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a leading + before a number is the number",
       "cells": {"A1": "+5"},
       "check": "A1",
@@ -301,7 +301,7 @@
     },
     {
       "id": "TYPED-035",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a month and day number without a year is that day of the current year, shown d-mmm",
       "cells": {"A1": "9/26"},
       "check": "A1",
@@ -309,7 +309,7 @@
     },
     {
       "id": "TYPED-036",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a month name and a day number is that day of the current year, shown d-mmm",
       "cells": {"A1": "Sep 26"},
       "check": "A1",
@@ -317,7 +317,7 @@
     },
     {
       "id": "TYPED-037",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a day, a month name and a year is shown d-mmm-yy",
       "cells": {"A1": "26-Sep-2026"},
       "check": "A1",
@@ -325,7 +325,7 @@
     },
     {
       "id": "TYPED-038",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a month name and a year is the first of that month, shown mmm-yy",
       "cells": {"A1": "Sep 2026"},
       "check": "A1",
@@ -333,7 +333,7 @@
     },
     {
       "id": "TYPED-039",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a full month name is read as its abbreviation is",
       "cells": {"A1": "26 September 2026"},
       "check": "A1",
@@ -350,7 +350,7 @@
     },
     {
       "id": "TYPED-041",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: thousands separators and decimals give #,##0.00",
       "cells": {"A1": "1,234.5"},
       "check": "A1",
@@ -358,7 +358,7 @@
     },
     {
       "id": "TYPED-042",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative number with thousands separators gives #,##0",
       "cells": {"A1": "-1,234"},
       "check": "A1",
@@ -366,7 +366,7 @@
     },
     {
       "id": "TYPED-043",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an exponent with decimals gives 0.00E+00",
       "cells": {"A1": "1.2345E3"},
       "check": "A1",
@@ -374,7 +374,7 @@
     },
     {
       "id": "TYPED-044",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a date and a time typed under de-DE record the built-in short date with a time, shown in the culture's pattern",
       "culture": "de-DE",
       "cells": {"A1": "26.9.2026 10:00"},
@@ -383,7 +383,7 @@
     },
     {
       "id": "TYPED-045",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a date typed under en-GB records the built-in short date, shown day first",
       "culture": "en-GB",
       "cells": {"A1": "26/9/2026"},
@@ -392,7 +392,7 @@
     },
     {
       "id": "TYPED-046",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a dollar amount with decimals takes the currency format with two decimals",
       "cells": {"A1": "$1,234.5"},
       "check": "A1",
@@ -408,7 +408,7 @@
     },
     {
       "id": "TYPED-048",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a dollar amount under en-GB, whose currency is the pound, stays text",
       "culture": "en-GB",
       "cells": {"A1": "$5"},

@@ -289,7 +289,7 @@
     },
     {
       "id": "LVL-025",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A format set on several whole columns at once formats each of them",
       "cells": {"D9": "1.5"},
       "action": {"do": "format", "range": "B:B,D:D", "format": "0.00"},
@@ -298,7 +298,7 @@
     },
     {
       "id": "LVL-026",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A format set on a block and a whole row at once reaches the row outside the block",
       "cells": {"A5": "0.5"},
       "action": {"do": "format", "range": "B2:C3,5:5", "format": "0%"},
@@ -307,7 +307,7 @@
     },
     {
       "id": "LVL-027",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A format and an alignment set on a column and a row at once meet where they cross",
       "cells": {"B3": "0.5"},
       "action": {"do": "style", "range": "B:B,3:3", "format": "0.00", "align": "right"},
@@ -316,7 +316,7 @@
     },
     {
       "id": "LVL-028",
-      "source": "uncertain",
+      "source": "observed",
       "description": "An alignment set on several cells at once leaves their number formats as they were",
       "cells": {"D4": "0.5"},
       "formats": {"D4": "0%"},
@@ -326,7 +326,7 @@
     },
     {
       "id": "LVL-029",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A column between two formatted at once is left General",
       "cells": {"C7": "1.5"},
       "action": {"do": "style", "range": "B:B,D:D", "format": "0.00", "align": "left"},

@@ -607,7 +607,7 @@
     },
     {
       "id": "TEXT-075",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A line break at the end of a Formula is dropped like a trailing space (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
       "cells": {"C5": "=A1+1\n"},
       "check": "C5",
@@ -615,7 +615,7 @@
     },
     {
       "id": "TEXT-076",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A line break before a comma is dropped like a space (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
       "cells": {"C5": "=IF(A1\n, 1, 0)"},
       "check": "C5",
@@ -631,7 +631,7 @@
     },
     {
       "id": "TEXT-078",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A no-break space between tokens is refused on entry, as a tab is (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
       "cells": {"C5": "=A1 +1"},
       "check": "C5",
@@ -639,7 +639,7 @@
     },
     {
       "id": "TEXT-079",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A tab inside quoted text is part of the text, not whitespace between tokens (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
       "cells": {"C5": "=\"a\tb\""},
       "check": "C5",
@@ -647,7 +647,7 @@
     },
     {
       "id": "TEXT-080",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A range spanning every column is written as whole rows (inferred from Excel's observed A:XFD and A1:A1048576 (verification/2026-09-27-windows-excel), not yet asked of Excel)",
       "cells": {"ZZ1000": "=A1:XFD3"},
       "check": "ZZ1000",
@@ -655,7 +655,7 @@
     },
     {
       "id": "TEXT-081",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A range spanning every row is written as whole columns, the columns' $ kept (inferred from Excel's observed A:XFD and A1:A1048576 (verification/2026-09-27-windows-excel), not yet asked of Excel)",
       "cells": {"ZZ1000": "=$A$1:$B$1048576"},
       "check": "ZZ1000",
@@ -663,7 +663,7 @@
     },
     {
       "id": "TEXT-082",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A range spanning the whole Sheet is written as whole rows (inferred from Excel's observed A:XFD and A1:A1048576 (verification/2026-09-27-windows-excel), not yet asked of Excel)",
       "cells": {"ZZ1000": "=A1:XFD1048576"},
       "check": "ZZ1000",
@@ -679,7 +679,7 @@
     },
     {
       "id": "TEXT-084",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A column name with a comma is written back in single brackets too (inferred from Excel's observed single brackets, not yet asked of Excel)",
       "tables": {"T": {"columns": ["a,b"], "rows": null}},
       "cells": {"ZZ1000": "=T[[a,b]]"},
@@ -720,7 +720,7 @@
     },
     {
       "id": "TEXT-089",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a lower-case exponent is written in full",
       "cells": {"ZZ1000": "=1e15"},
       "check": "ZZ1000",
@@ -728,7 +728,7 @@
     },
     {
       "id": "TEXT-090",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an explicit plus in the exponent is written in full",
       "cells": {"ZZ1000": "=1E+15"},
       "check": "ZZ1000",
@@ -736,7 +736,7 @@
     },
     {
       "id": "TEXT-091",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1E19, the largest power of ten written in full",
       "cells": {"ZZ1000": "=1E19"},
       "check": "ZZ1000",
@@ -760,7 +760,7 @@
     },
     {
       "id": "TEXT-094",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: twenty digits keep 15, written in full",
       "cells": {"ZZ1000": "=12345678901234567890"},
       "check": "ZZ1000",
@@ -768,7 +768,7 @@
     },
     {
       "id": "TEXT-095",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1E-9, the smallest power of ten written in full",
       "cells": {"ZZ1000": "=1E-9"},
       "check": "ZZ1000",
@@ -792,7 +792,7 @@
     },
     {
       "id": "TEXT-098",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a decimal past 15 significant digits keeps 15",
       "cells": {"ZZ1000": "=0.12345678901234567"},
       "check": "ZZ1000",
@@ -800,7 +800,7 @@
     },
     {
       "id": "TEXT-099",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a mantissa with a decimal point and an exponent is written in full",
       "cells": {"ZZ1000": "=1.0E3"},
       "check": "ZZ1000",
@@ -808,7 +808,7 @@
     },
     {
       "id": "TEXT-100",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: leading zeros are dropped",
       "cells": {"ZZ1000": "=00012"},
       "check": "ZZ1000",
@@ -816,7 +816,7 @@
     },
     {
       "id": "TEXT-101",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a trailing decimal point is dropped",
       "cells": {"ZZ1000": "=12."},
       "check": "ZZ1000",
@@ -824,7 +824,7 @@
     },
     {
       "id": "TEXT-102",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negated constant: the minus is its own token, the number written in full",
       "cells": {"ZZ1000": "=-1E15"},
       "check": "ZZ1000",

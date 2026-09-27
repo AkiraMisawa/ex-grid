@@ -341,7 +341,7 @@
     },
     {
       "id": "GW-028",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a tiny number whose scientific form does not fit is a bare 0",
       "columnWidth": 4,
       "cells": {"A1": "=1E-20"},
@@ -350,7 +350,7 @@
     },
     {
       "id": "GW-029",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a tiny number whose scientific form fits is shown scientific, not as 0",
       "columnWidth": 8.09,
       "cells": {"A1": "=1E-20"},
@@ -359,7 +359,7 @@
     },
     {
       "id": "GW-030",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number of 0.5 or more in a column one character wide is rounded to 1",
       "columnWidth": 1,
       "cells": {"A1": "=2/3"},

@@ -683,7 +683,7 @@
     },
     {
       "id": "FILL-074",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A trend filled up is held at 15 significant digits too, stepping away from the source (inferred from Excel's observed trends (verification/2026-09-27-windows-excel item 4), not yet asked of Excel)",
       "cells": {"A5": "4", "A6": "2", "A7": "1"},
       "action": {"do": "fill", "source": "A5:A7", "target": "A3:A4", "direction": "up"},
@@ -692,7 +692,7 @@
     },
     {
       "id": "FILL-075",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A trend of 0.1, 0.2 steps to exactly 0.5, not to the double sum's 0.5000000000000001 (inferred from Excel's observed trends (verification/2026-09-27-windows-excel item 4), not yet asked of Excel)",
       "cells": {"A1": "0.1", "A2": "0.2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
