@@ -5,7 +5,7 @@
 - **`MudExGridPaper`** — a Material surface around the grid, with MudBlazor's palette, type and
   `Dense`, `Hover` and `Striped` options, following the theme (dark mode included).
 - **`MudGridChrome`** — the grid's seams filled with MudBlazor's own controls: the column menu
-  and the Context Menu, the filter panel, the Cell Editor and the loading bar.
+  and the Context Menu, the filter panel, the find panel, the Cell Editor and the loading bar.
 - **`mud-ex-grid.css`** — maps the grid's Visual Tokens onto MudBlazor's palette variables.
 
 The grid's behaviour does not change: the Chrome renders and calls back, and the core decides

@@ -302,6 +302,31 @@ it has met `chrome` or `msedge`.
   150 ms — and a sweep while scrolling carries 47–55 frames a second up the circuit
   whatever the round trip, so the reports are not per frame.
 
+**2026-09-27, Excel's editing keys and Find.** A comparison against Excel, grilled with the user,
+found four gaps and one defect. **The defect:** ADR-0007 said the grid forwards Ctrl+Z, and
+nothing did. **The gaps:** Delete, Backspace, Ctrl+D / Ctrl+R and Ctrl+F. Decided as ADR-0007's
+forwarding section, ADR-0046 (Delete raises a Clear Intent, never a paste of empty text), the
+ADR-0035 additions for the fill keys and Backspace, ADR-0047 (Find is asked of the Consumer, and
+the grid takes Ctrl+F even where nothing can search) and ADR-0028's rename of `ViewportSize.Fill`
+to `Stretch`, which frees Fill for Excel's gesture. Built, with the criteria each ADR added
+(KB-37, ED-23..25, CP-24/25, FD-1..9):
+
+- `OnUndo` / `OnRedo`, each key taken from the page only while someone listens — the key gate
+  is now told a per-grid set (`GridKeys.TakenFor`) and re-told when it changes.
+- `OnClear` with `GridClearIntent`; Backspace's empty Overwrite editor; Ctrl+D / Ctrl+R planned
+  by `ClipboardRules.PlanFill` and raised as one paste intent of raw values, with three new
+  refusals (`NothingToFillFrom`, `MultipleRanges`, `SourceUnavailable`).
+- Find: `GridFind.Search` as the reference, `IGridSource.CanFind` / `FindAsync` with defaults
+  that say no, `GridSource.Fetch(find:)`, `OnFind` for push mode, the find panel as a Chrome seam
+  drawn by the built-in Chrome and by `ExGrid.MudBlazor`, and `OnFindRefused`.
+- The Features demo keeps an undo stack, so the keys have something to drive.
+
+**Where this ran.** A Linux cloud container, .NET 10.0.401 installed directly, **Google Chrome
+and Microsoft Edge installed from their vendors' packages**, headed under Xvfb. Layers 1 and 2:
+**644 + 600 (1 skipped by name) + 70**. Layer 3: the new `excel-keys.spec.mjs` and
+`find.spec.mjs` pass on both browsers against both hosts (**40 of 40** on Server); the full-suite
+figures are below.
+
 ## Working through to the component
 
 | ADR | | Pinned by |
