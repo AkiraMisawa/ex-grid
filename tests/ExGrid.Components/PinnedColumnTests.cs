@@ -231,7 +231,7 @@ public class PinnedColumnTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-pinned"));
     }
 
-    [Fact] // ADR-0045 / FN-6a: a Fill box too narrow for its Pinned block paints nothing pinned, and pins again when it widens
+    [Fact] // ADR-0045 / FN-6a: a Stretch box too narrow for its Pinned block paints nothing pinned, and pins again when it widens
     public async Task A_box_narrowed_under_the_pinned_block_suspends_pinning_until_it_widens()
     {
         int? reportedPinned = null;
@@ -241,7 +241,7 @@ public class PinnedColumnTests : GridTestContext
             .Add(g => g.Columns, TestRows.Wide(100))
             .Add(g => g.RowHeight, RowHeightPx)
             .Add(g => g.ViewportHeight, ViewportHeightPx)
-            .Add(g => g.ViewportWidth, ViewportSize.Fill)
+            .Add(g => g.ViewportWidth, ViewportSize.Stretch)
             .Add(g => g.PinnedColumnCount, 2)
             .Add(g => g.OnPinnedCountChanged, n => reportedPinned = n));
 
@@ -267,7 +267,7 @@ public class PinnedColumnTests : GridTestContext
             .Add(g => g.Columns, TestRows.Wide(100))
             .Add(g => g.RowHeight, RowHeightPx)
             .Add(g => g.ViewportHeight, ViewportHeightPx)
-            .Add(g => g.ViewportWidth, ViewportSize.Fill)
+            .Add(g => g.ViewportWidth, ViewportSize.Stretch)
             .Add(g => g.PinnedColumnCount, 2));
         await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 230, ViewportHeightPx));
 

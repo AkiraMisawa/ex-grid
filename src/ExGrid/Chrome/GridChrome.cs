@@ -246,6 +246,37 @@ public sealed record CellEditorContext(
 }
 
 /// <summary>
+/// The find panel's contract (ADR-0047). The core owns the search — the request, the answer,
+/// the Focus it moves — and the Chrome draws a field, the two options and the steps, and
+/// reports what the user did. It is a popover by every popover rule (ADR-0039/0040): it takes
+/// the keyboard through <see cref="FocusRequest"/>, which counts the requests for the field to
+/// take DOM focus — each opening — and it is closed by Escape, a pointer-down elsewhere in the
+/// instance, or <see cref="Close"/>, the keyboard returning to the root however it closes.
+///
+/// <para><see cref="Text"/>, <see cref="MatchCase"/> and <see cref="WholeCell"/> are what the
+/// panel shows; the Chrome reports changes through <see cref="TextChanged"/>,
+/// <see cref="MatchCaseChanged"/> and <see cref="WholeCellChanged"/>, and the core keeps them
+/// across a close and reopen within the instance, as Excel's dialog keeps its last search.
+/// <see cref="Next"/> and <see cref="Previous"/> run a step — Enter and Shift+Enter in the
+/// field, and whatever buttons the Chrome draws. <see cref="Outcome"/> is what the last step
+/// came to; the grid holds no sentence for it, so the Chrome words it, into a live region
+/// (ADR-0033).</para>
+/// </summary>
+public sealed record FindContext(
+    string Text,
+    bool MatchCase,
+    bool WholeCell,
+    Finding.FindOutcome Outcome,
+    Action<string> TextChanged,
+    Action<bool> MatchCaseChanged,
+    Action<bool> WholeCellChanged,
+    Func<Task> Next,
+    Func<Task> Previous,
+    Action Close,
+    int FocusRequest = 0,
+    Action<bool>? InnerPopupChanged = null);
+
+/// <summary>
 /// The substitutable UI seams (ADR-0009/0010): the filter panel, the column menu, the
 /// cell editor and the loading indicator. One rule throughout: Chrome renders and
 /// calls back; it does not decide meaning — the commands, the allowed operators and
@@ -273,6 +304,9 @@ public interface IGridChrome
     /// changes: the core holds no reference to a control it did not render, and does
     /// not try (ADR-0010/0030).</summary>
     RenderFragment? CellEditor(CellEditorContext context);
+
+    /// <summary>Null falls back to the core's built-in find panel (ADR-0047).</summary>
+    RenderFragment? FindPanel(FindContext context) => null;
 
     /// <summary>Null falls back to the core's own loading presentation (the
     /// <c>ex-loading</c> class and the Placeholder rows).</summary>

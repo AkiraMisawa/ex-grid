@@ -45,7 +45,7 @@ public sealed class DemoWideRow
 /// <summary>
 /// A row of the MudBlazor application page: a booked trade as an ordinary blotter lists
 /// it, with enough fields that its columns are wider than any screen the page is shown
-/// on — a grid sized by the layout (<c>ViewportSize.Fill</c>) then always has something
+/// on — a grid sized by the layout (<c>ViewportSize.Stretch</c>) then always has something
 /// to scroll to, whatever the Drawer leaves it. Every value is stored, and none of it is
 /// any real Consumer's: the names are invented and the numbers are a seeded sequence.
 /// </summary>

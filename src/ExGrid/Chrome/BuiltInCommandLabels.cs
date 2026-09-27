@@ -29,6 +29,14 @@ public static class BuiltInCommandLabels
         GridCommandIds.SizeToFit => "Size to fit",
         GridCommandIds.Copy => "Copy",
         GridCommandIds.CopyWithHeaders => "Copy with headers",
+        FindPanelLabelIds.Title => "Find",
+        FindPanelLabelIds.Field => "Find what",
+        FindPanelLabelIds.MatchCase => "Match case",
+        FindPanelLabelIds.WholeCell => "Match entire cell contents",
+        FindPanelLabelIds.Next => "Find next",
+        FindPanelLabelIds.Previous => "Find previous",
+        FindPanelLabelIds.NotFound => "No match",
+        FindPanelLabelIds.OrderChanged => "The rows moved; find again",
         _ => id,
     };
 }

@@ -81,10 +81,10 @@ internal sealed class GridJSInterop
         // gate was told is asserted.
         var setInnerPopup = handle.SetupVoid("setInnerPopup", _ => true);
         setInnerPopup.SetVoidResult();
-        // Whether any column edits, re-told when a parameter change flips it
-        // (ADR-0010/0020) — accepted for the same reason.
-        var setCanEdit = handle.SetupVoid("setCanEdit", _ => true);
-        setCanEdit.SetVoidResult();
+        // Which keys this grid takes, re-told when a parameter change changes the answer
+        // (ADR-0007/0010/0020/0047) — what it was told is asserted.
+        var setClaims = handle.SetupVoid("setClaims", _ => true);
+        setClaims.SetVoidResult();
         // The two pointer reports' switches (ADR-0021's fifth entry). The tests drive
         // OnPointerRowAsync and OnPointerRestAsync directly; what is asserted here is
         // what the browser was told to report.
@@ -105,8 +105,16 @@ internal sealed class GridJSInterop
             PointerReporting = setPointerReporting,
             PointerForgotten = forgetPointer,
             InnerPopupTold = setInnerPopup,
+            ClaimsTold = setClaims,
         };
     }
+
+    /// <summary>The keys the gate was told at attach: the fourth argument of <c>attach</c>.</summary>
+    internal IReadOnlyList<string> TakenAtAttach =>
+        (IReadOnlyList<string>)_module!.Invocations["attach"][^1].Arguments[3]!;
+
+    /// <summary>Every time the key gate was re-told which keys this grid takes.</summary>
+    internal JSRuntimeInvocationHandler ClaimsTold { get; private init; } = default!;
 
     /// <summary>Every time the key gate was told whether a popover's contents have a popup
     /// of their own open (ADR-0039).</summary>

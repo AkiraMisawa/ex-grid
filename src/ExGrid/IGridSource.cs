@@ -92,4 +92,21 @@ public interface IGridSource<TRow>
     /// directly, is refused by name.
     /// </summary>
     Rows.IRowMarks<TRow>? Marks => null;
+
+    /// <summary>
+    /// Whether this source answers <see cref="FindAsync"/> (ADR-0047). The default is no, so
+    /// a source written before Find keeps compiling and is honestly reported as unable to
+    /// search: Ctrl+F then refuses rather than handing the user the browser's search, which
+    /// sees only the painted rows.
+    /// </summary>
+    bool CanFind => false;
+
+    /// <summary>
+    /// The next cell whose displayed text matches, in the order the request was read in
+    /// (ADR-0047). <see cref="Finding.GridFind.Step{TRow}"/> is the reference for what a
+    /// match is. Called only when <see cref="CanFind"/>; the default refuses by name.
+    /// </summary>
+    Task<Finding.GridFindResult> FindAsync(Finding.GridFindRequest request, CancellationToken cancellationToken)
+        => throw new NotSupportedException(
+            $"{GetType().Name} does not search: CanFind is false, and the grid does not ask (ADR-0047).");
 }
