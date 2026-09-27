@@ -173,7 +173,8 @@ step.Undo();                                         // Entries, formats and Ref
   pasted field as if typed under the Sheet's culture. A copy that reaches a `#GETTING_DATA`
   Value is refused.
 - **Fill.** `SheetEdit.Fill(source, target, direction)` fills as Excel does for copies (with
-  References shifted), a linear trend from two or more numbers, and a single date by day, and
+  References shifted), a linear trend from two or more numbers (held at 15 significant digits,
+  as Excel holds it), and a single date by day, and
   refuses every other pattern — `Item 1`, day and month names, several dates — rather than fill
   it with copies.
 - `Sheet.Check(edit)` says whether an edit would be refused, without doing it.

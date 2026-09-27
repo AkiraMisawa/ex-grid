@@ -144,7 +144,7 @@
       "cells": {"A1": "1", "A2": "3", "A3": "4"},
       "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
       "check": "A4",
-      "expect": {"value2": 5.666666666666667, "digits": 12}
+      "expect": {"value2": 5.66666666666667}
     },
     {
       "id": "FILL-017",
@@ -153,7 +153,7 @@
       "cells": {"A1": "1", "A2": "3", "A3": "4"},
       "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
       "check": "A5",
-      "expect": {"value2": 7.166666666666667, "digits": 12}
+      "expect": {"value2": 7.16666666666667}
     },
     {
       "id": "FILL-018",
@@ -162,7 +162,7 @@
       "cells": {"A1": "1", "A2": "3", "A3": "4"},
       "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
       "check": "A6",
-      "expect": {"value2": 8.666666666666666, "digits": 12}
+      "expect": {"value2": 8.66666666666667}
     },
     {
       "id": "FILL-019",
@@ -590,6 +590,114 @@
       "action": {"do": "fill", "source": "B1", "target": "B2:B3", "direction": "down"},
       "check": "B3",
       "expect": {"formula": "=A3 + 1"}
+    },
+    {
+      "id": "FILL-064",
+      "source": "observed",
+      "description": "A linear trend (1, 2, 4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "1", "A2": "2", "A3": "4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A4",
+      "expect": {"value2": 5.33333333333333}
+    },
+    {
+      "id": "FILL-065",
+      "source": "observed",
+      "description": "A linear trend (1, 2, 4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "1", "A2": "2", "A3": "4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A5",
+      "expect": {"value2": 6.83333333333333}
+    },
+    {
+      "id": "FILL-066",
+      "source": "observed",
+      "description": "A linear trend (1, 2, 4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "1", "A2": "2", "A3": "4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A6",
+      "expect": {"value2": 8.33333333333333}
+    },
+    {
+      "id": "FILL-067",
+      "source": "observed",
+      "description": "A linear trend (1, 2, 4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "1", "A2": "2", "A3": "4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A7",
+      "expect": {"value2": 9.83333333333333}
+    },
+    {
+      "id": "FILL-068",
+      "source": "observed",
+      "description": "A linear trend (1, 2, 4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "1", "A2": "2", "A3": "4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A8",
+      "expect": {"value2": 11.3333333333333}
+    },
+    {
+      "id": "FILL-069",
+      "source": "observed",
+      "description": "A linear trend (0.1, 0.2, 0.4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "0.1", "A2": "0.2", "A3": "0.4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A4",
+      "expect": {"value2": 0.533333333333333}
+    },
+    {
+      "id": "FILL-070",
+      "source": "observed",
+      "description": "A linear trend (0.1, 0.2, 0.4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "0.1", "A2": "0.2", "A3": "0.4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A5",
+      "expect": {"value2": 0.683333333333333}
+    },
+    {
+      "id": "FILL-071",
+      "source": "observed",
+      "description": "A linear trend (0.1, 0.2, 0.4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "0.1", "A2": "0.2", "A3": "0.4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A6",
+      "expect": {"value2": 0.833333333333333}
+    },
+    {
+      "id": "FILL-072",
+      "source": "observed",
+      "description": "A linear trend (0.1, 0.2, 0.4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "0.1", "A2": "0.2", "A3": "0.4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A7",
+      "expect": {"value2": 0.983333333333333}
+    },
+    {
+      "id": "FILL-073",
+      "source": "observed",
+      "description": "A linear trend (0.1, 0.2, 0.4) is held at 15 significant digits (observed through probes.ps1, verification/2026-09-27-windows-excel item 4: Excel's trend is held at 15 significant digits)",
+      "cells": {"A1": "0.1", "A2": "0.2", "A3": "0.4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A8", "direction": "down"},
+      "check": "A8",
+      "expect": {"value2": 1.13333333333333}
+    },
+    {
+      "id": "FILL-074",
+      "source": "uncertain",
+      "description": "A trend filled up is held at 15 significant digits too, stepping away from the source (inferred from Excel's observed trends (verification/2026-09-27-windows-excel item 4), not yet asked of Excel)",
+      "cells": {"A5": "4", "A6": "2", "A7": "1"},
+      "action": {"do": "fill", "source": "A5:A7", "target": "A3:A4", "direction": "up"},
+      "check": "A3",
+      "expect": {"value2": 6.83333333333333}
+    },
+    {
+      "id": "FILL-075",
+      "source": "uncertain",
+      "description": "A trend of 0.1, 0.2 steps to exactly 0.5, not to the double sum's 0.5000000000000001 (inferred from Excel's observed trends (verification/2026-09-27-windows-excel item 4), not yet asked of Excel)",
+      "cells": {"A1": "0.1", "A2": "0.2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A5",
+      "expect": {"value2": 0.5}
     }
   ]
 }
