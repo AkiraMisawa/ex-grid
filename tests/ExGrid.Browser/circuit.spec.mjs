@@ -387,3 +387,163 @@ test.describe('two users, one store (SRV-3, ADR-0018)', () => {
         }
     });
 });
+
+// A click between keys (ED-22, ADR-0010): click F1, type 1, Enter; click F2, type 2, Enter; …
+// The Enter is held in the listener behind the 1 until the editor holds DOM focus, and a click
+// that followed it was applied first: the Enter's move then carried the Focus past the clicked
+// cell, and each value landed one row too low (verification/2026-09-27-windows-excel,
+// typing-probe-2.mjs: wrong on Server at 0, 30 and 60 ms pauses, on WebAssembly at 0). The
+// press must be ordered after the keys typed before it, and before the keys typed after it.
+//
+// Not fixed yet: holding the press behind the keys needs the listener to hear the press, which
+// is a listener kind ADR-0021 does not list, so it waits on that decision. Until then the tests
+// are fixme; EXGRID_RUN_PENDING=1 runs them (they fail on the Server host at 0 and 30 ms, and
+// at 150 ms round trip).
+const pending = process.env.EXGRID_RUN_PENDING === '1' ? test : test.fixme;
+test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () => {
+    const sheetGrid = (page) => page.locator('.ex-grid').first();
+    const columnF = (page, row) => sheetGrid(page).locator(`[id$='-r${row}c5']`);
+
+    async function openSheet(page) {
+        await page.goto('/sheet');
+        await expect(sheetGrid(page).locator("[id$='-r0c0']")).toHaveText('Item');
+        await expect(sheetGrid(page)).toHaveAttribute('tabindex', '0');
+    }
+
+    /** typing-probe-2.mjs's steps: each value typed into the cell clicked for it, then Enter. */
+    async function clickTypeEnter(page, pauseMs) {
+        for (const [row, value] of [[0, '1'], [1, '2'], [2, '3'], [6, '7']]) {
+            await columnF(page, row).click({ force: true });
+            if (pauseMs) await page.waitForTimeout(pauseMs);
+            await page.keyboard.type(value);
+            await page.keyboard.press('Enter');
+            if (pauseMs) await page.waitForTimeout(pauseMs);
+        }
+    }
+
+    async function expectEachValueInItsCell(page) {
+        // The last Enter moves the Focus to F8: once it is there, every key and click has landed.
+        await expect(sheetGrid(page).locator('input.ex-name-box')).toHaveValue('F8');
+        await expect.poll(() => sheetGrid(page).evaluate((root) => [0, 1, 2, 3, 4, 5, 6, 7]
+            .map((r) => root.querySelector(`[id$='-r${r}c5']`)?.textContent.trim() ?? '')))
+            .toEqual(['1', '2', '3', '', '', '', '7', '']);
+    }
+
+    for (const pauseMs of [0, 30, 60]) {
+        pending(`with ${pauseMs} ms between the steps, each value lands in the cell clicked for it`, async ({ page }) => {
+            await openSheet(page);
+            await clickTypeEnter(page, pauseMs);
+            await expectEachValueInItsCell(page);
+        });
+    }
+
+    pending('with a 150 ms round trip and no pause, each value lands in the cell clicked for it (SRV-5)', async ({ page }) => {
+        await openSheet(page);
+        await setRoundTrip(150);
+        await clickTypeEnter(page, 0);
+        await expectEachValueInItsCell(page);
+    });
+});
+
+// A field the core renders never has its own typing written back into it (SRV-5, ED-22). On a
+// circuit each input event arrives a round trip after it was typed, and a render answering it
+// that set the field's value put back the text as it stood then, over what was typed since:
+// `Xabcdefghij` typed at 10 keys a second at 150 ms arrived as `Xabdfhj`, `nonsense` in the Name
+// Box as `nnse` (found by ticket 18's suite, 2026-09-27). Each field now tells the renderer the
+// value it reports is what it already shows; a render writes it only when the core changes it.
+test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22)', () => {
+    /** Every write of the field's value from script, recorded: none is expected. */
+    async function recordWrites(page, selector) {
+        await page.evaluate((sel) => {
+            window.__valueWrites = [];
+            const field = document.querySelector(sel);
+            const own = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+            Object.defineProperty(field, 'value', {
+                get() { return own.get.call(this); },
+                set(v) { window.__valueWrites.push(v); own.set.call(this, v); },
+            });
+        }, selector);
+    }
+
+    // The built-in editor, and ExGrid.MudBlazor's (a Chrome's control reporting its own text).
+    for (const [chrome, field] of [['builtin', 'input.ex-editor'], ['mud', 'input.mud-ex-editor']]) {
+        test(`the Cell Editor, at 10 keys a second (${chrome})`, async ({ page }) => {
+            await page.goto(`/features?chrome=${chrome}`);
+            await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+            await expect(grid(page)).toHaveAttribute('tabindex', '0');
+            await clickCell(page, 0, 1);              // Trader, editable
+            await page.keyboard.type('X');
+            const editor = grid(page).locator(field);
+            await expect(editor).toHaveValue('X');
+            await expect(editor).toBeFocused();
+            await recordWrites(page, `.ex-grid ${field}`);
+            await setRoundTrip(150);
+
+            await page.keyboard.type('abcdefghij', { delay: 100 });
+
+            await page.waitForTimeout(1000);          // every answer has landed
+            await expect(editor).toHaveValue('Xabcdefghij');
+            expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
+            await page.keyboard.press('Enter');
+            await expect(grid(page).locator("[id$='r0c1']")).toHaveText('Xabcdefghij');
+        });
+    }
+
+    test('the Name Box, at 10 keys a second', async ({ page }) => {
+        await page.goto('/sheet');
+        const sheet = grid(page);
+        await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
+        await expect(sheet).toHaveAttribute('tabindex', '0');
+        const nameBox = sheet.locator('input.ex-name-box');
+        await nameBox.click();
+        await nameBox.fill('');
+        await recordWrites(page, '.ex-grid input.ex-name-box');
+        await setRoundTrip(150);
+
+        await page.keyboard.type('nonsense', { delay: 100 });
+
+        await page.waitForTimeout(1000);
+        await expect(nameBox).toHaveValue('nonsense');
+        expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
+    });
+});
+
+// A ← typed as the completion list is painted is the editor's (ADR-0051, ADR-0010). On a circuit
+// the render that paints the list and the message that tells the key gate are two messages; a
+// key between them was gated as Overwrite's and swallowed (ticket 18's notes). The gate now reads
+// the list's own mark, which lands with the paint. The key is dispatched from a MutationObserver,
+// so it lands exactly in that gap: on WebAssembly there is no gap, and the test is the case
+// without one.
+test('a ← typed as the completion list is painted is left to the editor (ADR-0051, ADR-0010)', async ({ page }) => {
+    await page.goto('/sheet');
+    const sheet = grid(page);
+    await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
+    await expect(sheet).toHaveAttribute('tabindex', '0');
+    await sheet.locator("[id$='-r4c5']").click({ force: true });
+    await page.keyboard.type('=');
+    const editor = sheet.locator('input.ex-editor:not(.ex-formula-bar-text)');
+    await expect(editor).toHaveValue('=');
+    await expect(editor).toBeFocused();
+    await page.evaluate(() => {
+        window.__arrowTaken = null;
+        const root = document.querySelector('.ex-grid');
+        const observer = new MutationObserver(() => {
+            if (window.__arrowTaken !== null || !root.querySelector('.ex-completion [role=listbox]')) {
+                return;
+            }
+            observer.disconnect();
+            const arrow = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true });
+            document.activeElement.dispatchEvent(arrow);
+            window.__arrowTaken = arrow.defaultPrevented;
+        });
+        observer.observe(root, { childList: true, subtree: true });
+    });
+
+    await page.keyboard.type('S');
+
+    await expect.poll(() => page.evaluate(() => window.__arrowTaken)).toBe(false);
+    // Not forwarded: the list the ← would have closed is still open.
+    await expect(sheet.locator('.ex-completion-list')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+});

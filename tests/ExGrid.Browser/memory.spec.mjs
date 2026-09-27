@@ -115,19 +115,25 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     await grid.mount();
     await page.evaluate(() => { window.__disposedRoot = document.querySelector('.ex-grid'); });
     const attached = (await grid.listenersOn('window.__disposedRoot')).map(key).sort();
-    // The per-instance handle's six, on the instance root and nowhere else (ADR-0018):
-    // the capture-phase keys, the pointer report, the two clipboard events, and the
-    // capture-phase input that reports an editor's caret with each input (ADR-0051's second
-    // round, DC-24; its selectionchange listener is the document's, since the event fires
-    // nowhere else, and is checked by the script-shape tests).
+    const fromModule = (t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.\\w+)?\\.js$`));
+    // The per-instance handle's six on the instance root (ADR-0018): the capture-phase
+    // keys, the editor's input report (ADR-0051), the pointer report and the two
+    // clipboard events.
     expect(attached).toEqual([
         'copy', 'input (capture)', 'keydown (capture)', 'mouseleave', 'mousemove', 'paste',
-    ].map((t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.\\w+)?\\.js$`))));
+    ].map(fromModule));
+    // And one on the document, the only place `selectionchange` fires: it acts only while
+    // DOM focus is in this instance's editor surface (ADR-0051), and it goes with the
+    // instance.
+    const moduleOnDocument = async () => (await grid.listenersOn('document')).map(key)
+        .filter((k) => /@ex-grid(\.\w+)?\.js$/.test(k));
+    expect(await moduleOnDocument()).toEqual([fromModule('selectionchange')]);
 
     await grid.dispose();
     // Held on purpose, so what is still attached to it can be read after disposal.
     await expect.poll(async () => (await grid.listenersOn('window.__disposedRoot')).map(key),
         { message: 'no listener left on the disposed root' }).toEqual([]);
+    await expect.poll(moduleOnDocument, { message: 'no listener of the module left on the document' }).toEqual([]);
 
     await page.evaluate(() => { delete window.__disposedRoot; });
     expect((await grid.counters()).listeners, 'the listener count is back to its baseline').toBe(baseline.listeners);

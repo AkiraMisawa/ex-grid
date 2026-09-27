@@ -272,8 +272,9 @@ surface: one uncommitted text, shown in two places ([ADR-0051](./docs/adr/0051-f
 _Avoid_: edit bar, input bar, toolbar
 
 **Name Box**:
-The Formula Bar's field that says where the Focus is, in the Consumer's words (`D200` on a Sheet).
-Typing an address into it moves the Selection there ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
+The Formula Bar's field that says where the Focus is, in the Consumer's words (`D200` on a Sheet);
+while a Formula is pointing, it names the pointed cell instead, as Excel does. Typing an address into
+it moves the Selection there ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
 _Avoid_: address bar, cell reference box
 
 **Interactive**:

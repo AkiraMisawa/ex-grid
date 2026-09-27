@@ -122,6 +122,11 @@ the kind that still look correct on screen**, so review will not catch them.
 - **`StateHasChanged()` can complete the render synchronously.** A field set just before it may
   already have been cleared by `OnAfterRender` when you read it back — this produced a real
   `NullReferenceException`. Copy to a local first.
+- **An `<input value="@text">` beside a plain `@oninput` writes typing back on a Server
+  circuit.** The render that answers each input puts that input's text back in the field, a
+  round trip late, over whatever was typed since. It loses characters at ordinary typing speed
+  (measured, 2026-09-27). Bind the field with `@bind:get`/`@bind:set` on `oninput`, so a render
+  writes it only when the component itself changes the text.
 - **Three name collisions exist.** A Razor page class with the same name as the root namespace
   shadows the namespace (`Bench.razor` in namespace `Bench` → CS0426). An enum named
   `RenderMode` collides with `Microsoft.AspNetCore.Components.Web.RenderMode`, which

@@ -149,3 +149,6 @@ DOM focus. This is the same allowlisted listener doing the same job
   Placing the caret at the end on opening applies only to an edit opened by typing or by F2.
 - **Moving the caret while pointing (←, → or a click in the text) ends pointing and enters
   Caret**, the equivalent of Excel's Edit mode. It does not enter Overwrite.
+
+- **While pointing, the Name Box names the pointed cell** *(observed in Excel, 2026-09-27)*. It
+  names the edited cell again when pointing ends.

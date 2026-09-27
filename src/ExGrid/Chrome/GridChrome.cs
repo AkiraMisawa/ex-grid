@@ -227,6 +227,13 @@ public sealed record LoadingContext(bool IsLoading, int PlaceholderRowCount);
 /// (ADR-0034), for the substitute to paint <c>aria-invalid</c> and its own border.
 /// Chrome still cannot veto: <see cref="Commit"/> stays argument-less and the decision
 /// to hold is the core's.</para>
+///
+/// <para>On a Server circuit <see cref="InitialText"/> carries each reported text back a round
+/// trip late. A control that writes it into its field puts that text back over the characters
+/// typed since (SRV-5, ED-22). The Wrapper's controls bind their field with <c>@bind:get</c>
+/// and <c>@bind:set</c> on <c>oninput</c>, render what the browser last reported, and take
+/// only a text the core wrote itself; the same holds for the Formula Bar's and the Name Box's
+/// controls.</para>
 /// </summary>
 public sealed record CellEditorContext(
     string Column,

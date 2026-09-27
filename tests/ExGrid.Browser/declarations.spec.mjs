@@ -389,7 +389,6 @@ test('DC-28: keys typed in the Formula Bar behind F2 on a 150 ms circuit land in
 // ab|cd + XY + Z). Left failing on the Server host, by name, until the core stops writing a
 // surface's own typing back into it (ADR-0051, ED-22).
 test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key lands at the caret they left', async ({ page }) => {
-    test.fail(SERVER, 'DC-28: a render answering a held key writes its text back and moves the caret to the end');
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await clickBarEnd(grid);
@@ -659,7 +658,6 @@ test('DC-30: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z walk the Sheet\'s stack; with an edi
 // into it, which empties the browser's undo history (found by this suite, 2026-09-27; the same
 // write-back that loses characters in the SRV-5 test below), so there Ctrl+Z undoes nothing.
 test('DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing', async ({ page }) => {
-    test.fail(SERVER, 'ADR-0007: each render writes the typed text back into the input, which clears its undo history');
     const grid = sheet(page);
     await clickCell(grid, 'F4');
     await page.keyboard.type('abc');
@@ -689,7 +687,6 @@ test('DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing', asyn
 // and replayed by the listener. Left failing on the Server host until the core stops writing a
 // surface's own typing back into it.
 test('SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 150 ms circuit loses nothing', async ({ page }) => {
-    test.fail(SERVER, 'SRV-5/ED-22: renders answering earlier inputs write stale text over characters typed since');
     const grid = sheet(page);
     await clickCell(grid, 'F3');
     await page.keyboard.type('=');
