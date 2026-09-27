@@ -55,6 +55,10 @@ disagree with the cells written. On a Sheet it is the most common paste there is
 - **After a spilled paste, the pasted block is the Selection**, with the Anchor at its top-left.
   Excel does the same. It is also what answers ADR-0014's third objection: the count on display
   is the count written.
+- **A Consumer can refuse a spilled paste** *(2026-09-27, after the second Windows run)*.
+  `GridPasteIntent.Refuse()` mirrors `GridFillIntent.Refuse()` (item 7): the grid then leaves the
+  Selection where it was, as Excel does. Before it, the grid selected the unwritten block after
+  ExSheet had refused the paste by name.
 - **A spill past the grid's extent is refused by name.** On a Sheet that extent is Excel's, so the
   refusal only comes at the Sheet's own edge. Every other shape rule of ADR-0014 stands, and
   [ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md)'s `Editable` gate is

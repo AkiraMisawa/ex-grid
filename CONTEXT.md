@@ -64,6 +64,13 @@ the size, and the parent must have a definite size on that axis
 ([ADR-0028](./docs/adr/0028-geometry-is-resolved-once-density-is-only-a-preset.md)).
 _Avoid_: auto (that is a column width), 100%, responsive (that is ADR-0045's "following the box")
 
+**Layout Ceiling**:
+The tallest element the browser will lay out, in CSS pixels. It is 2²⁵ px divided by the display
+scale and the page zoom, so it shrinks at 150%. Above it the grid compresses its scroll height
+([ADR-0053](./docs/adr/0053-the-scroll-height-is-compressed-above-the-browsers-layout-ceiling.md)).
+It is reported by the browser, like the Scrollbar Gutter.
+_Avoid_: max height, scroll limit (VZ-8's refusal is a different, fixed ceiling)
+
 **Scrollbar Gutter**:
 How much of the declared Viewport its own scrollbars occupy. A classic scrollbar is drawn
 **inside** the box the element declares and takes about 15px off that axis; an overlay scrollbar

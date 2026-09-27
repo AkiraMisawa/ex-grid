@@ -14,9 +14,10 @@ Every entry names the reason it cannot be done from Blazor.
 | **Reading and setting `scrollTop` / `scrollLeft`** | Blazor's scroll event args carry no scroll offset, and there is no way to set it from C#. Virtualisation needs both directions ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md), [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md) — Focus must stay visible). |
 | **Clipboard: `copy` / `paste` events and the async Clipboard API** | Writing two MIME types in one operation, and resolving a `ClipboardItem` from a promise, have no C# equivalent ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md), [ADR-0017](./0017-target-chromium-browsers-only.md)). *(Since 2026-09-25 a paste crosses as JS stream references rather than two strings in one call, so a Blazor Server hub's message limit cannot end the circuit — ADR-0005.)* |
 | **A `ResizeObserver` reporting the Scrollbar Gutter** | Added while wiring the keyboard; the paragraph below is the argument. |
+| **A `ResizeObserver` reporting the Layout Ceiling** | Added 2026-09-27 ([ADR-0053](./0053-the-scroll-height-is-compressed-above-the-browsers-layout-ceiling.md)). The tallest element the browser will lay out depends on the display scale and the page zoom, and `devicePixelRatio` does not reliably say which (emulation moves one without the other). A hidden element declared 2²⁵ px tall is observed; the size reported is the ceiling. It fires at attach and when the scale or zoom changes, never per render. Blazor has no resize observation at all. |
 | **A `mousemove` listener reporting the pointer — when it moves onto another row, and when it comes to rest** | Added when two decisions needed it at once; the section after the gutter's is the argument. Blazor's `@onmousemove` has no client-side predicate: every event crosses to .NET, and on Blazor Server every crossing is a wire round trip. |
 
-That is the entire list. **Five entries.**
+That is the entire list. **Six entries.**
 
 ### The fourth entry, and why it is not the text measurement this ADR refuses
 
