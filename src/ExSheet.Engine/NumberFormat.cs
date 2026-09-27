@@ -132,13 +132,28 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
 
     private static readonly Dictionary<(string Culture, bool Time), NumberFormat> ShortDates = [];
 
+    /// <summary>Excel's built-in day and month name (<c>d-mmm</c>, format 16), which a date typed without its year records.</summary>
+    private const string DayMonthCode = "d-mmm";
+
     /// <summary>
-    /// The pattern the built-in short date (and short date with time) shows in under
+    /// The built-in <c>d-mmm</c> as it shows under de-DE: <c>dd. mmm</c>, as Excel was observed to
+    /// show <c>26-Okt</c> typed there, <c>26. Okt</c> (TYPED-040, ADR-0047 second run). The day's
+    /// two digits are German Excel's <c>TT. MMM</c>, not observed (TYPED-050 is uncertain). Under
+    /// every other culture it shows as it is spelled (observed under en-US).
+    /// </summary>
+    private static readonly NumberFormat GermanDayMonth = Parse("dd. mmm");
+
+    private NumberFormat? DayMonthIn(CultureInfo culture) =>
+        culture.Name == "de-DE" && string.Equals(Code, DayMonthCode, StringComparison.OrdinalIgnoreCase) ? GermanDayMonth : null;
+
+    /// <summary>
+    /// The pattern the built-in short date (and short date with time, and <c>d-mmm</c>) shows in under
     /// <paramref name="culture"/>; <see langword="null"/> for any other format, or where the
     /// culture's pattern is the code itself.
     /// </summary>
     private NumberFormat? ShortDateIn(CultureInfo culture)
     {
+        if (DayMonthIn(culture) is { } dayMonth) return dayMonth;
         var time = string.Equals(Code, ShortDateTimeCode, StringComparison.OrdinalIgnoreCase);
         if (!time && !string.Equals(Code, ShortDateCode, StringComparison.OrdinalIgnoreCase)) return null;
         lock (ShortDates)

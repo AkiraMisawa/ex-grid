@@ -51,4 +51,30 @@ public class FormulaGrammarTests
     {
         Assert.Throws<FormulaSyntaxException>(() => Entry.FromFormula(formula));
     }
+
+    [Theory] // ADR-0047, second run: an intersection with a name in it is read, as Excel reads "- item one" typed, and is #NAME?
+    [InlineData("=- item one", "=- item one")]
+    [InlineData("=item one", "=item one")]
+    [InlineData("=a1 total", "=A1 total")]
+    [InlineData("=total A1:B2", "=total A1:B2")]
+    [InlineData("=item one two", "=item one two")]
+    [InlineData("=item one%", "=item one%")]
+    public void An_intersection_with_a_name_is_NAME(string typed, string stored)
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("B5"), typed);
+
+        Assert.Equal(stored, sheet.GetEntry(CellAddress.Parse("B5"))!.Formula);
+        Assert.Equal(ErrorValue.Name, sheet.GetValue(CellAddress.Parse("B5"))!.Value.Error);
+    }
+
+    [Theory] // ADR-0047: the intersection of two References is still not read
+    [InlineData("=A1 B1 total")]
+    [InlineData("=A1 TRUE")]
+    [InlineData("=item SUM(A1)")]
+    [InlineData("=item 1")]
+    public void An_intersection_without_a_name_or_with_a_non_reference_is_refused(string formula)
+    {
+        Assert.Throws<FormulaSyntaxException>(() => Entry.FromFormula(formula));
+    }
 }

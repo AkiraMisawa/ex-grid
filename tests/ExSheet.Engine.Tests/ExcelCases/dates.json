@@ -107,10 +107,11 @@
     {
       "id": "DATE-013",
       "source": "observed",
-      "description": "A two-digit year 30-99 is 1930-1999, Excel's default window",
+      "description": "A two-digit year 30 typed is 2030: 00-49 are 20xx, as Windows' default reads them (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "1/1/30"},
       "check": "A1",
-      "expect": {"value2": 10959}
+      "expect": {"value2": 47484},
+      "oracleSkip": "Range.FormulaLocal reads a two-digit year 30-49 as 19xx, but typed with real keys Excel reads it as Windows' default does, 20xx (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "DATE-014",
@@ -216,6 +217,32 @@
       "action": {"do": "enter", "cells": {"A1": "45292"}},
       "check": "A1",
       "expect": {"text": "1/1/2024"}
+    },
+    {
+      "id": "DATE-027",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a two-digit year 49 typed is 2049, the last of Windows' default window",
+      "cells": {"A1": "1/1/49"},
+      "check": "A1",
+      "expect": {"value2": 54424},
+      "oracleSkip": "Range.FormulaLocal reads a two-digit year 30-49 as 19xx, but typed with real keys Excel reads it as Windows' default does, 20xx (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "DATE-028",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a two-digit year 50 typed is 1950, the first of Windows' default window",
+      "cells": {"A1": "1/1/50"},
+      "check": "A1",
+      "expect": {"value2": 18264}
+    },
+    {
+      "id": "DATE-029",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a two-digit year after a month name reads as a numeric one: 31-Dec-49 is 2049",
+      "cells": {"A1": "31-Dec-49"},
+      "check": "A1",
+      "expect": {"value2": 54788},
+      "oracleSkip": "Range.FormulaLocal reads a two-digit year 30-49 as 19xx, but typed with real keys Excel reads it as Windows' default does, 20xx (verification/2026-09-27-windows-excel-2); ask by keys"
     }
   ]
 }

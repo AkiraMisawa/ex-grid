@@ -59,6 +59,20 @@ internal sealed class NameNode(string name) : Node
     public string Name { get; } = name;
 }
 
+/// <summary>
+/// The intersection of two operands written with whitespace between them, one of them a name
+/// (<c>item one</c>): ExSheet defines no names, so it is <c>#NAME?</c> (ADR-0047). The parser
+/// refuses an intersection of two References.
+/// </summary>
+internal sealed class IntersectionNode(Node left, Node right) : Node
+{
+    public Node Left { get; } = left;
+
+    public Node Right { get; } = right;
+
+    public override IEnumerable<Reference> References => Left.References.Concat(Right.References);
+}
+
 internal sealed class FunctionNode(string name, IReadOnlyList<Node> arguments, FunctionDefinition? function) : Node
 {
     /// <summary>The name: upper case for a declared function, as typed otherwise.</summary>

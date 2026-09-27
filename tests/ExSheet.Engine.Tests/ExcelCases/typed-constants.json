@@ -276,11 +276,11 @@
     },
     {
       "id": "TYPED-032",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a leading - that does not read as a Formula stays text (Excel may refuse it with its formula dialog instead)",
+      "source": "observed",
+      "description": "A leading - before text is read as a Formula, =- item one, with no dialog; the space between item and one is Excel's intersection of two names, so it is #NAME? (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "- item one"},
       "check": "A1",
-      "expect": {"value2": "- item one"},
+      "expect": {"value2": "#NAME?", "formula": "=- item one"},
       "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
@@ -341,12 +341,12 @@
     },
     {
       "id": "TYPED-040",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a month name in the culture's language",
+      "source": "observed",
+      "description": "A month name in the culture's language: a date, whose built-in d-mmm shows as 26. Okt under de-DE (verification/2026-09-27-windows-excel-2)",
       "culture": "de-DE",
       "cells": {"A1": "26-Okt"},
       "check": "A1",
-      "expect": {"text": "26-Okt", "numberFormat": "d-mmm"}
+      "expect": {"text": "26. Okt", "numberFormat": "d-mmm"}
     },
     {
       "id": "TYPED-041",
@@ -400,11 +400,11 @@
     },
     {
       "id": "TYPED-047",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a sign before the dollar sign is not read as a currency amount, and stays text",
+      "source": "observed",
+      "description": "A minus sign before the dollar sign is read as a negative dollar amount, with $5's format (verification/2026-09-27-windows-excel-2)",
       "cells": {"A1": "-$5"},
       "check": "A1",
-      "expect": {"value2": "-$5"}
+      "expect": {"value2": -5, "text": "($5)", "numberFormat": "$#,##0_);[Red]($#,##0)"}
     },
     {
       "id": "TYPED-048",
@@ -414,6 +414,58 @@
       "cells": {"A1": "$5"},
       "check": "A1",
       "expect": {"value2": "$5"}
+    },
+    {
+      "id": "TYPED-049",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a minus sign before the dollar sign with cents takes the format with cents",
+      "cells": {"A1": "-$5.50"},
+      "check": "A1",
+      "expect": {"value2": -5.5, "numberFormat": "$#,##0.00_);[Red]($#,##0.00)"}
+    },
+    {
+      "id": "TYPED-050",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the built-in d-mmm shows a one-digit day with two digits under de-DE, as German Excel's TT. MMM",
+      "culture": "de-DE",
+      "cells": {"A1": "5-Okt"},
+      "check": "A1",
+      "expect": {"text": "05. Okt", "numberFormat": "d-mmm"}
+    },
+    {
+      "id": "TYPED-051",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the built-in d-mmm shows as it is spelled under en-GB",
+      "culture": "en-GB",
+      "cells": {"A1": "5-Oct"},
+      "check": "A1",
+      "expect": {"text": "5-Oct", "numberFormat": "d-mmm"}
+    },
+    {
+      "id": "TYPED-052",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a sign after the dollar sign is not read as a dollar amount, and stays text",
+      "cells": {"A1": "$-5"},
+      "check": "A1",
+      "expect": {"value2": "$-5"}
+    },
+    {
+      "id": "TYPED-053",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a leading - before a name and a Reference is the Formula of their intersection, #NAME?",
+      "cells": {"A1": "-total B2"},
+      "check": "A1",
+      "expect": {"value2": "#NAME?", "formula": "=-total B2"},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "TYPED-054",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a leading - before two References with a space between them stays text: ExSheet does not read the intersection of References",
+      "cells": {"A1": "-B2 C2"},
+      "check": "A1",
+      "expect": {"value2": "-B2 C2"},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     }
   ]
 }

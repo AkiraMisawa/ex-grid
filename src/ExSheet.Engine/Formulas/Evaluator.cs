@@ -54,7 +54,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         // One Sheet exists: a Reference qualified with its name reads it, any other qualifier names nothing (ADR-0046).
         ReferenceNode r => Cells.IsLocal(r.Reference) ? Formulas.Operand.Of(r.Reference.Area) : Formulas.Operand.Of(ErrorValue.Ref),
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
-        NameNode => Formulas.Operand.Of(ErrorValue.Name),
+        NameNode or IntersectionNode => Formulas.Operand.Of(ErrorValue.Name),
         ParenthesesNode p => Operand(p.Inner),
         UnaryNode u => Formulas.Operand.Of(Negate(u)),
         PercentNode p => Formulas.Operand.Of(Percent(p)),
