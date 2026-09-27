@@ -1,6 +1,6 @@
 {
   "area": "iferror",
-  "about": "IFERROR (ADR-0047). An empty cell as either argument gives 0, as Excel was observed to answer; Microsoft's documentation says \"\", which Excel does not do.",
+  "about": "IFERROR (ADR-0047). An empty cell as either argument gives an empty value: a Formula whose result it is shows 0, as Excel was observed to answer (Microsoft's documentation says \"\"), and joined to text it is \"\" (verification/2026-09-27-windows-excel-2).",
   "cases": [
     {
       "id": "IFERROR-001",
