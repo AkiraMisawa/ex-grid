@@ -112,6 +112,49 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.True(cut.Instance.CanUndo);
     }
 
+    [Fact] // ADR-0048 (observed in Excel): a pasted run of # is a value too wide for its source column; the paste is refused by name, nothing written
+    public async Task A_pasted_run_of_hashes_is_refused_by_name()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("B1", "old"))));
+        await GoToAsync(cut, "A1:C1");
+
+        await PasteAsync(cut, "6\t########\t1,234.50\r\n");
+
+        Assert.Equal("", CellText(cut, "A1"));
+        Assert.Equal("old", CellText(cut, "B1"));
+        Assert.Equal("", CellText(cut, "C1"));
+        Assert.False(cut.Instance.CanUndo);
+        Assert.Contains("B1", Notice(cut));
+        Assert.Contains("'########'", Notice(cut));
+        Assert.Contains("source column was too narrow to show the value", Notice(cut));
+    }
+
+    [Fact] // ADR-0048 (observed in Excel, behaviours item 18): Excel's HTML carries the shown #### too, with no x:num; refused the same way
+    public async Task A_run_of_hashes_in_excels_html_is_refused()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "A1");
+
+        await PasteAsync(cut, "#####\r\n", "<table><tr><td class=xl65>#####</td></tr></table>");
+
+        Assert.Equal("", CellText(cut, "A1"));
+        Assert.Contains("source column was too narrow to show the value", Notice(cut));
+    }
+
+    [Fact] // ADR-0048: a run of # in another Sheet's invariant table is that Sheet's text Value, and is pasted as text
+    public async Task A_run_of_hashes_in_an_invariant_table_is_text()
+    {
+        var source = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "'###"))));
+        await GoToAsync(source, "A1");
+        var payload = Grid(source).Instance.BuildCopyPayload();
+        var target = RenderSheet();
+        await GoToAsync(target, "A1");
+
+        await PasteAsync(target, payload.Text!, payload.Html);
+
+        Assert.Equal("###", CellText(target, "A1"));
+    }
+
     [Fact] // ADR-0005/0048: outward, the text flavour is the Values as shown and the HTML flavour the unformatted Values
     public async Task A_copy_carries_the_values_shown_and_unformatted()
     {

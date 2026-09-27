@@ -125,6 +125,16 @@ internal static partial class SheetClipboard
             : null;
 
     /// <summary>
+    /// Whether a pasted field is a run of <c>#</c> in shown text: Excel showing a value too wide
+    /// for its column, with the value itself missing from the clipboard (observed,
+    /// verification/2026-09-27-windows-excel, behaviours item 18). Such a paste is refused by name,
+    /// not taken as the text <c>########</c> (ADR-0048). An invariant field — ExGrid's or
+    /// ExSheet's own unformatted table — holds the Value itself, so a run of <c>#</c> there is text.
+    /// </summary>
+    internal static bool IsTooNarrowToShow(string field, PasteFieldOrigin origin) =>
+        origin == PasteFieldOrigin.ShownText && field.Length > 0 && field.AsSpan().IndexOfAnyExcept('#') < 0;
+
+    /// <summary>
     /// What a pasted field that is not an exact number (<see cref="ExactNumberFor"/>) is typed as
     /// under <paramref name="culture"/> (ADR-0048, ADR-0050 item 10). Shown text is typed as it
     /// is. An invariant field is its value as it is: an ISO date as the date; <c>TRUE</c> and

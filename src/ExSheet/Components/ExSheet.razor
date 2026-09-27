@@ -484,7 +484,9 @@
     /// (<see cref="SheetClipboard.ExactNumberFor"/>). The
     /// grid has already judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a
     /// spilled block becomes the Selection when this returns. A field beginning with <c>=</c>
-    /// that cannot be read as a Formula is taken as text, as Excel takes it (ADR-0048).
+    /// that cannot be read as a Formula is taken as text, as Excel takes it (ADR-0048). A shown
+    /// field that is a run of <c>#</c> is a value too wide for its source column, the value itself
+    /// missing, and refuses the whole paste by name (<see cref="SheetClipboard.IsTooNarrowToShow"/>).
     /// </summary>
     private async Task OnPasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
     {
@@ -511,6 +513,12 @@
                     {
                         exact[new CellAddress(row, column)] = Entry.FromValue(Value.FromNumber(number));
                         continue;
+                    }
+                    if (SheetClipboard.IsTooNarrowToShow(field, intent.OriginFor(at)))
+                    {
+                        _notice = SheetWords.PasteTooNarrowToShow(field, new CellAddress(row, column));
+                        StateHasChanged();
+                        return;
                     }
                     if (SheetClipboard.TypedFor(field, intent.OriginFor(at), sheet.Culture) is not { } text)
                     {

@@ -22,6 +22,9 @@ internal static class SheetWords
     internal static string PasteReadsDifferently(string field, CultureInfo culture) =>
         $"Nothing was pasted: '{field}' came as a value no culture changes, and typed under {culture.Name} it would not read as that value.";
 
+    internal static string PasteTooNarrowToShow(string field, CellAddress at) =>
+        $"Nothing was pasted: the field for {at} is '{field}', which is how the source shows a value too wide for its column. The source column was too narrow to show the value, so the value itself was not copied. Widen the column there and copy again.";
+
     internal static string PasteRefused(PasteRefusalReason reason) => reason switch
     {
         PasteRefusalReason.EmptySelection => "Select a cell to paste into.",
