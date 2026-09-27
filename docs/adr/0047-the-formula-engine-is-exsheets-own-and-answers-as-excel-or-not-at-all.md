@@ -122,3 +122,18 @@ places.
 - **The example above, `=0.1+0.2-0.3`, is under verification.** Excel is reported to set a final
   addition or subtraction that nearly cancels to 0. Ticket 19 asks a real Excel, and this ADR is
   corrected by the answer.
+
+## Settled while building, second round *(2026-09-27, decided with the user)*
+
+- **The General format fits its column, as Excel's does.** A number shown in General is rounded
+  to the digits the column can show, and switches to scientific notation where Excel's does. So
+  `=1/3` reads `0.333333` in a default column, not `####`. The Value is untouched; only its text
+  depends on the width, which the component hands to the engine. **A number or date typed into a
+  column still at its default width widens the column when it does not fit**, as Excel does. Both
+  rules are checked against Excel by the case corpus, and by hand.
+- **Formats live at three levels, as in Excel: cell over row over column.** Formatting a whole
+  column or row records one entry, not a million. The component's interim cap on formatting
+  commands goes once this exists.
+- **A Formula's result takes a format at entry, as Excel's does.** For example, a date plus a
+  number shows as a date. The exact inference rule is Excel's, observed by the case corpus. It is
+  applied only when the cell's format is General, and only when the Formula is entered.

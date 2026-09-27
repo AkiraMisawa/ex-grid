@@ -122,3 +122,16 @@ markup, which is the cell's editor even when the user was typing in the Formula 
 could then land at the wrong caret. The listener now types them into the editor surface that holds
 DOM focus. This is the same allowlisted listener doing the same job
 ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).
+
+## Added while building, second round *(2026-09-27, decided with the user)*
+
+- **Shift+arrow points too.** While a pointing outline stands, the key listener claims the four
+  Shift+arrows as well, so they extend the outline instead of selecting text in the input.
+- **While the completion list is open, only ↑, ↓, Tab and Escape are claimed.** ← and → move the
+  caret, as they do in Excel.
+- **The editor's caret is reported and set, never inferred.** An input event carries no caret, and
+  working it out from the change is ambiguous where letters repeat. A wrong caret would make
+  completion replace the wrong span, and quietly change a Formula. So the listener reports the
+  caret with each input. After the core rewrites the text (an accepted candidate, a written
+  Reference), the listener places the caret where the core says. Neither is a measurement: no
+  layout is read ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).

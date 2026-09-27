@@ -122,3 +122,17 @@ before. ADR-0046 says why a Sheet needs it.
 
 **Item 5, refined: after a fill, the Selection is the source and the target together**, as in
 Excel. The Consumer may still refuse the pattern, and then the Selection stays on the source.
+
+## Added while building, second round *(2026-09-27, decided with the user)*
+
+**7. A per-cell alignment.** A Consumer can supply a cell's `CellAlign`, beside its kind (item 6).
+Without it, the column's alignment and then the kind's default decide, as before. A Sheet needs
+it for two things: a user's own alignment, and Excel's centring of booleans and Error Values.
+
+**8. Undo and redo reach the Consumer.** [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)
+says the grid forwards Ctrl+Z, but no route existed: the key listener never claimed it.
+- A Consumer can declare undo and redo callbacks. While no edit is open, the core then claims
+  Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z and raises them.
+- While an edit is open, the keys stay the editor's own, which undo uncommitted typing (ADR-0007's
+  last bullet).
+- Without the declaration, the keys stay the browser's.

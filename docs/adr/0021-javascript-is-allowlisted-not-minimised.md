@@ -244,3 +244,8 @@ Two grounds, and only two.
 the capture-phase `keydown` message now also carries the value and caret of the input it is
 capturing keys for. This is the same listener and the same allowlisted use. Reading an input's own
 value is not a measurement: no layout is read.)*
+
+*(Added 2026-09-27 by ADR-0051's second round: the editor listener also reports the caret with each
+input, and places the caret after the core rewrites the editor's text. It claims Shift+arrows while
+pointing, and only ↑, ↓, Tab and Escape while a completion list is open. This is still the one
+allowlisted keyboard/editor use. Reading or setting an input's selection reads no layout.)*
