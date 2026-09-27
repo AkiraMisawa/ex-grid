@@ -5,10 +5,11 @@ using Microsoft.AspNetCore.Components;
 namespace ExGrid.Components;
 
 /// <summary>
-/// The grid (ADR-0001). This part holds formula entry's aids, as ExGrid mechanism a Consumer
-/// switches on and gives meaning to (ADR-0051): the editor's text and caret reported as the
-/// user types, the Consumer's candidates and hint painted by Chrome as the editor's Inner
-/// Popup, and the keys that work the list. The grid does not know what a Formula is.
+/// The grid (ADR-0001). Its formula entry aids live in two parts beside the markup, as ExGrid
+/// mechanism a Consumer switches on and gives meaning to (ADR-0051): this one reports the
+/// editor's text and caret as the user types, paints the Consumer's candidates and hint as the
+/// editor's Inner Popup and works the list's keys; <c>ExGrid.Pointing.cs</c> holds Point. The
+/// grid does not know what a Formula is.
 /// </summary>
 /// <typeparam name="TRow">The Consumer's row type.</typeparam>
 public partial class ExGrid<TRow>
@@ -41,16 +42,20 @@ public partial class ExGrid<TRow>
     private int _completionAsked;
     private Action<int>? _acceptFromChrome;
 
+    // The set the key gate was last told, so a change is told once (ADR-0010).
+    private string? _gateTold;
+
     /// <summary>Whether a list of candidates is showing — the state in which ↑/↓, Tab and
     /// Escape are the list's (ADR-0051). A hint alone takes no key.</summary>
     private bool CompletionListOpen
         => _editMode != EditMode.None && _completion is { Candidates.Count: > 0 };
 
     /// <summary>The key gate's set for the current state (ADR-0010): Caret leaves the arrows
-    /// to the editor, except while a list is open, whose ↑/↓ are the core's.</summary>
+    /// to the editor, except while a list is open, whose ↑/↓ are the core's; Point claims them
+    /// as Overwrite does (ADR-0051).</summary>
     private string GateMode() => _editMode switch
     {
-        EditMode.Overwrite => "overwrite",
+        EditMode.Overwrite or EditMode.Point => "overwrite",
         EditMode.Caret => CompletionListOpen ? "overwrite" : "caret",
         _ => "none",
     };
@@ -60,12 +65,23 @@ public partial class ExGrid<TRow>
     /// the edit left it, the list shown for the old text goes — it answers text that is no
     /// longer there — and the new text is reported.
     /// </summary>
-    private void TextTyped(string text)
+    private void TextTyped(string text) => TextTyped(text, caret: null);
+
+    /// <summary>The same, with the caret known — carried by a key rather than inferred. Typing
+    /// ends pointing: the outline goes, and Point gives way to Overwrite, whose arrows point
+    /// again wherever the Consumer says a Reference can go (ADR-0051).</summary>
+    private void TextTyped(string text, int? caret)
     {
         if (text == _editText)
             return;
-        _editCaret = EditorTextRules.InferCaret(_editText, text);
+        _editCaret = caret ?? EditorTextRules.InferCaret(_editText, text);
         _editText = text;
+        if (_pointer is not null || _editMode == EditMode.Point)
+        {
+            EndPointing();
+            if (_editMode == EditMode.Point)
+                _editMode = EditMode.Overwrite;
+        }
         RequestCompletion();
     }
 
@@ -77,12 +93,11 @@ public partial class ExGrid<TRow>
     /// </summary>
     private void RequestCompletion()
     {
-        var wasOpen = CompletionListOpen;
         _completion = null;
         var asked = ++_completionAsked;
         if (CompleteEditorText is not { } complete || _editMode == EditMode.None)
         {
-            GateMayHaveMoved(wasOpen);
+            MarkGateIfMoved();
             return;
         }
         var text = _editText;
@@ -93,7 +108,7 @@ public partial class ExGrid<TRow>
         }
         catch (Exception ex)
         {
-            GateMayHaveMoved(wasOpen);
+            MarkGateIfMoved();
             _ = DispatchExceptionAsync(ex);
             return;
         }
@@ -101,7 +116,7 @@ public partial class ExGrid<TRow>
             ShowCompletion(asked, text, answer.Result);
         else
             _ = AwaitCompletionAsync(asked, text, answer);
-        GateMayHaveMoved(wasOpen);
+        MarkGateIfMoved();
     }
 
     private async Task AwaitCompletionAsync(int asked, string text, ValueTask<EditorCompletion?> answer)
@@ -118,10 +133,9 @@ public partial class ExGrid<TRow>
         }
         await InvokeAsync(() =>
         {
-            var wasOpen = CompletionListOpen;
-            if (!ShowCompletion(asked, text, result))
+                if (!ShowCompletion(asked, text, result))
                 return;
-            GateMayHaveMoved(wasOpen);
+            MarkGateIfMoved();
             // Not a UI event: an armed suppression would swallow this render (the OnKeyAsync
             // lesson).
             _suppressRender = false;
@@ -149,18 +163,18 @@ public partial class ExGrid<TRow>
     /// stale.</summary>
     private void CloseCompletion()
     {
-        var wasOpen = CompletionListOpen;
         _completion = null;
         _completionSelected = -1;
         _completionAsked++;
-        GateMayHaveMoved(wasOpen);
+        MarkGateIfMoved();
     }
 
-    /// <summary>In Caret the gate claims the arrows only while a list is open; a change is
-    /// told after the render (ADR-0010).</summary>
-    private void GateMayHaveMoved(bool wasOpen)
+    /// <summary>The key gate is told a change of its set after the render (ADR-0010): in Caret
+    /// it claims the arrows only while a list is open, and pointing claims them in any
+    /// state.</summary>
+    private void MarkGateIfMoved()
     {
-        if (_editMode == EditMode.Caret && wasOpen != CompletionListOpen)
+        if (!string.Equals(GateMode(), _gateTold, StringComparison.Ordinal))
             _jsEditingDirty = true;
     }
 

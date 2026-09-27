@@ -346,6 +346,10 @@
    grabs it reads the same numbers. Paint only, like every rectangle here. */
 .ex-fill-handle { position: absolute; box-sizing: border-box; background: var(--ex-fill-handle-color, var(--ex-focus-outline, CanvasText)); border: var(--ex-rule-width, 1px) solid Canvas; }
 .ex-fill-target { position: absolute; outline: 1px dashed var(--ex-fill-outline, var(--ex-focus-outline, CanvasText)); outline-offset: -1px; }
+/* The pointing outline (ADR-0051): the range a Formula's Reference is being pointed at, while
+   the Selection and the Focus stay where they are — dashed and heavier, so it reads as neither.
+   Paint only, like every rectangle here. */
+.ex-point { position: absolute; outline: 2px dashed var(--ex-focus-outline, CanvasText); outline-offset: -2px; }
 /* CanvasText, not Highlight: measured in the browser suite, Chrome's Highlight against
    Canvas is ~2:1 and UX-9 requires 3:1 — the ink colour contrasts by construction in
    both schemes, which is also roughly what Excel's own dark focus border does. */

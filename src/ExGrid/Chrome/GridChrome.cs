@@ -23,7 +23,7 @@ public enum FilterUiMode
     Both,
 }
 
-/// <summary>The two editing states the arrow keys mean different things in (ADR-0010).</summary>
+/// <summary>The editing states the arrow keys mean different things in (ADR-0010/0051).</summary>
 public enum CellEditMode
 {
     /// <summary>Entered by typing onto a selected cell: the original value is replaced,
@@ -33,6 +33,12 @@ public enum CellEditMode
     /// <summary>Entered with F2 or a double click: the original value stays, and the
     /// arrow keys move the caret within the text.</summary>
     Caret,
+
+    /// <summary>Only where the Consumer declares it (ADR-0051): the arrow keys and the mouse
+    /// point at cells — an outline moves over the grid, and the Consumer's Reference text for
+    /// it is written at the caret. The Selection and the Focus do not move. F2 switches to
+    /// <see cref="Caret"/>, and typing ends it.</summary>
+    Point,
 }
 
 /// <summary>

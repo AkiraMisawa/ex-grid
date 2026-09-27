@@ -155,7 +155,7 @@
                body: a handler per cell would be ~220 of them re-registered on every
                frame of a scroll, which is the cost ADR-0004 caps. *@
             <div class="ex-viewport" style="@ViewportStyle()"
-                 role="presentation" @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmouseup="OnMouseUp"
+                 role="presentation" @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmousedown:preventDefault="PressKeepsTheEditor" @onmouseup="OnMouseUp"
                  @ondblclick="OnViewportDoubleClickAsync"
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
                 @if (_visible is { } visible)
@@ -210,6 +210,12 @@
                                 {
                                     <div class="ex-fill-handle" style="@pinnedHandle"></div>
                                 }
+                                @* The pointing outline (ADR-0051): one more rectangle, over the
+                                   ranges; the Selection and the Focus beneath it do not move. *@
+                                @if (PointRange is { } pinnedPointRange && SelectionStyles.Pinned(pinnedPointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedPoint)
+                                {
+                                    <div class="ex-point" style="@pinnedPoint"></div>
+                                }
                             }
                         </div>
                         <div class="ex-selection" aria-hidden="true" @key="SelectionLayerKey">
@@ -241,6 +247,10 @@
                                 @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start, _metrics.FillHandleSizePx, pinnedLayer: false) is { } handle)
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
+                                }
+                                @if (PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } point)
+                                {
+                                    <div class="ex-point" style="@point"></div>
                                 }
                             }
                         </div>
@@ -1462,6 +1472,8 @@
         None = 0,
         Overwrite,
         Caret,
+        // Where the Consumer declares it (ADR-0051): the arrows and the mouse point.
+        Point,
     }
 
     private EditMode _editMode;
@@ -1783,6 +1795,7 @@
 
     protected override void OnParametersSet()
     {
+        ValidatePointDeclaration();
         // The Source's own change notification lands in the same pipeline (ApplyState),
         // so a re-entrant one raised by the column push below would run it twice.
         _applying = true;
@@ -2087,6 +2100,7 @@
         if (_editMode != EditMode.None && _selection.Selection.IsEmpty)
         {
             CloseCompletion();
+            EndPointing();
             _editMode = EditMode.None;
             _editSurface = EditSurface.Cell;
             _editText = "";
@@ -2775,6 +2789,11 @@
         // the press itself moves nothing.
         var leftInteractive = EndInteractive();
 
+        // Where the Consumer says a Reference can go, a press on a cell points instead of
+        // committing (ADR-0051).
+        if (OnPointPress(e))
+            return;
+
         // Excel's click-away semantics (ADR-0010): a press that is not on the editor
         // — the editor's own elements never let a press through — commits the
         // uncommitted text first, and the press then keeps its own meaning.
@@ -2885,6 +2904,11 @@
         if (CellUnder(e) is not { } cell)
         {
             _suppressRender = true;
+            return;
+        }
+        if (_pointDragging)
+        {
+            OnPointDrag(cell);
             return;
         }
         if (_fillSource is not null)
@@ -4554,6 +4578,7 @@
         {
             _dragHandler.Remove("onmousemove");
             StopEdgeTimer();
+            _pointDragging = false;
             // A fill drag ends with the drag, however it ends; a release outside the grid
             // is not seen, so it raises nothing rather than fill to a guessed cell.
             _fillSource = null;
@@ -5057,14 +5082,17 @@
     [JSInvokable]
     public async Task OnKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
-        bool fromDescendant = false)
+        bool fromDescendant = false, string? editorText = null, int editorCaret = -1)
     {
         if (_disposed)
             return;
         // While editing, the keys the gate forwarded are the editor's contract
-        // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite.
+        // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite. The key
+        // carries the editor's text and caret as the browser had them (ADR-0051), and what
+        // it means is decided from those.
         if (_editMode != EditMode.None)
         {
+            AdoptKeyText(editorText, editorCaret);
             await OnEditingKeyAsync(GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary));
             return;
         }
@@ -5523,7 +5551,8 @@
             return;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("setEditing", GateMode());
+            _gateTold = GateMode();
+            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -5544,12 +5573,15 @@
         // In Caret the arrows are the editor's, and reach the core only when the gate was
         // told something else a moment ago — a list that has just closed. They move no Focus
         // (ADR-0010). Only where formula entry is declared can that happen at all.
-        if (_editMode == EditMode.Caret && CompleteEditorText is not null
+        if (_editMode == EditMode.Caret && (CompleteEditorText is not null || PointAt is not null)
             && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End")
         {
             _suppressRender = false;
             return;
         }
+        // Where the Consumer says a Reference can go, the arrows point (ADR-0051).
+        if (OnPointKey(canonical))
+            return;
         var backward = canonical.StartsWith("Shift+", StringComparison.Ordinal);
         switch (canonical)
         {
@@ -5560,8 +5592,19 @@
                 StateHasChanged();
                 return;
             case "F2":
-                // F2 moves between the two states (ADR-0010).
-                _editMode = _editMode == EditMode.Caret ? EditMode.Overwrite : EditMode.Caret;
+                // F2 moves between the two states (ADR-0010) — and, where pointing is
+                // declared, between Caret and Point: from Caret it points where the Consumer
+                // says a Reference can go at the caret, and from Point it moves the caret
+                // again, the outline gone and its Reference left written (ADR-0051).
+                _editMode = _editMode switch
+                {
+                    EditMode.Point => EditMode.Caret,
+                    EditMode.Caret when PointAt is { } pointAt && ReferenceText is not null
+                        && pointAt(_editText, _editCaret) => EditMode.Point,
+                    EditMode.Caret => EditMode.Overwrite,
+                    _ => EditMode.Caret,
+                };
+                EndPointing();
                 await PushEditingModeAsync();
                 RequestEditorFocus();
                 StateHasChanged();
@@ -5723,8 +5766,9 @@
 
     private async Task EndEditingAsync()
     {
-        // The list and the hint answer the edit, and go with it (ADR-0051).
+        // The list and the hint answer the edit, and go with it, as the outline does (ADR-0051).
         CloseCompletion();
+        EndPointing();
         _editSurface = EditSurface.Cell;
         _editMode = EditMode.None;
         _editText = "";
@@ -5892,7 +5936,12 @@
             declared.Name,
             declared.Type,
             _editText,
-            _editMode == EditMode.Caret ? CellEditMode.Caret : CellEditMode.Overwrite,
+            _editMode switch
+            {
+                EditMode.Caret => CellEditMode.Caret,
+                EditMode.Point => CellEditMode.Point,
+                _ => CellEditMode.Overwrite,
+            },
             _editError,
             text =>
             {
@@ -6214,10 +6263,13 @@
         _revealFocus = false;
         _revealRowStart = false;
         _revealStepRows = 0;
+        // The pointing outline's Focus, where one asked (ADR-0051); the Focus otherwise.
+        var target = _revealTarget;
+        _revealTarget = null;
         if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)
             return;
 
-        var focus = _selection.Selection.Focus;
+        var focus = target ?? _selection.Selection.Focus;
         if (focus.Row >= TotalRows || focus.Column >= _columnStyles.Geometry.Count)
             return;
         // Under a PageSize the reveal works in page-local rows; a Focus that left the
