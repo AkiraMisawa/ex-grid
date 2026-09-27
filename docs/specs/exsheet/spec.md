@@ -268,6 +268,9 @@ find and replace, protecting cells, and `.xlsx`. Also:
 - **Partial, paged or server-aggregated Linked Tables**, another ExSheet as a source, and writing
   back to a Linked Table (ADR-0049).
 - **Localised formula syntax** (ADR-0047).
+- **Spilled arrays** (Excel 365's dynamic arrays): a Formula whose result is more than one cell
+  is `#VALUE!`, never implicitly intersected, so that spilling can arrive later without changing
+  any written sheet (ADR-0047, decided with the user 2026-09-27).
 - **A Formula Bar placed outside the grid** (ADR-0051).
 - **Functions beyond ADR-0047's list**, and fill patterns beyond copy, linear series and dates by
   day.

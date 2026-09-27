@@ -114,6 +114,9 @@ places.
 - **`IFERROR` and `ISERROR` do not catch `#CIRC!`**, as they do not catch `#GETTING_DATA`
   ([ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)). A cycle is a fault in
   the Sheet's construction, and `=IFERROR(A1, 0)` over one would show the 0 that this ADR refuses.
+  A dependent is a Formula whose text references a cycle member, whether or not the branch
+  reading it is taken: `=IF(TRUE, 1, A1)` is `#CIRC!` too. That is strict, and it is the safe side,
+  because a branch that is not taken today may be taken tomorrow.
 - **A Formula keeps the whitespace it was typed with.** Rewriting References on an insertion or a
   deletion changes only the Reference tokens.
 - **The example above, `=0.1+0.2-0.3`, is under verification.** Excel is reported to set a final
