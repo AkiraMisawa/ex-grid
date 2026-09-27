@@ -362,21 +362,23 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// XLOOKUP's binary search (<c>search_mode</c> 2 and −2), admitted only where its answer does not
-    /// depend on how Excel's search runs (ADR-0047): over a lookup array that is sorted as the mode
-    /// says, ascending for 2 and descending for −2, whose match is one key and not several. The
-    /// answer is then the one row that holds the matching value, which any correct search finds.
+    /// XLOOKUP's binary search (<c>search_mode</c> 2 and −2), admitted only over a lookup array that
+    /// is sorted as the mode says, ascending for 2 and descending for −2 (ADR-0047).
     /// <see langword="false"/> is a refusal (<c>#VALUE!</c>): the array is not sorted as the mode
     /// says; it holds blanks, Error Values, or values of more than one kind (Excel's ordering across
     /// kinds is not pinned here, so mixed kinds count as unsorted); the lookup value is blank or of
     /// another kind; text holds anything but ASCII letters, digits and spaces (Excel's collation of
-    /// other characters is not pinned here); the match mode is the wildcard or the regular
-    /// expression one; or the matched key appears more than once.
+    /// other characters is not pinned here); or the match mode is the wildcard or the regular
+    /// expression one.
     /// </summary>
     /// <remarks>
-    /// Which of several equal keys Excel's binary search returns is UNVERIFIED — it is to be observed
-    /// in Excel first (docs/specs/exsheet/verify-on-windows.md, Part A, item 9). Until then a match
-    /// on a duplicated key is refused rather than guessed.
+    /// Where the matching key appears more than once, the one returned is the one Excel was observed
+    /// to return (verification/2026-09-27-windows-excel, Part A item 9; ADR-0047). A key equal to the
+    /// lookup value is the first of its run ascending and the last descending. A nearest key that is
+    /// not equal is the one of its run closest to where the lookup value would sit: ascending, the
+    /// last of the next smaller and the first of the next larger; descending, the first of the next
+    /// smaller and the last of the next larger. Layouts longer than the eight observed are corpus
+    /// cases still to be asked.
     /// </remarks>
     /// <param name="vector">The lookup array.</param>
     /// <param name="evaluator">What reads its cells.</param>
@@ -415,16 +417,17 @@ internal static partial class FunctionLibrary
         }
         if (match is not { } matched || (matchMode == 0 && Evaluator.Compare(matched, wanted) != 0)) return true;
 
+        // Of a run of equal keys, the one Excel was observed to return (Part A item 9): an equal key
+        // is the first ascending and the last descending; a nearest one is the end of its run
+        // nearer the lookup value.
+        var first = Evaluator.Compare(matched, wanted) == 0
+            ? ascending
+            : matchMode == 1 ? ascending : !ascending;
         foreach (var (i, value) in candidates)
         {
             if (Evaluator.Compare(value, matched) != 0) continue;
-            // Several equal keys: which one Excel returns is UNVERIFIED (verify-on-windows.md, Part A, item 9).
-            if (found is not null)
-            {
-                found = null;
-                return false;
-            }
             found = i;
+            if (first) break;
         }
         return true;
 
