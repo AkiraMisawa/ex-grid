@@ -1,6 +1,6 @@
 {
   "area": "format-levels",
-  "about": "Number formats and alignment at cell, row and column level, cell over row over column, and how insertion and deletion carry them (ADR-0047, ADR-0046, SH-21). A format action on B:B or 2:2 is set on the whole column or row, as the Format Cells dialog sets it on a selected column or row. A range written with commas, such as B:B,3:3, is several ranges formatted in one step (ADR-0046), as Excel formats a selection of several areas; a style action sets a format, an alignment or both on them at once.Microsoft documents that an inserted row takes the formatting of the row above and an inserted column that of the column to its left (the Insert Options button's default, Format Same As Above / Left). Which level wins where a row and a column are both formatted, and what formatting a whole column does to a cell formatted before it, are not documented: those cases are uncertain until the oracle asks Excel.",
+  "about": "Number formats and alignment at cell, row and column level, cell over row over column, and how insertion and deletion carry them (ADR-0047, ADR-0046, SH-21). A format action on B:B or 2:2 is set on the whole column or row, as the Format Cells dialog sets it on a selected column or row. A range written with commas, such as B:B,3:3, is several ranges formatted in one step (ADR-0046), as Excel formats a selection of several areas; a style action sets a format, an alignment or both on them at once. A plain number typed into a cell that shows percentages is divided by 100, Excel's automatic percent entry, which only a typed entry shows: those cases are asked by keys.Microsoft documents that an inserted row takes the formatting of the row above and an inserted column that of the column to its left (the Insert Options button's default, Format Same As Above / Left). Which level wins where a row and a column are both formatted, and what formatting a whole column does to a cell formatted before it, are not documented: those cases are uncertain until the oracle asks Excel.",
   "cases": [
     {
       "id": "LVL-001",
@@ -164,7 +164,7 @@
     {
       "id": "LVL-015",
       "source": "observed",
-      "description": "A row inserted below a formatted row takes its format (Format Same As Above)",
+      "description": "A row inserted below a formatted row takes its format (Format Same As Above), and a number typed into it is read as a percentage, Excel's automatic percent entry: 0.5 is 0.005 (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {},
       "action": [
         {"do": "format", "range": "2:2", "format": "0%"},
@@ -172,7 +172,8 @@
         {"do": "enter", "cells": {"B3": "0.5"}}
       ],
       "check": "B3",
-      "expect": {"text": "50%", "numberFormat": "0%"}
+      "expect": {"value2": 0.005, "text": "1%", "numberFormat": "0%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "LVL-016",
@@ -345,6 +346,70 @@
       ],
       "check": "B2",
       "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-031",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a whole number typed into a percent cell is divided by 100 too: 10 is 10%",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "enter", "cells": {"B2": "10"}}
+      ],
+      "check": "B2",
+      "expect": {"value2": 0.1, "text": "10%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "LVL-032",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a percentage typed into a percent cell is not divided again",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "enter", "cells": {"B2": "50%"}}
+      ],
+      "check": "B2",
+      "expect": {"value2": 0.5, "text": "50%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "LVL-033",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number typed into a column formatted 0.00% is divided by 100",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00%"},
+        {"do": "enter", "cells": {"B2": "0.5"}}
+      ],
+      "check": "B2",
+      "expect": {"value2": 0.005, "text": "0.50%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "LVL-034",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text pasted into a percent cell is taken as the number it spells, not divided",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "pasteText", "rows": [["0.5"]], "at": "B2"}
+      ],
+      "check": "B2",
+      "expect": {"value2": 0.5, "text": "50%"}
+    },
+    {
+      "id": "LVL-035",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number typed into a percent cell is divided by 100",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "enter", "cells": {"B2": "-5"}}
+      ],
+      "check": "B2",
+      "expect": {"value2": -0.05, "text": "-5%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
     }
   ]
 }

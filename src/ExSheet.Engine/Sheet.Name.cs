@@ -53,6 +53,21 @@ public sealed partial class Sheet
     /// <summary>Whether a Reference names this Sheet's cells.</summary>
     internal bool IsLocal(Reference reference) => IsThisSheet(reference.SheetName);
 
+    /// <summary>
+    /// A typed Formula with every qualifier that names this Sheet written in the Sheet's own name,
+    /// as Excel writes it back: <c>=sheet1!#ref!*2</c> is stored as <c>=Sheet1!#REF!*2</c>
+    /// (TEXT-083, ADR-0047 second run). A qualifier naming another Sheet is left as typed. The
+    /// same instance when nothing changes.
+    /// </summary>
+    internal Entry InOwnName(Entry entry)
+    {
+        if (entry.Parsed is null || !entry.Formula!.Contains('!', StringComparison.Ordinal)) return entry;
+        bool Other(string qualifier) => IsThisSheet(qualifier) && !string.Equals(qualifier, Name, StringComparison.Ordinal);
+        return ReferenceRewriter.Rewrite(entry,
+            r => r.SheetName is { } s && Other(s) ? r with { SheetName = Name } : r,
+            q => Other(q) ? Name : q);
+    }
+
     internal static string CheckName(string name, string parameter) =>
         IsValidName(name, out var reason) ? name : throw new ArgumentException(reason, parameter);
 

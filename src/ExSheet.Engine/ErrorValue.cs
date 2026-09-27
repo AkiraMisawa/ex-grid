@@ -42,31 +42,51 @@ public enum ErrorValue
     /// here; ExSheet refuses to (ADR-0047). It is the only Error Value ExSheet adds to Excel's.
     /// </summary>
     Circ,
+
+    /// <summary><c>#SPILL!</c>, one of Excel's newer Error Values: data only, typed or loaded; nothing in the engine produces it (ADR-0047, second run).</summary>
+    Spill,
+
+    /// <summary><c>#CALC!</c>, one of Excel's newer Error Values: data only; nothing in the engine produces it.</summary>
+    Calc,
+
+    /// <summary><c>#FIELD!</c>, one of Excel's newer Error Values: data only; nothing in the engine produces it.</summary>
+    Field,
+
+    /// <summary><c>#BLOCKED!</c>, one of Excel's newer Error Values: data only; nothing in the engine produces it.</summary>
+    Blocked,
+
+    /// <summary><c>#CONNECT!</c>, one of Excel's newer Error Values: data only; nothing in the engine produces it.</summary>
+    Connect,
+
+    /// <summary><c>#UNKNOWN!</c>, one of Excel's newer Error Values: data only; nothing in the engine produces it.</summary>
+    Unknown,
 }
 
 /// <summary>The text of each <see cref="ErrorValue"/>, as a cell shows it and as a Formula writes it.</summary>
 public static class ErrorValues
 {
     private static readonly string[] Texts =
-        ["#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A", "#GETTING_DATA", "#CIRC!"];
+        ["#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A", "#GETTING_DATA", "#CIRC!",
+            "#SPILL!", "#CALC!", "#FIELD!", "#BLOCKED!", "#CONNECT!", "#UNKNOWN!"];
 
     /// <summary>The Error Value as a cell shows it, such as <c>#DIV/0!</c>.</summary>
     public static string ToText(this ErrorValue error) => Texts[(int)error];
 
     /// <summary>
-    /// Reads the text of one of Excel's Error Values, in either case. <c>#GETTING_DATA</c> and
-    /// <c>#CIRC!</c> are not read: they describe the state of a computation, and a user cannot
-    /// type one in (ADR-0047, ADR-0049). Nor are Excel's newer Error Values (<c>#SPILL!</c>,
-    /// <c>#CALC!</c>, <c>#FIELD!</c>, <c>#BLOCKED!</c>, <c>#CONNECT!</c>, <c>#BUSY!</c>,
-    /// <c>#UNKNOWN!</c>): the engine has none of them while spilling is out of the first version,
-    /// so typed, each stays text (ADR-0047).
+    /// Reads the text of one of Excel's Error Values, in either case, as Excel reads one typed with
+    /// real keys: <c>#spill!</c> is <c>#SPILL!</c>. <c>#GETTING_DATA</c> and <c>#CIRC!</c> are not
+    /// read: they describe the state of a computation, and a user cannot type one in (ADR-0047,
+    /// ADR-0049). Excel's newer Error Values (<c>#SPILL!</c>, <c>#CALC!</c>, <c>#FIELD!</c>,
+    /// <c>#BLOCKED!</c>, <c>#CONNECT!</c>, <c>#UNKNOWN!</c>) are read, as Excel reads them typed;
+    /// they are data only. <c>#BUSY!</c> is not: Excel keeps it as text (ADR-0047, second run).
     /// </summary>
     public static bool TryParseTyped([NotNullWhen(true)] string? text, out ErrorValue error)
     {
         error = default;
         if (text is null) return false;
-        for (var i = 0; i <= (int)ErrorValue.NA; i++)
+        for (var i = 0; i < Texts.Length; i++)
         {
+            if ((ErrorValue)i is ErrorValue.GettingData or ErrorValue.Circ) continue;
             if (string.Equals(Texts[i], text, StringComparison.OrdinalIgnoreCase))
             {
                 error = (ErrorValue)i;

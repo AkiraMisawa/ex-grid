@@ -60,11 +60,12 @@ internal static partial class ConstantParser
     }
 
     /// <summary>
-    /// A dollar amount under a culture whose currency is written <c>$5</c> (en-US): <c>$</c>, then
-    /// an unsigned number with no percentage or exponent. Excel was observed to read <c>$5</c> as 5
-    /// with the format <c>$#,##0_);[Red]($#,##0)</c> (TYPED-021); the colour is kept and not
-    /// painted (ADR-0047). Any other currency, or a sign around the symbol, stays text until Excel's
-    /// reading of it is observed.
+    /// A dollar amount under a culture whose currency is written <c>$5</c> (en-US): an optional
+    /// <c>-</c>, <c>$</c>, then an unsigned number with no percentage or exponent. Excel was
+    /// observed to read <c>$5</c> as 5 with the format <c>$#,##0_);[Red]($#,##0)</c> (TYPED-021),
+    /// and <c>-$5</c> as -5 with the same format (TYPED-047, second run); the colour is kept and
+    /// not painted (ADR-0047). Any other currency, or another sign around the symbol, stays text
+    /// until Excel's reading of it is observed.
     /// </summary>
     private static bool TryParseDollars(string text, CultureInfo culture, out double number, out NumberShape shape)
     {
@@ -72,10 +73,17 @@ internal static partial class ConstantParser
         shape = NumberShape.Plain;
         var format = culture.NumberFormat;
         if (format.CurrencySymbol != "$" || format.CurrencyPositivePattern != 0) return false;
-        if (text.Length < 2 || text[0] != '$' || !char.IsAsciiDigit(text[1])) return false;
-        return TryParseNumber(text[1..], culture, out number, out shape)
-            && !shape.HasFlag(NumberShape.Percent) && !shape.HasFlag(NumberShape.Exponent);
+        var negative = text.StartsWith("-$", StringComparison.Ordinal);
+        var amount = negative ? text[2..] : text.StartsWith('$') ? text[1..] : null;
+        if (amount is null || amount.Length == 0 || !char.IsAsciiDigit(amount[0])) return false;
+        if (!TryParseNumber(amount, culture, out number, out shape) || shape.HasFlag(NumberShape.Percent) || shape.HasFlag(NumberShape.Exponent)) return false;
+        if (negative) number = -number;
+        return true;
     }
+
+    /// <summary>Whether the typed text is a number written without <c>%</c>, a currency symbol or a date's shape: what Excel's automatic percent entry divides by 100.</summary>
+    public static bool IsPlainNumber(string typed, CultureInfo culture) =>
+        TryParseNumber(typed.Trim(' '), culture, out _, out var shape) && !shape.HasFlag(NumberShape.Percent);
 
     /// <summary>Text read as a number the way a typed number is: what Excel's arithmetic does with numeric text.</summary>
     public static bool TryParseNumber(string text, CultureInfo culture, out double number)
@@ -219,6 +227,14 @@ internal static partial class ConstantParser
         return spaceLike && (text[at] == ' ' || text[at] == ' ' || text[at] == ' ') ? 1 : 0;
     }
 
+    /// <summary>
+    /// The first two-digit year read as 19xx: 49 is 2049 and 50 is 1950, as Windows' default reads
+    /// a typed date and Excel was observed to take one typed with real keys (<c>1/1/30</c> is
+    /// 2030; ADR-0047, second run). Excel's <c>Range.FormulaLocal</c> reads 30 as 1930 instead,
+    /// which is not what a user typing gets.
+    /// </summary>
+    private const int FirstTwentiethCenturyYear = 50;
+
     [GeneratedRegex(@"^(?<a>\d{1,4})(?<s1>[/\-.])(?<b>\d{1,2})(?:\k<s1>(?<c>\d{1,4}))?$", RegexOptions.CultureInvariant)]
     private static partial Regex DatePattern();
 
@@ -229,8 +245,9 @@ internal static partial class ConstantParser
     /// A date in the culture's day order (month-day-year under <c>en-US</c>, year-month-day under
     /// <c>ja-JP</c>, day-month-year under <c>de-DE</c>) with <c>/</c>, <c>-</c> or the culture's own
     /// separator; a four-digit year written first is always year-month-day. Without a year, the
-    /// date is in <paramref name="currentYear"/>, as Excel takes it. A two-digit year is 2000–2029
-    /// for 00–29 and 1930–1999 for 30–99. A time <c>h:mm[:ss] [AM|PM]</c>, alone or after the date.
+    /// date is in <paramref name="currentYear"/>, as Excel takes it. A two-digit year is 2000–2049
+    /// for 00–49 and 1950–1999 for 50–99 (<see cref="FirstTwentiethCenturyYear"/>). A time
+    /// <c>h:mm[:ss] [AM|PM]</c>, alone or after the date.
     /// </summary>
     internal static bool TryParseDateTime(string text, CultureInfo culture, int currentYear, out double serial, out NumberFormat? format)
     {
@@ -311,7 +328,7 @@ internal static partial class ConstantParser
         {
             var value = Parse(digits);
             if (digits.Length > 2) return value;
-            return value < 30 ? 2000 + value : 1900 + value;
+            return value < FirstTwentiethCenturyYear ? 2000 + value : 1900 + value;
         }
     }
 
@@ -362,7 +379,7 @@ internal static partial class ConstantParser
         {
             var value = int.Parse(digits, NumberStyles.None, CultureInfo.InvariantCulture);
             if (digits.Length > 2) return value;
-            return value < 30 ? 2000 + value : 1900 + value;
+            return value < FirstTwentiethCenturyYear ? 2000 + value : 1900 + value;
         }
     }
 

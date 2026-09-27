@@ -323,21 +323,21 @@
     },
     {
       "id": "GW-026",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a negative number rounded to a bare 0 shows no minus sign",
+      "source": "observed",
+      "description": "A negative number rounded to a bare 0 keeps its minus sign: -0 (verification/2026-09-27-windows-excel-2)",
       "columnWidth": 2,
       "cells": {"A1": "=-1/3"},
       "check": "A1",
-      "expect": {"text": "0"}
+      "expect": {"text": "-0"}
     },
     {
       "id": "GW-027",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a negative number rounded to a bare 0 fits a column one character wide",
+      "source": "observed",
+      "description": "A negative number rounded to a bare 0 does not fit a column one character wide, which has no room for -0: #### (verification/2026-09-27-windows-excel-2)",
       "columnWidth": 1,
       "cells": {"A1": "=-1/3"},
       "check": "A1",
-      "expect": {"text": "0"}
+      "expect": {"text": "####"}
     },
     {
       "id": "GW-028",
@@ -392,6 +392,24 @@
       "check": "A1",
       "expect": {"widens": true, "widthOnEntry": 9, "numberFormat": "m/d/yyyy"},
       "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "GW-031",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number that rounds to 0 at the one decimal a column shows keeps its minus sign",
+      "columnWidth": 4,
+      "cells": {"A1": "=-1/30"},
+      "check": "A1",
+      "expect": {"text": "-0"}
+    },
+    {
+      "id": "GW-032",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number too small for any decimal a column shows is -0 there too",
+      "columnWidth": 3,
+      "cells": {"A1": "=-0.0001"},
+      "check": "A1",
+      "expect": {"text": "-0"}
     }
   ]
 }

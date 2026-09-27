@@ -865,11 +865,11 @@
     },
     {
       "id": "XLOOKUP-097",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: match_mode 3: \\w is ASCII, as PCRE2 without UCP, so an accented letter is not a word character",
+      "source": "observed",
+      "description": "match_mode 3: \\w is Unicode (PCRE2 with UCP), so an accented letter is a word character (verification/2026-09-27-windows-excel-2)",
       "cells": {"B1": "café", "B2": "cafe", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^\\w+$\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "b"}
+      "expect": {"value2": "a"}
     },
     {
       "id": "XLOOKUP-098",
@@ -889,27 +889,27 @@
     },
     {
       "id": "XLOOKUP-100",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: match_mode 3: a lookahead, which is not in the accepted set, is refused",
+      "source": "observed",
+      "description": "match_mode 3: a lookahead is accepted; it means the same in PCRE2 and .NET (verification/2026-09-27-windows-excel-2)",
       "cells": {"B1": "a", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(?=b)b\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "b"}
     },
     {
       "id": "XLOOKUP-101",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: match_mode 3: a Unicode property, which is not in the accepted set, is refused",
+      "source": "observed",
+      "description": "match_mode 3: a Unicode general category is accepted (verification/2026-09-27-windows-excel-2)",
       "cells": {"B1": "a", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"\\p{L}\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "a"}
     },
     {
       "id": "XLOOKUP-102",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: match_mode 3: a backreference, which is not in the accepted set, is refused",
+      "source": "observed",
+      "description": "match_mode 3: a backreference is accepted (verification/2026-09-27-windows-excel-2)",
       "cells": {"B1": "aa", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(a)\\1\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "a"}
     },
     {
       "id": "XLOOKUP-103",
@@ -1292,6 +1292,62 @@
       "cells": {"A1": "4", "B1": "1", "A2": "3", "B2": "2", "A3": "2", "B3": "3", "A4": "2", "B4": "4", "A5": "2", "B5": "5", "A6": "1", "B6": "6", "D1": "=XLOOKUP(2,A1:A6,B1:B6,,1,-2)"},
       "check": "D1",
       "expect": {"value2": 5}
+    },
+    {
+      "id": "XLOOKUP-149",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: \\d is Unicode too (UCP), so Arabic-Indic digits are digits",
+      "cells": {"B1": "١٢", "B2": "12", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^\\d+$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-150",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: \\w takes a combining mark (PCRE2 10.43 on)",
+      "cells": {"B1": "é", "B2": "e", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^\\w+$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-151",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: \\s is Unicode too, so a no-break space is whitespace",
+      "cells": {"B1": "a b", "B2": "a b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^a\\sb$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-152",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a negative lookahead is accepted",
+      "cells": {"B1": "ab", "B2": "ac", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"a(?!b)\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-153",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a lookbehind, which PCRE2 and .NET bound differently, is refused",
+      "cells": {"B1": "ab", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(?<=a)b\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XLOOKUP-154",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a script (\\p{Greek}), which .NET does not name, is refused",
+      "cells": {"B1": "α", "B2": "a", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"\\p{Greek}\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XLOOKUP-155",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a Unicode class against a value outside the Basic Multilingual Plane is refused, where PCRE2 and .NET read it differently",
+      "cells": {"B1": "𝐀", "B2": "a", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^\\w$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

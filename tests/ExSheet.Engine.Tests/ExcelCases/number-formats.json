@@ -678,12 +678,30 @@
     },
     {
       "id": "FMT-075",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a numbered colour ([Color 10]) is accepted like a named one",
+      "source": "observed",
+      "description": "A numbered colour written with a space ([Color 10]) is refused: \"Unable to set the NumberFormat property of the Range class\" (verification/2026-09-27-windows-excel-2)",
       "cells": {"A1": "-3"},
       "formats": {"A1": "0;[Color 10]-0"},
       "check": "A1",
-      "expect": {"text": "-3", "numberFormat": "0;[Color 10]-0"}
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "FMT-076",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a numbered colour written without a space ([Color10]) is accepted like a named one",
+      "cells": {"A1": "-3"},
+      "formats": {"A1": "0;[Color10]-0"},
+      "check": "A1",
+      "expect": {"text": "-3", "numberFormat": "0;[Color10]-0"}
+    },
+    {
+      "id": "FMT-077",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a numbered colour in lower case without a space is accepted",
+      "cells": {"A1": "3"},
+      "formats": {"A1": "[color3]0"},
+      "check": "A1",
+      "expect": {"text": "3", "numberFormat": "[color3]0"}
     }
   ]
 }

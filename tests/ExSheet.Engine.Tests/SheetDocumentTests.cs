@@ -102,7 +102,7 @@ public class SheetDocumentTests
             Assert.Equal(sheet.GetDisplay(address), reopened.GetDisplay(address));
         }
         Assert.Equal("1,234.50", reopened.GetDisplay(CellAddress.Parse("A1")).Text);
-        reopened.Enter(CellAddress.Parse("C1"), "0.25");
+        reopened.Enter(CellAddress.Parse("C1"), "25"); // a number typed into a percent cell is a percentage (ADR-0047, second run)
         Assert.Equal("25%", reopened.GetDisplay(CellAddress.Parse("C1")).Text);
     }
 
@@ -200,7 +200,7 @@ public class SheetDocumentTests
         sheet.SetFormat(CellRange.Parse("B:D"), NumberFormat.Parse("0.00"));
         sheet.SetAlignment(CellRange.Parse("F:F"), HorizontalAlignment.Center);
         sheet.SetFormat(CellRange.Parse("3:4"), NumberFormat.Parse("0%"));
-        sheet.Enter("C3", "0.5");
+        sheet.Enter("C3", "50%");
         sheet.Enter("C5", "0.5");
         sheet.SetFormat(CellAddress.Parse("C5"), NumberFormat.General);
 

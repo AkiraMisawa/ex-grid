@@ -52,7 +52,11 @@
         such a width only by widening on entry. "custom" is compared with the customWidth flag
         Excel writes on the check column, read from a copy of the workbook saved as .xlsx
         (absent is false), before the column's width is changed for reading its text.
-      - A case with "oracleSkip" is blocked with that reason.
+      - A case with "oracleSkip" is blocked with that reason. When the reason contains "ask by keys",
+        the case is one whose answer typed with real keys differs from COM's (a typed Error Value, a
+        two-digit year, automatic percent entry, a Formula's result format, widening a column): it is
+        blocked through COM and asked when -Keys types it, since the keyboard is Excel's answer for
+        ExSheet (ADR-0047, "Observed in Excel, second run").
       - With -Keys, the case's own cells (and "enter" actions) are typed instead: the cell is
         selected, its text is sent as keyboard input (SendInput, one Unicode character at a time,
         a line break as Alt+Enter), and Enter commits it, into a visible Excel in front. What the

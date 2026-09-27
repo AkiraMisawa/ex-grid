@@ -59,6 +59,18 @@ public class FunctionTests
     [InlineData("(?:a)")]      // a non-capturing group
     [InlineData("(?i)a")]      // an inline option
     [InlineData("(?<n>a)")]    // a named group
+    [InlineData("(?<=a)b")]    // a lookbehind: PCRE2 wants a bounded length, .NET does not
+    [InlineData("(?=a)*")]     // a quantified lookahead
+    [InlineData("\\P{L}")]     // a negated property
+    [InlineData("\\pL")]       // a property without braces
+    [InlineData("\\p{Greek}")] // a script: PCRE2 names it, .NET does not
+    [InlineData("\\p{IsGreek}")] // a block: .NET names it, PCRE2 does not
+    [InlineData("\\p{Cs}")]    // surrogates, which PCRE2 in UTF mode never sees
+    [InlineData("[\\p{L}]")]   // a property inside a class
+    [InlineData("\\1(a)")]     // a backreference before its group
+    [InlineData("(a)\\2")]     // a backreference to no group
+    [InlineData("(a)\\10")]    // \10: a group or an octal escape
+    [InlineData("\\0")]
     [InlineData("a*+")]        // a possessive quantifier
     [InlineData("a{,2}")]      // an upper bound alone: PCRE2 10.43 reads it, .NET does not
     [InlineData("a{x}")]       // a brace that is not a quantifier
@@ -99,10 +111,19 @@ public class FunctionTests
     [InlineData("^a.c$", "a\nc", false)]              // . does not match a newline
     [InlineData("^.$", "\U0001F600", true)]           // . matches a code point, as PCRE2 in UTF mode
     [InlineData("^[^a]$", "\U0001F600", true)]        // so does a negated class
-    [InlineData("^\\d+$", "١٢", false)]     // \d is ASCII: Arabic-Indic digits are not digits
-    [InlineData("^\\w+$", "café", false)]        // \w is ASCII
-    [InlineData("\\bcaf\\b", "café", true)]      // so \b sits before an accented letter
-    [InlineData("^\\s$", " ", false)]           // \s is ASCII whitespace
+    [InlineData("^\\d+$", "١٢", true)]      // \d is Unicode (UCP): Arabic-Indic digits are digits
+    [InlineData("^\\w+$", "café", true)]         // \w is Unicode (XLOOKUP-097, observed)
+    [InlineData("^\\w+$", "é", true)]           // a combining mark is a word character (PCRE2 10.43 on)
+    [InlineData("\\bcaf\\b", "café", false)]     // so \b does not sit before an accented letter
+    [InlineData("^\\s$", "᠎", true)]             // PCRE2's horizontal space U+180E, which .NET's \s is not
+    [InlineData("^[\\w]+$", "café", true)]
+    [InlineData("(?=b)b", "b", true)]                 // a lookahead (XLOOKUP-100, observed)
+    [InlineData("^(?!a)", "a", false)]                // a negative lookahead
+    [InlineData("^\\p{L}$", "é", true)]               // a general category (XLOOKUP-101, observed)
+    [InlineData("^\\p{Lu}$", "é", false)]
+    [InlineData("^(a)\\1$", "aa", true)]              // a backreference (XLOOKUP-102, observed)
+    [InlineData("^(a)\\1$", "ab", false)]
+    [InlineData("^\\s$", " ", true)]            // \s is Unicode whitespace: a no-break space
     [InlineData("^[a\\-z]+$", "a-z", true)]
     [InlineData("^[-a]+$", "-a", true)]
     [InlineData("^[a-]+$", "a-", true)]
@@ -119,5 +140,22 @@ public class FunctionTests
 
         var result = sheet.Evaluate("=XLOOKUP(C1,A1:A1,B1:B1,,3)");
         Assert.Equal(matches ? Value.FromText("x") : Value.FromError(ErrorValue.NA), result);
+    }
+
+    [Theory] // ADR-0047: a Unicode class reads a character outside the Basic Multilingual Plane as PCRE2 does not, so it is refused against one
+    [InlineData("\\w")]
+    [InlineData("\\d")]
+    [InlineData("\\s")]
+    [InlineData("\\b")]
+    [InlineData("\\p{L}")]
+    [InlineData("[^\\w]")]
+    public void A_Unicode_class_is_refused_against_a_character_outside_the_BMP(string pattern)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "'\U0001D400");
+        sheet.Enter("B1", "x");
+        sheet.Enter("C1", "'" + pattern);
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=XLOOKUP(C1,A1:A1,B1:B1,,3)").Error);
     }
 }

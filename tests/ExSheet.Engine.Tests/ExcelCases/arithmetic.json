@@ -48,7 +48,8 @@
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=10+50%"},
       "check": "ZZ1000",
-      "expect": {"value2": 10.5}
+      "expect": {"value2": 10.5, "text": "1050.0%", "numberFormat": "0.0%"},
+      "oracleSkip": "Through COM (Formula2) the result is General; typed with real keys Excel formats =10+50% as 0.0% (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ARITH-007",
@@ -512,7 +513,8 @@
       "description": "A result that is not a finite double is #NUM!",
       "cells": {"A1": "1E+300", "ZZ1000": "=A1*A1"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": "#NUM!", "numberFormat": "0.00E+00"},
+      "oracleSkip": "Through COM the result is General; typed with real keys Excel formats =A1*A1 over a cell typed 1E+300 as 0.00E+00 (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ARITH-065",
@@ -614,27 +616,27 @@
     },
     {
       "id": "ARITH-076",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: parentheses around the final subtraction leave it the final operation, so it is 0",
+      "source": "observed",
+      "description": "Parentheses around the final subtraction make it no longer the final operation: it is left alone (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=(0.1+0.2-0.3)"},
-      "check": "ZZ1000",
-      "expect": {"value2": 0}
-    },
-    {
-      "id": "ARITH-077",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: SUM is a function, not a final operation: its total is not set to 0",
-      "cells": {"ZZ1000": "=SUM(0.1,0.2,-0.3)"},
       "check": "ZZ1000",
       "expect": {"value2": 5.551115123125783E-17}
     },
     {
-      "id": "ARITH-078",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a final subtraction whose operands differ by less than 2^-48 of each is 0",
-      "cells": {"ZZ1000": "=1+3E-15-1"},
+      "id": "ARITH-077",
+      "source": "observed",
+      "description": "SUM's total nearly cancelling is 0, as a final addition's is (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=SUM(0.1,0.2,-0.3)"},
       "check": "ZZ1000",
       "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-078",
+      "source": "observed",
+      "description": "A final subtraction 14 units in the last place apart (3.1E-15 of each operand) is not set to 0: the threshold is narrower than 2^-48 (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=1+3E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.1086244689504383E-15}
     },
     {
       "id": "ARITH-079",
@@ -662,11 +664,11 @@
     },
     {
       "id": "ARITH-082",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: numbers further apart than 2^-48 of each are not equal (a 15-digit rule would say equal)",
+      "source": "observed",
+      "description": "A comparison treats numbers 18 units in the last place apart (4E-15 of each) as equal: wider than the final operation's threshold (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=1+4E-15=1"},
       "check": "ZZ1000",
-      "expect": {"value2": false}
+      "expect": {"value2": true}
     },
     {
       "id": "ARITH-083",
@@ -702,19 +704,19 @@
     },
     {
       "id": "ARITH-087",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a hyphen is not ignored: it sorts before the letter it stands beside",
+      "source": "observed",
+      "description": "A hyphen is ignored when text is compared, as Windows' word sort does: co-op does not sort before coop (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=\"co-op\"<\"coop\""},
       "check": "ZZ1000",
-      "expect": {"value2": true}
+      "expect": {"value2": false}
     },
     {
       "id": "ARITH-088",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a letter with no decomposition (ß) sorts after z, not as ss",
+      "source": "observed",
+      "description": "ß sorts as ss, not after z (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=\"ß\">\"z\""},
       "check": "ZZ1000",
-      "expect": {"value2": true}
+      "expect": {"value2": false}
     },
     {
       "id": "ARITH-089",
@@ -742,19 +744,19 @@
     },
     {
       "id": "ARITH-092",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: below 1E-9 a number is written into text in scientific notation",
+      "source": "observed",
+      "description": "1E-10 is written into text in full (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=1E-10&\"\""},
       "check": "ZZ1000",
-      "expect": {"value2": "1E-10"}
+      "expect": {"value2": "0.0000000001"}
     },
     {
       "id": "ARITH-093",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a small number with 15 significant digits is written into text in full",
+      "source": "observed",
+      "description": "A number whose full form would take more than 20 characters is written into text in scientific notation, in General's spelling (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=1.23456789012345E-5&\"\""},
       "check": "ZZ1000",
-      "expect": {"value2": "0.0000123456789012345"}
+      "expect": {"value2": "1.23456789012345E-05"}
     },
     {
       "id": "ARITH-094",
@@ -790,11 +792,307 @@
     },
     {
       "id": "ARITH-098",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a positive base with a fractional exponent is the correctly rounded power",
+      "source": "observed",
+      "description": "^ is the double power e^(b ln a), not the correctly rounded one: 8^(1/3) is 1.9999999999999998 (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=8^(1/3)"},
       "check": "ZZ1000",
-      "expect": {"value2": 2}
+      "expect": {"value2": 1.9999999999999998}
+    },
+    {
+      "id": "ARITH-099",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a final subtraction 1 unit in the last place apart is 0 (below the engine's threshold, 2^-51 of each operand)",
+      "cells": {"ZZ1000": "=1+2E-16-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-100",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a final subtraction 2 units in the last place of 1 apart (2^-51 exactly) is not 0: the engine's threshold is strict",
+      "cells": {"ZZ1000": "=1+5E-16-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4.440892098500626E-16}
+    },
+    {
+      "id": "ARITH-101",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a final subtraction 5 units in the last place of 1 apart is not 0",
+      "cells": {"ZZ1000": "=1+1E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.1102230246251565E-15}
+    },
+    {
+      "id": "ARITH-102",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a final subtraction 9 units in the last place of 1 apart is not 0",
+      "cells": {"ZZ1000": "=1+2E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.9984014443252818E-15}
+    },
+    {
+      "id": "ARITH-103",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a final subtraction 11 units in the last place of 1 apart is not 0",
+      "cells": {"ZZ1000": "=1+2.5E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.4424906541753444E-15}
+    },
+    {
+      "id": "ARITH-104",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a final subtraction 8.3E-16 of each operand apart is not 0 (between ARITH-067's 2.8E-16, which is 0, and ARITH-078's 3.1E-15, which is not)",
+      "cells": {"ZZ1000": "=1.1-1-0.1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 8.326672684688674E-17}
+    },
+    {
+      "id": "ARITH-105",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a final subtraction 2.8E-16 of each operand apart is 0, as ARITH-067's is",
+      "cells": {"ZZ1000": "=0.3-0.2-0.1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-106",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: numbers 5 units in the last place apart compare equal",
+      "cells": {"ZZ1000": "=1+1E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-107",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: numbers 23 units in the last place apart compare equal (below the engine's threshold, 2^-47 of each)",
+      "cells": {"ZZ1000": "=1+5E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-108",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: numbers 27 units in the last place apart compare equal",
+      "cells": {"ZZ1000": "=1+6E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-109",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: numbers 32 units in the last place of 1 apart (2^-47 exactly) are not equal: the engine's threshold is strict",
+      "cells": {"ZZ1000": "=1+7E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-110",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: numbers 36 units in the last place apart are not equal",
+      "cells": {"ZZ1000": "=1+8E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-111",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: numbers 41 units in the last place apart are not equal",
+      "cells": {"ZZ1000": "=1+9E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-112",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: <> agrees with =: numbers 23 units in the last place apart are not unequal",
+      "cells": {"ZZ1000": "=1+5E-15<>1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-113",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: SUM's last addition nearly cancelling is 0 whatever order the arguments come in",
+      "cells": {"ZZ1000": "=SUM(0.3,-0.1,-0.2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-114",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: SUM cancels inside another operation too: it is SUM's own last addition, not the Formula's",
+      "cells": {"ZZ1000": "=1*SUM(0.1,0.2,-0.3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-115",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: SUM over cells cancels as SUM over constants does",
+      "cells": {"A1": "0.1", "A2": "0.2", "A3": "-0.3", "ZZ1000": "=SUM(A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-116",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: SUM's last addition 14 units in the last place apart is not 0, as ARITH-078's is not",
+      "cells": {"ZZ1000": "=SUM(1,3E-15,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.1086244689504383E-15}
+    },
+    {
+      "id": "ARITH-117",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: two pairs of parentheses leave the final subtraction alone, as one pair does",
+      "cells": {"ZZ1000": "=((0.1+0.2-0.3))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.551115123125783E-17}
+    },
+    {
+      "id": "ARITH-118",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a subtraction outside the parentheses is the final operation, and is 0",
+      "cells": {"ZZ1000": "=(0.1+0.2)-0.3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-119",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an addition whose right side is in parentheses is still the final operation, and is 0",
+      "cells": {"ZZ1000": "=0.1+(0.2-0.3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-120",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negation around the parentheses is the final operation, so the subtraction inside is left alone",
+      "cells": {"ZZ1000": "=-(0.1+0.2-0.3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -5.551115123125783E-17}
+    },
+    {
+      "id": "ARITH-121",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: adding 0 last makes the addition of 0 the final operation, and the near-cancelling subtraction before it is left alone",
+      "cells": {"ZZ1000": "=0.1+0.2-0.3+0"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.551115123125783E-17}
+    },
+    {
+      "id": "ARITH-122",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text that differs only by a hyphen is not equal",
+      "cells": {"ZZ1000": "=\"co-op\"=\"coop\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-123",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text that differs only by a hyphen sorts the hyphenated one after",
+      "cells": {"ZZ1000": "=\"co-op\">\"coop\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-124",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a hyphen is passed over: co-p compares as cop, after coo",
+      "cells": {"ZZ1000": "=\"co-p\"<\"coo\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-125",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an apostrophe is not ignored as a hyphen is: it sorts before a letter",
+      "cells": {"ZZ1000": "=\"it's\"<\"its\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-126",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: ß and ss are not equal: ß sorts after ss, as an accented letter after its base",
+      "cells": {"ZZ1000": "=\"ß\"=\"ss\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-127",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: ß sorts as ss: after sr",
+      "cells": {"ZZ1000": "=\"ß\">\"sr\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-128",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: ß sorts as ss: before st",
+      "cells": {"ZZ1000": "=\"ß\"<\"st\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-129",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number whose full form takes 20 characters is written into text in full",
+      "cells": {"ZZ1000": "=1.2345678901234E-5&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.000012345678901234"}
+    },
+    {
+      "id": "ARITH-130",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1E-18, whose full form takes 20 characters, is written into text in full",
+      "cells": {"ZZ1000": "=1E-18&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.000000000000000001"}
+    },
+    {
+      "id": "ARITH-131",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1E-19, whose full form would take 21 characters, is written into text in scientific notation",
+      "cells": {"ZZ1000": "=1E-19&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1E-19"}
+    },
+    {
+      "id": "ARITH-132",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a minus sign does not count toward the 20 characters",
+      "cells": {"ZZ1000": "=-1E19&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "-10000000000000000000"}
+    },
+    {
+      "id": "ARITH-133",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 2^0.5 is e^(0.5 ln 2), one unit in the last place below the square root",
+      "cells": {"ZZ1000": "=2^0.5"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.414213562373095}
+    },
+    {
+      "id": "ARITH-134",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 27^(1/3) is e^(ln 27 / 3), one unit in the last place below 3",
+      "cells": {"ZZ1000": "=27^(1/3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.9999999999999996}
+    },
+    {
+      "id": "ARITH-135",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an integer exponent is exact",
+      "cells": {"ZZ1000": "=10^15"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1000000000000000}
     }
   ]
 }

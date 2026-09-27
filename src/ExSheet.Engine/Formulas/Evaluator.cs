@@ -34,14 +34,13 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// <summary>
     /// A Formula's result. It is never blank: a Formula that reads an empty cell shows 0. When the
     /// Formula's last operation is an addition or a subtraction whose result nearly cancels, the
-    /// result is 0, as Excel's is (<see cref="Arithmetic.FinalAdd"/>); parentheses around it do
-    /// not make it any less the last.
+    /// result is 0, as Excel's is (<see cref="Arithmetic.FinalAdd"/>). Parentheses around it make
+    /// it no longer the last: Excel was observed to leave <c>=(0.1+0.2-0.3)</c> at 5.55E-17
+    /// (ADR-0047, second run).
     /// </summary>
     public Value Evaluate(Node node)
     {
-        var top = node;
-        while (top is ParenthesesNode p) top = p.Inner;
-        if (top is BinaryNode { Operator: "+" or "-" } final) return Binary(final, finalOperation: true);
+        if (node is BinaryNode { Operator: "+" or "-" } final) return Binary(final, finalOperation: true);
         return ScalarOf(Operand(node)) ?? Value.FromNumber(0);
     }
 
@@ -55,7 +54,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         // One Sheet exists: a Reference qualified with its name reads it, any other qualifier names nothing (ADR-0046).
         ReferenceNode r => Cells.IsLocal(r.Reference) ? Formulas.Operand.Of(r.Reference.Area) : Formulas.Operand.Of(ErrorValue.Ref),
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
-        NameNode => Formulas.Operand.Of(ErrorValue.Name),
+        NameNode or IntersectionNode => Formulas.Operand.Of(ErrorValue.Name),
         ParenthesesNode p => Operand(p.Inner),
         UnaryNode u => Formulas.Operand.Of(Negate(u)),
         PercentNode p => Formulas.Operand.Of(Percent(p)),

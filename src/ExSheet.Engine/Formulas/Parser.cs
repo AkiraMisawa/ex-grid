@@ -6,9 +6,11 @@ namespace ExSheet.Engine.Formulas;
 /// comparison (<c>= &lt;&gt; &lt; &gt; &lt;= &gt;=</c>), <c>&amp;</c>, <c>+ -</c>, <c>* /</c>,
 /// <c>^</c>, <c>%</c>, then negation — so <c>-2^2</c> is 4 and <c>2^3^2</c> is 64, as in Excel.
 /// Anything it cannot read is refused with a <see cref="FormulaSyntaxException"/>, as Excel
-/// refuses such a Formula; that includes the intersection (space) and union (<c>,</c>) operators,
-/// array constants, and a range operator between anything but two addresses, which ExSheet does
-/// not read.
+/// refuses such a Formula; that includes the union (<c>,</c>) operator, array constants, a range
+/// operator between anything but two addresses, and the intersection (space) operator between
+/// two References, which ExSheet does not read. An intersection with a name in it is read, as
+/// Excel reads <c>- item one</c> typed as the Formula <c>=- item one</c> (ADR-0047, second run):
+/// ExSheet defines no names, so it is <c>#NAME?</c> whatever the other side is.
 /// </summary>
 internal sealed class Parser
 {
@@ -117,13 +119,44 @@ internal sealed class Parser
 
     private Node ParsePercent()
     {
-        var node = ParsePrimary();
+        var node = ParseIntersection();
         while (PeekOperator("%"))
         {
             Next();
             node = new PercentNode(node);
         }
         return node;
+    }
+
+    /// <summary>
+    /// The intersection operator, whitespace between two References or names, which binds tighter
+    /// than <c>%</c> and negation in Excel. It is read only when a name stands on one side of it;
+    /// between two References it is refused.
+    /// </summary>
+    private Node ParseIntersection()
+    {
+        var node = ParsePrimary();
+        while (node is NameNode or ReferenceNode or IntersectionNode && Peek.AfterSpace && IsIntersectionOperand(_at))
+        {
+            var at = Peek;
+            var right = ParsePrimary();
+            if (node is ReferenceNode && right is ReferenceNode)
+            {
+                throw new FormulaSyntaxException(_formula, at.Position, "the intersection of References is not read.");
+            }
+            node = new IntersectionNode(node, right);
+        }
+        return node;
+    }
+
+    /// <summary>Whether the token at <paramref name="index"/> is a Reference or a name that is not a function call nor a boolean.</summary>
+    private bool IsIntersectionOperand(int index)
+    {
+        var token = _tokens[index];
+        if (token.Kind == TokenKind.Reference) return true;
+        if (token.Kind != TokenKind.Name) return false;
+        if (_tokens[index + 1] is { Kind: TokenKind.LeftParenthesis, AfterSpace: false }) return false;
+        return !token.Text.Equals("TRUE", StringComparison.OrdinalIgnoreCase) && !token.Text.Equals("FALSE", StringComparison.OrdinalIgnoreCase);
     }
 
     private Node ParsePrimary()

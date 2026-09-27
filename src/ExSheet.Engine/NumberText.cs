@@ -21,28 +21,35 @@ internal static class NumberText
     /// </summary>
     public static string General(double number, CultureInfo culture) => number.ToString("G15", culture);
 
-    /// <summary>The smallest power of ten, as an exponent, that <see cref="Written"/> writes without scientific notation.</summary>
-    private const int WrittenSmallest = -9;
+    /// <summary>The most characters, not counting a minus sign, that a number written into text takes in full (<see cref="Written"/>).</summary>
+    internal const int WrittenLongest = 20;
 
-    /// <summary>The largest power of ten, as an exponent, that <see cref="Written"/> writes without scientific notation.</summary>
-    private const int WrittenLargest = 19;
+    /// <summary>The most characters a number constant in a Formula takes in full (<see cref="Written"/>).</summary>
+    internal const int FormulaConstantLongest = 21;
 
     /// <summary>
     /// A number as Excel writes it into text — <c>=A1&amp;""</c>, and the Cell Editor's text of a
     /// typed number: at most 15 significant digits (ADR-0047) and the culture's decimal separator,
-    /// written out in full across a wide range of magnitudes where General would go scientific.
-    /// Excel was observed to write <c>1E15</c> as <c>1000000000000000</c>, <c>1E-5</c> as
-    /// <c>0.00001</c>, and 123456789012345678 (held as 123456789012345000) in full. Scientific
-    /// notation, in General's spelling (<c>1E+20</c>), is taken from 1E+20 up and below 1E-9; both
-    /// thresholds are <c>uncertain</c> in the case corpus until Excel is asked.
+    /// written out in full where that takes at most <paramref name="longest"/> characters (a minus
+    /// sign not counted), and in General's scientific spelling (<c>1E+20</c>,
+    /// <c>1.23456789012345E-05</c>) where it would take more. Excel was observed to write into
+    /// text <c>1E19</c> (20 characters) and <c>1E-10</c> in full, and <c>1E20</c> and
+    /// <c>1.23456789012345E-5</c> (21 characters each) in scientific notation; a number constant in
+    /// a Formula is written back in full up to 21 characters (<c>=1E20</c> is
+    /// <c>=100000000000000000000</c>, <c>=1.23456789012345E-9</c>, 25, is
+    /// <c>=1.23456789012345E-09</c>) (ADR-0047, second run). Whether the minus sign counts is
+    /// <c>uncertain</c> in the case corpus.
     /// </summary>
-    public static string Written(double number, CultureInfo culture)
+    public static string Written(double number, CultureInfo culture, int longest = WrittenLongest)
     {
         if (number == 0) return "0";
         var e14 = Math.Abs(number).ToString("E14", CultureInfo.InvariantCulture);
         var digits = (e14[0] + e14[2..16]).TrimEnd('0');
         var exponent = int.Parse(e14.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
-        if (exponent < WrittenSmallest || exponent > WrittenLargest) return General(number, culture);
+        var fullLength = exponent < 0
+            ? 2 + (-exponent - 1) + digits.Length
+            : Math.Max(digits.Length, exponent + 1) + (digits.Length > exponent + 1 ? 1 : 0);
+        if (fullLength > longest) return General(number, culture);
 
         var text = new StringBuilder();
         if (number < 0) text.Append('-');
@@ -68,8 +75,9 @@ internal static class NumberText
     /// where the scientific form that fits is closer to the number than the decimal form that
     /// fits. The decimal form may round a number that is not zero to a bare <c>0</c>, as Excel was
     /// observed to show <c>=1/3</c> in a column one character wide (GW-017); a negative number
-    /// rounded so shows no minus sign. <see langword="null"/> when neither form fits: the cell shows
-    /// <c>####</c>.
+    /// rounded so keeps its minus sign, <c>-0</c>, and a column with no room for the sign shows
+    /// <c>####</c> (GW-026, GW-027, observed in the second run). <see langword="null"/> when
+    /// neither form fits: the cell shows <c>####</c>.
     /// </summary>
     public static string? General(double number, int characters, CultureInfo culture) =>
         GeneralForm(number, characters, culture)?.Text;
@@ -85,7 +93,7 @@ internal static class NumberText
     {
         var minus = number < 0;
         var limit = Math.Min(characters - (minus ? 1 : 0), GeneralLimit);
-        if (limit < 1) return minus && characters >= 1 && number > -0.5 ? ("0", false) : null;
+        if (limit < 1) return null;
         if (number == 0) return ("0", false);
 
         // Fifteen significant digits (ADR-0047), rounded again from there.
@@ -111,8 +119,8 @@ internal static class NumberText
         {
             return null;
         }
-        // A negative number rounded to a bare 0 shows no minus sign, as a format rounding it does not (FMT-063).
-        if (chosen == "0") return ("0", false);
+        // A negative number rounded to a bare 0 keeps its minus sign, -0, as Excel's General was
+        // observed to show it (GW-026, verification/2026-09-27-windows-excel-2).
         var separator = culture.NumberFormat.NumberDecimalSeparator;
         if (separator != ".") chosen = chosen.Replace(".", separator, StringComparison.Ordinal);
         return ((minus ? "-" : "") + chosen, isScientific);
