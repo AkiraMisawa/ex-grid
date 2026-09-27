@@ -160,6 +160,14 @@ When they do exist, these are the criteria that only a real Windows desktop answ
 - **An IME** (Japanese input) in the Cell Editor and in the Formula Bar. `AGENTS.md` lists a real
   IME as a run by hand.
 
+## Part D — Excel's behaviours, observed by hand
+
+Keys, clicks and drags cannot be checked through COM with the same meaning. Work through
+[`excel-behaviours-by-hand.md`](excel-behaviours-by-hand.md): read out each step, the user does it
+in Excel and then in ExSheet (`/sheet` on the DemoHost), and you record both into
+`verification/<date>-windows-excel/behaviours.md`. Items whose ExSheet side is not built yet
+record Excel's side only.
+
 ## Finishing
 
 Commit `verification/<date>-windows-excel/`, `verification/<date>-windows/`, the oracle script
