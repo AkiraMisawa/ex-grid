@@ -76,3 +76,12 @@ steps are operations on Entries, including structural ones that an Overlay canno
 **Renaming the Sheet is an undoable step**, like any other operation on the Sheet. Excel is
 reported not to undo a rename. This is a deliberate difference: undoing a rename never shows a
 wrong value, and it keeps the rule that each user operation is one step.
+
+- **Copy with headers is off on a Sheet** *(decided with the user, 2026-09-27)*. A Sheet's column
+  letters are addresses, not headers, and Excel has no such command. A Consumer that wants it
+  switches it on; it then copies Values with the letters as the first row.
+- **A copy of several ranges carries Values, not Entries**, until Excel's behaviour for such a copy
+  has been observed (the behaviours list).
+- **An invariant number pasted from Excel keeps every digit its double holds.** Unlike a typed
+  number, it is not cut to 15 significant digits, because Excel-to-Excel pasting does not cut it.
+  The case corpus confirms this.
