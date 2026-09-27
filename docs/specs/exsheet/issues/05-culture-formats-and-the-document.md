@@ -178,3 +178,11 @@ on a formatted number, since General is fitted. **Open:** the engine charges `E`
 `.` one digit width each, while the grid's `####` decision measures their own widths; a
 character wider than a digit could still hash a fitted text. That is ADR-0047's stated estimate
 until the case corpus has observed Excel.
+
+2026-09-27, component, grips alone (DC-36, ADR-0050 item 12): ExSheet declares ExGrid's
+`HideColumnMenu`, so the Headings carry the resize grips and no column-menu button, as Excel's
+do; the menu whose one enabled command was Size to fit (noted above) is gone, and size to fit
+stays on a double-click of a column's edge, recorded as the user's width. Layer 2:
+`ColumnWidthTests` (grips on every header and no button; a double-click sizing a column to fit),
+`SheetRenderingTests.Sort_and_filter_are_not_wired` (no menu button). Layer 3 for DC-36 is the
+core's.

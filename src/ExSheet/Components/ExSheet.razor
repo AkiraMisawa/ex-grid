@@ -11,10 +11,12 @@
     What is deliberately not wired: ExGrid's sort and filter. They reorder a view of rows a
     Consumer owns, and a Sheet's rows are places (ADR-0046); OnSortChanged and OnFilterChanged are
     left without a delegate, and HeaderClickSelects gives the header click Excel's meaning.
+    HideColumnMenu keeps the resize grips and drops the column-menu button: Excel's Headings
+    carry no menu, and size to fit stays on a double-click of the edge (ADR-0050 item 12).
 *@
 <ExGrid TRow="SheetRow" @ref="_grid"
         Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
-        Columns="_columns" OnColumnWidthChanged="_columnWidthChanged"
+        Columns="_columns" OnColumnWidthChanged="_columnWidthChanged" HideColumnMenu="true"
         RowHeight="RowHeight" ViewportHeight="ViewportHeight" ViewportWidth="ViewportWidth"
         PinnedColumnCount="PinnedColumnCount" Chrome="Chrome"
         OnRangeNeeded="OnRangeNeededAsync" OnEdit="OnEditAsync" SelectionChanged="_selectionChanged"

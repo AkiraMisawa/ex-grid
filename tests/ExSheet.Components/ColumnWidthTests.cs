@@ -89,13 +89,29 @@ public class ColumnWidthTests : SheetTestContext
         Assert.Matches("^#+$", CellText(cut, "C1"));
     }
 
-    [Fact] // ADR-0016: resizing is offered — the grips render because ExSheet takes the width change
-    public void The_resize_grips_are_offered()
+    [Fact] // ADR-0016, ADR-0050 item 12, DC-36: the grips render because ExSheet takes the width change, and no column-menu button does
+    public void The_resize_grips_are_offered_without_the_menu()
     {
         var cut = RenderSheet();
 
         Assert.True(Grid(cut).Instance.OnColumnWidthChanged.HasDelegate);
+        Assert.True(Grid(cut).Instance.HideColumnMenu);
         Assert.NotEmpty(cut.FindAll(".ex-resize-grip"));
+        Assert.Equal(cut.FindAll(".ex-header-cell").Count, cut.FindAll(".ex-resize-grip").Count);
+        Assert.Empty(cut.FindAll(".ex-menu-button"));
+    }
+
+    [Fact] // ADR-0050 item 12, DC-36, ADR-0016: a double-click on a column's edge still sizes it to fit, as the user's width
+    public async Task A_double_click_on_an_edge_sizes_the_column_to_fit()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "A1", "A heading far wider than its column");
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
+
+        await cut.FindAll(".ex-resize-grip")[0].DoubleClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { Button = 0 });
+
+        Assert.True(WidthOf(cut, 0) > SheetColumns.DefaultWidthPx);
+        Assert.Equal("A heading far wider than its column", CellText(cut, "A1"));
     }
 
     [Fact] // ADR-0003: the column list is replaced only when a width changes, and an ordinary edit leaves it alone
