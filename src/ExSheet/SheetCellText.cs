@@ -1,11 +1,13 @@
+using ExGrid.Columns;
 using ExSheet.Engine;
 
 namespace ExSheet;
 
 /// <summary>
-/// What one cell hands ExGrid as its value: the engine's formatted text and whether it is a
-/// number. ExGrid's column <c>Format</c> is handed only the value, so the value carries the text
-/// the engine formatted, and the per-cell kind is read from the same object (ADR-0050, item 6).
+/// What one cell hands ExGrid as its value: the engine's formatted text, whether it is a number,
+/// and its alignment. ExGrid's column <c>Format</c> is handed only the value, so the value carries
+/// the text the engine formatted, and the per-cell kind (ADR-0050, item 6) and alignment (item 7)
+/// are read from the same object.
 /// Immutable: a row's cells are the row's, and a new row instance carries new ones.
 /// </summary>
 /// <remarks>
@@ -14,7 +16,7 @@ namespace ExSheet;
 /// the unformatted Value as the engine writes it for its own copy (<see cref="SheetCopy.Html"/>),
 /// never the text the cell paints.
 /// </remarks>
-internal sealed record SheetCellText(string Text, bool IsNumber, string Raw) : IFormattable
+internal sealed record SheetCellText(string Text, bool IsNumber, string Raw, CellAlign Align) : IFormattable
 {
     /// <summary>
     /// What a number shows when it cannot be shown in its format at any width: a run of
@@ -24,14 +26,32 @@ internal sealed record SheetCellText(string Text, bool IsNumber, string Raw) : I
     /// </summary>
     internal static readonly string Unshowable = new('#', 256);
 
-    /// <summary>The cell's text from the engine's display and Value, or null for a blank cell.</summary>
-    internal static SheetCellText? From(CellDisplay display, Value? value)
+    /// <summary>
+    /// The cell's text from the engine's display, Value and alignment setting, or null for a
+    /// blank cell.
+    /// </summary>
+    internal static SheetCellText? From(CellDisplay display, Value? value, HorizontalAlignment setting)
     {
         var raw = value?.ToString() ?? "";
-        if (display.CannotShow) return new SheetCellText(Unshowable, IsNumber: true, raw);
+        var align = AlignOf(display, setting);
+        if (display.CannotShow) return new SheetCellText(Unshowable, IsNumber: true, raw, align);
         if (display.Text.Length == 0) return null;
-        return new SheetCellText(display.Text, display.IsNumber, raw);
+        return new SheetCellText(display.Text, display.IsNumber, raw, align);
     }
+
+    /// <summary>
+    /// The cell's alignment as the grid takes it (ADR-0050, item 7): a user's own setting as it
+    /// is; General as <see cref="CellAlign.Auto"/>, so the cell's kind decides — numbers right,
+    /// text left, as Excel's General does — except where the engine resolves General to the
+    /// centre, which is Excel's place for booleans and Error Values and one no kind gives.
+    /// </summary>
+    internal static CellAlign AlignOf(CellDisplay display, HorizontalAlignment setting) => setting switch
+    {
+        HorizontalAlignment.Left => CellAlign.Left,
+        HorizontalAlignment.Center => CellAlign.Center,
+        HorizontalAlignment.Right => CellAlign.Right,
+        _ => display.Alignment == HorizontalAlignment.Center ? CellAlign.Center : CellAlign.Auto,
+    };
 
     /// <summary>The unformatted Value, invariant: what the <c>text/html</c> flavour carries (ADR-0005).</summary>
     public string ToString(string? format, IFormatProvider? formatProvider) => Raw;

@@ -38,6 +38,15 @@ internal static class SheetColumns
     internal static Func<SheetRow, GridColumn<SheetRow>, ColumnType> CellType { get; } =
         static (row, column) => row.At(IndexOf(column)) is { IsNumber: true } ? ColumnType.Number : ColumnType.Text;
 
+    /// <summary>
+    /// The per-cell alignment (ADR-0050, item 7): the engine's, as <see cref="SheetCellText.AlignOf"/>
+    /// maps it. It reads only the row it is handed, so, like <see cref="CellType"/>, it is one
+    /// instance for the process and never has to be replaced: a cell whose alignment changes is
+    /// named by the engine's change and arrives on a new row instance (ADR-0003).
+    /// </summary>
+    internal static Func<SheetRow, GridColumn<SheetRow>, CellAlign> CellAlign { get; } =
+        static (row, column) => row.At(IndexOf(column))?.Align ?? global::ExGrid.Columns.CellAlign.Auto;
+
     /// <summary>The Cell Editor's opening text: the Entry (ADR-0051).</summary>
     internal static Func<SheetRow, GridColumn<SheetRow>, string?> EditorText { get; } =
         static (row, column) => row.EntryTextAt(IndexOf(column));
@@ -62,7 +71,7 @@ internal static class SheetColumns
                 header: name,
                 width: DefaultWidth,
                 editable: true,
-                headerAlign: CellAlign.Center,
+                headerAlign: global::ExGrid.Columns.CellAlign.Center,
                 validate: static (row, typed) => row.Judge(typed),
                 format: FormatText);
         }

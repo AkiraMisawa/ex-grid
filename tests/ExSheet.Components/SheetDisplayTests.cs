@@ -122,6 +122,67 @@ public class SheetDisplayTests : SheetTestContext
         Assert.Equal(HorizontalAlignment.Center, Assert.Single(raised!.Cells).Alignment);
     }
 
+    [Fact] // ADR-0050 item 7, DC-29: General leaves the kind to align — numbers right, text left — with no class of its own
+    public void General_alignment_leaves_the_kind_to_decide()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("A1", "Amount"), ("A2", "12.5"))));
+
+        Assert.DoesNotContain("ex-align-", Cell(cut, "A1").ClassName);
+        Assert.DoesNotContain("ex-align-", Cell(cut, "A2").ClassName);
+        Assert.Contains("ex-cell-numeric", Cell(cut, "A2").ClassName);
+    }
+
+    [Fact] // ADR-0050 item 7, DC-29: booleans and Error Values are centred under General, as Excel centres them
+    public void Booleans_and_error_values_are_centred()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("A1", "TRUE"), ("A2", "=1/0"))));
+
+        Assert.Contains("ex-align-center", Cell(cut, "A1").ClassName);
+        Assert.Contains("ex-align-center", Cell(cut, "A2").ClassName);
+    }
+
+    [Fact] // ADR-0050 item 7, DC-29: a user's own alignment paints the cell, and undoing it paints the kind's again
+    public async Task A_users_alignment_paints_the_cell()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("A1", "12.5"), ("A2", "text"))));
+        await GoToAsync(cut, "A1:A2");
+
+        Assert.True(await cut.Instance.SetAlignmentAsync(HorizontalAlignment.Left));
+
+        Assert.Contains("ex-align-left", Cell(cut, "A1").ClassName);
+        Assert.Contains("ex-align-left", Cell(cut, "A2").ClassName);
+        await cut.Instance.SetAlignmentAsync(HorizontalAlignment.Center);
+        Assert.Contains("ex-align-center", Cell(cut, "A1").ClassName);
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.DoesNotContain("ex-align-", Cell(cut, "A1").ClassName);
+    }
+
+    [Fact] // ADR-0050 item 7 / ADR-0003: the alignment delegate is one held instance, and an alignment repaints only its rows
+    public async Task An_alignment_repaints_only_its_rows()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("A1", "1"), ("A3", "3"))));
+        var held = Grid(cut).Instance.CellAlign;
+        await GoToAsync(cut, "A3");
+        var before = cut.FindComponents<global::ExGrid.Components.ExGridRow<SheetRow>>()
+            .ToDictionary(r => r.Instance.RowIndex, r => (r.Instance.Row, r.RenderCount));
+
+        await cut.Instance.SetAlignmentAsync(HorizontalAlignment.Right);
+
+        Assert.Same(held, Grid(cut).Instance.CellAlign);
+        Assert.Contains("ex-align-right", Cell(cut, "A3").ClassName);
+        foreach (var row in cut.FindComponents<global::ExGrid.Components.ExGridRow<SheetRow>>())
+        {
+            var (instance, renders) = before[row.Instance.RowIndex];
+            if (row.Instance.RowIndex == 2) Assert.NotSame(instance, row.Instance.Row);
+            else
+            {
+                Assert.Same(instance, row.Instance.Row);
+                Assert.Equal(renders, row.RenderCount);
+            }
+        }
+    }
+
     [Fact] // Principle 1: formatting a million cells at once is refused by name, and nothing changes
     public async Task Formatting_whole_columns_is_refused_by_name()
     {

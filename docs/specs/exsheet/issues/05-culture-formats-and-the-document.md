@@ -102,3 +102,14 @@ entry; a cell already formatted keeps its format; the entry's step undoes it. Mi
 this only for `DATE`, `TODAY` and `NOW`, which are not declared, so all fifteen cases in
 `ExcelCases/formula-formats.json` are uncertain; multiplication, functions and `&` give no format
 (the engine's answer, recorded for the oracle to confirm or correct).
+
+2026-09-27, component, alignment painted per cell (DC-29, ADR-0050 item 7): the first known gap
+above is closed. `SheetCellText` carries the cell's `CellAlign`, read from the engine with the
+rest of the cell: a user's Left, Center or Right as set (`Sheet.GetAlignment`, cell over row
+over column); General as `Auto`, so the per-cell kind aligns numbers right and text left; and
+General's centre where the engine's `CellDisplay` resolves it there, which is Excel's place for
+booleans and Error Values. ExSheet hands it to ExGrid's `CellAlign` as one delegate held for the
+process (`SheetColumns.CellAlign`), reading only the row it is handed, so an alignment change
+arrives on the new row instances the engine's change names and no other row renders (ADR-0003).
+Layer 2: `SheetDisplayTests` (General, booleans and Error Values, a user's alignment and its
+undo, the held delegate and the repainted rows).
