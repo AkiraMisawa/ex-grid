@@ -685,6 +685,158 @@
       "cells": {"ZZ1000": "=T[[a,b]]"},
       "check": "ZZ1000",
       "expect": {"formula": "=T[a,b]"}
+    },
+    {
+      "id": "TEXT-085",
+      "source": "observed",
+      "description": "A number constant is written as Excel writes it: 1E15 in full (verification/2026-09-27-windows-excel, the formula Excel wrote for ARITH-073)",
+      "cells": {"ZZ1000": "=1E15&\"\""},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1000000000000000&\"\""}
+    },
+    {
+      "id": "TEXT-086",
+      "source": "observed",
+      "description": "A number constant is written as Excel writes it: 1E-5 in full (verification/2026-09-27-windows-excel, the formula Excel wrote for ARITH-074)",
+      "cells": {"ZZ1000": "=1E-5&\"\""},
+      "check": "ZZ1000",
+      "expect": {"formula": "=0.00001&\"\""}
+    },
+    {
+      "id": "TEXT-087",
+      "source": "observed",
+      "description": "A number constant keeps 15 significant digits, the rest zeros, written in full (verification/2026-09-27-windows-excel, the formula Excel wrote for ARITH-075)",
+      "cells": {"ZZ1000": "=123456789012345678&\"\""},
+      "check": "ZZ1000",
+      "expect": {"formula": "=123456789012345000&\"\""}
+    },
+    {
+      "id": "TEXT-088",
+      "source": "observed",
+      "description": "A very large number constant stays scientific, in General's spelling (the formula Excel wrote for GW-023)",
+      "cells": {"ZZ1000": "=1E+100*1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1E+100*1"}
+    },
+    {
+      "id": "TEXT-089",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a lower-case exponent is written in full",
+      "cells": {"ZZ1000": "=1e15"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1000000000000000"}
+    },
+    {
+      "id": "TEXT-090",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an explicit plus in the exponent is written in full",
+      "cells": {"ZZ1000": "=1E+15"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1000000000000000"}
+    },
+    {
+      "id": "TEXT-091",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1E19, the largest power of ten written in full",
+      "cells": {"ZZ1000": "=1E19"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=10000000000000000000"}
+    },
+    {
+      "id": "TEXT-092",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1E20, the smallest power of ten written scientific",
+      "cells": {"ZZ1000": "=1E20"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1E+20"}
+    },
+    {
+      "id": "TEXT-093",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1.5E20 is scientific with its digits",
+      "cells": {"ZZ1000": "=1.5E20"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1.5E+20"}
+    },
+    {
+      "id": "TEXT-094",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: twenty digits keep 15, written in full",
+      "cells": {"ZZ1000": "=12345678901234567890"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=12345678901234500000"}
+    },
+    {
+      "id": "TEXT-095",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1E-9, the smallest power of ten written in full",
+      "cells": {"ZZ1000": "=1E-9"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=0.000000001"}
+    },
+    {
+      "id": "TEXT-096",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1E-10 is scientific",
+      "cells": {"ZZ1000": "=1E-10"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1E-10"}
+    },
+    {
+      "id": "TEXT-097",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 15 significant digits at 1E-9 are written in full",
+      "cells": {"ZZ1000": "=1.23456789012345E-9"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=0.00000000123456789012345"}
+    },
+    {
+      "id": "TEXT-098",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a decimal past 15 significant digits keeps 15",
+      "cells": {"ZZ1000": "=0.12345678901234567"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=0.123456789012345"}
+    },
+    {
+      "id": "TEXT-099",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a mantissa with a decimal point and an exponent is written in full",
+      "cells": {"ZZ1000": "=1.0E3"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1000"}
+    },
+    {
+      "id": "TEXT-100",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: leading zeros are dropped",
+      "cells": {"ZZ1000": "=00012"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=12"}
+    },
+    {
+      "id": "TEXT-101",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a trailing decimal point is dropped",
+      "cells": {"ZZ1000": "=12."},
+      "check": "ZZ1000",
+      "expect": {"formula": "=12"}
+    },
+    {
+      "id": "TEXT-102",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negated constant: the minus is its own token, the number written in full",
+      "cells": {"ZZ1000": "=-1E15"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=-1000000000000000"}
+    },
+    {
+      "id": "TEXT-103",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the largest power of ten a double holds is scientific",
+      "cells": {"ZZ1000": "=1E308"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1E+308"}
     }
   ]
 }

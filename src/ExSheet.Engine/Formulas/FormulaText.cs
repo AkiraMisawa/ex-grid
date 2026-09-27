@@ -8,8 +8,9 @@ namespace ExSheet.Engine.Formulas;
 /// keeps it, which is before a token: whitespace at the end of the Formula, and before a
 /// <c>,</c>, is dropped, as Excel drops it on entry (observed, verification/2026-09-27-windows-excel).
 /// Each token is written in the engine's invariant spelling — declared function names,
-/// References, booleans and Error Values in upper case, numbers as the shortest text that reads
-/// back as the same double, a structured reference in single brackets, a Reference spanning
+/// References, booleans and Error Values in upper case, numbers as Excel writes them (at most 15
+/// significant digits, written out in full where Excel writes them so: <c>=1E15</c> is stored as
+/// <c>=1000000000000000</c> and <c>=.5</c> as <c>=0.5</c>), a structured reference in single brackets, a Reference spanning
 /// every row or every column in its whole-column or whole-row form. Rewriting References, on an
 /// insertion, a deletion, a copy or a fill, replaces only the Reference tokens and leaves every
 /// other character where it was — except that a Reference rewritten to <c>#REF!</c> takes the
@@ -89,7 +90,9 @@ internal static class FormulaText
         switch (token.Kind)
         {
             case TokenKind.Number:
-                text.Append(token.Number.ToString("R", CultureInfo.InvariantCulture));
+                // As Excel writes a number constant back (ADR-0047): the form it gives the same number
+                // written into text, which the observed cases agree on (ARITH-073..075, TEXT-057/058).
+                text.Append(NumberText.Written(token.Number, CultureInfo.InvariantCulture));
                 break;
             case TokenKind.Text:
                 text.Append('"').Append(token.Text.Replace("\"", "\"\"", StringComparison.Ordinal)).Append('"');
