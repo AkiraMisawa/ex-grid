@@ -10,7 +10,7 @@ names. Candidates that come back for text that has since changed are dropped.
 
 **Blocked by:** 04, 09
 
-- [ ] `=SU` offers `SUM` and `SUMIF`-style candidates from the declared list; Tab accepts (ADR-0051)
+- [ ] `=SU` offers every declared function starting with `SU` (today `SUM`), and `=X` offers `XLOOKUP`; Tab accepts (ADR-0051)
 - [ ] Escape closes the list and leaves the edit open
 - [ ] The list stays inside the grid's box (ADR-0040) under the built-in Chrome and `ExGrid.MudBlazor`'s
 - [ ] A stale candidate list is never shown (layer 2 with a delayed answer)
