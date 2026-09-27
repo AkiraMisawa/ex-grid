@@ -88,3 +88,24 @@ operand, commit and move. **Still open.** The first criterion's Shift+↓ reache
 through `OnKeyAsync`: the gate's `point` set (ADR-0051, second round) is the core's to add, and
 until it lands a real Shift+↓ selects text in the input. Layer 3 with a delayed circuit (DC-20)
 is also open.
+
+2026-09-27, ExGrid core, third round (ADR-0051's last second-round bullet, ADR-0021's newest
+note, DC-24/DC-31): the gap above is closed. The editor listener now also reports the caret
+position on `selectionchange` while DOM focus is in an `.ex-editor` surface inside this
+instance's root and reporting is on. The event fires on the document only, so the handler checks
+the instance's root, is removed (and its pending frame cancelled) on dispose, sends at most one
+report per animation frame, and never repeats the last report sent; a caret the core placed is
+not reported back. `OnEditorCaretAsync` takes a caret-only report (text unchanged) as the new
+caret position: completion is asked again at it, and a click or arrow points from it. A caret
+moved away from a pointed Reference ends the outline, as typing does (Point gives way to
+Overwrite). While a placement the core asked for is in flight, a report of the browser's other
+caret in that text is not taken. Opening an edit — the cell editor by a key or F2, or the
+Formula Bar — places the caret at the end of the opening text with `setCaret`, after the render
+that shows it and once the surface has DOM focus. Declarations off: nothing is placed or
+reported (DC-1). Layer 2: `CaretTests` (opening placement in all three ways and undeclared,
+caret-only moves for completion and for a click, the outline ending, a report crossing a
+placement, no render for a report with nothing to answer) and `ShippedStylesheetTests` (the
+listener's shape: scoped, disposed, coalesced, deduplicated, no layout read).
+**What remains:** layer 3 with real keys and mouse — ← / → in Caret then a click on a cell, a
+click inside the text then a click on a cell, a click into the Formula Bar's text, the caret
+after opening — under both Chromes and on the Server host.

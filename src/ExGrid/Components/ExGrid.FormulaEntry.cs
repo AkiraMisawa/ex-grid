@@ -49,6 +49,13 @@ public partial class ExGrid<TRow>
     // the render carrying that text has landed (ADR-0051).
     private (string Text, int Caret)? _caretToPlace;
 
+    // The placement last asked for, until the listener has carried it out. Until then the
+    // browser's caret in that text is its own — where setting the value left it — and a report
+    // of it is not the user moving the caret (ADR-0051: reported and set, never inferred). The
+    // number tells a placement apart from one made while it was in flight.
+    private (string Text, int Caret)? _caretPlacing;
+    private int _caretPlacements;
+
     // The answer being shown, the candidate chosen in it, and the number of the last question
     // asked — an answer to any other is stale and dropped (ADR-0051, DC-18).
     private EditorCompletion? _completion;
@@ -191,12 +198,15 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>
-    /// The caret, reported by the grid's own listener with each input in an editor surface
-    /// (ADR-0051's second round): an input event carries no caret, and inferring it from the
-    /// change is ambiguous where letters repeat. Sent only where completion or pointing is
-    /// declared. The report and Blazor's input event are two messages: a report for the text
-    /// the core holds sets the caret, and asks the Consumer if the text was waiting for it; a
-    /// report for text not heard yet is kept for the input event that brings it.
+    /// The caret, reported by the grid's own listener with each input in an editor surface and
+    /// whenever it moves there (ADR-0051's second round): an input event carries no caret, and
+    /// inferring it from the change is ambiguous where letters repeat. Sent only where
+    /// completion or pointing is declared. The report and Blazor's input event are two
+    /// messages: a report for the text the core holds sets the caret — a move with the text
+    /// unchanged too, which asks the Consumer again and ends a pointing outline — and asks the
+    /// Consumer if the text was waiting for it; a report for text not heard yet is kept for the
+    /// input event that brings it. While a placement the core asked for is in flight, the
+    /// browser's other caret in that text is not the user's and is not taken.
     ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public only
     /// because JavaScript interop requires it.</para>
@@ -214,12 +224,32 @@ public partial class ExGrid<TRow>
             _reportedCaret = caret;
             return Task.CompletedTask;
         }
+        // The browser's own caret in text the core wrote, before the placement has landed: not
+        // the user's move, and the placement that follows is reported in its turn.
+        if (_caretPlacing is { } placing && placing.Caret != caret
+            && string.Equals(placing.Text, text, StringComparison.Ordinal))
+        {
+            return Task.CompletedTask;
+        }
         if (caret == _editCaret)
             return Task.CompletedTask;
+        // A caret-only move (ADR-0051's second round: reported whenever it moves) — ← or → in
+        // Caret, a click inside the text. Completion and Point act at the new caret position.
         _editCaret = caret;
-        if (CompleteEditorText is null)
+        // The outline's Reference was written where the caret stood: moved away, pointing ends,
+        // as typing ends it, and the next arrow or click points from the new caret position.
+        var pointingEnded = _pointer is not null || _editMode == EditMode.Point;
+        if (pointingEnded)
+        {
+            EndPointing();
+            if (_editMode == EditMode.Point)
+                _editMode = EditMode.Overwrite;
+            MarkGateIfMoved();
+        }
+        if (CompleteEditorText is null && !pointingEnded)
             return Task.CompletedTask;
-        RequestCompletion();
+        if (CompleteEditorText is not null)
+            RequestCompletion();
         // Not a UI event: an armed suppression would swallow this render (the OnKeyAsync
         // lesson).
         _suppressRender = false;
@@ -230,7 +260,30 @@ public partial class ExGrid<TRow>
     /// <summary>The core wrote the editor's text itself (ADR-0051): once the render carrying it
     /// has landed, the listener places the caret where the core says — after the inserted
     /// text, wherever in the text that is.</summary>
-    private void PlaceCaret() => _caretToPlace = (_editText, _editCaret);
+    private void PlaceCaret()
+    {
+        _caretToPlace = (_editText, _editCaret);
+        _caretPlacing = _caretToPlace;
+        _caretPlacements++;
+    }
+
+    /// <summary>An edit opened (ADR-0051's second round): where the caret is reported, it is
+    /// placed at the end of the opening text explicitly rather than assumed to be where the
+    /// browser left it. Where it is not, nothing is sent (DC-1).</summary>
+    private void OpenCaret()
+    {
+        if (ReportsCaret)
+            PlaceCaret();
+        else
+            ForgetCaretPlacement();
+    }
+
+    /// <summary>The edit closed: no placement is owed, and none is waited for.</summary>
+    private void ForgetCaretPlacement()
+    {
+        _caretToPlace = null;
+        _caretPlacing = null;
+    }
 
     /// <summary>Hands the caret the core placed to the listener, after the render that carries
     /// its text. The listener sets it only while the surface still holds that text: typed on
@@ -238,15 +291,23 @@ public partial class ExGrid<TRow>
     private async Task PushCaretAsync()
     {
         var place = _caretToPlace;
+        var placement = _caretPlacements;
         _caretToPlace = null;
-        if (place is not { } caret || _scrollHandle is null || _disposed || _editMode == EditMode.None)
-            return;
         try
         {
+            if (place is not { } caret || _scrollHandle is null || _disposed || _editMode == EditMode.None)
+                return;
             await _scrollHandle.InvokeVoidAsync("setCaret", caret.Text, caret.Caret);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
+        }
+        finally
+        {
+            // Carried out — or never to be. A report sent before it reached the listener has
+            // arrived by now: the call's answer follows it on the same channel.
+            if (placement == _caretPlacements)
+                _caretPlacing = null;
         }
     }
 

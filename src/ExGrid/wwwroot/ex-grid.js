@@ -6,7 +6,9 @@
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
-// the instance's own element, so the only listener attached here is the key one.
+// the instance's own element. Every listener here is on the instance root, but one:
+// `selectionchange` fires only on the document, so that one acts only while DOM focus is in
+// an editor surface inside this instance's root, and is removed with the instance.
 
 /**
  * @param {HTMLElement} root the instance's root element — where keys are captured, so a
@@ -212,24 +214,65 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             });
     };
 
-    // Each input in an editor surface reports its caret (ADR-0051's second round): an input
-    // event carries no caret, and working it out from the change is ambiguous where letters
-    // repeat. The value and selection start of the field the input happened in, read, not
-    // measured: no layout is read. Only while C# asked for it.
-    const onEditorInput = (event) => {
-        const input = event.target;
-        if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
-            || input.closest('.ex-editor') === null) {
+    // The caret in an editor surface is reported (ADR-0051's second round): an input event
+    // carries no caret, and working it out from the change is ambiguous where letters repeat;
+    // and a caret moved by ← / → or a click inside the text, with the text unchanged, would
+    // leave the core pointing and completing from a caret that is no longer there. The value
+    // and selection start of the field, read, not measured: no layout is read. Only while C#
+    // asked for it, and never a report that says what the last one said.
+    let reportedText = null;
+    let reportedCaret = -1;
+    const reportCaretOf = (input) => {
+        const caret = input.selectionStart ?? input.value.length;
+        if (input.value === reportedText && caret === reportedCaret) {
             return;
         }
-        core.invokeMethodAsync('OnEditorCaretAsync', input.value, input.selectionStart ?? input.value.length)
+        reportedText = input.value;
+        reportedCaret = caret;
+        core.invokeMethodAsync('OnEditorCaretAsync', input.value, caret)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to hear the caret', error);
                 }
             });
     };
+    // Each input reports at once: Blazor's input event is on its way, and the core waits for
+    // this report before it asks anything about the new text.
+    const onEditorInput = (event) => {
+        const input = event.target;
+        if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
+            || input.closest('.ex-editor') === null) {
+            return;
+        }
+        reportCaretOf(input);
+    };
     root.addEventListener('input', onEditorInput, true);
+    // The text field of an editor surface in this instance that holds DOM focus, or null.
+    const focusedEditorField = () => {
+        const active = document.activeElement;
+        return root && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
+            && root.contains(active) && active.closest('.ex-editor') !== null
+            ? active
+            : null;
+    };
+    // Whenever the caret moves: `selectionchange` fires on the document only, so this instance
+    // acts on it only while DOM focus is in one of its own editor surfaces (ADR-0018). A burst
+    // — a held arrow, a drag across the text, an input's own change — is one report per
+    // animation frame, of where the caret stands when the frame comes.
+    let caretFrame = 0;
+    const onSelectionChange = () => {
+        if (!reportCaret || !core || caretFrame !== 0 || focusedEditorField() === null) {
+            return;
+        }
+        caretFrame = requestAnimationFrame(() => {
+            caretFrame = 0;
+            const input = reportCaret && core ? focusedEditorField() : null;
+            if (input) {
+                reportCaretOf(input);
+            }
+        });
+    };
+    document.addEventListener('selectionchange', onSelectionChange);
 
     // Keys that follow a mode change are held until it lands (ADR-0010). The mode is
     // C#'s, and it tells this listener after the fact: in-process on WebAssembly, a round
@@ -898,14 +941,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         setEditing: (mode, reportsCaret) => {
             editing = mode;
             reportCaret = reportsCaret === true;
+            // A new state starts a new conversation: a report equal to one sent before it is
+            // news to the core now (the next edit can open on the same text and caret).
+            reportedText = null;
+            reportedCaret = -1;
         },
         // After the core wrote the editor's text itself — an accepted candidate, a pointed
         // Reference — the caret goes where the core says (ADR-0051's second round). Only while
         // the surface still holds that text: typed on since, the user's own caret stands.
+        // Also when an edit opens: the caret goes to the end of the opening text, placed rather
+        // than assumed. The caret placed is the core's already, so it is not reported back.
         setCaret: (text, caret) => {
             const input = editorInput();
             if (input && input.value === text) {
                 input.setSelectionRange(caret, caret);
+                reportedText = text;
+                reportedCaret = caret;
             }
         },
         // A popover's contents reported a popup of their own opening or closing
@@ -957,6 +1008,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             root.removeEventListener('mouseleave', onPointerLeave);
             root.removeEventListener('keydown', onKeyDown, true);
             root.removeEventListener('input', onEditorInput, true);
+            document.removeEventListener('selectionchange', onSelectionChange);
+            cancelAnimationFrame(caretFrame);
+            caretFrame = 0;
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
             root = null;

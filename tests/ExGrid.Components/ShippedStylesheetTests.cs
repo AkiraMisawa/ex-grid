@@ -64,11 +64,12 @@ public class ShippedStylesheetTests
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
 
-        // keydown (the capture-phase gate) and input (the same keyboard/editor use, reporting
-        // the caret with each input: ADR-0021's note of ADR-0051's second round), copy and
-        // paste (the clipboard), and the two that report a pointer coming to rest. Scrolling
-        // is Blazor's own @onscroll and the gutter is a ResizeObserver, so neither appears here.
-        string[] allowed = ["copy", "input", "keydown", "mousemove", "mouseleave", "paste"];
+        // keydown (the capture-phase gate), input and selectionchange (the same keyboard/editor
+        // use, reporting the caret with each input and whenever it moves: ADR-0021's notes of
+        // ADR-0051's second round), copy and paste (the clipboard), and the two that report a
+        // pointer coming to rest. Scrolling is Blazor's own @onscroll and the gutter is a
+        // ResizeObserver, so neither appears here.
+        string[] allowed = ["copy", "input", "keydown", "mousemove", "mouseleave", "paste", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -110,25 +111,43 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"if \(!taken\.has\(canonical\)\)"), script.Text);
     }
 
-    [Fact] // ADR-0051 second round / ADR-0021 / DC-31: the caret is reported with each input and set after the core's rewrite, nothing measured
+    [Fact] // ADR-0051 second round / ADR-0021 / DC-24 / DC-31: the caret is reported with each input and whenever it moves, and set when the core says, nothing measured
     public void The_listener_reports_and_places_the_caret()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
-        // Reported: one message per input in an editor surface, with the field's value and
-        // selection start, and only while C# asked for it (DC-1: a grid declaring neither
+        // Reported: from one place, with the field's value and selection start, never twice
+        // running the same, and only while C# asked for it (DC-1: a grid declaring neither
         // completion nor pointing sends nothing more).
         Assert.Single(Regex.Matches(script.Text, @"'OnEditorCaretAsync'"));
-        Assert.Matches(new Regex(@"if \(!reportCaret \|\|[^;]*closest\('\.ex-editor'\) === null\)", RegexOptions.Singleline), script.Text);
-        Assert.Matches(new Regex(@"'OnEditorCaretAsync', input\.value, input\.selectionStart \?\? input\.value\.length\)"), script.Text);
-        Assert.Matches(new Regex(@"root\.addEventListener\('input', onEditorInput, true\)"), script.Text);
-        Assert.Matches(new Regex(@"root\.removeEventListener\('input', onEditorInput, true\)"), script.Text);
+        Assert.Matches(new Regex(@"const caret = input\.selectionStart \?\? input\.value\.length;\s*if \(input\.value === reportedText && caret === reportedCaret\) \{\s*return;",
+            RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"'OnEditorCaretAsync', input\.value, caret\)"), script.Text);
         Assert.Matches(new Regex(@"reportCaret = reportsCaret === true;"), script.Text);
 
-        // Placed: only while the surface still holds the text the core wrote.
-        Assert.Matches(new Regex(@"setCaret: \(text, caret\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*input\.setSelectionRange\(caret, caret\);",
+        // With each input in an editor surface: on the instance root, removed on dispose.
+        Assert.Matches(new Regex(@"if \(!reportCaret \|\|[^;]*closest\('\.ex-editor'\) === null\)", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"root\.addEventListener\('input', onEditorInput, true\)"), script.Text);
+        Assert.Matches(new Regex(@"root\.removeEventListener\('input', onEditorInput, true\)"), script.Text);
+
+        // Whenever it moves: selectionchange fires on the document only, so it acts only while
+        // DOM focus is in an editor surface inside this instance's root (ADR-0018), coalesced
+        // to one report per animation frame, and is removed — and its frame cancelled — on
+        // dispose.
+        Assert.Single(Regex.Matches(script.Text, @"addEventListener\('selectionchange'"));
+        Assert.Matches(new Regex(@"document\.addEventListener\('selectionchange', onSelectionChange\);"), script.Text);
+        Assert.Matches(new Regex(@"document\.removeEventListener\('selectionchange', onSelectionChange\);\s*cancelAnimationFrame\(caretFrame\);"), script.Text);
+        Assert.Matches(new Regex(@"root\.contains\(active\) && active\.closest\('\.ex-editor'\) !== null"), script.Text);
+        Assert.Matches(new Regex(@"if \(!reportCaret \|\| !core \|\| caretFrame !== 0 \|\| focusedEditorField\(\) === null\) \{\s*return;\s*\}\s*caretFrame = requestAnimationFrame\(",
             RegexOptions.Singleline), script.Text);
-        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle|selectionchange"), script.Text);
+        // No other document-level listener: the rest stay on the instance root.
+        Assert.Single(Regex.Matches(script.Text, @"document\.addEventListener\("));
+
+        // Placed: only while the surface still holds the text the core wrote, and the caret it
+        // placed is not reported back.
+        Assert.Matches(new Regex(@"setCaret: \(text, caret\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*input\.setSelectionRange\(caret, caret\);\s*reportedText = text;\s*reportedCaret = caret;",
+            RegexOptions.Singleline), script.Text);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), script.Text);
     }
 
     [Fact] // ADR-0051 second round / DC-31: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys
