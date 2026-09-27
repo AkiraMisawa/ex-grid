@@ -1,6 +1,6 @@
 # 12: The one undo stack
 
-Status: needs-info
+Status: done
 
 **What to build:** ExSheet holds one undo stack. Each user operation is one step: an edit now, and paste, fill,
 insertion and deletion as they arrive. Ctrl+Z undoes and Ctrl+Y redoes. A change the Consumer makes
@@ -8,7 +8,7 @@ through ExSheet's commands lands on the same stack. Replacing the Sheet Document
 
 **Blocked by:** 02
 
-- [ ] Ctrl+Z and Ctrl+Y step through edits in order (ADR-0048)
+- [x] Ctrl+Z and Ctrl+Y step through edits in order (ADR-0048)
 - [x] A Consumer command is undone in its place in the order
 - [x] Replacing the document clears the stack
 - [x] Two ExSheets on one page keep separate stacks (ADR-0018)
@@ -68,3 +68,11 @@ per-instance handle (the one JavaScript change: the set is C#'s list, as at atta
 `ShippedStylesheetTests`. **What remains:** ExSheet passes `UndoAsync`/`RedoAsync` as `OnUndo`/
 `OnRedo` (the first criterion), and layer 3 presses the real keys: raised with no edit open,
 the editor's own undo with one open, and the browser's without the declaration (DC-30).
+
+2026-09-27, the keys: ExSheet declares `OnUndo` and `OnRedo` on its ExGrid, two `EventCallback`s
+made once per instance and held in fields, which call `UndoAsync` and `RedoAsync` — the stack a
+Consumer walks. Ctrl+Z undoes and Ctrl+Y / Ctrl+Shift+Z redo while no edit is open; while one
+is, the keys stay the editor's own (ADR-0007). Layer 2:
+`UndoStackTests.Ctrl_Z_and_Ctrl_Y_step_through_edits_in_order` and
+`While_an_edit_is_open_Ctrl_Z_leaves_the_stack_alone`. Every criterion here is met. DC-30's
+layer 3 half (the real keys in a browser, with and without an edit open) is ticket 18's.

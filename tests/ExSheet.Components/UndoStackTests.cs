@@ -10,7 +10,8 @@ namespace ExSheet.Components.Tests;
 /// The one undo stack (ticket 12, ADR-0048): every operation, the user's and the Consumer's, is
 /// one engine step in the order it was done; replacing the document clears it; each ExSheet has
 /// its own (ADR-0018). Driven through the component's public <c>UndoAsync</c> and
-/// <c>RedoAsync</c> — Ctrl+Z and Ctrl+Y do not reach ExSheet yet (the ticket says why).
+/// <c>RedoAsync</c>, and through Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z as the grid's key listener
+/// forwards them (ADR-0050 item 8, DC-30).
 /// </summary>
 public class UndoStackTests : SheetTestContext
 {
@@ -147,5 +148,41 @@ public class UndoStackTests : SheetTestContext
         Assert.Equal("again", CellText(second, "A2"));
         Assert.False(first.Instance.CanUndo);
         Assert.True(second.Instance.CanUndo);
+    }
+
+    [Fact] // ADR-0048/0050 item 8, DC-30, SH-13: Ctrl+Z and Ctrl+Y step through edits in order
+    public async Task Ctrl_Z_and_Ctrl_Y_step_through_edits_in_order()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "A1", "1");
+        await EnterAsync(cut, "A1", "2");
+        await EnterAsync(cut, "B1", "=A1*10");
+
+        await PressAsync(cut, "z", ctrl: true);
+        Assert.Equal("", CellText(cut, "B1"));
+        await PressAsync(cut, "z", ctrl: true);
+        Assert.Equal("1", CellText(cut, "A1"));
+
+        await PressAsync(cut, "y", ctrl: true);
+        Assert.Equal("2", CellText(cut, "A1"));
+        await PressAsync(cut, "Z", ctrl: true, shift: true);
+        Assert.Equal("20", CellText(cut, "B1"));
+        Assert.False(cut.Instance.CanRedo);
+    }
+
+    [Fact] // ADR-0050 item 8 / ADR-0007, DC-30: while an edit is open, Ctrl+Z is the editor's, not the stack's
+    public async Task While_an_edit_is_open_Ctrl_Z_leaves_the_stack_alone()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "A1", "1");
+        await GoToAsync(cut, "A2");
+        await PressAsync(cut, "2");
+        await TypeAsync(cut, "2");
+
+        await PressAsync(cut, "z", ctrl: true);
+
+        Assert.True(cut.Instance.CanUndo);
+        Assert.Equal("1", CellText(cut, "A1"));
+        Assert.Equal("2", EditorText(cut));
     }
 }

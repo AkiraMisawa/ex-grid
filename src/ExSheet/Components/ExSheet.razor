@@ -27,7 +27,8 @@
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
         OnCopyRowsNeeded="_copyRowsNeeded" OnCopyRefused="OnCopyRefused"
-        ShowFillHandle="true" OnFill="OnFillAsync" />
+        ShowFillHandle="true" OnFill="OnFillAsync"
+        OnUndo="_undo" OnRedo="_redo" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -71,6 +72,8 @@
     private readonly Func<string, string?> _commandLabel;
     private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _copyRowsNeeded;
     private readonly EventCallback<GridSelection> _selectionChanged;
+    private readonly EventCallback _undo;
+    private readonly EventCallback _redo;
 
     private ExGrid<SheetRow>? _grid;
     private Sheet? _sheet;
@@ -103,6 +106,11 @@
             _selection = selection;
             return SelectionChanged.InvokeAsync(selection);
         }));
+        // Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z while no edit is open (ADR-0050 item 8, ADR-0048):
+        // the same stack a Consumer walks with UndoAsync and RedoAsync. No receiver, as above:
+        // an undo re-renders what its change names itself.
+        _undo = new EventCallback(null, (Func<Task>)(() => UndoAsync()));
+        _redo = new EventCallback(null, (Func<Task>)(() => RedoAsync()));
     }
 
     /// <summary>
