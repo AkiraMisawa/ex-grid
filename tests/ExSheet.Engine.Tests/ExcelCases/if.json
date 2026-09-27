@@ -143,7 +143,7 @@
     {
       "id": "IF-016",
       "source": "observed",
-      "description": "Ticket 19 row 10: a missing value_if_true (engine: 0)",
+      "description": "Ticket 19 row 10: a missing value_if_true gives 0",
       "ticket19Row": 10,
       "cells": {"ZZ1000": "=IF(TRUE,,2)"},
       "check": "ZZ1000",
@@ -152,7 +152,7 @@
     {
       "id": "IF-017",
       "source": "observed",
-      "description": "Ticket 19 row 12: text that reads as a boolean as the test (engine: taken as TRUE)",
+      "description": "Ticket 19 row 12: text that reads as a boolean is taken as that boolean in the test",
       "ticket19Row": 12,
       "cells": {"ZZ1000": "=IF(\"TRUE\",1,2)"},
       "check": "ZZ1000",

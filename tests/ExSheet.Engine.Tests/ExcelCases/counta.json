@@ -59,7 +59,7 @@
     {
       "id": "COUNTA-007",
       "source": "observed",
-      "description": "Ticket 19 row 9: missing arguments (engine: each is counted)",
+      "description": "Ticket 19 row 9: missing arguments are each counted",
       "ticket19Row": 9,
       "cells": {"ZZ1000": "=COUNTA(,)"},
       "check": "ZZ1000",

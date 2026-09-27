@@ -1,6 +1,6 @@
 {
   "area": "arithmetic",
-  "about": "Excel's operators: precedence, concatenation, comparison, coercion, and plain IEEE doubles (ADR-0047).",
+  "about": "Excel's operators: precedence, concatenation, comparison, coercion, and IEEE doubles with Excel's observed adjustments (a final near-cancelling sum is 0, numbers compare at Excel's precision, text is collated) (ADR-0047).",
   "cases": [
     {
       "id": "ARITH-001",
@@ -570,7 +570,7 @@
     {
       "id": "ARITH-071",
       "source": "observed",
-      "description": "Ticket 19 row 6: text ordering of punctuation against letters (engine: ordinal, case-insensitive)",
+      "description": "Ticket 19 row 6: punctuation sorts before letters",
       "ticket19Row": 6,
       "cells": {"ZZ1000": "=\"!\"<\"a\""},
       "check": "ZZ1000",
