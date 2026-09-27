@@ -5783,7 +5783,10 @@
     /// <returns><c>false</c> when a Reject held the editor: nothing was raised, the
     /// editor is still standing, and the gesture that asked for the commit keeps no
     /// meaning of its own (ADR-0034).</returns>
-    private async Task<bool> CommitEditAsync()
+    /// <param name="reclaimFocus">Whether the keyboard comes back to the root once the edit
+    /// ends. A press into a field of the grid's own (the Name Box) keeps its meaning after
+    /// the commit (ADR-0010), so the keyboard stays where the press put it.</param>
+    private async Task<bool> CommitEditAsync(bool reclaimFocus = true)
     {
         var cell = _editingCell;
         var text = _editText;
@@ -5794,7 +5797,7 @@
         // gesture, so it is raised here rather than deferred.
         if (slice < 0 || slice >= _window.Count)
         {
-            await EndEditingAsync();
+            await EndEditingAsync(reclaimFocus);
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(EditDiscardReason.RowLeftTheWindow);
             return true;
@@ -5804,7 +5807,7 @@
         // is the last write path the gate did not cover.
         if (!ColumnIsEditable(cell.Column))
         {
-            await EndEditingAsync();
+            await EndEditingAsync(reclaimFocus);
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(EditDiscardReason.ColumnNoLongerEditable);
             return true;
@@ -5826,7 +5829,7 @@
         // A Flag raises the intent unchanged: the mark does not travel in it, and comes
         // back through the display channels when the Consumer answers them (ADR-0034).
         _editError = null;
-        await EndEditingAsync();
+        await EndEditingAsync(reclaimFocus);
         if (OnEdit.HasDelegate)
             await OnEdit.InvokeAsync(new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text));
         return true;
@@ -5899,7 +5902,7 @@
         }
     }
 
-    private async Task EndEditingAsync()
+    private async Task EndEditingAsync(bool reclaimFocus = true)
     {
         // The list and the hint answer the edit, and go with it, as the outline does (ADR-0051).
         CloseCompletion();
@@ -5915,7 +5918,8 @@
         // the next editor is not, and the focus above would land nowhere.
         _editorElement = default;
         await PushEditingModeAsync();
-        await ReclaimFocusAsync();
+        if (reclaimFocus)
+            await ReclaimFocusAsync();
     }
 
     private void OnEditorInput(ChangeEventArgs e)
@@ -5979,8 +5983,12 @@
 
     /// <summary>
     /// A press into the Name Box (ADR-0051): an open edit commits first, as a press anywhere
-    /// past the editor does (ADR-0010). A Reject holds the editor and takes the keyboard back
-    /// to it — the Name Box does not get to walk away from it (ADR-0034).
+    /// past the editor does, and the press then keeps its own meaning (ADR-0010) — the
+    /// keyboard stays in the Name Box. The Name Box is not an editor surface: taking the
+    /// keyboard back to the root there would land the address typed next on the grid, where
+    /// it opens Overwrite on the Focus cell and is committed into it instead of navigating. A
+    /// Reject holds the editor and takes the keyboard back to it — the Name Box does not get
+    /// to walk away from it (ADR-0034).
     /// </summary>
     private async Task OnNameBoxFocusAsync()
     {
@@ -5989,7 +5997,7 @@
             _suppressRender = true;
             return;
         }
-        if (!await CommitEditAsync())
+        if (!await CommitEditAsync(reclaimFocus: false))
             RequestEditorFocus();
     }
 

@@ -87,4 +87,28 @@ public class NameBoxWiringTests : SheetTestContext
         Assert.Equal(before, selections.Count);
         Assert.Contains($"'{typed}' is not a cell address", cut.Find(".ex-sheet-notice").TextContent);
     }
+
+    [Fact] // ADR-0051 / ADR-0050 item 4 / ADR-0010: with an edit open, an address typed into the Name Box navigates; it is never written into the Formula
+    public async Task An_address_typed_with_an_edit_open_navigates()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps.Add(s => s.SelectionChanged, selections.Add));
+        await GoToAsync(cut, "B1");
+        await PressAsync(cut, "=");
+        await TypeAsync(cut, "=1+2");
+        var focusCalls = JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+
+        await cut.Find(".ex-name-box").FocusAsync(new FocusEventArgs());
+        // The press keeps its meaning: the keyboard stays in the Name Box, so the address
+        // typed next is the Name Box's, not a key on the grid that opens Overwrite.
+        Assert.Equal(focusCalls, JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus"));
+        await GoToAsync(cut, "D200");
+
+        Assert.Equal(new SelectionRange(199, 3, 1, 1), Assert.Single(selections[^1].Ranges));
+        Assert.Equal("D200", NameBox(cut));
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+        await GoToAsync(cut, "B1");
+        Assert.Equal("=1+2", FormulaBar(cut));
+        Assert.Equal("3", CellText(cut, "B1"));
+    }
 }
