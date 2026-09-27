@@ -33,8 +33,8 @@ public sealed class SheetRow
     {
         _cells ??= [];
         if (_cells.TryGetValue(column, out var cached)) return cached;
-        var display = _sheet.GetDisplay(new CellAddress(Index, column));
-        var text = SheetCellText.From(display);
+        var address = new CellAddress(Index, column);
+        var text = SheetCellText.From(_sheet.GetDisplay(address), _sheet.GetValue(address));
         _cells[column] = text;
         return text;
     }

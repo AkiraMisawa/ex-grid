@@ -12,10 +12,10 @@ first. A paste is one undo step.
 
 - [ ] Copying `=A1` from B1 to B2 pastes `=A2` (ADR-0048)
 - [ ] Copying to another program gives the Values (ADR-0005)
-- [ ] Pasting `=A1+1` and `1,234` from outside makes a Formula and a number under the culture
-- [ ] A 3×3 block pasted onto one cell writes 3×3 and selects it (ADR-0050)
-- [ ] Without the declaration, ExGrid still refuses range → one cell (ADR-0014)
-- [ ] A spill past the edge is refused by name
+- [x] Pasting `=A1+1` and `1,234` from outside makes a Formula and a number under the culture
+- [x] A 3×3 block pasted onto one cell writes 3×3 and selects it (ADR-0050)
+- [x] Without the declaration, ExGrid still refuses range → one cell (ADR-0014)
+- [x] A spill past the edge is refused by name
 
 ## Comments
 
@@ -65,3 +65,51 @@ block, ExGrid's unchanged refusal without the declaration, and layer 3 with the 
 clipboard. A pasted field beginning with `=` that cannot be read refuses the whole paste
 (`FormulaSyntaxException`); what Excel does with such a field is not pinned, reported for a
 decision.
+
+2026-09-27, ExSheet wiring, the paste half. ExSheet declares `PasteMaySpill`. `OnPaste` takes
+every target cell's field, through the plan's tiling, as if typed under the Sheet's culture. That
+is one `SheetEdit.Enter` of all the cells, so one step on the undo stack. An intent under any Row
+Sequence Version but 0 is dropped (ADR-0011). A pasted field beginning with `=` that cannot be
+read refuses the whole paste and says where. `OnPasteRefused` and `OnCopyRefused` put ExSheet's
+sentence for each reason in the notice, including `SpillPastExtent` ("the block would run past
+the Sheet's edge"). `OnCopyRowsNeeded` answers a copy that runs beyond the Window from the Sheet,
+so such a copy is no longer refused as `RowsUnavailable`. A defect was fixed along the way. The
+grid builds a copy's `text/html` flavour from each value's invariant form, and ExSheet's cell
+value had none, so the clipboard carried `SheetCellText { Text = …, IsNumber = … }`. The value is
+now `IFormattable` and gives the unformatted Value as the engine writes it (`Value.ToString()`,
+which is what `SheetCopy.Html` holds). Layer 2, in `ClipboardWiringTests`: `=A1+1` and `"1,234"`
+typed, a 3×3 spill selected with the Focus at its top-left, one undo, one value over a range, the
+spill past the edge, an unreadable Formula, both flavours of a copy, and a copy of 1,000 rows.
+
+**Blocked on the core: the copy half (the first criterion, and the second in full).** ExGrid puts
+a copy together itself. `BuildCopyPayload` and `BuildCopyPayloadAsync` (ExGrid.razor) call
+`ClipboardData.Assemble` over the columns' `Format` (text) and value (HTML). No parameter lets a
+Consumer:
+
+1. learn that a copy was made, and of which range;
+2. supply the two flavours (`SheetCopy.Text` and `SheetCopy.Html`);
+3. refuse a copy with its own reason. `SheetRefusalReason.WaitingForData` has no path to the
+   user, and `CopyRefusalReason` has no Consumer member.
+
+So ExSheet cannot keep the `SheetCopy` it would compare a later paste against, and a copy
+reaching a `#GETTING_DATA` cell goes out as that text (ADR-0049 says it is refused). A cell whose
+number cannot be shown goes out as the run of `#` it paints, where the engine writes the Value
+(ADR-0016). Proposal: an opt-in declaration in ADR-0050's pattern, such as
+`Func<CopyPlan, CopyAnswer>? CopyPayload`. It would be asked synchronously on the same side, on
+both routes. Its answer would be both flavours, or a refusal carrying the Consumer's sentence.
+With it, ExSheet answers `Sheet.Copy(range)` and keeps the `SheetCopy`. On paste it recognises its
+own copy by comparing `intent.Values` with `ClipboardParse.Parse(copy.Html, copy.Text)`, which is
+the same parse the grid applied. A browser clipboard carries no owner, and equality of the parsed
+block is the strongest evidence a page can have. A false match would need another program to have
+put exactly the same block there, and the paste then writes the Entries that showed exactly those
+Values. On a match, ExSheet writes `SheetEdit.Paste(copy.Block, …)`.
+
+**Reported for a decision: inward text under a culture whose decimal separator is not `.`.** The
+grid prefers the HTML flavour, and there Excel's `x:num`, and ExSheet's own HTML, are invariant
+(`1234.5`). Text content is shown text, and `GridPasteIntent.Values` does not say which of the two
+a field is. Taken "as if typed" under `de-DE`, an invariant `1234.5` does not read as 1234.5.
+Either the intent says which flavour each field came from, or ExSheet refuses a field that reads
+differently as invariant and as typed. Under `en-US` and `ja-JP` the two readings agree.
+
+**Also reported:** a single value pasted over whole columns writes a million Entries in one step.
+Formatting has an interim cap (`FormatCellCap`); a paste has none.

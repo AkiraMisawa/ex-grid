@@ -24,7 +24,9 @@
         DataEdge="_dataEdge"
         ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf"
-        ContextCommands="_contextCommands" CommandLabel="_commandLabel" />
+        ContextCommands="_contextCommands" CommandLabel="_commandLabel"
+        PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
+        OnCopyRowsNeeded="_copyRowsNeeded" OnCopyRefused="OnCopyRefused" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -66,6 +68,7 @@
     private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
     private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
     private readonly Func<string, string?> _commandLabel;
+    private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _copyRowsNeeded;
     private readonly EventCallback<GridSelection> _selectionChanged;
 
     private ExGrid<SheetRow>? _grid;
@@ -88,6 +91,7 @@
         // Answered synchronously from the engine, so the list shows in the render the keystroke
         // causes (ADR-0051). It reads this Sheet's Linked Tables, so it is the instance's own.
         _contextCommands = ContextCommandsFor;
+        _copyRowsNeeded = RowsForCopy;
         // The Consumer's wording first, then ExSheet's own English for its commands; null falls
         // back to the grid's built-in words for the grid's own commands (ADR-0036).
         _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
@@ -368,6 +372,69 @@
             _notice = SheetWords.Refused(refused.Refusal);
             StateHasChanged();
         }
+    }
+
+    /// <summary>
+    /// A paste (ADR-0048, ADR-0050 item 3): every target cell takes its field as if the user had
+    /// typed it, under the Sheet's culture, in one step on the undo stack. The grid has already
+    /// judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a spilled block
+    /// becomes the Selection when this returns. A field beginning with <c>=</c> that cannot be
+    /// read refuses the whole paste, and nothing is written.
+    /// </summary>
+    private async Task OnPasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
+    {
+        // Rows are places, so the order never moves (ADR-0046); an intent written under any
+        // other version names positions that mean something else, and is dropped (ADR-0011).
+        if (intent.RowSequenceVersion != 0) return;
+        var typed = new Dictionary<CellAddress, string>();
+        foreach (var range in intent.Plan.Targets)
+        {
+            for (var row = range.TopRow; row <= range.BottomRow; row++)
+            {
+                for (var column = range.LeftColumn; column <= range.RightColumn; column++)
+                {
+                    typed[new CellAddress(row, column)] = intent.ValueFor(new CellPosition(row, column));
+                }
+            }
+        }
+        try
+        {
+            await PerformAsync(SheetEdit.Enter(typed));
+        }
+        catch (FormulaSyntaxException error)
+        {
+            _notice = SheetWords.PasteUnreadable(error);
+            StateHasChanged();
+        }
+        catch (SheetRefusedException refused)
+        {
+            _notice = SheetWords.Refused(refused.Refusal);
+            StateHasChanged();
+        }
+    }
+
+    private void OnPasteRefused(global::ExGrid.Clipboard.PasteRefusalReason reason)
+    {
+        _notice = SheetWords.PasteRefused(reason);
+        StateHasChanged();
+    }
+
+    private void OnCopyRefused(global::ExGrid.Clipboard.CopyRefusalReason reason)
+    {
+        _notice = SheetWords.CopyRefused(reason);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// The rows of a copy that runs beyond the Window (ADR-0005): the Sheet holds every row, so
+    /// it answers them all, read at this moment. They go to the clipboard and are kept nowhere.
+    /// </summary>
+    private Task<IReadOnlyList<SheetRow>> RowsForCopy(RowRange range, CancellationToken cancellation)
+    {
+        var sheet = CurrentSheet;
+        var rows = new SheetRow[range.Count];
+        for (var i = 0; i < rows.Length; i++) rows[i] = new SheetRow(sheet, range.Start + i);
+        return Task.FromResult<IReadOnlyList<SheetRow>>(rows);
     }
 
     private CellPosition FindEdge(CellPosition focus, GridDirection direction)
