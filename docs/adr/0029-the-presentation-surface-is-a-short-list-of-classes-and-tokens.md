@@ -240,6 +240,13 @@ not quietly in the stylesheet. Each is painted only when a Consumer makes the de
     so the key listener treats it as the editor.
   - `ex-name-box-form`: the form whose submission is Enter.
   - `ex-fill-target`: the outline painted during a fill drag.
+  - `ex-completion`, `ex-completion-list`, `ex-completion-item` and `ex-completion-selected`: the
+    completion list, painted by the built-in Chrome.
+  - `ex-completion-hint`: the argument hint beneath the list.
+  - `ex-point`: the pointing outline (Point mode).
+
+  These reuse existing tokens (`--ex-selection-fill`, `--ex-focus-outline` and
+  `--ex-grid-focus-outline`) and add none.
 - **Visual Tokens:**
   - `--ex-heading-background`, `--ex-heading-color` and `--ex-heading-rule-color`, for both
     Headings.
