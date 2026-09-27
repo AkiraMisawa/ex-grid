@@ -387,3 +387,60 @@ test.describe('two users, one store (SRV-3, ADR-0018)', () => {
         }
     });
 });
+
+// A click between keys (ED-22, ADR-0010): click F1, type 1, Enter; click F2, type 2, Enter; …
+// The Enter is held in the listener behind the 1 until the editor holds DOM focus, and a click
+// that followed it was applied first: the Enter's move then carried the Focus past the clicked
+// cell, and each value landed one row too low (verification/2026-09-27-windows-excel,
+// typing-probe-2.mjs: wrong on Server at 0, 30 and 60 ms pauses, on WebAssembly at 0). The
+// press must be ordered after the keys typed before it, and before the keys typed after it.
+//
+// Not fixed yet: holding the press behind the keys needs the listener to hear the press, which
+// is a listener kind ADR-0021 does not list, so it waits on that decision. Until then the tests
+// are fixme; EXGRID_RUN_PENDING=1 runs them (they fail on the Server host at 0 and 30 ms, and
+// at 150 ms round trip).
+const pending = process.env.EXGRID_RUN_PENDING === '1' ? test : test.fixme;
+test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () => {
+    const sheetGrid = (page) => page.locator('.ex-grid').first();
+    const columnF = (page, row) => sheetGrid(page).locator(`[id$='-r${row}c5']`);
+
+    async function openSheet(page) {
+        await page.goto('/sheet');
+        await expect(sheetGrid(page).locator("[id$='-r0c0']")).toHaveText('Item');
+        await expect(sheetGrid(page)).toHaveAttribute('tabindex', '0');
+    }
+
+    /** typing-probe-2.mjs's steps: each value typed into the cell clicked for it, then Enter. */
+    async function clickTypeEnter(page, pauseMs) {
+        for (const [row, value] of [[0, '1'], [1, '2'], [2, '3'], [6, '7']]) {
+            await columnF(page, row).click({ force: true });
+            if (pauseMs) await page.waitForTimeout(pauseMs);
+            await page.keyboard.type(value);
+            await page.keyboard.press('Enter');
+            if (pauseMs) await page.waitForTimeout(pauseMs);
+        }
+    }
+
+    async function expectEachValueInItsCell(page) {
+        // The last Enter moves the Focus to F8: once it is there, every key and click has landed.
+        await expect(sheetGrid(page).locator('input.ex-name-box')).toHaveValue('F8');
+        await expect.poll(() => sheetGrid(page).evaluate((root) => [0, 1, 2, 3, 4, 5, 6, 7]
+            .map((r) => root.querySelector(`[id$='-r${r}c5']`)?.textContent.trim() ?? '')))
+            .toEqual(['1', '2', '3', '', '', '', '7', '']);
+    }
+
+    for (const pauseMs of [0, 30, 60]) {
+        pending(`with ${pauseMs} ms between the steps, each value lands in the cell clicked for it`, async ({ page }) => {
+            await openSheet(page);
+            await clickTypeEnter(page, pauseMs);
+            await expectEachValueInItsCell(page);
+        });
+    }
+
+    pending('with a 150 ms round trip and no pause, each value lands in the cell clicked for it (SRV-5)', async ({ page }) => {
+        await openSheet(page);
+        await setRoundTrip(150);
+        await clickTypeEnter(page, 0);
+        await expectEachValueInItsCell(page);
+    });
+});
