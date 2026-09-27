@@ -28,10 +28,9 @@ nothing. Record everything.** Do not change any ADR, `CONTEXT.md` or
 
 ## Order
 
-**Parts A, B and E can start at once.** Part C (ExSheet beside Excel) and Part D (layer 3) test
-fixes that are still being merged: the typing race and the characters lost on the Server host. Start
-them only once the user says the merge is done, and pull `claude/exsheet-start-8cx3v1` again then.
-Record both verified commits.
+All parts can run now, from the tip of `claude/exsheet-start-8cx3v1` (`c07e634` or later). The input
+fixes that Parts C and D test are merged. A, B, C and D in order, then E (the bisect), which checks
+out old commits, last.
 
 ## Part A — the oracle again, whole corpus
 
