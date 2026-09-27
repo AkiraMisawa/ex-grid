@@ -18,6 +18,7 @@ public sealed class SheetRow
 {
     private readonly Sheet _sheet;
     private Dictionary<int, SheetCellText?>? _cells;
+    private Dictionary<int, (int Characters, string? Text)>? _painted;
 
     internal SheetRow(Sheet sheet, int index)
     {
@@ -37,6 +38,34 @@ public sealed class SheetRow
         var text = SheetCellText.From(_sheet.GetDisplay(address), _sheet.GetValue(address), _sheet.GetAlignment(address));
         _cells[column] = text;
         return text;
+    }
+
+    /// <summary>
+    /// What the cell paints in a column <paramref name="characters"/> wide, in Excel's unit
+    /// (ADR-0047, third round; ADR-0050 item 11): for a number in General, the engine's text
+    /// fitted to the width — <c>=1/3</c> reads <c>0.333333</c> in a default column — or the run
+    /// of <c>#</c> that becomes <c>####</c> where not even the shortest form fits. Null where the
+    /// cell paints its value's own text: text, booleans, Error Values, blanks, any other format
+    /// (the grid's <c>####</c> rule decides those), and a General number the width does not
+    /// shorten. The value's own text stays the accessible name and the copy.
+    /// </summary>
+    internal string? PaintedAt(int column, double characters)
+    {
+        if (At(column) is not { IsNumber: true } shown || ReferenceEquals(shown.Text, SheetCellText.Unshowable)) return null;
+        // The engine counts whole characters; a width that is 8 may arrive as 7.9999999.
+        var whole = (int)Math.Min(int.MaxValue, Math.Floor(Math.Max(0, characters) + 1e-9));
+        _painted ??= [];
+        if (_painted.TryGetValue(column, out var cached) && cached.Characters == whole) return cached.Text;
+        var address = new CellAddress(Index, column);
+        string? painted = null;
+        if (_sheet.GetFormat(address).IsGeneral)
+        {
+            var display = _sheet.GetDisplay(address, whole);
+            var text = display.CannotShow ? SheetCellText.Unshowable : display.Text;
+            painted = string.Equals(text, shown.Text, StringComparison.Ordinal) ? null : text;
+        }
+        _painted[column] = (whole, painted);
+        return painted;
     }
 
     /// <summary>The cell's Entry as the Cell Editor opens on it (ADR-0051).</summary>

@@ -11,14 +11,17 @@
     What is deliberately not wired: ExGrid's sort and filter. They reorder a view of rows a
     Consumer owns, and a Sheet's rows are places (ADR-0046); OnSortChanged and OnFilterChanged are
     left without a delegate, and HeaderClickSelects gives the header click Excel's meaning.
+    HideColumnMenu keeps the resize grips and drops the column-menu button: Excel's Headings
+    carry no menu, and size to fit stays on a double-click of the edge (ADR-0050 item 12).
 *@
 <ExGrid TRow="SheetRow" @ref="_grid"
         Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
-        Columns="_columns" OnColumnWidthChanged="_columnWidthChanged"
+        Columns="_columns" OnColumnWidthChanged="_columnWidthChanged" HideColumnMenu="true"
         RowHeight="RowHeight" ViewportHeight="ViewportHeight" ViewportWidth="ViewportWidth"
         PinnedColumnCount="PinnedColumnCount" Chrome="Chrome"
         OnRangeNeeded="OnRangeNeededAsync" OnEdit="OnEditAsync" SelectionChanged="_selectionChanged"
         CellType="SheetColumns.CellType" CellAlign="SheetColumns.CellAlign" EditorTextOf="SheetColumns.EditorText"
+        PaintedText="SheetColumns.PaintedText"
         HeaderClickSelects="true" HideHeader="!ShowColumnHeadings"
         RowHeadings="(ShowRowHeadings ? RowLabels : null)"
         DataEdge="_dataEdge"
@@ -26,7 +29,7 @@
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
-        OnCopyRowsNeeded="_copyRowsNeeded" OnCopyRefused="OnCopyRefused"
+        CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused"
         ShowFillHandle="true" OnFill="OnFillAsync"
         OnUndo="_undo" OnRedo="_redo" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
@@ -63,7 +66,7 @@
     private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
     private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
     private readonly Func<string, string?> _commandLabel;
-    private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _copyRowsNeeded;
+    private readonly Func<global::ExGrid.Clipboard.GridCopyRequest, global::ExGrid.Clipboard.GridCopyAnswer> _copyAnswer;
     private readonly EventCallback<GridSelection> _selectionChanged;
     private readonly EventCallback _undo;
     private readonly EventCallback<ColumnWidthChange> _columnWidthChanged;
@@ -77,6 +80,10 @@
     private int _windowStart;
     private GridSelection _selection = GridSelection.Empty;
     private string? _notice;
+    // The copy this Sheet last wrote, recognised on a paste by its fields (ADR-0050 item 9).
+    internal SheetOwnCopy? OwnCopy { get; private set; }
+    // The engine's sentence for the copy refused last, for the notice the refusal raises.
+    private string? _copyRefusal;
     private bool _initialised;
     private SheetDocument? _documentParameter;
     private CultureInfo? _cultureParameter;
@@ -90,7 +97,8 @@
         // Answered synchronously from the engine, so the list shows in the render the keystroke
         // causes (ADR-0051). It reads this Sheet's Linked Tables, so it is the instance's own.
         _contextCommands = ContextCommandsFor;
-        _copyRowsNeeded = RowsForCopy;
+        // Asked synchronously on both copy routes (ADR-0050 item 9).
+        _copyAnswer = AnswerCopy;
         // The Consumer's wording first, then ExSheet's own English for its commands; null falls
         // back to the grid's built-in words for the grid's own commands (ADR-0036).
         _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
@@ -230,16 +238,16 @@
     /// </summary>
     public Task<bool> UndoAsync() => OnDispatcherAsync(async () =>
     {
-        if (_history.Undo() is not { } change) return false;
-        await ChangedAsync(change);
+        if (_history.Undo() is not { } changes) return false;
+        await ChangedAsync(changes);
         return true;
     });
 
     /// <summary>Redoes the operation undone last. Answers false when there is nothing to redo.</summary>
     public Task<bool> RedoAsync() => OnDispatcherAsync(async () =>
     {
-        if (_history.Redo() is not { } change) return false;
-        await ChangedAsync(change);
+        if (_history.Redo() is not { } changes) return false;
+        await ChangedAsync(changes);
         return true;
     });
 
@@ -454,17 +462,26 @@
     }
 
     /// <summary>
-    /// A paste (ADR-0048, ADR-0050 item 3): every target cell takes its field as if the user had
-    /// typed it, under the Sheet's culture, in one step on the undo stack. The grid has already
-    /// judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a spilled block
-    /// becomes the Selection when this returns. A field beginning with <c>=</c> that cannot be
-    /// read refuses the whole paste, and nothing is written.
+    /// A paste (ADR-0048, ADR-0050 items 3, 9 and 10), one step on the undo stack. When its fields
+    /// equal, field for field, the ones this Sheet's last copy wrote, it is that copy, and its
+    /// Entries are pasted with their relative References shifted by the distance pasted.
+    /// Otherwise every target cell takes its field as typed under the Sheet's culture: shown text
+    /// as it is, an invariant value as that value (<see cref="SheetClipboard.TypedFor"/>). The
+    /// grid has already judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a
+    /// spilled block becomes the Selection when this returns. A field beginning with <c>=</c>
+    /// that cannot be read refuses the whole paste, and nothing is written.
     /// </summary>
     private async Task OnPasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
     {
         // Rows are places, so the order never moves (ADR-0046); an intent written under any
         // other version names positions that mean something else, and is dropped (ADR-0011).
         if (intent.RowSequenceVersion != 0) return;
+        if (OwnCopy is { } own && own.IsPastedAs(intent.Values))
+        {
+            await PasteEntriesAsync(own.Block, intent.Plan.Targets);
+            return;
+        }
+        var sheet = CurrentSheet;
         var typed = new Dictionary<CellAddress, string>();
         foreach (var range in intent.Plan.Targets)
         {
@@ -472,7 +489,15 @@
             {
                 for (var column = range.LeftColumn; column <= range.RightColumn; column++)
                 {
-                    typed[new CellAddress(row, column)] = intent.ValueFor(new CellPosition(row, column));
+                    var at = new CellPosition(row, column);
+                    var field = intent.ValueFor(at);
+                    if (SheetClipboard.TypedFor(field, intent.OriginFor(at), sheet.Culture) is not { } text)
+                    {
+                        _notice = SheetWords.PasteReadsDifferently(field, sheet.Culture);
+                        StateHasChanged();
+                        return;
+                    }
+                    typed[new CellAddress(row, column)] = text;
                 }
             }
         }
@@ -490,6 +515,41 @@
             _notice = SheetWords.Refused(refused.Refusal);
             StateHasChanged();
         }
+    }
+
+    /// <summary>
+    /// This Sheet's own copy pasted back (ADR-0048): its Entries, formats and alignment, with
+    /// relative References shifted by the distance pasted, written over each target range the
+    /// grid approved — from its top-left when the range is the block's size, repeated over it
+    /// when the range is a whole multiple of it. Several ranges exist only for a block of one
+    /// cell (ADR-0014); they are several engine steps and one operation on the undo stack.
+    /// </summary>
+    private async Task PasteEntriesAsync(SheetBlock block, IReadOnlyList<SelectionRange> targets)
+    {
+        var sheet = CurrentSheet;
+        var steps = new List<SheetStep>(targets.Count);
+        try
+        {
+            foreach (var target in targets)
+            {
+                var edit = target.RowCount == block.RowCount && target.ColumnCount == block.ColumnCount
+                    ? SheetEdit.Paste(block, new CellAddress(target.TopRow, target.LeftColumn))
+                    : SheetEdit.Paste(block, SheetFormulaAids.RangeOf(target));
+                steps.Add(sheet.Do(edit));
+            }
+        }
+        catch (SheetRefusedException refused)
+        {
+            // Nothing is half pasted: what was written before the refusal is put back.
+            var undone = new List<SheetChange>();
+            for (var i = steps.Count - 1; i >= 0; i--) undone.Add(steps[i].Undo());
+            if (undone.Count > 0) await ChangedAsync(undone, raiseDocument: false);
+            _notice = SheetWords.Refused(refused.Refusal);
+            StateHasChanged();
+            return;
+        }
+        _history.Record(steps);
+        await ChangedAsync([.. steps.Select(step => step.Change)]);
     }
 
     /// <summary>
@@ -535,20 +595,32 @@
 
     private void OnCopyRefused(global::ExGrid.Clipboard.CopyRefusalReason reason)
     {
-        _notice = SheetWords.CopyRefused(reason);
+        // A refusal of the Sheet's own is said in the engine's words; the grid's by its reason.
+        _notice = reason == global::ExGrid.Clipboard.CopyRefusalReason.RefusedByConsumer && _copyRefusal is { } sentence
+            ? sentence
+            : SheetWords.CopyRefused(reason);
         StateHasChanged();
     }
 
     /// <summary>
-    /// The rows of a copy that runs beyond the Window (ADR-0005): the Sheet holds every row, so
-    /// it answers them all, read at this moment. They go to the clipboard and are kept nowhere.
+    /// A copy (ADR-0050 item 9, ADR-0048): the engine copies the range, so the clipboard carries
+    /// the Values exactly as the engine gives them — shown for <c>text/plain</c>, unformatted and
+    /// invariant for <c>text/html</c> — however far the range runs beyond the Window, and a copy
+    /// reaching <c>#GETTING_DATA</c> is refused in the engine's words (ADR-0049). The Entries of a
+    /// one-range copy are kept, so that a paste of exactly this block back into the Sheet carries
+    /// them.
     /// </summary>
-    private Task<IReadOnlyList<SheetRow>> RowsForCopy(RowRange range, CancellationToken cancellation)
+    private global::ExGrid.Clipboard.GridCopyAnswer AnswerCopy(global::ExGrid.Clipboard.GridCopyRequest request)
     {
-        var sheet = CurrentSheet;
-        var rows = new SheetRow[range.Count];
-        for (var i = 0; i < rows.Length; i++) rows[i] = new SheetRow(sheet, range.Start + i);
-        return Task.FromResult<IReadOnlyList<SheetRow>>(rows);
+        var (answer, own) = SheetClipboard.Answer(CurrentSheet, request);
+        if (answer.IsRefused)
+        {
+            // The clipboard still holds the last copy, so the Entries kept for it still stand.
+            _copyRefusal = answer.Sentence;
+            return answer;
+        }
+        OwnCopy = own;
+        return answer;
     }
 
     private CellPosition FindEdge(CellPosition focus, GridDirection direction)
@@ -615,17 +687,20 @@
         _columns = _columns.WidenedTo(address.Column, needed);
     }
 
-    private async Task ChangedAsync(SheetChange change, bool raiseDocument = true)
+    private Task ChangedAsync(SheetChange change, bool raiseDocument = true) => ChangedAsync([change], raiseDocument);
+
+    /// <summary>What one operation changed, in the order its engine steps changed it.</summary>
+    private async Task ChangedAsync(IReadOnlyList<SheetChange> changes, bool raiseDocument = true)
     {
         var sheet = CurrentSheet;
-        _edges.Update(sheet, change);
+        foreach (var change in changes) _edges.Update(sheet, change);
         _notice = null;
-        if (change.Rows.Count > 0)
+        if (changes.Any(change => change.Rows.Count > 0))
         {
             // A new instance for every row the change names, the same instance for every other
             // row, so only the changed rows repaint (ADR-0003, SH-4).
             var rows = (SheetRow[])_window.Clone();
-            foreach (var row in change.Rows)
+            foreach (var row in changes.SelectMany(change => change.Rows).Distinct())
             {
                 var at = row - _windowStart;
                 if (at >= 0 && at < rows.Length) rows[at] = new SheetRow(sheet, row);

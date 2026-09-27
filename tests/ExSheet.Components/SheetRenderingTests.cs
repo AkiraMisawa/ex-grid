@@ -115,11 +115,8 @@ public class SheetRenderingTests : SheetTestContext
         Assert.Empty(cut.FindAll("[aria-sort=ascending], [aria-sort=descending]"));
         Assert.False(Grid(cut).Instance.OnSortChanged.HasDelegate);
         Assert.False(Grid(cut).Instance.OnFilterChanged.HasDelegate);
-        // The column menu is there because a width change reaches ExSheet (ADR-0016): Size to
-        // fit is its only enabled command, and the sort commands in it are disabled.
-        await cut.Find(".ex-menu-button").ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
-        var enabled = cut.FindAll("[role=menuitem]").Where(i => !i.HasAttribute("disabled")).Select(i => i.TextContent).ToList();
-        Assert.Equal(["Size to fit"], enabled);
+        // Nor is there a column menu to reach them from: the Headings are Excel's (ADR-0050 item 12).
+        Assert.Empty(cut.FindAll(".ex-menu-button"));
     }
 
     [Fact] // ADR-0046: Pinned Columns work on a Sheet — the leading columns stay painted when scrolled sideways
