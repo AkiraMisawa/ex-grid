@@ -85,6 +85,9 @@ internal sealed class GridJSInterop
         // (ADR-0010/0020) — accepted for the same reason.
         var setCanEdit = handle.SetupVoid("setCanEdit", _ => true);
         setCanEdit.SetVoidResult();
+        // The keys the core claims, re-told when undo or redo is declared (ADR-0050, item 8).
+        var setTaken = handle.SetupVoid("setTaken", _ => true);
+        setTaken.SetVoidResult();
         // The two pointer reports' switches (ADR-0021's fifth entry). The tests drive
         // OnPointerRowAsync and OnPointerRestAsync directly; what is asserted here is
         // what the browser was told to report.
@@ -105,8 +108,17 @@ internal sealed class GridJSInterop
             PointerReporting = setPointerReporting,
             PointerForgotten = forgetPointer,
             InnerPopupTold = setInnerPopup,
+            TakenTold = setTaken,
         };
     }
+
+    /// <summary>Every time the key gate was re-told the keys the core claims (ADR-0050,
+    /// item 8).</summary>
+    internal JSRuntimeInvocationHandler TakenTold { get; private init; } = default!;
+
+    /// <summary>The keys the core claimed at attach (ADR-0010).</summary>
+    internal IReadOnlyList<string> TakenAtAttach =>
+        (IReadOnlyList<string>)_module!.Invocations["attach"][^1].Arguments[3]!;
 
     /// <summary>Every time the key gate was told whether a popover's contents have a popup
     /// of their own open (ADR-0039).</summary>

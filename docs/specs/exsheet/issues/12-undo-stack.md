@@ -51,3 +51,20 @@ declaration in ADR-0050's pattern — the core claims Ctrl+Z, Ctrl+Y and Ctrl+Sh
 is open (the editor keeps its own undo) and raises an `OnHistoryKey`-style callback with undo or
 redo; without a delegate the keys stay the browser's, as today. With it, the first criterion is a
 few lines in ExSheet.
+
+2026-09-27, ExGrid core half of the route (ADR-0050 item 8, DC-30): `ExGrid.OnUndo` and
+`ExGrid.OnRedo`, two `EventCallback`s, each a declaration. Declared, the grid hands the key gate
+`GridKeys.TakenFor(undo, redo)`, which adds `Control+z`/`Control+Z` for undo and
+`Control+y`/`Control+Y`/`Control+Shift+Z`/`Control+Shift+z` for redo (both cases for CapsLock
+and Command+Shift) to `GridKeys.Taken`; `Control` is the Primary Modifier, so Command+Z on an
+Apple keyboard is the same key. The gate consults that set only while no edit is open, so while
+one is, Ctrl+Z stays the Cell Editor's or the Formula Bar's own undo of uncommitted typing
+(ADR-0007), and in a Consumer's control or the Name Box it stays the control's. The forwarded
+key resolves to `GridKeyKind.Undo`/`Redo` and raises the callback; it renders no row. Undeclared,
+`GridKeys.Taken` is handed unchanged and the keys stay the browser's (DC-1). A declaration made
+or withdrawn after attach re-tells the gate through a new `setTaken(keys)` on the module's
+per-instance handle (the one JavaScript change: the set is C#'s list, as at attach). Layer 1:
+`GridKeyTests`; layer 2: `UndoRedoKeyTests`, and the script inspection in
+`ShippedStylesheetTests`. **What remains:** ExSheet passes `UndoAsync`/`RedoAsync` as `OnUndo`/
+`OnRedo` (the first criterion), and layer 3 presses the real keys: raised with no edit open,
+the editor's own undo with one open, and the browser's without the declaration (DC-30).

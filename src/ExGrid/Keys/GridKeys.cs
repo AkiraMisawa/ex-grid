@@ -30,6 +30,7 @@ public static class GridKeys
     // Declared before Taken on purpose: static field initialisers run in textual order,
     // and a Taken built above this line would read a null table.
     private static readonly Dictionary<string, GridKeyAction> Table = BuildTable();
+    private static readonly Dictionary<string, GridKeyAction> History = BuildHistory();
 
     /// <summary>
     /// The keys the core takes, in canonical form. Handed to the JS listener, which takes
@@ -41,9 +42,32 @@ public static class GridKeys
     /// events that make the route prompt-free, ADR-0005), and F2 and printable
     /// characters, which open the Cell Editor and which the listener takes only on a grid
     /// with an editable column — a display-only grid must not take the page's keys
-    /// (ADR-0010).</para>
+    /// (ADR-0010). Nor undo and redo: those are taken only where a Consumer declared them,
+    /// through <see cref="TakenFor"/> (ADR-0050, item 8).</para>
     /// </summary>
     public static IReadOnlyList<string> Taken { get; } = [.. Table.Keys];
+
+    private static readonly IReadOnlyList<string> TakenWithUndo = [.. Table.Keys, .. KeysOf(GridKeyKind.Undo)];
+    private static readonly IReadOnlyList<string> TakenWithRedo = [.. Table.Keys, .. KeysOf(GridKeyKind.Redo)];
+    private static readonly IReadOnlyList<string> TakenWithBoth = [.. Table.Keys, .. History.Keys];
+
+    /// <summary>
+    /// The keys the core takes for one grid, given which history callbacks its Consumer
+    /// declared (ADR-0050, item 8): <see cref="Taken"/>, plus Ctrl+Z where undo is declared,
+    /// plus Ctrl+Y and Ctrl+Shift+Z where redo is. An undeclared key stays the browser's.
+    /// The listener claims them only while no edit is open; while one is, they are the
+    /// editor's own, which undo uncommitted typing (ADR-0007). One instance per answer, so
+    /// the grid can tell whether the set it handed the listener has changed by reference.
+    /// </summary>
+    /// <param name="undo">Whether the Consumer declared undo.</param>
+    /// <param name="redo">Whether the Consumer declared redo.</param>
+    public static IReadOnlyList<string> TakenFor(bool undo, bool redo) => (undo, redo) switch
+    {
+        (false, false) => Taken,
+        (true, false) => TakenWithUndo,
+        (false, true) => TakenWithRedo,
+        (true, true) => TakenWithBoth,
+    };
 
     /// <summary>
     /// What a key means, from the raw event fields. Anything not in the table resolves to
@@ -85,7 +109,31 @@ public static class GridKeys
     }
 
     private static GridKeyAction Resolve(string canonical)
-        => Table.TryGetValue(canonical, out var action) ? action : GridKeyAction.None;
+        => Table.TryGetValue(canonical, out var action) ? action
+            : History.TryGetValue(canonical, out var history) ? history
+            : GridKeyAction.None;
+
+    private static IEnumerable<string> KeysOf(GridKeyKind kind)
+        => History.Where(entry => entry.Value.Kind == kind).Select(entry => entry.Key);
+
+    // Undo and redo (ADR-0050, item 8), kept out of Table so that Taken does not carry them:
+    // they are taken only for a Consumer that declared them. Each in both cases: with
+    // CapsLock on the browser reports the other case, as it does for Ctrl+A, and with Shift
+    // held on an Apple keyboard Command+Shift+Z reports a lowercase key.
+    private static Dictionary<string, GridKeyAction> BuildHistory()
+    {
+        var undo = new GridKeyAction(GridKeyKind.Undo);
+        var redo = new GridKeyAction(GridKeyKind.Redo);
+        return new Dictionary<string, GridKeyAction>(StringComparer.Ordinal)
+        {
+            ["Control+z"] = undo,
+            ["Control+Z"] = undo,
+            ["Control+y"] = redo,
+            ["Control+Y"] = redo,
+            ["Control+Shift+Z"] = redo,
+            ["Control+Shift+z"] = redo,
+        };
+    }
 
     private static Dictionary<string, GridKeyAction> BuildTable()
     {

@@ -22,7 +22,7 @@
  * @returns a handle owned by that one grid
  */
 export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
-    const taken = new Set(takenKeys);
+    let taken = new Set(takenKeys);
 
     // Whether the synchronous channel exists — WebAssembly has it, a server circuit
     // does not. Probed once with a no-op, so a real .NET failure during a copy is
@@ -877,6 +877,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // that becomes display-only stops taking printable keys (ADR-0010/0020).
         setCanEdit: (value) => {
             canEdit = value;
+        },
+        // The keys the core claims, re-told when a Consumer declares or withdraws undo and
+        // redo (ADR-0050, item 8). Still GridKeys' list, decided in C#.
+        setTaken: (keys) => {
+            taken = new Set(keys);
         },
         getScrollOffset: () => (scroller
             ? { top: scroller.scrollTop, left: scroller.scrollLeft }

@@ -1088,6 +1088,25 @@
     [Parameter] public EventCallback<GridFillIntent> OnFill { get; set; }
 
     /// <summary>
+    /// A Consumer declaration (ADR-0050, item 8): undo reaches the Consumer. Declared, the
+    /// grid claims Ctrl+Z (Command+Z on an Apple keyboard, the Primary Modifier) while no
+    /// edit is open, and raises this. What undo means is the Consumer's: the grid holds no
+    /// history, as it holds no data (ADR-0007). While an edit is open, the key stays the
+    /// editor's own, which undoes uncommitted typing; in a Consumer's control inside the
+    /// grid, it stays the control's. Not declared, the default, the key stays the
+    /// browser's, as before.
+    /// </summary>
+    [Parameter] public EventCallback OnUndo { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ADR-0050, item 8): redo reaches the Consumer. Declared, the
+    /// grid claims Ctrl+Y and Ctrl+Shift+Z (Command on an Apple keyboard) while no edit is
+    /// open, and raises this, on the same terms as <see cref="OnUndo"/>. Not declared, the
+    /// default, both keys stay the browser's.
+    /// </summary>
+    [Parameter] public EventCallback OnRedo { get; set; }
+
+    /// <summary>
     /// The Filter in force (ADR-0002/0009), on the push form: what the panel paints
     /// its current state from. The grid never filters — the Consumer applies this and
     /// pushes the narrowed Window in, bumping <see cref="RowSequenceVersion"/> when
@@ -1544,6 +1563,12 @@
     private bool _jsEditingDirty;
     // What the key gate was last told about whether any column edits (ADR-0010/0020).
     private bool _jsCanEdit;
+
+    // The keys the gate was last handed (ADR-0010), which differ only by the undo and redo
+    // declarations (ADR-0050, item 8).
+    private IReadOnlyList<string>? _jsTaken;
+
+    private IReadOnlyList<string> TakenKeys() => GridKeys.TakenFor(OnUndo.HasDelegate, OnRedo.HasDelegate);
 
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the
     // action chosen in it. The keyboard never leaves the root; this is what the arrows
@@ -2453,6 +2478,21 @@
             {
             }
         }
+        // Undo and redo are taken only while declared (ADR-0050, item 8): a declaration made
+        // or withdrawn after attach re-tells the gate the whole set. TakenFor answers one
+        // instance per combination, so an unchanged declaration is a reference compare.
+        var taken = TakenKeys();
+        if (_scrollHandle is not null && !_disposed && !ReferenceEquals(taken, _jsTaken))
+        {
+            _jsTaken = taken;
+            try
+            {
+                await _scrollHandle.InvokeVoidAsync("setTaken", taken);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
+        }
         // Focused only once the input is painted. On Blazor Server this callback runs
         // when the browser acknowledges a batch, a round trip after it was rendered, and
         // a key arriving in that gap can open the editor after the batch this call is
@@ -2542,8 +2582,9 @@
 
             _self ??= DotNetObjectReference.Create(this);
             _jsCanEdit = AnyColumnEdits();
+            _jsTaken = TakenKeys();
             var handle = await _module.InvokeAsync<IJSObjectReference>(
-                "attach", _root, _scroller, _self, GridKeys.Taken, _jsCanEdit,
+                "attach", _root, _scroller, _self, _jsTaken, _jsCanEdit,
                 PopoverDelay.TotalMilliseconds);
             if (_disposed)
             {
@@ -5165,6 +5206,17 @@
             case GridKeyKind.OpenColumnMenu:
                 await OpenColumnMenuFromKeyAsync();
                 StateHasChanged();
+                return;
+            case GridKeyKind.Undo:
+                // Taken only where the Consumer declared it (ADR-0050, item 8), and only
+                // while no edit is open: an edit is answered above. What it undoes is the
+                // Consumer's, which pushes its rows back as for any edit (ADR-0007).
+                if (OnUndo.HasDelegate)
+                    await OnUndo.InvokeAsync();
+                return;
+            case GridKeyKind.Redo:
+                if (OnRedo.HasDelegate)
+                    await OnRedo.InvokeAsync();
                 return;
             case GridKeyKind.Leave:
                 // Escape peels the outermost layer first: an open popover closes and
