@@ -1,10 +1,10 @@
 import { test, expect } from './fixtures.mjs';
 
-// ViewportSize.Fill on the height (ADR-0028, rewritten 2026-09-26), against the /fill page:
+// ViewportSize.Stretch on the height (ADR-0028, rewritten 2026-09-26), against the /stretch page:
 // the grid takes a definite parent's height — a sized box, the rest of a flex column under a
 // toolbar, a Material paper under its toolbar (ADR-0030) — names a parent with no height
 // rather than guessing, and follows a box that follows the window. Until 2026-09-26 a
-// Fill-height grid settled at its header band in any box and painted no row.
+// Stretch-height grid settled at its header band in any box and painted no row.
 
 const ROW = 24;
 
@@ -19,7 +19,7 @@ async function rowsIn(page, container) {
 test.describe('in parents with a definite height', () => {
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 1400 });
-        await page.goto('/fill');
+        await page.goto('/stretch');
         await expect(page.locator('#fixed-box .ex-row').first()).toBeVisible();
     });
 
@@ -44,15 +44,15 @@ test.describe('in parents with a definite height', () => {
         expect(await rowsIn(page, '#flex-box')).toBeGreaterThan(5);
     });
 
-    test('inside the paper: the Fill grid takes what the toolbar leaves; a declared grid is unchanged (WR-7a, ADR-0030)', async ({ page }) => {
-        const paper = await page.locator('#fill-paper').evaluate((el) => {
+    test('inside the paper: the Stretch grid takes what the toolbar leaves; a declared grid is unchanged (WR-7a, ADR-0030)', async ({ page }) => {
+        const paper = await page.locator('#stretch-paper').evaluate((el) => {
             const r = el.getBoundingClientRect();
             const s = getComputedStyle(el);
             return { bottom: r.bottom - parseFloat(s.paddingBottom) - parseFloat(s.borderBottomWidth) };
         });
-        const grid = await box(page, '#fill-paper .ex-grid');
+        const grid = await box(page, '#stretch-paper .ex-grid');
         expect(grid.y + grid.height).toBeCloseTo(paper.bottom, 0);
-        expect(await rowsIn(page, '#fill-paper')).toBeGreaterThan(5);
+        expect(await rowsIn(page, '#stretch-paper')).toBeGreaterThan(5);
 
         const declared = await box(page, '#declared-paper .ex-scroller');
         expect(declared.height).toBeCloseTo(200, 0);
@@ -63,7 +63,7 @@ test.describe('in a parent with no height', () => {
     test.use({ expectedWarnings: [/parent gives it no height/] });
 
     test('nothing is painted and the grid names the parent (VZ-12b, ADR-0028)', async ({ page }) => {
-        await page.goto('/fill?parent=auto');
+        await page.goto('/stretch?parent=auto');
         await expect(page.locator('#auto-box .ex-grid')).toBeVisible();
         await page.waitForTimeout(500);
         expect(await rowsIn(page, '#auto-box')).toBe(0);
@@ -73,7 +73,7 @@ test.describe('in a parent with no height', () => {
 test.describe('in a box that follows the window', () => {
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
-        await page.goto('/fill?parent=window');
+        await page.goto('/stretch?parent=window');
         await expect(page.locator('#window-box .ex-row').first()).toBeVisible();
     });
 

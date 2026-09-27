@@ -195,7 +195,7 @@ hide it.
   ordinary MudBlazor app with an AppBar, a Drawer, tabs, a dialog, a toolbar select and
   a light/dark switch (§23's proof-of-concept page). The WR-7 clauses that need no seam
   the Wrapper has yet to fill: a grid mounted in a hidden tab paints its declared row
-  height and the right geometry once shown; a Drawer toggle resizes a `Fill` grid and
+  height and the right geometry once shown; a Drawer toggle resizes a `Stretch` grid and
   the painted columns and End's reveal follow, both ways; the two main-area grids stay
   independent (DOM-4); the toolbar's `MudSelect` never disturbs a grid; a grid in a
   `MudDialog` opens its popovers whole — inside the grid's box, scrolling where they do not
@@ -279,7 +279,7 @@ Two traps live in that, and the DemoHost has hit both:
 - MudBlazor 9's `MudSelect` takes the value on each arrow while its list is open, and
   Enter leaves the list open; Escape closes it. A test that presses Enter and waits for
   the list to go waits forever.
-- A grid whose Focus has scrolled out of view — a `Fill` grid narrowed under it, say —
+- A grid whose Focus has scrolled out of view — a `Stretch` grid narrowed under it, say —
   paints no Focus cell, and `aria-activedescendant` is then rightly empty (ADR-0033).
   Measure a row by its index, not by the Focus's.
 - A chord is two keydowns — the modifier first. A `{ once: true }` listener waiting for

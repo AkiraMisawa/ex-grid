@@ -101,7 +101,7 @@ export const test = base.extend({
     // not CON-6 failures; each must appear, so the refusal is asserted, not excused.
     // Anything else in the log still fails the test.
     expectedHostLog: [[], { option: true }],
-    // A warning the grid writes by decision — the Fill-height parent with no height it
+    // A warning the grid writes by decision — the Stretch-height parent with no height it
     // names (ADR-0028) — is provoked on purpose by the test that pins it, and named here
     // the same way: not a CON-3 failure, and asserted to appear, in the console on
     // WebAssembly or in the host's log on the Server host.

@@ -7,8 +7,8 @@ import { SERVER } from './hosting.mjs';
 //
 //   EXGRID_HOSTING=server EXGRID_MEASURE=pointer npx playwright test measure.spec.mjs
 //
-// And §21.9's Fill question (ADR-0028/0045): how long the stale band stands while the
-// window is dragged taller over a Fill grid on a circuit — the rows painted for the old
+// And §21.9's Stretch question (ADR-0028/0045): how long the stale band stands while the
+// window is dragged taller over a Stretch grid on a circuit — the rows painted for the old
 // size until the new size's render lands, a round trip later:
 //
 //   EXGRID_HOSTING=server EXGRID_MEASURE=fill npx playwright test measure.spec.mjs
@@ -108,15 +108,15 @@ test('what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip
     console.log(`SRV-6 ${JSON.stringify(results)}`);
 });
 
-test('how long the stale band stands while the window is dragged over a Fill grid, at 0, 50 and 150 ms round trip (§21.9, ADR-0028)', async ({ page }, testInfo) => {
+test('how long the stale band stands while the window is dragged over a Stretch grid, at 0, 50 and 150 ms round trip (§21.9, ADR-0028)', async ({ page }, testInfo) => {
     test.skip(MEASURE !== 'fill', 'EXGRID_MEASURE=fill');
     test.setTimeout(180_000);
     const results = {};
     for (const rtt of ROUND_TRIPS) {
         await setRoundTrip(0);
         await page.setViewportSize({ width: 1280, height: 420 });
-        // A box that follows the window's height, less 220px (the /fill page's own).
-        await page.goto('/fill?parent=window');
+        // A box that follows the window's height, less 220px (the /stretch page's own).
+        await page.goto('/stretch?parent=window');
         const grid = page.locator('#window-box .ex-grid');
         await expect(grid).toHaveAttribute('tabindex', '0');
         await expect(grid.locator('.ex-row').first()).toBeVisible();

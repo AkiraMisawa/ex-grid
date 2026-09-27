@@ -82,7 +82,7 @@
 .mud-ex-grid .mud-ex-grid-toolbar {
     padding-left: 8px;
     padding-right: 8px;
-    /* The paper is a column: a Fill-height grid takes what the toolbar leaves, through the
+    /* The paper is a column: a Stretch-height grid takes what the toolbar leaves, through the
        flex values the core writes on its own root, and the toolbar keeps its height
        (ADR-0028/0030). */
     flex: none;

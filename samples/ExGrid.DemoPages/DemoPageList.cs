@@ -38,7 +38,7 @@ public static class DemoPageList
             "Editing, the clipboard, sorting, filtering and Header Groups on one page, with every notification written out."),
         new("sizing", "Sizing", "Layout",
             "Column width gestures and a box that narrows until pinning is suspended (ADR-0016, ADR-0045)."),
-        new("fill", "Fill", "Layout",
+        new("stretch", "Stretch", "Layout",
             "A Viewport that takes its parent's height, and the warning when the parent has none (ADR-0028)."),
         new("lifecycle", "Lifecycle", "Layout",
             "Mount and dispose a grid repeatedly; nothing it attached stays behind (ADR-0018, ADR-0021)."),

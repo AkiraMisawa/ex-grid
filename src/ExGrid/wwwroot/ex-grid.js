@@ -798,7 +798,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const height = Math.max(0, border.blockSize - content.blockSize);
         // A notification carrying no news is dropped here rather than sent: it would
         // re-render the grid on every frame of a window drag. The content box size
-        // rides the same report (ADR-0028) — under ViewportSize.Fill it IS the size —
+        // rides the same report (ADR-0028) — under ViewportSize.Stretch it IS the size —
         // so a change of either is news.
         if (width === gutterWidth && height === gutterHeight
             && content.inlineSize === contentWidth && content.blockSize === contentHeight) {

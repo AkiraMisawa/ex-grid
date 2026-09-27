@@ -14,7 +14,7 @@ const positions = (page) => page.locator('#positions-paper .ex-grid');
 const orders = (page) => page.locator('#orders-paper .ex-grid');
 const history = (page) => page.locator('#history-paper .ex-grid');
 
-// The Fill grid's columns come to 1420px — wider than the main area with the Drawer
+// The Stretch grid's columns come to 1420px — wider than the main area with the Drawer
 // open or closed — and its last column is index 12.
 const LAST_COLUMN = 12;
 
@@ -162,7 +162,7 @@ test('WR-7: a grid in a tab that was hidden paints correctly once its tab is sho
     expectFocusReadable(await geometry(history(page), 2), 'after Ctrl+End');
 });
 
-test('WR-7: a Drawer toggle resizes the Fill grid and its geometry follows (ADR-0028)', async ({ page }) => {
+test('WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028)', async ({ page }) => {
     await open(page);
     await expect(page.locator('#drawer-status')).toHaveText('Drawer: open');
     const drawerWidth = (await page.locator('#app-drawer').boundingBox()).width;
@@ -184,7 +184,7 @@ test('WR-7: a Drawer toggle resizes the Fill grid and its geometry follows (ADR-
         await expect(page.locator('#drawer-status')).toHaveText(`Drawer: ${state}`);
         // The main content slides (MudBlazor animates its margin), so the box is waited
         // for; then the paint, which is the grid saying it was told.
-        await expect.poll(async () => (await geometry(positions(page), 2)).width, { message: `the Fill grid's width with the Drawer ${state}` })
+        await expect.poll(async () => (await geometry(positions(page), 2)).width, { message: `the Stretch grid's width with the Drawer ${state}` })
             .toBeCloseTo(expected, 0);
         await expect.poll(async () => sliceMatchesReadableArea(await geometry(positions(page), 2)),
             { message: `the painted columns are exactly the readable ones with the Drawer ${state}` }).toBe(true);

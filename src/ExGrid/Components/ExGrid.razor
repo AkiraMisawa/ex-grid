@@ -669,7 +669,7 @@
 
     /// <summary>How wide the scrolling area is — the other half of the geometry, a C#
     /// parameter for exactly the reason <see cref="ViewportHeight"/> is, and the outer
-    /// size in the same way. <see cref="ViewportSize.Fill"/> hands the size to the CSS
+    /// size in the same way. <see cref="ViewportSize.Stretch"/> hands the size to the CSS
     /// and the browser's report becomes the input (ADR-0028): the arithmetic still
     /// never reads the DOM — it is told.</summary>
     [Parameter] public ViewportSize ViewportWidth { get; set; } = DefaultViewportWidthPx;
@@ -1132,7 +1132,7 @@
     // cached beside it — rebuilt only when the metrics move.
     private GridMetrics _metrics = GridMetrics.Resolve(GridDensity.Compact);
     private string _rootStyle = "";
-    private (bool Width, bool Height) _rootStyleFill;
+    private (bool Width, bool Height) _rootStyleStretch;
     private bool _rowHeightSupplied;
     private bool _cellMetricsSupplied;
     private bool _densitySupplied;
@@ -1174,7 +1174,7 @@
     private double _gutterHeightPx;
 
     // The scroller's content box as the browser reports it — the size itself, under
-    // ViewportSize.Fill (ADR-0028). The same notification carries both; a declared axis
+    // ViewportSize.Stretch (ADR-0028). The same notification carries both; a declared axis
     // ignores its half.
     private double _reportedWidthPx;
     private double _reportedHeightPx;
@@ -1566,7 +1566,7 @@
             }
         }
 
-        if (!ViewportHeight.IsFill)
+        if (!ViewportHeight.IsStretch)
         {
             if (!double.IsFinite(ViewportHeight.Px) || ViewportHeight.Px <= 0)
             {
@@ -1580,7 +1580,7 @@
                     "first band of it, and what is left is where the rows go (ADR-0013/0028).");
             }
         }
-        if (!ViewportWidth.IsFill && (!double.IsFinite(ViewportWidth.Px) || ViewportWidth.Px <= 0))
+        if (!ViewportWidth.IsStretch && (!double.IsFinite(ViewportWidth.Px) || ViewportWidth.Px <= 0))
         {
             throw new ArgumentOutOfRangeException(nameof(ViewportWidth), ViewportWidth,
                 "ViewportWidth is a finite, positive number of pixels (ADR-0013).");
@@ -1614,7 +1614,7 @@
         // The band comes off the scroll budget, and the refusal names the band
         // (ADR-0032): a Viewport that cannot hold the band plus one row shows headers
         // and no data, which reads as an empty result.
-        if (_headerLayout.TierCount > 0 && !ViewportHeight.IsFill
+        if (_headerLayout.TierCount > 0 && !ViewportHeight.IsStretch
             && ViewportHeight.Px <= BandHeightPx + _metrics.RowHeightPx)
         {
             throw new InvalidOperationException(
@@ -1850,15 +1850,15 @@
     private void PrepareRender()
     {
         // What the Consumer declared, minus what the browser says its scrollbars take
-        // out of it (ADR-0013) — or, under Fill, what the browser reported the content
+        // out of it (ADR-0013) — or, under Stretch, what the browser reported the content
         // box to be, which already has the scrollbars taken out (ADR-0028). Both
         // gutters are 0 until the browser reports otherwise, so on a machine with
         // overlay scrollbars a declared axis is the declared size exactly.
         var previousHeightPx = _visibleHeightPx;
-        _visibleWidthPx = ViewportWidth.IsFill
+        _visibleWidthPx = ViewportWidth.IsStretch
             ? Math.Max(0, _reportedWidthPx)
             : ViewportBox.VisibleWidthOf(ViewportWidth.Px, _gutterWidthPx);
-        _visibleHeightPx = ViewportHeight.IsFill
+        _visibleHeightPx = ViewportHeight.IsStretch
             ? Math.Max(0, _reportedHeightPx)
             : ViewportBox.VisibleHeightOf(ViewportHeight.Px, _gutterHeightPx);
         CloseAPopoverTheBoxNoLongerHolds(previousHeightPx);
@@ -1869,7 +1869,7 @@
             // this small was a bug when the Consumer wrote it and stays one after the
             // scrollbar's strip; a reported zero is a hidden tab — paint nothing,
             // throw nothing, and the next report brings the grid back.
-            if (_visibleHeightPx <= BandHeightPx && !ViewportHeight.IsFill)
+            if (_visibleHeightPx <= BandHeightPx && !ViewportHeight.IsStretch)
             {
                 throw new InvalidOperationException(
                     $"A horizontal scrollbar takes {_gutterHeightPx}px out of the {ViewportHeight.Px}px Viewport, " +
@@ -4131,7 +4131,7 @@
     /// What the browser says about the scroller's box, reported whenever it changes
     /// (ADR-0021): the Scrollbar Gutter — 0 on a platform with overlay scrollbars, and
     /// 0 anywhere until the content overflows — and the content box's own size, which
-    /// under <see cref="ViewportSize.Fill"/> is the size (ADR-0028). One notification
+    /// under <see cref="ViewportSize.Stretch"/> is the size (ADR-0028). One notification
     /// carries both; the observer gained no new reason to exist and no new moment to
     /// fire.
     ///
@@ -4157,11 +4157,11 @@
             return;
         }
         // A report carrying no news renders nothing. The content box moves on every
-        // frame of a window drag, but only a Fill axis reads it — under a declared
+        // frame of a window drag, but only a Stretch axis reads it — under a declared
         // size that half of the report is noise by design.
         var guttersChanged = gutterWidthPx != _gutterWidthPx || gutterHeightPx != _gutterHeightPx;
-        var sizeChanged = (ViewportWidth.IsFill && widthPx != _reportedWidthPx)
-            || (ViewportHeight.IsFill && heightPx != _reportedHeightPx);
+        var sizeChanged = (ViewportWidth.IsStretch && widthPx != _reportedWidthPx)
+            || (ViewportHeight.IsStretch && heightPx != _reportedHeightPx);
         _reportedWidthPx = widthPx;
         _reportedHeightPx = heightPx;
         NameAParentWithNoHeight(heightPx);
@@ -4192,7 +4192,7 @@
     }
 
     /// <summary>
-    /// A Fill-height grid whose parent has no definite height is as tall as its content,
+    /// A Stretch-height grid whose parent has no definite height is as tall as its content,
     /// which before any row is painted is the header band alone — the exact signature
     /// (ADR-0028, "A parent with no height is named"). Named once, through the host's
     /// logger, until a real height arrives: a layout can pass through this state, so it is
@@ -4200,7 +4200,7 @@
     /// </summary>
     private void NameAParentWithNoHeight(double heightPx)
     {
-        if (!ViewportHeight.IsFill)
+        if (!ViewportHeight.IsStretch)
             return;
         if (heightPx > BandHeightPx + 0.5)
         {
@@ -4212,7 +4212,7 @@
         _namedParentWithNoHeight = true;
         var logger = (Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory)?.CreateLogger("ExGrid.Components.ExGrid");
         logger?.LogWarning(
-            "ExGrid: ViewportHeight is Fill, but the grid's parent gives it no height, so it is only as tall as its header " +
+            "ExGrid: ViewportHeight is Stretch, but the grid's parent gives it no height, so it is only as tall as its header " +
             "and no row can be painted. Give the parent a definite height: pixels, a percentage of something definite, " +
             "a grid track, or a flex item with min-height: 0 (ADR-0028).");
     }
@@ -6059,23 +6059,23 @@
     /// </summary>
     private string RootStyle()
     {
-        var fill = (ViewportWidth.IsFill, ViewportHeight.IsFill);
-        if (_rootStyle.Length == 0 || fill != _rootStyleFill)
+        var stretch = (ViewportWidth.IsStretch, ViewportHeight.IsStretch);
+        if (_rootStyle.Length == 0 || stretch != _rootStyleStretch)
         {
-            _rootStyleFill = fill;
+            _rootStyleStretch = stretch;
             _rootStyle = string.Create(
                 CultureInfo.InvariantCulture,
-                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{FillRootStyle(fill.Item1, fill.Item2)}");
+                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{FillRootStyle(stretch.Item1, stretch.Item2)}");
         }
         return _rootStyle;
     }
 
     /// <summary>
-    /// Under Fill the core gives its own elements the parent's size (ADR-0028, "Which
-    /// element takes the box"). A Fill height makes the root a column as tall as its parent,
+    /// Under Stretch the core gives its own elements the parent's size (ADR-0028, "Which
+    /// element takes the box"). A Stretch height makes the root a column as tall as its parent,
     /// in which the scroller takes what the pager and the status line leave; the flex
     /// values let it take what a toolbar leaves in a flex parent, and do nothing in a block
-    /// one. A Fill width only has to be allowed to shrink in a flex row, since a block
+    /// one. A Stretch width only has to be allowed to shrink in a flex row, since a block
     /// already takes its parent's width.
     /// </summary>
     private static string FillRootStyle(bool fillWidth, bool fillHeight) => (fillWidth, fillHeight) switch
@@ -6193,17 +6193,17 @@
             $"left: {leftPx}px; top: {topPx}px; width: {widthPx}px; height: {heightPx}px; line-height: {heightPx}px");
     }
 
-    /// <summary>A declared axis is written inline; a Fill axis is left to the
+    /// <summary>A declared axis is written inline; a Stretch axis is left to the
     /// Consumer's CSS, whose answer comes back through the report (ADR-0028).</summary>
     private string ScrollerStyle()
     {
-        // Under a Fill height the scroller takes what is left of the root's column
+        // Under a Stretch height the scroller takes what is left of the root's column
         // (ADR-0028): never its content's height, which is where the empty loop settled.
-        if (ViewportWidth.IsFill && ViewportHeight.IsFill)
+        if (ViewportWidth.IsStretch && ViewportHeight.IsStretch)
             return "flex: 1 1 auto; min-height: 0";
-        if (ViewportWidth.IsFill)
+        if (ViewportWidth.IsStretch)
             return FormattableString.Invariant($"height: {ViewportHeight.Px}px");
-        if (ViewportHeight.IsFill)
+        if (ViewportHeight.IsStretch)
             return FormattableString.Invariant($"width: {ViewportWidth.Px}px; flex: 1 1 auto; min-height: 0");
         return FormattableString.Invariant($"width: {ViewportWidth.Px}px; height: {ViewportHeight.Px}px");
     }
