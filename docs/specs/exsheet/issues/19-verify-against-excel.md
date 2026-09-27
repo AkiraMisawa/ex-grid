@@ -13,6 +13,12 @@ engine cannot match it, the function or the argument value is refused, as ADR-00
 This needs Excel on a person's machine, so it is `ready-for-human`. Record the Excel build number
 in the Comments.
 
+**Every row below is now a case in the Excel case corpus**
+(`tests/ExSheet.Engine.Tests/ExcelCases/*.json`) with `source: "uncertain"`, its `ticket19Row`,
+and the engine's current answer as `expect`. `ExcelOracle/oracle.ps1` asks Excel all of them with
+the rest of the corpus ([verify-on-windows.md](../verify-on-windows.md), Part A). Row 11 is asked
+with ranges (`=XLOOKUP(1,A1,B1,)`), because ExSheet does not read array constants such as `{1}`.
+
 **Blocked by:** None (can start immediately)
 
 | # | Enter this | Engine today | Excel's answer |

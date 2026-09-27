@@ -1,0 +1,195 @@
+{
+  "area": "round",
+  "about": "ROUND (ADR-0047).",
+  "cases": [
+    {
+      "id": "ROUND-001",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(2.15,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.2}
+    },
+    {
+      "id": "ROUND-002",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(2.149,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.1}
+    },
+    {
+      "id": "ROUND-003",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(-1.475,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1.48}
+    },
+    {
+      "id": "ROUND-004",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(21.5,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "ROUND-005",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(626.3,-3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1000}
+    },
+    {
+      "id": "ROUND-006",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(1.98,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ROUND-007",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(-50.55,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -100}
+    },
+    {
+      "id": "ROUND-008",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(2.5,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ROUND-009",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(-2.5,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -3}
+    },
+    {
+      "id": "ROUND-010",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(0.5,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ROUND-011",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(3.14159,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.142}
+    },
+    {
+      "id": "ROUND-012",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(1234.5678,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1200}
+    },
+    {
+      "id": "ROUND-013",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ROUND-014",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(A5,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ROUND-015",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(\"abc\",1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ROUND-016",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(1/0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ROUND-017",
+      "source": "documented",
+      "description": "ROUND: half away from zero, negative digits round left of the point (Microsoft's own examples first)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUND(1,1/0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ROUND-018",
+      "source": "uncertain",
+      "description": "Ticket 19 row 13: a half that is not exact in binary",
+      "ticket19Row": 13,
+      "cells": {"ZZ1000": "=ROUND(1.005,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.01}
+    },
+    {
+      "id": "ROUND-019",
+      "source": "uncertain",
+      "description": "Ticket 19 row 13: a half that is not exact in binary",
+      "ticket19Row": 13,
+      "cells": {"ZZ1000": "=ROUND(2.675,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.68}
+    },
+    {
+      "id": "ROUND-020",
+      "source": "uncertain",
+      "description": "Ticket 19 row 14: fractional num_digits (engine: truncated)",
+      "ticket19Row": 14,
+      "cells": {"ZZ1000": "=ROUND(1.25,1.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.3}
+    },
+    {
+      "id": "ROUND-021",
+      "source": "uncertain",
+      "description": "Ticket 19 row 14: numeric text as the number",
+      "ticket19Row": 14,
+      "cells": {"ZZ1000": "=ROUND(\"1.25\",1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.3}
+    }
+  ]
+}

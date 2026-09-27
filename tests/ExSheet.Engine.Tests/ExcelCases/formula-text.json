@@ -1,0 +1,609 @@
+{
+  "area": "formula-text",
+  "about": "The stored Formula text: Excel's spelling of every Reference form, operator and literal, and the whitespace it was typed with (ADR-0047).",
+  "cases": [
+    {
+      "id": "TEXT-001",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=A1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1"}
+    },
+    {
+      "id": "TEXT-002",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=$A$1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=$A$1"}
+    },
+    {
+      "id": "TEXT-003",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=A$1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A$1"}
+    },
+    {
+      "id": "TEXT-004",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=$A1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=$A1"}
+    },
+    {
+      "id": "TEXT-005",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=A1:B2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1:B2"}
+    },
+    {
+      "id": "TEXT-006",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=$A$1:$B$2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=$A$1:$B$2"}
+    },
+    {
+      "id": "TEXT-007",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=A:A"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A:A"}
+    },
+    {
+      "id": "TEXT-008",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=$A:$C"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=$A:$C"}
+    },
+    {
+      "id": "TEXT-009",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=1:1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1:1"}
+    },
+    {
+      "id": "TEXT-010",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=$2:$5"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=$2:$5"}
+    },
+    {
+      "id": "TEXT-011",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=XFD1048576"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=XFD1048576"}
+    },
+    {
+      "id": "TEXT-012",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=A:XFD"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A:XFD"}
+    },
+    {
+      "id": "TEXT-013",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "cells": {"ZZ1000": "=1:1048576"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1:1048576"}
+    },
+    {
+      "id": "TEXT-014",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "otherSheets": ["Sheet2", "My Sheet", "It's", "A1"],
+      "cells": {"ZZ1000": "=Sheet2!A1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=Sheet2!A1"}
+    },
+    {
+      "id": "TEXT-015",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "otherSheets": ["Sheet2", "My Sheet", "It's", "A1"],
+      "cells": {"ZZ1000": "=Sheet2!A1:B2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=Sheet2!A1:B2"}
+    },
+    {
+      "id": "TEXT-016",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "otherSheets": ["Sheet2", "My Sheet", "It's", "A1"],
+      "cells": {"ZZ1000": "=Sheet2!A:A"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=Sheet2!A:A"}
+    },
+    {
+      "id": "TEXT-017",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "otherSheets": ["Sheet2", "My Sheet", "It's", "A1"],
+      "cells": {"ZZ1000": "='My Sheet'!$A$1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "='My Sheet'!$A$1"}
+    },
+    {
+      "id": "TEXT-018",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "otherSheets": ["Sheet2", "My Sheet", "It's", "A1"],
+      "cells": {"ZZ1000": "='It''s'!A1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "='It''s'!A1"}
+    },
+    {
+      "id": "TEXT-019",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "otherSheets": ["Sheet2", "My Sheet", "It's", "A1"],
+      "cells": {"ZZ1000": "='A1'!B2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "='A1'!B2"}
+    },
+    {
+      "id": "TEXT-020",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "tables": {"Positions": {"columns": ["PV", "Market Value", "Rate#"], "rows": null}},
+      "cells": {"ZZ1000": "=Positions[PV]"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=Positions[PV]"}
+    },
+    {
+      "id": "TEXT-021",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "tables": {"Positions": {"columns": ["PV", "Market Value", "Rate#"], "rows": null}},
+      "cells": {"ZZ1000": "=Positions[[Market Value]]"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=Positions[[Market Value]]"}
+    },
+    {
+      "id": "TEXT-022",
+      "source": "documented",
+      "description": "Every Reference form is written back exactly as typed",
+      "tables": {"Positions": {"columns": ["PV", "Market Value", "Rate#"], "rows": null}},
+      "cells": {"ZZ1000": "=Positions[[Rate'#]]"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=Positions[[Rate'#]]"}
+    },
+    {
+      "id": "TEXT-023",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=1+2*3-4/5"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1+2*3-4/5"}
+    },
+    {
+      "id": "TEXT-024",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=(A1+B1)*C1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=(A1+B1)*C1"}
+    },
+    {
+      "id": "TEXT-025",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=-2^2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=-2^2"}
+    },
+    {
+      "id": "TEXT-026",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=2^3^2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=2^3^2"}
+    },
+    {
+      "id": "TEXT-027",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=50%"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=50%"}
+    },
+    {
+      "id": "TEXT-028",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=A1&\" \"&B1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1&\" \"&B1"}
+    },
+    {
+      "id": "TEXT-029",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=\"say \"\"hi\"\"\""},
+      "check": "ZZ1000",
+      "expect": {"formula": "=\"say \"\"hi\"\"\""}
+    },
+    {
+      "id": "TEXT-030",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=A1<>B1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1<>B1"}
+    },
+    {
+      "id": "TEXT-031",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=A1<=B1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1<=B1"}
+    },
+    {
+      "id": "TEXT-032",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=A1>=B1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1>=B1"}
+    },
+    {
+      "id": "TEXT-033",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=A1<B1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1<B1"}
+    },
+    {
+      "id": "TEXT-034",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=A1>B1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1>B1"}
+    },
+    {
+      "id": "TEXT-035",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=A1=B1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1=B1"}
+    },
+    {
+      "id": "TEXT-036",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=TRUE"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=TRUE"}
+    },
+    {
+      "id": "TEXT-037",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=FALSE"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=FALSE"}
+    },
+    {
+      "id": "TEXT-038",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=#N/A"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=#N/A"}
+    },
+    {
+      "id": "TEXT-039",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=#DIV/0!"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=#DIV/0!"}
+    },
+    {
+      "id": "TEXT-040",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=#NULL!"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=#NULL!"}
+    },
+    {
+      "id": "TEXT-041",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=#VALUE!"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=#VALUE!"}
+    },
+    {
+      "id": "TEXT-042",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=#REF!"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=#REF!"}
+    },
+    {
+      "id": "TEXT-043",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=#NAME?"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=#NAME?"}
+    },
+    {
+      "id": "TEXT-044",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=#NUM!"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=#NUM!"}
+    },
+    {
+      "id": "TEXT-045",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=1.5"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1.5"}
+    },
+    {
+      "id": "TEXT-046",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=0.001"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=0.001"}
+    },
+    {
+      "id": "TEXT-047",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=unknown(1,,A1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=unknown(1,,A1:B2)"}
+    },
+    {
+      "id": "TEXT-048",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=unknown()"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=unknown()"}
+    },
+    {
+      "id": "TEXT-049",
+      "source": "documented",
+      "description": "Operators, literals and calls are written back exactly as typed",
+      "cells": {"ZZ1000": "=someName"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=someName"}
+    },
+    {
+      "id": "TEXT-050",
+      "source": "documented",
+      "description": "The stored spelling is Excel's: References and literals in upper case, corners top-left first",
+      "cells": {"ZZ1000": "=a1+$b$2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1+$B$2"}
+    },
+    {
+      "id": "TEXT-051",
+      "source": "documented",
+      "description": "The stored spelling is Excel's: References and literals in upper case, corners top-left first",
+      "cells": {"ZZ1000": "=b2:a1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1:B2"}
+    },
+    {
+      "id": "TEXT-052",
+      "source": "documented",
+      "description": "The stored spelling is Excel's: References and literals in upper case, corners top-left first",
+      "cells": {"ZZ1000": "=B1:A2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A1:B2"}
+    },
+    {
+      "id": "TEXT-053",
+      "source": "documented",
+      "description": "The stored spelling is Excel's: References and literals in upper case, corners top-left first",
+      "cells": {"ZZ1000": "=c:a"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=A:C"}
+    },
+    {
+      "id": "TEXT-054",
+      "source": "documented",
+      "description": "The stored spelling is Excel's: References and literals in upper case, corners top-left first",
+      "cells": {"ZZ1000": "=5:2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=2:5"}
+    },
+    {
+      "id": "TEXT-055",
+      "source": "documented",
+      "description": "The stored spelling is Excel's: References and literals in upper case, corners top-left first",
+      "cells": {"ZZ1000": "=true"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=TRUE"}
+    },
+    {
+      "id": "TEXT-056",
+      "source": "documented",
+      "description": "The stored spelling is Excel's: References and literals in upper case, corners top-left first",
+      "cells": {"ZZ1000": "=#n/a"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=#N/A"}
+    },
+    {
+      "id": "TEXT-057",
+      "source": "documented",
+      "description": "The stored spelling is Excel's: References and literals in upper case, corners top-left first",
+      "cells": {"ZZ1000": "=.5"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=0.5"}
+    },
+    {
+      "id": "TEXT-058",
+      "source": "documented",
+      "description": "The stored spelling is Excel's: References and literals in upper case, corners top-left first",
+      "cells": {"ZZ1000": "=1.50"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1.5"}
+    },
+    {
+      "id": "TEXT-059",
+      "source": "documented",
+      "description": "A declared function is written back in upper case",
+      "cells": {"ZZ1000": "=sum(a1:b2)+xLookup(1,a:a,b:b)"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=SUM(A1:B2)+XLOOKUP(1,A:A,B:B)"}
+    },
+    {
+      "id": "TEXT-060",
+      "source": "documented",
+      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "cells": {"C5": "= 1 + 2"},
+      "check": "C5",
+      "expect": {"formula": "= 1 + 2"}
+    },
+    {
+      "id": "TEXT-061",
+      "source": "documented",
+      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "cells": {"C5": "=A1 + B1"},
+      "check": "C5",
+      "expect": {"formula": "=A1 + B1"}
+    },
+    {
+      "id": "TEXT-062",
+      "source": "documented",
+      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "cells": {"C5": "=SUM( A1:A3 , 4 )"},
+      "check": "C5",
+      "expect": {"formula": "=SUM( A1:A3 , 4 )"}
+    },
+    {
+      "id": "TEXT-063",
+      "source": "documented",
+      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "cells": {"C5": "=IF(A1 > 0,\n  A1,\n  0)"},
+      "check": "C5",
+      "expect": {"formula": "=IF(A1 > 0,\n  A1,\n  0)"}
+    },
+    {
+      "id": "TEXT-064",
+      "source": "documented",
+      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "cells": {"C5": "=\tA1\t*\t2"},
+      "check": "C5",
+      "expect": {"formula": "=\tA1\t*\t2"}
+    },
+    {
+      "id": "TEXT-065",
+      "source": "documented",
+      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "cells": {"C5": "=A1+1  "},
+      "check": "C5",
+      "expect": {"formula": "=A1+1  "}
+    },
+    {
+      "id": "TEXT-066",
+      "source": "documented",
+      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "cells": {"C5": "=  -A1%"},
+      "check": "C5",
+      "expect": {"formula": "=  -A1%"}
+    },
+    {
+      "id": "TEXT-067",
+      "source": "documented",
+      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "cells": {"C5": "=\"a  b\" & \" c\""},
+      "check": "C5",
+      "expect": {"formula": "=\"a  b\" & \" c\""}
+    },
+    {
+      "id": "TEXT-068",
+      "source": "documented",
+      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "tables": {"Positions": {"columns": ["PV"], "rows": null}},
+      "cells": {"C5": "= Positions[PV] "},
+      "check": "C5",
+      "expect": {"formula": "= Positions[PV] "}
+    },
+    {
+      "id": "TEXT-069",
+      "source": "documented",
+      "description": "Tokens are written in Excel's spelling; only the whitespace is kept as typed",
+      "cells": {"ZZ1000": "= sum( a1 , $b$2 )"},
+      "check": "ZZ1000",
+      "expect": {"formula": "= SUM( A1 , $B$2 )"}
+    },
+    {
+      "id": "TEXT-070",
+      "source": "documented",
+      "description": "Tokens are written in Excel's spelling; only the whitespace is kept as typed",
+      "cells": {"ZZ1000": "= b2:a1 "},
+      "check": "ZZ1000",
+      "expect": {"formula": "= A1:B2 "}
+    },
+    {
+      "id": "TEXT-071",
+      "source": "documented",
+      "description": "Tokens are written in Excel's spelling; only the whitespace is kept as typed",
+      "cells": {"ZZ1000": "= true + 1.50"},
+      "check": "ZZ1000",
+      "expect": {"formula": "= TRUE + 1.5"}
+    },
+    {
+      "id": "TEXT-072",
+      "source": "documented",
+      "description": "Tokens are written in Excel's spelling; only the whitespace is kept as typed",
+      "cells": {"ZZ1000": "= #n/a"},
+      "check": "ZZ1000",
+      "expect": {"formula": "= #N/A"}
+    },
+    {
+      "id": "TEXT-073",
+      "source": "documented",
+      "description": "Whitespace does not change a Formula's Value",
+      "cells": {"A1": "3", "B1": "4", "ZZ1000": "= A1 +\n B1 "},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "TEXT-074",
+      "source": "uncertain",
+      "description": "Ticket 19 row 35: a Formula typed with spaces, read back (engine: spaces kept, ADR-0047)",
+      "ticket19Row": 35,
+      "cells": {"A1": "1", "B1": "2", "C1": "= A1 + B1"},
+      "check": "C1",
+      "expect": {"value2": 3, "formula": "= A1 + B1"}
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "area": "iserror",
+  "about": "ISERROR (ADR-0047).",
+  "cases": [
+    {
+      "id": "ISERROR-001",
+      "source": "documented",
+      "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISERROR(1/0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISERROR-002",
+      "source": "documented",
+      "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISERROR(#N/A)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISERROR-003",
+      "source": "documented",
+      "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISERROR(#REF!)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISERROR-004",
+      "source": "documented",
+      "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISERROR(C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISERROR-005",
+      "source": "documented",
+      "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISERROR(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISERROR-006",
+      "source": "documented",
+      "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISERROR(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISERROR-007",
+      "source": "documented",
+      "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISERROR(\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISERROR-008",
+      "source": "documented",
+      "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISERROR(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISERROR-009",
+      "source": "documented",
+      "description": "ISERROR over a range where one Value is wanted is refused, uncaught",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISERROR(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills; ISERROR does not catch that refusal",
+      "excelExpect": {"value2": false}
+    },
+    {
+      "id": "ISERROR-010",
+      "source": "documented",
+      "description": "ISERROR does not catch #CIRC!",
+      "cells": {"A1": "=B1", "B1": "=A1", "ZZ1000": "=ISERROR(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: IFERROR and ISERROR do not catch #CIRC!, and a Formula whose text references a cycle member is #CIRC! whether or not the branch is taken",
+      "excelExpect": {"value2": false}
+    }
+  ]
+}

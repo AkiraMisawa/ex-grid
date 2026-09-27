@@ -1,0 +1,340 @@
+{
+  "area": "sheet-names",
+  "about": "References qualified with the Sheet's own name, how a qualifier is written, and renaming (ADR-0046).",
+  "cases": [
+    {
+      "id": "NAME-001",
+      "source": "documented",
+      "description": "A Reference qualified with the Sheet's own name reads its cells, without regard to case",
+      "cells": {"A1": "21", "A2": "5", "ZZ1000": "=Sheet1!A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 42}
+    },
+    {
+      "id": "NAME-002",
+      "source": "documented",
+      "description": "A Reference qualified with the Sheet's own name reads its cells, without regard to case",
+      "cells": {"A1": "21", "A2": "5", "ZZ1000": "=sheet1!A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 42}
+    },
+    {
+      "id": "NAME-003",
+      "source": "documented",
+      "description": "A Reference qualified with the Sheet's own name reads its cells, without regard to case",
+      "cells": {"A1": "21", "A2": "5", "ZZ1000": "='Sheet1'!A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 42}
+    },
+    {
+      "id": "NAME-004",
+      "source": "documented",
+      "description": "A Reference qualified with the Sheet's own name reads its cells, without regard to case",
+      "cells": {"A1": "21", "A2": "5", "ZZ1000": "=(SUM(Sheet1!A1:A2)-Sheet1!A2)*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 42}
+    },
+    {
+      "id": "NAME-005",
+      "source": "documented",
+      "description": "A name that needs quoting is read quoted, and resolves",
+      "sheetName": "My Sheet",
+      "cells": {"A1": "3", "ZZ1000": "='My Sheet'!A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "NAME-006",
+      "source": "documented",
+      "description": "A qualifier naming no Sheet is #REF! (the Sheet is named My Sheet)",
+      "sheetName": "My Sheet",
+      "cells": {"A1": "3", "ZZ1000": "=Sheet1!A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"},
+      "oracleSkip": "Excel reads a qualifier naming no sheet as an external workbook and may open a file dialog; ask by hand"
+    },
+    {
+      "id": "NAME-007",
+      "source": "documented",
+      "description": "Any other qualifier is #REF!",
+      "cells": {"A1": "3", "ZZ1000": "=Sheet2!A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"},
+      "oracleSkip": "Excel reads a qualifier naming no sheet as an external workbook and may open a file dialog; ask by hand"
+    },
+    {
+      "id": "NAME-008",
+      "source": "documented",
+      "description": "A qualifier with a trailing space names another Sheet, and is #REF!",
+      "cells": {"A1": "3", "ZZ1000": "='Sheet1 '!A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"},
+      "oracleSkip": "Excel reads a qualifier naming no sheet as an external workbook and may open a file dialog; ask by hand"
+    },
+    {
+      "id": "NAME-009",
+      "source": "documented",
+      "description": "A cycle through the Sheet's own name is a cycle (A1)",
+      "cells": {"A1": "=Sheet1!B1", "B1": "=A1"},
+      "check": "A1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    },
+    {
+      "id": "NAME-010",
+      "source": "documented",
+      "description": "A cycle through the Sheet's own name is a cycle (B1)",
+      "cells": {"A1": "=Sheet1!B1", "B1": "=A1"},
+      "check": "B1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    },
+    {
+      "id": "NAME-011",
+      "source": "documented",
+      "description": "An insertion rewrites a Reference qualified with the Sheet's own name, keeping the qualifier, and leaves another Sheet's alone",
+      "otherSheets": ["Sheet2"],
+      "cells": {"A5": "4", "B1": "=Sheet1!A5+Sheet2!A5"},
+      "action": {"do": "insertRows", "row": 1, "count": 1},
+      "check": "B2",
+      "expect": {"formula": "=Sheet1!A6+Sheet2!A5"}
+    },
+    {
+      "id": "NAME-012",
+      "source": "documented",
+      "description": "A Formula reading another Sheet is #REF! after the insertion too",
+      "otherSheets": ["Sheet2"],
+      "cells": {"A5": "4", "B1": "=Sheet1!A5+Sheet2!A5"},
+      "action": {"do": "insertRows", "row": 1, "count": 1},
+      "check": "B2",
+      "expect": {"value2": "#REF!"},
+      "engineDiffersByDecision": "ADR-0046: one Sheet; a Reference qualified with any other Sheet's name names no cell and is #REF!",
+      "excelExpect": {"value2": 4}
+    },
+    {
+      "id": "NAME-013",
+      "source": "documented",
+      "description": "A deletion of every cell a qualified Reference names makes it #REF!",
+      "cells": {"A5": "4", "B1": "=Sheet1!A5*2"},
+      "action": {"do": "deleteRows", "row": 5, "count": 1},
+      "check": "B1",
+      "expect": {"formula": "=#REF!*2"}
+    },
+    {
+      "id": "NAME-014",
+      "source": "documented",
+      "description": "A qualifier is written bare when Excel writes it bare, quoted otherwise (Sheet named Sheet1)",
+      "sheetName": "Sheet1",
+      "cells": {"A1": "9", "B1": "=Sheet1!A1"},
+      "check": "B1",
+      "expect": {"formula": "=Sheet1!A1"}
+    },
+    {
+      "id": "NAME-015",
+      "source": "documented",
+      "description": "The qualified Reference reads the Sheet (Sheet named Sheet1)",
+      "sheetName": "Sheet1",
+      "cells": {"A1": "9", "B1": "=Sheet1!A1"},
+      "check": "B1",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "NAME-016",
+      "source": "documented",
+      "description": "A qualifier is written bare when Excel writes it bare, quoted otherwise (Sheet named My Sheet)",
+      "sheetName": "My Sheet",
+      "cells": {"A1": "9", "B1": "='My Sheet'!A1"},
+      "check": "B1",
+      "expect": {"formula": "='My Sheet'!A1"}
+    },
+    {
+      "id": "NAME-017",
+      "source": "documented",
+      "description": "The qualified Reference reads the Sheet (Sheet named My Sheet)",
+      "sheetName": "My Sheet",
+      "cells": {"A1": "9", "B1": "='My Sheet'!A1"},
+      "check": "B1",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "NAME-018",
+      "source": "documented",
+      "description": "A qualifier is written bare when Excel writes it bare, quoted otherwise (Sheet named It's)",
+      "sheetName": "It's",
+      "cells": {"A1": "9", "B1": "='It''s'!A1"},
+      "check": "B1",
+      "expect": {"formula": "='It''s'!A1"}
+    },
+    {
+      "id": "NAME-019",
+      "source": "documented",
+      "description": "The qualified Reference reads the Sheet (Sheet named It's)",
+      "sheetName": "It's",
+      "cells": {"A1": "9", "B1": "='It''s'!A1"},
+      "check": "B1",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "NAME-020",
+      "source": "documented",
+      "description": "A qualifier is written bare when Excel writes it bare, quoted otherwise (Sheet named A1)",
+      "sheetName": "A1",
+      "cells": {"A1": "9", "B1": "='A1'!A1"},
+      "check": "B1",
+      "expect": {"formula": "='A1'!A1"}
+    },
+    {
+      "id": "NAME-021",
+      "source": "documented",
+      "description": "The qualified Reference reads the Sheet (Sheet named A1)",
+      "sheetName": "A1",
+      "cells": {"A1": "9", "B1": "='A1'!A1"},
+      "check": "B1",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "NAME-022",
+      "source": "documented",
+      "description": "A qualifier is written bare when Excel writes it bare, quoted otherwise (Sheet named R1C1)",
+      "sheetName": "R1C1",
+      "cells": {"A1": "9", "B1": "='R1C1'!A1"},
+      "check": "B1",
+      "expect": {"formula": "='R1C1'!A1"}
+    },
+    {
+      "id": "NAME-023",
+      "source": "documented",
+      "description": "The qualified Reference reads the Sheet (Sheet named R1C1)",
+      "sheetName": "R1C1",
+      "cells": {"A1": "9", "B1": "='R1C1'!A1"},
+      "check": "B1",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "NAME-024",
+      "source": "documented",
+      "description": "A qualifier is written bare when Excel writes it bare, quoted otherwise (Sheet named R)",
+      "sheetName": "R",
+      "cells": {"A1": "9", "B1": "='R'!A1"},
+      "check": "B1",
+      "expect": {"formula": "='R'!A1"}
+    },
+    {
+      "id": "NAME-025",
+      "source": "documented",
+      "description": "The qualified Reference reads the Sheet (Sheet named R)",
+      "sheetName": "R",
+      "cells": {"A1": "9", "B1": "='R'!A1"},
+      "check": "B1",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "NAME-026",
+      "source": "documented",
+      "description": "A qualifier is written bare when Excel writes it bare, quoted otherwise (Sheet named TRUE)",
+      "sheetName": "TRUE",
+      "cells": {"A1": "9", "B1": "='TRUE'!A1"},
+      "check": "B1",
+      "expect": {"formula": "='TRUE'!A1"}
+    },
+    {
+      "id": "NAME-027",
+      "source": "documented",
+      "description": "The qualified Reference reads the Sheet (Sheet named TRUE)",
+      "sheetName": "TRUE",
+      "cells": {"A1": "9", "B1": "='TRUE'!A1"},
+      "check": "B1",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "NAME-028",
+      "source": "documented",
+      "description": "A qualifier is written bare when Excel writes it bare, quoted otherwise (Sheet named 1st)",
+      "sheetName": "1st",
+      "cells": {"A1": "9", "B1": "='1st'!A1"},
+      "check": "B1",
+      "expect": {"formula": "='1st'!A1"}
+    },
+    {
+      "id": "NAME-029",
+      "source": "documented",
+      "description": "The qualified Reference reads the Sheet (Sheet named 1st)",
+      "sheetName": "1st",
+      "cells": {"A1": "9", "B1": "='1st'!A1"},
+      "check": "B1",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "NAME-030",
+      "source": "documented",
+      "description": "Renaming rewrites every Reference qualified with the old name",
+      "otherSheets": ["Other"],
+      "cells": {"A1": "5", "B1": "=Sheet1!A1+1", "B2": "=SHEET1!A1:A2", "B3": "=Other!A1"},
+      "action": {"do": "rename", "name": "Risk Q3"},
+      "check": "B1",
+      "expect": {"formula": "='Risk Q3'!A1+1"}
+    },
+    {
+      "id": "NAME-031",
+      "source": "documented",
+      "description": "Renaming rewrites a qualified range, whatever the case it was typed in",
+      "otherSheets": ["Other"],
+      "cells": {"A1": "5", "B1": "=Sheet1!A1+1", "B2": "=SHEET1!A1:A2", "B3": "=Other!A1"},
+      "action": {"do": "rename", "name": "Risk Q3"},
+      "check": "B2",
+      "expect": {"formula": "='Risk Q3'!A1:A2"}
+    },
+    {
+      "id": "NAME-032",
+      "source": "documented",
+      "description": "Renaming leaves other qualifiers alone",
+      "otherSheets": ["Other"],
+      "cells": {"A1": "5", "B1": "=Sheet1!A1+1", "B2": "=SHEET1!A1:A2", "B3": "=Other!A1"},
+      "action": {"do": "rename", "name": "Risk Q3"},
+      "check": "B3",
+      "expect": {"formula": "=Other!A1"}
+    },
+    {
+      "id": "NAME-033",
+      "source": "documented",
+      "description": "A renamed qualifier still reads the Sheet",
+      "otherSheets": ["Other"],
+      "cells": {"A1": "5", "B1": "=Sheet1!A1+1", "B2": "=SHEET1!A1:A2", "B3": "=Other!A1"},
+      "action": {"do": "rename", "name": "Risk Q3"},
+      "check": "B1",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "NAME-034",
+      "source": "documented",
+      "description": "Another Sheet's qualifier stays #REF! after a rename",
+      "otherSheets": ["Other"],
+      "cells": {"A1": "5", "B1": "=Sheet1!A1+1", "B2": "=SHEET1!A1:A2", "B3": "=Other!A1"},
+      "action": {"do": "rename", "name": "Risk Q3"},
+      "check": "B3",
+      "expect": {"value2": "#REF!"},
+      "engineDiffersByDecision": "ADR-0046: one Sheet; a Reference qualified with any other Sheet's name names no cell and is #REF!",
+      "excelExpect": {"value2": 0}
+    },
+    {
+      "id": "NAME-035",
+      "source": "documented",
+      "description": "A rename keeps the whitespace of the Formulas it rewrites",
+      "cells": {"B1": "= Sheet1!A1 + 1 "},
+      "action": {"do": "rename", "name": "My Sheet"},
+      "check": "B1",
+      "expect": {"formula": "= 'My Sheet'!A1 + 1 "}
+    },
+    {
+      "id": "NAME-036",
+      "source": "documented",
+      "description": "Undoing a rename puts back every Formula exactly",
+      "cells": {"A1": "5", "B1": "=Sheet1!A1"},
+      "action": [{"do": "rename", "name": "Data"}, {"do": "undo"}],
+      "check": "B1",
+      "expect": {"formula": "=Sheet1!A1", "value2": 5},
+      "engineDiffersByDecision": "ADR-0048: renaming the Sheet is an undoable step; Excel is reported not to undo a rename",
+      "oracleSkip": "Excel's undo does not reach changes made through COM; ask by hand"
+    }
+  ]
+}

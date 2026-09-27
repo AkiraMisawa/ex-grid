@@ -28,31 +28,55 @@ Branch: `claude/exsheet-start-8cx3v1`. Commit what you record there, in English,
 ADR-0047 admits a function only when it gives Excel's answer, and the engine was built without an
 Excel to ask. Part A asks.
 
-**How.** Drive Excel through COM from PowerShell. Write the script as
-`tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1`, reading the cases from `cases.json` beside it,
-so the next run can repeat it. Commit both.
+**How.** The engine's tests and Excel read **one corpus of cases**:
+`tests/ExSheet.Engine.Tests/ExcelCases/*.json`, one file per area (arithmetic, errors, each function,
+dates, number formats, typed constants, structure, fill, copy, Linked Tables, …). Each case says what
+is entered, what is done, which cell is checked, and what is expected there as Excel's `Value2`,
+`Text` or `Formula` would give it, with a `source`: `documented`, `observed` or `uncertain`.
+`ExcelCaseTests` runs every case against the engine; **`tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1`
+runs every case against Excel through COM.** Run the whole corpus with it, not only ticket 19:
 
-- `New-Object -ComObject Excel.Application`, then a new workbook. Close it without saving, and
-  quit Excel at the end.
-- For each case, set the inputs, then read back `Value2`, `Text`, `Formula`, `NumberFormat` and
-  `HorizontalAlignment` of the result cell.
-- **Formulas** go in through `Range.Formula`, which takes the invariant (en-US) syntax, the same
-  one the engine stores (ADR-0047).
-- **"Typed" constants** (rows 24–30 of ticket 19) go in through `Range.FormulaLocal`, which parses
-  as the UI does under the machine's regional format. Record the regional format beside each
-  result.
-  - Cases that need another culture (`de-DE`, `ja-JP`) can only be answered by changing the
-    Windows regional format. **Do not change it without asking the user.** Otherwise mark those
-    rows `blocked: needs <culture>`.
+```powershell
+pwsh tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1           # all cases; -Area / -Id narrow it
+```
+
+- **The script has never been run.** It was written in a container without Excel. Expect to fix
+  it on its first run; commit the fixes, and keep it simple (a fresh workbook per case, closed
+  without saving, Excel quit at the end).
+- **Formulas** go in through `Range.Formula2` (`Range.Formula` on an Excel without it), which takes
+  the invariant (en-US) syntax the engine stores (ADR-0047). `Formula2` is used because
+  `Range.Formula` applies Excel 2019's implicit intersection, which ADR-0047 rejected; the results
+  file says which one was used.
+- **Typed constants** go in through `Range.FormulaLocal`, which parses as the UI does under the
+  machine's regional format. A case whose `culture` is not the machine's is reported `blocked`.
+  Cases that need another culture (`de-DE`, `ja-JP`, `en-GB`) can only be answered by changing the
+  Windows regional format. **Do not change it without asking the user.** If they agree, change it,
+  run again with `-Area`/`-Id` for those cases, and change it back.
+- A case the engine answers differently **by decision** (`engineDiffersByDecision` names the ADR:
+  `#CIRC!`, `#GETTING_DATA`, spill refused, XLOOKUP's binary search refusals, fill patterns not yet
+  taken, one Sheet, an undoable rename) is compared with its `excelExpect`, Excel's expected answer,
+  or only recorded where there is none. Such a case does not fail the engine; it confirms Excel's
+  side.
+- A case with `oracleSkip` (an undo, a table still waiting for data, a qualifier naming no sheet)
+  is reported `blocked` with its reason. Answer it by hand if it matters, and say so.
 - A case that needs the mouse (the fill handle, what is selected afterwards) cannot be answered
   through COM's `AutoFill`, which selects nothing. Ask the user to do it by hand and describe
   what they see, and record it as observed by hand.
 
+**The results.** The script writes `tests/ExSheet.Engine.Tests/ExcelOracle/results-<date>.json`:
+per case, Excel's answer, what was expected, and `agree`, `disagree`, `blocked` or `recorded`, with
+the Excel version and build and the machine's regional format. **Commit the results file.** Then
+run it again with `-Update`, which rewrites `source` to `observed` for the agreeing cases only, and
+commit the corpus. **Disagreements are listed for the user, never fixed on the spot**: not in the
+engine, not in the case, and `-Update` leaves them exactly as they were. Whether the engine, the
+case or an ADR changes is the user's decision.
+
 **What.**
 
-1. **Every row of ticket 19**
-   ([`issues/19-verify-against-excel.md`](issues/19-verify-against-excel.md)). Fill in its "Excel's
-   answer" column, and add the Excel build to its Comments.
+1. **Every case of the corpus**, as above. Ticket 19's rows
+   ([`issues/19-verify-against-excel.md`](issues/19-verify-against-excel.md)) are in it with
+   `source: "uncertain"` and a `ticket19Row`; fill in the ticket's "Excel's answer" column from the
+   results file, and add the Excel build to its Comments.
 2. **Formatting of inserted rows and columns.** Give row 2 a number format and a fill, then insert
    a row at 3 (`Rows(3).Insert()` with the default `CopyOrigin`). Does row 3 take row 2's format?
    Do the same for columns. The engine inserts them blank today.
@@ -79,8 +103,14 @@ so the next run can repeat it. Commit both.
 10. **Pasting unreadable Formula text.** Copy the text `=1+` from Notepad and paste it onto a cell.
    Is it refused, or taken as text? This is done by hand.
 
+Several of items 2–10 have cases in the corpus too (the push-off insertions, fill patterns, the
+circular reference, spilling, whitespace, XLOOKUP's duplicated keys); the results file answers
+those, and the items below ask what the corpus cannot express.
+
 **Where to record.**
 
+- `ExcelOracle/results-<date>.json`, for the corpus. List its disagreements in
+  `verification/<date>-windows-excel/results.md` under "Disagreements" as well.
 - Ticket 19's table, for its rows.
 - `verification/<date>-windows-excel/results.md` for items 2–10. Give one section per item, with
   the inputs, what Excel did, and what the engine does today. The engine's current behaviour is
@@ -132,7 +162,8 @@ When they do exist, these are the criteria that only a real Windows desktop answ
 
 ## Finishing
 
-Commit `verification/<date>-windows-excel/`, `verification/<date>-windows/`, the oracle script,
-and the ticket 19 table, then push. The last message to the user lists every disagreement and
+Commit `verification/<date>-windows-excel/`, `verification/<date>-windows/`, the oracle script
+with any fixes its first run needed, its results file, the corpus as `-Update` left it, and the
+ticket 19 table, then push. The last message to the user lists every disagreement and
 every failure, each with the ticket or criterion it belongs to. It proposes nothing on the user's
 behalf.

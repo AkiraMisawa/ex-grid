@@ -1,0 +1,616 @@
+{
+  "area": "arithmetic",
+  "about": "Excel's operators: precedence, concatenation, comparison, coercion, and plain IEEE doubles (ADR-0047).",
+  "cases": [
+    {
+      "id": "ARITH-001",
+      "source": "documented",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=-2^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "ARITH-002",
+      "source": "documented",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=2^3^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 64}
+    },
+    {
+      "id": "ARITH-003",
+      "source": "documented",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=2^-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5}
+    },
+    {
+      "id": "ARITH-004",
+      "source": "documented",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=2*3^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 18}
+    },
+    {
+      "id": "ARITH-005",
+      "source": "documented",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=50%"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5}
+    },
+    {
+      "id": "ARITH-006",
+      "source": "documented",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=10+50%"},
+      "check": "ZZ1000",
+      "expect": {"value2": 10.5}
+    },
+    {
+      "id": "ARITH-007",
+      "source": "documented",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=2^200%"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "ARITH-008",
+      "source": "documented",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=-50%"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.5}
+    },
+    {
+      "id": "ARITH-009",
+      "source": "documented",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=1+2*3^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 19}
+    },
+    {
+      "id": "ARITH-010",
+      "source": "documented",
+      "description": "Comparison binds loosest, & below + -",
+      "cells": {"ZZ1000": "=1+1=2"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-011",
+      "source": "documented",
+      "description": "Comparison binds loosest, & below + -",
+      "cells": {"ZZ1000": "=1&2=\"12\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-012",
+      "source": "documented",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=\"a\"&\"b\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "ab"}
+    },
+    {
+      "id": "ARITH-013",
+      "source": "documented",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=\"a\"&1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a2"}
+    },
+    {
+      "id": "ARITH-014",
+      "source": "documented",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=1&2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "12"}
+    },
+    {
+      "id": "ARITH-015",
+      "source": "documented",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=1.5&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1.5"}
+    },
+    {
+      "id": "ARITH-016",
+      "source": "documented",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=TRUE&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "TRUE"}
+    },
+    {
+      "id": "ARITH-017",
+      "source": "documented",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=A1&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "x"}
+    },
+    {
+      "id": "ARITH-018",
+      "source": "documented",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=1/4&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.25"}
+    },
+    {
+      "id": "ARITH-019",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=1=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-020",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=1<2"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-021",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=2<=2"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-022",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=3>=4"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-023",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=1<>1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-024",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=\"a\"=\"A\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-025",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=\"apple\"<\"Banana\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-026",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=\"abc\"<\"abd\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-027",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=1=\"1\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-028",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=TRUE=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-029",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=TRUE>FALSE"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-030",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=TRUE>1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-031",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=\"a\">1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-032",
+      "source": "documented",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=TRUE>\"a\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-033",
+      "source": "documented",
+      "description": "A blank equals 0 against a number",
+      "cells": {"ZZ1000": "=A1=0"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-034",
+      "source": "documented",
+      "description": "A blank equals \"\" against text",
+      "cells": {"ZZ1000": "=A1=\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-035",
+      "source": "documented",
+      "description": "A blank equals FALSE against a boolean",
+      "cells": {"ZZ1000": "=A1=FALSE"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-036",
+      "source": "documented",
+      "description": "Two blanks are equal",
+      "cells": {"ZZ1000": "=A1=A2"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-037",
+      "source": "documented",
+      "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
+      "cells": {"ZZ1000": "=\"2\"+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ARITH-038",
+      "source": "documented",
+      "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
+      "cells": {"ZZ1000": "=-\"2\""},
+      "check": "ZZ1000",
+      "expect": {"value2": -2}
+    },
+    {
+      "id": "ARITH-039",
+      "source": "documented",
+      "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
+      "cells": {"ZZ1000": "=\"abc\"+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ARITH-040",
+      "source": "documented",
+      "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
+      "cells": {"ZZ1000": "=-\"abc\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ARITH-041",
+      "source": "documented",
+      "description": "^ refuses what has no real answer",
+      "cells": {"ZZ1000": "=0^0"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ARITH-042",
+      "source": "documented",
+      "description": "^ refuses what has no real answer",
+      "cells": {"ZZ1000": "=0^-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ARITH-043",
+      "source": "documented",
+      "description": "^ refuses what has no real answer",
+      "cells": {"ZZ1000": "=(-8)^(1/3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ARITH-044",
+      "source": "documented",
+      "description": "^ refuses what has no real answer",
+      "cells": {"ZZ1000": "=10^400"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ARITH-045",
+      "source": "documented",
+      "description": "Typing 2, 3 and =A1+B1 shows 5",
+      "cells": {"A1": "2", "B1": "3", "C1": "=A1+B1"},
+      "check": "C1",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "ARITH-046",
+      "source": "documented",
+      "description": "A typed constant is its Value",
+      "cells": {"A1": "2", "B1": "3", "C1": "=A1+B1"},
+      "check": "A1",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "ARITH-047",
+      "source": "documented",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=1+2*3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "ARITH-048",
+      "source": "documented",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=(1+2)*3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "ARITH-049",
+      "source": "documented",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=10-4-3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ARITH-050",
+      "source": "documented",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=12/4/3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ARITH-051",
+      "source": "documented",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=-A1+B1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ARITH-052",
+      "source": "documented",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=A1*B1-A1/B1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.333333333333333}
+    },
+    {
+      "id": "ARITH-053",
+      "source": "documented",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=--A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "ARITH-054",
+      "source": "documented",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=+A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "ARITH-055",
+      "source": "documented",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=1.5*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ARITH-056",
+      "source": "documented",
+      "description": "A blank cell is 0, and a Formula reading one shows 0",
+      "cells": {"ZZ1000": "=A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-057",
+      "source": "documented",
+      "description": "A blank cell is 0 in arithmetic",
+      "cells": {"ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ARITH-058",
+      "source": "documented",
+      "description": "A division by zero is #DIV/0!",
+      "cells": {"A1": "0", "ZZ1000": "=1/0"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ARITH-059",
+      "source": "documented",
+      "description": "A division by a cell holding 0 is #DIV/0!",
+      "cells": {"A1": "0", "ZZ1000": "=1/A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ARITH-060",
+      "source": "documented",
+      "description": "A division by a blank cell is #DIV/0!",
+      "cells": {"A1": "0", "ZZ1000": "=1/B1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ARITH-061",
+      "source": "documented",
+      "description": "Text that is not a number is #VALUE! in arithmetic",
+      "cells": {"A1": "Tokyo", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ARITH-062",
+      "source": "documented",
+      "description": "TRUE is 1 in arithmetic",
+      "cells": {"A1": "TRUE", "A2": "FALSE", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "ARITH-063",
+      "source": "documented",
+      "description": "FALSE is 0 in arithmetic",
+      "cells": {"A1": "TRUE", "A2": "FALSE", "ZZ1000": "=A2+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ARITH-064",
+      "source": "documented",
+      "description": "A result that is not a finite double is #NUM!",
+      "cells": {"A1": "1E+300", "ZZ1000": "=A1*A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ARITH-065",
+      "source": "documented",
+      "description": "Doubles as in Excel, not decimals: 0.1+0.2 is 0.30000000000000004, not 0.3",
+      "cells": {"ZZ1000": "=0.1+0.2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.30000000000000004}
+    },
+    {
+      "id": "ARITH-066",
+      "source": "uncertain",
+      "description": "Ticket 19 row 1: a final subtraction that nearly cancels (Excel is reported to set it to 0)",
+      "ticket19Row": 1,
+      "cells": {"ZZ1000": "=0.1+0.2-0.3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.551115123125783e-17}
+    },
+    {
+      "id": "ARITH-067",
+      "source": "uncertain",
+      "description": "Ticket 19 row 2: a final subtraction that nearly cancels",
+      "ticket19Row": 2,
+      "cells": {"ZZ1000": "=0.5-0.4-0.1"},
+      "check": "ZZ1000",
+      "expect": {"value2": -2.7755575615628914e-17}
+    },
+    {
+      "id": "ARITH-068",
+      "source": "uncertain",
+      "description": "Ticket 19 row 3: the same, not the final operation",
+      "ticket19Row": 3,
+      "cells": {"ZZ1000": "=1*(0.5-0.4-0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -2.7755575615628914e-17}
+    },
+    {
+      "id": "ARITH-069",
+      "source": "uncertain",
+      "description": "Ticket 19 row 4: comparing a sum that is not exactly 0.3",
+      "ticket19Row": 4,
+      "cells": {"ZZ1000": "=0.1+0.2=0.3"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-070",
+      "source": "uncertain",
+      "description": "Ticket 19 row 5: which error wins when text meets a division by zero",
+      "ticket19Row": 5,
+      "cells": {"ZZ1000": "=\"a\"+1/0"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ARITH-071",
+      "source": "uncertain",
+      "description": "Ticket 19 row 6: text ordering of punctuation against letters (engine: ordinal, case-insensitive)",
+      "ticket19Row": 6,
+      "cells": {"ZZ1000": "=\"!\"<\"a\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-072",
+      "source": "uncertain",
+      "description": "Ticket 19 row 6: text ordering of an accented letter (engine: ordinal, case-insensitive)",
+      "ticket19Row": 6,
+      "cells": {"ZZ1000": "=\"é\">\"z\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-073",
+      "source": "uncertain",
+      "description": "Ticket 19 row 7: a number written into text from 1E+15 (engine: scientific)",
+      "ticket19Row": 7,
+      "cells": {"ZZ1000": "=1E15&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1E+15"}
+    },
+    {
+      "id": "ARITH-074",
+      "source": "uncertain",
+      "description": "Ticket 19 row 7: a number written into text below 1E-05 (engine: scientific)",
+      "ticket19Row": 7,
+      "cells": {"ZZ1000": "=1E-5&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1E-05"}
+    },
+    {
+      "id": "ARITH-075",
+      "source": "uncertain",
+      "description": "Ticket 19 row 7: a number past 15 digits written into text",
+      "ticket19Row": 7,
+      "cells": {"ZZ1000": "=123456789012345678&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1.23456789012346E+17"}
+    }
+  ]
+}

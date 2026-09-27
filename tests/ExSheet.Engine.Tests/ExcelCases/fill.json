@@ -1,0 +1,595 @@
+{
+  "area": "fill",
+  "about": "What a fill writes: copies with References shifted, a linear trend, a date by day, and the patterns refused until they arrive (ADR-0050). Excel's side is Range.AutoFill with xlFillDefault.",
+  "cases": [
+    {
+      "id": "FILL-001",
+      "source": "documented",
+      "description": "1, 2 dragged gives 1, 2, 3, 4",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A1",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "FILL-002",
+      "source": "documented",
+      "description": "1, 2 dragged gives 1, 2, 3, 4",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A2",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "FILL-003",
+      "source": "documented",
+      "description": "1, 2 dragged gives 1, 2, 3, 4",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A3",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "FILL-004",
+      "source": "documented",
+      "description": "1, 2 dragged gives 1, 2, 3, 4",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A4",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "FILL-005",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (1, 2)",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A3",
+      "expect": {"value2": 3, "digits": 12}
+    },
+    {
+      "id": "FILL-006",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (1, 2)",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A4",
+      "expect": {"value2": 4, "digits": 12}
+    },
+    {
+      "id": "FILL-007",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (1, 2)",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A5",
+      "expect": {"value2": 5, "digits": 12}
+    },
+    {
+      "id": "FILL-008",
+      "source": "documented",
+      "description": "The source cells are left as typed, not replaced by the fitted line (1, 2)",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A2",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "FILL-009",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (1, 3)",
+      "cells": {"A1": "1", "A2": "3"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A3",
+      "expect": {"value2": 5, "digits": 12}
+    },
+    {
+      "id": "FILL-010",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (1, 3)",
+      "cells": {"A1": "1", "A2": "3"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A4",
+      "expect": {"value2": 7, "digits": 12}
+    },
+    {
+      "id": "FILL-011",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (1, 3)",
+      "cells": {"A1": "1", "A2": "3"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A5",
+      "expect": {"value2": 9, "digits": 12}
+    },
+    {
+      "id": "FILL-012",
+      "source": "documented",
+      "description": "The source cells are left as typed, not replaced by the fitted line (1, 3)",
+      "cells": {"A1": "1", "A2": "3"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A2",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "FILL-013",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (100, 95)",
+      "cells": {"A1": "100", "A2": "95"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A3",
+      "expect": {"value2": 90, "digits": 12}
+    },
+    {
+      "id": "FILL-014",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (100, 95)",
+      "cells": {"A1": "100", "A2": "95"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A4",
+      "expect": {"value2": 85, "digits": 12}
+    },
+    {
+      "id": "FILL-015",
+      "source": "documented",
+      "description": "The source cells are left as typed, not replaced by the fitted line (100, 95)",
+      "cells": {"A1": "100", "A2": "95"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A2",
+      "expect": {"value2": 95}
+    },
+    {
+      "id": "FILL-016",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (1, 3, 4)",
+      "cells": {"A1": "1", "A2": "3", "A3": "4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
+      "check": "A4",
+      "expect": {"value2": 5.666666666666667, "digits": 12}
+    },
+    {
+      "id": "FILL-017",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (1, 3, 4)",
+      "cells": {"A1": "1", "A2": "3", "A3": "4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
+      "check": "A5",
+      "expect": {"value2": 7.166666666666667, "digits": 12}
+    },
+    {
+      "id": "FILL-018",
+      "source": "documented",
+      "description": "Microsoft's examples of an AutoFill linear series (1, 3, 4)",
+      "cells": {"A1": "1", "A2": "3", "A3": "4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
+      "check": "A6",
+      "expect": {"value2": 8.666666666666666, "digits": 12}
+    },
+    {
+      "id": "FILL-019",
+      "source": "documented",
+      "description": "The source cells are left as typed, not replaced by the fitted line (1, 3, 4)",
+      "cells": {"A1": "1", "A2": "3", "A3": "4"},
+      "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
+      "check": "A3",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "FILL-020",
+      "source": "documented",
+      "description": "A series filled upward goes back along the same line",
+      "cells": {"A5": "1", "A6": "2"},
+      "action": {"do": "fill", "source": "A5:A6", "target": "A3:A4", "direction": "up"},
+      "check": "A4",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "FILL-021",
+      "source": "documented",
+      "description": "A series filled upward goes back along the same line",
+      "cells": {"A5": "1", "A6": "2"},
+      "action": {"do": "fill", "source": "A5:A6", "target": "A3:A4", "direction": "up"},
+      "check": "A3",
+      "expect": {"value2": -1}
+    },
+    {
+      "id": "FILL-022",
+      "source": "documented",
+      "description": "A series fills to the right as it fills down",
+      "cells": {"A1": "10", "B1": "20"},
+      "action": {"do": "fill", "source": "A1:B1", "target": "C1:E1", "direction": "right"},
+      "check": "C1",
+      "expect": {"value2": 30}
+    },
+    {
+      "id": "FILL-023",
+      "source": "documented",
+      "description": "A series fills to the right as it fills down",
+      "cells": {"A1": "10", "B1": "20"},
+      "action": {"do": "fill", "source": "A1:B1", "target": "C1:E1", "direction": "right"},
+      "check": "D1",
+      "expect": {"value2": 40}
+    },
+    {
+      "id": "FILL-024",
+      "source": "documented",
+      "description": "A series fills to the right as it fills down",
+      "cells": {"A1": "10", "B1": "20"},
+      "action": {"do": "fill", "source": "A1:B1", "target": "C1:E1", "direction": "right"},
+      "check": "E1",
+      "expect": {"value2": 50}
+    },
+    {
+      "id": "FILL-025",
+      "source": "documented",
+      "description": "A single number is copied, as Excel's plain drag copies it",
+      "cells": {"A1": "5"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
+      "check": "A2",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "FILL-026",
+      "source": "documented",
+      "description": "A single number is copied, as Excel's plain drag copies it",
+      "cells": {"A1": "5"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
+      "check": "A3",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "FILL-027",
+      "source": "documented",
+      "description": "A date gives the following days, in the date's format",
+      "cells": {"A1": "9/27/2026"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},
+      "check": "A2",
+      "expect": {"text": "9/28/2026"}
+    },
+    {
+      "id": "FILL-028",
+      "source": "documented",
+      "description": "A date gives the following days, in the date's format",
+      "cells": {"A1": "9/27/2026"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},
+      "check": "A3",
+      "expect": {"text": "9/29/2026"}
+    },
+    {
+      "id": "FILL-029",
+      "source": "documented",
+      "description": "A date gives the following days, in the date's format",
+      "cells": {"A1": "9/27/2026"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},
+      "check": "A4",
+      "expect": {"text": "9/30/2026"}
+    },
+    {
+      "id": "FILL-030",
+      "source": "documented",
+      "description": "A date filled up gives the days before it",
+      "cells": {"A3": "3/1/2026"},
+      "action": {"do": "fill", "source": "A3", "target": "A1:A2", "direction": "up"},
+      "check": "A2",
+      "expect": {"text": "2/28/2026"}
+    },
+    {
+      "id": "FILL-031",
+      "source": "documented",
+      "description": "A date filled up gives the days before it",
+      "cells": {"A3": "3/1/2026"},
+      "action": {"do": "fill", "source": "A3", "target": "A1:A2", "direction": "up"},
+      "check": "A1",
+      "expect": {"text": "2/27/2026"}
+    },
+    {
+      "id": "FILL-032",
+      "source": "documented",
+      "description": "Two dates a month apart are a pattern ExSheet does not yet take: refused",
+      "cells": {"A1": "1/1/2026", "A2": "2/1/2026"},
+      "formats": {"A1": "yyyy-mm-dd", "A2": "yyyy-mm-dd"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A3",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": 46082}
+    },
+    {
+      "id": "FILL-033",
+      "source": "documented",
+      "description": "A date with a time is a pattern ExSheet does not yet take: refused",
+      "cells": {"A1": "9/27/2026 10:00"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},
+      "check": "A2",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": 46293.416666666664, "digits": 9}
+    },
+    {
+      "id": "FILL-034",
+      "source": "documented",
+      "description": "A time of day is a pattern ExSheet does not yet take: refused",
+      "cells": {"A1": "10:00"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},
+      "check": "A2",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": 0.4583333333333333, "digits": 12}
+    },
+    {
+      "id": "FILL-035",
+      "source": "documented",
+      "description": "A Formula dragged shifts its relative References",
+      "cells": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "B1": "=A1*$A$1+A$1"},
+      "action": {"do": "fill", "source": "B1", "target": "B2:B4", "direction": "down"},
+      "check": "B4",
+      "expect": {"value2": 5, "formula": "=A4*$A$1+A$1"}
+    },
+    {
+      "id": "FILL-036",
+      "source": "documented",
+      "description": "Several Formulas repeat in order, each shifted from where it came",
+      "cells": {"A1": "=B1", "A2": "=C2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A3",
+      "expect": {"formula": "=B3"}
+    },
+    {
+      "id": "FILL-037",
+      "source": "documented",
+      "description": "Several Formulas repeat in order, each shifted from where it came",
+      "cells": {"A1": "=B1", "A2": "=C2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A4",
+      "expect": {"formula": "=C4"}
+    },
+    {
+      "id": "FILL-038",
+      "source": "documented",
+      "description": "Several Formulas repeat in order, each shifted from where it came",
+      "cells": {"A1": "=B1", "A2": "=C2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
+      "check": "A5",
+      "expect": {"formula": "=B5"}
+    },
+    {
+      "id": "FILL-039",
+      "source": "documented",
+      "description": "Several Formulas filled up repeat backwards",
+      "cells": {"A5": "=B5", "A6": "=C6"},
+      "action": {"do": "fill", "source": "A5:A6", "target": "A2:A4", "direction": "up"},
+      "check": "A2",
+      "expect": {"formula": "=C2"}
+    },
+    {
+      "id": "FILL-040",
+      "source": "documented",
+      "description": "Several Formulas filled up repeat backwards",
+      "cells": {"A5": "=B5", "A6": "=C6"},
+      "action": {"do": "fill", "source": "A5:A6", "target": "A2:A4", "direction": "up"},
+      "check": "A3",
+      "expect": {"formula": "=B3"}
+    },
+    {
+      "id": "FILL-041",
+      "source": "documented",
+      "description": "Several Formulas filled up repeat backwards",
+      "cells": {"A5": "=B5", "A6": "=C6"},
+      "action": {"do": "fill", "source": "A5:A6", "target": "A2:A4", "direction": "up"},
+      "check": "A4",
+      "expect": {"formula": "=C4"}
+    },
+    {
+      "id": "FILL-042",
+      "source": "documented",
+      "description": "Text Excel would continue is refused, not filled with copies (Item 1)",
+      "cells": {"A1": "Item 1"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
+      "check": "A2",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": "Item 2"}
+    },
+    {
+      "id": "FILL-043",
+      "source": "documented",
+      "description": "Text Excel would continue is refused, not filled with copies (Q1)",
+      "cells": {"A1": "Q1"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
+      "check": "A2",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": "Q2"}
+    },
+    {
+      "id": "FILL-044",
+      "source": "documented",
+      "description": "Text Excel would continue is refused, not filled with copies (Monday)",
+      "cells": {"A1": "Monday"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
+      "check": "A2",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": "Tuesday"}
+    },
+    {
+      "id": "FILL-045",
+      "source": "documented",
+      "description": "Text Excel would continue is refused, not filled with copies (jan)",
+      "cells": {"A1": "jan"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
+      "check": "A2",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies"
+    },
+    {
+      "id": "FILL-046",
+      "source": "documented",
+      "description": "Text Excel would continue is refused, not filled with copies (Sep)",
+      "cells": {"A1": "Sep"},
+      "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
+      "check": "A2",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": "Oct"}
+    },
+    {
+      "id": "FILL-047",
+      "source": "documented",
+      "description": "Day names are refused in the Sheet's culture too",
+      "culture": "de-DE",
+      "cells": {"A1": "Montag"},
+      "action": {"do": "fill", "source": "A1", "target": "A2", "direction": "down"},
+      "check": "A2",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
+      "excelExpect": {"value2": "Dienstag"}
+    },
+    {
+      "id": "FILL-048",
+      "source": "documented",
+      "description": "Text with no pattern, booleans, Error Values and blanks are copied, repeating the source",
+      "cells": {"A1": "apple", "A2": "TRUE", "A3": "#N/A", "A7": "stale"},
+      "action": {"do": "fill", "source": "A1:A4", "target": "A5:A8", "direction": "down"},
+      "check": "A5",
+      "expect": {"value2": "apple"}
+    },
+    {
+      "id": "FILL-049",
+      "source": "documented",
+      "description": "Text with no pattern, booleans, Error Values and blanks are copied, repeating the source",
+      "cells": {"A1": "apple", "A2": "TRUE", "A3": "#N/A", "A7": "stale"},
+      "action": {"do": "fill", "source": "A1:A4", "target": "A5:A8", "direction": "down"},
+      "check": "A6",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "FILL-050",
+      "source": "documented",
+      "description": "Text with no pattern, booleans, Error Values and blanks are copied, repeating the source",
+      "cells": {"A1": "apple", "A2": "TRUE", "A3": "#N/A", "A7": "stale"},
+      "action": {"do": "fill", "source": "A1:A4", "target": "A5:A8", "direction": "down"},
+      "check": "A7",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "FILL-051",
+      "source": "documented",
+      "description": "Text with no pattern, booleans, Error Values and blanks are copied, repeating the source",
+      "cells": {"A1": "apple", "A2": "TRUE", "A3": "#N/A", "A7": "stale"},
+      "action": {"do": "fill", "source": "A1:A4", "target": "A5:A8", "direction": "down"},
+      "check": "A8",
+      "expect": {"value2": null}
+    },
+    {
+      "id": "FILL-052",
+      "source": "documented",
+      "description": "Numbers mixed with anything else are refused (1 and a)",
+      "cells": {"A1": "1", "A2": "a"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A3",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies"
+    },
+    {
+      "id": "FILL-053",
+      "source": "documented",
+      "description": "Numbers mixed with anything else are refused (1 and =A1)",
+      "cells": {"A1": "1", "A2": "=A1"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A3",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies"
+    },
+    {
+      "id": "FILL-054",
+      "source": "documented",
+      "description": "Numbers mixed with anything else are refused (1 and a blank)",
+      "cells": {"A1": "1"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
+      "check": "A3",
+      "expect": {"refused": "FillPatternNotSupported", "value2": null},
+      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies"
+    },
+    {
+      "id": "FILL-055",
+      "source": "documented",
+      "description": "Each column of a vertical fill follows its own rule: a series",
+      "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
+      "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
+      "check": "A4",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "FILL-056",
+      "source": "documented",
+      "description": "Each column of a vertical fill follows its own rule: a Formula and a blank repeat",
+      "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
+      "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
+      "check": "B3",
+      "expect": {"formula": "=A3"}
+    },
+    {
+      "id": "FILL-057",
+      "source": "documented",
+      "description": "Each column of a vertical fill follows its own rule: a Formula and a blank repeat",
+      "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
+      "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
+      "check": "B4",
+      "expect": {"value2": null, "formula": ""}
+    },
+    {
+      "id": "FILL-058",
+      "source": "documented",
+      "description": "Each column of a vertical fill follows its own rule: text and a blank repeat",
+      "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
+      "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
+      "check": "C3",
+      "expect": {"value2": "x"}
+    },
+    {
+      "id": "FILL-059",
+      "source": "documented",
+      "description": "Each column of a vertical fill follows its own rule: text and a blank repeat",
+      "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
+      "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
+      "check": "C4",
+      "expect": {"value2": null}
+    },
+    {
+      "id": "FILL-060",
+      "source": "documented",
+      "description": "The target may be given as the whole extended range",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A1:A4", "direction": "down"},
+      "check": "A4",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "FILL-061",
+      "source": "documented",
+      "description": "The target may be given as the whole extended range; the source stays",
+      "cells": {"A1": "1", "A2": "2"},
+      "action": {"do": "fill", "source": "A1:A2", "target": "A1:A4", "direction": "down"},
+      "check": "A1",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "FILL-062",
+      "source": "documented",
+      "description": "A fill shifts its relative References and keeps the whitespace",
+      "cells": {"B1": "=A1 + 1"},
+      "action": {"do": "fill", "source": "B1", "target": "B2:B3", "direction": "down"},
+      "check": "B2",
+      "expect": {"formula": "=A2 + 1"}
+    },
+    {
+      "id": "FILL-063",
+      "source": "documented",
+      "description": "A fill shifts its relative References and keeps the whitespace",
+      "cells": {"B1": "=A1 + 1"},
+      "action": {"do": "fill", "source": "B1", "target": "B2:B3", "direction": "down"},
+      "check": "B3",
+      "expect": {"formula": "=A3 + 1"}
+    }
+  ]
+}
