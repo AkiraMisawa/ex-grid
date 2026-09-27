@@ -87,6 +87,9 @@ public class ExcelCaseTests
     [Theory, MemberData(nameof(Ids), "format-levels")] // ADR-0047, SH-21: formats at cell, row and column level, cell over row over column
     public void FormatLevels(string id) => Run("format-levels", id);
 
+    [Theory, MemberData(nameof(Ids), "formula-formats")] // ADR-0047: a Formula entered into a General cell takes a format as Excel's does
+    public void FormulaFormats(string id) => Run("formula-formats", id);
+
     [Theory, MemberData(nameof(Ids), "structure")] // ADR-0046/0047: insertion and deletion rewrite References
     public void Structure(string id) => Run("structure", id);
 
@@ -101,7 +104,7 @@ public class ExcelCaseTests
 
     private static readonly string[] Read =
     [
-        "arithmetic", "average", "copy", "count", "counta", "dates", "errors", "fill", "format-levels", "formula-text", "general-width", "if", "iferror", "iserror",
+        "arithmetic", "average", "copy", "count", "counta", "dates", "errors", "fill", "format-levels", "formula-formats", "formula-text", "general-width", "if", "iferror", "iserror",
         "linked-tables", "max", "min", "number-formats", "references", "round", "sheet-names", "structure", "sum", "typed-constants", "xlookup",
     ];
 

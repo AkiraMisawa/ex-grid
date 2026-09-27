@@ -211,6 +211,22 @@ public class FormatLevelTests
         Assert.Equal((TwoPlaces, (HorizontalAlignment?)HorizontalAlignment.Left), (cell.Format, cell.Alignment));
     }
 
+    [Fact] // ADR-0047/0048: the format a Formula takes at entry is part of the entry's step, and undoing it puts General back
+    public void A_formula_format_taken_at_entry_is_undone_with_it()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "9/26/2026");
+        var before = sheet.ToDocument().ToJson();
+
+        var step = sheet.Do(SheetEdit.Enter(At("B1"), "=A1+1"));
+
+        Assert.True(sheet.GetFormat(At("B1")).IsDate);
+        Assert.Contains(0, step.Change.Rows);
+        step.Undo();
+        Assert.Equal(before, sheet.ToDocument().ToJson());
+        Assert.True(sheet.GetFormat(At("B1")).IsGeneral);
+    }
+
     [Theory] // ADR-0047: whole columns and rows are written as Excel writes them
     [InlineData("B:D", true, false)]
     [InlineData("3:4", false, true)]

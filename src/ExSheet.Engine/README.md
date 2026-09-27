@@ -46,7 +46,10 @@ change.ValueChanges;                        // C1
 ```
 
 `Enter` reads text as a user typed it: text beginning with `=` is a Formula, and anything else is
-a constant read under the Sheet's culture and recorded already parsed. A Formula keeps the
+a constant read under the Sheet's culture and recorded already parsed. Typing into a General cell
+can give it a format, as in Excel: a date or a percentage typed as one, and a Formula of simple
+arithmetic (`+`, `-`, single-cell References, parentheses) takes the format of the first
+formatted cell it reads, so `=A1+7` over a date shows a date. It happens once, at entry. A Formula keeps the
 whitespace it was typed with; its tokens are written in Excel's spelling (`= sum( a1 )` is kept
 as `= SUM( A1 )`), and rewriting its References changes only the Reference tokens.
 

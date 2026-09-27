@@ -145,6 +145,12 @@ public sealed partial class Sheet
     /// Takes several typed texts as one change, with one recalculation (a paste). If any text is a
     /// Formula that cannot be read, nothing changes.
     /// </summary>
+    /// <remarks>
+    /// Typing can give a cell whose format is General a format, as Excel's does: a date or a
+    /// percentage typed as one, and a Formula that reads a formatted cell in simple arithmetic
+    /// (<see cref="FormatOnEntry"/>). A cell already formatted keeps its format, and a format
+    /// given on entry is never changed by a later recalculation (ADR-0047).
+    /// </remarks>
     /// <exception cref="FormulaSyntaxException">A text is a Formula that cannot be read.</exception>
     public SheetChange Enter(IEnumerable<KeyValuePair<CellAddress, string>> typed)
     {
@@ -170,6 +176,15 @@ public sealed partial class Sheet
             if (!GetFormat(address).IsGeneral) continue;
             var cell = _cells.TryGetValue(address, out var existing) ? existing : _cells[address] = new Cell(address);
             cell.Format = format;
+            rows.Add(address.Row);
+        }
+        // A Formula entered into a General cell takes a format from what it reads, as in Excel
+        // (ADR-0047): after the constants above, so it reads the formats they were just given.
+        foreach (var (address, entry) in entries)
+        {
+            if (entry?.Parsed is not { } parsed || !GetFormat(address).IsGeneral || FormatOnEntry(parsed) is not { } inferred) continue;
+            var cell = _cells.TryGetValue(address, out var existing) ? existing : _cells[address] = new Cell(address);
+            cell.Format = inferred;
             rows.Add(address.Row);
         }
         var change = SetEntries(entries);

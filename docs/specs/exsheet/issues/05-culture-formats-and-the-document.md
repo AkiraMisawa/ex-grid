@@ -93,3 +93,12 @@ recorded when a level would otherwise show through) and still reads versions 1 a
 `SheetDocumentCell.Format`/`Alignment` are now nullable, null meaning "takes its row's or
 column's". Cases: `ExcelCases/format-levels.json` (insertion's Format Same As Above/Left
 documented, the precedence cases uncertain); C#: `FormatLevelTests`, `SheetDocumentTests`.
+
+2026-09-27, engine, a Formula's format at entry (ADR-0047 second round): `Sheet.Enter` (typing
+and pasted text) gives a Formula entered into a General cell the format of the first formatted
+cell it reads, for Formulas of simple arithmetic only — single-cell References, constants, `+`,
+`-`, parentheses — so a date plus a number, and a date minus a date, show as dates. Once, at
+entry; a cell already formatted keeps its format; the entry's step undoes it. Microsoft documents
+this only for `DATE`, `TODAY` and `NOW`, which are not declared, so all fifteen cases in
+`ExcelCases/formula-formats.json` are uncertain; multiplication, functions and `&` give no format
+(the engine's answer, recorded for the oracle to confirm or correct).

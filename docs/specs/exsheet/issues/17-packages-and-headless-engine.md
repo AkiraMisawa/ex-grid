@@ -30,3 +30,11 @@ publishing `ExSheet.Engine` through the release is left for a decision (reported
 **What remains:** the `ExSheet` component package (it does not exist yet) and its smoke check,
 the release workflow publishing both, and the third criterion's layer 2 half — the Values on
 screen compared with the headless ones.
+
+2026-09-27, engine: the Sheet Document is version 3 — row and column formats as runs, a cell's
+own format and alignment — and the engine still opens versions 1 and 2, so a document saved by
+an earlier prerelease computes the same Values headless. A headless reader that wants what a
+column shows calls `Sheet.GetDisplay(address, width)` with the column's width in characters
+(General fitted as Excel's, SH-20); `GetDisplay(address)` stays the unfitted text.
+`SheetDocumentCell.Format` and `.Alignment` became nullable (null: the cell takes its row's or
+column's), a source-level change for a Consumer that reads them.
