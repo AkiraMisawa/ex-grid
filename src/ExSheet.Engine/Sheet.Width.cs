@@ -40,10 +40,12 @@ public sealed partial class Sheet
         ApplyColumnWidth(columns, CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, IsCustom: true) : null).Change;
 
     /// <summary>
-    /// Sets the width of every column <paramref name="columns"/> spans, in characters, as a width
-    /// an entry widened them to: automatic, so a longer entry widens them again (ADR-0046, ADR-0047
-    /// second round). It is recorded like any other width, so the document reopens as the user saw
-    /// it. The change names the columns whose width, or whose origin, changed.
+    /// Sets the width of every column <paramref name="columns"/> spans, in characters, as an
+    /// automatic width, so a longer entry widens them (ADR-0046). It is recorded like any other
+    /// width, so the document reopens as the user saw it. The component no longer widens a column
+    /// to one: a width a typed entry widened a column to is custom (ADR-0047, "What the second
+    /// observation settled", CW-018), and an automatic width is what a document may already hold.
+    /// The change names the columns whose width, or whose origin, changed.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="MaxColumnWidth"/>.</exception>
     public SheetChange SetAutomaticColumnWidth(CellRange columns, double width) =>
@@ -174,7 +176,8 @@ public sealed partial class Sheet
     /// </list>
     /// The component calls it after the user's entry is done, and widens the column to the answer
     /// when the column is at its default width or an automatic one (<see cref="SetAutomaticColumnWidth"/>),
-    /// never a custom one, and narrower than the answer (ADR-0046). How Excel
+    /// never a custom one, and narrower than the answer, recording the width as custom (ADR-0046,
+    /// ADR-0047 CW-018). How Excel
     /// chooses the new width is observed by the case corpus; this rule is uncertain there.
     /// </summary>
     public int? GetWidthOnEntry(CellAddress address)

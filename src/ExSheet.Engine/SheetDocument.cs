@@ -505,8 +505,8 @@ public sealed record SheetDocumentAxisStyle(int First, int Last, NumberFormat? F
 /// <param name="Last">The last column of the run.</param>
 /// <param name="Width">The width, in characters of the default font (Excel's unit, ADR-0047).</param>
 /// <param name="IsCustom">
-/// Whether the user set it (<see cref="SheetColumnWidth.IsCustom"/>); <see langword="false"/> for
-/// a width an entry widened the columns to, which a longer entry widens again.
+/// Whether it is custom (<see cref="SheetColumnWidth.IsCustom"/>); <see langword="false"/> for an
+/// automatic width, which a longer entry widens (ADR-0046).
 /// </param>
 public sealed record SheetDocumentColumnWidth(int First, int Last, double Width, bool IsCustom = true);
 

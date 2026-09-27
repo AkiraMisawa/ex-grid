@@ -797,9 +797,13 @@
     /// the grid resolves, so the widened column holds it and the grid does not hash it
     /// (ADR-0016). The width is recorded in the Sheet like any other (ADR-0046), as a step of
     /// the entry's own operation; the step, or null where the column is not widened. The width
-    /// is recorded as automatic (ADR-0046), so a longer entry widens the column again; it never
-    /// narrows it. A column whose width the user set — a drag, a size to fit — is custom and is
-    /// never widened. Only the typed entry widens: not a paste, a fill or a recalculated Formula.
+    /// is recorded as custom, with the edit a resize uses, as Excel's file marks a column a typed
+    /// entry widened (<c>customWidth</c>; ADR-0047, "What the second observation settled", CW-018),
+    /// so a longer entry does not widen the column again; nothing narrows it. A column whose width
+    /// is custom — the user's drag or size to fit, or an earlier widening — is never widened. An
+    /// automatic width survives only in a document that already holds one (ADR-0046): a longer
+    /// entry still widens that column, and the width it records is custom. Only the typed entry
+    /// widens: not a paste, a fill or a recalculated Formula.
     /// </summary>
     private SheetStep? WidenOnEntry(CellAddress address)
     {
@@ -813,7 +817,7 @@
             metrics.EstimatePx(shown.Text)));
         if (needed <= _columns.WidthPxOf(address.Column)) return null;
         if (SheetColumns.CharactersOfColumn(needed, metrics) is not { } recorded) return null;
-        return sheet.Do(SheetEdit.SetAutomaticColumnWidth(CellRange.WholeColumns(address.Column, address.Column), recorded));
+        return sheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(address.Column, address.Column), recorded));
     }
 
     private Task ChangedAsync(SheetChange change, bool raiseDocument = true, bool byUser = true) => ChangedAsync([change], raiseDocument, byUser);

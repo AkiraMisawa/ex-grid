@@ -90,9 +90,11 @@ public abstract class SheetEdit
         new ColumnWidthEdit(columns, Sheet.CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, IsCustom: true) : null);
 
     /// <summary>
-    /// A width an entry widened every column <paramref name="columns"/> spans to, in characters
-    /// (<see cref="Sheet.SetAutomaticColumnWidth"/>): automatic, so a longer entry widens them
-    /// again (ADR-0046). Undoing the step puts back every column's width exactly.
+    /// An automatic width on every column <paramref name="columns"/> spans, in characters
+    /// (<see cref="Sheet.SetAutomaticColumnWidth"/>), so a longer entry widens them (ADR-0046).
+    /// The component no longer records one, since a width a typed entry widened a column to is
+    /// custom (ADR-0047, CW-018); it stands for the automatic widths a document already holds.
+    /// Undoing the step puts back every column's width exactly.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="Sheet.MaxColumnWidth"/>.</exception>
     public static SheetEdit SetAutomaticColumnWidth(CellRange columns, double width) =>
