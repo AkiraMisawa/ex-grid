@@ -11,8 +11,9 @@ namespace ExGrid.Components.Tests;
 /// ST-1: after any sequence of operations the invariants hold. A scripted randomised
 /// sequence — clicks, drags, every claimed key, scrolls, sorts, filters, geometry
 /// changes — asserting after each step that every selection rectangle lies inside the
-/// extent, the displayed cell count is the sum of rectangle areas, the painted rows
-/// are a contiguous slice, and nothing throws. The seed is in the test name's data so
+/// extent, the Focus and the Extent lie inside the range holding the Focus (ADR-0052),
+/// the displayed cell count is the sum of rectangle areas, the painted rows are a
+/// contiguous slice, and nothing throws. The seed is in the test name's data so
 /// a failure replays exactly.
 /// </summary>
 public class ConsistencyTests : GridTestContext
@@ -63,6 +64,7 @@ public class ConsistencyTests : GridTestContext
         [
             "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End",
             "PageUp", "PageDown", "Enter", "Tab", " ", "a", "Escape", "F2", "5",
+            ".", "Backspace",
         ];
         var maxScrollTop = (totalRows * 20d) - (140 - 20);
 
@@ -138,6 +140,15 @@ public class ConsistencyTests : GridTestContext
             area += range.CellCount;
         }
         Assert.Equal(area, selection.CellCount);
+
+        // The Focus is always inside the Selection, in the range it names, and the Extent is a
+        // cell of that range — there is no detached state (ADR-0052).
+        if (!selection.IsEmpty)
+        {
+            Assert.True(selection.FocusRange.Contains(selection.Focus));
+            Assert.True(selection.FocusRange.Contains(selection.Extent));
+            Assert.Contains(selection.FocusRange, selection.Ranges);
+        }
 
         // The painted rows are one contiguous, absolutely-indexed slice.
         var rows = cut.FindAll(".ex-row");
