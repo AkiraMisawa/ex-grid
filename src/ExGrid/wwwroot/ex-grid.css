@@ -480,6 +480,42 @@
 }
 /* The pinned editor's zero-size sticky anchor — the pinned selection layer's trick. */
 .ex-editor-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
+/* The completion list and the argument hint (ADR-0051): the editor's Inner Popup, in a box the
+   core stands beneath the editor surface, inside the grid's box — its place, its width's clamp
+   and its max-height arrive inline (ADR-0027/0040), and contents taller than the room scroll.
+   Each candidate is a row's height, the same token the cells read. */
+.ex-completion {
+    position: absolute;
+    z-index: 12;
+    box-sizing: border-box;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--ex-header-background, Canvas);
+    color: inherit;
+    outline: var(--ex-grid-focus-outline, 1px solid Highlight);
+}
+.ex-completion-list { display: flex; flex-direction: column; }
+.ex-completion-item {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+}
+.ex-completion-selected { background: var(--ex-selection-fill, rgba(60, 120, 216, 0.18)); }
+.ex-completion-hint {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.8;
+}
+.ex-completion-list + .ex-completion-hint {
+    border-top: var(--ex-rule-width, 1px) solid var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
+}
 /* The pager and the status line (ADR-0015): the pager exists when PageSize is passed
    and rides the same Range Request machinery as scrolling; the status line closes the
    invisible-selection hole — for paging and scrolling alike. */

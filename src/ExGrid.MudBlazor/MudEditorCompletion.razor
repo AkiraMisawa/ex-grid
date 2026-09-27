@@ -1,0 +1,34 @@
+@* The completion seam's content (ADR-0051/0030): the Consumer's candidates as a Material list,
+   the chosen one wearing MudBlazor's selected item, and the argument hint beneath it in the
+   caption type. The core owns the box beneath the editor, its place inside the grid's box
+   (ADR-0040) and every key — ↑/↓, Tab and Escape never reach this component, the capture
+   listener takes them as the editor's. This paints and calls back: a press on a candidate
+   accepts it, and the box keeps DOM focus in the editor. *@
+@if (Context.Candidates.Count > 0)
+{
+    <div class="mud-list mud-ex-completion-list" role="listbox">
+        @for (var i = 0; i < Context.Candidates.Count; i++)
+        {
+            var index = i;
+            var selected = index == Context.Selected;
+            <div class="@(selected ? "mud-list-item mud-ex-completion-item mud-selected-item mud-primary-text" : "mud-list-item mud-ex-completion-item")"
+                 id="@(Context.OptionIdPrefix + index.ToString(System.Globalization.CultureInfo.InvariantCulture))" role="option"
+                 aria-selected="@(selected ? "true" : "false")"
+                 @onmousedown="() => Context.Accept(index)">
+                <span class="mud-typography mud-typography-body2">@Context.Candidates[index].Label</span>
+            </div>
+        }
+    </div>
+}
+@if (Context.Hint is { } hint)
+{
+    var (before, emphasis, after) = hint.Parts();
+    <div class="mud-typography mud-typography-caption mud-ex-completion-hint">@before@if (emphasis.Length > 0)
+        {<strong>@emphasis</strong>}@after</div>
+}
+
+@code {
+    /// <summary>The core's contract for the list (ADR-0051): the candidates, the chosen one,
+    /// the hint, and where an accept goes.</summary>
+    [Parameter, EditorRequired] public EditorCompletionContext Context { get; set; } = default!;
+}

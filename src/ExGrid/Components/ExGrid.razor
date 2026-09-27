@@ -270,7 +270,7 @@
                                     }
                                     else
                                     {
-                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -283,7 +283,7 @@
                             }
                             else
                             {
-                                <input class="ex-editor" style="@editorBox" value="@_editText" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="ex-editor" style="@editorBox" value="@_editText" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -374,7 +374,7 @@
             }
             else
             {
-                <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="Formula Bar"
+                <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="Formula Bar" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync" @oninput="_onFormulaBarInput ??= OnFormulaBarInput"
                        @ref="_formulaBarElement" />
             }
@@ -553,6 +553,45 @@
             else
             {
                 @messageText
+            }
+        </div>
+    }
+    @if (CompletionShown() is { } completion)
+    {
+        var completionContext = BuildCompletionContext(completion);
+        @* The completion list and the argument hint (ADR-0051): the editor's Inner Popup, in a
+           box the core stands beneath the editor surface the user is typing in, inside the
+           grid's box and bounded by the room there (ADR-0040) — outside the scroll container,
+           like every popover. A press in it keeps DOM focus in the editor: the editor still
+           holds the keyboard, and ↑/↓, Tab and Escape reach the core through the capture
+           listener as the editor's keys. Chrome paints the contents (ADR-0010/0030). *@
+        <div class="ex-completion" style="@CompletionStyle()" role="presentation"
+             @onmousedown:preventDefault @onmousedown:stopPropagation>
+            @if (Chrome?.EditorCompletion(completionContext) is { } completionFragment)
+            {
+                @completionFragment
+            }
+            else
+            {
+                @if (completion.Candidates.Count > 0)
+                {
+                    <div class="ex-completion-list" id="@CompletionListId" role="listbox">
+                        @for (var i = 0; i < completion.Candidates.Count; i++)
+                        {
+                            var index = i;
+                            <div class="@(index == _completionSelected ? "ex-completion-item ex-completion-selected" : "ex-completion-item")"
+                                 id="@(CompletionOptionPrefix + index.ToString(CultureInfo.InvariantCulture))" role="option"
+                                 aria-selected="@(index == _completionSelected ? "true" : "false")"
+                                 @onmousedown="() => AcceptCandidate(index)">@completion.Candidates[index].Label</div>
+                        }
+                    </div>
+                }
+                @if (completion.Hint is { } hint)
+                {
+                    var (before, emphasis, after) = hint.Parts();
+                    <div class="ex-completion-hint">@before@if (emphasis.Length > 0)
+                        {<strong>@emphasis</strong>}@after</div>
+                }
             }
         </div>
     }
@@ -2047,6 +2086,7 @@
         // than committed onto a stranger. The gate learns after this render.
         if (_editMode != EditMode.None && _selection.Selection.IsEmpty)
         {
+            CloseCompletion();
             _editMode = EditMode.None;
             _editSurface = EditSurface.Cell;
             _editText = "";
@@ -5462,6 +5502,13 @@
         _editMode = mode;
         _editingCell = cell;
         _editText = initialText;
+        _editCaret = initialText.Length;
+        // A character typed onto the cell is typing, and is reported; an edit opened on the
+        // cell's text is not, until the user types in it (ADR-0051).
+        if (mode == EditMode.Overwrite)
+            RequestCompletion();
+        else
+            CloseCompletion();
         RequestEditorFocus();
         await PushEditingModeAsync();
         StateHasChanged();
@@ -5476,12 +5523,7 @@
             return;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("setEditing", _editMode switch
-            {
-                EditMode.Overwrite => "overwrite",
-                EditMode.Caret => "caret",
-                _ => "none",
-            });
+            await _scrollHandle.InvokeVoidAsync("setEditing", GateMode());
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -5496,6 +5538,18 @@
     /// move together.</param>
     private async Task OnEditingKeyAsync(string canonical)
     {
+        // An open completion list has the first word on its own keys (ADR-0051).
+        if (OnCompletionKey(canonical))
+            return;
+        // In Caret the arrows are the editor's, and reach the core only when the gate was
+        // told something else a moment ago — a list that has just closed. They move no Focus
+        // (ADR-0010). Only where formula entry is declared can that happen at all.
+        if (_editMode == EditMode.Caret && CompleteEditorText is not null
+            && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End")
+        {
+            _suppressRender = false;
+            return;
+        }
         var backward = canonical.StartsWith("Shift+", StringComparison.Ordinal);
         switch (canonical)
         {
@@ -5669,6 +5723,8 @@
 
     private async Task EndEditingAsync()
     {
+        // The list and the hint answer the edit, and go with it (ADR-0051).
+        CloseCompletion();
         _editSurface = EditSurface.Cell;
         _editMode = EditMode.None;
         _editText = "";
@@ -5683,8 +5739,8 @@
 
     private void OnEditorInput(ChangeEventArgs e)
     {
-        _editText = e.Value?.ToString() ?? "";
         _editSurface = EditSurface.Cell;
+        TextTyped(e.Value?.ToString() ?? "");
     }
 
     /// <summary>
@@ -5715,6 +5771,8 @@
         _editMode = EditMode.Caret;
         _editingCell = focus;
         _editText = OpeningTextOf(focus);
+        _editCaret = _editText.Length;
+        CloseCompletion();
         await PushEditingModeAsync();
     }
 
@@ -5727,8 +5785,8 @@
             _suppressRender = true;
             return;
         }
-        _editText = e.Value?.ToString() ?? "";
         _editSurface = EditSurface.Bar;
+        TextTyped(e.Value?.ToString() ?? "");
     }
 
     /// <summary>Whether the Formula Bar takes typing: while an edit is open, or when the
@@ -5838,11 +5896,12 @@
             _editError,
             text =>
             {
-                _editText = text;
                 _editSurface = EditSurface.Cell;
-                // The bar shows the same uncommitted text (ADR-0051): a Chrome's control
-                // reports into its own component, so the root is told to paint the bar.
-                if (ShowFormulaBar)
+                TextTyped(text);
+                // The bar shows the same uncommitted text, and the completion box answers it
+                // (ADR-0051): a Chrome's control reports into its own component, so the root
+                // is told to paint them.
+                if (ShowFormulaBar || CompleteEditorText is not null)
                     StateHasChanged();
             },
             () => _ = InvokeAsync(() => CommitAndMoveAsync(next => next)),
