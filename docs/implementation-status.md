@@ -334,7 +334,11 @@ and an answer outside the request throws rather than being reworded as a reorder
 `ColumnInfo` now carries the column's `Format` and answers the displayed text itself, so a rebuilt
 column compares equal again and the rule is written once; `PlanFill` reports the declaration first
 (ADR-0035); a held Shift+Enter keeps its Shift; the demo's redo replays in order; FD-4/5/8/10/11,
-CP-25 and ED-25 have the tests they lacked.
+CP-25 and ED-25 have the tests they lacked. A second review of those fixes found a held Ctrl+F
+replayed into a popover (a second drain, and a filter field dropping it with every key after it);
+it now goes to the core. After both rounds: layers 1 and 2 **650 + 611 (1 skipped by name) + 70**;
+layer 3 on both browsers **484 pass, 14 skipped by name, 0 failed** on WebAssembly and **488 pass,
+10 skipped by name, 0 failed** on Server.
 
 **Two defects older than this drop, found by chasing the review's Server failures, are fixed:**
 
