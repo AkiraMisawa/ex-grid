@@ -14,7 +14,7 @@ carries a version and the culture, and a reader refuses a version it does not kn
 - [x] A document saved under `en-US` and opened under `de-DE` shows the same numbers (ADR-0048)
 - [x] Date serials match Excel's around 1900-02-29 (ADR-0047)
 - [x] Format codes for numbers, percent, thousands and dates render as Excel's under the culture
-- [ ] A number too wide for its column is `####` (ADR-0016)
+- [x] A number too wide for its column is `####` (ADR-0016)
 - [x] An unknown document version is refused, not guessed at (ADR-0048)
 
 ## Comments
@@ -34,3 +34,26 @@ and refuses an unknown version, a missing one, and anything version 1 does not d
 `####` for a number too wide for its column (ADR-0016) — the engine reports
 `CellDisplay.IsNumber`, and `CellDisplay.CannotShow` for a date no width can show — and the
 commands that set formats and alignment.
+
+2026-09-27, component half: each cell's value in ExGrid is a small immutable object carrying the
+engine's formatted text and whether it is a number (`SheetCellText`); the column's `Format`
+unwraps the text, and `CellType` answers Number or Text per cell from the same object. The
+`CellType` delegate reads only the row it is handed, so it is held once and never replaced: a cell
+whose kind changes arrives on a new row instance (ADR-0003). `####` is ExGrid's own rule for a
+Number cell that does not fit (DC-26/SH-10), with the number as the accessible name; a number no
+format can show (`CellDisplay.CannotShow`) is handed to the grid as a run of `#` no column can
+hold, which the same rule turns into the `####` that fills the cell. `ExSheet.SetNumberFormatAsync`
+and `ExSheet.SetAlignmentAsync` set either on the Selection as one undoable step (the Context Menu
+will call them), refusing by name a selection of more than 100,000 cells. Layer 2:
+`SheetDisplayTests`.
+
+Known gaps, both reported to the orchestrator rather than worked around:
+
+- **Alignment is recorded but not painted per cell.** ExGrid's per-cell declaration is the kind,
+  which gives Number cells the right and Text cells the left; a cell's explicit alignment, and
+  Excel's centring of booleans and Error Values under General, have no per-cell route in the core
+  (`GridColumn.Align` is per column). Painting them needs a core declaration.
+- **General does not shorten to the column's width.** Excel's General format shows `=1/3` as
+  `0.333333` in a default column; the engine gives fifteen significant digits and the grid, rightly
+  by ADR-0016, hashes what does not fit. The default column holds 8.43 of the grid's digits, so a
+  ten-character date such as `2026/09/26` is `####` until the column is wider.
