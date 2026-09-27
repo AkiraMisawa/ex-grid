@@ -50,6 +50,8 @@ public static class DemoPageList
             "An Action Column and Row Marks opening a row's inspector — modal or floating — and where the keyboard goes (ADR-0020, ADR-0043)."),
         new("inspector-edits", "Inspector edits", "Row inspectors",
             "Approving and noting a row from its inspector while the store changes underneath: banner, refusal, versioned notes."),
+        new("sheet", "Sheet", "ExSheet",
+            "ExSheet drawn by ExGrid: values, Formulas and a date, the Headings, the Formula Bar and the Name Box (ADR-0046, ADR-0051)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null

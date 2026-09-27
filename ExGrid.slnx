@@ -4,9 +4,11 @@
   <Project Path="samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj" />
   <Project Path="src/ExGrid/ExGrid.csproj" />
   <Project Path="src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj" />
+  <Project Path="src/ExSheet/ExSheet.csproj" />
   <Project Path="src/ExSheet.Engine/ExSheet.Engine.csproj" />
   <Project Path="tests/ExGrid.Components/ExGrid.Components.csproj" />
   <Project Path="tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj" />
   <Project Path="tests/ExGrid.Tests/ExGrid.Tests.csproj" />
+  <Project Path="tests/ExSheet.Components/ExSheet.Components.csproj" />
   <Project Path="tests/ExSheet.Engine.Tests/ExSheet.Engine.Tests.csproj" />
 </Solution>

@@ -1,0 +1,86 @@
+@page "/sheet"
+@using System.Globalization
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md),
+   and because inside ExSheet.Components the name ExSheet is the component, not the namespace. *@
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+
+<DemoNav />
+
+<h1>Sheet — ExSheet drawn by ExGrid</h1>
+
+<p>
+    ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's
+    Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the
+    Formula Bar, type an address such as <code>D200</code> into the Name Box, and use Ctrl+arrow to
+    jump to the end of a block. The status line counts the cells of the Sheet Document the page
+    receives after every change (ADR-0048).
+</p>
+
+<div class="demo-toolbar">
+    <button id="sheet-undo" @onclick="UndoAsync">Undo</button>
+    <button id="sheet-redo" @onclick="RedoAsync">Redo</button>
+    <button id="sheet-money" @onclick="FormatMoneyAsync">Format selection as #,##0.00</button>
+    <button id="sheet-insert-row" @onclick="InsertRowAsync">Insert a row above row 2</button>
+</div>
+
+<p class="demo-status">
+    <span id="sheet-status">@_status</span>
+</p>
+
+<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1"
+         ViewportHeight="420" ViewportWidth="900" />
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private ExSheet? _sheet;
+    private SheetDocument? _document = Opening();
+    private string _status = "";
+
+    // A few values, Formulas over them, and a date: the tracer's A1 + B1 and a little more.
+    private static SheetDocument Opening()
+    {
+        var sheet = new Sheet(Culture);
+        (string Address, string Typed)[] cells =
+        [
+            ("A1", "Item"), ("B1", "Qty"), ("C1", "Price"), ("D1", "Amount"),
+            ("A2", "Apples"), ("B2", "12"), ("C2", "0.5"), ("D2", "=B2*C2"),
+            ("A3", "Pears"), ("B3", "7"), ("C3", "0.75"), ("D3", "=B3*C3"),
+            ("A4", "Plums"), ("B4", "20"), ("C4", "0.2"), ("D4", "=B4*C4"),
+            ("A5", "Total"), ("B5", "=SUM(B2:B4)"), ("D5", "=SUM(D2:D4)"),
+            ("A7", "As of"), ("B7", "9/26/2026"),
+            ("A8", "Due"), ("B8", "=B7+30"),
+        ];
+        foreach (var (address, typed) in cells) sheet.Enter(CellAddress.Parse(address), typed);
+        return sheet.ToDocument();
+    }
+
+    protected override void OnInitialized() => Count();
+
+    private async Task UndoAsync()
+    {
+        if (_sheet is not null) await _sheet.UndoAsync();
+        Count();
+    }
+
+    private async Task RedoAsync()
+    {
+        if (_sheet is not null) await _sheet.RedoAsync();
+        Count();
+    }
+
+    private async Task FormatMoneyAsync()
+    {
+        if (_sheet is not null) await _sheet.SetNumberFormatAsync(NumberFormat.Parse("#,##0.00"));
+        Count();
+    }
+
+    private async Task InsertRowAsync()
+    {
+        if (_sheet is not null) await _sheet.DoAsync(SheetEdit.InsertRows(1));
+        Count();
+    }
+
+    private void Count() => _status = $"{_document?.Cells.Count ?? 0} cells in the Sheet Document.";
+}

@@ -1,0 +1,373 @@
+@using System.Globalization
+@using System.Runtime.CompilerServices
+
+@*
+    ExSheet holds and computes; ExGrid paints, selects, navigates and reports (ADR-0046). This
+    component renders exactly one ExGrid, as that grid's Consumer: it builds the Columns A … XFD,
+    answers every Range Request from the Sheet, hands back a new row instance for every row the
+    engine's SheetChange names and the same instance for every other row, and turns each Edit
+    Intent into one engine step on the one undo stack (ADR-0048).
+
+    What is deliberately not wired: ExGrid's sort and filter. They reorder a view of rows a
+    Consumer owns, and a Sheet's rows are places (ADR-0046); OnSortChanged and OnFilterChanged are
+    left without a delegate, and HeaderClickSelects gives the header click Excel's meaning.
+*@
+<ExGrid TRow="SheetRow" @ref="_grid"
+        Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
+        Columns="SheetColumns.All"
+        RowHeight="RowHeight" ViewportHeight="ViewportHeight" ViewportWidth="ViewportWidth"
+        PinnedColumnCount="PinnedColumnCount" Chrome="Chrome"
+        OnRangeNeeded="OnRangeNeededAsync" OnEdit="OnEditAsync" SelectionChanged="_selectionChanged"
+        CellType="SheetColumns.CellType" EditorTextOf="SheetColumns.EditorText"
+        HeaderClickSelects="true" HideHeader="!ShowColumnHeadings"
+        RowHeadings="(ShowRowHeadings ? RowLabels : null)"
+        DataEdge="_dataEdge"
+        ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" OnNameBoxEntered="OnNameBoxEnteredAsync" />
+@* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
+   Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
+<div class="ex-sheet-notice" role="status">@_notice</div>
+
+@code {
+    /// <summary>Excel's default row height in ExGrid's geometry, and the Grid's own default: 28 px.</summary>
+    public const double DefaultRowHeightPx = 28;
+
+    /// <summary>
+    /// How many cells a formatting command applies to at once. A selection of whole columns
+    /// names a million cells per column, and the Sheet records formatting per cell; past this the
+    /// command is refused and says so rather than stall the page.
+    /// </summary>
+    public const long FormatCellCap = 100_000;
+
+    // Rows beyond what the grid asked for, on either side, so that ordinary scrolling is
+    // answered from rows already in hand.
+    private const int ReadAhead = 50;
+    private const int InitialRows = 100;
+
+    private static readonly Func<int, string> RowLabels = static row => (row + 1).ToString(CultureInfo.InvariantCulture);
+
+    private static readonly Func<CellPosition, string?> NameBoxLabelOf =
+        static focus => new CellAddress(focus.Row, focus.Column).ToString();
+
+    private readonly SheetHistory _history = new();
+
+    // Every document this instance handed out. A Consumer that binds DocumentChanged back into
+    // Document hands one of them in again, and that is the Sheet already open, not a
+    // replacement: reopening it would clear the undo stack on every edit.
+    private readonly ConditionalWeakTable<SheetDocument, object> _emitted = new();
+
+    private readonly Func<CellPosition, GridDirection, CellPosition> _dataEdge;
+    private readonly EventCallback<GridSelection> _selectionChanged;
+
+    private ExGrid<SheetRow>? _grid;
+    private Sheet? _sheet;
+    private SheetEdges _edges = new();
+    private SheetRow[] _window = [];
+    private int _windowStart;
+    private GridSelection _selection = GridSelection.Empty;
+    private string? _notice;
+    private bool _initialised;
+    private SheetDocument? _documentParameter;
+    private CultureInfo? _cultureParameter;
+
+    /// <summary>Creates the component; the Sheet is opened when its parameters arrive.</summary>
+    public ExSheet()
+    {
+        // Held in fields: a delegate's identity reaches the grid, and one made per render would
+        // look like a change every time (ADR-0003).
+        _dataEdge = FindEdge;
+        // No receiver: a selection change re-renders the grid, not this component.
+        _selectionChanged = new EventCallback<GridSelection>(null, (Func<GridSelection, Task>)(selection =>
+        {
+            _selection = selection;
+            return SelectionChanged.InvokeAsync(selection);
+        }));
+    }
+
+    /// <summary>
+    /// The Sheet Document to show (ADR-0048). Handing over a different document replaces the
+    /// Sheet and clears the undo stack; handing back a document this component raised through
+    /// <see cref="DocumentChanged"/> — as binding <c>Document</c> two ways does — changes nothing. Null is
+    /// an empty Sheet in <see cref="Culture"/>.
+    /// </summary>
+    /// <exception cref="SheetDocumentException">The document's version is one the engine does not know.</exception>
+    [Parameter] public SheetDocument? Document { get; set; }
+
+    /// <summary>
+    /// Raised after every change to the Sheet with its Sheet Document — Entries, never Values
+    /// (ADR-0048). The application persists it; ExSheet never does.
+    /// </summary>
+    [Parameter] public EventCallback<SheetDocument> DocumentChanged { get; set; }
+
+    /// <summary>
+    /// The declared culture of a Sheet started empty: how typed constants are read and how
+    /// Values are shown (ADR-0048). A <see cref="Document"/> carries its own culture, which is
+    /// the one that counts for it. Null is the current culture when the Sheet is created. It is
+    /// the Sheet's, recorded in its document, so changing it on a live Sheet is refused by name:
+    /// Entries already typed would not be read again.
+    /// </summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+
+    /// <summary>How many leading columns are pinned — the Sheet's frozen panes, columns only (ADR-0046).</summary>
+    [Parameter] public int PinnedColumnCount { get; set; }
+
+    /// <summary>
+    /// Every row's height, in pixels (ADR-0013/0046). Excel's 1,048,576 rows have to fit under
+    /// the browser's scroll ceiling, header included, so a height at which they do not is
+    /// refused by name (SH-3). The Sheet is never quietly made shorter.
+    /// </summary>
+    [Parameter] public double RowHeight { get; set; } = DefaultRowHeightPx;
+
+    /// <summary>The outer height of the sheet, Formula Bar and header included; passed to ExGrid as is.</summary>
+    [Parameter] public ViewportSize ViewportHeight { get; set; } = 600;
+
+    /// <summary>The outer width of the sheet; passed to ExGrid as is.</summary>
+    [Parameter] public ViewportSize ViewportWidth { get; set; } = 800;
+
+    /// <summary>Whether the Row Headings — the row numbers — are shown (ADR-0050). The Sheet still addresses <c>A1</c> without them.</summary>
+    [Parameter] public bool ShowRowHeadings { get; set; } = true;
+
+    /// <summary>Whether the Column Headings — the column letters — are shown (ADR-0050). The Sheet still addresses <c>A1</c> without them.</summary>
+    [Parameter] public bool ShowColumnHeadings { get; set; } = true;
+
+    /// <summary>Whether the Formula Bar with its Name Box is shown (ADR-0051).</summary>
+    [Parameter] public bool ShowFormulaBar { get; set; } = true;
+
+    /// <summary>
+    /// Raised whenever the grid's Selection changes, as ExGrid raises it (ADR-0011/0014): what a
+    /// status line counts, and what the formatting commands act on.
+    /// </summary>
+    [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
+
+    /// <summary>The grid's Chrome, passed to ExGrid as is (ADR-0010).</summary>
+    [Parameter] public IGridChrome? Chrome { get; set; }
+
+    /// <summary>Whether there is a step to undo.</summary>
+    public bool CanUndo => _history.CanUndo;
+
+    /// <summary>Whether there is an undone step to redo.</summary>
+    public bool CanRedo => _history.CanRedo;
+
+    private Sheet CurrentSheet => _sheet ?? throw new InvalidOperationException("The Sheet opens when the component's parameters arrive.");
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        RefuseUnreachableRows();
+        if (!_initialised)
+        {
+            _initialised = true;
+            _documentParameter = Document;
+            _cultureParameter = Culture;
+            Open(Document);
+            return;
+        }
+        if (!Equals(Culture, _cultureParameter))
+        {
+            throw new InvalidOperationException(
+                $"The Sheet's culture is {CurrentSheet.Culture.Name}, and it is the Sheet's own: Entries already typed were read under it (ADR-0048). " +
+                "To show a Sheet under another culture, hand over a Sheet Document declaring that culture.");
+        }
+        if (!ReferenceEquals(Document, _documentParameter))
+        {
+            _documentParameter = Document;
+            if (Document is null || !_emitted.TryGetValue(Document, out _)) Open(Document);
+        }
+    }
+
+    /// <summary>
+    /// Undoes the latest operation — the user's or a Consumer command's, whichever came last
+    /// (ADR-0048). Answers false when there is nothing to undo.
+    /// </summary>
+    public Task<bool> UndoAsync() => OnDispatcherAsync(async () =>
+    {
+        if (_history.Undo() is not { } change) return false;
+        await ChangedAsync(change);
+        return true;
+    });
+
+    /// <summary>Redoes the operation undone last. Answers false when there is nothing to redo.</summary>
+    public Task<bool> RedoAsync() => OnDispatcherAsync(async () =>
+    {
+        if (_history.Redo() is not { } change) return false;
+        await ChangedAsync(change);
+        return true;
+    });
+
+    /// <summary>
+    /// A Consumer command: does <paramref name="edit"/> as one operation on the user's undo
+    /// stack, in its place in the order (ADR-0048), and raises <see cref="DocumentChanged"/>.
+    /// </summary>
+    /// <exception cref="SheetRefusedException">The Sheet refuses the operation; nothing changed.</exception>
+    /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read; nothing changed.</exception>
+    public Task DoAsync(SheetEdit edit)
+    {
+        ArgumentNullException.ThrowIfNull(edit);
+        return InvokeAsync(() => PerformAsync(edit));
+    }
+
+    /// <summary>
+    /// Sets the number format of every selected cell as one operation (ADR-0046);
+    /// <see langword="null"/> is General. Answers false, and says why, when nothing is
+    /// selected or the selection holds more than <see cref="FormatCellCap"/> cells.
+    /// </summary>
+    public Task<bool> SetNumberFormatAsync(NumberFormat? format) =>
+        OnDispatcherAsync(() => FormatSelectionAsync(cells => SheetEdit.SetFormat(cells, format)));
+
+    /// <summary>
+    /// Sets the horizontal alignment of every selected cell as one operation (ADR-0046). Answers
+    /// false, and says why, when nothing is selected or the selection holds more than
+    /// <see cref="FormatCellCap"/> cells.
+    /// </summary>
+    public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) =>
+        OnDispatcherAsync(() => FormatSelectionAsync(cells => SheetEdit.SetAlignment(cells, alignment)));
+
+    /// <summary>The Sheet as it stands, as a Sheet Document: Entries, never Values (ADR-0048).</summary>
+    public SheetDocument ToDocument() => CurrentSheet.ToDocument();
+
+    // A public method may be called from outside the renderer's context — a Consumer's timer,
+    // a service — so each one runs its work there.
+    private async Task<T> OnDispatcherAsync<T>(Func<Task<T>> work)
+    {
+        T result = default!;
+        await InvokeAsync(async () => result = await work());
+        return result;
+    }
+
+    private void RefuseUnreachableRows()
+    {
+        // The header takes one row height of the scrollable area when it is shown (ADR-0013).
+        var bands = Sheet.RowCount + (ShowColumnHeadings ? 1 : 0);
+        var ceiling = global::ExGrid.ViewportGeometry.MaxScrollHeightPx;
+        var tallest = ceiling / bands;
+        if (RowHeight > tallest)
+        {
+            throw new ArgumentOutOfRangeException(nameof(RowHeight), RowHeight, FormattableString.Invariant(
+                $"A row height of {RowHeight}px puts the Sheet's {Sheet.RowCount:N0} rows past the {ceiling:N0}px a browser can scroll, and the rows beyond it could never be reached. The tallest row that fits is {Math.Floor(tallest * 100) / 100}px. The Sheet is not made shorter to fit (ADR-0046)."));
+        }
+    }
+
+    private void Open(SheetDocument? document)
+    {
+        _sheet = document is null ? new Sheet(Culture ?? CultureInfo.CurrentCulture) : Sheet.Open(document);
+        _edges = SheetEdges.Of(_sheet);
+        _history.Clear();
+        _notice = null;
+        // Every row is new: the rows of the Sheet that was replaced say nothing about this one.
+        var (start, count) = _window.Length == 0 ? (0, InitialRows) : (_windowStart, _window.Length);
+        _window = [];
+        ShowRows(start, count);
+    }
+
+    private void ShowRows(int start, int count)
+    {
+        var sheet = CurrentSheet;
+        var from = Math.Max(0, start - ReadAhead);
+        var to = Math.Min(Sheet.RowCount, start + count + ReadAhead);
+        var rows = new SheetRow[Math.Max(0, to - from)];
+        for (var i = 0; i < rows.Length; i++)
+        {
+            var index = from + i;
+            var held = index - _windowStart;
+            rows[i] = held >= 0 && held < _window.Length ? _window[held] : new SheetRow(sheet, index);
+        }
+        _window = rows;
+        _windowStart = from;
+    }
+
+    private Task OnRangeNeededAsync(RowRange range)
+    {
+        ShowRows(range.Start, range.Count);
+        return Task.CompletedTask;
+    }
+
+    private async Task OnEditAsync(GridEditIntent<SheetRow> intent)
+    {
+        if (!CellAddress.TryParseColumn(intent.Column, out var column)) return;
+        try
+        {
+            await PerformAsync(SheetEdit.Enter(new CellAddress(intent.Row.Index, column), intent.Value));
+        }
+        catch (FormulaSyntaxException error)
+        {
+            // The column's verdict rejects an unreadable Formula before the intent is raised
+            // (ADR-0034); this is the net under it, and it changes nothing either.
+            _notice = SheetWords.FormulaUnreadable(error);
+        }
+        catch (SheetRefusedException refused)
+        {
+            _notice = SheetWords.Refused(refused.Refusal);
+        }
+    }
+
+    private async Task OnNameBoxEnteredAsync(string typed)
+    {
+        if (!NameBoxText.TryParse(typed, out var range))
+        {
+            _notice = SheetWords.AddressUnreadable(typed);
+            return;
+        }
+        _notice = null;
+        var place = new SelectionRange(range.First.Row, range.First.Column, range.RowCount, range.ColumnCount);
+        // Rows are places, so the Row Sequence Version never moves from 0 (ADR-0046).
+        if (_grid is { } grid) await grid.PlaceSelectionAsync(place, new CellPosition(range.First.Row, range.First.Column), 0);
+    }
+
+    private CellPosition FindEdge(CellPosition focus, GridDirection direction)
+    {
+        var edge = _edges.Find(new CellAddress(focus.Row, focus.Column), direction);
+        return new CellPosition(edge.Row, edge.Column);
+    }
+
+    private async Task<bool> FormatSelectionAsync(Func<IEnumerable<CellAddress>, SheetEdit> edit)
+    {
+        var ranges = _selection.Ranges;
+        if (ranges.Count == 0) return false;
+        var cells = ranges.Sum(r => r.CellCount);
+        if (cells > FormatCellCap)
+        {
+            _notice = SheetWords.TooManyCells(cells, FormatCellCap);
+            StateHasChanged();
+            return false;
+        }
+        var addresses = ranges
+            .SelectMany(r => Enumerable.Range(r.TopRow, r.RowCount)
+                .SelectMany(row => Enumerable.Range(r.LeftColumn, r.ColumnCount).Select(column => new CellAddress(row, column))))
+            .Distinct()
+            .ToList();
+        await PerformAsync(edit(addresses));
+        return true;
+    }
+
+    private async Task PerformAsync(SheetEdit edit)
+    {
+        var step = CurrentSheet.Do(edit);
+        _history.Record(step);
+        await ChangedAsync(step.Change);
+    }
+
+    private async Task ChangedAsync(SheetChange change)
+    {
+        var sheet = CurrentSheet;
+        _edges.Update(sheet, change);
+        _notice = null;
+        if (change.Rows.Count > 0)
+        {
+            // A new instance for every row the change names, the same instance for every other
+            // row, so only the changed rows repaint (ADR-0003, SH-4).
+            var rows = (SheetRow[])_window.Clone();
+            foreach (var row in change.Rows)
+            {
+                var at = row - _windowStart;
+                if (at >= 0 && at < rows.Length) rows[at] = new SheetRow(sheet, row);
+            }
+            _window = rows;
+        }
+        StateHasChanged();
+        if (DocumentChanged.HasDelegate)
+        {
+            var document = sheet.ToDocument();
+            _emitted.AddOrUpdate(document, document);
+            await DocumentChanged.InvokeAsync(document);
+        }
+    }
+}

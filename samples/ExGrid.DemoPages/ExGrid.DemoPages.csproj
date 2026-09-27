@@ -25,6 +25,9 @@
          Wrapper contract (ADR-0030). -->
     <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
+    <!-- ExSheet's page (/sheet): the demo pages are one of the two things that reference
+         ExSheet, its tests being the other (ADR-0046, SH-1). -->
+    <ProjectReference Include="..\..\src\ExSheet\ExSheet.csproj" />
   </ItemGroup>
 
 </Project>

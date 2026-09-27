@@ -43,3 +43,8 @@ What remains:
 - Layer 3: the band above the header as painted, under both Chromes, at both hosts; the Fill-height
   case (the root's padding and the scroller's flex share) as the browser lays it out.
 
+2026-09-27, ExSheet's wiring: `EditorTextOf` answers the Entry (`Sheet.GetEntryText`: the Formula,
+or the constant written as it would be typed under the Sheet's culture), `ShowFormulaBar` is on by
+default, and `NameBoxLabel` answers the Focus's A1 address. Layer 2: `FormulaBarWiringTests` (F2
+opens on `=A1*2` while the cell shows 42; the bar and the Name Box follow the Focus; a `de-DE`
+constant opens as typed there).

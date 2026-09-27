@@ -70,3 +70,10 @@ named through `MudExGridWords.NameBox` and `MudExGridWords.FormulaBar`.
 One existing test changed its selector, not its assertions: `MudGridChromeTests`'
 `The_formula_bar_and_the_chrome_editor_agree` now types into Mud's control inside the box.
 Layer 2: `FormulaBarChromeTests`, plus three tests in `MudGridChromeTests`.
+
+2026-09-27, ExSheet's wiring: `OnNameBoxEntered` reads the text as Excel's Name Box does — a cell,
+a range, whole columns `B:D`, whole rows `5:6`, either case, `$` markers ignored — and asks
+`PlaceSelectionAsync` to place it with the Focus at its top-left, under Row Sequence Version 0
+(rows are places, ADR-0046). Text that is not an address moves nothing, and the sentence saying so
+is written into the component's `role="status"` notice. A commit from the Formula Bar is one
+engine step. Layer 2: `NameBoxWiringTests`.
