@@ -7,11 +7,12 @@ namespace ExSheet.Engine;
 /// </summary>
 public sealed class SheetChange
 {
-    internal SheetChange(IReadOnlyList<CellAddress> valueChanges, IReadOnlyList<CellAddress> recalculated, IReadOnlyList<int> rows)
+    internal SheetChange(IReadOnlyList<CellAddress> valueChanges, IReadOnlyList<CellAddress> recalculated, IReadOnlyList<int> rows, IReadOnlyList<int>? columns = null)
     {
         ValueChanges = valueChanges;
         Recalculated = recalculated;
         Rows = rows;
+        Columns = columns ?? [];
     }
 
     /// <summary>A change that changed nothing.</summary>
@@ -31,4 +32,23 @@ public sealed class SheetChange
     /// in ascending order, each once.
     /// </summary>
     public IReadOnlyList<int> Rows { get; }
+
+    /// <summary>
+    /// The columns whose recorded width changed (ADR-0046) — set, cleared back to the default, or
+    /// moved by an insertion or deletion — in ascending order, each once.
+    /// </summary>
+    public IReadOnlyList<int> Columns { get; }
+
+    /// <summary>Several changes made as one, such as the parts of one step.</summary>
+    internal static SheetChange Merge(IEnumerable<SheetChange> changes)
+    {
+        var list = changes.ToList();
+        var valueChanges = list.SelectMany(c => c.ValueChanges).Distinct().Order().ToList();
+        var recalculated = list.SelectMany(c => c.Recalculated).Distinct().Order().ToList();
+        var rows = list.SelectMany(c => c.Rows).Distinct().Order().ToList();
+        var columns = list.SelectMany(c => c.Columns).Distinct().Order().ToList();
+        return valueChanges.Count == 0 && recalculated.Count == 0 && rows.Count == 0 && columns.Count == 0
+            ? None
+            : new SheetChange(valueChanges, recalculated, rows, columns);
+    }
 }

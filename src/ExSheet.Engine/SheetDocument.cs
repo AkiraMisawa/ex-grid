@@ -7,22 +7,24 @@ namespace ExSheet.Engine;
 /// <summary>
 /// The serialisable form of a Sheet (CONTEXT.md, ADR-0048). It records the Sheet's culture, its
 /// name (ADR-0046), the Linked Tables declared on it — each one's name and column names, never its
-/// rows (ADR-0049) — its Entries — constants already parsed, Formulas in invariant syntax — and
-/// the formats set on its columns, rows and cells (ADR-0047), and never a Value: opening one
+/// rows (ADR-0049) — its Entries — constants already parsed, Formulas in invariant syntax — the
+/// formats set on its columns, rows and cells (ADR-0047) and the widths set on its columns
+/// (ADR-0046), and never a Value: opening one
 /// computes every Value again. The Consumer persists it; ExSheet never does.
 /// </summary>
 /// <remarks>
 /// The document is a format with a version. A reader meeting a version it does not know refuses
 /// the document rather than guess at it (ADR-0048); so does a reader meeting anything it does not
-/// understand. This engine writes version 3 and reads versions 1 to 3: version 1 recorded no
+/// understand. This engine writes version 4 and reads versions 1 to 4: version 1 recorded no
 /// name and no Linked Table, and a Sheet opened from one is named <see cref="Sheet.DefaultName"/>
 /// and declares none; versions 1 and 2 recorded formats on cells only, where General meant the
-/// cell set nothing.
+/// cell set nothing; versions 1 to 3 recorded no column width, and every column of a Sheet
+/// opened from one is at the default width.
 /// </remarks>
 public sealed class SheetDocument
 {
     /// <summary>The version this engine writes.</summary>
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
 
     /// <summary>The oldest version this engine reads.</summary>
     public const int OldestReadableVersion = 1;
@@ -66,6 +68,13 @@ public sealed class SheetDocument
     /// </summary>
     public IReadOnlyList<SheetDocumentAxisStyle> Rows { get; init; } = [];
 
+    /// <summary>
+    /// The widths set on columns, in characters, in column order, adjacent columns set alike as one
+    /// run (ADR-0046). A column at the default width is not recorded. Empty for a document read
+    /// from versions 1 to 3.
+    /// </summary>
+    public IReadOnlyList<SheetDocumentColumnWidth> ColumnWidths { get; init; } = [];
+
     /// <summary>Writes the document as JSON.</summary>
     public string ToJson()
     {
@@ -92,6 +101,18 @@ public sealed class SheetDocument
             }
             WriteAxis(json, "columns", Columns, run => CellAddress.ColumnName(run.First) + ":" + CellAddress.ColumnName(run.Last));
             WriteAxis(json, "rows", Rows, run => (run.First + 1).ToString(CultureInfo.InvariantCulture) + ":" + (run.Last + 1).ToString(CultureInfo.InvariantCulture));
+            if (ColumnWidths.Count > 0)
+            {
+                json.WriteStartArray("columnWidths");
+                foreach (var run in ColumnWidths)
+                {
+                    json.WriteStartObject();
+                    json.WriteString("at", CellAddress.ColumnName(run.First) + ":" + CellAddress.ColumnName(run.Last));
+                    json.WriteNumber("width", run.Width);
+                    json.WriteEndObject();
+                }
+                json.WriteEndArray();
+            }
             json.WriteStartArray("cells");
             foreach (var cell in Cells)
             {
@@ -185,6 +206,7 @@ public sealed class SheetDocument
             var seen = new HashSet<CellAddress>();
             var columns = new List<SheetDocumentAxisStyle>();
             var rows = new List<SheetDocumentAxisStyle>();
+            var widths = new List<SheetDocumentColumnWidth>();
             foreach (var property in root.EnumerateObject())
             {
                 switch (property.Name)
@@ -216,6 +238,9 @@ public sealed class SheetDocument
                     case "rows" when number >= 3:
                         rows = ReadAxis(property.Value, "row", text => CellRange.TryParse(text, out var r) && r.IsWholeRows && !r.IsWholeColumns ? (r.First.Row, r.Last.Row) : null);
                         break;
+                    case "columnWidths" when number >= 4:
+                        widths = ReadWidths(property.Value);
+                        break;
                     case "cells":
                         if (property.Value.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("The cells are not an array.");
                         foreach (var element in property.Value.EnumerateArray())
@@ -233,7 +258,7 @@ public sealed class SheetDocument
             if (number >= 2 && name is null) throw new SheetDocumentException("The Sheet Document records no name.");
             ResolveCulture(culture);
             cells.Sort((a, b) => a.Address.CompareTo(b.Address));
-            return new SheetDocument(culture, name ?? Sheet.DefaultName, tables, cells) { Columns = columns, Rows = rows };
+            return new SheetDocument(culture, name ?? Sheet.DefaultName, tables, cells) { Columns = columns, Rows = rows, ColumnWidths = widths };
         }
     }
 
@@ -281,6 +306,42 @@ public sealed class SheetDocument
             if (format is null && alignment is null) throw new SheetDocumentException($"The {what} format at {span.First} sets nothing.");
             if (runs.Any(r => r.First <= span.Last && span.First <= r.Last)) throw new SheetDocumentException($"A {what} is formatted twice.");
             runs.Add(new SheetDocumentAxisStyle(span.First, span.Last, format, alignment));
+        }
+        runs.Sort((a, b) => a.First.CompareTo(b.First));
+        return runs;
+    }
+
+    private static List<SheetDocumentColumnWidth> ReadWidths(JsonElement array)
+    {
+        if (array.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("The column widths are not an array.");
+        var runs = new List<SheetDocumentColumnWidth>();
+        foreach (var element in array.EnumerateArray())
+        {
+            if (element.ValueKind != JsonValueKind.Object) throw new SheetDocumentException("A column width is not a JSON object.");
+            (int First, int Last)? at = null;
+            double? width = null;
+            foreach (var property in element.EnumerateObject())
+            {
+                switch (property.Name)
+                {
+                    case "at":
+                        at = property.Value.ValueKind == JsonValueKind.String && CellRange.TryParse(property.Value.GetString(), out var r) && r.IsWholeColumns
+                            ? (r.First.Column, r.Last.Column)
+                            : throw new SheetDocumentException($"'{property.Value}' is not a column or a run of them.");
+                        break;
+                    case "width":
+                        width = property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetDouble(out var w) && w is > 0 and <= Sheet.MaxColumnWidth
+                            ? w
+                            : throw new SheetDocumentException($"'{property.Value}' is not a column's width: more than 0 and at most {Sheet.MaxColumnWidth} characters.");
+                        break;
+                    default:
+                        throw new SheetDocumentException($"'{property.Name}' is not part of a column width.");
+                }
+            }
+            if (at is not { } span) throw new SheetDocumentException("A column width says no column.");
+            if (width is not { } set) throw new SheetDocumentException($"The column width at {CellAddress.ColumnName(span.First)} gives no width.");
+            if (runs.Any(r => r.First <= span.Last && span.First <= r.Last)) throw new SheetDocumentException("A column is given a width twice.");
+            runs.Add(new SheetDocumentColumnWidth(span.First, span.Last, set));
         }
         runs.Sort((a, b) => a.First.CompareTo(b.First));
         return runs;
@@ -423,6 +484,15 @@ public sealed record SheetDocumentCell(CellAddress Address, Entry? Entry, Number
 /// <param name="Format">The number format set on them, or <see langword="null"/>.</param>
 /// <param name="Alignment">The horizontal alignment set on them, or <see langword="null"/>.</param>
 public sealed record SheetDocumentAxisStyle(int First, int Last, NumberFormat? Format, HorizontalAlignment? Alignment);
+
+/// <summary>
+/// A width set on columns, as a Sheet Document records it: one entry for a run of adjacent columns
+/// set alike (ADR-0046). A column at the default width has none.
+/// </summary>
+/// <param name="First">The first column of the run, from 0.</param>
+/// <param name="Last">The last column of the run.</param>
+/// <param name="Width">The width, in characters of the default font (Excel's unit, ADR-0047).</param>
+public sealed record SheetDocumentColumnWidth(int First, int Last, double Width);
 
 /// <summary>A Linked Table's declaration as a Sheet Document records it: its name and its column names, never its rows (ADR-0049).</summary>
 /// <param name="Name">The name Formulas read it by.</param>

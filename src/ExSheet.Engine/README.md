@@ -12,8 +12,8 @@ cell from its **Entry**:
   recalculation; a circular reference is `#CIRC!` in every cell of the cycle and every cell that
   depends on it
 
-The **Sheet Document** is the Sheet's serialisable form (version 3, which also reads versions 1
-and 2), with the formats set on its columns, rows and cells. It holds Entries and never Values, so
+The **Sheet Document** is the Sheet's serialisable form (version 4, which also reads versions 1
+to 3), with the formats set on its columns, rows and cells and the widths set on its columns. It holds Entries and never Values, so
 anyone who wants a saved Sheet's numbers runs this engine — on a server as in the browser, with
 the same result.
 
@@ -135,7 +135,13 @@ step.Undo();                                         // Entries, formats and Ref
   Reference names, off the Sheet's edge is refused (`SheetRefusedException`). Inserted rows take
   the number format and alignment of the row above — its cells' and the row's own — and inserted
   columns those of the column to the left, as Excel's default does; Entries are never copied.
-  Formats set on rows and columns move with them.
+  Formats set on rows and columns move with them, and so do column widths.
+- **Column widths** are part of the Sheet Document, in characters as Excel counts them.
+  `SheetEdit.SetColumnWidth(range, width)` sets every column the range spans, from more than 0
+  to 255 characters; `null` puts them back at the default width, which is not recorded.
+  `Sheet.GetColumnWidth(column)` is the width set, or `null`. An inserted column takes the width
+  of the column to its left, as it takes its formats; a deleted column's width goes with it.
+  `SheetChange.Columns` names the columns whose width a change (or its undo) changed.
 - **Formats** are set at three levels, cell over row over column, as in Excel.
   `SheetEdit.SetFormat(range, format)` and `SheetEdit.SetAlignment(range, alignment)` record
   whole columns (`CellRange.Parse("B:D")`) and whole rows (`"2:4"`) as one entry each, and the
@@ -143,6 +149,9 @@ step.Undo();                                         // Entries, formats and Ref
   as Excel's do. Any other range sets its cells. `Sheet.GetFormat` and `Sheet.GetAlignment`
   answer what takes effect; `GetRowFormat`, `GetColumnFormat` and their alignment counterparts
   what a level sets. The per-cell forms taking addresses keep working.
+  `SheetEdit.SetStyle(ranges, format, alignment)` sets a number format, an alignment or both on
+  several ranges — a selection of several rectangles, whole columns and rows among them — as one
+  step; there `null` leaves a property as it is, and `NumberFormat.General` sets General.
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each

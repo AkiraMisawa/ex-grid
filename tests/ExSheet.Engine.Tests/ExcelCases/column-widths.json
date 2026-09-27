@@ -1,0 +1,172 @@
+{
+  "area": "column-widths",
+  "about": "Column widths set on columns, and how insertion and deletion carry them (ADR-0046, ADR-0047, SH-22). A width is in Excel's unit, characters of the default font; setColumnWidth sets the columns its range spans, as Range.ColumnWidth does, and a null width puts them back at the standard width (Range.UseStandardWidth). width is the check column's recorded width, null where none is recorded, which Excel reports as its standard width (8.43). Microsoft documents Range.ColumnWidth in characters, setting it on every column of a range, 8.43 as the default and 255 as the widest; Excel snaps a width to whole pixels, so the cases use whole numbers. Microsoft documents that an inserted column takes the formatting of the column to its left (Insert Options, Format Same As Left), but not whether its width is part of that, nor how deletion moves widths: those cases are uncertain until the oracle asks Excel.",
+  "cases": [
+    {
+      "id": "CW-001",
+      "source": "documented",
+      "description": "A column nobody set is at the standard width, and records none",
+      "cells": {"B2": "1"},
+      "check": "B2",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-002",
+      "source": "documented",
+      "description": "A width set on a column is that column's width",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 20},
+      "check": "B1",
+      "expect": {"width": 20}
+    },
+    {
+      "id": "CW-003",
+      "source": "documented",
+      "description": "A width set on a range of cells is set on every column the range spans",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B2:D3", "width": 15},
+      "check": "D9",
+      "expect": {"width": 15}
+    },
+    {
+      "id": "CW-004",
+      "source": "documented",
+      "description": "Setting one column's width leaves its neighbour at the standard width",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 20},
+      "check": "C1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-005",
+      "source": "documented",
+      "description": "A column put back at the standard width records none",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "setColumnWidth", "range": "B:B", "width": null}
+      ],
+      "check": "B1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-006",
+      "source": "uncertain",
+      "description": "An inserted column takes the width of the column to its left, as it takes its formats",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "insertColumns", "column": "C", "count": 2}
+      ],
+      "check": "D1",
+      "expect": {"width": 20}
+    },
+    {
+      "id": "CW-007",
+      "source": "uncertain",
+      "description": "A column's width moves right with it when columns are inserted before it",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "C:C", "width": 30},
+        {"do": "insertColumns", "column": "C", "count": 2}
+      ],
+      "check": "E1",
+      "expect": {"width": 30}
+    },
+    {
+      "id": "CW-008",
+      "source": "uncertain",
+      "description": "A column inserted after a column at the standard width is at the standard width, whatever the column it pushed right",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "C:C", "width": 30},
+        {"do": "insertColumns", "column": "C"}
+      ],
+      "check": "C1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-009",
+      "source": "uncertain",
+      "description": "A column inserted at A has no column to its left, and is at the standard width",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "A:A", "width": 20},
+        {"do": "insertColumns", "column": "A"}
+      ],
+      "check": "A1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-010",
+      "source": "uncertain",
+      "description": "Deleting a column moves the widths to its right left with their columns",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "setColumnWidth", "range": "C:C", "width": 30},
+        {"do": "deleteColumns", "column": "B"}
+      ],
+      "check": "B1",
+      "expect": {"width": 30}
+    },
+    {
+      "id": "CW-011",
+      "source": "uncertain",
+      "description": "Deleting columns drops their widths: the column that moves into their place brings its own",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:C", "width": 20},
+        {"do": "deleteColumns", "column": "B", "count": 2}
+      ],
+      "check": "B1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-012",
+      "source": "uncertain",
+      "description": "Inserting rows leaves the column widths alone",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "insertRows", "row": 1, "count": 3}
+      ],
+      "check": "B1",
+      "expect": {"width": 20}
+    },
+    {
+      "id": "CW-013",
+      "source": "uncertain",
+      "description": "Undoing a width puts back the standard width",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "undo"}
+      ],
+      "check": "B1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-014",
+      "source": "uncertain",
+      "description": "Undoing a column's deletion puts back its width",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "deleteColumns", "column": "B"},
+        {"do": "undo"}
+      ],
+      "check": "B1",
+      "expect": {"width": 20}
+    },
+    {
+      "id": "CW-015",
+      "source": "documented",
+      "description": "The widest column Excel allows is 255 characters",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 255},
+      "check": "B1",
+      "expect": {"width": 255}
+    }
+  ]
+}

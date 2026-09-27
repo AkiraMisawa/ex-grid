@@ -107,6 +107,14 @@ internal static class ExcelCorpus
             if (actual != widens.GetBoolean()) differences.Add($"widens: expected {widens.GetBoolean()}, got {actual}");
         }
 
+        if (expect.TryGetProperty("width", out var width))
+        {
+            // The check column's recorded width in characters; null where none is (Excel's standard width).
+            double? expected = width.ValueKind == JsonValueKind.Null ? null : width.GetDouble();
+            var actual = sheet.GetColumnWidth(at.Column);
+            if (actual != expected) differences.Add($"width: expected {expected?.ToString(CultureInfo.InvariantCulture) ?? "null"}, got {actual?.ToString(CultureInfo.InvariantCulture) ?? "null"}");
+        }
+
         if (expect.TryGetProperty("formula", out var formula))
         {
             var entry = sheet.GetEntry(at);
@@ -228,9 +236,17 @@ internal static class ExcelCorpus
                 IReadOnlyList<IReadOnlyList<string>> rows = [.. a.GetProperty("rows").EnumerateArray()
                     .Select(r => (IReadOnlyList<string>)[.. r.EnumerateArray().Select(f => f.GetString()!)])];
                 return SheetEdit.PasteText(rows, CellAddress.Parse(a.GetProperty("at").GetString()!));
+            case "setColumnWidth":
+                var w = a.GetProperty("width");
+                return SheetEdit.SetColumnWidth(Range("range"), w.ValueKind == JsonValueKind.Null ? null : w.GetDouble());
             case "rename": return SheetEdit.Rename(a.GetProperty("name").GetString()!);
-            case "format": return SheetEdit.SetFormat(Range("range"), NumberFormat.Parse(a.GetProperty("format").GetString()!));
-            case "align": return SheetEdit.SetAlignment(Range("range"), Enum.Parse<HorizontalAlignment>(a.GetProperty("align").GetString()!, ignoreCase: true));
+            case "format" or "align" or "style":
+                // A range written with commas is several ranges styled in one step (ADR-0046).
+                var ranges = a.GetProperty("range").GetString()!.Split(',').Select(CellRange.Parse).ToList();
+                NumberFormat? format = a.TryGetProperty("format", out var f) ? NumberFormat.Parse(f.GetString()!) : null;
+                HorizontalAlignment? align = a.TryGetProperty("align", out var al) ? Enum.Parse<HorizontalAlignment>(al.GetString()!, ignoreCase: true) : null;
+                if (what == "style" || ranges.Count > 1) return SheetEdit.SetStyle(ranges, format, align);
+                return what == "format" ? SheetEdit.SetFormat(ranges[0], format) : SheetEdit.SetAlignment(ranges[0], align!.Value);
             default: throw new InvalidDataException($"Unknown action \"{what}\".");
         }
     }
