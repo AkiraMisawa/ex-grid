@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
+using ExGrid.Cells;
 using ExGrid.Selection;
 
 namespace ExGrid.Chrome;
@@ -22,7 +23,7 @@ public enum FilterUiMode
     Both,
 }
 
-/// <summary>The two editing states the arrow keys mean different things in (ADR-0010).</summary>
+/// <summary>The editing states the arrow keys mean different things in (ADR-0010/0051).</summary>
 public enum CellEditMode
 {
     /// <summary>Entered by typing onto a selected cell: the original value is replaced,
@@ -32,6 +33,12 @@ public enum CellEditMode
     /// <summary>Entered with F2 or a double click: the original value stays, and the
     /// arrow keys move the caret within the text.</summary>
     Caret,
+
+    /// <summary>Only where the Consumer declares it (ADR-0051): the arrow keys and the mouse
+    /// point at cells — an outline moves over the grid, and the Consumer's Reference text for
+    /// it is written at the caret. The Selection and the Focus do not move. F2 switches to
+    /// <see cref="Caret"/>, and typing ends it.</summary>
+    Point,
 }
 
 /// <summary>
@@ -295,6 +302,31 @@ public sealed record FormulaBarTextContext(
     int FocusRequest = 0);
 
 /// <summary>
+/// The completion seam (ADR-0051/0039/0040): the candidates the Consumer offered for the
+/// editor's text, and its argument hint, painted as the editor's Inner Popup inside the core's
+/// box beneath the editor surface the user is typing in — the box, its place, its bound inside
+/// the grid and the keys are the core's. ↑/↓ move <see cref="Selected"/>, Tab accepts it, and
+/// Escape closes the list and leaves the edit open; the Chrome decides none of that and never
+/// sees those keys (the capture phase takes them). A press on a candidate calls
+/// <see cref="Accept"/> with its index; the box keeps DOM focus in the editor.
+///
+/// <para>Each candidate's element carries the id <see cref="OptionIdPrefix"/> followed by its
+/// index, which the core's own editor names with <c>aria-activedescendant</c>. Either list may
+/// be empty: an answer with only a hint paints only the hint.</para>
+/// </summary>
+/// <param name="Candidates">The candidates, in the Consumer's order.</param>
+/// <param name="Selected">The index of the chosen candidate, or -1 when there are none.</param>
+/// <param name="Hint">The argument hint, painted beneath the candidates, or null.</param>
+/// <param name="Accept">Accepts the candidate at an index.</param>
+/// <param name="OptionIdPrefix">The prefix of each candidate element's id.</param>
+public sealed record EditorCompletionContext(
+    IReadOnlyList<CompletionCandidate> Candidates,
+    int Selected,
+    EditorHint? Hint,
+    Action<int> Accept,
+    string OptionIdPrefix);
+
+/// <summary>
 /// The substitutable UI seams (ADR-0009/0010): the filter panel, the column menu, the
 /// cell editor, the loading indicator, and the Formula Bar's two fields (ADR-0051). One
 /// rule throughout: Chrome renders and calls back; it does not decide meaning — the
@@ -338,4 +370,10 @@ public interface IGridChrome
     /// <see cref="FormulaBarTextContext.FocusRequest"/> changes, as the Cell Editor's
     /// does.</summary>
     RenderFragment? FormulaBarText(FormulaBarTextContext context) => null;
+
+    /// <summary>The completion list and argument hint (ADR-0051). Null falls back to the core's
+    /// own list. A fragment is rendered inside the core's <c>ex-completion</c> box, which stands
+    /// beneath the editor surface inside the grid's box and scrolls when its room is short
+    /// (ADR-0040); the fragment paints the candidates, then the hint.</summary>
+    RenderFragment? EditorCompletion(EditorCompletionContext context) => null;
 }

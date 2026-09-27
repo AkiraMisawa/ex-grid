@@ -137,6 +137,29 @@
 .mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-editable:focus {
     box-shadow: inset 0 -2px 0 var(--mud-palette-primary);
 }
+/* The completion list and the argument hint (ADR-0051): the contents of the box the core
+   stands beneath the editor — its place, width and bound are the core's (.ex-completion).
+   A candidate is a row's height, from the core's token, so the list reads as the grid does. */
+.mud-ex-grid .ex-completion {
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    outline: none;
+    box-shadow: var(--mud-elevation-8);
+}
+.mud-ex-grid .mud-ex-completion-list { padding: 0; }
+.mud-ex-grid .mud-ex-completion-item {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    cursor: pointer;
+}
+.mud-ex-grid .mud-ex-completion-hint {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    color: var(--mud-palette-text-secondary);
+    border-top: 1px solid var(--mud-palette-lines-default);
+}
 /* The loading bar, where the core places its loading seam (ADR-0010). */
 .mud-ex-grid .mud-ex-grid-loading {
     height: 4px;

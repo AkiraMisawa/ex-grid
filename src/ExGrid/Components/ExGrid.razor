@@ -155,7 +155,7 @@
                body: a handler per cell would be ~220 of them re-registered on every
                frame of a scroll, which is the cost ADR-0004 caps. *@
             <div class="ex-viewport" style="@ViewportStyle()"
-                 role="presentation" @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmouseup="OnMouseUp"
+                 role="presentation" @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmousedown:preventDefault="PressKeepsTheEditor" @onmouseup="OnMouseUp"
                  @ondblclick="OnViewportDoubleClickAsync"
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
                 @if (_visible is { } visible)
@@ -210,6 +210,12 @@
                                 {
                                     <div class="ex-fill-handle" style="@pinnedHandle"></div>
                                 }
+                                @* The pointing outline (ADR-0051): one more rectangle, over the
+                                   ranges; the Selection and the Focus beneath it do not move. *@
+                                @if (PointRange is { } pinnedPointRange && SelectionStyles.Pinned(pinnedPointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedPoint)
+                                {
+                                    <div class="ex-point" style="@pinnedPoint"></div>
+                                }
                             }
                         </div>
                         <div class="ex-selection" aria-hidden="true" @key="SelectionLayerKey">
@@ -242,6 +248,10 @@
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
                                 }
+                                @if (PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } point)
+                                {
+                                    <div class="ex-point" style="@point"></div>
+                                }
                             }
                         </div>
                     }
@@ -270,7 +280,7 @@
                                     }
                                     else
                                     {
-                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -283,7 +293,7 @@
                             }
                             else
                             {
-                                <input class="ex-editor" style="@editorBox" value="@_editText" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="ex-editor" style="@editorBox" value="@_editText" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -363,7 +373,7 @@
                 }
                 else
                 {
-                    <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="Name Box"
+                    <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="@WordFor(GridLabelIds.NameBox)"
                            @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync" @oninput="_onNameBoxInput ??= OnNameBoxInput"
                            @onblur="_onNameBoxBlur ??= OnNameBoxBlur" />
                 }
@@ -374,7 +384,7 @@
             }
             else
             {
-                <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="Formula Bar"
+                <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync" @oninput="_onFormulaBarInput ??= OnFormulaBarInput"
                        @ref="_formulaBarElement" />
             }
@@ -553,6 +563,45 @@
             else
             {
                 @messageText
+            }
+        </div>
+    }
+    @if (CompletionShown() is { } completion)
+    {
+        var completionContext = BuildCompletionContext(completion);
+        @* The completion list and the argument hint (ADR-0051): the editor's Inner Popup, in a
+           box the core stands beneath the editor surface the user is typing in, inside the
+           grid's box and bounded by the room there (ADR-0040) — outside the scroll container,
+           like every popover. A press in it keeps DOM focus in the editor: the editor still
+           holds the keyboard, and ↑/↓, Tab and Escape reach the core through the capture
+           listener as the editor's keys. Chrome paints the contents (ADR-0010/0030). *@
+        <div class="ex-completion" style="@CompletionStyle()" role="presentation"
+             @onmousedown:preventDefault @onmousedown:stopPropagation>
+            @if (Chrome?.EditorCompletion(completionContext) is { } completionFragment)
+            {
+                @completionFragment
+            }
+            else
+            {
+                @if (completion.Candidates.Count > 0)
+                {
+                    <div class="ex-completion-list" id="@CompletionListId" role="listbox">
+                        @for (var i = 0; i < completion.Candidates.Count; i++)
+                        {
+                            var index = i;
+                            <div class="@(index == _completionSelected ? "ex-completion-item ex-completion-selected" : "ex-completion-item")"
+                                 id="@(CompletionOptionPrefix + index.ToString(CultureInfo.InvariantCulture))" role="option"
+                                 aria-selected="@(index == _completionSelected ? "true" : "false")"
+                                 @onmousedown="() => AcceptCandidate(index)">@completion.Candidates[index].Label</div>
+                        }
+                    </div>
+                }
+                @if (completion.Hint is { } hint)
+                {
+                    var (before, emphasis, after) = hint.Parts();
+                    <div class="ex-completion-hint">@before@if (emphasis.Length > 0)
+                        {<strong>@emphasis</strong>}@after</div>
+                }
             }
         </div>
     }
@@ -1092,8 +1141,13 @@
     /// how a Consumer keeping the built-in menu translates it, or renames one item,
     /// without reimplementing the menu. Returning null for an id falls back to
     /// <see cref="BuiltInCommandLabels"/>. A substituted Chrome never consults this — it
-    /// has the ids and resolves its own wording.</summary>
+    /// has the ids and resolves its own wording. The built-in Formula Bar's two fields take
+    /// their accessible names through it too, by <see cref="GridLabelIds"/> (ADR-0036/0051).</summary>
     [Parameter] public Func<string, string?>? CommandLabel { get; set; }
+
+    /// <summary>The built-in Chrome's word for an id: the Consumer's through
+    /// <see cref="CommandLabel"/>, the built-in English where it says nothing (ADR-0036).</summary>
+    private string WordFor(string id) => CommandLabel?.Invoke(id) ?? BuiltInCommandLabels.For(id);
 
     /// <summary>The Consumer's own context-menu commands, appended to the core's
     /// (ADR-0010/0036). It is handed the target — the clicked row, the column, and the
@@ -1423,6 +1477,8 @@
         None = 0,
         Overwrite,
         Caret,
+        // Where the Consumer declares it (ADR-0051): the arrows and the mouse point.
+        Point,
     }
 
     private EditMode _editMode;
@@ -1744,6 +1800,7 @@
 
     protected override void OnParametersSet()
     {
+        ValidatePointDeclaration();
         // The Source's own change notification lands in the same pipeline (ApplyState),
         // so a re-entrant one raised by the column push below would run it twice.
         _applying = true;
@@ -2047,6 +2104,8 @@
         // than committed onto a stranger. The gate learns after this render.
         if (_editMode != EditMode.None && _selection.Selection.IsEmpty)
         {
+            CloseCompletion();
+            EndPointing();
             _editMode = EditMode.None;
             _editSurface = EditSurface.Cell;
             _editText = "";
@@ -2735,6 +2794,11 @@
         // the press itself moves nothing.
         var leftInteractive = EndInteractive();
 
+        // Where the Consumer says a Reference can go, a press on a cell points instead of
+        // committing (ADR-0051).
+        if (OnPointPress(e))
+            return;
+
         // Excel's click-away semantics (ADR-0010): a press that is not on the editor
         // — the editor's own elements never let a press through — commits the
         // uncommitted text first, and the press then keeps its own meaning.
@@ -2845,6 +2909,11 @@
         if (CellUnder(e) is not { } cell)
         {
             _suppressRender = true;
+            return;
+        }
+        if (_pointDragging)
+        {
+            OnPointDrag(cell);
             return;
         }
         if (_fillSource is not null)
@@ -4514,6 +4583,7 @@
         {
             _dragHandler.Remove("onmousemove");
             StopEdgeTimer();
+            _pointDragging = false;
             // A fill drag ends with the drag, however it ends; a release outside the grid
             // is not seen, so it raises nothing rather than fill to a guessed cell.
             _fillSource = null;
@@ -5017,14 +5087,17 @@
     [JSInvokable]
     public async Task OnKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
-        bool fromDescendant = false)
+        bool fromDescendant = false, string? editorText = null, int editorCaret = -1)
     {
         if (_disposed)
             return;
         // While editing, the keys the gate forwarded are the editor's contract
-        // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite.
+        // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite. The key
+        // carries the editor's text and caret as the browser had them (ADR-0051), and what
+        // it means is decided from those.
         if (_editMode != EditMode.None)
         {
+            AdoptKeyText(editorText, editorCaret);
             await OnEditingKeyAsync(GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary));
             return;
         }
@@ -5462,6 +5535,13 @@
         _editMode = mode;
         _editingCell = cell;
         _editText = initialText;
+        _editCaret = initialText.Length;
+        // A character typed onto the cell is typing, and is reported; an edit opened on the
+        // cell's text is not, until the user types in it (ADR-0051).
+        if (mode == EditMode.Overwrite)
+            RequestCompletion();
+        else
+            CloseCompletion();
         RequestEditorFocus();
         await PushEditingModeAsync();
         StateHasChanged();
@@ -5476,12 +5556,8 @@
             return;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("setEditing", _editMode switch
-            {
-                EditMode.Overwrite => "overwrite",
-                EditMode.Caret => "caret",
-                _ => "none",
-            });
+            _gateTold = GateMode();
+            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -5496,6 +5572,21 @@
     /// move together.</param>
     private async Task OnEditingKeyAsync(string canonical)
     {
+        // An open completion list has the first word on its own keys (ADR-0051).
+        if (OnCompletionKey(canonical))
+            return;
+        // In Caret the arrows are the editor's, and reach the core only when the gate was
+        // told something else a moment ago — a list that has just closed. They move no Focus
+        // (ADR-0010). Only where formula entry is declared can that happen at all.
+        if (_editMode == EditMode.Caret && (CompleteEditorText is not null || PointAt is not null)
+            && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End")
+        {
+            _suppressRender = false;
+            return;
+        }
+        // Where the Consumer says a Reference can go, the arrows point (ADR-0051).
+        if (OnPointKey(canonical))
+            return;
         var backward = canonical.StartsWith("Shift+", StringComparison.Ordinal);
         switch (canonical)
         {
@@ -5506,8 +5597,19 @@
                 StateHasChanged();
                 return;
             case "F2":
-                // F2 moves between the two states (ADR-0010).
-                _editMode = _editMode == EditMode.Caret ? EditMode.Overwrite : EditMode.Caret;
+                // F2 moves between the two states (ADR-0010) — and, where pointing is
+                // declared, between Caret and Point: from Caret it points where the Consumer
+                // says a Reference can go at the caret, and from Point it moves the caret
+                // again, the outline gone and its Reference left written (ADR-0051).
+                _editMode = _editMode switch
+                {
+                    EditMode.Point => EditMode.Caret,
+                    EditMode.Caret when PointAt is { } pointAt && ReferenceText is not null
+                        && pointAt(_editText, _editCaret) => EditMode.Point,
+                    EditMode.Caret => EditMode.Overwrite,
+                    _ => EditMode.Caret,
+                };
+                EndPointing();
                 await PushEditingModeAsync();
                 RequestEditorFocus();
                 StateHasChanged();
@@ -5669,6 +5771,9 @@
 
     private async Task EndEditingAsync()
     {
+        // The list and the hint answer the edit, and go with it, as the outline does (ADR-0051).
+        CloseCompletion();
+        EndPointing();
         _editSurface = EditSurface.Cell;
         _editMode = EditMode.None;
         _editText = "";
@@ -5683,8 +5788,8 @@
 
     private void OnEditorInput(ChangeEventArgs e)
     {
-        _editText = e.Value?.ToString() ?? "";
         _editSurface = EditSurface.Cell;
+        TextTyped(e.Value?.ToString() ?? "");
     }
 
     /// <summary>
@@ -5715,6 +5820,8 @@
         _editMode = EditMode.Caret;
         _editingCell = focus;
         _editText = OpeningTextOf(focus);
+        _editCaret = _editText.Length;
+        CloseCompletion();
         await PushEditingModeAsync();
     }
 
@@ -5727,8 +5834,8 @@
             _suppressRender = true;
             return;
         }
-        _editText = e.Value?.ToString() ?? "";
         _editSurface = EditSurface.Bar;
+        TextTyped(e.Value?.ToString() ?? "");
     }
 
     /// <summary>Whether the Formula Bar takes typing: while an edit is open, or when the
@@ -5834,15 +5941,21 @@
             declared.Name,
             declared.Type,
             _editText,
-            _editMode == EditMode.Caret ? CellEditMode.Caret : CellEditMode.Overwrite,
+            _editMode switch
+            {
+                EditMode.Caret => CellEditMode.Caret,
+                EditMode.Point => CellEditMode.Point,
+                _ => CellEditMode.Overwrite,
+            },
             _editError,
             text =>
             {
-                _editText = text;
                 _editSurface = EditSurface.Cell;
-                // The bar shows the same uncommitted text (ADR-0051): a Chrome's control
-                // reports into its own component, so the root is told to paint the bar.
-                if (ShowFormulaBar)
+                TextTyped(text);
+                // The bar shows the same uncommitted text, and the completion box answers it
+                // (ADR-0051): a Chrome's control reports into its own component, so the root
+                // is told to paint them.
+                if (ShowFormulaBar || CompleteEditorText is not null)
                     StateHasChanged();
             },
             () => _ = InvokeAsync(() => CommitAndMoveAsync(next => next)),
@@ -6155,10 +6268,13 @@
         _revealFocus = false;
         _revealRowStart = false;
         _revealStepRows = 0;
+        // The pointing outline's Focus, where one asked (ADR-0051); the Focus otherwise.
+        var target = _revealTarget;
+        _revealTarget = null;
         if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)
             return;
 
-        var focus = _selection.Selection.Focus;
+        var focus = target ?? _selection.Selection.Focus;
         if (focus.Row >= TotalRows || focus.Column >= _columnStyles.Geometry.Count)
             return;
         // Under a PageSize the reveal works in page-local rows; a Focus that left the

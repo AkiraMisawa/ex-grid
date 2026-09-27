@@ -206,4 +206,26 @@ public class FormulaBarDisplayTests : GridTestContext
 
         Assert.Equal(before, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToList());
     }
+
+    [Fact] // ADR-0036/0051: the bar's accessible names are the built-in Chrome's words, by id, and English only as the fallback
+    public void The_bars_accessible_names_come_through_command_label()
+    {
+        var english = RenderGrid(WithBar);
+        Assert.Equal("Name Box", english.Find("input.ex-name-box").GetAttribute("aria-label"));
+        Assert.Equal("Formula Bar", english.Find("input.ex-formula-bar-text").GetAttribute("aria-label"));
+
+        var renamed = RenderGrid(ps =>
+        {
+            WithBar(ps);
+            ps.Add(g => g.CommandLabel, id => id switch
+            {
+                global::ExGrid.Chrome.GridLabelIds.NameBox => "Namenfeld",
+                global::ExGrid.Chrome.GridLabelIds.FormulaBar => "Bearbeitungsleiste",
+                _ => null,
+            });
+        });
+
+        Assert.Equal("Namenfeld", renamed.Find("input.ex-name-box").GetAttribute("aria-label"));
+        Assert.Equal("Bearbeitungsleiste", renamed.Find("input.ex-formula-bar-text").GetAttribute("aria-label"));
+    }
 }

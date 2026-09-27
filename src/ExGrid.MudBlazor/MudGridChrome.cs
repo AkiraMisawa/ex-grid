@@ -12,8 +12,9 @@ namespace ExGrid.MudBlazor;
 /// a 28px cell — the loading bar, a <c>MudProgressLinear</c> where the core places its
 /// loading seam, and the column menu and Context Menu, <c>MudButton</c>s with a Material
 /// icon each, and the filter panel — a value list or a condition form of MudBlazor's
-/// controls — all inside the core's popover; and the Formula Bar's two fields, bare inputs
-/// in the core's boxes as the Cell Editor is (ADR-0051).
+/// controls — all inside the core's popover; the Formula Bar's two fields, bare inputs
+/// in the core's boxes as the Cell Editor is, and the completion list with its argument hint
+/// (ADR-0051).
 ///
 /// <para>What goes inside a popover is the Wrapper's, and may open popups of its own —
 /// a select's options, a picker's calendar — which MudBlazor draws outside the instance
@@ -155,6 +156,20 @@ public sealed class MudGridChrome : IGridChrome
             builder.OpenComponent<MudFormulaBarText>(0);
             builder.AddComponentParameter(1, nameof(MudFormulaBarText.Context), context);
             builder.AddComponentParameter(2, nameof(MudFormulaBarText.Label), label);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>The completion list and argument hint (ADR-0051/0030): the Consumer's candidates
+    /// as a Material list with the chosen one selected, and the hint beneath in the caption
+    /// type, inside the box the core stands beneath the editor.</summary>
+    public RenderFragment? EditorCompletion(EditorCompletionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            builder.OpenComponent<MudEditorCompletion>(0);
+            builder.AddComponentParameter(1, nameof(MudEditorCompletion.Context), context);
             builder.CloseComponent();
         };
     }

@@ -30,3 +30,36 @@ the component knows it is pointing: typed by hand, `=A1` is not pointed, and `Po
 (`FormulaEntryTests`). **What remains is the component's:** the fourth editing state, the
 pointing outline, Shift extending, an operator ending it, F2, the Selection and Focus staying
 put, pointing from the Formula Bar, and the layer 3 test with a delayed circuit.
+
+2026-09-27, ExGrid core half: two declarations switch Point on. `ExGrid.PointAt` is a
+`Func<string, int, bool>`, the synchronous predicate. `ExGrid.ReferenceText` is a
+`Func<SelectionRange, string>`, and is required with `PointAt` (a predicate without it is refused
+by name). The capture-phase `keydown` message now carries the editor's `value` and
+`selectionStart`, read from the surface that holds DOM focus at the moment the key is forwarded
+(for a held key, after the keys before it were typed). This is the only change to `ex-grid.js`
+(DC-24, inspected in `ShippedStylesheetTests`). `OnKeyAsync` takes the carried text over as the
+uncommitted text and decides from it. An arrow in Overwrite where `PointAt` answers true starts
+pointing from the edited cell, and the outline is a one-range `GridSelection` of its own. Further
+arrows, and Home/End, move the outline while the text is still what the core wrote. Each move
+replaces the Reference the core wrote before, including one in the middle of the text. A click on
+a cell points in any editing state and does not commit, Shift+click extends, and the drag extends.
+The viewport's `mousedown` default is prevented while pointing is declared, so the editor keeps
+DOM focus. Typing anything ends pointing: Point gives way to Overwrite, whose next arrow points
+afresh where allowed. F2 moves Point → Caret, and Caret → Point where the predicate answers true
+(Overwrite otherwise, as before). The outline is `ex-point` in both overlay layers, and its Focus
+is revealed. The Selection and the Focus never move. `CellEditMode.Point` tells a Chrome's editor.
+Layer 2 (`PointModeTests`) covers DC-19's `=` ↓ ↓ → `A3`, a click, Shift+click, the drag, F2, the
+Formula Bar (mid-text), commit and reveal, and DC-1 without the predicate. It also covers DC-20's
+decision rule: the key's own text decides, both ways.
+
+**What remains.** ExSheet wiring: pass `FormulaEntry.PointAt` (as a bool) and `ReferenceText`.
+Layer 3: real keys and mouse (DC-19), and DC-20 on the Server host with 150 ms injected. **One
+criterion is blocked on a decision.** Shift+arrow extending from the keyboard is implemented in the
+core (`OnPointKey` handles `Shift+Arrow*`, tested through `OnKeyAsync`), but the gate never
+forwards it. `overwriteKeys` in `ex-grid.js` does not claim `Shift+ArrowDown`, and DC-24 permits no
+JS change beyond the text and caret. A real Shift+↓ therefore selects text in the input. The
+proposal is a `point` set in the gate (Overwrite's keys plus the four Shift+arrows), told while an
+outline stands, recorded as an ADR-0051/0021 note with DC-24 amended. Shift+click extends
+today. Also limited: the core cannot set the DOM caret (the same gap as ticket 10), so after a
+Reference written in the middle of the text the browser shows the caret at the end. The next
+arrow still replaces the right span, but a character typed next lands at the end.

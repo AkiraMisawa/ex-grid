@@ -346,6 +346,10 @@
    grabs it reads the same numbers. Paint only, like every rectangle here. */
 .ex-fill-handle { position: absolute; box-sizing: border-box; background: var(--ex-fill-handle-color, var(--ex-focus-outline, CanvasText)); border: var(--ex-rule-width, 1px) solid Canvas; }
 .ex-fill-target { position: absolute; outline: 1px dashed var(--ex-fill-outline, var(--ex-focus-outline, CanvasText)); outline-offset: -1px; }
+/* The pointing outline (ADR-0051): the range a Formula's Reference is being pointed at, while
+   the Selection and the Focus stay where they are — dashed and heavier, so it reads as neither.
+   Paint only, like every rectangle here. */
+.ex-point { position: absolute; outline: 2px dashed var(--ex-focus-outline, CanvasText); outline-offset: -2px; }
 /* CanvasText, not Highlight: measured in the browser suite, Chrome's Highlight against
    Canvas is ~2:1 and UX-9 requires 3:1 — the ink colour contrasts by construction in
    both schemes, which is also roughly what Excel's own dark focus border does. */
@@ -480,6 +484,42 @@
 }
 /* The pinned editor's zero-size sticky anchor — the pinned selection layer's trick. */
 .ex-editor-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
+/* The completion list and the argument hint (ADR-0051): the editor's Inner Popup, in a box the
+   core stands beneath the editor surface, inside the grid's box — its place, its width's clamp
+   and its max-height arrive inline (ADR-0027/0040), and contents taller than the room scroll.
+   Each candidate is a row's height, the same token the cells read. */
+.ex-completion {
+    position: absolute;
+    z-index: 12;
+    box-sizing: border-box;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--ex-header-background, Canvas);
+    color: inherit;
+    outline: var(--ex-grid-focus-outline, 1px solid Highlight);
+}
+.ex-completion-list { display: flex; flex-direction: column; }
+.ex-completion-item {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+}
+.ex-completion-selected { background: var(--ex-selection-fill, rgba(60, 120, 216, 0.18)); }
+.ex-completion-hint {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.8;
+}
+.ex-completion-list + .ex-completion-hint {
+    border-top: var(--ex-rule-width, 1px) solid var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
+}
 /* The pager and the status line (ADR-0015): the pager exists when PageSize is passed
    and rides the same Range Request machinery as scrolling; the status line closes the
    invisible-selection hole — for paging and scrolling alike. */

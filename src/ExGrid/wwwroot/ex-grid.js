@@ -182,16 +182,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         inEditor: event.target instanceof Element && event.target.closest('.ex-editor') !== null,
     });
 
-    const forward = (k) => core.invokeMethodAsync(
-        'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot)
-        .catch((error) => {
-            // Disposal can overtake a key in flight, and that is not a fault. Anything
-            // else is reported: a swallowed failure here means keys that silently stop
-            // working.
-            if (core) {
-                console.error('[ex-grid] the grid failed to handle a key', error);
-            }
-        });
+    // While editing, the key carries the editor's text and caret (ADR-0051): the core decides
+    // what an arrow means from what the user sees now, never from an answer a round trip old.
+    // Read as the key is forwarded — a held key's after the keys before it were typed — from
+    // the editor surface that holds DOM focus. A read of the field's own value, not a
+    // measurement: no layout is read.
+    const forward = (k) => {
+        const input = editing !== 'none' ? editorInput() : null;
+        return core.invokeMethodAsync(
+            'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot,
+            input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1)
+            .catch((error) => {
+                // Disposal can overtake a key in flight, and that is not a fault. Anything
+                // else is reported: a swallowed failure here means keys that silently stop
+                // working.
+                if (core) {
+                    console.error('[ex-grid] the grid failed to handle a key', error);
+                }
+            });
+    };
 
     // Keys that follow a mode change are held until it lands (ADR-0010). The mode is
     // C#'s, and it tells this listener after the fact: in-process on WebAssembly, a round

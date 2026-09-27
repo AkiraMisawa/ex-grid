@@ -82,4 +82,17 @@ public class ShippedStylesheetTests
         // Layer 3 holds the key for real.
         Assert.Matches(new Regex(@"canonical === ' ' && k\.repeat"), script.Text);
     }
+
+    [Fact] // ADR-0051/0021 / DC-24: the key message carries the editor's text and caret, read from the field, nothing measured
+    public void The_key_message_carries_the_editors_text_and_caret()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // The inspection DC-24 names: the one message to OnKeyAsync, with the value and the
+        // selection start of the editor surface — a read of the field, no layout read.
+        Assert.Single(Regex.Matches(script.Text, @"'OnKeyAsync'"));
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1\)",
+            RegexOptions.Singleline), script.Text);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
+    }
 }

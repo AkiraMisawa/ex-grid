@@ -199,4 +199,41 @@ public class MudGridChromeTests : MudTestContext
         Assert.Same(MudExGridPresentation.For(true, true), MudExGridPresentation.For(true, true));
         Assert.NotSame(MudExGridPresentation.For(true, true), MudExGridPresentation.For(true, false));
     }
+
+    private static ValueTask<EditorCompletion?> Complete(string text, int caret)
+        => ValueTask.FromResult<EditorCompletion?>(text == "=SU" && caret == 3
+            ? new EditorCompletion(
+                [new CompletionCandidate("SUM", 1, 2, "SUM("), new CompletionCandidate("SUMIF", 1, 2, "SUMIF(")],
+                new EditorHint("SUM(number1, [number2], …)", 4, 7))
+            : null);
+
+    [Fact] // ADR-0051/0030 / DC-17: under this Chrome the list is a Material list in the core's box, and a press accepts
+    public async Task The_completion_list_is_a_material_list_in_the_cores_box()
+    {
+        var cut = Render<ExGrid<Trade>>(ps => ps
+            .Add(g => g.Window, Rows(5))
+            .Add(g => g.TotalCount, 5)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 400)
+            .Add(g => g.Chrome, MudGridChrome.Default)
+            .Add(g => g.CompleteEditorText, Complete));
+        await ClickCellAsync(cut, 50, 30);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("=", false, false, false, false, false));
+
+        await cut.Find("input.mud-ex-editor").InputAsync(new ChangeEventArgs { Value = "=SU" });
+
+        var items = cut.FindAll(".ex-grid > .ex-completion .mud-ex-completion-list .mud-ex-completion-item");
+        Assert.Equal(["SUM", "SUMIF"], items.Select(item => item.TextContent.Trim()));
+        Assert.Contains("mud-selected-item", items[0].ClassName);
+        Assert.Equal("number1", cut.Find(".ex-completion .mud-ex-completion-hint strong").TextContent);
+
+        // ↓ is the core's: the Chrome is repainted with the choice it makes.
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false));
+        Assert.Contains("mud-selected-item", cut.FindAll(".mud-ex-completion-item")[1].ClassName);
+
+        await cut.FindAll(".mud-ex-completion-item")[1].MouseDownAsync(new MouseEventArgs { Button = 0 });
+        cut.WaitForAssertion(() => Assert.Equal("=SUMIF(", cut.Find("input.mud-ex-editor").GetAttribute("value")));
+    }
 }
