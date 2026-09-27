@@ -170,3 +170,15 @@ one operation on the undo stack, as a paste over several ranges already is; `Doc
 raised once. The guard noted above no longer applies to numbers — an exact double needs no
 reading back — and stays for ISO dates. Layer 2: `ClipboardWiringTests` (a 17-digit `x:num`
 pasted as that double; typed fields and exact numbers undone as one step).
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `declarations.spec.mjs`: a TSV block
+written to the real clipboard and pasted onto F2 spills 2×2 (a field `=F2+G2` read as a Formula),
+becomes the Selection with the Name Box on F2, and one Ctrl+Z takes it back (DC-8); D2:D3 copied
+by Ctrl+C gives the outward Values `6` / `5.25`, and pasted at F6 carries the Entries with the
+References shifted (`=D6*E6`, `=D7*E7`) (SH-14). **The `data-ex-grid="invariant"` marker
+survives** what the paste event is handed in Chromium 1194, on every route: the copy event
+(WebAssembly's keyboard copy), `navigator.clipboard.write` (every copy on the Server host) and a
+Context Menu copy on either host — recorded per run in `metrics.json` as `DC-33 marker …`. So
+ADR-0050's fallback (fields read as shown text when the marker is stripped) is not reached in
+Chromium; Edge proper has not been checked here. A real Excel copy (DC-33's other half) is not
+available on this machine.

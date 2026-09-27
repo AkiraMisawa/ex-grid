@@ -1,6 +1,6 @@
 # 10: Completion and the argument hint
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** The core reports the editor's text and caret as the user types (a Blazor input event). The
 Consumer answers with candidates and a hint. Chrome paints the list as the editor's Inner Popup,
@@ -12,7 +12,7 @@ names. Candidates that come back for text that has since changed are dropped.
 
 - [x] `=SU` offers every declared function starting with `SU` (today `SUM`), and `=X` offers `XLOOKUP`; Tab accepts (ADR-0051)
 - [x] Escape closes the list and leaves the edit open
-- [ ] The list stays inside the grid's box (ADR-0040) under the built-in Chrome and `ExGrid.MudBlazor`'s
+- [x] The list stays inside the grid's box (ADR-0040) under the built-in Chrome and `ExGrid.MudBlazor`'s
 - [x] A stale candidate list is never shown (layer 2 with a delayed answer)
 - [x] Works from the Formula Bar as from the cell
 
@@ -98,3 +98,14 @@ and the Formula Bar completes. The stale-list criterion is the core's `Completio
 because ExSheet always answers synchronously. **Still open:** the third criterion, the box inside
 the grid's box under both Chromes in layer 3 (DC-17's layer 3 half). The core's layer 2 covers it
 under both Chromes. Ticket 16 adds the table names to completion.
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `declarations.spec.mjs`, under the built-in Chrome
+and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`): `=SU` paints SUM beneath the editor and inside the
+grid's box, ↑/↓ choose, Tab writes `=SUM(` with the caret after it and the hint beneath, Escape
+closes the list and leaves the edit open; ← and → with the list open move the caret and keep the
+list (DC-31); `=S`, ←, `S` gives `=SS` with the caret at 2 and the list answering the prefix `S`,
+and Tab replaces the name token at the caret (`=SUM(`, caret 5) — the caret reported, not
+inferred; from the Formula Bar `=RO` offers ROUND, inside the box, with `num_digits` hinted.
+Green on both hosts. One race seen on the Server host and reported, not pinned: the list is
+painted by one message and the key listener is told it is open by the next, so a ← pressed
+between the two is gated as Overwrite's and swallowed.

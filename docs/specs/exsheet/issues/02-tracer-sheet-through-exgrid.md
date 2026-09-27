@@ -62,3 +62,5 @@ and on the Server host, run locally under xvfb with Playwright's Chromium. A by-
 real keys on the WebAssembly host typed `=D2*2` into E2 (12), jumped A1 → A5 → A7 with Ctrl+↓,
 opened F2 on `=B2*C2`, and read the Name Box's refusal of `nonsense`, with a clean console. That
 probe is not a committed spec: SH-18 (ticket 18) owns the browser suite.
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `sheet.spec.mjs`: the scroll to XFD1048576 by the Name Box paints the cell, its heading `1048576` and its column letter `XFD`, with no more elements under the root than at A1; an Entry typed there commits (SH-2). Green on both hosts.
