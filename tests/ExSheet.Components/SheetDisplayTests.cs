@@ -254,17 +254,48 @@ public class SheetDisplayTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // Principle 1, ADR-0048: several ranges one of which is whole columns cannot be one step, so it is refused by name
-    public async Task Several_ranges_with_whole_columns_are_refused_by_name()
+    [Fact] // ADR-0046, ADR-0047 second round, SH-21: several ranges one of which is whole columns are one step, the column recorded as one entry
+    public async Task Several_ranges_with_whole_columns_are_one_step()
     {
-        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("C3", "3"))));
+        SheetDocument? raised = null;
+        var cut = RenderSheet(ps => ps
+            .Add(s => s.Document, DocumentOf("en-US", ("A5", "5"), ("C3", "3"), ("D3", "4")))
+            .Add(s => s.DocumentChanged, d => raised = d));
         await GoToAsync(cut, "A:A");
         await CtrlClickAsync(cut, "C3");
 
-        Assert.False(await cut.Instance.SetNumberFormatAsync(NumberFormat.Parse("0.0")));
+        Assert.True(await cut.Instance.SetNumberFormatAsync(NumberFormat.Parse("0.0")));
 
-        Assert.Contains("one selection range at a time", cut.Find(".ex-sheet-notice").TextContent);
+        var run = Assert.Single(raised!.Columns);
+        Assert.Equal((0, 0), (run.First, run.Last));
+        Assert.Equal("5.0", CellText(cut, "A5"));
+        Assert.Equal("3.0", CellText(cut, "C3"));
+        Assert.Equal("4", CellText(cut, "D3"));
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal("5", CellText(cut, "A5"));
         Assert.Equal("3", CellText(cut, "C3"));
+        Assert.False(cut.Instance.CanUndo);
+    }
+
+    [Fact] // ADR-0046, ADR-0047 second round, SH-21: a whole row and a cell aligned together are one step, the row recorded as one entry
+    public async Task Several_ranges_with_whole_rows_are_one_step()
+    {
+        SheetDocument? raised = null;
+        var cut = RenderSheet(ps => ps
+            .Add(s => s.Document, DocumentOf("en-US", ("B2", "2"), ("C5", "5")))
+            .Add(s => s.DocumentChanged, d => raised = d));
+        await GoToAsync(cut, "2:2");
+        await CtrlClickAsync(cut, "C5");
+
+        Assert.True(await cut.Instance.SetAlignmentAsync(HorizontalAlignment.Center));
+
+        var run = Assert.Single(raised!.Rows);
+        Assert.Equal((1, 1, HorizontalAlignment.Center), (run.First, run.Last, run.Alignment));
+        Assert.Contains("ex-align-center", Cell(cut, "B2").ClassName);
+        Assert.Contains("ex-align-center", Cell(cut, "C5").ClassName);
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.DoesNotContain("ex-align-center", Cell(cut, "B2").ClassName);
+        Assert.DoesNotContain("ex-align-center", Cell(cut, "C5").ClassName);
         Assert.False(cut.Instance.CanUndo);
     }
 

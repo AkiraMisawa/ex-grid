@@ -18,9 +18,6 @@ internal static class SheetWords
 
     internal static string Refused(SheetRefusal refusal) => refusal.Message;
 
-    internal static string FormatSeveralWholeRanges =>
-        "Nothing was formatted: whole columns or rows are formatted one selection range at a time. Select one range.";
-
     internal static string PasteUnreadable(FormulaSyntaxException error) =>
         string.Create(CultureInfo.InvariantCulture,
             $"Nothing was pasted: a pasted Formula cannot be read at character {error.Position + 1}: {error.Reason}");

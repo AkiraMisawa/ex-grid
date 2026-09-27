@@ -204,3 +204,11 @@ width, so a widened column now counts as set and is not widened again;
 `A_widened_column_widens_again` is skipped, not rewritten, until the Sheet records whether a
 width was the user's or an entry's (Excel's `customWidth`) — an engine change and a decision
 against ADR-0046's "a width the user never set stays default and is not recorded".
+
+2026-09-27, component, a style over several ranges (SH-21, ADR-0046): `SetNumberFormatAsync` and
+`SetAlignmentAsync` hand every range of the Selection to the engine's
+`SheetEdit.SetStyle(ranges, format, alignment)` as one step, so a Selection of several ranges with
+whole columns or whole rows among them records each whole range as one entry and the others as
+cells, and is undone as one step. The refusal of such a Selection (noted above) and its sentence
+are removed. Layer 2: `SheetDisplayTests` (several ranges with whole columns, several with a
+whole row, each one step).
