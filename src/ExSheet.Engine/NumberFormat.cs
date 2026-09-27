@@ -63,6 +63,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
             reason = null;
             return true;
         }
+        code = UpperCaseAmPm(code);
         var parts = SplitSections(code, out reason);
         if (parts is null) return Refuse(out reason, reason);
         if (parts.Count > 4)
@@ -203,6 +204,39 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     {
         reason = why ?? "the code cannot be read.";
         return false;
+    }
+
+    /// <summary>
+    /// <c>AM/PM</c> written in any case is <c>AM/PM</c>: Excel rewrites <c>h:mm am/pm</c> to
+    /// <c>h:mm AM/PM</c> and shows <c>6:00 PM</c> (FMT-065). Quoted and escaped text is left alone.
+    /// </summary>
+    private static string UpperCaseAmPm(string code)
+    {
+        StringBuilder? rewritten = null;
+        for (var i = 0; i < code.Length; i++)
+        {
+            switch (code[i])
+            {
+                case '"':
+                    var close = code.IndexOf('"', i + 1);
+                    if (close < 0) return rewritten?.ToString() ?? code;
+                    i = close;
+                    continue;
+                case '\\':
+                case '_':
+                case '*':
+                    i++;
+                    continue;
+            }
+            if (string.Compare(code, i, "AM/PM", 0, 5, StringComparison.OrdinalIgnoreCase) != 0) continue;
+            if (string.CompareOrdinal(code, i, "AM/PM", 0, 5) != 0)
+            {
+                rewritten ??= new StringBuilder(code);
+                rewritten.Remove(i, 5).Insert(i, "AM/PM");
+            }
+            i += 4;
+        }
+        return rewritten?.ToString() ?? code;
     }
 
     private static List<string>? SplitSections(string code, out string? reason)
@@ -515,6 +549,9 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
             {
                 var rounded = FunctionLibrary.RoundHalfAwayFromZero(value, _fractionPlaceholders);
                 (integerDigits, fractionDigits) = Digits(rounded, _fractionPlaceholders);
+                // A negative number that rounds to zero shows no minus sign: -0.001 in 0.00 is
+                // 0.00, as Excel was observed to show it (FMT-063).
+                if (rounded == 0) minus = false;
             }
 
             var format = culture.NumberFormat;

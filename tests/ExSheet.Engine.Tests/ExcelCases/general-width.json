@@ -148,12 +148,12 @@
     },
     {
       "id": "GW-017",
-      "source": "uncertain",
-      "description": "A number that is not zero is never rounded to a bare 0: where scientific does not fit either it is ####",
+      "source": "observed",
+      "description": "A number that is not zero is rounded to a bare 0 where nothing else fits the column",
       "columnWidth": 1,
       "cells": {"A1": "=1/3"},
       "check": "A1",
-      "expect": {"text": "####"}
+      "expect": {"text": "0"}
     },
     {
       "id": "GW-018",
@@ -310,6 +310,51 @@
       "cells": {"A1": "-12345678"},
       "check": "A1",
       "expect": {"widens": true, "widthOnEntry": 9}
+    },
+    {
+      "id": "GW-026",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number rounded to a bare 0 shows no minus sign",
+      "columnWidth": 2,
+      "cells": {"A1": "=-1/3"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "GW-027",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number rounded to a bare 0 fits a column one character wide",
+      "columnWidth": 1,
+      "cells": {"A1": "=-1/3"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "GW-028",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a tiny number whose scientific form does not fit is a bare 0",
+      "columnWidth": 4,
+      "cells": {"A1": "=1E-20"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "GW-029",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a tiny number whose scientific form fits is shown scientific, not as 0",
+      "columnWidth": 8.09,
+      "cells": {"A1": "=1E-20"},
+      "check": "A1",
+      "expect": {"text": "1E-20"}
+    },
+    {
+      "id": "GW-030",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number of 0.5 or more in a column one character wide is rounded to 1",
+      "columnWidth": 1,
+      "cells": {"A1": "=2/3"},
+      "check": "A1",
+      "expect": {"text": "1"}
     }
   ]
 }

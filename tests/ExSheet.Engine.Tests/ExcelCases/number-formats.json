@@ -566,18 +566,18 @@
     },
     {
       "id": "FMT-063",
-      "source": "uncertain",
-      "description": "Ticket 19 row 31: a negative number that rounds to zero (engine: -0.00)",
+      "source": "observed",
+      "description": "Ticket 19 row 31: a negative number that rounds to zero shows no minus sign",
       "ticket19Row": 31,
       "cells": {"A1": "-0.001"},
       "formats": {"A1": "0.00"},
       "check": "A1",
-      "expect": {"text": "-0.00"}
+      "expect": {"text": "0.00"}
     },
     {
       "id": "FMT-064",
       "source": "observed",
-      "description": "Ticket 19 row 32: a time that rounds into the next day (engine: 0:00:00)",
+      "description": "Ticket 19 row 32: a time that rounds into the next day shows 0:00:00",
       "ticket19Row": 32,
       "cells": {"A1": "0.99999999"},
       "formats": {"A1": "h:mm:ss"},
@@ -586,23 +586,77 @@
     },
     {
       "id": "FMT-065",
-      "source": "uncertain",
-      "description": "Ticket 19 row 33: am/pm written in lower case (engine: kept as written)",
+      "source": "observed",
+      "description": "Ticket 19 row 33: am/pm written in lower case is rewritten AM/PM in the code, and shows in upper case",
       "ticket19Row": 33,
       "cells": {"A1": "0.75"},
       "formats": {"A1": "h:mm am/pm"},
       "check": "A1",
-      "expect": {"text": "6:00 pm"}
+      "expect": {"text": "6:00 PM", "numberFormat": "h:mm AM/PM"}
     },
     {
       "id": "FMT-066",
       "source": "observed",
-      "description": "Ticket 19 row 34: _) leaves the width of a ) (engine: one space)",
+      "description": "Ticket 19 row 34: _) leaves the width of a ), one space",
       "ticket19Row": 34,
       "cells": {"A1": "5"},
       "formats": {"A1": "_)0"},
       "check": "A1",
       "expect": {"text": " 5"}
+    },
+    {
+      "id": "FMT-067",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number that rounds to zero under a format with a negative section still takes that section",
+      "cells": {"A1": "-0.001"},
+      "formats": {"A1": "0.00;(0.00)"},
+      "check": "A1",
+      "expect": {"text": "(0.00)"}
+    },
+    {
+      "id": "FMT-068",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative percentage that rounds to zero shows no minus sign",
+      "cells": {"A1": "-0.00001"},
+      "formats": {"A1": "0.0%"},
+      "check": "A1",
+      "expect": {"text": "0.0%"}
+    },
+    {
+      "id": "FMT-069",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number that rounds to zero under #,##0 shows no minus sign",
+      "cells": {"A1": "-0.4"},
+      "formats": {"A1": "#,##0"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "FMT-070",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: AM/PM in mixed case is rewritten AM/PM",
+      "cells": {"A1": "0.25"},
+      "formats": {"A1": "h:mm Am/Pm"},
+      "check": "A1",
+      "expect": {"text": "6:00 AM", "numberFormat": "h:mm AM/PM"}
+    },
+    {
+      "id": "FMT-071",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: A/P keeps the case it is written in",
+      "cells": {"A1": "0.75"},
+      "formats": {"A1": "h:mm a/p"},
+      "check": "A1",
+      "expect": {"text": "6:00 p", "numberFormat": "h:mm a/p"}
+    },
+    {
+      "id": "FMT-072",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: am/pm inside quotes is literal text and is not rewritten",
+      "cells": {"A1": "0.75"},
+      "formats": {"A1": "h:mm \"am/pm\""},
+      "check": "A1",
+      "expect": {"text": "18:00 am/pm", "numberFormat": "h:mm \"am/pm\""}
     }
   ]
 }
