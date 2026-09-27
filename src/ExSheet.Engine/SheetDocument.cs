@@ -7,20 +7,22 @@ namespace ExSheet.Engine;
 /// <summary>
 /// The serialisable form of a Sheet (CONTEXT.md, ADR-0048). It records the Sheet's culture, its
 /// name (ADR-0046), the Linked Tables declared on it — each one's name and column names, never its
-/// rows (ADR-0049) — and its Entries — constants already parsed, Formulas in invariant syntax — and
-/// never a Value: opening one computes every Value again. The Consumer persists it; ExSheet never does.
+/// rows (ADR-0049) — its Entries — constants already parsed, Formulas in invariant syntax — and
+/// the formats set on its columns, rows and cells (ADR-0047), and never a Value: opening one
+/// computes every Value again. The Consumer persists it; ExSheet never does.
 /// </summary>
 /// <remarks>
 /// The document is a format with a version. A reader meeting a version it does not know refuses
 /// the document rather than guess at it (ADR-0048); so does a reader meeting anything it does not
-/// understand. This engine writes version 2 and reads versions 1 and 2: version 1 recorded no
+/// understand. This engine writes version 3 and reads versions 1 to 3: version 1 recorded no
 /// name and no Linked Table, and a Sheet opened from one is named <see cref="Sheet.DefaultName"/>
-/// and declares none.
+/// and declares none; versions 1 and 2 recorded formats on cells only, where General meant the
+/// cell set nothing.
 /// </remarks>
 public sealed class SheetDocument
 {
     /// <summary>The version this engine writes.</summary>
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     /// <summary>The oldest version this engine reads.</summary>
     public const int OldestReadableVersion = 1;
@@ -52,6 +54,18 @@ public sealed class SheetDocument
     /// <summary>The cells that hold something, in row-major order.</summary>
     public IReadOnlyList<SheetDocumentCell> Cells { get; }
 
+    /// <summary>
+    /// The formats set on whole columns, in column order, adjacent columns set alike as one run
+    /// (ADR-0047). Empty for a document read from version 1 or 2.
+    /// </summary>
+    public IReadOnlyList<SheetDocumentAxisStyle> Columns { get; init; } = [];
+
+    /// <summary>
+    /// The formats set on whole rows, in row order, adjacent rows set alike as one run (ADR-0047).
+    /// Empty for a document read from version 1 or 2.
+    /// </summary>
+    public IReadOnlyList<SheetDocumentAxisStyle> Rows { get; init; } = [];
+
     /// <summary>Writes the document as JSON.</summary>
     public string ToJson()
     {
@@ -76,6 +90,8 @@ public sealed class SheetDocument
                 }
                 json.WriteEndArray();
             }
+            WriteAxis(json, "columns", Columns, run => CellAddress.ColumnName(run.First) + ":" + CellAddress.ColumnName(run.Last));
+            WriteAxis(json, "rows", Rows, run => (run.First + 1).ToString(CultureInfo.InvariantCulture) + ":" + (run.Last + 1).ToString(CultureInfo.InvariantCulture));
             json.WriteStartArray("cells");
             foreach (var cell in Cells)
             {
@@ -99,14 +115,33 @@ public sealed class SheetDocument
                         }
                     }
                 }
-                if (!cell.Format.IsGeneral) json.WriteString("format", cell.Format.Code);
-                if (cell.Alignment != HorizontalAlignment.General) json.WriteString("align", AlignmentName(cell.Alignment));
+                WriteStyle(json, cell.Format, cell.Alignment);
                 json.WriteEndObject();
             }
             json.WriteEndArray();
             json.WriteEndObject();
         }
         return Encoding.UTF8.GetString(buffer.ToArray());
+    }
+
+    private static void WriteAxis(Utf8JsonWriter json, string name, IReadOnlyList<SheetDocumentAxisStyle> runs, Func<SheetDocumentAxisStyle, string> at)
+    {
+        if (runs.Count == 0) return;
+        json.WriteStartArray(name);
+        foreach (var run in runs)
+        {
+            json.WriteStartObject();
+            json.WriteString("at", at(run));
+            WriteStyle(json, run.Format, run.Alignment);
+            json.WriteEndObject();
+        }
+        json.WriteEndArray();
+    }
+
+    private static void WriteStyle(Utf8JsonWriter json, NumberFormat? format, HorizontalAlignment? alignment)
+    {
+        if (format is not null) json.WriteString("format", format.Code);
+        if (alignment is { } a) json.WriteString("align", AlignmentName(a));
     }
 
     /// <summary>Reads a document written by <see cref="ToJson"/>.</summary>
@@ -148,6 +183,8 @@ public sealed class SheetDocument
             var tables = new List<SheetDocumentTable>();
             var cells = new List<SheetDocumentCell>();
             var seen = new HashSet<CellAddress>();
+            var columns = new List<SheetDocumentAxisStyle>();
+            var rows = new List<SheetDocumentAxisStyle>();
             foreach (var property in root.EnumerateObject())
             {
                 switch (property.Name)
@@ -173,6 +210,12 @@ public sealed class SheetDocument
                             tables.Add(table);
                         }
                         break;
+                    case "columns" when number >= 3:
+                        columns = ReadAxis(property.Value, "column", text => CellRange.TryParse(text, out var r) && r.IsWholeColumns && !r.IsWholeRows ? (r.First.Column, r.Last.Column) : null);
+                        break;
+                    case "rows" when number >= 3:
+                        rows = ReadAxis(property.Value, "row", text => CellRange.TryParse(text, out var r) && r.IsWholeRows && !r.IsWholeColumns ? (r.First.Row, r.Last.Row) : null);
+                        break;
                     case "cells":
                         if (property.Value.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("The cells are not an array.");
                         foreach (var element in property.Value.EnumerateArray())
@@ -190,7 +233,7 @@ public sealed class SheetDocument
             if (number >= 2 && name is null) throw new SheetDocumentException("The Sheet Document records no name.");
             ResolveCulture(culture);
             cells.Sort((a, b) => a.Address.CompareTo(b.Address));
-            return new SheetDocument(culture, name ?? Sheet.DefaultName, tables, cells);
+            return new SheetDocument(culture, name ?? Sheet.DefaultName, tables, cells) { Columns = columns, Rows = rows };
         }
     }
 
@@ -205,6 +248,58 @@ public sealed class SheetDocument
             throw new SheetDocumentException($"The culture '{name}' is not known here.", e);
         }
     }
+
+    private static List<SheetDocumentAxisStyle> ReadAxis(JsonElement array, string what, Func<string?, (int First, int Last)?> parse)
+    {
+        if (array.ValueKind != JsonValueKind.Array) throw new SheetDocumentException($"The {what} formats are not an array.");
+        var runs = new List<SheetDocumentAxisStyle>();
+        foreach (var element in array.EnumerateArray())
+        {
+            if (element.ValueKind != JsonValueKind.Object) throw new SheetDocumentException($"A {what} format is not a JSON object.");
+            (int First, int Last)? at = null;
+            NumberFormat? format = null;
+            HorizontalAlignment? alignment = null;
+            foreach (var property in element.EnumerateObject())
+            {
+                switch (property.Name)
+                {
+                    case "at":
+                        at = property.Value.ValueKind == JsonValueKind.String ? parse(property.Value.GetString()) : null;
+                        if (at is null) throw new SheetDocumentException($"'{property.Value}' is not a {what} or a run of them.");
+                        break;
+                    case "format":
+                        format = ReadFormat(property.Value);
+                        break;
+                    case "align":
+                        alignment = ReadAlignment(property.Value, allowGeneral: true);
+                        break;
+                    default:
+                        throw new SheetDocumentException($"'{property.Name}' is not part of a {what} format.");
+                }
+            }
+            if (at is not { } span) throw new SheetDocumentException($"A {what} format says no {what}.");
+            if (format is null && alignment is null) throw new SheetDocumentException($"The {what} format at {span.First} sets nothing.");
+            if (runs.Any(r => r.First <= span.Last && span.First <= r.Last)) throw new SheetDocumentException($"A {what} is formatted twice.");
+            runs.Add(new SheetDocumentAxisStyle(span.First, span.Last, format, alignment));
+        }
+        runs.Sort((a, b) => a.First.CompareTo(b.First));
+        return runs;
+    }
+
+    private static NumberFormat ReadFormat(JsonElement value) =>
+        value.ValueKind == JsonValueKind.String && NumberFormat.TryParse(value.GetString()!, out var parsed, out _)
+            ? parsed
+            : throw new SheetDocumentException($"'{value}' is not a number format this version reads.");
+
+    private static HorizontalAlignment ReadAlignment(JsonElement value, bool allowGeneral) =>
+        value.ValueKind == JsonValueKind.String ? value.GetString() switch
+        {
+            "general" when allowGeneral => HorizontalAlignment.General,
+            "left" => HorizontalAlignment.Left,
+            "center" => HorizontalAlignment.Center,
+            "right" => HorizontalAlignment.Right,
+            _ => throw new SheetDocumentException($"'{value}' is not an alignment."),
+        } : throw new SheetDocumentException($"'{value}' is not an alignment.");
 
     private static SheetDocumentTable ReadTable(JsonElement element)
     {
@@ -238,8 +333,8 @@ public sealed class SheetDocument
         if (element.ValueKind != JsonValueKind.Object) throw new SheetDocumentException("A cell is not a JSON object.");
         CellAddress? address = null;
         Entry? entry = null;
-        var format = NumberFormat.General;
-        var alignment = HorizontalAlignment.General;
+        NumberFormat? format = null;
+        HorizontalAlignment? alignment = null;
         foreach (var property in element.EnumerateObject())
         {
             var value = property.Value;
@@ -284,32 +379,25 @@ public sealed class SheetDocument
                     }
                     break;
                 case "format":
-                    if (value.ValueKind != JsonValueKind.String || !NumberFormat.TryParse(value.GetString()!, out var parsedFormat, out var why))
-                    {
-                        throw new SheetDocumentException($"'{value}' is not a number format this version reads.");
-                    }
-                    format = parsedFormat;
+                    format = ReadFormat(value);
+                    // Before version 3 a cell's General was no format of its own: no level could show through it.
+                    if (version < 3 && format.IsGeneral) format = null;
                     break;
                 case "align":
-                    alignment = value.ValueKind == JsonValueKind.String ? value.GetString() switch
-                    {
-                        "left" => HorizontalAlignment.Left,
-                        "center" => HorizontalAlignment.Center,
-                        "right" => HorizontalAlignment.Right,
-                        _ => throw new SheetDocumentException($"'{value}' is not an alignment."),
-                    } : throw new SheetDocumentException($"'{value}' is not an alignment.");
+                    alignment = ReadAlignment(value, allowGeneral: version >= 3);
                     break;
                 default:
                     throw new SheetDocumentException($"'{property.Name}' is not part of a version {version} cell.");
             }
         }
         if (address is null) throw new SheetDocumentException("A cell has no address.");
-        if (entry is null && format.IsGeneral && alignment == HorizontalAlignment.General) throw new SheetDocumentException($"The cell {address} holds nothing.");
+        if (entry is null && format is null && alignment is null) throw new SheetDocumentException($"The cell {address} holds nothing.");
         return new SheetDocumentCell(address.Value, entry, format, alignment);
     }
 
     private static string AlignmentName(HorizontalAlignment alignment) => alignment switch
     {
+        HorizontalAlignment.General => "general",
         HorizontalAlignment.Left => "left",
         HorizontalAlignment.Center => "center",
         _ => "right",
@@ -322,9 +410,19 @@ public sealed class SheetDocument
 /// <summary>One cell of a Sheet Document: where it is, its Entry and its formatting. Never its Value (ADR-0048).</summary>
 /// <param name="Address">Where the cell is.</param>
 /// <param name="Entry">What the user put into it; <see langword="null"/> for a cell that holds only formatting.</param>
-/// <param name="Format">Its number format.</param>
-/// <param name="Alignment">Its horizontal alignment.</param>
-public sealed record SheetDocumentCell(CellAddress Address, Entry? Entry, NumberFormat Format, HorizontalAlignment Alignment);
+/// <param name="Format">The number format the cell sets itself; <see langword="null"/> when it takes its row's or column's (ADR-0047).</param>
+/// <param name="Alignment">The horizontal alignment the cell sets itself; <see langword="null"/> when it takes its row's or column's (ADR-0047).</param>
+public sealed record SheetDocumentCell(CellAddress Address, Entry? Entry, NumberFormat? Format, HorizontalAlignment? Alignment);
+
+/// <summary>
+/// A format set on whole columns or whole rows, as a Sheet Document records it: one entry for a
+/// run of adjacent columns (rows) set alike, never one per cell (ADR-0047).
+/// </summary>
+/// <param name="First">The first column (row) of the run, from 0.</param>
+/// <param name="Last">The last column (row) of the run.</param>
+/// <param name="Format">The number format set on them, or <see langword="null"/>.</param>
+/// <param name="Alignment">The horizontal alignment set on them, or <see langword="null"/>.</param>
+public sealed record SheetDocumentAxisStyle(int First, int Last, NumberFormat? Format, HorizontalAlignment? Alignment);
 
 /// <summary>A Linked Table's declaration as a Sheet Document records it: its name and its column names, never its rows (ADR-0049).</summary>
 /// <param name="Name">The name Formulas read it by.</param>

@@ -34,6 +34,7 @@ public enum HorizontalAlignment
 /// </param>
 /// <param name="CannotShow">
 /// The number cannot be shown in its format at any width — a negative date, or a date after
-/// 31 December 9999 — and the cell shows <c>####</c>, as Excel's does.
+/// 31 December 9999 — or, from <see cref="Sheet.GetDisplay(CellAddress, double)"/>, not in the
+/// width asked, and the cell shows <c>####</c>, as Excel's does.
 /// </param>
 public readonly record struct CellDisplay(string Text, HorizontalAlignment Alignment, bool IsNumber, bool CannotShow);

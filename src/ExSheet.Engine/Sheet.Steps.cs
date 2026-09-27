@@ -38,7 +38,7 @@ public sealed partial class Sheet
         {
             var existing = _cells.TryGetValue(address, out var cell);
             cell ??= new Cell(address);
-            if (cell.Format.Equals(state.Format) && cell.Alignment == state.Alignment) continue;
+            if (Equals(cell.Format, state.Format) && cell.Alignment == state.Alignment) continue;
             cell.Format = state.Format;
             cell.Alignment = state.Alignment;
             rows.Add(address.Row);
@@ -60,11 +60,14 @@ public sealed partial class Sheet
     internal SheetChange Unrestructure(Formulas.StructuralEdit edit, StructuralOutcome outcome)
     {
         var before = Snapshot();
+        var shownBefore = ShownSnapshot();
         var recalculated = new List<CellAddress>(Restructure(edit.Inverse, formatInserted: false).Change.Recalculated);
+        _rowStyles = new Dictionary<int, AxisStyle>(outcome.RowsBefore);
+        _columnStyles = new Dictionary<int, AxisStyle>(outcome.ColumnsBefore);
         var states = new List<(CellAddress, CellState)>();
         foreach (var (address, entry) in outcome.Rewritten) states.Add((address, StateOf(address).Recorded with { Entry = entry }));
         states.AddRange(outcome.Dropped.Select(d => (d.Address, d.State.Recorded)));
         recalculated.AddRange(Restore(states).Recalculated);
-        return Diff(before, recalculated);
+        return Diff(before, recalculated, shownBefore);
     }
 }

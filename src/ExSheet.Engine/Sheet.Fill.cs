@@ -74,7 +74,7 @@ public sealed partial class Sheet
 
             // Position along the axis relative to the source's first cell: 0..length-1 is the
             // source; the target is length.. going forward and ..-1 going back.
-            var cells = Enumerable.Range(0, length).Select(i => StateOf(SourceAt(i)).Recorded).ToArray();
+            var cells = Enumerable.Range(0, length).Select(i => ShownState(SourceAt(i))).ToArray();
             var rule = FillRule(cells, SourceAt, out var refusal);
             if (refusal is not null) return (refusal, []);
             for (var k = 0; k < count; k++)
@@ -110,11 +110,12 @@ public sealed partial class Sheet
             if (constant.Kind == ValueKind.Number)
             {
                 numbers++;
-                if (cells[i].Format.IsDate)
+                var format = cells[i].Format!;
+                if (format.IsDate)
                 {
-                    if (!cells[i].Format.IsDateOnly || cells.Length > 1)
+                    if (!format.IsDateOnly || cells.Length > 1)
                     {
-                        refusal = Refuse(sourceAt(i), cells[i].Format.IsDateOnly
+                        refusal = Refuse(sourceAt(i), format.IsDateOnly
                             ? "two or more dates, which Excel may step by month or year"
                             : "a time of day, which Excel steps by the hour");
                         return Copy;

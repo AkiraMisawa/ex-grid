@@ -28,10 +28,10 @@ public sealed class SheetBlock
     public Entry? EntryAt(int row, int column) => At(row, column).Entry;
 
     /// <summary>The number format at a position inside the block.</summary>
-    public NumberFormat FormatAt(int row, int column) => At(row, column).Format;
+    public NumberFormat FormatAt(int row, int column) => At(row, column).Format ?? NumberFormat.General;
 
     /// <summary>The alignment at a position inside the block.</summary>
-    public HorizontalAlignment AlignmentAt(int row, int column) => At(row, column).Alignment;
+    public HorizontalAlignment AlignmentAt(int row, int column) => At(row, column).Alignment ?? HorizontalAlignment.General;
 
     internal CellState At(int row, int column)
     {

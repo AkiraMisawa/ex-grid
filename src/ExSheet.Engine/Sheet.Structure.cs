@@ -8,7 +8,9 @@ public sealed partial class Sheet
     /// Inserts <paramref name="count"/> rows at <paramref name="row"/>; what was there and below
     /// moves down, and every Reference is rewritten to keep naming the same cells (ADR-0046/0047).
     /// The new rows hold no Entries; each of their cells takes the number format and alignment of
-    /// the cell above it, as Excel's default does (ADR-0046). Rows inserted at the top take none.
+    /// the cell above it, and each row the format set on the row above, as Excel's default does
+    /// (ADR-0046, ADR-0047). Rows inserted at the top take none. A format set on a row moves with
+    /// it, and one pushed off the bottom edge is dropped.
     /// </summary>
     /// <exception cref="SheetRefusedException">
     /// A cell holding an Entry, or the cells a Reference names, would be pushed off the Sheet's
@@ -25,7 +27,8 @@ public sealed partial class Sheet
 
     /// <summary>
     /// Inserts columns, as <see cref="InsertRows"/> does rows: each new cell takes the number format
-    /// and alignment of the cell to its left (ADR-0046), and columns inserted at <c>A</c> take none.
+    /// and alignment of the cell to its left, and each column the format set on the column to its
+    /// left (ADR-0046, ADR-0047); columns inserted at <c>A</c> take none.
     /// </summary>
     /// <exception cref="SheetRefusedException">Something would be pushed off the Sheet's right edge. Nothing changes.</exception>
     public SheetChange InsertColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, true)).Change;
@@ -37,7 +40,9 @@ public sealed partial class Sheet
     internal sealed record StructuralOutcome(
         SheetChange Change,
         IReadOnlyList<(CellAddress Address, CellState State)> Dropped,
-        IReadOnlyList<(CellAddress Address, Entry Entry)> Rewritten);
+        IReadOnlyList<(CellAddress Address, Entry Entry)> Rewritten,
+        Dictionary<int, AxisStyle> RowsBefore,
+        Dictionary<int, AxisStyle> ColumnsBefore);
 
     /// <summary>Whether <paramref name="edit"/> would be refused, and why; nothing changes either way.</summary>
     internal SheetRefusal? CheckStructural(StructuralEdit edit)
@@ -79,7 +84,7 @@ public sealed partial class Sheet
         foreach (var source in moved)
         {
             if ((rows ? source.Address.Row : source.Address.Column) != edit.Start - 1) continue;
-            if (source.Format.IsGeneral && source.Alignment == HorizontalAlignment.General) continue;
+            if (source.Format is null && source.Alignment is null) continue;
             for (var i = 0; i < edit.Count; i++)
             {
                 var at = rows ? new CellAddress(edit.Start + i, source.Address.Column) : new CellAddress(source.Address.Row, edit.Start + i);
@@ -100,6 +105,9 @@ public sealed partial class Sheet
         if (CheckStructural(edit) is { } refusal) throw new SheetRefusedException(refusal);
 
         var before = Snapshot();
+        var shownBefore = ShownSnapshot();
+        var rowsBefore = new Dictionary<int, AxisStyle>(_rowStyles);
+        var columnsBefore = new Dictionary<int, AxisStyle>(_columnStyles);
         var dropped = new List<(CellAddress, CellState)>();
         var rewritten = new List<(CellAddress, Entry)>();
         var moved = new List<Cell>();
@@ -133,8 +141,9 @@ public sealed partial class Sheet
         _cells.Clear();
         foreach (var cell in moved) _cells[cell.Address] = cell;
         if (edit.IsInsert && formatInserted && edit.Start > 0) FormatInserted(edit, moved);
+        ShiftAxisStyles(edit, formatInserted);
         RebuildDependencies();
         var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;
-        return new StructuralOutcome(Diff(before, recalculated), dropped, rewritten);
+        return new StructuralOutcome(Diff(before, recalculated, shownBefore), dropped, rewritten, rowsBefore, columnsBefore);
     }
 }

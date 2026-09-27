@@ -86,9 +86,25 @@ internal static class ExcelCorpus
 
         if (expect.TryGetProperty("text", out var text))
         {
-            var display = sheet.GetDisplay(at);
+            // The oracle reads Excel's Range.Text in a column 100 characters wide unless the case
+            // gives the column's width; the engine is asked at the same width.
+            var display = sheet.GetDisplay(at, ColumnWidth(c) ?? 100);
             var shown = display.CannotShow ? "####" : display.Text;
             if (shown != text.GetString()) differences.Add($"text: expected \"{text.GetString()}\", got \"{shown}\"");
+        }
+
+        if (expect.TryGetProperty("widthOnEntry", out var widthOnEntry))
+        {
+            int? expected = widthOnEntry.ValueKind == JsonValueKind.Null ? null : widthOnEntry.GetInt32();
+            var actual = sheet.GetWidthOnEntry(at);
+            if (actual != expected) differences.Add($"widthOnEntry: expected {expected?.ToString(CultureInfo.InvariantCulture) ?? "null"}, got {actual?.ToString(CultureInfo.InvariantCulture) ?? "null"}");
+        }
+
+        if (expect.TryGetProperty("widens", out var widens))
+        {
+            // Excel widens a column still at its default width; the engine answers the width needed.
+            var actual = sheet.GetWidthOnEntry(at) is { } needed && needed > Sheet.DefaultColumnWidth;
+            if (actual != widens.GetBoolean()) differences.Add($"widens: expected {widens.GetBoolean()}, got {actual}");
         }
 
         if (expect.TryGetProperty("formula", out var formula))
@@ -104,8 +120,18 @@ internal static class ExcelCorpus
             if (code != numberFormat.GetString()) differences.Add($"numberFormat: expected \"{numberFormat.GetString()}\", got \"{code}\"");
         }
 
+        if (expect.TryGetProperty("alignment", out var alignment))
+        {
+            var setting = sheet.GetAlignment(at).ToString().ToLowerInvariant();
+            if (setting != alignment.GetString()) differences.Add($"alignment: expected \"{alignment.GetString()}\", got \"{setting}\"");
+        }
+
         return differences;
     }
+
+    /// <summary>The check column's width in characters, when the case sets one (<c>columnWidth</c>).</summary>
+    private static double? ColumnWidth(JsonElement c) =>
+        c.TryGetProperty("columnWidth", out var width) ? width.GetDouble() : null;
 
     private static Sheet Build(JsonElement c)
     {
@@ -203,6 +229,8 @@ internal static class ExcelCorpus
                     .Select(r => (IReadOnlyList<string>)[.. r.EnumerateArray().Select(f => f.GetString()!)])];
                 return SheetEdit.PasteText(rows, CellAddress.Parse(a.GetProperty("at").GetString()!));
             case "rename": return SheetEdit.Rename(a.GetProperty("name").GetString()!);
+            case "format": return SheetEdit.SetFormat(Range("range"), NumberFormat.Parse(a.GetProperty("format").GetString()!));
+            case "align": return SheetEdit.SetAlignment(Range("range"), Enum.Parse<HorizontalAlignment>(a.GetProperty("align").GetString()!, ignoreCase: true));
             default: throw new InvalidDataException($"Unknown action \"{what}\".");
         }
     }

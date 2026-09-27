@@ -33,7 +33,7 @@ public sealed partial class Sheet
             for (var column = range.First.Column; column <= range.Last.Column; column++)
             {
                 var address = new CellAddress(row, column);
-                states[i++] = StateOf(address).Recorded;
+                states[i++] = ShownState(address);
                 if (column > range.First.Column) text.Append('\t');
                 var value = GetValue(address);
                 var raw = value?.ToString() ?? "";

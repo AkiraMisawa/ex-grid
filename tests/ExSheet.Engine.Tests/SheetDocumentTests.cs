@@ -12,13 +12,13 @@ public class SheetDocumentTests
     {
         var json = NewSheet().ToDocument().ToJson();
 
-        Assert.Equal("""{"version":2,"culture":"en-US","name":"Sheet1","cells":[]}""", json);
+        Assert.Equal("""{"version":3,"culture":"en-US","name":"Sheet1","cells":[]}""", json);
     }
 
     [Theory] // ADR-0048 (SH-12): a document of an unknown version is refused, not guessed at
-    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","cells":[]}""", 3)]
+    [InlineData("""{"version":4,"culture":"en-US","name":"Sheet1","cells":[]}""", 4)]
     [InlineData("""{"version":0,"culture":"en-US","cells":[]}""", 0)]
-    [InlineData("""{"version":3,"culture":"en-US","cells":[{"at":"A1","number":1}],"sheets":[]}""", 3)]
+    [InlineData("""{"version":4,"culture":"en-US","cells":[{"at":"A1","number":1}],"sheets":[]}""", 4)]
     public void An_unknown_version_is_refused(string json, int version)
     {
         var refusal = Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
@@ -49,6 +49,15 @@ public class SheetDocumentTests
     [InlineData("""{"version":2,"culture":"en-US","name":"","cells":[]}""")]
     [InlineData("""{"version":2,"culture":"en-US","name":"a/b","cells":[]}""")]
     [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","cells":[],"values":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","columns":[{"at":"A:A","format":"0"}],"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","cells":[{"at":"A1","number":1,"align":"general"}]}""")]
+    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"A:A"}],"cells":[]}""")]
+    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"1:1","format":"0"}],"cells":[]}""")]
+    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"A:XFD","format":"0"}],"cells":[]}""")]
+    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"A:B","format":"0"},{"at":"B:C","format":"0"}],"cells":[]}""")]
+    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","rows":[{"at":"A:A","format":"0"}],"cells":[]}""")]
+    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","rows":[{"at":"1:1","format":"0","colour":"red"}],"cells":[]}""")]
+    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","rows":[{"at":"2:2","align":"justify"}],"cells":[]}""")]
     [InlineData("""[1]""")]
     [InlineData("""not json""")]
     public void Anything_its_version_does_not_define_is_refused(string json)
@@ -144,7 +153,52 @@ public class SheetDocumentTests
 
         Assert.Equal("Sheet1", sheet.Name);
         Assert.Equal(6, sheet.Number("A2"));
-        Assert.StartsWith("""{"version":2,"culture":"en-US","name":"Sheet1",""", sheet.ToDocument().ToJson());
+        Assert.StartsWith("""{"version":3,"culture":"en-US","name":"Sheet1",""", sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0048, ADR-0047: a version 2 document still opens; its cells' formats are the cells' own
+    public void A_version_2_document_opens_with_its_cell_formats()
+    {
+        var document = SheetDocument.FromJson("""
+            {"version":2,"culture":"en-US","name":"Book","cells":[
+              {"at":"A1","number":0.25,"format":"0%","align":"center"},
+              {"at":"B1","format":"General","align":"right"}]}
+            """);
+
+        var sheet = Sheet.Open(document);
+
+        Assert.Equal("25%", sheet.GetDisplay(CellAddress.Parse("A1")).Text);
+        Assert.Equal(HorizontalAlignment.Center, sheet.GetAlignment(CellAddress.Parse("A1")));
+        Assert.Null(document.Cells[1].Format);
+        Assert.Empty(document.Columns);
+        Assert.Empty(document.Rows);
+        Assert.Equal(
+            """{"version":3,"culture":"en-US","name":"Book","cells":[{"at":"A1","number":0.25,"format":"0%","align":"center"},{"at":"B1","align":"right"}]}""",
+            sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0047 (SH-21): formats on whole columns and rows are one entry each, adjacent ones one run, and round-trip
+    public void Column_and_row_formats_are_recorded_as_runs()
+    {
+        var sheet = NewSheet();
+        sheet.SetFormat(CellRange.Parse("B:D"), NumberFormat.Parse("0.00"));
+        sheet.SetAlignment(CellRange.Parse("F:F"), HorizontalAlignment.Center);
+        sheet.SetFormat(CellRange.Parse("3:4"), NumberFormat.Parse("0%"));
+        sheet.Enter("C3", "0.5");
+        sheet.Enter("C5", "0.5");
+        sheet.SetFormat(CellAddress.Parse("C5"), NumberFormat.General);
+
+        var json = sheet.ToDocument().ToJson();
+
+        Assert.Equal(
+            """{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"B:D","format":"0.00"},{"at":"F:F","align":"center"}],"rows":[{"at":"3:4","format":"0%"}],"cells":[{"at":"C3","number":0.5},{"at":"C5","number":0.5,"format":"General"}]}""",
+            json);
+        var reopened = Sheet.Open(SheetDocument.FromJson(json));
+        Assert.Equal("50%", reopened.GetDisplay(CellAddress.Parse("C3")).Text);
+        Assert.Equal("0.5", reopened.GetDisplay(CellAddress.Parse("C5")).Text);
+        Assert.Equal("0.00", reopened.GetFormat(CellAddress.Parse("D1000")).Code);
+        Assert.Equal(HorizontalAlignment.Center, reopened.GetAlignment(CellAddress.Parse("F7")));
+        Assert.Equal(json, reopened.ToDocument().ToJson());
     }
 
     [Fact] // ADR-0046: the Sheet's name round-trips, and a Reference qualified with it reads the Sheet when reopened
