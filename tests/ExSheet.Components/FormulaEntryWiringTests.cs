@@ -118,7 +118,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal(["XLOOKUP"], Candidates(cut));
     }
 
-    [Fact] // ADR-0051 / DC-19: = ↓ ↓ writes A3, the Selection and the Focus stay, and Enter commits the Formula
+    [Fact] // ADR-0051 / DC-19: = ↓ ↓ writes A3 and the Name Box names it (Excel), the Focus stays, and Enter commits the Formula
     public async Task Equals_down_down_writes_a3()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A3", "7"))));
@@ -128,9 +128,10 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal("=A2", EditorText(cut));
         await PressInEditorAsync(cut, "ArrowDown", "=A2", 3);
         Assert.Equal("=A3", EditorText(cut));
-        Assert.Equal("A1", NameBox(cut));
+        Assert.Equal("A3", NameBox(cut));
 
         await PressInEditorAsync(cut, "Enter", "=A3", 3);
+        Assert.Equal("A2", NameBox(cut));
 
         Assert.Equal("7", CellText(cut, "A1"));
         await GoToAsync(cut, "A1");
@@ -150,7 +151,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal("=SUM(B2:C3", EditorText(cut));
     }
 
-    [Fact] // ADR-0051 / DC-19: a click on a cell writes the clicked cell, and the Focus stays on the edited one
+    [Fact] // ADR-0051 / DC-19: a click on a cell writes the clicked cell, and the Name Box names it (Excel)
     public async Task A_click_writes_the_clicked_cell()
     {
         var cut = RenderSheet();
@@ -164,7 +165,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         });
 
         Assert.Equal("=1+C4", EditorText(cut));
-        Assert.Equal("A1", NameBox(cut));
+        Assert.Equal("C4", NameBox(cut));
     }
 
     [Fact] // ADR-0051: F2 switches between moving the caret and pointing
@@ -193,7 +194,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         await PressInEditorAsync(cut, "ArrowUp", "=SUM()", 5, fromBar: true);
 
         Assert.Equal("=SUM(B1)", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
-        Assert.Equal("B2", NameBox(cut));
+        Assert.Equal("B1", NameBox(cut));
     }
 
     [Fact] // ADR-0051/0012: typing a constant, the arrows still commit and move

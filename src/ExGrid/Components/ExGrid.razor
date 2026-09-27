@@ -1329,8 +1329,10 @@
 
     /// <summary>
     /// The Name Box's label for the Focus, in the Consumer's words (ADR-0051): <c>D200</c> on
-    /// a Sheet. Asked for the Focus cell whenever the Formula Bar paints; null, or a null
-    /// answer, leaves the Name Box empty — the grid names no cell in words of its own.
+    /// a Sheet. Asked for the Focus cell whenever the Formula Bar paints — and while a pointing
+    /// outline stands (ADR-0051's Point), for the outline's Focus, as Excel names the pointed
+    /// cell; null, or a null answer, leaves the Name Box empty — the grid names no cell in
+    /// words of its own.
     /// </summary>
     [Parameter] public Func<CellPosition, string?>? NameBoxLabel { get; set; }
 
@@ -5667,9 +5669,15 @@
     }
 
     /// <summary>The Name Box's text: the Consumer's label for the Focus, or nothing
-    /// (ADR-0051).</summary>
+    /// (ADR-0051). While a pointing outline stands over an open edit it names the outline's
+    /// Focus instead, as Excel's does in Point — the Focus itself has not moved — and it
+    /// names the edited cell again the moment the outline goes.</summary>
     private string NameBoxText()
-        => _selection.Selection.IsEmpty ? "" : NameBoxLabel?.Invoke(_selection.Selection.Focus) ?? "";
+    {
+        if (_editMode != EditMode.None && _pointer is { IsEmpty: false } pointer)
+            return NameBoxLabel?.Invoke(pointer.Focus) ?? "";
+        return _selection.Selection.IsEmpty ? "" : NameBoxLabel?.Invoke(_selection.Selection.Focus) ?? "";
+    }
 
     /// <summary>
     /// What the Formula Bar shows for the Focus cell (ADR-0051/0016): the uncommitted text

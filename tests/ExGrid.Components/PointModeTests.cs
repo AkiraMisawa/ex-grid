@@ -49,7 +49,8 @@ public class PointModeTests : GridTestContext
         List<GridSelection>? selections = null,
         bool point = true,
         bool formulaBar = false,
-        Func<string, int, ValueTask<EditorCompletion?>>? complete = null)
+        Func<string, int, ValueTask<EditorCompletion?>>? complete = null,
+        Func<CellPosition, string?>? nameBoxLabel = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Window, TestRows.Many(50))
@@ -68,6 +69,8 @@ public class PointModeTests : GridTestContext
             }
             if (complete is not null)
                 ps.Add(g => g.CompleteEditorText, complete);
+            if (nameBoxLabel is not null)
+                ps.Add(g => g.NameBoxLabel, nameBoxLabel);
         });
 
     private static Task ClickAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, bool shift = false)
@@ -479,5 +482,98 @@ public class PointModeTests : GridTestContext
         await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
 
         Assert.Equal(CellEditMode.Point, chrome.Mode);
+    }
+
+    /// <summary>The Name Box's label in the Sheet's words: <c>A1</c>, <c>C7</c>.</summary>
+    private static string? CellName(CellPosition cell)
+        => FormattableString.Invariant($"{(char)('A' + cell.Column)}{cell.Row + 1}");
+
+    private IRenderedComponent<ExGrid<TestRow>> RenderWithNameBox(List<GridEditIntent<TestRow>>? intents = null)
+        => RenderGrid(intents, formulaBar: true, nameBoxLabel: CellName);
+
+    private static string NameBox(IRenderedComponent<ExGrid<TestRow>> cut)
+        => cut.Find("input.ex-name-box").GetAttribute("value") ?? "";
+
+    [Fact] // ADR-0051 (Excel, behaviours item 9): while pointing by keys the Name Box names the pointed cell
+    public async Task The_name_box_names_the_cell_pointed_by_keys()
+    {
+        var cut = RenderWithNameBox();
+        await StartFormulaAsync(cut);
+        Assert.Equal("A1", NameBox(cut));
+
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+        Assert.Equal("A2", NameBox(cut));
+        await PressAsync(cut, "ArrowDown", text: "=A2", caret: 3);
+        Assert.Equal("A3", NameBox(cut));
+        // Shift extends: the outline's moving end is named, as the Selection's is.
+        await PressAsync(cut, "ArrowRight", shift: true, text: "=A3", caret: 3);
+        Assert.Equal("=A3:B3", EditorText(cut));
+        Assert.Equal("B3", NameBox(cut));
+    }
+
+    [Fact] // ADR-0051 (Excel, behaviours item 9): an operator ends pointing, and the Name Box names the edited cell again
+    public async Task Typing_an_operator_returns_the_name_box_to_the_edited_cell()
+    {
+        var cut = RenderWithNameBox();
+        await StartFormulaAsync(cut);
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+        Assert.Equal("A2", NameBox(cut));
+
+        await TypeAsync(cut, "=A2+");
+
+        Assert.Equal("A1", NameBox(cut));
+    }
+
+    [Fact] // ADR-0051 (Excel, behaviours item 10): a click points, and the Name Box names the clicked cell
+    public async Task The_name_box_names_the_cell_pointed_by_a_click()
+    {
+        var cut = RenderWithNameBox();
+        await StartFormulaAsync(cut);
+
+        await ClickAsync(cut, 150, 70); // B4
+        Assert.Equal("=B4", EditorText(cut));
+        Assert.Equal("B4", NameBox(cut));
+        await cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = 250, OffsetY = 130 });
+        Assert.Equal("=B4:C7", EditorText(cut));
+        Assert.Equal("C7", NameBox(cut));
+    }
+
+    [Fact] // ADR-0051: F2 leaves the outline and the Name Box names the edited cell again
+    public async Task F2_returns_the_name_box_to_the_edited_cell()
+    {
+        var cut = RenderWithNameBox();
+        await StartFormulaAsync(cut);
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+
+        await PressAsync(cut, "F2", text: "=A2", caret: 3);
+
+        Assert.Equal("A1", NameBox(cut));
+    }
+
+    [Fact] // ADR-0051/0012: the pointed Formula committed, the Name Box follows the Focus as before
+    public async Task After_the_commit_the_name_box_follows_the_focus()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderWithNameBox(intents);
+        await StartFormulaAsync(cut);
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+        await PressAsync(cut, "ArrowDown", text: "=A2", caret: 3);
+
+        await PressAsync(cut, "Enter", text: "=A3", caret: 3);
+
+        Assert.Equal("=A3", Assert.Single(intents).Value);
+        Assert.Equal("A2", NameBox(cut));
+    }
+
+    [Fact] // ADR-0051: Escape cancels the edit, and the Name Box names the Focus, which never moved
+    public async Task Escape_returns_the_name_box_to_the_focus()
+    {
+        var cut = RenderWithNameBox();
+        await StartFormulaAsync(cut);
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+
+        await PressAsync(cut, "Escape", text: "=A2", caret: 3);
+
+        Assert.Equal("A1", NameBox(cut));
     }
 }
