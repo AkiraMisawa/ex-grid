@@ -53,7 +53,6 @@ public class SheetDocumentTests
     [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","cells":[{"at":"A1","number":1,"align":"general"}]}""")]
     [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"A:A"}],"cells":[]}""")]
     [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"1:1","format":"0"}],"cells":[]}""")]
-    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"A:XFD","format":"0"}],"cells":[]}""")]
     [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"A:B","format":"0"},{"at":"B:C","format":"0"}],"cells":[]}""")]
     [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","rows":[{"at":"A:A","format":"0"}],"cells":[]}""")]
     [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","rows":[{"at":"1:1","format":"0","colour":"red"}],"cells":[]}""")]

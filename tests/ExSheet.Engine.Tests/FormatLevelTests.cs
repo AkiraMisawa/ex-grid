@@ -44,6 +44,19 @@ public class FormatLevelTests
         Assert.Empty(sheet.ToDocument().Rows);
     }
 
+    [Fact] // ADR-0048 (SH-12): a Sheet formatted whole is written as A:XFD and opens again with the same format
+    public void A_whole_sheet_format_round_trips_through_the_document()
+    {
+        var sheet = NewSheet();
+        sheet.SetFormat(CellRange.Parse("A:XFD"), TwoPlaces);
+
+        var reopened = Sheet.Open(SheetDocument.FromJson(sheet.ToDocument().ToJson()));
+
+        Assert.Equal(TwoPlaces, reopened.GetFormat(At("A1")));
+        Assert.Equal(TwoPlaces, reopened.GetFormat(At("XFD1048576")));
+        Assert.Equal(sheet.ToDocument().ToJson(), reopened.ToDocument().ToJson());
+    }
+
     [Fact] // ADR-0047: cell over row over column
     public void Cell_over_row_over_column()
     {

@@ -233,7 +233,8 @@ public sealed class SheetDocument
                         }
                         break;
                     case "columns" when number >= 3:
-                        columns = ReadAxis(property.Value, "column", text => CellRange.TryParse(text, out var r) && r.IsWholeColumns && !r.IsWholeRows ? (r.First.Column, r.Last.Column) : null);
+                        // The whole Sheet is recorded as whole columns (A:XFD), so a column run may span every row and every column.
+                        columns = ReadAxis(property.Value, "column", text => CellRange.TryParse(text, out var r) && r.IsWholeColumns ? (r.First.Column, r.Last.Column) : null);
                         break;
                     case "rows" when number >= 3:
                         rows = ReadAxis(property.Value, "row", text => CellRange.TryParse(text, out var r) && r.IsWholeRows && !r.IsWholeColumns ? (r.First.Row, r.Last.Row) : null);
