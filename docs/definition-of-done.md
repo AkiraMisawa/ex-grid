@@ -984,6 +984,7 @@ nothing sees nothing change.
 | **DC-34** | MUST | A click into the Formula Bar's text keeps the caret where it was clicked; moving the caret while pointing enters Caret (ADR-0051, third round) | Layer 2 + Layer 3 | as stated |
 | **DC-35** | MUST | With a painted text supplied, the grid paints it and, where it differs from the value's text, gives the value's text as the accessible name (ADR-0050, item 11) | Layer 2 | as stated |
 | **DC-36** | MUST | Resize grips can be declared without the column-menu button; double-clicking an edge still sizes to fit (ADR-0050, item 12) | Layer 2 + Layer 3 | no menu button; grips work |
+| **DC-37** | MUST | With copy with headers left out, the Context Menu offers only Copy on every route, and no other route copies with headers; without the declaration, unchanged (ADR-0050, item 13) | Layer 2 | as stated |
 | **DC-25** | MUST | The declarations are per instance: two grids on one page, one declaring and one not, behave each as its own declarations say (ADR-0018) | Layer 3 | independent |
 
 ---
