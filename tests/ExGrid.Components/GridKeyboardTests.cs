@@ -55,7 +55,7 @@ public class GridKeyboardTests : GridTestContext
         Assert.Equal("0", cut.Find(".ex-grid").GetAttribute("tabindex"));
     }
 
-    [Fact] // ADR-0012: arrows collapse and move; Shift+arrow keeps the Anchor and grows the range
+    [Fact] // ADR-0012/0052: arrows collapse and move; Shift+arrow keeps the Focus and moves the Extent
     public async Task Arrows_move_and_shift_arrows_extend()
     {
         GridSelection? selection = null;
@@ -68,8 +68,8 @@ public class GridKeyboardTests : GridTestContext
         Assert.Equal(1, selection.CellCount);
 
         await PressAsync(cut, "ArrowDown", shift: true);
-        Assert.Equal(new CellPosition(2, 1), selection!.Focus);
-        Assert.Equal(new CellPosition(1, 1), selection.Anchor);
+        Assert.Equal(new CellPosition(1, 1), selection!.Focus);
+        Assert.Equal(new CellPosition(2, 1), selection.Extent);
         Assert.Equal(2, selection.CellCount);
     }
 
@@ -107,7 +107,7 @@ public class GridKeyboardTests : GridTestContext
         Assert.Equal(0, selection!.Focus.Row);
     }
 
-    [Fact] // ADR-0012: Enter runs down columns and Tab across rows, and the range stays selected
+    [Fact] // ADR-0012/0052: Enter runs down columns and Tab across rows, and the range stays selected
     public async Task Enter_and_tab_cycle_inside_the_selection()
     {
         GridSelection? selection = null;
@@ -117,15 +117,15 @@ public class GridKeyboardTests : GridTestContext
         await PressAsync(cut, "ArrowDown", shift: true);     // a 2x2 block
         var cells = selection!.CellCount;
 
-        // The block is rows 0-1 x columns 0-1 with the Focus at its last cell, so
-        // column-major cycling wraps to the first.
-        Assert.Equal(new CellPosition(1, 1), selection!.Focus);
-        await PressAsync(cut, "Enter");
+        // The block is rows 0-1 x columns 0-1 with the Focus where the extension started,
+        // at its first cell (ADR-0052).
         Assert.Equal(new CellPosition(0, 0), selection!.Focus);
         await PressAsync(cut, "Enter");
         Assert.Equal(new CellPosition(1, 0), selection!.Focus); // down the column
+        await PressAsync(cut, "Enter");
+        Assert.Equal(new CellPosition(0, 1), selection!.Focus); // on to the next column
         await PressAsync(cut, "Tab");
-        Assert.Equal(new CellPosition(1, 1), selection!.Focus); // across the row
+        Assert.Equal(new CellPosition(1, 0), selection!.Focus); // across the row, wrapping to the next
         Assert.Equal(cells, selection.CellCount);               // the range never moved
     }
 

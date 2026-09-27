@@ -1073,7 +1073,7 @@
     /// A Consumer declaration (ADR-0050, item 3): a paste may spill. A block of several
     /// cells pasted onto one cell then writes the block with that cell at its top-left — one
     /// <see cref="OnPaste"/> intent whose plan is the block — and the block becomes the
-    /// Selection, with the Anchor and the Focus at its top-left, so the count on display is
+    /// Selection, with the Focus at its top-left and nothing scrolled, so the count on display is
     /// the count written. <c>Editable</c> is judged on the block before anything is raised,
     /// and a block running past the grid's last row or column is refused as
     /// <see cref="PasteRefusalReason.SpillPastExtent"/>. Declared by a Consumer that holds
@@ -1245,7 +1245,7 @@
     /// <summary>
     /// A Consumer declaration (ADR-0050, item 1): a plain click on a column header selects
     /// the whole column, and nothing sorts — Excel's meaning, where ADR-0012 gives the click
-    /// to sorting. Shift+click extends from the Anchor's column, as it always does. Off, the
+    /// to sorting. Shift+click extends from the Focus's column, as it always does. Off, the
     /// header click sorts exactly as before.
     /// </summary>
     [Parameter] public bool HeaderClickSelects { get; set; }
@@ -1338,6 +1338,17 @@
     /// words of its own.
     /// </summary>
     [Parameter] public Func<CellPosition, string?>? NameBoxLabel { get; set; }
+
+    /// <summary>
+    /// The Name Box's label for the size of a range while a drag selects it, in the Consumer's
+    /// words (ADR-0052): <c>4R x 3C</c> on a Sheet, as Excel shows while the button is down.
+    /// Asked for the range holding the Focus on each render of a selecting drag once it covers
+    /// more than one cell; when the button comes up the Name Box names the Focus again through
+    /// <see cref="NameBoxLabel"/>. A fill drag and a pointing drag are not asked. Null, or a
+    /// null answer, keeps the Focus's label throughout. Keyboard extension is not asked: telling
+    /// when Shift is released would need a <c>keyup</c> listener (ADR-0021).
+    /// </summary>
+    [Parameter] public Func<SelectionRange, string?>? NameBoxSizeLabel { get; set; }
 
     /// <summary>
     /// Enter in the Name Box (ADR-0051): the text the user typed there, handed to the
@@ -2956,18 +2967,18 @@
         // already closed any open popover and committed an open editor, which is what a
         // press that lands elsewhere is supposed to do.
         // A press on a Row Heading (ADR-0050): the whole row, or with Shift whole rows from
-        // the Anchor's. The band stands outside the column index space, so the Focus lands
+        // the Focus's. The band stands outside the column index space, so the Focus lands
         // in the first column on screen — where the Viewport already is — and no drag
         // begins: a drag's moves extend by cell, and would collapse the whole rows.
         if (e.Button == 0 && ShowsRowHeadings
             && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx) && CellUnder(e) is { } headed)
         {
             var rowExtent = Extent;
-            var anchorColumn = FirstVisibleCell()?.Column ?? 0;
+            var focusColumn = FirstVisibleCell()?.Column ?? 0;
             var selected = _selection.Selection;
             var changed = Apply(e.ShiftKey
-                ? selected.ExtendToRow(headed.Row, rowExtent, anchorColumn)
-                : selected.SelectRow(headed.Row, rowExtent, anchorColumn));
+                ? selected.ExtendToRow(headed.Row, rowExtent, focusColumn)
+                : selected.SelectRow(headed.Row, rowExtent, focusColumn));
             if (!changed && (dismissed || committed || leftInteractive))
                 _suppressRender = false;
             return;
@@ -2995,9 +3006,9 @@
             : current.Click(cell, extent);
 
         Apply(next);
-        // A toggle-off leaves Anchor and Focus detached on the deselected cell, and
-        // dragging on from there would append a range the user never asked for
-        // (ADR-0012). Every other gesture has left a range that a drag can grow.
+        // A toggle-off takes a cell out and leaves the Focus on what remains (ADR-0052), and
+        // dragging on from there would redraw a range from a cell the press never pointed
+        // at (ADR-0012). Every other gesture has left a range that a drag can grow.
         //
         // Last, because attaching the move handler is itself a change to the markup: a
         // click on the one cell already selected changes no selection at all, and
@@ -3120,7 +3131,7 @@
     /// After a fill the Consumer accepted, the Selection is the source and the target
     /// together, as in Excel (ADR-0050, item 5 refined). The Focus stays on the cell it was
     /// on — inside the source, so the cell the Formula Bar shows does not change and nothing
-    /// scrolls — and the Anchor joins it, as any placement leaves them (ADR-0050, item 4).
+    /// scrolls: the source's first cell, where the fill began from it (ADR-0052).
     /// Positions mean something only under the order they were written in, and the
     /// Selection is the user's: if the order moved while the Consumer handled the intent,
     /// or the Selection is no longer the source, nothing is placed (ADR-0011).
@@ -3516,13 +3527,20 @@
         if (_editMode != EditMode.None)
             return;
         // The corner where the two Headings meet selects all (ADR-0050), as Ctrl+A does —
-        // under a pager, the page (ADR-0015). Read before the column: ColumnAt clamps a
-        // pixel in the band to the first column.
+        // under a pager, the page (ADR-0015) — and, unlike Ctrl+A, puts the Focus on the
+        // top-left cell on screen, as a Heading click puts it on the first row or column on
+        // screen (ADR-0052). Read before the column: ColumnAt clamps a pixel in the band to
+        // the first column.
         if (e.Button == 0 && ShowsRowHeadings && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx))
         {
             var allExtent = Extent;
             if (allExtent.RowCount > 0 && allExtent.ColumnCount > 0)
-                Apply(SelectAllInContext(_selection.Selection, allExtent));
+            {
+                var all = SelectAllInContext(_selection.Selection, allExtent);
+                if (!all.IsEmpty && FirstVisibleCell() is { } topLeft && all.Ranges[0].Contains(topLeft))
+                    all = all.Place(all.Ranges[0], topLeft, allExtent);
+                Apply(all);
+            }
             return;
         }
         // Past the last column the header is dead space, not the last column again:
@@ -3542,18 +3560,18 @@
         {
             return;
         }
-        // Shift+click selects whole columns from the Anchor's to this one, and does not
+        // Shift+click selects whole columns from the Focus's to this one, and does not
         // sort: Excel's gesture, and the mouse route to several whole columns. Selection
         // is positional, so an unsortable column is selected like any other (ADR-0012).
         if (e.ShiftKey)
         {
-            // From nothing selected, anchored on the first visible row, as the first key is
+            // From nothing selected, the Focus on the first visible row, as the first key is
             // (KB-9): the Viewport does not move for a click on the header.
             Apply(_selection.Selection.ExtendToColumn(column, Extent, _visible?.Start ?? 0));
             return;
         }
         // Declared, the plain click is Excel's too (ADR-0050, item 1): the whole column,
-        // anchored on the first visible row so the Viewport does not move — and no sort.
+        // the Focus on the first visible row so the Viewport does not move — and no sort.
         if (HeaderClickSelects)
         {
             Apply(_selection.Selection.SelectColumn(column, Extent, _visible?.Start ?? 0));
@@ -5092,7 +5110,7 @@
     }
 
     /// <summary>
-    /// After a spilled paste the block is the Selection, with the Anchor and the Focus at
+    /// its top-left, and nothing scrolls to show it (ADR-0050, item 3; ADR-0052). Only for a spill — a paste into a selected range
     /// its top-left (ADR-0050, item 3). Only for a spill — a paste into a selected range
     /// already has the target selected. Positions mean something only under the order they
     /// were written in: if the Consumer's handling of the intent moved the Row Sequence
@@ -5407,6 +5425,25 @@
             current = current.Click(start, extent);
         }
 
+        // Ctrl+Backspace scrolls the Focus into view and changes nothing else (ADR-0052). From
+        // no Focus it places one, as any first key does, and reveals that.
+        if (action.Kind == GridKeyKind.RevealFocus)
+        {
+            if (fromEmpty)
+                Apply(current);
+            if (PageSize is { } focusPageSize && current.Focus.Row / focusPageSize != _pageIndex)
+            {
+                _pageIndex = current.Focus.Row / focusPageSize;
+                PrepareRender();
+            }
+            _revealRowStart = false;
+            _revealStepRows = 0;
+            _revealFocus = true;
+            _suppressRender = false;
+            StateHasChanged();
+            return;
+        }
+
         // A key that moves the Focus, pressed when there is no Focus, only places one —
         // it does not also take its step. This is what every list does: the first Down
         // selects the first item rather than the second, and the selection appears where
@@ -5435,6 +5472,8 @@
                 extent),
             GridKeyKind.MoveByViewport => current.MoveByViewport(SignedViewportRows(action.Direction), extent),
             GridKeyKind.ExtendByViewport => current.ExtendByViewport(SignedViewportRows(action.Direction), extent),
+            GridKeyKind.MoveFocusToNextCorner => current.MoveFocusToNextCorner(extent),
+            GridKeyKind.CollapseToFocus => current.CollapseToFocus(extent),
             _ => current,
         };
 
@@ -5452,17 +5491,21 @@
             _suppressRender = false;
             return;
         }
-        // The keyboard crosses pages; dragging does not (ADR-0015): a Focus the
-        // keystroke carried past the page boundary turns the page, and the reveal then
-        // positions it inside the new one.
-        if (PageSize is { } pageSize && next.Focus.Row / pageSize != _pageIndex)
+        // While extending, the grid keeps the Extent in view, not the Focus, which stays
+        // where the extension started and may be left off screen (ADR-0052). Every other key
+        // moves the Focus, and the Focus is what has to end up on screen (ADR-0012).
+        var revealed = Extends(action) ? next.Extent : next.Focus;
+        _revealTarget = Extends(action) ? revealed : null;
+        // The keyboard crosses pages; dragging does not (ADR-0015): a cell the keystroke
+        // carried past the page boundary turns the page, and the reveal then positions it
+        // inside the new one.
+        if (PageSize is { } pageSize && revealed.Row / pageSize != _pageIndex)
         {
-            _pageIndex = next.Focus.Row / pageSize;
+            _pageIndex = revealed.Row / pageSize;
             PrepareRender();
         }
 
-        // The Focus has to end up on screen (ADR-0012), measured after the render against
-        // the geometry that was actually painted.
+        // Measured after the render against the geometry that was actually painted.
         _revealRowStart = NamesTheStartOfTheRow(action);
         // PageUp / PageDown move the Viewport by the same rows the Focus moved, so the
         // Focus keeps its position on screen (ADR-0012). Everywhere else the scroll is a
@@ -5475,6 +5518,11 @@
         _revealFocus = true;
         StateHasChanged();
     }
+
+    /// <summary>Whether a key extends a range — moves its Extent while the Focus stays
+    /// (ADR-0052).</summary>
+    private static bool Extends(GridKeyAction action)
+        => action.Kind is GridKeyKind.Extend or GridKeyKind.ExtendToEdge or GridKeyKind.ExtendByViewport;
 
     /// <summary>The Consumer's edge answer for this key, or null: only an arrow asks it
     /// (ADR-0050, item 2).</summary>
@@ -5508,7 +5556,7 @@
 
     /// <summary>
     /// The Consumer asks the grid to place the Selection and the Focus (ADR-0050, item 4):
-    /// <paramref name="range"/> becomes the one range, with the Anchor and the Focus on
+    /// <paramref name="range"/> becomes the one range, with the Focus on
     /// <paramref name="focus"/> inside it. The grid then does what it does after a click: an
     /// open edit commits first, the Focus is scrolled into view, and the new extent is
     /// announced once it settles (ADR-0033). The Selection stays the grid's — the Consumer
@@ -5679,12 +5727,22 @@
     /// <summary>The Name Box's text: the Consumer's label for the Focus, or nothing
     /// (ADR-0051). While a pointing outline stands over an open edit it names the outline's
     /// Focus instead, as Excel's does in Point — the Focus itself has not moved — and it
-    /// names the edited cell again the moment the outline goes.</summary>
+    /// names the edited cell again the moment the outline goes. While a selecting drag holds
+    /// the button over more than one cell, the Consumer's label for the range's size, as
+    /// Excel's shows <c>4R x 3C</c> (ADR-0052).</summary>
     private string NameBoxText()
     {
         if (_editMode != EditMode.None && _pointer is { IsEmpty: false } pointer)
             return NameBoxLabel?.Invoke(pointer.Focus) ?? "";
-        return _selection.Selection.IsEmpty ? "" : NameBoxLabel?.Invoke(_selection.Selection.Focus) ?? "";
+        if (_selection.Selection.IsEmpty)
+            return "";
+        if (_dragging && _fillSource is null && !_pointDragging && NameBoxSizeLabel is { } sizeLabel
+            && _selection.Selection.FocusRange is { CellCount: > 1 } dragged
+            && sizeLabel(dragged) is { } size)
+        {
+            return size;
+        }
+        return NameBoxLabel?.Invoke(_selection.Selection.Focus) ?? "";
     }
 
     /// <summary>
@@ -6230,7 +6288,7 @@
         if (start < 0 || count <= 0)
             return current;
         // The page-context overload, not Click+ExtendTo: naming the whole region must
-        // keep Anchor and Focus where they stand, exactly as SelectAll does (ADR-0012).
+        // keep the Focus where it stands, exactly as SelectAll does (ADR-0052).
         return current.SelectAll(extent, start, count);
     }
 
@@ -6507,7 +6565,8 @@
         _revealFocus = false;
         _revealRowStart = false;
         _revealStepRows = 0;
-        // The pointing outline's Focus, where one asked (ADR-0051); the Focus otherwise.
+        // The Extent while extending (ADR-0052), or the pointing outline's moving end
+        // (ADR-0051), where one asked; the Focus otherwise.
         var target = _revealTarget;
         _revealTarget = null;
         if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)

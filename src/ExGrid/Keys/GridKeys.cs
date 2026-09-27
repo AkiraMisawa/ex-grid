@@ -189,6 +189,13 @@ public static class GridKeys
         table["Shift+ "] = new(GridKeyKind.SelectWholeRows);
         table[" "] = new(GridKeyKind.Engage);
 
+        // Excel's three keys for the active cell (ADR-0052). None is the browser's, and none
+        // is taken from an open editor: while editing the listener claims only the editing
+        // keys, so Backspace and Ctrl+Backspace stay the editor's (ADR-0010).
+        table["Control+."] = new(GridKeyKind.MoveFocusToNextCorner);
+        table["Control+Backspace"] = new(GridKeyKind.RevealFocus);
+        table["Shift+Backspace"] = new(GridKeyKind.CollapseToFocus);
+
         // The way out of Tab's cycle. ADR-0012 says Enter and Tab never leave the
         // selection, which without an exit would trap the keyboard inside the grid —
         // against ADR-0020's own "the grid is one tab stop".

@@ -31,7 +31,7 @@ public partial class ExGrid<TRow>
     /// </summary>
     [Parameter] public Func<SelectionRange, string>? ReferenceText { get; set; }
 
-    // The pointing outline as an Anchor and a Focus of its own — a one-range selection, so the
+    // The pointing outline as a Focus and an Extent of its own — a one-range selection, so the
     // arrows, Shift and a click move it by the same transitions the Selection's own use — the
     // span of the text its Reference occupies, and the text as the core last wrote it. Pointing
     // stands only while the editor's text is still that text: anything typed ends it.
@@ -41,8 +41,9 @@ public partial class ExGrid<TRow>
     private string? _pointWritten;
     private bool _pointDragging;
 
-    // A cell to reveal in the Focus's place: the pointing outline's Focus, which may be
-    // walked off screen while the Focus itself stays put (ADR-0012's reveal, ADR-0051).
+    // A cell to reveal in the Focus's place: the Extent while a range is extended (ADR-0052),
+    // or the pointing outline's moving end, which may be walked off screen while the Focus
+    // itself stays put (ADR-0012's reveal, ADR-0051).
     private CellPosition? _revealTarget;
 
     /// <summary>Refuses a Point predicate without the Reference text it would need: pointing
@@ -161,7 +162,7 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// A press on a cell while editing (ADR-0051): it points — at that cell, or with Shift
-    /// from the outline's Anchor (from the edited cell when none stands) — where an outline
+    /// from the outline's Focus (from the edited cell when none stands) — where an outline
     /// stands over unchanged text or the Consumer says a Reference can go at the caret. The
     /// press does not commit, and the drag it starts extends the outline.
     /// </summary>
@@ -202,7 +203,7 @@ public partial class ExGrid<TRow>
     /// it.</summary>
     private void OnPointDrag(CellPosition cell)
     {
-        if (!PointingContinues || _pointer!.Focus == cell)
+        if (!PointingContinues || _pointer!.Extent == cell)
         {
             _suppressRender = true;
             return;
@@ -232,9 +233,10 @@ public partial class ExGrid<TRow>
         MarkGateIfMoved();
         if (reveal)
         {
-            // The outline's Focus is kept on screen as the Focus is (ADR-0012); the Focus
+            // The outline's moving end is kept on screen as the Extent is (ADR-0052): the
+            // pointed cell when the outline moves, the far end when Shift extends it. The Focus
             // itself does not move.
-            _revealTarget = _pointer.Focus;
+            _revealTarget = _pointer.Extent;
             _revealFocus = true;
         }
     }

@@ -31,14 +31,33 @@ public class EdgeAnswerTests
         Assert.Equal([new SelectionRange(9, 2, 1, 1)], selection.Ranges);
     }
 
-    [Fact] // ADR-0050 / DC-7: with an answer, Ctrl+Shift+arrow extends the range to it
+    [Fact] // ADR-0050/0052 / DC-7: with an answer, Ctrl+Shift+arrow runs the Extent to it and the Focus stays
     public void Ctrl_shift_arrow_extends_to_the_answer()
     {
         var selection = GridSelection.Empty.Click(new(3, 2), Grid).ExtendToEdge(GridDirection.Right, Grid, Stub);
 
         Assert.Equal([new SelectionRange(3, 2, 1, 3)], selection.Ranges);
-        Assert.Equal(new CellPosition(3, 2), selection.Anchor);
-        Assert.Equal(new CellPosition(3, 4), selection.Focus);
+        Assert.Equal(new CellPosition(3, 2), selection.Focus);
+        Assert.Equal(new CellPosition(3, 4), selection.Extent);
+    }
+
+    [Fact] // ADR-0052 (DC-7, Excel item 2): the answer is asked for the Extent, so a second press goes on from where the first stopped
+    public void A_second_ctrl_shift_arrow_asks_from_the_extent()
+    {
+        var asked = new List<CellPosition>();
+        CellPosition Recording(CellPosition origin, GridDirection direction)
+        {
+            asked.Add(origin);
+            return origin.Column < 4 ? origin with { Column = 4 } : origin with { Column = 25 };
+        }
+
+        var selection = GridSelection.Empty.Click(new(3, 2), Grid)
+            .ExtendToEdge(GridDirection.Right, Grid, Recording)
+            .ExtendToEdge(GridDirection.Right, Grid, Recording);
+
+        Assert.Equal([new CellPosition(3, 2), new CellPosition(3, 4)], asked);
+        Assert.Equal([new SelectionRange(3, 2, 1, 24)], selection.Ranges);
+        Assert.Equal(new CellPosition(3, 2), selection.Focus);
     }
 
     [Fact] // ADR-0050/0012 / DC-7: without an answer, both go to the grid's edge as before

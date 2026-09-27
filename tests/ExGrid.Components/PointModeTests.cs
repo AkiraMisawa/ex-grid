@@ -157,7 +157,7 @@ public class PointModeTests : GridTestContext
         Assert.Equal("=B5", EditorText(cut));
     }
 
-    [Fact] // ADR-0051 / DC-19: Shift extends the outline to a range, from its Anchor
+    [Fact] // ADR-0051/0052 / DC-19: Shift extends the outline to a range, from its Focus
     public async Task Shift_extends_to_a_range()
     {
         var cut = RenderGrid();
@@ -494,7 +494,7 @@ public class PointModeTests : GridTestContext
     private static string NameBox(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.Find("input.ex-name-box").GetAttribute("value") ?? "";
 
-    [Fact] // ADR-0051 (Excel, behaviours item 9): while pointing by keys the Name Box names the pointed cell
+    [Fact] // ADR-0051/0052 (Excel, behaviours item 9): while pointing by keys the Name Box names the pointed cell, and the outline's Focus once Shift extends it
     public async Task The_name_box_names_the_cell_pointed_by_keys()
     {
         var cut = RenderWithNameBox();
@@ -505,10 +505,11 @@ public class PointModeTests : GridTestContext
         Assert.Equal("A2", NameBox(cut));
         await PressAsync(cut, "ArrowDown", text: "=A2", caret: 3);
         Assert.Equal("A3", NameBox(cut));
-        // Shift extends: the outline's moving end is named, as the Selection's is.
+        // Shift extends: the outline's Focus is named, as the Selection's is — the end that
+        // stays, not the one that moves (ADR-0052).
         await PressAsync(cut, "ArrowRight", shift: true, text: "=A3", caret: 3);
         Assert.Equal("=A3:B3", EditorText(cut));
-        Assert.Equal("B3", NameBox(cut));
+        Assert.Equal("A3", NameBox(cut));
     }
 
     [Fact] // ADR-0051 (Excel, behaviours item 9): an operator ends pointing, and the Name Box names the edited cell again
@@ -524,7 +525,7 @@ public class PointModeTests : GridTestContext
         Assert.Equal("A1", NameBox(cut));
     }
 
-    [Fact] // ADR-0051 (Excel, behaviours item 10): a click points, and the Name Box names the clicked cell
+    [Fact] // ADR-0051/0052 (Excel, behaviours item 10): a click points, and the Name Box names the clicked cell, which a drag leaves the Focus
     public async Task The_name_box_names_the_cell_pointed_by_a_click()
     {
         var cut = RenderWithNameBox();
@@ -535,7 +536,8 @@ public class PointModeTests : GridTestContext
         Assert.Equal("B4", NameBox(cut));
         await cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = 250, OffsetY = 130 });
         Assert.Equal("=B4:C7", EditorText(cut));
-        Assert.Equal("C7", NameBox(cut));
+        // The drag's Focus is where the button went down (ADR-0052).
+        Assert.Equal("B4", NameBox(cut));
     }
 
     [Fact] // ADR-0051: F2 leaves the outline and the Name Box names the edited cell again

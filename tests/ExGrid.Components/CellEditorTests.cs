@@ -384,10 +384,10 @@ public class CellEditorTests : GridTestContext
         var pastes = new List<GridPasteIntent>();
         PasteRefusalReason? refused = null;
         var cut = RenderGrid(onPaste: pastes.Add, onPasteRefused: r => refused = r);
-        await ClickCellAsync(cut, 150, 10);                      // Amount, not editable
-        // Extend left so the Focus lands on Book: the editor opens on an editable cell,
-        // and the selection still covers Amount — the case that used to write anyway.
-        await PressAsync(cut, "ArrowLeft", shift: true);
+        await ClickCellAsync(cut, 50, 10);                       // Book, editable
+        // Extend right: the Focus stays on Book (ADR-0052), so the editor opens on an
+        // editable cell, and the selection covers Amount — the case that used to write anyway.
+        await PressAsync(cut, "ArrowRight", shift: true);
         await PressAsync(cut, "9");
 
         await PressAsync(cut, "Enter", ctrl: true);
@@ -473,8 +473,8 @@ public class CellEditorTests : GridTestContext
         var edits = new List<GridEditIntent<TestRow>>();
         var pastes = new List<GridPasteIntent>();
         var cut = RenderGrid(onEdit: edits.Add, onPaste: pastes.Add);
-        await ClickCellAsync(cut, 150, 10);                      // Amount, not editable
-        await PressAsync(cut, "ArrowLeft", shift: true);         // Focus on Book, selection still covers Amount
+        await ClickCellAsync(cut, 50, 10);                       // Book, editable
+        await PressAsync(cut, "ArrowRight", shift: true);        // Focus stays on Book, selection covers Amount (ADR-0052)
         await PressAsync(cut, "9");
 
         await PressAsync(cut, "Enter", ctrl: true);

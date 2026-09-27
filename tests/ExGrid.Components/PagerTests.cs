@@ -128,7 +128,7 @@ public class PagerTests : GridTestContext
         Assert.Contains("1 / 4", cut.Find(".ex-pager").TextContent);
     }
 
-    [Fact] // ADR-0015: the keyboard crosses pages — extension continues onto the next page
+    [Fact] // ADR-0015/0052: the keyboard crosses pages — extension continues onto the next page, following the Extent
     public async Task Shift_arrow_turns_the_page_and_continues()
     {
         GridSelection? selection = null;
@@ -136,7 +136,8 @@ public class PagerTests : GridTestContext
         await ClickCellAsync(cut, 50, 10);
         // To the page's last row, then one more.
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", true, true, false, false, false)); // Ctrl+Shift+Down: extend to edge
-        Assert.Equal(199, selection!.Focus.Row);
+        Assert.Equal(199, selection!.Extent.Row);
+        Assert.Equal(0, selection.Focus.Row);
 
         // Ctrl+Shift+Down went to the whole result's edge, so the page turned to the last.
         Assert.Contains("4 / 4", cut.Find(".ex-pager").TextContent);
@@ -144,8 +145,8 @@ public class PagerTests : GridTestContext
     }
 
 
-    [Fact] // ADR-0012/0015: Ctrl+A names a region — the Anchor and Focus stay where they stand
-    public async Task Ctrl_a_keeps_the_anchor_and_focus_where_they_stand()
+    [Fact] // ADR-0012/0015/0052: Ctrl+A names a region — the Focus stays where it stands
+    public async Task Ctrl_a_keeps_the_focus_where_it_stands()
     {
         GridSelection? selection = null;
         var cut = RenderGrid(s => selection = s);
@@ -155,7 +156,6 @@ public class PagerTests : GridTestContext
 
         Assert.Equal([new SelectionRange(0, 0, 50, 3)], selection!.Ranges);
         Assert.Equal(new CellPosition(2, 1), selection.Focus);
-        Assert.Equal(new CellPosition(2, 1), selection.Anchor);
     }
 
     [Fact] // ADR-0028: the re-anchor is page-local — a density change must not teleport the page

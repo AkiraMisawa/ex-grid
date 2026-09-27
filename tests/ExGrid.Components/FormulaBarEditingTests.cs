@@ -292,7 +292,7 @@ public class FormulaBarEditingTests : GridTestContext
 
         Assert.True(placed);
         Assert.Equal([new SelectionRange(2, 0, 3, 2)], selection!.Ranges);
-        Assert.Equal(new CellPosition(2, 0), selection.Anchor);
+        Assert.Equal(new CellPosition(2, 0), selection.Focus);
         Assert.NotEqual("", cut.Find(".ex-announce").TextContent);
     }
 

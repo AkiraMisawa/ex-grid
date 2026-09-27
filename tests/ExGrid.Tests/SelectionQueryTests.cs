@@ -79,7 +79,8 @@ public class SelectionQueryTests
         Assert.Equal(Build(), Build());
         Assert.Equal(Build().GetHashCode(), Build().GetHashCode());
         Assert.NotEqual(Build(), Build().Extend(GridDirection.Down, Grid));
-        Assert.Equal(GridSelection.Empty, GridSelection.Empty.Click(new(0, 0), Grid).ToggleRange(new(0, 0), Grid));
+        // ADR-0052: the only selected cell cannot be taken out, so the gesture changes nothing.
+        Assert.Equal(GridSelection.Empty.Click(new(0, 0), Grid), GridSelection.Empty.Click(new(0, 0), Grid).ToggleRange(new(0, 0), Grid));
     }
 
     [Fact] // ADR-0008: Ranges cannot be cast back to a mutable array — the selection stays immutable

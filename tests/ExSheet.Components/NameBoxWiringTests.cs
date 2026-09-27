@@ -111,4 +111,22 @@ public class NameBoxWiringTests : SheetTestContext
         Assert.Equal("=1+2", FormulaBar(cut));
         Assert.Equal("3", CellText(cut, "B1"));
     }
+
+    [Fact] // ADR-0052 case 2: while a drag's button is down the Name Box shows Excel's size, 4R x 3C, and names the Focus again on release
+    public async Task The_name_box_shows_the_size_of_a_drag_while_the_button_is_down()
+    {
+        var cut = RenderSheet();
+        var width = SheetColumns.DefaultWidthPx;
+        var row = ExSheet.DefaultRowHeightPx;
+        double X(int column) => HeadingWidth(cut) + (column * width) + (width / 2);
+        double Y(int r) => (r * row) + (row / 2);
+        var viewport = cut.Find(".ex-viewport");
+
+        await viewport.MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = X(3), OffsetY = Y(4) });   // D5
+        await cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = X(1), OffsetY = Y(1) }); // B2
+        Assert.Equal("4R x 3C", NameBox(cut));
+
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = X(1), OffsetY = Y(1) });
+        Assert.Equal("D5", NameBox(cut));
+    }
 }

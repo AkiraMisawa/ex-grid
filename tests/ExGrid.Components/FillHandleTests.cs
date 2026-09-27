@@ -136,15 +136,16 @@ public class FillHandleTests : GridTestContext
             .Add(g => g.ShowFillHandle, true)
             .Add(g => g.OnFill, (GridFillIntent _) => { })
             .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
-        await SelectBookRows0To1Async(cut);                      // Anchor row 0, Focus row 1
+        await SelectBookRows0To1Async(cut);                      // Focus row 0, Extent row 1
 
         await DownAsync(cut, 99, 41);
         await MoveAsync(cut, 50, 90);                            // row 4
         await UpAsync(cut, 50, 90);
 
         Assert.Equal([new SelectionRange(0, 0, 5, 1)], selection!.Ranges);
-        // The Focus has not moved, so the cell on display is the one it was.
-        Assert.Equal(new CellPosition(1, 0), selection.Focus);
+        // The Focus has not moved: it stays on the source's first cell, so the cell on
+        // display is the one it was (ADR-0052).
+        Assert.Equal(new CellPosition(0, 0), selection.Focus);
         var overlay = Assert.Single(cut.FindAll(".ex-range"));
         Assert.Contains("height: 100px", overlay.GetAttribute("style"));
         // The handle now stands at the bottom-right of the filled range.

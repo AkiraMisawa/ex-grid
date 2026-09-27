@@ -28,7 +28,7 @@
         HeaderClickSelects="true" HideHeader="!ShowColumnHeadings"
         RowHeadings="(ShowRowHeadings ? RowLabels : null)"
         DataEdge="_dataEdge"
-        ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
+        ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" NameBoxSizeLabel="NameBoxSizeOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
@@ -57,6 +57,11 @@
 
     private static readonly Func<CellPosition, string?> NameBoxLabelOf =
         static focus => new CellAddress(focus.Row, focus.Column).ToString();
+
+    // While a drag's button is down, Excel's Name Box shows the range's size, rows then
+    // columns, and names the active cell again on release (ADR-0052).
+    private static readonly Func<SelectionRange, string?> NameBoxSizeOf =
+        static range => string.Create(CultureInfo.InvariantCulture, $"{range.RowCount}R x {range.ColumnCount}C");
 
     private readonly SheetHistory _history = new();
 

@@ -83,8 +83,8 @@ public class SelectionTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-cell.ex-selected"));
     }
 
-    [Fact] // ADR-0012: Shift+click keeps the Anchor and redraws its range to the cell pointed at
-    public async Task Shift_click_redraws_the_range_from_the_anchor()
+    [Fact] // ADR-0012/0052: Shift+click keeps the Focus and redraws its range to the cell pointed at
+    public async Task Shift_click_redraws_the_range_from_the_focus()
     {
         var cut = RenderGrid();
 
@@ -358,7 +358,7 @@ public class SelectionTests : GridTestContext
         Assert.Equal([Rect(0, 20, 100, 20)], Rects(cut));
     }
 
-    [Fact] // ADR-0014: the Consumer is told, and the count needs no data to compute
+    [Fact] // ADR-0014/0052: the Consumer is told, and the count needs no data to compute
     public async Task The_consumer_is_told_what_is_selected()
     {
         var reported = new List<GridSelection>();
@@ -370,7 +370,9 @@ public class SelectionTests : GridTestContext
         Assert.Equal(2, reported.Count);
         Assert.Equal(1, reported[0].CellCount);
         Assert.Equal(12, reported[1].CellCount);
-        Assert.Equal(new CellPosition(2, 3), reported[1].Focus);
+        // ADR-0052: the Focus stays where the first press put it; the Extent is the cell Shift pointed at.
+        Assert.Equal(new CellPosition(0, 0), reported[1].Focus);
+        Assert.Equal(new CellPosition(2, 3), reported[1].Extent);
     }
 
     [Fact] // Nothing is selected until something is pointed at, and nothing is painted either
