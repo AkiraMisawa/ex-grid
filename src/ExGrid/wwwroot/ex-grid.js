@@ -14,15 +14,17 @@
  * @param {HTMLElement} scroller the instance's scroll container
  * @param {object} core the .NET object reference the taken keys are forwarded to
  * @param {string[]} takenKeys canonical forms of the keys the core claims, built by
- *   GridKeys.Taken — this file decides nothing about which keys those are
+ *   GridKeys.TakenFor for this grid — this file decides nothing about which keys those are
  * @param {boolean} canEdit whether any column edits at all — a display-only grid must
  *   not take printable keys away from the page (ADR-0010)
  * @param {number} restDelayMs how long the pointer must be still before the core is told
  *   — the core's own constant, so the number lives in one place (ADR-0034)
+ * @param {boolean} canFind whether a search is wired — Ctrl+F then opens the find panel,
+ *   and the keys after it wait for the panel; otherwise it is refused (ADR-0047)
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
-    const taken = new Set(takenKeys);
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind) {
+    let taken = new Set(takenKeys);
 
     // Whether the synchronous channel exists — WebAssembly has it, a server circuit
     // does not. Probed once with a no-op, so a real .NET failure during a copy is
@@ -51,8 +53,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     let editing = 'none';
     // Whether a popover's contents have a popup of their own open (ADR-0039), told by C#.
     let innerPopup = false;
+    // Ctrl+F too, taken and answered with nothing: Find is disabled while a cell is being
+    // edited, and the browser's own find would search only the painted rows (ADR-0047).
     const editingKeys = new Set(
-        ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2']);
+        ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2',
+            'Control+f', 'Control+F']);
     const overwriteKeys = new Set([
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
 
@@ -148,7 +153,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             if (popoverOpeners.has(canonical)) {
                 return 'popover';
             }
-            return canonical === ' ' ? 'mode' : 'core';
+            // Ctrl+F opens a popover only where a search is wired; elsewhere it is refused
+            // and opens nothing, and holding the keys after it for a panel that never comes
+            // would stall them (ADR-0047).
+            if (canonical === 'Control+f' || canonical === 'Control+F') {
+                return canFind ? 'popover' : 'core';
+            }
+            // Space and Backspace open an editor (ADR-0010/0035): a mode change.
+            return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';
         }
 
         // Overwrite or Caret: the editor normally holds DOM focus, but a click can
@@ -852,10 +864,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         setInnerPopup: (open) => {
             innerPopup = open;
         },
-        // Whether any column edits — re-told when the column set changes, so a grid
-        // that becomes display-only stops taking printable keys (ADR-0010/0020).
-        setCanEdit: (value) => {
-            canEdit = value;
+        // Which keys this grid takes, whether any column edits and whether a search is
+        // wired — re-told when a parameter change changes the answer, so a grid that
+        // becomes display-only stops taking printable keys, and one whose Consumer stops
+        // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0047).
+        setClaims: (takenKeys, editable, findable) => {
+            taken = new Set(takenKeys);
+            canEdit = editable;
+            canFind = findable;
         },
         getScrollOffset: () => (scroller
             ? { top: scroller.scrollTop, left: scroller.scrollLeft }

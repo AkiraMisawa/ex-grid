@@ -40,6 +40,21 @@ public enum PasteRefusalReason
     /// <summary>The clipboard is past the grid's <c>PasteByteCap</c>, so it was not read
     /// at all. Raised by the component, never by the pure rules (ADR-0005).</summary>
     TooLarge,
+
+    /// <summary>A fill key (Ctrl+D, Ctrl+R) on a range one row tall at the first row, or
+    /// one column wide at the first column: there is no row above, or column to the left,
+    /// to fill from (ADR-0035).</summary>
+    NothingToFillFrom,
+
+    /// <summary>A fill key over more than one range: each would need a source of its own,
+    /// and one intent carries one source block (ADR-0035).</summary>
+    MultipleRanges,
+
+    /// <summary>A fill key whose source rows could not be had whole — nobody to ask for
+    /// rows outside the Window, an answer that came back short, or the order changing
+    /// while they were asked for. The fill is refused rather than filled from a guess
+    /// (ADR-0035). Component-level, never produced by the pure rules.</summary>
+    SourceUnavailable,
 }
 
 /// <summary>

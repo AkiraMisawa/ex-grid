@@ -922,6 +922,28 @@
     /// </summary>
     [Parameter] public EventCallback<GridEditIntent<TRow>> OnEdit { get; set; }
 
+    /// <summary>
+    /// Ctrl+Z, forwarded (ADR-0007): the Consumer owns the history, because only it sees
+    /// every change — an edit in the grid and a row added through a dialog alike. The grid
+    /// knows nothing to put in the notification and changes nothing on it. The key is taken
+    /// from the page only while this has a listener, and never while the Cell Editor is
+    /// open, where Ctrl+Z undoes the typing.
+    /// </summary>
+    [Parameter] public EventCallback OnUndo { get; set; }
+
+    /// <summary>Ctrl+Y and Ctrl+Shift+Z, forwarded like <see cref="OnUndo"/> (ADR-0007) —
+    /// both Excel spellings, on every platform.</summary>
+    [Parameter] public EventCallback OnRedo { get; set; }
+
+    /// <summary>
+    /// Delete's Clear Intent (ADR-0046): the selected positions should hold no value. One
+    /// notification for the whole selection, carrying no value — not a paste of empty text,
+    /// which an amount column would read as a zero or a parse failure. Judged by the paste
+    /// gate first: a selection covering a non-editable column is refused whole, through
+    /// <see cref="OnPasteRefused"/>, and raises nothing here.
+    /// </summary>
+    [Parameter] public EventCallback<GridClearIntent> OnClear { get; set; }
+
     /// <summary>A refused copy, saying which rule it hit (ADR-0005): the clipboard was
     /// left untouched, and this is where Chrome learns why.</summary>
     [Parameter] public EventCallback<CopyRefusalReason> OnCopyRefused { get; set; }
@@ -1202,8 +1224,9 @@
     // input — recorded at render, because only the render knows which it painted.
     private bool _editorIsChrome;
     private bool _jsEditingDirty;
-    // What the key gate was last told about whether any column edits (ADR-0010/0020).
-    private bool _jsCanEdit;
+    // What the key gate was last told (ADR-0010/0020): which keys this grid takes, and
+    // whether any column edits. Null until attach.
+    private (GridKeyClaims Keys, bool CanFind)? _jsClaims;
 
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the
     // action chosen in it. The keyboard never leaves the root; this is what the arrows
@@ -2017,15 +2040,17 @@
             await PushEditingModeAsync();
         await PushPointerReportingAsync();
         // A display-only grid must not take printable keys away from the page
-        // (ADR-0010/0020) — the gate is told whether any column edits, and re-told
-        // when a parameter change flips the answer.
-        var canEdit = AnyColumnEdits();
-        if (_scrollHandle is not null && !_disposed && canEdit != _jsCanEdit)
+        // (ADR-0010/0020), nor a grid nobody listens to take Ctrl+Z (ADR-0007) — the
+        // gate is told which keys this grid takes, and re-told when a parameter change
+        // changes the answer.
+        var claims = KeyClaims();
+        if (_scrollHandle is not null && !_disposed && claims != _jsClaims)
         {
-            _jsCanEdit = canEdit;
+            _jsClaims = claims;
             try
             {
-                await _scrollHandle.InvokeVoidAsync("setCanEdit", canEdit);
+                await _scrollHandle.InvokeVoidAsync(
+                    "setClaims", GridKeys.TakenFor(claims.Keys), claims.Keys.CanEdit, claims.CanFind);
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
@@ -2100,10 +2125,11 @@
             _module = module;
 
             _self ??= DotNetObjectReference.Create(this);
-            _jsCanEdit = AnyColumnEdits();
+            var claims = KeyClaims();
+            _jsClaims = claims;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
-                "attach", _root, _scroller, _self, GridKeys.Taken, _jsCanEdit,
-                PopoverDelay.TotalMilliseconds);
+                "attach", _root, _scroller, _self, GridKeys.TakenFor(claims.Keys), claims.Keys.CanEdit,
+                PopoverDelay.TotalMilliseconds, claims.CanFind);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -4368,28 +4394,38 @@
         foreach (var segment in plan.Segments)
         {
             var range = new RowRange(segment.TopRow, segment.RowCount);
-            if (range.Start >= _windowStart && range.Start + range.Count <= _windowStart + _window.Count)
-            {
-                for (var row = range.Start; row < range.Start + range.Count; row++)
-                    rows[row] = _window[row - _windowStart];
-                continue;
-            }
-
-            IReadOnlyList<TRow> answered;
-            if (Source is not null)
-                answered = await Source.GetRowsAsync(range, CancellationToken.None);
-            else if (OnCopyRowsNeeded is not null)
-                answered = await OnCopyRowsNeeded(range, CancellationToken.None);
-            else
-                return null;
-            if (_disposed)
-                return null;
-            if (answered is null || answered.Count < range.Count)
+            var answered = await GatherRangeAsync(range);
+            if (answered is null)
                 return null;
             for (var i = 0; i < range.Count; i++)
                 rows[range.Start + i] = answered[i];
         }
         return rows;
+    }
+
+    /// <summary>One run of rows, in order: from the Window where it has them all,
+    /// otherwise asked for (ADR-0005). Null when nobody can answer, the grid went away, or
+    /// an answer came back short.</summary>
+    private async Task<IReadOnlyList<TRow>?> GatherRangeAsync(RowRange range)
+    {
+        if (range.Start >= _windowStart && range.Start + range.Count <= _windowStart + _window.Count)
+        {
+            var rows = new TRow[range.Count];
+            for (var i = 0; i < range.Count; i++)
+                rows[i] = _window[range.Start - _windowStart + i];
+            return rows;
+        }
+
+        IReadOnlyList<TRow> answered;
+        if (Source is not null)
+            answered = await Source.GetRowsAsync(range, CancellationToken.None);
+        else if (OnCopyRowsNeeded is not null)
+            answered = await OnCopyRowsNeeded(range, CancellationToken.None);
+        else
+            return null;
+        if (_disposed || answered is null || answered.Count < range.Count)
+            return null;
+        return answered;
     }
 
     /// <summary>The raw, locale-free form for <c>text/html</c> (ADR-0005): full
@@ -4515,6 +4551,33 @@
             case GridKeyKind.OpenColumnMenu:
                 await OpenColumnMenuFromKeyAsync();
                 StateHasChanged();
+                return;
+            case GridKeyKind.Undo:
+                // Forwarded and nothing else (ADR-0007): the history and what the screen
+                // shows afterwards are the Consumer's, and arrive as new row instances.
+                if (OnUndo.HasDelegate)
+                    await OnUndo.InvokeAsync();
+                return;
+            case GridKeyKind.Redo:
+                if (OnRedo.HasDelegate)
+                    await OnRedo.InvokeAsync();
+                return;
+            case GridKeyKind.ClearAndEdit:
+                // Backspace: an editor entry like a printable key, minus the character
+                // (ADR-0035) — judged where every entry is, on the Focus.
+                await TryStartEditingAsync(EditMode.Overwrite, "");
+                return;
+            case GridKeyKind.Clear:
+            case GridKeyKind.FillDown:
+            case GridKeyKind.FillRight:
+                // With no Focus these name nothing yet: the key only places one, the
+                // first-key rule (ADR-0012), on the general path below.
+                if (_selection.Selection.IsEmpty)
+                    break;
+                if (action.Kind == GridKeyKind.Clear)
+                    await ClearSelectionAsync();
+                else
+                    await FillFromKeyAsync(action.Kind == GridKeyKind.FillDown ? GridDirection.Down : GridDirection.Right);
                 return;
             case GridKeyKind.Leave:
                 // Escape peels the outermost layer first: an open popover closes and
@@ -4699,6 +4762,13 @@
         return Columns[focus.Column].Value(_window[slice]);
     }
 
+    /// <summary>What decides this grid's conditional key claims (ADR-0007/0010/0046/0047).</summary>
+    private (GridKeyClaims Keys, bool CanFind) KeyClaims()
+        => (new GridKeyClaims(AnyColumnEdits(), OnUndo.HasDelegate, OnRedo.HasDelegate), CanFind());
+
+    /// <summary>Whether anything can answer a Find (ADR-0047). Nothing yet.</summary>
+    private bool CanFind() => false;
+
     /// <summary>Whether the Cell Editor opens here: an editable column, and a row that
     /// is in hand — the Focus over a Placeholder waits for the data (ADR-0012/ED-8).</summary>
     private bool AnyColumnEdits()
@@ -4742,7 +4812,17 @@
         var caret = key == "F2" && !ctrl;
         if (!caret && key.Length != 1)
             return;
+        // The character that started Overwrite mode is not lost (ADR-0010): it was
+        // pressed before the editor existed, so the core holds it and the editor opens
+        // containing it. Caret keeps the current value, with the caret inside it.
+        await TryStartEditingAsync(caret ? EditMode.Caret : EditMode.Overwrite, caret ? null : key);
+    }
 
+    /// <param name="mode">Overwrite or Caret (ADR-0010).</param>
+    /// <param name="initialText">What the editor opens holding; null for the Focus cell's
+    /// own text, which is what Caret keeps.</param>
+    private async Task TryStartEditingAsync(EditMode mode, string? initialText)
+    {
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
             return;
@@ -4763,13 +4843,69 @@
 
         if (!Apply(current))
             _suppressRender = false;
-        // The character that started Overwrite mode is not lost (ADR-0010): it was
-        // pressed before the editor existed, so the core holds it and the editor opens
-        // containing it. Caret keeps the current value, with the caret inside it.
-        await StartEditingAsync(
-            current.Focus,
-            caret ? EditMode.Caret : EditMode.Overwrite,
-            caret ? CellTextOf(current.Focus) : key);
+        await StartEditingAsync(current.Focus, mode, initialText ?? CellTextOf(current.Focus));
+    }
+
+    /// <summary>
+    /// Delete (ADR-0046): one Clear Intent over the whole selection, judged by the paste
+    /// gate — a 1×1 shape, so only the empty selection and the Editable declaration can
+    /// refuse it, in ADR-0035's order. No verdict runs: there is no value to judge.
+    /// </summary>
+    private async Task ClearSelectionAsync()
+    {
+        var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(1, 1), ColumnIsEditable);
+        if (decision.IsRefused)
+        {
+            if (OnPasteRefused.HasDelegate)
+                await OnPasteRefused.InvokeAsync(decision.Reason);
+            return;
+        }
+        if (OnClear.HasDelegate)
+            await OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion));
+    }
+
+    /// <summary>
+    /// Ctrl+D / Ctrl+R (ADR-0035): the source row or column read in its raw, locale-free
+    /// form — never the displayed text, which may be rounded or <c>####</c> — and raised as
+    /// one paste intent. The rows come from the Window where it has them and are asked for
+    /// through the copy route where it does not; anything short of the whole source refuses
+    /// the fill rather than filling from a guess.
+    /// </summary>
+    private async Task FillFromKeyAsync(GridDirection direction)
+    {
+        var decision = ClipboardRules.PlanFill(_selection.Selection, direction, ColumnIsEditable, CopyCellCap);
+        if (decision.IsRefused)
+        {
+            if (OnPasteRefused.HasDelegate)
+                await OnPasteRefused.InvokeAsync(decision.Reason);
+            return;
+        }
+
+        var plan = decision.Plan;
+        var version = _sequenceVersion;
+        var rows = await GatherRangeAsync(plan.Source.RowSpan);
+        if (_disposed)
+            return;
+        // An order that moved while the rows were asked for makes both the rows and the
+        // positions they were asked by someone else's (ADR-0011).
+        if (rows is null || version != _sequenceVersion)
+        {
+            if (OnPasteRefused.HasDelegate)
+                await OnPasteRefused.InvokeAsync(PasteRefusalReason.SourceUnavailable);
+            return;
+        }
+
+        var source = plan.Source;
+        var block = new List<IReadOnlyList<string>>(source.RowCount);
+        for (var row = 0; row < source.RowCount; row++)
+        {
+            var values = new string[source.ColumnCount];
+            for (var column = 0; column < source.ColumnCount; column++)
+                values[column] = RawText(Columns[source.LeftColumn + column], rows[row]);
+            block.Add(values);
+        }
+        if (OnPaste.HasDelegate)
+            await OnPaste.InvokeAsync(new GridPasteIntent(plan.Paste, block, version));
     }
 
     private string CellTextOf(CellPosition cell)

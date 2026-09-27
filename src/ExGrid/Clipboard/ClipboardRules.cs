@@ -107,6 +107,82 @@ public static class ClipboardRules
             : PasteDecision.Refuse(PasteRefusalReason.ShapeMismatch);
     }
 
+    /// <summary>
+    /// Ctrl+D and Ctrl+R (ADR-0035): the range's top row (left column) is the source and
+    /// the rest of the range the target; a range one row tall (one column wide) fills from
+    /// the row above (the column to its left). The target goes through the paste gate —
+    /// the columns it writes must be editable; the source is only read, so for Ctrl+R its
+    /// column need not be. A source past <paramref name="cellCap"/> is refused as the
+    /// paste's own <see cref="PasteRefusalReason.TooLarge"/>: it would have to be read
+    /// whole, like a copy (ADR-0005).
+    /// </summary>
+    /// <param name="selection">What is selected, in positions of the current order.</param>
+    /// <param name="direction"><see cref="GridDirection.Down"/> for Ctrl+D,
+    /// <see cref="GridDirection.Right"/> for Ctrl+R.</param>
+    /// <param name="columnIsEditable">The Editable declaration by column position.</param>
+    /// <param name="cellCap">The most source cells the fill may read; the copy cap.</param>
+    public static FillDecision PlanFill(
+        GridSelection selection, GridDirection direction, Func<int, bool> columnIsEditable,
+        long cellCap = DefaultCellCap)
+    {
+        ArgumentNullException.ThrowIfNull(selection);
+        ArgumentNullException.ThrowIfNull(columnIsEditable);
+        if (direction is not (GridDirection.Down or GridDirection.Right))
+            throw new ArgumentOutOfRangeException(nameof(direction), direction,
+                "A fill runs down (Ctrl+D) or right (Ctrl+R).");
+        ArgumentOutOfRangeException.ThrowIfLessThan(cellCap, 1);
+
+        if (selection.IsEmpty)
+            return FillDecision.Refuse(PasteRefusalReason.EmptySelection);
+        // Before anything that needs to know where the source is: with several ranges
+        // there is no one source, and no one target to judge.
+        if (selection.Ranges.Count > 1)
+            return FillDecision.Refuse(PasteRefusalReason.MultipleRanges);
+
+        var range = selection.Ranges[0];
+        SelectionRange source, target;
+        if (direction == GridDirection.Down)
+        {
+            if (range.RowCount == 1)
+            {
+                if (range.TopRow == 0)
+                    return FillDecision.Refuse(PasteRefusalReason.NothingToFillFrom);
+                source = new SelectionRange(range.TopRow - 1, range.LeftColumn, 1, range.ColumnCount);
+                target = range;
+            }
+            else
+            {
+                source = new SelectionRange(range.TopRow, range.LeftColumn, 1, range.ColumnCount);
+                target = new SelectionRange(range.TopRow + 1, range.LeftColumn, range.RowCount - 1, range.ColumnCount);
+            }
+        }
+        else
+        {
+            if (range.ColumnCount == 1)
+            {
+                if (range.LeftColumn == 0)
+                    return FillDecision.Refuse(PasteRefusalReason.NothingToFillFrom);
+                source = new SelectionRange(range.TopRow, range.LeftColumn - 1, range.RowCount, 1);
+                target = range;
+            }
+            else
+            {
+                source = new SelectionRange(range.TopRow, range.LeftColumn, range.RowCount, 1);
+                target = new SelectionRange(range.TopRow, range.LeftColumn + 1, range.RowCount, range.ColumnCount - 1);
+            }
+        }
+
+        // The declaration outranks the size, as it outranks a paste's shape (ADR-0035):
+        // no smaller selection of these columns would ever be accepted.
+        if (!EveryColumnIsEditable([target], columnIsEditable))
+            return FillDecision.Refuse(PasteRefusalReason.TargetNotEditable);
+        if (source.CellCount > cellCap)
+            return FillDecision.Refuse(PasteRefusalReason.TooLarge);
+
+        var shape = new PasteShape(source.RowCount, source.ColumnCount);
+        return FillDecision.Approve(new FillPlan(source, new PastePlan([target], shape)));
+    }
+
     /// <summary>Every column the target covers, across every range. Columns, not cells:
     /// the row half of editability is the Window's, and a paste target legitimately
     /// covers rows that are off screen or not yet fetched (ADR-0014 / 0035).</summary>

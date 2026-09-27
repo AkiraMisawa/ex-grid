@@ -31,6 +31,11 @@ public static class GridKeys
     // and a Taken built above this line would read a null table.
     private static readonly Dictionary<string, GridKeyAction> Table = BuildTable();
 
+    // The keys claimed only on some grids, and what decides it. A key in Table but not
+    // here is claimed on every grid; a key here is in Table too, so Resolve answers it
+    // either way and only the claim is conditional.
+    private static readonly Dictionary<string, Func<GridKeyClaims, bool>> Conditions = BuildConditions();
+
     /// <summary>
     /// The keys the core takes, in canonical form. Handed to the JS listener, which takes
     /// exactly these and lets everything else through — a grid that swallowed Ctrl+F or
@@ -43,7 +48,19 @@ public static class GridKeys
     /// with an editable column — a display-only grid must not take the page's keys
     /// (ADR-0010).</para>
     /// </summary>
-    public static IReadOnlyList<string> Taken { get; } = [.. Table.Keys];
+    public static IReadOnlyList<string> Taken { get; } =
+        [.. Table.Keys.Where(key => !Conditions.ContainsKey(key))];
+
+    /// <summary>
+    /// The keys one grid takes: <see cref="Taken"/>, plus the keys whose claim depends on
+    /// what that grid can do. Delete, Backspace, Ctrl+D and Ctrl+R write, so they are taken
+    /// only on a grid with an editable column — a display-only grid leaves the page its own
+    /// keys (ADR-0010/0020/0035/0046). Ctrl+Z and the two redo keys are taken only when
+    /// someone listens for them: the grid holds no history, and a key taken for nobody is a
+    /// key stolen from the page (ADR-0007).
+    /// </summary>
+    public static IReadOnlyList<string> TakenFor(GridKeyClaims claims)
+        => [.. Table.Keys.Where(key => !Conditions.TryGetValue(key, out var when) || when(claims))];
 
     /// <summary>
     /// What a key means, from the raw event fields. Anything not in the table resolves to
@@ -158,6 +175,48 @@ public static class GridKeys
         // not reach sorting or filtering at all.
         table["Alt+ArrowDown"] = new(GridKeyKind.OpenColumnMenu);
 
+        // Excel's editing keys (ADR-0007/0035/0046), each claimed only on the grids named
+        // in BuildConditions. Both cases of every letter, for the CapsLock reason above.
+        // Ctrl+Shift+Z with CapsLock on reports a lowercase z, so both of its cases too.
+        foreach (var z in new[] { "z", "Z" })
+        {
+            table["Control+" + z] = new(GridKeyKind.Undo);
+            table["Control+Shift+" + z] = new(GridKeyKind.Redo);
+        }
+        table["Control+y"] = new(GridKeyKind.Redo);
+        table["Control+Y"] = new(GridKeyKind.Redo);
+        table["Delete"] = new(GridKeyKind.Clear);
+        table["Backspace"] = new(GridKeyKind.ClearAndEdit);
+        table["Control+d"] = new(GridKeyKind.FillDown);
+        table["Control+D"] = new(GridKeyKind.FillDown);
+        table["Control+r"] = new(GridKeyKind.FillRight);
+        table["Control+R"] = new(GridKeyKind.FillRight);
+
+        // Find (ADR-0047), on every grid: the browser's own find sees only painted rows, and
+        // a grid that let the key through would hand the user a search that looks complete
+        // and is not — even where nothing better is wired, the refusal says so.
+        table["Control+f"] = new(GridKeyKind.Find);
+        table["Control+F"] = new(GridKeyKind.Find);
+
         return table;
+    }
+
+    private static Dictionary<string, Func<GridKeyClaims, bool>> BuildConditions()
+    {
+        var conditions = new Dictionary<string, Func<GridKeyClaims, bool>>(StringComparer.Ordinal);
+        foreach (var (key, action) in Table)
+        {
+            Func<GridKeyClaims, bool>? when = action.Kind switch
+            {
+                GridKeyKind.Undo => claims => claims.CanUndo,
+                GridKeyKind.Redo => claims => claims.CanRedo,
+                GridKeyKind.Clear or GridKeyKind.ClearAndEdit
+                    or GridKeyKind.FillDown or GridKeyKind.FillRight => claims => claims.CanEdit,
+                _ => null,
+            };
+            if (when is not null)
+                conditions[key] = when;
+        }
+        return conditions;
     }
 }
