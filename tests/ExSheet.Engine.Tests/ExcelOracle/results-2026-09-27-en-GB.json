@@ -1,0 +1,45 @@
+{
+    "ran":  "2026-09-27T12:36:24",
+    "excel":  "16.0 (build 20326); EXCEL.EXE 16.0.20326.20158",
+    "windowsRegionalFormat":  "en-GB",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "summary":  {
+                    "agree":  1,
+                    "disagree":  0,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "DATE-011",
+                      "area":  "dates",
+                      "source":  "documented",
+                      "description":  "A date is typed in the culture\u0027s day order",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "26/09/2026",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  }
+              ]
+}
