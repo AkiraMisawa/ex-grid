@@ -186,3 +186,21 @@ stays on a double-click of a column's edge, recorded as the user's width. Layer 
 `ColumnWidthTests` (grips on every header and no button; a double-click sizing a column to fit),
 `SheetRenderingTests.Sort_and_filter_are_not_wired` (no menu button). Layer 3 for DC-36 is the
 core's.
+
+2026-09-27, component, column widths are the document's (SH-22, ADR-0046; ADR-0047 third
+round): the component's own width state is gone. `SheetColumnList` mirrors `Sheet.GetColumnWidth`,
+converting characters to pixels as `characters × DigitWidthPx + 2 × padding` in the Cell Metrics
+the grid resolves — the exact inverse of the conversion the painted text uses — and is refreshed
+for the columns every change names (`SheetChange.Columns`: a do, an undo, a redo, an insertion or
+a deletion), rebuilt when a Sheet is opened (its widths applied) and when the Cell Metrics change.
+A resize (a drag, or size to fit on a double-click) goes through `SheetEdit.SetColumnWidth` as one
+step on the undo stack and raises `DocumentChanged`; the grid reports a resize of several whole
+columns one column at a time, and those reports are one step. Widening on entry records its width
+through `SetColumnWidth` as a second engine step of the entry's own operation, so one undo puts
+back both. A recorded width narrower than the grid's default MinWidth is painted as recorded.
+Layer 2: `ColumnWidthTests`. **Open:** ADR-0047's second round has a column widened by an entry
+stay at its default width and widen again on a longer entry. The engine records one kind of
+width, so a widened column now counts as set and is not widened again;
+`A_widened_column_widens_again` is skipped, not rewritten, until the Sheet records whether a
+width was the user's or an entry's (Excel's `customWidth`) — an engine change and a decision
+against ADR-0046's "a width the user never set stays default and is not recorded".

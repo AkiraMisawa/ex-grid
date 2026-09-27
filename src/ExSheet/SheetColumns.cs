@@ -65,6 +65,29 @@ internal static class SheetColumns
     internal static double CharactersIn(double contentWidthPx, CellTextMetrics metrics) =>
         contentWidthPx <= 0 || metrics.DigitWidthPx <= 0 ? 0 : contentWidthPx / metrics.DigitWidthPx;
 
+    /// <summary>
+    /// A width the Sheet records, in characters (ADR-0047, third round), as the column's width in
+    /// pixels: the characters' digits and the cell's padding on both sides — the exact inverse of
+    /// <see cref="CharactersIn"/> over the column's content width, so a column recorded at
+    /// <c>n</c> characters paints what <see cref="PaintedText"/> fits to <c>n</c> characters.
+    /// Rounded to a millionth of a pixel, so a width that went through characters and back is the
+    /// pixel width it came from.
+    /// </summary>
+    internal static double PxOf(double characters, CellTextMetrics metrics) =>
+        Math.Round(characters * metrics.DigitWidthPx + 2 * metrics.CellHorizontalPaddingPx, 6);
+
+    /// <summary>
+    /// A column's width in pixels as the Sheet records it, in characters (ADR-0047, third round):
+    /// the inverse of <see cref="PxOf"/>, bounded above by <see cref="Sheet.MaxColumnWidth"/>,
+    /// Excel's limit; null for a width with no room for any character, which the Sheet cannot
+    /// record (a width of 0 is how Excel hides a column, ADR-0046).
+    /// </summary>
+    internal static double? CharactersOfColumn(double columnWidthPx, CellTextMetrics metrics)
+    {
+        var characters = CharactersIn(metrics.ContentWidthPx(columnWidthPx), metrics);
+        return characters > 0 ? Math.Min(characters, Sheet.MaxColumnWidth) : null;
+    }
+
     /// <summary>The Cell Editor's opening text: the Entry (ADR-0051).</summary>
     internal static Func<SheetRow, GridColumn<SheetRow>, string?> EditorText { get; } =
         static (row, column) => row.EntryTextAt(IndexOf(column));
@@ -79,7 +102,13 @@ internal static class SheetColumns
     /// Sheet column <paramref name="index"/> at <paramref name="widthPx"/> — what a
     /// <see cref="SheetColumnList"/> puts in place of the default column once a width is set.
     /// </summary>
-    internal static GridColumn<SheetRow> At(int index, double widthPx) => Column(index, new ColumnWidthSpec(ColumnWidth.Fixed(widthPx)));
+    /// <remarks>
+    /// A document may record a column narrower than the grid's default MinWidth, and the grid
+    /// refuses a Fixed width below its column's MinWidth rather than clamping it (ADR-0016), so
+    /// such a column's MinWidth is its own width: it is painted as narrow as it is recorded.
+    /// </remarks>
+    internal static GridColumn<SheetRow> At(int index, double widthPx) =>
+        Column(index, new ColumnWidthSpec(ColumnWidth.Fixed(widthPx), minWidthPx: Math.Min(ColumnWidthSpec.DefaultMinWidthPx, widthPx)));
 
     private static GridColumn<SheetRow>[] Build()
     {

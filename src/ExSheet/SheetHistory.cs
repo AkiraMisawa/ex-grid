@@ -33,6 +33,19 @@ internal sealed class SheetHistory
         _undone.Clear();
     }
 
+    /// <summary>
+    /// Adds <paramref name="step"/> to the latest operation when that operation began with
+    /// <paramref name="first"/> and nothing was done or undone since — one operation the grid
+    /// reports in parts, such as a resize of several whole columns, one column at a time. Answers
+    /// false, recording nothing, otherwise.
+    /// </summary>
+    internal bool TryExtend(SheetStep first, SheetStep step)
+    {
+        if (_done.Count == 0 || _undone.Count > 0 || !ReferenceEquals(_done[^1][0], first)) return false;
+        _done[^1] = [.. _done[^1], step];
+        return true;
+    }
+
     /// <summary>Undoes the latest operation and says what that changed, or answers null when there is none.</summary>
     internal IReadOnlyList<SheetChange>? Undo()
     {

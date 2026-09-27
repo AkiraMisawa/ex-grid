@@ -1,34 +1,44 @@
 using System.Collections;
 using System.Collections.Immutable;
 using ExGrid;
+using ExGrid.Columns;
+using ExSheet.Engine;
 
 namespace ExSheet;
 
 /// <summary>
 /// One ExSheet's columns <c>A</c> … <c>XFD</c> as ExGrid is handed them: the shared
-/// <see cref="SheetColumns.All"/>, with a column of its own in place of each one whose width has
-/// been set (ADR-0016, ADR-0047). Immutable: setting a width gives a new list, because the list's
-/// identity is what tells the grid that its columns changed (ADR-0003).
+/// <see cref="SheetColumns.All"/>, with a column of its own in place of each one whose width the
+/// Sheet records (ADR-0046, ADR-0047). Immutable: a change of width gives a new list, because the
+/// list's identity is what tells the grid that its columns changed (ADR-0003).
 /// </summary>
 /// <remarks>
-/// A column's width is set two ways, and the list remembers which. The user resizes it, and
-/// from then on it is the user's: an entry never widens it again. Or an entry of a number that
-/// does not fit widens it while it is still at its default width, as Excel does — and it stays
-/// at its default width, in that sense, until the user resizes it (ADR-0047, second round).
+/// The widths are the Sheet Document's, not this list's (ADR-0046): the list only mirrors what
+/// <see cref="Sheet.GetColumnWidth"/> answers, converted from characters to the grid's pixels
+/// (<see cref="SheetColumns.PxOf"/>). It is refreshed for the columns an engine change names
+/// (<see cref="SheetChange.Columns"/>), and rebuilt when a Sheet is opened or the Cell Metrics
+/// the conversion reads change.
 /// </remarks>
 internal sealed class SheetColumnList : IReadOnlyList<GridColumn<SheetRow>>
 {
     private readonly ImmutableDictionary<int, GridColumn<SheetRow>> _set;
-    private readonly ImmutableHashSet<int> _resized;
 
-    private SheetColumnList(ImmutableDictionary<int, GridColumn<SheetRow>> set, ImmutableHashSet<int> resized)
+    private SheetColumnList(ImmutableDictionary<int, GridColumn<SheetRow>> set, CellTextMetrics? metrics)
     {
         _set = set;
-        _resized = resized;
+        Metrics = metrics;
     }
 
     /// <summary>Every column at its default width.</summary>
-    internal static SheetColumnList Default { get; } = new(ImmutableDictionary<int, GridColumn<SheetRow>>.Empty, []);
+    internal static SheetColumnList Default { get; } = new(ImmutableDictionary<int, GridColumn<SheetRow>>.Empty, null);
+
+    /// <summary>The Cell Metrics the recorded widths were converted with; null when none is recorded.</summary>
+    internal CellTextMetrics? Metrics { get; }
+
+    /// <summary>Every width the Sheet records, converted with <paramref name="metrics"/>.</summary>
+    internal static SheetColumnList Of(Sheet sheet, CellTextMetrics metrics) =>
+        new SheetColumnList(ImmutableDictionary<int, GridColumn<SheetRow>>.Empty, metrics)
+            .Refreshed(sheet, Enumerable.Range(0, Sheet.ColumnCount), metrics);
 
     /// <inheritdoc />
     public GridColumn<SheetRow> this[int index] => _set.TryGetValue(index, out var column) ? column : SheetColumns.All[index];
@@ -40,16 +50,29 @@ internal sealed class SheetColumnList : IReadOnlyList<GridColumn<SheetRow>>
     internal double WidthPxOf(int column) =>
         _set.TryGetValue(column, out var set) ? set.Width.Width.FixedPx : SheetColumns.DefaultWidthPx;
 
-    /// <summary>Whether the column is still at its default width: the user has not resized it.</summary>
-    internal bool IsDefault(int column) => !_resized.Contains(column);
-
-    /// <summary>The list with the width the user resized the column to; the column is the user's from now on.</summary>
-    internal SheetColumnList ResizedByUser(int column, double widthPx) =>
-        new(_set.SetItem(column, SheetColumns.At(column, widthPx)), _resized.Add(column));
-
-    /// <summary>The list with the column widened to fit an entry; it is still at its default width.</summary>
-    internal SheetColumnList WidenedTo(int column, double widthPx) =>
-        new(_set.SetItem(column, SheetColumns.At(column, widthPx)), _resized);
+    /// <summary>
+    /// The list with <paramref name="columns"/> as the Sheet now records them: a column whose
+    /// width is set gets a column of its own at that width, one back at the default width goes
+    /// back to the shared column. Answers this same list when nothing it hands the grid changed,
+    /// and keeps every other column's instance (ADR-0003).
+    /// </summary>
+    internal SheetColumnList Refreshed(Sheet sheet, IEnumerable<int> columns, CellTextMetrics metrics)
+    {
+        var set = _set;
+        foreach (var column in columns)
+        {
+            if (sheet.GetColumnWidth(column) is { } characters)
+            {
+                var px = SheetColumns.PxOf(characters, metrics);
+                if (!(set.TryGetValue(column, out var held) && held.Width.Width.FixedPx == px)) set = set.SetItem(column, SheetColumns.At(column, px));
+            }
+            else
+            {
+                set = set.Remove(column);
+            }
+        }
+        return ReferenceEquals(set, _set) && Equals(metrics, Metrics) ? this : new SheetColumnList(set, metrics);
+    }
 
     /// <inheritdoc />
     public IEnumerator<GridColumn<SheetRow>> GetEnumerator()

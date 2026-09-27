@@ -86,6 +86,10 @@ await sheet.UndoAsync();
 A format or an alignment set on a selection of whole columns or whole rows is recorded on the
 columns or rows, one entry each, as Excel records it: cell over row over column.
 
+Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
+column, and a number typed into a default-width column that it widens, are steps on the undo stack
+like any other, and raise `DocumentChanged`; an opened document brings its widths with it.
+
 ## More
 
 The decisions behind ExSheet are ADR-0046 to ADR-0051 in
