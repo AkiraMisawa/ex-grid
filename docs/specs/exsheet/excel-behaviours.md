@@ -1,21 +1,56 @@
-# Excel's behaviours, observed by hand
+# Excel's behaviours, observed beside ExSheet
 
-Status: ready-for-human
+Status: ready-for-agent
 
 The engine's Values are checked against Excel automatically, by the case corpus and its oracle
-(`verify-on-windows.md`, Part A). What a user **does** — keys, clicks, drags — cannot be driven
-through COM with the same meaning, so this list is done by hand: a person does each step in Excel
-and then in ExSheet (the DemoHost's `/sheet` page, on the Windows machine), and records whether they
-agree. A Claude Code session can read out each step and write down what the person reports.
+(`verify-on-windows.md`, Part A). This list is about what a user **does**: keys, clicks and drags.
+The Claude Code session on the Windows machine drives both sides itself, and falls back to the
+person only where it cannot observe the result.
 
-Record in `verification/<date>-windows-excel/behaviours.md`, one row per item. The columns are:
-Excel did, ExSheet did, agree?, and a note. **Decide nothing.** Where they disagree, name the item
-and the ADR, and leave the choice to the user. Where ExSheet differs **by decision**, the item says
-so and names the ADR. Confirm that Excel really does what the ADR says Excel does. Do not count it
-as a disagreement.
+## How to drive it
 
-If a feature is not built yet in ExSheet (see the ticket's `Status:`), record Excel's side only,
-and write "ExSheet: not built".
+**Before starting,** tell the user that the run sends real keys and mouse moves, and that they must
+not touch the keyboard or mouse until you say it is finished. The screen must stay unlocked, with no
+screensaver, and the input method must be off (IME off, direct input). Wait for their go-ahead.
+
+For each item, use the first method that answers it, and record which one you used:
+
+1. **COM**, where Excel's object model has the same meaning as the gesture. Record `COM`.
+   - `Range.End(xlDown)` is Ctrl+↓.
+   - `Application.Goto` is the Name Box.
+   - `Rows(n).Insert()` inserts a row.
+   - `ActiveSheet.Name` and `Application.Undo` rename a sheet and undo it.
+   - Read back `Selection.Address`, `ActiveCell.Address`, `Formula2`, `Value2`, `Text` and
+     `NumberFormat`.
+2. **Real keys into the Excel window.** Record `keys`.
+   - Bring the window to the foreground with `Application.Visible = $true` and the window's
+     handle.
+   - Send the keys with `System.Windows.Forms.SendKeys.SendWait` or Win32 `SendInput`.
+   - Read the result back through COM.
+   - Keys cover Enter mode, F2, Point mode, completion with Tab and Escape, and pasting.
+3. **The real mouse and a screenshot.** Record `mouse+screenshot`.
+   - Move and drag with Win32 `SendInput`.
+   - Take a cell's screen position from `ActiveWindow.PointsToScreenPixelsX/Y` and the
+     `Range.Left/Top/Width/Height`.
+   - Take a screenshot of the Excel window and read it.
+   - Use this for the fill-handle drag, Heading clicks, and what only shows on screen (the
+     completion list, the argument hint, the status bar, a value running over its neighbour).
+4. **The user**, only when none of the above settles it. Record `asked the user`.
+   - Ask one precise question: what to do, and what to report.
+
+**ExSheet's side** is driven with Playwright on the DemoHost's `/sheet` page, in the same way
+`tests/ExGrid.Browser` drives the grid: real keys and the real mouse through the browser. Write
+these probes as specs under `tests/ExGrid.Browser/` (for example `sheet-vs-excel.spec.mjs`), with
+Excel's observed answer as the expectation, so they keep checking after this run. A probe whose
+feature is not built yet (see the ticket's `Status:`) is written with `test.fixme` and a note.
+
+**Recording.** Write `verification/<date>-windows-excel/behaviours.md`, one row per item, with
+these columns: method, Excel did, ExSheet did, agree?, and a note. Keep the screenshots you relied
+on beside it.
+
+**Decide nothing.** Where the two disagree, name the item and the ADR, and leave the choice to the
+user. Where ExSheet differs **by decision**, the item says so and names the ADR. Confirm that Excel
+really does what the ADR says Excel does, and do not count it as a disagreement.
 
 ## Moving and selecting (ADR-0012, ADR-0050)
 
