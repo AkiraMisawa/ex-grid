@@ -10,9 +10,8 @@ namespace ExSheet.Components.Tests;
 /// <summary>
 /// The clipboard as ExSheet wires it (ticket 14, ADR-0048/0050/0005): a paste may spill from one
 /// cell and the block becomes the Selection; every pasted field is taken as if typed under the
-/// Sheet's culture; a paste is one undo step; the copy's <c>text/html</c> flavour carries the
-/// unformatted Values. The copy of Entries inside ExSheet is not wired: ExGrid assembles a copy
-/// from the columns, and a Consumer cannot supply it (the ticket says what is missing).
+/// Sheet's culture; a paste is one undo step; a copy is the engine's, answered through ExGrid's
+/// copy answer (ADR-0050 item 9): the Values outward, the Entries kept for a paste back.
 /// </summary>
 public class ClipboardWiringTests : SheetTestContext
 {
@@ -126,18 +125,114 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>0.5</td><td>hello</td><td>1</td></tr></table>", payload.Html);
     }
 
-    [Fact] // ADR-0005: a copy running beyond the Window is answered from the Sheet, never refused as unavailable
-    public async Task A_copy_beyond_the_window_is_answered_from_the_sheet()
+    [Fact] // ADR-0050 item 9, ADR-0005: a copy running beyond the Window is answered by the engine on the synchronous route
+    public async Task A_copy_beyond_the_window_is_answered_by_the_engine()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "first"), ("A1000", "last"))));
         await GoToAsync(cut, "A1:A1000");
 
-        var grid = Grid(cut);
-        Assert.Equal("async", grid.Instance.BuildCopyPayload().Kind);
-        var payload = await grid.InvokeAsync(() => grid.Instance.BuildCopyPayloadAsync());
+        var payload = Grid(cut).Instance.BuildCopyPayload();
 
-        var lines = payload!.Text!.Split("\r\n");
+        Assert.Equal("data", payload.Kind);
+        var lines = payload.Text!.Split("\r\n");
         Assert.Equal("first", lines[0]);
         Assert.Equal("last", lines[999]);
+    }
+
+    [Fact] // ADR-0050 item 9, DC-32: the menu's asynchronous route asks the same answer
+    public async Task The_asynchronous_copy_route_writes_the_engines_copy()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "50%"), ("A2", "=1/3"))));
+        await GoToAsync(cut, "A1:A2");
+
+        var grid = Grid(cut);
+        var payload = await grid.InvokeAsync(() => grid.Instance.BuildCopyPayloadAsync());
+
+        Assert.Equal("50%\r\n0.333333333333333\r\n", payload!.Text);
+        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>0.5</td></tr><tr><td>0.3333333333333333</td></tr></table>", payload.Html);
+    }
+
+    [Fact] // ADR-0048, ADR-0050 item 9: a copy keeps its Entries, and the fields the grid's paste would read back from it
+    public async Task A_copy_keeps_its_entries_and_the_fields_it_wrote()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "2"), ("B1", "=A1*2"))));
+        await GoToAsync(cut, "A1:B1");
+
+        Grid(cut).Instance.BuildCopyPayload();
+
+        var own = cut.Instance.OwnCopy!;
+        Assert.Equal(CellRange.Parse("A1:B1"), own.Block.Source);
+        Assert.Equal("=A1*2", own.Block.EntryAt(0, 1)!.Formula);
+        Assert.Equal(["2", "4"], Assert.Single(own.Fields));
+    }
+
+    [Fact] // ADR-0049, SH-16, DC-32: a copy reaching a waiting cell is refused in the engine's words, and nothing is written
+    public async Task A_copy_reaching_getting_data_is_refused_in_the_engines_words()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("A2", "=SUM(Positions[PV])"))));
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["PV"]);
+        await GoToAsync(cut, "A1:A2");
+
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+
+        Assert.Equal("none", payload.Kind);
+        cut.WaitForAssertion(() => Assert.Contains("A2 is waiting for a Linked Table's data (#GETTING_DATA)", Notice(cut)));
+        Assert.Null(cut.Instance.OwnCopy);
+    }
+
+    [Fact] // ADR-0049: a refused copy leaves the last copy's Entries standing, as the clipboard still holds it
+    public async Task A_refused_copy_keeps_the_last_copy()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("A2", "=SUM(Positions[PV])"))));
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["PV"]);
+        await GoToAsync(cut, "A1");
+        Grid(cut).Instance.BuildCopyPayload();
+        await GoToAsync(cut, "A2");
+
+        Assert.Equal("none", Grid(cut).Instance.BuildCopyPayload().Kind);
+
+        Assert.Equal(CellRange.Parse("A1"), cut.Instance.OwnCopy!.Block.Source);
+    }
+
+    [Fact] // ADR-0005, ADR-0016: a number no format can show goes out as its Value, never as ####
+    public async Task A_number_that_cannot_be_shown_goes_out_as_its_value()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("A1"), "-5");
+        sheet.SetFormat([CellAddress.Parse("A1")], NumberFormat.Parse("yyyy-mm-dd"));
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+        await GoToAsync(cut, "A1");
+
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+
+        Assert.Equal("-5\r\n", payload.Text);
+        Assert.DoesNotContain("#", payload.Html!, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0005, ADR-0048: ranges combined into one block carry their Values, and no Entries
+    public async Task Several_ranges_carry_values_and_no_entries()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("C1", "=A1+2"))));
+        await GoToAsync(cut, "A1");
+        await CtrlClickAsync(cut, "C1");
+
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+
+        Assert.Equal("1\t3\r\n", payload.Text);
+        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>1</td><td>3</td></tr></table>", payload.Html);
+        Assert.Null(cut.Instance.OwnCopy);
+    }
+
+    private static async Task CtrlClickAsync(IRenderedComponent<ExSheet> cut, string address)
+    {
+        var at = CellAddress.Parse(address);
+        var heading = double.Parse(cut.Find(".ex-row-heading").GetAttribute("style")!.Replace("width:", "").Replace("px", "").Trim(), CultureInfo.InvariantCulture);
+        await cut.Find(".ex-viewport").MouseDownAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs
+        {
+            Button = 0, Buttons = 1, CtrlKey = true,
+            OffsetX = heading + at.Column * SheetColumns.DefaultWidthPx + 5,
+            OffsetY = at.Row * ExSheet.DefaultRowHeightPx + 5,
+        });
+        await cut.Find(".ex-viewport").MouseUpAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { Button = 0 });
     }
 }

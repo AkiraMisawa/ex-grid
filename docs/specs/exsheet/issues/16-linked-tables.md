@@ -1,6 +1,6 @@
 # 16: Linked Tables
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** The Consumer declares a Linked Table by name and columns, and pushes whole snapshots. Formulas
 read it with structured references and `XLOOKUP`. Until the first snapshot arrives, readers show
@@ -12,7 +12,7 @@ refused. A new snapshot recalculates only its readers. Table names join completi
 - [x] `=SUM(Positions[PV])` and `XLOOKUP` by key read the snapshot (ADR-0049)
 - [x] Before the first push: `#GETTING_DATA`, and `=IFERROR(…, 0)` also shows `#GETTING_DATA`
 - [x] A snapshot replaces the previous one in one step; no recalculation sees a mix
-- [ ] A copy reaching a waiting cell is refused
+- [x] A copy reaching a waiting cell is refused
 - [x] An undeclared table name is `#NAME?`
 - [x] The DemoHost shows a Sheet reading the data an ExGrid on the same page shows
 
@@ -66,3 +66,10 @@ scratch spec (not committed): `#GETTING_DATA` shows, then the values, revalue, t
 by completion, pointing, the Context Menu insertion and a fill drag, all with a clean console.
 **Still open:** the fourth criterion, a copy reaching a waiting cell being refused. It is blocked
 on the core's copy hook (ticket 14's comment): today such a copy carries `#GETTING_DATA` as text.
+
+2026-09-27, ExSheet wiring, the copy: the fourth criterion is met. ExSheet answers ExGrid's copy
+(`CopyAnswer`, ADR-0050 item 9) from the engine's `Sheet.Copy`, so a copy reaching a waiting cell
+is refused with the engine's sentence ("A2 is waiting for a Linked Table's data
+(#GETTING_DATA); ..."), the grid announces it, ExSheet's notice says it, and the clipboard keeps
+what it held (`ClipboardWiringTests.A_copy_reaching_getting_data_is_refused_in_the_engines_words`).
+Every criterion is met.

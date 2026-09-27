@@ -26,7 +26,7 @@
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
-        OnCopyRowsNeeded="_copyRowsNeeded" OnCopyRefused="OnCopyRefused"
+        CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused"
         ShowFillHandle="true" OnFill="OnFillAsync"
         OnUndo="_undo" OnRedo="_redo" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
@@ -63,7 +63,7 @@
     private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
     private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
     private readonly Func<string, string?> _commandLabel;
-    private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _copyRowsNeeded;
+    private readonly Func<global::ExGrid.Clipboard.GridCopyRequest, global::ExGrid.Clipboard.GridCopyAnswer> _copyAnswer;
     private readonly EventCallback<GridSelection> _selectionChanged;
     private readonly EventCallback _undo;
     private readonly EventCallback<ColumnWidthChange> _columnWidthChanged;
@@ -77,6 +77,10 @@
     private int _windowStart;
     private GridSelection _selection = GridSelection.Empty;
     private string? _notice;
+    // The copy this Sheet last wrote, recognised on a paste by its fields (ADR-0050 item 9).
+    internal SheetOwnCopy? OwnCopy { get; private set; }
+    // The engine's sentence for the copy refused last, for the notice the refusal raises.
+    private string? _copyRefusal;
     private bool _initialised;
     private SheetDocument? _documentParameter;
     private CultureInfo? _cultureParameter;
@@ -90,7 +94,8 @@
         // Answered synchronously from the engine, so the list shows in the render the keystroke
         // causes (ADR-0051). It reads this Sheet's Linked Tables, so it is the instance's own.
         _contextCommands = ContextCommandsFor;
-        _copyRowsNeeded = RowsForCopy;
+        // Asked synchronously on both copy routes (ADR-0050 item 9).
+        _copyAnswer = AnswerCopy;
         // The Consumer's wording first, then ExSheet's own English for its commands; null falls
         // back to the grid's built-in words for the grid's own commands (ADR-0036).
         _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
@@ -535,20 +540,32 @@
 
     private void OnCopyRefused(global::ExGrid.Clipboard.CopyRefusalReason reason)
     {
-        _notice = SheetWords.CopyRefused(reason);
+        // A refusal of the Sheet's own is said in the engine's words; the grid's by its reason.
+        _notice = reason == global::ExGrid.Clipboard.CopyRefusalReason.RefusedByConsumer && _copyRefusal is { } sentence
+            ? sentence
+            : SheetWords.CopyRefused(reason);
         StateHasChanged();
     }
 
     /// <summary>
-    /// The rows of a copy that runs beyond the Window (ADR-0005): the Sheet holds every row, so
-    /// it answers them all, read at this moment. They go to the clipboard and are kept nowhere.
+    /// A copy (ADR-0050 item 9, ADR-0048): the engine copies the range, so the clipboard carries
+    /// the Values exactly as the engine gives them — shown for <c>text/plain</c>, unformatted and
+    /// invariant for <c>text/html</c> — however far the range runs beyond the Window, and a copy
+    /// reaching <c>#GETTING_DATA</c> is refused in the engine's words (ADR-0049). The Entries of a
+    /// one-range copy are kept, so that a paste of exactly this block back into the Sheet carries
+    /// them.
     /// </summary>
-    private Task<IReadOnlyList<SheetRow>> RowsForCopy(RowRange range, CancellationToken cancellation)
+    private global::ExGrid.Clipboard.GridCopyAnswer AnswerCopy(global::ExGrid.Clipboard.GridCopyRequest request)
     {
-        var sheet = CurrentSheet;
-        var rows = new SheetRow[range.Count];
-        for (var i = 0; i < rows.Length; i++) rows[i] = new SheetRow(sheet, range.Start + i);
-        return Task.FromResult<IReadOnlyList<SheetRow>>(rows);
+        var (answer, own) = SheetClipboard.Answer(CurrentSheet, request);
+        if (answer.IsRefused)
+        {
+            // The clipboard still holds the last copy, so the Entries kept for it still stand.
+            _copyRefusal = answer.Sentence;
+            return answer;
+        }
+        OwnCopy = own;
+        return answer;
     }
 
     private CellPosition FindEdge(CellPosition focus, GridDirection direction)

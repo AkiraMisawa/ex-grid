@@ -11,7 +11,7 @@ first. A paste is one undo step.
 **Blocked by:** 03, 05, 12
 
 - [ ] Copying `=A1` from B1 to B2 pastes `=A2` (ADR-0048)
-- [ ] Copying to another program gives the Values (ADR-0005)
+- [x] Copying to another program gives the Values (ADR-0005)
 - [x] Pasting `=A1+1` and `1,234` from outside makes a Formula and a number under the culture
 - [x] A 3×3 block pasted onto one cell writes 3×3 and selects it (ADR-0050)
 - [x] Without the declaration, ExGrid still refuses range → one cell (ADR-0014)
@@ -113,3 +113,20 @@ differently as invariant and as typed. Under `en-US` and `ja-JP` the two reading
 
 **Also reported:** a single value pasted over whole columns writes a million Entries in one step.
 Formatting has an interim cap (`FormatCellCap`); a paste has none.
+
+2026-09-27, ExSheet wiring, the copy half (DC-32, ADR-0050 item 9). ExSheet declares ExGrid's
+`CopyAnswer`, so both copy routes ask it synchronously and no longer gather rows
+(`OnCopyRowsNeeded` is gone: the engine reads every row). One range is the engine's
+`Sheet.Copy`: `text/plain` is `SheetCopy.Text` as the engine writes it, and `text/html` is
+`SheetCopy.Html` with its table marked `data-ex-grid="invariant"` (ExGrid's
+`ClipboardData.InvariantMarker`), so ExGrid's paste reads its fields as invariant. The copy keeps
+the `SheetBlock` and the fields `ClipboardParse.ParseBlock(html, text)` reads back from what was
+written, for the paste to recognise. A copy reaching `#GETTING_DATA` is refused with the engine's
+sentence (`GridCopyAnswer.Refuse`); the grid announces it, ExSheet's notice says it, the
+clipboard keeps what it held, and the Entries kept for the last copy stand. Several ranges
+combined into one block, and a copy with the headers (the column letters), carry the Values cell
+by cell, as the engine writes them, and keep no Entries: a block of several ranges was never one
+place its References were relative to. Layer 2, in `ClipboardWiringTests`: both routes, the
+Entries kept, the refusal in the engine's words and the last copy kept past it, a Value no format
+can show going out as itself, and several ranges. The second criterion holds in layer 2; layer 3
+with the real clipboard is still open.
