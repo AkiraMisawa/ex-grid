@@ -43,6 +43,16 @@ public sealed record GridMetrics
     /// Groups (ADR-0032).</summary>
     public double HeaderHeightPx { get; }
 
+    /// <summary>The Formula Bar's height (ADR-0051/0028): the header's, so the bar reads as
+    /// one more band of the same frame — and like every number here it is resolved once,
+    /// emitted inline, and read by the arithmetic that gives the rows what it leaves.</summary>
+    public double FormulaBarHeightPx => HeaderHeightPx;
+
+    /// <summary>The Name Box's width (ADR-0051): <c>XFD1048576</c>, the longest address a
+    /// Sheet has, as the Cell Metrics estimate it with a cell's padding. Emitted inline,
+    /// never a stylesheet value.</summary>
+    public double NameBoxWidthPx => CellMetrics.EstimatePx("XFD1048576");
+
     /// <summary>States the size <see cref="CellMetrics"/>' digit width is true at.</summary>
     public double FontSizePx { get; }
 

@@ -315,6 +315,20 @@
             </div>
         </div>
     </div>
+    @if (ShowFormulaBar)
+    {
+        @* The Formula Bar (ADR-0051): a band inside the root, above the header — the root
+           gives the scroller its height less the band's and stands the band in the room
+           that leaves at its top, so the rows take what the band leaves. Written after the
+           scroller so the Cell Editor stays the first editor surface in the markup.
+           The Name Box names the Focus in the Consumer's words; the text is the Focus
+           cell's — the Entry on a Sheet, the full value behind a #### on a display grid
+           (ADR-0016). Neither is a tab stop: the grid is one (ADR-0020). *@
+        <div class="ex-formula-bar" style="@FormulaBarStyle()" role="presentation">
+            <div class="ex-name-box" style="@NameBoxStyle()" aria-label="Name Box">@NameBoxText()</div>
+            <input class="ex-formula-bar-text" value="@FormulaBarText()" readonly tabindex="-1" aria-label="Formula Bar" />
+        </div>
+    }
     @if (_menuColumn >= 0 && _menuColumn < Columns.Count)
     {
         @* The column's one popover (ADR-0044), as Excel's drop-down: its commands at the top —
@@ -1041,6 +1055,33 @@
     /// </summary>
     [Parameter] public Func<CellPosition, GridDirection, CellPosition>? DataEdge { get; set; }
 
+    /// <summary>
+    /// A Consumer declaration (ADR-0051): the text the Cell Editor opens on, per cell — on a
+    /// Sheet, the Entry, so F2 on a Formula's cell shows <c>=A1*2</c> rather than its Value.
+    /// Asked by (row, column) when an edit opens on the cell's text — F2, a double click, a
+    /// click in the Formula Bar — and for the Formula Bar's display. Overwrite keeps its
+    /// meaning: the typed character replaces. Null, or a null answer, opens on the value as
+    /// before.
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, string?>? EditorTextOf { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ADR-0051): the Formula Bar, a band inside the root above the
+    /// header holding the Name Box and the Focus cell's text — the opening text where
+    /// <see cref="EditorTextOf"/> supplies one, the full value behind a <c>####</c> where
+    /// not (ADR-0016). Its height is the Grid Metrics' (<see cref="GridMetrics.FormulaBarHeightPx"/>),
+    /// and it comes out of <see cref="ViewportHeight"/>: the rows take what it leaves. Off —
+    /// the default — there is no band and the geometry is as before.
+    /// </summary>
+    [Parameter] public bool ShowFormulaBar { get; set; }
+
+    /// <summary>
+    /// The Name Box's label for the Focus, in the Consumer's words (ADR-0051): <c>D200</c> on
+    /// a Sheet. Asked for the Focus cell whenever the Formula Bar paints; null, or a null
+    /// answer, leaves the Name Box empty — the grid names no cell in words of its own.
+    /// </summary>
+    [Parameter] public Func<CellPosition, string?>? NameBoxLabel { get; set; }
+
     // What the grid actually paints, resolved from the Source when there is one and
     // from the push parameters when there is not. Every reader below goes through these,
     // so binding a Source adds no branch to the pipeline — only one more way to fill it.
@@ -1665,6 +1706,13 @@
                 throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
                     "ViewportHeight is a finite, positive number of pixels (ADR-0013).");
             }
+            if (ShowFormulaBar && ViewportHeight.Px <= FormulaBarPx + (HideHeader ? 0 : _metrics.HeaderHeightPx))
+            {
+                throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
+                    $"ViewportHeight must exceed the Formula Bar's {FormulaBarPx}px" +
+                    (HideHeader ? "" : $" and the header's {_metrics.HeaderHeightPx}px") +
+                    ": both take their band of it, and what is left is where the rows go (ADR-0051/0028).");
+            }
             if (!HideHeader && ViewportHeight.Px <= _metrics.HeaderHeightPx)
             {
                 throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
@@ -1953,7 +2001,7 @@
             : ViewportBox.VisibleWidthOf(ViewportWidth.Px, _gutterWidthPx);
         _visibleHeightPx = ViewportHeight.IsFill
             ? Math.Max(0, _reportedHeightPx)
-            : ViewportBox.VisibleHeightOf(ViewportHeight.Px, _gutterHeightPx);
+            : ViewportBox.VisibleHeightOf(ViewportHeight.Px - FormulaBarPx, _gutterHeightPx);
         CloseAPopoverTheBoxNoLongerHolds(previousHeightPx);
 
         if (_visibleHeightPx <= BandHeightPx || _visibleWidthPx <= 0)
@@ -3170,7 +3218,7 @@
         // Below the cell, not over it: a box that covers the value it is complaining
         // about, or the editor the user is being asked to correct, is worse than none.
         return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx + top + _metrics.RowHeightPx}px; max-width: {width}px");
+            $"left: {left}px; top: {FormulaBarPx + BandHeightPx + top + _metrics.RowHeightPx}px; max-width: {width}px");
     }
 
     /// <summary>The widest a message popover lays out — emitted inline, never a
@@ -3272,9 +3320,9 @@
         var (at, below) = ContextPopoverPlacement();
         return below >= at
             ? FormattableString.Invariant(
-                $"left: {left}px; top: {at}px; {width}; max-height: {below}px")
+                $"left: {left}px; top: {FormulaBarPx + at}px; {width}; max-height: {below}px")
             : FormattableString.Invariant(
-                $"left: {left}px; top: {at}px; transform: translateY(-100%); {width}; max-height: {at}px");
+                $"left: {left}px; top: {FormulaBarPx + at}px; transform: translateY(-100%); {width}; max-height: {at}px");
     }
 
     /// <summary>Where the Context Menu stands and how much room lies below it: the pointer's
@@ -4074,7 +4122,7 @@
         // max-height keeps it inside the grid's box downwards, as PopoverAcross does across,
         // so no ancestor that shows the grid can cut it; taller contents scroll (ADR-0040).
         return FormattableString.Invariant(
-            $"left: {left}px; top: {BandHeightPx}px; {width}; max-height: {HeaderPopoverRoomPx}px");
+            $"left: {left}px; top: {FormulaBarPx + BandHeightPx}px; {width}; max-height: {HeaderPopoverRoomPx}px");
     }
 
     /// <summary>A header popover's room: from under the header band to the Viewport's
@@ -4932,7 +4980,7 @@
         await StartEditingAsync(
             current.Focus,
             caret ? EditMode.Caret : EditMode.Overwrite,
-            caret ? CellTextOf(current.Focus) : key);
+            caret ? OpeningTextOf(current.Focus) : key);
     }
 
     private string CellTextOf(CellPosition cell)
@@ -4941,6 +4989,55 @@
         return slice >= 0 && slice < _window.Count
             ? ExGridRow<TRow>.CellText(Columns[cell.Column], _window[slice])
             : "";
+    }
+
+    /// <summary>The text an edit opens on (ADR-0051): the Consumer's, where it supplies one
+    /// for this cell — the Entry on a Sheet — and the cell's text otherwise, as before.</summary>
+    private string OpeningTextOf(CellPosition cell)
+    {
+        var slice = cell.Row - _windowStart;
+        if (EditorTextOf is { } opening && slice >= 0 && slice < _window.Count
+            && opening(_window[slice], Columns[cell.Column]) is { } supplied)
+        {
+            return supplied;
+        }
+        return CellTextOf(cell);
+    }
+
+    /// <summary>The Name Box's text: the Consumer's label for the Focus, or nothing
+    /// (ADR-0051).</summary>
+    private string NameBoxText()
+        => _selection.Selection.IsEmpty ? "" : NameBoxLabel?.Invoke(_selection.Selection.Focus) ?? "";
+
+    /// <summary>
+    /// What the Formula Bar shows for the Focus cell (ADR-0051/0016): the uncommitted text
+    /// while it is being edited — the bar is the editor's second surface — and otherwise the
+    /// Consumer's opening text where it supplies one, or the full value: never the
+    /// <c>####</c> and never a rounding format, in the current culture's own spelling.
+    /// Empty with no Focus, or over a row not in hand.
+    /// </summary>
+    private string FormulaBarText()
+    {
+        if (_selection.Selection.IsEmpty)
+            return "";
+        var focus = _selection.Selection.Focus;
+        if (_editMode != EditMode.None && focus == _editingCell)
+            return _editText;
+        var slice = focus.Row - _windowStart;
+        if (focus.Column < 0 || focus.Column >= Columns.Count || slice < 0 || slice >= _window.Count)
+            return "";
+        var row = _window[slice];
+        var column = Columns[focus.Column];
+        if (EditorTextOf?.Invoke(row, column) is { } supplied)
+            return supplied;
+        if (!column.PaintsValue)
+            return "";
+        return column.Value(row) switch
+        {
+            null => "",
+            IFormattable formattable => formattable.ToString(null, CultureInfo.CurrentCulture),
+            var value => value.ToString() ?? "",
+        };
     }
 
     private async Task StartEditingAsync(CellPosition cell, EditMode mode, string initialText)
@@ -5212,7 +5309,7 @@
         var extent = Extent;
         if (!Apply(_selection.Selection.Click(cell, extent)))
             _suppressRender = false;
-        await StartEditingAsync(cell, EditMode.Caret, CellTextOf(cell));
+        await StartEditingAsync(cell, EditMode.Caret, OpeningTextOf(cell));
     }
 
     /// <summary>
@@ -6087,12 +6184,13 @@
     private string RootStyle()
     {
         var fill = (ViewportWidth.IsFill, ViewportHeight.IsFill);
-        if (_rootStyle.Length == 0 || fill != _rootStyleFill)
+        if (_rootStyle.Length == 0 || fill != _rootStyleFill || FormulaBarPx != _rootStyleBarPx)
         {
             _rootStyleFill = fill;
+            _rootStyleBarPx = FormulaBarPx;
             _rootStyle = string.Create(
                 CultureInfo.InvariantCulture,
-                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{FillRootStyle(fill.Item1, fill.Item2)}");
+                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{FillRootStyle(fill.Item1, fill.Item2)}{FormulaBarRootStyle()}");
         }
         return _rootStyle;
     }
@@ -6105,6 +6203,32 @@
     /// one. A Fill width only has to be allowed to shrink in a flex row, since a block
     /// already takes its parent's width.
     /// </summary>
+    /// <summary>
+    /// The room at the root's top the Formula Bar stands in (ADR-0051/0028): the root's
+    /// padding, so the scroller and everything after it start below the band, and under a
+    /// Fill height the scroller's flex share is what the band leaves. Nothing while the bar
+    /// is off.
+    /// </summary>
+    private string FormulaBarRootStyle()
+        => ShowFormulaBar
+            ? FormattableString.Invariant($"; padding-top: {FormulaBarPx}px; box-sizing: border-box")
+            : "";
+
+    private double _rootStyleBarPx;
+
+    /// <summary>The Formula Bar's height, or zero while it is off (ADR-0051).</summary>
+    private double FormulaBarPx => ShowFormulaBar ? _metrics.FormulaBarHeightPx : 0;
+
+    /// <summary>The band's box: its resolved height, and the scroller's width where that is
+    /// declared (ADR-0028). Under a Fill width the stylesheet's right edge stands.</summary>
+    private string FormulaBarStyle()
+        => ViewportWidth.IsFill
+            ? FormattableString.Invariant($"height: {FormulaBarPx}px; right: 0")
+            : FormattableString.Invariant($"height: {FormulaBarPx}px; width: {ViewportWidth.Px}px");
+
+    private string NameBoxStyle()
+        => FormattableString.Invariant($"width: {_metrics.NameBoxWidthPx}px");
+
     private static string FillRootStyle(bool fillWidth, bool fillHeight) => (fillWidth, fillHeight) switch
     {
         (true, true) => "; display: flex; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0; min-width: 0",
@@ -6230,11 +6354,13 @@
         // (ADR-0028): never its content's height, which is where the empty loop settled.
         if (ViewportWidth.IsFill && ViewportHeight.IsFill)
             return "flex: 1 1 auto; min-height: 0";
+        // The Formula Bar comes out of a declared height (ADR-0051/0028): the scroller is
+        // what the band leaves.
         if (ViewportWidth.IsFill)
-            return FormattableString.Invariant($"height: {ViewportHeight.Px}px");
+            return FormattableString.Invariant($"height: {ViewportHeight.Px - FormulaBarPx}px");
         if (ViewportHeight.IsFill)
             return FormattableString.Invariant($"width: {ViewportWidth.Px}px; flex: 1 1 auto; min-height: 0");
-        return FormattableString.Invariant($"width: {ViewportWidth.Px}px; height: {ViewportHeight.Px}px");
+        return FormattableString.Invariant($"width: {ViewportWidth.Px}px; height: {ViewportHeight.Px - FormulaBarPx}px");
     }
 
     private static string Px(double value) => FormattableString.Invariant($"{value}px");

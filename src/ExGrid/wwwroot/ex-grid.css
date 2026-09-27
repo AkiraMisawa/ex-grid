@@ -259,6 +259,40 @@
     color: var(--ex-heading-color, var(--ex-header-color, inherit));
     box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-heading-rule-color, var(--ex-header-rule-color, rgba(128, 128, 128, 0.45)));
 }
+/* The Formula Bar (ADR-0051): a band in the room the root leaves at its top. Its height,
+   its width and the Name Box's width are geometry and arrive inline from the resolved
+   metrics (ADR-0027/0028); what is here only lays the two fields side by side. */
+.ex-formula-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    box-sizing: border-box;
+    line-height: var(--ex-header-height);
+    background: var(--ex-formula-bar-background, var(--ex-header-background, Canvas));
+    color: var(--ex-formula-bar-color, inherit);
+    background-image: linear-gradient(to top, var(--ex-header-rule-color, rgba(128, 128, 128, 0.45)) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
+}
+.ex-name-box, .ex-formula-bar-text {
+    box-sizing: border-box;
+    height: 100%;
+    margin: 0;
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    outline: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ex-name-box {
+    flex: 0 0 auto;
+    box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
+}
+.ex-formula-bar-text { flex: 1 1 auto; min-width: 0; }
 .ex-row-heading { z-index: 4; }
 .ex-headings-corner { z-index: 7; }
 /* Selection is painted as overlay rectangles, never as a class on the selected cells

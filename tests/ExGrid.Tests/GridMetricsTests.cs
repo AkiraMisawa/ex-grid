@@ -150,4 +150,12 @@ public class GridMetricsTests
         Assert.Equal(9, uniform.CellMetrics.DigitWidthPx); // nothing else moves
         Assert.Equal(30, generous.CellMetrics.FullWidthPx); // wider than an em is the theme's to say
     }
+
+    [Fact] // ADR-0051/0028: the Formula Bar's height is the header's, resolved with it
+    public void The_formula_bar_height_follows_the_header()
+    {
+        Assert.Equal(28, GridMetrics.Resolve(GridDensity.Compact).FormulaBarHeightPx);
+        Assert.Equal(34, GridMetrics.Resolve(GridDensity.Compact, rowHeightPx: 22, headerHeightPx: 34).FormulaBarHeightPx);
+        Assert.Equal(22, GridMetrics.Resolve(GridDensity.Compact, rowHeightPx: 22).FormulaBarHeightPx);
+    }
 }
