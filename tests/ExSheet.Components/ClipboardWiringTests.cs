@@ -41,7 +41,7 @@ public class ClipboardWiringTests : SheetTestContext
         await PasteAsync(cut, "=A1+1\t\"1,234\"\r\n");
 
         Assert.Equal("42", CellText(cut, "B1"));
-        Assert.Equal("1234", CellText(cut, "C1"));
+        Assert.Equal("1,234", CellText(cut, "C1")); // thousands separators give #,##0, as Excel gives them (TYPED-025)
         await GoToAsync(cut, "B1");
         Assert.Equal("=A1+1", FormulaBar(cut));
     }
@@ -375,7 +375,7 @@ public class ClipboardWiringTests : SheetTestContext
 
         await PasteAsync(cut, "1.234,5\r\n");
 
-        Assert.Equal("1234,5", CellText(cut, "A1"));
+        Assert.Equal("1.234,50", CellText(cut, "A1")); // thousands separators with decimals give #,##0.00 (TYPED-008)
     }
 
     [Fact] // ADR-0050 item 10, ADR-0048: another Sheet's copy is invariant, so an en-US Sheet's 0.5 is 0.5 in a de-DE one

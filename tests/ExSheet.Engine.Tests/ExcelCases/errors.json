@@ -613,11 +613,13 @@
     },
     {
       "id": "ERR-077",
-      "source": "documented",
-      "description": "#GETTING_DATA is a state of a computation; typed, it is text",
+      "source": "observed",
+      "description": "#GETTING_DATA is a state of a computation; typed, it is text, although Excel reads it as the Error Value",
       "cells": {"A1": "#GETTING_DATA"},
       "check": "A1",
-      "expect": {"value2": "#GETTING_DATA", "kind": "text"}
+      "expect": {"value2": "#GETTING_DATA", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #GETTING_DATA or #CIRC! stays text, because each is a state of a computation and cannot be data (ADR-0049)",
+      "excelExpect": {"value2": "#GETTING_DATA"}
     },
     {
       "id": "ERR-078",
@@ -765,6 +767,38 @@
       "check": "A1",
       "expect": {"value2": "#CIRC!"},
       "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    },
+    {
+      "id": "ERR-094",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a typed Error Value is read in any case",
+      "cells": {"A1": "#div/0!"},
+      "check": "A1",
+      "expect": {"value2": "#DIV/0!", "formula": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-095",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a typed #NULL! is the Error Value",
+      "cells": {"A1": "#NULL!"},
+      "check": "A1",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-096",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value Excel added after the declared set (#SPILL!) has no ExSheet counterpart, so typed it is text",
+      "cells": {"A1": "#SPILL!"},
+      "check": "A1",
+      "expect": {"value2": "#SPILL!", "kind": "text"}
+    },
+    {
+      "id": "ERR-097",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: #CALC! has no ExSheet counterpart, so typed it is text",
+      "cells": {"A1": "#CALC!"},
+      "check": "A1",
+      "expect": {"value2": "#CALC!", "kind": "text"}
     }
   ]
 }

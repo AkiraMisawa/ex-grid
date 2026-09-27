@@ -37,6 +37,37 @@ public class CultureTests
         Assert.True(sheet.GetDisplay(a1).IsNumber);
     }
 
+    [Theory] // ADR-0047/0048: a day and a month name without a year is that day of the current year, as Excel reads it (TYPED-022)
+    [InlineData("en-US", "26-Sep")]
+    [InlineData("en-US", "Sep 26")]
+    [InlineData("en-US", "9/26")]
+    [InlineData("de-DE", "26-Sep")]
+    public void A_date_typed_without_a_year_is_in_the_current_year(string culture, string typed)
+    {
+        var sheet = In(culture);
+        var a1 = CellAddress.Parse("A1");
+
+        sheet.Enter(a1, typed);
+
+        Assert.Equal(Serial(DateTime.Today.Year, 9, 26), sheet.GetValue(a1)!.Value.Number);
+        Assert.Equal("d-mmm", sheet.GetFormat(a1).Code);
+    }
+
+    [Fact] // ADR-0047: a typed date records Excel's built-in short date, which shows in each culture's own pattern
+    public void The_built_in_short_date_shows_in_the_sheets_culture()
+    {
+        var shown = new[] { "en-US", "en-GB", "de-DE", "ja-JP" }.Select(culture =>
+        {
+            var sheet = In(culture);
+            var a1 = CellAddress.Parse("A1");
+            sheet.Enter(a1, "=46291");
+            sheet.SetFormat(a1, NumberFormat.Parse("m/d/yyyy"));
+            return sheet.GetDisplay(a1).Text;
+        });
+
+        Assert.Equal(["9/26/2026", "26/09/2026", "26.09.2026", "2026/09/26"], shown);
+    }
+
     [Fact] // ADR-0048: a percentage typed reopens in the Cell Editor as a percentage (its Value is in ExcelCases/typed-constants.json)
     public void A_typed_percentage_reopens_as_a_percentage()
     {
@@ -73,6 +104,12 @@ public class CultureTests
     [InlineData("ja-JP", "2026/9/26")]
     [InlineData("ja-JP", "13:45:10")]
     [InlineData("en-US", "'1,234")]
+    [InlineData("en-US", "'+A1")]    // text that typed without its apostrophe would be a Formula
+    [InlineData("en-US", "'-abc")]
+    [InlineData("en-US", "26-Sep")]
+    [InlineData("en-US", "1E15")]    // the editor writes it in full, 1000000000000000
+    [InlineData("en-US", "1E-10")]
+    [InlineData("de-DE", "26-Okt")]
     public void The_entry_text_types_back_to_the_same_entry(string culture, string typed)
     {
         var sheet = In(culture);

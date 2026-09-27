@@ -22,14 +22,37 @@ internal static partial class ConstantParser
         if (typed.Equals("FALSE", StringComparison.OrdinalIgnoreCase)) return (Value.FromBoolean(false), null);
         if (ErrorValues.TryParseTyped(typed, out var error)) return (Value.FromError(error), null);
         var trimmed = typed.Trim(' ');
-        if (TryParseNumber(trimmed, culture, out var number, out var percent))
+        if (TryParseNumber(trimmed, culture, out var number, out var shape))
         {
-            NumberFormat? implied = null;
-            if (percent) implied = NumberFormat.Parse(trimmed.Contains(culture.NumberFormat.NumberDecimalSeparator, StringComparison.Ordinal) ? "0.00%" : "0%");
-            return (Value.FromNumber(number), implied);
+            return (Value.FromNumber(number), Implied(shape));
         }
         if (TryParseDateTime(trimmed, culture, DateTime.Today.Year, out var serial, out var format)) return (Value.FromNumber(serial), format);
         return (Value.FromText(typed), null);
+    }
+
+    /// <summary>How a typed number was written, which decides the format Excel gives a General cell for it.</summary>
+    [Flags]
+    private enum NumberShape
+    {
+        Plain = 0,
+        Percent = 1,
+        Decimals = 2,
+        Grouped = 4,
+        Exponent = 8,
+    }
+
+    /// <summary>
+    /// The format a typed number gives a General cell, as Excel was observed to give it: a
+    /// percentage <c>0%</c> or <c>0.00%</c>; an exponent <c>0.00E+00</c> (<c>1E3</c> shows
+    /// <c>1.00E+03</c>); thousands separators <c>#,##0</c>, or <c>#,##0.00</c> with decimals
+    /// (<c>1,234</c> and <c>1.234,5</c> under de-DE). Otherwise none.
+    /// </summary>
+    private static NumberFormat? Implied(NumberShape shape)
+    {
+        if (shape.HasFlag(NumberShape.Percent)) return NumberFormat.Parse(shape.HasFlag(NumberShape.Decimals) ? "0.00%" : "0%");
+        if (shape.HasFlag(NumberShape.Exponent)) return NumberFormat.Parse("0.00E+00");
+        if (shape.HasFlag(NumberShape.Grouped)) return NumberFormat.Parse(shape.HasFlag(NumberShape.Decimals) ? "#,##0.00" : "#,##0");
+        return null;
     }
 
     /// <summary>Text read as a number the way a typed number is: what Excel's arithmetic does with numeric text.</summary>
@@ -48,10 +71,10 @@ internal static partial class ConstantParser
     /// exponent, an optional trailing <c>%</c>. Digits past the fifteenth significant one become
     /// zeros, as Excel keeps fifteen.
     /// </summary>
-    private static bool TryParseNumber(string text, CultureInfo culture, out double number, out bool percent)
+    private static bool TryParseNumber(string text, CultureInfo culture, out double number, out NumberShape shape)
     {
         number = 0;
-        percent = false;
+        shape = NumberShape.Plain;
         if (text.Length == 0) return false;
         var format = culture.NumberFormat;
         var decimalSeparator = format.NumberDecimalSeparator;
@@ -92,11 +115,13 @@ internal static partial class ConstantParser
             break;
         }
         if (groupRun >= 0 && groupRun != 3) return false;
+        if (groupRun >= 0) shape |= NumberShape.Grouped;
 
         var fraction = new StringBuilder();
         if (string.CompareOrdinal(text, i, decimalSeparator, 0, decimalSeparator.Length) == 0)
         {
             i += decimalSeparator.Length;
+            shape |= NumberShape.Decimals;
             while (i < text.Length && char.IsAsciiDigit(text[i])) fraction.Append(text[i++]);
         }
         if (integer.Length == 0 && fraction.Length == 0) return false;
@@ -116,11 +141,12 @@ internal static partial class ConstantParser
             if (j == start || j - start > 4) return false;
             exponent = int.Parse(text.AsSpan(start, j - start), NumberStyles.None, CultureInfo.InvariantCulture);
             if (exponentNegative) exponent = -exponent;
+            shape |= NumberShape.Exponent;
             i = j;
         }
         if (i < text.Length && text[i] == '%')
         {
-            percent = true;
+            shape |= NumberShape.Percent;
             i++;
         }
         if (parenthesised)
@@ -141,7 +167,7 @@ internal static partial class ConstantParser
         var kept = new string(digits);
         var spelled = kept[..integer.Length] + (fraction.Length > 0 ? "." + kept[integer.Length..] : "") + "E" + exponent.ToString(CultureInfo.InvariantCulture);
         if (!double.TryParse(spelled, NumberStyles.Float, CultureInfo.InvariantCulture, out number) || !double.IsFinite(number)) return false;
-        if (percent) number /= 100;
+        if (shape.HasFlag(NumberShape.Percent)) number /= 100;
         if (negative) number = -number;
         return double.IsFinite(number);
     }
@@ -204,6 +230,13 @@ internal static partial class ConstantParser
             return true;
         }
 
+        if (timePart is null && TryParseMonthName(datePart, culture, currentYear, out var named, out var namedCode))
+        {
+            serial = named;
+            format = NumberFormat.Parse(namedCode);
+            return true;
+        }
+
         var match = DatePattern().Match(datePart);
         if (!match.Success) return false;
         var separator = match.Groups["s1"].Value[0];
@@ -245,8 +278,9 @@ internal static partial class ConstantParser
             if (!TryParseTime(timePart, out fraction, out _)) return false;
         }
         serial = whole + fraction;
-        var dateCode = DateCode(culture);
-        format = NumberFormat.Parse(timePart is null ? dateCode : dateCode + " h:mm");
+        // A date with its year records Excel's built-in short date, whatever the culture, as
+        // Excel was observed to; one typed without a year shows as day and month name.
+        format = timePart is not null ? NumberFormat.ShortDateTime : c is null ? NumberFormat.Parse("d-mmm") : NumberFormat.ShortDate;
         return true;
 
         static int Parse(string digits) => int.Parse(digits, NumberStyles.None, CultureInfo.InvariantCulture);
@@ -257,6 +291,73 @@ internal static partial class ConstantParser
             if (digits.Length > 2) return value;
             return value < 30 ? 2000 + value : 1900 + value;
         }
+    }
+
+    [GeneratedRegex(@"^(?:(?<d1>\d{1,2})[\-/ ](?<m1>\p{L}+\.?)(?:[\-/ ](?<y1>\d{2}|\d{4}))?|(?<m2>\p{L}+\.?)[\-/ ](?<n2>\d{1,2}|\d{4}))$", RegexOptions.CultureInvariant)]
+    private static partial Regex MonthNamePattern();
+
+    /// <summary>
+    /// A date written with the culture's name of a month, as Excel reads it: <c>26-Sep</c> or
+    /// <c>Sep 26</c> is that day in <paramref name="currentYear"/>, shown <c>d-mmm</c> (observed,
+    /// TYPED-022); <c>26-Sep-2026</c> is shown <c>d-mmm-yy</c>, and <c>Sep 2026</c> is the first of
+    /// the month, shown <c>mmm-yy</c> (both uncertain in the case corpus).
+    /// </summary>
+    private static bool TryParseMonthName(string text, CultureInfo culture, int currentYear, out double serial, out string code)
+    {
+        serial = 0;
+        code = "";
+        var match = MonthNamePattern().Match(text);
+        if (!match.Success) return false;
+        int day, year;
+        int? month;
+        if (match.Groups["d1"].Success)
+        {
+            month = MonthNamed(match.Groups["m1"].Value, culture);
+            day = int.Parse(match.Groups["d1"].Value, NumberStyles.None, CultureInfo.InvariantCulture);
+            var y = match.Groups["y1"];
+            year = y.Success ? TwoOrFourDigitYear(y.Value) : currentYear;
+            code = y.Success ? "d-mmm-yy" : "d-mmm";
+        }
+        else
+        {
+            month = MonthNamed(match.Groups["m2"].Value, culture);
+            var number = match.Groups["n2"].Value;
+            var value = int.Parse(number, NumberStyles.None, CultureInfo.InvariantCulture);
+            if (number.Length <= 2 && value is >= 1 and <= 31)
+            {
+                (day, year, code) = (value, currentYear, "d-mmm");
+            }
+            else
+            {
+                (day, year, code) = (1, TwoOrFourDigitYear(number), "mmm-yy");
+            }
+        }
+        if (month is not { } m || DateSerial.FromDate(year, m, day) is not { } whole) return false;
+        serial = whole;
+        return true;
+
+        static int TwoOrFourDigitYear(string digits)
+        {
+            var value = int.Parse(digits, NumberStyles.None, CultureInfo.InvariantCulture);
+            if (digits.Length > 2) return value;
+            return value < 30 ? 2000 + value : 1900 + value;
+        }
+    }
+
+    /// <summary>The month (1–12) the culture names with <paramref name="name"/>, abbreviated or in full, in any case, a trailing full stop ignored.</summary>
+    private static int? MonthNamed(string name, CultureInfo culture)
+    {
+        var wanted = name.TrimEnd('.');
+        var names = culture.DateTimeFormat;
+        for (var m = 0; m < 12; m++)
+        {
+            if (string.Equals(wanted, names.AbbreviatedMonthNames[m].TrimEnd('.'), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(wanted, names.MonthNames[m], StringComparison.OrdinalIgnoreCase))
+            {
+                return m + 1;
+            }
+        }
+        return null;
     }
 
     private static bool TryParseTime(string text, out double fraction, out string format)
