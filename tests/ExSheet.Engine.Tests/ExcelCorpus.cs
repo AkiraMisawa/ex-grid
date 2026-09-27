@@ -66,6 +66,11 @@ internal static class ExcelCorpus
         {
             return refusesEntry ? [] : [$"an entry was refused: {e.Message}"];
         }
+        catch (FormatException e)
+        {
+            // A format code refused, as Excel refuses one it will not take (the oracle counts it as a refused entry).
+            return refusesEntry ? [] : [$"a format was refused: {e.Message}"];
+        }
         if (refusesEntry) return ["expected an entry refused, but every entry was taken"];
         var refusal = Act(sheet, c);
         var at = CellAddress.Parse(c.GetProperty("check").GetString()!);

@@ -15,7 +15,7 @@ namespace ExSheet.Engine;
 /// <c>0 # ?</c>, the decimal point, thousands separators and scaling commas, <c>%</c>, scientific
 /// <c>E+00</c> with one integer placeholder, <c>@</c>, quoted text, <c>\</c> escapes, <c>_</c>
 /// spacing, and the date and time codes <c>y m d h s</c> with <c>AM/PM</c> and <c>A/P</c>. A
-/// colour at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, … or <c>[Color n]</c>) is
+/// colour at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, … or <c>[Color10]</c>) is
 /// accepted and kept in the code, so the format goes back to Excel intact, but it is not painted
 /// until per-cell styling has its ADR (ADR-0047, ADR-0046). A code outside the subset — conditions,
 /// locales and elapsed time in brackets, fractions, fractional seconds, <c>*</c> fill, era codes,
@@ -460,12 +460,16 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
 
         private static readonly string[] ColourNames = ["Black", "Blue", "Cyan", "Green", "Magenta", "Red", "White", "Yellow"];
 
-        /// <summary>One of Excel's eight colour names, or <c>Color n</c> with n from 1 to 56, in any case.</summary>
+        /// <summary>
+        /// One of Excel's eight colour names, or <c>Colorn</c> with n from 1 to 56, in any case.
+        /// A space before the number is refused, as Excel refuses <c>[Color 10]</c> (FMT-075,
+        /// ADR-0047 second run).
+        /// </summary>
         private static bool IsColour(string name)
         {
             if (ColourNames.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase))) return true;
             if (!name.StartsWith("Color", StringComparison.OrdinalIgnoreCase)) return false;
-            var number = name[5..].TrimStart(' ');
+            var number = name[5..];
             return number.Length is 1 or 2 && number.All(char.IsAsciiDigit)
                 && int.Parse(number, CultureInfo.InvariantCulture) is >= 1 and <= 56;
         }
