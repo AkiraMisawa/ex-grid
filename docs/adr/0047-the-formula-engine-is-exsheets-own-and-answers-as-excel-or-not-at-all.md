@@ -247,9 +247,14 @@ Each disagreement goes to Excel's answer, except where a refusal is named.
   "format at entry" rule above to what was observed.
 - **A number typed into a percent cell is read as a percentage** (LVL-015): `0.5` into a `0%` cell
   is 0.005, Excel's automatic percent entry, which is on by default.
-- **A column a typed number widened is recorded as a custom width** (CW-018), as Excel's file marks
-  it (`customWidth`). Whether a longer number then widens it again was not observed; until it is,
-  it does, as the WD cases show.
+- **A column a typed entry widened is recorded as a custom width** (CW-018), as Excel's file marks
+  it (`customWidth`), **and a custom width is not widened again**. *(Settled with the user,
+  2026-09-27, when the first reading proved impossible: "custom, yet a longer number still widens
+  it" cannot both hold in ADR-0046's model, where custom means "never widened". A third kind of
+  width would have changed the Sheet Document for a behaviour nobody had observed.)* Excel's flag
+  was observed for a number only. A date's flag, and whether Excel widens a column again for a
+  longer number, go to the next Windows run. If Excel widens again, this becomes a third kind of
+  width.
 - **A format code with `[Color n]` is refused** (FMT-075), as Excel refuses it.
 
 The deliberate differences recorded earlier stand, and the second run gave the same answers for
