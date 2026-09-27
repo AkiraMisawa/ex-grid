@@ -27,5 +27,5 @@ same specs pass on Linux Chromium in the container.
 3. Also run each spec at 100% and 125% at the first bad commit, to see whether the scale matters.
 4. Record in `verification/<date>-windows-bisect/results.md`: the first bad commit, its diff
    summary, the runs at each step, and whether VZ-14 and BIG-1/5 share one cause. **Do not fix it.**
-5. Commit on a branch `claude/exsheet-windows-bisect` from the tip of `claude/exsheet-start-8cx3v1`,
-   and push.
+5. Commit the record on the branch the run uses. When it runs as Part E of
+   `verify-on-windows-2.md`, that is `claude/exsheet-windows-verify-2`. Then push.
