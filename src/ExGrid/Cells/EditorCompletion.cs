@@ -57,37 +57,13 @@ public sealed record EditorCompletion(IReadOnlyList<CompletionCandidate> Candida
 
 /// <summary>
 /// What the editor's text becomes, for the pieces of formula entry the core carries out itself
-/// (ADR-0051): accepting a candidate, writing a pointed Reference, and where the caret stands
-/// after typing it was not told about. Pure: the component holds the text, this answers what
-/// an operation does to it.
+/// (ADR-0051): accepting a candidate and writing a pointed Reference. Pure: the component holds
+/// the text, this answers what an operation does to it. Where the caret stands after the user's
+/// own typing is not answered here: the browser reports it, because working it out from the
+/// change is ambiguous where letters repeat (ADR-0051's second round).
 /// </summary>
 public static class EditorTextRules
 {
-    /// <summary>
-    /// Where the caret stands after the text changed from <paramref name="before"/> to
-    /// <paramref name="after"/> by one edit at one place — typing, a deletion, a paste over a
-    /// selection: the end of what the edit wrote. A Blazor input event carries the text and not
-    /// the caret, and reading the caret would be a measurement (ADR-0021); the edit itself
-    /// says where it happened. Where the text alone cannot tell — a letter typed beside the
-    /// same letter — the later of the places is taken, which is the same text either way.
-    /// </summary>
-    public static int InferCaret(string before, string after)
-    {
-        ArgumentNullException.ThrowIfNull(before);
-        ArgumentNullException.ThrowIfNull(after);
-        var prefix = 0;
-        var shorter = Math.Min(before.Length, after.Length);
-        while (prefix < shorter && before[prefix] == after[prefix])
-            prefix++;
-        var suffix = 0;
-        while (suffix < shorter - prefix
-               && before[before.Length - 1 - suffix] == after[after.Length - 1 - suffix])
-        {
-            suffix++;
-        }
-        return after.Length - suffix;
-    }
-
     /// <summary>
     /// <paramref name="text"/> with the span from <paramref name="start"/> of
     /// <paramref name="length"/> characters replaced by <paramref name="insert"/>, and the caret

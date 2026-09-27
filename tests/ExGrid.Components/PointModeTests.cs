@@ -130,7 +130,9 @@ public class PointModeTests : GridTestContext
         Assert.Empty(intents);
         // Row 2 of the painted slice, column A: paint only, over the Selection's own layer.
         Assert.Equal("left: 0px; top: 40px; width: 100px; height: 20px", PointStyle(cut));
-        Assert.Contains("overwrite", EditingModesTold()[^1]);
+        // The gate claims Overwrite's keys and the Shift+arrows while an outline stands
+        // (ADR-0051's second round).
+        Assert.Equal("point", EditingModesTold()[^1]);
     }
 
     [Fact] // ADR-0051 / DC-19: the Selection and the Focus do not move while pointing
@@ -265,7 +267,7 @@ public class PointModeTests : GridTestContext
 
         await TypeAsync(cut, "=A2*");
         await PressAsync(cut, "F2", text: "=A2*", caret: 4); // Caret → Point where a Reference can go
-        Assert.Equal("overwrite", EditingModesTold()[^1]);
+        Assert.Equal("point", EditingModesTold()[^1]);
 
         await PressAsync(cut, "ArrowRight", text: "=A2*", caret: 4);
         Assert.Equal("=A2*B1", EditorText(cut));

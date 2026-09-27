@@ -49,12 +49,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // these are gates only, and their mirror is the cases of OnEditingKeyAsync, which
     // reads the same canonical form — the two must move together.
     let editing = 'none';
+    // Whether each input in an editor surface reports its caret (ADR-0051), told by C# with
+    // the mode: only where completion or pointing is declared.
+    let reportCaret = false;
     // Whether a popover's contents have a popup of their own open (ADR-0039), told by C#.
     let innerPopup = false;
     const editingKeys = new Set(
         ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2']);
     const overwriteKeys = new Set([
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
+    // Pointing (ADR-0051's second round): Overwrite's keys and the four Shift+arrows, which
+    // extend the outline rather than select text in the input. And while a completion list
+    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ← and → move the caret.
+    const pointKeys = new Set([
+        ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+    const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
+    const claimedWhile = { overwrite: overwriteKeys, point: pointKeys, completion: completionKeys };
 
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
     // round trip later on a circuit, and a key typed in between must be the popover's, not
@@ -159,7 +169,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         if (!k.onRoot && !k.inEditor) {
             return null;
         }
-        const claimed = editing === 'overwrite' ? overwriteKeys : editingKeys;
+        const claimed = claimedWhile[editing] ?? editingKeys;
         // Every key the core claims while editing commits, cancels, moves or switches
         // the mode: each is a mode change.
         return claimed.has(canonical) ? 'mode' : null;
@@ -201,6 +211,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 }
             });
     };
+
+    // Each input in an editor surface reports its caret (ADR-0051's second round): an input
+    // event carries no caret, and working it out from the change is ambiguous where letters
+    // repeat. The value and selection start of the field the input happened in, read, not
+    // measured: no layout is read. Only while C# asked for it.
+    const onEditorInput = (event) => {
+        const input = event.target;
+        if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
+            || input.closest('.ex-editor') === null) {
+            return;
+        }
+        core.invokeMethodAsync('OnEditorCaretAsync', input.value, input.selectionStart ?? input.value.length)
+            .catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to hear the caret', error);
+                }
+            });
+    };
+    root.addEventListener('input', onEditorInput, true);
 
     // Keys that follow a mode change are held until it lands (ADR-0010). The mode is
     // C#'s, and it tells this listener after the fact: in-process on WebAssembly, a round
@@ -860,13 +889,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // this always writes through the asynchronous API. Still the fourth allowlist
         // entry — the clipboard — and not a fifth (ADR-0021).
         writeCopy: (withHeaders) => writeAsync(withHeaders === true),
-        // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite'
-        // or 'caret'. Set by the core when the mode changes — a mode change is a
+        // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite',
+        // 'caret', 'point' or 'completion' (ADR-0051), and whether inputs report their
+        // caret. Set by the core when the mode changes — a mode change is a
         // different set of claimed keys. (A focusable descendant holding the keyboard
         // — ADR-0020's interactive cell — is not a mode: it is read off event.target,
         // which is true whether focus arrived by click or by key.)
-        setEditing: (mode) => {
+        setEditing: (mode, reportsCaret) => {
             editing = mode;
+            reportCaret = reportsCaret === true;
+        },
+        // After the core wrote the editor's text itself — an accepted candidate, a pointed
+        // Reference — the caret goes where the core says (ADR-0051's second round). Only while
+        // the surface still holds that text: typed on since, the user's own caret stands.
+        setCaret: (text, caret) => {
+            const input = editorInput();
+            if (input && input.value === text) {
+                input.setSelectionRange(caret, caret);
+            }
         },
         // A popover's contents reported a popup of their own opening or closing
         // (ADR-0039): while one is open, a descendant's Escape is left to it.
@@ -916,6 +956,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             root.removeEventListener('mousemove', onPointerMove);
             root.removeEventListener('mouseleave', onPointerLeave);
             root.removeEventListener('keydown', onKeyDown, true);
+            root.removeEventListener('input', onEditorInput, true);
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
             root = null;

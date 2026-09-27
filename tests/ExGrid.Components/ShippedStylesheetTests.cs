@@ -64,10 +64,11 @@ public class ShippedStylesheetTests
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
 
-        // keydown (the capture-phase gate), copy and paste (the clipboard), and the two
-        // that report a pointer coming to rest. Scrolling is Blazor's own @onscroll and
-        // the gutter is a ResizeObserver, so neither appears here.
-        string[] allowed = ["copy", "keydown", "mousemove", "mouseleave", "paste"];
+        // keydown (the capture-phase gate) and input (the same keyboard/editor use, reporting
+        // the caret with each input: ADR-0021's note of ADR-0051's second round), copy and
+        // paste (the clipboard), and the two that report a pointer coming to rest. Scrolling
+        // is Blazor's own @onscroll and the gutter is a ResizeObserver, so neither appears here.
+        string[] allowed = ["copy", "input", "keydown", "mousemove", "mouseleave", "paste"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -107,5 +108,38 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[zZyY]'"), script.Text);
         Assert.Matches(new Regex(@"setTaken: \(keys\) => \{\s*taken = new Set\(keys\);\s*\}"), script.Text);
         Assert.Matches(new Regex(@"if \(!taken\.has\(canonical\)\)"), script.Text);
+    }
+
+    [Fact] // ADR-0051 second round / ADR-0021 / DC-31: the caret is reported with each input and set after the core's rewrite, nothing measured
+    public void The_listener_reports_and_places_the_caret()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // Reported: one message per input in an editor surface, with the field's value and
+        // selection start, and only while C# asked for it (DC-1: a grid declaring neither
+        // completion nor pointing sends nothing more).
+        Assert.Single(Regex.Matches(script.Text, @"'OnEditorCaretAsync'"));
+        Assert.Matches(new Regex(@"if \(!reportCaret \|\|[^;]*closest\('\.ex-editor'\) === null\)", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"'OnEditorCaretAsync', input\.value, input\.selectionStart \?\? input\.value\.length\)"), script.Text);
+        Assert.Matches(new Regex(@"root\.addEventListener\('input', onEditorInput, true\)"), script.Text);
+        Assert.Matches(new Regex(@"root\.removeEventListener\('input', onEditorInput, true\)"), script.Text);
+        Assert.Matches(new Regex(@"reportCaret = reportsCaret === true;"), script.Text);
+
+        // Placed: only while the surface still holds the text the core wrote.
+        Assert.Matches(new Regex(@"setCaret: \(text, caret\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*input\.setSelectionRange\(caret, caret\);",
+            RegexOptions.Singleline), script.Text);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle|selectionchange"), script.Text);
+    }
+
+    [Fact] // ADR-0051 second round / DC-31: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys
+    public void The_gate_has_a_point_set_and_a_completion_set()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        Assert.Matches(new Regex(@"const pointKeys = new Set\(\[\s*\.\.\.overwriteKeys, 'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight'\]\);"),
+            script.Text);
+        Assert.Matches(new Regex(@"const completionKeys = new Set\(\[\.\.\.editingKeys, 'ArrowUp', 'ArrowDown'\]\);"), script.Text);
+        Assert.Matches(new Regex(@"const claimedWhile = \{ overwrite: overwriteKeys, point: pointKeys, completion: completionKeys \};"), script.Text);
+        Assert.Matches(new Regex(@"const claimed = claimedWhile\[editing\] \?\? editingKeys;"), script.Text);
     }
 }

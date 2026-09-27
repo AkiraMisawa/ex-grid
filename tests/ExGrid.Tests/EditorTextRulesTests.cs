@@ -4,24 +4,11 @@ using Xunit;
 namespace ExGrid.Tests;
 
 /// <summary>
-/// What formula entry's own operations do to the editor's text (ADR-0051): the caret an input
-/// event leaves, a candidate accepted, a span replaced, and the hint split for painting.
+/// What formula entry's own operations do to the editor's text (ADR-0051): a candidate accepted,
+/// a span replaced, and the hint split for painting.
 /// </summary>
 public class EditorTextRulesTests
 {
-    [Theory] // ADR-0051: the caret stands at the end of what one edit wrote
-    [InlineData("", "=", 1)]
-    [InlineData("=S", "=SU", 3)]
-    [InlineData("=S+1", "=SU+1", 3)]
-    [InlineData("=SUM", "=SU", 3)]
-    [InlineData("=SU+1", "=S+1", 2)]
-    [InlineData("=A1+B1", "=A1*B1", 4)]
-    [InlineData("abc", "abc", 3)]
-    [InlineData("=SU", "=SUU", 4)]
-    [InlineData("=SUM(A1)", "=(A1)", 1)]
-    public void The_caret_after_an_input_is_the_end_of_what_changed(string before, string after, int caret)
-        => Assert.Equal(caret, EditorTextRules.InferCaret(before, after));
-
     [Fact] // ADR-0051: accepting a candidate replaces its span, and the caret lands after it
     public void Accepting_a_candidate_replaces_its_span()
     {

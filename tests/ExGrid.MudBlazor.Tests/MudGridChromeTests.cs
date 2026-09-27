@@ -223,6 +223,9 @@ public class MudGridChromeTests : MudTestContext
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("=", false, false, false, false, false));
 
         await cut.Find("input.mud-ex-editor").InputAsync(new ChangeEventArgs { Value = "=SU" });
+        // The grid's listener reports the caret with the input, from the Chrome's control as from
+        // the core's (ADR-0051's second round).
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("=SU", 3));
 
         var items = cut.FindAll(".ex-grid > .ex-completion .mud-ex-completion-list .mud-ex-completion-item");
         Assert.Equal(["SUM", "SUMIF"], items.Select(item => item.TextContent.Trim()));

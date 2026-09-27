@@ -88,6 +88,9 @@ internal sealed class GridJSInterop
         // The keys the core claims, re-told when undo or redo is declared (ADR-0050, item 8).
         var setTaken = handle.SetupVoid("setTaken", _ => true);
         setTaken.SetVoidResult();
+        // Where the caret goes after the core wrote the editor's text itself (ADR-0051).
+        var setCaret = handle.SetupVoid("setCaret", _ => true);
+        setCaret.SetVoidResult();
         // The two pointer reports' switches (ADR-0021's fifth entry). The tests drive
         // OnPointerRowAsync and OnPointerRestAsync directly; what is asserted here is
         // what the browser was told to report.
@@ -109,8 +112,12 @@ internal sealed class GridJSInterop
             PointerForgotten = forgetPointer,
             InnerPopupTold = setInnerPopup,
             TakenTold = setTaken,
+            CaretPlaced = setCaret,
         };
     }
+
+    /// <summary>Every (text, caret) the listener was told to place the caret at (ADR-0051).</summary>
+    internal JSRuntimeInvocationHandler CaretPlaced { get; private init; } = default!;
 
     /// <summary>Every time the key gate was re-told the keys the core claims (ADR-0050,
     /// item 8).</summary>

@@ -2150,6 +2150,8 @@
             _editMode = EditMode.None;
             _editSurface = EditSurface.Cell;
             _editText = "";
+            _reportedText = null;
+        _reportedText = null;
             _editError = null;
             _editorNeedsFocus = false;
             _jsEditingDirty = true;
@@ -2462,6 +2464,9 @@
         }
         if (_jsEditingDirty)
             await PushEditingModeAsync();
+        // After the render that carries the text the core wrote (ADR-0051).
+        if (_caretToPlace is not null)
+            await PushCaretAsync();
         await PushPointerReportingAsync();
         // A display-only grid must not take printable keys away from the page
         // (ADR-0010/0020) — the gate is told whether any column edits, and re-told
@@ -5625,7 +5630,7 @@
         try
         {
             _gateTold = GateMode();
-            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold);
+            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold, ReportsCaret);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -5673,7 +5678,7 @@
                 {
                     EditMode.Point => EditMode.Caret,
                     EditMode.Caret when PointAt is { } pointAt && ReferenceText is not null
-                        && pointAt(_editText, _editCaret) => EditMode.Point,
+                        && _editCaret >= 0 && pointAt(_editText, _editCaret) => EditMode.Point,
                     EditMode.Caret => EditMode.Overwrite,
                     _ => EditMode.Caret,
                 };
@@ -5845,6 +5850,7 @@
         _editSurface = EditSurface.Cell;
         _editMode = EditMode.None;
         _editText = "";
+        _reportedText = null;
         _editError = null;
         _editorNeedsFocus = false;
         // The input goes with the mode: a reference kept past it would name an element
