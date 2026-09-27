@@ -55,6 +55,36 @@ name. A Reference qualified with the Sheet's own name (`Sheet1!A1`, `'My Sheet'!
 cells; any other qualifier is `#REF!`. `Sheet.IsValidName` applies Excel's rules: 1 to 31
 characters, none of `: \ / ? * [ ]`, not beginning or ending with `'`, and not `History`.
 
+## What a cell shows in its column
+
+`Sheet.GetDisplay(address, width)` is what the cell shows in a column `width` characters wide —
+Excel's unit, the number of digits of the font that fit between the cell's paddings, with
+`Sheet.DefaultColumnWidth` (8.43) as Excel's default. Every character of a number's text is
+charged one digit width, so a column holds `⌊width⌋` characters. A component converts from its
+pixel width as `(columnPx − 2 × paddingPx) / digitWidthPx`.
+
+```csharp
+sheet.Enter(CellAddress.Parse("A1"), "=1/3");
+sheet.GetDisplay(CellAddress.Parse("A1"), Sheet.DefaultColumnWidth).Text;   // 0.333333
+sheet.GetDisplay(CellAddress.Parse("A1")).Text;                             // 0.333333333333333
+```
+
+- **General fits the column**, as Excel's does: decimals are rounded to the width, and the number
+  is written in scientific notation where its integer part does not fit, where it has twelve or
+  more digits, or where that shows it more closely. It never takes more than eleven characters
+  besides a minus sign. Where not even `1E+08` fits, the cell `CannotShow` (`####`).
+- **Any other format is never shortened.** A formatted number or a date longer than the width
+  cannot show, which is Excel's `####` (ADR-0016).
+- `GetDisplay(address)` is the text at no width: General in full, at fifteen significant digits,
+  for an accessible name or a copy.
+
+`Sheet.GetWidthOnEntry(address)` is the width, in characters, that the number typed into a cell
+needs, for widening a column still at its default width as Excel does: every integer digit
+without scientific notation (decimals are rounded instead), the scientific form of twelve or more
+digits, or the whole text of a date or another formatted number. It is `null` for text, a
+Formula and anything else that never widens a column. Which of these rules Microsoft documents,
+and which are still to be observed in Excel, the case corpus says per case.
+
 ## Functions
 
 `DeclaredFunction.All` lists the declared set, with each function's arguments as Excel documents

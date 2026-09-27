@@ -107,8 +107,10 @@ public sealed partial class Sheet
         _cells.TryGetValue(address, out var cell) ? cell.Alignment : HorizontalAlignment.General;
 
     /// <summary>
-    /// What the cell shows: its Value formatted by its number format under the Sheet's culture,
-    /// with its alignment resolved (ADR-0046/0047). Whether it fits is the grid's to decide.
+    /// What the cell shows at no particular width: its Value formatted by its number format under
+    /// the Sheet's culture — a number in General in full, at fifteen significant digits — with
+    /// its alignment resolved (ADR-0046/0047). It is the text for a cell's accessible name and for
+    /// a copy; what a column shows is <see cref="GetDisplay(CellAddress, double)"/>.
     /// </summary>
     public CellDisplay GetDisplay(CellAddress address)
     {

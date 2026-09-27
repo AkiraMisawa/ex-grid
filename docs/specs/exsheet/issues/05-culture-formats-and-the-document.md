@@ -57,3 +57,21 @@ Known gaps, both reported to the orchestrator rather than worked around:
   `0.333333` in a default column; the engine gives fifteen significant digits and the grid, rightly
   by ADR-0016, hashes what does not fit. The default column holds 8.43 of the grid's digits, so a
   ten-character date such as `2026/09/26` is `####` until the column is wider.
+
+2026-09-27, engine, General fits the column (SH-20, ADR-0047 second round): the gap above is
+closed on the engine's side. `Sheet.GetDisplay(address, width)` takes the column's width in
+Excel's unit — characters, `Sheet.DefaultColumnWidth` = 8.43 — and fits a General number to it
+as Excel does: decimals rounded (`=1/3` reads `0.333333` at 8.43), scientific where the integer
+part does not fit or has twelve or more digits (`123456789` reads `1.23E+08`), never more than
+eleven characters besides the sign, and `CannotShow` where not even `1E+08` fits. A number in
+any other format, and a date, longer than the width `CannotShow` (`####`). Each character is
+charged one digit width; the component converts its pixel width as
+`(columnPx − 2 × paddingPx) / digitWidthPx`, the inverse of how it sizes its default column.
+`GetDisplay(address)` keeps the fifteen-digit text for the accessible name and the copy.
+`Sheet.GetWidthOnEntry(address)` answers the width a typed number or date needs, for widening a
+default-width column on entry; the component wires both. The cases are
+`ExcelCases/general-width.json` (five documented, the rest uncertain until the oracle asks
+Excel); the oracle now sets a case's `columnWidth` and records the width Excel leaves a column
+at. FMT-033/036/038 now expect what a wide column shows (`0.333333333`, `1.23457E+14`,
+`0.666666667`) instead of fifteen digits, which Excel never shows in a cell; twelve or more digits
+going scientific is Microsoft's own documentation, the eleven characters are uncertain.

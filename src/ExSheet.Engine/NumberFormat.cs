@@ -92,6 +92,26 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         return true;
     }
 
+    /// <summary>Whether a number shows in Excel's General form: the format is General, or holds only a text section (<c>@</c>).</summary>
+    internal bool ShowsNumbersAsGeneral => _sections.Length == 0 || (_sections.Length == 1 && _sections[0].Kind == SectionKind.Text);
+
+    /// <summary>
+    /// A Value as this format shows it in a column <paramref name="characters"/> wide, each
+    /// character charged one digit width (ADR-0047): a number in General is fitted to the width
+    /// as Excel's General fits it, and any other number whose text is longer than the width
+    /// cannot be shown (<c>####</c>, ADR-0016). Text, booleans and Error Values are never fitted.
+    /// </summary>
+    internal (string Text, bool CannotShow) Format(Value value, CultureInfo culture, int characters)
+    {
+        if (value.Kind != ValueKind.Number) return Format(value, culture);
+        if (ShowsNumbersAsGeneral)
+        {
+            return NumberText.General(value.Number, characters, culture) is { } fitted ? (fitted, false) : ("", true);
+        }
+        var (text, cannotShow) = Format(value, culture);
+        return cannotShow || text.Length > characters ? ("", true) : (text, false);
+    }
+
     /// <summary>A Value as this format shows it under <paramref name="culture"/>; booleans and Error Values show as themselves.</summary>
     internal (string Text, bool CannotShow) Format(Value value, CultureInfo culture)
     {
@@ -106,7 +126,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         }
 
         var number = value.Number;
-        if (_sections.Length == 0 || (_sections.Length == 1 && _sections[0].Kind == SectionKind.Text))
+        if (ShowsNumbersAsGeneral)
         {
             return (NumberText.General(number, culture), false);
         }
