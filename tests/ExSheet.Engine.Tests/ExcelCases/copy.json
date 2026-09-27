@@ -266,6 +266,17 @@
       "cells": {},
       "check": "B1",
       "expect": {"value2": "=SUM(", "kind": "text"}
+    },
+    {
+      "id": "COPY-030",
+      "source": "uncertain",
+      "description": "Pasted text #SPILL! is taken as the text, as a typed one is",
+      "action": {"do": "pasteText", "rows": [["#SPILL!", "#GETTING_DATA", "#CIRC!"]], "at": "A1"},
+      "cells": {},
+      "check": "A1",
+      "expect": {"value2": "#SPILL!", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": "#SPILL!"}
     }
   ]
 }

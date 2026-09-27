@@ -799,6 +799,96 @@
       "cells": {"A1": "#CALC!"},
       "check": "A1",
       "expect": {"value2": "#CALC!", "kind": "text"}
+    },
+    {
+      "id": "ERR-098",
+      "source": "uncertain",
+      "description": "#SPILL!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "cells": {"A1": "#SPILL!"},
+      "check": "A1",
+      "expect": {"value2": "#SPILL!", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": "#SPILL!"}
+    },
+    {
+      "id": "ERR-099",
+      "source": "uncertain",
+      "description": "#CALC!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "cells": {"A1": "#CALC!"},
+      "check": "A1",
+      "expect": {"value2": "#CALC!", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": "#CALC!"}
+    },
+    {
+      "id": "ERR-100",
+      "source": "uncertain",
+      "description": "#FIELD!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "cells": {"A1": "#FIELD!"},
+      "check": "A1",
+      "expect": {"value2": "#FIELD!", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": "#FIELD!"}
+    },
+    {
+      "id": "ERR-101",
+      "source": "uncertain",
+      "description": "#BLOCKED!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "cells": {"A1": "#BLOCKED!"},
+      "check": "A1",
+      "expect": {"value2": "#BLOCKED!", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": "#BLOCKED!"}
+    },
+    {
+      "id": "ERR-102",
+      "source": "uncertain",
+      "description": "#CONNECT!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "cells": {"A1": "#CONNECT!"},
+      "check": "A1",
+      "expect": {"value2": "#CONNECT!", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": "#CONNECT!"}
+    },
+    {
+      "id": "ERR-103",
+      "source": "uncertain",
+      "description": "#BUSY!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "cells": {"A1": "#BUSY!"},
+      "check": "A1",
+      "expect": {"value2": "#BUSY!", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": "#BUSY!"}
+    },
+    {
+      "id": "ERR-104",
+      "source": "uncertain",
+      "description": "#UNKNOWN!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "cells": {"A1": "#UNKNOWN!"},
+      "check": "A1",
+      "expect": {"value2": "#UNKNOWN!", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": "#UNKNOWN!"}
+    },
+    {
+      "id": "ERR-105",
+      "source": "uncertain",
+      "description": "A newer Error Value typed in lower case (#spill!) is text as typed",
+      "cells": {"A1": "#spill!"},
+      "check": "A1",
+      "expect": {"value2": "#spill!", "kind": "text"},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": "#SPILL!"}
+    },
+    {
+      "id": "ERR-106",
+      "source": "uncertain",
+      "description": "A typed #CALC! is text to a Formula that reads it: ISERROR is FALSE",
+      "cells": {"A1": "#CALC!", "B1": "=ISERROR(A1)"},
+      "check": "B1",
+      "expect": {"value2": false},
+      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
+      "excelExpect": {"value2": true}
     }
   ]
 }

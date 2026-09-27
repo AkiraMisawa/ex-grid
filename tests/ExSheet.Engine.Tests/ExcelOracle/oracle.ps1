@@ -106,7 +106,8 @@ $ErrorTexts = @{
 }
 # Range.HorizontalAlignment's XlHAlign values, by the corpus's names.
 $AlignmentCodes = @{ general = 1; left = -4131; center = -4108; right = -4152 }
-$KnownErrors = @('#NULL!', '#DIV/0!', '#VALUE!', '#REF!', '#NAME?', '#NUM!', '#N/A', '#GETTING_DATA', '#CIRC!', '#SPILL!')
+$KnownErrors = @('#NULL!', '#DIV/0!', '#VALUE!', '#REF!', '#NAME?', '#NUM!', '#N/A', '#GETTING_DATA', '#CIRC!', '#SPILL!',
+    '#CALC!', '#FIELD!', '#BLOCKED!', '#CONNECT!', '#BUSY!', '#UNKNOWN!')
 
 function Read-Json([string]$Path) {
     [IO.File]::ReadAllText($Path, $Utf8) | ConvertFrom-Json

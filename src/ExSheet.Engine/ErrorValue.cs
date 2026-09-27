@@ -56,7 +56,10 @@ public static class ErrorValues
     /// <summary>
     /// Reads the text of one of Excel's Error Values, in either case. <c>#GETTING_DATA</c> and
     /// <c>#CIRC!</c> are not read: they describe the state of a computation, and a user cannot
-    /// type one in (ADR-0047, ADR-0049).
+    /// type one in (ADR-0047, ADR-0049). Nor are Excel's newer Error Values (<c>#SPILL!</c>,
+    /// <c>#CALC!</c>, <c>#FIELD!</c>, <c>#BLOCKED!</c>, <c>#CONNECT!</c>, <c>#BUSY!</c>,
+    /// <c>#UNKNOWN!</c>): the engine has none of them while spilling is out of the first version,
+    /// so typed, each stays text (ADR-0047).
     /// </summary>
     public static bool TryParseTyped([NotNullWhen(true)] string? text, out ErrorValue error)
     {
