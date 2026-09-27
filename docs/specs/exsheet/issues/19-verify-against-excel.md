@@ -51,7 +51,7 @@ in the Comments.
 | 32 | format `h:mm:ss` on 0.99999999 | rounds into the next day | |
 | 33 | format `h:mm am/pm` (lower case) | literal `AM`/`PM` | |
 | 34 | format `_)0` on 5 | one space | |
-| 35 | `= A1 + B1` typed with spaces, then F2 | spaces dropped | |
+| 35 | `= A1 + B1` typed with spaces, then F2 | spaces kept (ADR-0047) | |
 
 - [ ] Every row has Excel's answer and the build number is recorded
 - [ ] Each row where the engine differs is fixed to match, or the function / argument value is refused with an Error Value, and ADR-0047's list is updated accordingly
