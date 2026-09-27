@@ -439,4 +439,106 @@ public class ClipboardWiringTests : GridTestContext
 
         Assert.NotEqual([new SelectionRange(0, 0, 2, 2)], selection?.Ranges ?? []);
     }
+
+    [Fact] // ADR-0050 item 9 / DC-32: declared, the keyboard's synchronous copy asks the answer with the range and writes what it returns
+    public async Task A_copy_answer_is_asked_on_the_synchronous_route_and_written_as_given()
+    {
+        var requests = new List<GridCopyRequest>();
+        var cut = RenderGrid(ps => ps.Add(g => g.CopyAnswer, (GridCopyRequest r) =>
+        {
+            requests.Add(r);
+            return GridCopyAnswer.Write("mine\r\n", "<table><tr><td>mine</td></tr></table>");
+        }));
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+
+        var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+
+        Assert.Equal("data", payload.Kind);
+        Assert.Equal("mine\r\n", payload.Text);
+        Assert.Equal("<table><tr><td>mine</td></tr></table>", payload.Html);
+        var request = Assert.Single(requests);
+        Assert.Equal([new SelectionRange(0, 0, 1, 2)], request.Plan.Segments);
+        Assert.False(request.WithHeaders);
+    }
+
+    [Fact] // ADR-0050 item 9 / DC-32: the menu's asynchronous route asks it too, with the header request, and gathers no rows
+    public async Task A_copy_answer_is_asked_on_the_asynchronous_route()
+    {
+        var requests = new List<GridCopyRequest>();
+        var gathered = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.TotalCount, 100)
+            .Add(g => g.OnCopyRowsNeeded, (RowRange _, CancellationToken _) =>
+            {
+                gathered++;
+                return Task.FromResult<IReadOnlyList<TestRow>>([]);
+            })
+            .Add(g => g.CopyAnswer, (GridCopyRequest r) =>
+            {
+                requests.Add(r);
+                return GridCopyAnswer.Write("t", "h");
+            }));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, " ", ctrl: true);                  // whole column, rows 0..99, beyond the Window
+
+        var synchronous = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+        var assembled = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync(withHeaders: true));
+
+        // Answered in process on both routes: the synchronous one no longer has to defer.
+        Assert.Equal("data", synchronous.Kind);
+        Assert.NotNull(assembled);
+        Assert.Equal("data", assembled!.Kind);
+        Assert.Equal(("t", "h"), (assembled.Text, assembled.Html));
+        Assert.Equal(0, gathered);
+        Assert.Equal(2, requests.Count);
+        Assert.Equal([new SelectionRange(0, 0, 100, 1)], requests[1].Plan.Segments);
+        Assert.True(requests[1].WithHeaders);
+    }
+
+    [Fact] // ADR-0050 item 9 / DC-32: a refusal leaves the clipboard untouched, is raised by name, and says the Consumer's sentence
+    public async Task A_copy_answer_refusal_is_raised_and_announced_on_both_routes()
+    {
+        var refusals = new List<CopyRefusalReason>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnCopyRefused, (CopyRefusalReason r) => refusals.Add(r))
+            .Add(g => g.CopyAnswer, (GridCopyRequest _) => GridCopyAnswer.Refuse("The copy reaches cells still getting data.")));
+        await ClickCellAsync(cut, 50, 10);
+
+        var synchronous = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+        var assembled = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync());
+
+        Assert.Equal("none", synchronous.Kind);
+        Assert.Null(assembled);
+        cut.WaitForAssertion(() =>
+            Assert.Equal([CopyRefusalReason.RefusedByConsumer, CopyRefusalReason.RefusedByConsumer], refusals));
+        cut.WaitForAssertion(() =>
+            Assert.Equal("The copy reaches cells still getting data.", cut.Find(".ex-announce").TextContent));
+    }
+
+    [Fact] // ADR-0050 item 9 / ADR-0005: the grid's own refusals come first — an empty selection never asks the Consumer
+    public async Task A_copy_the_rules_refuse_never_asks_the_answer()
+    {
+        var asked = 0;
+        CopyRefusalReason? refused = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnCopyRefused, (CopyRefusalReason r) => refused = r)
+            .Add(g => g.CopyAnswer, (GridCopyRequest _) =>
+            {
+                asked++;
+                return GridCopyAnswer.Write("t", "h");
+            }));
+
+        var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+
+        Assert.Equal("none", payload.Kind);
+        cut.WaitForAssertion(() => Assert.Equal(CopyRefusalReason.EmptySelection, refused));
+        Assert.Equal(0, asked);
+    }
+
+    [Fact] // ADR-0050 item 9: a refusal without a sentence is not an answer
+    public void A_copy_refusal_needs_a_sentence()
+    {
+        Assert.ThrowsAny<ArgumentException>(() => GridCopyAnswer.Refuse(" "));
+    }
 }

@@ -1209,6 +1209,20 @@
     [Parameter] public Func<RowRange, CancellationToken, Task<IReadOnlyList<TRow>>>? OnCopyRowsNeeded { get; set; }
 
     /// <summary>
+    /// A Consumer declaration (ADR-0050, item 9): the Consumer answers a copy. On both copy
+    /// routes — the <c>copy</c> event's synchronous question and the asynchronous write a
+    /// menu copy or a selection beyond the Window takes — the grid first applies its own
+    /// rules (empty, misaligned, past the cap: ADR-0005), then asks this with the ranges
+    /// being copied, and writes exactly the two flavours it returns. Asked synchronously and
+    /// in process, so no rows are gathered for it and <see cref="OnCopyRowsNeeded"/> is not
+    /// consulted. A refusal leaves the clipboard untouched, announces the Consumer's sentence
+    /// through the root's live region, and raises <see cref="OnCopyRefused"/> as
+    /// <see cref="CopyRefusalReason.RefusedByConsumer"/>. Left null — the default — the grid
+    /// builds the copy itself, exactly as ADR-0005 says.
+    /// </summary>
+    [Parameter] public Func<GridCopyRequest, GridCopyAnswer>? CopyAnswer { get; set; }
+
+    /// <summary>
     /// A Consumer declaration (ADR-0050, item 1): a plain click on a column header selects
     /// the whole column, and nothing sorts — Excel's meaning, where ADR-0012 gives the click
     /// to sorting. Shift+click extends from the Anchor's column, as it always does. Off, the
@@ -4879,6 +4893,8 @@
             NotifyCopyRefused(decision.Reason);
             return ClipboardPayload.None;
         }
+        if (CopyAnswer is not null)
+            return AskCopyAnswer(decision.Plan, withHeaders: false) ?? ClipboardPayload.None;
         if (!WindowCovers(decision.Plan))
         {
             // The async route needs somebody to ask. Without one, refuse by name
@@ -4926,6 +4942,8 @@
             NotifyCopyRefused(decision.Reason);
             return null;
         }
+        if (CopyAnswer is not null)
+            return AskCopyAnswer(decision.Plan, withHeaders);
 
         var rows = await GatherRowsAsync(decision.Plan);
         if (_disposed)
@@ -5106,11 +5124,44 @@
         };
     }
 
+    /// <summary>
+    /// The declared copy answer, asked with the approved plan (ADR-0050, item 9): the two
+    /// flavours it returns, exactly as given, or null when it refused — the clipboard stays
+    /// untouched, the Consumer's sentence is announced, and the refusal is raised by name.
+    /// </summary>
+    private ClipboardPayload? AskCopyAnswer(CopyPlan plan, bool withHeaders)
+    {
+        var answer = CopyAnswer!(new GridCopyRequest(plan, withHeaders, _sequenceVersion));
+        if (answer is null)
+            throw new InvalidOperationException(
+                "CopyAnswer returned null. Answer GridCopyAnswer.Write with both flavours, or GridCopyAnswer.Refuse " +
+                "with a sentence; a copy that is neither would leave the user guessing what landed (ADR-0005).");
+        if (!answer.IsRefused)
+            return ClipboardPayload.Data(answer.Text!, answer.Html!);
+        NotifyCopyRefused(CopyRefusalReason.RefusedByConsumer, answer.Sentence);
+        return null;
+    }
+
     /// <summary>Raised off the synchronous copy path: the event handler cannot await,
     /// and the refusal must still reach the Consumer (ADR-0005: say which one).</summary>
-    private void NotifyCopyRefused(CopyRefusalReason reason)
+    private void NotifyCopyRefused(CopyRefusalReason reason, string? sentence = null)
     {
-        if (_disposed || !OnCopyRefused.HasDelegate)
+        if (_disposed)
+            return;
+        if (sentence is not null)
+        {
+            // The Consumer's own sentence, relayed as a verdict's is (ADR-0034/0036): a
+            // copy that landed nothing and said nothing is the silence ADR-0005 refuses.
+            _ = InvokeAsync(() =>
+            {
+                if (_disposed)
+                    return;
+                Announce(sentence);
+                _suppressRender = false;
+                StateHasChanged();
+            });
+        }
+        if (!OnCopyRefused.HasDelegate)
             return;
         _ = InvokeAsync(() => OnCopyRefused.InvokeAsync(reason));
     }
