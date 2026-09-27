@@ -115,9 +115,33 @@
     },
     {
       "id": "IFERROR-013",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the 0 IFERROR gives for an empty cell is a number, so joined to text it is \"0\"",
+      "source": "observed",
+      "description": "IFERROR over an empty cell gives an empty value, not 0: joined to text it is \"\" (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=IFERROR(A1,\"x\")&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": ""}
+    },
+    {
+      "id": "IFERROR-014",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an empty cell as the fallback is an empty value too: joined to text it is \"\"",
+      "cells": {"ZZ1000": "=IFERROR(1/0,A1)&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": ""}
+    },
+    {
+      "id": "IFERROR-015",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the empty value IFERROR gives for an empty cell is 0 in arithmetic",
+      "cells": {"ZZ1000": "=IFERROR(A1,\"x\")+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "IFERROR-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a missing value_if_error is the number 0, so joined to text it is \"0\"",
+      "cells": {"ZZ1000": "=IFERROR(1/0,)&\"\""},
       "check": "ZZ1000",
       "expect": {"value2": "0"}
     }

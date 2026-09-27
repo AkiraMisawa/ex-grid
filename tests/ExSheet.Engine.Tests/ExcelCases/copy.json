@@ -270,13 +270,11 @@
     {
       "id": "COPY-030",
       "source": "observed",
-      "description": "Pasted text #SPILL! is taken as the text, as a typed one is",
+      "description": "Pasted text #SPILL! is that Error Value, as a typed one is (verification/2026-09-27-windows-excel-2)",
       "action": {"do": "pasteText", "rows": [["#SPILL!", "#GETTING_DATA", "#CIRC!"]], "at": "A1"},
       "cells": {},
       "check": "A1",
-      "expect": {"value2": "#SPILL!", "kind": "text"},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": "#SPILL!"}
+      "expect": {"value2": "#SPILL!"}
     }
   ]
 }

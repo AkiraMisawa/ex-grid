@@ -787,108 +787,126 @@
     {
       "id": "ERR-096",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: an Error Value Excel added after the declared set (#SPILL!) has no ExSheet counterpart, so typed it is text",
+      "description": "#SPILL!, one of Excel's newer Error Values, typed is that Error Value (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#SPILL!"},
       "check": "A1",
-      "expect": {"value2": "#SPILL!", "kind": "text"}
+      "expect": {"value2": "#SPILL!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ERR-097",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: #CALC! has no ExSheet counterpart, so typed it is text",
+      "description": "#CALC! typed is that Error Value (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#CALC!"},
       "check": "A1",
-      "expect": {"value2": "#CALC!", "kind": "text"}
+      "expect": {"value2": "#CALC!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ERR-098",
-      "source": "uncertain",
-      "description": "#SPILL!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "source": "observed",
+      "description": "#SPILL!, one of Excel's newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#SPILL!"},
       "check": "A1",
-      "expect": {"value2": "#SPILL!", "kind": "text"},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": "#SPILL!"}
+      "expect": {"value2": "#SPILL!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ERR-099",
-      "source": "uncertain",
-      "description": "#CALC!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "source": "observed",
+      "description": "#CALC!, one of Excel's newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#CALC!"},
       "check": "A1",
-      "expect": {"value2": "#CALC!", "kind": "text"},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": "#CALC!"}
+      "expect": {"value2": "#CALC!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ERR-100",
-      "source": "uncertain",
-      "description": "#FIELD!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "source": "observed",
+      "description": "#FIELD!, one of Excel's newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#FIELD!"},
       "check": "A1",
-      "expect": {"value2": "#FIELD!", "kind": "text"},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": "#FIELD!"}
+      "expect": {"value2": "#FIELD!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ERR-101",
-      "source": "uncertain",
-      "description": "#BLOCKED!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "source": "observed",
+      "description": "#BLOCKED!, one of Excel's newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#BLOCKED!"},
       "check": "A1",
-      "expect": {"value2": "#BLOCKED!", "kind": "text"},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": "#BLOCKED!"}
+      "expect": {"value2": "#BLOCKED!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ERR-102",
-      "source": "uncertain",
-      "description": "#CONNECT!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "source": "observed",
+      "description": "#CONNECT!, one of Excel's newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#CONNECT!"},
       "check": "A1",
-      "expect": {"value2": "#CONNECT!", "kind": "text"},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": "#CONNECT!"}
+      "expect": {"value2": "#CONNECT!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ERR-103",
-      "source": "uncertain",
-      "description": "#BUSY!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "source": "observed",
+      "description": "#BUSY! typed stays text, with real keys as through COM (verification/2026-09-27-windows-excel-2)",
       "cells": {"A1": "#BUSY!"},
       "check": "A1",
-      "expect": {"value2": "#BUSY!", "kind": "text"},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": "#BUSY!"}
+      "expect": {"value2": "#BUSY!", "kind": "text"}
     },
     {
       "id": "ERR-104",
-      "source": "uncertain",
-      "description": "#UNKNOWN!, one of Excel's newer Error Values, typed: text, where Excel is expected to read the Error Value (to be asked)",
+      "source": "observed",
+      "description": "#UNKNOWN!, one of Excel's newer Error Values, typed is that Error Value: data only, nothing in the engine produces it (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#UNKNOWN!"},
       "check": "A1",
-      "expect": {"value2": "#UNKNOWN!", "kind": "text"},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": "#UNKNOWN!"}
+      "expect": {"value2": "#UNKNOWN!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ERR-105",
-      "source": "uncertain",
-      "description": "A newer Error Value typed in lower case (#spill!) is text as typed",
+      "source": "observed",
+      "description": "A newer Error Value typed in lower case (#spill!) is that Error Value, #SPILL! (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#spill!"},
       "check": "A1",
-      "expect": {"value2": "#spill!", "kind": "text"},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": "#SPILL!"}
+      "expect": {"value2": "#SPILL!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ERR-106",
-      "source": "uncertain",
-      "description": "A typed #CALC! is text to a Formula that reads it: ISERROR is FALSE",
+      "source": "observed",
+      "description": "A typed #CALC! is an Error Value to a Formula that reads it: ISERROR is TRUE (verification/2026-09-27-windows-excel-2, with real keys)",
       "cells": {"A1": "#CALC!", "B1": "=ISERROR(A1)"},
       "check": "B1",
-      "expect": {"value2": false},
-      "engineDiffersByDecision": "ADR-0047: a typed #SPILL!, #CALC! or another of Excel's newer Error Values stays text, because the engine has no such Error Value while spilling is out of the first version",
-      "excelExpect": {"value2": true}
+      "expect": {"value2": true},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "ERR-107",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: IFERROR catches a typed #SPILL! as it catches any other Error Value",
+      "cells": {"A1": "#SPILL!", "B1": "=IFERROR(A1,\"caught\")"},
+      "check": "B1",
+      "expect": {"value2": "caught"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "ERR-108",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a typed #CALC! propagates through arithmetic",
+      "cells": {"A1": "#CALC!", "B1": "=A1+1"},
+      "check": "B1",
+      "expect": {"value2": "#CALC!"},
+      "oracleSkip": "Range.FormulaLocal keeps this as text, but typed with real keys Excel reads the Error Value (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "ERR-109",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: #BUSY! typed in lower case stays text as typed",
+      "cells": {"A1": "#busy!"},
+      "check": "A1",
+      "expect": {"value2": "#busy!", "kind": "text"}
     }
   ]
 }

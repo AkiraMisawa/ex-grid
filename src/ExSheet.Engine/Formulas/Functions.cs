@@ -203,10 +203,12 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// An empty cell as either argument gives 0, as Excel was observed to give
-    /// (verification/2026-09-27-windows-excel) — not the empty text ("") Microsoft's documentation
-    /// describes. An Error Value is caught — but not <c>#GETTING_DATA</c>, which waits (ADR-0049),
-    /// nor <c>#CIRC!</c>, which a Formula reading a cycle shows whatever it computes (ADR-0047).
+    /// An empty cell as either argument gives an empty value: a Formula whose result it is shows
+    /// 0, as Excel was observed to show (verification/2026-09-27-windows-excel), and joined to
+    /// text it is "" (IFERROR-013, verification/2026-09-27-windows-excel-2). A missing
+    /// value_if_error is the number 0. An Error Value is caught — but not <c>#GETTING_DATA</c>,
+    /// which waits (ADR-0049), nor <c>#CIRC!</c>, which a Formula reading a cycle shows whatever it
+    /// computes (ADR-0047).
     /// </summary>
     private static Operand IfError(FunctionCall call)
     {
@@ -218,9 +220,9 @@ internal static partial class FunctionLibrary
             if (!call.Has(1)) return Operand.Of(Value.FromNumber(0));
             var fallback = call.Operand(1);
             if (IsArray(fallback)) return Operand.Of(ErrorValue.Value);
-            return Operand.Of(call.Evaluator.ScalarOf(fallback) ?? Value.FromNumber(0));
+            return call.Evaluator.ScalarOf(fallback) is { } caught ? Operand.Of(caught) : Operand.Blank;
         }
-        return Operand.Of(value ?? Value.FromNumber(0));
+        return value is { } v ? Operand.Of(v) : Operand.Blank;
     }
 
     private static Operand IsError(FunctionCall call)
