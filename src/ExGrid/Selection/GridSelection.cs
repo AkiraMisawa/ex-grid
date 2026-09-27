@@ -429,6 +429,68 @@ public sealed record GridSelection
     }
 
     /// <summary>
+    /// A plain click on a column header that a Consumer declared selects (ADR-0050, item
+    /// 1): the whole column, as one range, with Anchor and Focus on
+    /// <paramref name="anchorRow"/> of it — the holder passes its first visible row, so
+    /// the Viewport does not move for a click on the header (KB-9's rule, as Shift+click
+    /// already has it). Every other range goes, as a plain click on a cell collapses.
+    /// </summary>
+    public GridSelection SelectColumn(int column, GridExtent extent, int anchorRow)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (column < 0 || column >= extent.ColumnCount)
+            throw new ArgumentOutOfRangeException(nameof(column), column,
+                $"Outside the grid ({extent.ColumnCount} columns).");
+        var anchor = new CellPosition(Math.Clamp(anchorRow, 0, extent.RowCount - 1), column);
+        return new([new SelectionRange(0, column, extent.RowCount, 1)], anchor, anchor,
+            anchorDetached: false, focusRangeIndex: 0);
+    }
+
+    /// <summary>
+    /// A plain click on a Row Heading (ADR-0050, item 1): the whole row, every visible
+    /// column, as one range, with Anchor and Focus on <paramref name="anchorColumn"/> of
+    /// it — the holder passes its first visible column. The Row Headings stand outside
+    /// the column index space, so nothing here names them.
+    /// </summary>
+    public GridSelection SelectRow(int row, GridExtent extent, int anchorColumn)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (row < 0 || row >= extent.RowCount)
+            throw new ArgumentOutOfRangeException(nameof(row), row,
+                $"Outside the grid ({extent.RowCount} rows).");
+        var anchor = new CellPosition(row, Math.Clamp(anchorColumn, 0, extent.ColumnCount - 1));
+        return new([new SelectionRange(row, 0, 1, extent.ColumnCount)], anchor, anchor,
+            anchorDetached: false, focusRangeIndex: 0);
+    }
+
+    /// <summary>
+    /// Shift+click on a Row Heading (ADR-0050): whole rows from the Anchor's row to
+    /// <paramref name="row"/> — <see cref="ExtendToColumn"/> on the other axis. The Anchor
+    /// stays and the Focus moves to the clicked row in the Anchor's column; the Anchor's
+    /// range is replaced, or from a detached Anchor a new one starts. From Empty, the
+    /// clicked row alone, anchored on <paramref name="anchorColumnIfEmpty"/>.
+    /// </summary>
+    public GridSelection ExtendToRow(int row, GridExtent extent, int anchorColumnIfEmpty = 0)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (row < 0 || row >= extent.RowCount)
+            throw new ArgumentOutOfRangeException(nameof(row), row,
+                $"Outside the grid ({extent.RowCount} rows).");
+        if (IsEmpty)
+            return SelectRow(row, extent, anchorColumnIfEmpty);
+        RequireFits(extent);
+
+        var top = Math.Min(_anchor.Row, row);
+        var whole = new SelectionRange(top, 0, Math.Abs(row - _anchor.Row) + 1, extent.ColumnCount);
+        var focus = new CellPosition(row, _anchor.Column);
+        var ranges = _anchorDetached ? Append(Ranges, whole) : ReplaceLast(Ranges, whole);
+        return new(ranges, _anchor, focus, anchorDetached: false, ranges.Length - 1);
+    }
+
+    /// <summary>
     /// The columns covered by a range that spans every row, ascending, each once — what
     /// resizing several whole columns at once acts on (ADR-0016, 2026-09-25). A range
     /// short of any row selects cells, not columns, and contributes nothing.

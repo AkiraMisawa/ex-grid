@@ -240,6 +240,27 @@
    the ground underneath; the tints layer on top. */
 .ex-pinned { position: sticky; z-index: 2; background-color: var(--ex-pinned-background, Canvas); }
 .ex-header .ex-pinned { z-index: 5; background-color: var(--ex-header-background, Canvas); }
+/* The Row Headings and their corner (ADR-0050): first in each row's flow and in the
+   header's, held at the Viewport's left edge over everything that scrolls or is pinned —
+   a selection passing sideways goes under them, as it goes under a Pinned Column. Their
+   width is geometry and arrives inline from the resolved metrics (ADR-0027/0028); nothing
+   here sizes them. Paint only: the Viewport's and the header's delegated handlers read
+   the press from the offsets. */
+.ex-row-heading, .ex-headings-corner {
+    position: sticky;
+    left: 0;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: center;
+    pointer-events: none;
+    background: var(--ex-heading-background, var(--ex-header-background, Canvas));
+    color: var(--ex-heading-color, var(--ex-header-color, inherit));
+    box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-heading-rule-color, var(--ex-header-rule-color, rgba(128, 128, 128, 0.45)));
+}
+.ex-row-heading { z-index: 4; }
+.ex-headings-corner { z-index: 7; }
 /* Selection is painted as overlay rectangles, never as a class on the selected cells
    (ADR-0008): one element per range, so what it costs depends on how many rectangles
    there are and not on how many cells they cover — and no row parameter carries

@@ -29,6 +29,13 @@
    not arrived must not be read out as though they had (ADR-0004). *@
 <div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder, Stripe)"
      role="row" aria-rowindex="@(RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
+    @if (HeadingStyle is not null)
+    {
+        @* The Row Heading (ADR-0050): first in the flow and held at the left edge, so every
+           column after it starts where the geometry's lead band ends. Paint only: the
+           Viewport's delegated press reads the offsets, as it does for every cell. *@
+        <div class="ex-row-heading" style="@HeadingStyle" aria-hidden="true">@Heading</div>
+    }
     @for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
     {
         var column = Columns[i];
@@ -185,6 +192,15 @@
     /// the reason <see cref="OnAction"/> is (ADR-0003).</summary>
     [Parameter] public Func<TRow, bool, Task>? OnMark { get; set; }
 
+    /// <summary>This row's Row Heading label (ADR-0050), or null. A value, compared by
+    /// content, so only a row whose label moved re-renders.</summary>
+    [Parameter] public string? Heading { get; set; }
+
+    /// <summary>The Row Headings' inline width, or null while there is no band
+    /// (ADR-0050/0028). One string for every row, rebuilt by the grid only when the width
+    /// moves.</summary>
+    [Parameter] public string? HeadingStyle { get; set; }
+
     private TRow? _renderedRow;
     private IReadOnlyList<GridColumn<TRow>>? _renderedColumns;
     private ColumnStyles? _renderedStyles;
@@ -199,6 +215,8 @@
     private CellEngagement _renderedEngagement = CellEngagement.None;
     private bool _renderedMarked;
     private Func<TRow, bool, Task>? _renderedOnMark;
+    private string? _renderedHeading;
+    private string? _renderedHeadingStyle;
 
     protected override void OnInitialized()
     {
@@ -228,7 +246,9 @@
             && _renderedStripe == Stripe
             && _renderedEngagement == Engagement
             && _renderedMarked == Marked
-            && ReferenceEquals(_renderedOnMark, OnMark))
+            && ReferenceEquals(_renderedOnMark, OnMark)
+            && string.Equals(_renderedHeading, Heading, StringComparison.Ordinal)
+            && ReferenceEquals(_renderedHeadingStyle, HeadingStyle))
         {
             return false;
         }
@@ -253,6 +273,8 @@
         _renderedEngagement = Engagement;
         _renderedMarked = Marked;
         _renderedOnMark = OnMark;
+        _renderedHeading = Heading;
+        _renderedHeadingStyle = HeadingStyle;
     }
 
     // Each cell's id, composed the first time the cell is painted in this row and kept

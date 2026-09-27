@@ -66,8 +66,20 @@
             @* The header is a delegated click target the way the row Viewport is: its
                cells are pointer-events: none, so the click's offsets are measured from
                the header's own left edge — content coordinates, which is what ColumnAt
-               reads. Clicking a header sorts; it never selects the column (ADR-0012). *@
+               reads. Clicking a header sorts (ADR-0012), unless the Consumer declared that it
+               selects the column (ADR-0050). *@
+            @* A Consumer may hide the header (ADR-0050): the band goes, and the rows start
+               at the Viewport's top — BandHeightPx is zero, so the arithmetic follows. *@
+            @if (!HideHeader)
+            {
             <div class="ex-header" role="row" style="@HeaderBandStyle()" @onclick="OnHeaderClickAsync" @onmousedown="OnHeaderMouseDown">
+                @if (_rowHeadingStyle is not null)
+                {
+                    @* Where the two Headings meet (ADR-0050): held at the left edge as the
+                       Row Headings are, and a click there selects all. Paint only — the
+                       header's own delegated click reads the offsets. *@
+                    <div class="ex-headings-corner" style="@_rowHeadingStyle" aria-hidden="true"></div>
+                }
                 @if (_headerLayout.Groups.Count > 0)
                 {
                     @* The pinned rectangles ride a zero-size sticky anchor, exactly as
@@ -123,6 +135,7 @@
                     }
                 }
             </div>
+            }
             @if (_resizeColumn >= 0)
             {
                 @* The resize guide (ADR-0016): one absolutely positioned element
@@ -278,14 +291,24 @@
                                        RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
-                                       Marked="@MarkedAt(data)" OnMark="@(_onMark ??= RaiseRowMarkAsync)" />
+                                       Marked="@MarkedAt(data)" OnMark="@(_onMark ??= RaiseRowMarkAsync)"
+                                       Heading="@RowHeadingAt(row)" HeadingStyle="@_rowHeadingStyle" />
                         }
                         else
                         {
                             @* No row behind this position at all, so not even a Pinned
                                Column has anything to paint. aria-busy, because a value
                                that has not arrived must not read as one (ADR-0004/0033). *@
-                            <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"></div>
+                            @if (_rowHeadingStyle is not null)
+                            {
+                                @* A Row Heading is a position's label, so a row that has not
+                                   arrived still has one (ADR-0050). *@
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"><div class="ex-row-heading" style="@_rowHeadingStyle" aria-hidden="true">@RowHeadingAt(row)</div></div>
+                            }
+                            else
+                            {
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"></div>
+                            }
                         }
                     }
                 }
@@ -972,6 +995,41 @@
     /// </summary>
     [Parameter] public Func<RowRange, CancellationToken, Task<IReadOnlyList<TRow>>>? OnCopyRowsNeeded { get; set; }
 
+    /// <summary>
+    /// A Consumer declaration (ADR-0050, item 1): a plain click on a column header selects
+    /// the whole column, and nothing sorts — Excel's meaning, where ADR-0012 gives the click
+    /// to sorting. Shift+click extends from the Anchor's column, as it always does. Off, the
+    /// header click sorts exactly as before.
+    /// </summary>
+    [Parameter] public bool HeaderClickSelects { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ADR-0050, item 1): the Row Headings, a pinned band beside the
+    /// rows labelled by this function — handed a row's absolute position in the result,
+    /// Placeholders included, and answering its label (the row number, on a Sheet). The
+    /// band stands outside the column index space: it is never in the Selection, a copy,
+    /// Ctrl+A or the Enter/Tab cycle. A click on a heading selects the whole row and
+    /// Shift+click extends; where the column header stands too, the corner where the two
+    /// meet selects all. Null — the default — is no band, and hides the Row Headings.
+    /// Asked once per painted row per render, so it has to be as cheap as
+    /// <see cref="RowKind"/>.
+    /// </summary>
+    [Parameter] public Func<int, string>? RowHeadings { get; set; }
+
+    /// <summary>
+    /// The Row Headings' width, in pixels (ADR-0050/0028): resolved geometry, emitted
+    /// inline, never a stylesheet value. Null estimates it from the Cell Metrics, as the
+    /// wider of the first and the last row's labels — which is the widest for row numbers.
+    /// </summary>
+    [Parameter] public double? RowHeadingWidth { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ADR-0050, item 1): hides the column header, taking the whole
+    /// header band away — the first row starts at the Viewport's top. Also what a headerless
+    /// list asks for. Whole columns stay reachable with Ctrl+Space.
+    /// </summary>
+    [Parameter] public bool HideHeader { get; set; }
+
     // What the grid actually paints, resolved from the Source when there is one and
     // from the push parameters when there is not. Every reader below goes through these,
     // so binding a Source adds no branch to the pipeline — only one more way to fill it.
@@ -1296,7 +1354,53 @@
 
     /// <summary>The header band: one tier, plus one per declared tier above it
     /// (ADR-0032). Identical to the header height while no group is declared.</summary>
-    private double BandHeightPx => (1 + _headerLayout.TierCount) * _metrics.HeaderHeightPx;
+    private double BandHeightPx => HideHeader ? 0 : (1 + _headerLayout.TierCount) * _metrics.HeaderHeightPx;
+
+    // The Row Headings' resolved width (ADR-0050/0028), zero while none are declared, and
+    // the one style string every heading and the corner are painted with — rebuilt only
+    // when the width moves, so a row compares it without re-rendering.
+    private double _rowHeadingWidthPx;
+    private string? _rowHeadingStyle;
+
+    /// <summary>Whether the Row Headings band is painted (ADR-0050).</summary>
+    private bool ShowsRowHeadings => RowHeadings is not null;
+
+    /// <summary>A painted row's Row Heading label, or null while there is no band.</summary>
+    private string? RowHeadingAt(int row) => RowHeadings?.Invoke(row);
+
+    /// <summary>
+    /// The Row Headings' width, resolved once per push (ADR-0028): the Consumer's number
+    /// where it gave one, otherwise the wider of the first and last rows' labels as the
+    /// Cell Metrics estimate them — a cell's text and padding.
+    /// </summary>
+    private void ResolveRowHeadingWidth()
+    {
+        double width = 0;
+        if (RowHeadings is { } label)
+        {
+            if (RowHeadingWidth is { } declared)
+            {
+                if (!double.IsFinite(declared) || declared <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(RowHeadingWidth), declared,
+                        "RowHeadingWidth is a finite, positive number of pixels (ADR-0050/0028).");
+                }
+                width = declared;
+            }
+            else
+            {
+                var last = Math.Max(0, TotalRows - 1);
+                width = Math.Max(
+                    _metrics.CellMetrics.EstimatePx(label(0) ?? ""),
+                    _metrics.CellMetrics.EstimatePx(label(last) ?? ""));
+            }
+        }
+        if (width != _rowHeadingWidthPx || (_rowHeadingStyle is null) != (width == 0))
+        {
+            _rowHeadingWidthPx = width;
+            _rowHeadingStyle = width == 0 ? null : FormattableString.Invariant($"width: {width}px");
+        }
+    }
 
     // What the widths were last measured from. Re-measuring on every render would read
     // the rows' current contents, so an in-place rewrite would grow a column and repaint
@@ -1550,7 +1654,7 @@
                 throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
                     "ViewportHeight is a finite, positive number of pixels (ADR-0013).");
             }
-            if (ViewportHeight.Px <= _metrics.HeaderHeightPx)
+            if (!HideHeader && ViewportHeight.Px <= _metrics.HeaderHeightPx)
             {
                 throw new ArgumentOutOfRangeException(nameof(ViewportHeight), ViewportHeight,
                     $"ViewportHeight must exceed the header's {_metrics.HeaderHeightPx}px: the header takes the " +
@@ -1591,7 +1695,7 @@
         // The band comes off the scroll budget, and the refusal names the band
         // (ADR-0032): a Viewport that cannot hold the band plus one row shows headers
         // and no data, which reads as an empty result.
-        if (_headerLayout.TierCount > 0 && !ViewportHeight.IsFill
+        if (_headerLayout.TierCount > 0 && !HideHeader && !ViewportHeight.IsFill
             && ViewportHeight.Px <= BandHeightPx + _metrics.RowHeightPx)
         {
             throw new InvalidOperationException(
@@ -1637,6 +1741,7 @@
                 "A page holds at least one row; continuous scrolling is PageSize left unset (ADR-0015).");
         }
         ValidateWindowPlacement();
+        ResolveRowHeadingWidth();
 
         var columnsChanged = !ReferenceEquals(_observedColumns, Columns);
         var metricsChanged = _observedMetrics != _metrics.CellMetrics;
@@ -1971,7 +2076,8 @@
         var geometry = _columnStyles.Geometry;
         if (geometry.Count == Columns.Count
             && geometry.RequestedPinnedCount == PinnedColumnCount
-            && geometry.ViewportWidthPx == _visibleWidthPx)
+            && geometry.ViewportWidthPx == _visibleWidthPx
+            && geometry.LeadWidthPx == _rowHeadingWidthPx)
         {
             var moved = false;
             for (var c = 0; !moved && c < Columns.Count; c++)
@@ -1983,7 +2089,7 @@
         var widths = new double[Columns.Count];
         for (var c = 0; c < Columns.Count; c++)
             widths[c] = Columns[c].Width.ResolveWidthPx(_autoWidths[c]);
-        _columnStyles = new ColumnStyles(new ColumnGeometry(widths, PinnedColumnCount, _visibleWidthPx));
+        _columnStyles = new ColumnStyles(new ColumnGeometry(widths, PinnedColumnCount, _visibleWidthPx, _rowHeadingWidthPx));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -2384,6 +2490,24 @@
         // taken on the contextmenu event, which fires after this one — this press has
         // already closed any open popover and committed an open editor, which is what a
         // press that lands elsewhere is supposed to do.
+        // A press on a Row Heading (ADR-0050): the whole row, or with Shift whole rows from
+        // the Anchor's. The band stands outside the column index space, so the Focus lands
+        // in the first column on screen — where the Viewport already is — and no drag
+        // begins: a drag's moves extend by cell, and would collapse the whole rows.
+        if (e.Button == 0 && ShowsRowHeadings
+            && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx) && CellUnder(e) is { } headed)
+        {
+            var rowExtent = Extent;
+            var anchorColumn = FirstVisibleCell()?.Column ?? 0;
+            var selected = _selection.Selection;
+            var changed = Apply(e.ShiftKey
+                ? selected.ExtendToRow(headed.Row, rowExtent, anchorColumn)
+                : selected.SelectRow(headed.Row, rowExtent, anchorColumn));
+            if (!changed && (dismissed || committed || leftInteractive))
+                _suppressRender = false;
+            return;
+        }
+
         if (e.Button != 0 || CellUnder(e) is not { } cell)
         {
             _suppressRender = !dismissed && !committed && !leftInteractive;
@@ -2629,6 +2753,7 @@
             return;
         }
         if (e.Button != 0 || !OnColumnOrderChanged.HasDelegate
+            || _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx)
             || e.OffsetX < 0 || e.OffsetX >= _columnStyles.Geometry.TotalWidthPx
             || _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx) is not { } column)
         {
@@ -2812,6 +2937,16 @@
         // text the Reject was holding on to.
         if (_editMode != EditMode.None)
             return;
+        // The corner where the two Headings meet selects all (ADR-0050), as Ctrl+A does —
+        // under a pager, the page (ADR-0015). Read before the column: ColumnAt clamps a
+        // pixel in the band to the first column.
+        if (e.Button == 0 && ShowsRowHeadings && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx))
+        {
+            var allExtent = Extent;
+            if (allExtent.RowCount > 0 && allExtent.ColumnCount > 0)
+                Apply(SelectAllInContext(_selection.Selection, allExtent));
+            return;
+        }
         // Past the last column the header is dead space, not the last column again:
         // ColumnAt clamps because a drag past the edge should keep extending, and that
         // is the wrong answer for a click that landed on nothing.
@@ -2837,6 +2972,13 @@
             // From nothing selected, anchored on the first visible row, as the first key is
             // (KB-9): the Viewport does not move for a click on the header.
             Apply(_selection.Selection.ExtendToColumn(column, Extent, _visible?.Start ?? 0));
+            return;
+        }
+        // Declared, the plain click is Excel's too (ADR-0050, item 1): the whole column,
+        // anchored on the first visible row so the Viewport does not move — and no sort.
+        if (HeaderClickSelects)
+        {
+            Apply(_selection.Selection.SelectColumn(column, Extent, _visible?.Start ?? 0));
             return;
         }
         if (!Columns[column].IsQueryable)
@@ -3056,6 +3198,9 @@
         // A pause in the middle of a drag-select is not a hover: the pointer is holding a
         // gesture, and a popover under it would take the mouse-up that ends the drag.
         if (_disposed || CellMessageOf is null || _editMode != EditMode.None || _dragging)
+            return Task.CompletedTask;
+        // Over a Row Heading there is no cell (ADR-0050), though CellUnder clamps to one.
+        if (_columnStyles.Geometry.IsInLead(x, _scrollLeftPx))
             return Task.CompletedTask;
         if (CellUnder(new MouseEventArgs { OffsetX = x, OffsetY = y }) is not { } cell)
             return Task.CompletedTask;
@@ -5957,7 +6102,9 @@
     {
         var transform = FormattableString.Invariant(
             $"transform: translateY({_geometry.OffsetPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow)}px)");
-        return _headerLayout.TierCount == 0
+        // The stylesheet's default is one header tier; tiers and a hidden header
+        // (ADR-0050) both move where the rows begin, so the band's height travels inline.
+        return _headerLayout.TierCount == 0 && !HideHeader
             ? transform
             : FormattableString.Invariant($"top: {BandHeightPx}px; {transform}");
     }

@@ -43,7 +43,22 @@ public sealed class ColumnGeometry
     /// Pinned block that would leave the scrollable columns less than
     /// <see cref="MinScrollableBandPx"/> is suspended (ADR-0045).</summary>
     public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx)
+        : this(widthsPx, pinnedCount, viewportWidthPx, leadWidthPx: 0)
     {
+    }
+
+    /// <summary>The same arithmetic with a band of <paramref name="leadWidthPx"/> held
+    /// against the Viewport's left edge ahead of every column — the Row Headings
+    /// (ADR-0050). The band stands outside the column index space: it is covered the way
+    /// the Pinned Columns cover it, every column's offset starts after it, and no column
+    /// index ever names it. Zero is the geometry without the band, exactly.</summary>
+    public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx, double leadWidthPx)
+    {
+        if (!double.IsFinite(leadWidthPx) || leadWidthPx < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(leadWidthPx), leadWidthPx,
+                "The Row Headings' width is a finite, non-negative number of pixels (ADR-0050).");
+        }
         ArgumentNullException.ThrowIfNull(widthsPx);
         ArgumentOutOfRangeException.ThrowIfNegative(pinnedCount);
         if (pinnedCount > widthsPx.Count)
@@ -58,6 +73,7 @@ public sealed class ColumnGeometry
         }
 
         _offsets = new double[widthsPx.Count + 1];
+        _offsets[0] = leadWidthPx;
         _widths = new double[widthsPx.Count];
         for (var i = 0; i < widthsPx.Count; i++)
         {
@@ -80,6 +96,7 @@ public sealed class ColumnGeometry
         }
 
         Count = widthsPx.Count;
+        LeadWidthPx = leadWidthPx;
         RequestedPinnedCount = pinnedCount;
         // A block covering the Viewport shows only pinned columns, pans nothing visible,
         // and leaves a Focus moved into a scrollable column underneath it — unseen, which
@@ -103,6 +120,22 @@ public sealed class ColumnGeometry
     /// close, and the rule is not put on one axis only.
     /// </summary>
     public const double MaxScrollWidthPx = ViewportGeometry.MaxScrollHeightPx;
+
+    /// <summary>The band held against the Viewport's left edge ahead of every column —
+    /// the Row Headings (ADR-0050) — or zero. Column 0's offset is this, and the
+    /// <see cref="PinnedWidthPx"/> includes it, because it covers the edge the way a
+    /// Pinned Column does.</summary>
+    public double LeadWidthPx { get; }
+
+    /// <summary>Whether a pixel lies in the lead band, which stays at the Viewport's left
+    /// edge whatever the scroll offset (ADR-0050). Always false without one.</summary>
+    public bool IsInLead(double contentXPx, double scrollLeftPx)
+    {
+        if (LeadWidthPx <= 0 || !double.IsFinite(contentXPx) || !double.IsFinite(scrollLeftPx))
+            return false;
+        var viewportX = contentXPx - Math.Clamp(scrollLeftPx, 0, MaxScrollLeftPx);
+        return viewportX >= 0 && viewportX < LeadWidthPx;
+    }
 
     /// <summary>How many columns there are, pinned and scrollable alike.</summary>
     public int Count { get; }
@@ -275,6 +308,14 @@ public sealed class ColumnGeometry
 
         var left = Math.Clamp(scrollLeftPx, 0, MaxScrollLeftPx);
         var viewportX = contentXPx - left;
+        // The lead band (ADR-0050) names no column, and what has scrolled underneath it is
+        // no more readable than what lies under a Pinned Column: a pixel there clamps to
+        // the first column standing clear of the band, as a drag past either edge does.
+        if (viewportX < LeadWidthPx)
+        {
+            viewportX = LeadWidthPx;
+            contentXPx = left + LeadWidthPx;
+        }
         // Everything pinned means there is no scrollable run to fall through to, and a
         // pixel past the pinned block — the Viewport is wider than the columns, so there
         // is empty space to the right of them — has to clamp to the last pinned column
