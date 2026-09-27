@@ -134,7 +134,7 @@ public sealed partial class Sheet
                 }
                 else if (parsed.References.Any(r => edit.Reaches(r, this)))
                 {
-                    // A1:A1048576 or A:A kept its text, but what it covers moved underneath it.
+                    // A:A kept its text, but what it covers moved underneath it.
                     dirty.Add(to);
                 }
                 entry = mapped;

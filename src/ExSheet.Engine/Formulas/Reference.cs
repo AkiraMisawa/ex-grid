@@ -37,8 +37,39 @@ internal sealed record Reference(
         _ => new Area(Row1, Column1, Row2, Column2),
     };
 
+    /// <summary>
+    /// A Reference to a rectangle, in the shape Excel writes it: one spanning every column is
+    /// whole rows (<c>A1:XFD3</c> is <c>1:3</c>, <c>A:XFD</c> is <c>$1:$1048576</c>), one
+    /// spanning every row is whole columns (<c>A1:A1048576</c> is <c>A:A</c>), and any other is
+    /// an area — observed in Excel for <c>A:XFD</c> and <c>A1:A1048576</c>
+    /// (verification/2026-09-27-windows-excel). The axis a whole form drops is held absolute, as
+    /// Excel holds it.
+    /// </summary>
+    public static Reference Rectangle(string? sheet, int row1, int column1, int row2, int column2, bool row1Absolute, bool column1Absolute, bool row2Absolute, bool column2Absolute)
+    {
+        if (column1 == 0 && column2 == Sheet.ColumnCount - 1)
+        {
+            return new Reference(sheet, ReferenceShape.Rows, row1, 0, row2, column2, row1Absolute, true, row2Absolute, true);
+        }
+        if (row1 == 0 && row2 == Sheet.RowCount - 1)
+        {
+            return new Reference(sheet, ReferenceShape.Columns, 0, column1, row2, column2, true, column1Absolute, true, column2Absolute);
+        }
+        return new Reference(sheet, ReferenceShape.Area, row1, column1, row2, column2, row1Absolute, column1Absolute, row2Absolute, column2Absolute);
+    }
+
+    /// <summary>Writes the Reference as Excel writes it: a rectangle in the shape <see cref="Rectangle"/> gives it.</summary>
     public void WriteTo(StringBuilder text)
     {
+        if (Shape != ReferenceShape.Cell)
+        {
+            var shaped = Rectangle(SheetName, Row1, Column1, Row2, Column2, Row1Absolute, Column1Absolute, Row2Absolute, Column2Absolute);
+            if (shaped.Shape != Shape)
+            {
+                shaped.WriteTo(text);
+                return;
+            }
+        }
         if (SheetName is not null)
         {
             text.Append(QuoteSheetName(SheetName)).Append('!');

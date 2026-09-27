@@ -113,12 +113,12 @@
     },
     {
       "id": "NAME-013",
-      "source": "documented",
-      "description": "A deletion of every cell a qualified Reference names makes it #REF!",
+      "source": "observed",
+      "description": "A deletion of every cell a qualified Reference names makes it #REF!, the qualifier kept",
       "cells": {"A5": "4", "B1": "=Sheet1!A5*2"},
       "action": {"do": "deleteRows", "row": 5, "count": 1},
       "check": "B1",
-      "expect": {"formula": "=#REF!*2"}
+      "expect": {"formula": "=Sheet1!#REF!*2"}
     },
     {
       "id": "NAME-014",
@@ -335,6 +335,15 @@
       "expect": {"formula": "=Sheet1!A1", "value2": 5},
       "engineDiffersByDecision": "ADR-0048: renaming the Sheet is an undoable step; Excel is reported not to undo a rename",
       "oracleSkip": "Excel's undo does not reach changes made through COM; ask by hand"
+    },
+    {
+      "id": "NAME-037",
+      "source": "uncertain",
+      "description": "A rename rewrites the qualifier of a qualified #REF! too (inferred, not yet asked of Excel)",
+      "cells": {"B1": "=Sheet1!#REF!*2"},
+      "action": {"do": "rename", "name": "My Sheet"},
+      "check": "B1",
+      "expect": {"formula": "='My Sheet'!#REF!*2"}
     }
   ]
 }

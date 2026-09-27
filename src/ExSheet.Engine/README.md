@@ -53,7 +53,11 @@ formatted cell it reads, so `=A1+7` over a date shows a date. It happens once, a
 whitespace it was typed with where Excel keeps it — before a token, but not at the end nor before
 a `,` — and a tab between tokens is refused, as Excel refuses it. Its tokens are written in
 Excel's spelling (`= sum( a1 , 2 ) ` is kept as `= SUM( A1, 2 )`), and rewriting its References
-changes only the Reference tokens; one rewritten to `#REF!` takes the whitespace before it along.
+changes only the Reference tokens; one rewritten to `#REF!` takes the whitespace before it along
+and keeps its qualifier (`Sheet1!#REF!`). References are written as Excel writes them: a range
+spanning every row as whole columns (`A1:A1048576` is `A:A`), one spanning every column as whole
+rows (`A:XFD` is `$1:$1048576`), and a structured reference in single brackets
+(`Positions[[Market Value]]` is `Positions[Market Value]`).
 
 A Sheet has a name, `Sheet1` unless it is given one (`new Sheet(culture, "Risk")`), and
 `SheetEdit.Rename` changes it as Excel does, rewriting every Reference qualified with the old

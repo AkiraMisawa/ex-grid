@@ -239,6 +239,15 @@
       "action": {"do": "copy", "source": "B1", "destination": "A1"},
       "check": "A1",
       "expect": {"formula": "=#REF! + 1"}
+    },
+    {
+      "id": "COPY-027",
+      "source": "uncertain",
+      "description": "A qualified Reference a copy moves off the Sheet becomes #REF! with its qualifier kept (inferred from Excel's observed deletion, not yet asked of Excel)",
+      "cells": {"B1": "=Sheet1!A1+1"},
+      "action": {"do": "copy", "source": "B1", "destination": "A1"},
+      "check": "A1",
+      "expect": {"formula": "=Sheet1!#REF!+1"}
     }
   ]
 }

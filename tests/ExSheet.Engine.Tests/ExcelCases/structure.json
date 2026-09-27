@@ -166,12 +166,12 @@
     },
     {
       "id": "STRUCT-019",
-      "source": "documented",
-      "description": "A1:A1048576 is left alone by an insertion",
+      "source": "observed",
+      "description": "A1:A1048576 is written A:A from entry on, and an insertion leaves it alone",
       "cells": {"B1": "=SUM(A1:A1048576)"},
       "action": {"do": "insertRows", "row": 4, "count": 1},
       "check": "B1",
-      "expect": {"formula": "=SUM(A1:A1048576)"}
+      "expect": {"formula": "=SUM(A:A)"}
     },
     {
       "id": "STRUCT-020",
@@ -311,6 +311,15 @@
       "action": {"do": "deleteRows", "row": 5, "count": 1},
       "check": "B1",
       "expect": {"formula": "=C1 *#REF! + 1"}
+    },
+    {
+      "id": "STRUCT-035",
+      "source": "uncertain",
+      "description": "An insertion that grows a range to every row writes it as whole columns (inferred from Excel's observed A:XFD and A1:A1048576 (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"B1": "=SUM(A1:A1048575)"},
+      "action": {"do": "insertRows", "row": 5, "count": 1},
+      "check": "B1",
+      "expect": {"formula": "=SUM(A:A)"}
     }
   ]
 }
