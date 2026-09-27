@@ -45,7 +45,15 @@ change.ValueChanges;                        // C1
 ```
 
 `Enter` reads text as a user typed it: text beginning with `=` is a Formula, and anything else is
-a constant read under the Sheet's culture and recorded already parsed.
+a constant read under the Sheet's culture and recorded already parsed. A Formula keeps the
+whitespace it was typed with; its tokens are written in Excel's spelling (`= sum( a1 )` is kept
+as `= SUM( A1 )`), and rewriting its References changes only the Reference tokens.
+
+A Sheet has a name, `Sheet1` unless it is given one (`new Sheet(culture, "Risk")`), and
+`SheetEdit.Rename` changes it as Excel does, rewriting every Reference qualified with the old
+name. A Reference qualified with the Sheet's own name (`Sheet1!A1`, `'My Sheet'!A1`) reads its
+cells; any other qualifier is `#REF!`. `Sheet.IsValidName` applies Excel's rules: 1 to 31
+characters, none of `: \ / ? * [ ]`, not beginning or ending with `'`, and not `History`.
 
 ## Functions
 
@@ -68,7 +76,10 @@ answer:
 - **No spilled arrays.** A Formula whose result would be a multi-cell range, or an operator applied
   to one, is `#VALUE!`; so is an `XLOOKUP` whose return array is more than one cell across.
   `IFERROR` and `ISERROR` do not turn that refusal into a fallback.
-- **`XLOOKUP`'s binary search** (`search_mode` 2 and −2) is `#VALUE!`.
+- **`XLOOKUP`'s binary search** (`search_mode` 2 and −2) answers only over a lookup array sorted
+  as the mode says — one kind of value, no blanks, text of ASCII letters, digits and spaces — and
+  only when the matching key appears once; it is `#VALUE!` otherwise. Which of several equal keys
+  Excel returns has not been observed yet, so a duplicated key is refused rather than guessed.
 - **`#CIRC!`** is shown by every cell of a circular reference and every Formula that reads one,
   where Excel shows 0. `IFERROR` does not catch it.
 - **`#GETTING_DATA`**, a Linked Table's data on its way, is not an error to `IFERROR` and
@@ -87,7 +98,9 @@ step.Undo();                                         // Entries, formats and Ref
 - **Insertion and deletion** of rows and columns rewrite every Reference, relative and absolute
   alike; a range grows or shrinks as Excel's does, and a Reference whose cells are all deleted is
   written `#REF!` in the stored Formula. An insertion that would push an Entry, or the cells a
-  Reference names, off the Sheet's edge is refused (`SheetRefusedException`).
+  Reference names, off the Sheet's edge is refused (`SheetRefusedException`). Inserted rows take
+  the number format and alignment of the row above, and inserted columns those of the column to
+  the left, as Excel's default does; Entries are never copied.
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each
@@ -112,7 +125,13 @@ sheet.PushLinkedTable("Positions", [[Value.FromText("R-4471"), Value.FromNumber(
 ```
 
 A snapshot replaces the last in one step and recalculates only the Formulas that read the table.
-A table's rows are never recorded in the Sheet Document.
+The Sheet Document records each table's declaration — its name and column names — and never its
+rows: a Sheet opened from one already has the tables declared, and their readers show
+`#GETTING_DATA` until the first snapshot is pushed. Declare your tables at start-up regardless:
+the same declaration again changes nothing, and one with other columns replaces the held one,
+dropping its rows so readers wait again. A table is never undeclared.
+A column the table does not have is `#REF!`; a column used where one Value is wanted gives its
+Value when it has exactly one row, and `#VALUE!` otherwise.
 
 ## Formula entry
 

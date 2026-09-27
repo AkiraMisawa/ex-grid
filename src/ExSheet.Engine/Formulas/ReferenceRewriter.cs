@@ -1,29 +1,19 @@
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// Rebuilds a parsed Formula with every Reference passed through a map: the new Reference, or
-/// <see langword="null"/> where the cells it named no longer exist, which Excel writes as
-/// <c>#REF!</c> in the stored Formula (ADR-0047). Everything else is kept as it was.
+/// Rewrites a Formula's References through a map: the new Reference, or <see langword="null"/>
+/// where the cells it named no longer exist, which Excel writes as <c>#REF!</c> in the stored
+/// Formula (ADR-0047). Only the Reference tokens change; the whitespace and every other token are
+/// kept as they were.
 /// </summary>
 internal static class ReferenceRewriter
 {
-    public static Node Rewrite(Node node, Func<Reference, Reference?> map) => node switch
-    {
-        ReferenceNode r => map(r.Reference) is { } mapped ? (ReferenceEquals(mapped, r.Reference) ? r : new ReferenceNode(mapped)) : new ErrorNode(ErrorValue.Ref),
-        FunctionNode f => new FunctionNode(f.Name, [.. f.Arguments.Select(a => Rewrite(a, map))], f.Function),
-        ParenthesesNode p => new ParenthesesNode(Rewrite(p.Inner, map)),
-        UnaryNode u => new UnaryNode(u.Operator, Rewrite(u.Operand, map)),
-        PercentNode p => new PercentNode(Rewrite(p.Operand, map)),
-        BinaryNode b => new BinaryNode(b.Operator, Rewrite(b.Left, map), Rewrite(b.Right, map)),
-        _ => node,
-    };
-
     /// <summary>The Entry with its References mapped; the same instance when nothing changed.</summary>
     public static Entry Rewrite(Entry entry, Func<Reference, Reference?> map)
     {
-        if (entry.Parsed is not { } parsed) return entry;
-        var rewritten = Entry.FromParsed(Rewrite(parsed, map));
-        return rewritten.Equals(entry) ? entry : rewritten;
+        if (entry.Formula is not { } formula) return entry;
+        var rewritten = FormulaText.RewriteReferences(formula, map);
+        return ReferenceEquals(rewritten, formula) ? entry : Entry.FromFormula(rewritten);
     }
 }
 
@@ -81,14 +71,15 @@ internal readonly record struct StructuralEdit(SheetAxis Axis, int Start, int Co
     /// A Reference rewritten as Excel rewrites it: an insertion at or before a range's first cell
     /// moves it, one inside it grows it; a deletion shrinks it, moves it, or — when it takes every
     /// cell it named — makes it <c>#REF!</c> (<see langword="null"/>). A Reference that spans the
-    /// whole axis (<c>A:A</c> for rows) is untouched, as is one qualified with a Sheet name.
+    /// whole axis (<c>A:A</c> for rows) is untouched, as is one qualified with another Sheet's name
+    /// (ADR-0046); one qualified with <paramref name="sheet"/>'s own name is rewritten like any other.
     /// <paramref name="leavesSheet"/> is set when an insertion would push the cells it names off
     /// the edge; the caller refuses the insertion.
     /// </summary>
-    public Reference? Map(Reference reference, out bool leavesSheet)
+    public Reference? Map(Reference reference, Sheet sheet, out bool leavesSheet)
     {
         leavesSheet = false;
-        if (reference.SheetName is not null) return reference;
+        if (!sheet.IsLocal(reference)) return reference;
         var rows = Axis == SheetAxis.Rows;
         if (rows && reference.Shape == ReferenceShape.Columns) return reference;
         if (!rows && reference.Shape == ReferenceShape.Rows) return reference;
@@ -131,6 +122,6 @@ internal readonly record struct StructuralEdit(SheetAxis Axis, int Start, int Co
     }
 
     /// <summary>Whether a Reference covers any place at or beyond the edit along its axis.</summary>
-    public bool Reaches(Reference reference) =>
-        reference.SheetName is null && (Axis == SheetAxis.Rows ? reference.Area.Row2 : reference.Area.Column2) >= Start;
+    public bool Reaches(Reference reference, Sheet sheet) =>
+        sheet.IsLocal(reference) && (Axis == SheetAxis.Rows ? reference.Area.Row2 : reference.Area.Column2) >= Start;
 }

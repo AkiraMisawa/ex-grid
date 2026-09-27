@@ -186,7 +186,7 @@ public class LinkedTableTests
         Assert.Equal(1, sheet.Evaluate("=IFERROR(SUM(E[V]), 1)").Number);
     }
 
-    [Fact] // ADR-0047: a column of more than one row used as one Value is #VALUE! (no spilled arrays); one row reads as its Value
+    [Fact] // ADR-0047/0049: a column of more than one row used as one Value is #VALUE! (no implicit intersection); one row reads as its Value
     public void A_column_used_as_one_value()
     {
         var sheet = WithPositions();
@@ -223,17 +223,138 @@ public class LinkedTableTests
         Assert.Equal(9, sheet.Number("A2"));
     }
 
-    [Fact] // ADR-0048/0049: a Sheet Document holds the Formulas that name a table and never its rows
+    [Fact] // ADR-0048/0049: a Sheet Document holds the Formulas that name a table and its declaration, never its rows
     public void A_document_holds_the_formulas_not_the_rows()
     {
         var sheet = WithPositions();
         sheet.Enter("A1", "=SUM(Positions[PV])");
+        var json = sheet.ToDocument().ToJson();
+
+        Assert.DoesNotContain("R-4471", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("250.5", json, StringComparison.Ordinal);
+        Assert.Contains("""
+            "linkedTables":[{"name":"Positions","columns":["Id","PV","Desk"]}]
+            """, json, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0049: opening a document shows #GETTING_DATA for every reader until the first push, never #NAME?
+    public void An_opened_document_waits_for_the_first_push()
+    {
+        var sheet = WithPositions();
+        sheet.Enter("A1", "=SUM(Positions[PV])");
+        sheet.Enter("A2", "=IFERROR(XLOOKUP(\"R-4471\",Positions[Id],Positions[PV]),0)");
+        sheet.Enter("A3", "=A1+1");
 
         var reopened = Sheet.Open(SheetDocument.FromJson(sheet.ToDocument().ToJson()));
-        Assert.DoesNotContain("R-4471", sheet.ToDocument().ToJson(), StringComparison.Ordinal);
-        reopened.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"]);
 
         Assert.Equal(ErrorValue.GettingData, reopened.Error("A1"));
+        Assert.Equal(ErrorValue.GettingData, reopened.Error("A2"));
+        Assert.Equal(ErrorValue.GettingData, reopened.Error("A3"));
+        Assert.Equal([new LinkedTable("Positions", ["Id", "PV", "Desk"], true, 0)], reopened.LinkedTables,
+            (a, b) => a.Name == b.Name && a.Columns.SequenceEqual(b.Columns) && a.IsWaiting == b.IsWaiting && a.RowCount == b.RowCount);
+
+        var change = reopened.PushLinkedTable("Positions", [[T("R-4471"), N(250.5), T("FX")]]);
+
+        Assert.Equal(250.5, reopened.Number("A1"));
+        Assert.Equal(250.5, reopened.Number("A2"));
+        Assert.Equal(251.5, reopened.Number("A3"));
+        Assert.Equal(["A1", "A2", "A3"], change.ValueChanges.Addresses());
+    }
+
+    [Fact] // ADR-0049: declaring the same table again — as a Consumer does at start-up over a document that carries it — changes nothing
+    public void An_identical_declaration_changes_nothing()
+    {
+        var sheet = WithPositions();
+        sheet.Enter("A1", "=SUM(Positions[PV])");
+        var reopened = Sheet.Open(SheetDocument.FromJson(sheet.ToDocument().ToJson()));
+        reopened.PushLinkedTable("Positions", [[T("R-1"), N(7), T("FX")]]);
+
+        var again = reopened.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"]);
+        var sameOnTheLiveSheet = sheet.DeclareLinkedTable("positions", ["Id", "PV", "Desk"]);
+
+        Assert.Empty(again.ValueChanges);
+        Assert.Empty(sameOnTheLiveSheet.ValueChanges);
+        Assert.Equal(7, reopened.Number("A1"));
+        Assert.Equal(300.5, sheet.Number("A1"));
+        Assert.Single(reopened.LinkedTables);
+    }
+
+    [Fact] // ADR-0049: other columns replace the declaration; the rows held are dropped, readers wait, and a column that is gone is #REF!
+    public void A_declaration_with_other_columns_replaces_the_held_one()
+    {
+        var sheet = WithPositions();
+        sheet.Enter("A1", "=SUM(Positions[PV])");
+        sheet.Enter("A2", "=SUM(Positions[Desk])");
+
+        var change = sheet.DeclareLinkedTable("Positions", ["Id", "PV", "Book"]);
+
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A1"));
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A2"));
+        Assert.Equal(["A1", "A2"], change.ValueChanges.Addresses());
+
+        sheet.PushLinkedTable("Positions", [[T("R-1"), N(10), T("B1")]]);
+
+        Assert.Equal(10, sheet.Number("A1"));
+        Assert.Equal(ErrorValue.Ref, sheet.Error("A2"));
+        Assert.Equal(["Id", "PV", "Book"], sheet.LinkedTables.Single().Columns);
+    }
+
+    [Fact] // ADR-0049: a table is never undeclared — there is no API for it
+    public void A_table_is_never_undeclared()
+    {
+        Assert.Equal(
+            ["DeclareLinkedTable", "PushLinkedTable", "get_LinkedTables"],
+            typeof(Sheet).GetMethods().Select(m => m.Name).Where(n => n.Contains("LinkedTable", StringComparison.Ordinal) || n.Contains("Undeclare", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
+    }
+
+    [Fact] // ADR-0049: several declarations, a table no Formula reads, and odd column names round-trip in order
+    public void Declarations_round_trip_in_order()
+    {
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("Rates", ["Pair", "Mid"]);
+        sheet.DeclareLinkedTable("Trades", ["Unit Price", "Qty [lots]", "It's"]);
+
+        var document = SheetDocument.FromJson(sheet.ToDocument().ToJson());
+
+        Assert.Equal(["Rates", "Trades"], document.LinkedTables.Select(t => t.Name));
+        Assert.Equal(["Unit Price", "Qty [lots]", "It's"], document.LinkedTables[1].Columns);
+        Assert.Equal(["Rates", "Trades"], Sheet.Open(document).LinkedTables.Select(t => t.Name));
+    }
+
+    [Fact] // ADR-0049: after opening, an unknown column is still #REF!, and a one-row column still reads as its Value
+    public void Opened_declarations_read_as_declared()
+    {
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("One", ["V"]);
+        sheet.Enter("A1", "=One[Missing]");
+        sheet.Enter("A2", "=One[V]*2");
+        var reopened = Sheet.Open(SheetDocument.FromJson(sheet.ToDocument().ToJson()));
+
+        reopened.PushLinkedTable("One", [[N(21)]]);
+        Assert.Equal(ErrorValue.Ref, reopened.Error("A1"));
+        Assert.Equal(42, reopened.Number("A2"));
+
+        reopened.PushLinkedTable("One", [[N(21)], [N(1)]]);
+        Assert.Equal(ErrorValue.Value, reopened.Error("A2"));
+
+        reopened.PushLinkedTable("One", []);
+        Assert.Equal(ErrorValue.Value, reopened.Error("A2"));
+    }
+
+    [Theory] // ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document
+    [InlineData("""{"version":1,"culture":"en-US","linkedTables":[{"name":"T","columns":["V"]}],"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","linkedTables":{},"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T"}],"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","linkedTables":[{"columns":["V"]}],"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":[]}],"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V","v"]}],"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":[1]}],"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"A1","columns":["V"]}],"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V"],"rows":[[1]]}],"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V"]},{"name":"t","columns":["W"]}],"cells":[]}""")]
+    public void A_bad_declaration_in_a_document_is_refused(string json)
+    {
+        Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
     }
 
     [Fact] // ADR-0049: the declared tables are listed, with whether each is waiting
@@ -271,7 +392,6 @@ public class LinkedTableTests
         var sheet = WithPositions();
         sheet.Enter("A1", "=SUM(Positions[PV])");
 
-        Assert.Throws<InvalidOperationException>(() => sheet.DeclareLinkedTable("POSITIONS", ["X"]));
         Assert.Throws<ArgumentException>(() => sheet.DeclareLinkedTable("Dup", ["A", "a"]));
         Assert.Throws<ArgumentException>(() => sheet.DeclareLinkedTable("None", []));
         Assert.Throws<InvalidOperationException>(() => sheet.PushLinkedTable("Missing", []));

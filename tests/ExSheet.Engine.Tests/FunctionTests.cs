@@ -266,13 +266,94 @@ public class FunctionTests
         Assert.Equal(1, sheet.Evaluate("=XLOOKUP(\"a~*b\",A1:A2,B1:B2,,2,-1)").Number);
     }
 
-    [Fact] // ADR-0047: XLOOKUP's binary search is not admitted — it is refused, not answered differently from Excel
-    public void XLookup_binary_search_is_refused()
+    /// <summary>
+    /// For XLOOKUP's binary search. A1:A5 5, 15, 25, 35, 45 (ascending) · B1:B5 a…e ·
+    /// C1:C5 45, 35, 25, 15, 5 (descending) · D1:D5 apple, Banana, cherry, Date, fig (ascending
+    /// without regard to case) · F1:F5 5, 15, 15, 35, 45 (a duplicated key) · G1:G5 5, 25, 15, 35, 45 (unsorted) ·
+    /// H1:H5 5, "x", 25, 35, 45 (mixed kinds) · I1:I5 5, 15, blank, 35, 45 (a blank) ·
+    /// J1:J2 FALSE, TRUE · K1:K3 "a-b", "a-c", "a-d" (text Excel collates in its own way).
+    /// </summary>
+    private static Sheet BinaryData()
     {
-        var sheet = LookupData();
+        var sheet = NewSheet();
+        string[] fruit = ["apple", "Banana", "cherry", "Date", "fig"];
+        double[] unsorted = [5, 25, 15, 35, 45];
+        double[] duplicated = [5, 15, 15, 35, 45];
+        for (var i = 0; i < 5; i++)
+        {
+            var n = 5 + (i * 10);
+            sheet.Enter($"A{i + 1}", n.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sheet.Enter($"B{i + 1}", ((char)('a' + i)).ToString());
+            sheet.Enter($"C{i + 1}", (50 - n).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sheet.Enter($"D{i + 1}", fruit[i]);
+            sheet.Enter($"F{i + 1}", duplicated[i].ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sheet.Enter($"G{i + 1}", unsorted[i].ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sheet.Enter($"H{i + 1}", i == 1 ? "x" : n.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            if (i != 2) sheet.Enter($"I{i + 1}", n.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+        sheet.Enter("J1", "FALSE");
+        sheet.Enter("J2", "TRUE");
+        sheet.Enter("K1", "a-b");
+        sheet.Enter("K2", "a-c");
+        sheet.Enter("K3", "a-d");
+        return sheet;
+    }
 
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=XLOOKUP(25,J1:J5,K1:K5,,0,2)").Error);
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=XLOOKUP(25,J1:J5,K1:K5,,0,-2)").Error);
+    [Theory] // ADR-0047: XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key
+    [InlineData("=XLOOKUP(25,A1:A5,B1:B5,,0,2)", "c")]
+    [InlineData("=XLOOKUP(5,A1:A5,B1:B5,,0,2)", "a")]
+    [InlineData("=XLOOKUP(45,A1:A5,B1:B5,,0,2)", "e")]
+    [InlineData("=XLOOKUP(20,A1:A5,B1:B5,,0,2)", ErrorValue.NA)]
+    [InlineData("=XLOOKUP(20,A1:A5,B1:B5,\"none\",0,2)", "none")]
+    [InlineData("=XLOOKUP(20,A1:A5,B1:B5,,-1,2)", "b")]
+    [InlineData("=XLOOKUP(20,A1:A5,B1:B5,,1,2)", "c")]
+    [InlineData("=XLOOKUP(1,A1:A5,B1:B5,,-1,2)", ErrorValue.NA)]
+    [InlineData("=XLOOKUP(99,A1:A5,B1:B5,,1,2)", ErrorValue.NA)]
+    [InlineData("=XLOOKUP(99,A1:A5,B1:B5,,-1,2)", "e")]
+    [InlineData("=XLOOKUP(25,C1:C5,B1:B5,,0,-2)", "c")]
+    [InlineData("=XLOOKUP(20,C1:C5,B1:B5,,-1,-2)", "d")]
+    [InlineData("=XLOOKUP(20,C1:C5,B1:B5,,1,-2)", "c")]
+    [InlineData("=XLOOKUP(20,C1:C5,B1:B5,,0,-2)", ErrorValue.NA)]
+    [InlineData("=XLOOKUP(\"CHERRY\",D1:D5,B1:B5,,0,2)", "c")]
+    [InlineData("=XLOOKUP(\"coconut\",D1:D5,B1:B5,,-1,2)", "c")]
+    [InlineData("=XLOOKUP(\"coconut\",D1:D5,B1:B5,,1,2)", "d")]
+    [InlineData("=XLOOKUP(TRUE,J1:J2,B1:B2,,0,2)", "b")]
+    [InlineData("=XLOOKUP(35,F1:F5,B1:B5,,0,2)", "d")]
+    [InlineData("=XLOOKUP(20,F1:F5,B1:B5,,1,2)", "d")]
+    public void XLookup_binary_search_over_sorted_data_matches_excel(string formula, object expected) =>
+        AssertValue(BinaryData().Evaluate(formula), expected);
+
+    [Theory] // ADR-0047: XLOOKUP's binary search is refused (#VALUE!) wherever its answer would depend on how Excel searches
+    [InlineData("=XLOOKUP(25,C1:C5,B1:B5,,0,2)")]      // descending data, ascending mode
+    [InlineData("=XLOOKUP(25,A1:A5,B1:B5,,0,-2)")]     // ascending data, descending mode
+    [InlineData("=XLOOKUP(25,G1:G5,B1:B5,,0,2)")]      // unsorted
+    [InlineData("=XLOOKUP(35,G1:G5,B1:B5,,0,2)")]      // unsorted, even where the key is present
+    [InlineData("=XLOOKUP(25,H1:H5,B1:B5,,0,2)")]      // mixed kinds: Excel's ordering across kinds is not pinned
+    [InlineData("=XLOOKUP(25,I1:I5,B1:B5,,0,2)")]      // a blank in the lookup array
+    [InlineData("=XLOOKUP(\"x\",A1:A5,B1:B5,,0,2)")] // a lookup value of another kind
+    [InlineData("=XLOOKUP(A99,A1:A5,B1:B5,,0,2)")]     // a blank lookup value
+    [InlineData("=XLOOKUP(\"a-c\",K1:K3,B1:B3,,0,2)")] // text whose collation in Excel is not pinned
+    [InlineData("=XLOOKUP(\"b*\",D1:D5,B1:B5,,2,2)")] // wildcard match
+    [InlineData("=XLOOKUP(25,A1:A5,B1:B5,,0,3)")]      // not a search mode
+    public void XLookup_binary_search_is_refused_where_excels_answer_is_not_pinned(string formula) =>
+        Assert.Equal(ErrorValue.Value, BinaryData().Evaluate(formula).Error);
+
+    [Fact] // ADR-0047: which of several equal keys Excel's binary search returns is UNVERIFIED (verify-on-windows.md, Part A, item 9) — refused, not guessed
+    public void XLookup_binary_search_over_a_duplicated_key_is_refused()
+    {
+        var sheet = BinaryData();
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=XLOOKUP(15,F1:F5,B1:B5,,0,2)").Error);
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=XLOOKUP(20,F1:F5,B1:B5,,-1,2)").Error);
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=XLOOKUP(10,F1:F5,B1:B5,,1,2)").Error);
+
+        // Keys equal without regard to case are duplicates too.
+        sheet.Enter("D2", "Banana");
+        sheet.Enter("D3", "BANANA");
+        sheet.Enter("D4", "cherry");
+        sheet.Enter("D5", "Date");
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=XLOOKUP(\"banana\",D1:D5,B1:B5,,0,2)").Error);
+        Assert.Equal("a", sheet.Evaluate("=XLOOKUP(\"apple\",D1:D5,B1:B5,,0,2)").Text);
     }
 
     [Fact] // ADR-0047: a return array more than one cell across would spill, which ExSheet does not do

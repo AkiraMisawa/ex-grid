@@ -223,3 +223,30 @@ earlier claim that a stylesheet "cannot displace" a token-fed property was stron
 permits. The contract is stated precisely now: **the supported override routes cannot move
 geometry; a stylesheet that reaches for the unsupported ones is writing outside the contract,
 and what breaks is on it.** The browser suite pins the supported routes.
+
+## Added by ADR-0050 and ADR-0051 *(2026-09-27, decided with the user)*
+
+The declarations ExSheet asks of the core paint new things, and each one enters this list here,
+not quietly in the stylesheet. Each is painted only when a Consumer makes the declaration.
+
+- **Stable classes:**
+  - `ex-row-heading`: a Row Heading cell.
+  - `ex-headings-corner`: the corner where the two Headings meet.
+  - `ex-formula-bar`: the Formula Bar band.
+  - `ex-name-box`: its Name Box.
+  - `ex-fill-handle`: the fill handle.
+- **Internal classes**, which may change without notice:
+  - `ex-formula-bar-text`: the core's box around the bar's text surface. It carries `ex-editor`,
+    so the key listener treats it as the editor.
+  - `ex-name-box-form`: the form whose submission is Enter.
+  - `ex-fill-target`: the outline painted during a fill drag.
+- **Visual Tokens:**
+  - `--ex-heading-background`, `--ex-heading-color` and `--ex-heading-rule-color`, for both
+    Headings.
+  - `--ex-formula-bar-background` and `--ex-formula-bar-color`.
+  - `--ex-fill-handle-color` and `--ex-fill-outline`.
+
+  Each is a colour or an outline that the theme sets. None is a C# parameter
+  ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)).
+- **Geometry** (the Row Headings' width, the Formula Bar's height and the fill handle's size) is
+  resolved in C# with the Grid Metrics and emitted inline, as every other piece of geometry is.

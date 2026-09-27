@@ -70,3 +70,9 @@ steps are operations on Entries, including structural ones that an Overlay canno
   nothing across sessions, and it never talks to storage.
 - **The Sheet Document is a format with a version.** A reader meeting a version it does not know
   refuses to open the document. It does not guess.
+
+## Settled while building *(2026-09-27, decided with the user)*
+
+**Renaming the Sheet is an undoable step**, like any other operation on the Sheet. Excel is
+reported not to undo a rename. This is a deliberate difference: undoing a rename never shows a
+wrong value, and it keeps the rule that each user operation is one step.

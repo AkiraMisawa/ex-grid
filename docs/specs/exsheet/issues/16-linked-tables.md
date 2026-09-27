@@ -40,3 +40,7 @@ used as one Value is `#VALUE!`, of exactly one row reads as that Value; declarat
 recorded in the Sheet Document, so an opened document shows `#NAME?` until the Consumer
 declares its tables, and `#GETTING_DATA` from then until it pushes; a table cannot be declared
 twice or undeclared.
+
+2026-09-27, decided with the user (ADR-0049): declaring a table again is no longer refused. An
+identical declaration changes nothing; other columns replace the held one and drop its rows.
+`Sheet.DeclareLinkedTable` implements it; `LinkedTableTests` pins both.

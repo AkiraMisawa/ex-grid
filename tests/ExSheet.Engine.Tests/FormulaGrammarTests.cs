@@ -76,7 +76,6 @@ public class FormulaGrammarTests
     [InlineData("=5:2", "=2:5")]
     [InlineData("=true", "=TRUE")]
     [InlineData("=#n/a", "=#N/A")]
-    [InlineData("= 1 + 2", "=1+2")]
     [InlineData("=.5", "=0.5")]
     [InlineData("=1.50", "=1.5")]
     public void A_formula_is_recorded_in_excels_spelling(string typed, string recorded)
@@ -155,7 +154,7 @@ public class FormulaGrammarTests
         Assert.Equal(ErrorValue.Name, NewSheet().Evaluate("=Positions[PV]").Error);
     }
 
-    [Fact] // ADR-0046/0047: the Sheet qualifier is recorded; with one Sheet, no qualifier names a cell
+    [Fact] // ADR-0046/0047: the Sheet qualifier is recorded; with one Sheet, a qualifier other than its name names no cell
     public void A_sheet_qualified_reference_is_recorded_and_names_no_cell()
     {
         var sheet = NewSheet();

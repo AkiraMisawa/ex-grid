@@ -83,3 +83,11 @@ arrive.
   [ADR-0047](./0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)
   refuses it.
 - **In the first version a table is declared once and never undeclared.**
+
+- **Declaring a table again** *(decided with the user the same day)*. A Consumer declares its
+  tables at start-up, and a document it opens may already carry the declarations.
+  - A declaration identical to the one held, with the same name and the same columns, changes
+    nothing.
+  - One with other columns replaces the held declaration, because the table's shape is the
+    Consumer's. The rows held so far are dropped, readers wait again with `#GETTING_DATA`, and a
+    Formula naming a column that is gone reads `#REF!`. Nothing turns into a plausible value.

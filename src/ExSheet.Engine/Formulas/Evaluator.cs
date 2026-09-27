@@ -16,6 +16,9 @@ internal interface ICellReader
     /// first snapshot.
     /// </summary>
     Operand TableColumn(string table, string column);
+
+    /// <summary>Whether a Reference names the Sheet's own cells: unqualified, or qualified with the Sheet's name (ADR-0046).</summary>
+    bool IsLocal(Reference reference);
 }
 
 /// <summary>
@@ -38,8 +41,8 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         BooleanNode b => Formulas.Operand.Of(Value.FromBoolean(b.Value)),
         ErrorNode e => Formulas.Operand.Of(e.Error),
         MissingNode => Formulas.Operand.Missing,
-        // One Sheet exists and has no name to match, so a qualified Reference names nothing (ADR-0046).
-        ReferenceNode r => r.Reference.SheetName is null ? Formulas.Operand.Of(r.Reference.Area) : Formulas.Operand.Of(ErrorValue.Ref),
+        // One Sheet exists: a Reference qualified with its name reads it, any other qualifier names nothing (ADR-0046).
+        ReferenceNode r => Cells.IsLocal(r.Reference) ? Formulas.Operand.Of(r.Reference.Area) : Formulas.Operand.Of(ErrorValue.Ref),
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
         NameNode => Formulas.Operand.Of(ErrorValue.Name),
         ParenthesesNode p => Operand(p.Inner),
