@@ -5,6 +5,21 @@
    and because inside ExSheet.Components the name ExSheet is the component, not the namespace. *@
 @using global::ExSheet.Components
 @using global::ExSheet.Engine
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+@using global::MudBlazor
+
+@* ?chrome=mud runs the Sheet with ExGrid.MudBlazor's Chrome instead of the built-in one, as
+   /features does, so the browser tests of the Formula Bar and the completion list run under
+   both Chromes (DC-17, ADR-0030). Without the parameter nothing here renders. *@
+@if (_mudChrome)
+{
+    <HeadContent>
+        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    </HeadContent>
+    <MudThemeProvider />
+    <MudPopoverProvider />
+}
 
 <DemoNav />
 
@@ -39,7 +54,7 @@
 </p>
 
 <div class="demo-side-by-side">
-    <ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1"
+    <ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
              ViewportHeight="420" ViewportWidth="720" />
     <div id="sheet-positions">
         <ExGrid TRow="Position" Window="_positions" Columns="PositionColumns" RowHeight="28"
@@ -48,6 +63,28 @@
 </div>
 
 @code {
+    /// <summary>Which Chrome the Sheet runs with: absent or <c>builtin</c> is the core's own,
+    /// <c>mud</c> is <see cref="MudGridChrome.Default"/>. Anything else is refused, as on
+    /// /features, so a test "under both Chromes" cannot pass twice against the same one.</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    private IGridChrome? _chrome;
+    private bool _mudChrome;
+
+    protected override void OnParametersSet()
+    {
+        _mudChrome = ChromeName == "mud";
+        _chrome = ChromeName switch
+        {
+            null or "builtin" => null,
+            "mud" => MudGridChrome.Default,
+            _ => throw new ArgumentException(
+                $"Unknown chrome '{ChromeName}': this page runs with ?chrome=builtin (the default) or ?chrome=mud.",
+                nameof(ChromeName)),
+        };
+    }
+
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
 
     private const string Table = "Positions";

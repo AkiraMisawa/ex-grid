@@ -52,6 +52,8 @@ public static class DemoPageList
             "Approving and noting a row from its inspector while the store changes underneath: banner, refusal, versioned notes."),
         new("sheet", "Sheet", "ExSheet",
             "ExSheet drawn by ExGrid: Formulas with completion and pointing, the Formula Bar, fill, paste, insertion, and a Linked Table read from the positions grid beside it (ADR-0046, ADR-0049, ADR-0051)."),
+        new("sheets", "Two sheets", "ExSheet",
+            "Two ExSheets on one page: keys, completion, undo and the Formula Bar stay with the Sheet that has the keyboard (ADR-0018, ADR-0048)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null
