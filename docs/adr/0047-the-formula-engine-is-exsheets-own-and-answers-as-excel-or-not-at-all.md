@@ -118,7 +118,12 @@ places.
   reading it is taken: `=IF(TRUE, 1, A1)` is `#CIRC!` too. That is strict, and it is the safe side,
   because a branch that is not taken today may be taken tomorrow.
 - **A Formula keeps the whitespace it was typed with.** Rewriting References on an insertion or a
-  deletion changes only the Reference tokens.
+  deletion changes only the Reference tokens. *(Refined by what Excel was observed to do,
+  2026-09-27: whitespace belongs to the token after it. It is kept before a token, and dropped at
+  the end of the Formula and before a `,`. Only space, LF and CR may stand between tokens; a tab is
+  refused on entry. When a Reference becomes `#REF!`, the whitespace before it goes with it. A
+  Reference is written as Excel writes it, so `A1:A1048576` is written `A:A` and `A:XFD` is
+  written `$1:$1048576`.)*
 - **The example above, `=0.1+0.2-0.3`, is under verification.** Excel is reported to set a final
   addition or subtraction that nearly cancels to 0. Ticket 19 asks a real Excel, and this ADR is
   corrected by the answer.
