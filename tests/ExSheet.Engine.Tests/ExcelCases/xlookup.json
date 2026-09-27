@@ -1,0 +1,751 @@
+{
+  "area": "xlookup",
+  "about": "XLOOKUP: match and search modes, wildcards, binary search and its refusals (ADR-0047, ADR-0049).",
+  "cases": [
+    {
+      "id": "XLOOKUP-001",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"Banana\",G1:G5,H1:H5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "XLOOKUP-002",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"banana\",G1:G5,H1:H5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "XLOOKUP-003",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"Banana\",G1:G5,H1:H5,,0,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 40}
+    },
+    {
+      "id": "XLOOKUP-004",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"Banana\",G1:G5,H1:H5,,0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "XLOOKUP-005",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"Fig\",G1:G5,H1:H5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-006",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"Fig\",G1:G5,H1:H5,\"none\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "none"}
+    },
+    {
+      "id": "XLOOKUP-007",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"Fig\",G1:G5,H1:H5,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "XLOOKUP-008",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,J1:J5,K1:K5,,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-009",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,J1:J5,K1:K5,,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-010",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,J1:J5,K1:K5,,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-011",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,J1:J5,K1:K5,,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-012",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(1,J1:J5,K1:K5,,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-013",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(99,J1:J5,K1:K5,,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-014",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,J1:J5,K1:K5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-015",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"B*\",G1:G5,H1:H5,,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "XLOOKUP-016",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"?herry\",G1:G5,H1:H5,,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 30}
+    },
+    {
+      "id": "XLOOKUP-017",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"*e\",G1:G5,H1:H5,,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 10}
+    },
+    {
+      "id": "XLOOKUP-018",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"*e\",G1:G5,H1:H5,,2,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 50}
+    },
+    {
+      "id": "XLOOKUP-019",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"B*\",G1:G5,H1:H5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-020",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"y\",M1:O1,M2:O2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "XLOOKUP-021",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"k2\",P1:P2,Q1:Q2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "XLOOKUP-022",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"Cherry\",G:G,H:H)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 30}
+    },
+    {
+      "id": "XLOOKUP-023",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"5\",J1:J5,K1:K5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-024",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(1/0,G1:G5,H1:H5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "XLOOKUP-025",
+      "source": "documented",
+      "description": "XLOOKUP: Microsoft's documented match and search modes",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"Banana\",G1:G5,H1:H4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XLOOKUP-026",
+      "source": "documented",
+      "description": "A wildcard ? matches one character",
+      "cells": {"A1": "a*b", "A2": "axb", "B1": "1", "B2": "2", "ZZ1000": "=XLOOKUP(\"a?b\",A2:A2,B2:B2,,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "XLOOKUP-027",
+      "source": "documented",
+      "description": "A wildcard's ~ makes * literal",
+      "cells": {"A1": "a*b", "A2": "axb", "B1": "1", "B2": "2", "ZZ1000": "=XLOOKUP(\"a~*b\",A1:A2,B1:B2,,2,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "XLOOKUP-028",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,A1:A5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-029",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(5,A1:A5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-030",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(45,A1:A5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "e"}
+    },
+    {
+      "id": "XLOOKUP-031",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,A1:A5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-032",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,A1:A5,B1:B5,\"none\",0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "none"}
+    },
+    {
+      "id": "XLOOKUP-033",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,A1:A5,B1:B5,,-1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-034",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,A1:A5,B1:B5,,1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-035",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(1,A1:A5,B1:B5,,-1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-036",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(99,A1:A5,B1:B5,,1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-037",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(99,A1:A5,B1:B5,,-1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "e"}
+    },
+    {
+      "id": "XLOOKUP-038",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,C1:C5,B1:B5,,0,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-039",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,C1:C5,B1:B5,,-1,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "d"}
+    },
+    {
+      "id": "XLOOKUP-040",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,C1:C5,B1:B5,,1,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-041",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,C1:C5,B1:B5,,0,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-042",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"CHERRY\",D1:D5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-043",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"coconut\",D1:D5,B1:B5,,-1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-044",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"coconut\",D1:D5,B1:B5,,1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "d"}
+    },
+    {
+      "id": "XLOOKUP-045",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(TRUE,J1:J2,B1:B2,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-046",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(35,F1:F5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "d"}
+    },
+    {
+      "id": "XLOOKUP-047",
+      "source": "documented",
+      "description": "XLOOKUP's binary search answers over data sorted as its mode says, with a single matching key",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,F1:F5,B1:B5,,1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "d"}
+    },
+    {
+      "id": "XLOOKUP-048",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: descending data, ascending mode",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,C1:C5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-049",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: ascending data, descending mode",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,A1:A5,B1:B5,,0,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-050",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: unsorted",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,G1:G5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-051",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: unsorted, even where the key is present",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(35,G1:G5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-052",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: mixed kinds: Excel's ordering across kinds is not pinned",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,H1:H5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-053",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: a blank in the lookup array",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,I1:I5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-054",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: a lookup value of another kind",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"x\",A1:A5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-055",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: a blank lookup value",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(A99,A1:A5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-056",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: text whose collation in Excel is not pinned",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"a-c\",K1:K3,B1:B3,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-057",
+      "source": "documented",
+      "description": "XLOOKUP's binary search is refused where its answer would depend on how Excel searches: wildcard match",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"b*\",D1:D5,B1:B5,,2,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-058",
+      "source": "documented",
+      "description": "A search_mode that is not one of Excel's is #VALUE!",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(25,A1:A5,B1:B5,,0,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XLOOKUP-059",
+      "source": "documented",
+      "description": "Which of several equal keys Excel's binary search returns is not observed yet (verify-on-windows Part A item 9): refused, not guessed",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(15,F1:F5,B1:B5,,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-060",
+      "source": "documented",
+      "description": "Which of several equal keys Excel's binary search returns is not observed yet (verify-on-windows Part A item 9): refused, not guessed",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(20,F1:F5,B1:B5,,-1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-061",
+      "source": "documented",
+      "description": "Which of several equal keys Excel's binary search returns is not observed yet (verify-on-windows Part A item 9): refused, not guessed",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(10,F1:F5,B1:B5,,1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-062",
+      "source": "documented",
+      "description": "Keys equal without regard to case are duplicates too, under binary search",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"banana\",D1:D5,B1:B5,,0,2)"},
+      "action": {"do": "enter", "cells": {"D2": "Banana", "D3": "BANANA", "D4": "cherry", "D5": "Date"}},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: XLOOKUP's binary search answers only over data sorted as the mode says, with one matching key; otherwise #VALUE!"
+    },
+    {
+      "id": "XLOOKUP-063",
+      "source": "documented",
+      "description": "A key that appears once is found under binary search, even beside duplicates",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"apple\",D1:D5,B1:B5,,0,2)"},
+      "action": {"do": "enter", "cells": {"D2": "Banana", "D3": "BANANA", "D4": "cherry", "D5": "Date"}},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-064",
+      "source": "documented",
+      "description": "A return array more than one cell across would spill, which ExSheet does not do",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XLOOKUP(\"Apple\",G1:G5,H1:J5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": 10}
+    },
+    {
+      "id": "XLOOKUP-065",
+      "source": "documented",
+      "description": "XLOOKUP's result is a Reference, so the aggregates read it as one",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SUM(XLOOKUP(\"Banana\",G1:G5,H1:H5))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "XLOOKUP-066",
+      "source": "uncertain",
+      "description": "Ticket 19 row 11: a trailing empty if_not_found (engine: treated as omitted); ticket 19 wrote {1},{2}, which ExSheet does not read",
+      "ticket19Row": 11,
+      "cells": {"A1": "1", "B1": "2", "ZZ1000": "=XLOOKUP(1,A1,B1,)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "XLOOKUP-067",
+      "source": "uncertain",
+      "description": "Ticket 19 row 18: an empty lookup value against a lookup array with a blank (engine: no match)",
+      "ticket19Row": 18,
+      "cells": {"B1": "a", "B3": "c", "C1": "1", "C2": "2", "C3": "3", "ZZ1000": "=XLOOKUP(A1,B1:B3,C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-068",
+      "source": "uncertain",
+      "description": "Ticket 19 row 19: an Error Value inside lookup_array (engine: skipped)",
+      "ticket19Row": 19,
+      "cells": {"B1": "1", "B2": "#N/A", "B3": "3", "C1": "a", "C2": "b", "C3": "c", "ZZ1000": "=XLOOKUP(3,B1:B3,C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-069",
+      "source": "uncertain",
+      "description": "Ticket 19 row 20: approximate match over mixed numbers and text (B1:B4 10, x, 30, y)",
+      "ticket19Row": 20,
+      "cells": {"B1": "10", "B2": "x", "B3": "30", "B4": "y", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-070",
+      "source": "uncertain",
+      "description": "Ticket 19 row 20: approximate match over mixed numbers and text (B1:B4 10, x, 30, y)",
+      "ticket19Row": 20,
+      "cells": {"B1": "10", "B2": "x", "B3": "30", "B4": "y", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-071",
+      "source": "uncertain",
+      "description": "Ticket 19 row 20: approximate match over mixed numbers and text (B1:B4 10, x, 30, y)",
+      "ticket19Row": 20,
+      "cells": {"B1": "10", "B2": "x", "B3": "30", "B4": "y", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(\"m\",B1:B4,C1:C4,,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-072",
+      "source": "uncertain",
+      "description": "Ticket 19 row 20: approximate match over mixed numbers and text (B1:B4 10, x, 30, y)",
+      "ticket19Row": 20,
+      "cells": {"B1": "10", "B2": "x", "B3": "30", "B4": "y", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(\"m\",B1:B4,C1:C4,,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-073",
+      "source": "uncertain",
+      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30; engine: the first in search order)",
+      "ticket19Row": 21,
+      "cells": {"B1": "10", "B2": "30", "B3": "10", "B4": "30", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-074",
+      "source": "uncertain",
+      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30; engine: the first in search order)",
+      "ticket19Row": 21,
+      "cells": {"B1": "10", "B2": "30", "B3": "10", "B4": "30", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-075",
+      "source": "uncertain",
+      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30; engine: the first in search order)",
+      "ticket19Row": 21,
+      "cells": {"B1": "10", "B2": "30", "B3": "10", "B4": "30", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,-1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-076",
+      "source": "uncertain",
+      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30; engine: the first in search order)",
+      "ticket19Row": 21,
+      "cells": {"B1": "10", "B2": "30", "B3": "10", "B4": "30", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "d"}
+    },
+    {
+      "id": "XLOOKUP-077",
+      "source": "uncertain",
+      "description": "Ticket 19 row 22: match_mode 3 is not a mode",
+      "ticket19Row": 22,
+      "cells": {"A1": "1", "A2": "2", "A3": "3", "B1": "a", "B2": "b", "B3": "c", "ZZ1000": "=XLOOKUP(1,A1:A3,B1:B3,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XLOOKUP-078",
+      "source": "uncertain",
+      "description": "Ticket 19 row 22: a fractional match_mode (engine: truncated)",
+      "ticket19Row": 22,
+      "cells": {"A1": "1", "A2": "2", "A3": "3", "B1": "a", "B2": "b", "B3": "c", "ZZ1000": "=XLOOKUP(1,A1:A3,B1:B3,,1.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-079",
+      "source": "uncertain",
+      "description": "Ticket 19 row 23: wildcard match with a number, or numeric text, as the lookup value (B1 '5 text, B2 5, B3 15)",
+      "ticket19Row": 23,
+      "cells": {"B1": "'5", "B2": "5", "B3": "15", "C1": "text", "C2": "number", "C3": "other", "ZZ1000": "=XLOOKUP(5,B1:B3,C1:C3,,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "number"}
+    },
+    {
+      "id": "XLOOKUP-080",
+      "source": "uncertain",
+      "description": "Ticket 19 row 23: wildcard match with a number, or numeric text, as the lookup value (B1 '5 text, B2 5, B3 15)",
+      "ticket19Row": 23,
+      "cells": {"B1": "'5", "B2": "5", "B3": "15", "C1": "text", "C2": "number", "C3": "other", "ZZ1000": "=XLOOKUP(\"5\",B1:B3,C1:C3,,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "text"}
+    },
+    {
+      "id": "XLOOKUP-081",
+      "source": "uncertain",
+      "description": "Ticket 19 row 23: wildcard match with a number, or numeric text, as the lookup value (B1 '5 text, B2 5, B3 15)",
+      "ticket19Row": 23,
+      "cells": {"B1": "'5", "B2": "5", "B3": "15", "C1": "text", "C2": "number", "C3": "other", "ZZ1000": "=XLOOKUP(\"*5\",B1:B3,C1:C3,,2,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "text"}
+    }
+  ]
+}

@@ -27,40 +27,6 @@ public class LinkedTableTests
         return sheet;
     }
 
-    [Fact] // ADR-0049 (SH-16): SUM over a column and XLOOKUP by key read the snapshot
-    public void Formulas_read_the_snapshot_by_column_and_by_key()
-    {
-        var sheet = WithPositions();
-
-        sheet.Enter("A1", "=SUM(Positions[PV])");
-        sheet.Enter("A2", "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])");
-        sheet.Enter("A3", "=XLOOKUP(\"R-9999\", Positions[Id], Positions[PV], \"none\")");
-        sheet.Enter("A4", "=XLOOKUP(\"R-9999\", Positions[Id], Positions[Desk])");
-
-        Assert.Equal(300.5, sheet.Number("A1"));
-        Assert.Equal(250.5, sheet.Number("A2"));
-        Assert.Equal("none", sheet.Value("A3")!.Value.Text);
-        Assert.Equal(ErrorValue.NA, sheet.Error("A4"));
-    }
-
-    [Fact] // ADR-0049 (SH-16): before the first snapshot every reader waits, and IFERROR and ISERROR do not catch it
-    public void Before_the_first_snapshot_readers_wait()
-    {
-        var sheet = WithPositions(push: false);
-
-        sheet.Enter("A1", "=SUM(Positions[PV])");
-        sheet.Enter("A2", "=IFERROR(XLOOKUP(\"R-4471\", Positions[Id], Positions[PV]), 0)");
-        sheet.Enter("A3", "=ISERROR(Positions[PV])");
-        sheet.Enter("A4", "=IF(TRUE, 1, COUNTA(Positions[Id]))");
-        sheet.Enter("B1", "=A1*2");
-        sheet.Enter("B2", "=IFERROR(A2, 0)");
-
-        foreach (var address in new[] { "A1", "A2", "A3", "A4", "B1", "B2" })
-        {
-            Assert.Equal(ErrorValue.GettingData, sheet.Error(address));
-        }
-    }
-
     [Fact] // ADR-0049 (SH-16): the first snapshot replaces the wait everywhere it reached
     public void The_first_snapshot_ends_the_wait()
     {
@@ -85,26 +51,6 @@ public class LinkedTableTests
 
         Assert.Equal(ErrorValue.GettingData, sheet.Error("A1"));
         Assert.Equal(["A1"], change.ValueChanges.Addresses());
-    }
-
-    [Fact] // ADR-0049: a column the table does not have is #REF!
-    public void An_unknown_column_is_a_ref_error()
-    {
-        var sheet = WithPositions();
-
-        sheet.Enter("A1", "=SUM(Positions[Delta])");
-
-        Assert.Equal(ErrorValue.Ref, sheet.Error("A1"));
-    }
-
-    [Fact] // ADR-0049: table and column names match without regard to case, as Excel's do
-    public void Names_match_without_regard_to_case()
-    {
-        var sheet = WithPositions();
-
-        sheet.Enter("A1", "=SUM(positions[pv])");
-
-        Assert.Equal(300.5, sheet.Number("A1"));
     }
 
     [Fact] // ADR-0049 (SH-16): a new snapshot recalculates only the table's readers and what depends on them
@@ -159,55 +105,6 @@ public class LinkedTableTests
         Assert.Null(refused.Block);
         Assert.Null(refused.Text);
         Assert.False(allowed.IsRefused);
-    }
-
-    [Fact] // ADR-0047/0049: a table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA
-    public void A_column_is_a_range_to_the_functions()
-    {
-        var sheet = NewSheet();
-        sheet.DeclareLinkedTable("Mixed", ["V"]);
-        sheet.PushLinkedTable("Mixed", [[N(1)], [T("2")], [null], [Value.FromBoolean(true)], [N(4)]]);
-
-        Assert.Equal(5, sheet.Evaluate("=SUM(Mixed[V])").Number);
-        Assert.Equal(2.5, sheet.Evaluate("=AVERAGE(Mixed[V])").Number);
-        Assert.Equal(2, sheet.Evaluate("=COUNT(Mixed[V])").Number);
-        Assert.Equal(4, sheet.Evaluate("=COUNTA(Mixed[V])").Number);
-        Assert.Equal(4, sheet.Evaluate("=MAX(Mixed[V])").Number);
-    }
-
-    [Fact] // ADR-0047/0049: an Error Value in a table's column propagates through the aggregates
-    public void An_error_in_a_column_propagates()
-    {
-        var sheet = NewSheet();
-        sheet.DeclareLinkedTable("E", ["V"]);
-        sheet.PushLinkedTable("E", [[N(1)], [Value.FromError(ErrorValue.NA)]]);
-
-        Assert.Equal(ErrorValue.NA, sheet.Evaluate("=SUM(E[V])").Error);
-        Assert.Equal(1, sheet.Evaluate("=IFERROR(SUM(E[V]), 1)").Number);
-    }
-
-    [Fact] // ADR-0047/0049: a column of more than one row used as one Value is #VALUE! (no implicit intersection); one row reads as its Value
-    public void A_column_used_as_one_value()
-    {
-        var sheet = WithPositions();
-        sheet.DeclareLinkedTable("One", ["V"]);
-        sheet.PushLinkedTable("One", [[N(21)]]);
-
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=Positions[PV]*2").Error);
-        Assert.Equal(42, sheet.Evaluate("=One[V]*2").Number);
-    }
-
-    [Fact] // ADR-0049: a column whose name needs Excel's double brackets reads the same
-    public void A_column_named_with_special_characters()
-    {
-        var sheet = NewSheet();
-        sheet.DeclareLinkedTable("Trades", ["Unit Price", "Qty"]);
-        sheet.PushLinkedTable("Trades", [[N(2.5), N(4)]]);
-
-        sheet.Enter("A1", "=SUM(Trades[[Unit Price]])*SUM(Trades[Qty])");
-
-        Assert.Equal(10, sheet.Number("A1"));
-        Assert.Equal("=SUM(Trades[[Unit Price]])*SUM(Trades[Qty])", sheet.GetEntry(CellAddress.Parse("A1"))!.Formula);
     }
 
     [Fact] // ADR-0046/0049: a reader moved by an insertion still reads its table

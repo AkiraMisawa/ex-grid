@@ -1,0 +1,87 @@
+{
+  "area": "average",
+  "about": "AVERAGE (ADR-0047).",
+  "cases": [
+    {
+      "id": "AVERAGE-001",
+      "source": "documented",
+      "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AVERAGE(A1:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.3333333333333335}
+    },
+    {
+      "id": "AVERAGE-002",
+      "source": "documented",
+      "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AVERAGE(E1:E2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "AVERAGE-003",
+      "source": "documented",
+      "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AVERAGE(TRUE,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "AVERAGE-004",
+      "source": "documented",
+      "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AVERAGE(\"4\",2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "AVERAGE-005",
+      "source": "documented",
+      "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AVERAGE(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "AVERAGE-006",
+      "source": "documented",
+      "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AVERAGE(A3:A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "AVERAGE-007",
+      "source": "documented",
+      "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AVERAGE(C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "AVERAGE-008",
+      "source": "documented",
+      "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AVERAGE(\"abc\",1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AVERAGE-009",
+      "source": "documented",
+      "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AVERAGE(1,#N/A)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    }
+  ]
+}

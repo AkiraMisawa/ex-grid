@@ -1,0 +1,235 @@
+{
+  "area": "copy",
+  "about": "Copy and paste inside the Sheet: relative References shift by the distance pasted, as in Excel (ADR-0048). Excel's side is Range.Copy(destination); pasted text goes through the clipboard.",
+  "cases": [
+    {
+      "id": "COPY-001",
+      "source": "documented",
+      "description": "Copying =A1 from B1 to B2 pastes =A2",
+      "cells": {"A1": "1", "A2": "2", "B1": "=A1"},
+      "action": {"do": "copy", "source": "B1", "destination": "B2"},
+      "check": "B2",
+      "expect": {"value2": 2, "formula": "=A2"}
+    },
+    {
+      "id": "COPY-002",
+      "source": "documented",
+      "description": "Absolute parts stay, relative parts move, across and down",
+      "cells": {"C3": "=$A$1+A$1+$A1+A1"},
+      "action": {"do": "copy", "source": "C3", "destination": "E6"},
+      "check": "E6",
+      "expect": {"formula": "=$A$1+C$1+$A4+C4"}
+    },
+    {
+      "id": "COPY-003",
+      "source": "documented",
+      "description": "A Reference shifted off the Sheet is #REF!",
+      "cells": {"B2": "=A1"},
+      "action": {"do": "copy", "source": "B2", "destination": "B1"},
+      "check": "B1",
+      "expect": {"formula": "=#REF!"}
+    },
+    {
+      "id": "COPY-004",
+      "source": "documented",
+      "description": "A Reference shifted off the Sheet is #REF!",
+      "cells": {"B2": "=A1"},
+      "action": {"do": "copy", "source": "B2", "destination": "A2"},
+      "check": "A2",
+      "expect": {"formula": "=#REF!"}
+    },
+    {
+      "id": "COPY-005",
+      "source": "documented",
+      "description": "A Reference shifted off the Sheet is #REF!",
+      "cells": {"B3": "=SUM(A1:A2)"},
+      "action": {"do": "copy", "source": "B3", "destination": "B1"},
+      "check": "B1",
+      "expect": {"formula": "=SUM(#REF!)"}
+    },
+    {
+      "id": "COPY-006",
+      "source": "documented",
+      "description": "A Reference shifted off the Sheet is #REF!",
+      "cells": {"B3": "=SUM(A1:A2)+1"},
+      "action": {"do": "copy", "source": "B3", "destination": "B2"},
+      "check": "B2",
+      "expect": {"formula": "=SUM(#REF!)+1"}
+    },
+    {
+      "id": "COPY-007",
+      "source": "documented",
+      "description": "A Reference shifted off the Sheet is #REF!",
+      "cells": {"B3": "=$A$1+A1"},
+      "action": {"do": "copy", "source": "B3", "destination": "B1"},
+      "check": "B1",
+      "expect": {"formula": "=$A$1+#REF!"}
+    },
+    {
+      "id": "COPY-008",
+      "source": "documented",
+      "description": "A Reference shifted off the Sheet is #REF!",
+      "cells": {"A1": "=B1048576"},
+      "action": {"do": "copy", "source": "A1", "destination": "A2"},
+      "check": "A2",
+      "expect": {"formula": "=#REF!"}
+    },
+    {
+      "id": "COPY-009",
+      "source": "documented",
+      "description": "A range is written from its top-left whichever of its corners moved",
+      "cells": {"B6": "=SUM(A$5:A6)"},
+      "action": {"do": "copy", "source": "B6", "destination": "B1"},
+      "check": "B1",
+      "expect": {"formula": "=SUM(A1:A$5)"}
+    },
+    {
+      "id": "COPY-010",
+      "source": "documented",
+      "description": "A range is written from its top-left whichever of its corners moved",
+      "cells": {"C1": "=SUM($A1:B1)"},
+      "action": {"do": "copy", "source": "C1", "destination": "A1"},
+      "check": "A1",
+      "expect": {"formula": "=SUM(#REF!)"}
+    },
+    {
+      "id": "COPY-011",
+      "source": "documented",
+      "description": "A range is written from its top-left whichever of its corners moved",
+      "cells": {"D1": "=SUM($B1:C1)"},
+      "action": {"do": "copy", "source": "D1", "destination": "A1"},
+      "check": "A1",
+      "expect": {"formula": "=SUM(#REF!)"}
+    },
+    {
+      "id": "COPY-012",
+      "source": "documented",
+      "description": "A range is written from its top-left whichever of its corners moved",
+      "cells": {"D1": "=SUM($C1:C1)"},
+      "action": {"do": "copy", "source": "D1", "destination": "B1"},
+      "check": "B1",
+      "expect": {"formula": "=SUM(A1:$C1)"}
+    },
+    {
+      "id": "COPY-013",
+      "source": "documented",
+      "description": "Whole columns move across and whole rows move down, and not the other way",
+      "cells": {"B2": "=SUM(A:A)+SUM(1:1)"},
+      "action": {"do": "copy", "source": "B2", "destination": "D7"},
+      "check": "D7",
+      "expect": {"formula": "=SUM(C:C)+SUM(6:6)"}
+    },
+    {
+      "id": "COPY-014",
+      "source": "documented",
+      "description": "A paste writes the cell's format too",
+      "cells": {"A1": "1.5", "C1": "old", "C2": "old"},
+      "formats": {"A1": "0.00", "C2": "0%"},
+      "action": {"do": "copy", "source": "A1:A2", "destination": "C1"},
+      "check": "C1",
+      "expect": {"text": "1.50"}
+    },
+    {
+      "id": "COPY-015",
+      "source": "documented",
+      "description": "A blank cell of the block clears the Entry it lands on",
+      "cells": {"A1": "1.5", "C1": "old", "C2": "old"},
+      "formats": {"A1": "0.00", "C2": "0%"},
+      "action": {"do": "copy", "source": "A1:A2", "destination": "C1"},
+      "check": "C2",
+      "expect": {"value2": null, "numberFormat": "General"}
+    },
+    {
+      "id": "COPY-016",
+      "source": "documented",
+      "description": "A block pasted over a whole multiple of itself repeats, each copy shifted",
+      "cells": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "B1": "=A1*10"},
+      "action": {"do": "copy", "source": "B1", "destination": "B2:B4"},
+      "check": "B2",
+      "expect": {"formula": "=A2*10"}
+    },
+    {
+      "id": "COPY-017",
+      "source": "documented",
+      "description": "A block pasted over a whole multiple of itself repeats, each copy shifted",
+      "cells": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "B1": "=A1*10"},
+      "action": {"do": "copy", "source": "B1", "destination": "B2:B4"},
+      "check": "B3",
+      "expect": {"formula": "=A3*10"}
+    },
+    {
+      "id": "COPY-018",
+      "source": "documented",
+      "description": "A block pasted over a whole multiple of itself repeats, each copy shifted",
+      "cells": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "B1": "=A1*10"},
+      "action": {"do": "copy", "source": "B1", "destination": "B2:B4"},
+      "check": "B4",
+      "expect": {"formula": "=A4*10"}
+    },
+    {
+      "id": "COPY-019",
+      "source": "documented",
+      "description": "A copy pasted elsewhere shifts its relative References and keeps the whitespace",
+      "cells": {"B1": "= A1 * $A$1 "},
+      "action": {"do": "copy", "source": "B1", "destination": "C3"},
+      "check": "C3",
+      "expect": {"formula": "= B3 * $A$1 "}
+    },
+    {
+      "id": "COPY-020",
+      "source": "documented",
+      "description": "Pasted text is read as typed: =A1+1 becomes a Formula",
+      "cells": {"A1": "41"},
+      "action": {"do": "pasteText", "at": "B1", "rows": [["=A1+1", "1,234"], ["9/27/2026", "12%"]]},
+      "check": "B1",
+      "expect": {"value2": 42, "formula": "=A1+1"}
+    },
+    {
+      "id": "COPY-021",
+      "source": "documented",
+      "description": "Pasted text is read as typed: 1,234 is a number under en-US",
+      "cells": {"A1": "41"},
+      "action": {"do": "pasteText", "at": "B1", "rows": [["=A1+1", "1,234"], ["9/27/2026", "12%"]]},
+      "check": "C1",
+      "expect": {"value2": 1234}
+    },
+    {
+      "id": "COPY-022",
+      "source": "documented",
+      "description": "Pasted text is read as typed: a date is a serial",
+      "cells": {"A1": "41"},
+      "action": {"do": "pasteText", "at": "B1", "rows": [["=A1+1", "1,234"], ["9/27/2026", "12%"]]},
+      "check": "B2",
+      "expect": {"value2": 46292}
+    },
+    {
+      "id": "COPY-023",
+      "source": "documented",
+      "description": "Pasted text is read as typed: a percentage is the fraction",
+      "cells": {"A1": "41"},
+      "action": {"do": "pasteText", "at": "B1", "rows": [["=A1+1", "1,234"], ["9/27/2026", "12%"]]},
+      "check": "C2",
+      "expect": {"value2": 0.12}
+    },
+    {
+      "id": "COPY-024",
+      "source": "documented",
+      "description": "Inward text is read under the Sheet's culture, not the program's",
+      "culture": "de-DE",
+      "cells": {},
+      "action": {"do": "pasteText", "at": "A1", "rows": [["1.234,5", "=SUM(1.5,2)"]]},
+      "check": "A1",
+      "expect": {"value2": 1234.5}
+    },
+    {
+      "id": "COPY-025",
+      "source": "documented",
+      "description": "A pasted Formula is in the invariant syntax in every culture",
+      "culture": "de-DE",
+      "cells": {},
+      "action": {"do": "pasteText", "at": "A1", "rows": [["1.234,5", "=SUM(1.5,2)"]]},
+      "check": "B1",
+      "expect": {"value2": 3.5}
+    }
+  ]
+}

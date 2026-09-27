@@ -1,0 +1,770 @@
+{
+  "area": "errors",
+  "about": "Error Values as data: propagation through operators, and circular references (ADR-0047).",
+  "cases": [
+    {
+      "id": "ERR-001",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-002",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=1-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-003",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-004",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=A1/2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-005",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=A1^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-006",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-007",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=A1%"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-008",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=A1&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-009",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=A1=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-010",
+      "source": "documented",
+      "description": "A typed #N/A in A1 flows through every operator that uses it",
+      "cells": {"A1": "#N/A", "ZZ1000": "=\"x\"<A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-011",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-012",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=1-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-013",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-014",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=A1/2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-015",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=A1^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-016",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-017",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=A1%"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-018",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=A1&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-019",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=A1=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-020",
+      "source": "documented",
+      "description": "A typed #DIV/0! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#DIV/0!", "ZZ1000": "=\"x\"<A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-021",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-022",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=1-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-023",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-024",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=A1/2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-025",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=A1^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-026",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-027",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=A1%"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-028",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=A1&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-029",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=A1=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-030",
+      "source": "documented",
+      "description": "A typed #VALUE! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#VALUE!", "ZZ1000": "=\"x\"<A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ERR-031",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-032",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=1-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-033",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-034",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=A1/2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-035",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=A1^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-036",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-037",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=A1%"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-038",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=A1&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-039",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=A1=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-040",
+      "source": "documented",
+      "description": "A typed #REF! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#REF!", "ZZ1000": "=\"x\"<A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "ERR-041",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-042",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=1-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-043",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-044",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=A1/2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-045",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=A1^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-046",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-047",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=A1%"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-048",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=A1&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-049",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=A1=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-050",
+      "source": "documented",
+      "description": "A typed #NAME? in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NAME?", "ZZ1000": "=\"x\"<A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "ERR-051",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-052",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=1-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-053",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-054",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=A1/2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-055",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=A1^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-056",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-057",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=A1%"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-058",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=A1&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-059",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=A1=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-060",
+      "source": "documented",
+      "description": "A typed #NUM! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NUM!", "ZZ1000": "=\"x\"<A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ERR-061",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-062",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=1-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-063",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=A1*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-064",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=A1/2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-065",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=A1^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-066",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=-A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-067",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=A1%"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-068",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=A1&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-069",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=A1=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-070",
+      "source": "documented",
+      "description": "A typed #NULL! in A1 flows through every operator that uses it",
+      "cells": {"A1": "#NULL!", "ZZ1000": "=\"x\"<A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NULL!"}
+    },
+    {
+      "id": "ERR-071",
+      "source": "documented",
+      "description": "An error travels down a chain of Formulas",
+      "cells": {"A1": "0", "B1": "=1/A1", "C1": "=B1+1", "D1": "=C1*2"},
+      "check": "D1",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-072",
+      "source": "documented",
+      "description": "Correcting the source of an error recovers the chain",
+      "cells": {"A1": "0", "B1": "=1/A1", "C1": "=B1+1", "D1": "=C1*2"},
+      "action": {"do": "enter", "cells": {"A1": "4"}},
+      "check": "D1",
+      "expect": {"value2": 2.5}
+    },
+    {
+      "id": "ERR-073",
+      "source": "documented",
+      "description": "With two errors, the left operand's is carried",
+      "cells": {"ZZ1000": "=#N/A+1/0"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERR-074",
+      "source": "documented",
+      "description": "With two errors, the left operand's is carried",
+      "cells": {"ZZ1000": "=1/0+#N/A"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ERR-075",
+      "source": "documented",
+      "description": "A typed Error Value is a constant, in Excel's spelling",
+      "cells": {"A1": "#n/a"},
+      "check": "A1",
+      "expect": {"value2": "#N/A", "formula": "#N/A"}
+    },
+    {
+      "id": "ERR-076",
+      "source": "documented",
+      "description": "#CIRC! is a state of a computation; typed, it is text",
+      "cells": {"A1": "#CIRC!"},
+      "check": "A1",
+      "expect": {"value2": "#CIRC!", "kind": "text"}
+    },
+    {
+      "id": "ERR-077",
+      "source": "documented",
+      "description": "#GETTING_DATA is a state of a computation; typed, it is text",
+      "cells": {"A1": "#GETTING_DATA"},
+      "check": "A1",
+      "expect": {"value2": "#GETTING_DATA", "kind": "text"}
+    },
+    {
+      "id": "ERR-078",
+      "source": "documented",
+      "description": "A cycle is #CIRC! in each member and each dependent (A1)",
+      "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
+      "check": "A1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    },
+    {
+      "id": "ERR-079",
+      "source": "documented",
+      "description": "A cycle is #CIRC! in each member and each dependent (B1)",
+      "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
+      "check": "B1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    },
+    {
+      "id": "ERR-080",
+      "source": "documented",
+      "description": "A cycle is #CIRC! in each member and each dependent (C1)",
+      "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
+      "check": "C1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    },
+    {
+      "id": "ERR-081",
+      "source": "documented",
+      "description": "A cycle is #CIRC! in each member and each dependent (D1)",
+      "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
+      "check": "D1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    },
+    {
+      "id": "ERR-082",
+      "source": "documented",
+      "description": "A cell outside the cycle keeps its Value",
+      "cells": {"A1": "=B1+1", "C1": "=A1*2", "D1": "=C1&\"x\"", "E1": "7", "B1": "=A1"},
+      "check": "E1",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "ERR-083",
+      "source": "documented",
+      "description": "A Formula that reads itself is #CIRC!",
+      "cells": {"A1": "=A1+1"},
+      "check": "A1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    },
+    {
+      "id": "ERR-084",
+      "source": "documented",
+      "description": "A Formula entered later that reads a cycle is #CIRC! too",
+      "cells": {"A1": "=B1", "B1": "=A1", "Z1": "=A1+1"},
+      "check": "Z1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    },
+    {
+      "id": "ERR-085",
+      "source": "documented",
+      "description": "Breaking the cycle recovers every member and dependent (A1)",
+      "cells": {"A1": "=B1+1", "B1": "=C1+1", "C1": "=A1+1", "D1": "=A1*2"},
+      "action": {"do": "enter", "cells": {"C1": "10"}},
+      "check": "A1",
+      "expect": {"value2": 12}
+    },
+    {
+      "id": "ERR-086",
+      "source": "documented",
+      "description": "Breaking the cycle recovers every member and dependent (B1)",
+      "cells": {"A1": "=B1+1", "B1": "=C1+1", "C1": "=A1+1", "D1": "=A1*2"},
+      "action": {"do": "enter", "cells": {"C1": "10"}},
+      "check": "B1",
+      "expect": {"value2": 11}
+    },
+    {
+      "id": "ERR-087",
+      "source": "documented",
+      "description": "Breaking the cycle recovers every member and dependent (C1)",
+      "cells": {"A1": "=B1+1", "B1": "=C1+1", "C1": "=A1+1", "D1": "=A1*2"},
+      "action": {"do": "enter", "cells": {"C1": "10"}},
+      "check": "C1",
+      "expect": {"value2": 10}
+    },
+    {
+      "id": "ERR-088",
+      "source": "documented",
+      "description": "Breaking the cycle recovers every member and dependent (D1)",
+      "cells": {"A1": "=B1+1", "B1": "=C1+1", "C1": "=A1+1", "D1": "=A1*2"},
+      "action": {"do": "enter", "cells": {"C1": "10"}},
+      "check": "D1",
+      "expect": {"value2": 24}
+    },
+    {
+      "id": "ERR-089",
+      "source": "documented",
+      "description": "Clearing a member breaks the cycle too",
+      "cells": {"A1": "=B1", "B1": "=A1"},
+      "action": {"do": "enter", "cells": {"B1": ""}},
+      "check": "A1",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ERR-090",
+      "source": "documented",
+      "description": "Two separate cycles do not disturb each other: the broken one recovers",
+      "cells": {"A1": "=B1", "B1": "=A1", "X1": "=Y1", "Y1": "=X1"},
+      "action": {"do": "enter", "cells": {"B1": "3"}},
+      "check": "A1",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ERR-091",
+      "source": "documented",
+      "description": "Two separate cycles do not disturb each other: the other stays #CIRC! (X1)",
+      "cells": {"A1": "=B1", "B1": "=A1", "X1": "=Y1", "Y1": "=X1"},
+      "action": {"do": "enter", "cells": {"B1": "3"}},
+      "check": "X1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 0}
+    },
+    {
+      "id": "ERR-092",
+      "source": "documented",
+      "description": "Two separate cycles do not disturb each other: the other stays #CIRC! (Y1)",
+      "cells": {"A1": "=B1", "B1": "=A1", "X1": "=Y1", "Y1": "=X1"},
+      "action": {"do": "enter", "cells": {"B1": "3"}},
+      "check": "Y1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+      "excelExpect": {"value2": 0}
+    },
+    {
+      "id": "ERR-093",
+      "source": "documented",
+      "description": "A range that includes its own cell is a cycle",
+      "cells": {"A2": "5", "A1": "=SUM(A:A)"},
+      "check": "A1",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0"
+    }
+  ]
+}

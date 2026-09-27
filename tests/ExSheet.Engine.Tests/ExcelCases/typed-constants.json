@@ -1,0 +1,240 @@
+{
+  "area": "typed-constants",
+  "about": "Constants typed into a cell, read under the Sheet's culture (ADR-0048). Excel's side is typed through Range.FormulaLocal, so the machine's regional format must match the case's culture.",
+  "cases": [
+    {
+      "id": "TYPED-001",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "1,234.5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5}
+    },
+    {
+      "id": "TYPED-002",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "1234.5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5}
+    },
+    {
+      "id": "TYPED-003",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "12,345,678"},
+      "check": "A1",
+      "expect": {"value2": 12345678}
+    },
+    {
+      "id": "TYPED-004",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "-7"},
+      "check": "A1",
+      "expect": {"value2": -7}
+    },
+    {
+      "id": "TYPED-005",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "(7)"},
+      "check": "A1",
+      "expect": {"value2": -7}
+    },
+    {
+      "id": "TYPED-006",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "1E3"},
+      "check": "A1",
+      "expect": {"value2": 1000}
+    },
+    {
+      "id": "TYPED-007",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": ".5"},
+      "check": "A1",
+      "expect": {"value2": 0.5}
+    },
+    {
+      "id": "TYPED-008",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "culture": "de-DE",
+      "cells": {"A1": "1.234,5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5}
+    },
+    {
+      "id": "TYPED-009",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "culture": "de-DE",
+      "cells": {"A1": "1,5"},
+      "check": "A1",
+      "expect": {"value2": 1.5}
+    },
+    {
+      "id": "TYPED-010",
+      "source": "documented",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "culture": "ja-JP",
+      "cells": {"A1": "1,234.5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5}
+    },
+    {
+      "id": "TYPED-011",
+      "source": "documented",
+      "description": "Excel keeps 15 significant digits of what is typed; the rest become zeros",
+      "cells": {"A1": "1234567890123456789"},
+      "check": "A1",
+      "expect": {"value2": 1234567890123450000}
+    },
+    {
+      "id": "TYPED-012",
+      "source": "documented",
+      "description": "A typed percentage is the fraction, shown as a percentage",
+      "cells": {"A1": "50%"},
+      "check": "A1",
+      "expect": {"value2": 0.5, "text": "50%"}
+    },
+    {
+      "id": "TYPED-013",
+      "source": "documented",
+      "description": "Text typed with a leading apostrophe is text",
+      "cells": {"A1": "'123"},
+      "check": "A1",
+      "expect": {"value2": "123"}
+    },
+    {
+      "id": "TYPED-014",
+      "source": "documented",
+      "description": "Numeric text in arithmetic is read as a typed number would be, under the Sheet's culture",
+      "cells": {"ZZ1000": "=\"1,000\"+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1001}
+    },
+    {
+      "id": "TYPED-015",
+      "source": "documented",
+      "description": "Numeric text in arithmetic is read as a typed number would be, under the Sheet's culture",
+      "culture": "de-DE",
+      "cells": {"ZZ1000": "=\"1,5\"+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.5}
+    },
+    {
+      "id": "TYPED-016",
+      "source": "uncertain",
+      "description": "Ticket 19 row 8: a doubled percent sign (engine: text)",
+      "ticket19Row": 8,
+      "cells": {"A1": "200%%"},
+      "check": "A1",
+      "expect": {"value2": "200%%"}
+    },
+    {
+      "id": "TYPED-017",
+      "source": "uncertain",
+      "description": "Ticket 19 row 24: spaces around a number (engine: the number)",
+      "ticket19Row": 24,
+      "cells": {"A1": " 12 "},
+      "check": "A1",
+      "expect": {"value2": 12}
+    },
+    {
+      "id": "TYPED-018",
+      "source": "uncertain",
+      "description": "Ticket 19 row 25: a comma not in thousands position (engine: text)",
+      "ticket19Row": 25,
+      "cells": {"A1": "1,23"},
+      "check": "A1",
+      "expect": {"value2": "1,23"}
+    },
+    {
+      "id": "TYPED-019",
+      "source": "uncertain",
+      "description": "Ticket 19 row 26: a leading + before a Reference (engine: text)",
+      "ticket19Row": 26,
+      "cells": {"A1": "+A1"},
+      "check": "A1",
+      "expect": {"value2": "+A1"}
+    },
+    {
+      "id": "TYPED-020",
+      "source": "uncertain",
+      "description": "Ticket 19 row 26: a leading - before a Reference (engine: text)",
+      "ticket19Row": 26,
+      "cells": {"A1": "-A1"},
+      "check": "A1",
+      "expect": {"value2": "-A1"}
+    },
+    {
+      "id": "TYPED-021",
+      "source": "uncertain",
+      "description": "Ticket 19 row 27: a currency symbol (engine: text)",
+      "ticket19Row": 27,
+      "cells": {"A1": "$5"},
+      "check": "A1",
+      "expect": {"value2": "$5"}
+    },
+    {
+      "id": "TYPED-022",
+      "source": "uncertain",
+      "description": "Ticket 19 row 27: a day and month name without a year (engine: text)",
+      "ticket19Row": 27,
+      "cells": {"A1": "26-Sep"},
+      "check": "A1",
+      "expect": {"value2": "26-Sep"}
+    },
+    {
+      "id": "TYPED-023",
+      "source": "uncertain",
+      "description": "Ticket 19 row 28: WAHR under de-DE (engine: text)",
+      "ticket19Row": 28,
+      "culture": "de-DE",
+      "cells": {"A1": "WAHR"},
+      "check": "A1",
+      "expect": {"value2": "WAHR"}
+    },
+    {
+      "id": "TYPED-024",
+      "source": "uncertain",
+      "description": "Ticket 19 row 29: the format applied when 12.5% is typed",
+      "ticket19Row": 29,
+      "cells": {"A1": "12.5%"},
+      "check": "A1",
+      "expect": {"value2": 0.125, "text": "12.50%", "numberFormat": "0.00%"}
+    },
+    {
+      "id": "TYPED-025",
+      "source": "uncertain",
+      "description": "Ticket 19 row 29: the format applied when 1,234 is typed",
+      "ticket19Row": 29,
+      "cells": {"A1": "1,234"},
+      "check": "A1",
+      "expect": {"value2": 1234, "text": "1234", "numberFormat": "General"}
+    },
+    {
+      "id": "TYPED-026",
+      "source": "uncertain",
+      "description": "Ticket 19 row 29: the format applied when 1E3 is typed",
+      "ticket19Row": 29,
+      "cells": {"A1": "1E3"},
+      "check": "A1",
+      "expect": {"value2": 1000, "text": "1000", "numberFormat": "General"}
+    },
+    {
+      "id": "TYPED-027",
+      "source": "uncertain",
+      "description": "Ticket 19 row 30: the date format applied when a date is typed under ja-JP",
+      "ticket19Row": 30,
+      "culture": "ja-JP",
+      "cells": {"A1": "2026/9/26"},
+      "check": "A1",
+      "expect": {"value2": 46291, "text": "2026/09/26", "numberFormat": "yyyy/mm/dd"}
+    }
+  ]
+}

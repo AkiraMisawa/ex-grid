@@ -1,0 +1,221 @@
+{
+  "area": "dates",
+  "about": "Dates and times: typed in the culture's order, Excel's 1900 serials with its 29 February 1900, and times as fractions of a day (ADR-0047, ADR-0048).",
+  "cases": [
+    {
+      "id": "DATE-001",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "cells": {"A1": "9/26/2026"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-002",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "cells": {"A1": "9-26-2026"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-003",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "cells": {"A1": "2026-09-26"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-004",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "cells": {"A1": "2026/9/26"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-005",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "cells": {"A1": "9/26/26"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-006",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "culture": "de-DE",
+      "cells": {"A1": "26.9.2026"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-007",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "culture": "de-DE",
+      "cells": {"A1": "26.09.2026"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-008",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "culture": "de-DE",
+      "cells": {"A1": "2026-09-26"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-009",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "culture": "ja-JP",
+      "cells": {"A1": "2026/9/26"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-010",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "culture": "ja-JP",
+      "cells": {"A1": "2026-9-26"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-011",
+      "source": "documented",
+      "description": "A date is typed in the culture's day order",
+      "culture": "en-GB",
+      "cells": {"A1": "26/9/2026"},
+      "check": "A1",
+      "expect": {"value2": 46291}
+    },
+    {
+      "id": "DATE-012",
+      "source": "documented",
+      "description": "A two-digit year 00-29 is 2000-2029, Excel's default window",
+      "cells": {"A1": "1/1/29"},
+      "check": "A1",
+      "expect": {"value2": 47119}
+    },
+    {
+      "id": "DATE-013",
+      "source": "documented",
+      "description": "A two-digit year 30-99 is 1930-1999, Excel's default window",
+      "cells": {"A1": "1/1/30"},
+      "check": "A1",
+      "expect": {"value2": 10959}
+    },
+    {
+      "id": "DATE-014",
+      "source": "documented",
+      "description": "A day that does not exist is not a date; it stays the text typed",
+      "cells": {"A1": "2/30/2026"},
+      "check": "A1",
+      "expect": {"value2": "2/30/2026"}
+    },
+    {
+      "id": "DATE-015",
+      "source": "documented",
+      "description": "A day that does not exist is not a date; it stays the text typed",
+      "cells": {"A1": "13/1/2026"},
+      "check": "A1",
+      "expect": {"value2": "13/1/2026"}
+    },
+    {
+      "id": "DATE-016",
+      "source": "documented",
+      "description": "A day that does not exist is not a date; it stays the text typed",
+      "cells": {"A1": "2/29/2025"},
+      "check": "A1",
+      "expect": {"value2": "2/29/2025"}
+    },
+    {
+      "id": "DATE-017",
+      "source": "documented",
+      "description": "A day that does not exist is not a date; it stays the text typed",
+      "cells": {"A1": "12/31/1899"},
+      "check": "A1",
+      "expect": {"value2": "12/31/1899"}
+    },
+    {
+      "id": "DATE-018",
+      "source": "documented",
+      "description": "A typed time is a fraction of a day",
+      "cells": {"A1": "13:45"},
+      "check": "A1",
+      "expect": {"value2": 0.5729166666666666, "digits": 12, "text": "13:45"}
+    },
+    {
+      "id": "DATE-019",
+      "source": "documented",
+      "description": "A typed time with PM is a fraction of a day",
+      "cells": {"A1": "6:00 PM"},
+      "check": "A1",
+      "expect": {"value2": 0.75, "digits": 12, "text": "6:00 PM"}
+    },
+    {
+      "id": "DATE-020",
+      "source": "documented",
+      "description": "A date with a time is both",
+      "cells": {"A1": "9/26/2026 12:00"},
+      "check": "A1",
+      "expect": {"value2": 46291.5, "digits": 9}
+    },
+    {
+      "id": "DATE-021",
+      "source": "documented",
+      "description": "Typing a date around 29 February 1900 gives Excel's serial",
+      "cells": {"A1": "1/1/1900"},
+      "check": "A1",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "DATE-022",
+      "source": "documented",
+      "description": "Typing a date around 29 February 1900 gives Excel's serial",
+      "cells": {"A1": "2/28/1900"},
+      "check": "A1",
+      "expect": {"value2": 59}
+    },
+    {
+      "id": "DATE-023",
+      "source": "documented",
+      "description": "Typing a date around 29 February 1900 gives Excel's serial",
+      "cells": {"A1": "2/29/1900"},
+      "check": "A1",
+      "expect": {"value2": 60}
+    },
+    {
+      "id": "DATE-024",
+      "source": "documented",
+      "description": "Typing a date around 29 February 1900 gives Excel's serial",
+      "cells": {"A1": "3/1/1900"},
+      "check": "A1",
+      "expect": {"value2": 61}
+    },
+    {
+      "id": "DATE-025",
+      "source": "documented",
+      "description": "Typing a date around 29 February 1900 gives Excel's serial",
+      "cells": {"A1": "1/1/2024"},
+      "check": "A1",
+      "expect": {"value2": 45292}
+    },
+    {
+      "id": "DATE-026",
+      "source": "documented",
+      "description": "A number typed into a date cell keeps the date format",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"A1": "45292"}},
+      "check": "A1",
+      "expect": {"text": "1/1/2024"}
+    }
+  ]
+}
