@@ -64,6 +64,15 @@ public abstract class SheetEdit
         return new StyleEdit(range, new StylePatch(null, alignment));
     }
 
+    /// <summary>
+    /// A width set on every column <paramref name="columns"/> spans, in characters
+    /// (<see cref="Sheet.SetColumnWidth"/>); <see langword="null"/> puts them back at the default
+    /// width. Undoing the step puts back every column's width exactly (ADR-0046).
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="Sheet.MaxColumnWidth"/>.</exception>
+    public static SheetEdit SetColumnWidth(CellRange columns, double? width) =>
+        new ColumnWidthEdit(columns, Sheet.CheckColumnWidth(width));
+
     /// <summary>Rows inserted (<see cref="Sheet.InsertRows"/>).</summary>
     public static SheetEdit InsertRows(int row, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, true));
 
@@ -221,6 +230,17 @@ public abstract class SheetEdit
         {
             var outcome = sheet.ApplyStyle(range, patch);
             return new SheetStep(sheet, outcome.Change, s => s.UndoStyle(outcome), s => s.ApplyStyle(range, patch).Change);
+        }
+    }
+
+    /// <summary>A width set on columns: undone by every column's width put back, redone by the widths it left.</summary>
+    internal sealed class ColumnWidthEdit(CellRange columns, double? width) : SheetEdit
+    {
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var (change, before) = sheet.ApplyColumnWidth(columns, width);
+            var after = sheet.ColumnWidthsNow();
+            return new SheetStep(sheet, change, s => s.RestoreColumnWidths(before), s => s.RestoreColumnWidths(after));
         }
     }
 

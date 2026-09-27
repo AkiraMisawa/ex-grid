@@ -61,6 +61,10 @@ public sealed partial class Sheet
         {
             for (var column = style.First; column <= style.Last; column++) sheet._columnStyles[column] = new AxisStyle(style.Format, style.Alignment);
         }
+        foreach (var run in document.ColumnWidths)
+        {
+            for (var column = run.First; column <= run.Last; column++) sheet._columnWidths[column] = run.Width;
+        }
         foreach (var style in document.Rows)
         {
             for (var row = style.First; row <= style.Last; row++) sheet._rowStyles[row] = new AxisStyle(style.Format, style.Alignment);
@@ -78,9 +82,10 @@ public sealed partial class Sheet
 
     /// <summary>
     /// The Sheet as a Sheet Document: its culture, its name, its Linked Tables' declarations, its
-    /// Entries, and the number formats and alignments set on its columns, rows and cells — never its
-    /// Values, nor a table's rows (ADR-0046, ADR-0047, ADR-0048, ADR-0049). Adjacent columns or
-    /// rows formatted alike are recorded as one entry.
+    /// Entries, the number formats and alignments set on its columns, rows and cells, and the widths
+    /// set on its columns — never its Values, nor a table's rows (ADR-0046, ADR-0047, ADR-0048,
+    /// ADR-0049). Adjacent columns or rows formatted alike, and adjacent columns of one width, are
+    /// recorded as one entry; a column at the default width records none.
     /// </summary>
     public SheetDocument ToDocument() =>
         new(Culture.Name, Name, TableDeclarations, [.. _cells.Values
@@ -90,6 +95,7 @@ public sealed partial class Sheet
         {
             Columns = Runs(_columnStyles),
             Rows = Runs(_rowStyles),
+            ColumnWidths = WidthRuns(),
         };
 
     /// <summary>The addresses of every cell holding an Entry, in row-major order.</summary>

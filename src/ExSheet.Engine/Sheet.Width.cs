@@ -1,7 +1,111 @@
+using ExSheet.Engine.Formulas;
+
 namespace ExSheet.Engine;
 
 public sealed partial class Sheet
 {
+    /// <summary>
+    /// The widest a column can be, in characters: 255, as Microsoft documents Excel's limit on a
+    /// column's width.
+    /// </summary>
+    public const double MaxColumnWidth = 255;
+
+    /// <summary>
+    /// The widths set on columns, in characters, by column; a column absent is at the default
+    /// width and records nothing (ADR-0046).
+    /// </summary>
+    private Dictionary<int, double> _columnWidths = [];
+
+    /// <summary>
+    /// The width set on the column, in characters (Excel's unit, ADR-0047), or <see langword="null"/>
+    /// when none is: the column is at the default width, which the component chooses and the Sheet
+    /// Document does not record (ADR-0046).
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The column is outside <c>A</c> to <c>XFD</c>.</exception>
+    public double? GetColumnWidth(int column) => _columnWidths.TryGetValue(CheckColumn(column), out var width) ? width : null;
+
+    /// <summary>
+    /// Sets the width of every column <paramref name="columns"/> spans, in characters, as Excel's
+    /// <c>Range.ColumnWidth</c> sets the columns of a range; <see langword="null"/> puts them back
+    /// at the default width, recording nothing (ADR-0046). No Value changes; the change names the
+    /// columns whose width changed (<see cref="SheetChange.Columns"/>).
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// The width is not more than 0 and at most <see cref="MaxColumnWidth"/>. A width of 0 is how
+    /// Excel hides a column, and hiding columns is not part of the first version (ADR-0046).
+    /// </exception>
+    public SheetChange SetColumnWidth(CellRange columns, double? width) =>
+        ApplyColumnWidth(columns, CheckColumnWidth(width)).Change;
+
+    internal static double? CheckColumnWidth(double? width, string name = "width") =>
+        width is null or (> 0 and <= MaxColumnWidth)
+            ? width
+            : throw new ArgumentOutOfRangeException(name, width, $"A column's width is more than 0 and at most {MaxColumnWidth} characters; a hidden column (width 0) is not supported.");
+
+    /// <summary>A width set on columns, and the widths before it for undoing it.</summary>
+    internal (SheetChange Change, Dictionary<int, double> Before) ApplyColumnWidth(CellRange columns, double? width)
+    {
+        var before = new Dictionary<int, double>(_columnWidths);
+        for (var column = columns.First.Column; column <= columns.Last.Column; column++)
+        {
+            if (width is { } w) _columnWidths[column] = w;
+            else _columnWidths.Remove(column);
+        }
+        return (new SheetChange([], [], [], WidthsChangedSince(before)), before);
+    }
+
+    /// <summary>Puts every column's width back to <paramref name="widths"/>, and says which columns that changed.</summary>
+    internal SheetChange RestoreColumnWidths(Dictionary<int, double> widths)
+    {
+        var now = _columnWidths;
+        _columnWidths = new Dictionary<int, double>(widths);
+        var columns = WidthsChangedSince(now);
+        return columns.Count == 0 ? SheetChange.None : new SheetChange([], [], [], columns);
+    }
+
+    /// <summary>A copy of the widths set now.</summary>
+    internal Dictionary<int, double> ColumnWidthsNow() => new(_columnWidths);
+
+    /// <summary>The columns whose width differs between <paramref name="before"/> and now, ascending.</summary>
+    private List<int> WidthsChangedSince(Dictionary<int, double> before) =>
+        [.. before.Keys.Union(_columnWidths.Keys)
+            .Where(c => !(before.TryGetValue(c, out var was) && _columnWidths.TryGetValue(c, out var now) && was == now))
+            .Order()];
+
+    /// <summary>
+    /// The widths after an insertion or deletion of columns: moved with their columns, those
+    /// deleted or pushed off the right edge dropped, and inserted columns given the width of the
+    /// column to their left when <paramref name="formatInserted"/>, as they take its formats
+    /// (ADR-0046).
+    /// </summary>
+    private void ShiftColumnWidths(StructuralEdit edit, bool formatInserted)
+    {
+        if (edit.Axis != SheetAxis.Columns) return;
+        var shifted = new Dictionary<int, double>();
+        foreach (var (column, width) in _columnWidths)
+        {
+            if (edit.Move(new CellAddress(0, column)) is { } moved) shifted[moved.Column] = width;
+        }
+        if (edit.IsInsert && formatInserted && edit.Start > 0 && _columnWidths.TryGetValue(edit.Start - 1, out var left))
+        {
+            for (var i = 0; i < edit.Count; i++) shifted[edit.Start + i] = left;
+        }
+        _columnWidths = shifted;
+    }
+
+    /// <summary>The widths as a Sheet Document records them: adjacent columns set alike are one run.</summary>
+    private IReadOnlyList<SheetDocumentColumnWidth> WidthRuns()
+    {
+        var runs = new List<SheetDocumentColumnWidth>();
+        foreach (var column in _columnWidths.Keys.Order())
+        {
+            var width = _columnWidths[column];
+            if (runs.Count > 0 && runs[^1] is var last && last.Last == column - 1 && last.Width == width) runs[^1] = last with { Last = column };
+            else runs.Add(new SheetDocumentColumnWidth(column, column, width));
+        }
+        return runs;
+    }
+
     /// <summary>
     /// Excel's default column width, in characters: 8.43 (ADR-0047). Microsoft documents column
     /// width as "the number of characters of the default font that fit in a cell", and 8.43 as the

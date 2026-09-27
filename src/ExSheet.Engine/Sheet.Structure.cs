@@ -27,13 +27,14 @@ public sealed partial class Sheet
 
     /// <summary>
     /// Inserts columns, as <see cref="InsertRows"/> does rows: each new cell takes the number format
-    /// and alignment of the cell to its left, and each column the format set on the column to its
-    /// left (ADR-0046, ADR-0047); columns inserted at <c>A</c> take none.
+    /// and alignment of the cell to its left, and each column the format and the width set on the
+    /// column to its left (ADR-0046, ADR-0047); columns inserted at <c>A</c> take none. A width set
+    /// on a column moves with it, and one pushed off the right edge is dropped.
     /// </summary>
     /// <exception cref="SheetRefusedException">Something would be pushed off the Sheet's right edge. Nothing changes.</exception>
     public SheetChange InsertColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, true)).Change;
 
-    /// <summary>Deletes columns, as <see cref="DeleteRows"/> does rows.</summary>
+    /// <summary>Deletes columns, as <see cref="DeleteRows"/> does rows: the widths set on them go, and those to their right move left with their columns (ADR-0046).</summary>
     public SheetChange DeleteColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, false)).Change;
 
     /// <summary>What a structural edit did, and what undoing it needs besides the inverse edit.</summary>
@@ -42,7 +43,8 @@ public sealed partial class Sheet
         IReadOnlyList<(CellAddress Address, CellState State)> Dropped,
         IReadOnlyList<(CellAddress Address, Entry Entry)> Rewritten,
         Dictionary<int, AxisStyle> RowsBefore,
-        Dictionary<int, AxisStyle> ColumnsBefore);
+        Dictionary<int, AxisStyle> ColumnsBefore,
+        Dictionary<int, double> WidthsBefore);
 
     /// <summary>Whether <paramref name="edit"/> would be refused, and why; nothing changes either way.</summary>
     internal SheetRefusal? CheckStructural(StructuralEdit edit)
@@ -108,6 +110,7 @@ public sealed partial class Sheet
         var shownBefore = ShownSnapshot();
         var rowsBefore = new Dictionary<int, AxisStyle>(_rowStyles);
         var columnsBefore = new Dictionary<int, AxisStyle>(_columnStyles);
+        var widthsBefore = ColumnWidthsNow();
         var dropped = new List<(CellAddress, CellState)>();
         var rewritten = new List<(CellAddress, Entry)>();
         var moved = new List<Cell>();
@@ -142,8 +145,10 @@ public sealed partial class Sheet
         foreach (var cell in moved) _cells[cell.Address] = cell;
         if (edit.IsInsert && formatInserted && edit.Start > 0) FormatInserted(edit, moved);
         ShiftAxisStyles(edit, formatInserted);
+        ShiftColumnWidths(edit, formatInserted);
         RebuildDependencies();
         var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;
-        return new StructuralOutcome(Diff(before, recalculated, shownBefore), dropped, rewritten, rowsBefore, columnsBefore);
+        var change = SheetChange.Merge([Diff(before, recalculated, shownBefore), new SheetChange([], [], [], WidthsChangedSince(widthsBefore))]);
+        return new StructuralOutcome(change, dropped, rewritten, rowsBefore, columnsBefore, widthsBefore);
     }
 }
