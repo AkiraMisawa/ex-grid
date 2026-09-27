@@ -26,8 +26,13 @@ public sealed partial class Sheet
     /// <summary>
     /// Declares a Linked Table by name and columns (ADR-0049), before any of its rows arrive.
     /// Formulas that read it stop being <c>#NAME?</c> and show <c>#GETTING_DATA</c> until the
-    /// first snapshot is pushed. A table is declared once and never undeclared; the declaration is
-    /// recorded in the Sheet Document, and a Sheet opened from one already has it.
+    /// first snapshot is pushed. The declaration is recorded in the Sheet Document, and a Sheet
+    /// opened from one already has it; a table is never undeclared.
+    /// <para>Declaring a table again is how a Consumer that declares at start-up meets a document
+    /// that already carries the declaration: the same columns, in the same order, change nothing;
+    /// other columns replace the declaration — the table's shape is the Consumer's — and drop the
+    /// rows held so far, so readers wait again and a Formula naming a column that is gone reads
+    /// <c>#REF!</c>.</para>
     /// </summary>
     /// <param name="name">
     /// The name Formulas read it by, as Excel names a Table: a letter, <c>_</c> or <c>\</c>, then
@@ -36,27 +41,33 @@ public sealed partial class Sheet
     /// </param>
     /// <param name="columns">The column names: at least one, none empty, no two the same without regard to case.</param>
     /// <exception cref="ArgumentException">The name or the columns are not ones a structured reference can name.</exception>
-    /// <exception cref="InvalidOperationException">
-    /// A table of that name is already declared — by an earlier call, or by the Sheet Document the
-    /// Sheet was opened from (<see cref="LinkedTables"/> lists them).
-    /// </exception>
     public SheetChange DeclareLinkedTable(string name, IReadOnlyList<string> columns)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(columns);
         if (WhyNotALinkedTable(name, columns) is { } why) throw new ArgumentException(why, IsTableName(name) ? nameof(columns) : nameof(name));
-        // Declared once, never undeclared nor declared again (ADR-0049).
-        if (_tables.ContainsKey(name)) throw new InvalidOperationException($"A Linked Table named '{name}' is already declared.");
-        Declare(name, columns);
+        if (_tables.TryGetValue(name, out var held))
+        {
+            // The same declaration again changes nothing; other columns replace it (ADR-0049).
+            if (held.Columns.SequenceEqual(columns, StringComparer.Ordinal)) return SheetChange.None;
+            _tables.Remove(name);
+            Declare(name, columns, held.Order);
+        }
+        else
+        {
+            Declare(name, columns);
+        }
         return RecalculateReaders(name);
     }
 
-    private void Declare(string name, IReadOnlyList<string> columns)
+    private void Declare(string name, IReadOnlyList<string> columns, int? order = null)
     {
         var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < columns.Count; i++) index[columns[i]] = i;
-        _tables[name] = new TableState(name, [.. columns], index, _tables.Count);
+        _tables[name] = new TableState(name, [.. columns], index, order ?? NextOrder());
     }
+
+    private int NextOrder() => _tables.Count == 0 ? 0 : _tables.Values.Max(t => t.Order) + 1;
 
     /// <summary>Why a name and columns cannot be declared as a Linked Table, or <see langword="null"/> when they can.</summary>
     internal static string? WhyNotALinkedTable(string name, IReadOnlyList<string> columns)

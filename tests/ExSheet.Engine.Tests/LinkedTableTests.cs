@@ -261,14 +261,47 @@ public class LinkedTableTests
         Assert.Equal(["A1", "A2", "A3"], change.ValueChanges.Addresses());
     }
 
-    [Fact] // ADR-0049: a table is declared once — a declaration a document brought is not declared again — and never undeclared
-    public void A_table_is_declared_once_and_never_undeclared()
+    [Fact] // ADR-0049: declaring the same table again — as a Consumer does at start-up over a document that carries it — changes nothing
+    public void An_identical_declaration_changes_nothing()
     {
         var sheet = WithPositions();
+        sheet.Enter("A1", "=SUM(Positions[PV])");
         var reopened = Sheet.Open(SheetDocument.FromJson(sheet.ToDocument().ToJson()));
+        reopened.PushLinkedTable("Positions", [[T("R-1"), N(7), T("FX")]]);
 
-        Assert.Throws<InvalidOperationException>(() => reopened.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"]));
-        Assert.Throws<InvalidOperationException>(() => sheet.DeclareLinkedTable("positions", ["Id"]));
+        var again = reopened.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"]);
+        var sameOnTheLiveSheet = sheet.DeclareLinkedTable("positions", ["Id", "PV", "Desk"]);
+
+        Assert.Empty(again.ValueChanges);
+        Assert.Empty(sameOnTheLiveSheet.ValueChanges);
+        Assert.Equal(7, reopened.Number("A1"));
+        Assert.Equal(300.5, sheet.Number("A1"));
+        Assert.Single(reopened.LinkedTables);
+    }
+
+    [Fact] // ADR-0049: other columns replace the declaration; the rows held are dropped, readers wait, and a column that is gone is #REF!
+    public void A_declaration_with_other_columns_replaces_the_held_one()
+    {
+        var sheet = WithPositions();
+        sheet.Enter("A1", "=SUM(Positions[PV])");
+        sheet.Enter("A2", "=SUM(Positions[Desk])");
+
+        var change = sheet.DeclareLinkedTable("Positions", ["Id", "PV", "Book"]);
+
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A1"));
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A2"));
+        Assert.Equal(["A1", "A2"], change.ValueChanges.Addresses());
+
+        sheet.PushLinkedTable("Positions", [[T("R-1"), N(10), T("B1")]]);
+
+        Assert.Equal(10, sheet.Number("A1"));
+        Assert.Equal(ErrorValue.Ref, sheet.Error("A2"));
+        Assert.Equal(["Id", "PV", "Book"], sheet.LinkedTables.Single().Columns);
+    }
+
+    [Fact] // ADR-0049: a table is never undeclared — there is no API for it
+    public void A_table_is_never_undeclared()
+    {
         Assert.Equal(
             ["DeclareLinkedTable", "PushLinkedTable", "get_LinkedTables"],
             typeof(Sheet).GetMethods().Select(m => m.Name).Where(n => n.Contains("LinkedTable", StringComparison.Ordinal) || n.Contains("Undeclare", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
@@ -359,7 +392,6 @@ public class LinkedTableTests
         var sheet = WithPositions();
         sheet.Enter("A1", "=SUM(Positions[PV])");
 
-        Assert.Throws<InvalidOperationException>(() => sheet.DeclareLinkedTable("POSITIONS", ["X"]));
         Assert.Throws<ArgumentException>(() => sheet.DeclareLinkedTable("Dup", ["A", "a"]));
         Assert.Throws<ArgumentException>(() => sheet.DeclareLinkedTable("None", []));
         Assert.Throws<InvalidOperationException>(() => sheet.PushLinkedTable("Missing", []));

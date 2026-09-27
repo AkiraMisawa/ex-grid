@@ -127,8 +127,9 @@ sheet.PushLinkedTable("Positions", [[Value.FromText("R-4471"), Value.FromNumber(
 A snapshot replaces the last in one step and recalculates only the Formulas that read the table.
 The Sheet Document records each table's declaration — its name and column names — and never its
 rows: a Sheet opened from one already has the tables declared, and their readers show
-`#GETTING_DATA` until the first snapshot is pushed. A table is declared once and never
-undeclared, so check `Sheet.LinkedTables` before declaring on a Sheet opened from a document.
+`#GETTING_DATA` until the first snapshot is pushed. Declare your tables at start-up regardless:
+the same declaration again changes nothing, and one with other columns replaces the held one,
+dropping its rows so readers wait again. A table is never undeclared.
 A column the table does not have is `#REF!`; a column used where one Value is wanted gives its
 Value when it has exactly one row, and `#VALUE!` otherwise.
 
