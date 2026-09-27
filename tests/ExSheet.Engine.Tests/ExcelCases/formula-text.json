@@ -744,19 +744,19 @@
     },
     {
       "id": "TEXT-092",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: 1E20, the smallest power of ten written scientific",
+      "source": "observed",
+      "description": "1E20 is written back in full, 21 characters (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=1E20"},
       "check": "ZZ1000",
-      "expect": {"formula": "=1E+20"}
+      "expect": {"formula": "=100000000000000000000"}
     },
     {
       "id": "TEXT-093",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: 1.5E20 is scientific with its digits",
+      "source": "observed",
+      "description": "1.5E20 is written back in full (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=1.5E20"},
       "check": "ZZ1000",
-      "expect": {"formula": "=1.5E+20"}
+      "expect": {"formula": "=150000000000000000000"}
     },
     {
       "id": "TEXT-094",
@@ -776,19 +776,19 @@
     },
     {
       "id": "TEXT-096",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: 1E-10 is scientific",
+      "source": "observed",
+      "description": "1E-10 is written back in full (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=1E-10"},
       "check": "ZZ1000",
-      "expect": {"formula": "=1E-10"}
+      "expect": {"formula": "=0.0000000001"}
     },
     {
       "id": "TEXT-097",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: 15 significant digits at 1E-9 are written in full",
+      "source": "observed",
+      "description": "15 significant digits at 1E-9, 25 characters in full, are written back in scientific notation, in General's spelling (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=1.23456789012345E-9"},
       "check": "ZZ1000",
-      "expect": {"formula": "=0.00000000123456789012345"}
+      "expect": {"formula": "=1.23456789012345E-09"}
     },
     {
       "id": "TEXT-098",
@@ -837,6 +837,46 @@
       "cells": {"ZZ1000": "=1E308"},
       "check": "ZZ1000",
       "expect": {"formula": "=1E+308"}
+    },
+    {
+      "id": "TEXT-104",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1E21, whose full form would take 22 characters, is written back in scientific notation",
+      "cells": {"ZZ1000": "=1E21"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1E+21"}
+    },
+    {
+      "id": "TEXT-105",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1E-19, whose full form takes 21 characters, is written back in full",
+      "cells": {"ZZ1000": "=1E-19"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=0.0000000000000000001"}
+    },
+    {
+      "id": "TEXT-106",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1E-20, whose full form would take 22 characters, is written back in scientific notation",
+      "cells": {"ZZ1000": "=1E-20"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1E-20"}
+    },
+    {
+      "id": "TEXT-107",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 15 significant digits at 1E-6, 22 characters in full, are written back in scientific notation",
+      "cells": {"ZZ1000": "=1.23456789012345E-6"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1.23456789012345E-06"}
+    },
+    {
+      "id": "TEXT-108",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 15 significant digits at 1E-5, 21 characters in full, are written back in full",
+      "cells": {"ZZ1000": "=1.23456789012345E-5"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=0.0000123456789012345"}
     }
   ]
 }

@@ -73,8 +73,10 @@ internal static partial class FunctionLibrary
     {
         var numbers = new List<double>();
         if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        // SUM's last addition cancels as a Formula's final addition does (ADR-0047, second run:
+        // =SUM(0.1,0.2,-0.3) is 0), wherever SUM stands in the Formula.
         var total = 0.0;
-        foreach (var n in numbers) total += n;
+        for (var i = 0; i < numbers.Count; i++) total = i == numbers.Count - 1 ? Arithmetic.FinalAdd(total, numbers[i]) : total + numbers[i];
         return Operand.Of(Evaluator.Number(total));
     }
 

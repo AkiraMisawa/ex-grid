@@ -92,7 +92,7 @@ internal static class FormulaText
             case TokenKind.Number:
                 // As Excel writes a number constant back (ADR-0047): the form it gives the same number
                 // written into text, which the observed cases agree on (ARITH-073..075, TEXT-057/058).
-                text.Append(NumberText.Written(token.Number, CultureInfo.InvariantCulture));
+                text.Append(NumberText.Written(token.Number, CultureInfo.InvariantCulture, NumberText.FormulaConstantLongest));
                 break;
             case TokenKind.Text:
                 text.Append('"').Append(token.Text.Replace("\"", "\"\"", StringComparison.Ordinal)).Append('"');
