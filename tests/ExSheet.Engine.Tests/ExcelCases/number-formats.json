@@ -657,6 +657,33 @@
       "formats": {"A1": "h:mm \"am/pm\""},
       "check": "A1",
       "expect": {"text": "18:00 am/pm", "numberFormat": "h:mm \"am/pm\""}
+    },
+    {
+      "id": "FMT-073",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a colour section is kept in the code; a negative shows in parentheses (the colour itself is not painted, ADR-0047)",
+      "cells": {"A1": "-5"},
+      "formats": {"A1": "$#,##0_);[Red]($#,##0)"},
+      "check": "A1",
+      "expect": {"text": "($5)", "numberFormat": "$#,##0_);[Red]($#,##0)"}
+    },
+    {
+      "id": "FMT-074",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a colour on the first section does not change the digits shown",
+      "cells": {"A1": "1234.567"},
+      "formats": {"A1": "[Blue]#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "1,234.57", "numberFormat": "[Blue]#,##0.00"}
+    },
+    {
+      "id": "FMT-075",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a numbered colour ([Color 10]) is accepted like a named one",
+      "cells": {"A1": "-3"},
+      "formats": {"A1": "0;[Color 10]-0"},
+      "check": "A1",
+      "expect": {"text": "-3", "numberFormat": "0;[Color 10]-0"}
     }
   ]
 }

@@ -40,7 +40,7 @@ public class SheetDocumentTests
     [InlineData("""{"version":1,"culture":"en-US","cells":[{"at":"A1","number":1},{"at":"A1","number":2}]}""")]
     [InlineData("""{"version":1,"culture":"en-US","cells":[{"at":"A1","formula":"=1+"}]}""")]
     [InlineData("""{"version":1,"culture":"en-US","cells":[{"at":"A1","error":"#CIRC!"}]}""")]
-    [InlineData("""{"version":1,"culture":"en-US","cells":[{"at":"A1","number":1,"format":"[Red]0"}]}""")]
+    [InlineData("""{"version":1,"culture":"en-US","cells":[{"at":"A1","number":1,"format":"[<10]0"}]}""")]
     [InlineData("""{"version":1,"culture":"en-US","cells":[{"at":"A1","number":1,"align":"justify"}]}""")]
     [InlineData("""{"version":1,"culture":"xx-NOPE","cells":[]}""")]
     [InlineData("""{"version":1,"culture":"en-US","name":"Sheet1","cells":[]}""")]

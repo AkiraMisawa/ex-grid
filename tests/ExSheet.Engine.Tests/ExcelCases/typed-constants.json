@@ -175,12 +175,12 @@
     },
     {
       "id": "TYPED-021",
-      "source": "uncertain",
-      "description": "Ticket 19 row 27: a currency symbol. Excel was observed to read $5 as 5 with the format $#,##0_);[Red]($#,##0), shown \"$5 \". The engine keeps it as text until a decision admits a colour in a format code ([Red]), which ADR-0046 leaves out of the first version",
+      "source": "observed",
+      "description": "Ticket 19 row 27: a currency symbol. Excel reads $5 as 5 with the format $#,##0_);[Red]($#,##0), shown \"$5 \". The colour is kept in the code and not painted (ADR-0047)",
       "ticket19Row": 27,
       "cells": {"A1": "$5"},
       "check": "A1",
-      "expect": {"value2": "$5"}
+      "expect": {"value2": 5, "text": "$5 ", "numberFormat": "$#,##0_);[Red]($#,##0)"}
     },
     {
       "id": "TYPED-022",
@@ -389,6 +389,31 @@
       "cells": {"A1": "26/9/2026"},
       "check": "A1",
       "expect": {"text": "26/09/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "TYPED-046",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a dollar amount with decimals takes the currency format with two decimals",
+      "cells": {"A1": "$1,234.5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5, "text": "$1,234.50 ", "numberFormat": "$#,##0.00_);[Red]($#,##0.00)"}
+    },
+    {
+      "id": "TYPED-047",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a sign before the dollar sign is not read as a currency amount, and stays text",
+      "cells": {"A1": "-$5"},
+      "check": "A1",
+      "expect": {"value2": "-$5"}
+    },
+    {
+      "id": "TYPED-048",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a dollar amount under en-GB, whose currency is the pound, stays text",
+      "culture": "en-GB",
+      "cells": {"A1": "$5"},
+      "check": "A1",
+      "expect": {"value2": "$5"}
     }
   ]
 }

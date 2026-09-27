@@ -26,6 +26,10 @@ internal static partial class ConstantParser
         {
             return (Value.FromNumber(number), Implied(shape));
         }
+        if (TryParseDollars(trimmed, culture, out number, out shape))
+        {
+            return (Value.FromNumber(number), NumberFormat.Parse(shape.HasFlag(NumberShape.Decimals) ? "$#,##0.00_);[Red]($#,##0.00)" : "$#,##0_);[Red]($#,##0)"));
+        }
         if (TryParseDateTime(trimmed, culture, DateTime.Today.Year, out var serial, out var format)) return (Value.FromNumber(serial), format);
         return (Value.FromText(typed), null);
     }
@@ -53,6 +57,24 @@ internal static partial class ConstantParser
         if (shape.HasFlag(NumberShape.Exponent)) return NumberFormat.Parse("0.00E+00");
         if (shape.HasFlag(NumberShape.Grouped)) return NumberFormat.Parse(shape.HasFlag(NumberShape.Decimals) ? "#,##0.00" : "#,##0");
         return null;
+    }
+
+    /// <summary>
+    /// A dollar amount under a culture whose currency is written <c>$5</c> (en-US): <c>$</c>, then
+    /// an unsigned number with no percentage or exponent. Excel was observed to read <c>$5</c> as 5
+    /// with the format <c>$#,##0_);[Red]($#,##0)</c> (TYPED-021); the colour is kept and not
+    /// painted (ADR-0047). Any other currency, or a sign around the symbol, stays text until Excel's
+    /// reading of it is observed.
+    /// </summary>
+    private static bool TryParseDollars(string text, CultureInfo culture, out double number, out NumberShape shape)
+    {
+        number = 0;
+        shape = NumberShape.Plain;
+        var format = culture.NumberFormat;
+        if (format.CurrencySymbol != "$" || format.CurrencyPositivePattern != 0) return false;
+        if (text.Length < 2 || text[0] != '$' || !char.IsAsciiDigit(text[1])) return false;
+        return TryParseNumber(text[1..], culture, out number, out shape)
+            && !shape.HasFlag(NumberShape.Percent) && !shape.HasFlag(NumberShape.Exponent);
     }
 
     /// <summary>Text read as a number the way a typed number is: what Excel's arithmetic does with numeric text.</summary>

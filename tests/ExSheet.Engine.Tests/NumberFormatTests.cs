@@ -90,8 +90,13 @@ public class NumberFormatTests
     }
 
     [Theory] // ADR-0047: a format code outside the supported subset is refused, not shown some other way
-    [InlineData("[Red]0")]
-    [InlineData("0.00_);[Red](0.00)")]
+    [InlineData("[<10]0")]
+    [InlineData("[$-409]0")]
+    [InlineData("0[Red]")]
+    [InlineData("[Red][Blue]0")]
+    [InlineData("[Color 57]0")]
+    [InlineData("[Pink]0")]
+    [InlineData("[Red0")]
     [InlineData("# ?/?")]
     [InlineData("*-0")]
     [InlineData("[h]:mm")]
@@ -106,5 +111,34 @@ public class NumberFormatTests
         Assert.False(NumberFormat.TryParse(code, out _, out var reason));
         Assert.False(string.IsNullOrEmpty(reason));
         Assert.Throws<FormatException>(() => NumberFormat.Parse(code));
+    }
+
+    [Theory] // ADR-0047: a colour at the start of a section is kept in the code, and not painted
+    [InlineData("[Red]0", 5, "5")]
+    [InlineData("[red]0", 5, "5")]
+    [InlineData("0.00_);[Red](0.00)", -1.5, "(1.50)")]
+    [InlineData("0.00_);[Red](0.00)", 1.5, "1.50 ")]
+    [InlineData("[Blue]0;[Magenta]-0;[Green]\"zero\"", 0, "zero")]
+    [InlineData("[Color 3]0", 7, "7")]
+    [InlineData("[Color56]0", 7, "7")]
+    [InlineData("0;[Yellow]-0", -7, "-7")]
+    public void A_colour_is_kept_and_not_painted(string code, double number, string shown)
+    {
+        Assert.True(NumberFormat.TryParse(code, out var format, out _));
+        Assert.Equal(code, format.Code);
+        Assert.Equal(shown, Show(number, code).Text);
+    }
+
+    [Fact] // ADR-0047 (TYPED-021): $5 typed is 5 with Excel's currency format, colour included
+    public void A_typed_dollar_amount_takes_the_currency_format()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        var a1 = CellAddress.Parse("A1");
+
+        sheet.Enter(a1, "$5");
+
+        Assert.Equal(5, sheet.GetValue(a1)!.Value.Number);
+        Assert.Equal("$#,##0_);[Red]($#,##0)", sheet.GetFormat(a1).Code);
+        Assert.Equal("$5 ", sheet.GetDisplay(a1).Text);
     }
 }

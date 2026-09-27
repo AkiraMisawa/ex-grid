@@ -14,10 +14,12 @@ namespace ExSheet.Engine;
 /// The subset read: up to four sections (positive; negative; zero; text); the digit placeholders
 /// <c>0 # ?</c>, the decimal point, thousands separators and scaling commas, <c>%</c>, scientific
 /// <c>E+00</c> with one integer placeholder, <c>@</c>, quoted text, <c>\</c> escapes, <c>_</c>
-/// spacing, and the date and time codes <c>y m d h s</c> with <c>AM/PM</c> and <c>A/P</c>. A code
-/// outside the subset — colours and conditions in brackets, elapsed time, fractions, fractional
-/// seconds, <c>*</c> fill, era codes, unquoted letters — is refused rather than shown some other
-/// way.
+/// spacing, and the date and time codes <c>y m d h s</c> with <c>AM/PM</c> and <c>A/P</c>. A
+/// colour at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, … or <c>[Color n]</c>) is
+/// accepted and kept in the code, so the format goes back to Excel intact, but it is not painted
+/// until per-cell styling has its ADR (ADR-0047, ADR-0046). A code outside the subset — conditions,
+/// locales and elapsed time in brackets, fractions, fractional seconds, <c>*</c> fill, era codes,
+/// unquoted letters — is refused rather than shown some other way.
 /// </remarks>
 public sealed class NumberFormat : IEquatable<NumberFormat>
 {
@@ -222,6 +224,11 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                     if (close < 0) return rewritten?.ToString() ?? code;
                     i = close;
                     continue;
+                case '[':
+                    var end = code.IndexOf(']', i + 1);
+                    if (end < 0) return rewritten?.ToString() ?? code;
+                    i = end;
+                    continue;
                 case '\\':
                 case '_':
                 case '*':
@@ -256,6 +263,15 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                         return null;
                     }
                     i = close;
+                    break;
+                case '[':
+                    var end = code.IndexOf(']', i + 1);
+                    if (end < 0)
+                    {
+                        reason = "a bracket is not closed.";
+                        return null;
+                    }
+                    i = end;
                     break;
                 case '\\':
                 case '_':
@@ -323,6 +339,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         {
             reason = null;
             var parts = new List<Part>();
+            var coloured = false;
             for (var i = 0; i < text.Length; i++)
             {
                 var c = text[i];
@@ -356,7 +373,21 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                         reason = "* repeats a character to fill the column, which depends on its width.";
                         return null;
                     case '[':
-                        reason = "colours, conditions, locales and elapsed time in brackets are not supported.";
+                        var bracketEnd = text.IndexOf(']', i + 1);
+                        if (bracketEnd > i && IsColour(text[(i + 1)..bracketEnd]))
+                        {
+                            // A colour is kept in the code and not painted (ADR-0047). Excel reads
+                            // one at the start of a section; anywhere else it is refused.
+                            if (parts.Count > 0 || coloured)
+                            {
+                                reason = "a colour is read only once, at the start of its section.";
+                                return null;
+                            }
+                            coloured = true;
+                            i = bracketEnd;
+                            continue;
+                        }
+                        reason = "conditions, locales and elapsed time in brackets are not supported.";
                         return null;
                     case '@':
                         parts.Add(new Part(PartKind.TextValue, "@"));
@@ -410,6 +441,18 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                 parts.Add(new Part(PartKind.Literal, c.ToString()));
             }
             return Classify(parts, out reason);
+        }
+
+        private static readonly string[] ColourNames = ["Black", "Blue", "Cyan", "Green", "Magenta", "Red", "White", "Yellow"];
+
+        /// <summary>One of Excel's eight colour names, or <c>Color n</c> with n from 1 to 56, in any case.</summary>
+        private static bool IsColour(string name)
+        {
+            if (ColourNames.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase))) return true;
+            if (!name.StartsWith("Color", StringComparison.OrdinalIgnoreCase)) return false;
+            var number = name[5..].TrimStart(' ');
+            return number.Length is 1 or 2 && number.All(char.IsAsciiDigit)
+                && int.Parse(number, CultureInfo.InvariantCulture) is >= 1 and <= 56;
         }
 
         private static Section? Classify(List<Part> parts, out string? reason)
