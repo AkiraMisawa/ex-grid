@@ -9,9 +9,9 @@ step.
 
 **Blocked by:** 03, 12
 
-- [ ] Inserting above a referenced cell rewrites every Reference to it (ADR-0046/0047)
-- [ ] Deleting a referenced cell makes the Formula `#REF!`
-- [ ] The Selection stays in place after an insertion, as in Excel (ADR-0011/0046)
+- [x] Inserting above a referenced cell rewrites every Reference to it (ADR-0046/0047)
+- [x] Deleting a referenced cell makes the Formula `#REF!`
+- [x] The Selection stays in place after an insertion, as in Excel (ADR-0011/0046)
 - [ ] One Ctrl+Z restores the structure and every Reference
 
 ## Comments
@@ -34,3 +34,19 @@ the Row Sequence Version and the Selection in place (SH-5's layer 2 half), and h
 change's rows back as new row instances. Not implemented, reported for a decision: Excel gives
 an inserted row the formatting of the row above (and a column that of the column to its left);
 the engine inserts blank rows.
+
+2026-09-27, ExSheet wiring: the grid's Context Menu (`ContextCommands`, ADR-0036) carries four
+ExSheet commands: insert rows above, delete rows, insert columns to the left, and delete columns.
+Each acts on the rows or columns the Selection spans (two rows selected insert two) and does its
+`SheetEdit` through `PerformAsync`, so it is one step on the undo stack. The ids are public
+(`SheetCommandIds`) and the labels go through a new `ExSheet.CommandLabel`: the Consumer's
+wording first, then ExSheet's English, then the grid's built-in words for the grid's own commands.
+A Selection of several ranges has no one span, so the commands are unavailable for it rather
+than acting on a guess. A refusal (`EntriesWouldLeaveSheet`, …) changes nothing, puts the
+engine's sentence in the notice, and records no step. The Row Sequence Version stays 0 and the
+grid is never told of a new Selection. Only the rows the change names get new instances. Layer 2:
+`StructureCommandTests` (the menu and its words, the rewritten References including a range
+growing, two rows, `#REF!` on a deleted column, one undo restoring structure and References, render
+counts, a refusal). **Still open:** the fourth criterion's Ctrl+Z. `UndoAsync` restores the
+structure and every Reference, but the key waits on the core's undo route (ADR-0050, item 8;
+ticket 12).

@@ -23,7 +23,8 @@
         RowHeadings="(ShowRowHeadings ? RowLabels : null)"
         DataEdge="_dataEdge"
         ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
-        CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf" />
+        CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf"
+        ContextCommands="_contextCommands" CommandLabel="_commandLabel" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -63,6 +64,8 @@
 
     private readonly Func<CellPosition, GridDirection, CellPosition> _dataEdge;
     private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
+    private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
+    private readonly Func<string, string?> _commandLabel;
     private readonly EventCallback<GridSelection> _selectionChanged;
 
     private ExGrid<SheetRow>? _grid;
@@ -84,6 +87,10 @@
         _dataEdge = FindEdge;
         // Answered synchronously from the engine, so the list shows in the render the keystroke
         // causes (ADR-0051). It reads this Sheet's Linked Tables, so it is the instance's own.
+        _contextCommands = ContextCommandsFor;
+        // The Consumer's wording first, then ExSheet's own English for its commands; null falls
+        // back to the grid's built-in words for the grid's own commands (ADR-0036).
+        _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
         _complete = (text, caret) => ValueTask.FromResult(_sheet is { } sheet ? SheetFormulaAids.Complete(sheet, text, caret) : null);
         // No receiver: a selection change re-renders the grid, not this component.
         _selectionChanged = new EventCallback<GridSelection>(null, (Func<GridSelection, Task>)(selection =>
@@ -147,6 +154,13 @@
     /// status line counts, and what the formatting commands act on.
     /// </summary>
     [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
+
+    /// <summary>
+    /// The wording for a command id in the menus the built-in Chrome renders (ADR-0036): the
+    /// grid's own ids and ExSheet's (<see cref="SheetCommandIds"/>). Null for an id falls back to
+    /// ExSheet's English for its own commands and the grid's for the rest.
+    /// </summary>
+    [Parameter] public Func<string, string?>? CommandLabel { get; set; }
 
     /// <summary>The grid's Chrome, passed to ExGrid as is (ADR-0010).</summary>
     [Parameter] public IGridChrome? Chrome { get; set; }
@@ -320,6 +334,40 @@
         var place = new SelectionRange(range.First.Row, range.First.Column, range.RowCount, range.ColumnCount);
         // Rows are places, so the Row Sequence Version never moves from 0 (ADR-0046).
         if (_grid is { } grid) await grid.PlaceSelectionAsync(place, new CellPosition(range.First.Row, range.First.Column), 0);
+    }
+
+    /// <summary>
+    /// ExSheet's Context Menu commands (ADR-0036): inserting and deleting the rows or columns the
+    /// Selection spans. Rows and columns are places, so the Row Sequence Version does not move
+    /// and the Selection stays where it was (ADR-0046); each command is one step on the undo
+    /// stack (ADR-0048). A Selection of several ranges has no one span to act on, so the
+    /// commands are unavailable for it rather than guessing one.
+    /// </summary>
+    private IEnumerable<GridCommand> ContextCommandsFor(ContextMenuContext<SheetRow> context)
+    {
+        var span = context.Selection.Count == 1 ? context.Selection[0] : (SelectionRange?)null;
+        var enabled = span is not null;
+        var r = span.GetValueOrDefault();
+        return
+        [
+            new(SheetCommandIds.InsertRows, enabled, () => StructureAsync(SheetEdit.InsertRows(r.TopRow, r.RowCount))),
+            new(SheetCommandIds.DeleteRows, enabled, () => StructureAsync(SheetEdit.DeleteRows(r.TopRow, r.RowCount))),
+            new(SheetCommandIds.InsertColumns, enabled, () => StructureAsync(SheetEdit.InsertColumns(r.LeftColumn, r.ColumnCount))),
+            new(SheetCommandIds.DeleteColumns, enabled, () => StructureAsync(SheetEdit.DeleteColumns(r.LeftColumn, r.ColumnCount))),
+        ];
+    }
+
+    private async Task StructureAsync(SheetEdit edit)
+    {
+        try
+        {
+            await PerformAsync(edit);
+        }
+        catch (SheetRefusedException refused)
+        {
+            _notice = SheetWords.Refused(refused.Refusal);
+            StateHasChanged();
+        }
     }
 
     private CellPosition FindEdge(CellPosition focus, GridDirection direction)

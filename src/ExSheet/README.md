@@ -41,7 +41,10 @@ What the user gets: typing constants and Formulas, the Formula shown when a cell
 the Formula Bar, a Name Box that says where the Focus is and takes an address to go to, column and
 row selection from the Headings, and Ctrl+arrow stopping where a block of values ends. While a
 Formula is typed, function names are completed (Tab accepts), the argument hint shows the
-function's arguments, and the arrows and the mouse point at cells to write their References.
+function's arguments, and the arrows and the mouse point at cells to write their References. The
+Context Menu inserts and deletes the rows or columns the Selection spans; References keep naming
+the same cells, and a deleted target is `#REF!`. `CommandLabel` words the menu, by the ids in
+`SheetCommandIds` and the grid's own.
 
 ## Commands and the undo stack
 
