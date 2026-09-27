@@ -1,6 +1,6 @@
 {
   "area": "xlookup",
-  "about": "XLOOKUP: match and search modes, wildcards, binary search and its refusals (ADR-0047, ADR-0049).",
+  "about": "XLOOKUP: match and search modes, wildcards, regular expressions, binary search and its refusals (ADR-0047, ADR-0049). match_mode 3 accepts only the constructs whose meaning is the same in PCRE2 and .NET, and refuses any other pattern with #VALUE!.",
   "cases": [
     {
       "id": "XLOOKUP-001",
@@ -606,7 +606,7 @@
     {
       "id": "XLOOKUP-066",
       "source": "observed",
-      "description": "Ticket 19 row 11: a trailing empty if_not_found (engine: treated as omitted); ticket 19 wrote {1},{2}, which ExSheet does not read",
+      "description": "Ticket 19 row 11: a trailing empty if_not_found is taken as omitted; ticket 19 wrote {1},{2}, which ExSheet does not read",
       "ticket19Row": 11,
       "cells": {"A1": "1", "B1": "2", "ZZ1000": "=XLOOKUP(1,A1,B1,)"},
       "check": "ZZ1000",
@@ -614,17 +614,17 @@
     },
     {
       "id": "XLOOKUP-067",
-      "source": "uncertain",
-      "description": "Ticket 19 row 18: an empty lookup value against a lookup array with a blank (engine: no match)",
+      "source": "observed",
+      "description": "Ticket 19 row 18: an empty lookup value matches a blank cell of the lookup array",
       "ticket19Row": 18,
       "cells": {"B1": "a", "B3": "c", "C1": "1", "C2": "2", "C3": "3", "ZZ1000": "=XLOOKUP(A1,B1:B3,C1:C3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#N/A"}
+      "expect": {"value2": 2}
     },
     {
       "id": "XLOOKUP-068",
       "source": "observed",
-      "description": "Ticket 19 row 19: an Error Value inside lookup_array (engine: skipped)",
+      "description": "Ticket 19 row 19: an Error Value inside lookup_array is passed over",
       "ticket19Row": 19,
       "cells": {"B1": "1", "B2": "#N/A", "B3": "3", "C1": "a", "C2": "b", "C3": "c", "ZZ1000": "=XLOOKUP(3,B1:B3,C1:C3)"},
       "check": "ZZ1000",
@@ -650,12 +650,12 @@
     },
     {
       "id": "XLOOKUP-071",
-      "source": "uncertain",
-      "description": "Ticket 19 row 20: approximate match over mixed numbers and text (B1:B4 10, x, 30, y)",
+      "source": "observed",
+      "description": "Ticket 19 row 20: approximate match over mixed numbers and text (B1:B4 10, x, 30, y): numbers are smaller than any text, so the next smaller than \"m\" is 30",
       "ticket19Row": 20,
       "cells": {"B1": "10", "B2": "x", "B3": "30", "B4": "y", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(\"m\",B1:B4,C1:C4,,-1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#N/A"}
+      "expect": {"value2": "c"}
     },
     {
       "id": "XLOOKUP-072",
@@ -669,7 +669,7 @@
     {
       "id": "XLOOKUP-073",
       "source": "observed",
-      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30; engine: the first in search order)",
+      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30): the first in search order",
       "ticket19Row": 21,
       "cells": {"B1": "10", "B2": "30", "B3": "10", "B4": "30", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,-1)"},
       "check": "ZZ1000",
@@ -678,7 +678,7 @@
     {
       "id": "XLOOKUP-074",
       "source": "observed",
-      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30; engine: the first in search order)",
+      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30): the first in search order",
       "ticket19Row": 21,
       "cells": {"B1": "10", "B2": "30", "B3": "10", "B4": "30", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,1)"},
       "check": "ZZ1000",
@@ -687,7 +687,7 @@
     {
       "id": "XLOOKUP-075",
       "source": "observed",
-      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30; engine: the first in search order)",
+      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30): the first in search order",
       "ticket19Row": 21,
       "cells": {"B1": "10", "B2": "30", "B3": "10", "B4": "30", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,-1,-1)"},
       "check": "ZZ1000",
@@ -696,7 +696,7 @@
     {
       "id": "XLOOKUP-076",
       "source": "observed",
-      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30; engine: the first in search order)",
+      "description": "Ticket 19 row 21: ties under approximate match (B1:B4 10, 30, 10, 30): the first in search order",
       "ticket19Row": 21,
       "cells": {"B1": "10", "B2": "30", "B3": "10", "B4": "30", "C1": "a", "C2": "b", "C3": "c", "C4": "d", "ZZ1000": "=XLOOKUP(20,B1:B4,C1:C4,,1,-1)"},
       "check": "ZZ1000",
@@ -704,17 +704,17 @@
     },
     {
       "id": "XLOOKUP-077",
-      "source": "uncertain",
-      "description": "Ticket 19 row 22: match_mode 3 is not a mode",
+      "source": "observed",
+      "description": "Ticket 19 row 22: match_mode 3 is a regular expression match; a number is matched by its text",
       "ticket19Row": 22,
       "cells": {"A1": "1", "A2": "2", "A3": "3", "B1": "a", "B2": "b", "B3": "c", "ZZ1000": "=XLOOKUP(1,A1:A3,B1:B3,,3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "a"}
     },
     {
       "id": "XLOOKUP-078",
       "source": "observed",
-      "description": "Ticket 19 row 22: a fractional match_mode (engine: truncated)",
+      "description": "Ticket 19 row 22: a fractional match_mode is truncated",
       "ticket19Row": 22,
       "cells": {"A1": "1", "A2": "2", "A3": "3", "B1": "a", "B2": "b", "B3": "c", "ZZ1000": "=XLOOKUP(1,A1:A3,B1:B3,,1.5)"},
       "check": "ZZ1000",
@@ -746,6 +746,190 @@
       "cells": {"B1": "'5", "B2": "5", "B3": "15", "C1": "text", "C2": "number", "C3": "other", "ZZ1000": "=XLOOKUP(\"*5\",B1:B3,C1:C3,,2,-1)"},
       "check": "ZZ1000",
       "expect": {"value2": "text"}
+    },
+    {
+      "id": "XLOOKUP-082",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an empty lookup value matches only a blank cell, not 0 or text",
+      "cells": {"B1": "0", "B2": "x", "C1": "a", "C2": "b", "C3": "c", "ZZ1000": "=XLOOKUP(A1,B1:B3,C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-083",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an empty lookup value does not match empty text (\"\") written by a Formula",
+      "cells": {"B1": "=\"\"", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(A1,B1:B2,C1:C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-084",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an empty lookup value searched from the end matches the last blank",
+      "cells": {"B2": "x", "C1": "a", "C2": "b", "C3": "c", "ZZ1000": "=XLOOKUP(A1,B1:B3,C1:C3,,0,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "c"}
+    },
+    {
+      "id": "XLOOKUP-085",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 0 does not match a blank cell",
+      "cells": {"B2": "0", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(0,B1:B2,C1:C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-086",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: approximate match: text is larger than any number, so the next larger than 20 is text",
+      "cells": {"B1": "10", "B2": "x", "B3": "5", "C1": "a", "C2": "b", "C3": "c", "ZZ1000": "=XLOOKUP(20,B1:B3,C1:C3,,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-087",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: approximate match: a boolean is larger than any text",
+      "cells": {"B1": "TRUE", "B2": "a", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"m\",B1:B2,C1:C2,,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-088",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3 is case-sensitive",
+      "cells": {"B1": "Apple", "B2": "apple", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"apple\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-089",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3 matches any part of a value, not only the whole",
+      "cells": {"B1": "pineapple", "B2": "apple", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"apple\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-090",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3 with ^ and $ matches the whole value",
+      "cells": {"B1": "pineapple", "B2": "apple", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^apple$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-091",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a class, a count and \\d",
+      "cells": {"B1": "AB12", "B2": "AB123", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^[A-Z]{2}\\d{3}$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-092",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a group, alternation and ?",
+      "cells": {"B1": "catalog", "B2": "dogs", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^(cat|dog)s?$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-093",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a lazy quantifier",
+      "cells": {"B1": "xyz", "B2": "aXb", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"a.*?b\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-094",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: \\b is a word boundary",
+      "cells": {"B1": "concatenate", "B2": "the cat sat", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"\\bcat\\b\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-095",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: an escaped metacharacter is literal; a number is matched by its text",
+      "cells": {"B1": "105", "B2": "1.5", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^1\\.5$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-096",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a negated class and +",
+      "cells": {"B1": "123", "B2": "a1", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^[^0-9]+\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-097",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: \\w is ASCII, as PCRE2 without UCP, so an accented letter is not a word character",
+      "cells": {"B1": "café", "B2": "cafe", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^\\w+$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-098",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: \\s matches a space",
+      "cells": {"B1": "ab", "B2": "a b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"a\\sb\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-099",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: no value matches",
+      "cells": {"B1": "a", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"z\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XLOOKUP-100",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a lookahead, which is not in the accepted set, is refused",
+      "cells": {"B1": "a", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(?=b)b\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XLOOKUP-101",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a Unicode property, which is not in the accepted set, is refused",
+      "cells": {"B1": "a", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"\\p{L}\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XLOOKUP-102",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a backreference, which is not in the accepted set, is refused",
+      "cells": {"B1": "aa", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(a)\\1\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XLOOKUP-103",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3: a pattern that is not a regular expression is refused",
+      "cells": {"B1": "a", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(a\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XLOOKUP-104",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: match_mode 3 under binary search is refused, as the wildcard mode is",
+      "cells": {"B1": "a", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"b\",B1:B2,C1:C2,,3,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

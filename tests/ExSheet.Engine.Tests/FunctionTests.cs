@@ -54,4 +54,70 @@ public class FunctionTests
         Assert.Null(DeclaredFunction.Find("VLOOKUP"));
         Assert.All(DeclaredFunction.All, f => Assert.False(string.IsNullOrWhiteSpace(f.Description)));
     }
+
+    [Theory] // ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!
+    [InlineData("(?:a)")]      // a non-capturing group
+    [InlineData("(?i)a")]      // an inline option
+    [InlineData("(?<n>a)")]    // a named group
+    [InlineData("a*+")]        // a possessive quantifier
+    [InlineData("a{,2}")]      // an upper bound alone: PCRE2 10.43 reads it, .NET does not
+    [InlineData("a{x}")]       // a brace that is not a quantifier
+    [InlineData("a}")]
+    [InlineData("a]")]
+    [InlineData("[[:alpha:]]")] // a POSIX class
+    [InlineData("[a-[b]]")]    // .NET's class subtraction
+    [InlineData("[a-c-e]")]    // a hyphen after a range
+    [InlineData("[\\d-z]")]    // a range from a class
+    [InlineData("[z-a]")]      // a range out of order
+    [InlineData("[]")]
+    [InlineData("\\D")]
+    [InlineData("\\W")]
+    [InlineData("\\S")]
+    [InlineData("\\B")]
+    [InlineData("\\n")]
+    [InlineData("\\x41")]
+    [InlineData("\\A")]
+    [InlineData("*a")]         // a quantifier with nothing to repeat
+    [InlineData("^*")]
+    [InlineData("a**")]
+    [InlineData("(a")]
+    [InlineData("a)")]
+    [InlineData("a\\")]
+    [InlineData("\U0001F600")] // outside the Basic Multilingual Plane
+    public void A_regular_expression_outside_the_accepted_set_is_refused(string pattern)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "a");
+        sheet.Enter("B1", "x");
+        sheet.Enter("C1", "'" + pattern);
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=XLOOKUP(C1,A1:A1,B1:B1,,3)").Error);
+    }
+
+    [Theory] // ADR-0047: the accepted constructs, with PCRE2's meaning where .NET's would differ
+    [InlineData("^a.c$", "abc", true)]
+    [InlineData("^a.c$", "a\nc", false)]              // . does not match a newline
+    [InlineData("^.$", "\U0001F600", true)]           // . matches a code point, as PCRE2 in UTF mode
+    [InlineData("^[^a]$", "\U0001F600", true)]        // so does a negated class
+    [InlineData("^\\d+$", "١٢", false)]     // \d is ASCII: Arabic-Indic digits are not digits
+    [InlineData("^\\w+$", "café", false)]        // \w is ASCII
+    [InlineData("\\bcaf\\b", "café", true)]      // so \b sits before an accented letter
+    [InlineData("^\\s$", " ", false)]           // \s is ASCII whitespace
+    [InlineData("^[a\\-z]+$", "a-z", true)]
+    [InlineData("^[-a]+$", "-a", true)]
+    [InlineData("^[a-]+$", "a-", true)]
+    [InlineData("^a{2,3}?$", "aaa", true)]
+    [InlineData("^\\(1\\)$", "(1)", true)]
+    [InlineData("^a b#$", "a b#", true)]              // spaces and # are literal
+    [InlineData("A", "a", false)]                     // case-sensitive
+    public void A_regular_expression_in_the_accepted_set_matches_as_PCRE2(string pattern, string text, bool matches)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "'" + text);
+        sheet.Enter("B1", "x");
+        sheet.Enter("C1", "'" + pattern);
+
+        var result = sheet.Evaluate("=XLOOKUP(C1,A1:A1,B1:B1,,3)");
+        Assert.Equal(matches ? Value.FromText("x") : Value.FromError(ErrorValue.NA), result);
+    }
 }
