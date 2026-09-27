@@ -11,7 +11,7 @@ namespace ExSheet.Engine;
 /// are displayed (ADR-0048).
 /// </summary>
 /// <remarks>Not thread-safe: one Sheet is changed and read from one thread at a time.</remarks>
-public sealed class Sheet
+public sealed partial class Sheet
 {
     /// <summary>Excel's row count: 1,048,576 (ADR-0046).</summary>
     public const int RowCount = 1_048_576;
@@ -255,6 +255,7 @@ public sealed class Sheet
             }
         }
         if (areas.Count > 0) _areaPrecedents[formulaCell] = [.. areas];
+        RegisterTableReaders(formulaCell, formula);
     }
 
     private void Unregister(CellAddress formulaCell, Node formula)
@@ -269,6 +270,7 @@ public sealed class Sheet
             }
         }
         _areaPrecedents.Remove(formulaCell);
+        UnregisterTableReaders(formulaCell, formula);
     }
 
     /// <summary>The Formula cells that read <paramref name="address"/> directly.</summary>
@@ -386,7 +388,7 @@ public sealed class Sheet
     /// </summary>
     private Value? Taint(Node node, StagedReader reader)
     {
-        var gettingData = false;
+        var gettingData = ReadsWaitingTable(node);
         foreach (var reference in node.References)
         {
             if (reference.SheetName is not null) continue;
@@ -432,6 +434,8 @@ public sealed class Sheet
 
         public IEnumerable<CellAddress> NonBlankIn(Area area) =>
             sheet.CellsIn(area).Where(a => Read(a) is not null).Order();
+
+        public Operand TableColumn(string table, string column) => sheet.TableColumn(table, column);
     }
 
     private sealed class Cell(CellAddress address)

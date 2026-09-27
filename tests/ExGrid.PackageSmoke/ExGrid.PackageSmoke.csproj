@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.7" />
     <PackageReference Include="ExGrid" Version="$(ExGridVersion)" />
     <PackageReference Include="ExGrid.MudBlazor" Version="$(ExGridVersion)" />
+    <PackageReference Include="ExSheet.Engine" Version="$(ExGridVersion)" />
   </ItemGroup>
 
   <Target Name="RequireThePackedVersion" BeforeTargets="CollectPackageReferences">

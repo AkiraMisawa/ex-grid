@@ -17,3 +17,18 @@ names. Candidates that come back for text that has since changed are dropped.
 - [ ] Works from the Formula Bar as from the cell
 
 ## Comments
+
+2026-09-27, engine half: `FormulaEntry.Complete(text, caret, linkedTables)` (and
+`Sheet.Complete(text, caret)`, which passes the Sheet's own Linked Tables) returns the
+declared functions and Linked Table names beginning with the name being typed at the caret,
+without regard to case, in one alphabetical list, with the span of text accepting a candidate
+replaces and what it writes (`SUM(` for a function, the name for a table). It offers nothing
+inside text in quotes, a Reference with `$`, a number, a column in brackets, a name that does
+not stand where an operand can start, or when nothing matches. `FormulaEntry.HintAt(text,
+caret)` returns the innermost declared function whose argument list holds the caret, the
+argument index counted by the commas at its own depth, and that argument's name as
+`DeclaredFunction.Arguments` lists it. Both work on unfinished text and never require the
+Formula to parse (`FormulaEntryTests`). The first criterion's `=SU` offers `SUM` only: the
+declared set has no `SUMIF` (ADR-0047). **What remains is the component's:** reporting the
+text and caret as the user types, the Inner Popup and the hint painted by Chrome, ↑/↓/Tab/Escape,
+dropping a stale list, and all of it from the Formula Bar too.

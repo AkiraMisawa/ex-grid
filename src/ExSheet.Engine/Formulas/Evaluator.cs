@@ -9,6 +9,13 @@ internal interface ICellReader
 
     /// <summary>The addresses inside <paramref name="area"/> that are not blank, in row-major order.</summary>
     IEnumerable<CellAddress> NonBlankIn(Area area);
+
+    /// <summary>
+    /// A Linked Table's column (ADR-0049): the column's Values, or <c>#NAME?</c> for a table never
+    /// declared, <c>#REF!</c> for a column it does not have, and <c>#GETTING_DATA</c> before its
+    /// first snapshot.
+    /// </summary>
+    Operand TableColumn(string table, string column);
 }
 
 /// <summary>
@@ -33,8 +40,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         MissingNode => Formulas.Operand.Missing,
         // One Sheet exists and has no name to match, so a qualified Reference names nothing (ADR-0046).
         ReferenceNode r => r.Reference.SheetName is null ? Formulas.Operand.Of(r.Reference.Area) : Formulas.Operand.Of(ErrorValue.Ref),
-        // No Linked Table can be declared yet: an undeclared name is #NAME? (ADR-0049).
-        StructuredReferenceNode => Formulas.Operand.Of(ErrorValue.Name),
+        StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
         NameNode => Formulas.Operand.Of(ErrorValue.Name),
         ParenthesesNode p => Operand(p.Inner),
         UnaryNode u => Formulas.Operand.Of(Negate(u)),
@@ -54,7 +60,17 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         OperandKind.Scalar => operand.Scalar,
         OperandKind.Area when operand.Area.IsSingleCell => Cells.Read(new CellAddress(operand.Area.Row1, operand.Area.Column1)),
         OperandKind.Area => Value.FromError(ErrorValue.Value),
+        OperandKind.Column when operand.Column!.Count == 1 => operand.Column[0],
+        OperandKind.Column => Value.FromError(ErrorValue.Value),
         _ => null,
+    };
+
+    /// <summary>The Values of a range that are not blank, in order: row-major for cells, top to bottom for a Linked Table's column.</summary>
+    public IEnumerable<Value> RangeValues(Operand range) => range.Kind switch
+    {
+        OperandKind.Area => Cells.NonBlankIn(range.Area).Select(a => Cells.Read(a)!.Value),
+        OperandKind.Column => range.Column!.Where(v => v is not null).Select(v => v!.Value),
+        _ => throw new ArgumentException("Not a range.", nameof(range)),
     };
 
     public Value? Scalar(Node node) => ScalarOf(Operand(node));

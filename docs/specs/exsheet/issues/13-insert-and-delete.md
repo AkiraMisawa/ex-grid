@@ -15,3 +15,22 @@ step.
 - [ ] One Ctrl+Z restores the structure and every Reference
 
 ## Comments
+
+2026-09-27, engine half: `Sheet.InsertRows`, `DeleteRows`, `InsertColumns` and `DeleteColumns`
+move Entries, number formats and alignment, and rewrite every Reference in every Formula,
+relative and absolute alike, to keep naming the same cells: a range moves when the edit is at or
+above its first row, grows when it is inside it, shrinks on a partial deletion, and is written
+`#REF!` in the stored Formula when every cell it named is deleted (`=SUM(#REF!)`, `=#REF!+1`).
+`A:A`, and `A1:A1048576`, which Excel writes as `A:A`, stay put on a row edit, but a Formula
+reading them recomputes. Only the rewritten Formulas (and what reads them) recompute. The
+returned `SheetChange` names every row whose Value, Entry or formatting at that address
+differs, which on an insertion is every non-blank row below it (`StructureTests`). Covers the
+engine side of the first two criteria and, with ticket 12's `SheetStep`, of the fourth. An
+insertion that would push an Entry off the Sheet is refused by name, as Excel refuses it; one
+that would push the cells a Reference names off the edge is refused too, because what Excel
+writes there is not pinned (reported for a decision). A cell holding only formatting is
+dropped at the edge. **What remains is the component's:** the Context Menu commands, keeping
+the Row Sequence Version and the Selection in place (SH-5's layer 2 half), and handing the
+change's rows back as new row instances. Not implemented, reported for a decision: Excel gives
+an inserted row the formatting of the row above (and a column that of the column to its left);
+the engine inserts blank rows.

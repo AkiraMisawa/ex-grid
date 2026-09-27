@@ -1,0 +1,210 @@
+using ExSheet.Engine.Formulas;
+
+namespace ExSheet.Engine;
+
+/// <summary>
+/// One user operation on a Sheet, described before it is done: an edit, a paste, a format, an
+/// insertion or deletion, a fill. <see cref="Sheet.Do"/> does it and returns the one
+/// <see cref="SheetStep"/> that undoes it (ADR-0048): a paste over a thousand cells is one step.
+/// </summary>
+public abstract class SheetEdit
+{
+    private protected SheetEdit()
+    {
+    }
+
+    /// <summary>Text typed into one cell, read under the Sheet's culture (<see cref="Sheet.Enter(CellAddress, string)"/>).</summary>
+    public static SheetEdit Enter(CellAddress address, string typed) =>
+        Enter([new KeyValuePair<CellAddress, string>(address, typed ?? throw new ArgumentNullException(nameof(typed)))]);
+
+    /// <summary>Several typed texts as one operation, such as a paste from another program.</summary>
+    public static SheetEdit Enter(IEnumerable<KeyValuePair<CellAddress, string>> typed)
+    {
+        ArgumentNullException.ThrowIfNull(typed);
+        var list = typed.ToList();
+        return new CellsEdit(list.Select(p => p.Key), sheet => sheet.Enter(list));
+    }
+
+    /// <summary>Entries set or cleared (<see langword="null"/>) as one operation.</summary>
+    public static SheetEdit SetEntries(IEnumerable<KeyValuePair<CellAddress, Entry?>> entries)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        var list = entries.ToList();
+        return new CellsEdit(list.Select(p => p.Key), sheet => sheet.SetEntries(list));
+    }
+
+    /// <summary>A number format set on cells; <see langword="null"/> is General.</summary>
+    public static SheetEdit SetFormat(IEnumerable<CellAddress> addresses, NumberFormat? format)
+    {
+        ArgumentNullException.ThrowIfNull(addresses);
+        var list = addresses.ToList();
+        return new CellsEdit(list, sheet => sheet.SetFormat(list, format));
+    }
+
+    /// <summary>A horizontal alignment set on cells.</summary>
+    public static SheetEdit SetAlignment(IEnumerable<CellAddress> addresses, HorizontalAlignment alignment)
+    {
+        ArgumentNullException.ThrowIfNull(addresses);
+        var list = addresses.ToList();
+        return new CellsEdit(list, sheet => sheet.SetAlignment(list, alignment));
+    }
+
+    /// <summary>Rows inserted (<see cref="Sheet.InsertRows"/>).</summary>
+    public static SheetEdit InsertRows(int row, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, true));
+
+    /// <summary>Rows deleted (<see cref="Sheet.DeleteRows"/>).</summary>
+    public static SheetEdit DeleteRows(int row, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, false));
+
+    /// <summary>Columns inserted (<see cref="Sheet.InsertColumns"/>).</summary>
+    public static SheetEdit InsertColumns(int column, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Columns, column, count, true));
+
+    /// <summary>Columns deleted (<see cref="Sheet.DeleteColumns"/>).</summary>
+    public static SheetEdit DeleteColumns(int column, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Columns, column, count, false));
+
+    /// <summary>
+    /// A block copied inside ExSheet, pasted with its top-left cell at <paramref name="origin"/>:
+    /// Entries with their relative References shifted by the distance pasted (a Reference shifted
+    /// off the Sheet is <c>#REF!</c>, as in Excel), formats and alignment with them (ADR-0048). A
+    /// block that would run past the Sheet's edge is refused by name (ADR-0050).
+    /// </summary>
+    public static SheetEdit Paste(SheetBlock block, CellAddress origin)
+    {
+        ArgumentNullException.ThrowIfNull(block);
+        return new PlacedEdit(Sheet.OffSheet(origin, block.RowCount, block.ColumnCount), () => Sheet.Place(block, origin));
+    }
+
+    /// <summary>
+    /// A block pasted over <paramref name="target"/>, repeated to fill it as Excel repeats a paste
+    /// over a selection that is a whole multiple of the block's size.
+    /// </summary>
+    /// <exception cref="ArgumentException">The target is not a whole multiple of the block in both directions.</exception>
+    public static SheetEdit Paste(SheetBlock block, CellRange target)
+    {
+        ArgumentNullException.ThrowIfNull(block);
+        if (target.RowCount % block.RowCount != 0 || target.ColumnCount % block.ColumnCount != 0)
+        {
+            throw new ArgumentException($"A {target.RowCount} × {target.ColumnCount} target is not a whole multiple of a {block.RowCount} × {block.ColumnCount} block.", nameof(target));
+        }
+        return new PlacedEdit(null, () => Tiles(block, target).SelectMany(origin => Sheet.Place(block, origin)));
+
+        static IEnumerable<CellAddress> Tiles(SheetBlock block, CellRange target)
+        {
+            for (var row = target.First.Row; row <= target.Last.Row; row += block.RowCount)
+            {
+                for (var column = target.First.Column; column <= target.Last.Column; column += block.ColumnCount) yield return new CellAddress(row, column);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Text pasted from another program, each field taken as if the user had typed it into its cell
+    /// under the Sheet's culture: <c>=A1+1</c> becomes a Formula and <c>1,234</c> a number under
+    /// <c>en-US</c> (ADR-0048). <paramref name="fields"/> is rectangular, rows of columns, with the
+    /// top-left field at <paramref name="origin"/>; an empty field clears its cell. A block that
+    /// would run past the Sheet's edge is refused by name (ADR-0050).
+    /// </summary>
+    /// <exception cref="ArgumentException">The rows are not all the same length, or there are none.</exception>
+    public static SheetEdit PasteText(IReadOnlyList<IReadOnlyList<string>> fields, CellAddress origin)
+    {
+        ArgumentNullException.ThrowIfNull(fields);
+        if (fields.Count == 0 || fields[0].Count == 0) throw new ArgumentException("Nothing to paste.", nameof(fields));
+        var width = fields[0].Count;
+        if (fields.Any(row => row is null || row.Count != width)) throw new ArgumentException("The pasted fields are not rectangular.", nameof(fields));
+        var refusal = Sheet.OffSheet(origin, fields.Count, width);
+        if (refusal is not null) return new RefusedEdit(refusal);
+        var typed = new List<KeyValuePair<CellAddress, string>>();
+        for (var r = 0; r < fields.Count; r++)
+        {
+            for (var c = 0; c < width; c++) typed.Add(new(new CellAddress(origin.Row + r, origin.Column + c), fields[r][c] ?? throw new ArgumentException("A field is null.", nameof(fields))));
+        }
+        return Enter(typed);
+    }
+
+    /// <summary>
+    /// A Fill Intent resolved as Excel fills (ADR-0050, item 5): <paramref name="target"/> extends
+    /// <paramref name="source"/> in <paramref name="direction"/>, given as the new cells alone or as
+    /// the whole extended range. Formulas are copied with their References shifted, two or more
+    /// numbers continue as Excel's linear trend, a single date goes on by day, and a single number,
+    /// text without a pattern, booleans, Error Values and blanks are copied. Any other pattern is
+    /// refused (<see cref="SheetRefusalReason.FillPatternNotSupported"/>), never filled with copies;
+    /// <see cref="Sheet.Check"/> says so before anything is written.
+    /// </summary>
+    public static SheetEdit Fill(CellRange source, CellRange target, FillDirection direction)
+    {
+        if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction), direction, "Not a fill direction.");
+        return new FillEdit(source, target, direction);
+    }
+
+    /// <summary>Whether the Sheet would refuse this operation as it stands, and why. Changes nothing.</summary>
+    internal virtual SheetRefusal? Check(Sheet sheet) => null;
+
+    internal abstract SheetStep Apply(Sheet sheet);
+
+    /// <summary>
+    /// An operation on cells in place: undone by putting back what those cells recorded before,
+    /// redone by putting back what they recorded after.
+    /// </summary>
+    internal sealed class CellsEdit(IEnumerable<CellAddress> touched, Func<Sheet, SheetChange> apply) : SheetEdit
+    {
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var addresses = touched.Distinct().ToList();
+            var before = sheet.Record(addresses);
+            var change = apply(sheet);
+            var after = sheet.Record(addresses);
+            return new SheetStep(sheet, change, s => s.Restore(before), s => s.Restore(after));
+        }
+    }
+
+    /// <summary>
+    /// Cells written whole — Entry, format and alignment — such as a paste of Entries or a fill:
+    /// the states are computed when the edit is done, and a refusal known in advance stops it.
+    /// </summary>
+    internal sealed class PlacedEdit(SheetRefusal? refusal, Func<IEnumerable<(CellAddress Address, CellState State)>> states) : SheetEdit
+    {
+        internal override SheetRefusal? Check(Sheet sheet) => refusal;
+
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var placed = states().ToList();
+            return new CellsEdit(placed.Select(p => p.Address), s => s.Restore(placed)).Apply(sheet);
+        }
+    }
+
+    /// <summary>A fill, planned against the Sheet as it stands when it is checked or done.</summary>
+    internal sealed class FillEdit(CellRange source, CellRange target, FillDirection direction) : SheetEdit
+    {
+        internal override SheetRefusal? Check(Sheet sheet) => sheet.PlanFill(source, target, direction).Refusal;
+
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var (refusal, states) = sheet.PlanFill(source, target, direction);
+            if (refusal is not null) throw new SheetRefusedException(refusal);
+            return new CellsEdit(states.Select(s => s.Address), s => s.Restore(states)).Apply(sheet);
+        }
+    }
+
+    /// <summary>An operation refused before anything was computed for it.</summary>
+    internal sealed class RefusedEdit(SheetRefusal refusal) : SheetEdit
+    {
+        internal override SheetRefusal? Check(Sheet sheet) => refusal;
+
+        internal override SheetStep Apply(Sheet sheet) => throw new SheetRefusedException(refusal);
+    }
+
+    /// <summary>
+    /// An insertion or deletion: undone by the inverse edit, then putting back the Formulas it
+    /// rewrote and the cells it dropped, exactly as they were — the inverse alone does not restore
+    /// a range a deletion shrank, nor a Reference it made <c>#REF!</c>.
+    /// </summary>
+    internal sealed class StructureEdit(StructuralEdit edit) : SheetEdit
+    {
+        internal override SheetRefusal? Check(Sheet sheet) => sheet.CheckStructural(edit);
+
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var outcome = sheet.Restructure(edit);
+            return new SheetStep(sheet, outcome.Change, s => s.Unrestructure(edit, outcome), s => s.Restructure(edit).Change);
+        }
+    }
+}

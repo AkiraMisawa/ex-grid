@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Packs ExGrid and ExGrid.MudBlazor, reads back what the packages declare, and builds and
-# publishes an application that takes them from the packed files alone (ADR-0042).
+# publishes an application that takes them from the packed files alone (ADR-0042). ExSheet.Engine
+# is packed and taken the same way, into a feed of its own: .feed holds exactly what the release
+# publishes, and ExSheet is not part of that release yet.
 #
 #   tests/ExGrid.PackageSmoke/check.sh [version]
 #
@@ -13,24 +15,27 @@ here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../.." && pwd)
 version=${1:-0.0.0-smoke.$(date +%s)}
 feed="$here/.feed"
+sheetfeed="$here/.sheet-feed"
 cache="$here/.nuget-packages"
 out="$here/.publish"
 
 fail() { echo "package check: $*" >&2; exit 1; }
 
-rm -rf "$feed" "$cache" "$out" "$here/bin" "$here/obj"
-mkdir -p "$feed"
+rm -rf "$feed" "$sheetfeed" "$cache" "$out" "$here/bin" "$here/obj"
+mkdir -p "$feed" "$sheetfeed"
 
 echo "== pack $version"
 for project in ExGrid ExGrid.MudBlazor; do
   dotnet pack "$root/src/$project" -c Release -o "$feed" -p:Version="$version" --nologo
 done
+dotnet pack "$root/src/ExSheet.Engine" -c Release -o "$sheetfeed" -p:Version="$version" --nologo
 
 echo "== what the packages declare"
-nuspec() { unzip -p "$feed/$1.$version.nupkg" "$1.nuspec"; }
-entries() { unzip -Z1 "$feed/$1.$version.nupkg"; }
-for id in ExGrid ExGrid.MudBlazor; do
-  [ -f "$feed/$id.$version.snupkg" ] || fail "$id has no symbol package"
+feedof() { case "$1" in ExSheet.*) echo "$sheetfeed" ;; *) echo "$feed" ;; esac; }
+nuspec() { unzip -p "$(feedof "$1")/$1.$version.nupkg" "$1.nuspec"; }
+entries() { unzip -Z1 "$(feedof "$1")/$1.$version.nupkg"; }
+for id in ExGrid ExGrid.MudBlazor ExSheet.Engine; do
+  [ -f "$(feedof "$id")/$id.$version.snupkg" ] || fail "$id has no symbol package"
   spec=$(nuspec "$id")
   grep -q '<license type="expression">MIT</license>' <<<"$spec" || fail "$id does not declare MIT"
   grep -q '<readme>README.md</readme>' <<<"$spec" || fail "$id has no readme"
@@ -49,16 +54,20 @@ grep -qF "<dependency id=\"ExGrid\" version=\"[$version]\"" <<<"$(nuspec ExGrid.
   || fail "ExGrid.MudBlazor does not depend on exactly ExGrid $version"
 grep -q '<dependency id="MudBlazor" version="9.0.0"' <<<"$(nuspec ExGrid.MudBlazor)" \
   || fail "ExGrid.MudBlazor's dependency on MudBlazor is not 9.0.0"
+# The engine depends on nothing at all: a server computes a Sheet with it alone (ADR-0047, SH-1).
+if grep -q '<dependency ' <<<"$(nuspec ExSheet.Engine)"; then fail "ExSheet.Engine declares a dependency"; fi
 
 echo "== an application that takes them"
 dotnet publish "$here" -c Release -o "$out" --nologo \
   -p:ExGridVersion="$version" -p:RestorePackagesPath="$cache"
 
 # Restored from the packed files, not from anywhere else.
-for id in exgrid exgrid.mudblazor; do
+for id in exgrid exgrid.mudblazor exsheet.engine; do
   meta="$cache/$id/$version/.nupkg.metadata"
+  from=$feed
+  [ "$id" = exsheet.engine ] && from=$sheetfeed
   [ -f "$meta" ] || fail "$id $version was not restored"
-  grep -qF "$feed" "$meta" || fail "$id $version came from somewhere other than $feed"
+  grep -qF "$from" "$meta" || fail "$id $version came from somewhere other than $from"
 done
 
 # The paths the README tells a Consumer to link, and the module the component imports.

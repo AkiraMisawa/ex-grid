@@ -41,6 +41,9 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     /// <summary>Whether a number shows as a date or time: its first section holds date or time codes.</summary>
     public bool IsDate => _sections.Length > 0 && _sections[0].Kind == SectionKind.Date;
 
+    /// <summary>Whether a number shows as a date with no time of day: date codes and no hour, second or AM/PM.</summary>
+    internal bool IsDateOnly => IsDate && !_sections[0].HasTime;
+
     /// <summary>Whether a number shows as a percentage: its first section holds <c>%</c>.</summary>
     public bool IsPercent => _sections.Length > 0 && _sections[0].Percent > 0;
 
@@ -212,6 +215,9 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         public SectionKind Kind { get; }
 
         public int Percent { get; private set; }
+
+        /// <summary>Whether a date section shows a time of day.</summary>
+        public bool HasTime => _parts.Any(p => p.Kind == PartKind.AmPm || (p.Kind == PartKind.DateCode && p.Code is 'h' or 's'));
 
         private int _scale;
         private bool _thousands;

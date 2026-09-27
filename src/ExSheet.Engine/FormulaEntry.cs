@@ -1,0 +1,340 @@
+using System.Text.RegularExpressions;
+
+namespace ExSheet.Engine;
+
+/// <summary>What a completion candidate names.</summary>
+public enum CompletionKind
+{
+    /// <summary>A function of the declared set (<see cref="DeclaredFunction"/>).</summary>
+    Function,
+
+    /// <summary>A Linked Table declared on the Sheet (ADR-0049).</summary>
+    LinkedTable,
+}
+
+/// <summary>One name completion offers (ADR-0051).</summary>
+/// <param name="Name">The name, as declared.</param>
+/// <param name="Kind">What it names.</param>
+/// <param name="InsertText">What accepting it writes in place of what was typed: a function's name and its <c>(</c>, a table's name.</param>
+/// <param name="Description">One sentence for a function; <see langword="null"/> for a table.</param>
+public sealed record CompletionCandidate(string Name, CompletionKind Kind, string InsertText, string? Description);
+
+/// <summary>
+/// The candidates for the name being typed at the caret (ADR-0051): accepting one replaces the
+/// <see cref="Length"/> characters from <see cref="Start"/> with its <see cref="CompletionCandidate.InsertText"/>.
+/// </summary>
+/// <param name="Start">Where the name being typed starts in the text.</param>
+/// <param name="Length">How long it is, including any part of it after the caret.</param>
+/// <param name="Candidates">The names that begin with what was typed, in alphabetical order; never empty.</param>
+public sealed record FormulaCompletion(int Start, int Length, IReadOnlyList<CompletionCandidate> Candidates);
+
+/// <summary>The argument hint (ADR-0051): the function whose argument list holds the caret, and which argument it is in.</summary>
+/// <param name="Function">The declared function.</param>
+/// <param name="ArgumentIndex">Which argument the caret is in, from 0.</param>
+/// <param name="CurrentArgument">
+/// That argument's name as <see cref="DeclaredFunction.Arguments"/> lists it — for an open-ended
+/// function past its named arguments, the one that repeats — or <see langword="null"/> when the
+/// caret is past the last argument the function takes.
+/// </param>
+public sealed record ArgumentHint(DeclaredFunction Function, int ArgumentIndex, string? CurrentArgument);
+
+/// <summary>Where Point mode writes a Reference: the <see cref="Length"/> characters from <see cref="Start"/> are replaced (none, for an insertion at the caret).</summary>
+/// <param name="Start">Where the Reference goes in the text.</param>
+/// <param name="Length">How many characters it replaces.</param>
+public readonly record struct PointSite(int Start, int Length);
+
+/// <summary>
+/// Pure answers over the text of a Formula being typed and its caret, for the aids ADR-0051 asks
+/// of the Consumer: completion candidates, the argument hint, whether a Reference can go at the
+/// caret (Point mode), and the Reference text for a pointed range. Each works on unfinished text:
+/// nothing here requires the Formula to parse. Text not beginning with <c>=</c> is not a Formula,
+/// and gets no aid.
+/// </summary>
+public static partial class FormulaEntry
+{
+    /// <summary>
+    /// The names beginning with the name being typed at the caret, without regard to case: the
+    /// declared functions and <paramref name="linkedTables"/>. <see langword="null"/> when the caret
+    /// is not at the end of a name standing where an operand can start (inside text in quotes, a
+    /// Reference with <c>$</c>, a number, a column in brackets), or when nothing matches.
+    /// </summary>
+    public static FormulaCompletion? Complete(string text, int caret, IEnumerable<string> linkedTables)
+    {
+        ArgumentNullException.ThrowIfNull(linkedTables);
+        if (!IsFormula(text, caret)) return null;
+        var tokens = Scan(text);
+        var index = tokens.FindIndex(t => t.Start < caret && caret <= t.End);
+        if (index < 0) return null;
+        var token = tokens[index];
+        if (token.Kind != TokenKind.Operand || token.Unterminated || token.HasBrackets) return null;
+        var prefix = text[token.Start..caret];
+        if (!NamePattern().IsMatch(prefix) || !OperandMayStart(tokens, index)) return null;
+
+        var candidates = DeclaredFunction.All
+            .Where(f => f.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .Select(f => new CompletionCandidate(f.Name, CompletionKind.Function, f.Name + "(", f.Description))
+            .Concat(linkedTables
+                .Where(t => t.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                .Select(t => new CompletionCandidate(t, CompletionKind.LinkedTable, t, null)))
+            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return candidates.Count == 0 ? null : new FormulaCompletion(token.Start, token.End - token.Start, candidates);
+    }
+
+    /// <summary>
+    /// The hint for the innermost function call whose argument list holds the caret, counting
+    /// arguments by the commas at its own depth; grouping parentheses inside it belong to it, and
+    /// text in quotes is one argument whatever it holds. <see langword="null"/> outside any call,
+    /// or when that function is not declared.
+    /// </summary>
+    public static ArgumentHint? HintAt(string text, int caret)
+    {
+        if (!IsFormula(text, caret)) return null;
+        var tokens = Scan(text);
+        var frames = new Stack<(string? Function, int Commas)>();
+        for (var i = 0; i < tokens.Count && tokens[i].End <= caret; i++)
+        {
+            var token = tokens[i];
+            switch (token.Kind)
+            {
+                case TokenKind.Open:
+                    var callee = i > 0 && tokens[i - 1].Kind == TokenKind.Operand && tokens[i - 1].End == token.Start && NamePattern().IsMatch(text[tokens[i - 1].Start..tokens[i - 1].End])
+                        ? text[tokens[i - 1].Start..tokens[i - 1].End]
+                        : null;
+                    frames.Push((callee, 0));
+                    break;
+                case TokenKind.Close:
+                    if (frames.Count > 0) frames.Pop();
+                    break;
+                case TokenKind.Comma:
+                    if (frames.Count > 0)
+                    {
+                        var (function, commas) = frames.Pop();
+                        frames.Push((function, commas + 1));
+                    }
+                    break;
+            }
+        }
+        foreach (var (function, commas) in frames)
+        {
+            if (function is null) continue;
+            if (DeclaredFunction.Find(function) is not { } declared) return null;
+            return new ArgumentHint(declared, commas, ArgumentName(declared, commas));
+        }
+        return null;
+    }
+
+    private static string? ArgumentName(DeclaredFunction function, int index)
+    {
+        var names = function.Arguments.Split(", ");
+        if (index < names.Length && names[index] != "...") return names[index];
+        return names[^1] == "..." ? names[^2] : null;
+    }
+
+    /// <summary>
+    /// Whether a Reference can be written at the caret (ADR-0051's Point predicate): the Formula
+    /// stands after its <c>=</c>, an operator (not <c>%</c>), <c>(</c> or <c>,</c>, with nothing
+    /// after the caret that the Reference would run into. <see langword="null"/> when it cannot.
+    /// </summary>
+    public static PointSite? PointAt(string text, int caret)
+    {
+        if (!IsFormula(text, caret)) return null;
+        var tokens = Scan(text);
+        if (tokens.Any(t => t.Start < caret && caret < t.End) || tokens.Any(t => t.Unterminated && t.Start < caret)) return null;
+        var before = tokens.FindLastIndex(t => t.End <= caret);
+        if (!OperandMayStart(tokens, before + 1) || !MayFollowOperand(tokens, caret)) return null;
+        return new PointSite(caret, 0);
+    }
+
+    /// <summary>
+    /// The Reference that ends at the caret and stands where Point mode could have written it —
+    /// the one a further arrow key replaces while the user is pointing (ADR-0051). Only the
+    /// component knows whether it is pointing; typed by hand, the same text is not pointed.
+    /// <see langword="null"/> when no Reference ends at the caret in such a place.
+    /// </summary>
+    public static PointSite? PointedReferenceAt(string text, int caret)
+    {
+        if (!IsFormula(text, caret)) return null;
+        var tokens = Scan(text);
+        var index = tokens.FindIndex(t => t.End == caret);
+        if (index < 0) return null;
+        var token = tokens[index];
+        if (token.Kind != TokenKind.Operand || !PointedPattern().IsMatch(text[token.Start..token.End])) return null;
+        if (!OperandMayStart(tokens, index) || !MayFollowOperand(tokens, caret)) return null;
+        return new PointSite(token.Start, token.End - token.Start);
+    }
+
+    /// <summary>The Reference Point mode writes for a pointed range: <c>B7</c> for one cell, <c>B7:C9</c> from its top-left otherwise.</summary>
+    public static string ReferenceText(CellRange range) => range.ToString();
+
+    private static bool IsFormula(string text, int caret)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        if ((uint)caret > (uint)text.Length) throw new ArgumentOutOfRangeException(nameof(caret), caret, "The caret is 0 to the text's length.");
+        return text.Length > 0 && text[0] == '=' && caret >= 1;
+    }
+
+    /// <summary>Whether an operand can start at token <paramref name="index"/>: right after the <c>=</c>, an operator that takes a right side, <c>(</c> or <c>,</c>.</summary>
+    private static bool OperandMayStart(List<Token> tokens, int index)
+    {
+        if (index == 0) return true;
+        var previous = tokens[index - 1];
+        return previous.Kind is TokenKind.Open or TokenKind.Comma || (previous.Kind == TokenKind.Operator && previous.Text != "%");
+    }
+
+    /// <summary>Whether what follows the caret leaves room for an operand: the end, <c>)</c>, <c>,</c> or an operator.</summary>
+    private static bool MayFollowOperand(List<Token> tokens, int caret)
+    {
+        var next = tokens.Find(t => t.Start >= caret);
+        return next is null || next.Kind is TokenKind.Close or TokenKind.Comma or TokenKind.Operator;
+    }
+
+    [GeneratedRegex(@"^[A-Za-z_\\][A-Za-z0-9_.]*$", RegexOptions.CultureInvariant)]
+    private static partial Regex NamePattern();
+
+    [GeneratedRegex(@"^\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6}(?::\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6})?$", RegexOptions.CultureInvariant)]
+    private static partial Regex PointedPattern();
+
+    private enum TokenKind
+    {
+        Operand,
+        Text,
+        Operator,
+        Open,
+        Close,
+        Comma,
+    }
+
+    private sealed record Token(TokenKind Kind, int Start, int End, string Text, bool Unterminated = false, bool HasBrackets = false);
+
+    private static readonly string[] Operators = ["<>", "<=", ">=", "=", "<", ">", "+", "-", "*", "/", "^", "&", "%"];
+
+    /// <summary>
+    /// A tolerant scan of a Formula's text after its <c>=</c>: text in quotes, parentheses,
+    /// commas, operators, and operands — a run of name, number, Reference or Error Value
+    /// characters, with a quoted Sheet name and a structured reference's brackets inside it. It
+    /// never fails: an unclosed quote or bracket runs to the end and is marked so.
+    /// </summary>
+    private static List<Token> Scan(string text)
+    {
+        var tokens = new List<Token>();
+        var i = 1;
+        while (i < text.Length)
+        {
+            var c = text[i];
+            if (char.IsWhiteSpace(c))
+            {
+                i++;
+                continue;
+            }
+            var start = i;
+            if (c == '"')
+            {
+                i++;
+                var closed = false;
+                while (i < text.Length)
+                {
+                    if (text[i] == '"')
+                    {
+                        if (i + 1 < text.Length && text[i + 1] == '"')
+                        {
+                            i += 2;
+                            continue;
+                        }
+                        i++;
+                        closed = true;
+                        break;
+                    }
+                    i++;
+                }
+                tokens.Add(new Token(TokenKind.Text, start, i, text[start..i], !closed));
+                continue;
+            }
+            if (c is '(' or ')' or ',')
+            {
+                tokens.Add(new Token(c == '(' ? TokenKind.Open : c == ')' ? TokenKind.Close : TokenKind.Comma, i, i + 1, c.ToString()));
+                i++;
+                continue;
+            }
+            var op = Array.Find(Operators, o => string.CompareOrdinal(text, i, o, 0, o.Length) == 0);
+            if (op is not null)
+            {
+                tokens.Add(new Token(TokenKind.Operator, i, i + op.Length, op));
+                i += op.Length;
+                continue;
+            }
+
+            // An Error Value, whose spelling holds characters that are operators elsewhere (#DIV/0!).
+            if (c == '#')
+            {
+                i++;
+                while (i < text.Length && (char.IsAsciiLetterOrDigit(text[i]) || text[i] is '/' or '!' or '?' or '_')) i++;
+                tokens.Add(new Token(TokenKind.Operand, start, i, text[start..i]));
+                continue;
+            }
+
+            // An operand: everything up to the next space, quote, parenthesis, comma or operator,
+            // with a quoted Sheet name and bracketed columns read whole.
+            var unterminated = false;
+            var brackets = false;
+            while (i < text.Length && !unterminated)
+            {
+                var d = text[i];
+                if (d == '\'')
+                {
+                    i++;
+                    unterminated = true;
+                    while (i < text.Length)
+                    {
+                        if (text[i] == '\'' && !(i + 1 < text.Length && text[i + 1] == '\''))
+                        {
+                            i++;
+                            unterminated = false;
+                            break;
+                        }
+                        i += text[i] == '\'' ? 2 : 1;
+                    }
+                    continue;
+                }
+                if (d == '[')
+                {
+                    brackets = true;
+                    var depth = 0;
+                    unterminated = true;
+                    while (i < text.Length)
+                    {
+                        if (text[i] == '\'' && i + 1 < text.Length)
+                        {
+                            i += 2;
+                            continue;
+                        }
+                        if (text[i] == '[') depth++;
+                        else if (text[i] == ']' && --depth == 0)
+                        {
+                            i++;
+                            unterminated = false;
+                            break;
+                        }
+                        i++;
+                    }
+                    continue;
+                }
+                if (char.IsWhiteSpace(d) || d is '"' or '(' or ')' or ',' || Array.Exists(Operators, o => o[0] == d)) break;
+                i++;
+            }
+            if (i == start) i++;
+            tokens.Add(new Token(TokenKind.Operand, start, i, text[start..i], unterminated, brackets));
+        }
+        return tokens;
+    }
+}
+
+public sealed partial class Sheet
+{
+    /// <summary>
+    /// Completion for the Formula being typed (ADR-0051): the declared functions and this Sheet's
+    /// Linked Tables whose names begin with the name at the caret (<see cref="FormulaEntry.Complete"/>).
+    /// </summary>
+    public FormulaCompletion? Complete(string text, int caret) =>
+        FormulaEntry.Complete(text, caret, _tables.Values.OrderBy(t => t.Order).Select(t => t.Name));
+}

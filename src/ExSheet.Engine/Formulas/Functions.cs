@@ -44,10 +44,9 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area:
-                    foreach (var address in evaluator.Cells.NonBlankIn(operand.Area))
+                case OperandKind.Area or OperandKind.Column:
+                    foreach (var value in evaluator.RangeValues(operand))
                     {
-                        var value = evaluator.Cells.Read(address)!.Value;
                         if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
                         else if (value.IsError) return value.Error;
                     }
@@ -118,11 +117,8 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area:
-                    foreach (var address in evaluator.Cells.NonBlankIn(operand.Area))
-                    {
-                        if (evaluator.Cells.Read(address)!.Value.Kind == ValueKind.Number) count++;
-                    }
+                case OperandKind.Area or OperandKind.Column:
+                    count += evaluator.RangeValues(operand).Count(v => v.Kind == ValueKind.Number);
                     break;
                 case OperandKind.Missing:
                     count++;
@@ -147,8 +143,8 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area:
-                    count += evaluator.Cells.NonBlankIn(operand.Area).Count();
+                case OperandKind.Area or OperandKind.Column:
+                    count += evaluator.RangeValues(operand).Count();
                     break;
                 case OperandKind.Missing:
                     count++;
@@ -168,7 +164,8 @@ internal static partial class FunctionLibrary
     /// so it is <c>#VALUE!</c>, and IFERROR and ISERROR do not treat that refusal as a catchable
     /// error — they refuse too, rather than turn "cannot" into a fallback value.
     /// </summary>
-    private static bool IsArray(Operand operand) => operand.Kind == OperandKind.Area && !operand.Area.IsSingleCell;
+    private static bool IsArray(Operand operand) =>
+        (operand.Kind == OperandKind.Area && !operand.Area.IsSingleCell) || (operand.Kind == OperandKind.Column && operand.Column!.Count != 1);
 
     private static Operand If(FunctionCall call)
     {
@@ -297,8 +294,8 @@ internal static partial class FunctionLibrary
 
         var lookupArray = call.Operand(1);
         var returnArray = call.Operand(2);
-        if (lookupArray.Kind != OperandKind.Area) return lookupArray.IsError ? lookupArray : Operand.Of(ErrorValue.Value);
-        if (returnArray.Kind != OperandKind.Area) return returnArray.IsError ? returnArray : Operand.Of(ErrorValue.Value);
+        if (!lookupArray.IsRange) return lookupArray.IsError ? lookupArray : Operand.Of(ErrorValue.Value);
+        if (!returnArray.IsRange) return returnArray.IsError ? returnArray : Operand.Of(ErrorValue.Value);
 
         var matchMode = 0;
         if (call.Has(4))
@@ -320,13 +317,10 @@ internal static partial class FunctionLibrary
             if (searchMode is not (1 or -1)) return Operand.Of(ErrorValue.Value);
         }
 
-        var vector = lookupArray.Area;
-        var vertical = vector.Columns == 1;
-        if (!vertical && vector.Rows != 1) return Operand.Of(ErrorValue.Value);
-        var length = vertical ? vector.Rows : vector.Columns;
-        var result = returnArray.Area;
+        // A range of one row or one column; a Linked Table's column runs down.
+        if (Vector.Of(lookupArray) is not { } vector) return Operand.Of(ErrorValue.Value);
         // The return array lies along the lookup array; more than one cell across it would spill.
-        if (vertical ? result.Rows != length || result.Columns != 1 : result.Columns != length || result.Rows != 1)
+        if (Vector.Of(returnArray) is not { } result || result.Vertical != vector.Vertical || result.Length != vector.Length)
         {
             return Operand.Of(ErrorValue.Value);
         }
@@ -334,7 +328,7 @@ internal static partial class FunctionLibrary
         int? found = null;
         if (lookup is { } wanted)
         {
-            var candidates = evaluator.Cells.NonBlankIn(vector).Select(a => (Index: vertical ? a.Row - vector.Row1 : a.Column - vector.Column1, Value: evaluator.Cells.Read(a)!.Value));
+            var candidates = vector.Candidates(evaluator);
             if (searchMode == -1) candidates = candidates.Reverse();
             found = matchMode switch
             {
@@ -348,9 +342,43 @@ internal static partial class FunctionLibrary
         {
             return call.Has(3) ? call.Operand(3) : Operand.Of(ErrorValue.NA);
         }
-        var row = vertical ? result.Row1 + index : result.Row1;
-        var column = vertical ? result.Column1 : result.Column1 + index;
-        return Operand.Of(new Area(row, column, row, column));
+        return result.ItemAt(index);
+    }
+
+    /// <summary>A range of one row or one column, as XLOOKUP reads it: rectangle of cells or a Linked Table's column.</summary>
+    private readonly record struct Vector(Operand Source, bool Vertical, int Length)
+    {
+        public static Vector? Of(Operand range)
+        {
+            if (range.Kind == OperandKind.Column) return new Vector(range, true, range.Column!.Count);
+            var area = range.Area;
+            if (area.Columns == 1) return new Vector(range, true, area.Rows);
+            if (area.Rows == 1) return new Vector(range, false, area.Columns);
+            return null;
+        }
+
+        /// <summary>The Values that are not blank, with their positions along the vector, in order.</summary>
+        public IEnumerable<(int Index, Value Value)> Candidates(Evaluator evaluator)
+        {
+            if (Source.Kind == OperandKind.Column)
+            {
+                var column = Source.Column!;
+                return Enumerable.Range(0, column.Count).Where(i => column[i] is not null).Select(i => (i, column[i]!.Value));
+            }
+            var area = Source.Area;
+            var vertical = Vertical;
+            return evaluator.Cells.NonBlankIn(area).Select(a => (vertical ? a.Row - area.Row1 : a.Column - area.Column1, evaluator.Cells.Read(a)!.Value));
+        }
+
+        /// <summary>The item at a position: a cell, read as a Reference, or a Linked Table's Value.</summary>
+        public Operand ItemAt(int index)
+        {
+            if (Source.Kind == OperandKind.Column) return Source.Column![index] is { } value ? Operand.Of(value) : Operand.Blank;
+            var area = Source.Area;
+            var row = Vertical ? area.Row1 + index : area.Row1;
+            var column = Vertical ? area.Column1 : area.Column1 + index;
+            return Operand.Of(new Area(row, column, row, column));
+        }
     }
 
     private static bool SameKindEqual(Value candidate, Value wanted) =>
