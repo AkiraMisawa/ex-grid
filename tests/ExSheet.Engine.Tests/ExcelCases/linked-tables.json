@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "TABLE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM over a column and XLOOKUP by key read the snapshot",
       "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
       "cells": {"A1": "=SUM(Positions[PV])"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "TABLE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM over a column and XLOOKUP by key read the snapshot",
       "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
       "cells": {"A1": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "TABLE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM over a column and XLOOKUP by key read the snapshot",
       "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
       "cells": {"A1": "=XLOOKUP(\"R-9999\", Positions[Id], Positions[PV], \"none\")"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "TABLE-004",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM over a column and XLOOKUP by key read the snapshot",
       "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
       "cells": {"A1": "=XLOOKUP(\"R-9999\", Positions[Id], Positions[Desk])"},
@@ -115,7 +115,7 @@
     },
     {
       "id": "TABLE-012",
-      "source": "documented",
+      "source": "observed",
       "description": "Table and column names match without regard to case",
       "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
       "cells": {"A1": "=SUM(positions[pv])"},
@@ -132,7 +132,7 @@
     },
     {
       "id": "TABLE-014",
-      "source": "documented",
+      "source": "observed",
       "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
       "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
       "cells": {"ZZ1000": "=SUM(Mixed[V])"},
@@ -141,7 +141,7 @@
     },
     {
       "id": "TABLE-015",
-      "source": "documented",
+      "source": "observed",
       "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
       "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
       "cells": {"ZZ1000": "=AVERAGE(Mixed[V])"},
@@ -150,7 +150,7 @@
     },
     {
       "id": "TABLE-016",
-      "source": "documented",
+      "source": "observed",
       "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
       "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
       "cells": {"ZZ1000": "=COUNT(Mixed[V])"},
@@ -159,7 +159,7 @@
     },
     {
       "id": "TABLE-017",
-      "source": "documented",
+      "source": "observed",
       "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
       "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
       "cells": {"ZZ1000": "=COUNTA(Mixed[V])"},
@@ -168,7 +168,7 @@
     },
     {
       "id": "TABLE-018",
-      "source": "documented",
+      "source": "observed",
       "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
       "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
       "cells": {"ZZ1000": "=MAX(Mixed[V])"},
@@ -177,7 +177,7 @@
     },
     {
       "id": "TABLE-019",
-      "source": "documented",
+      "source": "observed",
       "description": "An Error Value in a table's column propagates through the aggregates",
       "tables": {"E": {"columns": ["V"], "rows": [[1], ["#N/A"]]}},
       "cells": {"ZZ1000": "=SUM(E[V])"},
@@ -186,7 +186,7 @@
     },
     {
       "id": "TABLE-020",
-      "source": "documented",
+      "source": "observed",
       "description": "IFERROR catches an Error Value from a table's column",
       "tables": {"E": {"columns": ["V"], "rows": [[1], ["#N/A"]]}},
       "cells": {"ZZ1000": "=IFERROR(SUM(E[V]), 1)"},
@@ -195,7 +195,7 @@
     },
     {
       "id": "TABLE-021",
-      "source": "documented",
+      "source": "observed",
       "description": "A column of more than one row used as one Value is #VALUE! (no implicit intersection)",
       "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}, "One": {"columns": ["V"], "rows": [[21]]}},
       "cells": {"ZZ1000": "=Positions[PV]*2"},
@@ -206,7 +206,7 @@
     },
     {
       "id": "TABLE-022",
-      "source": "documented",
+      "source": "observed",
       "description": "A one-row column used as one Value reads as its Value",
       "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}, "One": {"columns": ["V"], "rows": [[21]]}},
       "cells": {"ZZ1000": "=One[V]*2"},

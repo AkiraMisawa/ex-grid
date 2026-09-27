@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "COUNT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNT(A1:A7)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "COUNT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNT(1,\"2\",TRUE,\"abc\")"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "COUNT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNT(C1:C3)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "COUNT-004",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNT(#N/A,1)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "COUNT-005",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNT(A5)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "COUNT-006",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNT(D1)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "COUNT-007",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNT(A:A)"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "COUNT-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 9: missing arguments (engine: each is 0, and counted)",
       "ticket19Row": 9,
       "cells": {"ZZ1000": "=COUNT(,)"},

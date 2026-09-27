@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "STRUCT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Inserting above a referenced cell rewrites the Reference to it",
       "cells": {"A5": "21", "B1": "=A5*2"},
       "action": {"do": "insertRows", "row": 3, "count": 1},
@@ -13,7 +13,7 @@
     },
     {
       "id": "STRUCT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "The referenced cell moves down",
       "cells": {"A5": "21", "B1": "=A5*2"},
       "action": {"do": "insertRows", "row": 3, "count": 1},
@@ -22,7 +22,7 @@
     },
     {
       "id": "STRUCT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "The inserted row is blank",
       "cells": {"A5": "21", "B1": "=A5*2"},
       "action": {"do": "insertRows", "row": 3, "count": 1},
@@ -31,7 +31,7 @@
     },
     {
       "id": "STRUCT-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Absolute and mixed References are rewritten alike",
       "cells": {"A5": "1", "C5": "2", "B1": "=$A$5+A$5+$C5"},
       "action": {"do": "insertRows", "row": 1, "count": 2},
@@ -40,7 +40,7 @@
     },
     {
       "id": "STRUCT-005",
-      "source": "documented",
+      "source": "observed",
       "description": "A range grows when a row goes inside it, moves when one goes at or above its top, and stays when one goes below it",
       "cells": {"C1": "=SUM(A2:A5)"},
       "action": {"do": "insertRows", "row": 3, "count": 1},
@@ -49,7 +49,7 @@
     },
     {
       "id": "STRUCT-006",
-      "source": "documented",
+      "source": "observed",
       "description": "A range grows when a row goes inside it, moves when one goes at or above its top, and stays when one goes below it",
       "cells": {"C1": "=SUM(A2:A5)"},
       "action": {"do": "insertRows", "row": 2, "count": 1},
@@ -58,7 +58,7 @@
     },
     {
       "id": "STRUCT-007",
-      "source": "documented",
+      "source": "observed",
       "description": "A range grows when a row goes inside it, moves when one goes at or above its top, and stays when one goes below it",
       "cells": {"C1": "=SUM(A2:A5)"},
       "action": {"do": "insertRows", "row": 1, "count": 1},
@@ -67,7 +67,7 @@
     },
     {
       "id": "STRUCT-008",
-      "source": "documented",
+      "source": "observed",
       "description": "A range grows when a row goes inside it, moves when one goes at or above its top, and stays when one goes below it",
       "cells": {"C1": "=SUM(A2:A5)"},
       "action": {"do": "insertRows", "row": 5, "count": 1},
@@ -76,7 +76,7 @@
     },
     {
       "id": "STRUCT-009",
-      "source": "documented",
+      "source": "observed",
       "description": "A range grows when a row goes inside it, moves when one goes at or above its top, and stays when one goes below it",
       "cells": {"C1": "=SUM(A2:A5)"},
       "action": {"do": "insertRows", "row": 6, "count": 1},
@@ -85,7 +85,7 @@
     },
     {
       "id": "STRUCT-010",
-      "source": "documented",
+      "source": "observed",
       "description": "A range shrinks when some of its rows are deleted, and is #REF! when all are",
       "cells": {"A2": "2", "A3": "3", "A4": "4", "A5": "5", "C10": "=SUM(A2:A5)"},
       "action": {"do": "deleteRows", "row": 3, "count": 1},
@@ -94,7 +94,7 @@
     },
     {
       "id": "STRUCT-011",
-      "source": "documented",
+      "source": "observed",
       "description": "A range shrinks when some of its rows are deleted, and is #REF! when all are",
       "cells": {"A2": "2", "A3": "3", "A4": "4", "A5": "5", "C10": "=SUM(A2:A5)"},
       "action": {"do": "deleteRows", "row": 1, "count": 2},
@@ -103,7 +103,7 @@
     },
     {
       "id": "STRUCT-012",
-      "source": "documented",
+      "source": "observed",
       "description": "A range shrinks when some of its rows are deleted, and is #REF! when all are",
       "cells": {"A2": "2", "A3": "3", "A4": "4", "A5": "5", "C10": "=SUM(A2:A5)"},
       "action": {"do": "deleteRows", "row": 4, "count": 5},
@@ -112,7 +112,7 @@
     },
     {
       "id": "STRUCT-013",
-      "source": "documented",
+      "source": "observed",
       "description": "A range shrinks when some of its rows are deleted, and is #REF! when all are",
       "cells": {"A2": "2", "A3": "3", "A4": "4", "A5": "5", "C10": "=SUM(A2:A5)"},
       "action": {"do": "deleteRows", "row": 2, "count": 4},
@@ -121,7 +121,7 @@
     },
     {
       "id": "STRUCT-014",
-      "source": "documented",
+      "source": "observed",
       "description": "A range shrinks when some of its rows are deleted, and is #REF! when all are",
       "cells": {"A2": "2", "A3": "3", "A4": "4", "A5": "5", "C10": "=SUM(A2:A5)"},
       "action": {"do": "deleteRows", "row": 7, "count": 3},
@@ -130,7 +130,7 @@
     },
     {
       "id": "STRUCT-015",
-      "source": "documented",
+      "source": "observed",
       "description": "Columns are rewritten as rows are, whole columns included",
       "cells": {"B1": "3", "B2": "4", "D1": "=B1+SUM(B:B)+SUM(A1:C1)"},
       "action": {"do": "insertColumns", "column": "B", "count": 1},
@@ -139,7 +139,7 @@
     },
     {
       "id": "STRUCT-016",
-      "source": "documented",
+      "source": "observed",
       "description": "Deleting a column rewrites References past it",
       "cells": {"A1": "1", "B1": "2", "C1": "3", "E1": "=A1+C1", "E2": "=B1", "E3": "=SUM(A1:C1)"},
       "action": {"do": "deleteColumns", "column": "B", "count": 1},
@@ -148,7 +148,7 @@
     },
     {
       "id": "STRUCT-017",
-      "source": "documented",
+      "source": "observed",
       "description": "Deleting a referenced column makes the Reference #REF!",
       "cells": {"A1": "1", "B1": "2", "C1": "3", "E1": "=A1+C1", "E2": "=B1", "E3": "=SUM(A1:C1)"},
       "action": {"do": "deleteColumns", "column": "B", "count": 1},
@@ -157,7 +157,7 @@
     },
     {
       "id": "STRUCT-018",
-      "source": "documented",
+      "source": "observed",
       "description": "Deleting a column inside a range shrinks it",
       "cells": {"A1": "1", "B1": "2", "C1": "3", "E1": "=A1+C1", "E2": "=B1", "E3": "=SUM(A1:C1)"},
       "action": {"do": "deleteColumns", "column": "B", "count": 1},
@@ -175,7 +175,7 @@
     },
     {
       "id": "STRUCT-020",
-      "source": "documented",
+      "source": "observed",
       "description": "A Reference qualified with another Sheet's name is not this Sheet's, and is not rewritten",
       "otherSheets": ["Sheet2"],
       "cells": {"B1": "=Sheet2!A5"},
@@ -194,7 +194,7 @@
     },
     {
       "id": "STRUCT-022",
-      "source": "documented",
+      "source": "observed",
       "description": "Deleting a cell of a cycle breaks it: the Reference becomes #REF!",
       "cells": {"A1": "=B1+1", "B1": "=A1+1", "C2": "=A1"},
       "action": {"do": "deleteColumns", "column": "B", "count": 1},
@@ -203,7 +203,7 @@
     },
     {
       "id": "STRUCT-023",
-      "source": "documented",
+      "source": "observed",
       "description": "Deleting a cell of a cycle breaks it: what read the cycle follows",
       "cells": {"A1": "=B1+1", "B1": "=A1+1", "C2": "=A1"},
       "action": {"do": "deleteColumns", "column": "B", "count": 1},
@@ -212,7 +212,7 @@
     },
     {
       "id": "STRUCT-024",
-      "source": "documented",
+      "source": "observed",
       "description": "A Formula inside the deleted rows goes with them",
       "cells": {"A2": "=1+1", "A4": "=A2*2"},
       "action": {"do": "deleteRows", "row": 2, "count": 1},
@@ -221,7 +221,7 @@
     },
     {
       "id": "STRUCT-025",
-      "source": "documented",
+      "source": "observed",
       "description": "What read a deleted Formula is #REF!",
       "cells": {"A2": "=1+1", "A4": "=A2*2"},
       "action": {"do": "deleteRows", "row": 2, "count": 1},
@@ -230,7 +230,7 @@
     },
     {
       "id": "STRUCT-026",
-      "source": "documented",
+      "source": "observed",
       "description": "An insertion that would push an Entry off the Sheet is refused, and nothing changes",
       "cells": {"A1048576": "1", "B1": "2"},
       "action": {"do": "insertRows", "row": 1, "count": 1},
@@ -239,7 +239,7 @@
     },
     {
       "id": "STRUCT-027",
-      "source": "documented",
+      "source": "observed",
       "description": "An insertion that would push an Entry off the Sheet is refused, and the Entry at the edge stays",
       "cells": {"A1048576": "1", "B1": "2"},
       "action": {"do": "insertRows", "row": 1, "count": 1},
@@ -257,7 +257,7 @@
     },
     {
       "id": "STRUCT-029",
-      "source": "documented",
+      "source": "observed",
       "description": "A cell holding only formatting at the edge is dropped, not a reason to refuse",
       "cells": {},
       "formats": {"XFD1": "0.00"},
@@ -267,7 +267,7 @@
     },
     {
       "id": "STRUCT-030",
-      "source": "documented",
+      "source": "observed",
       "description": "Rows inserted at the top have no row above, and take no formatting",
       "cells": {},
       "formats": {"A1": "0.00"},
@@ -277,7 +277,7 @@
     },
     {
       "id": "STRUCT-031",
-      "source": "documented",
+      "source": "observed",
       "description": "The row pushed down keeps its formatting",
       "cells": {},
       "formats": {"A1": "0.00"},

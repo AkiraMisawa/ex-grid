@@ -56,7 +56,7 @@
       - "columnWidth" sets the check column's ColumnWidth (characters) before anything is entered,
         and its text is read at that width; every other case is read at width 100. The column's
         width after the case's entries is recorded ("columnWidth") and compared with "widens"
-        (wider than the default 8.43 or not). "widthOnEntry" is the engine's answer and is not
+        (wider than the sheet's StandardWidth or not). "widthOnEntry" is the engine's answer and is not
         compared; Excel's width is beside it in the results.
 
     A disagreement is listed for the user. It is never fixed on the spot, and -Update never
@@ -74,20 +74,27 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$Cases = (Join-Path $PSScriptRoot '..\ExcelCases'),
-    [string]$Out = (Join-Path $PSScriptRoot ('results-{0}.json' -f (Get-Date -Format 'yyyy-MM-dd'))),
+    [string]$Cases,
+    [string]$Out,
     [string[]]$Area,
     [string[]]$Id,
     [switch]$Update,
     [switch]$Visible
 )
 
+# Windows PowerShell 5.1 leaves $PSScriptRoot empty in param() defaults when the script is run
+# with -File, so the defaults are resolved here instead.
+if (-not $Cases) { $Cases = Join-Path $PSScriptRoot '..\ExcelCases' }
+if (-not $Out) { $Out = Join-Path $PSScriptRoot ('results-{0}.json' -f (Get-Date -Format 'yyyy-MM-dd')) }
+# Run with -File, "-Area xlookup,round" arrives as one string; split it as -Command would have.
+if ($Area) { $Area = @($Area | ForEach-Object { $_ -split ',' }) }
+if ($Id) { $Id = @($Id | ForEach-Object { $_ -split ',' }) }
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $Invariant = [Globalization.CultureInfo]::InvariantCulture
 $Utf8 = New-Object Text.UTF8Encoding $false
 $Missing = [Type]::Missing
-$DefaultColumnWidth = 8.43
 
 # Excel's error codes as Range.Value2 returns them (an Int32), by their CVErr number.
 $ErrorTexts = @{
@@ -141,6 +148,23 @@ function Set-Cells($Sheet, $Cells, [bool]$UseFormula2) {
     foreach ($p in $Cells.PSObject.Properties) { Set-Typed $Sheet.Range($p.Name) ([string]$p.Value) $UseFormula2 }
 }
 
+# Two properties are set and read through IDispatch directly, with the en-US locale id, rather
+# than through PowerShell's COM binder:
+#   - Range.NumberFormat. The binder passes the user's locale id, and Excel reads and writes
+#     NumberFormat in that locale's codes, so under de-DE "General" is refused and "mmmm" becomes
+#     minutes. VBA always passes en-US, and the corpus's codes are the invariant ones.
+#   - Range.Value2. Windows PowerShell 5.1's binder keeps the type of the first value assigned to
+#     it and then refuses another (a Double after a String throws InvalidCastException).
+# FormulaLocal is not affected: Excel reads it under the machine's regional format whatever the
+# locale id, which is what a typed entry needs.
+$EnUs = [Globalization.CultureInfo]::GetCultureInfo('en-US')
+function Set-ComProperty($Object, [string]$Name, $Value) {
+    [void]$Object.GetType().InvokeMember($Name, [Reflection.BindingFlags]::SetProperty, $null, $Object, @(, $Value), $null, $EnUs, $null)
+}
+function Get-ComProperty($Object, [string]$Name) {
+    return $Object.GetType().InvokeMember($Name, [Reflection.BindingFlags]::GetProperty, $null, $Object, @(), $null, $EnUs, $null)
+}
+
 function Add-Tables($Sheet, $Tables, [bool]$NeedsValues) {
     if ($null -eq $Tables) { return }
     $column = 15000
@@ -151,7 +175,7 @@ function Add-Tables($Sheet, $Tables, [bool]$NeedsValues) {
             if ($NeedsValues) { throw [InvalidOperationException]::new("blocked: table $($t.Name) is waiting for its data, which Excel has no counterpart for") }
             $rows = @(, @($columns | ForEach-Object { $null }))
         }
-        for ($c = 0; $c -lt $columns.Count; $c++) { $Sheet.Cells.Item(1, $column + $c).Value2 = [string]$columns[$c] }
+        for ($c = 0; $c -lt $columns.Count; $c++) { Set-ComProperty $Sheet.Cells.Item(1, $column + $c) 'Value2' ([string]$columns[$c]) }
         $r = 2
         foreach ($row in @($rows)) {
             $values = @($row)
@@ -159,11 +183,11 @@ function Add-Tables($Sheet, $Tables, [bool]$NeedsValues) {
                 $v = $values[$c]
                 $cell = $Sheet.Cells.Item($r, $column + $c)
                 if ($null -eq $v) { continue }
-                elseif ($v -is [bool]) { $cell.Value2 = $v }
+                elseif ($v -is [bool]) { Set-ComProperty $cell 'Value2' $v }
                 elseif ($v -is [string]) {
-                    if ($KnownErrors -contains $v) { $cell.Formula = $v } else { $cell.Value2 = "'" + $v }
+                    if ($KnownErrors -contains $v) { $cell.Formula = $v } else { Set-ComProperty $cell 'Value2' ("'" + $v) }
                 }
-                else { $cell.Value2 = (To-Double $v) }
+                else { Set-ComProperty $cell 'Value2' (To-Double $v) }
             }
             $r++
         }
@@ -211,7 +235,7 @@ function Invoke-Action($Excel, $Sheet, $Action, [bool]$UseFormula2) {
         }
         # A range such as B:B or 2:2 is Excel's own whole column or row, so a format set on it is
         # set the way the Format Cells dialog sets it on a selected column or row.
-        'format' { $Sheet.Range([string]$Action.range).NumberFormat = [string]$Action.format }
+        'format' { Set-ComProperty $Sheet.Range([string]$Action.range) 'NumberFormat' ([string]$Action.format) }
         'align' { $Sheet.Range([string]$Action.range).HorizontalAlignment = $AlignmentCodes[[string]$Action.align] }
         'style' {
             $range = $Sheet.Range([string]$Action.range)
@@ -275,13 +299,15 @@ function Read-Answer($Sheet, [string]$Check, [bool]$UseFormula2, [bool]$KeepWidt
     if ($answer.kind -eq 'number' -and $text -match '^#+$') { $text = '####' }
     $answer.text = $text
     $answer.formula = if ($UseFormula2) { [string]$cell.Formula2 } else { [string]$cell.Formula }
-    $answer.numberFormat = [string]$cell.NumberFormat
+    $answer.numberFormat = [string](Get-ComProperty $cell 'NumberFormat')
     $alignment = [int]$cell.HorizontalAlignment
     $answer.alignment = ($AlignmentCodes.GetEnumerator() | Where-Object { $_.Value -eq $alignment } | Select-Object -First 1).Key
     if ($null -eq $answer.alignment) { $answer.alignment = "xlHAlign($alignment)" }
     $answer.columnWidth = $width
+    # The default width follows the workbook's default font (8.43 with Calibri, 8.09 with Aptos
+    # Narrow), so it is read from the sheet rather than assumed.
     $answer.standardWidth = [double]$Sheet.StandardWidth
-    $answer.widens = ($width -gt $DefaultColumnWidth + 0.001)
+    $answer.widens = ($width -gt $answer.standardWidth + 0.001)
     if ($ReadCustom) { $answer.custom = $custom }
     return $answer
 }
@@ -346,7 +372,6 @@ try {
     $excel.Visible = [bool]$Visible
     $excel.DisplayAlerts = $false
     $excel.AskToUpdateLinks = $false
-    $excel.Iteration = $false
     $probe = $excel.Workbooks.Add()
     $useFormula2 = $true
     try { $null = $probe.Worksheets.Item(1).Range('A1').Formula2 } catch { $useFormula2 = $false }
@@ -375,6 +400,8 @@ try {
                 $workbook = $null
                 try {
                     $workbook = $excel.Workbooks.Add()
+                    # Iteration is refused while no workbook is open, so it is set once one is.
+                    $excel.Iteration = $false
                     $sheet = $workbook.Worksheets.Item(1)
                     if (Has-Prop $case 'sheetName') { $sheet.Name = [string]$case.sheetName }
                     foreach ($other in @(Get-Prop $case 'otherSheets')) {
@@ -391,7 +418,7 @@ try {
                     if (Has-Prop $case 'fixture') { Set-Cells $sheet (Get-Prop $fixtures ([string]$case.fixture)).cells $useFormula2 }
                     Set-Cells $sheet $case.cells $useFormula2
                     $formats = Get-Prop $case 'formats'
-                    if ($null -ne $formats) { foreach ($p in $formats.PSObject.Properties) { $sheet.Range($p.Name).NumberFormat = [string]$p.Value } }
+                    if ($null -ne $formats) { foreach ($p in $formats.PSObject.Properties) { Set-ComProperty $sheet.Range($p.Name) 'NumberFormat' ([string]$p.Value) } }
 
                     $refused = $false; $refusal = $null
                     foreach ($action in @(Get-Prop $case 'action')) {
@@ -420,7 +447,7 @@ try {
                         else { $result.status = 'disagree'; $result.differences = @($message.Substring(15)) }
                     }
                     elseif ($message.StartsWith('blocked: ')) { $result.status = 'blocked'; $result.reason = $message.Substring(9) }
-                    else { $result.status = 'blocked'; $result.reason = "the oracle failed: $message" }
+                    else { $result.status = 'blocked'; $result.reason = "the oracle failed: $message (oracle.ps1 line $($_.InvocationInfo.ScriptLineNumber))" }
                 }
                 finally {
                     if ($null -ne $workbook) { try { $workbook.Close($false) } catch { } }
@@ -435,6 +462,8 @@ finally {
     try { foreach ($w in @($excel.Workbooks)) { $w.Close($false) } } catch { }
     $excelVersion = 'unknown'
     try { $excelVersion = '{0} (build {1})' -f $excel.Version, $excel.Build } catch { }
+    # Application.Build gives only the third part of the version; the file names the whole of it.
+    try { $excelVersion += '; EXCEL.EXE ' + (Get-Item (Join-Path $excel.Path 'EXCEL.EXE')).VersionInfo.ProductVersion } catch { }
     $excel.Quit()
     [void][Runtime.InteropServices.Marshal]::ReleaseComObject($excel)
     [GC]::Collect()

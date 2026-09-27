@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "LVL-001",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A number in a formatted column shows the column's format",
       "cells": {"B5": "1.5"},
       "action": {"do": "format", "range": "B:B", "format": "0.00"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "LVL-002",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A number typed into a column after it was formatted shows the column's format",
       "cells": {},
       "action": [
@@ -25,7 +25,7 @@
     },
     {
       "id": "LVL-003",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A blank cell in a formatted row reports the row's format",
       "cells": {},
       "action": {"do": "format", "range": "3:3", "format": "0%"},
@@ -34,7 +34,7 @@
     },
     {
       "id": "LVL-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A row formatted after its column wins where they cross",
       "cells": {"B3": "0.5"},
       "action": [
@@ -46,7 +46,7 @@
     },
     {
       "id": "LVL-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A column formatted after a row wins where they cross: formatting the column formats every cell in it",
       "cells": {"B3": "0.5"},
       "action": [
@@ -58,7 +58,7 @@
     },
     {
       "id": "LVL-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "The row formatted before a column keeps its format away from the crossing",
       "cells": {"C3": "0.5"},
       "action": [
@@ -70,7 +70,7 @@
     },
     {
       "id": "LVL-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A cell formatted after its column keeps its own format",
       "cells": {"B2": "0.5"},
       "action": [
@@ -82,7 +82,7 @@
     },
     {
       "id": "LVL-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Formatting a whole column replaces the format of a cell in it formatted before",
       "cells": {"B2": "0.5"},
       "action": [
@@ -94,7 +94,7 @@
     },
     {
       "id": "LVL-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A cell set to General inside a formatted column shows General",
       "cells": {"B2": "0.5"},
       "action": [
@@ -106,7 +106,7 @@
     },
     {
       "id": "LVL-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A row set to General over a formatted column shows General where they cross",
       "cells": {"B3": "1.5"},
       "action": [
@@ -118,7 +118,7 @@
     },
     {
       "id": "LVL-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Formatting the whole sheet replaces every row's and column's format",
       "cells": {"B3": "0.5"},
       "action": [
@@ -130,7 +130,7 @@
     },
     {
       "id": "LVL-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A row's alignment is its cells' alignment",
       "cells": {"D2": "x"},
       "action": {"do": "align", "range": "2:2", "align": "center"},
@@ -139,7 +139,7 @@
     },
     {
       "id": "LVL-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A cell's own alignment wins over its column's",
       "cells": {"D2": "x"},
       "action": [
@@ -151,7 +151,7 @@
     },
     {
       "id": "LVL-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Alignment and number format are set independently: aligning a column keeps a cell's format",
       "cells": {"D2": "0.5"},
       "action": [
@@ -163,7 +163,7 @@
     },
     {
       "id": "LVL-015",
-      "source": "documented",
+      "source": "observed",
       "description": "A row inserted below a formatted row takes its format (Format Same As Above)",
       "cells": {},
       "action": [
@@ -176,7 +176,7 @@
     },
     {
       "id": "LVL-016",
-      "source": "documented",
+      "source": "observed",
       "description": "A formatted row moves down when a row is inserted above it, and the new row takes the unformatted row above",
       "cells": {"B2": "0.25"},
       "action": [
@@ -189,7 +189,7 @@
     },
     {
       "id": "LVL-017",
-      "source": "documented",
+      "source": "observed",
       "description": "A row inserted above a formatted row takes the row above it, not the formatted one below",
       "cells": {"B2": "0.25"},
       "action": [
@@ -202,7 +202,7 @@
     },
     {
       "id": "LVL-018",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Deleting a formatted row takes its format with it; the row that moves up brings its own",
       "cells": {"B3": "0.5"},
       "action": [
@@ -214,7 +214,7 @@
     },
     {
       "id": "LVL-019",
-      "source": "documented",
+      "source": "observed",
       "description": "A column inserted to the right of a formatted column takes its format (Format Same As Left)",
       "cells": {},
       "action": [
@@ -227,7 +227,7 @@
     },
     {
       "id": "LVL-020",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Deleting a column moves the formatted columns to its right left with their formats",
       "cells": {"D4": "3"},
       "action": [
@@ -239,7 +239,7 @@
     },
     {
       "id": "LVL-021",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A cell copied out of a formatted column carries the format it showed",
       "cells": {"B5": "1.5"},
       "action": [
@@ -251,7 +251,7 @@
     },
     {
       "id": "LVL-022",
-      "source": "uncertain",
+      "source": "observed",
       "description": "An unformatted cell pasted into a formatted column brings its General with it",
       "cells": {"E5": "1.5", "B5": "7"},
       "action": [

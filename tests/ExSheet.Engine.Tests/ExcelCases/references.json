@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "REF-001",
-      "source": "documented",
+      "source": "observed",
       "description": "A name outside the extent is not a Reference; an unknown name is #NAME?",
       "cells": {"ZZ1000": "=XFE1"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "REF-002",
-      "source": "documented",
+      "source": "observed",
       "description": "A name outside the extent is not a Reference; an unknown name is #NAME?",
       "cells": {"ZZ1000": "=A1048577"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "REF-003",
-      "source": "documented",
+      "source": "observed",
       "description": "An unknown name is #NAME?",
       "cells": {"ZZ1000": "=profit"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "REF-004",
-      "source": "documented",
+      "source": "observed",
       "description": "A function outside the declared set is #NAME?, whatever its arguments",
       "cells": {"ZZ1000": "=NOSUCHFUNCTION(1)"},
       "check": "ZZ1000",
@@ -36,7 +36,7 @@
     },
     {
       "id": "REF-005",
-      "source": "documented",
+      "source": "observed",
       "description": "A function outside the declared set is #NAME?, whatever its arguments",
       "cells": {"ZZ1000": "=NOSUCHFUNCTION(1/0)"},
       "check": "ZZ1000",
@@ -53,7 +53,7 @@
     },
     {
       "id": "REF-007",
-      "source": "documented",
+      "source": "observed",
       "description": "A Reference qualified with another Sheet's name names no cell",
       "otherSheets": ["Sheet2"],
       "cells": {"A1": "5", "ZZ1000": "=Sheet2!A1"},
@@ -64,7 +64,7 @@
     },
     {
       "id": "REF-008",
-      "source": "documented",
+      "source": "observed",
       "description": "The Sheet qualifier is recorded as typed",
       "otherSheets": ["Sheet2"],
       "cells": {"A1": "5", "ZZ1000": "=Sheet2!A1"},
@@ -73,7 +73,7 @@
     },
     {
       "id": "REF-009",
-      "source": "documented",
+      "source": "observed",
       "description": "A multi-cell Reference as a Formula's result is refused (one Formula cannot show many cells)",
       "cells": {"A1": "5", "ZZ1000": "=A1:A2"},
       "check": "ZZ1000",
@@ -83,7 +83,7 @@
     },
     {
       "id": "REF-010",
-      "source": "documented",
+      "source": "observed",
       "description": "A multi-cell Reference as a Formula's result is refused (one Formula cannot show many cells)",
       "cells": {"A1": "5", "ZZ1000": "=A:A"},
       "check": "ZZ1000",
@@ -93,7 +93,7 @@
     },
     {
       "id": "REF-011",
-      "source": "documented",
+      "source": "observed",
       "description": "A multi-cell Reference as a Formula's result is refused (one Formula cannot show many cells)",
       "cells": {"A1": "5", "ZZ1000": "=1:1"},
       "check": "ZZ1000",
@@ -103,7 +103,7 @@
     },
     {
       "id": "REF-012",
-      "source": "documented",
+      "source": "observed",
       "description": "A multi-cell Reference as a Formula's result is refused (one Formula cannot show many cells)",
       "cells": {"A1": "5", "ZZ1000": "=A1:A2+1"},
       "check": "ZZ1000",
@@ -113,7 +113,7 @@
     },
     {
       "id": "REF-013",
-      "source": "documented",
+      "source": "observed",
       "description": "A one-cell range is that cell's Value",
       "cells": {"A1": "5", "ZZ1000": "=A1:A1"},
       "check": "ZZ1000",
@@ -121,7 +121,7 @@
     },
     {
       "id": "REF-014",
-      "source": "documented",
+      "source": "observed",
       "description": "An absolute Reference reads the cell",
       "cells": {"A1": "5", "ZZ1000": "=$A$1"},
       "check": "ZZ1000",

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "TYPED-001",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "cells": {"A1": "1,234.5"},
       "check": "A1",
@@ -12,7 +12,7 @@
     },
     {
       "id": "TYPED-002",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "cells": {"A1": "1234.5"},
       "check": "A1",
@@ -20,7 +20,7 @@
     },
     {
       "id": "TYPED-003",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "cells": {"A1": "12,345,678"},
       "check": "A1",
@@ -28,7 +28,7 @@
     },
     {
       "id": "TYPED-004",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "cells": {"A1": "-7"},
       "check": "A1",
@@ -36,7 +36,7 @@
     },
     {
       "id": "TYPED-005",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "cells": {"A1": "(7)"},
       "check": "A1",
@@ -44,7 +44,7 @@
     },
     {
       "id": "TYPED-006",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "cells": {"A1": "1E3"},
       "check": "A1",
@@ -52,7 +52,7 @@
     },
     {
       "id": "TYPED-007",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "cells": {"A1": ".5"},
       "check": "A1",
@@ -60,7 +60,7 @@
     },
     {
       "id": "TYPED-008",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "culture": "de-DE",
       "cells": {"A1": "1.234,5"},
@@ -69,7 +69,7 @@
     },
     {
       "id": "TYPED-009",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "culture": "de-DE",
       "cells": {"A1": "1,5"},
@@ -78,7 +78,7 @@
     },
     {
       "id": "TYPED-010",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed number is read with the Sheet's culture's separators",
       "culture": "ja-JP",
       "cells": {"A1": "1,234.5"},
@@ -87,7 +87,7 @@
     },
     {
       "id": "TYPED-011",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel keeps 15 significant digits of what is typed; the rest become zeros",
       "cells": {"A1": "1234567890123456789"},
       "check": "A1",
@@ -95,7 +95,7 @@
     },
     {
       "id": "TYPED-012",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed percentage is the fraction, shown as a percentage",
       "cells": {"A1": "50%"},
       "check": "A1",
@@ -103,7 +103,7 @@
     },
     {
       "id": "TYPED-013",
-      "source": "documented",
+      "source": "observed",
       "description": "Text typed with a leading apostrophe is text",
       "cells": {"A1": "'123"},
       "check": "A1",
@@ -111,7 +111,7 @@
     },
     {
       "id": "TYPED-014",
-      "source": "documented",
+      "source": "observed",
       "description": "Numeric text in arithmetic is read as a typed number would be, under the Sheet's culture",
       "cells": {"ZZ1000": "=\"1,000\"+1"},
       "check": "ZZ1000",
@@ -119,7 +119,7 @@
     },
     {
       "id": "TYPED-015",
-      "source": "documented",
+      "source": "observed",
       "description": "Numeric text in arithmetic is read as a typed number would be, under the Sheet's culture",
       "culture": "de-DE",
       "cells": {"ZZ1000": "=\"1,5\"+1"},
@@ -128,7 +128,7 @@
     },
     {
       "id": "TYPED-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 8: a doubled percent sign (engine: text)",
       "ticket19Row": 8,
       "cells": {"A1": "200%%"},
@@ -137,7 +137,7 @@
     },
     {
       "id": "TYPED-017",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 24: spaces around a number (engine: the number)",
       "ticket19Row": 24,
       "cells": {"A1": " 12 "},
@@ -146,7 +146,7 @@
     },
     {
       "id": "TYPED-018",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 25: a comma not in thousands position (engine: text)",
       "ticket19Row": 25,
       "cells": {"A1": "1,23"},
@@ -155,7 +155,7 @@
     },
     {
       "id": "TYPED-019",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 26: a leading + before a Reference (engine: text)",
       "ticket19Row": 26,
       "cells": {"A1": "+A1"},
@@ -164,7 +164,7 @@
     },
     {
       "id": "TYPED-020",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 26: a leading - before a Reference (engine: text)",
       "ticket19Row": 26,
       "cells": {"A1": "-A1"},
@@ -191,7 +191,7 @@
     },
     {
       "id": "TYPED-023",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 28: WAHR under de-DE (engine: text)",
       "ticket19Row": 28,
       "culture": "de-DE",
@@ -201,7 +201,7 @@
     },
     {
       "id": "TYPED-024",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 29: the format applied when 12.5% is typed",
       "ticket19Row": 29,
       "cells": {"A1": "12.5%"},

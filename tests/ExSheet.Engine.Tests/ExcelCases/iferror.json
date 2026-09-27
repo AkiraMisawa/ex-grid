@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "IFERROR-001",
-      "source": "documented",
+      "source": "observed",
       "description": "IFERROR: an Error Value gives the fallback; an empty cell is taken as \"\" (Microsoft's documentation)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IFERROR(1/0,\"x\")"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "IFERROR-002",
-      "source": "documented",
+      "source": "observed",
       "description": "IFERROR: an Error Value gives the fallback; an empty cell is taken as \"\" (Microsoft's documentation)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IFERROR(5,\"x\")"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "IFERROR-003",
-      "source": "documented",
+      "source": "observed",
       "description": "IFERROR: an Error Value gives the fallback; an empty cell is taken as \"\" (Microsoft's documentation)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IFERROR(#N/A,0)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "IFERROR-004",
-      "source": "documented",
+      "source": "observed",
       "description": "IFERROR: an Error Value gives the fallback; an empty cell is taken as \"\" (Microsoft's documentation)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IFERROR(\"abc\"+1,-1)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "IFERROR-005",
-      "source": "documented",
+      "source": "observed",
       "description": "IFERROR: an Error Value gives the fallback; an empty cell is taken as \"\" (Microsoft's documentation)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IFERROR(C2,\"bad\")"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "IFERROR-006",
-      "source": "documented",
+      "source": "observed",
       "description": "IFERROR: an Error Value gives the fallback; an empty cell is taken as \"\" (Microsoft's documentation)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IFERROR(A6,\"x\")"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "IFERROR-009",
-      "source": "documented",
+      "source": "observed",
       "description": "IFERROR does not turn the refusal of a range where one Value is wanted into a fallback",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IFERROR(A1:A2,0)"},
@@ -87,7 +87,7 @@
     },
     {
       "id": "IFERROR-010",
-      "source": "documented",
+      "source": "observed",
       "description": "IFERROR does not catch #CIRC!",
       "cells": {"A1": "=B1", "B1": "=A1", "ZZ1000": "=IFERROR(A1,0)"},
       "check": "ZZ1000",
@@ -97,7 +97,7 @@
     },
     {
       "id": "IFERROR-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 10: a missing value_if_error (engine: 0)",
       "ticket19Row": 10,
       "cells": {"ZZ1000": "=IFERROR(1/0,)"},

@@ -1,0 +1,581 @@
+import { test, expect } from './fixtures.mjs';
+
+// Excel's behaviours, observed beside ExSheet (docs/specs/exsheet/excel-behaviours.md). Each test
+// is one item of that list, driven with real keys and the real mouse on /sheet, and its
+// expectation is what a real Excel did: Microsoft 365, 16.0.20326.20158, driven the same way on
+// 2026-09-27 (verification/2026-09-27-windows-excel/behaviours.md, with the screenshots). Where
+// ExSheet differs from Excel by decision, the test asserts the decision and names its ADR; the
+// comment says what Excel does.
+//
+// A probe whose feature is not built yet (its ticket's Status: is not done) is test.fixme, with
+// the ticket named. EXGRID_SHEET_UNBUILT=1 runs those too, to see what ExSheet does today.
+//
+// /sheet opens with data in A1:D13 (SheetPage.razor's Opening()), so the probes write into E and F,
+// which are empty and on screen.
+
+const UNBUILT = process.env.EXGRID_SHEET_UNBUILT === '1';
+/** A test whose feature waits on a ticket that is not done: fixme, unless asked to run anyway. */
+const waitsOn = (ticket) => (UNBUILT ? test : test.fixme);
+
+const COLUMNS = (n) => {
+    let s = '';
+    for (n += 1; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
+    return s;
+};
+function parse(a1) {
+    const [, letters, digits] = /^([A-Z]+)(\d+)$/.exec(a1);
+    let column = 0;
+    for (const ch of letters) column = column * 26 + (ch.charCodeAt(0) - 64);
+    return { row: Number(digits) - 1, column: column - 1 };
+}
+
+const sheet = (page) => page.locator('.ex-grid').first();
+const cell = (page, a1) => {
+    const { row, column } = parse(a1);
+    return sheet(page).locator(`[id$='-r${row}c${column}']`);
+};
+const bar = (page) => sheet(page).locator('input.ex-formula-bar-text');
+const nameBox = (page) => sheet(page).locator('input.ex-name-box');
+const cellEditor = (page) => sheet(page).locator('input.ex-editor:not(.ex-formula-bar-text)');
+const announced = (page) => sheet(page).locator('.ex-announce');
+
+// Cells are pointer-events: none by design (ADR-0004): the click goes through to the Viewport,
+// as a user's does. A plain click waits until the Name Box names the cell, as a user waits for
+// the screen: a click that follows an Enter at once can land before the Enter's move does (found
+// on the Server host, verification/2026-09-27-windows-excel/typing-probe-2.mjs), and these
+// probes ask about Excel's behaviours, not that race.
+async function click(page, a1, options = {}) {
+    await cell(page, a1).click({ force: true, ...options });
+    await page.waitForTimeout(PACE_MS);
+    if (Object.keys(options).length === 0) await expect(nameBox(page)).toHaveValue(a1);
+}
+
+/**
+ * The cell Excel calls the active cell, as the user reads it here: the Name Box's address.
+ * Excel's ActiveCell is the fixed end of a Shift-extension; ExGrid's Name Box names its Focus,
+ * the moving end (ADR-0012). Where the two part, the probe fails and says so.
+ */
+async function expectActive(page, a1) {
+    // Soft: where the Name Box names the other end, the rest of the item still runs.
+    await expect.soft(nameBox(page)).toHaveValue(a1);
+}
+
+/** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+async function expectSelection(page, from, to) {
+    const a = parse(from);
+    const b = parse(to);
+    const rows = b.row - a.row + 1;
+    const columns = b.column - a.column + 1;
+    await expect(announced(page)).toContainText(
+        `${rows} rows by ${columns} columns selected, ${COLUMNS(a.column)} ${a.row + 1} to ${COLUMNS(b.column)} ${b.row + 1}`);
+}
+
+/** Types into a cell and commits with Enter, as a user does. */
+async function enter(page, a1, typed) {
+    await click(page, a1);
+    await page.keyboard.type(typed);
+    await page.keyboard.press('Enter');
+    // Enter commits and moves down: wait for the move, as the next click would otherwise race it.
+    const { row, column } = parse(a1);
+    await expect(nameBox(page)).toHaveValue(`${COLUMNS(column)}${row + 2}`);
+}
+
+/** The Entry a cell holds, read from the Formula Bar with the cell selected. */
+async function entryOf(page, a1) {
+    await click(page, a1);
+    return bar(page).inputValue();
+}
+
+async function dragFillHandle(page, toA1) {
+    await page.waitForTimeout(PACE_MS);
+    const handle = await sheet(page).locator('.ex-fill-handle').first().boundingBox();
+    const target = await cell(page, toA1).boundingBox();
+    await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
+    await page.mouse.up();
+    await page.waitForTimeout(PACE_MS);
+}
+
+// A person's pace: every key and click waits this long before the next. On the Server host a
+// click or key that follows the previous one at once can land before that one's answer, and a
+// value typed next then lands in the wrong cell (found in this run: typing-probe-2.mjs, wrong at
+// 0–60 ms on a local circuit, right from 100 ms). These probes ask what Excel does, not that.
+const PACE_MS = 150;
+
+test.beforeEach(async ({ page, context }) => {
+    for (const name of ['press', 'type']) {
+        const act = page.keyboard[name].bind(page.keyboard);
+        page.keyboard[name] = async (...args) => { await act(...args); await page.waitForTimeout(PACE_MS); };
+    }
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto('/sheet');
+    await expect(cell(page, 'A1')).toHaveText('Item');
+});
+
+// ---- Moving and selecting (ADR-0012, ADR-0050) ----------------------------------------------
+
+test('item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §2, ticket 07)', async ({ page }) => {
+    for (const [a1, v] of [['F1', '1'], ['F2', '2'], ['F3', '3'], ['F7', '7'], ['F8', '8'], ['F9', '9']]) {
+        await enter(page, a1, v);
+    }
+    // Excel: A1 -> A3 -> A7 -> A9 -> A1048576 (keys and Range.End(xlDown) alike).
+    await click(page, 'F1');
+    for (const stop of ['F3', 'F7', 'F9', 'F1048576']) {
+        await page.keyboard.press('Control+ArrowDown');
+        await expectActive(page, stop);
+    }
+    // From a blank cell: the start of the next block, then its end.
+    await page.keyboard.press('Control+Home');
+    await click(page, 'F5');
+    for (const stop of ['F7', 'F9', 'F1048576']) {
+        await page.keyboard.press('Control+ArrowDown');
+        await expectActive(page, stop);
+    }
+    // In a column with nothing in it: the last row at once.
+    await page.keyboard.press('Control+Home');
+    await click(page, 'G1');
+    await page.keyboard.press('Control+ArrowDown');
+    await expectActive(page, 'G1048576');
+    // And back up from the last value: A7, A3, A1 in Excel.
+    await page.keyboard.press('Control+Home');
+    await click(page, 'F9');
+    for (const stop of ['F7', 'F3', 'F1']) {
+        await page.keyboard.press('Control+ArrowUp');
+        await expectActive(page, stop);
+    }
+});
+
+test('item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07)', async ({ page }) => {
+    // Excel's layout was C2:G2 with the Focus on D2; the same block sits at E6:I6 here, in a row
+    // /sheet leaves empty (row 1 holds headings in A1:D1, which would join the block).
+    await click(page, 'E6');
+    for (const v of ['a', 'b', 'c', 'd', 'e']) {
+        await page.keyboard.type(v);
+        await page.keyboard.press('Tab');
+    }
+    await page.keyboard.press('Enter');
+    await click(page, 'F6');
+    await page.keyboard.press('Control+Shift+ArrowRight');
+    await expectSelection(page, 'F6', 'I6');
+    await expectActive(page, 'F6');
+    await page.keyboard.press('Control+Shift+ArrowRight');
+    await expectSelection(page, 'F6', 'XFD6');
+    // Excel: Ctrl+Shift+Left from D2 is C2:D2, the block's start.
+    await page.keyboard.press('Control+Home');
+    await click(page, 'F6');
+    await page.keyboard.press('Control+Shift+ArrowLeft');
+    await expectSelection(page, 'E6', 'F6');
+});
+
+test('item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06)', async ({ page }) => {
+    const header = (letter) => sheet(page).locator('.ex-header-cell', { hasText: new RegExp(`^${letter}$`) });
+    await click(page, 'C3');
+    await header('B').click({ force: true });
+    await expectSelection(page, 'B1', 'B1048576');
+    await expectActive(page, 'B1');
+    await header('D').click({ force: true, modifiers: ['Shift'] });
+    await expectSelection(page, 'B1', 'D1048576');
+    await expectActive(page, 'B1');
+    // The other way round, the Focus stays on the first column clicked: D1 in Excel.
+    await header('D').click({ force: true });
+    await header('B').click({ force: true, modifiers: ['Shift'] });
+    await expectSelection(page, 'B1', 'D1048576');
+    await expectActive(page, 'D1');
+    // Scrolled to row 100, Excel's Focus is D100: the top visible row, not row 1.
+    await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    await expect(cell(page, 'A100')).toBeVisible();
+    await header('D').click({ force: true });
+    await expectActive(page, 'D100');
+});
+
+test('item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06)', async ({ page }) => {
+    const heading = (n) => sheet(page).locator('.ex-row-heading', { hasText: new RegExp(`^${n}$`) }).first();
+    await click(page, 'C3');
+    await heading(2).click({ force: true });
+    await expectSelection(page, 'A2', 'XFD2');
+    await expectActive(page, 'A2');
+    await heading(5).click({ force: true, modifiers: ['Shift'] });
+    await expectSelection(page, 'A2', 'XFD5');
+    await expectActive(page, 'A2');
+    await heading(5).click({ force: true });
+    await heading(2).click({ force: true, modifiers: ['Shift'] });
+    await expectSelection(page, 'A2', 'XFD5');
+    await expectActive(page, 'A5');
+});
+
+test('item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06)', async ({ page }) => {
+    await click(page, 'C3');
+    await sheet(page).locator('.ex-headings-corner').click({ force: true });
+    await expectSelection(page, 'A1', 'XFD1048576');
+    await expectActive(page, 'A1');
+    // Scrolled to row 100 (and column C in Excel), Excel's Focus was the top-left visible cell.
+    // Column A is pinned on /sheet, so that is A100 here.
+    await click(page, 'C3');
+    await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    await expect(cell(page, 'A100')).toBeVisible();
+    await sheet(page).locator('.ex-headings-corner').click({ force: true });
+    await expectSelection(page, 'A1', 'XFD1048576');
+    await expectActive(page, 'A100');
+});
+
+test('item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09)', async ({ page }) => {
+    const viewport = await sheet(page).locator('.ex-scroller').boundingBox();
+    await nameBox(page).click();
+    await nameBox(page).fill('D200');
+    await page.keyboard.press('Enter');
+    await expectActive(page, 'D200');
+    // Excel scrolled from row 1 until D200 was the last whole row on screen (rows 144–201 of 57).
+    const d200 = await cell(page, 'D200').boundingBox();
+    expect(d200.y + d200.height).toBeLessThanOrEqual(viewport.y + viewport.height + 1);
+    expect(d200.y + d200.height).toBeGreaterThan(viewport.y + viewport.height - 2 * d200.height);
+    // Back up to B2:C5: Excel scrolled only until row 2 was the first row on screen.
+    await nameBox(page).click();
+    await nameBox(page).fill('B2:C5');
+    await page.keyboard.press('Enter');
+    await expectSelection(page, 'B2', 'C5');
+    await expectActive(page, 'B2');
+    const b2 = await cell(page, 'B2').boundingBox();
+    const header = await sheet(page).locator('.ex-header-cell').first().boundingBox();
+    expect(Math.abs(b2.y - (header.y + header.height))).toBeLessThanOrEqual(2);
+});
+
+// ---- Entering and editing (ADR-0051, ADR-0012) --------------------------------------------------
+
+test('item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08)', async ({ page }) => {
+    await click(page, 'E3');
+    await page.keyboard.type('abc');
+    await page.keyboard.press('ArrowRight');
+    await expect(cell(page, 'E3')).toHaveText('abc');
+    await expectActive(page, 'F3');
+    await click(page, 'E4');
+    await page.keyboard.type('5');
+    await page.keyboard.press('ArrowDown');
+    await expect(cell(page, 'E4')).toHaveText('5');
+    await expectActive(page, 'E5');
+});
+
+test('item 8: F2 on a Formula shows it with the caret at the end, and the arrows move the caret (ADR-0051, ticket 08)', async ({ page }) => {
+    await click(page, 'D2');
+    await page.keyboard.press('F2');
+    await expect(cellEditor(page)).toHaveValue('=B2*C2');
+    const caret = () => cellEditor(page).evaluate((e) => e.selectionStart);
+    expect(await caret()).toBe('=B2*C2'.length);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    expect(await caret()).toBe('=B2*C2'.length - 2);
+    await expectActive(page, 'D2');
+    // Excel: ↑ in Edit mode puts the caret at the start of the (single-line) text and stays.
+    await page.keyboard.press('ArrowUp');
+    await expect(cellEditor(page)).toHaveValue('=B2*C2');
+    expect(await caret()).toBe(0);
+    await page.keyboard.press('Escape');
+    await expect(cellEditor(page)).toHaveCount(0);
+    expect(await entryOf(page, 'D2')).toBe('=B2*C2');
+});
+
+waitsOn(11)('item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11)', async ({ page }) => {
+    await click(page, 'E5');
+    await page.keyboard.type('=');
+    await expect(cellEditor(page)).toHaveValue('=');
+    await page.keyboard.press('ArrowDown');
+    await expect(cellEditor(page)).toHaveValue('=E6');
+    // Excel's Name Box names the pointed cell while pointing (C6 in its screenshot).
+    await expect.soft(nameBox(page)).toHaveValue('E6');
+    await page.keyboard.press('ArrowDown');
+    await expect(cellEditor(page)).toHaveValue('=E7');
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect(cellEditor(page)).toHaveValue('=E7:F7');
+    await page.keyboard.type('+');
+    await expect(cellEditor(page)).toHaveValue('=E7:F7+');
+    // Once the pointer ends, Excel's Name Box names the edited cell again (C5).
+    await expect.soft(nameBox(page)).toHaveValue('E5');
+});
+
+waitsOn(11)('item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11)', async ({ page }) => {
+    await click(page, 'E10');
+    await page.keyboard.type('=');
+    // A click while pointing: no waiting for the Name Box, which is the question here.
+    await cell(page, 'C3').click({ force: true });
+    await page.waitForTimeout(PACE_MS);
+    await expect(cellEditor(page)).toHaveValue('=C3');
+    // Excel's Name Box names the pointed cell while pointing (C3 in its screenshot).
+    await expect.soft(nameBox(page)).toHaveValue('C3');
+    const from = await cell(page, 'C3').boundingBox();
+    const to = await cell(page, 'D4').boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await expect(cellEditor(page)).toHaveValue('=C3:D4');
+});
+
+waitsOn(11)('item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11)', async ({ page }) => {
+    await click(page, 'E5');
+    await page.keyboard.type('=');
+    await page.keyboard.press('ArrowDown');
+    await expect(cellEditor(page)).toHaveValue('=E6');
+    await page.keyboard.press('F2');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    // Excel: the caret moved (=|E6); the pointer did not.
+    await expect(cellEditor(page)).toHaveValue('=E6');
+    expect(await cellEditor(page).evaluate((e) => e.selectionStart)).toBe(1);
+});
+
+waitsOn(11)('item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11)', async ({ page }) => {
+    await click(page, 'E5');
+    await bar(page).click();
+    await page.keyboard.type('=');
+    await page.keyboard.press('ArrowDown');
+    // Excel stayed in Edit mode with "=" alone.
+    await expect(bar(page)).toHaveValue('=');
+});
+
+waitsOn(10)('item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10)', async ({ page }) => {
+    const list = sheet(page).locator('.ex-completion-list');
+    await click(page, 'E5');
+    await page.keyboard.type('=SUM');
+    // Excel's list for =SUM: SUM (selected), SUMIF, SUMIFS, SUMPRODUCT, SUMSQ, SUMX2MY2, …;
+    // ExSheet offers only its declared functions (ADR-0047), so the first is what is compared.
+    await expect(list.locator('.ex-completion-item').first()).toHaveText('SUM');
+    await expect(list.locator('.ex-completion-selected')).toHaveText('SUM');
+    await page.keyboard.press('Tab');
+    await expect(cellEditor(page)).toHaveValue('=SUM(');
+    await page.keyboard.press('Escape');
+    await expect(cellEditor(page)).toHaveCount(0);
+    // Escape with the list open closes the list and keeps the edit; a second Escape cancels it.
+    await click(page, 'E5');
+    await page.keyboard.type('=SU');
+    await expect(list).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(list).toHaveCount(0);
+    await expect(cellEditor(page)).toHaveValue('=SU');
+    await page.keyboard.press('Escape');
+    await expect(cellEditor(page)).toHaveCount(0);
+});
+
+waitsOn(10)('item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10)', async ({ page }) => {
+    const hint = sheet(page).locator('.ex-completion-hint');
+    await click(page, 'E5');
+    await page.keyboard.type('=XLOOKUP(');
+    await expect(hint).toHaveText('XLOOKUP(lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode])');
+    await expect(hint.locator('strong, b, em').first()).toHaveText('lookup_value');
+    await page.keyboard.type('1,A1:A3,');
+    await expect(hint.locator('strong, b, em').first()).toHaveText('return_array');
+    await page.keyboard.type('B1:B3,,');
+    await expect(hint.locator('strong, b, em').first()).toHaveText('[match_mode]');
+});
+
+test('item 15: Escape in the Formula Bar cancels the edit and gives the keys back to the grid (ADR-0051, ticket 09)', async ({ page }) => {
+    await click(page, 'E5');
+    await bar(page).click();
+    await page.keyboard.type('xyz');
+    await page.keyboard.press('Escape');
+    await expect(cell(page, 'E5')).toHaveText('');
+    await expectActive(page, 'E5');
+    await page.keyboard.type('7');
+    await page.keyboard.press('Enter');
+    await expect(cell(page, 'E5')).toHaveText('7');
+    await expectActive(page, 'E6');
+});
+
+// ---- Clipboard (ADR-0048, ADR-0050) ------------------------------------------------------------
+
+waitsOn(14)('item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)', async ({ page }) => {
+    await enter(page, 'E1', '=B2');
+    await click(page, 'E1');
+    await page.keyboard.press('Control+C');
+    await click(page, 'E3');
+    await page.keyboard.press('Control+V');
+    // Excel: =A1 copied from B1 into B3 is =A3.
+    expect(await entryOf(page, 'E3')).toBe('=B4');
+});
+
+waitsOn(14)('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)', async ({ page }) => {
+    await click(page, 'B2');
+    await click(page, 'D4', { modifiers: ['Shift'] });
+    await page.keyboard.press('Control+C');
+    await click(page, 'C6');
+    await page.keyboard.press('Control+V');
+    // Excel: E5:G7 selected with the Focus on E5, and B2's =A2*2 written as =E6*2 at F6.
+    await expectSelection(page, 'C6', 'E8');
+    await expectActive(page, 'C6');
+    expect(await entryOf(page, 'E7')).toBe('=C7*D7');
+});
+
+// Not a probe a spec can run: it needs Excel on the other side of the clipboard.
+test.fixme('item 18: cells from Excel, and to Excel (ADR-0048, ticket 14)', async () => {
+    // Observed with clipboard-probe.mjs, which drives Excel too; a spec cannot. Excel → ExSheet:
+    // a Formula arrives as its Value, a date as a date (its displayed text, which is ######## when
+    // Excel's column was too narrow), and 1,234.50 as 1234.5 without its format. ExSheet → Excel:
+    // Excel reads the HTML flavour, so a date arrives as the serial 46291 and #,##0.00 is lost.
+});
+
+async function pasteText(page, a1, text) {
+    await page.evaluate((t) => navigator.clipboard.writeText(t), text);
+    await click(page, a1);
+    await page.keyboard.press('Control+V');
+}
+
+waitsOn(14)('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)', async ({ page }) => {
+    await pasteText(page, 'E5', '=A1+1');
+    expect(await entryOf(page, 'E5')).toBe('=A1+1');
+});
+
+waitsOn(14)('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
+    await pasteText(page, 'E5', '1,234');
+    await expect(cell(page, 'E5')).toHaveText('1,234');
+});
+
+waitsOn(14)('item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)', async ({ page }) => {
+    await pasteText(page, 'E5', '=1+');
+    // Excel took unreadable Formula text as the text itself, with no refusal and no dialog.
+    await expect(cell(page, 'E5')).toHaveText('=1+');
+});
+
+// ---- Fill (ADR-0050, item 5) --------------------------------------------------------------------
+
+test('item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15)', async ({ page }) => {
+    await enter(page, 'E1', '1');
+    await enter(page, 'E2', '3');
+    await click(page, 'E1');
+    await click(page, 'E2', { modifiers: ['Shift'] });
+    await dragFillHandle(page, 'E6');
+    await expect(cell(page, 'E6')).toHaveText('11');
+    await expectSelection(page, 'E1', 'E6');
+    await expectActive(page, 'E1');
+});
+
+test('item 20: one number is copied, one date goes on by day, a Formula shifts (ADR-0050, ticket 15)', async ({ page }) => {
+    await enter(page, 'E1', '5');
+    await click(page, 'E1');
+    await dragFillHandle(page, 'E4');
+    await expect(cell(page, 'E4')).toHaveText('5');
+    await enter(page, 'F1', '9/26/2026');
+    await click(page, 'F1');
+    await dragFillHandle(page, 'F4');
+    await expect(cell(page, 'F4')).toHaveText('9/29/2026');
+    await enter(page, 'E8', '=B2*2');
+    await click(page, 'E8');
+    await dragFillHandle(page, 'E10');
+    expect(await entryOf(page, 'E10')).toBe('=B4*2');
+});
+
+test('item 20: 1, 2, 4 continue as Excel\'s trend, to the 15 digits Excel keeps (ADR-0050, ticket 15)', async ({ page }) => {
+    await enter(page, 'E1', '1');
+    await enter(page, 'E2', '2');
+    await enter(page, 'E3', '4');
+    await click(page, 'E1');
+    await click(page, 'E3', { modifiers: ['Shift'] });
+    await dragFillHandle(page, 'E5');
+    // Excel's Value2 is 5.33333333333333 exactly (rounded to 15 digits), and its bar shows that.
+    expect(await entryOf(page, 'E4')).toBe('5.33333333333333');
+    expect(await entryOf(page, 'E5')).toBe('6.83333333333333');
+});
+
+test('item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15)', async ({ page }) => {
+    await enter(page, 'E5', '1');
+    await enter(page, 'E6', '3');
+    await click(page, 'E5');
+    await click(page, 'E6', { modifiers: ['Shift'] });
+    await dragFillHandle(page, 'E2');
+    await expect(cell(page, 'E4')).toHaveText('-1');
+    await expect(cell(page, 'E2')).toHaveText('-5');
+    // Excel: A2:A6 selected, the Focus on A5, the source's first cell.
+    await expectSelection(page, 'E2', 'E6');
+    await expectActive(page, 'E5');
+});
+
+test('item 20: text in two cells filled left repeats backwards (ADR-0050, ticket 15)', async ({ page }) => {
+    await enter(page, 'D10', 'a');
+    await enter(page, 'E10', 'b');
+    await click(page, 'D10');
+    await click(page, 'E10', { modifiers: ['Shift'] });
+    await dragFillHandle(page, 'B10');
+    // Excel, from E1:F1 = a, b: D1 = b, C1 = a, B1 = b.
+    await expect(cell(page, 'C10')).toHaveText('b');
+    await expect(cell(page, 'B10')).toHaveText('a');
+});
+
+test('item 20: Item 1, Mon and a date with a time are refused, by decision (ADR-0050)', async ({ page }) => {
+    // Excel continues them (Item 2, Tue, the next day at 10:00, losing about 5 ms); ExSheet
+    // refuses a pattern it has not implemented rather than fill it with copies.
+    for (const typed of ['Item 1', 'Mon', '9/26/2026 10:00']) {
+        await enter(page, 'E1', typed);
+        await click(page, 'E1');
+        await dragFillHandle(page, 'E3');
+        await expect(cell(page, 'E2')).toHaveText('');
+        await expect(page.locator('.ex-sheet-notice')).not.toHaveText('');
+    }
+});
+
+test('item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15)', async ({ page }) => {
+    await click(page, 'A1');
+    await click(page, 'B2', { modifiers: ['Shift'] });
+    await expect(sheet(page).locator('.ex-fill-handle')).toHaveCount(1);
+    await click(page, 'D4', { modifiers: ['ControlOrMeta'] });
+    await expect(sheet(page).locator('.ex-fill-handle')).toHaveCount(0);
+});
+
+// ---- Structure (ADR-0046) -----------------------------------------------------------------------
+
+waitsOn(13)('item 22: inserting rows above a selected range keeps the Selection where it was (ADR-0046, ticket 13)', async ({ page }) => {
+    await click(page, 'B3');
+    await click(page, 'C4', { modifiers: ['Shift'] });
+    await click(page, 'B3', { button: 'right' });
+    await page.getByRole('menuitem', { name: /insert rows above/i }).click();
+    // Excel: two rows inserted above row 3, the Selection still B3:C4 (now the new rows), the
+    // Focus B3, and the new rows formatted as the row above.
+    await expectSelection(page, 'B3', 'C4');
+    await expectActive(page, 'B3');
+    await expect(cell(page, 'A5')).toHaveText('Pears');
+});
+
+waitsOn(13)('item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13)', async ({ page }) => {
+    await enter(page, 'E1', '=B3*2');
+    await enter(page, 'F1', '=SUM(B2:B4)');
+    await click(page, 'B3', { button: 'right' });
+    await page.getByRole('menuitem', { name: /delete rows/i }).click();
+    // Excel: =A5*2 became =#REF!*2, and =SUM(A4:A6) became =SUM(A4:A5).
+    expect(await entryOf(page, 'E1')).toBe('=#REF!*2');
+    expect(await entryOf(page, 'F1')).toBe('=SUM(B2:B3)');
+});
+
+// Nothing to drive yet: /sheet offers the user no rename.
+test.fixme('item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12)', async () => {
+    // Excel: renamed to Data through Home > Format > Rename Sheet, then Ctrl+Z: Sheet1 again.
+    // ExSheet undoes a rename by decision (ADR-0048), so the two agree. /sheet has no rename
+    // command for the user to drive yet.
+});
+
+// ---- Display (ADR-0016, ADR-0046) ---------------------------------------------------------------
+
+test('item 25: a long text is cut with an ellipsis, by decision; Excel lets it run over (ADR-0046)', async ({ page }) => {
+    await enter(page, 'E1', 'A long text that runs well past its column');
+    const overflow = await cell(page, 'E1').evaluate((e) => ({
+        ellipsis: getComputedStyle(e).textOverflow, clipped: e.scrollWidth > e.clientWidth,
+    }));
+    expect(overflow).toEqual({ ellipsis: 'ellipsis', clipped: true });
+});
+
+test('item 26: a number too wide for its column shows #### (ADR-0016)', async ({ page }) => {
+    // Excel, at width 4: 123456 in General, 12345 as 0.00 and a date all showed ####. /sheet
+    // cannot narrow a column (ExSheet declares no OnColumnWidthChanged), so the number here is
+    // wider than the default column instead; a date that wide cannot be typed, and is not asked.
+    await enter(page, 'E1', '123456789012');
+    await click(page, 'E1');
+    await page.locator('#sheet-money').click();
+    await expect(cell(page, 'E1')).toHaveText(/^#+$/);
+});
+
+test('item 27: every cell of a cycle and its dependents is #CIRC!, by decision; Excel shows 0 (ADR-0047)', async ({ page }) => {
+    // Excel: one warning dialog when the cycle closes, 0 in all three, and "Circular References: A1"
+    // in the status bar.
+    await enter(page, 'E1', '=F1');
+    await enter(page, 'F1', '=E1');
+    await enter(page, 'E2', '=IFERROR(E1,0)');
+    await expect(cell(page, 'E1')).toHaveText('#CIRC!');
+    await expect(cell(page, 'F1')).toHaveText('#CIRC!');
+    await expect(cell(page, 'E2')).toHaveText('#CIRC!');
+});

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "FILL-001",
-      "source": "documented",
+      "source": "observed",
       "description": "1, 2 dragged gives 1, 2, 3, 4",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "FILL-002",
-      "source": "documented",
+      "source": "observed",
       "description": "1, 2 dragged gives 1, 2, 3, 4",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "FILL-003",
-      "source": "documented",
+      "source": "observed",
       "description": "1, 2 dragged gives 1, 2, 3, 4",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "FILL-004",
-      "source": "documented",
+      "source": "observed",
       "description": "1, 2 dragged gives 1, 2, 3, 4",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "FILL-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (1, 2)",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "FILL-006",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (1, 2)",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "FILL-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (1, 2)",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "FILL-008",
-      "source": "documented",
+      "source": "observed",
       "description": "The source cells are left as typed, not replaced by the fitted line (1, 2)",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "FILL-009",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (1, 3)",
       "cells": {"A1": "1", "A2": "3"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "FILL-010",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (1, 3)",
       "cells": {"A1": "1", "A2": "3"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -94,7 +94,7 @@
     },
     {
       "id": "FILL-011",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (1, 3)",
       "cells": {"A1": "1", "A2": "3"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -103,7 +103,7 @@
     },
     {
       "id": "FILL-012",
-      "source": "documented",
+      "source": "observed",
       "description": "The source cells are left as typed, not replaced by the fitted line (1, 3)",
       "cells": {"A1": "1", "A2": "3"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -112,7 +112,7 @@
     },
     {
       "id": "FILL-013",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (100, 95)",
       "cells": {"A1": "100", "A2": "95"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
@@ -121,7 +121,7 @@
     },
     {
       "id": "FILL-014",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (100, 95)",
       "cells": {"A1": "100", "A2": "95"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
@@ -130,7 +130,7 @@
     },
     {
       "id": "FILL-015",
-      "source": "documented",
+      "source": "observed",
       "description": "The source cells are left as typed, not replaced by the fitted line (100, 95)",
       "cells": {"A1": "100", "A2": "95"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
@@ -139,7 +139,7 @@
     },
     {
       "id": "FILL-016",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (1, 3, 4)",
       "cells": {"A1": "1", "A2": "3", "A3": "4"},
       "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
@@ -148,7 +148,7 @@
     },
     {
       "id": "FILL-017",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (1, 3, 4)",
       "cells": {"A1": "1", "A2": "3", "A3": "4"},
       "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
@@ -157,7 +157,7 @@
     },
     {
       "id": "FILL-018",
-      "source": "documented",
+      "source": "observed",
       "description": "Microsoft's examples of an AutoFill linear series (1, 3, 4)",
       "cells": {"A1": "1", "A2": "3", "A3": "4"},
       "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
@@ -166,7 +166,7 @@
     },
     {
       "id": "FILL-019",
-      "source": "documented",
+      "source": "observed",
       "description": "The source cells are left as typed, not replaced by the fitted line (1, 3, 4)",
       "cells": {"A1": "1", "A2": "3", "A3": "4"},
       "action": {"do": "fill", "source": "A1:A3", "target": "A4:A6", "direction": "down"},
@@ -175,7 +175,7 @@
     },
     {
       "id": "FILL-020",
-      "source": "documented",
+      "source": "observed",
       "description": "A series filled upward goes back along the same line",
       "cells": {"A5": "1", "A6": "2"},
       "action": {"do": "fill", "source": "A5:A6", "target": "A3:A4", "direction": "up"},
@@ -184,7 +184,7 @@
     },
     {
       "id": "FILL-021",
-      "source": "documented",
+      "source": "observed",
       "description": "A series filled upward goes back along the same line",
       "cells": {"A5": "1", "A6": "2"},
       "action": {"do": "fill", "source": "A5:A6", "target": "A3:A4", "direction": "up"},
@@ -193,7 +193,7 @@
     },
     {
       "id": "FILL-022",
-      "source": "documented",
+      "source": "observed",
       "description": "A series fills to the right as it fills down",
       "cells": {"A1": "10", "B1": "20"},
       "action": {"do": "fill", "source": "A1:B1", "target": "C1:E1", "direction": "right"},
@@ -202,7 +202,7 @@
     },
     {
       "id": "FILL-023",
-      "source": "documented",
+      "source": "observed",
       "description": "A series fills to the right as it fills down",
       "cells": {"A1": "10", "B1": "20"},
       "action": {"do": "fill", "source": "A1:B1", "target": "C1:E1", "direction": "right"},
@@ -211,7 +211,7 @@
     },
     {
       "id": "FILL-024",
-      "source": "documented",
+      "source": "observed",
       "description": "A series fills to the right as it fills down",
       "cells": {"A1": "10", "B1": "20"},
       "action": {"do": "fill", "source": "A1:B1", "target": "C1:E1", "direction": "right"},
@@ -220,7 +220,7 @@
     },
     {
       "id": "FILL-025",
-      "source": "documented",
+      "source": "observed",
       "description": "A single number is copied, as Excel's plain drag copies it",
       "cells": {"A1": "5"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
@@ -229,7 +229,7 @@
     },
     {
       "id": "FILL-026",
-      "source": "documented",
+      "source": "observed",
       "description": "A single number is copied, as Excel's plain drag copies it",
       "cells": {"A1": "5"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
@@ -238,7 +238,7 @@
     },
     {
       "id": "FILL-027",
-      "source": "documented",
+      "source": "observed",
       "description": "A date gives the following days, in the date's format",
       "cells": {"A1": "9/27/2026"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},
@@ -247,7 +247,7 @@
     },
     {
       "id": "FILL-028",
-      "source": "documented",
+      "source": "observed",
       "description": "A date gives the following days, in the date's format",
       "cells": {"A1": "9/27/2026"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},
@@ -256,7 +256,7 @@
     },
     {
       "id": "FILL-029",
-      "source": "documented",
+      "source": "observed",
       "description": "A date gives the following days, in the date's format",
       "cells": {"A1": "9/27/2026"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},
@@ -265,7 +265,7 @@
     },
     {
       "id": "FILL-030",
-      "source": "documented",
+      "source": "observed",
       "description": "A date filled up gives the days before it",
       "cells": {"A3": "3/1/2026"},
       "action": {"do": "fill", "source": "A3", "target": "A1:A2", "direction": "up"},
@@ -274,7 +274,7 @@
     },
     {
       "id": "FILL-031",
-      "source": "documented",
+      "source": "observed",
       "description": "A date filled up gives the days before it",
       "cells": {"A3": "3/1/2026"},
       "action": {"do": "fill", "source": "A3", "target": "A1:A2", "direction": "up"},
@@ -283,7 +283,7 @@
     },
     {
       "id": "FILL-032",
-      "source": "documented",
+      "source": "observed",
       "description": "Two dates a month apart are a pattern ExSheet does not yet take: refused",
       "cells": {"A1": "1/1/2026", "A2": "2/1/2026"},
       "formats": {"A1": "yyyy-mm-dd", "A2": "yyyy-mm-dd"},
@@ -306,7 +306,7 @@
     },
     {
       "id": "FILL-034",
-      "source": "documented",
+      "source": "observed",
       "description": "A time of day is a pattern ExSheet does not yet take: refused",
       "cells": {"A1": "10:00"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},
@@ -317,7 +317,7 @@
     },
     {
       "id": "FILL-035",
-      "source": "documented",
+      "source": "observed",
       "description": "A Formula dragged shifts its relative References",
       "cells": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "B1": "=A1*$A$1+A$1"},
       "action": {"do": "fill", "source": "B1", "target": "B2:B4", "direction": "down"},
@@ -326,7 +326,7 @@
     },
     {
       "id": "FILL-036",
-      "source": "documented",
+      "source": "observed",
       "description": "Several Formulas repeat in order, each shifted from where it came",
       "cells": {"A1": "=B1", "A2": "=C2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -335,7 +335,7 @@
     },
     {
       "id": "FILL-037",
-      "source": "documented",
+      "source": "observed",
       "description": "Several Formulas repeat in order, each shifted from where it came",
       "cells": {"A1": "=B1", "A2": "=C2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -344,7 +344,7 @@
     },
     {
       "id": "FILL-038",
-      "source": "documented",
+      "source": "observed",
       "description": "Several Formulas repeat in order, each shifted from where it came",
       "cells": {"A1": "=B1", "A2": "=C2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A5", "direction": "down"},
@@ -353,7 +353,7 @@
     },
     {
       "id": "FILL-039",
-      "source": "documented",
+      "source": "observed",
       "description": "Several Formulas filled up repeat backwards",
       "cells": {"A5": "=B5", "A6": "=C6"},
       "action": {"do": "fill", "source": "A5:A6", "target": "A2:A4", "direction": "up"},
@@ -362,7 +362,7 @@
     },
     {
       "id": "FILL-040",
-      "source": "documented",
+      "source": "observed",
       "description": "Several Formulas filled up repeat backwards",
       "cells": {"A5": "=B5", "A6": "=C6"},
       "action": {"do": "fill", "source": "A5:A6", "target": "A2:A4", "direction": "up"},
@@ -371,7 +371,7 @@
     },
     {
       "id": "FILL-041",
-      "source": "documented",
+      "source": "observed",
       "description": "Several Formulas filled up repeat backwards",
       "cells": {"A5": "=B5", "A6": "=C6"},
       "action": {"do": "fill", "source": "A5:A6", "target": "A2:A4", "direction": "up"},
@@ -380,7 +380,7 @@
     },
     {
       "id": "FILL-042",
-      "source": "documented",
+      "source": "observed",
       "description": "Text Excel would continue is refused, not filled with copies (Item 1)",
       "cells": {"A1": "Item 1"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
@@ -391,7 +391,7 @@
     },
     {
       "id": "FILL-043",
-      "source": "documented",
+      "source": "observed",
       "description": "Text Excel would continue is refused, not filled with copies (Q1)",
       "cells": {"A1": "Q1"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
@@ -402,7 +402,7 @@
     },
     {
       "id": "FILL-044",
-      "source": "documented",
+      "source": "observed",
       "description": "Text Excel would continue is refused, not filled with copies (Monday)",
       "cells": {"A1": "Monday"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
@@ -423,7 +423,7 @@
     },
     {
       "id": "FILL-046",
-      "source": "documented",
+      "source": "observed",
       "description": "Text Excel would continue is refused, not filled with copies (Sep)",
       "cells": {"A1": "Sep"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A3", "direction": "down"},
@@ -434,7 +434,7 @@
     },
     {
       "id": "FILL-047",
-      "source": "documented",
+      "source": "observed",
       "description": "Day names are refused in the Sheet's culture too",
       "culture": "de-DE",
       "cells": {"A1": "Montag"},
@@ -446,7 +446,7 @@
     },
     {
       "id": "FILL-048",
-      "source": "documented",
+      "source": "observed",
       "description": "Text with no pattern, booleans, Error Values and blanks are copied, repeating the source",
       "cells": {"A1": "apple", "A2": "TRUE", "A3": "#N/A", "A7": "stale"},
       "action": {"do": "fill", "source": "A1:A4", "target": "A5:A8", "direction": "down"},
@@ -455,7 +455,7 @@
     },
     {
       "id": "FILL-049",
-      "source": "documented",
+      "source": "observed",
       "description": "Text with no pattern, booleans, Error Values and blanks are copied, repeating the source",
       "cells": {"A1": "apple", "A2": "TRUE", "A3": "#N/A", "A7": "stale"},
       "action": {"do": "fill", "source": "A1:A4", "target": "A5:A8", "direction": "down"},
@@ -464,7 +464,7 @@
     },
     {
       "id": "FILL-050",
-      "source": "documented",
+      "source": "observed",
       "description": "Text with no pattern, booleans, Error Values and blanks are copied, repeating the source",
       "cells": {"A1": "apple", "A2": "TRUE", "A3": "#N/A", "A7": "stale"},
       "action": {"do": "fill", "source": "A1:A4", "target": "A5:A8", "direction": "down"},
@@ -473,7 +473,7 @@
     },
     {
       "id": "FILL-051",
-      "source": "documented",
+      "source": "observed",
       "description": "Text with no pattern, booleans, Error Values and blanks are copied, repeating the source",
       "cells": {"A1": "apple", "A2": "TRUE", "A3": "#N/A", "A7": "stale"},
       "action": {"do": "fill", "source": "A1:A4", "target": "A5:A8", "direction": "down"},
@@ -512,7 +512,7 @@
     },
     {
       "id": "FILL-055",
-      "source": "documented",
+      "source": "observed",
       "description": "Each column of a vertical fill follows its own rule: a series",
       "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
       "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
@@ -521,7 +521,7 @@
     },
     {
       "id": "FILL-056",
-      "source": "documented",
+      "source": "observed",
       "description": "Each column of a vertical fill follows its own rule: a Formula and a blank repeat",
       "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
       "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
@@ -530,7 +530,7 @@
     },
     {
       "id": "FILL-057",
-      "source": "documented",
+      "source": "observed",
       "description": "Each column of a vertical fill follows its own rule: a Formula and a blank repeat",
       "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
       "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
@@ -539,7 +539,7 @@
     },
     {
       "id": "FILL-058",
-      "source": "documented",
+      "source": "observed",
       "description": "Each column of a vertical fill follows its own rule: text and a blank repeat",
       "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
       "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
@@ -548,7 +548,7 @@
     },
     {
       "id": "FILL-059",
-      "source": "documented",
+      "source": "observed",
       "description": "Each column of a vertical fill follows its own rule: text and a blank repeat",
       "cells": {"A1": "1", "A2": "2", "B1": "=A1", "C1": "x"},
       "action": {"do": "fill", "source": "A1:C2", "target": "A3:C4", "direction": "down"},
@@ -557,7 +557,7 @@
     },
     {
       "id": "FILL-060",
-      "source": "documented",
+      "source": "observed",
       "description": "The target may be given as the whole extended range",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A1:A4", "direction": "down"},
@@ -566,7 +566,7 @@
     },
     {
       "id": "FILL-061",
-      "source": "documented",
+      "source": "observed",
       "description": "The target may be given as the whole extended range; the source stays",
       "cells": {"A1": "1", "A2": "2"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A1:A4", "direction": "down"},
@@ -575,7 +575,7 @@
     },
     {
       "id": "FILL-062",
-      "source": "documented",
+      "source": "observed",
       "description": "A fill shifts its relative References and keeps the whitespace",
       "cells": {"B1": "=A1 + 1"},
       "action": {"do": "fill", "source": "B1", "target": "B2:B3", "direction": "down"},
@@ -584,7 +584,7 @@
     },
     {
       "id": "FILL-063",
-      "source": "documented",
+      "source": "observed",
       "description": "A fill shifts its relative References and keeps the whitespace",
       "cells": {"B1": "=A1 + 1"},
       "action": {"do": "fill", "source": "B1", "target": "B2:B3", "direction": "down"},

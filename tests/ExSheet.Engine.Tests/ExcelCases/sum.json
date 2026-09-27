@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "SUM-001",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(A1:A7)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "SUM-002",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(1,2,3)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "SUM-003",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(\"3\",2,TRUE)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "SUM-004",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(A3)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "SUM-005",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(A4)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "SUM-006",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(A5)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "SUM-007",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(A1:A2,10)"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "SUM-008",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(A:A)"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "SUM-009",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(C1:C3)"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "SUM-010",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(\"abc\")"},
@@ -94,7 +94,7 @@
     },
     {
       "id": "SUM-011",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(1,#N/A)"},
@@ -103,7 +103,7 @@
     },
     {
       "id": "SUM-012",
-      "source": "documented",
+      "source": "observed",
       "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SUM(D1)"},
@@ -112,7 +112,7 @@
     },
     {
       "id": "SUM-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 9: a missing argument (engine: 0)",
       "ticket19Row": 9,
       "cells": {"ZZ1000": "=SUM(1,,2)"},
@@ -121,7 +121,7 @@
     },
     {
       "id": "SUM-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 16: two different errors in a range (engine: the first in row-major order)",
       "ticket19Row": 16,
       "cells": {"A2": "#N/A", "A3": "#DIV/0!", "ZZ1000": "=SUM(A1:A3)"},

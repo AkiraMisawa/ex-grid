@@ -1,0 +1,236 @@
+[
+  {
+    "base": "http://localhost:6298",
+    "pause": 0,
+    "trial": 1,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:6298",
+    "pause": 0,
+    "trial": 2,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:6298",
+    "pause": 0,
+    "trial": 3,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:6298",
+    "pause": 100,
+    "trial": 1,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:6298",
+    "pause": 100,
+    "trial": 2,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:6298",
+    "pause": 100,
+    "trial": 3,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:6298",
+    "pause": 300,
+    "trial": 1,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:6298",
+    "pause": 300,
+    "trial": 2,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:6298",
+    "pause": 300,
+    "trial": 3,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:5299",
+    "pause": 0,
+    "trial": 1,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:5299",
+    "pause": 0,
+    "trial": 2,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:5299",
+    "pause": 0,
+    "trial": 3,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:5299",
+    "pause": 100,
+    "trial": 1,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:5299",
+    "pause": 100,
+    "trial": 2,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:5299",
+    "pause": 100,
+    "trial": 3,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:5299",
+    "pause": 300,
+    "trial": 1,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:5299",
+    "pause": 300,
+    "trial": 2,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  },
+  {
+    "base": "http://localhost:5299",
+    "pause": 300,
+    "trial": 3,
+    "e1Entry": "=F1",
+    "changedCells": {
+      "r0c4": "0",
+      "r10c1": "1189.4",
+      "r11c1": "318.25",
+      "r12c1": "5"
+    },
+    "console": []
+  }
+]

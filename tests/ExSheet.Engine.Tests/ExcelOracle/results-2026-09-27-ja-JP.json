@@ -1,0 +1,173 @@
+{
+    "ran":  "2026-09-27T12:34:34",
+    "excel":  "16.0 (build 20326); EXCEL.EXE 16.0.20326.20158",
+    "windowsRegionalFormat":  "ja-JP",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "summary":  {
+                    "agree":  4,
+                    "disagree":  1,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "DATE-009",
+                      "area":  "dates",
+                      "source":  "documented",
+                      "description":  "A date is typed in the culture\u0027s day order",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "2026/09/26",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "DATE-010",
+                      "area":  "dates",
+                      "source":  "documented",
+                      "description":  "A date is typed in the culture\u0027s day order",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "2026/09/26",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FMT-030",
+                      "area":  "number-formats",
+                      "source":  "documented",
+                      "description":  "The culture\u0027s separators, over the invariant code",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "1,234.50"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "1,234.50"
+                                       },
+                      "excel":  {
+                                    "value2":  1234.5,
+                                    "kind":  "number",
+                                    "number":  "1234.5",
+                                    "text":  "1,234.50",
+                                    "formula":  "=1234.5",
+                                    "numberFormat":  "#,##0.00",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-010",
+                      "area":  "typed-constants",
+                      "source":  "documented",
+                      "description":  "A typed number is read with the Sheet\u0027s culture\u0027s separators",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1234.5
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1234.5
+                                       },
+                      "excel":  {
+                                    "value2":  1234.5,
+                                    "kind":  "number",
+                                    "number":  "1234.5",
+                                    "text":  "1,234.50",
+                                    "formula":  "1234.5",
+                                    "numberFormat":  "#,##0.00",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-027",
+                      "area":  "typed-constants",
+                      "source":  "uncertain",
+                      "description":  "Ticket 19 row 30: the date format applied when a date is typed under ja-JP",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291,
+                                       "text":  "2026/09/26",
+                                       "numberFormat":  "yyyy/mm/dd"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291,
+                                           "text":  "2026/09/26",
+                                           "numberFormat":  "yyyy/mm/dd"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "2026/09/26",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "numberFormat: expected \"yyyy/mm/dd\", Excel \"m/d/yyyy\""
+                                      ]
+                  }
+              ]
+}

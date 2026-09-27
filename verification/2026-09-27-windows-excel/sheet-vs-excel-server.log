@@ -1,0 +1,573 @@
+start 2026-09-27 14:19:37 BST
+'\\wsl.localhost\Ubuntu-24.04\home\akira\src\hobby\ex-grid\verification\2026-09-27-windows-excel\shots'
+CMD.EXE was started with the above path as the current directory.
+UNC paths are not supported.  Defaulting to Windows directory.
+
+Running 68 tests using 1 worker
+
+  ok  1 [chrome] › sheet-vs-excel.spec.mjs:118:1 › item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §2, ticket 07) (6.3s)
+  x   2 [chrome] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07) (8.3s)
+  x   3 [chrome] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06) (6.1s)
+  x   4 [chrome] › sheet-vs-excel.spec.mjs:192:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06) (6.0s)
+  x   5 [chrome] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06) (11.0s)
+  ok  6 [chrome] › sheet-vs-excel.spec.mjs:222:1 › item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09) (1.0s)
+  ok  7 [chrome] › sheet-vs-excel.spec.mjs:245:1 › item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08) (1.3s)
+  ok  8 [chrome] › sheet-vs-excel.spec.mjs:258:1 › item 8: F2 on a Formula shows it with the caret at the end, and the arrows move the caret (ADR-0051, ticket 08) (1.5s)
+  -   9 [chrome] › sheet-vs-excel.spec.mjs:277:12 › item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11)
+  -  10 [chrome] › sheet-vs-excel.spec.mjs:295:12 › item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11)
+  -  11 [chrome] › sheet-vs-excel.spec.mjs:313:12 › item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11)
+  -  12 [chrome] › sheet-vs-excel.spec.mjs:326:12 › item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11)
+  -  13 [chrome] › sheet-vs-excel.spec.mjs:335:12 › item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10)
+  -  14 [chrome] › sheet-vs-excel.spec.mjs:358:12 › item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10)
+  ok 15 [chrome] › sheet-vs-excel.spec.mjs:370:1 › item 15: Escape in the Formula Bar cancels the edit and gives the keys back to the grid (ADR-0051, ticket 09) (1.1s)
+  -  16 [chrome] › sheet-vs-excel.spec.mjs:385:12 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)
+  -  17 [chrome] › sheet-vs-excel.spec.mjs:395:12 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)
+  -  18 [chrome] › sheet-vs-excel.spec.mjs:408:6 › item 18: cells from Excel, and to Excel (ADR-0048, ticket 14)
+  -  19 [chrome] › sheet-vs-excel.spec.mjs:421:12 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)
+  -  20 [chrome] › sheet-vs-excel.spec.mjs:426:12 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)
+  -  21 [chrome] › sheet-vs-excel.spec.mjs:431:12 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)
+  x  22 [chrome] › sheet-vs-excel.spec.mjs:439:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15) (7.2s)
+  ok 23 [chrome] › sheet-vs-excel.spec.mjs:450:1 › item 20: one number is copied, one date goes on by day, a Formula shifts (ADR-0050, ticket 15) (3.7s)
+  ok 24 [chrome] › sheet-vs-excel.spec.mjs:465:1 › item 20: 1, 2, 4 continue as Excel's trend, to the 15 digits Excel keeps (ADR-0050, ticket 15) (2.8s)
+  x  25 [chrome] › sheet-vs-excel.spec.mjs:477:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15) (7.2s)
+  ok 26 [chrome] › sheet-vs-excel.spec.mjs:490:1 › item 20: text in two cells filled left repeats backwards (ADR-0050, ticket 15) (2.1s)
+  ok 27 [chrome] › sheet-vs-excel.spec.mjs:501:1 › item 20: Item 1, Mon and a date with a time are refused, by decision (ADR-0050) (3.5s)
+  ok 28 [chrome] › sheet-vs-excel.spec.mjs:513:1 › item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15) (835ms)
+  -  29 [chrome] › sheet-vs-excel.spec.mjs:523:12 › item 22: inserting rows above a selected range keeps the Selection where it was (ADR-0046, ticket 13)
+  -  30 [chrome] › sheet-vs-excel.spec.mjs:535:12 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13)
+  -  31 [chrome] › sheet-vs-excel.spec.mjs:546:6 › item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12)
+  ok 32 [chrome] › sheet-vs-excel.spec.mjs:554:1 › item 25: a long text is cut with an ellipsis, by decision; Excel lets it run over (ADR-0046) (852ms)
+  ok 33 [chrome] › sheet-vs-excel.spec.mjs:562:1 › item 26: a number too wide for its column shows #### (ADR-0016) (966ms)
+  ok 34 [chrome] › sheet-vs-excel.spec.mjs:572:1 › item 27: every cell of a cycle and its dependents is #CIRC!, by decision; Excel shows 0 (ADR-0047) (1.8s)
+  ok 35 [msedge] › sheet-vs-excel.spec.mjs:118:1 › item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §2, ticket 07) (6.4s)
+  x  36 [msedge] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07) (8.5s)
+  x  37 [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06) (6.1s)
+  x  38 [msedge] › sheet-vs-excel.spec.mjs:192:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06) (6.0s)
+  x  39 [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06) (11.0s)
+  ok 40 [msedge] › sheet-vs-excel.spec.mjs:222:1 › item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09) (1.1s)
+  ok 41 [msedge] › sheet-vs-excel.spec.mjs:245:1 › item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08) (1.3s)
+  ok 42 [msedge] › sheet-vs-excel.spec.mjs:258:1 › item 8: F2 on a Formula shows it with the caret at the end, and the arrows move the caret (ADR-0051, ticket 08) (1.5s)
+  -  43 [msedge] › sheet-vs-excel.spec.mjs:277:12 › item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11)
+  -  44 [msedge] › sheet-vs-excel.spec.mjs:295:12 › item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11)
+  -  45 [msedge] › sheet-vs-excel.spec.mjs:313:12 › item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11)
+  -  46 [msedge] › sheet-vs-excel.spec.mjs:326:12 › item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11)
+  -  47 [msedge] › sheet-vs-excel.spec.mjs:335:12 › item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10)
+  -  48 [msedge] › sheet-vs-excel.spec.mjs:358:12 › item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10)
+  ok 49 [msedge] › sheet-vs-excel.spec.mjs:370:1 › item 15: Escape in the Formula Bar cancels the edit and gives the keys back to the grid (ADR-0051, ticket 09) (1.1s)
+  -  50 [msedge] › sheet-vs-excel.spec.mjs:385:12 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)
+  -  51 [msedge] › sheet-vs-excel.spec.mjs:395:12 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)
+  -  52 [msedge] › sheet-vs-excel.spec.mjs:408:6 › item 18: cells from Excel, and to Excel (ADR-0048, ticket 14)
+  -  53 [msedge] › sheet-vs-excel.spec.mjs:421:12 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)
+  -  54 [msedge] › sheet-vs-excel.spec.mjs:426:12 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)
+  -  55 [msedge] › sheet-vs-excel.spec.mjs:431:12 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)
+  x  56 [msedge] › sheet-vs-excel.spec.mjs:439:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15) (7.2s)
+  ok 57 [msedge] › sheet-vs-excel.spec.mjs:450:1 › item 20: one number is copied, one date goes on by day, a Formula shifts (ADR-0050, ticket 15) (3.8s)
+  ok 58 [msedge] › sheet-vs-excel.spec.mjs:465:1 › item 20: 1, 2, 4 continue as Excel's trend, to the 15 digits Excel keeps (ADR-0050, ticket 15) (2.9s)
+  x  59 [msedge] › sheet-vs-excel.spec.mjs:477:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15) (7.2s)
+  ok 60 [msedge] › sheet-vs-excel.spec.mjs:490:1 › item 20: text in two cells filled left repeats backwards (ADR-0050, ticket 15) (2.2s)
+  ok 61 [msedge] › sheet-vs-excel.spec.mjs:501:1 › item 20: Item 1, Mon and a date with a time are refused, by decision (ADR-0050) (3.6s)
+  ok 62 [msedge] › sheet-vs-excel.spec.mjs:513:1 › item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15) (846ms)
+  -  63 [msedge] › sheet-vs-excel.spec.mjs:523:12 › item 22: inserting rows above a selected range keeps the Selection where it was (ADR-0046, ticket 13)
+  -  64 [msedge] › sheet-vs-excel.spec.mjs:535:12 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13)
+  -  65 [msedge] › sheet-vs-excel.spec.mjs:546:6 › item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12)
+  ok 66 [msedge] › sheet-vs-excel.spec.mjs:554:1 › item 25: a long text is cut with an ellipsis, by decision; Excel lets it run over (ADR-0046) (868ms)
+  ok 67 [msedge] › sheet-vs-excel.spec.mjs:562:1 › item 26: a number too wide for its column shows #### (ADR-0016) (986ms)
+  ok 68 [msedge] › sheet-vs-excel.spec.mjs:572:1 › item 27: every cell of a cycle and its dependents is #CIRC!, by decision; Excel shows 0 (ADR-0047) (1.8s)
+
+
+  1) [chrome] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "F6"
+    Received: "I6"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "I6"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:161:11
+
+    Error Context: test-results\sheet-vs-excel-item-2-Ctrl-cdc54-lumn-ADR-0050-§2-ticket-07--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-2-Ctrl-cdc54-lumn-ADR-0050-§2-ticket-07--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-2-Ctrl-cdc54-lumn-ADR-0050-§2-ticket-07--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chrome] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "B1"
+    Received: "D1"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "D1"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:179:11
+
+    Error Context: test-results\sheet-vs-excel-item-3-a-co-c2b36--row-ADR-0050-§1-ticket-06--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-3-a-co-c2b36--row-ADR-0050-§1-ticket-06--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-3-a-co-c2b36--row-ADR-0050-§1-ticket-06--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chrome] › sheet-vs-excel.spec.mjs:192:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "A2"
+    Received: "A5"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "A5"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:200:11
+
+    Error Context: test-results\sheet-vs-excel-item-4-a-ro-4fcd0-reen-ADR-0050-§1-ticket-06--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-4-a-ro-4fcd0-reen-ADR-0050-§1-ticket-06--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-4-a-ro-4fcd0-reen-ADR-0050-§1-ticket-06--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chrome] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "A1"
+    Received: "C3"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "C3"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:211:11
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "A100"
+    Received: "C3"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "C3"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:219:11
+
+    Error Context: test-results\sheet-vs-excel-item-5-the--84001-cell-ADR-0050-§1-ticket-06--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-5-the--84001-cell-ADR-0050-§1-ticket-06--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-5-the--84001-cell-ADR-0050-§1-ticket-06--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chrome] › sheet-vs-excel.spec.mjs:439:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "E1"
+    Received: "E2"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "E2"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:447:11
+
+    Error Context: test-results\sheet-vs-excel-item-20-the-a189a--ADR-0050-item-5-ticket-15--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-20-the-a189a--ADR-0050-item-5-ticket-15--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-20-the-a189a--ADR-0050-item-5-ticket-15--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chrome] › sheet-vs-excel.spec.mjs:477:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "E5"
+    Received: "E6"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "E6"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:487:11
+
+    Error Context: test-results\sheet-vs-excel-item-20-a-s-428fb--source-ADR-0050-ticket-15--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-20-a-s-428fb--source-ADR-0050-ticket-15--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-20-a-s-428fb--source-ADR-0050-ticket-15--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [msedge] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "F6"
+    Received: "I6"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "I6"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:161:11
+
+    Error Context: test-results\sheet-vs-excel-item-2-Ctrl-cdc54-lumn-ADR-0050-§2-ticket-07--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-2-Ctrl-cdc54-lumn-ADR-0050-§2-ticket-07--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-2-Ctrl-cdc54-lumn-ADR-0050-§2-ticket-07--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "B1"
+    Received: "D1"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "D1"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:179:11
+
+    Error Context: test-results\sheet-vs-excel-item-3-a-co-c2b36--row-ADR-0050-§1-ticket-06--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-3-a-co-c2b36--row-ADR-0050-§1-ticket-06--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-3-a-co-c2b36--row-ADR-0050-§1-ticket-06--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [msedge] › sheet-vs-excel.spec.mjs:192:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "A2"
+    Received: "A5"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "A5"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:200:11
+
+    Error Context: test-results\sheet-vs-excel-item-4-a-ro-4fcd0-reen-ADR-0050-§1-ticket-06--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-4-a-ro-4fcd0-reen-ADR-0050-§1-ticket-06--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-4-a-ro-4fcd0-reen-ADR-0050-§1-ticket-06--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "A1"
+    Received: "C3"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "C3"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:211:11
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "A100"
+    Received: "C3"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "C3"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:219:11
+
+    Error Context: test-results\sheet-vs-excel-item-5-the--84001-cell-ADR-0050-§1-ticket-06--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-5-the--84001-cell-ADR-0050-§1-ticket-06--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-5-the--84001-cell-ADR-0050-§1-ticket-06--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11) [msedge] › sheet-vs-excel.spec.mjs:439:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "E1"
+    Received: "E2"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "E2"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:447:11
+
+    Error Context: test-results\sheet-vs-excel-item-20-the-a189a--ADR-0050-item-5-ticket-15--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-20-the-a189a--ADR-0050-item-5-ticket-15--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-20-the-a189a--ADR-0050-item-5-ticket-15--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12) [msedge] › sheet-vs-excel.spec.mjs:477:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('input.ex-name-box')
+    Expected: "E5"
+    Received: "E6"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "soft toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('input.ex-name-box')
+        14 × locator resolved to <input tabindex="-1" class="ex-name-box" aria-label="Name Box"/>
+           - unexpected value "E6"
+
+
+      58 | async function expectActive(page, a1) {
+      59 |     // Soft: where the Name Box names the other end, the rest of the item still runs.
+    > 60 |     await expect.soft(nameBox(page)).toHaveValue(a1);
+         |                                      ^
+      61 | }
+      62 |
+      63 | /** A multi-cell Selection, as the live region names its corners (ADR-0033). */
+        at expectActive (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:60:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:487:11
+
+    Error Context: test-results\sheet-vs-excel-item-20-a-s-428fb--source-ADR-0050-ticket-15--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-20-a-s-428fb--source-ADR-0050-ticket-15--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-20-a-s-428fb--source-ADR-0050-ticket-15--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12 failed
+    [chrome] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07) 
+    [chrome] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06) 
+    [chrome] › sheet-vs-excel.spec.mjs:192:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06) 
+    [chrome] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06) 
+    [chrome] › sheet-vs-excel.spec.mjs:439:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15) 
+    [chrome] › sheet-vs-excel.spec.mjs:477:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15) 
+    [msedge] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07) 
+    [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:192:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:439:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15) 
+    [msedge] › sheet-vs-excel.spec.mjs:477:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15) 
+  30 skipped
+  26 passed (2.6m)
+end 2026-09-27 14:22:17 BST

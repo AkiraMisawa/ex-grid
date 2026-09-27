@@ -1,0 +1,2647 @@
+{
+    "ran":  "2026-09-27T12:45:58",
+    "excel":  "16.0 (build 20326); EXCEL.EXE 16.0.20326.20158",
+    "windowsRegionalFormat":  "en-GB",
+    "probes":  [
+                   {
+                       "item":  "2",
+                       "probe":  "row 2 formatted 0.00 and filled yellow as a whole row; Rows(3).Insert()",
+                       "before":  [
+                                      {
+                                          "address":  "A2",
+                                          "value2":  "1.5",
+                                          "text":  "1.50",
+                                          "formula2":  "1.5",
+                                          "numberFormat":  "0.00",
+                                          "fill":  "color 65535"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "Z3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "1.5",
+                                         "text":  "1.50",
+                                         "formula2":  "1.5",
+                                         "numberFormat":  "0.00",
+                                         "fill":  "color 65535"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "0.00",
+                                         "fill":  "color 65535"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "Z3",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "0.00",
+                                         "fill":  "color 65535"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "2",
+                       "probe":  "A2 alone formatted 0.00 and filled yellow; Rows(3).Insert()",
+                       "before":  [
+                                      {
+                                          "address":  "A2",
+                                          "value2":  "1.5",
+                                          "text":  "1.50",
+                                          "formula2":  "1.5",
+                                          "numberFormat":  "0.00",
+                                          "fill":  "color 65535"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "B3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "1.5",
+                                         "text":  "1.50",
+                                         "formula2":  "1.5",
+                                         "numberFormat":  "0.00",
+                                         "fill":  "color 65535"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "0.00",
+                                         "fill":  "color 65535"
+                                     },
+                                     {
+                                         "address":  "B3",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "2",
+                       "probe":  "row 2 formatted and filled; Rows(2).Insert() (at the formatted row itself)",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  "1.5",
+                                          "text":  "1.50",
+                                          "formula2":  "1.5",
+                                          "numberFormat":  "0.00",
+                                          "fill":  "color 65535"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "1.5",
+                                         "text":  "1.50",
+                                         "formula2":  "1.5",
+                                         "numberFormat":  "0.00",
+                                         "fill":  "color 65535"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "2",
+                       "probe":  "column B formatted 0.00 and filled yellow as a whole column; Columns(3).Insert()",
+                       "before":  [
+                                      {
+                                          "address":  "B1",
+                                          "value2":  "1.5",
+                                          "text":  "1.50",
+                                          "formula2":  "1.5",
+                                          "numberFormat":  "0.00",
+                                          "fill":  "color 65535"
+                                      },
+                                      {
+                                          "address":  "C1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "D1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C100",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "B1",
+                                         "value2":  "1.5",
+                                         "text":  "1.50",
+                                         "formula2":  "1.5",
+                                         "numberFormat":  "0.00",
+                                         "fill":  "color 65535"
+                                     },
+                                     {
+                                         "address":  "C1",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "0.00",
+                                         "fill":  "color 65535"
+                                     },
+                                     {
+                                         "address":  "D1",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C100",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "0.00",
+                                         "fill":  "color 65535"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "3",
+                       "probe":  "a value in A1048576, =A1048576 in B1; Rows(1).Insert()",
+                       "before":  [
+                                      {
+                                          "address":  "B1",
+                                          "value2":  "7",
+                                          "text":  "7",
+                                          "formula2":  "=A1048576",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "B2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A1048576",
+                                          "value2":  "7",
+                                          "text":  "7",
+                                          "formula2":  "7",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  true,
+                       "refusal":  "Microsoft Excel can\u0027t insert new cells because it would push non-empty cells off the end of the worksheet. These non-empty cells might appear empty but have blank values, some formatting, or a formula. Delete enough rows or columns to make room for what you want to insert and then try again.",
+                       "after":  [
+                                     {
+                                         "address":  "B1",
+                                         "value2":  "7",
+                                         "text":  "7",
+                                         "formula2":  "=A1048576",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "B2",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A1048576",
+                                         "value2":  "7",
+                                         "text":  "7",
+                                         "formula2":  "7",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "3",
+                       "probe":  "A1048576 blank, =A1048576 in B1; Rows(1).Insert()",
+                       "before":  [
+                                      {
+                                          "address":  "B1",
+                                          "value2":  "0",
+                                          "text":  "0",
+                                          "formula2":  "=A1048576",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "B2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "B1",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "B2",
+                                         "value2":  "#REF!",
+                                         "text":  "#REF!",
+                                         "formula2":  "=#REF!",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "3",
+                       "probe":  "A1048576 holding only a number format, nothing else; Rows(1).Insert()",
+                       "before":  [
+                                      {
+                                          "address":  "A1048576",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "0.00",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1048576",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A1",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "3",
+                       "probe":  "=SUM(A1:A1048576) in B1; Rows(5).Insert()",
+                       "before":  [
+                                      {
+                                          "address":  "B1",
+                                          "value2":  "3",
+                                          "text":  "3",
+                                          "formula2":  "=SUM(A:A)",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "B1",
+                                         "value2":  "3",
+                                         "text":  "3",
+                                         "formula2":  "=SUM(A:A)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "3",
+                       "probe":  "=SUM(A2:A1048576) in B1; Rows(1).Insert() (STRUCT-028, read where B1 went)",
+                       "before":  [
+                                      {
+                                          "address":  "B1",
+                                          "value2":  "1",
+                                          "text":  "1",
+                                          "formula2":  "=SUM(A2:A1048576)",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "B2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "B1",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "B2",
+                                         "value2":  "1",
+                                         "text":  "1",
+                                         "formula2":  "=SUM(A3:A1048576)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "3",
+                       "probe":  "=SUM(A5:A1048575) in B1; Rows(1).Insert() (the range reaches the last row)",
+                       "before":  [
+                                      {
+                                          "address":  "B1",
+                                          "value2":  "1",
+                                          "text":  "1",
+                                          "formula2":  "=SUM(A5:A1048575)",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "B2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "B1",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "B2",
+                                         "value2":  "1",
+                                         "text":  "1",
+                                         "formula2":  "=SUM(A6:A1048576)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "a single number (5) filled down A1 -\u003e A1:A4",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  "5",
+                                          "text":  "5",
+                                          "formula2":  "5",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "5",
+                                         "text":  "5",
+                                         "formula2":  "5",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "5",
+                                         "text":  "5",
+                                         "formula2":  "5",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "5",
+                                         "text":  "5",
+                                         "formula2":  "5",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "5",
+                                         "text":  "5",
+                                         "formula2":  "5",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "a single date (2026-09-26, m/d/yyyy) filled down A1 -\u003e A1:A4",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  "46291",
+                                          "text":  "26/09/2026",
+                                          "formula2":  "46291",
+                                          "numberFormat":  "m/d/yyyy",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "46291",
+                                         "text":  "26/09/2026",
+                                         "formula2":  "46291",
+                                         "numberFormat":  "m/d/yyyy",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "46292",
+                                         "text":  "27/09/2026",
+                                         "formula2":  "46292",
+                                         "numberFormat":  "m/d/yyyy",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "46293",
+                                         "text":  "28/09/2026",
+                                         "formula2":  "46293",
+                                         "numberFormat":  "m/d/yyyy",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "46294",
+                                         "text":  "29/09/2026",
+                                         "formula2":  "46294",
+                                         "numberFormat":  "m/d/yyyy",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "a date with a time (2026-09-26 10:00, m/d/yyyy h:mm) filled down A1 -\u003e A1:A4",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  "46291.416666666664",
+                                          "text":  "26/09/2026 10:00",
+                                          "formula2":  "46291.4166666667",
+                                          "numberFormat":  "m/d/yyyy h:mm",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "46291.416666666664",
+                                         "text":  "26/09/2026 10:00",
+                                         "formula2":  "46291.4166666667",
+                                         "numberFormat":  "m/d/yyyy h:mm",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "46292.4166666088",
+                                         "text":  "27/09/2026 10:00",
+                                         "formula2":  "46292.4166666088",
+                                         "numberFormat":  "m/d/yyyy h:mm",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "46293.4166666088",
+                                         "text":  "28/09/2026 10:00",
+                                         "formula2":  "46293.4166666088",
+                                         "numberFormat":  "m/d/yyyy h:mm",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "46294.4166666088",
+                                         "text":  "29/09/2026 10:00",
+                                         "formula2":  "46294.4166666088",
+                                         "numberFormat":  "m/d/yyyy h:mm",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "Item 1 filled down A1 -\u003e A1:A4",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  "Item 1",
+                                          "text":  "Item 1",
+                                          "formula2":  "Item 1",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "Item 1",
+                                         "text":  "Item 1",
+                                         "formula2":  "Item 1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "Item 2",
+                                         "text":  "Item 2",
+                                         "formula2":  "Item 2",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "Item 3",
+                                         "text":  "Item 3",
+                                         "formula2":  "Item 3",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "Item 4",
+                                         "text":  "Item 4",
+                                         "formula2":  "Item 4",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "1, 3 filled down A1:A2 -\u003e A1:A6",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  "1",
+                                          "text":  "1",
+                                          "formula2":  "1",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  "3",
+                                          "text":  "3",
+                                          "formula2":  "3",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A5",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A6",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "1",
+                                         "text":  "1",
+                                         "formula2":  "1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "3",
+                                         "text":  "3",
+                                         "formula2":  "3",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "5",
+                                         "text":  "5",
+                                         "formula2":  "5",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "7",
+                                         "text":  "7",
+                                         "formula2":  "7",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A5",
+                                         "value2":  "9",
+                                         "text":  "9",
+                                         "formula2":  "9",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A6",
+                                         "value2":  "11",
+                                         "text":  "11",
+                                         "formula2":  "11",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "1, 2, 4 filled down A1:A3 -\u003e A1:A8",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  "1",
+                                          "text":  "1",
+                                          "formula2":  "1",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  "2",
+                                          "text":  "2",
+                                          "formula2":  "2",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  "4",
+                                          "text":  "4",
+                                          "formula2":  "4",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A5",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A6",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A7",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A8",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "1",
+                                         "text":  "1",
+                                         "formula2":  "1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "2",
+                                         "text":  "2",
+                                         "formula2":  "2",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "4",
+                                         "text":  "4",
+                                         "formula2":  "4",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "5.33333333333333",
+                                         "text":  "5.333333",
+                                         "formula2":  "5.33333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A5",
+                                         "value2":  "6.83333333333333",
+                                         "text":  "6.833333",
+                                         "formula2":  "6.83333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A6",
+                                         "value2":  "8.33333333333333",
+                                         "text":  "8.333333",
+                                         "formula2":  "8.33333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A7",
+                                         "value2":  "9.83333333333333",
+                                         "text":  "9.833333",
+                                         "formula2":  "9.83333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A8",
+                                         "value2":  "11.3333333333333",
+                                         "text":  "11.33333",
+                                         "formula2":  "11.3333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "0.1, 0.2, 0.4 filled down A1:A3 -\u003e A1:A8 (the last digit of a trend)",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  "0.1",
+                                          "text":  "0.1",
+                                          "formula2":  "0.1",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  "0.2",
+                                          "text":  "0.2",
+                                          "formula2":  "0.2",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  "0.4",
+                                          "text":  "0.4",
+                                          "formula2":  "0.4",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A5",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A6",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A7",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A8",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "0.1",
+                                         "text":  "0.1",
+                                         "formula2":  "0.1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "0.2",
+                                         "text":  "0.2",
+                                         "formula2":  "0.2",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "0.4",
+                                         "text":  "0.4",
+                                         "formula2":  "0.4",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "0.533333333333333",
+                                         "text":  "0.533333",
+                                         "formula2":  "0.533333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A5",
+                                         "value2":  "0.683333333333333",
+                                         "text":  "0.683333",
+                                         "formula2":  "0.683333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A6",
+                                         "value2":  "0.833333333333333",
+                                         "text":  "0.833333",
+                                         "formula2":  "0.833333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A7",
+                                         "value2":  "0.983333333333333",
+                                         "text":  "0.983333",
+                                         "formula2":  "0.983333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A8",
+                                         "value2":  "1.13333333333333",
+                                         "text":  "1.133333",
+                                         "formula2":  "1.13333333333333",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "numbers 1, 3 in A5:A6 filled up -\u003e A1:A6",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A5",
+                                          "value2":  "1",
+                                          "text":  "1",
+                                          "formula2":  "1",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A6",
+                                          "value2":  "3",
+                                          "text":  "3",
+                                          "formula2":  "3",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "-7",
+                                         "text":  "-7",
+                                         "formula2":  "-7",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "-5",
+                                         "text":  "-5",
+                                         "formula2":  "-5",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "-3",
+                                         "text":  "-3",
+                                         "formula2":  "-3",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "-1",
+                                         "text":  "-1",
+                                         "formula2":  "-1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A5",
+                                         "value2":  "1",
+                                         "text":  "1",
+                                         "formula2":  "1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A6",
+                                         "value2":  "3",
+                                         "text":  "3",
+                                         "formula2":  "3",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "text a, b in A5:A6 filled up -\u003e A1:A6",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A5",
+                                          "value2":  "a",
+                                          "text":  "a",
+                                          "formula2":  "a",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A6",
+                                          "value2":  "b",
+                                          "text":  "b",
+                                          "formula2":  "b",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "a",
+                                         "text":  "a",
+                                         "formula2":  "a",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "b",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "a",
+                                         "text":  "a",
+                                         "formula2":  "a",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "b",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A5",
+                                         "value2":  "a",
+                                         "text":  "a",
+                                         "formula2":  "a",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A6",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "b",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "text a, b, c in A4:A6 filled up -\u003e A1:A6",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  "a",
+                                          "text":  "a",
+                                          "formula2":  "a",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A5",
+                                          "value2":  "b",
+                                          "text":  "b",
+                                          "formula2":  "b",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A6",
+                                          "value2":  "c",
+                                          "text":  "c",
+                                          "formula2":  "c",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "a",
+                                         "text":  "a",
+                                         "formula2":  "a",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "b",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  "c",
+                                         "text":  "c",
+                                         "formula2":  "c",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "a",
+                                         "text":  "a",
+                                         "formula2":  "a",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A5",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "b",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A6",
+                                         "value2":  "c",
+                                         "text":  "c",
+                                         "formula2":  "c",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "numbers 1, 3 in E1:F1 filled left -\u003e A1:F1",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "B1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "D1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "E1",
+                                          "value2":  "1",
+                                          "text":  "1",
+                                          "formula2":  "1",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "F1",
+                                          "value2":  "3",
+                                          "text":  "3",
+                                          "formula2":  "3",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "-7",
+                                         "text":  "-7",
+                                         "formula2":  "-7",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "B1",
+                                         "value2":  "-5",
+                                         "text":  "-5",
+                                         "formula2":  "-5",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C1",
+                                         "value2":  "-3",
+                                         "text":  "-3",
+                                         "formula2":  "-3",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "D1",
+                                         "value2":  "-1",
+                                         "text":  "-1",
+                                         "formula2":  "-1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "1",
+                                         "text":  "1",
+                                         "formula2":  "1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "F1",
+                                         "value2":  "3",
+                                         "text":  "3",
+                                         "formula2":  "3",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "text a, b in E1:F1 filled left -\u003e A1:F1",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "B1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "D1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "E1",
+                                          "value2":  "a",
+                                          "text":  "a",
+                                          "formula2":  "a",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "F1",
+                                          "value2":  "b",
+                                          "text":  "b",
+                                          "formula2":  "b",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "a",
+                                         "text":  "a",
+                                         "formula2":  "a",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "B1",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "b",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C1",
+                                         "value2":  "a",
+                                         "text":  "a",
+                                         "formula2":  "a",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "D1",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "b",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "a",
+                                         "text":  "a",
+                                         "formula2":  "a",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "F1",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "b",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "4",
+                       "probe":  "a source of =B1*2, x and a blank (A1:A3) filled down -\u003e A1:A9, B1:B9 = 1..9",
+                       "before":  [
+                                      {
+                                          "address":  "A1",
+                                          "value2":  "2",
+                                          "text":  "2",
+                                          "formula2":  "=B1*2",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A2",
+                                          "value2":  "x",
+                                          "text":  "x",
+                                          "formula2":  "x",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A5",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A6",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A7",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A8",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "A9",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "A1",
+                                         "value2":  "2",
+                                         "text":  "2",
+                                         "formula2":  "=B1*2",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A2",
+                                         "value2":  "x",
+                                         "text":  "x",
+                                         "formula2":  "x",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A3",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A4",
+                                         "value2":  "8",
+                                         "text":  "8",
+                                         "formula2":  "=B4*2",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A5",
+                                         "value2":  "x",
+                                         "text":  "x",
+                                         "formula2":  "x",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A6",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A7",
+                                         "value2":  "14",
+                                         "text":  "14",
+                                         "formula2":  "=B7*2",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A8",
+                                         "value2":  "x",
+                                         "text":  "x",
+                                         "formula2":  "x",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "A9",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "7",
+                       "probe":  "=A1:A3 in C1 through Formula2, with 1, 2, 3 in A1:A3",
+                       "before":  [
+                                      {
+                                          "address":  "C1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C4",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "C1",
+                                         "value2":  "1",
+                                         "text":  "1",
+                                         "formula2":  "=A1:A3",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C2",
+                                         "value2":  "2",
+                                         "text":  "2",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C3",
+                                         "value2":  "3",
+                                         "text":  "3",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C4",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "7",
+                       "probe":  "=A1:A3 in C2 through Range.Formula (Excel 2019 implicit intersection), with 1, 2, 3 in A1:A3",
+                       "before":  [
+                                      {
+                                          "address":  "C1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C3",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "C1",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C2",
+                                         "value2":  "2",
+                                         "text":  "2",
+                                         "formula2":  "=@A1:A3",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C3",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "7",
+                       "probe":  "=A1:A3 in C1 through Formula2, with x already in C3",
+                       "before":  [
+                                      {
+                                          "address":  "C1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C2",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      },
+                                      {
+                                          "address":  "C3",
+                                          "value2":  "x",
+                                          "text":  "x",
+                                          "formula2":  "x",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "C1",
+                                         "value2":  "#SPILL!",
+                                         "text":  "#SPILL!",
+                                         "formula2":  "=A1:A3",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C2",
+                                         "value2":  null,
+                                         "text":  "",
+                                         "formula2":  "",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     },
+                                     {
+                                         "address":  "C3",
+                                         "value2":  "x",
+                                         "text":  "x",
+                                         "formula2":  "x",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "8",
+                       "probe":  "Range.Formula = \"= A1 + B1\" with 1 and 2 in A1:B1",
+                       "before":  [
+                                      {
+                                          "address":  "C1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "C1",
+                                         "value2":  "3",
+                                         "text":  "3",
+                                         "formula2":  "= A1 + B1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "8",
+                       "probe":  "Range.Formula2 = \"= A1 + B1\" with 1 and 2 in A1:B1",
+                       "before":  [
+                                      {
+                                          "address":  "C1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "C1",
+                                         "value2":  "3",
+                                         "text":  "3",
+                                         "formula2":  "= A1 + B1",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B6 = 1,2,2,2,3,4 (C = a..f): =XLOOKUP(2,B1:B6,C1:C6,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "=XLOOKUP(2,B1:B6,C1:C6,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B6 = 1,2,2,2,3,4 (C = a..f): =XLOOKUP(2,B1:B6,C1:C6,,0,1)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "=XLOOKUP(2,B1:B6,C1:C6,,0,1)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B6 = 1,2,2,2,3,4 (C = a..f): =XLOOKUP(2,B1:B6,C1:C6,,0,-1)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "d",
+                                         "text":  "d",
+                                         "formula2":  "=XLOOKUP(2,B1:B6,C1:C6,,0,-1)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B6 = 1,2,2,2,3,4 (C = a..f): =XLOOKUP(2.5,B1:B6,C1:C6,,-1,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "d",
+                                         "text":  "d",
+                                         "formula2":  "=XLOOKUP(2.5,B1:B6,C1:C6,,-1,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B6 = 1,2,2,2,3,4 (C = a..f): =XLOOKUP(1.5,B1:B6,C1:C6,,1,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "=XLOOKUP(1.5,B1:B6,C1:C6,,1,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B3 = 1,2,2 (C = row1..): =XLOOKUP(2,B1:B3,C1:C3,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "row2",
+                                         "text":  "row2",
+                                         "formula2":  "=XLOOKUP(2,B1:B3,C1:C3,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B3 = 2,2,3 (C = row1..): =XLOOKUP(2,B1:B3,C1:C3,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "row1",
+                                         "text":  "row1",
+                                         "formula2":  "=XLOOKUP(2,B1:B3,C1:C3,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B7 = 1,2,2,2,2,2,3 (C = row1..): =XLOOKUP(2,B1:B7,C1:C7,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "row2",
+                                         "text":  "row2",
+                                         "formula2":  "=XLOOKUP(2,B1:B7,C1:C7,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B8 = 2,2,2,2,2,2,2,2 (C = row1..): =XLOOKUP(2,B1:B8,C1:C8,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "row1",
+                                         "text":  "row1",
+                                         "formula2":  "=XLOOKUP(2,B1:B8,C1:C8,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B10 = 1,1,2,2,3,3,4,4,5,5 (C = row1..): =XLOOKUP(2,B1:B10,C1:C10,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "row3",
+                                         "text":  "row3",
+                                         "formula2":  "=XLOOKUP(2,B1:B10,C1:C10,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B6 = 4,3,2,2,2,1 (C = a..f): =XLOOKUP(2,B1:B6,C1:C6,,0,-2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "e",
+                                         "text":  "e",
+                                         "formula2":  "=XLOOKUP(2,B1:B6,C1:C6,,0,-2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B6 = 4,3,2,2,2,1 (C = a..f): =XLOOKUP(2.5,B1:B6,C1:C6,,-1,-2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "c",
+                                         "text":  "c",
+                                         "formula2":  "=XLOOKUP(2.5,B1:B6,C1:C6,,-1,-2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B6 = 4,3,2,2,2,1 (C = a..f): =XLOOKUP(1.5,B1:B6,C1:C6,,1,-2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "e",
+                                         "text":  "e",
+                                         "formula2":  "=XLOOKUP(1.5,B1:B6,C1:C6,,1,-2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B8 = 3,1,4,1,5,9,2,6 unsorted (C = a..h): =XLOOKUP(4,B1:B8,C1:C8,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "#N/A",
+                                         "text":  "#N/A",
+                                         "formula2":  "=XLOOKUP(4,B1:B8,C1:C8,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B8 = 3,1,4,1,5,9,2,6 unsorted (C = a..h): =XLOOKUP(1,B1:B8,C1:C8,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "b",
+                                         "text":  "b",
+                                         "formula2":  "=XLOOKUP(1,B1:B8,C1:C8,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B8 = 3,1,4,1,5,9,2,6 unsorted (C = a..h): =XLOOKUP(9,B1:B8,C1:C8,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "f",
+                                         "text":  "f",
+                                         "formula2":  "=XLOOKUP(9,B1:B8,C1:C8,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B8 = 3,1,4,1,5,9,2,6 unsorted (C = a..h): =XLOOKUP(2,B1:B8,C1:C8,,0,2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "#N/A",
+                                         "text":  "#N/A",
+                                         "formula2":  "=XLOOKUP(2,B1:B8,C1:C8,,0,2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B8 = 3,1,4,1,5,9,2,6 unsorted (C = a..h): =XLOOKUP(4,B1:B8,C1:C8,,0,-2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "#N/A",
+                                         "text":  "#N/A",
+                                         "formula2":  "=XLOOKUP(4,B1:B8,C1:C8,,0,-2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B8 = 3,1,4,1,5,9,2,6 unsorted (C = a..h): =XLOOKUP(1,B1:B8,C1:C8,,0,-2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "d",
+                                         "text":  "d",
+                                         "formula2":  "=XLOOKUP(1,B1:B8,C1:C8,,0,-2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   },
+                   {
+                       "item":  "9",
+                       "probe":  "B1:B8 = 3,1,4,1,5,9,2,6 unsorted (C = a..h): =XLOOKUP(6,B1:B8,C1:C8,,0,-2)",
+                       "before":  [
+                                      {
+                                          "address":  "E1",
+                                          "value2":  null,
+                                          "text":  "",
+                                          "formula2":  "",
+                                          "numberFormat":  "General",
+                                          "fill":  "none"
+                                      }
+                                  ],
+                       "refused":  false,
+                       "refusal":  null,
+                       "after":  [
+                                     {
+                                         "address":  "E1",
+                                         "value2":  "#N/A",
+                                         "text":  "#N/A",
+                                         "formula2":  "=XLOOKUP(6,B1:B8,C1:C8,,0,-2)",
+                                         "numberFormat":  "General",
+                                         "fill":  "none"
+                                     }
+                                 ]
+                   }
+               ]
+}

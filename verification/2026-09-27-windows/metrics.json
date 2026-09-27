@@ -1,0 +1,280 @@
+{
+  "chrome": {
+    "PST-6": {
+      "sourceCells": 400,
+      "bytes": 10400400,
+      "parseAndIntentMs": 1362,
+      "nextKeyMs": 8
+    },
+    "MEM-2": {
+      "cycles": 50,
+      "baseline": {
+        "nodes": 112,
+        "listeners": 52
+      },
+      "drift": {
+        "nodes": 0,
+        "listeners": 0
+      }
+    },
+    "BIG-7": {
+      "mountToFirstPaintedRowMs": 177,
+      "totalRows": 1000000
+    },
+    "DOM-5": {
+      "on": {
+        "elements": 224,
+        "cells": 189,
+        "rows": 21
+      },
+      "off": {
+        "elements": 2226,
+        "cells": 2100,
+        "rows": 21
+      }
+    },
+    "PF-6": {
+      "on": {
+        "dom": {
+          "elements": 224,
+          "cells": 189,
+          "rows": 21
+        },
+        "settleRepaintMs": {
+          "count": 8,
+          "median": 2.6,
+          "min": 2.4,
+          "p95": 2.75,
+          "max": 2.75
+        },
+        "ordinaryScrollFrameMs": {
+          "rows": {
+            "count": 150,
+            "median": 8.3,
+            "min": 8.2,
+            "p95": 8.4,
+            "max": 8.5
+          },
+          "columns": {
+            "count": 150,
+            "median": 8.3,
+            "min": 8.2,
+            "p95": 8.4,
+            "max": 8.5
+          }
+        },
+        "flingFrameMs": {
+          "count": 30,
+          "median": 8.3,
+          "min": 8.2,
+          "p95": 8.4,
+          "max": 8.5
+        }
+      },
+      "off": {
+        "dom": {
+          "elements": 2226,
+          "cells": 2100,
+          "rows": 21
+        },
+        "settleRepaintMs": {
+          "count": 8,
+          "median": 19.53,
+          "min": 18.89,
+          "p95": 20.39,
+          "max": 20.39
+        },
+        "ordinaryScrollFrameMs": {
+          "rows": {
+            "count": 150,
+            "median": 8.3,
+            "min": 8.2,
+            "p95": 8.4,
+            "max": 25.1
+          },
+          "columns": {
+            "count": 150,
+            "median": 8.3,
+            "min": 8.2,
+            "p95": 8.4,
+            "max": 33.3
+          }
+        },
+        "flingFrameMs": {
+          "count": 30,
+          "median": 8.3,
+          "min": 8.1,
+          "p95": 8.4,
+          "max": 8.5
+        }
+      }
+    },
+    "BIG-6": {
+      "totalRows": 1000000,
+      "settleRepaintMs": {
+        "count": 8,
+        "median": 2.6,
+        "min": 2.4,
+        "p95": 2.75,
+        "max": 2.75
+      },
+      "sustainedScrollFrameMs": {
+        "count": 150,
+        "median": 8.3,
+        "min": 8.2,
+        "p95": 8.4,
+        "max": 8.5
+      }
+    },
+    "PF-7": {
+      "rectangle": "10 rows × 7 columns, edge moved ±5 rows",
+      "steps": 40,
+      "stepCostMs": {
+        "count": 40,
+        "median": 0.11,
+        "min": 0.1,
+        "p95": 0.15,
+        "max": 0.23
+      }
+    }
+  },
+  "msedge": {
+    "PST-6": {
+      "sourceCells": 400,
+      "bytes": 10400400,
+      "parseAndIntentMs": 1354,
+      "nextKeyMs": 7
+    },
+    "MEM-2": {
+      "cycles": 50,
+      "baseline": {
+        "nodes": 112,
+        "listeners": 52
+      },
+      "drift": {
+        "nodes": 0,
+        "listeners": 0
+      }
+    },
+    "BIG-7": {
+      "mountToFirstPaintedRowMs": 170,
+      "totalRows": 1000000
+    },
+    "DOM-5": {
+      "on": {
+        "elements": 224,
+        "cells": 189,
+        "rows": 21
+      },
+      "off": {
+        "elements": 2226,
+        "cells": 2100,
+        "rows": 21
+      }
+    },
+    "PF-6": {
+      "on": {
+        "dom": {
+          "elements": 224,
+          "cells": 189,
+          "rows": 21
+        },
+        "settleRepaintMs": {
+          "count": 8,
+          "median": 2.64,
+          "min": 2.55,
+          "p95": 2.78,
+          "max": 2.78
+        },
+        "ordinaryScrollFrameMs": {
+          "rows": {
+            "count": 150,
+            "median": 8.3,
+            "min": 8.1,
+            "p95": 8.4,
+            "max": 8.5
+          },
+          "columns": {
+            "count": 150,
+            "median": 8.3,
+            "min": 8.2,
+            "p95": 8.4,
+            "max": 8.5
+          }
+        },
+        "flingFrameMs": {
+          "count": 30,
+          "median": 8.3,
+          "min": 8.2,
+          "p95": 8.5,
+          "max": 8.5
+        }
+      },
+      "off": {
+        "dom": {
+          "elements": 2226,
+          "cells": 2100,
+          "rows": 21
+        },
+        "settleRepaintMs": {
+          "count": 8,
+          "median": 20.11,
+          "min": 18.52,
+          "p95": 23.16,
+          "max": 23.16
+        },
+        "ordinaryScrollFrameMs": {
+          "rows": {
+            "count": 150,
+            "median": 8.3,
+            "min": 8.2,
+            "p95": 8.5,
+            "max": 33.4
+          },
+          "columns": {
+            "count": 150,
+            "median": 8.3,
+            "min": 8.2,
+            "p95": 8.4,
+            "max": 16.7
+          }
+        },
+        "flingFrameMs": {
+          "count": 30,
+          "median": 8.3,
+          "min": 8.2,
+          "p95": 8.4,
+          "max": 8.4
+        }
+      }
+    },
+    "BIG-6": {
+      "totalRows": 1000000,
+      "settleRepaintMs": {
+        "count": 8,
+        "median": 2.64,
+        "min": 2.55,
+        "p95": 2.78,
+        "max": 2.78
+      },
+      "sustainedScrollFrameMs": {
+        "count": 150,
+        "median": 8.3,
+        "min": 8.1,
+        "p95": 8.4,
+        "max": 8.5
+      }
+    },
+    "PF-7": {
+      "rectangle": "10 rows × 7 columns, edge moved ±5 rows",
+      "steps": 40,
+      "stepCostMs": {
+        "count": 40,
+        "median": 0.11,
+        "min": 0.1,
+        "p95": 0.16,
+        "max": 0.19
+      }
+    }
+  }
+}

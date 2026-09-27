@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "AVERAGE-001",
-      "source": "documented",
+      "source": "observed",
       "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AVERAGE(A1:A7)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "AVERAGE-002",
-      "source": "documented",
+      "source": "observed",
       "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AVERAGE(E1:E2)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "AVERAGE-003",
-      "source": "documented",
+      "source": "observed",
       "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AVERAGE(TRUE,3)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "AVERAGE-004",
-      "source": "documented",
+      "source": "observed",
       "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AVERAGE(\"4\",2)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "AVERAGE-005",
-      "source": "documented",
+      "source": "observed",
       "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AVERAGE(A5)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "AVERAGE-006",
-      "source": "documented",
+      "source": "observed",
       "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AVERAGE(A3:A6)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "AVERAGE-007",
-      "source": "documented",
+      "source": "observed",
       "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AVERAGE(C1:C3)"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "AVERAGE-008",
-      "source": "documented",
+      "source": "observed",
       "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AVERAGE(\"abc\",1)"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "AVERAGE-009",
-      "source": "documented",
+      "source": "observed",
       "description": "AVERAGE: zeros count, blanks, text and booleans in a range do not; nothing to average is #DIV/0!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AVERAGE(1,#N/A)"},

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "IF-001",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(TRUE,1,2)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "IF-002",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(FALSE,1,2)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "IF-003",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(FALSE,1)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "IF-004",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(1,\"y\",\"n\")"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "IF-005",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(0,\"y\",\"n\")"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "IF-006",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(-0.5,\"y\",\"n\")"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "IF-007",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(A5,1,2)"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "IF-008",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(A1>0,\"pos\",\"neg\")"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "IF-009",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(1/0,1,2)"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "IF-010",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(\"abc\",1,2)"},
@@ -94,7 +94,7 @@
     },
     {
       "id": "IF-011",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(TRUE,1,1/0)"},
@@ -103,7 +103,7 @@
     },
     {
       "id": "IF-012",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(FALSE,1/0,3)"},
@@ -112,7 +112,7 @@
     },
     {
       "id": "IF-013",
-      "source": "documented",
+      "source": "observed",
       "description": "IF: a blank or 0 is FALSE, text is #VALUE!, an error is the result, and the branch not taken is not evaluated",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(A2=2,A7,A1)"},
@@ -121,7 +121,7 @@
     },
     {
       "id": "IF-014",
-      "source": "documented",
+      "source": "observed",
       "description": "A range as IF's test would spill, which ExSheet does not do",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=IF(A1:A2,1,2)"},
@@ -132,7 +132,7 @@
     },
     {
       "id": "IF-015",
-      "source": "documented",
+      "source": "observed",
       "description": "A branch not taken that reads a cycle still makes the Formula #CIRC!",
       "cells": {"A1": "=B1", "B1": "=A1", "ZZ1000": "=IF(TRUE,1,A1)"},
       "check": "ZZ1000",
@@ -142,7 +142,7 @@
     },
     {
       "id": "IF-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 10: a missing value_if_true (engine: 0)",
       "ticket19Row": 10,
       "cells": {"ZZ1000": "=IF(TRUE,,2)"},
@@ -151,7 +151,7 @@
     },
     {
       "id": "IF-017",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 12: text that reads as a boolean as the test (engine: taken as TRUE)",
       "ticket19Row": 12,
       "cells": {"ZZ1000": "=IF(\"TRUE\",1,2)"},
@@ -160,7 +160,7 @@
     },
     {
       "id": "IF-018",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 12: other text as the test",
       "ticket19Row": 12,
       "cells": {"ZZ1000": "=IF(\"x\",1,2)"},
