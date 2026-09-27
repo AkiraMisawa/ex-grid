@@ -83,6 +83,48 @@ public sealed partial class Sheet
     public SheetChange SetAlignment(CellRange range, HorizontalAlignment alignment) =>
         ApplyStyle(range, new StylePatch(null, CheckAlignment(alignment))).Change;
 
+    /// <summary>
+    /// Sets a number format, an alignment or both on several ranges at once, each range recorded
+    /// as <see cref="SetFormat(CellRange, NumberFormat?)"/> records one: whole columns and whole
+    /// rows as one entry each (ADR-0046, ADR-0047). Here <see langword="null"/> leaves that
+    /// property as it is; <see cref="NumberFormat.General"/> sets General. No Value changes.
+    /// </summary>
+    /// <exception cref="ArgumentException">There is no range, or the style sets nothing.</exception>
+    public SheetChange SetStyle(IEnumerable<CellRange> ranges, NumberFormat? format, HorizontalAlignment? alignment)
+    {
+        var (list, patch) = CheckStyle(ranges, format, alignment);
+        return ApplyStyles(list, patch).Change;
+    }
+
+    /// <summary>The ranges and the patch of a style set on several ranges, checked.</summary>
+    internal static (IReadOnlyList<CellRange> Ranges, StylePatch Patch) CheckStyle(IEnumerable<CellRange> ranges, NumberFormat? format, HorizontalAlignment? alignment)
+    {
+        ArgumentNullException.ThrowIfNull(ranges);
+        var list = ranges.ToList();
+        if (list.Count == 0) throw new ArgumentException("A style is set on at least one range.", nameof(ranges));
+        if (format is null && alignment is null) throw new ArgumentException("The style sets neither a number format nor an alignment.", nameof(format));
+        if (alignment is { } a) CheckAlignment(a);
+        return (list, new StylePatch(format, alignment));
+    }
+
+    /// <summary>What a style set on several ranges did: each range's outcome, in the order they were set.</summary>
+    internal sealed record StylesOutcome(SheetChange Change, IReadOnlyList<StyleOutcome> Parts);
+
+    /// <summary>Sets <paramref name="patch"/> on each range in turn, as one change.</summary>
+    internal StylesOutcome ApplyStyles(IReadOnlyList<CellRange> ranges, StylePatch patch)
+    {
+        var parts = ranges.Select(range => ApplyStyle(range, patch)).ToList();
+        return new StylesOutcome(SheetChange.Merge(parts.Select(p => p.Change)), parts);
+    }
+
+    /// <summary>Undoes a style set on several ranges: each range's part undone in the reverse of the order it was set, so every level ends exactly as it was.</summary>
+    internal SheetChange UndoStyles(StylesOutcome outcome)
+    {
+        var changes = new List<SheetChange>();
+        for (var i = outcome.Parts.Count - 1; i >= 0; i--) changes.Add(UndoStyle(outcome.Parts[i]));
+        return SheetChange.Merge(changes);
+    }
+
     private static HorizontalAlignment CheckAlignment(HorizontalAlignment alignment) =>
         Enum.IsDefined(alignment) ? alignment : throw new ArgumentOutOfRangeException(nameof(alignment), alignment, "Not an alignment.");
 

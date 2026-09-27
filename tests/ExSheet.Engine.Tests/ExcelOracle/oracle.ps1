@@ -41,7 +41,9 @@
       - "otherSheets" are added as empty worksheets, so that a Formula naming them is accepted.
       - "format" and "align" actions set Range.NumberFormat and Range.HorizontalAlignment on the
         action's range, which may be whole columns (B:B) or whole rows (2:2); "alignment" is
-        read back from Range.HorizontalAlignment.
+        read back from Range.HorizontalAlignment. A range with commas (B:B,3:3) is Excel's own
+        range of several areas. A "style" action sets whichever of "format" and "align" it gives
+        on its range.
       - "setColumnWidth" sets Range.ColumnWidth on the action's range (every column it spans), or,
         for a null width, Range.UseStandardWidth. "width" is compared with the check column's
         ColumnWidth as read before anything else changes it; null means the sheet's StandardWidth.
@@ -204,6 +206,11 @@ function Invoke-Action($Excel, $Sheet, $Action, [bool]$UseFormula2) {
         # set the way the Format Cells dialog sets it on a selected column or row.
         'format' { $Sheet.Range([string]$Action.range).NumberFormat = [string]$Action.format }
         'align' { $Sheet.Range([string]$Action.range).HorizontalAlignment = $AlignmentCodes[[string]$Action.align] }
+        'style' {
+            $range = $Sheet.Range([string]$Action.range)
+            if (Has-Prop $Action 'format') { $range.NumberFormat = [string]$Action.format }
+            if (Has-Prop $Action 'align') { $range.HorizontalAlignment = $AlignmentCodes[[string]$Action.align] }
+        }
         'undo' { throw [InvalidOperationException]::new("blocked: Excel's undo does not reach changes made through COM") }
         default { throw [InvalidOperationException]::new("blocked: unknown action $($Action.do)") }
     }

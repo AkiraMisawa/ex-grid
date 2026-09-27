@@ -149,6 +149,9 @@ step.Undo();                                         // Entries, formats and Ref
   as Excel's do. Any other range sets its cells. `Sheet.GetFormat` and `Sheet.GetAlignment`
   answer what takes effect; `GetRowFormat`, `GetColumnFormat` and their alignment counterparts
   what a level sets. The per-cell forms taking addresses keep working.
+  `SheetEdit.SetStyle(ranges, format, alignment)` sets a number format, an alignment or both on
+  several ranges — a selection of several rectangles, whole columns and rows among them — as one
+  step; there `null` leaves a property as it is, and `NumberFormat.General` sets General.
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each

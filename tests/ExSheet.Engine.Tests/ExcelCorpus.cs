@@ -240,8 +240,13 @@ internal static class ExcelCorpus
                 var w = a.GetProperty("width");
                 return SheetEdit.SetColumnWidth(Range("range"), w.ValueKind == JsonValueKind.Null ? null : w.GetDouble());
             case "rename": return SheetEdit.Rename(a.GetProperty("name").GetString()!);
-            case "format": return SheetEdit.SetFormat(Range("range"), NumberFormat.Parse(a.GetProperty("format").GetString()!));
-            case "align": return SheetEdit.SetAlignment(Range("range"), Enum.Parse<HorizontalAlignment>(a.GetProperty("align").GetString()!, ignoreCase: true));
+            case "format" or "align" or "style":
+                // A range written with commas is several ranges styled in one step (ADR-0046).
+                var ranges = a.GetProperty("range").GetString()!.Split(',').Select(CellRange.Parse).ToList();
+                NumberFormat? format = a.TryGetProperty("format", out var f) ? NumberFormat.Parse(f.GetString()!) : null;
+                HorizontalAlignment? align = a.TryGetProperty("align", out var al) ? Enum.Parse<HorizontalAlignment>(al.GetString()!, ignoreCase: true) : null;
+                if (what == "style" || ranges.Count > 1) return SheetEdit.SetStyle(ranges, format, align);
+                return what == "format" ? SheetEdit.SetFormat(ranges[0], format) : SheetEdit.SetAlignment(ranges[0], align!.Value);
             default: throw new InvalidDataException($"Unknown action \"{what}\".");
         }
     }

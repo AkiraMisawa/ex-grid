@@ -65,6 +65,21 @@ public abstract class SheetEdit
     }
 
     /// <summary>
+    /// A number format, an alignment or both set on several ranges as one step (ADR-0046), such as
+    /// a selection of several rectangles, whole columns and whole rows among them; each range is
+    /// recorded as <see cref="SetFormat(CellRange, NumberFormat?)"/> records one. Here
+    /// <see langword="null"/> leaves that property as it is, and <see cref="NumberFormat.General"/>
+    /// sets General. Undoing the step puts back every level exactly.
+    /// </summary>
+    /// <exception cref="ArgumentException">There is no range, or the style sets neither property.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The alignment is not one.</exception>
+    public static SheetEdit SetStyle(IEnumerable<CellRange> ranges, NumberFormat? format = null, HorizontalAlignment? alignment = null)
+    {
+        var (list, patch) = Sheet.CheckStyle(ranges, format, alignment);
+        return new StylesEdit(list, patch);
+    }
+
+    /// <summary>
     /// A width set on every column <paramref name="columns"/> spans, in characters
     /// (<see cref="Sheet.SetColumnWidth"/>); <see langword="null"/> puts them back at the default
     /// width. Undoing the step puts back every column's width exactly (ADR-0046).
@@ -230,6 +245,16 @@ public abstract class SheetEdit
         {
             var outcome = sheet.ApplyStyle(range, patch);
             return new SheetStep(sheet, outcome.Change, s => s.UndoStyle(outcome), s => s.ApplyStyle(range, patch).Change);
+        }
+    }
+
+    /// <summary>A style set on several ranges: undone by every range's part undone in reverse, redone by setting it again.</summary>
+    internal sealed class StylesEdit(IReadOnlyList<CellRange> ranges, StylePatch patch) : SheetEdit
+    {
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var outcome = sheet.ApplyStyles(ranges, patch);
+            return new SheetStep(sheet, outcome.Change, s => s.UndoStyles(outcome), s => s.ApplyStyles(ranges, patch).Change);
         }
     }
 
