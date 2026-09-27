@@ -465,24 +465,29 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
         }, selector);
     }
 
-    test('the Cell Editor, at 10 keys a second', async ({ page }) => {
-        await openFeatures(page);
-        await clickCell(page, 0, 1);                  // Trader, editable
-        await page.keyboard.type('X');
-        const editor = grid(page).locator('input.ex-editor');
-        await expect(editor).toHaveValue('X');
-        await expect(editor).toBeFocused();
-        await recordWrites(page, '.ex-grid input.ex-editor');
-        await setRoundTrip(150);
+    // The built-in editor, and ExGrid.MudBlazor's (a Chrome's control reporting its own text).
+    for (const [chrome, field] of [['builtin', 'input.ex-editor'], ['mud', 'input.mud-ex-editor']]) {
+        test(`the Cell Editor, at 10 keys a second (${chrome})`, async ({ page }) => {
+            await page.goto(`/features?chrome=${chrome}`);
+            await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+            await expect(grid(page)).toHaveAttribute('tabindex', '0');
+            await clickCell(page, 0, 1);              // Trader, editable
+            await page.keyboard.type('X');
+            const editor = grid(page).locator(field);
+            await expect(editor).toHaveValue('X');
+            await expect(editor).toBeFocused();
+            await recordWrites(page, `.ex-grid ${field}`);
+            await setRoundTrip(150);
 
-        await page.keyboard.type('abcdefghij', { delay: 100 });
+            await page.keyboard.type('abcdefghij', { delay: 100 });
 
-        await page.waitForTimeout(1000);              // every answer has landed
-        await expect(editor).toHaveValue('Xabcdefghij');
-        expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
-        await page.keyboard.press('Enter');
-        await expect(grid(page).locator("[id$='r0c1']")).toHaveText('Xabcdefghij');
-    });
+            await page.waitForTimeout(1000);          // every answer has landed
+            await expect(editor).toHaveValue('Xabcdefghij');
+            expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
+            await page.keyboard.press('Enter');
+            await expect(grid(page).locator("[id$='r0c1']")).toHaveText('Xabcdefghij');
+        });
+    }
 
     test('the Name Box, at 10 keys a second', async ({ page }) => {
         await page.goto('/sheet');

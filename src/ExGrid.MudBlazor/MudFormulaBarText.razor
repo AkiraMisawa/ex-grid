@@ -4,8 +4,8 @@
    box, the keys and the one uncommitted text; this paints the control, reports what is
    typed, and takes DOM focus for each request. *@
 <input class="@(Context.ReadOnly ? "mud-ex-formula-bar-text" : "mud-ex-formula-bar-text mud-ex-formula-bar-text-editable")"
-       value="@Context.Text" readonly="@Context.ReadOnly" tabindex="-1" aria-label="@Label"
-       @onfocus="OnFocus" @oninput="OnInput" @ref="_input" />
+       @bind:get="_text.Shown" @bind:set="OnInput" @bind:event="oninput" readonly="@Context.ReadOnly" tabindex="-1" aria-label="@Label"
+       @onfocus="OnFocus" @ref="_input" />
 
 @code {
     private ElementReference _input;
@@ -21,10 +21,20 @@
 
     private Task OnFocus() => Context.Focused();
 
-    private void OnInput(ChangeEventArgs e) => Context.TextChanged(e.Value?.ToString() ?? "");
+    // Bound, not value= beside @oninput: the renderer then takes what the browser reports as
+    // what the control shows, and what it renders follows the typing, never an echo of it a
+    // round trip old (SRV-5, ED-22).
+    private readonly FieldText _text = new();
+
+    private void OnInput(string? text)
+    {
+        _text.Typed(text ?? "");
+        Context.TextChanged(_text.Shown);
+    }
 
     protected override void OnParametersSet()
     {
+        _text.Told(Context.Text);
         // Unlike the Cell Editor, the bar stands before anything asks for it: the first
         // request is the first change from the number it was painted with.
         if (_focusedRequest is null)
