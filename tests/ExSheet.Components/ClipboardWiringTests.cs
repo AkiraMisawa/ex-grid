@@ -141,6 +141,75 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.Contains("source column was too narrow to show the value", Notice(cut));
     }
 
+    /// <summary>
+    /// Excel's HTML flavour for one column of three cells, as the browser's <c>paste</c> event
+    /// hands it over on Windows (verification/2026-09-27-windows-excel-2,
+    /// clipboard-probe-chrome.json): the head and its style sheet as Excel writes them, each
+    /// cell's shown text, and no <c>x:num</c>.
+    /// </summary>
+    private static string ExcelColumnHtml(int width, string first, string second, string third) =>
+        "<html xmlns:v=\"urn:schemas-microsoft-com:vml\"\r\nxmlns:o=\"urn:schemas-microsoft-com:office:office\"\r\n" +
+        "xmlns:x=\"urn:schemas-microsoft-com:office:excel\"\r\nxmlns=\"http://www.w3.org/TR/REC-html40\">\r\n\r\n<head>\r\n" +
+        "<meta http-equiv=Content-Type content=\"text/html; charset=utf-8\">\r\n<meta name=ProgId content=Excel.Sheet>\r\n" +
+        "<meta name=Generator content=\"Microsoft Excel 15\">\r\n<style>\r\n<!--table\r\n\t{mso-displayed-decimal-separator:\"\\.\";\r\n" +
+        "\tmso-displayed-thousand-separator:\"\\,\";}\r\ntd\r\n\t{mso-number-format:General;\r\n\twhite-space:nowrap;}\r\n" +
+        ".xl65\r\n\t{mso-number-format:\"Short Date\";}\r\n.xl66\r\n\t{mso-number-format:Standard;}\r\n-->\r\n</style>\r\n</head>\r\n\r\n" +
+        "<body link=\"#467886\" vlink=\"#96607D\">\r\n\r\n" +
+        $"<table border=0 cellpadding=0 cellspacing=0 width={width} style='border-collapse:\r\n collapse'>\r\n<!--StartFragment-->\r\n" +
+        $" <col width={width} style='mso-width-source:userset'>\r\n" +
+        $" <tr height=19 style='height:14.5pt'>\r\n  <td height=19 align=right width={width} style='height:14.5pt'>{first}</td>\r\n </tr>\r\n" +
+        $" <tr height=19 style='height:14.5pt'>\r\n  <td height=19 class=xl65 align=center style='height:14.5pt'>{second}</td>\r\n </tr>\r\n" +
+        $" <tr height=19 style='height:14.5pt'>\r\n  <td height=19 class=xl66 align=center style='height:14.5pt'>{third}</td>\r\n </tr>\r\n" +
+        "<!--EndFragment-->\r\n</table>\r\n\r\n</body>\r\n\r\n</html>\r\n";
+
+    private const string ExcelColumnText = "6\r\n26/09/2026\r\n1,234.50\r\n";
+
+    [Fact] // ADR-0048, ADR-0050 item 3 (observed on Windows, 2026-09-27): Excel's too-narrow column pasted onto one cell is refused by name, and the notice outlives the paste's own move
+    public async Task A_too_narrow_excel_column_pasted_onto_one_cell_is_refused_by_name()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "F7");
+
+        await PasteAsync(cut, ExcelColumnText, ExcelColumnHtml(49, "6", "######", "######"));
+
+        Assert.Equal("", CellText(cut, "F7"));
+        Assert.Equal("", CellText(cut, "F8"));
+        Assert.Equal("", CellText(cut, "F9"));
+        Assert.False(cut.Instance.CanUndo);
+        Assert.Contains("F8", Notice(cut));
+        Assert.Contains("'######'", Notice(cut));
+        Assert.Contains("source column was too narrow to show the value", Notice(cut));
+    }
+
+    [Fact] // ADR-0048: the notice a refused spill raised stands until the user's own next action, and that action clears it
+    public async Task The_refused_spill_notice_is_cleared_by_the_next_selection()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "F7");
+        await PasteAsync(cut, ExcelColumnText, ExcelColumnHtml(49, "6", "######", "######"));
+        Assert.Contains("too narrow", Notice(cut));
+
+        await GoToAsync(cut, "A1");
+
+        Assert.Equal("", Notice(cut));
+    }
+
+    [Fact] // ADR-0048, ADR-0050 item 3: the same flavours from a column wide enough are pasted, and the spill is selected
+    public async Task A_wide_enough_excel_column_pasted_onto_one_cell_spills()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps.Add(s => s.SelectionChanged, selections.Add));
+        await GoToAsync(cut, "F2");
+
+        await PasteAsync(cut, ExcelColumnText, ExcelColumnHtml(74, "6", "26/09/2026", "1,234.50"));
+
+        Assert.Equal("6", CellText(cut, "F2"));
+        Assert.NotEqual("", CellText(cut, "F3"));
+        Assert.Equal("1,234.50", CellText(cut, "F4"));
+        Assert.Equal(new SelectionRange(1, 5, 3, 1), Assert.Single(selections[^1].Ranges));
+        Assert.Equal("", Notice(cut));
+    }
+
     [Fact] // ADR-0048: a run of # in another Sheet's invariant table is that Sheet's text Value, and is pasted as text
     public async Task A_run_of_hashes_in_an_invariant_table_is_text()
     {
