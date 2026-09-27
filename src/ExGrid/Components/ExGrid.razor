@@ -306,7 +306,7 @@
                             <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
-                                       CellState="CellState" RowKind="RowKind"
+                                       CellState="CellState" CellType="CellType" RowKind="RowKind"
                                        RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
@@ -910,6 +910,26 @@
     /// the states already on screen where they are.</para>
     /// </summary>
     [Parameter] public CellStateOf<TRow>? CellState { get; set; }
+
+    /// <summary>
+    /// A per-cell kind (ADR-0050, item 6): asked for by (row, column), it overrides the
+    /// column's <see cref="GridColumn{TRow}.Type"/> for that one cell's alignment, numeric
+    /// class and <c>####</c> decision (ADR-0016) — a text heading above a column of
+    /// amounts is left-aligned and never hashed, a number in a Text column is
+    /// right-aligned and hashed when it does not fit. Sorting and filtering stay per
+    /// column. Null — the default — leaves every cell on its column's kind, exactly as
+    /// before. Asked of value cells only: an Action, Template or Mark cell paints no value
+    /// to align or hash.
+    ///
+    /// <para>The text a cell paints is unchanged by it: the column's <c>Format</c> where it
+    /// declares one, the value's own <c>ToString()</c> where it does not — the core's
+    /// default format is the same for every kind, so there is nothing kind-dependent to
+    /// follow.</para>
+    ///
+    /// <para><b>Hold it in a field and hand over a new one when the kinds change.</b> Its
+    /// identity is the change signal, as <see cref="CellState"/>'s is (ADR-0003/0006).</para>
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, ColumnType>? CellType { get; set; }
 
     /// <summary>
     /// What role each row plays — detail, group or total (ADR-0024). Null means every
