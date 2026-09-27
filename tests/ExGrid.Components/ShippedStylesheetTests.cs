@@ -67,9 +67,10 @@ public class ShippedStylesheetTests
         // keydown (the capture-phase gate), input and selectionchange (the same keyboard/editor
         // use, reporting the caret with each input and whenever it moves: ADR-0021's notes of
         // ADR-0051's second round), copy and paste (the clipboard), and the two that report a
-        // pointer coming to rest. Scrolling is Blazor's own @onscroll and the gutter is a
-        // ResizeObserver, so neither appears here.
-        string[] allowed = ["copy", "input", "keydown", "mousemove", "mouseleave", "paste", "selectionchange"];
+        // pointer coming to rest, and the capture-phase mousedown and mouseup that keep a press on
+        // the rows in its place among held keys (ADR-0021's note of 2026-09-27). Scrolling is
+        // Blazor's own @onscroll and the gutter is a ResizeObserver, so neither appears here.
+        string[] allowed = ["copy", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 

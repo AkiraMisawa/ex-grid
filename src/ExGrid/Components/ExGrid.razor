@@ -2890,7 +2890,7 @@
     /// The transitions themselves are the pure model's; nothing about what a click means
     /// is decided here.
     /// </summary>
-    private async Task OnMouseDown(MouseEventArgs e)
+    private async Task AnswerPressAsync(MouseEventArgs e)
     {
         // Read before anything below changes what is painted: the handle is grabbed where
         // the user saw it (ADR-0050, item 5).
@@ -3262,7 +3262,7 @@
         }
     }
 
-    private async Task OnMouseUp(MouseEventArgs e)
+    private async Task AnswerReleaseAsync(MouseEventArgs e)
     {
         if (_fillSource is not null)
         {

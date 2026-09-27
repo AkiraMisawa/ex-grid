@@ -173,7 +173,7 @@ hide it.
   never pause (PF-1).
 - `memory.spec.mjs` — on `/lifecycle`, a grid mounted and disposed fifty times leaves the
   browser's node and listener counts where they were (MEM-2), and a dispose takes the
-  module's six listeners off the root (MEM-4). The ten-minute soak (MEM-5, with the
+  module's eight listeners off the root (MEM-4). The ten-minute soak (MEM-5, with the
   managed heap for MEM-6) runs only with `EXGRID_SOAK=1`:
   ```sh
   EXGRID_SOAK=1 npx playwright test memory.spec.mjs

@@ -518,6 +518,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         await editorSettled();
         while (held.length > 0 && core) {
             const k = held.shift();
+            if (k.press) {
+                await replayPress(k);
+                continue;
+            }
             const target = focusedControl();
             if (target) {
                 // A held key that itself sends the keyboard across the popover holds the
@@ -709,6 +713,72 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // the page would receive every keystroke, and in the bubble phase a cell editor would
     // already have moved its caret (ADR-0010 / ADR-0018).
     root.addEventListener('keydown', onKeyDown, true);
+
+    // A press on the rows keeps its place among held keys (ADR-0021/0010, ED-22). While keys
+    // are held, or a change of editing mode is being answered, a primary-button press on the
+    // rows is held too, in order, and its release with it: a click straight after Enter
+    // reached C# before the held Enter, and the Enter's move carried the Focus past the
+    // clicked cell. When nothing is held the press passes through untouched. No layout is
+    // read: the press is replayed with the coordinates the browser gave it.
+    const mouseInit = (event) => ({
+        bubbles: true, cancelable: true, view: window, detail: event.detail,
+        screenX: event.screenX, screenY: event.screenY, clientX: event.clientX, clientY: event.clientY,
+        ctrlKey: event.ctrlKey, shiftKey: event.shiftKey, altKey: event.altKey, metaKey: event.metaKey,
+        button: event.button, buttons: event.buttons,
+    });
+    const onPress = (event) => {
+        // Cells are pointer-events: none, so the Viewport is what a press on the rows lands on.
+        if (!core || replaying || event.button !== 0 || !(event.target instanceof Element)
+            || !event.target.classList.contains('ex-viewport') || (!answering && held.length === 0)) {
+            return;
+        }
+        // Out of Blazor's sight until its turn. Its default — DOM focus onto the rows — is
+        // kept, as the press would have had it, except over an editor surface that holds DOM
+        // focus: whether the press keeps that editor is the core's to say at its turn
+        // (ADR-0051), and a press that commits it hands the keyboard to the root then.
+        if (editing !== 'none' && editorFocused()) {
+            event.preventDefault();
+        }
+        event.stopPropagation();
+        held.push({ press: 'mousedown', target: event.target, init: mouseInit(event) });
+    };
+    // A release is held only behind its press: once the press has been handed on, the
+    // release follows it to Blazor as it comes, and Blazor keeps the two in order.
+    const onRelease = (event) => {
+        if (!core || replaying || !held.some((k) => k.press === 'mousedown')) {
+            return;
+        }
+        event.stopPropagation();
+        held.push({ press: 'mouseup', target: event.target, init: mouseInit(event) });
+    };
+    // A held press or release, handed to Blazor as the event it was, in its place: on the
+    // element it landed on, or on the Viewport if a render has replaced that one. The keys
+    // held behind it wait until the core says it has answered it — a press can commit an open
+    // edit and wait on the Consumer hearing it, and those keys must be gated against the mode
+    // it leaves (ExGrid.PressAnsweredAsync). The listener asks straight after dispatching, so
+    // the core has always heard the press first; the answer is the core's, never a guess.
+    const replayPress = async (k) => {
+        const target = k.target.isConnected ? k.target : root.querySelector('.ex-viewport');
+        if (!target) {
+            return;
+        }
+        replaying = true;
+        try {
+            target.dispatchEvent(new MouseEvent(k.press, k.init));
+        } finally {
+            replaying = false;
+        }
+        await core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to answer a press', error);
+            }
+        });
+        // An edit the press kept stands with DOM focus in it, and one it ended is gone: the
+        // keys after it are gated once that has settled, as after a key.
+        await editorSettled();
+    };
+    root.addEventListener('mousedown', onPress, true);
+    root.addEventListener('mouseup', onRelease, true);
 
     // The clipboard (ADR-0005) — the fourth allowlist entry (ADR-0021). Both events
     // fire on the focused root — verified on the real Chrome: a non-editable,
@@ -1024,6 +1094,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             root.removeEventListener('mousemove', onPointerMove);
             root.removeEventListener('mouseleave', onPointerLeave);
             root.removeEventListener('keydown', onKeyDown, true);
+            root.removeEventListener('mousedown', onPress, true);
+            root.removeEventListener('mouseup', onRelease, true);
             root.removeEventListener('input', onEditorInput, true);
             document.removeEventListener('selectionchange', onSelectionChange);
             cancelAnimationFrame(caretFrame);
