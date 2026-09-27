@@ -101,6 +101,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // taken from there, Space would type nothing, arrows would move the
                 // selection instead of a caret and Ctrl+A would select the grid instead
                 // of the field's text.
+                // Ctrl+F in one of the grid's own popovers is the grid's too (ADR-0047, settled
+                // 2026-09-27): the browser's find would see only the painted rows. In the find
+                // field it selects the field's text, the field's own behaviour and no meaning of
+                // the core's; anywhere else in a popover it opens Find, as from the root. A
+                // Consumer's control in a Template cell keeps the key, as it keeps every other.
+                if (k.inPopover && (canonical === 'Control+f' || canonical === 'Control+F')) {
+                    if (k.inFindField) {
+                        return 'select';
+                    }
+                    return canFind ? 'popover' : 'core';
+                }
                 if (canonical !== 'Escape') {
                     return null;
                 }
@@ -192,6 +203,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         repeat: event.repeat,
         onRoot: isRoot(event.target),
         inEditor: event.target instanceof Element && event.target.closest('.ex-editor') !== null,
+        inPopover: popoverOf(event.target) !== null,
+        inFindField: isTextField(event.target) && event.target.closest('.ex-popover-find') !== null,
     });
 
     const forward = (k) => core.invokeMethodAsync(
@@ -415,6 +428,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const handToPopover = (target, k) => {
         if (isTextField(target) && !k.ctrlKey && !k.metaKey && !k.altKey) {
             if (k.key === 'Enter' && target.form) {
+                // The keydown first, so the field's own handlers hear what the key was — Shift
+                // held turns the find panel's Enter into "previous" (ADR-0047) — then the
+                // submission, which a dispatched keydown does not perform.
+                replayInto(target, k);
                 target.form.requestSubmit();
                 return;
             }
@@ -432,6 +449,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         await editorSettled();
         while (held.length > 0 && core) {
             const k = held.shift();
+            // A modifier's own keydown — the Shift pressed for a capital, or for Shift+Enter —
+            // is held with the rest to keep their order, and means nothing by itself: the key
+            // that follows carries it. Replaying it would be a key no field can reproduce, and
+            // that stops the replay there, dropping every key typed after it.
+            if (k.key === 'Shift' || k.key === 'Control' || k.key === 'Alt' || k.key === 'Meta') {
+                continue;
+            }
             const target = focusedControl();
             if (target) {
                 // A held key that itself sends the keyboard across the popover holds the
@@ -450,7 +474,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             // Aimed at the grid when it was pressed; after the answer, the grid's
             // keyboard is the editor if one stands, and the root if not.
-            const rebased = { ...k, onRoot: editing === 'none', inEditor: editing !== 'none' };
+            const rebased = {
+                ...k, onRoot: editing === 'none', inEditor: editing !== 'none', inPopover: false, inFindField: false,
+            };
             const verdict = gate(rebased);
             if (verdict === 'mode' || verdict === 'popover') {
                 awaitingPopover = verdict === 'popover';
@@ -531,6 +557,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         event.preventDefault();
         event.stopPropagation();
         if (verdict === 'drop') {
+            return;
+        }
+        if (verdict === 'select') {
+            event.target.select();
             return;
         }
         const answer = forward(k);

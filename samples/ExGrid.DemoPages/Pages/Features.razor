@@ -212,18 +212,28 @@
     private string _editStatus = "—";
     private string _clearStatus = "—";
     private string _findStatus = "—";
+    private string _historyStatus = "—";
+    private string _pasteStatus = "—";
+    private string _copyStatus = "—";
+    private string _pasteRefusedStatus = "—";
+    private string _editDiscardedStatus = "—";
+    private string _contextStatus = "—";
+    private string _widthStatus = "—";
+
 
     /// <summary>Find's refusals (ADR-0047). This page's grid is bound to GridSource.From, which
     /// searches, so Unavailable never arrives here; the panel words NotFound itself too.</summary>
     private void OnFindRefused(FindRefusalReason reason)
         => Status(reason, reason.ToString(), s => _findStatus = s);
-    private string _historyStatus = "—";
 
-    // The undo stack ADR-0007 says the Consumer owns: one entry per intent — a typed edit,
-    // a paste, a fill or a clear — each the row instances it replaced and the ones it put
-    // in their place. The grid only forwards the keys.
-    private readonly Stack<List<(DemoTrade Before, DemoTrade After)>> _undo = new();
-    private readonly Stack<List<(DemoTrade Before, DemoTrade After)>> _redo = new();
+    /// <summary>One history step: the row instances one intent replaced and the ones it put in
+    /// their place, in the order it replaced them.</summary>
+    private sealed record HistoryStep(IReadOnlyList<(DemoTrade Before, DemoTrade After)> Changes);
+
+    // The undo stack ADR-0007 says the Consumer owns: one step per intent — a typed edit, a
+    // paste, a fill or a clear. The grid only forwards the keys.
+    private readonly Stack<HistoryStep> _undo = new();
+    private readonly Stack<HistoryStep> _redo = new();
 
     /// <summary>Applies one intent's replacements as one history step.</summary>
     private int Apply(IEnumerable<(DemoTrade Row, DemoTrade Replacement)> changes)
@@ -244,7 +254,7 @@
         }
         if (step.Count > 0)
         {
-            _undo.Push(step);
+            _undo.Push(new HistoryStep(step));
             _redo.Clear();
         }
         _rules.Evaluate(_source.Window, _columns);
@@ -255,10 +265,10 @@
 
     private void OnRedo() => Replay(_redo, _undo, "redone");
 
-    private void Replay(
-        Stack<List<(DemoTrade Before, DemoTrade After)>> from,
-        Stack<List<(DemoTrade Before, DemoTrade After)>> to,
-        string verb)
+    /// <summary>Undoes or redoes one step: its changes reversed, last first, and the reverse
+    /// step — in the order it was just applied — pushed onto the other stack, so replaying that
+    /// one last-first puts the changes back in their original order.</summary>
+    private void Replay(Stack<HistoryStep> from, Stack<HistoryStep> to, string verb)
     {
         if (!from.TryPop(out var step))
         {
@@ -266,15 +276,15 @@
             return;
         }
         var reversed = new List<(DemoTrade, DemoTrade)>();
-        for (var i = step.Count - 1; i >= 0; i--)
+        for (var i = step.Changes.Count - 1; i >= 0; i--)
         {
-            var (before, after) = step[i];
+            var (before, after) = step.Changes[i];
             _source.ReplaceRow(after, before);
-            reversed.Insert(0, (after, before));
+            reversed.Add((after, before));
         }
-        to.Push(reversed);
+        to.Push(new HistoryStep(reversed));
         _rules.Evaluate(_source.Window, _columns);
-        _historyStatus = $"{step.Count} rows {verb}";
+        _historyStatus = $"{step.Changes.Count} changes {verb}";
     }
 
     /// <summary>Delete's Clear Intent (ADR-0046): no value at all, mapped per column onto
@@ -301,12 +311,6 @@
         var applied = Apply(changes);
         _clearStatus = $"{intent.CellCount} cells, {applied} applied, {skipped} have no blank";
     }
-    private string _pasteStatus = "—";
-    private string _copyStatus = "—";
-    private string _pasteRefusedStatus = "—";
-    private string _editDiscardedStatus = "—";
-    private string _contextStatus = "—";
-    private string _widthStatus = "—";
 
     private void OnEdit(GridEditIntent<DemoTrade> intent)
     {

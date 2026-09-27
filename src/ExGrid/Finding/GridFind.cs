@@ -18,13 +18,13 @@ namespace ExGrid.Finding;
 public static class GridFind
 {
     /// <summary>
-    /// Searches <paramref name="rows"/> — the result in its current order — for the next match.
+    /// One step: the next match in <paramref name="rows"/> — the result in its current order.
     /// </summary>
     /// <param name="rows">Every row of the result, in the order the request was read in.</param>
     /// <param name="request">The step.</param>
     /// <param name="textOf">The displayed text of a column by name, or null for a column that
     /// has no text to search (an action column) or that this Source does not know.</param>
-    public static GridFindResult Search<TRow>(
+    public static GridFindResult Step<TRow>(
         IReadOnlyList<TRow> rows, GridFindRequest request, Func<string, Func<TRow, string>?> textOf)
     {
         ArgumentNullException.ThrowIfNull(rows);

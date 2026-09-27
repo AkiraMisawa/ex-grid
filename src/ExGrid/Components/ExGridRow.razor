@@ -455,9 +455,7 @@
     /// <summary>The same text from a value already fetched — the row fetches once and
     /// derives both the text and the tone from it.</summary>
     internal static string TextOf(GridColumn<TRow> column, object? value)
-        => value is null
-            ? ""
-            : column.Format is { } format ? format(value) : value.ToString() ?? "";
+        => column.Info.TextOfValue(value);
 
     /// <summary>The column's tone for a value (ADR-0006): None without a rule, None for a
     /// null — a Blank has no sign and the rule is never asked about it.</summary>

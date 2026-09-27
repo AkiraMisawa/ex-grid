@@ -10,4 +10,7 @@ namespace ExGrid.Keys;
 /// <param name="CanUndo">Whether someone listens for undo. Ctrl+Z is claimed only then.</param>
 /// <param name="CanRedo">Whether someone listens for redo. Ctrl+Y and Ctrl+Shift+Z are
 /// claimed only then.</param>
-public readonly record struct GridKeyClaims(bool CanEdit, bool CanUndo, bool CanRedo);
+/// <param name="CanFind">Whether anything can answer a Find (ADR-0047). Ctrl+F is claimed either
+/// way; this decides whether it opens the find panel — and the keys typed after it wait for the
+/// panel — or is refused.</param>
+public readonly record struct GridKeyClaims(bool CanEdit, bool CanUndo, bool CanRedo, bool CanFind = false);

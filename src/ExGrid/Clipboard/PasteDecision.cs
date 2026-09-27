@@ -14,8 +14,8 @@ namespace ExGrid.Clipboard;
 /// however it is shaped. Chrome must not offer the "reselect the same shape" advice for
 /// it — no reselection of that shape would be accepted.
 /// <see cref="TooLarge"/> is not about shape either (ADR-0005): the clipboard is past the
-/// grid's byte ceiling, so it was not read at all. Component-level, never produced by the
-/// pure rules.
+/// grid's byte ceiling, so it was not read at all — or a fill key's source is past the copy
+/// cap (ADR-0035).
 /// </summary>
 public enum PasteRefusalReason
 {
@@ -37,8 +37,10 @@ public enum PasteRefusalReason
     /// of the same shape would be accepted, so Chrome must not advise one.</summary>
     TargetNotEditable,
 
-    /// <summary>The clipboard is past the grid's <c>PasteByteCap</c>, so it was not read
-    /// at all. Raised by the component, never by the pure rules (ADR-0005).</summary>
+    /// <summary>Too much to read: a clipboard past the grid's <c>PasteByteCap</c>, raised by
+    /// the component before the clipboard is read at all (ADR-0005) — or a fill key's source
+    /// past the copy cap, which <see cref="ClipboardRules.PlanFill"/> refuses as a copy of it
+    /// would be refused (ADR-0035).</summary>
     TooLarge,
 
     /// <summary>A fill key (Ctrl+D, Ctrl+R) on a range one row tall at the first row, or

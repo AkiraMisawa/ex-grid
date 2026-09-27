@@ -47,7 +47,7 @@ public class GridFindTests
 
     private static (int Row, string? Column) Find(GridFindRequest request)
     {
-        var result = GridFind.Search(Rows, request, TextOf);
+        var result = GridFind.Step(Rows, request, TextOf);
         return (result.Row, result.Column);
     }
 
@@ -115,7 +115,7 @@ public class GridFindTests
 
     [Fact] // ADR-0047: an empty text asks nothing
     public void An_empty_text_finds_nothing()
-        => Assert.False(GridFind.Search(Rows, Ask(""), TextOf).IsFound);
+        => Assert.False(GridFind.Step(Rows, Ask(""), TextOf).IsFound);
 
     [Fact] // ADR-0047 / FD-7: the in-memory Source matches the columns' displayed text as the grid handed it over
     public async Task The_in_memory_source_searches_the_result_in_its_order()
@@ -199,5 +199,59 @@ public class GridFindTests
         Assert.Equal(selection.Ranges, moved.Ranges);
         Assert.Equal(selection.Anchor, moved.Anchor);
         Assert.Throws<ArgumentOutOfRangeException>(() => selection.FocusOn(new(9, 4)));
+    }
+
+    [Fact] // ADR-0047 (2026-09-27): a rebuilt column is the same column to a Source — no requery on repush
+    public void A_rebuilt_column_carries_an_equal_info()
+    {
+        static GridColumn<Trade> Build() => new("Notional", ColumnType.Number, t => t.Notional,
+            format: v => ((decimal)v).ToString("N0", System.Globalization.CultureInfo.InvariantCulture));
+
+        Assert.Equal(Build().Info, Build().Info);
+    }
+
+    [Fact] // ADR-0047: the displayed text is one rule — the row paints by it and a Source matches by it
+    public void The_info_answers_the_displayed_text()
+    {
+        var formatted = new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional,
+            format: v => ((decimal)v).ToString("N0", System.Globalization.CultureInfo.InvariantCulture)).Info;
+        var plain = new GridColumn<Trade>("Book", ColumnType.Text, t => t.Book).Info;
+        var blank = new GridColumn<Trade>("Nothing", ColumnType.Text, _ => null).Info;
+
+        Assert.Equal("1,000", formatted.TextOf(Rows[0]));
+        Assert.Equal("Beta", plain.TextOf(Rows[1]));
+        Assert.Equal("", blank.TextOf(Rows[1]));
+    }
+
+    [Fact] // ADR-0047 / FD-7: GridSource.From answers every clause exactly as the reference step does
+    public async Task The_in_memory_source_agrees_with_the_reference_on_every_clause()
+    {
+        var source = GridSource.From(Rows);
+        source.OnColumnsChanged(
+        [
+            new GridColumn<Trade>("Book", ColumnType.Text, t => t.Book).Info,
+            new GridColumn<Trade>("Trader", ColumnType.Text, t => t.Trader).Info,
+            new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional,
+                format: v => ((decimal)v).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)).Info,
+        ]);
+        GridFindRequest[] clauses =
+        [
+            Ask("nova", from: new(0, 2)),                       // by rows, from the cell after
+            Ask("alpha"),                                       // no From: the first cell
+            Ask("alpha", from: new(3, 0)),                      // wrapping
+            Ask("beta", from: new(1, 0)),                       // a lone match finds itself
+            Ask("alpha", from: new(0, 0), backward: true),      // backward, wrapping
+            Ask("NOVAK", matchCase: true),                      // case
+            Ask("et", wholeCell: true),                         // whole cell
+            Ask("2,500.50"),                                    // displayed text
+            Ask("alpha", scope: [new(2, 0, 2, 2), new(3, 0, 1, 1)]), // scope
+        ];
+
+        foreach (var request in clauses)
+        {
+            var expected = GridFind.Step(Rows, request, TextOf);
+            var actual = await source.FindAsync(request, CancellationToken.None);
+            Assert.Equal((expected.Row, expected.Column), (actual.Row, actual.Column));
+        }
     }
 }

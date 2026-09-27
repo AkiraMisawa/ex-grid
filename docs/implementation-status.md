@@ -316,7 +316,7 @@ to `Stretch`, which frees Fill for Excel's gesture. Built, with the criteria eac
 - `OnClear` with `GridClearIntent`; Backspace's empty Overwrite editor; Ctrl+D / Ctrl+R planned
   by `ClipboardRules.PlanFill` and raised as one paste intent of raw values, with three new
   refusals (`NothingToFillFrom`, `MultipleRanges`, `SourceUnavailable`).
-- Find: `GridFind.Search` as the reference, `IGridSource.CanFind` / `FindAsync` with defaults
+- Find: `GridFind.Step` as the reference, `IGridSource.CanFind` / `FindAsync` with defaults
   that say no, `GridSource.Fetch(find:)`, `OnFind` for push mode, the find panel as a Chrome seam
   drawn by the built-in Chrome and by `ExGrid.MudBlazor`, and `OnFindRefused`.
 - The Features demo keeps an undo stack, so the keys have something to drive.
@@ -327,12 +327,25 @@ and Microsoft Edge installed from their vendors' packages**, headed under Xvfb. 
 14 skipped by name, 0 failed** on WebAssembly, and **448 pass, 10 skipped by name, 0 failed** on
 Server. Neither discharges the Windows or real-IME runs.
 
-**A max-depth review of this drop found open items, not yet fixed.** The worst, by axis: Ctrl+F
-pressed inside the grid's own popovers — the find field included — still reaches the browser, which
-FD-1 forbids and no ADR yet settles; and `ColumnInfo`'s displayed-text closure makes a Consumer's
-rebuilt columns compare unequal, so every repush requeries. Also open: `PlanFill`'s refusal order
-against ADR-0035, `OnFind` beside a bound Source, a Shift+Enter held behind Ctrl+F running "next",
-the demo's redo, and test gaps under FD-4/5/8, CP-25 and ED-25. Three of them wait on a decision.
+**A max-depth review of this drop found open items; all are fixed.** Three needed a decision,
+recorded in ADR-0047's "Settled in review" section: Ctrl+F inside the grid's own popovers is the
+grid's (in the find field it selects the text), `OnFind` beside a bound Source is refused by name,
+and an answer outside the request throws rather than being reworded as a reorder. The rest:
+`ColumnInfo` now carries the column's `Format` and answers the displayed text itself, so a rebuilt
+column compares equal again and the rule is written once; `PlanFill` reports the declaration first
+(ADR-0035); a held Shift+Enter keeps its Shift; the demo's redo replays in order; FD-4/5/8/10/11,
+CP-25 and ED-25 have the tests they lacked.
+
+**Two defects older than this drop, found by chasing the review's Server failures, are fixed:**
+
+- **Text typed at full speed on a circuit lost characters** — in the Cell Editor
+  (`…123456789` became `…1289`), the filter panel's fields and the find field. Each rendered its
+  value by hand, `value="@x"` beside an `@oninput`, and every render wrote the server's older copy
+  back over the typing. Only `@bind` tells Blazor the field's own value outranks a render's. New
+  criterion SRV-7, and a trap in CLAUDE.md.
+- **A held key replay stopped at the first bare modifier.** The Shift pressed for a capital during a
+  hold — typing straight after Ctrl+F, E or a key that opens the editor — is a keydown of its own,
+  and replaying it failed the "can this be reproduced" test, which dropped every key after it.
 
 ## Working through to the component
 

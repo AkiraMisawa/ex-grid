@@ -173,5 +173,11 @@ is also what Excel does. It is an editor entry and nothing else, so it is judged
 editor entry is: on an editable cell whose row is in hand, and not at all on any other cell. It is
 claimed on the same grids as the printable keys.
 
+**The order of the fill keys' refusals** *(settled in review, 2026-09-27)* is this ADR's own:
+the declaration first. `EmptySelection` → `TargetNotEditable` → `MultipleRanges` →
+`NothingToFillFrom` → `TooLarge`. Each range is judged on the target it would have on its own, so
+a range at the first row over a non-editable column is refused for the column — the refusal that
+no reselection will cure — rather than told there is nothing above it.
+
 **Consequences.** `PasteRefusalReason` gains `NothingToFillFrom`, `MultipleRanges` and
 `SourceUnavailable`. Chrome words them (ADR-0010); the grid holds no string.

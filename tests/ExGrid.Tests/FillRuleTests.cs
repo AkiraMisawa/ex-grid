@@ -89,7 +89,27 @@ public class FillRuleTests
         Assert.Equal(PasteRefusalReason.TargetNotEditable, decision.Reason);
     }
 
-    [Fact] // ADR-0035 / CP-25: the Ctrl+R source column is read, not written, so it may be read-only
+    [Theory] // ADR-0035 / CP-25: the declaration is reported first — before there being nothing to fill from
+    [InlineData(GridDirection.Down)]
+    [InlineData(GridDirection.Right)]
+    public void The_declaration_outranks_nothing_to_fill_from(GridDirection direction)
+    {
+        var decision = ClipboardRules.PlanFill(Range(0, 0, 0, 0), direction, _ => false);
+
+        Assert.Equal(PasteRefusalReason.TargetNotEditable, decision.Reason);
+    }
+
+    [Fact] // ADR-0035 / CP-25: and before several ranges, each judged on the target it alone would have
+    public void The_declaration_outranks_multiple_ranges()
+    {
+        var selection = Range(1, 1, 3, 1).ToggleRange(new(8, 4), Grid);
+
+        var decision = ClipboardRules.PlanFill(selection, GridDirection.Down, column => column != 4);
+
+        Assert.Equal(PasteRefusalReason.TargetNotEditable, decision.Reason);
+    }
+
+    [Fact] // ADR-0035 / CP-25: the Ctrl+R source column is read, not written, so it may be non-editable
     public void A_non_editable_source_column_is_not_refused()
     {
         var multi = ClipboardRules.PlanFill(Range(1, 1, 5, 3), GridDirection.Right, column => column != 1);
@@ -108,7 +128,7 @@ public class FillRuleTests
         Assert.False(ClipboardRules.PlanFill(Range(0, 1, 998, 2), GridDirection.Right, Editable, cellCap: 999).IsRefused);
     }
 
-    [Fact] // A fill runs down or right; up and left are not keys the grid has
+    [Fact] // ADR-0035: a fill runs down or right; up and left are not keys the grid has
     public void Only_down_and_right_are_fill_directions()
         => Assert.Throws<ArgumentOutOfRangeException>(
             () => ClipboardRules.PlanFill(Range(1, 1, 2, 2), GridDirection.Up, Editable));

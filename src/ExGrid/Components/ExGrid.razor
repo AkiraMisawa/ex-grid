@@ -239,7 +239,7 @@
                                     }
                                     else
                                     {
-                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="ex-editor" style="@pinnedBox" @bind="_editText" @bind:event="oninput" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -252,7 +252,7 @@
                             }
                             else
                             {
-                                <input class="ex-editor" style="@editorBox" value="@_editText" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="ex-editor" style="@editorBox" @bind="_editText" @bind:event="oninput" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -364,8 +364,7 @@
                             @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                             {
                                 var shown = domain.Values.Where(v => FilterPanelChoices.Matches(_panelSearch, PanelText(v, panelColumn))).ToArray();
-                                <input type="search" placeholder="Search" value="@_panelSearch" @ref="_panelFirst"
-                                       @oninput="e => _panelSearch = e.Value?.ToString() ?? string.Empty" />
+                                <input type="search" placeholder="Search" @bind="_panelSearch" @bind:event="oninput" @ref="_panelFirst" />
                                 @* Excel's "Add current selection to filter" (ADR-0009): only while a
                                    search stands over a column already filtered by its values. *@
                                 @if (FilterPanelChoices.OffersAddToFilter(panelContext.Current, _panelSearch))
@@ -401,7 +400,7 @@
                                         <option value="@op">@op</option>
                                     }
                                 </select>
-                                <input value="@_panelValueText" @ref="_panelValueField" @oninput="e => _panelValueText = e.Value?.ToString() ?? string.Empty" />
+                                <input @bind="_panelValueText" @bind:event="oninput" @ref="_panelValueField" />
                                 @* A second condition, joined by And or Or, as Excel's Custom AutoFilter
                                    (ADR-0009). Left at "(none)" it applies nothing of its own. *@
                                 <div class="ex-popover-join" role="radiogroup">
@@ -420,7 +419,7 @@
                                 </select>
                                 @if (_panelSecondOperator is { } second && FilterPanelChoices.TakesOperand(second))
                                 {
-                                    <input class="ex-popover-second" value="@_panelSecondValueText" @oninput="e => _panelSecondValueText = e.Value?.ToString() ?? string.Empty" />
+                                    <input class="ex-popover-second" @bind="_panelSecondValueText" @bind:event="oninput" />
                                 }
                             }
                             <div class="ex-popover-actions">
@@ -470,8 +469,7 @@
                 {
                     <form class="ex-popover-form" @onsubmit="SubmitFindAsync" @onsubmit:preventDefault>
                         <input type="search" class="ex-find-field" aria-label="@Label(FindPanelLabelIds.Field)"
-                               value="@_findText" @ref="_findField"
-                               @oninput="e => _findText = e.Value?.ToString() ?? string.Empty"
+                               @bind="_findText" @bind:event="oninput" @ref="_findField"
                                @onkeydown="OnFindFieldKeyDown" />
                         <label>
                             <input type="checkbox" class="ex-find-match-case" checked="@_findMatchCase"
@@ -489,12 +487,7 @@
                         </div>
                         @* What the last step came to, announced: a step that moves nothing is
                            otherwise a key that did nothing and said nothing (ADR-0033). *@
-                        <div class="ex-find-outcome" role="status">@(_findOutcome switch
-                        {
-                            FindOutcome.NotFound => Label(FindPanelLabelIds.NotFound),
-                            FindOutcome.OrderChanged => Label(FindPanelLabelIds.OrderChanged),
-                            _ => "",
-                        })</div>
+                        <div class="ex-find-outcome" role="status">@(FindPanelLabelIds.For(_findOutcome) is { } said ? Label(said) : "")</div>
                     </form>
                 }
             </div>
@@ -997,10 +990,12 @@
 
     /// <summary>
     /// A push-mode Consumer's answer to a Find step (ADR-0047): the next cell whose displayed
-    /// text matches, in the order the request was read in. A bound <see cref="Source"/> that
-    /// can find answers instead; with neither, Ctrl+F is refused rather than left to the
-    /// browser, whose find sees only the painted rows. A step asked while one is out cancels
-    /// it, and its answer is discarded.
+    /// text matches, in the order the request was read in. A bound <see cref="Source"/>
+    /// answers through its own <c>FindAsync</c>, and passing this beside one is refused by
+    /// name; with neither, Ctrl+F is refused rather than left to the browser, whose find sees
+    /// only the painted rows. A step asked while one is out cancels it, and its answer is
+    /// discarded. An answer outside the request — a column it did not name, a row the result
+    /// does not have — throws, naming the request.
     /// </summary>
     [Parameter] public Func<GridFindRequest, CancellationToken, Task<GridFindResult>>? OnFind { get; set; }
 
@@ -1304,9 +1299,9 @@
     // input — recorded at render, because only the render knows which it painted.
     private bool _editorIsChrome;
     private bool _jsEditingDirty;
-    // What the key gate was last told (ADR-0010/0020): which keys this grid takes, and
-    // whether any column edits. Null until attach.
-    private (GridKeyClaims Keys, bool CanFind)? _jsClaims;
+    // What the key gate was last told (ADR-0010/0020/0047): which keys this grid takes,
+    // whether any column edits, whether anything can find. Null until attach.
+    private GridKeyClaims? _jsClaims;
 
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the
     // action chosen in it. The keyboard never leaves the root; this is what the arrows
@@ -1455,7 +1450,9 @@
     private static readonly string[] SourceReplaces =
         [nameof(Window), nameof(WindowStart), nameof(TotalCount), nameof(IsLoading),
          nameof(RowSequenceVersion), nameof(OnRangeNeeded), nameof(Sorts), nameof(OnSortChanged),
-         nameof(OnCopyRowsNeeded), nameof(Filters), nameof(OnFilterChanged), nameof(OnDistinctValuesNeeded)];
+         nameof(OnCopyRowsNeeded), nameof(Filters), nameof(OnFilterChanged), nameof(OnDistinctValuesNeeded),
+         // The push mode's answer to a Find: beside a Source, two answers to one question (ADR-0047).
+         nameof(OnFind)];
 
     /// <summary>
     /// Blazor's parameter entry point, overridden to refuse by name a Source passed
@@ -2130,7 +2127,7 @@
             try
             {
                 await _scrollHandle.InvokeVoidAsync(
-                    "setClaims", GridKeys.TakenFor(claims.Keys), claims.Keys.CanEdit, claims.CanFind);
+                    "setClaims", GridKeys.TakenFor(claims), claims.CanEdit, claims.CanFind);
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
@@ -2208,7 +2205,7 @@
             var claims = KeyClaims();
             _jsClaims = claims;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
-                "attach", _root, _scroller, _self, GridKeys.TakenFor(claims.Keys), claims.Keys.CanEdit,
+                "attach", _root, _scroller, _self, GridKeys.TakenFor(claims), claims.CanEdit,
                 PopoverDelay.TotalMilliseconds, claims.CanFind);
             if (_disposed)
             {
@@ -3324,8 +3321,7 @@
 
     /// <summary>What the built-in menu calls a command (ADR-0036): the Consumer's wording
     /// where it has one, the default Chrome's table otherwise.</summary>
-    private string LabelOf(GridCommand command)
-        => CommandLabel?.Invoke(command.Id) ?? BuiltInCommandLabels.For(command.Id);
+    private string LabelOf(GridCommand command) => Label(command.Id);
 
     /// <summary>"Size to fit" fixes the width at the content of this moment (ADR-0016):
     /// the header's full need and every value in the Window — not only the painted rows,
@@ -3522,6 +3518,7 @@
         _panelFirst = default;
         _panelLast = default;
         _panelValueField = default;
+        _findField = default;
         _menuItems.Clear();
         _reclaimFocusPending = false;
         // A new opening starts clean, however the last one ended: a panel still waiting
@@ -4669,7 +4666,7 @@
                 if (_selection.Selection.IsEmpty)
                     break;
                 if (action.Kind == GridKeyKind.Clear)
-                    await ClearSelectionAsync();
+                    await RaiseClearIntentAsync();
                 else
                     await FillFromKeyAsync(action.Kind == GridKeyKind.FillDown ? GridDirection.Down : GridDirection.Right);
                 return;
@@ -4857,11 +4854,11 @@
     }
 
     /// <summary>What decides this grid's conditional key claims (ADR-0007/0010/0046/0047).</summary>
-    private (GridKeyClaims Keys, bool CanFind) KeyClaims()
-        => (new GridKeyClaims(AnyColumnEdits(), OnUndo.HasDelegate, OnRedo.HasDelegate), CanFind());
+    private GridKeyClaims KeyClaims()
+        => new(AnyColumnEdits(), OnUndo.HasDelegate, OnRedo.HasDelegate, CanFind());
 
     /// <summary>Whether anything can answer a Find (ADR-0047): the push-mode delegate, or a
-    /// bound Source that says it can.</summary>
+    /// bound Source that says it can — never both, which is refused by name.</summary>
     private bool CanFind() => OnFind is not null || (Source?.CanFind ?? false);
 
     /// <summary>
@@ -4881,7 +4878,6 @@
         _findOpen = true;
         _findOutcome = FindOutcome.None;
         BeginPopoverFocus();
-        _findField = default;
         _findFocusRequest++;
         _popoverFocusPending = PopoverFocus.FindField;
     }
@@ -4932,47 +4928,47 @@
             return;
         _findCancellation = null;
 
-        var column = -1;
-        if (answer.IsFound)
+        // The order moved while the question was out: the answer, found or not, is about
+        // positions that no longer stand (ADR-0011).
+        if (request.RowSequenceVersion != _sequenceVersion)
         {
-            for (var i = 0; i < Columns.Count; i++)
+            await RefuseFindAsync(FindRefusalReason.OrderChanged);
+            return;
+        }
+        if (!answer.IsFound)
+        {
+            await RefuseFindAsync(FindRefusalReason.NotFound);
+            return;
+        }
+        // An answer outside the question is the Consumer's defect, named rather than reworded
+        // as a reorder (ADR-0047, 2026-09-27): a column it was not asked about, or a row the
+        // result does not have.
+        var extent = Extent;
+        if (answer.Column is not { } answered || !request.Columns.Contains(answered)
+            || answer.Row >= extent.RowCount)
+        {
+            throw new InvalidOperationException(FormattableString.Invariant(
+                $"ExGrid: the Find answer (row {answer.Row}, column '{answer.Column}') is outside the request: it asked about the columns [{string.Join(", ", request.Columns)}] of a result of {extent.RowCount} rows (ADR-0047)."));
+        }
+        // A column the request named that has since left the grid: the visible columns moved
+        // while the step was out, which is OrderChanged's other half.
+        var column = -1;
+        for (var i = 0; i < Columns.Count; i++)
+        {
+            if (Columns[i].Name == answered)
             {
-                if (Columns[i].Name == answer.Column)
-                {
-                    column = i;
-                    break;
-                }
+                column = i;
+                break;
             }
         }
-        FindRefusalReason? refused = null;
-        if (request.RowSequenceVersion != _sequenceVersion || (answer.IsFound && column < 0))
-            refused = FindRefusalReason.OrderChanged;
-        else if (!answer.IsFound)
-            refused = FindRefusalReason.NotFound;
-
-        if (refused is { } reason)
+        if (column < 0)
         {
-            _findOutcome = reason == FindRefusalReason.NotFound ? FindOutcome.NotFound : FindOutcome.OrderChanged;
-            _suppressRender = false;
-            StateHasChanged();
-            if (OnFindRefused.HasDelegate)
-                await OnFindRefused.InvokeAsync(reason);
+            await RefuseFindAsync(FindRefusalReason.OrderChanged);
             return;
         }
 
         _findOutcome = FindOutcome.Found;
         var found = new CellPosition(answer.Row, column);
-        var extent = Extent;
-        if (found.Row >= extent.RowCount)
-        {
-            // A position past the result the grid holds is an answer about another order.
-            _findOutcome = FindOutcome.OrderChanged;
-            _suppressRender = false;
-            StateHasChanged();
-            if (OnFindRefused.HasDelegate)
-                await OnFindRefused.InvokeAsync(FindRefusalReason.OrderChanged);
-            return;
-        }
         // With a scope the selection stands and only the Focus moves inside it, so the next
         // step searches the same ranges; without one it collapses onto the match.
         var next = request.Scope is not null && selection.Contains(found)
@@ -4987,6 +4983,22 @@
         _revealFocus = true;
         _suppressRender = false;
         StateHasChanged();
+    }
+
+    /// <summary>A step that moved nothing (ADR-0047): the panel shows why, and the Consumer is
+    /// told — Chrome words both, as the grid holds no sentence.</summary>
+    private async Task RefuseFindAsync(FindRefusalReason reason)
+    {
+        _findOutcome = reason switch
+        {
+            FindRefusalReason.NotFound => FindOutcome.NotFound,
+            FindRefusalReason.OrderChanged => FindOutcome.OrderChanged,
+            _ => FindOutcome.None,
+        };
+        _suppressRender = false;
+        StateHasChanged();
+        if (OnFindRefused.HasDelegate)
+            await OnFindRefused.InvokeAsync(reason);
     }
 
     /// <summary>The find panel's context (ADR-0047), for a substituted Chrome.</summary>
@@ -5034,13 +5046,14 @@
     /// inside the grid's box across and downwards.</summary>
     private string FindPopoverStyle()
     {
-        var widest = Math.Min(PopoverMaxWidthPx, Math.Max(0, _visibleWidthPx));
-        var narrowest = Math.Min(PopoverMinWidthPx, widest);
+        // Anchored by its right edge at the Viewport's, with the same width bounds every
+        // popover is clamped with, so it can never reach past the grid's left edge either.
+        var (_, width) = PopoverAcross(0);
         return FormattableString.Invariant(
-            $"left: {Math.Max(0, _visibleWidthPx)}px; top: {BandHeightPx}px; transform: translateX(-100%); min-width: {narrowest}px; max-width: {widest}px; max-height: {HeaderPopoverRoomPx}px");
+            $"left: {Math.Max(0, _visibleWidthPx)}px; top: {BandHeightPx}px; transform: translateX(-100%); {width}; max-height: {HeaderPopoverRoomPx}px");
     }
 
-    /// <summary>A word of the built-in panels, through the Consumer's labels first.</summary>
+    /// <summary>A word of the built-in menus and panels, through the Consumer's labels first.</summary>
     private string Label(string id) => CommandLabel?.Invoke(id) ?? BuiltInCommandLabels.For(id);
 
     /// <summary>Whether the Cell Editor opens here: an editable column, and a row that
@@ -5125,7 +5138,7 @@
     /// gate — a 1×1 shape, so only the empty selection and the Editable declaration can
     /// refuse it, in ADR-0035's order. No verdict runs: there is no value to judge.
     /// </summary>
-    private async Task ClearSelectionAsync()
+    private async Task RaiseClearIntentAsync()
     {
         var decision = ClipboardRules.PlanPaste(_selection.Selection, new PasteShape(1, 1), ColumnIsEditable);
         if (decision.IsRefused)
@@ -5412,8 +5425,6 @@
         await PushEditingModeAsync();
         await ReclaimFocusAsync();
     }
-
-    private void OnEditorInput(ChangeEventArgs e) => _editText = e.Value?.ToString() ?? "";
 
     /// <summary>The core wants the editor's control to hold DOM focus: the built-in
     /// input is focused after the render; a Chrome's control is told through the
@@ -6270,6 +6281,10 @@
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
+        // A Find step still out is nobody's any more: the Consumer's search is told to stop
+        // (ADR-0047, the fetching Source's rule).
+        _findCancellation?.Cancel();
+        _findCancellation = null;
         _settleTimer?.Dispose();
         _edgeTimer?.Dispose();
         _announceTimer?.Dispose();
@@ -6339,7 +6354,7 @@
             _rootStyleStretch = stretch;
             _rootStyle = string.Create(
                 CultureInfo.InvariantCulture,
-                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{FillRootStyle(stretch.Item1, stretch.Item2)}");
+                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{StretchRootStyle(stretch.Item1, stretch.Item2)}");
         }
         return _rootStyle;
     }
@@ -6352,7 +6367,7 @@
     /// one. A Stretch width only has to be allowed to shrink in a flex row, since a block
     /// already takes its parent's width.
     /// </summary>
-    private static string FillRootStyle(bool fillWidth, bool fillHeight) => (fillWidth, fillHeight) switch
+    private static string StretchRootStyle(bool stretchWidth, bool stretchHeight) => (stretchWidth, stretchHeight) switch
     {
         (true, true) => "; display: flex; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0; min-width: 0",
         (false, true) => "; display: flex; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0",

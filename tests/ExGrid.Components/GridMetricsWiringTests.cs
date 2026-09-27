@@ -173,7 +173,7 @@ public class GridMetricsWiringTests : GridTestContext
     [Fact] // ADR-0028: a Stretch width may shrink in a flex row; a declared grid carries none of it
     public void A_stretch_width_may_shrink_and_a_declared_grid_carries_no_stretch_values()
     {
-        var fillWidth = Render<ExGrid<TestRow>>(ps => ps
+        var stretchWidth = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Window())
             .Add(g => g.Columns, TestRows.Columns())
             .Add(g => g.ViewportHeight, 200)
@@ -184,7 +184,7 @@ public class GridMetricsWiringTests : GridTestContext
             .Add(g => g.ViewportHeight, 200)
             .Add(g => g.ViewportWidth, 350));
 
-        var root = fillWidth.Find(".ex-grid").GetAttribute("style")!;
+        var root = stretchWidth.Find(".ex-grid").GetAttribute("style")!;
         Assert.Contains("min-width: 0", root);
         Assert.DoesNotContain("height: 100%", root);
         var plain = declared.Find(".ex-grid").GetAttribute("style")!;

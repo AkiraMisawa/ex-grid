@@ -1,4 +1,3 @@
-@using FindOutcome = global::ExGrid.Finding.FindOutcome
 @* The find panel under MudBlazor (ADR-0047/0030): a MudTextField, the two options as
    MudCheckBoxes and the two steps as MudButtons, inside the core's popover. The search, the
    Focus it moves and what closes the panel are the core's; this draws and calls back.
@@ -43,12 +42,7 @@
 
     private string Own(string id) => MudExGridWords.Own(Chrome, id);
 
-    private string OutcomeText => Context.Outcome switch
-    {
-        FindOutcome.NotFound => Own(FindPanelLabelIds.NotFound),
-        FindOutcome.OrderChanged => Own(FindPanelLabelIds.OrderChanged),
-        _ => "",
-    };
+    private string OutcomeText => FindPanelLabelIds.For(Context.Outcome) is { } said ? Own(said) : "";
 
     protected override void OnParametersSet()
     {

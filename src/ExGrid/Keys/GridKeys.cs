@@ -8,8 +8,9 @@ namespace ExGrid.Keys;
 /// browser — which matters here more than usual, because the other half of this seam
 /// lives in JavaScript.
 ///
-/// <para><b>The same table is read twice.</b> <see cref="Taken"/> is handed to the JS
-/// listener at attach time so it can <c>preventDefault</c> <em>synchronously</em> — the
+/// <para><b>The same table is read twice.</b> <see cref="TakenFor"/> — <see cref="Taken"/> and
+/// the keys this grid's claims add — is handed to the JS listener at attach time, and again
+/// whenever the claims change, so it can <c>preventDefault</c> <em>synchronously</em> — the
 /// interop call is asynchronous, and by the time an answer came back the event would be
 /// over. <see cref="Resolve(string, bool, bool, bool, bool, bool)"/> then decides what
 /// the key means, from the raw fields the listener forwards. <b>This side is the
@@ -37,9 +38,11 @@ public static class GridKeys
     private static readonly Dictionary<string, Func<GridKeyClaims, bool>> Conditions = BuildConditions();
 
     /// <summary>
-    /// The keys the core takes, in canonical form. Handed to the JS listener, which takes
-    /// exactly these and lets everything else through — a grid that swallowed Ctrl+F or
-    /// Cmd+R would be taking the browser's keys, not its own.
+    /// The keys the core takes on every grid, in canonical form. The JS listener takes exactly
+    /// these and the ones <see cref="TakenFor"/> adds, and lets everything else through — a key
+    /// taken for no meaning of the grid's is a key stolen from the browser. Ctrl+F is here
+    /// because the browser's own find would be a wrong answer on a virtualised grid (ADR-0047);
+    /// Ctrl+R only on a grid that edits, where it is Excel's fill (ADR-0035).
     ///
     /// <para>Not here, deliberately: Ctrl+C / Ctrl+V (the clipboard rides the browser's
     /// own <c>copy</c> and <c>paste</c> events — taking the keys would suppress the very

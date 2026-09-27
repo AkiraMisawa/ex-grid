@@ -36,7 +36,7 @@ public static class BuiltInCommandLabels
         FindPanelLabelIds.Next => "Find next",
         FindPanelLabelIds.Previous => "Find previous",
         FindPanelLabelIds.NotFound => "No match",
-        FindPanelLabelIds.OrderChanged => "The rows were reordered; search again",
+        FindPanelLabelIds.OrderChanged => "The rows moved; find again",
         _ => id,
     };
 }

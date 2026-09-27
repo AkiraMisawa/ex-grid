@@ -113,3 +113,44 @@ instance, as Excel's dialog keeps its last search.
 - **Ctrl+F is no longer the browser's while the grid is focused**, on every grid. A Consumer that
   wants the browser's search back has no switch for it, on purpose: that search is the wrong
   answer for a virtualised grid.
+
+## Settled in review — 2026-09-27
+
+*(A review of the first implementation found three cases this ADR had left open, and one
+mechanism that did not hold. Each was decided with the user; the text above is unchanged, and
+this section overrides it where the two differ.)*
+
+**Ctrl+F inside the grid's own popovers is the grid's too.** The gate had followed ADR-0039's rule
+that a popover's contents own every key but Escape, so Ctrl+F pressed in the find field — the
+natural way back to it — opened the browser's search, which FD-1 forbids. Now:
+
+- in the find panel's field, Ctrl+F selects the field's text, as Excel's dialog does. It is done
+  by the key listener itself, as the held-key replay already types into a field (ADR-0010): the
+  selection is the field's own behaviour, not a meaning the grid gives the key, and the core is
+  not told;
+- in any other of the grid's popovers — a column's, the Context Menu — Ctrl+F closes that popover
+  and opens the find panel, exactly as it would from the root;
+- in a Consumer's control inside a Template cell the key stays the control's, as before.
+
+**`OnFind` beside a bound Source is refused by name**, as `Window` beside `Source` is
+([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md), FN-2). `OnFind` is the push
+mode's answer; with a Source bound there would be two answers to one question, and silently
+preferring either is the quiet choice the spine refuses.
+
+**An answer outside the request is the Consumer's defect, raised by name.** A column name that is
+not among the request's `Columns`, or a row outside the result the grid holds, cannot be the
+answer to the question asked, so the grid throws, naming the request — it does not reword a bug as
+"the rows were reordered". `OrderChanged` keeps exactly one meaning: **the order, or the visible
+columns, moved while the step was out** — the version differs, or a column the request named has
+since left the grid.
+
+**The column's format travels in `ColumnInfo`, not a composed text function.** A closure built per
+column made `ColumnInfo`'s record equality fail for every rebuilt column, so a Consumer that
+rebuilds its column array made `InMemoryGridSource` requery on every repush — its documented no-op
+lost. `ColumnInfo` carries `Format`, compared by delegate identity like `Value`, and answers the
+displayed text itself (`TextOf`), which is also the one place the rule is written: the row paints
+by it and a Source matches by it.
+
+The public surface this ADR adds is therefore also `GridFind` (the reference step), `FindPanelLabelIds`
+(the built-in panel's words), `GridSelection.FocusOn`, and `GridKeyClaims.CanFind` beside the
+other key claims.

@@ -5,7 +5,7 @@ namespace ExGrid.Finding;
 /// <summary>
 /// One step of a Find (ADR-0047): what to look for, where to start, which way, and in what.
 /// The grid asks and the Consumer answers, as it answers for sort and filter; the grid only
-/// moves the Focus. <see cref="GridFind.Search{TRow}"/> is the reference for what a match is.
+/// moves the Focus. <see cref="GridFind.Step{TRow}"/> is the reference for what a match is.
 /// </summary>
 public sealed record GridFindRequest
 {

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched } from './fixtures.mjs';
 
 // Excel's editing keys with real keys on /features (ADR-0007/0035/0046): undo and redo
 // forwarded to the Consumer's history, Delete's Clear Intent, Backspace, and the fill keys —
@@ -25,28 +25,6 @@ async function clickCell(page, row, column, modifiers = []) {
     await cell(page, row, column).click({ force: true, modifiers });
 }
 
-// Whether the next keydown reached the page with its default intact — the listener is
-// installed on document, past the grid's capture-phase one, BEFORE the press (KB-15). A key
-// the grid takes is prevented AND stopped, so the listener never hears it: null afterwards
-// means taken, true means untouched.
-async function watchNextKey(page) {
-    await page.evaluate(() => {
-        window.__keySeen = null;
-        // The modifiers go down first, as keydowns of their own, and the grid takes none of
-        // them: the chord is the first keydown that is not a bare modifier.
-        const listener = (e) => {
-            if (['Control', 'Meta', 'Shift', 'Alt'].includes(e.key)) {
-                return;
-            }
-            window.__keySeen = !e.defaultPrevented;
-            document.removeEventListener('keydown', listener);
-        };
-        document.addEventListener('keydown', listener);
-    });
-}
-
-const keySeenUntouched = (page) => page.evaluate(() => window.__keySeen);
-
 test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken (KB-37, ADR-0007)', async ({ page }) => {
     const trader = cell(page, 0, 1);
     const before = await trader.textContent();
@@ -56,9 +34,9 @@ test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken 
     await expect(trader).toHaveText('Undone');
 
     await clickCell(page, 0, 1);
-    await watchNextKey(page);
+    await watchNextKey(page, ['z', 'Z']);
     await page.keyboard.press('ControlOrMeta+z');
-    await expect(page.locator('#history-status')).toContainText('1 rows undone');
+    await expect(page.locator('#history-status')).toContainText('1 changes undone');
     await expect(trader).toHaveText(before);
     expect(await keySeenUntouched(page), 'the grid took Ctrl+Z').not.toBe(true);
 
@@ -66,7 +44,7 @@ test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken 
     await expect(trader).toHaveText('Undone');
     await page.keyboard.press('ControlOrMeta+z');
     await page.keyboard.press('ControlOrMeta+Shift+Z');
-    await expect(page.locator('#history-status')).toContainText('1 rows redone');
+    await expect(page.locator('#history-status')).toContainText('1 changes redone');
     await expect(trader).toHaveText('Undone');
 });
 
@@ -90,7 +68,7 @@ test('inside the editor Ctrl+Z, Delete and Backspace are the input\'s own (ADR-0
 test('Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24, ADR-0046)', async ({ page }) => {
     await clickCell(page, 0, 1);
     await clickCell(page, 2, 1, ['Shift']);
-    await watchNextKey(page);
+    await watchNextKey(page, 'Delete');
     await page.keyboard.press('Delete');
 
     await expect(page.locator('#clear-status')).toContainText('3 cells, 3 applied');
@@ -101,7 +79,7 @@ test('Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24
 
     // One intent, so one Ctrl+Z puts all three back.
     await page.keyboard.press('ControlOrMeta+z');
-    await expect(page.locator('#history-status')).toContainText('3 rows undone');
+    await expect(page.locator('#history-status')).toContainText('3 changes undone');
     await expect(cell(page, 1, 1)).not.toHaveText('');
 });
 
@@ -139,7 +117,7 @@ test('Ctrl+D fills down and Ctrl+R fills right, and the browser keeps neither ke
     const top = await cell(page, 4, 1).textContent();
     await clickCell(page, 4, 1);
     await clickCell(page, 6, 1, ['Shift']);
-    await watchNextKey(page);
+    await watchNextKey(page, ['d', 'D']);
     await page.keyboard.press('ControlOrMeta+d');
 
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1, 2 applied');
@@ -150,7 +128,7 @@ test('Ctrl+D fills down and Ctrl+R fills right, and the browser keeps neither ke
     // Ctrl+R on one Notional cell reads the Trader to its left — a name, which this
     // Consumer cannot parse as a notional, so nothing applies; the intent was raised.
     await clickCell(page, 7, 2);
-    await watchNextKey(page);
+    await watchNextKey(page, ['r', 'R']);
     await page.keyboard.press('ControlOrMeta+r');
     await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1, 0 applied');
     expect(await keySeenUntouched(page), 'the grid took Ctrl+R — the page did not reload').not.toBe(true);
@@ -162,16 +140,22 @@ test('Ctrl+D on the first row is refused by name (CP-25, ADR-0035)', async ({ pa
     await expect(page.locator('#paste-refused-status')).toContainText('NothingToFillFrom');
 });
 
-test('a display-only grid leaves Delete, Backspace and Ctrl+Z to the page (ED-25, KB-37)', async ({ page }) => {
+test('a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25, KB-37, ADR-0046/0035/0007)', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();
     await cells.locator("[id$='r0c0']").click({ force: true });
 
-    for (const key of ['Delete', 'Backspace', 'ControlOrMeta+z']) {
-        await watchNextKey(page);
-        await page.keyboard.press(key);
-        expect(await keySeenUntouched(page), `${key} reached the page untouched`).toBe(true);
+    const keys = [
+        ['Delete', 'Delete'], ['Backspace', 'Backspace'], ['ControlOrMeta+z', ['z', 'Z']],
+        ['ControlOrMeta+d', ['d', 'D']], ['ControlOrMeta+r', ['r', 'R']],
+    ];
+    for (const [press, name] of keys) {
+        // Stopped by the test once the page has seen it, so Ctrl+R does not reload the page
+        // under it and Ctrl+D opens no bookmark bubble.
+        await watchNextKey(page, name, { preventAfter: true });
+        await page.keyboard.press(press);
+        expect(await keySeenUntouched(page), `${press} reached the page untouched`).toBe(true);
     }
     await expect(cells.locator('.ex-editor')).toHaveCount(0);
 });

@@ -58,8 +58,8 @@ public class FindTests : GridTestContext
             }
         });
 
-    private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, bool ctrl = false, bool shift = false)
-        => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
+    private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, bool ctrl = false, bool shift = false, bool alt = false)
+        => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, alt, false, false));
 
     private static Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, bool shift = false)
         => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y, ShiftKey = shift });
@@ -125,6 +125,7 @@ public class FindTests : GridTestContext
         Assert.Equal(new CellPosition(1, 1), request.From);
         Assert.Null(request.Scope);
         Assert.Equal(["Book", "Amount", "AsOf"], request.Columns);
+        Assert.Equal(0, request.RowSequenceVersion);
     }
 
     [Fact] // ADR-0047 / FD-5: a found cell becomes the Focus, and the selection collapses onto it
@@ -274,5 +275,100 @@ public class FindTests : GridTestContext
         await SearchAsync(cut, "Row 000150");
 
         Assert.Equal(new CellPosition(150, 0), heard.Selection!.Focus);
+    }
+
+    [Fact] // ADR-0047 / FD-5: a match outside the Window is reached: the Focus lands on it and the grid scrolls there
+    public async Task A_match_outside_the_window_is_scrolled_to()
+    {
+        var heard = new Heard();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 5000)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.OnFind, (request, _) => Task.FromResult(GridFindResult.Found(4000, "Book")))
+            .Add(g => g.SelectionChanged, s => heard.Selection = s));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "f", ctrl: true);
+
+        await SearchAsync(cut, "Row 004000");
+
+        Assert.Equal(new CellPosition(4000, 0), heard.Selection!.Focus);
+        Assert.Contains(Js.ScrolledTo, offset => offset.Top > 4000 * 20 - 200);
+    }
+
+    [Fact] // ADR-0047 / FD-10: OnFind beside a bound Source is two answers to one question, refused by name
+    public void On_find_beside_a_source_is_refused_by_name()
+    {
+        var failure = Assert.ThrowsAny<Exception>(() => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, GridSource.From(TestRows.Many(10)))
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.OnFind, (request, _) => Task.FromResult(GridFindResult.NotFound))));
+
+        Assert.Contains("OnFind", failure.Message);
+        Assert.Contains("Source", failure.Message);
+    }
+
+    [Theory] // ADR-0047 / FD-11: an answer outside the request is the Consumer's defect, named
+    [InlineData(3, "Elsewhere")]
+    [InlineData(500, "Book")]
+    public async Task An_answer_outside_the_request_throws_naming_it(int row, string column)
+    {
+        var cut = RenderGrid(new Heard(), Answer(row, column));
+        await PressAsync(cut, "f", ctrl: true);
+        await cut.Find("input.ex-find-field").InputAsync(new ChangeEventArgs { Value = "Row" });
+
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => cut.Find("button.ex-find-next").ClickAsync(new MouseEventArgs()));
+
+        Assert.Contains("outside the request", failure.Message);
+    }
+
+    [Fact] // ADR-0047 / FD-11: a requested column that left the grid while the step was out is OrderChanged
+    public async Task A_column_that_left_while_the_step_was_out_is_order_changed()
+    {
+        var heard = new Heard();
+        var answer = new TaskCompletionSource<GridFindResult>();
+        var cut = RenderGrid(heard, (_, _) => answer.Task);
+        await PressAsync(cut, "f", ctrl: true);
+        await cut.Find("input.ex-find-field").InputAsync(new ChangeEventArgs { Value = "Row" });
+        var step = cut.Find("button.ex-find-next").ClickAsync(new MouseEventArgs());
+
+        cut.Render(ps => ps.Add(g => g.Columns, Columns()[..2]));
+        await cut.InvokeAsync(() => answer.SetResult(GridFindResult.Found(1, "AsOf")));
+        await step;
+
+        Assert.Equal([FindRefusalReason.OrderChanged], heard.Refusals);
+    }
+
+    [Fact] // ADR-0047 / FD-8: the panel stays inside the grid's box — anchored at its right edge, bounded below
+    public async Task The_panel_is_placed_inside_the_grids_box()
+    {
+        var cut = RenderGrid(new Heard(), Answer(0, "Book"));
+
+        await PressAsync(cut, "f", ctrl: true);
+
+        var style = cut.Find(".ex-popover-find").GetAttribute("style")!;
+        Assert.Contains("transform: translateX(-100%)", style);
+        Assert.Contains("max-width:", style);
+        Assert.Contains("max-height:", style);
+    }
+
+    [Fact] // ADR-0047 / FD-1 / FD-8: Ctrl+F from inside another popover closes it and opens the one find panel
+    public async Task Ctrl_f_from_a_column_menu_opens_the_find_panel_in_its_place()
+    {
+        var cut = RenderGrid(new Heard(), Answer(0, "Book"));
+        // A column menu exists only where a command can reach the Consumer (ADR-0010).
+        cut.Render(ps => ps.Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> _) => { }));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "ArrowDown", alt: true); // the Focus column's menu
+        Assert.Single(cut.FindAll(".ex-popover"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("f", true, false, false, false, false, fromDescendant: true));
+
+        Assert.Single(cut.FindAll(".ex-popover"));
+        Assert.Single(cut.FindAll(".ex-popover-find"));
     }
 }

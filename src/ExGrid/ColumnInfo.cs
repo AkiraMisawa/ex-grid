@@ -9,10 +9,22 @@ namespace ExGrid;
 /// value at all: the engine then refuses to sort or filter on it by name rather than
 /// ordering every row by nothing (ADR-0020).</para>
 ///
-/// <para><paramref name="Text"/> is the text the cell displays — the column's format applied —
-/// which is what a Find matches (ADR-0047). A Source that searches has to format exactly as
-/// the grid does, so the grid hands it the function rather than leaving it to be re-derived.
-/// Null where the column displays no value of its own.</para>
+/// <para><paramref name="Format"/> is the column's display format, null for the value's own
+/// <c>ToString</c>. It travels here so that a Source can answer a Find against the text the user
+/// reads (ADR-0047) — through <see cref="TextOf(TRow)"/>, the one place the displayed-text rule is
+/// written, which the row paints by too. It is compared by delegate identity like
+/// <paramref name="Value"/>, so a column rebuilt from the same declaration is the same column
+/// to a Source.</para>
 /// </summary>
 public sealed record ColumnInfo<TRow>(
-    string Name, ColumnType Type, Func<TRow, object?> Value, bool IsQueryable = true, Func<TRow, string>? Text = null);
+    string Name, ColumnType Type, Func<TRow, object?> Value, bool IsQueryable = true, Func<object, string>? Format = null)
+{
+    /// <summary>The text a cell of this column displays for a row: empty for a Blank, the
+    /// <see cref="Format"/> applied where there is one, the value's own text otherwise.</summary>
+    public string TextOf(TRow row) => TextOfValue(Value(row));
+
+    /// <summary>The same text from a value already extracted — the row fetches the value once
+    /// and derives both its text and its tone from it.</summary>
+    public string TextOfValue(object? value)
+        => value is null ? "" : Format is { } format ? format(value) : value.ToString() ?? "";
+}

@@ -79,7 +79,7 @@ public readonly record struct ViewportBox
 
     /// <summary>One axis alone, validated and subtracted — what a grid whose other axis
     /// is <c>Stretch</c> needs (ADR-0028): the declared axis keeps its refusals while the
-    /// filled one is an observation with none to make.</summary>
+    /// stretched one is an observation with none to make.</summary>
     public static double VisibleWidthOf(double outerWidthPx, double gutterWidthPx)
     {
         Check(outerWidthPx, nameof(outerWidthPx), gutterWidthPx, nameof(gutterWidthPx), "wide", "vertical");

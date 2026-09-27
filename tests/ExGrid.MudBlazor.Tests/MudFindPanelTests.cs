@@ -68,7 +68,7 @@ public class MudFindPanelTests : MudTestContext
         Assert.Equal("No match", outcome.TextContent.Trim());
     }
 
-    [Fact] // WR-3: the Chrome's Label words the panel
+    [Fact] // ADR-0047 / ADR-0030 / WR-3: the Chrome's Label words the panel
     public void The_chrome_words_the_panel()
     {
         var chrome = new MudGridChrome { Label = id => id == FindPanelLabelIds.Next ? "Weiter" : null };

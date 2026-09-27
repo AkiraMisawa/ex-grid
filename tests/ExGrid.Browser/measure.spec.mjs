@@ -181,7 +181,7 @@ test('how long the stale band stands while the window is dragged over a Stretch 
         };
     }
     await setRoundTrip(0);
-    record(testInfo.project.name, { 'FILL-DRAG': results });
-    testInfo.annotations.push({ type: 'FILL-DRAG', description: JSON.stringify(results) });
-    console.log(`FILL-DRAG ${JSON.stringify(results)}`);
+    record(testInfo.project.name, { 'STRETCH-DRAG': results });
+    testInfo.annotations.push({ type: 'STRETCH-DRAG', description: JSON.stringify(results) });
+    console.log(`STRETCH-DRAG ${JSON.stringify(results)}`);
 });

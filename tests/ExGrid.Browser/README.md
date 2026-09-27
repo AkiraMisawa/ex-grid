@@ -49,7 +49,8 @@ test.
 
 `circuit.spec.mjs` holds what only a circuit can fail — keys typed faster than a round
 trip (ED-22), a paste past the hub's message limit (CP-21), a write the browser rejects
-(CP-23), the Prerendered paint (A11Y-20), two users over one store (SRV-3). It runs on
+(CP-23), the Prerendered paint (A11Y-20), two users over one store (SRV-3), and text typed at
+full speed into the editor, the filter's search box and the find field arriving whole (SRV-7). It runs on
 both hosts; a test that has no meaning on WebAssembly is skipped there by name.
 
 ## Installing the browsers
@@ -131,13 +132,15 @@ hide it.
   Ctrl+Shift+Z reaching the page's undo stack (KB-37), Delete's Clear Intent and its
   refusal (ED-24), Backspace's empty editor (ED-23), Ctrl+D / Ctrl+R and a fill refused by
   name (CP-24/25), the keys staying the input's own inside the editor, and — on `/cells` —
-  a display-only grid leaving Delete, Backspace and Ctrl+Z to the page (ED-25).
+  a display-only grid leaving Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25).
 - `find.spec.mjs` — Find (ADR-0047), **run once per Chrome** on `/features`: Ctrl+F taken
   from the browser and the keys typed after it landing in the panel's field, Enter and
   Shift+Enter stepping, a match beyond the painted rows revealed, "no match" in a live
-  region, Escape handing the keyboard back (FD-1/3/5/6); a range searched and kept (FD-4);
-  Tab staying inside the panel (FD-8); Ctrl+F taken and nothing opened on `/cells`, which
-  wires no search (FD-2); and nothing done in the editor (FD-1).
+  region, Escape handing the keyboard back, a range searched and kept, a capital and a
+  Shift+Enter typed straight after Ctrl+F keeping their meaning, Ctrl+F in the find field
+  selecting its text and in a column's popover opening Find (FD-1/3/4/5/6); the panel inside the
+  grid's box, one per page, and Tab staying inside it (FD-8); Ctrl+F taken and nothing opened
+  on `/cells`, which wires no search (FD-2); and nothing done in the editor (FD-1).
 - `popovers.spec.mjs` — the popovers on `/features`, **run once per Chrome**: the
   built-in one and `ExGrid.MudBlazor`'s (`/features?chrome=mud`), which must give
   identical outcomes (WR-5, FN-17). The three dismissals, a pointer-down keeping its own

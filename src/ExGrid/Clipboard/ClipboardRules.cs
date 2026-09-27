@@ -134,53 +134,55 @@ public static class ClipboardRules
 
         if (selection.IsEmpty)
             return FillDecision.Refuse(PasteRefusalReason.EmptySelection);
-        // Before anything that needs to know where the source is: with several ranges
-        // there is no one source, and no one target to judge.
+
+        // The declaration first (ADR-0035): each range is judged on the target it would have on
+        // its own, so a range at the first row over a non-editable column is refused for the
+        // column — the refusal no reselection cures — and a multi-range selection is refused
+        // for it before it is refused for being several ranges.
+        foreach (var candidate in selection.Ranges)
+        {
+            if (!EveryColumnIsEditable([TargetOf(candidate, direction)], columnIsEditable))
+                return FillDecision.Refuse(PasteRefusalReason.TargetNotEditable);
+        }
+        // With several ranges there is no one source for one intent.
         if (selection.Ranges.Count > 1)
             return FillDecision.Refuse(PasteRefusalReason.MultipleRanges);
 
         var range = selection.Ranges[0];
-        SelectionRange source, target;
-        if (direction == GridDirection.Down)
-        {
-            if (range.RowCount == 1)
-            {
-                if (range.TopRow == 0)
-                    return FillDecision.Refuse(PasteRefusalReason.NothingToFillFrom);
-                source = new SelectionRange(range.TopRow - 1, range.LeftColumn, 1, range.ColumnCount);
-                target = range;
-            }
-            else
-            {
-                source = new SelectionRange(range.TopRow, range.LeftColumn, 1, range.ColumnCount);
-                target = new SelectionRange(range.TopRow + 1, range.LeftColumn, range.RowCount - 1, range.ColumnCount);
-            }
-        }
-        else
-        {
-            if (range.ColumnCount == 1)
-            {
-                if (range.LeftColumn == 0)
-                    return FillDecision.Refuse(PasteRefusalReason.NothingToFillFrom);
-                source = new SelectionRange(range.TopRow, range.LeftColumn - 1, range.RowCount, 1);
-                target = range;
-            }
-            else
-            {
-                source = new SelectionRange(range.TopRow, range.LeftColumn, range.RowCount, 1);
-                target = new SelectionRange(range.TopRow, range.LeftColumn + 1, range.RowCount, range.ColumnCount - 1);
-            }
-        }
-
-        // The declaration outranks the size, as it outranks a paste's shape (ADR-0035):
-        // no smaller selection of these columns would ever be accepted.
-        if (!EveryColumnIsEditable([target], columnIsEditable))
-            return FillDecision.Refuse(PasteRefusalReason.TargetNotEditable);
+        if (SourceOf(range, direction) is not { } source)
+            return FillDecision.Refuse(PasteRefusalReason.NothingToFillFrom);
         if (source.CellCount > cellCap)
             return FillDecision.Refuse(PasteRefusalReason.TooLarge);
+        var target = TargetOf(range, direction);
 
         var shape = new PasteShape(source.RowCount, source.ColumnCount);
         return FillDecision.Approve(new FillPlan(source, new PastePlan([target], shape)));
+    }
+
+    /// <summary>What a fill key writes over one range: the rows below its top row (the columns
+    /// right of its left column), or the whole range when it is one row tall (one column wide) and
+    /// fills from outside it (ADR-0035).</summary>
+    private static SelectionRange TargetOf(SelectionRange range, GridDirection direction) => direction == GridDirection.Down
+        ? range.RowCount == 1
+            ? range
+            : new SelectionRange(range.TopRow + 1, range.LeftColumn, range.RowCount - 1, range.ColumnCount)
+        : range.ColumnCount == 1
+            ? range
+            : new SelectionRange(range.TopRow, range.LeftColumn + 1, range.RowCount, range.ColumnCount - 1);
+
+    /// <summary>What a fill key reads for one range: its top row (left column), or the row above
+    /// (column to the left) of a range one cell deep — null when there is none (ADR-0035).</summary>
+    private static SelectionRange? SourceOf(SelectionRange range, GridDirection direction)
+    {
+        if (direction == GridDirection.Down)
+        {
+            if (range.RowCount > 1)
+                return new SelectionRange(range.TopRow, range.LeftColumn, 1, range.ColumnCount);
+            return range.TopRow == 0 ? null : new SelectionRange(range.TopRow - 1, range.LeftColumn, 1, range.ColumnCount);
+        }
+        if (range.ColumnCount > 1)
+            return new SelectionRange(range.TopRow, range.LeftColumn, range.RowCount, 1);
+        return range.LeftColumn == 0 ? null : new SelectionRange(range.TopRow, range.LeftColumn - 1, range.RowCount, 1);
     }
 
     /// <summary>Every column the target covers, across every range. Columns, not cells:

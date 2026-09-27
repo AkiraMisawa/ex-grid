@@ -103,7 +103,7 @@ public interface IGridSource<TRow>
 
     /// <summary>
     /// The next cell whose displayed text matches, in the order the request was read in
-    /// (ADR-0047). <see cref="Finding.GridFind.Search{TRow}"/> is the reference for what a
+    /// (ADR-0047). <see cref="Finding.GridFind.Step{TRow}"/> is the reference for what a
     /// match is. Called only when <see cref="CanFind"/>; the default refuses by name.
     /// </summary>
     Task<Finding.GridFindResult> FindAsync(Finding.GridFindRequest request, CancellationToken cancellationToken)

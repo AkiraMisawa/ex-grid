@@ -14,7 +14,7 @@ namespace ExGrid.Components.Tests;
 /// undo and redo forwarded, Backspace, Delete's Clear Intent, and the fill keys. Whether
 /// the browser's keydown is taken is the gate's, and layer 3's; which keys the gate is
 /// told to take is asserted here. 20px rows, Book (editable) and Amount (editable) then
-/// Note (not editable), each 100px.
+/// AsOf (not editable), each 100px.
 /// </summary>
 public class ExcelKeyTests : GridTestContext
 {
@@ -25,7 +25,7 @@ public class ExcelKeyTests : GridTestContext
         new("Book", ColumnType.Text, r => r.Book, width: Fixed100, editable: editable, validate: validate),
         new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100, editable: editable, validate: validate,
             format: v => ((decimal)v).ToString("N0", System.Globalization.CultureInfo.InvariantCulture)),
-        new("Note", ColumnType.Date, r => r.AsOf, width: Fixed100),
+        new("AsOf", ColumnType.Date, r => r.AsOf, width: Fixed100),
     ];
 
     private sealed class Heard
@@ -173,7 +173,7 @@ public class ExcelKeyTests : GridTestContext
     {
         var heard = new Heard();
         var cut = RenderGrid(heard);
-        await ClickCellAsync(cut, 250, 10); // Note
+        await ClickCellAsync(cut, 250, 10); // AsOf
 
         await PressAsync(cut, "Backspace");
 
@@ -206,7 +206,7 @@ public class ExcelKeyTests : GridTestContext
         var heard = new Heard();
         var cut = RenderGrid(heard);
         await ClickCellAsync(cut, 150, 10);
-        await ClickCellAsync(cut, 250, 30, shift: true); // Amount..Note
+        await ClickCellAsync(cut, 250, 30, shift: true); // Amount..AsOf
 
         await PressAsync(cut, "Delete");
 
@@ -312,5 +312,44 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal([new RowRange(0, 500)], asked);
         Assert.Empty(heard.Pastes);
         Assert.Equal([PasteRefusalReason.SourceUnavailable], heard.Refusals);
+    }
+
+    [Fact] // ADR-0035 / CP-25: the Ctrl+R source column is read, not written, so it need not be editable
+    public async Task Ctrl_r_reads_a_source_column_that_does_not_edit()
+    {
+        var heard = new Heard();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, new GridColumn<TestRow>[]
+            {
+                new("Book", ColumnType.Text, r => r.Book, width: Fixed100),
+                new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100, editable: true),
+            })
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.OnPaste, p => heard.Pastes.Add(p))
+            .Add(g => g.OnPasteRefused, r => heard.Refusals.Add(r)));
+        await ClickCellAsync(cut, 150, 30); // (1, 1), Amount
+
+        await PressAsync(cut, "r", ctrl: true);
+
+        var paste = Assert.Single(heard.Pastes);
+        Assert.Equal("Row 000001", paste.ValueFor(new(1, 1)));
+        Assert.Empty(heard.Refusals);
+    }
+
+    [Fact] // ADR-0007 / KB-37: a Consumer that stops listening gives Ctrl+Z back — the gate is told again
+    public void The_gate_is_told_again_when_the_claims_change()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard, undo: true, redo: false);
+        Assert.Contains("Control+z", Js.TakenAtAttach);
+
+        cut.Render(ps => ps.Add(g => g.OnUndo, default(Microsoft.AspNetCore.Components.EventCallback)));
+
+        var told = Js.ClaimsTold.Invocations.Last().Arguments;
+        Assert.DoesNotContain("Control+z", (IReadOnlyList<string>)told[0]!);
     }
 }

@@ -387,3 +387,51 @@ test.describe('two users, one store (SRV-3, ADR-0018)', () => {
         }
     });
 });
+
+// A field whose value the grid renders by hand — value="@x" with an @oninput beside it — is
+// written back with the server's copy by every render, and on a circuit that copy is a round
+// trip behind the typing: "1000000.00123456789" became "1000000.001289", quietly. Only @bind
+// tells Blazor that the field's own value outranks a render's (SRV-7).
+test.describe('text typed at full speed into the grid\'s own fields arrives whole (SRV-7)', () => {
+    test.beforeEach(async ({ page }) => {
+        await openFeatures(page);
+        await setRoundTrip(50);
+    });
+
+    test('in the Cell Editor', async ({ page }) => {
+        await clickCell(page, 0, 2);                   // Notional, editable
+        await page.keyboard.press('F2');
+        const editor = grid(page).locator('input.ex-editor');
+        await expect(editor).toBeFocused();
+        await page.keyboard.press('End');
+        await page.keyboard.type('123456789');
+
+        await expect.poll(() => editor.inputValue(), { timeout: 3000 }).toMatch(/123456789$/);
+        // And stays whole once every round trip has landed.
+        await page.waitForTimeout(500);
+        expect(await editor.inputValue()).toMatch(/123456789$/);
+    });
+
+    test('in the find field (ADR-0047)', async ({ page }) => {
+        await clickCell(page, 0, 0);
+        await page.keyboard.press('ControlOrMeta+f');
+        const field = grid(page).locator('.ex-popover-find input').first();
+        await expect(field).toBeFocused();
+        await page.keyboard.type('5320984.5');
+
+        await page.waitForTimeout(500);
+        expect(await field.inputValue()).toBe('5320984.5');
+    });
+
+    test('in the filter\'s search box (ADR-0009)', async ({ page }) => {
+        await clickCell(page, 0, 0);                   // Book: a value list with a search box
+        await page.keyboard.press('Alt+ArrowDown');
+        await page.keyboard.press('e');
+        const field = grid(page).locator('.ex-popover-filter input').first();
+        await expect(field).toBeFocused();
+        await page.keyboard.type('Gammadelta');
+
+        await page.waitForTimeout(500);
+        expect(await field.inputValue()).toBe('Gammadelta');
+    });
+});

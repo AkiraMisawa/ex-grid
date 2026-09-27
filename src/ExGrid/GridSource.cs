@@ -36,7 +36,7 @@ public static class GridSource
     /// keeps none, and a Mark Column bound to this source is refused by name.</param>
     /// <param name="find">Answers a Find step (ADR-0047) against the result the handed Filter
     /// and Sorts produce — the ones in force — with the next matching position, as
-    /// <see cref="Finding.GridFind.Search{TRow}"/> would over that result. Null reports that
+    /// <see cref="Finding.GridFind.Step{TRow}"/> would over that result. Null reports that
     /// this source cannot search, and Ctrl+F is refused.</param>
     public static FetchingGridSource<TRow> Fetch<TRow>(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
