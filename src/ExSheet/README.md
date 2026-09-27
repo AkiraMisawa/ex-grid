@@ -46,7 +46,9 @@ Context Menu inserts and deletes the rows or columns the Selection spans; Refere
 the same cells, and a deleted target is `#REF!`. `CommandLabel` words the menu, by the ids in
 `SheetCommandIds` and the grid's own. A paste may spill from one cell, as in Excel; the pasted block becomes the
 Selection, and each field is read as if typed under the Sheet's culture. A copy carries the Values:
-as shown in `text/plain`, unformatted in `text/html`.
+as shown in `text/plain`, unformatted in `text/html`. The fill handle fills as Excel does: Formulas with their
+References shifted, a series from two or more numbers, and dates by day. Any other pattern is
+refused, and the user is told why.
 
 ## Commands and the undo stack
 

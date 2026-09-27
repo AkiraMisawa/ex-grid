@@ -26,7 +26,8 @@
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
-        OnCopyRowsNeeded="_copyRowsNeeded" OnCopyRefused="OnCopyRefused" />
+        OnCopyRowsNeeded="_copyRowsNeeded" OnCopyRefused="OnCopyRefused"
+        ShowFillHandle="true" OnFill="OnFillAsync" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -412,6 +413,41 @@
             StateHasChanged();
         }
     }
+
+    /// <summary>
+    /// A Fill Intent (ADR-0050, item 5), resolved as Excel fills by the engine: copy with
+    /// References shifted, a linear series from two or more numbers, dates by day, as one step
+    /// on the undo stack. Any other pattern is refused before anything is written: the grid is
+    /// told, so the Selection stays on the source, and the user is told why.
+    /// </summary>
+    private async Task OnFillAsync(GridFillIntent intent)
+    {
+        if (intent.RowSequenceVersion != 0)
+        {
+            intent.Refuse();
+            return;
+        }
+        var edit = SheetEdit.Fill(SheetFormulaAids.RangeOf(intent.Source), SheetFormulaAids.RangeOf(intent.Target), DirectionOf(intent.Direction));
+        // Refused synchronously, before the handler's first await: the grid reads the answer
+        // when the handler completes, and a refusal leaves the Selection on the source.
+        if (CurrentSheet.Check(edit) is { } refusal)
+        {
+            intent.Refuse();
+            _notice = SheetWords.Refused(refusal);
+            StateHasChanged();
+            return;
+        }
+        await PerformAsync(edit);
+    }
+
+    private static FillDirection DirectionOf(GridDirection direction) => direction switch
+    {
+        GridDirection.Down => FillDirection.Down,
+        GridDirection.Up => FillDirection.Up,
+        GridDirection.Right => FillDirection.Right,
+        GridDirection.Left => FillDirection.Left,
+        _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, "Not a direction a fill extends in."),
+    };
 
     private void OnPasteRefused(global::ExGrid.Clipboard.PasteRefusalReason reason)
     {

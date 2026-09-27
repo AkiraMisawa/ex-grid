@@ -1,6 +1,6 @@
 # 15: The fill handle and the Fill Intent
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** The fifth ADR-0050 declaration. The core paints the handle at the corner of the Selection's last
 range, owns the one-axis drag and its outline, checks `Editable`, and raises a Fill Intent on
@@ -10,11 +10,11 @@ other pattern. One fill is one undo step.
 
 **Blocked by:** 03, 05, 12
 
-- [ ] Off by default: no handle is painted (existing suites green)
-- [ ] A drag raises one Fill Intent with source, target and direction; the grid writes nothing (ADR-0050)
-- [ ] 1, 2 dragged gives 1, 2, 3, 4; a date gives the following days; a Formula shifts its References
-- [ ] `Item 1` dragged is refused, not filled with copies
-- [ ] A target covering a non-editable column is refused whole (ADR-0035)
+- [x] Off by default: no handle is painted (existing suites green)
+- [x] A drag raises one Fill Intent with source, target and direction; the grid writes nothing (ADR-0050)
+- [x] 1, 2 dragged gives 1, 2, 3, 4; a date gives the following days; a Formula shifts its References
+- [x] `Item 1` dragged is refused, not filled with copies
+- [x] A target covering a non-editable column is refused whole (ADR-0035)
 
 ## Comments
 
@@ -75,3 +75,17 @@ Intent per drag, `Editable` on the target, and handing the intent to `SheetEdit.
 as uncertain against Excel: the last binary digit of a trend value, the backwards repetition
 of a multi-cell pattern filled up or left, and Formulas mixed with text in one source (copied
 here).
+
+2026-09-27, ExSheet wiring: ExSheet declares `ShowFillHandle`. `OnFill` maps the intent's
+`Source`, `Target` and `Direction` onto `SheetEdit.Fill` and asks `Sheet.Check` first,
+synchronously, before the handler's first await. A refusal (`FillPatternNotSupported`,
+`FillShapeNotSupported`) calls `GridFillIntent.Refuse()`, so the Selection stays on the source,
+and puts the engine's sentence, which names the cell, in the notice. Anything else is done
+through the undo stack as one step, and the grid then selects the source and the target together
+(ADR-0050, item 5 refined). An intent under a Row Sequence Version other than 0 is refused. Layer 2
+drives a real drag through the grid's handle in `FillWiringTests`: the handle is painted, 1, 2 → 3,
+4 selecting A1:A4, a date by day, a Formula with its References shifted, `Item 1` refused with
+nothing written and the Selection on the source, and one undo. The first, second and fifth
+criteria are the core's, covered by its `FillHandleTests`, and ExSheet declares every column
+Editable. Layer 3 for DC-13 (a real mouse drag under both Chromes, and the edge auto-scroll)
+belongs to ticket 18.
