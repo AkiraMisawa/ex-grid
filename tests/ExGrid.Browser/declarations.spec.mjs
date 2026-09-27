@@ -198,8 +198,9 @@ test('DC-19: = ↓ ↓ points at F4, Shift+arrows extend, the Selection and the 
     await expect(bar(grid)).toHaveValue('=F4');
     const point = grid.locator('.ex-selection .ex-point');
     await expectCovers(point, grid, 'F4', 'F4');
-    // The Focus is still the cell being edited.
-    await expect(nameBox(grid)).toHaveValue('F2');
+    // The Focus is still the cell being edited; the Name Box names the pointed cell, as Excel's
+    // does (ADR-0051, observed 2026-09-27).
+    await expect(nameBox(grid)).toHaveValue('F4');
     await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c5$/);
     await expectCovers(grid.locator('.ex-selection .ex-focus'), grid, 'F2', 'F2');
 
@@ -215,6 +216,7 @@ test('DC-19: = ↓ ↓ points at F4, Shift+arrows extend, the Selection and the 
     // An operator ends pointing; the next arrow points afresh after it.
     await page.keyboard.type('+');
     await expect(point).toHaveCount(0);
+    await expect(nameBox(grid)).toHaveValue('F2');
     await page.keyboard.press('ArrowRight');
     await expect(editor(grid)).toHaveValue('=F4:G5+G2');
     // Enter commits the Formula into F2, where the edit began.
@@ -231,7 +233,7 @@ test('DC-19: a click points at the clicked cell; Shift+click extends', async ({ 
     await clickCell(grid, 'C3');
     await expect(editor(grid)).toHaveValue('=C3');
     await expectCovers(grid.locator('.ex-selection .ex-point'), grid, 'C3', 'C3');
-    await expect(nameBox(grid)).toHaveValue('F2');
+    await expect(nameBox(grid)).toHaveValue('C3');
     await clickCell(grid, 'C4', { modifiers: ['Shift'] });
     await expect(editor(grid)).toHaveValue('=C3:C4');
     await page.keyboard.type('*');

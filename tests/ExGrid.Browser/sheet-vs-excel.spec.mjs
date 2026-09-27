@@ -147,6 +147,7 @@ test('item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §
 });
 
 test('item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07)', async ({ page }) => {
+    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
     // Excel's layout was C2:G2 with the Focus on D2; the same block sits at E6:I6 here, in a row
     // /sheet leaves empty (row 1 holds headings in A1:D1, which would join the block).
     await click(page, 'E6');
@@ -169,6 +170,7 @@ test('item 2: Ctrl+Shift+Right from inside a row block selects to its end, then 
 });
 
 test('item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06)', async ({ page }) => {
+    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
     const header = (letter) => sheet(page).locator('.ex-header-cell', { hasText: new RegExp(`^${letter}$`) });
     await click(page, 'C3');
     await header('B').click({ force: true });
@@ -190,6 +192,7 @@ test('item 3: a column letter selects the column, Shift+click extends, the Focus
 });
 
 test('item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06)', async ({ page }) => {
+    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
     const heading = (n) => sheet(page).locator('.ex-row-heading', { hasText: new RegExp(`^${n}$`) }).first();
     await click(page, 'C3');
     await heading(2).click({ force: true });
@@ -205,6 +208,7 @@ test('item 4: a row number selects the row, Shift+click extends, the Focus in th
 });
 
 test('item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06)', async ({ page }) => {
+    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
     await click(page, 'C3');
     await sheet(page).locator('.ex-headings-corner').click({ force: true });
     await expectSelection(page, 'A1', 'XFD1048576');
@@ -274,7 +278,7 @@ test('item 8: F2 on a Formula shows it with the caret at the end, and the arrows
     expect(await entryOf(page, 'D2')).toBe('=B2*C2');
 });
 
-waitsOn(11)('item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11)', async ({ page }) => {
+test('item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11)', async ({ page }) => {
     await click(page, 'E5');
     await page.keyboard.type('=');
     await expect(cellEditor(page)).toHaveValue('=');
@@ -292,7 +296,7 @@ waitsOn(11)('item 9: Point mode by keys writes each Reference as the pointer mov
     await expect.soft(nameBox(page)).toHaveValue('E5');
 });
 
-waitsOn(11)('item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11)', async ({ page }) => {
+test('item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11)', async ({ page }) => {
     await click(page, 'E10');
     await page.keyboard.type('=');
     // A click while pointing: no waiting for the Name Box, which is the question here.
@@ -310,7 +314,7 @@ waitsOn(11)('item 10: Point mode by mouse writes the clicked cell, then the drag
     await expect(cellEditor(page)).toHaveValue('=C3:D4');
 });
 
-waitsOn(11)('item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11)', async ({ page }) => {
+test('item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11)', async ({ page }) => {
     await click(page, 'E5');
     await page.keyboard.type('=');
     await page.keyboard.press('ArrowDown');
@@ -323,7 +327,7 @@ waitsOn(11)('item 11: F2 while pointing turns the arrows back to the caret (ADR-
     expect(await cellEditor(page).evaluate((e) => e.selectionStart)).toBe(1);
 });
 
-waitsOn(11)('item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11)', async ({ page }) => {
+test('item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11)', async ({ page }) => {
     await click(page, 'E5');
     await bar(page).click();
     await page.keyboard.type('=');
@@ -332,7 +336,7 @@ waitsOn(11)('item 12: typing = in the Formula Bar and pressing Down does not poi
     await expect(bar(page)).toHaveValue('=');
 });
 
-waitsOn(10)('item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10)', async ({ page }) => {
+test('item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10)', async ({ page }) => {
     const list = sheet(page).locator('.ex-completion-list');
     await click(page, 'E5');
     await page.keyboard.type('=SUM');
@@ -355,7 +359,7 @@ waitsOn(10)('item 13: completion lists candidates, Tab takes one with its parent
     await expect(cellEditor(page)).toHaveCount(0);
 });
 
-waitsOn(10)('item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10)', async ({ page }) => {
+test('item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10)', async ({ page }) => {
     const hint = sheet(page).locator('.ex-completion-hint');
     await click(page, 'E5');
     await page.keyboard.type('=XLOOKUP(');
@@ -437,6 +441,7 @@ waitsOn(14)('item 19 and Part A item 10: pasted text =1+ is taken as that text (
 // ---- Fill (ADR-0050, item 5) --------------------------------------------------------------------
 
 test('item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15)', async ({ page }) => {
+    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
     await enter(page, 'E1', '1');
     await enter(page, 'E2', '3');
     await click(page, 'E1');
@@ -475,6 +480,7 @@ test('item 20: 1, 2, 4 continue as Excel\'s trend, to the 15 digits Excel keeps 
 });
 
 test('item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15)', async ({ page }) => {
+    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
     await enter(page, 'E5', '1');
     await enter(page, 'E6', '3');
     await click(page, 'E5');
