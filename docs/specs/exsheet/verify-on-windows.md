@@ -73,13 +73,16 @@ so the next run can repeat it. Commit both.
    text, by hand.
 7. **Spilled arrays.** `=A1:A3` in a cell, with values in `A1:A3`. Does it spill?
 8. **Whitespace.** Set `Formula` to `= A1 + B1`, then read `Formula` back.
-9. **Pasting unreadable Formula text.** Copy the text `=1+` from Notepad and paste it onto a cell.
+9. **XLOOKUP's binary search** (`search_mode` 2 and −2) over sorted data **with duplicate keys**:
+   which of the equal rows is returned? Also try unsorted data, and record what Excel returns
+   there, although the engine refuses it (ADR-0047).
+10. **Pasting unreadable Formula text.** Copy the text `=1+` from Notepad and paste it onto a cell.
    Is it refused, or taken as text? This is done by hand.
 
 **Where to record.**
 
 - Ticket 19's table, for its rows.
-- `verification/<date>-windows-excel/results.md` for items 2–9. Give one section per item, with
+- `verification/<date>-windows-excel/results.md` for items 2–10. Give one section per item, with
   the inputs, what Excel did, and what the engine does today. The engine's current behaviour is
   in the tests under `tests/ExSheet.Engine.Tests`, and in the `## Comments` of tickets 13–16.
 
