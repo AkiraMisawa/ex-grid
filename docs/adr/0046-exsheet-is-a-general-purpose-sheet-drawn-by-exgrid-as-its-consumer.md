@@ -161,3 +161,10 @@ Sheet has to rewrite the References to it in the other.
   as formats do. A width the user never set stays default and is not recorded.
 - **A style can be applied to several ranges in one step**, whole columns and rows included. It is
   one undo step, like any other operation.
+
+- **A recorded width says whether the user set it** *(decided with the user, 2026-09-27)*. A width
+  set by an entry that widened the column is recorded, so the document reopens as the user saw it.
+  It stays **automatic**, and a longer entry widens it again. Only a width the user set (a drag, a
+  size to fit, a command) is **custom** and stops automatic widening. Excel keeps the same
+  distinction in its files (`customWidth`). This refines the bullet above: "a width the user never
+  set" is automatic, and it is recorded as such.

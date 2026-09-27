@@ -184,3 +184,9 @@ on a double-click of the edge.
 ([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)). The keyboard
 goes back to the editor, and whatever is typed next lands in the Formula, where it can be seen.
 Nothing typed is thrown away, so this is kept.
+
+**13. The copy-with-headers command can be left out.** A Consumer can declare that the Context
+Menu does not offer copy with headers. On a Sheet the column letters are addresses, so ExSheet
+declares it by default and offers the command only when its own Consumer switches it on
+([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
+Without the declaration nothing changes.
