@@ -155,7 +155,7 @@ public class FormulaGrammarTests
         Assert.Equal(ErrorValue.Name, NewSheet().Evaluate("=Positions[PV]").Error);
     }
 
-    [Fact] // ADR-0046/0047: the Sheet qualifier is recorded; with one Sheet, no qualifier names a cell
+    [Fact] // ADR-0046/0047: the Sheet qualifier is recorded; with one Sheet, a qualifier other than its name names no cell
     public void A_sheet_qualified_reference_is_recorded_and_names_no_cell()
     {
         var sheet = NewSheet();

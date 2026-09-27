@@ -5,31 +5,39 @@ using System.Text.Json;
 namespace ExSheet.Engine;
 
 /// <summary>
-/// The serialisable form of a Sheet (CONTEXT.md, ADR-0048). It records the Sheet's culture and
-/// its Entries — constants already parsed, Formulas in invariant syntax — and never a Value:
-/// opening one computes every Value again. The Consumer persists it; ExSheet never does.
+/// The serialisable form of a Sheet (CONTEXT.md, ADR-0048). It records the Sheet's culture, its
+/// name (ADR-0046) and its Entries — constants already parsed, Formulas in invariant syntax — and
+/// never a Value: opening one computes every Value again. The Consumer persists it; ExSheet never does.
 /// </summary>
 /// <remarks>
 /// The document is a format with a version. A reader meeting a version it does not know refuses
 /// the document rather than guess at it (ADR-0048); so does a reader meeting anything it does not
-/// understand.
+/// understand. This engine writes version 2 and reads versions 1 and 2: version 1 recorded no
+/// name, and a Sheet opened from one is named <see cref="Sheet.DefaultName"/>.
 /// </remarks>
 public sealed class SheetDocument
 {
-    /// <summary>The version this engine writes, and the only one it reads.</summary>
-    public const int CurrentVersion = 1;
+    /// <summary>The version this engine writes.</summary>
+    public const int CurrentVersion = 2;
 
-    internal SheetDocument(string culture, IReadOnlyList<SheetDocumentCell> cells)
+    /// <summary>The oldest version this engine reads.</summary>
+    public const int OldestReadableVersion = 1;
+
+    internal SheetDocument(string culture, string name, IReadOnlyList<SheetDocumentCell> cells)
     {
         Culture = culture;
+        Name = name;
         Cells = cells;
     }
 
-    /// <summary>The format version: <see cref="CurrentVersion"/>.</summary>
+    /// <summary>The format version the document is written in: <see cref="CurrentVersion"/>, whatever version it was read from.</summary>
     public int Version => CurrentVersion;
 
     /// <summary>The name of the Sheet's declared culture, such as <c>en-US</c>; empty for the invariant culture.</summary>
     public string Culture { get; }
+
+    /// <summary>The Sheet's name (ADR-0046); <see cref="Sheet.DefaultName"/> for a document read from version 1.</summary>
+    public string Name { get; }
 
     /// <summary>The cells that hold something, in row-major order.</summary>
     public IReadOnlyList<SheetDocumentCell> Cells { get; }
@@ -43,6 +51,7 @@ public sealed class SheetDocument
             json.WriteStartObject();
             json.WriteNumber("version", CurrentVersion);
             json.WriteString("culture", Culture);
+            json.WriteString("name", Name);
             json.WriteStartArray("cells");
             foreach (var cell in Cells)
             {
@@ -78,8 +87,9 @@ public sealed class SheetDocument
 
     /// <summary>Reads a document written by <see cref="ToJson"/>.</summary>
     /// <exception cref="SheetDocumentException">
-    /// The version is not <see cref="CurrentVersion"/>, or the document holds anything this
-    /// version does not define. Nothing is guessed.
+    /// The version is not one this engine reads (<see cref="OldestReadableVersion"/> to
+    /// <see cref="CurrentVersion"/>), or the document holds anything its version does not define.
+    /// Nothing is guessed.
     /// </exception>
     public static SheetDocument FromJson(string json)
     {
@@ -104,12 +114,13 @@ public sealed class SheetDocument
             {
                 throw new SheetDocumentException("The Sheet Document has no version.");
             }
-            if (number != CurrentVersion)
+            if (number is < OldestReadableVersion or > CurrentVersion)
             {
-                throw new SheetDocumentException($"The Sheet Document is version {number}; this engine reads version {CurrentVersion} only.") { DocumentVersion = number };
+                throw new SheetDocumentException($"The Sheet Document is version {number}; this engine reads versions {OldestReadableVersion} to {CurrentVersion}.") { DocumentVersion = number };
             }
 
             string? culture = null;
+            string? name = null;
             var cells = new List<SheetDocumentCell>();
             var seen = new HashSet<CellAddress>();
             foreach (var property in root.EnumerateObject())
@@ -121,23 +132,28 @@ public sealed class SheetDocument
                     case "culture":
                         culture = property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : throw new SheetDocumentException("The culture is not a string.");
                         break;
+                    case "name" when number >= 2:
+                        name = property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : throw new SheetDocumentException("The name is not a string.");
+                        if (!Sheet.IsValidName(name, out var why)) throw new SheetDocumentException($"'{name}' is not a Sheet's name: {why}");
+                        break;
                     case "cells":
                         if (property.Value.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("The cells are not an array.");
                         foreach (var element in property.Value.EnumerateArray())
                         {
-                            var cell = ReadCell(element);
+                            var cell = ReadCell(element, number);
                             if (!seen.Add(cell.Address)) throw new SheetDocumentException($"The cell {cell.Address} appears twice.");
                             cells.Add(cell);
                         }
                         break;
                     default:
-                        throw new SheetDocumentException($"'{property.Name}' is not part of a version {CurrentVersion} Sheet Document.");
+                        throw new SheetDocumentException($"'{property.Name}' is not part of a version {number} Sheet Document.");
                 }
             }
             if (culture is null) throw new SheetDocumentException("The Sheet Document records no culture.");
+            if (number >= 2 && name is null) throw new SheetDocumentException("The Sheet Document records no name.");
             ResolveCulture(culture);
             cells.Sort((a, b) => a.Address.CompareTo(b.Address));
-            return new SheetDocument(culture, cells);
+            return new SheetDocument(culture, name ?? Sheet.DefaultName, cells);
         }
     }
 
@@ -153,7 +169,7 @@ public sealed class SheetDocument
         }
     }
 
-    private static SheetDocumentCell ReadCell(JsonElement element)
+    private static SheetDocumentCell ReadCell(JsonElement element, int version)
     {
         if (element.ValueKind != JsonValueKind.Object) throw new SheetDocumentException("A cell is not a JSON object.");
         CellAddress? address = null;
@@ -220,7 +236,7 @@ public sealed class SheetDocument
                     } : throw new SheetDocumentException($"'{value}' is not an alignment.");
                     break;
                 default:
-                    throw new SheetDocumentException($"'{property.Name}' is not part of a version {CurrentVersion} cell.");
+                    throw new SheetDocumentException($"'{property.Name}' is not part of a version {version} cell.");
             }
         }
         if (address is null) throw new SheetDocumentException("A cell has no address.");

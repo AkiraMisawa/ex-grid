@@ -89,12 +89,29 @@ internal sealed record Reference(
         {
             if (!(char.IsAsciiLetterOrDigit(c) || c == '_' || c == '.')) bare = false;
         }
-        // A bare name that reads as a cell address (A1!B2) or a boolean would be misread.
-        if (bare && (CellAddress.TryParse(name, out _) || name.Equals("TRUE", StringComparison.OrdinalIgnoreCase) || name.Equals("FALSE", StringComparison.OrdinalIgnoreCase)))
+        // A bare name that reads as a cell address (A1!B2), an R1C1 address or a boolean would be misread.
+        if (bare && (CellAddress.TryParse(name, out _) || RowColumn(name) || name.Equals("TRUE", StringComparison.OrdinalIgnoreCase) || name.Equals("FALSE", StringComparison.OrdinalIgnoreCase)))
         {
             bare = false;
         }
         return bare ? name : "'" + name.Replace("'", "''", StringComparison.Ordinal) + "'";
+
+        // R, C, R1, C1, R1C1, RC, ...: R1C1 notation.
+        static bool RowColumn(string name)
+        {
+            var i = 0;
+            if (i < name.Length && name[i] is 'R' or 'r')
+            {
+                i++;
+                while (i < name.Length && char.IsAsciiDigit(name[i])) i++;
+            }
+            if (i < name.Length && name[i] is 'C' or 'c')
+            {
+                i++;
+                while (i < name.Length && char.IsAsciiDigit(name[i])) i++;
+            }
+            return i > 0 && i == name.Length;
+        }
     }
 }
 

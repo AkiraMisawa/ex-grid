@@ -29,9 +29,18 @@ public sealed partial class Sheet
 
     /// <summary>Creates an empty Sheet whose constants are read and whose Values are shown under <paramref name="culture"/>.</summary>
     public Sheet(CultureInfo culture)
+        : this(culture, DefaultName)
+    {
+    }
+
+    /// <summary>Creates an empty Sheet named <paramref name="name"/>, whose constants are read and whose Values are shown under <paramref name="culture"/>.</summary>
+    /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="IsValidName"/>).</exception>
+    public Sheet(CultureInfo culture, string name)
     {
         ArgumentNullException.ThrowIfNull(culture);
+        ArgumentNullException.ThrowIfNull(name);
         Culture = CultureInfo.ReadOnly(culture);
+        Name = CheckName(name, nameof(name));
     }
 
     /// <summary>The Sheet's declared culture (ADR-0048). Formulas are in invariant syntax whatever it is (ADR-0047).</summary>
@@ -44,7 +53,7 @@ public sealed partial class Sheet
     public static Sheet Open(SheetDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
-        var sheet = new Sheet(SheetDocument.ResolveCulture(document.Culture));
+        var sheet = new Sheet(SheetDocument.ResolveCulture(document.Culture), document.Name);
         foreach (var cell in document.Cells)
         {
             if (cell.Format.IsGeneral && cell.Alignment == HorizontalAlignment.General) continue;
@@ -57,11 +66,11 @@ public sealed partial class Sheet
     }
 
     /// <summary>
-    /// The Sheet as a Sheet Document: its culture, its Entries, and each cell's number format and
-    /// alignment — never its Values (ADR-0048).
+    /// The Sheet as a Sheet Document: its culture, its name, its Entries, and each cell's number
+    /// format and alignment — never its Values (ADR-0046, ADR-0048).
     /// </summary>
     public SheetDocument ToDocument() =>
-        new(Culture.Name, [.. _cells.Values
+        new(Culture.Name, Name, [.. _cells.Values
             .Where(c => !c.IsEmpty)
             .OrderBy(c => c.Address)
             .Select(c => new SheetDocumentCell(c.Address, c.Entry, c.Format, c.Alignment))]);
@@ -241,7 +250,7 @@ public sealed partial class Sheet
         var areas = new List<Area>();
         foreach (var reference in formula.References)
         {
-            if (reference.SheetName is not null) continue;
+            if (!IsLocal(reference)) continue;
             var area = reference.Area;
             if (area.IsSingleCell)
             {
@@ -263,7 +272,7 @@ public sealed partial class Sheet
         foreach (var reference in formula.References)
         {
             var area = reference.Area;
-            if (reference.SheetName is null && area.IsSingleCell)
+            if (IsLocal(reference) && area.IsSingleCell)
             {
                 var target = new CellAddress(area.Row1, area.Column1);
                 if (_cellDependents.TryGetValue(target, out var set) && set.Remove(formulaCell) && set.Count == 0) _cellDependents.Remove(target);
@@ -391,7 +400,7 @@ public sealed partial class Sheet
         var gettingData = ReadsWaitingTable(node);
         foreach (var reference in node.References)
         {
-            if (reference.SheetName is not null) continue;
+            if (!IsLocal(reference)) continue;
             foreach (var address in CellsIn(reference.Area))
             {
                 if (reader.Read(address) is { IsError: true } value)
@@ -436,6 +445,8 @@ public sealed partial class Sheet
             sheet.CellsIn(area).Where(a => Read(a) is not null).Order();
 
         public Operand TableColumn(string table, string column) => sheet.TableColumn(table, column);
+
+        public bool IsLocal(Reference reference) => sheet.IsLocal(reference);
     }
 
     private sealed class Cell(CellAddress address)

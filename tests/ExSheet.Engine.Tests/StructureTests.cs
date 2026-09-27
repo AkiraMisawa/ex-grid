@@ -152,7 +152,7 @@ public class StructureTests
         Assert.Equal("=SUM(A1:A1048576)", Formula(sheet, "B1"));
     }
 
-    [Fact] // ADR-0046: a Reference qualified with a Sheet name is not this Sheet's, and is not rewritten
+    [Fact] // ADR-0046: a Reference qualified with another Sheet's name is not this Sheet's, and is not rewritten
     public void A_sheet_qualified_reference_is_not_rewritten()
     {
         var sheet = NewSheet();

@@ -81,14 +81,15 @@ internal readonly record struct StructuralEdit(SheetAxis Axis, int Start, int Co
     /// A Reference rewritten as Excel rewrites it: an insertion at or before a range's first cell
     /// moves it, one inside it grows it; a deletion shrinks it, moves it, or — when it takes every
     /// cell it named — makes it <c>#REF!</c> (<see langword="null"/>). A Reference that spans the
-    /// whole axis (<c>A:A</c> for rows) is untouched, as is one qualified with a Sheet name.
+    /// whole axis (<c>A:A</c> for rows) is untouched, as is one qualified with another Sheet's name
+    /// (ADR-0046); one qualified with <paramref name="sheet"/>'s own name is rewritten like any other.
     /// <paramref name="leavesSheet"/> is set when an insertion would push the cells it names off
     /// the edge; the caller refuses the insertion.
     /// </summary>
-    public Reference? Map(Reference reference, out bool leavesSheet)
+    public Reference? Map(Reference reference, Sheet sheet, out bool leavesSheet)
     {
         leavesSheet = false;
-        if (reference.SheetName is not null) return reference;
+        if (!sheet.IsLocal(reference)) return reference;
         var rows = Axis == SheetAxis.Rows;
         if (rows && reference.Shape == ReferenceShape.Columns) return reference;
         if (!rows && reference.Shape == ReferenceShape.Rows) return reference;
@@ -131,6 +132,6 @@ internal readonly record struct StructuralEdit(SheetAxis Axis, int Start, int Co
     }
 
     /// <summary>Whether a Reference covers any place at or beyond the edit along its axis.</summary>
-    public bool Reaches(Reference reference) =>
-        reference.SheetName is null && (Axis == SheetAxis.Rows ? reference.Area.Row2 : reference.Area.Column2) >= Start;
+    public bool Reaches(Reference reference, Sheet sheet) =>
+        sheet.IsLocal(reference) && (Axis == SheetAxis.Rows ? reference.Area.Row2 : reference.Area.Column2) >= Start;
 }

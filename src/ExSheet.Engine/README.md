@@ -47,6 +47,12 @@ change.ValueChanges;                        // C1
 `Enter` reads text as a user typed it: text beginning with `=` is a Formula, and anything else is
 a constant read under the Sheet's culture and recorded already parsed.
 
+A Sheet has a name, `Sheet1` unless it is given one (`new Sheet(culture, "Risk")`), and
+`SheetEdit.Rename` changes it as Excel does, rewriting every Reference qualified with the old
+name. A Reference qualified with the Sheet's own name (`Sheet1!A1`, `'My Sheet'!A1`) reads its
+cells; any other qualifier is `#REF!`. `Sheet.IsValidName` applies Excel's rules: 1 to 31
+characters, none of `: \ / ? * [ ]`, not beginning or ending with `'`, and not `History`.
+
 ## Functions
 
 `DeclaredFunction.All` lists the declared set, with each function's arguments as Excel documents

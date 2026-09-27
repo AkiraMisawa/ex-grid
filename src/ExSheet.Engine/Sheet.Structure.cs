@@ -53,7 +53,7 @@ public sealed partial class Sheet
             if (cell.Entry?.Parsed is not { } parsed) continue;
             foreach (var reference in parsed.References)
             {
-                edit.Map(reference, out var leaves);
+                edit.Map(reference, this, out var leaves);
                 if (leaves)
                 {
                     return new SheetRefusal(SheetRefusalReason.ReferenceWouldLeaveSheet,
@@ -85,13 +85,13 @@ public sealed partial class Sheet
             var entry = cell.Entry;
             if (entry?.Parsed is { } parsed)
             {
-                var mapped = ReferenceRewriter.Rewrite(entry, r => edit.Map(r, out _));
+                var mapped = ReferenceRewriter.Rewrite(entry, r => edit.Map(r, this, out _));
                 if (!ReferenceEquals(mapped, entry))
                 {
                     rewritten.Add((cell.Address, entry));
                     dirty.Add(to);
                 }
-                else if (parsed.References.Any(edit.Reaches))
+                else if (parsed.References.Any(r => edit.Reaches(r, this)))
                 {
                     // A1:A1048576 or A:A kept its text, but what it covers moved underneath it.
                     dirty.Add(to);
