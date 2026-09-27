@@ -316,7 +316,7 @@
                             <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
-                                       CellState="CellState" CellType="CellType" RowKind="RowKind"
+                                       CellState="CellState" CellType="CellType" CellAlign="CellAlign" RowKind="RowKind"
                                        RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
@@ -979,6 +979,22 @@
     /// identity is the change signal, as <see cref="CellState"/>'s is (ADR-0003/0006).</para>
     /// </summary>
     [Parameter] public Func<TRow, GridColumn<TRow>, ColumnType>? CellType { get; set; }
+
+    /// <summary>
+    /// A per-cell alignment (ADR-0050, item 7): asked for by (row, column), it aligns that
+    /// one cell. The precedence is this answer where it is not
+    /// <see cref="Columns.CellAlign.Auto"/>, then the column's
+    /// <see cref="GridColumn{TRow}.Align"/>, then the default of the cell's kind
+    /// (<see cref="CellType"/>, then the column's; ADR-0016). A Sheet needs it for a user's
+    /// own alignment and for Excel's centring of booleans and Error Values. Null, the
+    /// default, leaves every cell aligned exactly as before. Asked of value cells only, as
+    /// <see cref="CellType"/> is.
+    ///
+    /// <para><b>Hold it in a field and hand over a new one when the alignments change.</b>
+    /// Its identity is the change signal, as <see cref="CellState"/>'s is
+    /// (ADR-0003/0006).</para>
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, CellAlign>? CellAlign { get; set; }
 
     /// <summary>
     /// What role each row plays — detail, group or total (ADR-0024). Null means every

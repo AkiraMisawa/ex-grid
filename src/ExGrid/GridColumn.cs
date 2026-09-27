@@ -214,6 +214,27 @@ public sealed record GridColumn<TRow>
         return type;
     }
 
+    /// <summary>
+    /// One cell's alignment (ADR-0050, item 7): the Consumer's per-cell answer where it
+    /// supplies one other than <see cref="CellAlign.Auto"/>, this column's
+    /// <see cref="Align"/> where it does not. <see cref="CellAlign.Auto"/> then leaves the
+    /// kind's default to decide (ADR-0016), so the precedence is per cell, then column,
+    /// then kind. An undefined answer is refused by name rather than painted as some
+    /// alignment nobody declared.
+    /// </summary>
+    /// <param name="row">The row the cell is on.</param>
+    /// <param name="cellAlign">The Consumer's per-cell lookup, or null for none.</param>
+    public CellAlign AlignAt(TRow row, Func<TRow, GridColumn<TRow>, CellAlign>? cellAlign)
+    {
+        if (cellAlign is null)
+            return Align;
+        var align = cellAlign(row, this);
+        if (align is not (CellAlign.Auto or CellAlign.Left or CellAlign.Center or CellAlign.Right))
+            throw new ArgumentOutOfRangeException(nameof(cellAlign), align,
+                $"The per-cell alignment for a cell of column '{Name}' is not a CellAlign (ADR-0050).");
+        return align == CellAlign.Auto ? Align : align;
+    }
+
     /// <summary>How the value is extracted from a row — what Filter, Sort, copy and the
     /// painted text all read. Null is a Blank (ADR-0023).</summary>
     public Func<TRow, object?> Value => Info.Value;
