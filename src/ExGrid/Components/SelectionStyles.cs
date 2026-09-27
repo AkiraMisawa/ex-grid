@@ -58,6 +58,29 @@ internal static class SelectionStyles
             firstPaintedRow);
     }
 
+    /// <summary>
+    /// The fill handle (ADR-0050, item 5): a square of <paramref name="sizePx"/> centred on
+    /// the range's bottom-right corner, in the layer that corner belongs to — the pinned one
+    /// when the range's last column is pinned, the scrollable one otherwise. Null for the
+    /// other layer, so the handle is one element and never two.
+    /// </summary>
+    public static string? Handle(
+        SelectionRange range, ColumnGeometry columns, double rowHeightPx, int firstPaintedRow,
+        double sizePx, bool pinnedLayer)
+    {
+        if ((range.RightColumn < columns.PinnedCount) != pinnedLayer)
+            return null;
+        var (leftPx, topPx) = HandleCornerPx(range, columns, rowHeightPx, firstPaintedRow);
+        return FormattableString.Invariant(
+            $"left: {leftPx - (sizePx / 2)}px; top: {topPx - (sizePx / 2)}px; width: {sizePx}px; height: {sizePx}px");
+    }
+
+    /// <summary>The range's bottom-right corner, in the coordinates its layer paints in:
+    /// the painted slice's top, and the content's (or the pinned layer's) left.</summary>
+    public static (double LeftPx, double TopPx) HandleCornerPx(
+        SelectionRange range, ColumnGeometry columns, double rowHeightPx, int firstPaintedRow)
+        => (columns.OffsetPxOf(range.RightColumn + 1), (range.BottomRow + 1 - firstPaintedRow) * rowHeightPx);
+
     /// <summary>The Focus as a rectangle, so one cell and a block are the same
     /// arithmetic.</summary>
     public static SelectionRange CellRange(CellPosition cell) => new(cell.Row, cell.Column, 1, 1);

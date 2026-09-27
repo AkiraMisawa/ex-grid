@@ -304,7 +304,8 @@
     background: transparent;
     color: inherit;
 }
-.ex-formula-bar > .ex-editor:focus { outline: var(--ex-editor-outline, 2px solid Highlight); outline-offset: -2px; }
+.ex-formula-bar > .ex-editor:focus,
+.ex-formula-bar > .ex-editor:focus-within { outline: var(--ex-editor-outline, 2px solid Highlight); outline-offset: -2px; }
 .ex-name-box-form { display: contents; }
 .ex-row-heading { z-index: 4; }
 .ex-headings-corner { z-index: 7; }
@@ -339,6 +340,12 @@
    Focus band so the two read apart when they coincide. */
 .ex-hover-row { position: absolute; background: var(--ex-row-hover-background, rgba(128, 128, 128, 0.06)); }
 .ex-focus { position: absolute; outline: 2px solid var(--ex-focus-outline, CanvasText); outline-offset: -1px; }
+/* The fill handle and a fill drag's target outline (ADR-0050, item 5): two more overlay
+   rectangles, painted only when a Consumer declares fill. The handle's size and place are
+   geometry and arrive inline from the resolved metrics (ADR-0027/0028) — the press that
+   grabs it reads the same numbers. Paint only, like every rectangle here. */
+.ex-fill-handle { position: absolute; box-sizing: border-box; background: var(--ex-fill-handle-color, var(--ex-focus-outline, CanvasText)); border: var(--ex-rule-width, 1px) solid Canvas; }
+.ex-fill-target { position: absolute; outline: 1px dashed var(--ex-fill-outline, var(--ex-focus-outline, CanvasText)); outline-offset: -1px; }
 /* CanvasText, not Highlight: measured in the browser suite, Chrome's Highlight against
    Canvas is ~2:1 and UX-9 requires 3:1 — the ink colour contrasts by construction in
    both schemes, which is also roughly what Excel's own dark focus border does. */

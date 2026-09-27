@@ -50,3 +50,23 @@ What remains:
   change `ex-grid.js`, which ADR-0051 does not allow, so it needs a decision if layer 3 shows it.
 - DC-25 (two grids, one declaring) is layer 3's.
 
+
+The Chrome seam, 2026-09-27 (ADR-0051 Consequences, ADR-0010/0030). Before this change, the bar's
+two fields were painted with built-in markup under every Chrome. Each field is now a seam:
+
+- **`IGridChrome.NameBox(NameBoxContext)`** takes `Text`, `TextChanged`, `Focused` and
+  `Blurred`.
+- **`IGridChrome.FormulaBarText(FormulaBarTextContext)`** takes `Text`, `ReadOnly`,
+  `Focused`, `TextChanged` and `FocusRequest`.
+
+Both are default interface methods that return null, so a Chrome that paints neither field
+keeps the built-in inputs unchanged. The core still owns the boxes: `div.ex-name-box` inside
+the form whose implicit submission is Enter, and the bar's `div.ex-editor.ex-formula-bar-text`.
+Because the bar's box wears `ex-editor`, the capture listener still gates its keys, and no
+JavaScript changed. The core also still owns the keys and the meaning of the text.
+`ExGrid.MudBlazor` fills both seams with bare inputs (`MudNameBox`, `MudFormulaBarText`),
+named through `MudExGridWords.NameBox` and `MudExGridWords.FormulaBar`.
+
+One existing test changed its selector, not its assertions: `MudGridChromeTests`'
+`The_formula_bar_and_the_chrome_editor_agree` now types into Mud's control inside the box.
+Layer 2: `FormulaBarChromeTests`, plus three tests in `MudGridChromeTests`.

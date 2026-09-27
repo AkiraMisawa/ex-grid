@@ -113,6 +113,30 @@
 .mud-ex-grid .ex-editor .mud-ex-editor.mud-ex-editor-error {
     box-shadow: inset 0 -2px 0 var(--mud-palette-error);
 }
+/* The Formula Bar's two fields (ADR-0051): bare inputs filling the boxes the core stands in
+   the bar — the boxes, their padding and their widths are the core's (.ex-name-box, and the
+   bar's .ex-editor); these are the controls inside them. The text field is the Cell Editor's
+   second surface and wears its underline while it takes typing. */
+.mud-ex-grid .ex-name-box .mud-ex-name-box,
+.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    font: inherit;
+    line-height: inherit;
+    background: transparent;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-editable:focus {
+    box-shadow: inset 0 -2px 0 var(--mud-palette-primary);
+}
 /* The loading bar, where the core places its loading seam (ADR-0010). */
 .mud-ex-grid .mud-ex-grid-loading {
     height: 4px;

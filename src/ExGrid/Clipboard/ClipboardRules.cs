@@ -12,7 +12,9 @@ namespace ExGrid.Clipboard;
 /// stale positions is the holder dropping the selection when the Row Sequence Version
 /// changes (ADR-0011) — a rule the holder must enforce itself;
 /// <see cref="GridSelection"/> can only refuse a selection that no longer fits its
-/// extent, and a same-sized reorder is invisible to it.
+/// extent, and a same-sized reorder is invisible to it. The one extent that does appear
+/// is the spill's (ADR-0050, item 3): there it is not a guard against stale positions but
+/// the edge a spilled block may not cross.
 /// </summary>
 public static class ClipboardRules
 {
@@ -65,8 +67,20 @@ public static class ClipboardRules
     /// by position in the current order. It has no overload without it on purpose: an
     /// entry point that skips the declaration is one that walks past it.
     /// </summary>
+    /// <param name="target">The Selection the paste lands on.</param>
+    /// <param name="source">The block on the clipboard.</param>
+    /// <param name="columnIsEditable">Whether a write may land in a column (ADR-0035).</param>
+    /// <param name="spillWithin">The Consumer's declaration that a paste may spill
+    /// (ADR-0050, item 3), carrying the grid's extent. Given, a block of several cells onto
+    /// one cell is planned as the block with that cell at its top-left — one target range,
+    /// so one intent — where ADR-0014 would refuse it as
+    /// <see cref="PasteRefusalReason.SingleCellTarget"/>. <c>Editable</c> is judged on the
+    /// block's columns first, then a block crossing the extent is refused as
+    /// <see cref="PasteRefusalReason.SpillPastExtent"/>. Null — the default — is ADR-0014
+    /// unchanged. Every other shape rule stands either way.</param>
     public static PasteDecision PlanPaste(
-        GridSelection target, PasteShape source, Func<int, bool> columnIsEditable)
+        GridSelection target, PasteShape source, Func<int, bool> columnIsEditable,
+        GridExtent? spillWithin = null)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(columnIsEditable);
@@ -100,11 +114,38 @@ public static class ClipboardRules
 
         var only = target.Ranges[0];
         if (only.CellCount == 1)
-            return PasteDecision.Refuse(PasteRefusalReason.SingleCellTarget);
+        {
+            return spillWithin is { } extent
+                ? PlanSpill(only.TopRow, only.LeftColumn, source, columnIsEditable, extent)
+                : PasteDecision.Refuse(PasteRefusalReason.SingleCellTarget);
+        }
 
         return only.RowCount % source.Rows == 0 && only.ColumnCount % source.Columns == 0
             ? PasteDecision.Approve(new PastePlan(target.Ranges, source))
             : PasteDecision.Refuse(PasteRefusalReason.ShapeMismatch);
+    }
+
+    /// <summary>
+    /// Range → one cell, declared to spill (ADR-0050, item 3): the block from that cell.
+    /// "May not" before "cannot", as ADR-0035 orders them — the block's columns that exist
+    /// are judged for <c>Editable</c> before the edge is, because moving the paste up or
+    /// left to fit it would not help a block that covers a locked column. Nothing is
+    /// planned for a block that does not fit; it is never clipped to the edge, which
+    /// would write fewer cells than were copied.
+    /// </summary>
+    private static PasteDecision PlanSpill(
+        int topRow, int leftColumn, PasteShape source, Func<int, bool> columnIsEditable, GridExtent extent)
+    {
+        var lastColumn = Math.Min((long)leftColumn + source.Columns, extent.ColumnCount) - 1;
+        for (var column = leftColumn; column <= lastColumn; column++)
+        {
+            if (!columnIsEditable(column))
+                return PasteDecision.Refuse(PasteRefusalReason.TargetNotEditable);
+        }
+        if ((long)topRow + source.Rows > extent.RowCount || (long)leftColumn + source.Columns > extent.ColumnCount)
+            return PasteDecision.Refuse(PasteRefusalReason.SpillPastExtent);
+        return PasteDecision.Approve(new PastePlan(
+            [new SelectionRange(topRow, leftColumn, source.Rows, source.Columns)], source));
     }
 
     /// <summary>Every column the target covers, across every range. Columns, not cells:

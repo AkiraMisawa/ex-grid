@@ -16,6 +16,8 @@ namespace ExGrid.Clipboard;
 /// <see cref="TooLarge"/> is not about shape either (ADR-0005): the clipboard is past the
 /// grid's byte ceiling, so it was not read at all. Component-level, never produced by the
 /// pure rules.
+/// <see cref="SpillPastExtent"/> exists only where a Consumer declared that a paste may
+/// spill (ADR-0050, item 3): the block would run past the grid's last row or column.
 /// </summary>
 public enum PasteRefusalReason
 {
@@ -40,6 +42,11 @@ public enum PasteRefusalReason
     /// <summary>The clipboard is past the grid's <c>PasteByteCap</c>, so it was not read
     /// at all. Raised by the component, never by the pure rules (ADR-0005).</summary>
     TooLarge,
+
+    /// <summary>A spilled paste (ADR-0050, item 3) whose block would run past the grid's
+    /// last row or last column. Nothing is written — the block is never clipped to the
+    /// edge. Raised only where the Consumer declared that a paste may spill.</summary>
+    SpillPastExtent,
 }
 
 /// <summary>
@@ -58,7 +65,8 @@ public sealed class PastePlan
         Source = source;
     }
 
-    /// <summary>The ranges to fill. More than one only with a 1×1 source (ADR-0014).</summary>
+    /// <summary>The ranges to fill. More than one only with a 1×1 source (ADR-0014). A
+    /// spilled paste (ADR-0050, item 3) is one range, the block itself.</summary>
     public IReadOnlyList<SelectionRange> Targets { get; }
 
     /// <summary>The block on the clipboard, tiled from each target range's top-left.</summary>

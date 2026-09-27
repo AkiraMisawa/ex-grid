@@ -89,14 +89,71 @@ public class MudGridChromeTests : MudTestContext
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("x", false, false, false, false, false));
 
         await cut.Find("input.mud-ex-editor").InputAsync(new ChangeEventArgs { Value = "xyz" });
-        Assert.Equal("xyz", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+        Assert.Equal("xyz", cut.Find(".ex-formula-bar-text input.mud-ex-formula-bar-text").GetAttribute("value"));
 
-        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
-        await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "xyzw" });
+        await cut.Find(".ex-formula-bar-text input.mud-ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-formula-bar-text input.mud-ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "xyzw" });
         Assert.Equal("xyzw", cut.Find("input.mud-ex-editor").GetAttribute("value"));
 
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Enter", false, false, false, false, false, fromDescendant: true));
         Assert.Equal("xyzw", Assert.Single(intents).Value);
+    }
+
+    private IRenderedComponent<ExGrid<Trade>> RenderBarGrid(MudGridChrome chrome, Action<string>? onNameBox = null)
+        => Render<ExGrid<Trade>>(ps =>
+        {
+            ps.Add(g => g.Window, Rows(5))
+              .Add(g => g.TotalCount, 5)
+              .Add(g => g.Columns, Columns())
+              .Add(g => g.RowHeight, 20d)
+              .Add(g => g.ViewportHeight, 200)
+              .Add(g => g.ViewportWidth, 400)
+              .Add(g => g.Chrome, chrome)
+              .Add(g => g.ShowFormulaBar, true)
+              .Add(g => g.NameBoxLabel, cell => FormattableString.Invariant($"R{cell.Row + 1}C{cell.Column + 1}"));
+            if (onNameBox is not null)
+                ps.Add(g => g.OnNameBoxEntered, onNameBox);
+        });
+
+    [Fact] // ADR-0051/0030: the Formula Bar's two fields are this Chrome's bare inputs in the core's boxes, named in its words
+    public async Task The_formula_bar_fields_are_bare_inputs_in_the_cores_boxes()
+    {
+        var chrome = new MudGridChrome { Label = id => id == MudExGridWords.NameBox ? "Cell reference" : null };
+        var cut = RenderBarGrid(chrome);
+        await ClickCellAsync(cut, 50, 30);                       // Book, row 1
+
+        var nameBox = cut.Find(".ex-formula-bar .ex-name-box-form > div.ex-name-box > input.mud-ex-name-box");
+        Assert.Equal("R2C1", nameBox.GetAttribute("value"));
+        Assert.Equal("Cell reference", nameBox.GetAttribute("aria-label"));
+        var bar = cut.Find(".ex-formula-bar > div.ex-editor.ex-formula-bar-text > input.mud-ex-formula-bar-text");
+        Assert.Equal("Formula Bar", bar.GetAttribute("aria-label"));
+        Assert.Empty(cut.FindAll("input.ex-name-box"));
+        Assert.Null(cut.Find(".ex-formula-bar").QuerySelector(".mud-textfield"));
+    }
+
+    [Fact] // ADR-0051 / ADR-0050 item 4: typed into this Chrome's Name Box, Enter hands the text to the Consumer
+    public async Task The_name_box_hands_what_was_typed_on_enter()
+    {
+        string? entered = null;
+        var cut = RenderBarGrid(MudGridChrome.Default, text => entered = text);
+        await ClickCellAsync(cut, 50, 30);
+
+        await cut.Find("input.mud-ex-name-box").FocusAsync(new FocusEventArgs());
+        await cut.Find("input.mud-ex-name-box").InputAsync(new ChangeEventArgs { Value = "R4C1" });
+        await cut.Find(".ex-name-box-form").SubmitAsync();
+
+        Assert.Equal("R4C1", entered);
+    }
+
+    [Fact] // ADR-0051/0035: this Chrome's bar is read-only where the Focus cell does not edit
+    public async Task The_bar_is_read_only_where_the_focus_cell_does_not_edit()
+    {
+        var cut = RenderBarGrid(MudGridChrome.Default);
+        await ClickCellAsync(cut, 50, 30);                       // Book edits
+        Assert.False(cut.Find("input.mud-ex-formula-bar-text").HasAttribute("readonly"));
+
+        await ClickCellAsync(cut, 150, 30);                      // Amount does not
+        Assert.True(cut.Find("input.mud-ex-formula-bar-text").HasAttribute("readonly"));
     }
 
     [Fact] // ADR-0010/0030: the loading bar is a MudProgressLinear in the Chrome's colour, only while loading

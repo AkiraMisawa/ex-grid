@@ -199,6 +199,17 @@
                                 {
                                     <div class="ex-focus" style="@pinnedFocus"></div>
                                 }
+                                @* The fill handle and its target outline (ADR-0050, item 5): one
+                                   more rectangle each, painted last so they stand over the
+                                   ranges. The handle sits in whichever layer its corner does. *@
+                                @if (FillOutlineRange is { } pinnedFillRange && SelectionStyles.Pinned(pinnedFillRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedFillOutline)
+                                {
+                                    <div class="ex-fill-target" style="@pinnedFillOutline"></div>
+                                }
+                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start, _metrics.FillHandleSizePx, pinnedLayer: true) is { } pinnedHandle)
+                                {
+                                    <div class="ex-fill-handle" style="@pinnedHandle"></div>
+                                }
                             }
                         </div>
                         <div class="ex-selection" aria-hidden="true" @key="SelectionLayerKey">
@@ -222,6 +233,14 @@
                                 @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } focus)
                                 {
                                     <div class="ex-focus" style="@focus"></div>
+                                }
+                                @if (FillOutlineRange is { } fillRange && SelectionStyles.Scrollable(fillRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fillOutline)
+                                {
+                                    <div class="ex-fill-target" style="@fillOutline"></div>
+                                }
+                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start, _metrics.FillHandleSizePx, pinnedLayer: false) is { } handle)
+                                {
+                                    <div class="ex-fill-handle" style="@handle"></div>
                                 }
                             }
                         </div>
@@ -329,15 +348,36 @@
            gates the editor's — Enter and Tab commit once, Escape cancels once, F2 switches
            the mode (ADR-0018). The Name Box's Enter is its form's implicit submission, as the
            filter panel's is: no key handler, and an IME's confirming Enter is left alone. *@
+        @* Each field is a Chrome seam (ADR-0051/0010/0030): the core owns the boxes, the
+           form, the keys and what the text means, and a Chrome that paints a field paints
+           its control inside the core's box — the text field's box wearing ex-editor, as
+           the Cell Editor's does. A Chrome that paints neither leaves the built-in inputs. *@
+        var nameBoxChrome = Chrome?.NameBox(BuildNameBoxContext());
+        var barChrome = Chrome?.FormulaBarText(BuildFormulaBarTextContext());
+        _formulaBarIsChrome = barChrome is not null;
         <div class="ex-formula-bar" style="@FormulaBarStyle()" role="presentation">
             <form class="ex-name-box-form" @onsubmit="_onNameBoxSubmit ??= SubmitNameBoxAsync" @onsubmit:preventDefault>
-                <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="Name Box"
-                       @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync" @oninput="_onNameBoxInput ??= OnNameBoxInput"
-                       @onblur="_onNameBoxBlur ??= OnNameBoxBlur" />
+                @if (nameBoxChrome is not null)
+                {
+                    <div class="ex-name-box" style="@NameBoxStyle()">@nameBoxChrome</div>
+                }
+                else
+                {
+                    <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="Name Box"
+                           @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync" @oninput="_onNameBoxInput ??= OnNameBoxInput"
+                           @onblur="_onNameBoxBlur ??= OnNameBoxBlur" />
+                }
             </form>
-            <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="Formula Bar"
-                   @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync" @oninput="_onFormulaBarInput ??= OnFormulaBarInput"
-                   @ref="_formulaBarElement" />
+            @if (barChrome is not null)
+            {
+                <div class="ex-editor ex-formula-bar-text">@barChrome</div>
+            }
+            else
+            {
+                <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="Formula Bar"
+                       @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync" @oninput="_onFormulaBarInput ??= OnFormulaBarInput"
+                       @ref="_formulaBarElement" />
+            }
         </div>
     }
     @if (_menuColumn >= 0 && _menuColumn < Columns.Count)
@@ -925,6 +965,39 @@
     [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
 
     /// <summary>
+    /// A Consumer declaration (ADR-0050, item 3): a paste may spill. A block of several
+    /// cells pasted onto one cell then writes the block with that cell at its top-left — one
+    /// <see cref="OnPaste"/> intent whose plan is the block — and the block becomes the
+    /// Selection, with the Anchor and the Focus at its top-left, so the count on display is
+    /// the count written. <c>Editable</c> is judged on the block before anything is raised,
+    /// and a block running past the grid's last row or column is refused as
+    /// <see cref="PasteRefusalReason.SpillPastExtent"/>. Declared by a Consumer that holds
+    /// every cell, such as a Sheet. Off — the default — ADR-0014's refusal stands.
+    /// </summary>
+    [Parameter] public bool PasteMaySpill { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ADR-0050, item 5): fill is enabled. The fill handle is painted
+    /// at the bottom-right corner of the Selection's last range, in the selection overlay —
+    /// none for a disjoint Selection, and none while an edit is open. Dragging it extends
+    /// along one axis, the one the pointer went further along, with the target outlined; on
+    /// release the grid raises one <see cref="OnFill"/> intent and writes nothing. A target
+    /// covering a column that is not Editable is refused whole first, through
+    /// <see cref="OnPasteRefused"/> — paste and fill go through one gate (ADR-0035). Off —
+    /// the default — no handle is painted.
+    /// </summary>
+    [Parameter] public bool ShowFillHandle { get; set; }
+
+    /// <summary>
+    /// The Fill Intent (ADR-0050, item 5): a fill-handle drag, released — the source range,
+    /// the target range beside it and the direction. The grid writes nothing; what a fill
+    /// means is the Consumer's, which pushes new rows back as for any edit (ADR-0007). A
+    /// release back inside the source, or after the order moved under the drag, raises
+    /// nothing.
+    /// </summary>
+    [Parameter] public EventCallback<GridFillIntent> OnFill { get; set; }
+
+    /// <summary>
     /// The Filter in force (ADR-0002/0009), on the push form: what the panel paints
     /// its current state from. The grid never filters — the Consumer applies this and
     /// pushes the narrowed Window in, bumping <see cref="RowSequenceVersion"/> when
@@ -975,7 +1048,8 @@
     [Parameter] public EventCallback<CopyRefusalReason> OnCopyRefused { get; set; }
 
     /// <summary>A refused paste — or a refused Ctrl+Enter fill, which goes through the
-    /// same rules — saying which rule it hit (ADR-0014 / 0035). The single-cell reason is
+    /// same rules, or a refused fill-handle drag (ADR-0050, item 5), whose one refusal is
+    /// the editability reason — saying which rule it hit (ADR-0014 / 0035). The single-cell reason is
     /// the one whose message says reselecting a target of the same shape will work; the
     /// editability reason is the one where no reselection of that shape ever will.</summary>
     [Parameter] public EventCallback<PasteRefusalReason> OnPasteRefused { get; set; }
@@ -1308,6 +1382,12 @@
     private string[] _columnNames = [];
     private bool _dragging;
     private bool _suppressRender;
+    // A fill-handle drag (ADR-0050, item 5): the range it started from, the cell the pointer
+    // last stood on, and the order the positions were taken under. Set only while the drag
+    // runs; ending the drag clears them.
+    private SelectionRange? _fillSource;
+    private CellPosition? _fillPointer;
+    private int _fillVersion;
     private bool _selectionChanged;
 
     // The Cell Editor (ADR-0007/0010): one floating input, its uncommitted text the
@@ -1345,6 +1425,17 @@
     private Action<ChangeEventArgs>? _onNameBoxInput;
     private Action? _onNameBoxBlur;
     private Func<Task>? _onNameBoxSubmit;
+    // The same handlers as a Chrome's control calls them (ADR-0051/0030): its events are its
+    // own component's, so each renders the root as an event on the root would.
+    private Func<Task>? _chromeNameBoxFocused;
+    private Action<string>? _chromeNameBoxTextChanged;
+    private Action? _chromeNameBoxBlurred;
+    private Func<Task>? _chromeFormulaBarFocused;
+    private Action<string>? _chromeFormulaBarTextChanged;
+    // Whether a Chrome paints the bar's text field, and its focus requests — the core holds
+    // no reference to a control it did not render (ADR-0010/0030).
+    private bool _formulaBarIsChrome;
+    private int _formulaBarFocusRequest;
     private CellPosition _editingCell;
     private string _editText = "";
     private ElementReference _editorElement;
@@ -1538,6 +1629,29 @@
     /// (ADR-0008): which row am I on, in a grid a hundred columns wide.</summary>
     private SelectionRange FocusRowRange
         => new(_selection.Selection.Focus.Row, 0, 1, Math.Max(1, Columns.Count));
+
+    /// <summary>The range the fill handle stands on, when it is painted (ADR-0050, item 5):
+    /// declared, with no edit open, and a Selection of one range.</summary>
+    private SelectionRange? FillHandleRange
+        => ShowFillHandle && _editMode == EditMode.None ? FillRules.HandleRange(_selection.Selection) : null;
+
+    /// <summary>The outline a running fill drag paints: the source and what it has reached,
+    /// as one rectangle — one axis, so the union is a rectangle.</summary>
+    private SelectionRange? FillOutlineRange
+    {
+        get
+        {
+            if (_fillSource is not { } source || _fillPointer is not { } pointer
+                || FillRules.ExtensionFor(source, pointer) is not { } extension)
+            {
+                return null;
+            }
+            var target = extension.Target;
+            return SelectionRange.FromCorners(
+                new CellPosition(Math.Min(source.TopRow, target.TopRow), Math.Min(source.LeftColumn, target.LeftColumn)),
+                new CellPosition(Math.Max(source.BottomRow, target.BottomRow), Math.Max(source.RightColumn, target.RightColumn)));
+        }
+    }
 
     private TimeProvider Time
         => _time ??= Services.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System;
@@ -2249,7 +2363,10 @@
         // the user works there goes back to the bar, never across to the cell.
         if (_editorNeedsFocus && _editSurface == EditSurface.Bar)
         {
-            if (_formulaBarElement.Context is not null)
+            // A Chrome's control focuses itself on its context's request number.
+            if (_formulaBarIsChrome)
+                _editorNeedsFocus = false;
+            else if (_formulaBarElement.Context is not null)
             {
                 _editorNeedsFocus = false;
                 try
@@ -2571,6 +2688,9 @@
     /// </summary>
     private async Task OnMouseDown(MouseEventArgs e)
     {
+        // Read before anything below changes what is painted: the handle is grabbed where
+        // the user saw it (ADR-0050, item 5).
+        var onFillHandle = e.Button == 0 && !e.ShiftKey && !e.CtrlKey && !e.MetaKey && IsOnFillHandle(e);
         // A press anywhere in the body dismisses an open popover — clicking past a
         // menu is how people close menus everywhere else on the platform. The
         // dismissal is markup, so the render must run even when the press itself
@@ -2601,6 +2721,17 @@
             // is still standing — the stale-editor failure ADR-0010's rule exists to
             // prevent (ADR-0034 amends it).
             StateHasChanged();
+            return;
+        }
+
+        // A press on the fill handle starts a fill drag, not a selection: the Selection
+        // stays as it is, and the moves reach out from it along one axis (ADR-0050, item 5).
+        if (onFillHandle && FillRules.HandleRange(_selection.Selection) is { } fillSource)
+        {
+            _fillSource = fillSource;
+            _fillPointer = null;
+            _fillVersion = _sequenceVersion;
+            SetDragging(true);
             return;
         }
 
@@ -2691,8 +2822,72 @@
             _suppressRender = true;
             return;
         }
-        Apply(_selection.Selection.ExtendTo(cell, Extent));
+        if (_fillSource is not null)
+        {
+            if (!MoveFillPointer(cell))
+                _suppressRender = true;
+        }
+        else
+            Apply(_selection.Selection.ExtendTo(cell, Extent));
         UpdateEdgeBand(e);
+    }
+
+    /// <summary>
+    /// Whether the press lands on the fill handle (ADR-0050, item 5) — arithmetic, as every
+    /// other press in the body is (ADR-0008): the same corner the handle was painted at,
+    /// with a grab box twice its side. A corner that has scrolled under the Pinned Columns
+    /// cannot be grabbed, as it cannot be seen.
+    /// </summary>
+    private bool IsOnFillHandle(MouseEventArgs e)
+    {
+        if (FillHandleRange is not { } range || _visible is not { } visible)
+            return false;
+        var geometry = _columnStyles.Geometry;
+        var (cornerX, cornerY) = SelectionStyles.HandleCornerPx(range, geometry, _metrics.RowHeightPx, visible.Start);
+        var scrollLeft = Math.Clamp(_scrollLeftPx, 0, geometry.MaxScrollLeftPx);
+        if (range.RightColumn < geometry.PinnedCount)
+            cornerX += scrollLeft;
+        else if (cornerX - scrollLeft < geometry.PinnedWidthPx)
+            return false;
+        var size = _metrics.FillHandleSizePx;
+        return Math.Abs(e.OffsetX - cornerX) <= size && Math.Abs(e.OffsetY - cornerY) <= size;
+    }
+
+    /// <summary>The fill drag's pointer moved onto <paramref name="cell"/>. Whether what is
+    /// painted changes — the outline moves only when the extension does.</summary>
+    private bool MoveFillPointer(CellPosition cell)
+    {
+        if (_fillSource is not { } source || cell == _fillPointer)
+            return false;
+        var before = _fillPointer is { } previous ? FillRules.ExtensionFor(source, previous) : null;
+        _fillPointer = cell;
+        return FillRules.ExtensionFor(source, cell) != before;
+    }
+
+    /// <summary>
+    /// The fill drag's release (ADR-0050, item 5): exactly one Fill Intent, or one refusal,
+    /// or nothing when the pointer came back inside the source. Editable is judged on the
+    /// target before anything is raised (ADR-0035). Positions taken under an order that has
+    /// since moved name different rows, so such a drag raises nothing (ADR-0011).
+    /// </summary>
+    private async Task FinishFillAsync(CellPosition? releasedOn)
+    {
+        var source = _fillSource;
+        var pointer = releasedOn ?? _fillPointer;
+        var version = _fillVersion;
+        SetDragging(false);
+        if (_disposed || source is not { } from || pointer is not { } to || version != _sequenceVersion)
+            return;
+        if (FillRules.PlanFill(from, to, ColumnIsEditable) is not { } decision)
+            return;
+        if (decision.IsRefused)
+        {
+            if (OnPasteRefused.HasDelegate)
+                await OnPasteRefused.InvokeAsync(decision.Reason);
+            return;
+        }
+        if (OnFill.HasDelegate)
+            await OnFill.InvokeAsync(new GridFillIntent(from, decision.Extension, version));
     }
 
     /// <summary>
@@ -2780,7 +2975,12 @@
                 // RowAt clamps inside the page, which is exactly ADR-0015's rule: a
                 // drag never turns the page.
                 if (row is int r && column is int c)
-                    changed = Apply(_selection.Selection.ExtendTo(new CellPosition(_pageStartRow + r, c), Extent));
+                {
+                    var under = new CellPosition(_pageStartRow + r, c);
+                    changed = _fillSource is not null
+                        ? MoveFillPointer(under)
+                        : Apply(_selection.Selection.ExtendTo(under, Extent));
+                }
 
                 // Not a UI event: an armed suppression would swallow whatever renders
                 // next (the OnKeyAsync lesson).
@@ -2814,8 +3014,13 @@
         }
     }
 
-    private void OnMouseUp()
+    private async Task OnMouseUp(MouseEventArgs e)
     {
+        if (_fillSource is not null)
+        {
+            await FinishFillAsync(CellUnder(e));
+            return;
+        }
         _suppressRender = true;
         SetDragging(false);
     }
@@ -4250,6 +4455,10 @@
         {
             _dragHandler.Remove("onmousemove");
             StopEdgeTimer();
+            // A fill drag ends with the drag, however it ends; a release outside the grid
+            // is not seen, so it raises nothing rather than fill to a guessed cell.
+            _fillSource = null;
+            _fillPointer = null;
             // A message the Focus's timer would have opened mid-drag was refused
             // (ShowMessageAt); the button is up now, so the stillness starts again from
             // here — a press held longer than the delay still gets its message.
@@ -4596,16 +4805,46 @@
         if (block is null)
             return;
 
+        var target = _selection.Selection;
+        var extent = Extent;
         var decision = ClipboardRules.PlanPaste(
-            _selection.Selection, new PasteShape(block.Count, block[0].Count), ColumnIsEditable);
+            target, new PasteShape(block.Count, block[0].Count), ColumnIsEditable,
+            PasteMaySpill ? extent : null);
         if (decision.IsRefused)
         {
             if (OnPasteRefused.HasDelegate)
                 await OnPasteRefused.InvokeAsync(decision.Reason);
             return;
         }
+        var version = _sequenceVersion;
         if (OnPaste.HasDelegate)
-            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, _sequenceVersion));
+            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, version));
+        if (PasteMaySpill)
+            SelectSpilledBlock(target, decision.Plan, version);
+    }
+
+    /// <summary>
+    /// After a spilled paste the block is the Selection, with the Anchor and the Focus at
+    /// its top-left (ADR-0050, item 3). Only for a spill — a paste into a selected range
+    /// already has the target selected. Positions mean something only under the order they
+    /// were written in: if the Consumer's handling of the intent moved the Row Sequence
+    /// Version, or took the block's cells away, nothing is placed (ADR-0011).
+    /// </summary>
+    private void SelectSpilledBlock(GridSelection target, PastePlan plan, int version)
+    {
+        if (_disposed || plan.Targets.Count != 1 || target.Ranges.Count != 1)
+            return;
+        var block = plan.Targets[0];
+        if (block == target.Ranges[0] || version != _sequenceVersion)
+            return;
+        var extent = Extent;
+        if (block.BottomRow >= extent.RowCount || block.RightColumn >= extent.ColumnCount)
+            return;
+        if (Apply(_selection.Selection.Place(block, new CellPosition(block.TopRow, block.LeftColumn), extent)))
+        {
+            _suppressRender = false;
+            StateHasChanged();
+        }
     }
 
     /// <summary>Whether every row the plan touches is in the Window — the test that
@@ -5484,7 +5723,47 @@
         // in the Formula Bar, it must not take the keyboard from there (ADR-0051).
         if (_editSurface == EditSurface.Cell)
             _editorFocusRequest++;
+        else
+            _formulaBarFocusRequest++;
     }
+
+    /// <summary>The Name Box seam's contract (ADR-0051/0030): what it shows, and the core's
+    /// own handlers as the Chrome's control calls them.</summary>
+    private NameBoxContext BuildNameBoxContext()
+        => new(
+            _nameBoxText ?? NameBoxText(),
+            _chromeNameBoxTextChanged ??= text => FromChrome(() => _nameBoxText = text),
+            _chromeNameBoxFocused ??= () => FromChromeAsync(OnNameBoxFocusAsync),
+            _chromeNameBoxBlurred ??= () => FromChrome(OnNameBoxBlur));
+
+    /// <summary>The Formula Bar text field seam's contract (ADR-0051/0030): the Focus cell's
+    /// text, whether it takes typing, the core's handlers, and the focus requests.</summary>
+    private FormulaBarTextContext BuildFormulaBarTextContext()
+        => new(
+            FormulaBarText(),
+            !FormulaBarEditable,
+            _chromeFormulaBarFocused ??= () => FromChromeAsync(OnFormulaBarFocusAsync),
+            _chromeFormulaBarTextChanged ??= text => FromChrome(() => OnFormulaBarInput(new ChangeEventArgs { Value = text })),
+            _formulaBarFocusRequest);
+
+    /// <summary>A handler reached from a Chrome's control rather than from an event on the
+    /// root: run on the renderer's context, then rendered as the root's own event would be —
+    /// <see cref="ShouldRender"/> still consumes a suppression the handler armed.</summary>
+    private Task FromChromeAsync(Func<Task> handler)
+        => InvokeAsync(async () =>
+        {
+            if (_disposed)
+                return;
+            await handler();
+            StateHasChanged();
+        });
+
+    private void FromChrome(Action handler)
+        => _ = FromChromeAsync(() =>
+        {
+            handler();
+            return Task.CompletedTask;
+        });
 
     /// <summary>The editor seam's contract (ADR-0010): the core owns the box, the keys
     /// and the text's lifecycle; a substitute renders the control and reports its text

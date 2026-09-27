@@ -53,6 +53,12 @@ public sealed record GridMetrics
     /// never a stylesheet value.</summary>
     public double NameBoxWidthPx => CellMetrics.EstimatePx("XFD1048576");
 
+    /// <summary>The fill handle's side (ADR-0050, item 5; ADR-0028): a square centred on
+    /// the bottom-right corner of the Selection, a little under a third of a row. The
+    /// press that grabs it is read against the same number, so the paint and the hit
+    /// cannot disagree. Declared, not measured.</summary>
+    public double FillHandleSizePx => Math.Max(5, Math.Round(RowHeightPx * 0.3));
+
     /// <summary>States the size <see cref="CellMetrics"/>' digit width is true at.</summary>
     public double FontSizePx { get; }
 

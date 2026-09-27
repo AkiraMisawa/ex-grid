@@ -52,8 +52,16 @@ public static class MudExGridWords
     /// "Operator", so the two are not one name twice to a screen reader.</summary>
     public const string SecondCondition = "second-condition";
 
+    /// <summary>The Formula Bar's Name Box, as its accessible name (ADR-0051).</summary>
+    public const string NameBox = "name-box";
+
+    /// <summary>The Formula Bar's text field, as its accessible name (ADR-0051).</summary>
+    public const string FormulaBar = "formula-bar";
+
     private static string English(string id) => id switch
     {
+        NameBox => "Name Box",
+        FormulaBar => "Formula Bar",
         Search => "Search",
         BlankValue => "(Blanks)",
         IsOneOf => "is one of",
