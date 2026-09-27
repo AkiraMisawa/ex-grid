@@ -135,6 +135,17 @@ public abstract class SheetEdit
         return new FillEdit(source, target, direction);
     }
 
+    /// <summary>
+    /// The Sheet renamed (<see cref="Sheet.Rename"/>): References qualified with the old name are
+    /// rewritten to the new one. Undoing it puts back the name and those Formulas exactly.
+    /// </summary>
+    /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="Sheet.IsValidName"/>).</exception>
+    public static SheetEdit Rename(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        return new RenameEdit(Sheet.CheckName(name, nameof(name)));
+    }
+
     /// <summary>Whether the Sheet would refuse this operation as it stands, and why. Changes nothing.</summary>
     internal virtual SheetRefusal? Check(Sheet sheet) => null;
 
@@ -181,6 +192,16 @@ public abstract class SheetEdit
             var (refusal, states) = sheet.PlanFill(source, target, direction);
             if (refusal is not null) throw new SheetRefusedException(refusal);
             return new CellsEdit(states.Select(s => s.Address), s => s.Restore(states)).Apply(sheet);
+        }
+    }
+
+    /// <summary>A rename: undone by the old name and the Formulas it rewrote put back.</summary>
+    internal sealed class RenameEdit(string name) : SheetEdit
+    {
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var outcome = sheet.ApplyRename(name);
+            return new SheetStep(sheet, outcome.Change, s => s.UndoRename(outcome), s => s.ApplyRename(name).Change);
         }
     }
 

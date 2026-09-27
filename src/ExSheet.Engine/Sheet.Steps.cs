@@ -60,7 +60,7 @@ public sealed partial class Sheet
     internal SheetChange Unrestructure(Formulas.StructuralEdit edit, StructuralOutcome outcome)
     {
         var before = Snapshot();
-        var recalculated = new List<CellAddress>(Restructure(edit.Inverse).Change.Recalculated);
+        var recalculated = new List<CellAddress>(Restructure(edit.Inverse, formatInserted: false).Change.Recalculated);
         var states = new List<(CellAddress, CellState)>();
         foreach (var (address, entry) in outcome.Rewritten) states.Add((address, StateOf(address).Recorded with { Entry = entry }));
         states.AddRange(outcome.Dropped.Select(d => (d.Address, d.State.Recorded)));

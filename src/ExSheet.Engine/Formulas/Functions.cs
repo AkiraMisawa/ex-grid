@@ -6,8 +6,8 @@ namespace ExSheet.Engine.Formulas;
 /// The declared set, ADR-0047's first list. Each function is written to Microsoft's documented
 /// behaviour for it: how it treats blanks, text, booleans and Error Values typed as arguments and
 /// found inside ranges, and its rounding. Where ExSheet cannot give Excel's answer — a result that
-/// would spill an array, XLOOKUP's binary search — it gives an Error Value instead of another
-/// answer.
+/// would spill an array, XLOOKUP's binary search over data it cannot show to be sorted — it gives
+/// an Error Value instead of another answer.
 /// </summary>
 internal static partial class FunctionLibrary
 {
@@ -311,10 +311,7 @@ internal static partial class FunctionLibrary
             var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(5)), out var modeError);
             if (modeError is { } me) return Operand.Of(me);
             searchMode = (int)Math.Truncate(mode);
-            // Binary search (2, -2) is not admitted: on unsorted data Excel's answer depends on its
-            // own search order, which ExSheet does not know, and a different wrong answer would
-            // look like a right one.
-            if (searchMode is not (1 or -1)) return Operand.Of(ErrorValue.Value);
+            if (searchMode is not (1 or -1 or 2 or -2)) return Operand.Of(ErrorValue.Value);
         }
 
         // A range of one row or one column; a Linked Table's column runs down.
@@ -326,7 +323,11 @@ internal static partial class FunctionLibrary
         }
 
         int? found = null;
-        if (lookup is { } wanted)
+        if (searchMode is 2 or -2)
+        {
+            if (!TryBinarySearch(vector, evaluator, lookup, matchMode, ascending: searchMode == 2, out found)) return Operand.Of(ErrorValue.Value);
+        }
+        else if (lookup is { } wanted)
         {
             var candidates = vector.Candidates(evaluator);
             if (searchMode == -1) candidates = candidates.Reverse();
@@ -343,6 +344,78 @@ internal static partial class FunctionLibrary
             return call.Has(3) ? call.Operand(3) : Operand.Of(ErrorValue.NA);
         }
         return result.ItemAt(index);
+    }
+
+    /// <summary>
+    /// XLOOKUP's binary search (<c>search_mode</c> 2 and −2), admitted only where its answer does not
+    /// depend on how Excel's search runs (ADR-0047): over a lookup array that is sorted as the mode
+    /// says, ascending for 2 and descending for −2, whose match is one key and not several. The
+    /// answer is then the one row that holds the matching value, which any correct search finds.
+    /// <see langword="false"/> is a refusal (<c>#VALUE!</c>): the array is not sorted as the mode
+    /// says; it holds blanks, Error Values, or values of more than one kind (Excel's ordering across
+    /// kinds is not pinned here, so mixed kinds count as unsorted); the lookup value is blank or of
+    /// another kind; text holds anything but ASCII letters, digits and spaces (Excel's collation of
+    /// other characters is not pinned here); the match mode is the wildcard one; or the matched key
+    /// appears more than once.
+    /// </summary>
+    /// <remarks>
+    /// Which of several equal keys Excel's binary search returns is UNVERIFIED — it is to be observed
+    /// in Excel first (docs/specs/exsheet/verify-on-windows.md, Part A, item 9). Until then a match
+    /// on a duplicated key is refused rather than guessed.
+    /// </remarks>
+    /// <param name="vector">The lookup array.</param>
+    /// <param name="evaluator">What reads its cells.</param>
+    /// <param name="lookup">The lookup value; blank as <see langword="null"/>.</param>
+    /// <param name="matchMode">XLOOKUP's <c>match_mode</c>: 0, −1, 1 or 2.</param>
+    /// <param name="ascending">Whether the mode is 2 (ascending) rather than −2 (descending).</param>
+    /// <param name="found">The position matched, or <see langword="null"/> when nothing matches.</param>
+    private static bool TryBinarySearch(Vector vector, Evaluator evaluator, Value? lookup, int matchMode, bool ascending, out int? found)
+    {
+        found = null;
+        if (matchMode == 2 || lookup is not { } wanted || wanted.IsError || !Orderable(wanted)) return false;
+        var candidates = vector.Candidates(evaluator).ToList();
+        if (candidates.Count != vector.Length) return false;
+        foreach (var (_, value) in candidates)
+        {
+            if (value.Kind != wanted.Kind || !Orderable(value)) return false;
+        }
+        for (var i = 1; i < candidates.Count; i++)
+        {
+            var order = Evaluator.Compare(candidates[i - 1].Value, candidates[i].Value);
+            if (ascending ? order > 0 : order < 0) return false;
+        }
+
+        // The value that matches: the wanted one, or failing that the nearest smaller (−1) or larger (1).
+        Value? match = null;
+        foreach (var (_, value) in candidates)
+        {
+            var order = Evaluator.Compare(value, wanted);
+            if (order == 0)
+            {
+                match = value;
+                break;
+            }
+            if (matchMode == -1 && order < 0 && (match is null || Evaluator.Compare(value, match) > 0)) match = value;
+            if (matchMode == 1 && order > 0 && (match is null || Evaluator.Compare(value, match) < 0)) match = value;
+        }
+        if (match is not { } matched || (matchMode == 0 && Evaluator.Compare(matched, wanted) != 0)) return true;
+
+        foreach (var (i, value) in candidates)
+        {
+            if (Evaluator.Compare(value, matched) != 0) continue;
+            // Several equal keys: which one Excel returns is UNVERIFIED (verify-on-windows.md, Part A, item 9).
+            if (found is not null)
+            {
+                found = null;
+                return false;
+            }
+            found = i;
+        }
+        return true;
+
+        static bool Orderable(Value value) =>
+            value.Kind is ValueKind.Number or ValueKind.Boolean
+            || (value.Kind == ValueKind.Text && value.Text.All(c => char.IsAsciiLetterOrDigit(c) || c == ' '));
     }
 
     /// <summary>A range of one row or one column, as XLOOKUP reads it: rectangle of cells or a Linked Table's column.</summary>

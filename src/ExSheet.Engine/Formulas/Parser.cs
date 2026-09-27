@@ -23,10 +23,14 @@ internal sealed class Parser
     }
 
     /// <summary>Parses a Formula; <paramref name="formula"/> starts with <c>=</c>.</summary>
-    public static Node Parse(string formula)
+    public static Node Parse(string formula) => Parse(formula, out _);
+
+    /// <summary>Parses a Formula, and gives the tokens it was read from.</summary>
+    public static Node Parse(string formula, out IReadOnlyList<Token> tokens)
     {
         if (formula.Length == 0 || formula[0] != '=') throw new FormulaSyntaxException(formula, 0, "a Formula begins with '='.");
         var parser = new Parser(formula, Lexer.Tokenize(formula, 1));
+        tokens = parser._tokens;
         if (parser.Peek.Kind == TokenKind.End) throw new FormulaSyntaxException(formula, 1, "the Formula is empty.");
         var node = parser.ParseComparison();
         if (parser.Peek.Kind != TokenKind.End) throw parser.Unexpected();

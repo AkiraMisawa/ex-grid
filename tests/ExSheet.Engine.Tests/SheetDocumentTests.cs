@@ -7,18 +7,18 @@ namespace ExSheet.Engine.Tests;
 
 public class SheetDocumentTests
 {
-    [Fact] // ADR-0048 (SH-12): the document carries its version and its culture
-    public void The_document_carries_version_and_culture()
+    [Fact] // ADR-0048 (SH-12), ADR-0046: the document carries its version, its culture and the Sheet's name
+    public void The_document_carries_version_culture_and_name()
     {
         var json = NewSheet().ToDocument().ToJson();
 
-        Assert.Equal("""{"version":1,"culture":"en-US","cells":[]}""", json);
+        Assert.Equal("""{"version":2,"culture":"en-US","name":"Sheet1","cells":[]}""", json);
     }
 
     [Theory] // ADR-0048 (SH-12): a document of an unknown version is refused, not guessed at
-    [InlineData("""{"version":2,"culture":"en-US","cells":[]}""", 2)]
+    [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","cells":[]}""", 3)]
     [InlineData("""{"version":0,"culture":"en-US","cells":[]}""", 0)]
-    [InlineData("""{"version":2,"culture":"en-US","cells":[{"at":"A1","number":1}],"sheets":[]}""", 2)]
+    [InlineData("""{"version":3,"culture":"en-US","cells":[{"at":"A1","number":1}],"sheets":[]}""", 3)]
     public void An_unknown_version_is_refused(string json, int version)
     {
         var refusal = Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
@@ -43,9 +43,15 @@ public class SheetDocumentTests
     [InlineData("""{"version":1,"culture":"en-US","cells":[{"at":"A1","number":1,"format":"[Red]0"}]}""")]
     [InlineData("""{"version":1,"culture":"en-US","cells":[{"at":"A1","number":1,"align":"justify"}]}""")]
     [InlineData("""{"version":1,"culture":"xx-NOPE","cells":[]}""")]
+    [InlineData("""{"version":1,"culture":"en-US","name":"Sheet1","cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":1,"cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"","cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"a/b","cells":[]}""")]
+    [InlineData("""{"version":2,"culture":"en-US","name":"Sheet1","cells":[],"values":[]}""")]
     [InlineData("""[1]""")]
     [InlineData("""not json""")]
-    public void Anything_version_1_does_not_define_is_refused(string json)
+    public void Anything_its_version_does_not_define_is_refused(string json)
     {
         Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
     }
@@ -127,6 +133,31 @@ public class SheetDocumentTests
             Assert.Equal(sheet.Value(name), reopened.Value(name));
         }
         Assert.Equal("", reopened.Value("A3")!.Value.Text);
+    }
+
+    [Fact] // ADR-0048, ADR-0046: a version 1 document still opens, as a Sheet named Sheet1
+    public void A_version_1_document_opens_named_sheet1()
+    {
+        var document = SheetDocument.FromJson("""{"version":1,"culture":"en-US","cells":[{"at":"A1","number":2},{"at":"A2","formula":"=A1*3"}]}""");
+
+        var sheet = Sheet.Open(document);
+
+        Assert.Equal("Sheet1", sheet.Name);
+        Assert.Equal(6, sheet.Number("A2"));
+        Assert.StartsWith("""{"version":2,"culture":"en-US","name":"Sheet1",""", sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0046: the Sheet's name round-trips, and a Reference qualified with it reads the Sheet when reopened
+    public void The_name_round_trips()
+    {
+        var sheet = new Sheet(EnUs, "Risk 'Q3' book");
+        sheet.Enter("A1", "7");
+        sheet.Enter("B1", "='Risk ''Q3'' book'!A1+1");
+
+        var reopened = Sheet.Open(SheetDocument.FromJson(sheet.ToDocument().ToJson()));
+
+        Assert.Equal("Risk 'Q3' book", reopened.Name);
+        Assert.Equal(8, reopened.Number("B1"));
     }
 
     [Fact] // ADR-0048: the invariant culture can be declared and recorded too
