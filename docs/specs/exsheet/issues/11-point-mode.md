@@ -63,3 +63,17 @@ outline stands, recorded as an ADR-0051/0021 note with DC-24 amended. Shift+clic
 today. Also limited: the core cannot set the DOM caret (the same gap as ticket 10), so after a
 Reference written in the middle of the text the browser shows the caret at the end. The next
 arrow still replaces the right span, but a character typed next lands at the end.
+
+2026-09-27, ExGrid core, second round (ADR-0051's second round, DC-31's C# side): the blocked
+criterion is unblocked in the core. While the edit is in Point the gate is told `point`, which
+claims Overwrite's keys and the four Shift+arrows, so a real Shift+↓ reaches `OnPointKey` and
+extends the outline instead of selecting text. After a Reference is written (by a key, a click
+or the drag), the grid tells the listener to place the caret after it (`setCaret`), so a
+character typed next lands after the Reference even mid-text. The caret a click points from is
+the one the listener reported with the last input, never one inferred; with none reported yet,
+a click does not point. Layer 2: `CaretTests`, `PointModeTests` (the gate is now told `point`).
+**What remains:** layer 3 with real keys and mouse (DC-19, DC-31: Shift+arrows extend, the
+caret after a mid-text Reference), DC-20 on the Server host, and the ExSheet wiring. One gap is
+left and returned as a proposal: a caret moved without an input (← / → in Caret, a click in the
+text) is not reported, so a click on a cell right after it points from the caret of the last
+input or key.

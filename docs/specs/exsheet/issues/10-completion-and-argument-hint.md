@@ -60,3 +60,26 @@ and ambiguous only between repeated letters. Second, the core cannot place the D
 accept the browser leaves it at the end of the text, which is right for the usual case (`=SU|` →
 `=SUM(|`) and visibly wrong when text follows the caret. In Caret with a list open, ←/→/Home/End
 close the list and do not move the caret, because the gate has no set that claims ↑/↓ alone.
+
+2026-09-27, ExGrid core, second round (ADR-0051's second round, DC-31's C# side): both limits
+above are gone. **The caret is reported, never inferred:** `EditorTextRules.InferCaret` is
+removed. Where completion or pointing is declared, the grid's listener reports each input in an
+editor surface (the Cell Editor, the Formula Bar, a Chrome's control inside `.ex-editor`) with
+the field's `value` and `selectionStart`, through a new `[JSInvokable] OnEditorCaretAsync(text,
+caret)`; `setEditing` now carries whether to report, so a grid declaring neither sends nothing
+more (DC-1). The report and Blazor's input event are two messages and either may come first: a
+report for text not heard yet is kept for its input event, and until the caret is known the
+Consumer is not asked (a key that carries it asks at once). **The caret is set after the core
+rewrites the text:** after an accepted candidate, and after a written Reference, the grid calls
+`setCaret(text, caret)` on the handle after the render that carries the text, and the listener
+places it only while the surface still holds that text. **While a list is open the gate is told
+`completion`**, which claims only ↑/↓ beside the editing keys (Tab, Escape, Enter, F2), in
+Overwrite and Caret alike, so ← and → move the caret. A key that carries a caret other than the
+one the list answered re-asks the Consumer first and is decided against that answer, so Tab
+after ← replaces the span at the new caret. A ←/→/Home/End that a gate not yet told still
+claimed only closes the list. Layer 2: `CaretTests` (including `=SS` completed at the reported
+caret, a report ahead of its input, the caret placed mid-text), `CompletionTests`,
+`MudGridChromeTests`; the script shape in `ShippedStylesheetTests`. **What remains:** layer 3
+with real keys (DC-31): `=SS` then completion replaces the span at the caret, the caret sits
+after the inserted text, and ←/→ with the list open move the caret; plus the earlier
+layer 3 items and the ExSheet wiring.

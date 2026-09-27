@@ -1,6 +1,7 @@
 using ExGrid.Cells;
 using ExGrid.Chrome;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 
 namespace ExGrid.Components;
 
@@ -31,9 +32,22 @@ public partial class ExGrid<TRow>
     /// </summary>
     [Parameter] public Func<string, int, ValueTask<EditorCompletion?>>? CompleteEditorText { get; set; }
 
-    // Where the caret stands in the uncommitted text, as far as the core knows it: at the end
-    // of what an input event wrote, or where a key carried it (ADR-0051).
+    // Where the caret stands in the uncommitted text, as the browser reported it with an input
+    // or carried it with a key, or where the core put it after writing the text itself; -1
+    // while it is not known (ADR-0051: reported and set, never inferred).
     private int _editCaret;
+
+    // The browser's report of an input whose text the core has not heard yet: the listener's
+    // report and Blazor's input event are two messages, and either can arrive first.
+    private string? _reportedText;
+    private int _reportedCaret = -1;
+
+    // The caret the list on show answers: a key carrying another one makes it stale.
+    private int _completionCaret = -1;
+
+    // Text the core wrote into the editor, and where the listener is to place the caret once
+    // the render carrying that text has landed (ADR-0051).
+    private (string Text, int Caret)? _caretToPlace;
 
     // The answer being shown, the candidate chosen in it, and the number of the last question
     // asked — an answer to any other is stale and dropped (ADR-0051, DC-18).
@@ -51,30 +65,43 @@ public partial class ExGrid<TRow>
         => _editMode != EditMode.None && _completion is { Candidates.Count: > 0 };
 
     /// <summary>The key gate's set for the current state (ADR-0010): Caret leaves the arrows
-    /// to the editor, except while a list is open, whose ↑/↓ are the core's; Point claims them
-    /// as Overwrite does (ADR-0051).</summary>
+    /// to the editor. While a list is open, in any state, only its ↑/↓ are claimed beside the
+    /// editing keys, so ← and → move the caret. Point claims Overwrite's keys and the four
+    /// Shift+arrows, which extend the outline (ADR-0051's second round).</summary>
     private string GateMode() => _editMode switch
     {
-        EditMode.Overwrite or EditMode.Point => "overwrite",
-        EditMode.Caret => CompletionListOpen ? "overwrite" : "caret",
-        _ => "none",
+        EditMode.None => "none",
+        _ when CompletionListOpen => "completion",
+        EditMode.Point => "point",
+        EditMode.Overwrite => "overwrite",
+        _ => "caret",
     };
 
+    /// <summary>Whether the listener reports the caret with each input (ADR-0051): only where
+    /// completion or pointing is declared, so a grid that declares neither sends nothing more
+    /// than before (DC-1).</summary>
+    private bool ReportsCaret => CompleteEditorText is not null || PointAt is not null;
+
     /// <summary>
-    /// The user changed the uncommitted text in either surface (ADR-0051): the caret is where
-    /// the edit left it, the list shown for the old text goes — it answers text that is no
-    /// longer there — and the new text is reported.
+    /// The user changed the uncommitted text in either surface (ADR-0051): the list shown for
+    /// the old text goes — it answers text that is no longer there — and the new text is
+    /// reported. The caret is the one the listener reported with this input, if its report came
+    /// first; otherwise it is not known yet, and the text is reported when it comes
+    /// (<see cref="OnEditorCaretAsync"/>).
     /// </summary>
     private void TextTyped(string text) => TextTyped(text, caret: null);
 
-    /// <summary>The same, with the caret known — carried by a key rather than inferred. Typing
-    /// ends pointing: the outline goes, and Point gives way to Overwrite, whose arrows point
-    /// again wherever the Consumer says a Reference can go (ADR-0051).</summary>
+    /// <summary>The same, with the caret carried by a key. Typing ends pointing: the outline
+    /// goes, and Point gives way to Overwrite, whose arrows point again wherever the Consumer
+    /// says a Reference can go (ADR-0051).</summary>
     private void TextTyped(string text, int? caret)
     {
         if (text == _editText)
             return;
-        _editCaret = caret ?? EditorTextRules.InferCaret(_editText, text);
+        if (caret is null && string.Equals(text, _reportedText, StringComparison.Ordinal))
+            caret = _reportedCaret;
+        _reportedText = null;
+        _editCaret = caret ?? -1;
         _editText = text;
         if (_pointer is not null || _editMode == EditMode.Point)
         {
@@ -95,16 +122,19 @@ public partial class ExGrid<TRow>
     {
         _completion = null;
         var asked = ++_completionAsked;
-        if (CompleteEditorText is not { } complete || _editMode == EditMode.None)
+        // A caret not known yet is waited for, never guessed: a list for the wrong caret would
+        // replace the wrong span (ADR-0051).
+        if (CompleteEditorText is not { } complete || _editMode == EditMode.None || _editCaret < 0)
         {
             MarkGateIfMoved();
             return;
         }
         var text = _editText;
+        var caret = _editCaret;
         ValueTask<EditorCompletion?> answer;
         try
         {
-            answer = complete(text, _editCaret);
+            answer = complete(text, caret);
         }
         catch (Exception ex)
         {
@@ -113,13 +143,13 @@ public partial class ExGrid<TRow>
             return;
         }
         if (answer.IsCompletedSuccessfully)
-            ShowCompletion(asked, text, answer.Result);
+            ShowCompletion(asked, text, caret, answer.Result);
         else
-            _ = AwaitCompletionAsync(asked, text, answer);
+            _ = AwaitCompletionAsync(asked, text, caret, answer);
         MarkGateIfMoved();
     }
 
-    private async Task AwaitCompletionAsync(int asked, string text, ValueTask<EditorCompletion?> answer)
+    private async Task AwaitCompletionAsync(int asked, string text, int caret, ValueTask<EditorCompletion?> answer)
     {
         EditorCompletion? result;
         try
@@ -133,7 +163,7 @@ public partial class ExGrid<TRow>
         }
         await InvokeAsync(() =>
         {
-                if (!ShowCompletion(asked, text, result))
+            if (!ShowCompletion(asked, text, caret, result))
                 return;
             MarkGateIfMoved();
             // Not a UI event: an armed suppression would swallow this render (the OnKeyAsync
@@ -146,7 +176,7 @@ public partial class ExGrid<TRow>
     /// <summary>Shows an answer, unless it is stale: asked before a later question, for text
     /// that is no longer the editor's, or after the edit closed (ADR-0051, DC-18).</summary>
     /// <returns>Whether anything was shown.</returns>
-    private bool ShowCompletion(int asked, string text, EditorCompletion? answer)
+    private bool ShowCompletion(int asked, string text, int caret, EditorCompletion? answer)
     {
         if (_disposed || asked != _completionAsked || _editMode == EditMode.None
             || !string.Equals(text, _editText, StringComparison.Ordinal)
@@ -156,7 +186,68 @@ public partial class ExGrid<TRow>
         }
         _completion = answer;
         _completionSelected = answer.Candidates.Count > 0 ? 0 : -1;
+        _completionCaret = caret;
         return true;
+    }
+
+    /// <summary>
+    /// The caret, reported by the grid's own listener with each input in an editor surface
+    /// (ADR-0051's second round): an input event carries no caret, and inferring it from the
+    /// change is ambiguous where letters repeat. Sent only where completion or pointing is
+    /// declared. The report and Blazor's input event are two messages: a report for the text
+    /// the core holds sets the caret, and asks the Consumer if the text was waiting for it; a
+    /// report for text not heard yet is kept for the input event that brings it.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public only
+    /// because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="text">The editor surface's value as the input left it.</param>
+    /// <param name="caret">Its <c>selectionStart</c>.</param>
+    [JSInvokable]
+    public Task OnEditorCaretAsync(string text, int caret)
+    {
+        if (_disposed || _editMode == EditMode.None || text is null || caret < 0 || caret > text.Length)
+            return Task.CompletedTask;
+        if (!string.Equals(text, _editText, StringComparison.Ordinal))
+        {
+            _reportedText = text;
+            _reportedCaret = caret;
+            return Task.CompletedTask;
+        }
+        if (caret == _editCaret)
+            return Task.CompletedTask;
+        _editCaret = caret;
+        if (CompleteEditorText is null)
+            return Task.CompletedTask;
+        RequestCompletion();
+        // Not a UI event: an armed suppression would swallow this render (the OnKeyAsync
+        // lesson).
+        _suppressRender = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>The core wrote the editor's text itself (ADR-0051): once the render carrying it
+    /// has landed, the listener places the caret where the core says — after the inserted
+    /// text, wherever in the text that is.</summary>
+    private void PlaceCaret() => _caretToPlace = (_editText, _editCaret);
+
+    /// <summary>Hands the caret the core placed to the listener, after the render that carries
+    /// its text. The listener sets it only while the surface still holds that text: typed on
+    /// since, the user's own caret stands.</summary>
+    private async Task PushCaretAsync()
+    {
+        var place = _caretToPlace;
+        _caretToPlace = null;
+        if (place is not { } caret || _scrollHandle is null || _disposed || _editMode == EditMode.None)
+            return;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("setCaret", caret.Text, caret.Caret);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
     }
 
     /// <summary>Takes the list and the hint down, and makes any answer still on its way
@@ -180,9 +271,11 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// A key the gate forwarded while a list is open (ADR-0051): ↑/↓ choose, Tab accepts,
-    /// Escape closes the list and leaves the edit open. In Caret the gate claimed the other
-    /// caret keys too, only because the list was open: they close it. Every other key keeps
-    /// its meaning, and whatever it does to the edit takes the list with it.
+    /// Escape closes the list and leaves the edit open. The gate leaves ←, →, Home and End to
+    /// the editor while a list is open; one that arrives all the same was claimed by a gate
+    /// not yet told the list opened, and its default was prevented, so it only closes the
+    /// list — it neither moves the caret nor commits. Every other key keeps its meaning, and
+    /// whatever it does to the edit takes the list with it.
     /// </summary>
     /// <returns>Whether the key was the list's.</returns>
     private bool OnCompletionKey(string canonical)
@@ -208,7 +301,7 @@ public partial class ExGrid<TRow>
                 CloseCompletion();
                 StateHasChanged();
                 return true;
-            case "ArrowLeft" or "ArrowRight" or "Home" or "End" when _editMode == EditMode.Caret:
+            case "ArrowLeft" or "ArrowRight" or "Home" or "End":
                 CloseCompletion();
                 StateHasChanged();
                 return true;
@@ -228,6 +321,7 @@ public partial class ExGrid<TRow>
         var (text, caret) = EditorTextRules.Accept(_editText, _completion.Candidates[index]);
         _editText = text;
         _editCaret = caret;
+        PlaceCaret();
         RequestCompletion();
     }
 

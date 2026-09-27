@@ -57,6 +57,14 @@ public enum GridKeyKind
     /// <summary>Alt+↓: open the column menu of the Focus's column — the key Excel opens a
     /// header's filter drop-down with (ADR-0039). Before it, only a pointer on ▾ could.</summary>
     OpenColumnMenu,
+
+    /// <summary>Ctrl+Z, while no edit is open: raise the Consumer's undo (ADR-0050,
+    /// item 8). Taken only where the Consumer declared one.</summary>
+    Undo,
+
+    /// <summary>Ctrl+Y and Ctrl+Shift+Z, while no edit is open: raise the Consumer's redo
+    /// (ADR-0050, item 8). Taken only where the Consumer declared one.</summary>
+    Redo,
 }
 
 /// <summary>

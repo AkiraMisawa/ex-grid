@@ -198,4 +198,34 @@ public class GridKeyTests
         Assert.Contains("ContextMenu", GridKeys.Taken);
         Assert.Contains("Shift+F10", GridKeys.Taken);
     }
+
+    [Theory] // ADR-0050 item 8: Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo, in either case (CapsLock, Command+Shift)
+    [InlineData("z", false, GridKeyKind.Undo)]
+    [InlineData("Z", false, GridKeyKind.Undo)]
+    [InlineData("y", false, GridKeyKind.Redo)]
+    [InlineData("Y", false, GridKeyKind.Redo)]
+    [InlineData("Z", true, GridKeyKind.Redo)]
+    [InlineData("z", true, GridKeyKind.Redo)]
+    public void The_history_keys_resolve(string key, bool shift, GridKeyKind expected)
+    {
+        Assert.Equal(expected, Key(key, ctrl: true, shift: shift).Kind);
+        Assert.Equal(expected, Key(key, shift: shift, meta: true).Kind);
+        Assert.Equal(GridKeyKind.None, Key(key, shift: shift, meta: true, metaIsPrimary: false).Kind);
+    }
+
+    [Fact] // ADR-0050 item 8 / DC-1: undo and redo are never taken unless declared
+    public void The_history_keys_are_taken_only_where_declared()
+    {
+        Assert.Same(GridKeys.Taken, GridKeys.TakenFor(undo: false, redo: false));
+        Assert.DoesNotContain(GridKeys.Taken, key => GridKeys.Resolve(
+            key[(key.LastIndexOf('+') + 1)..], key.Contains("Control+"), key.Contains("Shift+"), false, false, false).Kind
+            is GridKeyKind.Undo or GridKeyKind.Redo);
+
+        Assert.Equal(["Control+z", "Control+Z"], GridKeys.TakenFor(undo: true, redo: false).Except(GridKeys.Taken));
+        Assert.Equal(["Control+y", "Control+Y", "Control+Shift+Z", "Control+Shift+z"],
+            GridKeys.TakenFor(undo: false, redo: true).Except(GridKeys.Taken));
+        Assert.Equal(6, GridKeys.TakenFor(undo: true, redo: true).Except(GridKeys.Taken).Count());
+        // One instance per answer, so the grid re-tells the gate only when a declaration moved.
+        Assert.Same(GridKeys.TakenFor(true, true), GridKeys.TakenFor(true, true));
+    }
 }

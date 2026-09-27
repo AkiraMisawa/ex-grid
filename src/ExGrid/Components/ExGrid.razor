@@ -316,7 +316,7 @@
                             <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
-                                       CellState="CellState" CellType="CellType" RowKind="RowKind"
+                                       CellState="CellState" CellType="CellType" CellAlign="CellAlign" RowKind="RowKind"
                                        RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
@@ -981,6 +981,22 @@
     [Parameter] public Func<TRow, GridColumn<TRow>, ColumnType>? CellType { get; set; }
 
     /// <summary>
+    /// A per-cell alignment (ADR-0050, item 7): asked for by (row, column), it aligns that
+    /// one cell. The precedence is this answer where it is not
+    /// <see cref="Columns.CellAlign.Auto"/>, then the column's
+    /// <see cref="GridColumn{TRow}.Align"/>, then the default of the cell's kind
+    /// (<see cref="CellType"/>, then the column's; ADR-0016). A Sheet needs it for a user's
+    /// own alignment and for Excel's centring of booleans and Error Values. Null, the
+    /// default, leaves every cell aligned exactly as before. Asked of value cells only, as
+    /// <see cref="CellType"/> is.
+    ///
+    /// <para><b>Hold it in a field and hand over a new one when the alignments change.</b>
+    /// Its identity is the change signal, as <see cref="CellState"/>'s is
+    /// (ADR-0003/0006).</para>
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, CellAlign>? CellAlign { get; set; }
+
+    /// <summary>
     /// What role each row plays — detail, group or total (ADR-0024). Null means every
     /// row is a detail row. Asked once per painted row, so it is as cheap as
     /// <see cref="CellState"/> has to be, and its identity is the change signal in the
@@ -1070,6 +1086,25 @@
     /// refined). With no handler, nobody has accepted, and the Selection stays too.</para>
     /// </summary>
     [Parameter] public EventCallback<GridFillIntent> OnFill { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ADR-0050, item 8): undo reaches the Consumer. Declared, the
+    /// grid claims Ctrl+Z (Command+Z on an Apple keyboard, the Primary Modifier) while no
+    /// edit is open, and raises this. What undo means is the Consumer's: the grid holds no
+    /// history, as it holds no data (ADR-0007). While an edit is open, the key stays the
+    /// editor's own, which undoes uncommitted typing; in a Consumer's control inside the
+    /// grid, it stays the control's. Not declared, the default, the key stays the
+    /// browser's, as before.
+    /// </summary>
+    [Parameter] public EventCallback OnUndo { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ADR-0050, item 8): redo reaches the Consumer. Declared, the
+    /// grid claims Ctrl+Y and Ctrl+Shift+Z (Command on an Apple keyboard) while no edit is
+    /// open, and raises this, on the same terms as <see cref="OnUndo"/>. Not declared, the
+    /// default, both keys stay the browser's.
+    /// </summary>
+    [Parameter] public EventCallback OnRedo { get; set; }
 
     /// <summary>
     /// The Filter in force (ADR-0002/0009), on the push form: what the panel paints
@@ -1528,6 +1563,12 @@
     private bool _jsEditingDirty;
     // What the key gate was last told about whether any column edits (ADR-0010/0020).
     private bool _jsCanEdit;
+
+    // The keys the gate was last handed (ADR-0010), which differ only by the undo and redo
+    // declarations (ADR-0050, item 8).
+    private IReadOnlyList<string>? _jsTaken;
+
+    private IReadOnlyList<string> TakenKeys() => GridKeys.TakenFor(OnUndo.HasDelegate, OnRedo.HasDelegate);
 
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the
     // action chosen in it. The keyboard never leaves the root; this is what the arrows
@@ -2109,6 +2150,8 @@
             _editMode = EditMode.None;
             _editSurface = EditSurface.Cell;
             _editText = "";
+            _reportedText = null;
+        _reportedText = null;
             _editError = null;
             _editorNeedsFocus = false;
             _jsEditingDirty = true;
@@ -2421,6 +2464,9 @@
         }
         if (_jsEditingDirty)
             await PushEditingModeAsync();
+        // After the render that carries the text the core wrote (ADR-0051).
+        if (_caretToPlace is not null)
+            await PushCaretAsync();
         await PushPointerReportingAsync();
         // A display-only grid must not take printable keys away from the page
         // (ADR-0010/0020) — the gate is told whether any column edits, and re-told
@@ -2432,6 +2478,21 @@
             try
             {
                 await _scrollHandle.InvokeVoidAsync("setCanEdit", canEdit);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
+        }
+        // Undo and redo are taken only while declared (ADR-0050, item 8): a declaration made
+        // or withdrawn after attach re-tells the gate the whole set. TakenFor answers one
+        // instance per combination, so an unchanged declaration is a reference compare.
+        var taken = TakenKeys();
+        if (_scrollHandle is not null && !_disposed && !ReferenceEquals(taken, _jsTaken))
+        {
+            _jsTaken = taken;
+            try
+            {
+                await _scrollHandle.InvokeVoidAsync("setTaken", taken);
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
@@ -2526,8 +2587,9 @@
 
             _self ??= DotNetObjectReference.Create(this);
             _jsCanEdit = AnyColumnEdits();
+            _jsTaken = TakenKeys();
             var handle = await _module.InvokeAsync<IJSObjectReference>(
-                "attach", _root, _scroller, _self, GridKeys.Taken, _jsCanEdit,
+                "attach", _root, _scroller, _self, _jsTaken, _jsCanEdit,
                 PopoverDelay.TotalMilliseconds);
             if (_disposed)
             {
@@ -5150,6 +5212,17 @@
                 await OpenColumnMenuFromKeyAsync();
                 StateHasChanged();
                 return;
+            case GridKeyKind.Undo:
+                // Taken only where the Consumer declared it (ADR-0050, item 8), and only
+                // while no edit is open: an edit is answered above. What it undoes is the
+                // Consumer's, which pushes its rows back as for any edit (ADR-0007).
+                if (OnUndo.HasDelegate)
+                    await OnUndo.InvokeAsync();
+                return;
+            case GridKeyKind.Redo:
+                if (OnRedo.HasDelegate)
+                    await OnRedo.InvokeAsync();
+                return;
             case GridKeyKind.Leave:
                 // Escape peels the outermost layer first: an open popover closes and
                 // the grid keeps the keyboard — one press, one dismissal. Only with
@@ -5557,7 +5630,7 @@
         try
         {
             _gateTold = GateMode();
-            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold);
+            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold, ReportsCaret);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -5605,7 +5678,7 @@
                 {
                     EditMode.Point => EditMode.Caret,
                     EditMode.Caret when PointAt is { } pointAt && ReferenceText is not null
-                        && pointAt(_editText, _editCaret) => EditMode.Point,
+                        && _editCaret >= 0 && pointAt(_editText, _editCaret) => EditMode.Point,
                     EditMode.Caret => EditMode.Overwrite,
                     _ => EditMode.Caret,
                 };
@@ -5777,6 +5850,7 @@
         _editSurface = EditSurface.Cell;
         _editMode = EditMode.None;
         _editText = "";
+        _reportedText = null;
         _editError = null;
         _editorNeedsFocus = false;
         // The input goes with the mode: a reference kept past it would name an element

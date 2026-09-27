@@ -86,8 +86,24 @@ public class CompletionTests : GridTestContext
     private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, bool shift = false)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, false, shift, false, false, false));
 
-    private static Task TypeAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text)
-        => cut.Find(".ex-viewport .ex-editor").InputAsync(new ChangeEventArgs { Value = text });
+    /// <summary>An input in the Cell Editor as the browser delivers it: Blazor's input event, then
+    /// the listener's report of the caret, at the end of the text unless the test says where
+    /// (ADR-0051's second round).</summary>
+    private static async Task TypeAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text, int? caret = null)
+    {
+        await cut.Find(".ex-viewport .ex-editor").InputAsync(new ChangeEventArgs { Value = text });
+        await ReportCaretAsync(cut, text, caret ?? text.Length);
+    }
+
+    /// <summary>The same input in the Formula Bar.</summary>
+    private static async Task TypeInBarAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text, int? caret = null)
+    {
+        await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = text });
+        await ReportCaretAsync(cut, text, caret ?? text.Length);
+    }
+
+    private static Task ReportCaretAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text, int caret)
+        => cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync(text, caret));
 
     /// <summary>Opens Overwrite on the first cell with <c>=</c>, then types the rest.</summary>
     private static async Task TypeFormulaAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text)
@@ -129,9 +145,9 @@ public class CompletionTests : GridTestContext
 
         await TypeFormulaAsync(cut, "=S");
         await TypeAsync(cut, "=SU");
-        // Typed in the middle: the caret is where the edit happened, not the end of the text.
         await TypeAsync(cut, "=SU+1");
-        await TypeAsync(cut, "=SUM+1");
+        // Typed in the middle: the caret is the one the browser reported, not the end of the text.
+        await TypeAsync(cut, "=SUM+1", caret: 4);
 
         Assert.Equal([("=", 1), ("=S", 2), ("=SU", 3), ("=SU+1", 5), ("=SUM+1", 4)], asked);
     }
@@ -330,15 +346,16 @@ public class CompletionTests : GridTestContext
         await bar.FocusAsync(new FocusEventArgs());
         Assert.Equal("caret", EditingModesTold()[^1]);
 
-        await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "=SU" });
+        await TypeInBarAsync(cut, "=SU");
 
         Assert.Equal(["SUM", "SUMIF"], Labels(cut));
         var style = cut.Find(".ex-completion").GetAttribute("style")!;
         // Beneath the bar: its 20px band, at a 20px row (ADR-0028).
         Assert.Contains("top: 20px", style);
         // In Caret the arrows are the editor's, but while a list is open ↑/↓ are the list's: the
-        // gate is told to claim them, and told back when the list closes (ADR-0010).
-        Assert.Equal("overwrite", EditingModesTold()[^1]);
+        // gate is told to claim them and no other arrow, and told back when the list closes
+        // (ADR-0010; ADR-0051's second round).
+        Assert.Equal("completion", EditingModesTold()[^1]);
 
         await PressAsync(cut, "ArrowDown");
         await PressAsync(cut, "Tab");
@@ -349,14 +366,14 @@ public class CompletionTests : GridTestContext
         Assert.Empty(intents);
     }
 
-    [Fact] // ADR-0051: in Caret with a list open, the caret keys the gate claimed only close the list
+    [Fact] // ADR-0051 second round: a ← claimed by a gate not yet told the list opened only closes the list
     public async Task In_caret_a_left_arrow_closes_the_list_and_moves_nothing()
     {
         var intents = new List<GridEditIntent<TestRow>>();
         var cut = RenderGrid(Synchronous(), intents, formulaBar: true);
         await ClickAsync(cut, 50, 10);
         await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
-        await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "=SU" });
+        await TypeInBarAsync(cut, "=SU");
 
         await PressAsync(cut, "ArrowLeft");
         // A second arrow, arriving before the gate heard the list was gone, moves nothing either.

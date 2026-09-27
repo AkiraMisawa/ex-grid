@@ -84,20 +84,27 @@ public partial class ExGrid<TRow>
     /// A key the gate forwarded while editing, carrying the editor's text and caret
     /// (ADR-0051): the text is the browser's, as the user sees it, and is taken over as the
     /// uncommitted text. A change the core had not heard of yet is typing — it ends pointing
-    /// and is reported like any other.
+    /// and is reported like any other. A caret moved while a list stands — ← and → are the
+    /// editor's while it is open — makes the list stale: it is asked again for the caret the
+    /// key carries, and the key is decided against that answer.
     /// </summary>
     private void AdoptKeyText(string? text, int caret)
     {
         if (text is null || _editMode == EditMode.None)
             return;
+        int? carried = caret >= 0 && caret <= text.Length ? caret : null;
         if (!string.Equals(text, _editText, StringComparison.Ordinal))
         {
-            var inferred = EditorTextRules.InferCaret(_editText, text);
-            TextTyped(text, caret >= 0 && caret <= text.Length ? caret : inferred);
+            TextTyped(text, carried);
             return;
         }
-        if (caret >= 0 && caret <= text.Length)
-            _editCaret = caret;
+        if (carried is not { } at || at == _editCaret)
+            return;
+        // A text that was waiting for its caret is asked about now, before the key is decided.
+        var waited = _editCaret < 0 && CompleteEditorText is not null;
+        _editCaret = at;
+        if (waited || (CompletionListOpen && at != _completionCaret))
+            RequestCompletion();
     }
 
     /// <summary>
@@ -135,7 +142,7 @@ public partial class ExGrid<TRow>
             EndPointing();
             // Home and End move an outline that stands; they start none. Caret's arrows are
             // the editor's.
-            if (move.Kind == 2 || _editMode == EditMode.Caret || !pointAt(_editText, _editCaret))
+            if (move.Kind == 2 || _editMode == EditMode.Caret || _editCaret < 0 || !pointAt(_editText, _editCaret))
                 return false;
             _pointer = GridSelection.Empty.Click(_editingCell, extent);
             _pointStart = _editCaret;
@@ -175,7 +182,8 @@ public partial class ExGrid<TRow>
         else
         {
             EndPointing();
-            if (!pointAt(_editText, _editCaret))
+            // A caret not known is not guessed at: the Reference would land somewhere else.
+            if (_editCaret < 0 || !pointAt(_editText, _editCaret))
                 return false;
             _pointStart = _editCaret;
             _pointLength = 0;
@@ -219,6 +227,7 @@ public partial class ExGrid<TRow>
         _editCaret = caret;
         _pointWritten = text;
         _editMode = EditMode.Point;
+        PlaceCaret();
         CloseCompletion();
         MarkGateIfMoved();
         if (reveal)
