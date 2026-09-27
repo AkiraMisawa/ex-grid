@@ -193,5 +193,66 @@ engine must now reproduce. The `decimal` alternative stays rejected.
 - **Typed `#SPILL!`, `#CALC!` and Excel's other newer Error Values stay text.** The engine has no
   such Error Values while spilling is out of the first version. They join `#GETTING_DATA` and
   `#CIRC!` as exceptions to "a typed Error Value becomes that Error Value".
+  *(Reversed 2026-09-27, second observation below: that answer came through COM. Typed, Excel
+  makes them Error Values.)*
 - **A number constant in a Formula is written as Excel writes it**: `=1E15&""` is stored as
   `=1000000000000000&""`, with 15 significant digits.
+
+## Observed in Excel, second run *(2026-09-27, the same build — verification/2026-09-27-windows-excel-2)*
+
+The whole corpus, 1056 cases, was asked twice: through COM, and **with real keys**. The two routes
+disagree in a dozen places (`results.md`, "COM and the keyboard"). **Where they differ, the keyboard
+is Excel's answer for ExSheet**, because a user types. COM's `FormulaLocal` and `Formula2` are the
+oracle's convenience, not what a person meets.
+
+### What the second observation settled *(decided with the user, 2026-09-27)*
+
+Each disagreement goes to Excel's answer, except where a refusal is named.
+
+- **Near-cancel follows Excel's shape** (ARITH-076..082). A final addition or subtraction inside
+  parentheses is left alone (`=(0.1+0.2-0.3)` is 5.55E-17), `SUM` cancels as a final operation does
+  (`=SUM(0.1,0.2,-0.3)` is 0), and comparison treats `1+4E-15` as equal to 1. The threshold is
+  narrower than 2⁻⁴⁸ (`=1+3E-15-1` is not zeroed). **Its exact boundary is not known**, so the corpus
+  gains cases that bracket it for the next Windows run, and the engine takes the tightest threshold
+  consistent with every observed case until then.
+- **Text comparison ignores hyphens and reads `ß` as `ss`** (ARITH-087, 088), as Excel's collation
+  does.
+- **A number turned into text is written as Excel writes it** (ARITH-092, 093): `1E-10` becomes
+  `0.0000000001`, and `1.23456789012345E-5` becomes `1.23456789012345E-05`.
+- **`^` is the plain double power** (ARITH-098): `=8^(1/3)` is 1.9999999999999998.
+- **Typed `#SPILL!`, `#CALC!`, `#FIELD!`, `#BLOCKED!`, `#CONNECT!` and `#UNKNOWN!` are Error
+  Values**, in any case (`#spill!` is `#SPILL!`), and `ISERROR` sees them (ERR-096..106). They are
+  data only: nothing in the engine produces them. **`#BUSY!` stays text**, as Excel keeps it.
+  `#GETTING_DATA` and `#CIRC!` stay text, as decided above.
+- **`IFERROR` over an empty cell gives an empty value, not 0** (IFERROR-013): `=IFERROR(A1,"x")&""`
+  is `""`.
+- **`XLOOKUP`'s regular expressions accept Unicode `\w`, lookahead, `\p{…}` and backreferences**
+  (XLOOKUP-097..102). They mean the same in PCRE2 and .NET, so the accepted set was drawn too
+  narrowly. The admission rule stands for constructs the two read differently.
+- **A Formula is written back as Excel writes it** (TEXT-083..097): a sheet qualifier takes the
+  sheet's own name (`sheet1!` → `Sheet1!`), a number constant is written in Excel's form
+  (`=1E20` → `=100000000000000000000`, `=1E-10` → `=0.0000000001`,
+  `=1.23456789012345E-9` → `=1.23456789012345E-09`), and a CR LF inside a Formula is kept as LF.
+- **`=1E308` is refused** (TEXT-103). Excel refuses it through COM and, typed, offers to correct it to
+  `=E1308`. ExSheet does not correct a Formula into another one.
+- **General shows a negative that rounds to 0 as `-0`, and `####` where even that does not fit**
+  (GW-026, 027).
+- **Typed constants are read as Excel reads typed ones** (TYPED-032, 047, DATE-013, TYPED-040):
+  `-$5` is the number -5; `- item one` becomes the Formula `=- item one`, which is `#NAME?`; a
+  two-digit year up to 49 is 20xx and from 50 on is 19xx, as Windows' default does (`1/1/30` is
+  2030); `26-Okt` under de-DE is a date shown `26. Okt`.
+- **A Formula's result takes a format from what it refers to or contains** (FF-011, 013, 020,
+  ARITH-006, 064): a Formula over a date is formatted as a date, `SUM` over dates too, `=10+50%`
+  takes `0.0%`, and a Formula over a cell in scientific format takes `0.00E+00`. This widens the
+  "format at entry" rule above to what was observed.
+- **A number typed into a percent cell is read as a percentage** (LVL-015): `0.5` into a `0%` cell
+  is 0.005, Excel's automatic percent entry, which is on by default.
+- **A column a typed number widened is recorded as a custom width** (CW-018), as Excel's file marks
+  it (`customWidth`). Whether a longer number then widens it again was not observed; until it is,
+  it does, as the WD cases show.
+- **A format code with `[Color n]` is refused** (FMT-075), as Excel refuses it.
+
+The deliberate differences recorded earlier stand, and the second run gave the same answers for
+them: a Linked Table or column that does not exist is `#NAME?` or `#REF!` rather than a refused
+entry (TABLE-011, 013), a pasted Formula is read in the invariant syntax under de-DE (COPY-025),
+`#CIRC!` (ISERROR-010), and a date-time fill (FILL-033).

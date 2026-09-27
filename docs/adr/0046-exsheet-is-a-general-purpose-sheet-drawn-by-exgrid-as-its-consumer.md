@@ -168,3 +168,6 @@ Sheet has to rewrite the References to it in the other.
   size to fit, a command) is **custom** and stops automatic widening. Excel keeps the same
   distinction in its files (`customWidth`). This refines the bullet above: "a width the user never
   set" is automatic, and it is recorded as such.
+  *(2026-09-27, second Windows run: a column widened by a typed **number** is marked custom in
+  Excel's file. ExSheet records it as custom too; see ADR-0047, "What the second observation
+  settled".)*
