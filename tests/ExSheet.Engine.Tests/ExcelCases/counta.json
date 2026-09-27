@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "COUNTA-001",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNTA(A1:A7)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "COUNTA-002",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNTA(C1:C3)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "COUNTA-003",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNTA(D1)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "COUNTA-004",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNTA(1,\"a\",TRUE)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "COUNTA-005",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNTA(A5)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "COUNTA-006",
-      "source": "documented",
+      "source": "observed",
       "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COUNTA(A1:E2)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "COUNTA-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 9: missing arguments (engine: each is counted)",
       "ticket19Row": 9,
       "cells": {"ZZ1000": "=COUNTA(,)"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "COUNTA-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 17: a typed Error Value as an argument",
       "ticket19Row": 17,
       "cells": {"ZZ1000": "=COUNTA(#N/A,1)"},

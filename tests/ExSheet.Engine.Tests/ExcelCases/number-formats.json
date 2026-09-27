@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "FMT-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "1234.567"},
       "formats": {"A1": "0.00"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "FMT-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "1234.567"},
       "formats": {"A1": "#,##0.00"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "FMT-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "1234567"},
       "formats": {"A1": "#,##0"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "FMT-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "-1234.5"},
       "formats": {"A1": "#,##0.00"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "FMT-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "0.256"},
       "formats": {"A1": "0%"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "FMT-006",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "0.256"},
       "formats": {"A1": "0.0%"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "FMT-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "5"},
       "formats": {"A1": "000"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "FMT-008",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "0.5"},
       "formats": {"A1": "#.##"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "FMT-009",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "1.5"},
       "formats": {"A1": "0.###"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "FMT-010",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "1.5"},
       "formats": {"A1": "0.000"},
@@ -94,7 +94,7 @@
     },
     {
       "id": "FMT-011",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "1234567"},
       "formats": {"A1": "#,##0,"},
@@ -103,7 +103,7 @@
     },
     {
       "id": "FMT-012",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "1234567890"},
       "formats": {"A1": "0.0,,"},
@@ -112,7 +112,7 @@
     },
     {
       "id": "FMT-013",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "12345"},
       "formats": {"A1": "0.00E+00"},
@@ -121,7 +121,7 @@
     },
     {
       "id": "FMT-014",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "0.000123"},
       "formats": {"A1": "0.00E+00"},
@@ -130,7 +130,7 @@
     },
     {
       "id": "FMT-015",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "0.5"},
       "formats": {"A1": "0"},
@@ -139,7 +139,7 @@
     },
     {
       "id": "FMT-016",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "2.5"},
       "formats": {"A1": "0"},
@@ -148,7 +148,7 @@
     },
     {
       "id": "FMT-017",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "-2.5"},
       "formats": {"A1": "0"},
@@ -157,7 +157,7 @@
     },
     {
       "id": "FMT-018",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "123"},
       "formats": {"A1": "0.00\" kg\""},
@@ -166,7 +166,7 @@
     },
     {
       "id": "FMT-019",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "5"},
       "formats": {"A1": "\\$0.00"},
@@ -175,7 +175,7 @@
     },
     {
       "id": "FMT-020",
-      "source": "documented",
+      "source": "observed",
       "description": "Number, percent and thousands codes render as Excel's",
       "cells": {"A1": "-5"},
       "formats": {"A1": "$#,##0.00"},
@@ -184,7 +184,7 @@
     },
     {
       "id": "FMT-021",
-      "source": "documented",
+      "source": "observed",
       "description": "Sections are positive; negative; zero; text",
       "cells": {"A1": "5"},
       "formats": {"A1": "0.00;(0.00)"},
@@ -193,7 +193,7 @@
     },
     {
       "id": "FMT-022",
-      "source": "documented",
+      "source": "observed",
       "description": "Sections are positive; negative; zero; text",
       "cells": {"A1": "-5"},
       "formats": {"A1": "0.00;(0.00)"},
@@ -202,7 +202,7 @@
     },
     {
       "id": "FMT-023",
-      "source": "documented",
+      "source": "observed",
       "description": "Sections are positive; negative; zero; text",
       "cells": {"A1": "0"},
       "formats": {"A1": "0;-0;\"zero\""},
@@ -211,7 +211,7 @@
     },
     {
       "id": "FMT-024",
-      "source": "documented",
+      "source": "observed",
       "description": "Sections are positive; negative; zero; text",
       "cells": {"A1": "-3"},
       "formats": {"A1": "0;-0;\"zero\""},
@@ -220,7 +220,7 @@
     },
     {
       "id": "FMT-025",
-      "source": "documented",
+      "source": "observed",
       "description": "Sections are positive; negative; zero; text",
       "cells": {"A1": "0"},
       "formats": {"A1": "0.00;(0.00)"},
@@ -229,7 +229,7 @@
     },
     {
       "id": "FMT-026",
-      "source": "documented",
+      "source": "observed",
       "description": "Text shows as it is, or through the text section's @",
       "cells": {"A1": "abc"},
       "formats": {"A1": "0.00"},
@@ -238,7 +238,7 @@
     },
     {
       "id": "FMT-027",
-      "source": "documented",
+      "source": "observed",
       "description": "Text shows as it is, or through the text section's @",
       "cells": {"A1": "abc"},
       "formats": {"A1": "@"},
@@ -247,7 +247,7 @@
     },
     {
       "id": "FMT-028",
-      "source": "documented",
+      "source": "observed",
       "description": "Text shows as it is, or through the text section's @",
       "cells": {"A1": "x"},
       "formats": {"A1": "0;0;0;\"[\"@\"]\""},
@@ -256,7 +256,7 @@
     },
     {
       "id": "FMT-029",
-      "source": "documented",
+      "source": "observed",
       "description": "The culture's separators, over the invariant code",
       "culture": "de-DE",
       "cells": {"A1": "=1234.5"},
@@ -266,7 +266,7 @@
     },
     {
       "id": "FMT-030",
-      "source": "documented",
+      "source": "observed",
       "description": "The culture's separators, over the invariant code",
       "culture": "ja-JP",
       "cells": {"A1": "=1234.5"},
@@ -276,7 +276,7 @@
     },
     {
       "id": "FMT-031",
-      "source": "documented",
+      "source": "observed",
       "description": "The culture's separators, over the invariant code",
       "cells": {"A1": "1234.5"},
       "formats": {"A1": "#,##0.00"},
@@ -285,7 +285,7 @@
     },
     {
       "id": "FMT-032",
-      "source": "documented",
+      "source": "observed",
       "description": "General shows at most 15 significant digits",
       "cells": {"A1": "1234.5"},
       "formats": {"A1": "General"},
@@ -294,7 +294,7 @@
     },
     {
       "id": "FMT-033",
-      "source": "uncertain",
+      "source": "observed",
       "description": "General in a wide column shows at most eleven characters, rounded: not the fifteen digits the Cell Editor shows (the eleven is not documented)",
       "cells": {"A1": "=1/3"},
       "formats": {"A1": "General"},
@@ -303,7 +303,7 @@
     },
     {
       "id": "FMT-034",
-      "source": "documented",
+      "source": "observed",
       "description": "General shows at most 15 significant digits",
       "cells": {"A1": "=0.1+0.2"},
       "formats": {"A1": "General"},
@@ -312,7 +312,7 @@
     },
     {
       "id": "FMT-035",
-      "source": "documented",
+      "source": "observed",
       "description": "General shows at most 15 significant digits",
       "cells": {"A1": "-42"},
       "formats": {"A1": "General"},
@@ -321,7 +321,7 @@
     },
     {
       "id": "FMT-036",
-      "source": "uncertain",
+      "source": "observed",
       "description": "General writes twelve or more digits in scientific notation, even in a wide column (documented); the six significant digits are not",
       "cells": {"A1": "123456789012345"},
       "formats": {"A1": "General"},
@@ -330,7 +330,7 @@
     },
     {
       "id": "FMT-037",
-      "source": "documented",
+      "source": "observed",
       "description": "Past fifteen significant digits a number shows zeros",
       "cells": {"A1": "1234567890123456789"},
       "formats": {"A1": "0"},
@@ -339,7 +339,7 @@
     },
     {
       "id": "FMT-038",
-      "source": "uncertain",
+      "source": "observed",
       "description": "General in a wide column rounds 2/3 to eleven characters (the eleven is not documented)",
       "cells": {"A1": "=2/3"},
       "formats": {"A1": "General"},
@@ -348,7 +348,7 @@
     },
     {
       "id": "FMT-039",
-      "source": "documented",
+      "source": "observed",
       "description": "General uses the culture's decimal separator",
       "culture": "de-DE",
       "cells": {"A1": "=1.5"},
@@ -358,7 +358,7 @@
     },
     {
       "id": "FMT-040",
-      "source": "documented",
+      "source": "observed",
       "description": "Date serials match Excel's 1900 system around its 29 February 1900",
       "cells": {"A1": "1"},
       "formats": {"A1": "yyyy-mm-dd"},
@@ -367,7 +367,7 @@
     },
     {
       "id": "FMT-041",
-      "source": "documented",
+      "source": "observed",
       "description": "Date serials match Excel's 1900 system around its 29 February 1900",
       "cells": {"A1": "59"},
       "formats": {"A1": "yyyy-mm-dd"},
@@ -376,7 +376,7 @@
     },
     {
       "id": "FMT-042",
-      "source": "documented",
+      "source": "observed",
       "description": "Date serials match Excel's 1900 system around its 29 February 1900",
       "cells": {"A1": "60"},
       "formats": {"A1": "yyyy-mm-dd"},
@@ -385,7 +385,7 @@
     },
     {
       "id": "FMT-043",
-      "source": "documented",
+      "source": "observed",
       "description": "Date serials match Excel's 1900 system around its 29 February 1900",
       "cells": {"A1": "61"},
       "formats": {"A1": "yyyy-mm-dd"},
@@ -394,7 +394,7 @@
     },
     {
       "id": "FMT-044",
-      "source": "documented",
+      "source": "observed",
       "description": "Date serials match Excel's 1900 system around its 29 February 1900",
       "cells": {"A1": "45292"},
       "formats": {"A1": "yyyy-mm-dd"},
@@ -403,7 +403,7 @@
     },
     {
       "id": "FMT-045",
-      "source": "documented",
+      "source": "observed",
       "description": "Date serials match Excel's 1900 system around its 29 February 1900",
       "cells": {"A1": "2958465"},
       "formats": {"A1": "yyyy-mm-dd"},
@@ -412,7 +412,7 @@
     },
     {
       "id": "FMT-046",
-      "source": "documented",
+      "source": "observed",
       "description": "Serial 0 is 0 January 1900, as Excel writes it",
       "cells": {"A1": "0"},
       "formats": {"A1": "m/d/yyyy"},
@@ -421,7 +421,7 @@
     },
     {
       "id": "FMT-047",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "45292"},
       "formats": {"A1": "mmm d, yyyy"},
@@ -430,7 +430,7 @@
     },
     {
       "id": "FMT-048",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "45292"},
       "formats": {"A1": "mmmm"},
@@ -439,7 +439,7 @@
     },
     {
       "id": "FMT-049",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "45292"},
       "formats": {"A1": "dddd"},
@@ -448,7 +448,7 @@
     },
     {
       "id": "FMT-050",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "45292"},
       "formats": {"A1": "ddd dd/mm/yy"},
@@ -457,7 +457,7 @@
     },
     {
       "id": "FMT-051",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US (Excel counts 1 January 1900 as a Sunday)",
       "cells": {"A1": "1"},
       "formats": {"A1": "dddd"},
@@ -466,7 +466,7 @@
     },
     {
       "id": "FMT-052",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "45292.5"},
       "formats": {"A1": "yyyy-mm-dd hh:mm:ss"},
@@ -475,7 +475,7 @@
     },
     {
       "id": "FMT-053",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "0.5"},
       "formats": {"A1": "h:mm"},
@@ -484,7 +484,7 @@
     },
     {
       "id": "FMT-054",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "0.75"},
       "formats": {"A1": "h:mm AM/PM"},
@@ -493,7 +493,7 @@
     },
     {
       "id": "FMT-055",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "0"},
       "formats": {"A1": "h:mm AM/PM"},
@@ -502,7 +502,7 @@
     },
     {
       "id": "FMT-056",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "0.5"},
       "formats": {"A1": "h:mm AM/PM"},
@@ -511,7 +511,7 @@
     },
     {
       "id": "FMT-057",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "=0.25+5/1440"},
       "formats": {"A1": "hh:mm"},
@@ -520,7 +520,7 @@
     },
     {
       "id": "FMT-058",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "45292"},
       "formats": {"A1": "mm/dd"},
@@ -529,7 +529,7 @@
     },
     {
       "id": "FMT-059",
-      "source": "documented",
+      "source": "observed",
       "description": "Date and time codes render as Excel's under en-US",
       "cells": {"A1": "=0.25+5/1440+7/86400"},
       "formats": {"A1": "m:ss"},
@@ -538,7 +538,7 @@
     },
     {
       "id": "FMT-060",
-      "source": "documented",
+      "source": "observed",
       "description": "Month names are the culture's",
       "culture": "de-DE",
       "cells": {"A1": "=45292"},
@@ -548,7 +548,7 @@
     },
     {
       "id": "FMT-061",
-      "source": "documented",
+      "source": "observed",
       "description": "A date that cannot exist cannot be shown, and shows ####",
       "cells": {"A1": "-1"},
       "formats": {"A1": "yyyy-mm-dd"},
@@ -557,7 +557,7 @@
     },
     {
       "id": "FMT-062",
-      "source": "documented",
+      "source": "observed",
       "description": "A date that cannot exist cannot be shown, and shows ####",
       "cells": {"A1": "2958466"},
       "formats": {"A1": "yyyy-mm-dd"},
@@ -576,7 +576,7 @@
     },
     {
       "id": "FMT-064",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 32: a time that rounds into the next day (engine: 0:00:00)",
       "ticket19Row": 32,
       "cells": {"A1": "0.99999999"},
@@ -596,7 +596,7 @@
     },
     {
       "id": "FMT-066",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 34: _) leaves the width of a ) (engine: one space)",
       "ticket19Row": 34,
       "cells": {"A1": "5"},

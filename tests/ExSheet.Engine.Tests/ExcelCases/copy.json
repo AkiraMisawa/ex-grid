@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "COPY-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Copying =A1 from B1 to B2 pastes =A2",
       "cells": {"A1": "1", "A2": "2", "B1": "=A1"},
       "action": {"do": "copy", "source": "B1", "destination": "B2"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "COPY-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Absolute parts stay, relative parts move, across and down",
       "cells": {"C3": "=$A$1+A$1+$A1+A1"},
       "action": {"do": "copy", "source": "C3", "destination": "E6"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "COPY-003",
-      "source": "documented",
+      "source": "observed",
       "description": "A Reference shifted off the Sheet is #REF!",
       "cells": {"B2": "=A1"},
       "action": {"do": "copy", "source": "B2", "destination": "B1"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "COPY-004",
-      "source": "documented",
+      "source": "observed",
       "description": "A Reference shifted off the Sheet is #REF!",
       "cells": {"B2": "=A1"},
       "action": {"do": "copy", "source": "B2", "destination": "A2"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "COPY-005",
-      "source": "documented",
+      "source": "observed",
       "description": "A Reference shifted off the Sheet is #REF!",
       "cells": {"B3": "=SUM(A1:A2)"},
       "action": {"do": "copy", "source": "B3", "destination": "B1"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "COPY-006",
-      "source": "documented",
+      "source": "observed",
       "description": "A Reference shifted off the Sheet is #REF!",
       "cells": {"B3": "=SUM(A1:A2)+1"},
       "action": {"do": "copy", "source": "B3", "destination": "B2"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "COPY-007",
-      "source": "documented",
+      "source": "observed",
       "description": "A Reference shifted off the Sheet is #REF!",
       "cells": {"B3": "=$A$1+A1"},
       "action": {"do": "copy", "source": "B3", "destination": "B1"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "COPY-008",
-      "source": "documented",
+      "source": "observed",
       "description": "A Reference shifted off the Sheet is #REF!",
       "cells": {"A1": "=B1048576"},
       "action": {"do": "copy", "source": "A1", "destination": "A2"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "COPY-009",
-      "source": "documented",
+      "source": "observed",
       "description": "A range is written from its top-left whichever of its corners moved",
       "cells": {"B6": "=SUM(A$5:A6)"},
       "action": {"do": "copy", "source": "B6", "destination": "B1"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "COPY-010",
-      "source": "documented",
+      "source": "observed",
       "description": "A range is written from its top-left whichever of its corners moved",
       "cells": {"C1": "=SUM($A1:B1)"},
       "action": {"do": "copy", "source": "C1", "destination": "A1"},
@@ -94,7 +94,7 @@
     },
     {
       "id": "COPY-011",
-      "source": "documented",
+      "source": "observed",
       "description": "A range is written from its top-left whichever of its corners moved",
       "cells": {"D1": "=SUM($B1:C1)"},
       "action": {"do": "copy", "source": "D1", "destination": "A1"},
@@ -103,7 +103,7 @@
     },
     {
       "id": "COPY-012",
-      "source": "documented",
+      "source": "observed",
       "description": "A range is written from its top-left whichever of its corners moved",
       "cells": {"D1": "=SUM($C1:C1)"},
       "action": {"do": "copy", "source": "D1", "destination": "B1"},
@@ -112,7 +112,7 @@
     },
     {
       "id": "COPY-013",
-      "source": "documented",
+      "source": "observed",
       "description": "Whole columns move across and whole rows move down, and not the other way",
       "cells": {"B2": "=SUM(A:A)+SUM(1:1)"},
       "action": {"do": "copy", "source": "B2", "destination": "D7"},
@@ -121,7 +121,7 @@
     },
     {
       "id": "COPY-014",
-      "source": "documented",
+      "source": "observed",
       "description": "A paste writes the cell's format too",
       "cells": {"A1": "1.5", "C1": "old", "C2": "old"},
       "formats": {"A1": "0.00", "C2": "0%"},
@@ -131,7 +131,7 @@
     },
     {
       "id": "COPY-015",
-      "source": "documented",
+      "source": "observed",
       "description": "A blank cell of the block clears the Entry it lands on",
       "cells": {"A1": "1.5", "C1": "old", "C2": "old"},
       "formats": {"A1": "0.00", "C2": "0%"},
@@ -141,7 +141,7 @@
     },
     {
       "id": "COPY-016",
-      "source": "documented",
+      "source": "observed",
       "description": "A block pasted over a whole multiple of itself repeats, each copy shifted",
       "cells": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "B1": "=A1*10"},
       "action": {"do": "copy", "source": "B1", "destination": "B2:B4"},
@@ -150,7 +150,7 @@
     },
     {
       "id": "COPY-017",
-      "source": "documented",
+      "source": "observed",
       "description": "A block pasted over a whole multiple of itself repeats, each copy shifted",
       "cells": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "B1": "=A1*10"},
       "action": {"do": "copy", "source": "B1", "destination": "B2:B4"},
@@ -159,7 +159,7 @@
     },
     {
       "id": "COPY-018",
-      "source": "documented",
+      "source": "observed",
       "description": "A block pasted over a whole multiple of itself repeats, each copy shifted",
       "cells": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "B1": "=A1*10"},
       "action": {"do": "copy", "source": "B1", "destination": "B2:B4"},
@@ -177,7 +177,7 @@
     },
     {
       "id": "COPY-020",
-      "source": "documented",
+      "source": "observed",
       "description": "Pasted text is read as typed: =A1+1 becomes a Formula",
       "cells": {"A1": "41"},
       "action": {"do": "pasteText", "at": "B1", "rows": [["=A1+1", "1,234"], ["9/27/2026", "12%"]]},
@@ -186,7 +186,7 @@
     },
     {
       "id": "COPY-021",
-      "source": "documented",
+      "source": "observed",
       "description": "Pasted text is read as typed: 1,234 is a number under en-US",
       "cells": {"A1": "41"},
       "action": {"do": "pasteText", "at": "B1", "rows": [["=A1+1", "1,234"], ["9/27/2026", "12%"]]},
@@ -195,7 +195,7 @@
     },
     {
       "id": "COPY-022",
-      "source": "documented",
+      "source": "observed",
       "description": "Pasted text is read as typed: a date is a serial",
       "cells": {"A1": "41"},
       "action": {"do": "pasteText", "at": "B1", "rows": [["=A1+1", "1,234"], ["9/27/2026", "12%"]]},
@@ -204,7 +204,7 @@
     },
     {
       "id": "COPY-023",
-      "source": "documented",
+      "source": "observed",
       "description": "Pasted text is read as typed: a percentage is the fraction",
       "cells": {"A1": "41"},
       "action": {"do": "pasteText", "at": "B1", "rows": [["=A1+1", "1,234"], ["9/27/2026", "12%"]]},
@@ -213,7 +213,7 @@
     },
     {
       "id": "COPY-024",
-      "source": "documented",
+      "source": "observed",
       "description": "Inward text is read under the Sheet's culture, not the program's",
       "culture": "de-DE",
       "cells": {},

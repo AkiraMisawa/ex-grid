@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ISERROR-001",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISERROR(1/0)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "ISERROR-002",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISERROR(#N/A)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "ISERROR-003",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISERROR(#REF!)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "ISERROR-004",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISERROR(C2)"},
@@ -40,7 +40,7 @@
     },
     {
       "id": "ISERROR-005",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISERROR(1)"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "ISERROR-006",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISERROR(A5)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "ISERROR-007",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISERROR(\"x\")"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "ISERROR-008",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR: TRUE for any of Excel's Error Values, FALSE for everything else",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISERROR(A6)"},
@@ -76,7 +76,7 @@
     },
     {
       "id": "ISERROR-009",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR over a range where one Value is wanted is refused, uncaught",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ISERROR(A1:A2)"},

@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "ARITH-001",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=-2^2"},
       "check": "ZZ1000",
@@ -12,7 +12,7 @@
     },
     {
       "id": "ARITH-002",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=2^3^2"},
       "check": "ZZ1000",
@@ -20,7 +20,7 @@
     },
     {
       "id": "ARITH-003",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=2^-1"},
       "check": "ZZ1000",
@@ -28,7 +28,7 @@
     },
     {
       "id": "ARITH-004",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=2*3^2"},
       "check": "ZZ1000",
@@ -36,7 +36,7 @@
     },
     {
       "id": "ARITH-005",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=50%"},
       "check": "ZZ1000",
@@ -44,7 +44,7 @@
     },
     {
       "id": "ARITH-006",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=10+50%"},
       "check": "ZZ1000",
@@ -52,7 +52,7 @@
     },
     {
       "id": "ARITH-007",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=2^200%"},
       "check": "ZZ1000",
@@ -60,7 +60,7 @@
     },
     {
       "id": "ARITH-008",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=-50%"},
       "check": "ZZ1000",
@@ -68,7 +68,7 @@
     },
     {
       "id": "ARITH-009",
-      "source": "documented",
+      "source": "observed",
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=1+2*3^2"},
       "check": "ZZ1000",
@@ -76,7 +76,7 @@
     },
     {
       "id": "ARITH-010",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparison binds loosest, & below + -",
       "cells": {"ZZ1000": "=1+1=2"},
       "check": "ZZ1000",
@@ -84,7 +84,7 @@
     },
     {
       "id": "ARITH-011",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparison binds loosest, & below + -",
       "cells": {"ZZ1000": "=1&2=\"12\""},
       "check": "ZZ1000",
@@ -92,7 +92,7 @@
     },
     {
       "id": "ARITH-012",
-      "source": "documented",
+      "source": "observed",
       "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
       "cells": {"ZZ1000": "=\"a\"&\"b\""},
       "check": "ZZ1000",
@@ -100,7 +100,7 @@
     },
     {
       "id": "ARITH-013",
-      "source": "documented",
+      "source": "observed",
       "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
       "cells": {"ZZ1000": "=\"a\"&1+1"},
       "check": "ZZ1000",
@@ -108,7 +108,7 @@
     },
     {
       "id": "ARITH-014",
-      "source": "documented",
+      "source": "observed",
       "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
       "cells": {"ZZ1000": "=1&2"},
       "check": "ZZ1000",
@@ -116,7 +116,7 @@
     },
     {
       "id": "ARITH-015",
-      "source": "documented",
+      "source": "observed",
       "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
       "cells": {"ZZ1000": "=1.5&\"\""},
       "check": "ZZ1000",
@@ -124,7 +124,7 @@
     },
     {
       "id": "ARITH-016",
-      "source": "documented",
+      "source": "observed",
       "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
       "cells": {"ZZ1000": "=TRUE&\"\""},
       "check": "ZZ1000",
@@ -132,7 +132,7 @@
     },
     {
       "id": "ARITH-017",
-      "source": "documented",
+      "source": "observed",
       "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
       "cells": {"ZZ1000": "=A1&\"x\""},
       "check": "ZZ1000",
@@ -140,7 +140,7 @@
     },
     {
       "id": "ARITH-018",
-      "source": "documented",
+      "source": "observed",
       "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
       "cells": {"ZZ1000": "=1/4&\"\""},
       "check": "ZZ1000",
@@ -148,7 +148,7 @@
     },
     {
       "id": "ARITH-019",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=1=1"},
       "check": "ZZ1000",
@@ -156,7 +156,7 @@
     },
     {
       "id": "ARITH-020",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=1<2"},
       "check": "ZZ1000",
@@ -164,7 +164,7 @@
     },
     {
       "id": "ARITH-021",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=2<=2"},
       "check": "ZZ1000",
@@ -172,7 +172,7 @@
     },
     {
       "id": "ARITH-022",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=3>=4"},
       "check": "ZZ1000",
@@ -180,7 +180,7 @@
     },
     {
       "id": "ARITH-023",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=1<>1"},
       "check": "ZZ1000",
@@ -188,7 +188,7 @@
     },
     {
       "id": "ARITH-024",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=\"a\"=\"A\""},
       "check": "ZZ1000",
@@ -196,7 +196,7 @@
     },
     {
       "id": "ARITH-025",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=\"apple\"<\"Banana\""},
       "check": "ZZ1000",
@@ -204,7 +204,7 @@
     },
     {
       "id": "ARITH-026",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=\"abc\"<\"abd\""},
       "check": "ZZ1000",
@@ -212,7 +212,7 @@
     },
     {
       "id": "ARITH-027",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=1=\"1\""},
       "check": "ZZ1000",
@@ -220,7 +220,7 @@
     },
     {
       "id": "ARITH-028",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=TRUE=1"},
       "check": "ZZ1000",
@@ -228,7 +228,7 @@
     },
     {
       "id": "ARITH-029",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=TRUE>FALSE"},
       "check": "ZZ1000",
@@ -236,7 +236,7 @@
     },
     {
       "id": "ARITH-030",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=TRUE>1"},
       "check": "ZZ1000",
@@ -244,7 +244,7 @@
     },
     {
       "id": "ARITH-031",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=\"a\">1"},
       "check": "ZZ1000",
@@ -252,7 +252,7 @@
     },
     {
       "id": "ARITH-032",
-      "source": "documented",
+      "source": "observed",
       "description": "Comparisons: numbers before text before booleans, text without regard to case",
       "cells": {"ZZ1000": "=TRUE>\"a\""},
       "check": "ZZ1000",
@@ -260,7 +260,7 @@
     },
     {
       "id": "ARITH-033",
-      "source": "documented",
+      "source": "observed",
       "description": "A blank equals 0 against a number",
       "cells": {"ZZ1000": "=A1=0"},
       "check": "ZZ1000",
@@ -268,7 +268,7 @@
     },
     {
       "id": "ARITH-034",
-      "source": "documented",
+      "source": "observed",
       "description": "A blank equals \"\" against text",
       "cells": {"ZZ1000": "=A1=\"\""},
       "check": "ZZ1000",
@@ -276,7 +276,7 @@
     },
     {
       "id": "ARITH-035",
-      "source": "documented",
+      "source": "observed",
       "description": "A blank equals FALSE against a boolean",
       "cells": {"ZZ1000": "=A1=FALSE"},
       "check": "ZZ1000",
@@ -284,7 +284,7 @@
     },
     {
       "id": "ARITH-036",
-      "source": "documented",
+      "source": "observed",
       "description": "Two blanks are equal",
       "cells": {"ZZ1000": "=A1=A2"},
       "check": "ZZ1000",
@@ -292,7 +292,7 @@
     },
     {
       "id": "ARITH-037",
-      "source": "documented",
+      "source": "observed",
       "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
       "cells": {"ZZ1000": "=\"2\"+1"},
       "check": "ZZ1000",
@@ -300,7 +300,7 @@
     },
     {
       "id": "ARITH-038",
-      "source": "documented",
+      "source": "observed",
       "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
       "cells": {"ZZ1000": "=-\"2\""},
       "check": "ZZ1000",
@@ -308,7 +308,7 @@
     },
     {
       "id": "ARITH-039",
-      "source": "documented",
+      "source": "observed",
       "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
       "cells": {"ZZ1000": "=\"abc\"+1"},
       "check": "ZZ1000",
@@ -316,7 +316,7 @@
     },
     {
       "id": "ARITH-040",
-      "source": "documented",
+      "source": "observed",
       "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
       "cells": {"ZZ1000": "=-\"abc\""},
       "check": "ZZ1000",
@@ -324,7 +324,7 @@
     },
     {
       "id": "ARITH-041",
-      "source": "documented",
+      "source": "observed",
       "description": "^ refuses what has no real answer",
       "cells": {"ZZ1000": "=0^0"},
       "check": "ZZ1000",
@@ -332,7 +332,7 @@
     },
     {
       "id": "ARITH-042",
-      "source": "documented",
+      "source": "observed",
       "description": "^ refuses what has no real answer",
       "cells": {"ZZ1000": "=0^-1"},
       "check": "ZZ1000",
@@ -348,7 +348,7 @@
     },
     {
       "id": "ARITH-044",
-      "source": "documented",
+      "source": "observed",
       "description": "^ refuses what has no real answer",
       "cells": {"ZZ1000": "=10^400"},
       "check": "ZZ1000",
@@ -356,7 +356,7 @@
     },
     {
       "id": "ARITH-045",
-      "source": "documented",
+      "source": "observed",
       "description": "Typing 2, 3 and =A1+B1 shows 5",
       "cells": {"A1": "2", "B1": "3", "C1": "=A1+B1"},
       "check": "C1",
@@ -364,7 +364,7 @@
     },
     {
       "id": "ARITH-046",
-      "source": "documented",
+      "source": "observed",
       "description": "A typed constant is its Value",
       "cells": {"A1": "2", "B1": "3", "C1": "=A1+B1"},
       "check": "A1",
@@ -372,7 +372,7 @@
     },
     {
       "id": "ARITH-047",
-      "source": "documented",
+      "source": "observed",
       "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
       "cells": {"A1": "2", "B1": "3", "ZZ1000": "=1+2*3"},
       "check": "ZZ1000",
@@ -380,7 +380,7 @@
     },
     {
       "id": "ARITH-048",
-      "source": "documented",
+      "source": "observed",
       "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
       "cells": {"A1": "2", "B1": "3", "ZZ1000": "=(1+2)*3"},
       "check": "ZZ1000",
@@ -388,7 +388,7 @@
     },
     {
       "id": "ARITH-049",
-      "source": "documented",
+      "source": "observed",
       "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
       "cells": {"A1": "2", "B1": "3", "ZZ1000": "=10-4-3"},
       "check": "ZZ1000",
@@ -396,7 +396,7 @@
     },
     {
       "id": "ARITH-050",
-      "source": "documented",
+      "source": "observed",
       "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
       "cells": {"A1": "2", "B1": "3", "ZZ1000": "=12/4/3"},
       "check": "ZZ1000",
@@ -404,7 +404,7 @@
     },
     {
       "id": "ARITH-051",
-      "source": "documented",
+      "source": "observed",
       "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
       "cells": {"A1": "2", "B1": "3", "ZZ1000": "=-A1+B1"},
       "check": "ZZ1000",
@@ -412,7 +412,7 @@
     },
     {
       "id": "ARITH-052",
-      "source": "documented",
+      "source": "observed",
       "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
       "cells": {"A1": "2", "B1": "3", "ZZ1000": "=A1*B1-A1/B1"},
       "check": "ZZ1000",
@@ -420,7 +420,7 @@
     },
     {
       "id": "ARITH-053",
-      "source": "documented",
+      "source": "observed",
       "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
       "cells": {"A1": "2", "B1": "3", "ZZ1000": "=--A1"},
       "check": "ZZ1000",
@@ -428,7 +428,7 @@
     },
     {
       "id": "ARITH-054",
-      "source": "documented",
+      "source": "observed",
       "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
       "cells": {"A1": "2", "B1": "3", "ZZ1000": "=+A1"},
       "check": "ZZ1000",
@@ -436,7 +436,7 @@
     },
     {
       "id": "ARITH-055",
-      "source": "documented",
+      "source": "observed",
       "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
       "cells": {"A1": "2", "B1": "3", "ZZ1000": "=1.5*2"},
       "check": "ZZ1000",
@@ -444,7 +444,7 @@
     },
     {
       "id": "ARITH-056",
-      "source": "documented",
+      "source": "observed",
       "description": "A blank cell is 0, and a Formula reading one shows 0",
       "cells": {"ZZ1000": "=A1"},
       "check": "ZZ1000",
@@ -452,7 +452,7 @@
     },
     {
       "id": "ARITH-057",
-      "source": "documented",
+      "source": "observed",
       "description": "A blank cell is 0 in arithmetic",
       "cells": {"ZZ1000": "=A1+1"},
       "check": "ZZ1000",
@@ -460,7 +460,7 @@
     },
     {
       "id": "ARITH-058",
-      "source": "documented",
+      "source": "observed",
       "description": "A division by zero is #DIV/0!",
       "cells": {"A1": "0", "ZZ1000": "=1/0"},
       "check": "ZZ1000",
@@ -468,7 +468,7 @@
     },
     {
       "id": "ARITH-059",
-      "source": "documented",
+      "source": "observed",
       "description": "A division by a cell holding 0 is #DIV/0!",
       "cells": {"A1": "0", "ZZ1000": "=1/A1"},
       "check": "ZZ1000",
@@ -476,7 +476,7 @@
     },
     {
       "id": "ARITH-060",
-      "source": "documented",
+      "source": "observed",
       "description": "A division by a blank cell is #DIV/0!",
       "cells": {"A1": "0", "ZZ1000": "=1/B1"},
       "check": "ZZ1000",
@@ -484,7 +484,7 @@
     },
     {
       "id": "ARITH-061",
-      "source": "documented",
+      "source": "observed",
       "description": "Text that is not a number is #VALUE! in arithmetic",
       "cells": {"A1": "Tokyo", "ZZ1000": "=A1+1"},
       "check": "ZZ1000",
@@ -492,7 +492,7 @@
     },
     {
       "id": "ARITH-062",
-      "source": "documented",
+      "source": "observed",
       "description": "TRUE is 1 in arithmetic",
       "cells": {"A1": "TRUE", "A2": "FALSE", "ZZ1000": "=A1+1"},
       "check": "ZZ1000",
@@ -500,7 +500,7 @@
     },
     {
       "id": "ARITH-063",
-      "source": "documented",
+      "source": "observed",
       "description": "FALSE is 0 in arithmetic",
       "cells": {"A1": "TRUE", "A2": "FALSE", "ZZ1000": "=A2+1"},
       "check": "ZZ1000",
@@ -508,7 +508,7 @@
     },
     {
       "id": "ARITH-064",
-      "source": "documented",
+      "source": "observed",
       "description": "A result that is not a finite double is #NUM!",
       "cells": {"A1": "1E+300", "ZZ1000": "=A1*A1"},
       "check": "ZZ1000",
@@ -516,7 +516,7 @@
     },
     {
       "id": "ARITH-065",
-      "source": "documented",
+      "source": "observed",
       "description": "Doubles as in Excel, not decimals: 0.1+0.2 is 0.30000000000000004, not 0.3",
       "cells": {"ZZ1000": "=0.1+0.2"},
       "check": "ZZ1000",
@@ -542,7 +542,7 @@
     },
     {
       "id": "ARITH-068",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 3: the same, not the final operation",
       "ticket19Row": 3,
       "cells": {"ZZ1000": "=1*(0.5-0.4-0.1)"},
@@ -560,7 +560,7 @@
     },
     {
       "id": "ARITH-070",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 5: which error wins when text meets a division by zero",
       "ticket19Row": 5,
       "cells": {"ZZ1000": "=\"a\"+1/0"},
@@ -569,7 +569,7 @@
     },
     {
       "id": "ARITH-071",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Ticket 19 row 6: text ordering of punctuation against letters (engine: ordinal, case-insensitive)",
       "ticket19Row": 6,
       "cells": {"ZZ1000": "=\"!\"<\"a\""},

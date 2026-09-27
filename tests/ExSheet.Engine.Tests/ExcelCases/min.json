@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "MIN-001",
-      "source": "documented",
+      "source": "observed",
       "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MIN(A1:A7)"},
@@ -13,7 +13,7 @@
     },
     {
       "id": "MIN-002",
-      "source": "documented",
+      "source": "observed",
       "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MIN(A5:A6)"},
@@ -22,7 +22,7 @@
     },
     {
       "id": "MIN-003",
-      "source": "documented",
+      "source": "observed",
       "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MIN(\"5\",7)"},
@@ -31,7 +31,7 @@
     },
     {
       "id": "MIN-004",
-      "source": "documented",
+      "source": "observed",
       "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MIN(C1:C3)"},

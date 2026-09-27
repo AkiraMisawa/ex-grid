@@ -4,7 +4,7 @@
   "cases": [
     {
       "id": "FF-001",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A date plus a number shows as a date",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1+7"}},
@@ -13,7 +13,7 @@
     },
     {
       "id": "FF-002",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A number plus a date shows as a date: the first formatted Reference, not the first operand",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=7+A1"}},
@@ -31,7 +31,7 @@
     },
     {
       "id": "FF-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A Formula that is one Reference takes that cell's format",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1"}},
@@ -40,7 +40,7 @@
     },
     {
       "id": "FF-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A negated Reference in parentheses takes that cell's format",
       "cells": {"A1": "12.5%"},
       "action": {"do": "enter", "cells": {"B1": "=-(A1)+1"}},
@@ -49,7 +49,7 @@
     },
     {
       "id": "FF-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "The first Reference whose cell is formatted gives the format, an unformatted one before it passed over",
       "cells": {"A1": "5", "A2": "10%"},
       "action": {"do": "enter", "cells": {"B1": "=A1+A2"}},
@@ -58,7 +58,7 @@
     },
     {
       "id": "FF-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A cell formatted before the Formula is entered keeps its format",
       "cells": {"A1": "9/26/2026"},
       "action": [
@@ -70,7 +70,7 @@
     },
     {
       "id": "FF-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "The format is taken once, at entry: formatting the cell read afterwards does not change it",
       "cells": {"A1": "5"},
       "action": [
@@ -82,7 +82,7 @@
     },
     {
       "id": "FF-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A cell read in a formatted column gives the column's format",
       "cells": {"A5": "3"},
       "action": [
@@ -94,7 +94,7 @@
     },
     {
       "id": "FF-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A Formula pasted as text takes a format as a typed one does",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "pasteText", "rows": [["=A1+1"]], "at": "B1"},
@@ -103,7 +103,7 @@
     },
     {
       "id": "FF-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: multiplication gives no format",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1*1"}},
@@ -121,7 +121,7 @@
     },
     {
       "id": "FF-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a mixed expression is not simple arithmetic and gives no format",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1+2*3"}},
@@ -130,7 +130,7 @@
     },
     {
       "id": "FF-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Text joined with & gives no format",
       "cells": {"A1": "9/26/2026"},
       "action": {"do": "enter", "cells": {"B1": "=A1&\"\""}},
@@ -139,7 +139,7 @@
     },
     {
       "id": "FF-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Arithmetic on General cells alone gives no format",
       "cells": {"A1": "5", "A2": "6"},
       "action": {"do": "enter", "cells": {"B1": "=A1+A2"}},
