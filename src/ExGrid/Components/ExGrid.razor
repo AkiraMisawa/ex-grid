@@ -316,7 +316,7 @@
                             <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
-                                       CellState="CellState" CellType="CellType" CellAlign="CellAlign" RowKind="RowKind"
+                                       CellState="CellState" CellType="CellType" CellAlign="CellAlign" PaintedText="PaintedText" RowKind="RowKind"
                                        RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
@@ -995,6 +995,23 @@
     /// (ADR-0003/0006).</para>
     /// </summary>
     [Parameter] public Func<TRow, GridColumn<TRow>, CellAlign>? CellAlign { get; set; }
+
+    /// <summary>
+    /// A per-cell painted text (ADR-0050, item 11): asked for by (row, column) with the
+    /// column's resolved content width and the <see cref="CellMetrics"/>, it answers the
+    /// text the cell paints, or null for the value's own text. ExSheet paints General
+    /// fitted to its column this way (ADR-0047). The <c>####</c> rule still decides on what
+    /// is painted for a Number or Date cell (ADR-0016), and where the painted text differs
+    /// from the value's own, the value's text is the cell's accessible name
+    /// (ADR-0016/0033). Copy, editing, the value list and Auto widths read the value's own
+    /// text, unchanged. Null, the default, paints every cell exactly as before. Asked of
+    /// value cells only, as <see cref="CellType"/> is.
+    ///
+    /// <para><b>Hold it in a field and hand over a new one when the texts change.</b> Its
+    /// identity is the change signal, as <see cref="CellState"/>'s is (ADR-0003/0006); a
+    /// change of column width repaints the rows on its own.</para>
+    /// </summary>
+    [Parameter] public PaintedTextOf<TRow>? PaintedText { get; set; }
 
     /// <summary>
     /// What role each row plays — detail, group or total (ADR-0024). Null means every

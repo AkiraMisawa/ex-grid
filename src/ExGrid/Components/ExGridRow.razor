@@ -68,12 +68,14 @@
             var numeric = OverflowRules.HashesWhenOverflowing(type);
             var value = column.Value(Row);
             var text = TextOf(column, value);
-            var decision = OverflowRules.Decide(type, text, Styles.Geometry.WidthPxOf(i), Metrics);
-            @* aria-label only when hashed: the accessible name of a #### cell is the
-               real value (ADR-0016/0033), and on every other cell the text names itself. *@
+            var decision = Paint(column, i, type, text);
+            @* aria-label only when what is painted is not the value's text: the accessible
+               name of a #### cell, or of a cell whose painted text the Consumer supplied, is
+               the real value (ADR-0016/0033/0050), and on every other cell the text names
+               itself. *@
             <div class="@CellClasses.For(numeric, pinned: true, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value))" style="@Styles.PinnedCell(i)"
                  role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                 aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
+                 aria-label="@AccessibleName(decision, text)">@decision.DisplayText</div>
         }
     }
     @if (!Placeholder && Scrollable is { } scrollable)
@@ -97,10 +99,10 @@
                 var numeric = OverflowRules.HashesWhenOverflowing(type);
                 var value = column.Value(Row);
                 var text = TextOf(column, value);
-                var decision = OverflowRules.Decide(type, text, Styles.Geometry.WidthPxOf(i), Metrics);
+                var decision = Paint(column, i, type, text);
                 <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value))" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                     aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
+                     aria-label="@AccessibleName(decision, text)">@decision.DisplayText</div>
             }
         }
     }
@@ -176,6 +178,13 @@
     [Parameter] public Func<TRow, GridColumn<TRow>, CellAlign>? CellAlign { get; set; }
 
     /// <summary>
+    /// The Consumer's painted text (ADR-0050, item 11), or null for the value's own. Asked
+    /// once per painted value cell with the column's content width; its identity is the
+    /// change signal, exactly as it is for <see cref="CellType"/> (ADR-0003/0006).
+    /// </summary>
+    [Parameter] public PaintedTextOf<TRow>? PaintedText { get; set; }
+
+    /// <summary>
     /// What role each row plays (ADR-0024). Passed down as the delegate and invoked here,
     /// not invoked by the parent and passed as a value: the delegate's identity is the
     /// change signal, exactly as it is for <see cref="CellState"/>, and a role that could
@@ -226,6 +235,7 @@
     private CellStateOf<TRow>? _renderedCellState;
     private Func<TRow, GridColumn<TRow>, ColumnType>? _renderedCellType;
     private Func<TRow, GridColumn<TRow>, CellAlign>? _renderedCellAlign;
+    private PaintedTextOf<TRow>? _renderedPaintedText;
     private Func<TRow, RowKind>? _renderedRowKind;
     private Func<GridActionEventArgs<TRow>, Task>? _renderedOnAction;
     private int _renderedRowIndex;
@@ -260,6 +270,7 @@
             && ReferenceEquals(_renderedCellState, CellState)
             && ReferenceEquals(_renderedCellType, CellType)
             && ReferenceEquals(_renderedCellAlign, CellAlign)
+            && ReferenceEquals(_renderedPaintedText, PaintedText)
             && ReferenceEquals(_renderedRowKind, RowKind)
             && ReferenceEquals(_renderedOnAction, OnAction)
             && _renderedRowIndex == RowIndex
@@ -288,6 +299,7 @@
         _renderedCellState = CellState;
         _renderedCellType = CellType;
         _renderedCellAlign = CellAlign;
+        _renderedPaintedText = PaintedText;
         _renderedRowKind = RowKind;
         _renderedOnAction = OnAction;
         _renderedRowIndex = RowIndex;
@@ -495,6 +507,27 @@
     /// (ADR-0023).</summary>
     internal static string CellText(GridColumn<TRow> column, TRow row)
         => TextOf(column, column.Value(row));
+
+    /// <summary>
+    /// What one value cell paints: the Consumer's painted text where it supplies one
+    /// (ADR-0050, item 11), the value's text where it does not — and in either case the
+    /// <c>####</c> rule decides on what would be painted, so a Number or Date that does
+    /// not fit is never shown cut (ADR-0016).
+    /// </summary>
+    private OverflowDecision Paint(GridColumn<TRow> column, int index, ColumnType type, string text)
+    {
+        var widthPx = Styles.Geometry.WidthPxOf(index);
+        var painted = PaintedText?.Invoke(Row, column, Metrics.ContentWidthPx(widthPx), Metrics) ?? text;
+        return OverflowRules.Decide(type, painted, widthPx, Metrics);
+    }
+
+    /// <summary>The cell's aria-label: the value's own text wherever the cell paints
+    /// something else — <c>####</c>, or a painted text that differs from it
+    /// (ADR-0016/0033/0050) — and nothing where the text names itself.</summary>
+    private static string? AccessibleName(OverflowDecision decision, string text)
+        => decision.IsHashed || !string.Equals(decision.DisplayText, text, StringComparison.Ordinal)
+            ? text
+            : null;
 
     /// <summary>The same text from a value already fetched — the row fetches once and
     /// derives both the text and the tone from it.</summary>
