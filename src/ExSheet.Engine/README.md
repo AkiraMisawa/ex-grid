@@ -137,8 +137,10 @@ step.Undo();                                         // Entries, formats and Ref
 
 - **Insertion and deletion** of rows and columns rewrite every Reference, relative and absolute
   alike; a range grows or shrinks as Excel's does, and a Reference whose cells are all deleted is
-  written `#REF!` in the stored Formula. An insertion that would push an Entry, or the cells a
-  Reference names, off the Sheet's edge is refused (`SheetRefusedException`). Inserted rows take
+  written `#REF!` in the stored Formula. An insertion that would push an Entry off the Sheet's
+  edge is refused (`SheetRefusedException`), as Excel refuses it; one that pushes only the cells a
+  Reference names off is done, as in Excel, with a range cut at the edge and a Reference left
+  with no cells written `#REF!`. Inserted rows take
   the number format and alignment of the row above — its cells' and the row's own — and inserted
   columns those of the column to the left, as Excel's default does; Entries are never copied.
   Formats set on rows and columns move with them, and so do column widths.

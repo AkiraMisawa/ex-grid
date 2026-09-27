@@ -74,12 +74,13 @@ internal readonly record struct StructuralEdit(SheetAxis Axis, int Start, int Co
     /// cell it named — makes it <c>#REF!</c> (<see langword="null"/>). A Reference that spans the
     /// whole axis (<c>A:A</c> for rows) is untouched, as is one qualified with another Sheet's name
     /// (ADR-0046); one qualified with <paramref name="sheet"/>'s own name is rewritten like any other.
-    /// <paramref name="leavesSheet"/> is set when an insertion would push the cells it names off
-    /// the edge; the caller refuses the insertion.
+    /// An insertion that pushes the cells a Reference names off the edge does not stop the
+    /// insertion, as it does not in Excel (observed, verification/2026-09-27-windows-excel): a
+    /// range pushed partly off is cut at the edge (<c>A2:A1048576</c>, a row inserted at 1, is
+    /// <c>A3:A1048576</c>), and a Reference pushed wholly off is <c>#REF!</c>.
     /// </summary>
-    public Reference? Map(Reference reference, Sheet sheet, out bool leavesSheet)
+    public Reference? Map(Reference reference, Sheet sheet)
     {
-        leavesSheet = false;
         if (!sheet.IsLocal(reference)) return reference;
         var rows = Axis == SheetAxis.Rows;
         if (rows && reference.Shape == ReferenceShape.Columns) return reference;
@@ -106,11 +107,8 @@ internal readonly record struct StructuralEdit(SheetAxis Axis, int Start, int Co
             {
                 return reference;
             }
-            if (n2 > Max)
-            {
-                leavesSheet = true;
-                return reference;
-            }
+            if (n1 > Max) return null;
+            if (n2 > Max) n2 = Max;
         }
         else
         {

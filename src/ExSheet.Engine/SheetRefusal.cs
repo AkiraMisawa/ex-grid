@@ -9,12 +9,6 @@ public enum SheetRefusalReason
     /// <summary>An insertion would push a cell holding an Entry off the Sheet's edge. Excel refuses this too.</summary>
     EntriesWouldLeaveSheet,
 
-    /// <summary>
-    /// An insertion would push the cells a Reference names off the Sheet's edge. What Excel writes
-    /// then is not pinned, so ExSheet refuses rather than guess.
-    /// </summary>
-    ReferenceWouldLeaveSheet,
-
     /// <summary>A block written at a place would run past the Sheet's edge (ADR-0050).</summary>
     BlockWouldLeaveSheet,
 

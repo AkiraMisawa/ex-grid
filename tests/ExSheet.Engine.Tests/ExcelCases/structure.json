@@ -248,12 +248,12 @@
     },
     {
       "id": "STRUCT-028",
-      "source": "uncertain",
-      "description": "An insertion that would push the cells a Reference names off the Sheet is refused (what Excel writes is not pinned)",
+      "source": "observed",
+      "description": "An insertion that pushes part of a range off the Sheet is done, and the range is cut at the edge (the Formula moved to B2)",
       "cells": {"B1": "=SUM(A2:A1048576)"},
       "action": {"do": "insertRows", "row": 1, "count": 1},
-      "check": "B1",
-      "expect": {"refused": "ReferenceWouldLeaveSheet", "formula": "=SUM(A2:A1048576)"}
+      "check": "B2",
+      "expect": {"formula": "=SUM(A3:A1048576)"}
     },
     {
       "id": "STRUCT-029",
@@ -320,6 +320,60 @@
       "action": {"do": "insertRows", "row": 5, "count": 1},
       "check": "B1",
       "expect": {"formula": "=SUM(A:A)"}
+    },
+    {
+      "id": "STRUCT-036",
+      "source": "observed",
+      "description": "An insertion that pushes the one cell a Reference names off the Sheet is done, and the Reference is #REF! (observed through probes.ps1, verification/2026-09-27-windows-excel item 3)",
+      "cells": {"B1": "=A1048576"},
+      "action": {"do": "insertRows", "row": 1, "count": 1},
+      "check": "B2",
+      "expect": {"formula": "=#REF!", "value2": "#REF!"}
+    },
+    {
+      "id": "STRUCT-037",
+      "source": "observed",
+      "description": "An Entry pushed off the Sheet still refuses the insertion, whatever References read it (observed through probes.ps1, verification/2026-09-27-windows-excel item 3)",
+      "cells": {"A1048576": "1", "B1": "=A1048576"},
+      "action": {"do": "insertRows", "row": 1, "count": 1},
+      "check": "B1",
+      "expect": {"refused": "EntriesWouldLeaveSheet", "formula": "=A1048576"}
+    },
+    {
+      "id": "STRUCT-038",
+      "source": "observed",
+      "description": "A range an insertion moves to end at the edge is moved, not cut (observed through probes.ps1, verification/2026-09-27-windows-excel item 3)",
+      "cells": {"B1": "=SUM(A5:A1048575)"},
+      "action": {"do": "insertRows", "row": 1, "count": 1},
+      "check": "B2",
+      "expect": {"formula": "=SUM(A6:A1048576)"}
+    },
+    {
+      "id": "STRUCT-039",
+      "source": "uncertain",
+      "description": "A range cut at the edge down to one cell stays a range (inferred from Excel's observed rows (verification/2026-09-27-windows-excel item 3), not yet asked of Excel)",
+      "cells": {"B1": "=SUM(A1048575:A1048576)"},
+      "action": {"do": "insertRows", "row": 1, "count": 1},
+      "check": "B2",
+      "expect": {"formula": "=SUM(A1048576:A1048576)"}
+    },
+    {
+      "id": "STRUCT-040",
+      "source": "uncertain",
+      "description": "A column inserted pushes a Reference off the right edge: it is #REF!, and the insertion done (inferred from Excel's observed rows (verification/2026-09-27-windows-excel item 3), not yet asked of Excel)",
+      "cells": {"A1": "=XFD1*2"},
+      "action": {"do": "insertColumns", "column": "A", "count": 1},
+      "check": "B1",
+      "expect": {"formula": "=#REF!*2"}
+    },
+    {
+      "id": "STRUCT-041",
+      "source": "uncertain",
+      "description": "Whole rows an insertion pushes partly off the Sheet are cut at the edge (inferred from Excel's observed rows (verification/2026-09-27-windows-excel item 3), not yet asked of Excel)",
+      "cells": {"B1": "=SUM(2:1048576)"},
+      "action": {"do": "insertRows", "row": 1, "count": 1},
+      "check": "B2",
+      "expect": {"formula": "=SUM(3:1048576)"}
     }
   ]
 }

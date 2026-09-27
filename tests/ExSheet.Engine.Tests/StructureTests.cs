@@ -179,6 +179,23 @@ public class StructureTests
         Assert.Throws<ArgumentOutOfRangeException>(() => sheet.DeleteColumns(0, 0));
     }
 
+    [Fact] // ADR-0046/0047 (observed in Excel): an insertion that pushes a Reference off the Sheet is done; undo puts the Formula back
+    public void An_insertion_pushing_a_reference_off_is_done_and_undone_exactly()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1048575", "4");
+        sheet.Enter("B1", "=SUM(A2:A1048576)+A1048576");
+
+        var step = sheet.Do(SheetEdit.InsertRows(0));
+
+        Assert.Equal("=SUM(A3:A1048576)+#REF!", Formula(sheet, "B2"));
+        Assert.Equal(ErrorValue.Ref, sheet.Error("B2"));
+
+        step.Undo();
+        Assert.Equal("=SUM(A2:A1048576)+A1048576", Formula(sheet, "B1"));
+        Assert.Equal(4, sheet.Number("B1"));
+    }
+
     [Fact] // ADR-0048: the rewritten Formulas are what the Sheet Document records
     public void The_document_records_the_rewritten_formulas()
     {
