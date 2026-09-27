@@ -1286,6 +1286,17 @@
     [Parameter] public bool HideColumnMenu { get; set; }
 
     /// <summary>
+    /// A Consumer declaration (ADR-0050, item 13): the grid does not offer copy with headers.
+    /// The Context Menu holds <see cref="GridCommandIds.Copy"/> without
+    /// <see cref="GridCommandIds.CopyWithHeaders"/> — the context handed to
+    /// <see cref="ContextCommands"/> included — and a copy asked with headers by any other
+    /// route is refused, the clipboard left as it was, rather than written without them
+    /// (ADR-0005). A Sheet's column letters are addresses, not headers (ADR-0048). Off — the
+    /// default — the command is offered exactly as before.
+    /// </summary>
+    [Parameter] public bool HideCopyWithHeaders { get; set; }
+
+    /// <summary>
     /// A Consumer declaration (ADR-0050, item 2): where Ctrl+arrow stops. Handed the Focus
     /// and the direction, it answers the cell on that line where the data ends — the grid
     /// does not hold the data, so it cannot know. Asked synchronously, on Ctrl+arrow and
@@ -3860,8 +3871,10 @@
         var core = new List<GridCommand>
         {
             new(GridCommandIds.Copy, canCopy, () => MenuCopyAsync(withHeaders: false)),
-            new(GridCommandIds.CopyWithHeaders, canCopy, () => MenuCopyAsync(withHeaders: true)),
         };
+        // ADR-0050 item 13: a Consumer may leave copy with headers out.
+        if (!HideCopyWithHeaders)
+            core.Add(new(GridCommandIds.CopyWithHeaders, canCopy, () => MenuCopyAsync(withHeaders: true)));
         var context = new ContextMenuContext<TRow>(
             _window[slice], declared.Name, declared.Type,
             _selection.Selection.Ranges, _sequenceVersion, core, CloseFromChrome, _popoverFocusRequest,
@@ -4961,6 +4974,10 @@
     public async Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false)
     {
         if (_disposed)
+            return null;
+        // ADR-0050 item 13: a grid that does not offer copy with headers refuses one asked
+        // for, rather than quietly writing the block without them.
+        if (withHeaders && HideCopyWithHeaders)
             return null;
 
         // Decided again rather than remembered from the synchronous half: the answer

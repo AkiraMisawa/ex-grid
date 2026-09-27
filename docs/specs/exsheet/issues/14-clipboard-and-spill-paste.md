@@ -170,3 +170,11 @@ one operation on the undo stack, as a paste over several ranges already is; `Doc
 raised once. The guard noted above no longer applies to numbers — an exact double needs no
 reading back — and stays for ISO dates. Layer 2: `ClipboardWiringTests` (a 17-digit `x:num`
 pasted as that double; typed fields and exact numbers undone as one step).
+
+2026-09-27, ExGrid core, copy with headers can be left out (ADR-0050 item 13): ExGrid declares
+`HideCopyWithHeaders`. Declared, the Context Menu's core commands are `Copy` alone — on a
+secondary click and on the ContextMenu key, and in the context handed to `ContextCommands` — and
+`BuildCopyPayloadAsync(withHeaders: true)`, the one other route, answers null, so the clipboard
+keeps what it held rather than taking the block without its headers; a plain copy is untouched.
+Off, the menu and the copy are exactly as before (DC-1). Layer 2:
+`CopyWithHeadersDeclarationTests`. The Definition of Done has no DC row for item 13 yet.
