@@ -5934,6 +5934,12 @@
     /// opening text — the keyboard stays in the bar, which is the Cell Editor's second
     /// surface, so the listener gates its keys as the editor's (ADR-0018). A cell that does
     /// not edit leaves the bar read-only and opens nothing.
+    ///
+    /// <para>The caret stays where the press put it, as Excel's does (ADR-0051's third
+    /// round): the bar already showed the opening text, so nothing is placed, and the caret is
+    /// not known until the listener reports it. Only where the opening text differs from what
+    /// the bar showed — rewriting the field moves the browser's caret anyway — is it placed at
+    /// the end, as an edit opened by typing or F2 is.</para>
     /// </summary>
     private async Task OnFormulaBarFocusAsync()
     {
@@ -5952,12 +5958,21 @@
             CloseMenus();
         EndInteractive();
         var focus = _selection.Selection.Focus;
+        var shown = FormulaBarText();
         _editSurface = EditSurface.Bar;
         _editMode = EditMode.Caret;
         _editingCell = focus;
         _editText = OpeningTextOf(focus);
-        _editCaret = _editText.Length;
-        OpenCaret();
+        if (ReportsCaret && string.Equals(_editText, shown, StringComparison.Ordinal))
+        {
+            _editCaret = -1;
+            ForgetCaretPlacement();
+        }
+        else
+        {
+            _editCaret = _editText.Length;
+            OpenCaret();
+        }
         CloseCompletion();
         await PushEditingModeAsync();
     }

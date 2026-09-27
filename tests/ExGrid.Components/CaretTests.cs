@@ -53,11 +53,14 @@ public class CaretTests : GridTestContext
 
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
         List<(string, int)>? asked = null, bool complete = true, bool point = false,
-        List<GridEditIntent<TestRow>>? intents = null, bool bar = false)
+        List<GridEditIntent<TestRow>>? intents = null, bool bar = false,
+        Func<TestRow, GridColumn<TestRow>, string?>? entry = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
             if (bar)
                 ps.Add(g => g.ShowFormulaBar, true);
+            if (entry is not null)
+                ps.Add(g => g.EditorTextOf, entry);
             ps.Add(g => g.Window, TestRows.Many(50))
               .Add(g => g.TotalCount, 50)
               .Add(g => g.Columns, Columns())
@@ -323,13 +326,44 @@ public class CaretTests : GridTestContext
         Assert.Equal([("Row 000000", 10)], CaretsPlaced());
     }
 
-    [Fact] // ADR-0051 second round / DC-31: opening an edit from the Formula Bar places the caret at the end of the opening text
-    public async Task Opening_from_the_formula_bar_places_the_caret_at_the_end()
+    [Fact] // ADR-0051 third round / DC-34: a click into the Formula Bar's text keeps the caret where it was clicked
+    public async Task A_click_into_the_formula_bar_keeps_the_caret_where_it_was_clicked()
+    {
+        var asked = new List<(string, int)>();
+        var cut = RenderGrid(asked, bar: true);
+        await ClickAsync(cut, 50, 10);
+
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        // The listener reports where the press put the caret: after "Row".
+        await ReportAsync(cut, "Row 000000", 3);
+
+        Assert.Empty(CaretsPlaced());
+        Assert.Equal("caret", EditingTold()[^1].Mode);
+        Assert.Equal(("Row 000000", 3), asked[^1]);
+    }
+
+    [Fact] // ADR-0051 third round / DC-34: pointing after a click into the bar's text writes at the clicked caret, not at the end
+    public async Task A_click_into_the_bar_points_from_the_clicked_caret()
+    {
+        var cut = RenderGrid(complete: false, point: true, bar: true,
+            entry: (row, column) => row.Book == "Row 000000" ? "=+1" : null);
+        await ClickAsync(cut, 50, 10);
+
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        await ReportAsync(cut, "=+1", 1);                // clicked just after the =
+        await ClickAsync(cut, 50, 70);                   // A4
+
+        Assert.Equal("=A4+1", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+        Assert.Equal([("=A4+1", 3)], CaretsPlaced());
+    }
+
+    [Fact] // ADR-0051 second round / DC-31: an edit opened by F2 still places the caret at the end, bar or not
+    public async Task Opening_by_f2_with_a_bar_places_the_caret_at_the_end()
     {
         var cut = RenderGrid(bar: true);
         await ClickAsync(cut, 50, 10);
 
-        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        await PressAsync(cut, "F2");
 
         Assert.Equal([("Row 000000", 10)], CaretsPlaced());
     }
@@ -382,7 +416,7 @@ public class CaretTests : GridTestContext
         Assert.Equal(("=A4+1", 3), CaretsPlaced()[^1]);
     }
 
-    [Fact] // ADR-0051 second round / DC-31: a caret moved away from a pointed Reference ends pointing; the next click writes at the new caret
+    [Fact] // ADR-0051 second and third rounds / DC-31 / DC-34: a caret moved away from a pointed Reference ends pointing and enters Caret; the next click writes at the new caret
     public async Task A_caret_moved_while_pointing_ends_the_outline()
     {
         var intents = new List<GridEditIntent<TestRow>>();
@@ -399,7 +433,7 @@ public class CaretTests : GridTestContext
         await ReportAsync(cut, "=A2+1", 4);
 
         Assert.Empty(cut.FindAll(".ex-point"));
-        Assert.Equal("overwrite", EditingTold()[^1].Mode);
+        Assert.Equal("caret", EditingTold()[^1].Mode);
         await ClickAsync(cut, 50, 70); // A4
         Assert.Equal("=A2+A41", EditorText(cut));
         Assert.Equal(("=A2+A41", 6), CaretsPlaced()[^1]);
