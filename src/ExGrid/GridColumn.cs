@@ -194,6 +194,26 @@ public sealed record GridColumn<TRow>
     /// (ADR-0016/0023).</summary>
     public ColumnType Type => Info.Type;
 
+    /// <summary>
+    /// One cell's kind (ADR-0050, item 6): the Consumer's per-cell answer where it supplies
+    /// one, this column's <see cref="Type"/> where it does not. It is what alignment, the
+    /// numeric class and the <c>####</c> decision follow (ADR-0016); sorting and filtering
+    /// never ask it — they stay on <see cref="Type"/>. An undefined answer is refused by
+    /// name rather than painted as some kind nobody declared.
+    /// </summary>
+    /// <param name="row">The row the cell is on.</param>
+    /// <param name="cellType">The Consumer's per-cell lookup, or null for none.</param>
+    public ColumnType TypeAt(TRow row, Func<TRow, GridColumn<TRow>, ColumnType>? cellType)
+    {
+        if (cellType is null)
+            return Type;
+        var type = cellType(row, this);
+        if (type is not (ColumnType.Text or ColumnType.Number or ColumnType.Date or ColumnType.Boolean))
+            throw new ArgumentOutOfRangeException(nameof(cellType), type,
+                $"The per-cell kind for a cell of column '{Name}' is not a ColumnType (ADR-0050).");
+        return type;
+    }
+
     /// <summary>How the value is extracted from a row — what Filter, Sort, copy and the
     /// painted text all read. Null is a Blank (ADR-0023).</summary>
     public Func<TRow, object?> Value => Info.Value;

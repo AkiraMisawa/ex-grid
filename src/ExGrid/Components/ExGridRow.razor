@@ -64,10 +64,11 @@
         }
         else
         {
-            var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
+            var type = column.TypeAt(Row, CellType);
+            var numeric = OverflowRules.HashesWhenOverflowing(type);
             var value = column.Value(Row);
             var text = TextOf(column, value);
-            var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
+            var decision = OverflowRules.Decide(type, text, Styles.Geometry.WidthPxOf(i), Metrics);
             @* aria-label only when hashed: the accessible name of a #### cell is the
                real value (ADR-0016/0033), and on every other cell the text names itself. *@
             <div class="@CellClasses.For(numeric, pinned: true, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.PinnedCell(i)"
@@ -92,10 +93,11 @@
             }
             else
             {
-                var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
+                var type = column.TypeAt(Row, CellType);
+                var numeric = OverflowRules.HashesWhenOverflowing(type);
                 var value = column.Value(Row);
                 var text = TextOf(column, value);
-                var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
+                var decision = OverflowRules.Decide(type, text, Styles.Geometry.WidthPxOf(i), Metrics);
                 <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
                      aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
@@ -160,6 +162,13 @@
     [Parameter] public CellStateOf<TRow>? CellState { get; set; }
 
     /// <summary>
+    /// The per-cell kind (ADR-0050, item 6), or null for the column's. Asked once per
+    /// painted value cell; its identity is the change signal, exactly as it is for
+    /// <see cref="CellState"/> (ADR-0003/0006).
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, ColumnType>? CellType { get; set; }
+
+    /// <summary>
     /// What role each row plays (ADR-0024). Passed down as the delegate and invoked here,
     /// not invoked by the parent and passed as a value: the delegate's identity is the
     /// change signal, exactly as it is for <see cref="CellState"/>, and a role that could
@@ -208,6 +217,7 @@
     private bool _renderedPlaceholder;
     private CellTextMetrics _renderedMetrics;
     private CellStateOf<TRow>? _renderedCellState;
+    private Func<TRow, GridColumn<TRow>, ColumnType>? _renderedCellType;
     private Func<TRow, RowKind>? _renderedRowKind;
     private Func<GridActionEventArgs<TRow>, Task>? _renderedOnAction;
     private int _renderedRowIndex;
@@ -240,6 +250,7 @@
             && _renderedPlaceholder == Placeholder
             && _renderedMetrics == Metrics
             && ReferenceEquals(_renderedCellState, CellState)
+            && ReferenceEquals(_renderedCellType, CellType)
             && ReferenceEquals(_renderedRowKind, RowKind)
             && ReferenceEquals(_renderedOnAction, OnAction)
             && _renderedRowIndex == RowIndex
@@ -266,6 +277,7 @@
         _renderedPlaceholder = Placeholder;
         _renderedMetrics = Metrics;
         _renderedCellState = CellState;
+        _renderedCellType = CellType;
         _renderedRowKind = RowKind;
         _renderedOnAction = OnAction;
         _renderedRowIndex = RowIndex;

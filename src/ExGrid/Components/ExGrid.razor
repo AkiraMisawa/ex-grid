@@ -306,7 +306,7 @@
                             <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
-                                       CellState="CellState" RowKind="RowKind"
+                                       CellState="CellState" CellType="CellType" RowKind="RowKind"
                                        RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
@@ -912,6 +912,26 @@
     [Parameter] public CellStateOf<TRow>? CellState { get; set; }
 
     /// <summary>
+    /// A per-cell kind (ADR-0050, item 6): asked for by (row, column), it overrides the
+    /// column's <see cref="GridColumn{TRow}.Type"/> for that one cell's alignment, numeric
+    /// class and <c>####</c> decision (ADR-0016) — a text heading above a column of
+    /// amounts is left-aligned and never hashed, a number in a Text column is
+    /// right-aligned and hashed when it does not fit. Sorting and filtering stay per
+    /// column. Null — the default — leaves every cell on its column's kind, exactly as
+    /// before. Asked of value cells only: an Action, Template or Mark cell paints no value
+    /// to align or hash.
+    ///
+    /// <para>The text a cell paints is unchanged by it: the column's <c>Format</c> where it
+    /// declares one, the value's own <c>ToString()</c> where it does not — the core's
+    /// default format is the same for every kind, so there is nothing kind-dependent to
+    /// follow.</para>
+    ///
+    /// <para><b>Hold it in a field and hand over a new one when the kinds change.</b> Its
+    /// identity is the change signal, as <see cref="CellState"/>'s is (ADR-0003/0006).</para>
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, ColumnType>? CellType { get; set; }
+
+    /// <summary>
     /// What role each row plays — detail, group or total (ADR-0024). Null means every
     /// row is a detail row. Asked once per painted row, so it is as cheap as
     /// <see cref="CellState"/> has to be, and its identity is the change signal in the
@@ -994,6 +1014,11 @@
     /// means is the Consumer's, which pushes new rows back as for any edit (ADR-0007). A
     /// release back inside the source, or after the order moved under the drag, raises
     /// nothing.
+    ///
+    /// <para>When the handler completes, the Selection becomes the source and the target
+    /// together, as in Excel — unless the handler called
+    /// <see cref="GridFillIntent.Refuse"/>, and then it stays on the source (ADR-0050, item 5
+    /// refined). With no handler, nobody has accepted, and the Selection stays too.</para>
     /// </summary>
     [Parameter] public EventCallback<GridFillIntent> OnFill { get; set; }
 
@@ -2886,8 +2911,42 @@
                 await OnPasteRefused.InvokeAsync(decision.Reason);
             return;
         }
-        if (OnFill.HasDelegate)
-            await OnFill.InvokeAsync(new GridFillIntent(from, decision.Extension, version));
+        // Nobody taking the intent is nobody accepting it: the Selection stays on the source.
+        if (!OnFill.HasDelegate)
+            return;
+        var intent = new GridFillIntent(from, decision.Extension, version);
+        await OnFill.InvokeAsync(intent);
+        if (!intent.IsRefused)
+            SelectFilledRange(from, intent.Target, version);
+    }
+
+    /// <summary>
+    /// After a fill the Consumer accepted, the Selection is the source and the target
+    /// together, as in Excel (ADR-0050, item 5 refined). The Focus stays on the cell it was
+    /// on — inside the source, so the cell the Formula Bar shows does not change and nothing
+    /// scrolls — and the Anchor joins it, as any placement leaves them (ADR-0050, item 4).
+    /// Positions mean something only under the order they were written in, and the
+    /// Selection is the user's: if the order moved while the Consumer handled the intent,
+    /// or the Selection is no longer the source, nothing is placed (ADR-0011).
+    /// </summary>
+    private void SelectFilledRange(SelectionRange source, SelectionRange target, int version)
+    {
+        if (_disposed || version != _sequenceVersion)
+            return;
+        var current = _selection.Selection;
+        if (current.IsEmpty || current.Ranges.Count != 1 || current.Ranges[0] != source || !source.Contains(current.Focus))
+            return;
+        var extent = Extent;
+        var filled = SelectionRange.FromCorners(
+            new CellPosition(Math.Min(source.TopRow, target.TopRow), Math.Min(source.LeftColumn, target.LeftColumn)),
+            new CellPosition(Math.Max(source.BottomRow, target.BottomRow), Math.Max(source.RightColumn, target.RightColumn)));
+        if (filled.BottomRow >= extent.RowCount || filled.RightColumn >= extent.ColumnCount)
+            return;
+        if (Apply(current.Place(filled, current.Focus, extent)))
+        {
+            _suppressRender = false;
+            StateHasChanged();
+        }
     }
 
     /// <summary>

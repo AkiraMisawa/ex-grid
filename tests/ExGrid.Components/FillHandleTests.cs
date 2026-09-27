@@ -123,8 +123,114 @@ public class FillHandleTests : GridTestContext
         Assert.Equal(0, edits);
         Assert.Equal(0, pastes);
         Assert.Empty(cut.FindAll(".ex-fill-target"));
-        // The press on the handle selected nothing: the Selection is the source.
+        // The press on the handle selected nothing; the accepted fill then selected the
+        // source and the target together (ADR-0050, item 5 refined).
+        Assert.Equal([new SelectionRange(0, 0, 5, 1)], selection!.Ranges);
+    }
+
+    [Fact] // ADR-0050 item 5 refined / DC-27: after a fill the Consumer accepts, the Selection is source and target together
+    public async Task An_accepted_fill_selects_the_source_and_the_target()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.ShowFillHandle, true)
+            .Add(g => g.OnFill, (GridFillIntent _) => { })
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await SelectBookRows0To1Async(cut);                      // Anchor row 0, Focus row 1
+
+        await DownAsync(cut, 99, 41);
+        await MoveAsync(cut, 50, 90);                            // row 4
+        await UpAsync(cut, 50, 90);
+
+        Assert.Equal([new SelectionRange(0, 0, 5, 1)], selection!.Ranges);
+        // The Focus has not moved, so the cell on display is the one it was.
+        Assert.Equal(new CellPosition(1, 0), selection.Focus);
+        var overlay = Assert.Single(cut.FindAll(".ex-range"));
+        Assert.Contains("height: 100px", overlay.GetAttribute("style"));
+        // The handle now stands at the bottom-right of the filled range.
+        Assert.Equal("left: 97px; top: 97px; width: 6px; height: 6px",
+            Assert.Single(cut.FindAll(".ex-fill-handle")).GetAttribute("style"));
+    }
+
+    [Fact] // ADR-0050 item 5 refined / DC-27: a fill up or left selects the target before the source
+    public async Task An_accepted_fill_upward_selects_from_the_target()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.ShowFillHandle, true)
+            .Add(g => g.OnFill, (GridFillIntent _) => { })
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await DownAsync(cut, 50, 90);                            // Book, row 4
+        await UpAsync(cut, 50, 90);
+
+        await DownAsync(cut, 100, 100);                          // its handle
+        await MoveAsync(cut, 50, 30);                            // row 1
+        await UpAsync(cut, 50, 30);
+
+        Assert.Equal([new SelectionRange(1, 0, 4, 1)], selection!.Ranges);
+        Assert.Equal(new CellPosition(4, 0), selection.Focus);
+    }
+
+    [Fact] // ADR-0050 item 5 refined / DC-27: after a fill the Consumer refuses, the Selection stays on the source
+    public async Task A_refused_fill_leaves_the_selection_on_the_source()
+    {
+        GridSelection? selection = null;
+        var changes = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.ShowFillHandle, true)
+            .Add(g => g.OnFill, async (GridFillIntent i) =>
+            {
+                await Task.Yield();                              // a refusal reached asynchronously still counts
+                i.Refuse();
+            })
+            .Add(g => g.SelectionChanged, (GridSelection s) => { selection = s; changes++; }));
+        await SelectBookRows0To1Async(cut);
+        var before = changes;
+
+        await DownAsync(cut, 99, 41);
+        await MoveAsync(cut, 50, 90);
+        await UpAsync(cut, 50, 90);
+
+        Assert.Equal(before, changes);
         Assert.Equal([new SelectionRange(0, 0, 2, 1)], selection!.Ranges);
+        Assert.Equal("left: 97px; top: 37px; width: 6px; height: 6px",
+            Assert.Single(cut.FindAll(".ex-fill-handle")).GetAttribute("style"));
+    }
+
+    [Fact] // ADR-0050 item 5 refined / DC-27: with nobody taking the intent, nobody accepted it
+    public async Task Without_a_handler_the_selection_stays_on_the_source()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.ShowFillHandle, true)
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await SelectBookRows0To1Async(cut);
+
+        await DownAsync(cut, 99, 41);
+        await MoveAsync(cut, 50, 90);
+        await UpAsync(cut, 50, 90);
+
+        Assert.Equal([new SelectionRange(0, 0, 2, 1)], selection!.Ranges);
+    }
+
+    [Fact] // ADR-0050 item 5 refined / ADR-0011: an order that moved while the Consumer handled the intent places nothing
+    public async Task A_reorder_during_the_handler_places_nothing()
+    {
+        GridSelection? selection = null;
+        IRenderedComponent<ExGrid<TestRow>>? grid = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.ShowFillHandle, true)
+            .Add(g => g.OnFill, (GridFillIntent _) => grid!.Render(p => p.Add(g => g.RowSequenceVersion, 1)))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        grid = cut;
+        await SelectBookRows0To1Async(cut);
+
+        await DownAsync(cut, 99, 41);
+        await MoveAsync(cut, 50, 90);
+        await UpAsync(cut, 50, 90);
+
+        // The reorder dropped the Selection (ADR-0011); the fill did not bring one back.
+        Assert.True(selection!.IsEmpty);
     }
 
     [Fact] // ADR-0050 item 5 / DC-13: one axis only — the larger displacement decides

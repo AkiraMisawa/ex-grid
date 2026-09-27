@@ -140,6 +140,11 @@ public sealed class FillDecision
 /// <para>Positional, like a paste: the Consumer resolves the ranges under the order they
 /// were written in, and a <see cref="RowSequenceVersion"/> that no longer matches its own
 /// means the order moved under the intent, which must then be discarded (ADR-0011).</para>
+///
+/// <para>After a fill the Consumer accepts, the Selection is the source and the target
+/// together, as in Excel; a Consumer that does not implement the pattern calls
+/// <see cref="Refuse"/> before its handler completes, and the Selection stays on the source
+/// (ADR-0050, item 5 refined).</para>
 /// </summary>
 public sealed class GridFillIntent
 {
@@ -163,4 +168,17 @@ public sealed class GridFillIntent
 
     /// <summary>The order these positions are written in (ADR-0011).</summary>
     public int RowSequenceVersion { get; }
+
+    /// <summary>Whether the Consumer refused the fill through <see cref="Refuse"/>.</summary>
+    public bool IsRefused { get; private set; }
+
+    /// <summary>
+    /// The Consumer's answer that it does not fill this — a pattern it has not implemented is
+    /// refused, never filled with copies (ADR-0050, item 5). Called before the <c>OnFill</c>
+    /// handler completes, it leaves the Selection on the source; a handler that completes
+    /// without calling it has accepted, and the Selection becomes the source and the target
+    /// together. Telling the user why is the Consumer's: the grid knows only that it was
+    /// refused, not what the pattern was.
+    /// </summary>
+    public void Refuse() => IsRefused = true;
 }
