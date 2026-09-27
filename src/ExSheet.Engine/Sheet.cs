@@ -47,13 +47,16 @@ public sealed partial class Sheet
     public CultureInfo Culture { get; }
 
     /// <summary>
-    /// Opens a Sheet Document: a Sheet in the document's culture holding its Entries, with every
-    /// Value computed again (ADR-0048). The culture of the thread that opens it plays no part.
+    /// Opens a Sheet Document: a Sheet in the document's culture, with its name, its Linked Tables
+    /// declared and waiting for their first snapshot, and its Entries, with every Value computed
+    /// again (ADR-0048, ADR-0049). The culture of the thread that opens it plays no part.
     /// </summary>
     public static Sheet Open(SheetDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
         var sheet = new Sheet(SheetDocument.ResolveCulture(document.Culture), document.Name);
+        // Declared before any Formula is computed: a reader shows #GETTING_DATA, never #NAME? (ADR-0049).
+        foreach (var table in document.LinkedTables) sheet.Declare(table.Name, table.Columns);
         foreach (var cell in document.Cells)
         {
             if (cell.Format.IsGeneral && cell.Alignment == HorizontalAlignment.General) continue;
@@ -66,11 +69,12 @@ public sealed partial class Sheet
     }
 
     /// <summary>
-    /// The Sheet as a Sheet Document: its culture, its name, its Entries, and each cell's number
-    /// format and alignment — never its Values (ADR-0046, ADR-0048).
+    /// The Sheet as a Sheet Document: its culture, its name, its Linked Tables' declarations, its
+    /// Entries, and each cell's number format and alignment — never its Values, nor a table's rows
+    /// (ADR-0046, ADR-0048, ADR-0049).
     /// </summary>
     public SheetDocument ToDocument() =>
-        new(Culture.Name, Name, [.. _cells.Values
+        new(Culture.Name, Name, TableDeclarations, [.. _cells.Values
             .Where(c => !c.IsEmpty)
             .OrderBy(c => c.Address)
             .Select(c => new SheetDocumentCell(c.Address, c.Entry, c.Format, c.Alignment))]);

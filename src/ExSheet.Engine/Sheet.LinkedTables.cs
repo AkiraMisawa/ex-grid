@@ -26,7 +26,8 @@ public sealed partial class Sheet
     /// <summary>
     /// Declares a Linked Table by name and columns (ADR-0049), before any of its rows arrive.
     /// Formulas that read it stop being <c>#NAME?</c> and show <c>#GETTING_DATA</c> until the
-    /// first snapshot is pushed.
+    /// first snapshot is pushed. A table is declared once and never undeclared; the declaration is
+    /// recorded in the Sheet Document, and a Sheet opened from one already has it.
     /// </summary>
     /// <param name="name">
     /// The name Formulas read it by, as Excel names a Table: a letter, <c>_</c> or <c>\</c>, then
@@ -35,23 +36,45 @@ public sealed partial class Sheet
     /// </param>
     /// <param name="columns">The column names: at least one, none empty, no two the same without regard to case.</param>
     /// <exception cref="ArgumentException">The name or the columns are not ones a structured reference can name.</exception>
-    /// <exception cref="InvalidOperationException">A table of that name is already declared.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// A table of that name is already declared — by an earlier call, or by the Sheet Document the
+    /// Sheet was opened from (<see cref="LinkedTables"/> lists them).
+    /// </exception>
     public SheetChange DeclareLinkedTable(string name, IReadOnlyList<string> columns)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(columns);
-        if (!IsTableName(name)) throw new ArgumentException($"'{name}' is not a name a Linked Table can have.", nameof(name));
-        if (columns.Count == 0) throw new ArgumentException("A Linked Table has at least one column.", nameof(columns));
-        var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        for (var i = 0; i < columns.Count; i++)
-        {
-            if (string.IsNullOrEmpty(columns[i])) throw new ArgumentException("A column name is empty.", nameof(columns));
-            if (!index.TryAdd(columns[i], i)) throw new ArgumentException($"The column '{columns[i]}' is declared twice.", nameof(columns));
-        }
+        if (WhyNotALinkedTable(name, columns) is { } why) throw new ArgumentException(why, IsTableName(name) ? nameof(columns) : nameof(name));
+        // Declared once, never undeclared nor declared again (ADR-0049).
         if (_tables.ContainsKey(name)) throw new InvalidOperationException($"A Linked Table named '{name}' is already declared.");
-        _tables[name] = new TableState(name, [.. columns], index, _tables.Count);
+        Declare(name, columns);
         return RecalculateReaders(name);
     }
+
+    private void Declare(string name, IReadOnlyList<string> columns)
+    {
+        var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < columns.Count; i++) index[columns[i]] = i;
+        _tables[name] = new TableState(name, [.. columns], index, _tables.Count);
+    }
+
+    /// <summary>Why a name and columns cannot be declared as a Linked Table, or <see langword="null"/> when they can.</summary>
+    internal static string? WhyNotALinkedTable(string name, IReadOnlyList<string> columns)
+    {
+        if (!IsTableName(name)) return $"'{name}' is not a name a Linked Table can have.";
+        if (columns.Count == 0) return "A Linked Table has at least one column.";
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var column in columns)
+        {
+            if (string.IsNullOrEmpty(column)) return "A column name is empty.";
+            if (!seen.Add(column)) return $"The column '{column}' is declared twice.";
+        }
+        return null;
+    }
+
+    /// <summary>The declarations, as a Sheet Document records them (ADR-0049).</summary>
+    private IReadOnlyList<SheetDocumentTable> TableDeclarations =>
+        [.. _tables.Values.OrderBy(t => t.Order).Select(t => new SheetDocumentTable(t.Name, t.Columns))];
 
     /// <summary>
     /// Replaces a Linked Table's data with a whole snapshot, in one step (ADR-0049): no
