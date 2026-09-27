@@ -21,10 +21,10 @@ public sealed record ColumnInfo<TRow>(
 {
     /// <summary>The text a cell of this column displays for a row: empty for a Blank, the
     /// <see cref="Format"/> applied where there is one, the value's own text otherwise.</summary>
-    public string TextOf(TRow row) => TextOfValue(Value(row));
+    public string TextOf(TRow row) => TextFor(Value(row));
 
     /// <summary>The same text from a value already extracted — the row fetches the value once
     /// and derives both its text and its tone from it.</summary>
-    public string TextOfValue(object? value)
+    public string TextFor(object? value)
         => value is null ? "" : Format is { } format ? format(value) : value.ToString() ?? "";
 }

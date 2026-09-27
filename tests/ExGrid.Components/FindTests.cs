@@ -111,6 +111,8 @@ public class FindTests : GridTestContext
     {
         var heard = new Heard();
         var cut = RenderGrid(heard, Answer(0, "Book"));
+        // A version other than the default, so an unset one could not pass for it.
+        cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 7));
         await ClickCellAsync(cut, 150, 30); // (1, 1)
         await PressAsync(cut, "f", ctrl: true);
         await cut.Find("input.ex-find-match-case").ChangeAsync(new ChangeEventArgs { Value = true });
@@ -125,7 +127,7 @@ public class FindTests : GridTestContext
         Assert.Equal(new CellPosition(1, 1), request.From);
         Assert.Null(request.Scope);
         Assert.Equal(["Book", "Amount", "AsOf"], request.Columns);
-        Assert.Equal(0, request.RowSequenceVersion);
+        Assert.Equal(7, request.RowSequenceVersion);
     }
 
     [Fact] // ADR-0047 / FD-5: a found cell becomes the Focus, and the selection collapses onto it
@@ -365,6 +367,30 @@ public class FindTests : GridTestContext
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "ArrowDown", alt: true); // the Focus column's menu
         Assert.Single(cut.FindAll(".ex-popover"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("f", true, false, false, false, false, fromDescendant: true));
+
+        Assert.Single(cut.FindAll(".ex-popover"));
+        Assert.Single(cut.FindAll(".ex-popover-find"));
+    }
+
+    [Fact] // ADR-0047 / ADR-0001: OnFind passed alone is a callback, not data — neither Window nor Source is refused
+    public void On_find_alone_is_not_a_window()
+    {
+        var failure = Assert.ThrowsAny<Exception>(() => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.OnFind, (request, _) => Task.FromResult(GridFindResult.NotFound))));
+
+        Assert.Contains("Neither Window nor Source", failure.Message);
+    }
+
+    [Fact] // ADR-0047 / FD-1: Ctrl+F from inside the Context Menu closes it and opens the find panel
+    public async Task Ctrl_f_from_the_context_menu_opens_the_find_panel_in_its_place()
+    {
+        var cut = RenderGrid(new Heard(), Answer(0, "Book"));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "F10", shift: true);
+        Assert.Single(cut.FindAll(".ex-popover[role=menu]"));
 
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("f", true, false, false, false, false, fromDescendant: true));
 

@@ -234,24 +234,30 @@ public class GridFindTests
             new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional,
                 format: v => ((decimal)v).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)).Info,
         ]);
-        GridFindRequest[] clauses =
+        // Each clause with its own answer written out, so neither side can agree with the other
+        // by both finding nothing.
+        (GridFindRequest Request, int Row, string? Column)[] clauses =
         [
-            Ask("nova", from: new(0, 2)),                       // by rows, from the cell after
-            Ask("alpha"),                                       // no From: the first cell
-            Ask("alpha", from: new(3, 0)),                      // wrapping
-            Ask("beta", from: new(1, 0)),                       // a lone match finds itself
-            Ask("alpha", from: new(0, 0), backward: true),      // backward, wrapping
-            Ask("NOVAK", matchCase: true),                      // case
-            Ask("et", wholeCell: true),                         // whole cell
-            Ask("2,500.50"),                                    // displayed text
-            Ask("alpha", scope: [new(2, 0, 2, 2), new(3, 0, 1, 1)]), // scope
+            (Ask("nova", from: new(0, 2)), 1, "Trader"),                    // by rows, from the cell after
+            (Ask("alpha"), 0, "Book"),                                      // no From: the first cell
+            (Ask("alpha", from: new(3, 0)), 0, "Book"),                     // wrapping
+            (Ask("beta", from: new(1, 0)), 1, "Book"),                      // a lone match finds itself
+            (Ask("alpha", from: new(0, 0), backward: true), 3, "Book"),     // backward, wrapping
+            (Ask("NOVAK", matchCase: true), -1, null),                      // case
+            (Ask("novak", matchCase: true), 2, "Trader"),
+            (Ask("et", wholeCell: true), -1, null),                         // whole cell
+            (Ask("beta", wholeCell: true), 1, "Book"),
+            (Ask("2,500.50"), 1, "Notional"),                               // displayed text
+            (Ask("2500.5"), -1, null),
+            (Ask("alpha", scope: [new(2, 0, 2, 2), new(3, 0, 1, 1)]), 3, "Book"), // scope
         ];
 
-        foreach (var request in clauses)
+        foreach (var (request, row, column) in clauses)
         {
-            var expected = GridFind.Step(Rows, request, TextOf);
             var actual = await source.FindAsync(request, CancellationToken.None);
-            Assert.Equal((expected.Row, expected.Column), (actual.Row, actual.Column));
+            Assert.Equal((row, column), (actual.Row, actual.Column));
+            var reference = GridFind.Step(Rows, request, TextOf);
+            Assert.Equal((row, column), (reference.Row, reference.Column));
         }
     }
 }

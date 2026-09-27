@@ -121,7 +121,9 @@ the kind that still look correct on screen**, so review will not catch them.
 - **`StateHasChanged()` can complete the render synchronously.** A field set just before it may
   already have been cleared by `OnAfterRender` when you read it back — this produced a real
   `NullReferenceException`. Copy to a local first.
-- **A text field's value goes through `@bind`, never `value="@x"` beside an `@oninput`.** Only
+- **A text field whose value changes while it is typed in goes through `@bind`, never
+  `value="@x"` beside an `@oninput`** (a value fixed for the field's lifetime, such as a
+  Chrome editor's `InitialText`, is safe). Only
   `@bind` tells Blazor that the field's own value outranks a render's. Written by hand, every
   render writes the server's copy back, and on a circuit that copy is a round trip behind the
   typing: `…123456789` became `…1289` in the Cell Editor, and the page looked fine (SRV-7).

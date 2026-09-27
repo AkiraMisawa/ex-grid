@@ -93,7 +93,6 @@ public sealed record GridColumn<TRow>
         Align = align;
         HeaderAlign = headerAlign;
         Validate = validate;
-        Format = format;
         Tone = tone;
     }
 
@@ -247,7 +246,7 @@ public sealed record GridColumn<TRow>
     /// with (ADR-0005/0016); the raw, locale-free <c>text/html</c> form never goes through
     /// it. The Consumer's delegate owns the culture: the grid takes no view on separators.
     /// </summary>
-    public Func<object, string>? Format { get; }
+    public Func<object, string>? Format => Info.Format;
 
     /// <summary>
     /// The column's tone rule (ADR-0006): what a non-null value means — a gain, a loss —

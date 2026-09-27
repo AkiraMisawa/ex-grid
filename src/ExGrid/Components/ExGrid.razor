@@ -1493,8 +1493,9 @@
         }
         // Neither is a Consumer that forgot: an empty grid is written as Window="[]",
         // never as nothing at all. Left unchecked it paints an empty result that looks
-        // exactly like a loaded one.
-        if (!sourceSupplied && supplied.Count == 0 && !_bound)
+        // exactly like a loaded one. Asked of the Window itself, not of any push parameter:
+        // a callback such as OnFind or OnSortChanged passed alone is still no data.
+        if (!sourceSupplied && !parameters.TryGetValue<object>(nameof(Window), out _) && !_bound)
         {
             throw new InvalidOperationException(
                 "Neither Window nor Source was passed. Pass the Window to paint (push), or a Grid Source to " +

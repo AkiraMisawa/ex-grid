@@ -352,4 +352,18 @@ public class ExcelKeyTests : GridTestContext
         var told = Js.ClaimsTold.Invocations.Last().Arguments;
         Assert.DoesNotContain("Control+z", (IReadOnlyList<string>)told[0]!);
     }
+
+    [Fact] // ADR-0035 / CP-25: a fill over several ranges is refused by name, and raises nothing
+    public async Task Ctrl_d_over_several_ranges_is_refused()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard);
+        await ClickCellAsync(cut, 50, 30);
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = 70, CtrlKey = true });
+
+        await PressAsync(cut, "d", ctrl: true);
+
+        Assert.Empty(heard.Pastes);
+        Assert.Equal([PasteRefusalReason.MultipleRanges], heard.Refusals);
+    }
 }

@@ -127,6 +127,43 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
         });
 
+        test('Ctrl+F in the Context Menu, and in the filter\'s text field, opens Find in its place (FD-1, ADR-0047)', async ({ page }) => {
+            await page.keyboard.press('Shift+F10');
+            await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
+            await page.keyboard.press('ControlOrMeta+f');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+            await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
+            await page.keyboard.press('Escape');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+            await expect(grid(page)).toBeFocused();
+
+            // Book's filter is a value list with a search box: E puts the keyboard in it.
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect(grid(page).locator('.ex-popover [role=menu]').first()).toBeVisible();
+            await page.keyboard.press('e');
+            const search = grid(page).locator('.ex-popover-filter input').first();
+            await expect(search).toBeFocused();
+            await watchNextKey(page, ['f', 'F']);
+            await page.keyboard.press('ControlOrMeta+f');
+            expect(await keySeenUntouched(page), 'the grid took Ctrl+F in the filter\'s field').not.toBe(true);
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+            await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
+        });
+
+        test('a Ctrl+F typed straight after Alt+Down opens Find, and the letters after it land in its field (FD-1, ED-22, ADR-0047)', async ({ page }) => {
+            // Typed together: on a circuit the column's popover takes DOM focus a round trip
+            // later, so the Ctrl+F and the letters are held, and the Ctrl+F must reach the core
+            // rather than the menu, which would take a letter as a command.
+            await page.keyboard.press('Alt+ArrowDown');
+            await page.keyboard.press('ControlOrMeta+f');
+            await page.keyboard.type('Osei');
+
+            const field = grid(page).locator('.ex-popover-find input').first();
+            await expect(field).toBeFocused();
+            await expect(field).toHaveValue('Osei');
+            await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+        });
+
         test('Escape closes the panel and hands the keyboard back to the grid (FD-3, ADR-0047)', async ({ page }) => {
             await page.keyboard.press('ControlOrMeta+f');
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();

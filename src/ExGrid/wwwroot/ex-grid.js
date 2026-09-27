@@ -66,6 +66,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the grid's (ADR-0010's hold, widened).
     const popoverOpeners = new Set(['Alt+ArrowDown', 'Shift+F10', 'ContextMenu']);
 
+    // Find's key (ADR-0047), both cases for CapsLock, and the modifiers' own keydowns, which
+    // mean nothing by themselves.
+    const findKeys = new Set(['Control+f', 'Control+F']);
+    const modifierKeys = new Set(['Shift', 'Control', 'Alt', 'Meta']);
+
     // What the gate decides a key is for (ADR-0010): 'popover' — the core's, and it opens a
     // popover, so the keys after it are held until the popover holds DOM focus; 'mode' — the
     // core's, and it can change the editing mode, so the keys after it are held until it is
@@ -74,6 +79,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // null — the browser's, or a control's inside the grid. Read from a snapshot of the
     // event rather than the event itself, so a held key can be gated again, against the
     // mode its predecessor's answer left.
+    // The mirror of GridKeys.Canonical — the two must move together. Meta held where it is not
+    // primary still appears in the form, so it cannot pass for an unmodified key: nothing in the
+    // set carries it, and the browser keeps it.
+    const canonicalOf = (k) => {
+        const control = k.ctrlKey || (k.metaKey && metaIsPrimary);
+        const foreign = k.metaKey && !metaIsPrimary;
+        return (control ? 'Control+' : '') + (foreign ? 'Meta+' : '')
+            + (k.shiftKey ? 'Shift+' : '') + (k.altKey ? 'Alt+' : '') + k.key;
+    };
+
     const gate = (k) => {
         // The mirror of GridKeys.Canonical — the two must move together. It exists here
         // only to decide whether to take the key: preventDefault has to happen now, and
@@ -81,13 +96,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // key MEANS is resolved on the C# side, from the raw fields sent below, so a
         // disagreement between the two shows up as a key that does nothing rather than as
         // a key that does something else.
+        const canonical = canonicalOf(k);
         const control = k.ctrlKey || (k.metaKey && metaIsPrimary);
-        // Meta held where it is not primary still appears in the form, so it cannot pass
-        // for an unmodified key: nothing in the set carries it, and the browser keeps it.
         const foreign = k.metaKey && !metaIsPrimary;
-        const prefix = (control ? 'Control+' : '') + (foreign ? 'Meta+' : '')
-            + (k.shiftKey ? 'Shift+' : '') + (k.altKey ? 'Alt+' : '');
-        const canonical = prefix + k.key;
 
         if (editing === 'none') {
             if (!k.onRoot) {
@@ -106,7 +117,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // field it selects the field's text, the field's own behaviour and no meaning of
                 // the core's; anywhere else in a popover it opens Find, as from the root. A
                 // Consumer's control in a Template cell keeps the key, as it keeps every other.
-                if (k.inPopover && (canonical === 'Control+f' || canonical === 'Control+F')) {
+                if (k.inPopover && findKeys.has(canonical)) {
                     if (k.inFindField) {
                         return 'select';
                     }
@@ -167,7 +178,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // Ctrl+F opens a popover only where a search is wired; elsewhere it is refused
             // and opens nothing, and holding the keys after it for a panel that never comes
             // would stall them (ADR-0047).
-            if (canonical === 'Control+f' || canonical === 'Control+F') {
+            if (findKeys.has(canonical)) {
                 return canFind ? 'popover' : 'core';
             }
             // Space and Backspace open an editor (ADR-0010/0035): a mode change.
@@ -453,10 +464,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // is held with the rest to keep their order, and means nothing by itself: the key
             // that follows carries it. Replaying it would be a key no field can reproduce, and
             // that stops the replay there, dropping every key typed after it.
-            if (k.key === 'Shift' || k.key === 'Control' || k.key === 'Alt' || k.key === 'Meta') {
+            if (modifierKeys.has(k.key)) {
                 continue;
             }
             const target = focusedControl();
+            // Find's key held behind a popover is the grid's there too (ADR-0047), and is not
+            // replayed into the popover — a menu would take it as a keydown of its own, and a
+            // text field cannot reproduce a Ctrl chord at all, which would drop it and every
+            // key after it. In the find field it selects the text; anywhere else in a popover
+            // the core is asked to open Find, and the keys after it wait for the panel.
+            if (target && popoverOf(target) && findKeys.has(canonicalOf(k))) {
+                if (isTextField(target) && target.closest('.ex-popover-find')) {
+                    target.select();
+                    continue;
+                }
+                const aimed = { ...k, onRoot: false, inEditor: false, inPopover: true, inFindField: false };
+                awaitingPopover = canFind;
+                await forward(aimed);
+                await editorSettled();
+                continue;
+            }
             if (target) {
                 // A held key that itself sends the keyboard across the popover holds the
                 // rest again, until DOM focus has followed it.
