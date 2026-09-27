@@ -287,15 +287,11 @@ test('DC-31: a Reference written mid-text lands at the caret and the caret sits 
 
 for (const chrome of ['builtin', 'mud']) {
     test(`DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (${chrome} Chrome)`, async ({ page }) => {
-        // Under ExGrid.MudBlazor's Chrome a press into the bar opens the edit with DOM focus in
-        // the Cell Editor, not the bar (found by this suite, 2026-09-27): MudCellEditor mounts
-        // with no request seen yet and takes any FocusRequest as a new one, so it focuses itself
-        // on an edit the bar opened, which the core never asked for (ADR-0051: while the user
-        // works in the bar, the cell's editor must not take the keyboard). The bar's caret is
-        // then not where it was pressed and the keys typed next land in the cell. Left failing
-        // under that Chrome, by name, until the seam's contract says how a control mounted by
-        // an edit the bar opened knows it was not asked to focus.
-        test.fail(chrome === 'mud', 'DC-34/DC-22: under MudGridChrome the Cell Editor takes DOM focus from the Formula Bar');
+        // Under ExGrid.MudBlazor's Chrome a press into the bar once opened the edit with DOM
+        // focus in the Cell Editor, not the bar (found by this suite, 2026-09-27): MudCellEditor
+        // mounted with no request seen yet and took any FocusRequest as a new one. An edit the
+        // bar opens now hands the cell's editor a request of zero, which asks nothing
+        // (CellEditorContext.FocusRequest, ADR-0051/0030).
         await underChrome(page, chrome);
         const grid = sheet(page);
         // D2 holds =B2*C2. A press near the start of the bar's text leaves the caret there.

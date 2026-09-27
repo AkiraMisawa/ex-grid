@@ -252,10 +252,15 @@ public sealed record CellEditorContext(
     /// shown.</summary>
     public string? MessageId { get; init; } = MessageId;
 
-    /// <summary>Counts the core's requests that the control take DOM focus — on opening,
-    /// on F2, and after a Reject that a click-away had moved focus off it. A substitute
-    /// focuses its control whenever this changes; the core holds no reference to a
-    /// control it did not render (ADR-0010/0030).</summary>
+    /// <summary>Names the core's latest request that the control take DOM focus — on
+    /// opening, on F2, and after a Reject that a click-away had moved focus off it. Zero asks
+    /// nothing: an edit the Formula Bar opened keeps the keyboard in the bar, and its cell
+    /// editor is handed zero until the core asks otherwise (ADR-0051). A substitute focuses
+    /// its control when it is handed a non-zero request it has not answered yet — on mounting
+    /// as on any later render; a request is never re-used, so a control mounted by one edit
+    /// cannot mistake it for another's. The core holds no reference to a control it did not
+    /// render (ADR-0010/0030), which is the rule <see cref="TemplateCellContext{TRow}.FocusRequest"/>
+    /// follows too (ADR-0037).</summary>
     public int FocusRequest { get; init; } = FocusRequest;
 }
 

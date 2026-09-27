@@ -191,6 +191,31 @@ public class MudGridChromeTests : MudTestContext
         Assert.DoesNotContain("mud-ex-editor-error", clean.Find("input.mud-ex-editor").ClassName);
     }
 
+    [Fact] // ADR-0051/0010/0030, DC-34: a request of zero asks nothing — an edit the Formula Bar opened keeps the keyboard in the bar
+    public void The_editor_takes_the_keyboard_only_for_a_request_it_has_not_answered()
+    {
+        const string focus = "Blazor._internal.domWrapper.focus";
+        int FocusCalls() => JSInterop.Invocations.Count(i => i.Identifier == focus);
+        CellEditorContext Editor(int request) => new(
+            "Book", ColumnType.Text, "x", CellEditMode.Caret, null, _ => { }, () => { }, () => { }, FocusRequest: request);
+
+        // Mounted by an edit the Formula Bar opened: asked nothing, it takes nothing.
+        var editor = Render<MudCellEditor>(ps => ps.Add(c => c.Context, Editor(0)));
+        Assert.Equal(0, FocusCalls());
+
+        // Asked: once. Rendered again with the request it has answered: nothing more.
+        editor.Render(ps => ps.Add(c => c.Context, Editor(4)));
+        Assert.Equal(1, FocusCalls());
+        editor.Render(ps => ps.Add(c => c.Context, Editor(4)));
+        Assert.Equal(1, FocusCalls());
+        editor.Render(ps => ps.Add(c => c.Context, Editor(5)));
+        Assert.Equal(2, FocusCalls());
+
+        // Mounted by an edit that asked: at once.
+        Render<MudCellEditor>(ps => ps.Add(c => c.Context, Editor(6)));
+        Assert.Equal(3, FocusCalls());
+    }
+
     [Fact] // ADR-0028/0030: Material's dense is Compact, never Excel
     public void Dense_is_compact_not_excel()
     {

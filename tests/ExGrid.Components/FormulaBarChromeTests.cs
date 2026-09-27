@@ -56,6 +56,33 @@ public class FormulaBarChromeTests : GridTestContext
         }
     }
 
+    /// <summary>A Chrome that paints the bar's text field and the Cell Editor, recording the
+    /// editor's contexts.</summary>
+    private sealed class EditorChrome : IGridChrome
+    {
+        public FormulaBarTextContext? BarHanded { get; private set; }
+
+        public CellEditorContext? EditorHanded { get; private set; }
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context)
+        {
+            EditorHanded = context;
+            return builder => builder.AddMarkupContent(0, "<span class='stub-editor'></span>");
+        }
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? FormulaBarText(FormulaBarTextContext context)
+        {
+            BarHanded = context;
+            return builder => builder.AddMarkupContent(0, "<span class='stub-bar'></span>");
+        }
+    }
+
     /// <summary>A Chrome that paints none of the bar: the built-in inputs stay.</summary>
     private sealed class SilentChrome : IGridChrome
     {
@@ -167,6 +194,41 @@ public class FormulaBarChromeTests : GridTestContext
         await PressInBarAsync(cut, "F2");                        // switches the mode, and asks for the keyboard
 
         Assert.NotEqual(before, chrome.BarHanded!.FocusRequest);
+    }
+
+    [Fact] // ADR-0051/0010/0030, DC-34: an edit the bar opened asks the Chrome's cell editor for nothing — the keyboard stays in the bar
+    public async Task An_edit_the_bar_opened_asks_the_chromes_cell_editor_for_nothing()
+    {
+        var chrome = new EditorChrome();
+        var cut = RenderGrid(chrome);
+        await ClickAsync(cut, 50, 10);
+
+        await cut.InvokeAsync(() => chrome.BarHanded!.Focused());
+
+        Assert.NotNull(chrome.EditorHanded);
+        Assert.Equal(0, chrome.EditorHanded!.FocusRequest);
+        // F2 in the bar asks the bar again, never the cell.
+        var bar = chrome.BarHanded!.FocusRequest;
+        await PressInBarAsync(cut, "F2");
+        Assert.NotEqual(bar, chrome.BarHanded!.FocusRequest);
+        Assert.Equal(0, chrome.EditorHanded!.FocusRequest);
+    }
+
+    [Fact] // ADR-0010/0030: an edit opened on the cell asks its editor, and each edit's request is a new one
+    public async Task An_edit_opened_on_the_cell_asks_the_chromes_editor_with_a_new_request_each_time()
+    {
+        var chrome = new EditorChrome();
+        var cut = RenderGrid(chrome, []);
+        await ClickAsync(cut, 50, 10);
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("5", false, false, false, false, false));
+        var first = chrome.EditorHanded!.FocusRequest;
+        Assert.NotEqual(0, first);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Enter", false, false, false, false, false));
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("6", false, false, false, false, false));
+        Assert.NotEqual(0, chrome.EditorHanded!.FocusRequest);
+        Assert.NotEqual(first, chrome.EditorHanded!.FocusRequest);
     }
 
     [Fact] // ADR-0051 / ADR-0050 item 4: under a Chrome's Name Box, Enter hands what was typed to the Consumer

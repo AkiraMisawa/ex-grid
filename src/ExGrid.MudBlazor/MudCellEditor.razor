@@ -13,7 +13,7 @@
 
 @code {
     private ElementReference _input;
-    private int _focusedRequest = -1;
+    private int _focusedRequest;
     private bool _needsFocus;
 
     /// <summary>The core's contract for the editor (ADR-0010): the text to start from, where
@@ -36,8 +36,9 @@
         _text.Told(Context.InitialText);
         // The core asks for focus on opening, on F2, and after a Reject that a
         // click-away had moved focus off the control (ADR-0034); each request is a new
-        // number, and the control focuses itself for each (ADR-0010/0030).
-        if (Context.FocusRequest != _focusedRequest)
+        // number, and the control focuses itself for each (ADR-0010/0030). Zero asks
+        // nothing: an edit the Formula Bar opened leaves the keyboard in the bar (ADR-0051).
+        if (Context.FocusRequest != 0 && Context.FocusRequest != _focusedRequest)
             _needsFocus = true;
     }
 

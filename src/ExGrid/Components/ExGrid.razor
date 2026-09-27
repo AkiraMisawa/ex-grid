@@ -1613,6 +1613,12 @@
     private ElementReference _editorElement;
     private bool _editorNeedsFocus;
     private int _editorFocusRequest;
+    // Whether the edit standing has asked the cell's editor for the keyboard at all. An edit
+    // the Formula Bar opened has not: its editor is handed a request of zero, which asks
+    // nothing, so a Chrome's control mounted by it leaves the keyboard in the bar (ADR-0051,
+    // DC-34). The number itself only ever grows, so a request is never mistaken for one an
+    // earlier editor already answered.
+    private bool _editorFocusAsked;
     // Whether the editor standing is a Chrome's fragment rather than the built-in
     // input — recorded at render, because only the render knows which it painted.
     private bool _editorIsChrome;
@@ -2210,6 +2216,7 @@
             ForgetCaretPlacement();
             _editError = null;
             _editorNeedsFocus = false;
+            _editorFocusAsked = false;
             _jsEditingDirty = true;
             // Announced, not silent: the user typed and something they did not do took
             // it away. Raised from OnAfterRenderAsync for the reason the Range Request
@@ -5969,6 +5976,7 @@
         ForgetCaretPlacement();
         _editError = null;
         _editorNeedsFocus = false;
+        _editorFocusAsked = false;
         // The input goes with the mode: a reference kept past it would name an element
         // the next editor is not, and the focus above would land nowhere.
         _editorElement = default;
@@ -6109,7 +6117,10 @@
         // A Chrome's editor focuses itself on a new request number; while the user works
         // in the Formula Bar, it must not take the keyboard from there (ADR-0051).
         if (_editSurface == EditSurface.Cell)
+        {
             _editorFocusRequest++;
+            _editorFocusAsked = true;
+        }
         else
             _formulaBarFocusRequest++;
     }
@@ -6186,7 +6197,7 @@
                 StateHasChanged();
             }),
             _editError is null ? null : MessageId,
-            _editorFocusRequest);
+            _editorFocusAsked ? _editorFocusRequest : 0);
     }
 
     /// <summary>F2's other door (ADR-0010): a double click enters Caret on an editable
