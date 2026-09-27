@@ -53,9 +53,11 @@ public class CaretTests : GridTestContext
 
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
         List<(string, int)>? asked = null, bool complete = true, bool point = false,
-        List<GridEditIntent<TestRow>>? intents = null)
+        List<GridEditIntent<TestRow>>? intents = null, bool bar = false)
         => Render<ExGrid<TestRow>>(ps =>
         {
+            if (bar)
+                ps.Add(g => g.ShowFormulaBar, true);
             ps.Add(g => g.Window, TestRows.Many(50))
               .Add(g => g.TotalCount, 50)
               .Add(g => g.Columns, Columns())
@@ -138,7 +140,7 @@ public class CaretTests : GridTestContext
         await PressAsync(cut, "Tab", "=SS", 2);
 
         Assert.Equal("=SUM(S", EditorText(cut));
-        Assert.Equal([("=SUM(S", 5)], CaretsPlaced());
+        Assert.Equal([("=", 1), ("=SUM(S", 5)], CaretsPlaced());
         Assert.Empty(intents);
     }
 
@@ -168,7 +170,7 @@ public class CaretTests : GridTestContext
         await PressAsync(cut, "Tab", "=SU+1", 3);
 
         Assert.Equal("=SUM(+1", EditorText(cut));
-        Assert.Equal([("=SUM(+1", 5)], CaretsPlaced());
+        Assert.Equal(("=SUM(+1", 5), CaretsPlaced()[^1]);
     }
 
     [Fact] // ADR-0051 second round / DC-31: a Reference written in the middle of the text places the caret after it
@@ -182,7 +184,7 @@ public class CaretTests : GridTestContext
         await PressAsync(cut, "ArrowDown", "=+1", 1);
 
         Assert.Equal("=A2+1", EditorText(cut));
-        Assert.Equal([("=A2+1", 3)], CaretsPlaced());
+        Assert.Equal([("=", 1), ("=A2+1", 3)], CaretsPlaced());
 
         // The next arrow replaces that Reference, and the caret follows it again.
         await PressAsync(cut, "ArrowDown", "=A2+1", 3);
@@ -201,7 +203,7 @@ public class CaretTests : GridTestContext
         await ClickAsync(cut, 50, 70); // A4
 
         Assert.Equal("=A4+1", EditorText(cut));
-        Assert.Equal([("=A4+1", 3)], CaretsPlaced());
+        Assert.Equal([("=", 1), ("=A4+1", 3)], CaretsPlaced());
     }
 
     [Fact] // ADR-0051 second round: with no caret reported yet, a click writes no Reference at a guessed place
@@ -217,7 +219,8 @@ public class CaretTests : GridTestContext
         // An ordinary click, as where no Reference can go: the text is committed as typed.
         Assert.Empty(cut.FindAll(".ex-point"));
         Assert.Equal("=+1", Assert.Single(intents).Value);
-        Assert.Empty(CaretsPlaced());
+        // Only the opening's placement: nothing was written.
+        Assert.Equal([("=", 1)], CaretsPlaced());
     }
 
     [Fact] // ADR-0051 second round / DC-31: while a list is open the gate claims only its keys; closed, Overwrite's again
@@ -248,7 +251,7 @@ public class CaretTests : GridTestContext
 
         Assert.Equal(("=SU", 2), asked[^2]);
         Assert.Equal("=SUM(U", EditorText(cut));
-        Assert.Equal([("=SUM(U", 5)], CaretsPlaced());
+        Assert.Equal(("=SUM(U", 5), CaretsPlaced()[^1]);
     }
 
     [Fact] // ADR-0051 second round / DC-1: the listener reports carets only where completion or pointing is declared
@@ -297,5 +300,145 @@ public class CaretTests : GridTestContext
         await PressAsync(cut, "Tab", "=SU", 3);
 
         Assert.Equal(before, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToList());
+    }
+
+    [Fact] // ADR-0051 second round / DC-31: opening an edit by typing places the caret at the end of the opening text
+    public async Task Opening_by_typing_places_the_caret_at_the_end()
+    {
+        var cut = RenderGrid();
+
+        await StartFormulaAsync(cut);
+
+        Assert.Equal([("=", 1)], CaretsPlaced());
+    }
+
+    [Fact] // ADR-0051 second round / DC-31: opening an edit on the cell's text places the caret at its end, never assumed
+    public async Task Opening_on_the_cells_text_places_the_caret_at_its_end()
+    {
+        var cut = RenderGrid(complete: false, point: true);
+        await ClickAsync(cut, 50, 10);
+
+        await PressAsync(cut, "F2");
+
+        Assert.Equal([("Row 000000", 10)], CaretsPlaced());
+    }
+
+    [Fact] // ADR-0051 second round / DC-31: opening an edit from the Formula Bar places the caret at the end of the opening text
+    public async Task Opening_from_the_formula_bar_places_the_caret_at_the_end()
+    {
+        var cut = RenderGrid(bar: true);
+        await ClickAsync(cut, 50, 10);
+
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+
+        Assert.Equal([("Row 000000", 10)], CaretsPlaced());
+    }
+
+    [Fact] // ADR-0051 second round / DC-1: without completion or pointing, opening an edit places nothing
+    public async Task Undeclared_opening_places_nothing()
+    {
+        var cut = RenderGrid(complete: false, bar: true);
+        await ClickAsync(cut, 50, 10);
+        await PressAsync(cut, "=");
+        await PressAsync(cut, "Escape", "=", 1);
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+
+        Assert.Empty(CaretsPlaced());
+    }
+
+    [Fact] // ADR-0051 second round / DC-31: a caret moved with the text unchanged is the caret completion is asked at
+    public async Task A_caret_only_move_asks_completion_at_the_new_caret()
+    {
+        var asked = new List<(string, int)>();
+        var cut = RenderGrid(asked);
+        await StartFormulaAsync(cut);
+        await InputAsync(cut, "=S+XL");
+        await ReportAsync(cut, "=S+XL", 5);
+        Assert.Equal(["XLOOKUP"], Labels(cut));
+
+        // ← three times, or a click after the S: the text is unchanged, the caret is not.
+        await ReportAsync(cut, "=S+XL", 2);
+
+        Assert.Equal(("=S+XL", 2), asked[^1]);
+        Assert.Equal(["SUM", "SUMIF"], Labels(cut));
+        await PressAsync(cut, "Tab", "=S+XL", 2);
+        Assert.Equal("=SUM(+XL", EditorText(cut));
+        Assert.Equal(("=SUM(+XL", 5), CaretsPlaced()[^1]);
+    }
+
+    [Fact] // ADR-0051 second round / DC-31: a click points at the caret the user moved to, not the one typing left
+    public async Task A_click_points_at_the_caret_the_user_moved_to()
+    {
+        var cut = RenderGrid(complete: false, point: true);
+        await StartFormulaAsync(cut);
+        await InputAsync(cut, "=+1");
+        await ReportAsync(cut, "=+1", 3);
+
+        // Moved back before the +: a Reference can go after the =.
+        await ReportAsync(cut, "=+1", 1);
+        await ClickAsync(cut, 50, 70); // A4
+
+        Assert.Equal("=A4+1", EditorText(cut));
+        Assert.Equal(("=A4+1", 3), CaretsPlaced()[^1]);
+    }
+
+    [Fact] // ADR-0051 second round / DC-31: a caret moved away from a pointed Reference ends pointing; the next click writes at the new caret
+    public async Task A_caret_moved_while_pointing_ends_the_outline()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(complete: false, point: true, intents: intents);
+        await StartFormulaAsync(cut);
+        await InputAsync(cut, "=+1");
+        await ReportAsync(cut, "=+1", 1);
+        await PressAsync(cut, "ArrowDown", "=+1", 1);
+        Assert.Equal("=A2+1", EditorText(cut));
+        Assert.NotEmpty(cut.FindAll(".ex-point"));
+        Assert.Equal("point", EditingTold()[^1].Mode);
+
+        // A click inside the text, after the +.
+        await ReportAsync(cut, "=A2+1", 4);
+
+        Assert.Empty(cut.FindAll(".ex-point"));
+        Assert.Equal("overwrite", EditingTold()[^1].Mode);
+        await ClickAsync(cut, 50, 70); // A4
+        Assert.Equal("=A2+A41", EditorText(cut));
+        Assert.Equal(("=A2+A41", 6), CaretsPlaced()[^1]);
+        Assert.Empty(intents);
+    }
+
+    [Fact] // ADR-0051 second round: the browser's caret in text the core wrote, reported before the placement lands, is not taken
+    public async Task A_report_ahead_of_the_placement_is_not_taken()
+    {
+        var cut = RenderGrid(complete: false, point: true);
+        await StartFormulaAsync(cut);
+        await InputAsync(cut, "=+1");
+        await ReportAsync(cut, "=+1", 1);
+        var placement = Js.UnansweredCaretPlacement();
+
+        await PressAsync(cut, "ArrowDown", "=+1", 1);
+        var placed = placement.Invocations.Last();
+        Assert.Equal(("=A2+1", 3), ((string)placed.Arguments[0]!, (int)placed.Arguments[1]!));
+        // Setting the value left the browser's caret at the end, and that was reported.
+        await ReportAsync(cut, "=A2+1", 5);
+        await cut.InvokeAsync(placement.SetVoidResult);
+
+        // The outline stands and the next arrow replaces its Reference, at the placed caret.
+        Assert.NotEmpty(cut.FindAll(".ex-point"));
+        await PressAsync(cut, "ArrowDown", "=A2+1", 3);
+        Assert.Equal("=A3+1", EditorText(cut));
+    }
+
+    [Fact] // ADR-0051 second round / ADR-0003: a caret-only report with nothing to answer renders nothing
+    public async Task A_caret_only_report_with_nothing_to_answer_renders_nothing()
+    {
+        var cut = RenderGrid(complete: false, point: true);
+        await StartFormulaAsync(cut);
+        await InputAsync(cut, "=+1");
+        await ReportAsync(cut, "=+1", 3);
+        var renders = cut.RenderCount;
+
+        await ReportAsync(cut, "=+1", 2);
+
+        Assert.Equal(renders, cut.RenderCount);
     }
 }
