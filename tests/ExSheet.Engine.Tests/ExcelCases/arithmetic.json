@@ -48,7 +48,8 @@
       "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
       "cells": {"ZZ1000": "=10+50%"},
       "check": "ZZ1000",
-      "expect": {"value2": 10.5}
+      "expect": {"value2": 10.5, "text": "1050.0%", "numberFormat": "0.0%"},
+      "oracleSkip": "Through COM (Formula2) the result is General; typed with real keys Excel formats =10+50% as 0.0% (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ARITH-007",
@@ -512,7 +513,8 @@
       "description": "A result that is not a finite double is #NUM!",
       "cells": {"A1": "1E+300", "ZZ1000": "=A1*A1"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": "#NUM!", "numberFormat": "0.00E+00"},
+      "oracleSkip": "Through COM the result is General; typed with real keys Excel formats =A1*A1 over a cell typed 1E+300 as 0.00E+00 (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "ARITH-065",

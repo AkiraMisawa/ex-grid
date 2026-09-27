@@ -44,7 +44,8 @@ public class SheetDocumentWiringTests : SheetTestContext
         var alone = Sheet.Open(SheetDocument.FromJson(document.ToJson()));
         Assert.Equal(alone.GetDisplay(CellAddress.Parse("A1")).Text, CellText(cut, "A1"));
         Assert.Equal(alone.GetDisplay(CellAddress.Parse("A2")).Text, CellText(cut, "A2"));
-        Assert.Equal("2469", CellText(cut, "A2"));
+        // A product takes the format of the cell it reads on entry (ADR-0047, second run): #,##0.00.
+        Assert.Equal("2,469.00", CellText(cut, "A2"));
     }
 
     /// <summary>

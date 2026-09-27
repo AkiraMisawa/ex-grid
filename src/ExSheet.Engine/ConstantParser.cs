@@ -81,6 +81,10 @@ internal static partial class ConstantParser
         return true;
     }
 
+    /// <summary>Whether the typed text is a number written without <c>%</c>, a currency symbol or a date's shape: what Excel's automatic percent entry divides by 100.</summary>
+    public static bool IsPlainNumber(string typed, CultureInfo culture) =>
+        TryParseNumber(typed.Trim(' '), culture, out _, out var shape) && !shape.HasFlag(NumberShape.Percent);
+
     /// <summary>Text read as a number the way a typed number is: what Excel's arithmetic does with numeric text.</summary>
     public static bool TryParseNumber(string text, CultureInfo culture, out double number)
     {

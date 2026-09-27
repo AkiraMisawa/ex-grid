@@ -95,7 +95,7 @@ public class ClipboardTests
         var sheet = NewSheet();
         sheet.Enter("A1", "1234.5");
         sheet.SetFormat(At("A1"), NumberFormat.Parse("#,##0.00"));
-        sheet.Enter("B1", "=A1*2");
+        sheet.Enter("B1", "=A1/0.5"); // division gives no format on entry (ADR-0047), so B1 goes out in General
         sheet.Enter("A2", "a\tb");
         sheet.Enter("B2", "=1/0");
         sheet.Enter("A3", "TRUE");

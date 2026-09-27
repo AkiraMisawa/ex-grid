@@ -195,6 +195,13 @@ public sealed partial class Sheet
                 entries.Add(new(address, InOwnName(signed)));
                 continue;
             }
+            // A plain number typed into a cell that shows percentages is read as a percentage,
+            // Excel's automatic percent entry (on by default): 0.5 into a 0% cell is 0.005
+            // (LVL-015, ADR-0047 second run). Only typed; a paste is taken as it is.
+            if (!pasted && value.Kind == ValueKind.Number && GetFormat(address).IsPercent && ConstantParser.IsPlainNumber(text, Culture))
+            {
+                value = Value.FromNumber(value.Number / 100);
+            }
             entries.Add(new(address, Entry.FromValue(value)));
             if (format is not null) implied.Add((address, format));
         }
