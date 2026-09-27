@@ -1,6 +1,6 @@
 # 11: Point mode
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** The fourth editing state. While the Consumer's synchronous predicate says the caret stands where
 a Reference can go, arrows and clicks move a pointing outline, painted in the selection overlay,
@@ -10,12 +10,12 @@ editor's text and caret, and the decision is made from them (ADR-0021's note).
 
 **Blocked by:** 03, 09
 
-- [ ] `=` ↓ ↓ writes `A3`; Shift+↓ writes a range; a click writes the clicked cell (ADR-0051)
+- [x] `=` ↓ ↓ writes `A3`; Shift+↓ writes a range; a click writes the clicked cell (ADR-0051)
 - [x] Typing a constant, the arrows still commit and move (ADR-0012)
 - [x] F2 switches between moving the caret and pointing
 - [x] The Selection and the Focus do not move while pointing
 - [x] Pointing works from the Formula Bar
-- [ ] Layer 3 on the Server host with a delayed circuit: fast typing never points where the text forbids it
+- [x] Layer 3 on the Server host with a delayed circuit: fast typing never points where the text forbids it
 
 ## Comments
 
@@ -109,3 +109,13 @@ listener's shape: scoped, disposed, coalesced, deduplicated, no layout read).
 **What remains:** layer 3 with real keys and mouse — ← / → in Caret then a click on a cell, a
 click inside the text then a click on a cell, a click into the Formula Bar's text, the caret
 after opening — under both Chromes and on the Server host.
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `declarations.spec.mjs`: `=` ↓ ↓ writes `=F4` with
+the outline over F4 and the Focus still on F2; real Shift+↓ and Shift+→ extend it to `=F4:G5` and
+the input selects no text; an operator ends pointing; a click writes `=C3`, Shift+click `=C3:C4`;
+F2 from pointing gives Caret, whose arrows move the caret; a Reference written mid-text lands at
+the caret with the caret after it; from the Formula Bar F2 points, and a press in the bar's text
+ends pointing (DC-19/31/34). DC-20 at 150 ms on the Server host: `=1` ↓ commits and moves, `=1+` ↓
+points. Green on both hosts under the built-in Chrome. Under `ExGrid.MudBlazor`'s Chrome the
+pointing-from-the-bar test is left failing by name (`test.fail`): a press into the bar leaves DOM
+focus in the Mud Cell Editor, not the bar (see ticket 18).

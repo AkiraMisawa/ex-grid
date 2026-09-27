@@ -73,3 +73,5 @@ is refused with the engine's sentence ("A2 is waiting for a Linked Table's data
 (#GETTING_DATA); ..."), the grid announces it, ExSheet's notice says it, and the clipboard keeps
 what it held (`ClipboardWiringTests.A_copy_reaching_getting_data_is_refused_in_the_engines_words`).
 Every criterion is met.
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `sheet.spec.mjs`: B11 and B12 read `#GETTING_DATA` until the page's first snapshot, then 1189.4 and 318.25 (COUNTA 5), and Revalue changes B12 to 321.43 (SH-16, SH-18). Green on both hosts. Seen along the way: every change to the Sheet clears ExSheet's notice, a Consumer's push included, so a refusal said just before a push disappears with it.

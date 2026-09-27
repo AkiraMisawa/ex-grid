@@ -1,0 +1,52 @@
+@page "/sheets"
+@using System.Globalization
+@* global::, for the reasons SheetPage.razor gives. *@
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+
+<DemoNav />
+
+<h1>Two sheets — independent instances</h1>
+
+<p>
+    Two ExSheets on one page, each with its own Sheet, its own undo stack and its own Formula Bar
+    (ADR-0018, ADR-0048). Keys typed into one never reach the other, a completion list opens in
+    the one being typed in, and Ctrl+Z undoes only the Sheet that has the keyboard.
+</p>
+
+<div class="demo-side-by-side">
+    <div id="sheet-left">
+        <ExSheet @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" ViewportHeight="360" ViewportWidth="520" />
+    </div>
+    <div id="sheet-right">
+        <ExSheet @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" ViewportHeight="360" ViewportWidth="520" />
+    </div>
+</div>
+
+<p class="demo-status">
+    <span id="sheets-status">@_status</span>
+</p>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private SheetDocument? _left = Opening("Left", 10);
+    private SheetDocument? _right = Opening("Right", 20);
+    private string _status = "";
+
+    // Each Sheet names itself in A1 and holds a number and a Formula over it, so a key that
+    // crossed from one to the other would show in the other's cells.
+    private static SheetDocument Opening(string name, int value)
+    {
+        var sheet = new Sheet(Culture);
+        sheet.Enter(CellAddress.Parse("A1"), name);
+        sheet.Enter(CellAddress.Parse("B1"), value.ToString(CultureInfo.InvariantCulture));
+        sheet.Enter(CellAddress.Parse("C1"), "=B1*2");
+        return sheet.ToDocument();
+    }
+
+    protected override void OnInitialized() => Count();
+
+    private void Count() =>
+        _status = $"Left: {_left?.Cells.Count ?? 0} cells; right: {_right?.Cells.Count ?? 0} cells.";
+}

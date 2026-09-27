@@ -48,3 +48,5 @@ or the constant written as it would be typed under the Sheet's culture), `ShowFo
 default, and `NameBoxLabel` answers the Focus's A1 address. Layer 2: `FormulaBarWiringTests` (F2
 opens on `=A1*2` while the cell shows 42; the bar and the Name Box follow the Focus; a `de-DE`
 constant opens as typed there).
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `sheet.spec.mjs` and `declarations.spec.mjs`: F2 on D2 opens `=B2*C2` while the cell shows 6, and the bar shows the Entry with the Focus there, under the built-in Chrome and `ExGrid.MudBlazor`'s. The Fill-height case is not driven (the DemoHost's Sheets have fixed heights).

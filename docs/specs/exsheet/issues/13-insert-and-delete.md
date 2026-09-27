@@ -50,3 +50,9 @@ growing, two rows, `#REF!` on a deleted column, one undo restoring structure and
 counts, a refusal). **Still open:** the fourth criterion's Ctrl+Z. `UndoAsync` restores the
 structure and every Reference, but the key waits on the core's undo route (ADR-0050, item 8;
 ticket 12).
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `sheet.spec.mjs`: a row inserted
+by the page's button and one by the Context Menu's "Insert rows above" keep `=SUM(B2:B4)` and
+`=B2*C2` naming their cells (`=SUM(B4:B6)` after both), and one Ctrl+Z per insertion restores the
+structure and every Reference. Only row insertion is driven in the browser; deletion and columns
+are not, so the last criterion stays open here.

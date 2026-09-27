@@ -35,3 +35,5 @@ along the line, or to the Sheet's edge. `DataEdge` is a delegate held in a field
 another column's data, the last row; the index following an entry, a clearing and an insertion).
 Layer 2: `EdgeWiringTests`. Real Ctrl+arrow keys through the capture listener stay layer 3's
 (SH-18).
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `sheet.spec.mjs`: real Ctrl+↓ from A1 stops at A5, A7, A8, A10, A13 and the Sheet's last row; Ctrl+↑, Ctrl+→ to XFD13 and Ctrl+← back; Ctrl+Shift+↓ from B2 selects B2:B5 (DC-7, SH-18). Green on both hosts.

@@ -76,3 +76,11 @@ is, the keys stay the editor's own (ADR-0007). Layer 2:
 `UndoStackTests.Ctrl_Z_and_Ctrl_Y_step_through_edits_in_order` and
 `While_an_edit_is_open_Ctrl_Z_leaves_the_stack_alone`. Every criterion here is met. DC-30's
 layer 3 half (the real keys in a browser, with and without an edit open) is ticket 18's.
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `declarations.spec.mjs`: Ctrl+Z,
+Ctrl+Y and Ctrl+Shift+Z walk the stack with no edit open; with one open the three keys change
+nothing on the stack and leave the edit open; on the positions grid, which declares no undo,
+Ctrl+Z is not prevented (DC-30). `sheets.spec.mjs`: two ExSheets keep separate stacks (SH-13).
+Green on both hosts. Left failing by name on the Server host: ADR-0007's "the editor's own keys
+undo uncommitted typing" — each render writes the typed text back into the input, which empties
+the browser's undo history (see ticket 18).

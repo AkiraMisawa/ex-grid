@@ -77,3 +77,16 @@ a range, whole columns `B:D`, whole rows `5:6`, either case, `$` markers ignored
 (rows are places, ADR-0046). Text that is not an address moves nothing, and the sentence saying so
 is written into the component's `role="status"` notice. A commit from the Formula Bar is one
 engine step. Layer 2: `NameBoxWiringTests`.
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `sheet.spec.mjs`: typed in the cell
+the bar agrees after every keystroke and typed in the bar the cell agrees; Enter from the bar
+commits once (one Ctrl+Z undoes it) and moves the Focus down; Escape from the bar cancels once and
+leaves the root holding the keyboard (DC-22). The Name Box goes to D200 scrolled into view,
+refuses `nonsense` with the notice, commits an open edit on a press and navigates, and hands an
+unreadable `=SUM(` back to its editor (DC-11). DC-28 at 150 ms on the Server host: the keys held
+behind F2 land in the bar in order. Two defects found, each left failing by name: on the Server
+host the next key after those lands at the end of the text, not at the caret (a render writes the
+text back and moves the browser's caret), and under `ExGrid.MudBlazor`'s Chrome a press into the
+bar leaves DOM focus in the Cell Editor, so the keys typed next land in the cell's surface
+(see ticket 18). The markup-order case noted above is closed: the listener types held keys into
+the surface holding DOM focus.

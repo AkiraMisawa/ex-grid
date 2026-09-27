@@ -89,3 +89,12 @@ nothing written and the Selection on the source, and one undo. The first, second
 criteria are the core's, covered by its `FillHandleTests`, and ExSheet declares every column
 Editable. Layer 3 for DC-13 (a real mouse drag under both Chromes, and the edge auto-scroll)
 belongs to ticket 18.
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `declarations.spec.mjs`, under the
+built-in Chrome and `ExGrid.MudBlazor`'s: the handle is painted at the Selection's bottom-right and
+grabbed there; 1, 2 dragged to F6 writes 3, 4, 5 down one axis only, the target outline shows
+while dragging and goes on release, the Selection is F2:F6, one Ctrl+Z takes the fill back
+(DC-13/27); D2 filled right shifts its References (`=C2*D2`, `=D2*E2`); `Item 1`, `Item 2` dragged
+is refused with the notice, nothing written, the Selection on the source; the edge auto-scroll
+carries a fill far below the Viewport and the series is continuous to its end. Green on both
+hosts.
