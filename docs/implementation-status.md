@@ -323,9 +323,16 @@ to `Stretch`, which frees Fill for Excel's gesture. Built, with the criteria eac
 
 **Where this ran.** A Linux cloud container, .NET 10.0.401 installed directly, **Google Chrome
 and Microsoft Edge installed from their vendors' packages**, headed under Xvfb. Layers 1 and 2:
-**644 + 600 (1 skipped by name) + 70**. Layer 3: the new `excel-keys.spec.mjs` and
-`find.spec.mjs` pass on both browsers against both hosts (**40 of 40** on Server); the full-suite
-figures are below.
+**644 + 600 (1 skipped by name) + 70**. Layer 3, the whole suite on both browsers: **444 pass,
+14 skipped by name, 0 failed** on WebAssembly, and **448 pass, 10 skipped by name, 0 failed** on
+Server. Neither discharges the Windows or real-IME runs.
+
+**A max-depth review of this drop found open items, not yet fixed.** The worst, by axis: Ctrl+F
+pressed inside the grid's own popovers — the find field included — still reaches the browser, which
+FD-1 forbids and no ADR yet settles; and `ColumnInfo`'s displayed-text closure makes a Consumer's
+rebuilt columns compare unequal, so every repush requeries. Also open: `PlanFill`'s refusal order
+against ADR-0035, `OnFind` beside a bound Source, a Shift+Enter held behind Ctrl+F running "next",
+the demo's redo, and test gaps under FD-4/5/8, CP-25 and ED-25. Three of them wait on a decision.
 
 ## Working through to the component
 
