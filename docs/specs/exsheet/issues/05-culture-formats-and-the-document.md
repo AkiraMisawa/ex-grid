@@ -230,3 +230,15 @@ reads Excel's `customWidth` flag from a saved `.xlsx` copy, does `sizeToFit` as 
 blocks `automatic` actions (only an entry sets one in Excel). All the new cases are uncertain
 except CW-017 (absent `customWidth` is false, per ECMA-376). Layer 1: `ColumnWidthTests`,
 `SheetDocumentTests`.
+
+2026-09-27, component, widening on entry is automatic again (SH-20, SH-22; ADR-0046's last
+bullet, ADR-0047 second round): the open item above is closed. Widening on entry records its
+width through `SheetEdit.SetAutomaticColumnWidth`, still as a second engine step of the entry's
+own operation; a column whose recorded width is custom is never widened, and one at its default
+or an automatic width widens whenever a typed number or date needs more than it has, and never
+narrows. A resize — a drag or a size to fit — goes through `SheetEdit.SetColumnWidth`, custom, so
+widening stops there; resizing a widened column to the same width still makes it custom. A
+reopened document keeps each width's origin. Layer 2: `ColumnWidthTests` —
+`A_widened_column_widens_again` runs (no longer skipped), with the automatic width recorded, a
+drag and a size to fit recorded as custom, a widened column the user resizes no longer widening,
+the second widening undone with its entry, and a reopened document's widths keeping their origin.

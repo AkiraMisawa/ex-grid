@@ -178,3 +178,11 @@ secondary click and on the ContextMenu key, and in the context handed to `Contex
 keeps what it held rather than taking the block without its headers; a plain copy is untouched.
 Off, the menu and the copy are exactly as before (DC-1). Layer 2:
 `CopyWithHeadersDeclarationTests`. The Definition of Done has no DC row for item 13 yet.
+
+2026-09-27, ExSheet wiring, copy with headers is off on a Sheet (ADR-0048; ADR-0050 item 13):
+ExSheet hands ExGrid `HideCopyWithHeaders` unless its own new parameter `AllowCopyWithHeaders`
+(default false) is on. By default the Context Menu offers `Copy` and not `Copy with headers`, and
+a copy asked with headers is refused by the grid; switched on, the command is the grid's own, and
+ExSheet's copy answer writes the Values with the column letters as the first row, as noted above.
+Layer 2: `CopyWithHeadersTests` (off by default, on with the parameter, the grid's id worded by
+`CommandLabel`).

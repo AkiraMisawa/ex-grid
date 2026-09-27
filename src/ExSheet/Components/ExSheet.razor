@@ -13,6 +13,9 @@
     left without a delegate, and HeaderClickSelects gives the header click Excel's meaning.
     HideColumnMenu keeps the resize grips and drops the column-menu button: Excel's Headings
     carry no menu, and size to fit stays on a double-click of the edge (ADR-0050 item 12).
+    HideCopyWithHeaders leaves copy with headers out, since a Sheet's column letters are addresses,
+    not headers, unless the Consumer switches it on with AllowCopyWithHeaders (ADR-0048, ADR-0050
+    item 13).
 *@
 <ExGrid TRow="SheetRow" @ref="_grid"
         Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
@@ -29,7 +32,7 @@
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
-        CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused"
+        CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
         ShowFillHandle="true" OnFill="OnFillAsync"
         OnUndo="_undo" OnRedo="_redo" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
@@ -190,6 +193,14 @@
     /// ExSheet's English for its own commands and the grid's for the rest.
     /// </summary>
     [Parameter] public Func<string, string?>? CommandLabel { get; set; }
+
+    /// <summary>
+    /// Whether the Context Menu offers copy with headers, which copies the Values with the column
+    /// letters as the first row (ADR-0048). Off by default: a Sheet's column letters are addresses,
+    /// not headers, and Excel has no such command, so ExSheet declares ExGrid's
+    /// <c>HideCopyWithHeaders</c> unless this is on (ADR-0050 item 13).
+    /// </summary>
+    [Parameter] public bool AllowCopyWithHeaders { get; set; }
 
     /// <summary>The grid's Chrome, passed to ExGrid as is (ADR-0010).</summary>
     [Parameter] public IGridChrome? Chrome { get; set; }
@@ -692,7 +703,8 @@
 
     /// <summary>
     /// A column the user resized — dragged, or sized to fit on a double-click of its edge
-    /// (ADR-0016). The width is recorded in the Sheet, in characters converted from the grid's
+    /// (ADR-0016). The width is recorded in the Sheet as custom, the user's, so an entry never
+    /// widens the column again (ADR-0046), in characters converted from the grid's
     /// pixels as the painted text converts them (ADR-0047, third round), as one step on the undo
     /// stack, and <see cref="DocumentChanged"/> is raised (ADR-0046). The grid reports a resize of
     /// several whole columns one column at a time; the columns of one resize are one step.
@@ -723,15 +735,15 @@
     /// estimate charges for the text the cell shows at that many characters, in the Cell Metrics
     /// the grid resolves, so the widened column holds it and the grid does not hash it
     /// (ADR-0016). The width is recorded in the Sheet like any other (ADR-0046), as a step of
-    /// the entry's own operation; the step, or null where the column is not widened. A column
-    /// whose width the Sheet records — resized by the user, or widened by an entry already — is
-    /// not at its default width and is never widened. Only the typed entry widens: not a paste,
-    /// a fill or a recalculated Formula.
+    /// the entry's own operation; the step, or null where the column is not widened. The width
+    /// is recorded as automatic (ADR-0046), so a longer entry widens the column again; it never
+    /// narrows it. A column whose width the user set — a drag, a size to fit — is custom and is
+    /// never widened. Only the typed entry widens: not a paste, a fill or a recalculated Formula.
     /// </summary>
     private SheetStep? WidenOnEntry(CellAddress address)
     {
         var sheet = CurrentSheet;
-        if (sheet.GetColumnWidth(address.Column) is not null) return null;
+        if (sheet.GetColumnWidth(address.Column) is { IsCustom: true }) return null;
         if (sheet.GetWidthOnEntry(address) is not { } characters) return null;
         var metrics = CellMetrics;
         var shown = sheet.GetDisplay(address, characters);
@@ -740,7 +752,7 @@
             metrics.EstimatePx(shown.Text)));
         if (needed <= _columns.WidthPxOf(address.Column)) return null;
         if (SheetColumns.CharactersOfColumn(needed, metrics) is not { } recorded) return null;
-        return sheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(address.Column, address.Column), recorded));
+        return sheet.Do(SheetEdit.SetAutomaticColumnWidth(CellRange.WholeColumns(address.Column, address.Column), recorded));
     }
 
     private Task ChangedAsync(SheetChange change, bool raiseDocument = true) => ChangedAsync([change], raiseDocument);

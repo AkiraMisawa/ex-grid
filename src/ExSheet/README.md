@@ -36,6 +36,9 @@ computes, ExGrid paints, selects, navigates and reports.
   `RowHeight` at which the full extent would pass the browser's scroll ceiling is refused by name.
 - **`ShowRowHeadings`, `ShowColumnHeadings` and `ShowFormulaBar`** hide either Heading or the
   Formula Bar. The cells are still addressed `A1`.
+- **`AllowCopyWithHeaders`** puts ExGrid's copy with headers back in the Context Menu. It is off
+  by default: a Sheet's column letters are addresses, not headers. Switched on, it copies the
+  Values with the column letters as the first row.
 
 What the user gets: typing constants and Formulas, the Formula shown when a cell is edited and in
 the Formula Bar, a Name Box that says where the Focus is and takes an address to go to, column and
@@ -87,8 +90,10 @@ A format or an alignment set on a selection of whole columns or whole rows is re
 columns or rows, one entry each, as Excel records it: cell over row over column.
 
 Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
-column, and a number typed into a default-width column that it widens, are steps on the undo stack
-like any other, and raise `DocumentChanged`; an opened document brings its widths with it.
+column, and a number typed into a column that it widens, are steps on the undo stack like any
+other, and raise `DocumentChanged`; an opened document brings its widths with it. A width an entry
+widened the column to stays automatic, and a longer entry widens the column again; a width the
+user set — a drag or a size to fit — is custom, and entries no longer widen that column.
 
 ## More
 

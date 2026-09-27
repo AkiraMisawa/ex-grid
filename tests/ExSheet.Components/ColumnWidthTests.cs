@@ -63,12 +63,7 @@ public class ColumnWidthTests : SheetTestContext
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 2));
     }
 
-    // ADR-0047 second round: a column widened by an entry is still at its default width, and widens
-    // again. Since widths are the Sheet Document's (ADR-0046), a widened column records its width,
-    // and the engine records no difference between a width the user set and one an entry widened
-    // to (Excel's customWidth), so the component can no longer tell which it is. Left failing
-    // rather than rewritten to the narrower behaviour.
-    [Fact(Skip = "Needs the Sheet to record whether a width was set by the user or widened by an entry (ADR-0046, ADR-0047 second round); see ticket 05")]
+    [Fact] // ADR-0047 second round, ADR-0046 (a recorded width says whether the user set it): a width an entry widened the column to is automatic, and a longer entry widens it again
     public async Task A_widened_column_widens_again()
     {
         var cut = RenderSheet();
@@ -259,6 +254,74 @@ public class ColumnWidthTests : SheetTestContext
         await cut.Instance.DoAsync(SheetEdit.DeleteColumns(1));
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 1));
         Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
+    }
+
+    [Fact] // ADR-0046: widening on entry records an automatic width, not the user's
+    public async Task Widening_on_entry_records_an_automatic_width()
+    {
+        var cut = RenderSheet();
+
+        await EnterAsync(cut, "B1", "1234567890");
+
+        var width = Assert.Single(cut.Instance.ToDocument().ColumnWidths);
+        Assert.False(width.IsCustom);
+    }
+
+    [Fact] // ADR-0046: a drag and a size to fit both record the user's width, custom
+    public async Task A_resize_and_a_size_to_fit_record_a_custom_width()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "A1", "A heading far wider than its column");
+
+        await ResizeAsync(cut, "C", 120);
+        await cut.FindAll(".ex-resize-grip")[0].DoubleClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { Button = 0 });
+
+        var widths = cut.Instance.ToDocument().ColumnWidths;
+        Assert.Equal([(0, true), (2, true)], widths.Select(w => (w.First, w.IsCustom)));
+    }
+
+    [Fact] // ADR-0046: a widened column the user then resizes is the user's, and a longer entry no longer widens it
+    public async Task A_widened_column_the_user_resizes_stops_widening()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "A1", "1234567890");
+        var widened = WidthOf(cut, 0);
+
+        await ResizeAsync(cut, "A", widened);
+        await EnterAsync(cut, "A2", "12345678901");
+
+        Assert.Equal(widened, WidthOf(cut, 0), 6);
+        Assert.True(Assert.Single(cut.Instance.ToDocument().ColumnWidths).IsCustom);
+    }
+
+    [Fact] // ADR-0046, ADR-0048: the widening of a longer entry is one undo step with that entry, back to the automatic width before it
+    public async Task Widening_again_is_undone_with_its_entry()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "A1", "1234567890");
+        var first = WidthOf(cut, 0);
+        await EnterAsync(cut, "A2", "12345678901");
+
+        Assert.True(await cut.Instance.UndoAsync());
+
+        Assert.Equal(first, WidthOf(cut, 0), 6);
+        Assert.Equal("", CellText(cut, "A2"));
+        Assert.False(Assert.Single(cut.Instance.ToDocument().ColumnWidths).IsCustom);
+    }
+
+    [Fact] // ADR-0046, ADR-0048: a document reopened with an automatic width still widens on a longer entry, and one with a custom width does not
+    public async Task A_reopened_documents_widths_keep_their_origin()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.SetAutomaticColumnWidth(CellRange.Parse("A:A"), 10);
+        sheet.SetColumnWidth(CellRange.Parse("B:B"), 10);
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+
+        await EnterAsync(cut, "A1", "123456789012345");
+        await EnterAsync(cut, "B1", "123456789012345");
+
+        Assert.True(WidthOf(cut, 0) > SheetColumns.PxOf(10, Metrics));
+        Assert.Equal(SheetColumns.PxOf(10, Metrics), WidthOf(cut, 1), 6);
     }
 
     [Fact] // ADR-0046: a width set by a Consumer command is painted, as the user's would be
