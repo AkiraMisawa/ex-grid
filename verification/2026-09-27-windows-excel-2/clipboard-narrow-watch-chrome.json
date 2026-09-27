@@ -1,0 +1,46 @@
+{
+ "channel": "chrome",
+ "focused": true,
+ "pastes": [
+  {
+   "target": "ex-grid",
+   "activeElement": "ex-grid",
+   "types": [
+    "text/plain",
+    "text/html",
+    "text/rtf",
+    "Files"
+   ],
+   "text": "6\r\n26/09/2026\r\n1,234.50\r\n",
+   "htmlLength": 2110,
+   "htmlCells": [
+    "6",
+    "######",
+    "######"
+   ]
+  }
+ ],
+ "notices": [
+  {
+   "at": 1952.5999999940395,
+   "text": ""
+  }
+ ],
+ "messages": [],
+ "seen": [
+  {
+   "ms": 1,
+   "s": {
+    "notice": "",
+    "nameBox": "F7",
+    "F7_F9": [
+     "",
+     "",
+     ""
+    ],
+    "selected": "",
+    "live": ""
+   }
+  }
+ ]
+}

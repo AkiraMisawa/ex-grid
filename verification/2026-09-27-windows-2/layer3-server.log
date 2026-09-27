@@ -1,0 +1,1487 @@
+start 2026-09-27 23:05:31 BST
+
+Running 596 tests using 1 worker
+
+  ok   1 [chrome] › circuit.spec.mjs:34:5 › keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5) › a number typed at full speed is committed whole (1.7s)
+  ok   2 [chrome] › circuit.spec.mjs:43:5 › keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5) › continuous entry puts each value in its own cell (2.4s)
+  ok   3 [chrome] › circuit.spec.mjs:54:5 › keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5) › keys held behind a key that opened nothing replay as ordinary keys (681ms)
+  ok   4 [chrome] › circuit.spec.mjs:64:1 › a paste past a Server hub's message limit arrives whole (CP-21) (697ms)
+  ok   5 [chrome] › circuit.spec.mjs:89:1 › a clipboard write the browser rejects is refused by name (CP-23) (403ms)
+  ok   6 [chrome] › circuit.spec.mjs:107:1 › keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5) (774ms)
+  ok   7 [chrome] › circuit.spec.mjs:129:1 › keys typed straight after a key that opens a menu reach the menu (KB-33, ADR-0010/0039) (1.1s)
+  ok   8 [chrome] › circuit.spec.mjs:147:5 › a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, builtin) (1.1s)
+  ok   9 [chrome] › circuit.spec.mjs:147:5 › a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, mud) (1.3s)
+  ok  10 [chrome] › circuit.spec.mjs:174:1 › a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5) (1.2s)
+  ok  11 [chrome] › circuit.spec.mjs:193:1 › a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5) (1.8s)
+  ok  12 [chrome] › circuit.spec.mjs:225:5 › an Escape pressed straight after the operator list opens is not the grid's (KB-35, ADR-0039) (1.5s)
+  ok  13 [chrome] › circuit.spec.mjs:225:5 › an Escape pressed straight after the date calendar opens is not the grid's (KB-35, ADR-0039) (1.4s)
+  ok  14 [chrome] › circuit.spec.mjs:274:1 › a value typed and Enter pressed at once apply the condition (KB-31, SRV-5) (823ms)
+  ok  15 [chrome] › circuit.spec.mjs:293:1 › Escape, Escape straight after an Inner Popup closes it and then the panel (ADR-0039, SRV-5) (1.0s)
+  ok  16 [chrome] › circuit.spec.mjs:310:1 › a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5) (1.2s)
+  ok  17 [chrome] › circuit.spec.mjs:329:1 › a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20) (610ms)
+  ok  18 [chrome] › circuit.spec.mjs:350:5 › two users, one store (SRV-3, ADR-0018) › a store change reaches both, a sort reaches one, and a shared source is refused (1.0s)
+  ok  19 [chrome] › circuit.spec.mjs:430:9 › a click between keys is ordered with them (ED-22, ADR-0010) › with 0 ms between the steps, each value lands in the cell clicked for it (3.2s)
+  ok  20 [chrome] › circuit.spec.mjs:430:9 › a click between keys is ordered with them (ED-22, ADR-0010) › with 30 ms between the steps, each value lands in the cell clicked for it (1.4s)
+  ok  21 [chrome] › circuit.spec.mjs:430:9 › a click between keys is ordered with them (ED-22, ADR-0010) › with 60 ms between the steps, each value lands in the cell clicked for it (1.2s)
+  ok  22 [chrome] › circuit.spec.mjs:437:5 › a click between keys is ordered with them (ED-22, ADR-0010) › with a 150 ms round trip and no pause, each value lands in the cell clicked for it (SRV-5) (5.2s)
+  ok  23 [chrome] › circuit.spec.mjs:467:9 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Cell Editor, at 10 keys a second (builtin) (3.3s)
+  ok  24 [chrome] › circuit.spec.mjs:467:9 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Cell Editor, at 10 keys a second (mud) (3.2s)
+  ok  25 [chrome] › circuit.spec.mjs:489:5 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Name Box, at 10 keys a second (2.2s)
+  ok  26 [chrome] › circuit.spec.mjs:514:1 › a ← typed as the completion list is painted is left to the editor (ADR-0051, ADR-0010) (456ms)
+  ok  27 [chrome] › declarations.spec.mjs:59:9 › under the builtin Chrome › DC-17: the candidate list opens under the editor, inside the grid's box; Tab accepts (2.5s)
+  ok  28 [chrome] › declarations.spec.mjs:95:9 › under the builtin Chrome › DC-17: Escape closes the list and leaves the edit open; the next Escape cancels (2.4s)
+  ok  29 [chrome] › declarations.spec.mjs:108:9 › under the builtin Chrome › DC-31: with the list open, ← and → move the caret and the list stays (2.6s)
+  ok  30 [chrome] › declarations.spec.mjs:134:9 › under the builtin Chrome › DC-31: a repeated letter (=SS) completes the span at the caret, and the caret sits after it (2.8s)
+  ok  31 [chrome] › declarations.spec.mjs:167:9 › under the builtin Chrome › DC-17: completion works from the Formula Bar, its list inside the grid's box (2.3s)
+  ok  32 [chrome] › declarations.spec.mjs:59:9 › under the mud Chrome › DC-17: the candidate list opens under the editor, inside the grid's box; Tab accepts (4.6s)
+  ok  33 [chrome] › declarations.spec.mjs:95:9 › under the mud Chrome › DC-17: Escape closes the list and leaves the edit open; the next Escape cancels (4.5s)
+  ok  34 [chrome] › declarations.spec.mjs:108:9 › under the mud Chrome › DC-31: with the list open, ← and → move the caret and the list stays (4.7s)
+  ok  35 [chrome] › declarations.spec.mjs:134:9 › under the mud Chrome › DC-31: a repeated letter (=SS) completes the span at the caret, and the caret sits after it (4.8s)
+  ok  36 [chrome] › declarations.spec.mjs:167:9 › under the mud Chrome › DC-17: completion works from the Formula Bar, its list inside the grid's box (4.4s)
+  ok  37 [chrome] › declarations.spec.mjs:191:1 › DC-19: = ↓ ↓ points at F4, Shift+arrows extend, the Selection and the Focus stay put (2.6s)
+  ok  38 [chrome] › declarations.spec.mjs:229:1 › DC-19: a click points at the clicked cell; Shift+click extends (2.4s)
+  ok  39 [chrome] › declarations.spec.mjs:247:1 › DC-19: F2 switches from pointing to moving the caret (2.5s)
+  ok  40 [chrome] › declarations.spec.mjs:270:1 › DC-31: a Reference written mid-text lands at the caret and the caret sits after it (2.4s)
+  x   41 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (builtin Chrome) (7.3s)
+  x   42 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (23.2s)
+  ok  43 [chrome] › declarations.spec.mjs:335:1 › DC-20: typed quickly on a 150 ms circuit, no arrow points where the text forbids it (5.1s)
+  ok  44 [chrome] › declarations.spec.mjs:358:1 › DC-28: keys typed in the Formula Bar behind F2 on a 150 ms circuit land in the bar, in order (3.0s)
+  ok  45 [chrome] › declarations.spec.mjs:389:1 › DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key lands at the caret they left (4.3s)
+  ok  46 [chrome] › declarations.spec.mjs:439:5 › DC-13/DC-27: dragging the fill handle continues a series; the Selection is source and target (builtin Chrome) (2.9s)
+  ok  47 [chrome] › declarations.spec.mjs:439:5 › DC-13/DC-27: dragging the fill handle continues a series; the Selection is source and target (mud Chrome) (5.0s)
+  ok  48 [chrome] › declarations.spec.mjs:465:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport (4.5s)
+  ok  49 [chrome] › declarations.spec.mjs:502:1 › DC-13: a Formula filled right shifts its References; a refused pattern leaves the Selection on the source (3.0s)
+  ok  50 [chrome] › declarations.spec.mjs:528:1 › DC-8: a block pasted from the real clipboard onto one cell spills, and becomes the Selection (2.4s)
+DC-33 marker on the asynchronous (Server: navigator.clipboard.write) route: kept
+  ok  51 [chrome] › declarations.spec.mjs:562:1 › SH-14/DC-33: a copy inside the Sheet carries Entries and shifts References; outward it carries Values (2.6s)
+DC-33 marker on the asynchronous route (menu copy): kept; html: <html>
+<body>
+<!--StartFragment--><html><head></head><body><table data-ex-grid="invariant" xmlns:x="urn:schemas-microsoft-com:office:excel"><tbody><tr><td x:num="12">12</td><td x:num="0.5">0.5</td></tr><tr><td x:num="7">7</td><td x:num="0.75">0.75</td></tr></tbody></table></body></html><!--EndFrag
+  ok  52 [chrome] › declarations.spec.mjs:592:1 › DC-33: whether the invariant marker survives the asynchronous clipboard route (a menu copy) (2.5s)
+  ok  53 [chrome] › declarations.spec.mjs:619:1 › DC-30: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z walk the Sheet's stack; with an edit open they are the editor's (3.0s)
+  ok  54 [chrome] › declarations.spec.mjs:658:1 › DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing (3.4s)
+  ok  55 [chrome] › declarations.spec.mjs:687:1 › SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 150 ms circuit loses nothing (4.5s)
+  ok  56 [chrome] › declarations.spec.mjs:700:1 › DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser's (2.1s)
+  ok  57 [chrome] › declarations.spec.mjs:722:1 › DC-36: the grips resize a column and size it to fit, and no header carries a menu button (2.4s)
+  ok  58 [chrome] › declarations.spec.mjs:747:1 › DC-25: the positions grid, declaring nothing, keeps ExGrid's own behaviour beside the Sheet (2.4s)
+  ok  59 [chrome] › features.spec.mjs:28:1 › typing opens Overwrite containing the character, Enter commits and moves (ED-2/ED-4) (487ms)
+  ok  60 [chrome] › features.spec.mjs:48:1 › in Overwrite an arrow commits and moves; in Caret it moves the caret (ED-2) (623ms)
+  ok  61 [chrome] › features.spec.mjs:65:1 › Escape cancels the editor and never blurs the grid mid-edit (ED-3) (372ms)
+  ok  62 [chrome] › features.spec.mjs:80:1 › the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/CP-6/CP-10) (351ms)
+  ok  63 [chrome] › features.spec.mjs:127:1 › a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-3) (430ms)
+  ok  64 [chrome] › features.spec.mjs:141:1 › paste raises one intent shaped by the clipboard block (CP-14, PST-1) (418ms)
+  ok  65 [chrome] › features.spec.mjs:152:1 › a paste covering a non-editable column is refused whole (CP-16, ADR-0035) (432ms)
+  ok  66 [chrome] › features.spec.mjs:167:1 › Ctrl+Enter fill across a non-editable column is refused, and says so (CP-16, ADR-0035) (527ms)
+  ok  67 [chrome] › features.spec.mjs:188:1 › a refusal is announced, not only painted (A11Y-16, ADR-0035) (496ms)
+  ok  68 [chrome] › features.spec.mjs:209:1 › a menu copy writes without a prompt, and with headers (CP-19/CP-17, ADR-0005/0036) (491ms)
+  ok  69 [chrome] › features.spec.mjs:225:1 › a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034) (522ms)
+  ok  70 [chrome] › features.spec.mjs:244:1 › a Flag applies and is marked, and its message opens on the Focus (ED-16/ED-17, ADR-0034) (803ms)
+  ok  71 [chrome] › features.spec.mjs:261:1 › a flagged cell says why when the pointer rests on it (ED-17b, ADR-0021/0034) (1.3s)
+  ok  72 [chrome] › features.spec.mjs:281:1 › a pasted value wears the same mark as a typed one (ADR-0034) (451ms)
+  ok  73 [chrome] › features.spec.mjs:291:1 › Ctrl+PageDown is neither handled nor prevented (KB-15) (353ms)
+  ok  74 [chrome] › features.spec.mjs:317:1 › the grid is one tab stop (A11Y-4, KB-12) (333ms)
+  ok  75 [chrome] › features.spec.mjs:346:1 › two instances stay independent: no --ex-* on :root, no window global (DOM-4) (343ms)
+  ok  76 [chrome] › features.spec.mjs:365:1 › a header click sorts and the selection is untouched by it (SR-1) (338ms)
+  ok  77 [chrome] › features.spec.mjs:379:1 › a display-only grid does not take printable keys away from the page (ADR-0010/0020) (478ms)
+  ok  78 [chrome] › features.spec.mjs:401:1 › Escape returns the keyboard from a descendant control to the grid (ADR-0020/0012) (572ms)
+  ok  79 [chrome] › features.spec.mjs:436:1 › Space enters a cell with several actions; the arrows choose and Space fires once (KB-20/KB-21, ADR-0037) (812ms)
+  ok  80 [chrome] › features.spec.mjs:463:1 › inside a cell Enter never fires: it leaves and moves down (KB-22, ADR-0020/0037) (601ms)
+  ok  81 [chrome] › features.spec.mjs:475:1 › Escape leaves an Interactive cell and the grid keeps the keyboard (KB-22, ADR-0037) (506ms)
+  ok  82 [chrome] › features.spec.mjs:486:1 › Space puts the caret in a Template cell's field, and Escape brings the keyboard back (KB-23/KB-24, ADR-0037) (639ms)
+  ok  83 [chrome] › features.spec.mjs:503:1 › a held Space fires a one-action cell once (KB-26, ADR-0037) (625ms)
+  ok  84 [chrome] › features.spec.mjs:517:1 › holding Space to enter a cell fires nothing (KB-26, ADR-0037) (576ms)
+  ok  85 [chrome] › features.spec.mjs:531:1 › Shift+Tab from after the grid lands on the root, not on a button inside it (A11Y-17, ADR-0037) (474ms)
+  ok  86 [chrome] › features.spec.mjs:550:1 › the chosen action is outlined, with and without forced colors (UX-14, ADR-0029/0037) (900ms)
+  ok  87 [chrome] › features.spec.mjs:566:1 › a press dragged off an action leaves no button holding the keyboard, and Enter fires nothing (KB-27, ADR-0020/0037) (569ms)
+  ok  88 [chrome] › fill.spec.mjs:26:5 › in parents with a definite height › a sized box: the grid is the box, rows reach its bottom, and the DOM is the box's (VZ-12a, ADR-0028) (437ms)
+  ok  89 [chrome] › fill.spec.mjs:38:5 › in parents with a definite height › the rest of a flex column: the grid starts under the toolbar and ends with the column (VZ-12a, ADR-0028) (420ms)
+  ok  90 [chrome] › fill.spec.mjs:47:5 › in parents with a definite height › inside the paper: the Fill grid takes what the toolbar leaves; a declared grid is unchanged (WR-7a, ADR-0030) (422ms)
+  ok  91 [chrome] › fill.spec.mjs:65:5 › in a parent with no height › nothing is painted and the grid names the parent (VZ-12b, ADR-0028) (897ms)
+  ok  92 [chrome] › fill.spec.mjs:80:5 › in a box that follows the window › the Viewport follows the window, both ways (VZ-12a, ADR-0028/0045) (621ms)
+  ok  93 [chrome] › fill.spec.mjs:88:5 › in a box that follows the window › a column that cannot be filtered shows its commands alone, and Tab closes them as a Cancel (KB-30, ADR-0039/0044) (564ms)
+  ok  94 [chrome] › fill.spec.mjs:106:5 › in a box that follows the window › a column menu with less than a row of room closes, and the keyboard is the grid's (UX-11a, ADR-0040) (658ms)
+  ok  95 [chrome] › gestures.spec.mjs:21:1 › a leaf drag reorders within its group and clamps at its edge (HG-14/HG-15) (493ms)
+  ok  96 [chrome] › gestures.spec.mjs:40:1 › grabbing a group rectangle moves the whole group (HG-14) (452ms)
+  ok  97 [chrome] › gestures.spec.mjs:55:1 › a resize drag with a real mouse applies on release (ADR-0016) (417ms)
+  ok  98 [chrome] › gestures.spec.mjs:71:1 › a drag past MaxWidth is recorded as it came and painted at that width (ADR-0016, FN-12) (392ms)
+  ok  99 [chrome] › gestures.spec.mjs:88:1 › pasting onto an off-screen selection works, and the indicator showed first (PST-3) (509ms)
+  ok 100 [chrome] › gestures.spec.mjs:104:1 › a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded) (1.9s)
+  ok 101 [chrome] › gestures.spec.mjs:136:1 › the focus outline holds 3:1 against the cell ground under the default theme (UX-9) (350ms)
+  ok 102 [chrome] › gestures.spec.mjs:161:1 › narrowing the scrollbar by token changes the gutter and the geometry follows (UX-10) (527ms)
+  ok 103 [chrome] › gestures.spec.mjs:192:1 › a composing IME keydown is never taken (ED-11, the listener guard) (381ms)
+  ok 104 [chrome] › inspector-edits.spec.mjs:44:1 › RI-16: an approval from the inspector reaches the grid as a new instance, and the inspector shows it without a banner (ADR-0003) (401ms)
+  ok 105 [chrome] › inspector-edits.spec.mjs:56:1 › RI-17: a change elsewhere raises the banner with the new value, keeps the old one shown, and disables the actions until reloaded (439ms)
+  ok 106 [chrome] › inspector-edits.spec.mjs:76:1 › RI-18: a row deleted elsewhere says so, and its inspector acts on nothing (397ms)
+  ok 107 [chrome] › inspector-edits.spec.mjs:86:1 › RI-19: an approval pressed before the news of a change arrives is refused by the store, and says why (461ms)
+  ok 108 [chrome] › inspector-edits.spec.mjs:109:1 › RI-24: a deletion stays said, whatever news about the trade arrives after it (507ms)
+  ok 109 [chrome] › inspector-edits.spec.mjs:125:1 › RI-25: an inspector opened while news is held back shows what the grid showed, and learns of the change when it is announced (465ms)
+  ok 110 [chrome] › inspector-edits.spec.mjs:137:1 › RI-20: a note records the version it was written against, and is marked once the trade has moved on (476ms)
+  ok 111 [chrome] › inspector-edits.spec.mjs:154:1 › RI-21: the inspector follows its trade by key when an approval moves it under the sort (457ms)
+  -  112 [chrome] › inspector-edits.spec.mjs:171:1 › RI-22: on WebAssembly the page says there is nobody to share the store with
+  ok 113 [chrome] › inspector-edits.spec.mjs:177:1 › RI-23: on the Server host, an approval in another tab raises the banner in this one (ADR-0018) (832ms)
+  ok 114 [chrome] › inspectors.spec.mjs:88:5 › RI-4: modal, by click, handler returning once the dialog is shown: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037) (873ms)
+  ok 115 [chrome] › inspectors.spec.mjs:105:5 › RI-26: modal, by click from outside the grid, handler returning once the dialog is shown: closing gives the keyboard back to where it was, not to the grid (ADR-0037) (898ms)
+  ok 116 [chrome] › inspectors.spec.mjs:116:5 › RI-5: modal, by Space, handler returning once the dialog is shown: the keyboard is in the inspector (ADR-0020/0037) (917ms)
+  ok 117 [chrome] › inspectors.spec.mjs:88:5 › RI-4: modal, by click, handler awaiting the dialog's result: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037) (835ms)
+  ok 118 [chrome] › inspectors.spec.mjs:105:5 › RI-26: modal, by click from outside the grid, handler awaiting the dialog's result: closing gives the keyboard back to where it was, not to the grid (ADR-0037) (922ms)
+  ok 119 [chrome] › inspectors.spec.mjs:116:5 › RI-5: modal, by Space, handler awaiting the dialog's result: the keyboard is in the inspector (ADR-0020/0037) (923ms)
+  ok 120 [chrome] › inspectors.spec.mjs:124:1 › RI-6: floating, by click: the keyboard is in the inspector just opened (ADR-0020/0037) (1.2s)
+  ok 121 [chrome] › inspectors.spec.mjs:136:1 › RI-7: floating, by Space: the keyboard is in the inspector (ADR-0020/0037) (897ms)
+  ok 122 [chrome] › inspectors.spec.mjs:144:1 › RI-8: floating: a row whose inspector is open brings it to the front instead of opening another (605ms)
+  ok 123 [chrome] › inspectors.spec.mjs:157:1 › RI-9: floating: an inspector is dragged by its title bar, and closes on its own (683ms)
+  ok 124 [chrome] › inspectors.spec.mjs:183:1 › RI-10: the marked rows open as inspectors, one each, and the count names the ones outside the filter (ADR-0043) (643ms)
+  ok 125 [chrome] › inspectors.spec.mjs:202:1 › RI-11: the marks survive a sort, so the rows opened are the rows ticked (ADR-0043) (594ms)
+  ok 126 [chrome] › inspectors.spec.mjs:217:1 › RI-12: above the cap the marked rows are refused by count, and nothing opens (544ms)
+  ok 127 [chrome] › inspectors.spec.mjs:230:1 › RI-13: modal: the marked rows open one after another, and Escape ends the queue (1.7s)
+  ok 128 [chrome] › inspectors.spec.mjs:255:1 › RI-14: Enter on the Inspect cell moves down and opens nothing (ADR-0020) (815ms)
+  ok 129 [chrome] › inspectors.spec.mjs:266:1 › RI-15: while a modal inspector stands, the grid behind it cannot be pressed (983ms)
+  ok 130 [chrome] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) (767ms)
+  ok 131 [chrome] › marks.spec.mjs:57:1 › a filter keeps the marks and names the ones outside it (MK-7) (641ms)
+  ok 132 [chrome] › marks.spec.mjs:73:1 › Space in the Mark Column brings the selected rows into line (MK-1) (536ms)
+  ok 133 [chrome] › marks.spec.mjs:96:1 › a row arriving after "mark all" is not marked, and the header turns to "some" (MK-8) (503ms)
+  ok 134 [chrome] › marks.spec.mjs:107:1 › an action over a mark whose row was deleted elsewhere reports it as gone (ADR-0043) (492ms)
+  -  135 [chrome] › measure.spec.mjs:32:1 › what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip (SRV-6)
+  -  136 [chrome] › measure.spec.mjs:111:1 › how long the stale band stands while the window is dragged over a Fill grid, at 0, 50 and 150 ms round trip (§21.9, ADR-0028)
+  ok 137 [chrome] › memory.spec.mjs:75:1 › mounting and disposing the grid fifty times returns nodes and listeners to baseline (MEM-2) (5.7s)
+  x  138 [chrome] › memory.spec.mjs:110:1 › disposal takes the module's listeners off the root, and the count comes back (MEM-4) (447ms)
+  -  139 [chrome] › memory.spec.mjs:147:1 › a ten-minute scripted scroll does not grow the JS heap (MEM-5, MEM-6)
+  ok 140 [chrome] › mud-app.spec.mjs:111:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) (1.0s)
+  ok 141 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Fill grid and its geometry follows (ADR-0028) (1.5s)
+  ok 142 [chrome] › mud-app.spec.mjs:212:1 › WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018) (563ms)
+  ok 143 [chrome] › mud-app.spec.mjs:258:1 › WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039) (811ms)
+  ok 144 [chrome] › mud-app.spec.mjs:318:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) (1.0s)
+  ok 145 [chrome] › mud-app.spec.mjs:384:1 › WR-9: the application's own controls — theme, tabs, dialog — keep the console clean (CON-1/2/3/6) (906ms)
+  ok 146 [chrome] › mud-app.spec.mjs:403:1 › WR-5 (setup): /features?chrome=mud runs its grids under MudGridChrome, and the column menu opens (FN-17, UX-11) (635ms)
+  x  147 [chrome] › mud-app.spec.mjs:430:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (535ms)
+  ok 148 [chrome] › mud.spec.mjs:41:1 › the painted geometry equals the declared metrics under the real Wrapper stylesheet (UX-3) (436ms)
+  ok 149 [chrome] › mud.spec.mjs:62:1 › nothing under the Viewport transitions or animates with the Wrapper loaded (UX-6) (401ms)
+  ok 150 [chrome] › mud.spec.mjs:80:1 › the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9) (487ms)
+  ok 151 [chrome] › mud.spec.mjs:110:1 › a loss is painted in the palette's error colour by the Consumer's tone rule, and only there (ADR-0006, FN-7a) (388ms)
+  ok 152 [chrome] › mud.spec.mjs:132:1 › a theme switch re-renders nothing inside the grid: the rows are the same elements (RR-1) (427ms)
+  ok 153 [chrome] › mud.spec.mjs:150:1 › the row under the pointer is highlighted by an overlay band, in the hovered instance only (UX-13) (541ms)
+  ok 154 [chrome] › mud.spec.mjs:175:1 › the Wrapper's editor opens inside the core's box with the typed character, and commits (ED-4, ADR-0030) (708ms)
+  ok 155 [chrome] › mud.spec.mjs:206:1 › the loading bar is a MudProgressLinear where the core places its seam, only while loading (475ms)
+  ok 156 [chrome] › mud.spec.mjs:218:1 › the paper's corners: rounded with an inset, square flush; the grid's own box is untouched (411ms)
+  ok 157 [chrome] › navigation.spec.mjs:33:1 › RI-1: the index at / lists every routed page, once (270ms)
+  ok 158 [chrome] › navigation.spec.mjs:47:1 › RI-2: the Row Identity demo that was at / is at /identity (308ms)
+  ok 159 [chrome] › navigation.spec.mjs:54:1 › RI-3: every page opens from the index, names itself, and leads back to it (clean console) (3.6s)
+  ok 160 [chrome] › observational.spec.mjs:128:1 › mount to first painted row at 10⁶ rows (BIG-7) (277ms)
+  ok 161 [chrome] › observational.spec.mjs:140:1 › the DOM, the settle repaint and the frame intervals, virtualised and not (DOM-5, PF-6, BIG-6) (16.3s)
+  ok 162 [chrome] › observational.spec.mjs:182:1 › a selection drag, one row a step, costs this much per step (PF-7) (2.1s)
+  ok 163 [chrome] › popovers.spec.mjs:118:9 › under the builtin Chrome › a secondary click opens the grid's menu, not the browser's (CTX-1/CTX-5, ADR-0036) (328ms)
+  ok 164 [chrome] › popovers.spec.mjs:133:9 › under the builtin Chrome › a secondary click outside the selection moves it first (CTX-1, ADR-0036) (328ms)
+  ok 165 [chrome] › popovers.spec.mjs:144:9 › under the builtin Chrome › a Consumer command receives the clicked row and the selection (CTX-3, ADR-0036) (384ms)
+  ok 166 [chrome] › popovers.spec.mjs:154:9 › under the builtin Chrome › the ContextMenu key opens it on the Focus (CTX-4, ADR-0036) (411ms)
+  ok 167 [chrome] › popovers.spec.mjs:165:9 › under the builtin Chrome › popovers are not clipped by the scroll container and stay per instance (UX-11) (530ms)
+  ok 168 [chrome] › popovers.spec.mjs:187:9 › under the builtin Chrome › a popover taller than its grid stays inside the grid's box and scrolls (UX-11, ADR-0040) (403ms)
+  ok 169 [chrome] › popovers.spec.mjs:205:9 › under the builtin Chrome › Alt+↓ opens the Focus column's menu, and the menu takes the keyboard (KB-28/KB-29, ADR-0039) (403ms)
+  ok 170 [chrome] › popovers.spec.mjs:216:9 › under the builtin Chrome › every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039) (672ms)
+  ok 171 [chrome] › popovers.spec.mjs:238:9 › under the builtin Chrome › however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039) (1.0s)
+  ok 172 [chrome] › popovers.spec.mjs:277:9 › under the builtin Chrome › in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039) (809ms)
+  ok 173 [chrome] › popovers.spec.mjs:305:13 › under the builtin Chrome › in a menu Enter runs the item and closes it (KB-30, ADR-0039) (517ms)
+  ok 174 [chrome] › popovers.spec.mjs:305:13 › under the builtin Chrome › in a menu Space runs the item and closes it (KB-30, ADR-0039) (508ms)
+  ok 175 [chrome] › popovers.spec.mjs:321:13 › under the builtin Chrome › over a filter, Tab on a command moves to the search box — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) (523ms)
+  ok 176 [chrome] › popovers.spec.mjs:321:13 › under the builtin Chrome › over a filter, Shift+Tab on a command moves to Cancel — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) (543ms)
+  ok 177 [chrome] › popovers.spec.mjs:339:9 › under the builtin Chrome › the Context Menu answers the same keys, and Tab closes it (KB-30, ADR-0039) (546ms)
+  ok 178 [chrome] › popovers.spec.mjs:354:9 › under the builtin Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) (732ms)
+  ok 179 [chrome] › popovers.spec.mjs:384:9 › under the builtin Chrome › the letters: S sorts, E goes to the search box where "e" is text, C clears (FL-15, FL-16, ADR-0044) (1.0s)
+  ok 180 [chrome] › popovers.spec.mjs:428:9 › under the builtin Chrome › on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044) (707ms)
+  ok 181 [chrome] › popovers.spec.mjs:463:9 › under the builtin Chrome › where no value list stands, E goes to the condition's value, where a search is typed (FL-15, ADR-0044) (533ms)
+  ok 182 [chrome] › popovers.spec.mjs:480:9 › under the builtin Chrome › E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044) (878ms)
+  ok 183 [chrome] › popovers.spec.mjs:511:9 › under the builtin Chrome › Enter in the value field applies exactly what OK applies (KB-31, ADR-0039) (1.2s)
+  ok 184 [chrome] › popovers.spec.mjs:520:9 › under the builtin Chrome › a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039) (425ms)
+  ok 185 [chrome] › popovers.spec.mjs:537:9 › under the builtin Chrome › a column's popover is a dialog holding a menu, both named by its header; the Context Menu a menu (A11Y-19, ADR-0039/0044) (562ms)
+  ok 186 [chrome] › popovers.spec.mjs:118:9 › under the mud Chrome › a secondary click opens the grid's menu, not the browser's (CTX-1/CTX-5, ADR-0036) (361ms)
+  ok 187 [chrome] › popovers.spec.mjs:133:9 › under the mud Chrome › a secondary click outside the selection moves it first (CTX-1, ADR-0036) (350ms)
+  ok 188 [chrome] › popovers.spec.mjs:144:9 › under the mud Chrome › a Consumer command receives the clicked row and the selection (CTX-3, ADR-0036) (454ms)
+  ok 189 [chrome] › popovers.spec.mjs:154:9 › under the mud Chrome › the ContextMenu key opens it on the Focus (CTX-4, ADR-0036) (553ms)
+  ok 190 [chrome] › popovers.spec.mjs:165:9 › under the mud Chrome › popovers are not clipped by the scroll container and stay per instance (UX-11) (589ms)
+  ok 191 [chrome] › popovers.spec.mjs:187:9 › under the mud Chrome › a popover taller than its grid stays inside the grid's box and scrolls (UX-11, ADR-0040) (438ms)
+  ok 192 [chrome] › popovers.spec.mjs:205:9 › under the mud Chrome › Alt+↓ opens the Focus column's menu, and the menu takes the keyboard (KB-28/KB-29, ADR-0039) (371ms)
+  ok 193 [chrome] › popovers.spec.mjs:216:9 › under the mud Chrome › every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039) (777ms)
+  ok 194 [chrome] › popovers.spec.mjs:238:9 › under the mud Chrome › however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039) (1.0s)
+  ok 195 [chrome] › popovers.spec.mjs:277:9 › under the mud Chrome › in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039) (1.1s)
+  ok 196 [chrome] › popovers.spec.mjs:305:13 › under the mud Chrome › in a menu Enter runs the item and closes it (KB-30, ADR-0039) (583ms)
+  ok 197 [chrome] › popovers.spec.mjs:305:13 › under the mud Chrome › in a menu Space runs the item and closes it (KB-30, ADR-0039) (564ms)
+  ok 198 [chrome] › popovers.spec.mjs:321:13 › under the mud Chrome › over a filter, Tab on a command moves to the search box — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) (597ms)
+  ok 199 [chrome] › popovers.spec.mjs:321:13 › under the mud Chrome › over a filter, Shift+Tab on a command moves to Cancel — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) (843ms)
+  ok 200 [chrome] › popovers.spec.mjs:339:9 › under the mud Chrome › the Context Menu answers the same keys, and Tab closes it (KB-30, ADR-0039) (663ms)
+  ok 201 [chrome] › popovers.spec.mjs:354:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) (1.1s)
+  ok 202 [chrome] › popovers.spec.mjs:384:9 › under the mud Chrome › the letters: S sorts, E goes to the search box where "e" is text, C clears (FL-15, FL-16, ADR-0044) (1.1s)
+  ok 203 [chrome] › popovers.spec.mjs:428:9 › under the mud Chrome › on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044) (837ms)
+  ok 204 [chrome] › popovers.spec.mjs:463:9 › under the mud Chrome › where no value list stands, E goes to the condition's value, where a search is typed (FL-15, ADR-0044) (545ms)
+  ok 205 [chrome] › popovers.spec.mjs:480:9 › under the mud Chrome › E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044) (919ms)
+  ok 206 [chrome] › popovers.spec.mjs:511:9 › under the mud Chrome › Enter in the value field applies exactly what OK applies (KB-31, ADR-0039) (1.4s)
+  ok 207 [chrome] › popovers.spec.mjs:520:9 › under the mud Chrome › a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039) (2.7s)
+  ok 208 [chrome] › popovers.spec.mjs:537:9 › under the mud Chrome › a column's popover is a dialog holding a menu, both named by its header; the Context Menu a menu (A11Y-19, ADR-0039/0044) (458ms)
+  ok 209 [chrome] › popovers.spec.mjs:586:5 › Inner Popups under the mud Chrome › an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21) (617ms)
+  ok 210 [chrome] › popovers.spec.mjs:612:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the operator list and the panel, and keeps its meaning (FN-21, ModalOverlay off) (657ms)
+  ok 211 [chrome] › popovers.spec.mjs:612:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the date calendar and the panel, and keeps its meaning (FN-21, ModalOverlay off) (664ms)
+  ok 212 [chrome] › popovers.spec.mjs:640:9 › Inner Popups under the mud Chrome › Escape closes the operator list first, and the next Escape the panel (FN-21, KB-32) (669ms)
+  ok 213 [chrome] › popovers.spec.mjs:640:9 › Inner Popups under the mud Chrome › Escape closes the date calendar first, and the next Escape the panel (FN-21, KB-32) (817ms)
+  ok 214 [chrome] › popovers.spec.mjs:662:5 › Inner Popups under the mud Chrome › under ModalOverlay the press is the overlay's: only the Inner Popup closes, and Escape then closes the panel (FN-21) (1.0s)
+  ok 215 [chrome] › popovers.spec.mjs:687:5 › Inner Popups under the mud Chrome › choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the root (FN-21, KB-32) (855ms)
+  ok 216 [chrome] › presentation.spec.mjs:17:1 › geometry tokens are inline and read-only: an ancestor or stylesheet cannot move them (UX-2) (299ms)
+  ok 217 [chrome] › presentation.spec.mjs:39:1 › the painted heights equal the declared metrics exactly (UX-3, ST-3) (288ms)
+  ok 218 [chrome] › presentation.spec.mjs:56:1 › a Visual Token set on an ancestor recolours the paint (UX-5, the paint half) (295ms)
+  ok 219 [chrome] › presentation.spec.mjs:71:1 › nothing inside the Viewport transitions or animates (UX-6) (282ms)
+  ok 220 [chrome] › presentation.spec.mjs:87:1 › forced colors keep every Cell State and Row Kind tellable (UX-7, on /cells) (348ms)
+  ok 221 [chrome] › presentation.spec.mjs:113:1 › under a dark scheme the untouched grid stays readable (UX-8) (291ms)
+  ok 222 [chrome] › presentation.spec.mjs:136:1 › inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3) (350ms)
+  ok 223 [chrome] › presentation.spec.mjs:169:1 › a Header Group label is centred, and nothing aligns it vertically (HG-13, ADR-0032) (303ms)
+  ok 224 [chrome] › presentation.spec.mjs:186:1 › the editor's box is exactly the cell's (ED-9) (392ms)
+  ok 225 [chrome] › presentation.spec.mjs:206:1 › the pointer leaving the grid stops the auto-scroll (SL-14/SL-15) (2.0s)
+  ok 226 [chrome] › presentation.spec.mjs:233:1 › the Blazor error UI never appears (CON-5) (286ms)
+  x  227 [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars (416ms)
+  x  228 [chrome] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout (460ms)
+  x  229 [chrome] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again (442ms)
+  x  230 [chrome] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (435ms)
+  ok 231 [chrome] › sheet-vs-excel.spec.mjs:118:1 › item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §2, ticket 07) (6.4s)
+  x  232 [chrome] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07) (8.3s)
+  x  233 [chrome] › sheet-vs-excel.spec.mjs:172:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06) (6.0s)
+  x  234 [chrome] › sheet-vs-excel.spec.mjs:194:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06) (5.9s)
+  x  235 [chrome] › sheet-vs-excel.spec.mjs:210:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06) (10.9s)
+  ok 236 [chrome] › sheet-vs-excel.spec.mjs:226:1 › item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09) (979ms)
+  ok 237 [chrome] › sheet-vs-excel.spec.mjs:249:1 › item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08) (1.3s)
+  ok 238 [chrome] › sheet-vs-excel.spec.mjs:262:1 › item 8: F2 on a Formula shows it with the caret at the end, and the arrows move the caret (ADR-0051, ticket 08) (1.5s)
+  ok 239 [chrome] › sheet-vs-excel.spec.mjs:281:1 › item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11) (1.3s)
+  ok 240 [chrome] › sheet-vs-excel.spec.mjs:299:1 › item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11) (882ms)
+  ok 241 [chrome] › sheet-vs-excel.spec.mjs:317:1 › item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11) (1.3s)
+  ok 242 [chrome] › sheet-vs-excel.spec.mjs:330:1 › item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11) (827ms)
+  ok 243 [chrome] › sheet-vs-excel.spec.mjs:339:1 › item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10) (1.7s)
+  ok 244 [chrome] › sheet-vs-excel.spec.mjs:362:1 › item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10) (994ms)
+  ok 245 [chrome] › sheet-vs-excel.spec.mjs:374:1 › item 15: Escape in the Formula Bar cancels the edit and gives the keys back to the grid (ADR-0051, ticket 09) (1.1s)
+  -  246 [chrome] › sheet-vs-excel.spec.mjs:389:12 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)
+  -  247 [chrome] › sheet-vs-excel.spec.mjs:399:12 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)
+  -  248 [chrome] › sheet-vs-excel.spec.mjs:412:6 › item 18: cells from Excel, and to Excel (ADR-0048, ticket 14)
+  -  249 [chrome] › sheet-vs-excel.spec.mjs:425:12 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)
+  -  250 [chrome] › sheet-vs-excel.spec.mjs:430:12 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)
+  -  251 [chrome] › sheet-vs-excel.spec.mjs:435:12 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)
+  x  252 [chrome] › sheet-vs-excel.spec.mjs:443:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15) (7.1s)
+  ok 253 [chrome] › sheet-vs-excel.spec.mjs:455:1 › item 20: one number is copied, one date goes on by day, a Formula shifts (ADR-0050, ticket 15) (3.7s)
+  ok 254 [chrome] › sheet-vs-excel.spec.mjs:470:1 › item 20: 1, 2, 4 continue as Excel's trend, to the 15 digits Excel keeps (ADR-0050, ticket 15) (2.9s)
+  x  255 [chrome] › sheet-vs-excel.spec.mjs:482:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15) (7.1s)
+  ok 256 [chrome] › sheet-vs-excel.spec.mjs:496:1 › item 20: text in two cells filled left repeats backwards (ADR-0050, ticket 15) (2.0s)
+  ok 257 [chrome] › sheet-vs-excel.spec.mjs:507:1 › item 20: Item 1, Mon and a date with a time are refused, by decision (ADR-0050) (3.5s)
+  ok 258 [chrome] › sheet-vs-excel.spec.mjs:519:1 › item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15) (839ms)
+  -  259 [chrome] › sheet-vs-excel.spec.mjs:529:12 › item 22: inserting rows above a selected range keeps the Selection where it was (ADR-0046, ticket 13)
+  -  260 [chrome] › sheet-vs-excel.spec.mjs:541:12 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13)
+  -  261 [chrome] › sheet-vs-excel.spec.mjs:552:6 › item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12)
+  ok 262 [chrome] › sheet-vs-excel.spec.mjs:560:1 › item 25: a long text is cut with an ellipsis, by decision; Excel lets it run over (ADR-0046) (813ms)
+  ok 263 [chrome] › sheet-vs-excel.spec.mjs:568:1 › item 26: a number too wide for its column shows #### (ADR-0016) (1.0s)
+  ok 264 [chrome] › sheet-vs-excel.spec.mjs:578:1 › item 27: every cell of a cycle and its dependents is #CIRC!, by decision; Excel shows 0 (ADR-0047) (1.8s)
+  ok 265 [chrome] › sheet.spec.mjs:32:1 › SH-18: an Entry and a Formula typed into cells commit, compute and move the Focus down (3.3s)
+  x  266 [chrome] › sheet.spec.mjs:56:1 › SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow extends to it (7.5s)
+  x  267 [chrome] › sheet.spec.mjs:81:1 › SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, and nothing sorts (2.2s)
+  ok 268 [chrome] › sheet.spec.mjs:131:1 › DC-3: the Row Headings stay at the left edge while the Sheet scrolls sideways (2.3s)
+  ok 269 [chrome] › sheet.spec.mjs:167:1 › SH-18/DC-11: the Name Box takes the Focus to an address, scrolled into view (2.8s)
+  ok 270 [chrome] › sheet.spec.mjs:191:1 › SH-18/DC-11: the Name Box pressed with an edit open commits it, then navigates (2.6s)
+  ok 271 [chrome] › sheet.spec.mjs:220:1 › SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commits and cancels once (2.9s)
+  ok 272 [chrome] › sheet.spec.mjs:263:1 › SH-18: inserting a row keeps every Reference naming its cell, and one Ctrl+Z restores it (2.7s)
+  ok 273 [chrome] › sheet.spec.mjs:293:1 › SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot, then the values (4.2s)
+  x  274 [chrome] › sheet.spec.mjs:308:1 › SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent (7.3s)
+  ok 275 [chrome] › sheets.spec.mjs:24:1 › SH-13/DC-25: typing and Formulas stay in the Sheet that has the keyboard (877ms)
+  ok 276 [chrome] › sheets.spec.mjs:46:1 › SH-13: each Sheet keeps its own undo stack (976ms)
+  ok 277 [chrome] › sheets.spec.mjs:68:1 › ADR-0018: a completion list, a pointing outline and the Formula Bar belong to one Sheet (1.1s)
+  ok 278 [chrome] › sheets.spec.mjs:110:1 › ADR-0018: a Context Menu opens in the Sheet it was asked of, and its command acts there (466ms)
+  ok 279 [chrome] › sheets.spec.mjs:129:1 › ADR-0018: a Sheet the user has pressed keeps the keyboard when the other one finishes a cancel late (3.0s)
+  ok 280 [chrome] › sizing.spec.mjs:47:1 › a sorted Auto header and a Japanese Auto header paint whole (FN-12d, ADR-0016) (354ms)
+  ok 281 [chrome] › sizing.spec.mjs:53:1 › a Japanese header double-clicked to fit paints whole at its fitted width (FN-12d, ADR-0016) (455ms)
+  ok 282 [chrome] › sizing.spec.mjs:62:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) (621ms)
+  ok 283 [chrome] › sizing.spec.mjs:77:1 › a double-click on an edge fits a value the Viewport has not painted (FN-12a, ADR-0016) (961ms)
+  ok 284 [chrome] › sizing.spec.mjs:93:1 › a press on an edge that does not move reports no width and sorts nothing (FN-12b, ADR-0016) (414ms)
+  ok 285 [chrome] › sizing.spec.mjs:101:1 › Shift+click on a header selects whole columns and does not sort (SR-2a, ADR-0012) (481ms)
+  ok 286 [chrome] › sizing.spec.mjs:110:1 › dragging the edge of one of several whole columns resizes them all (FN-12c, ADR-0016) (490ms)
+  ok 287 [chrome] › sizing.spec.mjs:125:1 › columns narrower than a wide box are not stretched, and a resize changes no column width (UX-11b, ADR-0045) (354ms)
+  ok 288 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (785ms)
+  ok 289 [chrome] › stripes.spec.mjs:60:1 › a pinned and a scrollable cell of one striped row paint the same ground (UX-15) (559ms)
+  ok 290 [chrome] › stripes.spec.mjs:84:1 › a group or total row paints its own ground over the stripe and still counts (UX-16) (421ms)
+  ok 291 [chrome] › stripes.spec.mjs:105:1 › a Cell State ground and the overlays paint over the stripe (UX-16) (652ms)
+  ok 292 [chrome] › stripes.spec.mjs:129:1 › under forced colours no stripe is painted (UX-16) (407ms)
+  x  293 [chrome] › virtualisation.spec.mjs:39:1 › the far corner is reachable and painted at 10⁶ rows (BIG-1) (15.4s)
+  ok 294 [chrome] › virtualisation.spec.mjs:53:1 › the element count is the same at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1) (1.9s)
+  x  295 [chrome] › virtualisation.spec.mjs:66:1 › the first and the last row paint their own data, there and back again (BIG-5) (15.4s)
+  ok 296 [chrome] › virtualisation.spec.mjs:85:1 › scrolling changes which rows exist, not how many elements do (ADR-0004 P1, across a scroll) (1.2s)
+  ok 297 [chrome] › virtualisation.spec.mjs:101:1 › Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next key is answered (BIG-3, SL-6, DOM-2) (409ms)
+  ok 298 [chrome] › virtualisation.spec.mjs:202:1 › a scroll frame makes at most one interop call, whatever is painted (PF-1) (3.4s)
+  ok 299 [msedge] › circuit.spec.mjs:34:5 › keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5) › a number typed at full speed is committed whole (1.7s)
+  ok 300 [msedge] › circuit.spec.mjs:43:5 › keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5) › continuous entry puts each value in its own cell (2.4s)
+  ok 301 [msedge] › circuit.spec.mjs:54:5 › keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5) › keys held behind a key that opened nothing replay as ordinary keys (689ms)
+  ok 302 [msedge] › circuit.spec.mjs:64:1 › a paste past a Server hub's message limit arrives whole (CP-21) (704ms)
+  ok 303 [msedge] › circuit.spec.mjs:89:1 › a clipboard write the browser rejects is refused by name (CP-23) (451ms)
+  ok 304 [msedge] › circuit.spec.mjs:107:1 › keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5) (836ms)
+  ok 305 [msedge] › circuit.spec.mjs:129:1 › keys typed straight after a key that opens a menu reach the menu (KB-33, ADR-0010/0039) (1.1s)
+  ok 306 [msedge] › circuit.spec.mjs:147:5 › a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, builtin) (1.2s)
+  ok 307 [msedge] › circuit.spec.mjs:147:5 › a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, mud) (1.3s)
+  ok 308 [msedge] › circuit.spec.mjs:174:1 › a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5) (1.2s)
+  ok 309 [msedge] › circuit.spec.mjs:193:1 › a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5) (1.9s)
+  ok 310 [msedge] › circuit.spec.mjs:225:5 › an Escape pressed straight after the operator list opens is not the grid's (KB-35, ADR-0039) (1.4s)
+  ok 311 [msedge] › circuit.spec.mjs:225:5 › an Escape pressed straight after the date calendar opens is not the grid's (KB-35, ADR-0039) (1.3s)
+  ok 312 [msedge] › circuit.spec.mjs:274:1 › a value typed and Enter pressed at once apply the condition (KB-31, SRV-5) (817ms)
+  ok 313 [msedge] › circuit.spec.mjs:293:1 › Escape, Escape straight after an Inner Popup closes it and then the panel (ADR-0039, SRV-5) (1.0s)
+  ok 314 [msedge] › circuit.spec.mjs:310:1 › a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5) (1.2s)
+  ok 315 [msedge] › circuit.spec.mjs:329:1 › a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20) (617ms)
+  ok 316 [msedge] › circuit.spec.mjs:350:5 › two users, one store (SRV-3, ADR-0018) › a store change reaches both, a sort reaches one, and a shared source is refused (977ms)
+  ok 317 [msedge] › circuit.spec.mjs:430:9 › a click between keys is ordered with them (ED-22, ADR-0010) › with 0 ms between the steps, each value lands in the cell clicked for it (3.2s)
+  ok 318 [msedge] › circuit.spec.mjs:430:9 › a click between keys is ordered with them (ED-22, ADR-0010) › with 30 ms between the steps, each value lands in the cell clicked for it (1.4s)
+  ok 319 [msedge] › circuit.spec.mjs:430:9 › a click between keys is ordered with them (ED-22, ADR-0010) › with 60 ms between the steps, each value lands in the cell clicked for it (1.2s)
+  ok 320 [msedge] › circuit.spec.mjs:437:5 › a click between keys is ordered with them (ED-22, ADR-0010) › with a 150 ms round trip and no pause, each value lands in the cell clicked for it (SRV-5) (5.2s)
+  ok 321 [msedge] › circuit.spec.mjs:467:9 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Cell Editor, at 10 keys a second (builtin) (3.2s)
+  ok 322 [msedge] › circuit.spec.mjs:467:9 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Cell Editor, at 10 keys a second (mud) (3.3s)
+  ok 323 [msedge] › circuit.spec.mjs:489:5 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Name Box, at 10 keys a second (2.2s)
+  ok 324 [msedge] › circuit.spec.mjs:514:1 › a ← typed as the completion list is painted is left to the editor (ADR-0051, ADR-0010) (505ms)
+  ok 325 [msedge] › declarations.spec.mjs:59:9 › under the builtin Chrome › DC-17: the candidate list opens under the editor, inside the grid's box; Tab accepts (2.5s)
+  ok 326 [msedge] › declarations.spec.mjs:95:9 › under the builtin Chrome › DC-17: Escape closes the list and leaves the edit open; the next Escape cancels (2.5s)
+  ok 327 [msedge] › declarations.spec.mjs:108:9 › under the builtin Chrome › DC-31: with the list open, ← and → move the caret and the list stays (2.6s)
+  ok 328 [msedge] › declarations.spec.mjs:134:9 › under the builtin Chrome › DC-31: a repeated letter (=SS) completes the span at the caret, and the caret sits after it (2.7s)
+  ok 329 [msedge] › declarations.spec.mjs:167:9 › under the builtin Chrome › DC-17: completion works from the Formula Bar, its list inside the grid's box (2.4s)
+  ok 330 [msedge] › declarations.spec.mjs:59:9 › under the mud Chrome › DC-17: the candidate list opens under the editor, inside the grid's box; Tab accepts (4.6s)
+  ok 331 [msedge] › declarations.spec.mjs:95:9 › under the mud Chrome › DC-17: Escape closes the list and leaves the edit open; the next Escape cancels (4.5s)
+  ok 332 [msedge] › declarations.spec.mjs:108:9 › under the mud Chrome › DC-31: with the list open, ← and → move the caret and the list stays (4.7s)
+  ok 333 [msedge] › declarations.spec.mjs:134:9 › under the mud Chrome › DC-31: a repeated letter (=SS) completes the span at the caret, and the caret sits after it (4.7s)
+  ok 334 [msedge] › declarations.spec.mjs:167:9 › under the mud Chrome › DC-17: completion works from the Formula Bar, its list inside the grid's box (4.4s)
+  ok 335 [msedge] › declarations.spec.mjs:191:1 › DC-19: = ↓ ↓ points at F4, Shift+arrows extend, the Selection and the Focus stay put (2.7s)
+  ok 336 [msedge] › declarations.spec.mjs:229:1 › DC-19: a click points at the clicked cell; Shift+click extends (2.4s)
+  ok 337 [msedge] › declarations.spec.mjs:247:1 › DC-19: F2 switches from pointing to moving the caret (2.5s)
+  ok 338 [msedge] › declarations.spec.mjs:270:1 › DC-31: a Reference written mid-text lands at the caret and the caret sits after it (2.4s)
+  x  339 [msedge] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (builtin Chrome) (7.3s)
+  x  340 [msedge] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (23.3s)
+  ok 341 [msedge] › declarations.spec.mjs:335:1 › DC-20: typed quickly on a 150 ms circuit, no arrow points where the text forbids it (5.0s)
+  ok 342 [msedge] › declarations.spec.mjs:358:1 › DC-28: keys typed in the Formula Bar behind F2 on a 150 ms circuit land in the bar, in order (3.0s)
+  ok 343 [msedge] › declarations.spec.mjs:389:1 › DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key lands at the caret they left (4.3s)
+  ok 344 [msedge] › declarations.spec.mjs:439:5 › DC-13/DC-27: dragging the fill handle continues a series; the Selection is source and target (builtin Chrome) (2.9s)
+  ok 345 [msedge] › declarations.spec.mjs:439:5 › DC-13/DC-27: dragging the fill handle continues a series; the Selection is source and target (mud Chrome) (4.9s)
+  ok 346 [msedge] › declarations.spec.mjs:465:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport (3.9s)
+  ok 347 [msedge] › declarations.spec.mjs:502:1 › DC-13: a Formula filled right shifts its References; a refused pattern leaves the Selection on the source (3.2s)
+  ok 348 [msedge] › declarations.spec.mjs:528:1 › DC-8: a block pasted from the real clipboard onto one cell spills, and becomes the Selection (2.4s)
+DC-33 marker on the asynchronous (Server: navigator.clipboard.write) route: kept
+  ok 349 [msedge] › declarations.spec.mjs:562:1 › SH-14/DC-33: a copy inside the Sheet carries Entries and shifts References; outward it carries Values (2.6s)
+DC-33 marker on the asynchronous route (menu copy): kept; html: <html>
+<body>
+<!--StartFragment--><html><head></head><body><table data-ex-grid="invariant" xmlns:x="urn:schemas-microsoft-com:office:excel"><tbody><tr><td x:num="12">12</td><td x:num="0.5">0.5</td></tr><tr><td x:num="7">7</td><td x:num="0.75">0.75</td></tr></tbody></table></body></html><!--EndFrag
+  ok 350 [msedge] › declarations.spec.mjs:592:1 › DC-33: whether the invariant marker survives the asynchronous clipboard route (a menu copy) (2.5s)
+  ok 351 [msedge] › declarations.spec.mjs:619:1 › DC-30: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z walk the Sheet's stack; with an edit open they are the editor's (2.9s)
+  ok 352 [msedge] › declarations.spec.mjs:658:1 › DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing (3.3s)
+  ok 353 [msedge] › declarations.spec.mjs:687:1 › SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 150 ms circuit loses nothing (4.6s)
+  ok 354 [msedge] › declarations.spec.mjs:700:1 › DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser's (2.1s)
+  ok 355 [msedge] › declarations.spec.mjs:722:1 › DC-36: the grips resize a column and size it to fit, and no header carries a menu button (2.4s)
+  ok 356 [msedge] › declarations.spec.mjs:747:1 › DC-25: the positions grid, declaring nothing, keeps ExGrid's own behaviour beside the Sheet (2.5s)
+  ok 357 [msedge] › features.spec.mjs:28:1 › typing opens Overwrite containing the character, Enter commits and moves (ED-2/ED-4) (549ms)
+  ok 358 [msedge] › features.spec.mjs:48:1 › in Overwrite an arrow commits and moves; in Caret it moves the caret (ED-2) (605ms)
+  ok 359 [msedge] › features.spec.mjs:65:1 › Escape cancels the editor and never blurs the grid mid-edit (ED-3) (385ms)
+  ok 360 [msedge] › features.spec.mjs:80:1 › the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/CP-6/CP-10) (365ms)
+  ok 361 [msedge] › features.spec.mjs:127:1 › a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-3) (367ms)
+  ok 362 [msedge] › features.spec.mjs:141:1 › paste raises one intent shaped by the clipboard block (CP-14, PST-1) (422ms)
+  ok 363 [msedge] › features.spec.mjs:152:1 › a paste covering a non-editable column is refused whole (CP-16, ADR-0035) (433ms)
+  ok 364 [msedge] › features.spec.mjs:167:1 › Ctrl+Enter fill across a non-editable column is refused, and says so (CP-16, ADR-0035) (519ms)
+  ok 365 [msedge] › features.spec.mjs:188:1 › a refusal is announced, not only painted (A11Y-16, ADR-0035) (500ms)
+  ok 366 [msedge] › features.spec.mjs:209:1 › a menu copy writes without a prompt, and with headers (CP-19/CP-17, ADR-0005/0036) (491ms)
+  ok 367 [msedge] › features.spec.mjs:225:1 › a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034) (543ms)
+  ok 368 [msedge] › features.spec.mjs:244:1 › a Flag applies and is marked, and its message opens on the Focus (ED-16/ED-17, ADR-0034) (1.3s)
+  ok 369 [msedge] › features.spec.mjs:261:1 › a flagged cell says why when the pointer rests on it (ED-17b, ADR-0021/0034) (1.4s)
+  ok 370 [msedge] › features.spec.mjs:281:1 › a pasted value wears the same mark as a typed one (ADR-0034) (462ms)
+  ok 371 [msedge] › features.spec.mjs:291:1 › Ctrl+PageDown is neither handled nor prevented (KB-15) (349ms)
+  ok 372 [msedge] › features.spec.mjs:317:1 › the grid is one tab stop (A11Y-4, KB-12) (351ms)
+  ok 373 [msedge] › features.spec.mjs:346:1 › two instances stay independent: no --ex-* on :root, no window global (DOM-4) (304ms)
+  ok 374 [msedge] › features.spec.mjs:365:1 › a header click sorts and the selection is untouched by it (SR-1) (346ms)
+  ok 375 [msedge] › features.spec.mjs:379:1 › a display-only grid does not take printable keys away from the page (ADR-0010/0020) (483ms)
+  ok 376 [msedge] › features.spec.mjs:401:1 › Escape returns the keyboard from a descendant control to the grid (ADR-0020/0012) (571ms)
+  ok 377 [msedge] › features.spec.mjs:436:1 › Space enters a cell with several actions; the arrows choose and Space fires once (KB-20/KB-21, ADR-0037) (758ms)
+  ok 378 [msedge] › features.spec.mjs:463:1 › inside a cell Enter never fires: it leaves and moves down (KB-22, ADR-0020/0037) (542ms)
+  ok 379 [msedge] › features.spec.mjs:475:1 › Escape leaves an Interactive cell and the grid keeps the keyboard (KB-22, ADR-0037) (490ms)
+  ok 380 [msedge] › features.spec.mjs:486:1 › Space puts the caret in a Template cell's field, and Escape brings the keyboard back (KB-23/KB-24, ADR-0037) (628ms)
+  ok 381 [msedge] › features.spec.mjs:503:1 › a held Space fires a one-action cell once (KB-26, ADR-0037) (542ms)
+  ok 382 [msedge] › features.spec.mjs:517:1 › holding Space to enter a cell fires nothing (KB-26, ADR-0037) (529ms)
+  ok 383 [msedge] › features.spec.mjs:531:1 › Shift+Tab from after the grid lands on the root, not on a button inside it (A11Y-17, ADR-0037) (462ms)
+  ok 384 [msedge] › features.spec.mjs:550:1 › the chosen action is outlined, with and without forced colors (UX-14, ADR-0029/0037) (887ms)
+  ok 385 [msedge] › features.spec.mjs:566:1 › a press dragged off an action leaves no button holding the keyboard, and Enter fires nothing (KB-27, ADR-0020/0037) (623ms)
+  ok 386 [msedge] › fill.spec.mjs:26:5 › in parents with a definite height › a sized box: the grid is the box, rows reach its bottom, and the DOM is the box's (VZ-12a, ADR-0028) (433ms)
+  ok 387 [msedge] › fill.spec.mjs:38:5 › in parents with a definite height › the rest of a flex column: the grid starts under the toolbar and ends with the column (VZ-12a, ADR-0028) (421ms)
+  ok 388 [msedge] › fill.spec.mjs:47:5 › in parents with a definite height › inside the paper: the Fill grid takes what the toolbar leaves; a declared grid is unchanged (WR-7a, ADR-0030) (427ms)
+  ok 389 [msedge] › fill.spec.mjs:65:5 › in a parent with no height › nothing is painted and the grid names the parent (VZ-12b, ADR-0028) (900ms)
+  ok 390 [msedge] › fill.spec.mjs:80:5 › in a box that follows the window › the Viewport follows the window, both ways (VZ-12a, ADR-0028/0045) (636ms)
+  ok 391 [msedge] › fill.spec.mjs:88:5 › in a box that follows the window › a column that cannot be filtered shows its commands alone, and Tab closes them as a Cancel (KB-30, ADR-0039/0044) (527ms)
+  ok 392 [msedge] › fill.spec.mjs:106:5 › in a box that follows the window › a column menu with less than a row of room closes, and the keyboard is the grid's (UX-11a, ADR-0040) (657ms)
+  ok 393 [msedge] › gestures.spec.mjs:21:1 › a leaf drag reorders within its group and clamps at its edge (HG-14/HG-15) (453ms)
+  ok 394 [msedge] › gestures.spec.mjs:40:1 › grabbing a group rectangle moves the whole group (HG-14) (457ms)
+  ok 395 [msedge] › gestures.spec.mjs:55:1 › a resize drag with a real mouse applies on release (ADR-0016) (434ms)
+  ok 396 [msedge] › gestures.spec.mjs:71:1 › a drag past MaxWidth is recorded as it came and painted at that width (ADR-0016, FN-12) (390ms)
+  ok 397 [msedge] › gestures.spec.mjs:88:1 › pasting onto an off-screen selection works, and the indicator showed first (PST-3) (553ms)
+  ok 398 [msedge] › gestures.spec.mjs:104:1 › a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded) (1.8s)
+  ok 399 [msedge] › gestures.spec.mjs:136:1 › the focus outline holds 3:1 against the cell ground under the default theme (UX-9) (348ms)
+  ok 400 [msedge] › gestures.spec.mjs:161:1 › narrowing the scrollbar by token changes the gutter and the geometry follows (UX-10) (534ms)
+  ok 401 [msedge] › gestures.spec.mjs:192:1 › a composing IME keydown is never taken (ED-11, the listener guard) (339ms)
+  ok 402 [msedge] › inspector-edits.spec.mjs:44:1 › RI-16: an approval from the inspector reaches the grid as a new instance, and the inspector shows it without a banner (ADR-0003) (446ms)
+  ok 403 [msedge] › inspector-edits.spec.mjs:56:1 › RI-17: a change elsewhere raises the banner with the new value, keeps the old one shown, and disables the actions until reloaded (460ms)
+  ok 404 [msedge] › inspector-edits.spec.mjs:76:1 › RI-18: a row deleted elsewhere says so, and its inspector acts on nothing (430ms)
+  ok 405 [msedge] › inspector-edits.spec.mjs:86:1 › RI-19: an approval pressed before the news of a change arrives is refused by the store, and says why (483ms)
+  ok 406 [msedge] › inspector-edits.spec.mjs:109:1 › RI-24: a deletion stays said, whatever news about the trade arrives after it (529ms)
+  ok 407 [msedge] › inspector-edits.spec.mjs:125:1 › RI-25: an inspector opened while news is held back shows what the grid showed, and learns of the change when it is announced (440ms)
+  ok 408 [msedge] › inspector-edits.spec.mjs:137:1 › RI-20: a note records the version it was written against, and is marked once the trade has moved on (497ms)
+  ok 409 [msedge] › inspector-edits.spec.mjs:154:1 › RI-21: the inspector follows its trade by key when an approval moves it under the sort (454ms)
+  -  410 [msedge] › inspector-edits.spec.mjs:171:1 › RI-22: on WebAssembly the page says there is nobody to share the store with
+  ok 411 [msedge] › inspector-edits.spec.mjs:177:1 › RI-23: on the Server host, an approval in another tab raises the banner in this one (ADR-0018) (779ms)
+  ok 412 [msedge] › inspectors.spec.mjs:88:5 › RI-4: modal, by click, handler returning once the dialog is shown: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037) (974ms)
+  ok 413 [msedge] › inspectors.spec.mjs:105:5 › RI-26: modal, by click from outside the grid, handler returning once the dialog is shown: closing gives the keyboard back to where it was, not to the grid (ADR-0037) (837ms)
+  ok 414 [msedge] › inspectors.spec.mjs:116:5 › RI-5: modal, by Space, handler returning once the dialog is shown: the keyboard is in the inspector (ADR-0020/0037) (964ms)
+  ok 415 [msedge] › inspectors.spec.mjs:88:5 › RI-4: modal, by click, handler awaiting the dialog's result: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037) (965ms)
+  ok 416 [msedge] › inspectors.spec.mjs:105:5 › RI-26: modal, by click from outside the grid, handler awaiting the dialog's result: closing gives the keyboard back to where it was, not to the grid (ADR-0037) (900ms)
+  ok 417 [msedge] › inspectors.spec.mjs:116:5 › RI-5: modal, by Space, handler awaiting the dialog's result: the keyboard is in the inspector (ADR-0020/0037) (921ms)
+  ok 418 [msedge] › inspectors.spec.mjs:124:1 › RI-6: floating, by click: the keyboard is in the inspector just opened (ADR-0020/0037) (1.2s)
+  ok 419 [msedge] › inspectors.spec.mjs:136:1 › RI-7: floating, by Space: the keyboard is in the inspector (ADR-0020/0037) (890ms)
+  ok 420 [msedge] › inspectors.spec.mjs:144:1 › RI-8: floating: a row whose inspector is open brings it to the front instead of opening another (524ms)
+  ok 421 [msedge] › inspectors.spec.mjs:157:1 › RI-9: floating: an inspector is dragged by its title bar, and closes on its own (751ms)
+  ok 422 [msedge] › inspectors.spec.mjs:183:1 › RI-10: the marked rows open as inspectors, one each, and the count names the ones outside the filter (ADR-0043) (650ms)
+  ok 423 [msedge] › inspectors.spec.mjs:202:1 › RI-11: the marks survive a sort, so the rows opened are the rows ticked (ADR-0043) (604ms)
+  ok 424 [msedge] › inspectors.spec.mjs:217:1 › RI-12: above the cap the marked rows are refused by count, and nothing opens (566ms)
+  ok 425 [msedge] › inspectors.spec.mjs:230:1 › RI-13: modal: the marked rows open one after another, and Escape ends the queue (1.7s)
+  ok 426 [msedge] › inspectors.spec.mjs:255:1 › RI-14: Enter on the Inspect cell moves down and opens nothing (ADR-0020) (803ms)
+  ok 427 [msedge] › inspectors.spec.mjs:266:1 › RI-15: while a modal inspector stands, the grid behind it cannot be pressed (985ms)
+  ok 428 [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) (734ms)
+  ok 429 [msedge] › marks.spec.mjs:57:1 › a filter keeps the marks and names the ones outside it (MK-7) (642ms)
+  ok 430 [msedge] › marks.spec.mjs:73:1 › Space in the Mark Column brings the selected rows into line (MK-1) (504ms)
+  ok 431 [msedge] › marks.spec.mjs:96:1 › a row arriving after "mark all" is not marked, and the header turns to "some" (MK-8) (510ms)
+  ok 432 [msedge] › marks.spec.mjs:107:1 › an action over a mark whose row was deleted elsewhere reports it as gone (ADR-0043) (487ms)
+  -  433 [msedge] › measure.spec.mjs:32:1 › what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip (SRV-6)
+  -  434 [msedge] › measure.spec.mjs:111:1 › how long the stale band stands while the window is dragged over a Fill grid, at 0, 50 and 150 ms round trip (§21.9, ADR-0028)
+  ok 435 [msedge] › memory.spec.mjs:75:1 › mounting and disposing the grid fifty times returns nodes and listeners to baseline (MEM-2) (5.3s)
+  ok 436 [msedge] › memory.spec.mjs:110:1 › disposal takes the module's listeners off the root, and the count comes back (MEM-4) (542ms)
+  -  437 [msedge] › memory.spec.mjs:147:1 › a ten-minute scripted scroll does not grow the JS heap (MEM-5, MEM-6)
+  ok 438 [msedge] › mud-app.spec.mjs:111:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) (1.1s)
+  ok 439 [msedge] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Fill grid and its geometry follows (ADR-0028) (1.7s)
+  ok 440 [msedge] › mud-app.spec.mjs:212:1 › WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018) (572ms)
+  ok 441 [msedge] › mud-app.spec.mjs:258:1 › WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039) (976ms)
+  ok 442 [msedge] › mud-app.spec.mjs:318:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) (946ms)
+  ok 443 [msedge] › mud-app.spec.mjs:384:1 › WR-9: the application's own controls — theme, tabs, dialog — keep the console clean (CON-1/2/3/6) (1.1s)
+  ok 444 [msedge] › mud-app.spec.mjs:403:1 › WR-5 (setup): /features?chrome=mud runs its grids under MudGridChrome, and the column menu opens (FN-17, UX-11) (672ms)
+  ok 445 [msedge] › mud-app.spec.mjs:430:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (508ms)
+  ok 446 [msedge] › mud.spec.mjs:41:1 › the painted geometry equals the declared metrics under the real Wrapper stylesheet (UX-3) (412ms)
+  ok 447 [msedge] › mud.spec.mjs:62:1 › nothing under the Viewport transitions or animates with the Wrapper loaded (UX-6) (342ms)
+  ok 448 [msedge] › mud.spec.mjs:80:1 › the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9) (494ms)
+  ok 449 [msedge] › mud.spec.mjs:110:1 › a loss is painted in the palette's error colour by the Consumer's tone rule, and only there (ADR-0006, FN-7a) (402ms)
+  ok 450 [msedge] › mud.spec.mjs:132:1 › a theme switch re-renders nothing inside the grid: the rows are the same elements (RR-1) (419ms)
+  ok 451 [msedge] › mud.spec.mjs:150:1 › the row under the pointer is highlighted by an overlay band, in the hovered instance only (UX-13) (561ms)
+  ok 452 [msedge] › mud.spec.mjs:175:1 › the Wrapper's editor opens inside the core's box with the typed character, and commits (ED-4, ADR-0030) (709ms)
+  ok 453 [msedge] › mud.spec.mjs:206:1 › the loading bar is a MudProgressLinear where the core places its seam, only while loading (467ms)
+  ok 454 [msedge] › mud.spec.mjs:218:1 › the paper's corners: rounded with an inset, square flush; the grid's own box is untouched (420ms)
+  ok 455 [msedge] › navigation.spec.mjs:33:1 › RI-1: the index at / lists every routed page, once (273ms)
+  ok 456 [msedge] › navigation.spec.mjs:47:1 › RI-2: the Row Identity demo that was at / is at /identity (310ms)
+  ok 457 [msedge] › navigation.spec.mjs:54:1 › RI-3: every page opens from the index, names itself, and leads back to it (clean console) (3.6s)
+  ok 458 [msedge] › observational.spec.mjs:128:1 › mount to first painted row at 10⁶ rows (BIG-7) (281ms)
+  ok 459 [msedge] › observational.spec.mjs:140:1 › the DOM, the settle repaint and the frame intervals, virtualised and not (DOM-5, PF-6, BIG-6) (16.3s)
+  ok 460 [msedge] › observational.spec.mjs:182:1 › a selection drag, one row a step, costs this much per step (PF-7) (2.1s)
+  ok 461 [msedge] › popovers.spec.mjs:118:9 › under the builtin Chrome › a secondary click opens the grid's menu, not the browser's (CTX-1/CTX-5, ADR-0036) (378ms)
+  ok 462 [msedge] › popovers.spec.mjs:133:9 › under the builtin Chrome › a secondary click outside the selection moves it first (CTX-1, ADR-0036) (335ms)
+  ok 463 [msedge] › popovers.spec.mjs:144:9 › under the builtin Chrome › a Consumer command receives the clicked row and the selection (CTX-3, ADR-0036) (399ms)
+  ok 464 [msedge] › popovers.spec.mjs:154:9 › under the builtin Chrome › the ContextMenu key opens it on the Focus (CTX-4, ADR-0036) (432ms)
+  ok 465 [msedge] › popovers.spec.mjs:165:9 › under the builtin Chrome › popovers are not clipped by the scroll container and stay per instance (UX-11) (447ms)
+  ok 466 [msedge] › popovers.spec.mjs:187:9 › under the builtin Chrome › a popover taller than its grid stays inside the grid's box and scrolls (UX-11, ADR-0040) (370ms)
+  ok 467 [msedge] › popovers.spec.mjs:205:9 › under the builtin Chrome › Alt+↓ opens the Focus column's menu, and the menu takes the keyboard (KB-28/KB-29, ADR-0039) (453ms)
+  ok 468 [msedge] › popovers.spec.mjs:216:9 › under the builtin Chrome › every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039) (657ms)
+  ok 469 [msedge] › popovers.spec.mjs:238:9 › under the builtin Chrome › however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039) (1.0s)
+  ok 470 [msedge] › popovers.spec.mjs:277:9 › under the builtin Chrome › in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039) (815ms)
+  ok 471 [msedge] › popovers.spec.mjs:305:13 › under the builtin Chrome › in a menu Enter runs the item and closes it (KB-30, ADR-0039) (513ms)
+  ok 472 [msedge] › popovers.spec.mjs:305:13 › under the builtin Chrome › in a menu Space runs the item and closes it (KB-30, ADR-0039) (553ms)
+  ok 473 [msedge] › popovers.spec.mjs:321:13 › under the builtin Chrome › over a filter, Tab on a command moves to the search box — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) (535ms)
+  ok 474 [msedge] › popovers.spec.mjs:321:13 › under the builtin Chrome › over a filter, Shift+Tab on a command moves to Cancel — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) (549ms)
+  ok 475 [msedge] › popovers.spec.mjs:339:9 › under the builtin Chrome › the Context Menu answers the same keys, and Tab closes it (KB-30, ADR-0039) (591ms)
+  ok 476 [msedge] › popovers.spec.mjs:354:9 › under the builtin Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) (852ms)
+  ok 477 [msedge] › popovers.spec.mjs:384:9 › under the builtin Chrome › the letters: S sorts, E goes to the search box where "e" is text, C clears (FL-15, FL-16, ADR-0044) (993ms)
+  ok 478 [msedge] › popovers.spec.mjs:428:9 › under the builtin Chrome › on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044) (714ms)
+  ok 479 [msedge] › popovers.spec.mjs:463:9 › under the builtin Chrome › where no value list stands, E goes to the condition's value, where a search is typed (FL-15, ADR-0044) (580ms)
+  ok 480 [msedge] › popovers.spec.mjs:480:9 › under the builtin Chrome › E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044) (926ms)
+  ok 481 [msedge] › popovers.spec.mjs:511:9 › under the builtin Chrome › Enter in the value field applies exactly what OK applies (KB-31, ADR-0039) (1.2s)
+  ok 482 [msedge] › popovers.spec.mjs:520:9 › under the builtin Chrome › a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039) (394ms)
+  ok 483 [msedge] › popovers.spec.mjs:537:9 › under the builtin Chrome › a column's popover is a dialog holding a menu, both named by its header; the Context Menu a menu (A11Y-19, ADR-0039/0044) (589ms)
+  ok 484 [msedge] › popovers.spec.mjs:118:9 › under the mud Chrome › a secondary click opens the grid's menu, not the browser's (CTX-1/CTX-5, ADR-0036) (360ms)
+  ok 485 [msedge] › popovers.spec.mjs:133:9 › under the mud Chrome › a secondary click outside the selection moves it first (CTX-1, ADR-0036) (415ms)
+  ok 486 [msedge] › popovers.spec.mjs:144:9 › under the mud Chrome › a Consumer command receives the clicked row and the selection (CTX-3, ADR-0036) (442ms)
+  ok 487 [msedge] › popovers.spec.mjs:154:9 › under the mud Chrome › the ContextMenu key opens it on the Focus (CTX-4, ADR-0036) (533ms)
+  ok 488 [msedge] › popovers.spec.mjs:165:9 › under the mud Chrome › popovers are not clipped by the scroll container and stay per instance (UX-11) (583ms)
+  ok 489 [msedge] › popovers.spec.mjs:187:9 › under the mud Chrome › a popover taller than its grid stays inside the grid's box and scrolls (UX-11, ADR-0040) (445ms)
+  ok 490 [msedge] › popovers.spec.mjs:205:9 › under the mud Chrome › Alt+↓ opens the Focus column's menu, and the menu takes the keyboard (KB-28/KB-29, ADR-0039) (370ms)
+  ok 491 [msedge] › popovers.spec.mjs:216:9 › under the mud Chrome › every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039) (719ms)
+  ok 492 [msedge] › popovers.spec.mjs:238:9 › under the mud Chrome › however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039) (1.1s)
+  ok 493 [msedge] › popovers.spec.mjs:277:9 › under the mud Chrome › in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039) (1.1s)
+  ok 494 [msedge] › popovers.spec.mjs:305:13 › under the mud Chrome › in a menu Enter runs the item and closes it (KB-30, ADR-0039) (664ms)
+  ok 495 [msedge] › popovers.spec.mjs:305:13 › under the mud Chrome › in a menu Space runs the item and closes it (KB-30, ADR-0039) (606ms)
+  ok 496 [msedge] › popovers.spec.mjs:321:13 › under the mud Chrome › over a filter, Tab on a command moves to the search box — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) (559ms)
+  ok 497 [msedge] › popovers.spec.mjs:321:13 › under the mud Chrome › over a filter, Shift+Tab on a command moves to Cancel — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) (604ms)
+  ok 498 [msedge] › popovers.spec.mjs:339:9 › under the mud Chrome › the Context Menu answers the same keys, and Tab closes it (KB-30, ADR-0039) (701ms)
+  ok 499 [msedge] › popovers.spec.mjs:354:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) (1.1s)
+  ok 500 [msedge] › popovers.spec.mjs:384:9 › under the mud Chrome › the letters: S sorts, E goes to the search box where "e" is text, C clears (FL-15, FL-16, ADR-0044) (961ms)
+  ok 501 [msedge] › popovers.spec.mjs:428:9 › under the mud Chrome › on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044) (832ms)
+  ok 502 [msedge] › popovers.spec.mjs:463:9 › under the mud Chrome › where no value list stands, E goes to the condition's value, where a search is typed (FL-15, ADR-0044) (617ms)
+  ok 503 [msedge] › popovers.spec.mjs:480:9 › under the mud Chrome › E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044) (931ms)
+  ok 504 [msedge] › popovers.spec.mjs:511:9 › under the mud Chrome › Enter in the value field applies exactly what OK applies (KB-31, ADR-0039) (1.4s)
+  ok 505 [msedge] › popovers.spec.mjs:520:9 › under the mud Chrome › a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039) (2.7s)
+  ok 506 [msedge] › popovers.spec.mjs:537:9 › under the mud Chrome › a column's popover is a dialog holding a menu, both named by its header; the Context Menu a menu (A11Y-19, ADR-0039/0044) (495ms)
+  ok 507 [msedge] › popovers.spec.mjs:586:5 › Inner Popups under the mud Chrome › an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21) (586ms)
+  ok 508 [msedge] › popovers.spec.mjs:612:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the operator list and the panel, and keeps its meaning (FN-21, ModalOverlay off) (698ms)
+  ok 509 [msedge] › popovers.spec.mjs:612:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the date calendar and the panel, and keeps its meaning (FN-21, ModalOverlay off) (674ms)
+  ok 510 [msedge] › popovers.spec.mjs:640:9 › Inner Popups under the mud Chrome › Escape closes the operator list first, and the next Escape the panel (FN-21, KB-32) (715ms)
+  ok 511 [msedge] › popovers.spec.mjs:640:9 › Inner Popups under the mud Chrome › Escape closes the date calendar first, and the next Escape the panel (FN-21, KB-32) (862ms)
+  ok 512 [msedge] › popovers.spec.mjs:662:5 › Inner Popups under the mud Chrome › under ModalOverlay the press is the overlay's: only the Inner Popup closes, and Escape then closes the panel (FN-21) (819ms)
+  ok 513 [msedge] › popovers.spec.mjs:687:5 › Inner Popups under the mud Chrome › choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the root (FN-21, KB-32) (690ms)
+  ok 514 [msedge] › presentation.spec.mjs:17:1 › geometry tokens are inline and read-only: an ancestor or stylesheet cannot move them (UX-2) (306ms)
+  ok 515 [msedge] › presentation.spec.mjs:39:1 › the painted heights equal the declared metrics exactly (UX-3, ST-3) (293ms)
+  ok 516 [msedge] › presentation.spec.mjs:56:1 › a Visual Token set on an ancestor recolours the paint (UX-5, the paint half) (316ms)
+  ok 517 [msedge] › presentation.spec.mjs:71:1 › nothing inside the Viewport transitions or animates (UX-6) (304ms)
+  ok 518 [msedge] › presentation.spec.mjs:87:1 › forced colors keep every Cell State and Row Kind tellable (UX-7, on /cells) (323ms)
+  ok 519 [msedge] › presentation.spec.mjs:113:1 › under a dark scheme the untouched grid stays readable (UX-8) (311ms)
+  ok 520 [msedge] › presentation.spec.mjs:136:1 › inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3) (370ms)
+  ok 521 [msedge] › presentation.spec.mjs:169:1 › a Header Group label is centred, and nothing aligns it vertically (HG-13, ADR-0032) (313ms)
+  ok 522 [msedge] › presentation.spec.mjs:186:1 › the editor's box is exactly the cell's (ED-9) (441ms)
+  ok 523 [msedge] › presentation.spec.mjs:206:1 › the pointer leaving the grid stops the auto-scroll (SL-14/SL-15) (2.0s)
+  ok 524 [msedge] › presentation.spec.mjs:233:1 › the Blazor error UI never appears (CON-5) (324ms)
+  x  525 [msedge] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars (423ms)
+  x  526 [msedge] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout (468ms)
+  x  527 [msedge] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again (460ms)
+  x  528 [msedge] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (445ms)
+  ok 529 [msedge] › sheet-vs-excel.spec.mjs:118:1 › item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §2, ticket 07) (6.4s)
+  x  530 [msedge] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07) (8.4s)
+  x  531 [msedge] › sheet-vs-excel.spec.mjs:172:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06) (6.0s)
+  x  532 [msedge] › sheet-vs-excel.spec.mjs:194:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06) (5.9s)
+  x  533 [msedge] › sheet-vs-excel.spec.mjs:210:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06) (11.0s)
+  ok 534 [msedge] › sheet-vs-excel.spec.mjs:226:1 › item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09) (1.0s)
+  ok 535 [msedge] › sheet-vs-excel.spec.mjs:249:1 › item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08) (1.3s)
+  ok 536 [msedge] › sheet-vs-excel.spec.mjs:262:1 › item 8: F2 on a Formula shows it with the caret at the end, and the arrows move the caret (ADR-0051, ticket 08) (1.5s)
+  ok 537 [msedge] › sheet-vs-excel.spec.mjs:281:1 › item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11) (1.3s)
+  ok 538 [msedge] › sheet-vs-excel.spec.mjs:299:1 › item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11) (897ms)
+  ok 539 [msedge] › sheet-vs-excel.spec.mjs:317:1 › item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11) (1.3s)
+  ok 540 [msedge] › sheet-vs-excel.spec.mjs:330:1 › item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11) (821ms)
+  ok 541 [msedge] › sheet-vs-excel.spec.mjs:339:1 › item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10) (1.6s)
+  ok 542 [msedge] › sheet-vs-excel.spec.mjs:362:1 › item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10) (1.0s)
+  ok 543 [msedge] › sheet-vs-excel.spec.mjs:374:1 › item 15: Escape in the Formula Bar cancels the edit and gives the keys back to the grid (ADR-0051, ticket 09) (1.2s)
+  -  544 [msedge] › sheet-vs-excel.spec.mjs:389:12 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)
+  -  545 [msedge] › sheet-vs-excel.spec.mjs:399:12 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)
+  -  546 [msedge] › sheet-vs-excel.spec.mjs:412:6 › item 18: cells from Excel, and to Excel (ADR-0048, ticket 14)
+  -  547 [msedge] › sheet-vs-excel.spec.mjs:425:12 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)
+  -  548 [msedge] › sheet-vs-excel.spec.mjs:430:12 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)
+  -  549 [msedge] › sheet-vs-excel.spec.mjs:435:12 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)
+  x  550 [msedge] › sheet-vs-excel.spec.mjs:443:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15) (7.1s)
+  ok 551 [msedge] › sheet-vs-excel.spec.mjs:455:1 › item 20: one number is copied, one date goes on by day, a Formula shifts (ADR-0050, ticket 15) (3.7s)
+  ok 552 [msedge] › sheet-vs-excel.spec.mjs:470:1 › item 20: 1, 2, 4 continue as Excel's trend, to the 15 digits Excel keeps (ADR-0050, ticket 15) (2.9s)
+  x  553 [msedge] › sheet-vs-excel.spec.mjs:482:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15) (7.1s)
+  ok 554 [msedge] › sheet-vs-excel.spec.mjs:496:1 › item 20: text in two cells filled left repeats backwards (ADR-0050, ticket 15) (2.1s)
+  ok 555 [msedge] › sheet-vs-excel.spec.mjs:507:1 › item 20: Item 1, Mon and a date with a time are refused, by decision (ADR-0050) (3.6s)
+  ok 556 [msedge] › sheet-vs-excel.spec.mjs:519:1 › item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15) (835ms)
+  -  557 [msedge] › sheet-vs-excel.spec.mjs:529:12 › item 22: inserting rows above a selected range keeps the Selection where it was (ADR-0046, ticket 13)
+  -  558 [msedge] › sheet-vs-excel.spec.mjs:541:12 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13)
+  -  559 [msedge] › sheet-vs-excel.spec.mjs:552:6 › item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12)
+  ok 560 [msedge] › sheet-vs-excel.spec.mjs:560:1 › item 25: a long text is cut with an ellipsis, by decision; Excel lets it run over (ADR-0046) (888ms)
+  ok 561 [msedge] › sheet-vs-excel.spec.mjs:568:1 › item 26: a number too wide for its column shows #### (ADR-0016) (1.0s)
+  ok 562 [msedge] › sheet-vs-excel.spec.mjs:578:1 › item 27: every cell of a cycle and its dependents is #CIRC!, by decision; Excel shows 0 (ADR-0047) (1.8s)
+  ok 563 [msedge] › sheet.spec.mjs:32:1 › SH-18: an Entry and a Formula typed into cells commit, compute and move the Focus down (3.2s)
+  x  564 [msedge] › sheet.spec.mjs:56:1 › SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow extends to it (7.5s)
+  x  565 [msedge] › sheet.spec.mjs:81:1 › SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, and nothing sorts (2.2s)
+  ok 566 [msedge] › sheet.spec.mjs:131:1 › DC-3: the Row Headings stay at the left edge while the Sheet scrolls sideways (2.3s)
+  ok 567 [msedge] › sheet.spec.mjs:167:1 › SH-18/DC-11: the Name Box takes the Focus to an address, scrolled into view (2.8s)
+  ok 568 [msedge] › sheet.spec.mjs:191:1 › SH-18/DC-11: the Name Box pressed with an edit open commits it, then navigates (2.7s)
+  x  569 [msedge] › sheet.spec.mjs:220:1 › SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commits and cancels once (7.7s)
+  ok 570 [msedge] › sheet.spec.mjs:263:1 › SH-18: inserting a row keeps every Reference naming its cell, and one Ctrl+Z restores it (2.6s)
+  ok 571 [msedge] › sheet.spec.mjs:293:1 › SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot, then the values (4.1s)
+  x  572 [msedge] › sheet.spec.mjs:308:1 › SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent (7.4s)
+  ok 573 [msedge] › sheets.spec.mjs:24:1 › SH-13/DC-25: typing and Formulas stay in the Sheet that has the keyboard (843ms)
+  ok 574 [msedge] › sheets.spec.mjs:46:1 › SH-13: each Sheet keeps its own undo stack (951ms)
+  ok 575 [msedge] › sheets.spec.mjs:68:1 › ADR-0018: a completion list, a pointing outline and the Formula Bar belong to one Sheet (1.1s)
+  ok 576 [msedge] › sheets.spec.mjs:110:1 › ADR-0018: a Context Menu opens in the Sheet it was asked of, and its command acts there (442ms)
+  ok 577 [msedge] › sheets.spec.mjs:129:1 › ADR-0018: a Sheet the user has pressed keeps the keyboard when the other one finishes a cancel late (3.0s)
+  ok 578 [msedge] › sizing.spec.mjs:47:1 › a sorted Auto header and a Japanese Auto header paint whole (FN-12d, ADR-0016) (345ms)
+  ok 579 [msedge] › sizing.spec.mjs:53:1 › a Japanese header double-clicked to fit paints whole at its fitted width (FN-12d, ADR-0016) (464ms)
+  ok 580 [msedge] › sizing.spec.mjs:62:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) (665ms)
+  ok 581 [msedge] › sizing.spec.mjs:77:1 › a double-click on an edge fits a value the Viewport has not painted (FN-12a, ADR-0016) (944ms)
+  ok 582 [msedge] › sizing.spec.mjs:93:1 › a press on an edge that does not move reports no width and sorts nothing (FN-12b, ADR-0016) (402ms)
+  ok 583 [msedge] › sizing.spec.mjs:101:1 › Shift+click on a header selects whole columns and does not sort (SR-2a, ADR-0012) (487ms)
+  ok 584 [msedge] › sizing.spec.mjs:110:1 › dragging the edge of one of several whole columns resizes them all (FN-12c, ADR-0016) (535ms)
+  ok 585 [msedge] › sizing.spec.mjs:125:1 › columns narrower than a wide box are not stretched, and a resize changes no column width (UX-11b, ADR-0045) (416ms)
+  ok 586 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (823ms)
+  ok 587 [msedge] › stripes.spec.mjs:60:1 › a pinned and a scrollable cell of one striped row paint the same ground (UX-15) (561ms)
+  ok 588 [msedge] › stripes.spec.mjs:84:1 › a group or total row paints its own ground over the stripe and still counts (UX-16) (442ms)
+  ok 589 [msedge] › stripes.spec.mjs:105:1 › a Cell State ground and the overlays paint over the stripe (UX-16) (717ms)
+  ok 590 [msedge] › stripes.spec.mjs:129:1 › under forced colours no stripe is painted (UX-16) (412ms)
+  x  591 [msedge] › virtualisation.spec.mjs:39:1 › the far corner is reachable and painted at 10⁶ rows (BIG-1) (15.4s)
+  ok 592 [msedge] › virtualisation.spec.mjs:53:1 › the element count is the same at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1) (1.9s)
+  x  593 [msedge] › virtualisation.spec.mjs:66:1 › the first and the last row paint their own data, there and back again (BIG-5) (15.4s)
+  ok 594 [msedge] › virtualisation.spec.mjs:85:1 › scrolling changes which rows exist, not how many elements do (ADR-0004 P1, across a scroll) (1.2s)
+  ok 595 [msedge] › virtualisation.spec.mjs:101:1 › Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next key is answered (BIG-3, SL-6, DOM-2) (426ms)
+  ok 596 [msedge] › virtualisation.spec.mjs:202:1 › a scroll frame makes at most one interop call, whatever is painted (PF-1) (3.4s)
+
+
+  1) [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (builtin Chrome) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+    Expected: "=B2*C2="
+    Received: "="
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+        2 × locator resolved to <input tabindex="-1" aria-label="Formula Bar" aria-autocomplete="list" class="ex-editor ex-formula-bar-text" _bl_4bc37f53-435c-42b6-a18d-5b8d19b4b79b=""/>
+          - unexpected value "=B2*C2"
+        - locator resolved to <input tabindex="-1" aria-label="Formula Bar" aria-autocomplete="list" class="ex-editor ex-formula-bar-text" _bl_4bc37f53-435c-42b6-a18d-5b8d19b4b79b=""/>
+        - unexpected value ""
+        11 × locator resolved to <input tabindex="-1" aria-label="Formula Bar" aria-autocomplete="list" class="ex-editor ex-formula-bar-text" _bl_4bc37f53-435c-42b6-a18d-5b8d19b4b79b=""/>
+           - unexpected value "="
+
+
+       at sheet-helpers.mjs:115
+
+      113 |     for (let i = 1; i <= text.length; i++) {
+      114 |         await page.keyboard.type(text[i - 1]);
+    > 115 |         await expect(field).toHaveValue(start.slice(0, caretAt) + text.slice(0, i) + start.slice(caretAt));
+          |                             ^
+      116 |     }
+      117 | }
+      118 |
+        at typeSteadily (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet-helpers.mjs:115:29)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\declarations.spec.mjs:312:9
+
+    Error Context: test-results\declarations-DC-19-DC-34-p-4c354-nters-Caret-builtin-Chrome--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\declarations-DC-19-DC-34-p-4c354-nters-Caret-builtin-Chrome--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\declarations-DC-19-DC-34-p-4c354-nters-Caret-builtin-Chrome--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+        14 × locator resolved to <input tabindex="-1" aria-label="Formula Bar" _bl_a4c4ef3d-2765-4418-b314-c03817b71876="" class="mud-ex-formula-bar-text mud-ex-formula-bar-text-editable"/>
+           - unexpected value "inactive"
+
+
+      316 |         await expect(bar(grid)).toHaveValue('=SUM(F3');
+      317 |         await expect(editor(grid)).toHaveValue('=SUM(F3');
+    > 318 |         await expect(bar(grid)).toBeFocused();
+          |                                 ^
+      319 |         await expectCovers(grid.locator('.ex-selection .ex-point'), grid, 'F3', 'F3');
+      320 |
+      321 |         // A press in the text while pointing moves the caret there, ends pointing and enters Caret
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\declarations.spec.mjs:318:33
+
+    Error Context: test-results\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chrome] › memory.spec.mjs:110:1 › disposal takes the module's listeners off the root, and the count comes back (MEM-4) 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 10
+    + Received  +  1
+
+    - Array [
+    -   StringMatching /^copy @ex-grid(\.\w+)?\.js$/,
+    -   StringMatching /^input \(capture\) @ex-grid(\.\w+)?\.js$/,
+    -   StringMatching /^keydown \(capture\) @ex-grid(\.\w+)?\.js$/,
+    -   StringMatching /^mousedown \(capture\) @ex-grid(\.\w+)?\.js$/,
+    -   StringMatching /^mouseleave @ex-grid(\.\w+)?\.js$/,
+    -   StringMatching /^mousemove @ex-grid(\.\w+)?\.js$/,
+    -   StringMatching /^mouseup \(capture\) @ex-grid(\.\w+)?\.js$/,
+    -   StringMatching /^paste @ex-grid(\.\w+)?\.js$/,
+    - ]
+    + Array []
+
+      121 |     // keys (ADR-0021/0010), the editor's input report (ADR-0051), the pointer report and the
+      122 |     // two clipboard events.
+    > 123 |     expect(attached).toEqual([
+          |                      ^
+      124 |         'copy', 'input (capture)', 'keydown (capture)', 'mousedown (capture)', 'mouseleave',
+      125 |         'mousemove', 'mouseup (capture)', 'paste',
+      126 |     ].map(fromModule));
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\memory.spec.mjs:123:22
+
+    Error Context: test-results\memory-disposal-takes-the--03383-the-count-comes-back-MEM-4--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\memory-disposal-takes-the--03383-the-count-comes-back-MEM-4--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\memory-disposal-takes-the--03383-the-count-comes-back-MEM-4--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chrome] › mud-app.spec.mjs:430:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 0
+
+    @@ -6,7 +6,6 @@
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+    -   "9",
+      ]
+
+      471 |     expect(dark.rowImage).toContain(dark.token);
+      472 |     const probes = await positions(page).evaluate((root) => [...root.querySelectorAll('.ex-row')].map((row) => row.dataset.probe));
+    > 473 |     expect(probes).toEqual([...Array(count).keys()].map(String));
+          |                    ^
+      474 | });
+      475 |
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\mud-app.spec.mjs:473:20
+
+    Error Context: test-results\mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    898.1979370117188
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:217:9
+
+    Error Context: test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chrome] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    899.53125
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:229:9
+
+    Error Context: test-results\scrollbar-the-Focus-is-nev-c4074-rollbars-that-occupy-layout-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-c4074-rollbars-that-occupy-layout-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-c4074-rollbars-that-occupy-layout-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chrome] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    899.53125
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:278:13
+
+    Error Context: test-results\scrollbar-the-Focus-is-nev-7cc92-om-level-after-moving-again-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-7cc92-om-level-after-moving-again-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-7cc92-om-level-after-moving-again-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chrome] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    898.1979370117188
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:348:9
+
+    Error Context: test-results\scrollbar-on-a-Windows-des-51cba-th-the-OS-doing-the-scaling-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-on-a-Windows-des-51cba-th-the-OS-doing-the-scaling-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-on-a-Windows-des-51cba-th-the-OS-doing-the-scaling-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [chrome] › sheet.spec.mjs:56:1 › SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow extends to it 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('.ex-grid:has(> .ex-formula-bar)').first()
+    Expected pattern: /-r1048575c0$/
+    Received string:  ""
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first()
+        2 × locator resolved to <div dir="ltr" role="grid" tabindex="0" class="ex-grid" aria-colcount="16384" aria-rowcount="1048576" aria-multiselectable="true" aria-activedescendant="ex286-r12c0" _bl_fa0e2e43-43a0-4ac7-bfdd-2e2477ad5240="">…</div>
+          - unexpected value "ex286-r12c0"
+        12 × locator resolved to <div dir="ltr" role="grid" tabindex="0" class="ex-grid" aria-colcount="16384" aria-rowcount="1048576" aria-multiselectable="true" _bl_fa0e2e43-43a0-4ac7-bfdd-2e2477ad5240="">…</div>
+           - unexpected value "null"
+
+
+       at sheet-helpers.mjs:77
+
+      75 | export async function expectFocusAt(grid, address) {
+      76 |     const { row, column } = at(address);
+    > 77 |     await expect(grid).toHaveAttribute('aria-activedescendant', new RegExp(`-r${row}c${column}$`));
+         |                        ^
+      78 |     await expect(nameBox(grid)).toHaveValue(address);
+      79 | }
+      80 |
+        at expectFocusAt (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet-helpers.mjs:77:24)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet.spec.mjs:63:15
+
+    Error Context: test-results\sheet-SH-18-DC-7-Ctrl-arro-9e434-l-Shift-arrow-extends-to-it-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-SH-18-DC-7-Ctrl-arro-9e434-l-Shift-arrow-extends-to-it-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-SH-18-DC-7-Ctrl-arro-9e434-l-Shift-arrow-extends-to-it-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [chrome] › sheet.spec.mjs:81:1 › SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, and nothing sorts 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 28000000
+    Received:   22369617.791656494
+
+      94 |         expect(Math.abs(box.width - want.width)).toBeLessThanOrEqual(1);
+      95 |         expect(Math.abs(box.y - want.y)).toBeLessThanOrEqual(1);
+    > 96 |         expect(box.height).toBeGreaterThan(1_000_000 * 28);
+         |                            ^
+      97 |     };
+      98 |     await coversColumns('C1', 'C1');
+      99 |     // Shift+click extends from the Anchor's column.
+        at coversColumns (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet.spec.mjs:96:28)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet.spec.mjs:98:5
+
+    Error Context: test-results\sheet-SH-18-DC-2-DC-3-a-co-95869-er-select-and-nothing-sorts-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-SH-18-DC-2-DC-3-a-co-95869-er-select-and-nothing-sorts-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-SH-18-DC-2-DC-3-a-co-95869-er-select-and-nothing-sorts-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11) [chrome] › sheet.spec.mjs:308:1 › SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('.ex-grid:has(> .ex-formula-bar)').first()
+    Expected pattern: /-r1048575c16383$/
+    Received string:  ""
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first()
+        2 × locator resolved to <div dir="ltr" role="grid" tabindex="0" class="ex-grid" aria-colcount="16384" aria-rowcount="1048576" aria-multiselectable="true" aria-activedescendant="ex304-r0c0" _bl_3cef9c27-6667-42dc-8e0d-c6574e24d85b="">…</div>
+          - unexpected value "ex304-r0c0"
+        12 × locator resolved to <div dir="ltr" role="grid" tabindex="0" class="ex-grid" aria-colcount="16384" aria-rowcount="1048576" aria-multiselectable="true" _bl_3cef9c27-6667-42dc-8e0d-c6574e24d85b="">…</div>
+           - unexpected value "null"
+
+
+       at sheet-helpers.mjs:77
+
+      75 | export async function expectFocusAt(grid, address) {
+      76 |     const { row, column } = at(address);
+    > 77 |     await expect(grid).toHaveAttribute('aria-activedescendant', new RegExp(`-r${row}c${column}$`));
+         |                        ^
+      78 |     await expect(nameBox(grid)).toHaveValue(address);
+      79 | }
+      80 |
+        at expectFocusAt (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet-helpers.mjs:77:24)
+        at goTo (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet-helpers.mjs:90:11)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet.spec.mjs:313:5
+
+    Error Context: test-results\sheet-SH-2-the-Focus-reach-ea8b7-es-not-grow-with-the-extent-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-SH-2-the-Focus-reach-ea8b7-es-not-grow-with-the-extent-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-SH-2-the-Focus-reach-ea8b7-es-not-grow-with-the-extent-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12) [chrome] › virtualisation.spec.mjs:39:1 › the far corner is reachable and painted at 10⁶ rows (BIG-1) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid [id$=\'-r999999c99\']')
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r999999c99\']')
+
+
+      44 |
+      45 |     // The last row lands and paints real cells; the pinned columns are present.
+    > 46 |     await expect(cell(page, ROWS - 1, 99)).toBeVisible({ timeout: 15_000 });
+         |                                            ^
+      47 |     await expect(grid.locator('.ex-cell.ex-pinned').first()).toBeVisible();
+      48 |
+      49 |     await page.keyboard.press('ControlOrMeta+Home');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\virtualisation.spec.mjs:46:44
+
+    Error Context: test-results\virtualisation-the-far-cor-ca327--painted-at-10⁶-rows-BIG-1--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\virtualisation-the-far-cor-ca327--painted-at-10⁶-rows-BIG-1--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\virtualisation-the-far-cor-ca327--painted-at-10⁶-rows-BIG-1--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  13) [chrome] › virtualisation.spec.mjs:66:1 › the first and the last row paint their own data, there and back again (BIG-5) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('.ex-grid [id$=\'-r999999c0\']')
+    Expected: "K-999999"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r999999c0\']')
+
+
+      22 | /** What /wide's data says a row holds (DemoData.WideColumns), checked against what is painted. */
+      23 | async function expectRowPainted(page, row) {
+    > 24 |     await expect(cell(page, row, 0)).toHaveText(`K-${String(row).padStart(6, '0')}`, { timeout: 15_000 });
+         |                                      ^
+      25 |     await expect(cell(page, row, 1)).toHaveText(BOOKS[row % BOOKS.length]);
+      26 |     // M01, the first scrollable column: ((row·7919 + 2·104729) mod 1,999,999) / 100.
+      27 |     const expected = ((row * 7919 + 2 * 104729) % 1_999_999) / 100;
+        at expectRowPainted (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\virtualisation.spec.mjs:24:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\virtualisation.spec.mjs:73:11
+
+    Error Context: test-results\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  14) [msedge] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (builtin Chrome) 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+    Expected: "=B2*C2="
+    Received: "="
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+        2 × locator resolved to <input tabindex="-1" aria-label="Formula Bar" aria-autocomplete="list" class="ex-editor ex-formula-bar-text" _bl_35e518dd-129b-4d6b-88b3-418b76e6b9e7=""/>
+          - unexpected value "=B2*C2"
+        - locator resolved to <input tabindex="-1" aria-label="Formula Bar" aria-autocomplete="list" class="ex-editor ex-formula-bar-text" _bl_35e518dd-129b-4d6b-88b3-418b76e6b9e7=""/>
+        - unexpected value ""
+        11 × locator resolved to <input tabindex="-1" aria-label="Formula Bar" aria-autocomplete="list" class="ex-editor ex-formula-bar-text" _bl_35e518dd-129b-4d6b-88b3-418b76e6b9e7=""/>
+           - unexpected value "="
+
+
+       at sheet-helpers.mjs:115
+
+      113 |     for (let i = 1; i <= text.length; i++) {
+      114 |         await page.keyboard.type(text[i - 1]);
+    > 115 |         await expect(field).toHaveValue(start.slice(0, caretAt) + text.slice(0, i) + start.slice(caretAt));
+          |                             ^
+      116 |     }
+      117 | }
+      118 |
+        at typeSteadily (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet-helpers.mjs:115:29)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\declarations.spec.mjs:312:9
+
+    Error Context: test-results\declarations-DC-19-DC-34-p-4c354-nters-Caret-builtin-Chrome--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\declarations-DC-19-DC-34-p-4c354-nters-Caret-builtin-Chrome--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\declarations-DC-19-DC-34-p-4c354-nters-Caret-builtin-Chrome--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  15) [msedge] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeFocused" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+        14 × locator resolved to <input tabindex="-1" aria-label="Formula Bar" _bl_65c135c1-0ca9-46c3-9ead-6d51f79c62de="" class="mud-ex-formula-bar-text mud-ex-formula-bar-text-editable"/>
+           - unexpected value "inactive"
+
+
+      316 |         await expect(bar(grid)).toHaveValue('=SUM(F3');
+      317 |         await expect(editor(grid)).toHaveValue('=SUM(F3');
+    > 318 |         await expect(bar(grid)).toBeFocused();
+          |                                 ^
+      319 |         await expectCovers(grid.locator('.ex-selection .ex-point'), grid, 'F3', 'F3');
+      320 |
+      321 |         // A press in the text while pointing moves the caret there, ends pointing and enters Caret
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\declarations.spec.mjs:318:33
+
+    Error Context: test-results\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  16) [msedge] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    898.1979370117188
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:217:9
+
+    Error Context: test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-8a104-e-platform-s-own-scrollbars-msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  17) [msedge] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    899.53125
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:229:9
+
+    Error Context: test-results\scrollbar-the-Focus-is-nev-c4074-rollbars-that-occupy-layout-msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-c4074-rollbars-that-occupy-layout-msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-c4074-rollbars-that-occupy-layout-msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  18) [msedge] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    899.53125
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:278:13
+
+    Error Context: test-results\scrollbar-the-Focus-is-nev-7cc92-om-level-after-moving-again-msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-the-Focus-is-nev-7cc92-om-level-after-moving-again-msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-the-Focus-is-nev-7cc92-om-level-after-moving-again-msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  19) [msedge] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling 
+
+    Error: the Focus is behind the horizontal scrollbar
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 872.2083435058594
+    Received:    898.1979370117188
+
+      90 |     expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+      91 |     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
+    > 92 |     expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+         |                                                                          ^
+      93 | }
+      94 |
+      95 | /**
+        at expectFocusInsideClientBox (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:92:74)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\scrollbar.spec.mjs:348:9
+
+    Error Context: test-results\scrollbar-on-a-Windows-des-51cba-th-the-OS-doing-the-scaling-msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\scrollbar-on-a-Windows-des-51cba-th-the-OS-doing-the-scaling-msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\scrollbar-on-a-Windows-des-51cba-th-the-OS-doing-the-scaling-msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  20) [msedge] › sheet.spec.mjs:56:1 › SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow extends to it 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('.ex-grid:has(> .ex-formula-bar)').first()
+    Expected pattern: /-r1048575c0$/
+    Received string:  ""
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first()
+        2 × locator resolved to <div dir="ltr" role="grid" tabindex="0" class="ex-grid" aria-colcount="16384" aria-rowcount="1048576" aria-multiselectable="true" aria-activedescendant="ex474-r12c0" _bl_30821395-ec2a-44dc-bf0d-2fc03980cdba="">…</div>
+          - unexpected value "ex474-r12c0"
+        12 × locator resolved to <div dir="ltr" role="grid" tabindex="0" class="ex-grid" aria-colcount="16384" aria-rowcount="1048576" aria-multiselectable="true" _bl_30821395-ec2a-44dc-bf0d-2fc03980cdba="">…</div>
+           - unexpected value "null"
+
+
+       at sheet-helpers.mjs:77
+
+      75 | export async function expectFocusAt(grid, address) {
+      76 |     const { row, column } = at(address);
+    > 77 |     await expect(grid).toHaveAttribute('aria-activedescendant', new RegExp(`-r${row}c${column}$`));
+         |                        ^
+      78 |     await expect(nameBox(grid)).toHaveValue(address);
+      79 | }
+      80 |
+        at expectFocusAt (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet-helpers.mjs:77:24)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet.spec.mjs:63:15
+
+    Error Context: test-results\sheet-SH-18-DC-7-Ctrl-arro-9e434-l-Shift-arrow-extends-to-it-msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-SH-18-DC-7-Ctrl-arro-9e434-l-Shift-arrow-extends-to-it-msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-SH-18-DC-7-Ctrl-arro-9e434-l-Shift-arrow-extends-to-it-msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  21) [msedge] › sheet.spec.mjs:81:1 › SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, and nothing sorts 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 28000000
+    Received:   22369617.791656494
+
+      94 |         expect(Math.abs(box.width - want.width)).toBeLessThanOrEqual(1);
+      95 |         expect(Math.abs(box.y - want.y)).toBeLessThanOrEqual(1);
+    > 96 |         expect(box.height).toBeGreaterThan(1_000_000 * 28);
+         |                            ^
+      97 |     };
+      98 |     await coversColumns('C1', 'C1');
+      99 |     // Shift+click extends from the Anchor's column.
+        at coversColumns (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet.spec.mjs:96:28)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet.spec.mjs:98:5
+
+    Error Context: test-results\sheet-SH-18-DC-2-DC-3-a-co-95869-er-select-and-nothing-sorts-msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-SH-18-DC-2-DC-3-a-co-95869-er-select-and-nothing-sorts-msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-SH-18-DC-2-DC-3-a-co-95869-er-select-and-nothing-sorts-msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  22) [msedge] › sheet.spec.mjs:220:1 › SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commits and cancels once 
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+    Expected: "*"
+    Received: "=B3+1*"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveValue" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('input.ex-formula-bar-text, .ex-formula-bar-text input')
+        8 × locator resolved to <input tabindex="-1" aria-label="Formula Bar" aria-autocomplete="list" class="ex-editor ex-formula-bar-text" _bl_9a57c1c8-50b5-4834-954a-ae4f0ead2204=""/>
+          - unexpected value "=B3+1"
+        6 × locator resolved to <input tabindex="-1" aria-label="Formula Bar" aria-autocomplete="list" class="ex-editor ex-formula-bar-text" _bl_9a57c1c8-50b5-4834-954a-ae4f0ead2204=""/>
+          - unexpected value "=B3+1*"
+
+
+       at sheet-helpers.mjs:115
+
+      113 |     for (let i = 1; i <= text.length; i++) {
+      114 |         await page.keyboard.type(text[i - 1]);
+    > 115 |         await expect(field).toHaveValue(start.slice(0, caretAt) + text.slice(0, i) + start.slice(caretAt));
+          |                             ^
+      116 |     }
+      117 | }
+      118 |
+        at typeSteadily (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet-helpers.mjs:115:29)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet.spec.mjs:254:5
+
+    Error Context: test-results\sheet-SH-18-DC-22-the-Form-5d0be-ch-commits-and-cancels-once-msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-SH-18-DC-22-the-Form-5d0be-ch-commits-and-cancels-once-msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-SH-18-DC-22-the-Form-5d0be-ch-commits-and-cancels-once-msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  23) [msedge] › sheet.spec.mjs:308:1 › SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('.ex-grid:has(> .ex-formula-bar)').first()
+    Expected pattern: /-r1048575c16383$/
+    Received string:  ""
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first()
+        2 × locator resolved to <div dir="ltr" role="grid" tabindex="0" class="ex-grid" aria-colcount="16384" aria-rowcount="1048576" aria-multiselectable="true" aria-activedescendant="ex492-r0c0" _bl_3c7175c3-b19b-4561-8ca9-5f0b2167364f="">…</div>
+          - unexpected value "ex492-r0c0"
+        12 × locator resolved to <div dir="ltr" role="grid" tabindex="0" class="ex-grid" aria-colcount="16384" aria-rowcount="1048576" aria-multiselectable="true" _bl_3c7175c3-b19b-4561-8ca9-5f0b2167364f="">…</div>
+           - unexpected value "null"
+
+
+       at sheet-helpers.mjs:77
+
+      75 | export async function expectFocusAt(grid, address) {
+      76 |     const { row, column } = at(address);
+    > 77 |     await expect(grid).toHaveAttribute('aria-activedescendant', new RegExp(`-r${row}c${column}$`));
+         |                        ^
+      78 |     await expect(nameBox(grid)).toHaveValue(address);
+      79 | }
+      80 |
+        at expectFocusAt (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet-helpers.mjs:77:24)
+        at goTo (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet-helpers.mjs:90:11)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\sheet.spec.mjs:313:5
+
+    Error Context: test-results\sheet-SH-2-the-Focus-reach-ea8b7-es-not-grow-with-the-extent-msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-SH-2-the-Focus-reach-ea8b7-es-not-grow-with-the-extent-msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-SH-2-the-Focus-reach-ea8b7-es-not-grow-with-the-extent-msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  24) [msedge] › virtualisation.spec.mjs:39:1 › the far corner is reachable and painted at 10⁶ rows (BIG-1) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid [id$=\'-r999999c99\']')
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r999999c99\']')
+
+
+      44 |
+      45 |     // The last row lands and paints real cells; the pinned columns are present.
+    > 46 |     await expect(cell(page, ROWS - 1, 99)).toBeVisible({ timeout: 15_000 });
+         |                                            ^
+      47 |     await expect(grid.locator('.ex-cell.ex-pinned').first()).toBeVisible();
+      48 |
+      49 |     await page.keyboard.press('ControlOrMeta+Home');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\virtualisation.spec.mjs:46:44
+
+    Error Context: test-results\virtualisation-the-far-cor-ca327--painted-at-10⁶-rows-BIG-1--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\virtualisation-the-far-cor-ca327--painted-at-10⁶-rows-BIG-1--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\virtualisation-the-far-cor-ca327--painted-at-10⁶-rows-BIG-1--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  25) [msedge] › virtualisation.spec.mjs:66:1 › the first and the last row paint their own data, there and back again (BIG-5) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('.ex-grid [id$=\'-r999999c0\']')
+    Expected: "K-999999"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r999999c0\']')
+
+
+      22 | /** What /wide's data says a row holds (DemoData.WideColumns), checked against what is painted. */
+      23 | async function expectRowPainted(page, row) {
+    > 24 |     await expect(cell(page, row, 0)).toHaveText(`K-${String(row).padStart(6, '0')}`, { timeout: 15_000 });
+         |                                      ^
+      25 |     await expect(cell(page, row, 1)).toHaveText(BOOKS[row % BOOKS.length]);
+      26 |     // M01, the first scrollable column: ((row·7919 + 2·104729) mod 1,999,999) / 100.
+      27 |     const expected = ((row * 7919 + 2 * 104729) % 1_999_999) / 100;
+        at expectRowPainted (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\virtualisation.spec.mjs:24:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-27-2\tests\ExGrid.Browser\virtualisation.spec.mjs:73:11
+
+    Error Context: test-results\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  25 failed
+    [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (builtin Chrome) 
+    [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+    [chrome] › memory.spec.mjs:110:1 › disposal takes the module's listeners off the root, and the count comes back (MEM-4) 
+    [chrome] › mud-app.spec.mjs:430:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) 
+    [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars 
+    [chrome] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout 
+    [chrome] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again 
+    [chrome] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling 
+    [chrome] › sheet.spec.mjs:56:1 › SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow extends to it 
+    [chrome] › sheet.spec.mjs:81:1 › SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, and nothing sorts 
+    [chrome] › sheet.spec.mjs:308:1 › SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent 
+    [chrome] › virtualisation.spec.mjs:39:1 › the far corner is reachable and painted at 10⁶ rows (BIG-1) 
+    [chrome] › virtualisation.spec.mjs:66:1 › the first and the last row paint their own data, there and back again (BIG-5) 
+    [msedge] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (builtin Chrome) 
+    [msedge] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+    [msedge] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars 
+    [msedge] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout 
+    [msedge] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again 
+    [msedge] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling 
+    [msedge] › sheet.spec.mjs:56:1 › SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow extends to it 
+    [msedge] › sheet.spec.mjs:81:1 › SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, and nothing sorts 
+    [msedge] › sheet.spec.mjs:220:1 › SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commits and cancels once 
+    [msedge] › sheet.spec.mjs:308:1 › SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent 
+    [msedge] › virtualisation.spec.mjs:39:1 › the far corner is reachable and painted at 10⁶ rows (BIG-1) 
+    [msedge] › virtualisation.spec.mjs:66:1 › the first and the last row paint their own data, there and back again (BIG-5) 
+  26 skipped
+  545 passed (16.4m)
+end 2026-09-27 23:21:54 BST
