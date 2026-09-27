@@ -367,3 +367,14 @@ handlers ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)'s economy).
   ranges, but the exact ordering was not verified. Check against Excel during implementation.
 - **Excel's detail where Enter after a run of Tabs returns to the starting column is not
   adopted.** The implementation cost outweighs the benefit. Add it if it turns out to be wanted.
+
+## Added later: what a Consumer may declare instead *(2026-09-27)*
+
+[ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md) lets a Consumer take Excel's behaviour in
+two places where this ADR chose otherwise, and nothing changes for a Consumer who does not ask:
+**a header click that selects the column** (with Row Headings beside the rows), and **an edge
+answer for Ctrl+arrow**, so it stops where the data ends rather than at the grid's edge.
+[ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md) adds **Point
+mode**, in which the arrow keys point at cells for a Formula instead of committing. It applies
+only while the Consumer's predicate says the caret is at a place where a Reference can go.
+Everything above stands for a display grid. ExSheet is the Consumer that makes these declarations.

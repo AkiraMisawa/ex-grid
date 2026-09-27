@@ -1,0 +1,113 @@
+# What ExSheet asks of ExGrid's core — five declarations, each opt-in
+
+*(Decided with the user, 2026-09-27, in the design grilling that started ExSheet —
+[ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md). Formula
+entry asks for more, recorded separately in
+[ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md).)*
+
+ExSheet draws a Sheet by being ExGrid's Consumer, and most of Excel's behaviour comes with that
+for free. Five things do not. ExGrid made the opposite choice in each, and made it for a display
+grid on purpose. **Each one enters the core as a declaration a Consumer makes.** A Consumer who
+does not make it sees the grid exactly as before, so no existing criterion changes. Each change
+has to be right for any Consumer that makes the declaration, ExSheet or not.
+
+## 1. A header click that selects, and Headings
+
+[ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md) gave the header click to sorting
+("the data-grid convention is adopted; Excel's is not"), and broke the tie by what happens first
+on a data screen. On a Sheet, ExGrid's sort is not used at all (ADR-0046), and Excel's click is
+the only meaning available.
+
+- **A Consumer can declare that a header click selects the column.** A plain click selects the
+  whole column, and Shift+click extends from the Anchor's column, as the existing Shift+click
+  does. Nothing sorts.
+- **Row Headings: a band beside the rows, outside the column index space.** It is painted per
+  row, with a label the Consumer supplies (the row number). A click selects the whole row, and
+  Shift+click extends. The corner where the two Headings meet selects all.
+  **It is not a column.** A column would sit inside Selection, copy, Ctrl+A and the Enter/Tab
+  cycle, so every one of those would have to learn to skip it. The header band already stands
+  outside the row index space in the same way. The band is pinned, and its width is geometry
+  resolved in C# ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)).
+- **Either Heading can be hidden.** Hiding the column header takes the header band away. That is
+  also useful to an ExGrid Consumer drawing a headerless list, which today has no way to say so.
+  Whole columns stay reachable with Ctrl+Space.
+
+## 2. Ctrl+arrow asks where the data ends
+
+In ExGrid, Ctrl+arrow goes to the edge of the grid. The grid does not hold the data, so it cannot
+know where a block of values ends. In Excel, Ctrl+arrow stops at the edge of the current block of
+non-blank cells, and Excel users use it constantly.
+
+- **A Consumer can supply an edge answer**: given a cell and a direction, the cell where Ctrl+arrow
+  stops. ExGrid asks it on Ctrl+arrow and on Ctrl+Shift+arrow, and moves the Focus or extends the
+  range to the answer. It is a synchronous question to in-process C#, so on a Server circuit it
+  costs no round trip; the answer lives on the same side as the key handling.
+- **Without it, nothing changes**: the edge of the grid, as ADR-0012 has it.
+
+## 3. A paste may spill, and its range becomes the Selection
+
+[ADR-0014](./0014-paste-shape-rules-and-selection-count.md) refuses "range → one cell". That paste
+writes to rows nobody selected, can spill outside the Window, and would make the displayed count
+disagree with the cells written. On a Sheet it is the most common paste there is.
+
+- **A Consumer can declare that a paste may spill.** A source of m×n pasted onto a single cell
+  writes the m×n block with that cell at its top-left, as Excel does.
+- **After a spilled paste, the pasted block is the Selection**, with the Anchor at its top-left.
+  Excel does the same. It is also what answers ADR-0014's third objection: the count on display
+  is the count written.
+- **A spill past the grid's extent is refused by name.** On a Sheet that extent is Excel's, so the
+  refusal only comes at the Sheet's own edge. Every other shape rule of ADR-0014 stands, and
+  [ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md)'s `Editable` gate is
+  checked against the spilled block, before anything is written.
+- **Why the declaration is right for ExSheet:** ADR-0014's other two objections rest on the grid not
+  holding the data. On a Sheet, the Consumer holds every cell, so nothing lands outside what it
+  holds. The spill becomes the Selection, so it is on display. And it is one step on the undo
+  stack ([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
+  A display-grid Consumer does not declare it, and ADR-0014 stands for it unchanged.
+
+## 4. The Consumer can place the Selection and the Focus
+
+The Selection and the Focus are the grid's, and today nothing outside the grid can move them. The
+Name Box (ADR-0051) needs to: a user types `D200` and the Focus goes there.
+
+- **A Consumer can ask the grid to select a range and put the Focus in it.** The grid then does
+  what it does after a click. It scrolls the Focus into view and announces the new extent
+  ([ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)).
+- **The Selection stays the grid's.** The Consumer asks, and the grid places. A Held Selection is
+  still reconciled against the Row Sequence Version
+  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+  A request made under an older version is dropped, because it names positions that no longer
+  mean what they did.
+
+## 5. The fill handle: the gesture is the core's, the meaning is the Consumer's
+
+The fill handle was reserved with nothing settled. [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)
+reserved its painting, and the Definition of Done's §21 reserved "neither the gesture nor the fill
+semantics". This settles it in the shape ADR-0007 gave editing: **the grid reports the intent, and
+the Consumer decides what it means.**
+
+- **The core paints the handle** at the bottom-right corner of the Selection's last range, in the
+  selection overlay, when the Consumer declares that fill is enabled. **The core owns the drag.** It
+  extends along one axis, like Excel, and paints the target outline.
+- **On release the grid raises a Fill Intent**: the source range, the target range, and the
+  direction. It writes nothing. `Editable` is checked on the target first (ADR-0035). The only
+  shape is one rectangle extended along one axis, and a disjoint Selection shows no handle, as in
+  Excel.
+- **The meaning is the Consumer's.** ExSheet fills as Excel fills. Every rule it implements matches
+  Excel's result; **a pattern it has not implemented is refused, not filled with copies.** Excel
+  would have continued a series there, and a column of copies is a plausible, wrong series. The
+  first rules are: copy, with relative References shifted; a linear series from two or more selected
+  numbers; a series of dates by day. `Item 1` → `Item 2` and the rest of Excel's patterns come
+  later, and each is refused until it arrives.
+- A plain ExGrid Consumer can take Fill Intents too, and resolve them into its Overlay.
+
+## Consequences
+
+- **ADR-0012, ADR-0014 and ADR-0008 each gain a note** saying their rule stands, and which
+  declaration here lets a Consumer take Excel's behaviour instead.
+- **§21's two rows are settled.** "The fill handle" is settled by item 5, and "whether ExSheet is a
+  sibling or a Consumer" by ADR-0046.
+- **Each declaration gets criteria in the Definition of Done**, in ExGrid's sections, because they
+  are ExGrid features that any Consumer can use.
+- **No new JavaScript.** The drag, the header click, the Headings and the edge answer all run on
+  events the grid already listens to ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).

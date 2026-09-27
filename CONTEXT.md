@@ -22,7 +22,7 @@ A grid whose main purpose is to reproduce Excel's **editing** behaviour, for gen
 than for one screen's data. It holds a **Sheet** — cells addressed `A1`, their **Entries**, and
 a formula engine that computes their **Values** — and it is drawn by ExGrid, as that grid's
 **Consumer**: ExSheet holds and computes, ExGrid paints and reports. It may have a fill handle,
-row/column insertion and deletion, and **Formulas**. **Being specified.**
+row/column insertion and deletion, and **Formulas**. **Being specified** ([ADR-0046](./docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: spreadsheet, worksheet, and **Sheet**, which names what ExSheet holds, not the product
 
 > **How far do formulas go?** What people call "a formula" splits three ways, and **two of them
@@ -38,7 +38,9 @@ _Avoid_: spreadsheet, worksheet, and **Sheet**, which names what ExSheet holds, 
 > data ([ADR-0001](./docs/adr/0001-consumer-pushes-the-window-grid-does-not-fetch.md)). And with
 > the real Excel sitting next to it, there is no reason to reimplement a worse formula engine
 > (copy round-trips with the raw value preserved,
-> [ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md)).
+> [ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md)). ExSheet answers that sentence
+> for itself — it lives inside the application, and its Formulas read the application's data
+> ([ADR-0046](./docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
 
 > The **only** grounds separating ExGrid from ExSheet are **data ownership** (reflecting
 > something external versus holding it) and **whether there is a formula engine**. Virtual
@@ -249,12 +251,30 @@ uncommitted text lives.
 _Avoid_: input, editing cell
 
 **Overwrite / Caret**:
-The two states of cell **editing** (three modes in total, with **Interactive**). **Overwrite** is
+The two states of cell **editing** (four modes in total, with **Interactive** and **Point**). **Overwrite** is
 entered by typing straight onto a selected cell: the original value is replaced, and **the arrow
 keys commit and move to the neighbouring cell**. **Caret** is entered with F2 or a double click:
 the original value stays and **the arrow keys move the caret within the text**. The distinction
 is Excel's, and without it "type, arrow to the next cell" does not work as continuous entry.
 _Avoid_: input mode / edit mode (both read as "editing" and the distinction disappears)
+
+**Point**:
+The editing state in which the arrow keys and the mouse **point at cells for a Formula** instead
+of committing: an outline moves over the grid and its Reference is written at the caret. It holds
+only while the Consumer says the caret stands where a Reference can go; F2 switches between it and
+Caret. The Selection and the Focus do not move ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
+_Avoid_: reference mode, pick mode
+
+**Formula Bar**:
+A band inside the grid's root, above the header, showing the **Name Box** and the Focus cell's
+full text — the Entry on a Sheet, the full value on a display grid. It is the Cell Editor's second
+surface: one uncommitted text, shown in two places ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
+_Avoid_: edit bar, input bar, toolbar
+
+**Name Box**:
+The Formula Bar's field that says where the Focus is, in the Consumer's words (`D200` on a Sheet).
+Typing an address into it moves the Selection there ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
+_Avoid_: address bar, cell reference box
 
 **Interactive**:
 The state of being **inside** a cell. Entered with Space and left with Esc, on an Action Column
@@ -323,6 +343,13 @@ _Avoid_: read-only, locked, protected, disabled
 The notification the grid raises when a user commits an edit — (row identity, column, new value).
 The grid changes nothing itself. The screen changes when the Consumer returns new row instances.
 _Avoid_: change event, commit, update
+
+**Fill Intent**:
+The notification the grid raises when a user drags the fill handle — the source range, the target
+range, and the direction. The grid writes nothing; what a fill means is the Consumer's, and on a
+Sheet a pattern ExSheet does not implement is refused rather than filled with copies
+([ADR-0050](./docs/adr/0050-what-exsheet-asks-of-exgrids-core.md)).
+_Avoid_: autofill, drag-fill, fill-down (Ctrl+Enter's fill is a paste-shaped write, not this)
 
 **Edit Verdict**:
 The Consumer's judgement on one commit, asked by the grid at the moment of committing —
@@ -492,25 +519,28 @@ _Avoid_: custom column, render column
 
 **Sheet**:
 The grid of cells ExSheet holds, addressed by column letter and row number (`A1`) over Excel's
-extent. The product is **ExSheet**; a Sheet is what it holds.
+extent. The product is **ExSheet**; a Sheet is what it holds. Its rows and columns are places:
+inserting a row changes what the rows below hold, and moves none of them ([ADR-0046](./docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: worksheet, tab, spreadsheet
 
 **Entry**:
 What a user put into a cell — a constant (`42`, `Tokyo`, `TRUE`) or a **Formula**. It is what a
 **Sheet Document** records, and what the user sees again when they edit the cell. Distinct from
-the **Value** the cell shows.
+the **Value** the cell shows ([ADR-0048](./docs/adr/0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
 _Avoid_: input (that is the Cell Editor's element), content, raw value (that is a copy's
 unformatted value)
 
 **Value**:
 What a cell evaluates to: a number, text, a boolean, or an **Error Value**. A constant Entry is
 its own Value; a Formula's Value is its result. A date is a number shown with a date format, as
-in Excel. It is never recorded — it is computed again wherever a Sheet Document is opened.
+in Excel. It is never recorded — it is computed again wherever a Sheet Document is opened
+([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: result, cached value, computed value
 
 **Formula**:
 An Entry beginning with `=`, written in Excel's syntax, that computes a Value from other cells'
-Values. A function ExSheet does not know yields `#NAME?`; it is never guessed at.
+Values. A function ExSheet does not know yields `#NAME?`; it is never guessed at
+([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: expression, calculation, computed column (that is ExGrid's — a Column whose accessor
 computes)
 
@@ -518,7 +548,7 @@ computes)
 The part of a Formula that names cells — `A1`, `$A$1`, `A1:B2`, and with the Sheet named,
 `Sheet2!A1`. A relative Reference shifts when its Formula is copied or filled. Inserting or
 deleting rows and columns rewrites every Reference so that it keeps naming the same cells; one
-whose cells are deleted becomes `#REF!`.
+whose cells are deleted becomes `#REF!` ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: link, pointer, address (an address is where a cell is; a Reference is how a Formula
 names it)
 
@@ -526,7 +556,7 @@ names it)
 A Value that is an error — `#DIV/0!`, `#NAME?`, `#REF!`, `#VALUE!`, `#N/A` and the rest of
 Excel's set, plus `#CIRC!` for a Formula that depends on itself, where Excel would show 0 —
 produced by a Formula and carried into every Formula that uses it. It is data, like a number. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
-never computed.
+never computed ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: error (that is a Cell State), exception
 
 **Linked Table**:
@@ -534,20 +564,23 @@ A named table of rows the Consumer supplies to ExSheet, which Formulas read with
 structured references — `SUM(Positions[PV])`. Its rows are reached by key through functions
 (`XLOOKUP`), never by position: another grid's order is its user's to change, and a positional
 Reference into it would change value without anyone editing it. ExSheet never reads another
-component instance; what a Linked Table holds comes from the Consumer. Until it has arrived, a
-Formula that reads it shows that it is waiting — never 0, never an older value.
+component instance; what a Linked Table holds comes from the Consumer, pushed as one whole
+snapshot. Until it has arrived, a Formula that reads it shows `#GETTING_DATA` — never 0, never an
+older value — and `IFERROR` does not catch the wait ([ADR-0049](./docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md)).
 _Avoid_: external reference (Excel's name for a reference into another workbook), data
 connection, link
 
 **Headings**:
 The column letters and row numbers framing a Sheet — Column Headings and Row Headings. Clicking
 one selects its whole column or row, as in Excel. The Consumer may hide either; a Sheet shown
-without them still addresses its cells `A1`.
+without them still addresses its cells `A1`. The Row Headings are a band beside the rows, never a
+column ([ADR-0050](./docs/adr/0050-what-exsheet-asks-of-exgrids-core.md)).
 _Avoid_: header (that is ExGrid's column header, whose click sorts), labels, row numbers
 
 **Sheet Document**:
 The serialisable form of a Sheet that ExSheet hands to its Consumer and takes back. It holds
-Entries, never Values. The Consumer persists it; ExSheet does not.
+Entries, never Values, with constants already parsed — so opening it under another culture
+cannot change a number. The Consumer persists it; ExSheet does not ([ADR-0048](./docs/adr/0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
 _Avoid_: file, workbook, snapshot, save data
 
 ## Flagged ambiguities

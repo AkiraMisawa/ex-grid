@@ -153,4 +153,6 @@ there are no Overrides to consult for Cell State "modified", and no reset-by-del
 the pre-edit instance is gone from the base. The single library-provided **Overlay**
 application this ADR promises — and the bundled undo stack with it — remains to be built, and
 its trigger is the first scenario-backed Consumer, where the base is fetched and the diff is
-what gets persisted. `ReplaceRow` neither replaces that obligation nor prejudges its shape.
+what gets persisted. *(ExSheet's undo stack is not that stack either:
+[ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md) gives
+ExSheet one of its own, over Entries, and leaves this one reserved.)* `ReplaceRow` neither replaces that obligation nor prejudges its shape.

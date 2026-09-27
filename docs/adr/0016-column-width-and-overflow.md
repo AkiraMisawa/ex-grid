@@ -359,7 +359,9 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   deal with the real value.
 - **The focused-cell value display may live in Chrome.** Producing the value is the core's;
   painting it is Chrome's (the rule in
-  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)).
+  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)). *(It arrived as the Formula
+  Bar, [ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md): a band
+  inside the root that a Consumer switches on, and the Cell Editor's second surface.)*
 - **`MinWidth` is also the lower bound for dragging.** A column cannot be crushed until it
   disappears. To hide one, use the column menu's "hide this column", which records the intent
   clearly and goes into the saved view.

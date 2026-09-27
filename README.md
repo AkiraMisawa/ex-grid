@@ -10,7 +10,8 @@ Two products share this repository and ship as separate packages
 ([ADR-0019](docs/adr/0019-one-repository-many-packages.md)):
 
 - **ExGrid** — display-oriented. Fully specified; this is what gets built first.
-- **ExSheet** — edit-oriented. Later.
+- **ExSheet** — edit-oriented. Being specified: decided in ADR-0046 to ADR-0051, specified in
+  `docs/specs/exsheet/`.
 
 **Current status: the specification is settled; implementation is underway** — the
 pure-logic core and the component layer exist, virtualised on both axes, with pinned

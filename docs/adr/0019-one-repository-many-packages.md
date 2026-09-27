@@ -13,7 +13,8 @@ ex-grid/                      ← one repository
 │   ├── ExGrid/               → NuGet: ExGrid            (no dependencies)
 │   ├── ExGrid.MudBlazor/     → NuGet: ExGrid.MudBlazor  (a Chrome implementation)
 │   ├── ExGrid.Fluxor/        → NuGet: ExGrid.Fluxor     (push interface ↔ store)
-│   └── ExSheet/              → NuGet: ExSheet           (future)
+│   ├── ExSheet/              → NuGet: ExSheet           (the component; ADR-0046)
+│   └── ExSheet.Engine/       → NuGet: ExSheet.Engine    (the formula engine, no UI; ADR-0047)
 ├── tests/
 │   ├── ExGrid.Tests/         ← pure logic (xUnit)
 │   ├── ExGrid.Components/    ← component (bUnit)
@@ -69,7 +70,13 @@ repository would mean **splitting or duplicating the glossary and the ADRs**, an
 release cadence, and nothing is forcing that. What would come first instead is the cost of
 publishing a package on every core change and making ExSheet follow it.
 
-## Is ExSheet a sibling of ExGrid, or a Consumer of it? — open
+## Is ExSheet a sibling of ExGrid, or a Consumer of it? — settled: a Consumer
+
+*(Settled 2026-09-27 by [ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md):
+**ExSheet is ExGrid's Consumer.** The friction below is answered there as well: rows and columns
+of a Sheet are places, so an insertion changes values and not order, and the Row Sequence Version
+does not move. What ExSheet does need from the core is five opt-in declarations,
+[ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md). The section is kept as it was written.)*
 
 [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) established that the grid only
 reports an Edit Intent, and the Consumer owns the committed state and pushes back a Window with

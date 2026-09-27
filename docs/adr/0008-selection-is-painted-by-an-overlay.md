@@ -116,7 +116,9 @@ The gestures ADR-0012 names are wired; two things around them are deliberately n
 - **The fill handle is not painted.** This ADR names it as one of the three things an overlay
   draws, but what it does belongs with edits
   ([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)) and neither the gesture nor
-  the fill semantics are settled.
+  the fill semantics are settled. *(Settled 2026-09-27 by
+  [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md): the core paints the handle and owns
+  the drag, and raises a Fill Intent; the Consumer decides what a fill means.)*
 - **Right-click and double-click leave the selection alone.** A secondary click is ignored rather
   than guessed at: in Excel it moves the selection unless the cell is already inside it, and a
   context menu is a Chrome seam (ADR-0010) that has not been specified. Double-click starts editing

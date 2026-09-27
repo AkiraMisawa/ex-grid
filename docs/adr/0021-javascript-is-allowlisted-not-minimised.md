@@ -239,3 +239,8 @@ Two grounds, and only two.
 - **If the browser target ever widens, this list grows.** Popovers would need positioning code,
   and the clipboard path would need reworking (ADR-0017). That cost belongs in the decision to
   widen, not in this ADR.
+
+*(Added 2026-09-27 by [ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md):
+the capture-phase `keydown` message now also carries the value and caret of the input it is
+capturing keys for. This is the same listener and the same allowlisted use. Reading an input's own
+value is not a measurement: no layout is read.)*

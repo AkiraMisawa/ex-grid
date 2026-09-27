@@ -88,6 +88,11 @@ so one Ctrl+Z, ADR-0007).
   It is the first that is a declaration ("may not") rather than a shape ("cannot"), so it is
   checked *before* the shape rules, whose "reselect a target of the same shape" advice would
   otherwise send the user after something that can never succeed.
+- *(Added later, by [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md):)* **A Consumer
+  that holds every cell may declare that a paste may spill.** "Range → one cell" then writes the
+  block from that cell, and the pasted block becomes the Selection, so the count on display is the
+  count written. This is ExSheet's case; a display grid keeps this ADR's refusal unchanged, and so
+  does every other shape rule.
 - *(Added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md):)* **The count display gains a line for Row Marks**, and it
   says aloud how many lie outside the current filter — `120 marked (70 outside the current
   filter)`. The marks are counted by the Consumer, which holds them; displaying is Chrome's, as
