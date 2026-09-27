@@ -16,8 +16,8 @@ internal static class EntryText
             case ValueKind.Number:
                 var number = constant.Number;
                 if (format.IsDate && number >= 0 && number < DateSerial.Maximum + 1) return DateTimeText(number, culture);
-                if (format.IsPercent) return NumberText.General(number * 100, culture) + "%";
-                return NumberText.General(number, culture);
+                if (format.IsPercent) return NumberText.Written(number * 100, culture) + "%";
+                return NumberText.Written(number, culture);
             case ValueKind.Boolean:
             case ValueKind.Error:
                 return constant.ToString();

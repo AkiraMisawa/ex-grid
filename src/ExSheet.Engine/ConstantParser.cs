@@ -146,6 +146,23 @@ internal static partial class ConstantParser
         return double.IsFinite(number);
     }
 
+    /// <summary>
+    /// A number written in a Formula (invariant digits, an optional point and exponent), read as
+    /// Excel reads it: digits past the fifteenth significant one become zeros, so
+    /// <c>=123456789012345678</c> holds 123456789012345000, as Excel was observed to.
+    /// </summary>
+    internal static double ParseFormulaNumber(string invariant)
+    {
+        var chars = invariant.ToCharArray();
+        var significant = 0;
+        for (var k = 0; k < chars.Length && chars[k] is not ('e' or 'E'); k++)
+        {
+            if (!char.IsAsciiDigit(chars[k]) || (significant == 0 && chars[k] == '0')) continue;
+            if (++significant > 15) chars[k] = '0';
+        }
+        return double.Parse(chars, NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent, CultureInfo.InvariantCulture);
+    }
+
     /// <summary>The culture's group separator at <paramref name="at"/>; a space-like separator also accepts a plain space.</summary>
     private static int GroupSeparatorAt(string text, int at, string separator)
     {

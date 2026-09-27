@@ -21,6 +21,46 @@ internal static class NumberText
     /// </summary>
     public static string General(double number, CultureInfo culture) => number.ToString("G15", culture);
 
+    /// <summary>The smallest power of ten, as an exponent, that <see cref="Written"/> writes without scientific notation.</summary>
+    private const int WrittenSmallest = -9;
+
+    /// <summary>The largest power of ten, as an exponent, that <see cref="Written"/> writes without scientific notation.</summary>
+    private const int WrittenLargest = 19;
+
+    /// <summary>
+    /// A number as Excel writes it into text — <c>=A1&amp;""</c>, and the Cell Editor's text of a
+    /// typed number: at most 15 significant digits (ADR-0047) and the culture's decimal separator,
+    /// written out in full across a wide range of magnitudes where General would go scientific.
+    /// Excel was observed to write <c>1E15</c> as <c>1000000000000000</c>, <c>1E-5</c> as
+    /// <c>0.00001</c>, and 123456789012345678 (held as 123456789012345000) in full. Scientific
+    /// notation, in General's spelling (<c>1E+20</c>), is taken from 1E+20 up and below 1E-9; both
+    /// thresholds are <c>uncertain</c> in the case corpus until Excel is asked.
+    /// </summary>
+    public static string Written(double number, CultureInfo culture)
+    {
+        if (number == 0) return "0";
+        var e14 = Math.Abs(number).ToString("E14", CultureInfo.InvariantCulture);
+        var digits = (e14[0] + e14[2..16]).TrimEnd('0');
+        var exponent = int.Parse(e14.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+        if (exponent < WrittenSmallest || exponent > WrittenLargest) return General(number, culture);
+
+        var text = new StringBuilder();
+        if (number < 0) text.Append('-');
+        if (exponent < 0)
+        {
+            text.Append('0').Append(culture.NumberFormat.NumberDecimalSeparator).Append('0', -exponent - 1).Append(digits);
+        }
+        else if (digits.Length <= exponent + 1)
+        {
+            text.Append(digits).Append('0', exponent + 1 - digits.Length);
+        }
+        else
+        {
+            text.Append(digits, 0, exponent + 1).Append(culture.NumberFormat.NumberDecimalSeparator).Append(digits, exponent + 1, digits.Length - exponent - 1);
+        }
+        return text.ToString();
+    }
+
     /// <summary>
     /// Excel's General form fitted to a column <paramref name="characters"/> wide, each character
     /// charged one digit width (ADR-0047): decimals are rounded to what fits, and the form is

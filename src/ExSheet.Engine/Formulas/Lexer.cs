@@ -142,7 +142,7 @@ internal static partial class Lexer
             {
                 var number = NumberPattern().Match(formula, i);
                 if (!number.Success) throw new FormulaSyntaxException(formula, i, "this is not a number.");
-                var value = double.Parse(number.Value, NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent, CultureInfo.InvariantCulture);
+                var value = ConstantParser.ParseFormulaNumber(number.Value);
                 if (!double.IsFinite(value)) throw new FormulaSyntaxException(formula, i, "the number is too large.");
                 tokens.Add(new Token(TokenKind.Number, i, number.Value, afterSpace) { Number = value, Length = number.Length });
                 i += number.Length;
