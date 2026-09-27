@@ -50,6 +50,7 @@ public sealed partial class Sheet
     {
         _cellDependents.Clear();
         _areaPrecedents.Clear();
+        _tableReaders.Clear();
         foreach (var cell in _cells.Values)
         {
             if (cell.Entry?.Parsed is { } parsed) Register(cell.Address, parsed);
