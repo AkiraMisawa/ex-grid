@@ -280,7 +280,7 @@
                                     }
                                     else
                                     {
-                                        <input class="ex-editor" style="@pinnedBox" value="@_editText" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="ex-editor" style="@pinnedBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -293,7 +293,7 @@
                             }
                             else
                             {
-                                <input class="ex-editor" style="@editorBox" value="@_editText" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @oninput="OnEditorInput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="ex-editor" style="@editorBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -373,8 +373,8 @@
                 }
                 else
                 {
-                    <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="@WordFor(GridLabelIds.NameBox)"
-                           @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync" @oninput="_onNameBoxInput ??= OnNameBoxInput"
+                    <input class="ex-name-box" style="@NameBoxStyle()" @bind:get="_nameBoxText ?? NameBoxText()" @bind:set="OnNameBoxInput" @bind:event="oninput" tabindex="-1" aria-label="@WordFor(GridLabelIds.NameBox)"
+                           @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync"
                            @onblur="_onNameBoxBlur ??= OnNameBoxBlur" />
                 }
             </form>
@@ -384,8 +384,8 @@
             }
             else
             {
-                <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
-                       @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync" @oninput="_onFormulaBarInput ??= OnFormulaBarInput"
+                <input class="ex-editor ex-formula-bar-text" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
+                       @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync"
                        @ref="_formulaBarElement" />
             }
         </div>
@@ -1591,9 +1591,7 @@
     // every scroll frame (PF-3).
     private string? _nameBoxText;
     private Func<Task>? _onFormulaBarFocus;
-    private Action<ChangeEventArgs>? _onFormulaBarInput;
     private Func<Task>? _onNameBoxFocus;
-    private Action<ChangeEventArgs>? _onNameBoxInput;
     private Action? _onNameBoxBlur;
     private Func<Task>? _onNameBoxSubmit;
     // The same handlers as a Chrome's control calls them (ADR-0051/0030): its events are its
@@ -5976,10 +5974,20 @@
             await ReclaimFocusAsync();
     }
 
-    private void OnEditorInput(ChangeEventArgs e)
+    /// <summary>
+    /// Typing in the Cell Editor. The editor surfaces, the Formula Bar's field and the Name Box
+    /// are bound with <c>@bind:get</c>/<c>@bind:set</c> on <c>oninput</c>, not <c>value</c> and
+    /// <c>@oninput</c>: only a bound handler tells the renderer that the value the browser
+    /// reports is what the field already shows. Without that, on a Server circuit each render
+    /// answering an input a round trip old wrote that input's text back over the characters
+    /// typed since, moved the caret to the end and emptied the field's undo history (SRV-5,
+    /// ED-22, DC-28, ADR-0007). A render now writes a field only when the core changed its
+    /// text.
+    /// </summary>
+    private void OnEditorInput(string? text)
     {
         _editSurface = EditSurface.Cell;
-        TextTyped(e.Value?.ToString() ?? "");
+        TextTyped(text ?? "");
     }
 
     /// <summary>
@@ -6033,7 +6041,7 @@
 
     /// <summary>Typing in the Formula Bar (ADR-0051): the one uncommitted text, so the
     /// Cell Editor shows it on the render this input causes.</summary>
-    private void OnFormulaBarInput(ChangeEventArgs e)
+    private void OnFormulaBarInput(string? text)
     {
         if (_editMode == EditMode.None)
         {
@@ -6041,7 +6049,7 @@
             return;
         }
         _editSurface = EditSurface.Bar;
-        TextTyped(e.Value?.ToString() ?? "");
+        TextTyped(text ?? "");
     }
 
     /// <summary>Whether the Formula Bar takes typing: while an edit is open, or when the
@@ -6070,7 +6078,7 @@
             RequestEditorFocus();
     }
 
-    private void OnNameBoxInput(ChangeEventArgs e) => _nameBoxText = e.Value?.ToString() ?? "";
+    private void OnNameBoxInput(string? text) => _nameBoxText = text ?? "";
 
     private void OnNameBoxBlur() => _nameBoxText = null;
 
@@ -6119,7 +6127,7 @@
             FormulaBarText(),
             !FormulaBarEditable,
             _chromeFormulaBarFocused ??= () => FromChromeAsync(OnFormulaBarFocusAsync),
-            _chromeFormulaBarTextChanged ??= text => FromChrome(() => OnFormulaBarInput(new ChangeEventArgs { Value = text })),
+            _chromeFormulaBarTextChanged ??= text => FromChrome(() => OnFormulaBarInput(text)),
             _formulaBarFocusRequest);
 
     /// <summary>A handler reached from a Chrome's control rather than from an event on the

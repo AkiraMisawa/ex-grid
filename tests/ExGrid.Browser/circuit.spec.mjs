@@ -444,3 +444,61 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
         await expectEachValueInItsCell(page);
     });
 });
+
+// A field the core renders never has its own typing written back into it (SRV-5, ED-22). On a
+// circuit each input event arrives a round trip after it was typed, and a render answering it
+// that set the field's value put back the text as it stood then, over what was typed since:
+// `Xabcdefghij` typed at 10 keys a second at 150 ms arrived as `Xabdfhj`, `nonsense` in the Name
+// Box as `nnse` (found by ticket 18's suite, 2026-09-27). Each field now tells the renderer the
+// value it reports is what it already shows; a render writes it only when the core changes it.
+test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22)', () => {
+    /** Every write of the field's value from script, recorded: none is expected. */
+    async function recordWrites(page, selector) {
+        await page.evaluate((sel) => {
+            window.__valueWrites = [];
+            const field = document.querySelector(sel);
+            const own = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+            Object.defineProperty(field, 'value', {
+                get() { return own.get.call(this); },
+                set(v) { window.__valueWrites.push(v); own.set.call(this, v); },
+            });
+        }, selector);
+    }
+
+    test('the Cell Editor, at 10 keys a second', async ({ page }) => {
+        await openFeatures(page);
+        await clickCell(page, 0, 1);                  // Trader, editable
+        await page.keyboard.type('X');
+        const editor = grid(page).locator('input.ex-editor');
+        await expect(editor).toHaveValue('X');
+        await expect(editor).toBeFocused();
+        await recordWrites(page, '.ex-grid input.ex-editor');
+        await setRoundTrip(150);
+
+        await page.keyboard.type('abcdefghij', { delay: 100 });
+
+        await page.waitForTimeout(1000);              // every answer has landed
+        await expect(editor).toHaveValue('Xabcdefghij');
+        expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
+        await page.keyboard.press('Enter');
+        await expect(grid(page).locator("[id$='r0c1']")).toHaveText('Xabcdefghij');
+    });
+
+    test('the Name Box, at 10 keys a second', async ({ page }) => {
+        await page.goto('/sheet');
+        const sheet = grid(page);
+        await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
+        await expect(sheet).toHaveAttribute('tabindex', '0');
+        const nameBox = sheet.locator('input.ex-name-box');
+        await nameBox.click();
+        await nameBox.fill('');
+        await recordWrites(page, '.ex-grid input.ex-name-box');
+        await setRoundTrip(150);
+
+        await page.keyboard.type('nonsense', { delay: 100 });
+
+        await page.waitForTimeout(1000);
+        await expect(nameBox).toHaveValue('nonsense');
+        expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
+    });
+});
