@@ -86,3 +86,15 @@ so this is no difference at all.)*
 - **An invariant number pasted from Excel keeps every digit its double holds.** Unlike a typed
   number, it is not cut to 15 significant digits, because Excel-to-Excel pasting does not cut it.
   The case corpus confirms this.
+
+### What the observation settled *(decided with the user, 2026-09-27)*
+
+- **A copy to Excel carries formats.** ExSheet's HTML flavour gives each cell its Value and its
+  number format in Excel's own markup (`x:num` and `mso-number-format`). A date then arrives in
+  Excel as a date, not as a serial number in General. The value stays the unformatted Value, which
+  ADR-0016 requires.
+- **A pasted field that is a run of `#`** is Excel showing a value too wide for its column, with
+  the value itself missing. It is refused by name, and the refusal says the source column was too
+  narrow to show the value. It is not taken as the text `########`.
+- **Pasted text that cannot be read as a Formula is taken as text**, as Excel takes `=1+`. It is
+  not refused.

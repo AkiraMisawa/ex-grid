@@ -91,3 +91,8 @@ arrive.
   - One with other columns replaces the held declaration, because the table's shape is the
     Consumer's. The rows held so far are dropped, readers wait again with `#GETTING_DATA`, and a
     Formula naming a column that is gone reads `#REF!`. Nothing turns into a plausible value.
+
+- **An unknown table or column is still accepted on entry** *(decided with the user, 2026-09-27)*.
+  Excel refuses such a Formula on entry. ExSheet shows `#NAME?` (no such table) or `#REF!` (no
+  such column) instead, because a Linked Table can be declared after the Sheet Document is opened.
+  Refusing on entry would make a saved document impossible to reopen before its tables arrive.

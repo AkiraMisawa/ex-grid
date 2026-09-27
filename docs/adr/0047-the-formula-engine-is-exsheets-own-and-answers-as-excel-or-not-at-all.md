@@ -159,3 +159,20 @@ nearly cancels to 0, and `=0.1+0.2=0.3` is TRUE. It leaves the same arithmetic a
 wrapped in a multiplication: `=1*(0.5-0.4-0.1)` is -2.78E-17. The argument for doubles still
 holds: Excel computes in doubles, and "Excel's answer" includes these adjustments, which the
 engine must now reproduce. The `decimal` alternative stays rejected.
+
+### What the observation settled *(decided with the user, 2026-09-27)*
+
+- **Every disagreement the oracle found in a declared function, a typed constant, a format or a
+  Formula's written form is fixed to Excel's answer.** The list is in
+  `verification/2026-09-27-windows-excel/results.md`.
+- **A typed Error Value becomes that Error Value**, as in Excel (`#N/A`, `#DIV/0!`, …). The
+  exceptions are `#GETTING_DATA` and `#CIRC!`, which are states of a computation and cannot be data
+  ([ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)); typed, they stay text.
+- **A pasted or typed Formula is read in the invariant syntax under every culture.** Under
+  `de-DE` Excel reads `=SUM(1.5,2)` as text, because it expects its local syntax. This is a
+  deliberate difference, because localised syntax is out of the first version.
+- **`XLOOKUP`'s `match_mode` 3 (regular expressions) is supported.** Excel's expressions are
+  PCRE2's; .NET's are close but not the same. So a pattern is accepted only when it uses constructs
+  whose meaning is the same in both. Any other pattern gives `#VALUE!`, as the admission rule
+  requires. Case sensitivity and the constructs in the accepted set are pinned by the case corpus
+  against Excel.
