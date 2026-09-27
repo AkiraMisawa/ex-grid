@@ -39,7 +39,9 @@ computes, ExGrid paints, selects, navigates and reports.
 
 What the user gets: typing constants and Formulas, the Formula shown when a cell is edited and in
 the Formula Bar, a Name Box that says where the Focus is and takes an address to go to, column and
-row selection from the Headings, and Ctrl+arrow stopping where a block of values ends.
+row selection from the Headings, and Ctrl+arrow stopping where a block of values ends. While a
+Formula is typed, function names are completed (Tab accepts), the argument hint shows the
+function's arguments, and the arrows and the mouse point at cells to write their References.
 
 ## Commands and the undo stack
 

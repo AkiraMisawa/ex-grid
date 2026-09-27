@@ -23,7 +23,7 @@
         RowHeadings="(ShowRowHeadings ? RowLabels : null)"
         DataEdge="_dataEdge"
         ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
-        CompleteEditorText="_complete" />
+        CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -45,6 +45,11 @@
     private const int InitialRows = 100;
 
     private static readonly Func<int, string> RowLabels = static row => (row + 1).ToString(CultureInfo.InvariantCulture);
+
+    // Point mode's two answers (ADR-0051) read only the text and the range they are handed, so
+    // one instance of each serves every ExSheet.
+    private static readonly Func<string, int, bool> PointAtCaret = SheetFormulaAids.PointAt;
+    private static readonly Func<SelectionRange, string> ReferenceTextOf = SheetFormulaAids.ReferenceText;
 
     private static readonly Func<CellPosition, string?> NameBoxLabelOf =
         static focus => new CellAddress(focus.Row, focus.Column).ToString();

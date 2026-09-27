@@ -1,4 +1,5 @@
 using ExGrid.Cells;
+using ExGrid.Selection;
 using ExSheet.Engine;
 using GridCandidate = ExGrid.Cells.CompletionCandidate;
 
@@ -8,7 +9,8 @@ namespace ExSheet;
 /// The answers ExSheet gives ExGrid's formula entry aids (ADR-0051): the grid reports the
 /// editor's text and caret and does not know what a Formula is; the engine's
 /// <see cref="FormulaEntry"/> does. This is only the translation between the two — the engine's
-/// span and replacement onto the grid's candidates, and its argument onto the grid's hint.
+/// span and replacement onto the grid's candidates, its argument onto the grid's hint, its
+/// insertion site onto the grid's yes or no, and a pointed range onto its Reference text.
 /// </summary>
 internal static class SheetFormulaAids
 {
@@ -54,4 +56,16 @@ internal static class SheetFormulaAids
         }
         return new EditorHint(signature);
     }
+
+    /// <summary>Point mode's predicate (ADR-0051): whether a Reference can be written at the caret.</summary>
+    internal static bool PointAt(string text, int caret) =>
+        caret >= 0 && caret <= text.Length && FormulaEntry.PointAt(text, caret) is not null;
+
+    /// <summary>The Reference Point mode writes for a pointed range: <c>A3</c>, or <c>B7:C9</c> from its top-left.</summary>
+    internal static string ReferenceText(SelectionRange range) =>
+        FormulaEntry.ReferenceText(RangeOf(range));
+
+    /// <summary>The Sheet's name for a range of the grid's positions: rows and columns are places (ADR-0046).</summary>
+    internal static CellRange RangeOf(SelectionRange range) =>
+        new(new CellAddress(range.TopRow, range.LeftColumn), new CellAddress(range.BottomRow, range.RightColumn));
 }
