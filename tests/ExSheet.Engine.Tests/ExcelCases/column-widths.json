@@ -1,6 +1,6 @@
 {
   "area": "column-widths",
-  "about": "Column widths set on columns, and how insertion and deletion carry them (ADR-0046, ADR-0047, SH-22). A width is in Excel's unit, characters of the default font; setColumnWidth sets the columns its range spans, as Range.ColumnWidth does, and a null width puts them back at the standard width (Range.UseStandardWidth). width is the check column's recorded width, null where none is recorded, which Excel reports as its standard width (8.43). Microsoft documents Range.ColumnWidth in characters, setting it on every column of a range, 8.43 as the default and 255 as the widest; Excel snaps a width to whole pixels, so the cases use whole numbers. Microsoft documents that an inserted column takes the formatting of the column to its left (Insert Options, Format Same As Left), but not whether its width is part of that, nor how deletion moves widths: those cases are uncertain until the oracle asks Excel. custom says whether the check column's width is one the user set (ADR-0046): a drag, a size to fit (sizeToFit, which the oracle does as AutoFit) or a command, as opposed to a width an entry widened the column to (automatic, which only an entry sets in Excel, so the oracle blocks those cases). Excel keeps the distinction as the customWidth attribute of a column in its files, which ECMA-376 documents as false when absent; the oracle reads it from a saved copy. Whether Range.ColumnWidth and AutoFit set it, and whether widening on entry leaves it unset, is not documented: those cases are uncertain.",
+  "about": "Column widths set on columns, and how insertion and deletion carry them (ADR-0046, ADR-0047, SH-22). A width is in Excel's unit, characters of the default font; setColumnWidth sets the columns its range spans, as Range.ColumnWidth does, and a null width puts them back at the standard width (Range.UseStandardWidth). width is the check column's recorded width, null where none is recorded, which Excel reports as its standard width (8.43). Microsoft documents Range.ColumnWidth in characters, setting it on every column of a range, 8.43 as the default and 255 as the widest; Excel snaps a width to whole pixels, so the cases use whole numbers. Microsoft documents that an inserted column takes the formatting of the column to its left (Insert Options, Format Same As Left), but not whether its width is part of that, nor how deletion moves widths: those cases are uncertain until the oracle asks Excel. custom says whether the check column's width is custom (ADR-0046): one the user set, a drag, a size to fit (sizeToFit, which the oracle does as AutoFit) or a command, and, as the second run observed for a typed number (CW-018), a width a typed entry widened the column to (ADR-0047, \"What the second observation settled\"). An automatic width (automatic) is what a document may already hold; nothing in Excel sets one but an entry, so the oracle blocks those cases. Excel keeps the distinction as the customWidth attribute of a column in its files, which ECMA-376 documents as false when absent; the oracle reads it from a saved copy. A case with widens or widthAtMost is typed: the oracle types it with real keys (ask by keys), and the engine harness widens the check column after each of the case's cells as the component does, recording the width custom in the engine's characters. widthAtMost bounds the check column's width after every entry, in characters, and asks whether a longer entry widens a column again.",
   "cases": [
     {
       "id": "CW-001",
@@ -187,11 +187,12 @@
     },
     {
       "id": "CW-018",
-      "source": "uncertain",
-      "description": "A number that widens its column leaves the width automatic, not custom (the engine leaves the widening to the component and records nothing here; Excel's flag is what is asked)",
+      "source": "observed",
+      "description": "A typed number that widens its column makes the width custom, as Excel's file marks it (verification/2026-09-27-windows-excel-2: widened to 10.18, customWidth set; ADR-0047, \"What the second observation settled\"). The engine leaves the widening to the component; the harness widens as the component does",
       "cells": {"B2": "1234567890"},
       "check": "B2",
-      "expect": {"widens": true, "custom": false}
+      "expect": {"widens": true, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel-2/results.md); ask by keys"
     },
     {
       "id": "CW-019",
@@ -217,7 +218,7 @@
     {
       "id": "CW-021",
       "source": "uncertain",
-      "description": "A width an entry widened the column to is recorded, and is automatic",
+      "description": "An automatic width, which a document may hold from before a typed entry's width was custom (ADR-0046), is recorded, and is automatic",
       "cells": {},
       "action": {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
       "check": "B1",
@@ -283,6 +284,33 @@
       ],
       "check": "B1",
       "expect": {"width": 11, "custom": false}
+    },
+    {
+      "id": "CW-027",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a typed date that widens its column makes the width custom, as a typed number does (CW-018 observed the flag for a number only)",
+      "cells": {"B2": "9/26/2026"},
+      "check": "B2",
+      "expect": {"widens": true, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
+    },
+    {
+      "id": "CW-028",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: after a typed number widened B (to 10.18 in CW-018's run), a longer typed number does not widen it again, since the width is custom. If Excel widens it (past 10.5), ADR-0047 makes this a third kind of width",
+      "cells": {"B2": "1234567890", "B3": "12345678901"},
+      "check": "B3",
+      "expect": {"widens": true, "custom": true, "widthAtMost": 10.5},
+      "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
+    },
+    {
+      "id": "CW-029",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a typed Formula whose number widens its column (WD-007's shape) makes the width custom, as a typed number does",
+      "cells": {"B2": "=123456789*10"},
+      "check": "B2",
+      "expect": {"widens": true, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
     }
   ]
 }

@@ -48,8 +48,9 @@
         for a null width, Range.UseStandardWidth. "width" is compared with the check column's
         ColumnWidth as read before anything else changes it; null means the sheet's StandardWidth.
         With "sizeToFit" it is EntireColumn.AutoFit instead, and the width it gives is Excel's own.
-        With "automatic" (a width an entry widened the column to) the case is blocked: Excel sets
-        such a width only by widening on entry. "custom" is compared with the customWidth flag
+        With "automatic" (a width not custom, which a document may already hold) the case is
+        blocked: nothing in Excel sets one but widening on entry, and a typed number's widening was
+        observed to set customWidth (CW-018). "custom" is compared with the customWidth flag
         Excel writes on the check column, read from a copy of the workbook saved as .xlsx
         (absent is false), before the column's width is changed for reading its text.
       - A case with "oracleSkip" is blocked with that reason. When the reason contains "ask by keys",
@@ -79,8 +80,9 @@
       - "columnWidth" sets the check column's ColumnWidth (characters) before anything is entered,
         and its text is read at that width; every other case is read at width 100. The column's
         width after the case's entries is recorded ("columnWidth") and compared with "widens"
-        (wider than the sheet's StandardWidth or not). "widthOnEntry" is the engine's answer and is not
-        compared; Excel's width is beside it in the results.
+        (wider than the sheet's StandardWidth or not), and with "widthAtMost" (no wider than that many
+        characters: whether a longer entry widened the column again). "widthOnEntry" is the engine's
+        answer and is not compared; Excel's width is beside it in the results.
 
     A disagreement is listed for the user. It is never fixed on the spot, and -Update never
     touches it: a human decides whether the engine changes, the case changes, or an ADR does.
@@ -648,7 +650,7 @@ function Invoke-Action($Excel, $Sheet, $Action, [bool]$UseFormula2) {
         }
         'rename' { $Sheet.Name = [string]$Action.name }
         'setColumnWidth' {
-            if ((Has-Prop $Action 'automatic') -and $Action.automatic) { throw [InvalidOperationException]::new("blocked: Excel records an automatic width only when an entry widens the column; nothing sets one") }
+            if ((Has-Prop $Action 'automatic') -and $Action.automatic) { throw [InvalidOperationException]::new("blocked: nothing in Excel sets an automatic width but widening on entry, and a typed number's widening sets customWidth (CW-018)") }
             if ((Has-Prop $Action 'sizeToFit') -and $Action.sizeToFit) { [void]$Sheet.Range([string]$Action.range).EntireColumn.AutoFit() }
             elseif ($null -eq $Action.width) { $Sheet.Range([string]$Action.range).EntireColumn.UseStandardWidth = $true }
             else { $Sheet.Range([string]$Action.range).EntireColumn.ColumnWidth = (To-Double $Action.width) }
@@ -762,6 +764,10 @@ function Compare-Answer($Target, $Answer) {
     if (Has-Prop $Target 'widens') {
         # "widthOnEntry" is the engine's answer in characters; Excel's width is recorded beside it, not compared.
         if ([bool]$Target.widens -ne [bool]$Answer.widens) { $differences.Add("widens: expected $($Target.widens), Excel's column is $($Answer.columnWidth) wide") }
+    }
+    if (Has-Prop $Target 'widthAtMost') {
+        # A bound on the column's width after every entry: whether a longer entry widened it again (CW-028).
+        if ($Answer.columnWidth -gt (To-Double $Target.widthAtMost) + 0.005) { $differences.Add("widthAtMost: expected at most $($Target.widthAtMost), Excel's column is $($Answer.columnWidth) wide") }
     }
     if (Has-Prop $Target 'width') {
         # null is a column nobody set: Excel reports the sheet's standard width for it.

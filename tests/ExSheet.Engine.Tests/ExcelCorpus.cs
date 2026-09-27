@@ -60,7 +60,7 @@ internal static class ExcelCorpus
         Sheet sheet;
         try
         {
-            sheet = Build(c);
+            sheet = Build(c, TypedWidening(c));
         }
         catch (FormulaSyntaxException e)
         {
@@ -118,9 +118,18 @@ internal static class ExcelCorpus
 
         if (expect.TryGetProperty("widens", out var widens))
         {
-            // Excel widens a column still at its default width; the engine answers the width needed.
-            var actual = sheet.GetWidthOnEntry(at) is { } needed && needed > Sheet.DefaultColumnWidth;
+            // Whether the check column ends wider than the default width: the typed entries
+            // widened it as the component does (TypedWidening).
+            var actual = sheet.GetColumnWidth(at.Column) is { } recorded && recorded.Width > Sheet.DefaultColumnWidth;
             if (actual != widens.GetBoolean()) differences.Add($"widens: expected {widens.GetBoolean()}, got {actual}");
+        }
+
+        if (expect.TryGetProperty("widthAtMost", out var widthAtMost))
+        {
+            // The check column's width after every typed entry is no wider than this (characters):
+            // a column a typed entry widened is not widened again by a longer one (ADR-0047, CW-018).
+            var actual = sheet.GetColumnWidth(at.Column)?.Width ?? Sheet.DefaultColumnWidth;
+            if (actual > widthAtMost.GetDouble()) differences.Add($"widthAtMost: expected at most {widthAtMost.GetDouble().ToString(CultureInfo.InvariantCulture)}, got {actual.ToString(CultureInfo.InvariantCulture)}");
         }
 
         if (expect.TryGetProperty("width", out var width))
@@ -165,7 +174,33 @@ internal static class ExcelCorpus
     private static double? ColumnWidth(JsonElement c) =>
         c.TryGetProperty("columnWidth", out var width) ? width.GetDouble() : null;
 
-    private static Sheet Build(JsonElement c)
+    /// <summary>
+    /// Whether the case asks how the typed entries widened the check column (<c>widens</c>,
+    /// <c>widthAtMost</c>). The oracle types those cases with real keys, and Excel widens the
+    /// column as it goes; the engine leaves widening to the component, so the harness does it
+    /// the component's way after each of the case's own cells (<see cref="Widen"/>).
+    /// </summary>
+    private static bool TypedWidening(JsonElement c) =>
+        c.GetProperty("expect") is var expect && (expect.TryGetProperty("widens", out _) || expect.TryGetProperty("widthAtMost", out _));
+
+    /// <summary>
+    /// The component's widening on entry (<c>ExSheet.razor</c>, <c>WidenOnEntry</c>): a column not
+    /// custom that is narrower than what the entry needs (<see cref="Sheet.GetWidthOnEntry"/>) is
+    /// widened to it, and the width is recorded as custom, as Excel's file marks it (ADR-0047,
+    /// "What the second observation settled", CW-018), so it is not widened again. The component
+    /// converts the width through the grid's pixels; here it is the engine's characters, which is
+    /// why the corpus compares widening, not Excel's exact width.
+    /// </summary>
+    private static void Widen(Sheet sheet, CellAddress address)
+    {
+        var recorded = sheet.GetColumnWidth(address.Column);
+        if (recorded is { IsCustom: true }) return;
+        if (sheet.GetWidthOnEntry(address) is not { } needed) return;
+        if (needed <= (recorded?.Width ?? Sheet.DefaultColumnWidth)) return;
+        sheet.SetColumnWidth(CellRange.WholeColumns(address.Column, address.Column), needed);
+    }
+
+    private static Sheet Build(JsonElement c, bool widen)
     {
         var culture = CultureInfo.GetCultureInfo(c.TryGetProperty("culture", out var cu) ? cu.GetString()! : "en-US");
         var sheet = c.TryGetProperty("sheetName", out var name) ? new Sheet(culture, name.GetString()!) : new Sheet(culture);
@@ -187,7 +222,7 @@ internal static class ExcelCorpus
         {
             Enter(sheet, Fixtures.Value[fixture.GetString()!]);
         }
-        Enter(sheet, c.GetProperty("cells"));
+        Enter(sheet, c.GetProperty("cells"), widen);
 
         if (c.TryGetProperty("formats", out var formats))
         {
@@ -199,9 +234,14 @@ internal static class ExcelCorpus
         return sheet;
     }
 
-    private static void Enter(Sheet sheet, JsonElement cells)
+    private static void Enter(Sheet sheet, JsonElement cells, bool widen = false)
     {
-        foreach (var cell in cells.EnumerateObject()) sheet.Enter(CellAddress.Parse(cell.Name), cell.Value.GetString()!);
+        foreach (var cell in cells.EnumerateObject())
+        {
+            var address = CellAddress.Parse(cell.Name);
+            sheet.Enter(address, cell.Value.GetString()!);
+            if (widen) Widen(sheet, address);
+        }
     }
 
     /// <summary>Does the case's actions in order; the first refused one stops them, and its reason is returned.</summary>
