@@ -724,7 +724,8 @@
 
     /// <summary>
     /// A number or date the user typed into a column still at its default width widens the
-    /// column when it does not fit, as Excel's does (ADR-0047, second round; SH-20). The engine
+    /// column when it does not fit, as Excel's does (ADR-0047, second round; SH-20), and so does
+    /// a typed Formula whose result is a number, as Excel was observed to widen it (WD-007). The engine
     /// says how many characters the entry needs; the width in pixels is what the grid's own
     /// estimate charges for the text the cell shows at that many characters, in the Cell Metrics
     /// the grid resolves, so the widened column holds it and the grid does not hash it

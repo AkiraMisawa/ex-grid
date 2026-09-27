@@ -16,15 +16,15 @@ internal static class EntryText
             case ValueKind.Number:
                 var number = constant.Number;
                 if (format.IsDate && number >= 0 && number < DateSerial.Maximum + 1) return DateTimeText(number, culture);
-                if (format.IsPercent) return NumberText.General(number * 100, culture) + "%";
-                return NumberText.General(number, culture);
+                if (format.IsPercent) return NumberText.Written(number * 100, culture) + "%";
+                return NumberText.Written(number, culture);
             case ValueKind.Boolean:
             case ValueKind.Error:
                 return constant.ToString();
             default:
                 var text = constant.Text;
                 // Text that would be read back as something else keeps Excel's leading apostrophe.
-                if (text.Length == 0 || text[0] == '=' || text[0] == '\'' || ConstantParser.Parse(text, culture).Kind != ValueKind.Text)
+                if (text.Length == 0 || text[0] == '=' || text[0] == '\'' || ConstantParser.Parse(text, culture).Kind != ValueKind.Text || Entry.SignedFormula(text) is not null)
                 {
                     return "'" + text;
                 }

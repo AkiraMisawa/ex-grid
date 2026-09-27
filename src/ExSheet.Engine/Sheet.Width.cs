@@ -160,8 +160,10 @@ public sealed partial class Sheet
     /// <summary>
     /// The width, in characters, that the number typed into this cell needs, for widening a
     /// column whose width the user has not set when the number is typed, as Excel does (ADR-0047);
-    /// <see langword="null"/> when what the cell holds never widens a column: text, a boolean, an
-    /// Error Value, a Formula, a blank, or a number no width can show.
+    /// a Formula whose Value is a number needs its Value's width, as Excel was observed to widen a
+    /// column for one (WD-007). <see langword="null"/> when what the cell holds never widens a
+    /// column: text, a boolean, an Error Value, a Formula whose Value is not a number, a blank,
+    /// or a number no width can show.
     /// <list type="bullet">
     /// <item>A number in General needs the width at which it shows without scientific notation
     /// and with every integer digit — decimals are rounded to the column instead, as Microsoft
@@ -177,7 +179,11 @@ public sealed partial class Sheet
     /// </summary>
     public int? GetWidthOnEntry(CellAddress address)
     {
-        if (!_cells.TryGetValue(address, out var cell) || cell.Entry?.Constant is not { Kind: ValueKind.Number } constant) return null;
+        if (!_cells.TryGetValue(address, out var cell) || cell.Entry is not { } entry) return null;
+        // A Formula's number widens the column as a typed one does, as Excel was observed to
+        // widen it for =123456789*10 (WD-007).
+        var shown = entry.IsFormula ? cell.Value : entry.Constant;
+        if (shown is not { Kind: ValueKind.Number } constant) return null;
         var number = constant.Number;
         var format = GetFormat(address);
         if (!format.ShowsNumbersAsGeneral)

@@ -63,6 +63,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
             reason = null;
             return true;
         }
+        code = UpperCaseAmPm(code);
         var parts = SplitSections(code, out reason);
         if (parts is null) return Refuse(out reason, reason);
         if (parts.Count > 4)
@@ -112,9 +113,48 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         return cannotShow || text.Length > characters ? ("", true) : (text, false);
     }
 
+    /// <summary>
+    /// Excel's built-in short date, <c>m/d/yyyy</c> in the invariant codes: what a typed date
+    /// records under every culture, as Excel was observed to record it (en-US, en-GB, de-DE and
+    /// ja-JP alike). It is not the pattern it spells: it shows a date in the Sheet culture's own
+    /// short-date pattern (<c>2026/09/26</c> under ja-JP, <c>26.09.2026</c> under de-DE), as
+    /// Excel's built-in format 14 shows in the system's pattern.
+    /// </summary>
+    internal static NumberFormat ShortDate { get; } = Parse(ShortDateCode);
+
+    /// <summary>Excel's built-in short date with a time (<c>m/d/yyyy h:mm</c>, format 22), which shows the culture's short date and then the time.</summary>
+    internal static NumberFormat ShortDateTime { get; } = Parse(ShortDateTimeCode);
+
+    private const string ShortDateCode = "m/d/yyyy";
+    private const string ShortDateTimeCode = "m/d/yyyy h:mm";
+
+    private static readonly Dictionary<(string Culture, bool Time), NumberFormat> ShortDates = [];
+
+    /// <summary>
+    /// The pattern the built-in short date (and short date with time) shows in under
+    /// <paramref name="culture"/>; <see langword="null"/> for any other format, or where the
+    /// culture's pattern is the code itself.
+    /// </summary>
+    private NumberFormat? ShortDateIn(CultureInfo culture)
+    {
+        var time = string.Equals(Code, ShortDateTimeCode, StringComparison.OrdinalIgnoreCase);
+        if (!time && !string.Equals(Code, ShortDateCode, StringComparison.OrdinalIgnoreCase)) return null;
+        lock (ShortDates)
+        {
+            if (!ShortDates.TryGetValue((culture.Name, time), out var local))
+            {
+                var code = ConstantParser.DateCode(culture) + (time ? " h:mm" : "");
+                local = string.Equals(code, Code, StringComparison.Ordinal) || !TryParse(code, out var parsed, out _) ? this : parsed;
+                ShortDates[(culture.Name, time)] = local;
+            }
+            return ReferenceEquals(local, this) || string.Equals(local.Code, Code, StringComparison.Ordinal) ? null : local;
+        }
+    }
+
     /// <summary>A Value as this format shows it under <paramref name="culture"/>; booleans and Error Values show as themselves.</summary>
     internal (string Text, bool CannotShow) Format(Value value, CultureInfo culture)
     {
+        if (value.Kind == ValueKind.Number && ShortDateIn(culture) is { } local) return local.Format(value, culture);
         switch (value.Kind)
         {
             case ValueKind.Boolean:
@@ -164,6 +204,39 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     {
         reason = why ?? "the code cannot be read.";
         return false;
+    }
+
+    /// <summary>
+    /// <c>AM/PM</c> written in any case is <c>AM/PM</c>: Excel rewrites <c>h:mm am/pm</c> to
+    /// <c>h:mm AM/PM</c> and shows <c>6:00 PM</c> (FMT-065). Quoted and escaped text is left alone.
+    /// </summary>
+    private static string UpperCaseAmPm(string code)
+    {
+        StringBuilder? rewritten = null;
+        for (var i = 0; i < code.Length; i++)
+        {
+            switch (code[i])
+            {
+                case '"':
+                    var close = code.IndexOf('"', i + 1);
+                    if (close < 0) return rewritten?.ToString() ?? code;
+                    i = close;
+                    continue;
+                case '\\':
+                case '_':
+                case '*':
+                    i++;
+                    continue;
+            }
+            if (string.Compare(code, i, "AM/PM", 0, 5, StringComparison.OrdinalIgnoreCase) != 0) continue;
+            if (string.CompareOrdinal(code, i, "AM/PM", 0, 5) != 0)
+            {
+                rewritten ??= new StringBuilder(code);
+                rewritten.Remove(i, 5).Insert(i, "AM/PM");
+            }
+            i += 4;
+        }
+        return rewritten?.ToString() ?? code;
     }
 
     private static List<string>? SplitSections(string code, out string? reason)
@@ -476,6 +549,9 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
             {
                 var rounded = FunctionLibrary.RoundHalfAwayFromZero(value, _fractionPlaceholders);
                 (integerDigits, fractionDigits) = Digits(rounded, _fractionPlaceholders);
+                // A negative number that rounds to zero shows no minus sign: -0.001 in 0.00 is
+                // 0.00, as Excel was observed to show it (FMT-063).
+                if (rounded == 0) minus = false;
             }
 
             var format = culture.NumberFormat;

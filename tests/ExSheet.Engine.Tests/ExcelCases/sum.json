@@ -113,7 +113,7 @@
     {
       "id": "SUM-013",
       "source": "observed",
-      "description": "Ticket 19 row 9: a missing argument (engine: 0)",
+      "description": "Ticket 19 row 9: a missing argument is 0",
       "ticket19Row": 9,
       "cells": {"ZZ1000": "=SUM(1,,2)"},
       "check": "ZZ1000",
@@ -122,7 +122,7 @@
     {
       "id": "SUM-014",
       "source": "observed",
-      "description": "Ticket 19 row 16: two different errors in a range (engine: the first in row-major order)",
+      "description": "Ticket 19 row 16: of two different errors in a range, the first in row-major order is the result",
       "ticket19Row": 16,
       "cells": {"A2": "#N/A", "A3": "#DIV/0!", "ZZ1000": "=SUM(A1:A3)"},
       "check": "ZZ1000",

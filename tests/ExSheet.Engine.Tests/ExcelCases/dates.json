@@ -45,56 +45,56 @@
     {
       "id": "DATE-006",
       "source": "observed",
-      "description": "A date is typed in the culture's day order",
+      "description": "A date is typed in the culture's day order, and records Excel's built-in short date, shown in the culture's pattern",
       "culture": "de-DE",
       "cells": {"A1": "26.9.2026"},
       "check": "A1",
-      "expect": {"value2": 46291}
+      "expect": {"value2": 46291, "text": "26.09.2026", "numberFormat": "m/d/yyyy"}
     },
     {
       "id": "DATE-007",
       "source": "observed",
-      "description": "A date is typed in the culture's day order",
+      "description": "A date is typed in the culture's day order, and records Excel's built-in short date, shown in the culture's pattern",
       "culture": "de-DE",
       "cells": {"A1": "26.09.2026"},
       "check": "A1",
-      "expect": {"value2": 46291}
+      "expect": {"value2": 46291, "text": "26.09.2026", "numberFormat": "m/d/yyyy"}
     },
     {
       "id": "DATE-008",
       "source": "observed",
-      "description": "A date is typed in the culture's day order",
+      "description": "A date is typed in the culture's day order, and records Excel's built-in short date, shown in the culture's pattern",
       "culture": "de-DE",
       "cells": {"A1": "2026-09-26"},
       "check": "A1",
-      "expect": {"value2": 46291}
+      "expect": {"value2": 46291, "text": "26.09.2026", "numberFormat": "m/d/yyyy"}
     },
     {
       "id": "DATE-009",
       "source": "observed",
-      "description": "A date is typed in the culture's day order",
+      "description": "A date is typed in the culture's day order, and records Excel's built-in short date, shown in the culture's pattern",
       "culture": "ja-JP",
       "cells": {"A1": "2026/9/26"},
       "check": "A1",
-      "expect": {"value2": 46291}
+      "expect": {"value2": 46291, "text": "2026/09/26", "numberFormat": "m/d/yyyy"}
     },
     {
       "id": "DATE-010",
       "source": "observed",
-      "description": "A date is typed in the culture's day order",
+      "description": "A date is typed in the culture's day order, and records Excel's built-in short date, shown in the culture's pattern",
       "culture": "ja-JP",
       "cells": {"A1": "2026-9-26"},
       "check": "A1",
-      "expect": {"value2": 46291}
+      "expect": {"value2": 46291, "text": "2026/09/26", "numberFormat": "m/d/yyyy"}
     },
     {
       "id": "DATE-011",
       "source": "observed",
-      "description": "A date is typed in the culture's day order",
+      "description": "A date is typed in the culture's day order, and records Excel's built-in short date, shown in the culture's pattern",
       "culture": "en-GB",
       "cells": {"A1": "26/9/2026"},
       "check": "A1",
-      "expect": {"value2": 46291}
+      "expect": {"value2": 46291, "text": "26/09/2026", "numberFormat": "m/d/yyyy"}
     },
     {
       "id": "DATE-012",

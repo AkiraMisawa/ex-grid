@@ -201,9 +201,10 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// Microsoft's documentation: an empty cell as either argument is taken as empty text (""). An
-    /// Error Value is caught — but not <c>#GETTING_DATA</c>, which waits (ADR-0049), nor
-    /// <c>#CIRC!</c>, which a Formula reading a cycle shows whatever it computes (ADR-0047).
+    /// An empty cell as either argument gives 0, as Excel was observed to give
+    /// (verification/2026-09-27-windows-excel) — not the empty text ("") Microsoft's documentation
+    /// describes. An Error Value is caught — but not <c>#GETTING_DATA</c>, which waits (ADR-0049),
+    /// nor <c>#CIRC!</c>, which a Formula reading a cycle shows whatever it computes (ADR-0047).
     /// </summary>
     private static Operand IfError(FunctionCall call)
     {
@@ -215,9 +216,9 @@ internal static partial class FunctionLibrary
             if (!call.Has(1)) return Operand.Of(Value.FromNumber(0));
             var fallback = call.Operand(1);
             if (IsArray(fallback)) return Operand.Of(ErrorValue.Value);
-            return Operand.Of(call.Evaluator.ScalarOf(fallback) ?? Value.FromText(""));
+            return Operand.Of(call.Evaluator.ScalarOf(fallback) ?? Value.FromNumber(0));
         }
-        return Operand.Of(value ?? Value.FromText(""));
+        return Operand.Of(value ?? Value.FromNumber(0));
     }
 
     private static Operand IsError(FunctionCall call)
@@ -303,7 +304,7 @@ internal static partial class FunctionLibrary
             var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(4)), out var modeError);
             if (modeError is { } me) return Operand.Of(me);
             matchMode = (int)Math.Truncate(mode);
-            if (matchMode is not (0 or -1 or 1 or 2)) return Operand.Of(ErrorValue.Value);
+            if (matchMode is not (0 or -1 or 1 or 2 or 3)) return Operand.Of(ErrorValue.Value);
         }
         var searchMode = 1;
         if (call.Has(5))
@@ -331,12 +332,26 @@ internal static partial class FunctionLibrary
         {
             var candidates = vector.Candidates(evaluator);
             if (searchMode == -1) candidates = candidates.Reverse();
-            found = matchMode switch
+            if (matchMode == 3)
             {
-                0 => FirstExact(candidates, wanted),
-                2 => FirstWildcard(candidates, wanted),
-                _ => Nearest(candidates, wanted, matchMode),
-            };
+                // Numbers and booleans are matched by their text; Error Values match nothing.
+                var texts = candidates.Where(c => !c.Value.IsError).Select(c => (c.Index, evaluator.ToText(c.Value)));
+                if (!PortableRegex.TryFirstMatch(evaluator.ToText(wanted), texts, out found)) return Operand.Of(ErrorValue.Value);
+            }
+            else
+            {
+                found = matchMode switch
+                {
+                    0 => FirstExact(candidates, wanted),
+                    2 => FirstWildcard(candidates, wanted),
+                    _ => Nearest(candidates, wanted, matchMode),
+                };
+            }
+        }
+        else if (matchMode == 0)
+        {
+            // A blank lookup value matches a blank cell, as Excel was observed to (XLOOKUP-067).
+            found = vector.FirstBlank(evaluator, fromEnd: searchMode == -1);
         }
 
         if (found is not { } index)
@@ -355,8 +370,8 @@ internal static partial class FunctionLibrary
     /// says; it holds blanks, Error Values, or values of more than one kind (Excel's ordering across
     /// kinds is not pinned here, so mixed kinds count as unsorted); the lookup value is blank or of
     /// another kind; text holds anything but ASCII letters, digits and spaces (Excel's collation of
-    /// other characters is not pinned here); the match mode is the wildcard one; or the matched key
-    /// appears more than once.
+    /// other characters is not pinned here); the match mode is the wildcard or the regular
+    /// expression one; or the matched key appears more than once.
     /// </summary>
     /// <remarks>
     /// Which of several equal keys Excel's binary search returns is UNVERIFIED — it is to be observed
@@ -366,13 +381,13 @@ internal static partial class FunctionLibrary
     /// <param name="vector">The lookup array.</param>
     /// <param name="evaluator">What reads its cells.</param>
     /// <param name="lookup">The lookup value; blank as <see langword="null"/>.</param>
-    /// <param name="matchMode">XLOOKUP's <c>match_mode</c>: 0, −1, 1 or 2.</param>
+    /// <param name="matchMode">XLOOKUP's <c>match_mode</c>: 0, −1, 1, 2 or 3.</param>
     /// <param name="ascending">Whether the mode is 2 (ascending) rather than −2 (descending).</param>
     /// <param name="found">The position matched, or <see langword="null"/> when nothing matches.</param>
     private static bool TryBinarySearch(Vector vector, Evaluator evaluator, Value? lookup, int matchMode, bool ascending, out int? found)
     {
         found = null;
-        if (matchMode == 2 || lookup is not { } wanted || wanted.IsError || !Orderable(wanted)) return false;
+        if (matchMode is 2 or 3 || lookup is not { } wanted || wanted.IsError || !Orderable(wanted)) return false;
         var candidates = vector.Candidates(evaluator).ToList();
         if (candidates.Count != vector.Length) return false;
         foreach (var (_, value) in candidates)
@@ -443,6 +458,19 @@ internal static partial class FunctionLibrary
             return evaluator.Cells.NonBlankIn(area).Select(a => (vertical ? a.Row - area.Row1 : a.Column - area.Column1, evaluator.Cells.Read(a)!.Value));
         }
 
+        /// <summary>The first blank position in search order, from the end when <paramref name="fromEnd"/>; <see langword="null"/> when none is blank.</summary>
+        public int? FirstBlank(Evaluator evaluator, bool fromEnd)
+        {
+            var filled = new HashSet<int>(Candidates(evaluator).Select(c => c.Index));
+            if (filled.Count == Length) return null;
+            for (var k = 0; k < Length; k++)
+            {
+                var index = fromEnd ? Length - 1 - k : k;
+                if (!filled.Contains(index)) return index;
+            }
+            return null;
+        }
+
         /// <summary>The item at a position: a cell, read as a Reference, or a Linked Table's Value.</summary>
         public Operand ItemAt(int index)
         {
@@ -477,14 +505,19 @@ internal static partial class FunctionLibrary
         return null;
     }
 
-    /// <summary>An exact match first; otherwise the nearest smaller (mode −1) or larger (mode 1) value of the same kind, the first such in search order.</summary>
+    /// <summary>
+    /// An exact match first; otherwise the nearest smaller (mode −1) or larger (mode 1) value, the
+    /// first such in search order. Values of another kind take part in Excel's order across kinds —
+    /// numbers before text, text before booleans — so over 10, x, 30, y the next smaller value
+    /// than "m" is 30, as Excel was observed to answer (XLOOKUP-071). Error Values take no part.
+    /// </summary>
     private static int? Nearest(IEnumerable<(int Index, Value Value)> candidates, Value wanted, int mode)
     {
         int? best = null;
         Value bestValue = default;
         foreach (var (index, value) in candidates)
         {
-            if (value.Kind != wanted.Kind || value.Kind == ValueKind.Error) continue;
+            if (value.Kind == ValueKind.Error) continue;
             var order = Evaluator.Compare(value, wanted);
             if (order == 0) return index;
             if (mode == -1 ? order > 0 : order < 0) continue;

@@ -21,13 +21,55 @@ internal static class NumberText
     /// </summary>
     public static string General(double number, CultureInfo culture) => number.ToString("G15", culture);
 
+    /// <summary>The smallest power of ten, as an exponent, that <see cref="Written"/> writes without scientific notation.</summary>
+    private const int WrittenSmallest = -9;
+
+    /// <summary>The largest power of ten, as an exponent, that <see cref="Written"/> writes without scientific notation.</summary>
+    private const int WrittenLargest = 19;
+
+    /// <summary>
+    /// A number as Excel writes it into text — <c>=A1&amp;""</c>, and the Cell Editor's text of a
+    /// typed number: at most 15 significant digits (ADR-0047) and the culture's decimal separator,
+    /// written out in full across a wide range of magnitudes where General would go scientific.
+    /// Excel was observed to write <c>1E15</c> as <c>1000000000000000</c>, <c>1E-5</c> as
+    /// <c>0.00001</c>, and 123456789012345678 (held as 123456789012345000) in full. Scientific
+    /// notation, in General's spelling (<c>1E+20</c>), is taken from 1E+20 up and below 1E-9; both
+    /// thresholds are <c>uncertain</c> in the case corpus until Excel is asked.
+    /// </summary>
+    public static string Written(double number, CultureInfo culture)
+    {
+        if (number == 0) return "0";
+        var e14 = Math.Abs(number).ToString("E14", CultureInfo.InvariantCulture);
+        var digits = (e14[0] + e14[2..16]).TrimEnd('0');
+        var exponent = int.Parse(e14.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+        if (exponent < WrittenSmallest || exponent > WrittenLargest) return General(number, culture);
+
+        var text = new StringBuilder();
+        if (number < 0) text.Append('-');
+        if (exponent < 0)
+        {
+            text.Append('0').Append(culture.NumberFormat.NumberDecimalSeparator).Append('0', -exponent - 1).Append(digits);
+        }
+        else if (digits.Length <= exponent + 1)
+        {
+            text.Append(digits).Append('0', exponent + 1 - digits.Length);
+        }
+        else
+        {
+            text.Append(digits, 0, exponent + 1).Append(culture.NumberFormat.NumberDecimalSeparator).Append(digits, exponent + 1, digits.Length - exponent - 1);
+        }
+        return text.ToString();
+    }
+
     /// <summary>
     /// Excel's General form fitted to a column <paramref name="characters"/> wide, each character
     /// charged one digit width (ADR-0047): decimals are rounded to what fits, and the form is
     /// scientific where the integer part does not fit, where it has twelve or more digits, or
     /// where the scientific form that fits is closer to the number than the decimal form that
-    /// fits. <see langword="null"/> when neither form fits — or only a decimal form that rounds a
-    /// number that is not zero to zero: the cell shows <c>####</c> rather than a zero.
+    /// fits. The decimal form may round a number that is not zero to a bare <c>0</c>, as Excel was
+    /// observed to show <c>=1/3</c> in a column one character wide (GW-017); a negative number
+    /// rounded so shows no minus sign. <see langword="null"/> when neither form fits: the cell shows
+    /// <c>####</c>.
     /// </summary>
     public static string? General(double number, int characters, CultureInfo culture) =>
         GeneralForm(number, characters, culture)?.Text;
@@ -43,7 +85,7 @@ internal static class NumberText
     {
         var minus = number < 0;
         var limit = Math.Min(characters - (minus ? 1 : 0), GeneralLimit);
-        if (limit < 1) return null;
+        if (limit < 1) return minus && characters >= 1 && number > -0.5 ? ("0", false) : null;
         if (number == 0) return ("0", false);
 
         // Fifteen significant digits (ADR-0047), rounded again from there.
@@ -54,7 +96,6 @@ internal static class NumberText
 
         var fixedForm = Decimal(digits, exponent, limit);
         var scientific = Scientific(digits, exponent, limit);
-        if (fixedForm == "0") fixedForm = null;
 
         string chosen;
         bool isScientific;
@@ -70,6 +111,8 @@ internal static class NumberText
         {
             return null;
         }
+        // A negative number rounded to a bare 0 shows no minus sign, as a format rounding it does not (FMT-063).
+        if (chosen == "0") return ("0", false);
         var separator = culture.NumberFormat.NumberDecimalSeparator;
         if (separator != ".") chosen = chosen.Replace(".", separator, StringComparison.Ordinal);
         return ((minus ? "-" : "") + chosen, isScientific);

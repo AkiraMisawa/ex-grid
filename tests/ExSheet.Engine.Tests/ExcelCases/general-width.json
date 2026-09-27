@@ -1,6 +1,6 @@
 {
   "area": "general-width",
-  "about": "What a number shows in a column of a given width, and whether typing it widens a column still at its default width (ADR-0047, SH-20). columnWidth is the check column's width in Excel's unit, characters of the default font (8.43 is Excel's default), set before anything is entered; the engine charges every character one digit width. Microsoft documents that General rounds decimals when the cell is not wide enough, that twelve or more digits go scientific, that a narrow column may show 123456789 as 1.2E+08, and that a formatted number or date too wide for its column shows #####. How many characters General keeps, when it prefers scientific for small numbers, and when Excel widens a column on entry are not documented: those cases are uncertain until the oracle asks Excel. widens compares with Excel's column width after the entry (wider than 8.43 or not); widthOnEntry is the engine's answer in characters, which Excel's is recorded beside.",
+  "about": "What a number shows in a column of a given width, and whether typing it widens a column still at its default width (ADR-0047, SH-20). columnWidth is the check column's width in Excel's unit, characters of the default font (8.43 is Excel's default with Calibri; Microsoft 365's Aptos Narrow makes it 8.09, which is why widths are compared only as widens or not), set before anything is entered; the engine charges every character one digit width. Microsoft documents that General rounds decimals when the cell is not wide enough, that twelve or more digits go scientific, that a narrow column may show 123456789 as 1.2E+08, and that a formatted number or date too wide for its column shows #####. How many characters General keeps and when it prefers scientific for small numbers are not documented: those cases are uncertain until the oracle asks Excel. When Excel widens a column on entry was observed by typing with real keys (verification/2026-09-27-windows-excel/behaviours.md): a value set through COM widens nothing, so the oracle skips those cases. widens compares with Excel's column width after the entry (wider than 8.43 or not); widthOnEntry is the engine's answer in characters, which Excel's is recorded beside.",
   "cases": [
     {
       "id": "GW-001",
@@ -148,12 +148,12 @@
     },
     {
       "id": "GW-017",
-      "source": "uncertain",
-      "description": "A number that is not zero is never rounded to a bare 0: where scientific does not fit either it is ####",
+      "source": "observed",
+      "description": "A number that is not zero is rounded to a bare 0 where nothing else fits the column",
       "columnWidth": 1,
       "cells": {"A1": "=1/3"},
       "check": "A1",
-      "expect": {"text": "####"}
+      "expect": {"text": "0"}
     },
     {
       "id": "GW-018",
@@ -233,11 +233,12 @@
     },
     {
       "id": "WD-001",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Nine typed digits widen a default-width column to hold them",
       "cells": {"A1": "123456789"},
       "check": "A1",
-      "expect": {"widens": true, "widthOnEntry": 9}
+      "expect": {"widens": true, "widthOnEntry": 9},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
       "id": "WD-002",
@@ -245,7 +246,8 @@
       "description": "Eight typed digits fit a default-width column and do not widen it",
       "cells": {"A1": "12345678"},
       "check": "A1",
-      "expect": {"widens": false, "widthOnEntry": 8}
+      "expect": {"widens": false, "widthOnEntry": 8},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
       "id": "WD-003",
@@ -253,23 +255,26 @@
       "description": "Typed decimals do not widen a column: General rounds them to the width instead, which is what Microsoft documents it does when the cell is not wide enough",
       "cells": {"A1": "1.23456789"},
       "check": "A1",
-      "expect": {"widens": false, "widthOnEntry": 1, "text": "1.23456789"}
+      "expect": {"widens": false, "widthOnEntry": 1, "text": "1.23456789"},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
       "id": "WD-004",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Twelve typed digits are scientific at any width, and widen the column to that form",
       "cells": {"A1": "123456789012"},
       "check": "A1",
-      "expect": {"widens": true, "widthOnEntry": 11}
+      "expect": {"widens": true, "widthOnEntry": 11},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
       "id": "WD-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A typed date widens a default-width column to its whole text",
       "cells": {"A1": "9/26/2026"},
       "check": "A1",
-      "expect": {"widens": true, "widthOnEntry": 9, "numberFormat": "m/d/yyyy"}
+      "expect": {"widens": true, "widthOnEntry": 9, "numberFormat": "m/d/yyyy"},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
       "id": "WD-006",
@@ -277,15 +282,17 @@
       "description": "Typed text never widens a column",
       "cells": {"A1": "A heading far wider than its column"},
       "check": "A1",
-      "expect": {"widens": false, "widthOnEntry": null}
+      "expect": {"widens": false, "widthOnEntry": null},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
       "id": "WD-007",
       "source": "observed",
-      "description": "A Formula's result does not widen a column: only a typed number or date does",
+      "description": "A Formula's numeric result widens a column as a typed number does",
       "cells": {"A1": "=123456789*10"},
       "check": "A1",
-      "expect": {"widens": false, "widthOnEntry": null}
+      "expect": {"widens": true, "widthOnEntry": 10},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
       "id": "WD-008",
@@ -293,7 +300,8 @@
       "description": "A typed percentage that fits does not widen a column",
       "cells": {"A1": "12.5%"},
       "check": "A1",
-      "expect": {"widens": false, "widthOnEntry": 6, "numberFormat": "0.00%"}
+      "expect": {"widens": false, "widthOnEntry": 6, "numberFormat": "0.00%"},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
       "id": "WD-009",
@@ -301,15 +309,89 @@
       "description": "A typed number whose integer part fits once its decimals round away does not widen a column",
       "cells": {"A1": "1234567.891"},
       "check": "A1",
-      "expect": {"widens": false, "widthOnEntry": 7}
+      "expect": {"widens": false, "widthOnEntry": 7},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     },
     {
       "id": "WD-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "A typed negative number counts its minus sign",
       "cells": {"A1": "-12345678"},
       "check": "A1",
-      "expect": {"widens": true, "widthOnEntry": 9}
+      "expect": {"widens": true, "widthOnEntry": 9},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "GW-026",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number rounded to a bare 0 shows no minus sign",
+      "columnWidth": 2,
+      "cells": {"A1": "=-1/3"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "GW-027",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number rounded to a bare 0 fits a column one character wide",
+      "columnWidth": 1,
+      "cells": {"A1": "=-1/3"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "GW-028",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a tiny number whose scientific form does not fit is a bare 0",
+      "columnWidth": 4,
+      "cells": {"A1": "=1E-20"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "GW-029",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a tiny number whose scientific form fits is shown scientific, not as 0",
+      "columnWidth": 8.09,
+      "cells": {"A1": "=1E-20"},
+      "check": "A1",
+      "expect": {"text": "1E-20"}
+    },
+    {
+      "id": "GW-030",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number of 0.5 or more in a column one character wide is rounded to 1",
+      "columnWidth": 1,
+      "cells": {"A1": "=2/3"},
+      "check": "A1",
+      "expect": {"text": "1"}
+    },
+    {
+      "id": "WD-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Formula whose result is text never widens a column",
+      "cells": {"A1": "=\"A heading far wider than its column\""},
+      "check": "A1",
+      "expect": {"widens": false, "widthOnEntry": null},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Formula whose result fits does not widen a column",
+      "cells": {"A1": "=1234*10"},
+      "check": "A1",
+      "expect": {"widens": false, "widthOnEntry": 5},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Formula that takes a date format on entry widens a default-width column to its whole text",
+      "cells": {"B1": "9/26/2026", "A1": "=B1+1"},
+      "check": "A1",
+      "expect": {"widens": true, "widthOnEntry": 9, "numberFormat": "m/d/yyyy"},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
     }
   ]
 }

@@ -31,8 +31,19 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
 
     public ICellReader Cells { get; } = cells;
 
-    /// <summary>A Formula's result. It is never blank: a Formula that reads an empty cell shows 0.</summary>
-    public Value Evaluate(Node node) => ScalarOf(Operand(node)) ?? Value.FromNumber(0);
+    /// <summary>
+    /// A Formula's result. It is never blank: a Formula that reads an empty cell shows 0. When the
+    /// Formula's last operation is an addition or a subtraction whose result nearly cancels, the
+    /// result is 0, as Excel's is (<see cref="Arithmetic.FinalAdd"/>); parentheses around it do
+    /// not make it any less the last.
+    /// </summary>
+    public Value Evaluate(Node node)
+    {
+        var top = node;
+        while (top is ParenthesesNode p) top = p.Inner;
+        if (top is BinaryNode { Operator: "+" or "-" } final) return Binary(final, finalOperation: true);
+        return ScalarOf(Operand(node)) ?? Value.FromNumber(0);
+    }
 
     public Operand Operand(Node node) => node switch
     {
@@ -91,7 +102,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         return error is { } e ? Value.FromError(e) : Number(operand / 100);
     }
 
-    private Value Binary(BinaryNode node)
+    private Value Binary(BinaryNode node, bool finalOperation = false)
     {
         var left = Scalar(node.Left);
         var right = Scalar(node.Right);
@@ -104,7 +115,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
             case "=" or "<>" or "<" or ">" or "<=" or ">=":
                 if (left is { IsError: true } cle) return cle;
                 if (right is { IsError: true } cre) return cre;
-                var order = Compare(left, right);
+                var order = Compare(left, right, Arithmetic.ApproximatelyEqual);
                 return Value.FromBoolean(node.Operator switch
                 {
                     "=" => order == 0,
@@ -122,14 +133,14 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         if (rightError is { } be) return Value.FromError(be);
         switch (node.Operator)
         {
-            case "+": return Number(a + b);
-            case "-": return Number(a - b);
+            case "+": return Number(finalOperation ? Arithmetic.FinalAdd(a, b) : a + b);
+            case "-": return Number(finalOperation ? Arithmetic.FinalAdd(a, -b) : a - b);
             case "*": return Number(a * b);
             case "/": return b == 0 ? Value.FromError(ErrorValue.Div0) : Number(a / b);
             case "^":
                 if (a == 0 && b == 0) return Value.FromError(ErrorValue.Num);
                 if (a == 0 && b < 0) return Value.FromError(ErrorValue.Div0);
-                return Number(Math.Pow(a, b));
+                return Arithmetic.Power(a, b) is { } power ? Number(power) : Value.FromError(ErrorValue.Num);
             default: throw new InvalidOperationException($"No operator {node.Operator}.");
         }
     }
@@ -140,9 +151,17 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
 
     /// <summary>
     /// Excel's comparison: a blank is the empty value of the other side's kind (0, "" or FALSE);
-    /// numbers sort before text, and text before booleans; text compares without regard to case.
+    /// numbers sort before text, and text before booleans; numbers compare exactly; text compares
+    /// as Excel collates it, without regard to case (<see cref="TextOrder"/>).
     /// </summary>
-    internal static int Compare(Value? left, Value? right)
+    internal static int Compare(Value? left, Value? right) => Compare(left, right, null);
+
+    /// <summary>
+    /// <see cref="Compare(Value?, Value?)"/>, except that two numbers for which
+    /// <paramref name="equalNumbers"/> holds compare equal: the comparison operators compare at
+    /// Excel's precision (<see cref="Arithmetic.ApproximatelyEqual"/>).
+    /// </summary>
+    internal static int Compare(Value? left, Value? right, Func<double, double, bool>? equalNumbers)
     {
         if (left is null && right is null) return 0;
         var a = left ?? EmptyOf(right!.Value.Kind);
@@ -150,8 +169,8 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         if (a.Kind != b.Kind) return Rank(a.Kind).CompareTo(Rank(b.Kind));
         return a.Kind switch
         {
-            ValueKind.Number => a.Number.CompareTo(b.Number),
-            ValueKind.Text => string.CompareOrdinal(a.Text.ToUpperInvariant(), b.Text.ToUpperInvariant()),
+            ValueKind.Number => equalNumbers is not null && equalNumbers(a.Number, b.Number) ? 0 : a.Number.CompareTo(b.Number),
+            ValueKind.Text => TextOrder.Compare(a.Text, b.Text),
             _ => a.Boolean.CompareTo(b.Boolean),
         };
 
@@ -192,12 +211,12 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         }
     }
 
-    /// <summary>Excel's coercion to text: a blank is empty, a number is written as General under the Sheet's culture.</summary>
+    /// <summary>Excel's coercion to text: a blank is empty, a number is written as Excel writes one into text (<see cref="NumberText.Written"/>) under the Sheet's culture.</summary>
     public string ToText(Value? value) => value switch
     {
         null => "",
         { Kind: ValueKind.Text } v => v.Text,
-        { Kind: ValueKind.Number } v => NumberText.General(v.Number, Culture),
+        { Kind: ValueKind.Number } v => NumberText.Written(v.Number, Culture),
         { Kind: ValueKind.Boolean } v => v.Boolean ? "TRUE" : "FALSE",
         { } v => v.Error.ToText(),
     };

@@ -65,7 +65,29 @@ public sealed class Entry : IEquatable<Entry>
         ArgumentNullException.ThrowIfNull(culture);
         if (typed.Length == 0) return null;
         if (typed[0] == '=') return FromFormula(typed);
-        return new Entry(ConstantParser.Parse(typed, culture));
+        var constant = ConstantParser.Parse(typed, culture);
+        if (constant.Kind == ValueKind.Text && SignedFormula(typed) is { } formula) return formula;
+        return new Entry(constant);
+    }
+
+    /// <summary>
+    /// Text typed with a leading <c>+</c> or <c>-</c> that is not a constant is the Formula it
+    /// spells after an <c>=</c>, as Excel's cell editor reads it: <c>+A1</c> is <c>=+A1</c> and
+    /// <c>-A1</c> is <c>=-A1</c> (observed with real keys; Excel's <c>Range.FormulaLocal</c> keeps
+    /// them as text, which is not what a user typing gets). Text that does not read as a Formula
+    /// that way stays text. <see langword="null"/> when the text is not such a Formula.
+    /// </summary>
+    internal static Entry? SignedFormula(string typed)
+    {
+        if (typed.Length < 2 || typed[0] is not ('+' or '-')) return null;
+        try
+        {
+            return FromFormula("=" + typed);
+        }
+        catch (FormulaSyntaxException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Two Entries are equal when they hold the same constant (exactly) or the same Formula text.</summary>

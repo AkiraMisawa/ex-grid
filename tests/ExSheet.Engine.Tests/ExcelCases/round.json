@@ -176,7 +176,7 @@
     {
       "id": "ROUND-020",
       "source": "observed",
-      "description": "Ticket 19 row 14: fractional num_digits (engine: truncated)",
+      "description": "Ticket 19 row 14: a fractional num_digits is truncated",
       "ticket19Row": 14,
       "cells": {"ZZ1000": "=ROUND(1.25,1.9)"},
       "check": "ZZ1000",
