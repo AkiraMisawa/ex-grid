@@ -14,3 +14,19 @@ numbers the screen shows.
 - [ ] A saved document's Values computed headless equal the Values on screen (ADR-0047/0048)
 
 ## Comments
+
+2026-09-27, engine half: `HeadlessTests` opens a saved Sheet Document (JSON, `de-DE`, with
+formats, dates, a cycle, an error, a Linked Table reference) with nothing but `ExSheet.Engine` and
+gets Excel's Values and displayed text; the same document gives the same Values whatever culture
+the process runs under, and a Sheet edited (insertion, fill, paste, pasted text), saved and
+opened again computes the same Values. The engine's whole reference closure holds no
+`Microsoft.AspNetCore`, `Microsoft.JSInterop` or `ExGrid` assembly (the second criterion).
+`tests/ExGrid.PackageSmoke/check.sh` now packs `ExSheet.Engine` too, reads its `.nuspec` back
+(MIT, readme, repository and commit, symbols, XML docs, and no dependency at all), and the smoke
+application restores it from the packed file and compiles the README's examples against it.
+It is packed into a feed of its own, `.sheet-feed`, and not `.feed`: `.feed` is exactly what the
+release workflow publishes, and its publish job accepts exactly ExGrid's four files, so
+publishing `ExSheet.Engine` through the release is left for a decision (reported).
+**What remains:** the `ExSheet` component package (it does not exist yet) and its smoke check,
+the release workflow publishing both, and the third criterion's layer 2 half — the Values on
+screen compared with the headless ones.

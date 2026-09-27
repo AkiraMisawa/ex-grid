@@ -74,9 +74,56 @@ answer:
 - **`#GETTING_DATA`**, a Linked Table's data on its way, is not an error to `IFERROR` and
   `ISERROR`, where Excel's are: a fallback never stands in for data that has not arrived.
 
+## Operations, and undoing them
+
+Every user operation is a `SheetEdit`, and `Sheet.Do` returns the one `SheetStep` that undoes and
+redoes it, each with one recalculation. The stack of steps is the caller's.
+
+```csharp
+var step = sheet.Do(SheetEdit.InsertRows(row: 2));   // References are rewritten to keep naming the same cells
+step.Undo();                                         // Entries, formats and References exactly as they were
+```
+
+- **Insertion and deletion** of rows and columns rewrite every Reference, relative and absolute
+  alike; a range grows or shrinks as Excel's does, and a Reference whose cells are all deleted is
+  written `#REF!` in the stored Formula. An insertion that would push an Entry, or the cells a
+  Reference names, off the Sheet's edge is refused (`SheetRefusedException`).
+- **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
+  the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
+  else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each
+  pasted field as if typed under the Sheet's culture. A copy that reaches a `#GETTING_DATA`
+  Value is refused.
+- **Fill.** `SheetEdit.Fill(source, target, direction)` fills as Excel does for copies (with
+  References shifted), a linear trend from two or more numbers, and a single date by day, and
+  refuses every other pattern — `Item 1`, day and month names, several dates — rather than fill
+  it with copies.
+- `Sheet.Check(edit)` says whether an edit would be refused, without doing it.
+
+## Linked Tables
+
+Data the application holds reaches Formulas as a Linked Table, pushed whole and read by
+structured reference and by key:
+
+```csharp
+sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
+sheet.Enter(CellAddress.Parse("A1"), "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])");
+// A1 is #GETTING_DATA until the first snapshot arrives.
+sheet.PushLinkedTable("Positions", [[Value.FromText("R-4471"), Value.FromNumber(250.5)]]);
+```
+
+A snapshot replaces the last in one step and recalculates only the Formulas that read the table.
+A table's rows are never recorded in the Sheet Document.
+
+## Formula entry
+
+`FormulaEntry` answers, over a Formula's unfinished text and its caret, what an editor needs:
+completion candidates (`Sheet.Complete` adds the Sheet's Linked Tables to the functions), the
+argument hint, whether a Reference can be written at the caret (Point mode), and the Reference
+text for a range.
+
 ## More
 
-The decisions behind the engine are ADR-0046 to ADR-0049 in
+The decisions behind the engine are ADR-0046 to ADR-0051 in
 [`docs/adr/`](https://github.com/AkiraMisawa/ex-grid/tree/main/docs/adr), and the terms — Sheet,
 Entry, Value, Formula, Reference, Error Value, Sheet Document — are defined in
 [`CONTEXT.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/CONTEXT.md).
