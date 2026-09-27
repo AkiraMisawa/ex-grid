@@ -9,12 +9,12 @@ refused. A new snapshot recalculates only its readers. Table names join completi
 
 **Blocked by:** 04, 14
 
-- [ ] `=SUM(Positions[PV])` and `XLOOKUP` by key read the snapshot (ADR-0049)
-- [ ] Before the first push: `#GETTING_DATA`, and `=IFERROR(…, 0)` also shows `#GETTING_DATA`
-- [ ] A snapshot replaces the previous one in one step; no recalculation sees a mix
+- [x] `=SUM(Positions[PV])` and `XLOOKUP` by key read the snapshot (ADR-0049)
+- [x] Before the first push: `#GETTING_DATA`, and `=IFERROR(…, 0)` also shows `#GETTING_DATA`
+- [x] A snapshot replaces the previous one in one step; no recalculation sees a mix
 - [ ] A copy reaching a waiting cell is refused
-- [ ] An undeclared table name is `#NAME?`
-- [ ] The DemoHost shows a Sheet reading the data an ExGrid on the same page shows
+- [x] An undeclared table name is `#NAME?`
+- [x] The DemoHost shows a Sheet reading the data an ExGrid on the same page shows
 
 ## Comments
 
@@ -44,3 +44,25 @@ twice or undeclared.
 2026-09-27, decided with the user (ADR-0049): declaring a table again is no longer refused. An
 identical declaration changes nothing; other columns replace the held one and drop its rows.
 `Sheet.DeclareLinkedTable` implements it; `LinkedTableTests` pins both.
+
+2026-09-27, ExSheet wiring: the component has three new public members.
+`DeclareLinkedTableAsync(name, columns)` and `PushLinkedTableAsync(name, rows)` delegate to the
+engine and run on the renderer's dispatcher. `LinkedTables` lists the declarations. The engine's
+`SheetChange` goes through the same path as an edit, so only the rows whose Values changed get
+new instances, and every other row skips its render. A declaration that changes what is declared
+raises `DocumentChanged`, because the Sheet Document records declarations. A snapshot never does,
+because the document never holds a table's rows. Neither is a step on the undo stack: both are the
+Consumer's data, not a user's operation. The engine's exceptions (a bad name, an undeclared table,
+a ragged row) reach the caller. Completion offers the tables' names through `Sheet.Complete`
+(ticket 10). Layer 2, in `LinkedTableWiringTests`: `#NAME?` undeclared, then `#GETTING_DATA`
+through `IFERROR`; `SUM` and `XLOOKUP` over a snapshot; a newer snapshot replacing the last;
+render counts; what is raised and what is not; `=SUM(Po` offering `Positions`; and a push to an
+undeclared table refused. The DemoHost's `/sheet` page now has a positions ExGrid beside the
+Sheet, fed from the page's own array. The Sheet reads it as `Positions`: `=SUM(Positions[PV])`,
+`=XLOOKUP("R-4471", Positions[Id], Positions[PV])` and `=COUNTA(Positions[Id])`. The first
+snapshot is pushed 1.5 s after the first render, so `#GETTING_DATA` shows first, and *Revalue*
+pushes a new snapshot that both show. It was checked in a real Chromium on both hosts with a
+scratch spec (not committed): `#GETTING_DATA` shows, then the values, revalue, the table offered
+by completion, pointing, the Context Menu insertion and a fill drag, all with a clean console.
+**Still open:** the fourth criterion, a copy reaching a waiting cell being refused. It is blocked
+on the core's copy hook (ticket 14's comment): today such a copy carries `#GETTING_DATA` as text.

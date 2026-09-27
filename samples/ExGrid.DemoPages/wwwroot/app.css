@@ -41,6 +41,13 @@ body {
     --ex-header-rule-color: var(--mud-palette-primary-darken);
 }
 
+/* The /sheet page: the Sheet and the positions grid whose data it reads, side by side. */
+.demo-side-by-side {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
 .demo-pane {
     max-width: 60rem;
     margin-bottom: 2rem;

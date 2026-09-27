@@ -50,6 +50,27 @@ as shown in `text/plain`, unformatted in `text/html`. The fill handle fills as E
 References shifted, a series from two or more numbers, and dates by day. Any other pattern is
 refused, and the user is told why.
 
+## Linked Tables
+
+A Formula can read the application's own data as a **Linked Table**, by key or by column, in
+Excel's syntax (ADR-0049):
+
+```csharp
+await sheet.DeclareLinkedTableAsync("Positions", ["Id", "Book", "PV"]);
+await sheet.PushLinkedTableAsync("Positions", positions.Select(p =>
+    (IReadOnlyList<Value?>)[Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)]));
+```
+
+```
+=SUM(Positions[PV])
+=XLOOKUP("R-4471", Positions[Id], Positions[PV])
+```
+
+Until the first snapshot arrives, a Formula reading the table shows `#GETTING_DATA`, and
+`IFERROR` does not hide it. Each push replaces the whole table, and only the Formulas reading it
+recalculate. The declaration is recorded in the Sheet Document. The rows never are, so a Consumer
+pushes again after opening a document.
+
 ## Commands and the undo stack
 
 There is one undo stack per ExSheet, and a command the application gives goes onto it in its place

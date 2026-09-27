@@ -51,7 +51,7 @@ public static class DemoPageList
         new("inspector-edits", "Inspector edits", "Row inspectors",
             "Approving and noting a row from its inspector while the store changes underneath: banner, refusal, versioned notes."),
         new("sheet", "Sheet", "ExSheet",
-            "ExSheet drawn by ExGrid: values, Formulas and a date, the Headings, the Formula Bar and the Name Box (ADR-0046, ADR-0051)."),
+            "ExSheet drawn by ExGrid: Formulas with completion and pointing, the Formula Bar, fill, paste, insertion, and a Linked Table read from the positions grid beside it (ADR-0046, ADR-0049, ADR-0051)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null

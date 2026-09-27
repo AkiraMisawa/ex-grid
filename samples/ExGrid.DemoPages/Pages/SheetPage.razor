@@ -1,4 +1,5 @@
 @page "/sheet"
+@implements IDisposable
 @using System.Globalization
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md),
    and because inside ExSheet.Components the name ExSheet is the component, not the namespace. *@
@@ -17,22 +18,62 @@
     receives after every change (ADR-0048).
 </p>
 
+<p>
+    The grid on the right shows this page's positions, and the Sheet reads the same data as the
+    Linked Table <code>Positions</code> (ADR-0049): by key in B12, by column in B11. The page pushes
+    its first snapshot a moment after the Sheet opens, so those cells show <code>#GETTING_DATA</code>
+    until it lands; <i>Revalue</i> changes the data both show, and only the Formulas reading the
+    table recalculate. Type <code>=SUM(Po</code> into a cell to see the table offered.
+</p>
+
 <div class="demo-toolbar">
     <button id="sheet-undo" @onclick="UndoAsync">Undo</button>
     <button id="sheet-redo" @onclick="RedoAsync">Redo</button>
     <button id="sheet-money" @onclick="FormatMoneyAsync">Format selection as #,##0.00</button>
     <button id="sheet-insert-row" @onclick="InsertRowAsync">Insert a row above row 2</button>
+    <button id="sheet-revalue" @onclick="RevalueAsync">Revalue the positions by +1%</button>
 </div>
 
 <p class="demo-status">
     <span id="sheet-status">@_status</span>
 </p>
 
-<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1"
-         ViewportHeight="420" ViewportWidth="900" />
+<div class="demo-side-by-side">
+    <ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1"
+             ViewportHeight="420" ViewportWidth="720" />
+    <div id="sheet-positions">
+        <ExGrid TRow="Position" Window="_positions" Columns="PositionColumns" RowHeight="28"
+                ViewportHeight="420" ViewportWidth="330" />
+    </div>
+</div>
 
 @code {
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private const string Table = "Positions";
+    private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+
+    // The page's own data: what the positions grid shows and what the Sheet reads, from one
+    // source (ADR-0049's first rule: ExSheet never reads the grid).
+    private sealed record Position(string Id, string Book, double PV);
+
+    private static readonly IReadOnlyList<GridColumn<Position>> PositionColumns =
+    [
+        new("Id", ColumnType.Text, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("Book", ColumnType.Text, p => p.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("PV", ColumnType.Number, p => p.PV, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)),
+            format: v => ((double)v).ToString("N2", CultureInfo.InvariantCulture)),
+    ];
+
+    private readonly CancellationTokenSource _closing = new();
+    private Position[] _positions =
+    [
+        new("R-1102", "Rates", 1_250),
+        new("R-2210", "Rates", -420.5),
+        new("R-4471", "FX", 318.25),
+        new("R-5093", "Credit", 97.4),
+        new("R-6120", "FX", -55.75),
+    ];
 
     private ExSheet? _sheet;
     private SheetDocument? _document = Opening();
@@ -51,12 +92,53 @@
             ("A5", "Total"), ("B5", "=SUM(B2:B4)"), ("D5", "=SUM(D2:D4)"),
             ("A7", "As of"), ("B7", "9/26/2026"),
             ("A8", "Due"), ("B8", "=B7+30"),
+            ("A10", "Positions"),
+            ("A11", "Total PV"), ("B11", $"=SUM({Table}[PV])"),
+            ("A12", "PV of R-4471"), ("B12", $"=XLOOKUP(\"R-4471\", {Table}[Id], {Table}[PV])"),
+            ("A13", "Count"), ("B13", $"=COUNTA({Table}[Id])"),
         ];
+        // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
+        sheet.DeclareLinkedTable(Table, TableColumns);
         foreach (var (address, typed) in cells) sheet.Enter(CellAddress.Parse(address), typed);
         return sheet.ToDocument();
     }
 
     protected override void OnInitialized() => Count();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _sheet is null) return;
+        // Declaring what the document already declares changes nothing; a page that opens a
+        // document without it declares it here.
+        await _sheet.DeclareLinkedTableAsync(Table, TableColumns);
+        try
+        {
+            // Long enough to see #GETTING_DATA: the data is "on its way".
+            await Task.Delay(TimeSpan.FromSeconds(1.5), _closing.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        await PushAsync();
+    }
+
+    private async Task RevalueAsync()
+    {
+        _positions = [.. _positions.Select(p => p with { PV = Math.Round(p.PV * 1.01, 2) })];
+        await PushAsync();
+    }
+
+    private Task PushAsync() =>
+        _sheet is null
+            ? Task.CompletedTask
+            : _sheet.PushLinkedTableAsync(Table, _positions.Select(p => (IReadOnlyList<Value?>)[Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)]));
+
+    public void Dispose()
+    {
+        _closing.Cancel();
+        _closing.Dispose();
+    }
 
     private async Task UndoAsync()
     {

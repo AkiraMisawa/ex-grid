@@ -250,6 +250,58 @@
     public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) =>
         OnDispatcherAsync(() => FormatSelectionAsync(cells => SheetEdit.SetAlignment(cells, alignment)));
 
+    /// <summary>
+    /// The Linked Tables declared on the Sheet, in the order they were declared (ADR-0049): each
+    /// one's name, columns, whether it is still waiting for its first snapshot, and how many
+    /// rows the last one held.
+    /// </summary>
+    public IReadOnlyList<LinkedTable> LinkedTables => CurrentSheet.LinkedTables;
+
+    /// <summary>
+    /// Declares a Linked Table by name and columns, before any of its rows arrive (ADR-0049).
+    /// Formulas naming it stop being <c>#NAME?</c> and show <c>#GETTING_DATA</c> until the first
+    /// snapshot is pushed, and completion offers its name. The declaration is recorded in the Sheet
+    /// Document, so <see cref="DocumentChanged"/> is raised when it changes what was declared.
+    /// Declaring the same table with the same columns changes nothing. Other columns replace the
+    /// declaration and drop the rows held so far. It is the Consumer's data, not a user's
+    /// operation, so it is no step on the undo stack.
+    /// </summary>
+    /// <exception cref="ArgumentException">The name or the columns are not ones a structured reference can name.</exception>
+    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(columns);
+        return InvokeAsync(async () =>
+        {
+            var sheet = CurrentSheet;
+            var before = sheet.LinkedTables;
+            var change = sheet.DeclareLinkedTable(name, columns);
+            await ChangedAsync(change, raiseDocument: !SameDeclarations(before, sheet.LinkedTables));
+        });
+    }
+
+    /// <summary>
+    /// Replaces a Linked Table's data with a whole snapshot, in one step (ADR-0049): no
+    /// recalculation sees part of one snapshot and part of another. Only the Formulas that read
+    /// the table, and what depends on them, recalculate, and only the rows whose Values changed
+    /// repaint. The Sheet Document never holds a table's rows, so nothing is raised through
+    /// <see cref="DocumentChanged"/>, and nothing goes on the undo stack.
+    /// </summary>
+    /// <param name="name">The declared table's name.</param>
+    /// <param name="rows">The rows, each holding one Value per declared column, in order; null is a blank.</param>
+    /// <exception cref="InvalidOperationException">No table of that name is declared.</exception>
+    /// <exception cref="ArgumentException">A row does not have one Value per column, or holds a Value that is not data.</exception>
+    public Task PushLinkedTableAsync(string name, IEnumerable<IReadOnlyList<Value?>> rows)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(rows);
+        return InvokeAsync(() => ChangedAsync(CurrentSheet.PushLinkedTable(name, rows), raiseDocument: false));
+    }
+
+    // What the Sheet Document records of the tables: names and columns, in order (ADR-0049).
+    private static bool SameDeclarations(IReadOnlyList<LinkedTable> a, IReadOnlyList<LinkedTable> b) =>
+        a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Columns.SequenceEqual(p.Second.Columns));
+
     /// <summary>The Sheet as it stands, as a Sheet Document: Entries, never Values (ADR-0048).</summary>
     public SheetDocument ToDocument() => CurrentSheet.ToDocument();
 
@@ -506,7 +558,7 @@
         await ChangedAsync(step.Change);
     }
 
-    private async Task ChangedAsync(SheetChange change)
+    private async Task ChangedAsync(SheetChange change, bool raiseDocument = true)
     {
         var sheet = CurrentSheet;
         _edges.Update(sheet, change);
@@ -524,7 +576,7 @@
             _window = rows;
         }
         StateHasChanged();
-        if (DocumentChanged.HasDelegate)
+        if (raiseDocument && DocumentChanged.HasDelegate)
         {
             var document = sheet.ToDocument();
             _emitted.AddOrUpdate(document, document);
