@@ -362,4 +362,81 @@ public class ClipboardWiringTests : GridTestContext
 
         Assert.Equal(2, Assert.Single(intents).CellCount);
     }
+
+    [Fact] // ADR-0050 item 3 / DC-8: declared, a block onto one cell is one intent, and the block becomes the Selection
+    public async Task A_spilled_paste_raises_one_intent_and_selects_the_block()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 10);                       // Book, row 0 — a single cell
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], intent.Plan.Targets);
+        Assert.Equal(4, intent.CellCount);
+        Assert.Equal("d", intent.ValueFor(new CellPosition(1, 1)));
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], selection!.Ranges);
+        Assert.Equal(new CellPosition(0, 0), selection.Anchor);
+        Assert.Equal(new CellPosition(0, 0), selection.Focus);
+        Assert.Equal(4, selection.CellCount);                    // the count on display is the count written
+    }
+
+    [Fact] // ADR-0050 item 3 / DC-10: a spill past the grid's last row is refused by name, and nothing moves
+    public async Task A_spill_past_the_last_row_is_refused_by_name()
+    {
+        var intents = new List<GridPasteIntent>();
+        PasteRefusalReason? refused = null;
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused = r)
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 50);                       // Book, row 2 — the last row
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\r\nb\r\n", null));
+
+        Assert.Empty(intents);
+        Assert.Equal(PasteRefusalReason.SpillPastExtent, refused);
+        Assert.Equal([new SelectionRange(2, 0, 1, 1)], selection!.Ranges);
+    }
+
+    [Fact] // ADR-0050 item 3 / ADR-0035 / DC-10: Editable is judged on the spilled block before anything is raised
+    public async Task A_spill_covering_a_non_editable_column_is_refused()
+    {
+        var intents = new List<GridPasteIntent>();
+        PasteRefusalReason? refused = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused = r));
+        await ClickCellAsync(cut, 150, 10);                      // Amount, editable; the block reaches Locked
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\n", null));
+
+        Assert.Empty(intents);
+        Assert.Equal(PasteRefusalReason.TargetNotEditable, refused);
+    }
+
+    [Fact] // ADR-0050 item 3 / ADR-0011: a spill whose handling moved the order places no stale block
+    public async Task A_spill_whose_intent_moved_the_order_does_not_place_the_block()
+    {
+        GridSelection? selection = null;
+        IRenderedComponent<ExGrid<TestRow>>? cut = null;
+        cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent _) =>
+                cut!.Render(p => p.Add(g => g.RowSequenceVersion, 1)))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 10);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        Assert.NotEqual([new SelectionRange(0, 0, 2, 2)], selection?.Ranges ?? []);
+    }
 }

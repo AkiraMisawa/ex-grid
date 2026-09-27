@@ -925,6 +925,18 @@
     [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
 
     /// <summary>
+    /// A Consumer declaration (ADR-0050, item 3): a paste may spill. A block of several
+    /// cells pasted onto one cell then writes the block with that cell at its top-left — one
+    /// <see cref="OnPaste"/> intent whose plan is the block — and the block becomes the
+    /// Selection, with the Anchor and the Focus at its top-left, so the count on display is
+    /// the count written. <c>Editable</c> is judged on the block before anything is raised,
+    /// and a block running past the grid's last row or column is refused as
+    /// <see cref="PasteRefusalReason.SpillPastExtent"/>. Declared by a Consumer that holds
+    /// every cell, such as a Sheet. Off — the default — ADR-0014's refusal stands.
+    /// </summary>
+    [Parameter] public bool PasteMaySpill { get; set; }
+
+    /// <summary>
     /// The Filter in force (ADR-0002/0009), on the push form: what the panel paints
     /// its current state from. The grid never filters — the Consumer applies this and
     /// pushes the narrowed Window in, bumping <see cref="RowSequenceVersion"/> when
@@ -4596,16 +4608,46 @@
         if (block is null)
             return;
 
+        var target = _selection.Selection;
+        var extent = Extent;
         var decision = ClipboardRules.PlanPaste(
-            _selection.Selection, new PasteShape(block.Count, block[0].Count), ColumnIsEditable);
+            target, new PasteShape(block.Count, block[0].Count), ColumnIsEditable,
+            PasteMaySpill ? extent : null);
         if (decision.IsRefused)
         {
             if (OnPasteRefused.HasDelegate)
                 await OnPasteRefused.InvokeAsync(decision.Reason);
             return;
         }
+        var version = _sequenceVersion;
         if (OnPaste.HasDelegate)
-            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, _sequenceVersion));
+            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, version));
+        if (PasteMaySpill)
+            SelectSpilledBlock(target, decision.Plan, version);
+    }
+
+    /// <summary>
+    /// After a spilled paste the block is the Selection, with the Anchor and the Focus at
+    /// its top-left (ADR-0050, item 3). Only for a spill — a paste into a selected range
+    /// already has the target selected. Positions mean something only under the order they
+    /// were written in: if the Consumer's handling of the intent moved the Row Sequence
+    /// Version, or took the block's cells away, nothing is placed (ADR-0011).
+    /// </summary>
+    private void SelectSpilledBlock(GridSelection target, PastePlan plan, int version)
+    {
+        if (_disposed || plan.Targets.Count != 1 || target.Ranges.Count != 1)
+            return;
+        var block = plan.Targets[0];
+        if (block == target.Ranges[0] || version != _sequenceVersion)
+            return;
+        var extent = Extent;
+        if (block.BottomRow >= extent.RowCount || block.RightColumn >= extent.ColumnCount)
+            return;
+        if (Apply(_selection.Selection.Place(block, new CellPosition(block.TopRow, block.LeftColumn), extent)))
+        {
+            _suppressRender = false;
+            StateHasChanged();
+        }
     }
 
     /// <summary>Whether every row the plan touches is in the Window — the test that
