@@ -1,0 +1,12 @@
+@* Every product using is written with global::. The component lives in
+   ExSheet.Components, where a plain "ExSheet.Engine" would be looked up against the
+   ExSheet component class first, and a plain "ExGrid.X" against sibling types (the CS0426
+   trap recorded in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Chrome
+@using global::ExGrid.Components
+@using global::ExGrid.Selection
+@using global::ExSheet.Engine
