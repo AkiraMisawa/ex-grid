@@ -181,3 +181,17 @@ engine must now reproduce. The `decimal` alternative stays rejected.
   whose meaning is the same in both. Any other pattern gives `#VALUE!`, as the admission rule
   requires. Case sensitivity and the constructs in the accepted set are pinned by the case corpus
   against Excel.
+
+- **A colour in a format code is kept, and not yet painted** *(decided with the user, 2026-09-27)*.
+  `$5` typed becomes 5 with Excel's `$#,##0_);[Red]($#,##0)`. The code is recorded whole, so it
+  goes back to Excel intact. `[Red]` is not painted until per-cell styling has its ADR
+  ([ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)). The
+  parentheses still mark a negative, so the sign is never lost.
+- **`XLOOKUP`'s binary search over duplicate keys answers as Excel was observed to**: the first
+  equal key ascending, the last descending. Longer layouts are checked in the next Windows run.
+  Unsorted data is still refused.
+- **Typed `#SPILL!`, `#CALC!` and Excel's other newer Error Values stay text.** The engine has no
+  such Error Values while spilling is out of the first version. They join `#GETTING_DATA` and
+  `#CIRC!` as exceptions to "a typed Error Value becomes that Error Value".
+- **A number constant in a Formula is written as Excel writes it**: `=1E15&""` is stored as
+  `=1000000000000000&""`, with 15 significant digits.

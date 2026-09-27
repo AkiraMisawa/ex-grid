@@ -252,3 +252,11 @@ allowlisted keyboard/editor use. Reading or setting an input's selection reads n
 
 *(Added the same day: the editor listener also reports the caret on `selectionchange` inside an
 editor surface, and places it when an edit opens. It is the same use, and reads no layout.)*
+
+*(Added 2026-09-27, decided with the user: when the grid hands the keyboard back to its own root, a
+round trip after the gesture that asked for it, the call now does so only if DOM focus is still
+inside that root or on nothing (`body`). Otherwise a second grid the user has since moved to would
+have its keyboard taken. The call was already a JavaScript focus call made through Blazor. The
+condition reads `document.activeElement` and no layout. This is the one decision about focus made
+in JavaScript, and the reason is recorded here: [ADR-0018](./0018-multiple-instances-must-be-independent.md)'s
+independence cannot be kept on a circuit otherwise.)*

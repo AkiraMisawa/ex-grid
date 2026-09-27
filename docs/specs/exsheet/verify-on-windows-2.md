@@ -26,6 +26,13 @@ nothing. Record everything.** Do not change any ADR, `CONTEXT.md` or
   (a locked screen, another window in front), stop that part, record it as blocked, and go on
   with what does not need input.
 
+## Order
+
+**Parts A, B and E can start at once.** Part C (ExSheet beside Excel) and Part D (layer 3) test
+fixes that are still being merged: the typing race and the characters lost on the Server host. Start
+them only once the user says the merge is done, and pull `claude/exsheet-start-8cx3v1` again then.
+Record both verified commits.
+
 ## Part A — the oracle again, whole corpus
 
 `tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1`, as before: en-US for the whole corpus, then
