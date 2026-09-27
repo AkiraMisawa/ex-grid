@@ -529,6 +529,16 @@ a number. **Not the Cell State Error**, which is the Consumer's verdict on a val
 never computed.
 _Avoid_: error (that is a Cell State), exception
 
+**Linked Table**:
+A named table of rows the Consumer supplies to ExSheet, which Formulas read with Excel's
+structured references — `SUM(Positions[PV])`. Its rows are reached by key through functions
+(`XLOOKUP`), never by position: another grid's order is its user's to change, and a positional
+Reference into it would change value without anyone editing it. ExSheet never reads another
+component instance; what a Linked Table holds comes from the Consumer. Until it has arrived, a
+Formula that reads it shows that it is waiting — never 0, never an older value.
+_Avoid_: external reference (Excel's name for a reference into another workbook), data
+connection, link
+
 **Sheet Document**:
 The serialisable form of a Sheet that ExSheet hands to its Consumer and takes back. It holds
 Entries, never Values. The Consumer persists it; ExSheet does not.
