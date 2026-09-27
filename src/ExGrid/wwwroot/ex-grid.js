@@ -279,14 +279,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     };
 
     // The editor the answer opened, once its element is there — the render that made it
-    // and the answer travel separately, and the answer can arrive first.
+    // and the answer travel separately, and the answer can arrive first. Of the editor
+    // surfaces, the one holding DOM focus: the Formula Bar when the user was typing there,
+    // not the cell's editor that comes first in the markup (ADR-0051). The first one only
+    // when none holds it — the two-second hold has run out.
     const editorInput = () => {
-        const editor = root && root.querySelector('.ex-editor');
+        const active = document.activeElement;
+        const focused = root && active instanceof Element && root.contains(active)
+            ? active.closest('.ex-editor')
+            : null;
+        const editor = focused ?? (root && root.querySelector('.ex-editor'));
         if (!editor) {
             return null;
         }
-        return editor instanceof HTMLInputElement || editor instanceof HTMLTextAreaElement
-            ? editor
+        if (editor instanceof HTMLInputElement || editor instanceof HTMLTextAreaElement) {
+            return editor;
+        }
+        // A substituted Chrome editor is a box around its control: the control that has
+        // DOM focus inside it, if one has.
+        return focused && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
+            ? active
             : editor.querySelector('input, textarea');
     };
     // When the hold that is standing began: two seconds from it, whatever the keys held
