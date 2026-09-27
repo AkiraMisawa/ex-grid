@@ -75,8 +75,9 @@ internal static class NumberText
     /// where the scientific form that fits is closer to the number than the decimal form that
     /// fits. The decimal form may round a number that is not zero to a bare <c>0</c>, as Excel was
     /// observed to show <c>=1/3</c> in a column one character wide (GW-017); a negative number
-    /// rounded so shows no minus sign. <see langword="null"/> when neither form fits: the cell shows
-    /// <c>####</c>.
+    /// rounded so keeps its minus sign, <c>-0</c>, and a column with no room for the sign shows
+    /// <c>####</c> (GW-026, GW-027, observed in the second run). <see langword="null"/> when
+    /// neither form fits: the cell shows <c>####</c>.
     /// </summary>
     public static string? General(double number, int characters, CultureInfo culture) =>
         GeneralForm(number, characters, culture)?.Text;
@@ -92,7 +93,7 @@ internal static class NumberText
     {
         var minus = number < 0;
         var limit = Math.Min(characters - (minus ? 1 : 0), GeneralLimit);
-        if (limit < 1) return minus && characters >= 1 && number > -0.5 ? ("0", false) : null;
+        if (limit < 1) return null;
         if (number == 0) return ("0", false);
 
         // Fifteen significant digits (ADR-0047), rounded again from there.
@@ -118,8 +119,8 @@ internal static class NumberText
         {
             return null;
         }
-        // A negative number rounded to a bare 0 shows no minus sign, as a format rounding it does not (FMT-063).
-        if (chosen == "0") return ("0", false);
+        // A negative number rounded to a bare 0 keeps its minus sign, -0, as Excel's General was
+        // observed to show it (GW-026, verification/2026-09-27-windows-excel-2).
         var separator = culture.NumberFormat.NumberDecimalSeparator;
         if (separator != ".") chosen = chosen.Replace(".", separator, StringComparison.Ordinal);
         return ((minus ? "-" : "") + chosen, isScientific);
