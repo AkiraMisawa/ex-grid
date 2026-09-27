@@ -1,6 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { HOST_LOG, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
+import { BASE_URL, HOST_LOG, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
 
 // What every spec shares: the console capture that CON-1/2/3/6 are read from, and the
 // two records a run writes — console.json and metrics.json — under one directory.
@@ -95,6 +95,29 @@ function hostLogSince(offset) {
 }
 
 export const test = base.extend({
+    // A browser's first page is not what any test is about. The first load after a launch
+    // pays for the browser starting up and for the app's first boot in it, and on a CI
+    // runner that has taken over half a minute — the second project's first two tests timed
+    // out opening /features before their bodies ran, and every test after them passed. So
+    // each worker, which is one browser, opens a grid page once before its first test,
+    // under a timeout of its own, and the tests' own timeouts keep measuring the tests.
+    // Nothing is asserted here: a page that never loads fails the first test that needs
+    // it, by name, as before.
+    warmedUp: [async ({ browser }, use) => {
+        const context = await browser.newContext({ baseURL: BASE_URL });
+        try {
+            const page = await context.newPage();
+            await page.goto('/features', { timeout: 150_000 });
+            await page.locator('.ex-grid .ex-row').first()
+                .waitFor({ state: 'visible', timeout: 150_000 })
+                .catch(() => { });
+        } catch {
+            // Left to the tests to report: this is preparation, not a verdict.
+        } finally {
+            await context.close();
+        }
+        await use(true);
+    }, { scope: 'worker', auto: true, timeout: 330_000 }],
     // A refusal the grid raises as an exception by decision — a bundled Grid Source
     // attached from a second circuit (ADR-0018) — reaches the host log as an unhandled
     // exception, and a test that provokes it on purpose names it here. Named lines are
@@ -117,25 +140,26 @@ export const test = base.extend({
         page.on('pageerror', (e) => pageErrors.push(String(e)));
         const hostLogFrom = hostLogSize();
 
-        // On the Server host every page is prerendered first: painted, and deaf until its
-        // circuit connects and each grid has attached its listener (A11Y-20). A user who
+        // A grid is painted before it can hear a key: its listener attaches only once the
+        // module import has landed, and until then the grid is Prerendered — no tab stop,
+        // aria-busy (A11Y-20) — and a key pressed at it is lost. On the Server host the
+        // whole page is prerendered and deaf until its circuit connects as well. A user who
         // acts before that loses the input — the grid says it is busy for exactly that
-        // reason — so every navigation here waits, as that user would, for the page to
-        // be interactive and no grid to be Prerendered. WebAssembly has no prerender and
-        // the wait is immediate.
-        if (SERVER) {
-            const ready = async () => {
-                await page.locator('#demo-interactive').waitFor({ state: 'attached' });
-                await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
+        // reason — so every navigation here waits, as that user would, for the page to be
+        // interactive and no grid to be Prerendered. On WebAssembly this used to be skipped
+        // as immediate; it is not: rows paint before the import resolves, and a test that
+        // clicked and typed in that gap lost its keys on a slow runner.
+        const ready = async () => {
+            await page.locator('#demo-interactive').waitFor({ state: 'attached' });
+            await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
+        };
+        for (const name of ['goto', 'reload']) {
+            const navigate = page[name].bind(page);
+            page[name] = async (...args) => {
+                const response = await navigate(...args);
+                await ready();
+                return response;
             };
-            for (const name of ['goto', 'reload']) {
-                const navigate = page[name].bind(page);
-                page[name] = async (...args) => {
-                    const response = await navigate(...args);
-                    await ready();
-                    return response;
-                };
-            }
         }
 
         await use(page);

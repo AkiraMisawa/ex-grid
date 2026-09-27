@@ -110,6 +110,23 @@ test fails at 0 ms with `browserType.launch: Target page, context or browser has
 closed`. That is not a result, but keep the log and say so rather than letting a rerun
 hide it.
 
+## Before the first test of each browser
+
+`fixtures.mjs` opens `/features` once per worker — once per browser — before that browser's
+first test, under a timeout of its own (the `warmedUp` fixture). A browser's first load pays
+for its own start-up and the app's first boot in it, which on a CI runner has taken over half a
+minute and timed out the first two tests of the second project before their bodies ran. The
+warm-up asserts nothing; a page that never loads still fails the first test that needs it.
+
+## Before the first key of each page
+
+Every `page.goto` and `page.reload` in a test returns only once the page is interactive and no
+grid is Prerendered (`aria-busy` gone, a tab stop taken — A11Y-20), on both hosts. Rows paint
+before the grid's listener attaches — on WebAssembly too, where the module import still has to
+land — and a key pressed in that gap is lost, as it would be for a user who ignored the busy
+grid. A test that clicked and typed straight after the rows appeared failed that way on a slow
+runner.
+
 ## What it asserts
 
 - `scrollbar.spec.mjs` — the Scrollbar Gutter: the Focus is never behind a bar, at
