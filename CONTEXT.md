@@ -524,8 +524,8 @@ names it)
 
 **Error Value**:
 A Value that is an error — `#DIV/0!`, `#NAME?`, `#REF!`, `#VALUE!`, `#N/A` and the rest of
-Excel's set — produced by a Formula and carried into every Formula that uses it. It is data, like
-a number. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
+Excel's set, plus `#CIRC!` for a Formula that depends on itself, where Excel would show 0 —
+produced by a Formula and carried into every Formula that uses it. It is data, like a number. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
 never computed.
 _Avoid_: error (that is a Cell State), exception
 
@@ -538,6 +538,12 @@ component instance; what a Linked Table holds comes from the Consumer. Until it 
 Formula that reads it shows that it is waiting — never 0, never an older value.
 _Avoid_: external reference (Excel's name for a reference into another workbook), data
 connection, link
+
+**Headings**:
+The column letters and row numbers framing a Sheet — Column Headings and Row Headings. Clicking
+one selects its whole column or row, as in Excel. The Consumer may hide either; a Sheet shown
+without them still addresses its cells `A1`.
+_Avoid_: header (that is ExGrid's column header, whose click sorts), labels, row numbers
 
 **Sheet Document**:
 The serialisable form of a Sheet that ExSheet hands to its Consumer and takes back. It holds
