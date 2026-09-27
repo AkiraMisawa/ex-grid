@@ -103,7 +103,7 @@ public class CellToneTests : GridTestContext
         var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
 
         Assert.Equal("-7\r\n", payload.Text);
-        Assert.Equal("<table><tr><td>-7</td></tr></table>", payload.Html);
+        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>-7</td></tr></table>", payload.Html);
     }
 
     [Fact] // ADR-0029: every composed class string is interned — the same combination is the same instance

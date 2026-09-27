@@ -5012,9 +5012,10 @@
         if (_disposed)
             return;
 
-        var block = ClipboardParse.Parse(html, text);
-        if (block is null)
+        var parsed = ClipboardParse.ParseBlock(html, text);
+        if (parsed is null)
             return;
+        var block = parsed.Values;
 
         var target = _selection.Selection;
         var extent = Extent;
@@ -5029,7 +5030,7 @@
         }
         var version = _sequenceVersion;
         if (OnPaste.HasDelegate)
-            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, version));
+            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, version, parsed.Origins));
         if (PasteMaySpill)
             SelectSpilledBlock(target, decision.Plan, version);
     }

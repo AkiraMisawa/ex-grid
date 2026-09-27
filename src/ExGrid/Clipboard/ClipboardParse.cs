@@ -19,12 +19,32 @@ public static class ClipboardParse
     /// <summary>The parsed block, rectangular by construction — a short line is padded
     /// with empty cells, as Excel pads. Null when neither flavour holds anything.</summary>
     public static IReadOnlyList<IReadOnlyList<string>>? Parse(string? html, string? text)
+        => ParseBlock(html, text)?.Values;
+
+    /// <summary>
+    /// The parsed block with where each field came from (ADR-0050, item 10): a field is
+    /// <see cref="PasteFieldOrigin.Invariant"/> when Excel's <c>x:num="…"</c> supplied it, or
+    /// when the whole table is ExGrid's own unformatted HTML (marked by
+    /// <see cref="ClipboardData.InvariantMarker"/>); every other field — the text flavour, a
+    /// cell's text content, Excel's bare <c>x:num</c> — is
+    /// <see cref="PasteFieldOrigin.ShownText"/>, written in the source's culture. Null when
+    /// neither flavour holds anything, as <see cref="Parse"/>.
+    /// </summary>
+    public static ClipboardBlock? ParseBlock(string? html, string? text)
     {
         if (!string.IsNullOrEmpty(html) && ParseHtmlTable(html) is { Count: > 0 } table)
             return Rectangular(table);
         if (!string.IsNullOrEmpty(text) && ParseTsv(text) is { Count: > 0 } block)
-            return Rectangular(block);
+            return Rectangular(Shown(block));
         return null;
+    }
+
+    private static List<List<(string Value, PasteFieldOrigin Origin)>> Shown(List<List<string>> rows)
+    {
+        var fields = new List<List<(string, PasteFieldOrigin)>>(rows.Count);
+        foreach (var row in rows)
+            fields.Add(row.ConvertAll(value => (value, PasteFieldOrigin.ShownText)));
+        return fields;
     }
 
     /// <summary>
@@ -109,7 +129,7 @@ public static class ClipboardParse
     /// <c>x:num</c> attribute when Excel supplied one (the raw number, full precision),
     /// otherwise its text content with tags stripped and entities decoded.
     /// </summary>
-    private static List<List<string>>? ParseHtmlTable(string html)
+    private static List<List<(string Value, PasteFieldOrigin Origin)>>? ParseHtmlTable(string html)
     {
         var tableStart = html.IndexOf("<table", StringComparison.OrdinalIgnoreCase);
         if (tableStart < 0)
@@ -117,8 +137,13 @@ public static class ClipboardParse
         var tableEnd = html.IndexOf("</table", tableStart, StringComparison.OrdinalIgnoreCase);
         if (tableEnd < 0)
             tableEnd = html.Length;
+        // ExGrid's own flavour is raw and locale-free throughout (ADR-0005), so every field of
+        // it is invariant; it says so on the table, and nothing else on a clipboard does.
+        var tableOpenEnd = html.IndexOf('>', tableStart);
+        var ownInvariant = tableOpenEnd > 0 && tableOpenEnd < tableEnd &&
+            html.AsSpan(tableStart, tableOpenEnd - tableStart).Contains(ClipboardData.InvariantMarker, StringComparison.OrdinalIgnoreCase);
 
-        var rows = new List<List<string>>();
+        var rows = new List<List<(string, PasteFieldOrigin)>>();
         var position = tableStart;
         while (true)
         {
@@ -129,7 +154,7 @@ public static class ClipboardParse
             if (rowEnd < 0 || rowEnd > tableEnd)
                 rowEnd = tableEnd;
 
-            var cells = new List<string>();
+            var cells = new List<(string, PasteFieldOrigin)>();
             var cellPosition = rowStart;
             while (true)
             {
@@ -147,7 +172,9 @@ public static class ClipboardParse
 
                 var attributes = html[cellStart..openEnd];
                 var content = html[(openEnd + 1)..closeStart];
-                cells.Add(NumberAttribute(attributes) ?? DecodeText(content));
+                cells.Add(NumberAttribute(attributes) is { } number
+                    ? (number, PasteFieldOrigin.Invariant)
+                    : (DecodeText(content), ownInvariant ? PasteFieldOrigin.Invariant : PasteFieldOrigin.ShownText));
                 cellPosition = closeStart + 1;
             }
             if (cells.Count > 0)
@@ -242,28 +269,59 @@ public static class ClipboardParse
         return text.ToString().Trim(' ', '\t', '\n', '\r').Replace('\u00A0', ' ');
     }
 
-    private static IReadOnlyList<IReadOnlyList<string>> Rectangular(List<List<string>> rows)
+    private static ClipboardBlock Rectangular(List<List<(string Value, PasteFieldOrigin Origin)>> rows)
     {
         var width = 0;
         foreach (var row in rows)
             width = Math.Max(width, row.Count);
-        var block = new IReadOnlyList<string>[rows.Count];
+        var values = new IReadOnlyList<string>[rows.Count];
+        var origins = new IReadOnlyList<PasteFieldOrigin>[rows.Count];
         for (var r = 0; r < rows.Count; r++)
         {
             var row = rows[r];
-            if (row.Count < width)
-            {
-                var padded = new string[width];
-                row.CopyTo(padded);
-                for (var c = row.Count; c < width; c++)
-                    padded[c] = "";
-                block[r] = padded;
-            }
-            else
-            {
-                block[r] = row;
-            }
+            // A short line is padded with empty cells, as Excel pads; an empty field reads the
+            // same under any culture.
+            var rowValues = new string[width];
+            var rowOrigins = new PasteFieldOrigin[width];
+            for (var c = 0; c < width; c++)
+                (rowValues[c], rowOrigins[c]) = c < row.Count ? row[c] : ("", PasteFieldOrigin.ShownText);
+            values[r] = rowValues;
+            origins[r] = rowOrigins;
         }
-        return block;
+        return new ClipboardBlock(values, origins);
     }
+}
+
+/// <summary>Where one pasted field came from, which says how it is read (ADR-0050, item 10).</summary>
+public enum PasteFieldOrigin
+{
+    /// <summary>Text as it was shown where it was copied: the plain-text flavour, or an HTML
+    /// cell's text content. Its numbers are written in the source's culture — <c>1.234,5</c>
+    /// under <c>de-DE</c> — so a Consumer reads it as typed under its own culture.</summary>
+    ShownText = 0,
+
+    /// <summary>An invariant number: Excel's <c>x:num</c> attribute, the raw value at full
+    /// precision in invariant notation, or a field of ExGrid's own unformatted HTML, which is
+    /// locale-free throughout (ADR-0005). A Consumer reads it under the invariant culture, never
+    /// its own — otherwise <c>1234.5</c> from Excel would be misread under <c>de-DE</c>.</summary>
+    Invariant,
+}
+
+/// <summary>
+/// A parsed clipboard block (ADR-0005/0050): the values, rectangular by construction, and
+/// beside each one where it came from.
+/// </summary>
+public sealed class ClipboardBlock
+{
+    internal ClipboardBlock(IReadOnlyList<IReadOnlyList<string>> values, IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> origins)
+    {
+        Values = values;
+        Origins = origins;
+    }
+
+    /// <summary>The fields, row by row; every row is as wide as the widest.</summary>
+    public IReadOnlyList<IReadOnlyList<string>> Values { get; }
+
+    /// <summary>Where each field of <see cref="Values"/> came from, at the same position.</summary>
+    public IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> Origins { get; }
 }

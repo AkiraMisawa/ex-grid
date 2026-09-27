@@ -56,7 +56,7 @@ public class ClipboardWiringTests : GridTestContext
 
         Assert.Equal("data", payload.Kind);
         Assert.Equal("Alpha\t100.5\r\n", payload.Text);
-        Assert.Equal("<table><tr><td>Alpha</td><td>100.5</td></tr></table>", payload.Html);
+        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>Alpha</td><td>100.5</td></tr></table>", payload.Html);
     }
 
     [Fact] // ADR-0005 / CP-15: an empty selection refuses with its own reason; the clipboard is untouched
@@ -318,6 +318,40 @@ public class ClipboardWiringTests : GridTestContext
             "1,234.57", "<table><tr><td x:num=\"1234.56789\">1,234.57</td></tr></table>"));
 
         Assert.Equal("1234.56789", Assert.Single(intents).ValueFor(new CellPosition(0, 0)));
+    }
+
+    [Fact] // ADR-0050 item 10 / DC-33: the paste intent says where each field came from, through the tiling
+    public async Task A_paste_intent_marks_each_field_invariant_or_shown()
+    {
+        var intents = new List<GridPasteIntent>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i)));
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+
+        // One row of two, tiled down three rows: an x:num and a shown text.
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync(
+            "1,234.50\t1,5\r\n", "<table><tr><td x:num=\"1234.5\">1,234.50</td><td x:num>1,5</td></tr></table>"));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal([[PasteFieldOrigin.Invariant, PasteFieldOrigin.ShownText]], intent.Origins);
+        Assert.Equal(PasteFieldOrigin.Invariant, intent.OriginFor(new CellPosition(2, 0)));
+        Assert.Equal(PasteFieldOrigin.ShownText, intent.OriginFor(new CellPosition(2, 1)));
+    }
+
+    [Fact] // ADR-0050 item 10 / DC-33: a copy from this grid pastes back as invariant
+    public async Task The_grids_own_copy_pastes_back_as_invariant()
+    {
+        var intents = new List<GridPasteIntent>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i)));
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+        var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync(payload.Text, payload.Html));
+
+        Assert.Equal([[PasteFieldOrigin.Invariant, PasteFieldOrigin.Invariant]], Assert.Single(intents).Origins);
     }
 
     [Fact] // ADR-0035 / CP-16: a target covering a non-editable column refuses, and raises no intent

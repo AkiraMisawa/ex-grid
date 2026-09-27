@@ -123,7 +123,7 @@ public class ClipboardWiringTests : SheetTestContext
 
         Assert.Equal("data", payload.Kind);
         Assert.Equal("50%\thello\t1\r\n", payload.Text);
-        Assert.Equal("<table><tr><td>0.5</td><td>hello</td><td>1</td></tr></table>", payload.Html);
+        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>0.5</td><td>hello</td><td>1</td></tr></table>", payload.Html);
     }
 
     [Fact] // ADR-0005: a copy running beyond the Window is answered from the Sheet, never refused as unavailable
