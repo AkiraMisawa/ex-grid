@@ -130,6 +130,21 @@ public class ClipboardTests
         Assert.True(sheet.GetFormat(At("B2")).IsDate);
     }
 
+    [Fact] // ADR-0048 (observed in Excel): pasted text that cannot be read as a Formula is text; typed, it is still refused
+    public void An_unreadable_pasted_formula_is_text()
+    {
+        var sheet = NewSheet();
+
+        var step = sheet.Do(SheetEdit.PasteText([new(At("A1"), "5"), new(At("B1"), "=1+")]));
+
+        Assert.Equal(5, sheet.Number("A1"));
+        Assert.Equal(Value.FromText("=1+"), sheet.GetValue(At("B1")));
+        Assert.False(sheet.GetEntry(At("B1"))!.IsFormula);
+        step.Undo();
+        Assert.Null(sheet.GetEntry(At("B1")));
+        Assert.Throws<FormulaSyntaxException>(() => sheet.Do(SheetEdit.Enter(At("B1"), "=1+")));
+    }
+
     [Fact] // ADR-0048: an empty field clears its cell; a ragged block is refused as an argument
     public void Empty_fields_clear_and_ragged_blocks_are_refused()
     {

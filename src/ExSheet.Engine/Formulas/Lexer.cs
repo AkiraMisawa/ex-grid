@@ -32,6 +32,9 @@ internal sealed record Token(TokenKind Kind, int Position, string Text, bool Aft
 
     /// <summary>For a structured reference: the table's name; <see cref="Text"/> is the column's.</summary>
     public string? TableName { get; init; }
+
+    /// <summary>For <c>#REF!</c> written after a Sheet qualifier (<c>Sheet1!#REF!</c>): the Sheet's name, unquoted.</summary>
+    public string? SheetName { get; init; }
 }
 
 /// <summary>
@@ -53,6 +56,10 @@ internal static partial class Lexer
         RegexOptions.IgnorePatternWhitespace | RegexOptions.CultureInvariant)]
     private static partial Regex ReferencePattern();
 
+    /// <summary><c>Sheet1!#REF!</c>: a qualified Reference whose cells were deleted, as Excel writes it.</summary>
+    [GeneratedRegex(@"\G(?<sheet>'(?:[^']|'')+'|[A-Za-z_][A-Za-z0-9_.]*)!#REF!", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex QualifiedRefErrorPattern();
+
     [GeneratedRegex(@"\G(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", RegexOptions.CultureInvariant)]
     private static partial Regex NumberPattern();
 
@@ -60,6 +67,14 @@ internal static partial class Lexer
     private static partial Regex NamePattern();
 
     private static readonly string[] Operators = ["<>", "<=", ">=", "=", "<", ">", "+", "-", "*", "/", "^", "&", "%"];
+
+    /// <summary>
+    /// The whitespace a Formula may hold between its tokens: a space and a line break. Excel
+    /// refuses a tab (observed, verification/2026-09-27-windows-excel); a carriage return and the
+    /// other space characters are inferred (a carriage return is taken with its line feed, the
+    /// rest are refused).
+    /// </summary>
+    public static bool IsFormulaWhitespace(char c) => c is ' ' or '\n' or '\r';
 
     public static List<Token> Tokenize(string formula, int start)
     {
@@ -70,6 +85,10 @@ internal static partial class Lexer
             var afterSpace = false;
             while (i < formula.Length && char.IsWhiteSpace(formula[i]))
             {
+                if (!IsFormulaWhitespace(formula[i]))
+                {
+                    throw new FormulaSyntaxException(formula, i, "a Formula's whitespace is spaces and line breaks; Excel refuses a tab or any other space character.");
+                }
                 i++;
                 afterSpace = true;
             }
@@ -127,6 +146,16 @@ internal static partial class Lexer
             {
                 tokens.Add(new Token(c == '(' ? TokenKind.LeftParenthesis : c == ')' ? TokenKind.RightParenthesis : TokenKind.Comma, i, c.ToString(), afterSpace) { Length = 1 });
                 i++;
+                continue;
+            }
+
+            var qualifiedError = QualifiedRefErrorPattern().Match(formula, i);
+            if (qualifiedError.Success)
+            {
+                var raw = qualifiedError.Groups["sheet"].Value;
+                var sheet = raw[0] == '\'' ? raw[1..^1].Replace("''", "'", StringComparison.Ordinal) : raw;
+                tokens.Add(new Token(TokenKind.Error, i, qualifiedError.Value, afterSpace) { Error = ErrorValue.Ref, SheetName = sheet, Length = qualifiedError.Length });
+                i += qualifiedError.Length;
                 continue;
             }
 
@@ -232,18 +261,19 @@ internal static partial class Lexer
             // Excel writes a rectangle from its top-left corner, whichever corner was typed first.
             if (c2 < c1) (c1, c1Abs, c2, c2Abs) = (c2, c2Abs, c1, c1Abs);
             if (r2 < r1) (r1, r1Abs, r2, r2Abs) = (r2, r2Abs, r1, r1Abs);
-            return new Reference(sheet, ReferenceShape.Area, r1, c1, r2, c2, r1Abs, c1Abs, r2Abs, c2Abs);
+            return Reference.Rectangle(sheet, r1, c1, r2, c2, r1Abs, c1Abs, r2Abs, c2Abs);
         }
         if (match.Groups["cc1"].Success)
         {
             if (!TryColumn(match.Groups["cc1"].Value, out var c1, out var c1Abs) || !TryColumn(match.Groups["cc2"].Value, out var c2, out var c2Abs)) return null;
             if (c2 < c1) (c1, c1Abs, c2, c2Abs) = (c2, c2Abs, c1, c1Abs);
-            return new Reference(sheet, ReferenceShape.Columns, 0, c1, Sheet.RowCount - 1, c2, false, c1Abs, false, c2Abs);
+            // Excel holds a whole column's rows as absolute: A:XFD is written $1:$1048576.
+            return Reference.Rectangle(sheet, 0, c1, Sheet.RowCount - 1, c2, true, c1Abs, true, c2Abs);
         }
         {
             if (!TryRow(match.Groups["rr1"].Value, out var r1, out var r1Abs) || !TryRow(match.Groups["rr2"].Value, out var r2, out var r2Abs)) return null;
             if (r2 < r1) (r1, r1Abs, r2, r2Abs) = (r2, r2Abs, r1, r1Abs);
-            return new Reference(sheet, ReferenceShape.Rows, r1, 0, r2, Sheet.ColumnCount - 1, r1Abs, false, r2Abs, false);
+            return Reference.Rectangle(sheet, r1, 0, r2, Sheet.ColumnCount - 1, r1Abs, true, r2Abs, true);
         }
     }
 

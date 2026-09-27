@@ -18,9 +18,6 @@ internal static class SheetWords
 
     internal static string Refused(SheetRefusal refusal) => refusal.Message;
 
-    internal static string PasteUnreadable(FormulaSyntaxException error) =>
-        string.Create(CultureInfo.InvariantCulture,
-            $"Nothing was pasted: a pasted Formula cannot be read at character {error.Position + 1}: {error.Reason}");
 
     internal static string PasteReadsDifferently(string field, CultureInfo culture) =>
         $"Nothing was pasted: '{field}' came as a value no culture changes, and typed under {culture.Name} it would not read as that value.";

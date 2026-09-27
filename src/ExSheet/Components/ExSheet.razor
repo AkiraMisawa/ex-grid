@@ -484,7 +484,7 @@
     /// (<see cref="SheetClipboard.ExactNumberFor"/>). The
     /// grid has already judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a
     /// spilled block becomes the Selection when this returns. A field beginning with <c>=</c>
-    /// that cannot be read refuses the whole paste, and nothing is written.
+    /// that cannot be read as a Formula is taken as text, as Excel takes it (ADR-0048).
     /// </summary>
     private async Task OnPasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
     {
@@ -526,15 +526,14 @@
         {
             if (exact.Count == 0)
             {
-                await PerformAsync(SheetEdit.Enter(typed));
+                await PerformAsync(SheetEdit.PasteText(typed));
                 return;
             }
             // The typed fields and the exact numbers are one operation on the undo stack
             // (ADR-0048). The engine takes typed text, whose reading can give a cell a format,
-            // and exact Entries in separate edits, so the paste is two engine steps, typed first:
-            // a Formula that cannot be read refuses it before anything is written.
+            // and exact Entries in separate edits, so the paste is two engine steps, typed first.
             var steps = new List<SheetStep>(2);
-            if (typed.Count > 0) steps.Add(sheet.Do(SheetEdit.Enter(typed)));
+            if (typed.Count > 0) steps.Add(sheet.Do(SheetEdit.PasteText(typed)));
             try
             {
                 steps.Add(sheet.Do(SheetEdit.SetEntries(exact)));
@@ -547,11 +546,6 @@
             }
             _history.Record(steps);
             await ChangedAsync([.. steps.Select(step => step.Change)]);
-        }
-        catch (FormulaSyntaxException error)
-        {
-            _notice = SheetWords.PasteUnreadable(error);
-            StateHasChanged();
         }
         catch (SheetRefusedException refused)
         {

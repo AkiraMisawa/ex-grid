@@ -28,7 +28,8 @@ public sealed partial class Sheet
     /// <list type="bullet">
     /// <item>Formulas are copied with their relative References shifted, repeating the source.</item>
     /// <item>Two or more numbers continue as Excel's linear trend: the least-squares line through
-    /// them, the source cells left as they are (1, 2 → 3, 4; 1, 3, 4 → 5.67, 7.17, 8.67).</item>
+    /// them, the source cells left as they are (1, 2 → 3, 4; 1, 3, 4 → 5.67, 7.17, 8.67), held at
+    /// 15 significant digits as Excel holds them.</item>
     /// <item>A single date (a number shown in a date format with no time of day) goes on by one day
     /// per cell.</item>
     /// <item>A single number, and text, booleans, Error Values and blanks, are copied, repeating
@@ -154,10 +155,67 @@ public sealed partial class Sheet
             sxx += (i - meanX) * (i - meanX);
         }
         var slope = sxy / sxx;
-        return (x, _, _) => Series(meanY + slope * (x - meanX));
+        // Excel stores a trend at 15 significant digits (observed, verification/2026-09-27-windows-excel
+        // item 4): the step and the cell next to the source are the line's, each rounded so, and
+        // every further cell is that cell plus the step, counted exactly and rounded so. 1, 2, 4
+        // gives 5.33333333333333, 6.83333333333333, ...; 0.1, 0.2, 0.4 gives ..., 0.983333333333333,
+        // where rounding the line's own double at each cell would give 0.983333333333334.
+        var step = TrendDigits.Round(slope);
+        var ahead = TrendDigits.Round(meanY + slope * (ys.Length - meanX));
+        var behind = TrendDigits.Round(meanY + slope * (-1 - meanX));
+        return (x, _, _) => Series(x >= 0 ? TrendDigits.Step(ahead, step, x - ys.Length) : TrendDigits.Step(behind, -step, -1 - x));
 
         static Entry Series(double number) =>
             Entry.FromValue(double.IsFinite(number) ? Value.FromNumber(number) : Value.FromError(ErrorValue.Num));
+    }
+
+    /// <summary>Excel's 15 significant digits, for a fill's linear trend (ADR-0050, ticket 15).</summary>
+    internal static class TrendDigits
+    {
+        private const int Digits = 15;
+
+        /// <summary><paramref name="number"/> rounded to 15 significant digits, as the nearest double.</summary>
+        public static double Round(double number) =>
+            double.IsFinite(number) && number != 0
+                ? double.Parse(number.ToString("E" + (Digits - 1).ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture), CultureInfo.InvariantCulture)
+                : number;
+
+        /// <summary>
+        /// <paramref name="first"/> plus <paramref name="count"/> steps, rounded to 15 significant
+        /// digits. Both are already at 15 digits, so the sum is counted exactly in decimal where
+        /// decimal holds it; outside decimal's range it is counted in doubles.
+        /// </summary>
+        public static double Step(double first, double step, int count)
+        {
+            if (count == 0) return first;
+            if (Exact(first) is { } a && Exact(step) is { } s)
+            {
+                var sum = a + count * s;
+                // Through text, which double.Parse rounds correctly to the nearest double.
+                if (Inside(sum)) return double.Parse(RoundDecimal(sum).ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+            }
+            return Round(first + count * step);
+        }
+
+        private static decimal? Exact(double number)
+        {
+            if (!Inside(number)) return null;
+            return number == 0 ? 0m : decimal.Parse(number.ToString("E" + (Digits - 1).ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
+        // Decimal keeps 15 significant digits from 1e-13 (its 28 places) up to 1e15 (a whole number of 15 digits).
+        private static bool Inside(double number) => number == 0 || (Math.Abs(number) >= 1e-13 && Math.Abs(number) < 1e15);
+
+        private static bool Inside(decimal number) => number == 0 || (Math.Abs(number) >= 1e-13m && Math.Abs(number) < 1e15m);
+
+        private static decimal RoundDecimal(decimal number)
+        {
+            if (number == 0) return 0;
+            var magnitude = 0;
+            for (var a = Math.Abs(number); a >= 10; a /= 10) magnitude++;
+            for (var a = Math.Abs(number); a < 1; a *= 10) magnitude--;
+            return Math.Round(number, Digits - 1 - magnitude, MidpointRounding.AwayFromZero);
+        }
     }
 
     private static SheetRefusal Refuse(CellAddress at, string what) =>

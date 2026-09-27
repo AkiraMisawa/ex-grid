@@ -215,12 +215,12 @@
     },
     {
       "id": "TABLE-023",
-      "source": "documented",
-      "description": "A column whose name needs Excel's double brackets reads the same, and is written back so",
+      "source": "observed",
+      "description": "A column typed in double brackets reads the same, and is written back in single brackets",
       "tables": {"Trades": {"columns": ["Unit Price", "Qty"], "rows": [[2.5, 4]]}},
       "cells": {"A1": "=SUM(Trades[[Unit Price]])*SUM(Trades[Qty])"},
       "check": "A1",
-      "expect": {"value2": 10, "formula": "=SUM(Trades[[Unit Price]])*SUM(Trades[Qty])"}
+      "expect": {"value2": 10, "formula": "=SUM(Trades[Unit Price])*SUM(Trades[Qty])"}
     }
   ]
 }

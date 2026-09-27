@@ -26,8 +26,8 @@ public sealed class Entry : IEquatable<Entry>
     public Value? Constant { get; }
 
     /// <summary>
-    /// The Formula in invariant syntax, beginning with <c>=</c>: the whitespace as it was typed,
-    /// and each token as the engine writes it (function names and References in upper case,
+    /// The Formula in invariant syntax, beginning with <c>=</c>: the whitespace as it was typed
+    /// where Excel keeps it (not at the end, nor before a <c>,</c>), and each token as the engine writes it (function names and References in upper case,
     /// <c>,</c> between arguments, <c>.</c> as the decimal separator) (ADR-0047);
     /// <see langword="null"/> when this Entry is a constant.
     /// </summary>

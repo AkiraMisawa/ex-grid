@@ -4,15 +4,16 @@ namespace ExSheet.Engine.Formulas;
 /// Rewrites a Formula's References through a map: the new Reference, or <see langword="null"/>
 /// where the cells it named no longer exist, which Excel writes as <c>#REF!</c> in the stored
 /// Formula (ADR-0047). Only the Reference tokens change; the whitespace and every other token are
-/// kept as they were.
+/// kept as they were, but for the whitespace before a Reference that becomes <c>#REF!</c>
+/// (<see cref="FormulaText.RewriteReferences"/>).
 /// </summary>
 internal static class ReferenceRewriter
 {
     /// <summary>The Entry with its References mapped; the same instance when nothing changed.</summary>
-    public static Entry Rewrite(Entry entry, Func<Reference, Reference?> map)
+    public static Entry Rewrite(Entry entry, Func<Reference, Reference?> map, Func<string, string>? requalify = null)
     {
         if (entry.Formula is not { } formula) return entry;
-        var rewritten = FormulaText.RewriteReferences(formula, map);
+        var rewritten = FormulaText.RewriteReferences(formula, map, requalify);
         return ReferenceEquals(rewritten, formula) ? entry : Entry.FromFormula(rewritten);
     }
 }
@@ -73,19 +74,20 @@ internal readonly record struct StructuralEdit(SheetAxis Axis, int Start, int Co
     /// cell it named — makes it <c>#REF!</c> (<see langword="null"/>). A Reference that spans the
     /// whole axis (<c>A:A</c> for rows) is untouched, as is one qualified with another Sheet's name
     /// (ADR-0046); one qualified with <paramref name="sheet"/>'s own name is rewritten like any other.
-    /// <paramref name="leavesSheet"/> is set when an insertion would push the cells it names off
-    /// the edge; the caller refuses the insertion.
+    /// An insertion that pushes the cells a Reference names off the edge does not stop the
+    /// insertion, as it does not in Excel (observed, verification/2026-09-27-windows-excel): a
+    /// range pushed partly off is cut at the edge (<c>A2:A1048576</c>, a row inserted at 1, is
+    /// <c>A3:A1048576</c>), and a Reference pushed wholly off is <c>#REF!</c>.
     /// </summary>
-    public Reference? Map(Reference reference, Sheet sheet, out bool leavesSheet)
+    public Reference? Map(Reference reference, Sheet sheet)
     {
-        leavesSheet = false;
         if (!sheet.IsLocal(reference)) return reference;
         var rows = Axis == SheetAxis.Rows;
         if (rows && reference.Shape == ReferenceShape.Columns) return reference;
         if (!rows && reference.Shape == ReferenceShape.Rows) return reference;
         var p1 = rows ? reference.Row1 : reference.Column1;
         var p2 = rows ? reference.Row2 : reference.Column2;
-        // A1:A1048576 is A:A to Excel, which writes it so; an edit along the axis leaves it alone.
+        // A:A (A1:A1048576 is written so) spans the whole axis; an edit along it leaves it alone.
         if (reference.Shape != ReferenceShape.Cell && p1 == 0 && p2 == Max) return reference;
 
         int n1, n2;
@@ -105,11 +107,8 @@ internal readonly record struct StructuralEdit(SheetAxis Axis, int Start, int Co
             {
                 return reference;
             }
-            if (n2 > Max)
-            {
-                leavesSheet = true;
-                return reference;
-            }
+            if (n1 > Max) return null;
+            if (n2 > Max) n2 = Max;
         }
         else
         {

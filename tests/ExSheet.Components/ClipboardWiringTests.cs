@@ -99,17 +99,17 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0047: a pasted Formula that cannot be read refuses the whole paste, and says why
-    public async Task An_unreadable_formula_refuses_the_whole_paste()
+    [Fact] // ADR-0048 (observed in Excel): pasted text that cannot be read as a Formula is taken as text, not refused
+    public async Task An_unreadable_formula_is_pasted_as_text()
     {
         var cut = RenderSheet();
         await GoToAsync(cut, "A1:B1");
 
         await PasteAsync(cut, "5\t=SUM(\r\n");
 
-        Assert.StartsWith("Nothing was pasted: a pasted Formula cannot be read", Notice(cut));
-        Assert.Equal("", CellText(cut, "A1"));
-        Assert.False(cut.Instance.CanUndo);
+        Assert.Equal("5", CellText(cut, "A1"));
+        Assert.Equal("=SUM(", CellText(cut, "B1"));
+        Assert.True(cut.Instance.CanUndo);
     }
 
     [Fact] // ADR-0005/0048: outward, the text flavour is the Values as shown and the HTML flavour the unformatted Values

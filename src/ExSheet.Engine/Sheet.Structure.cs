@@ -10,11 +10,12 @@ public sealed partial class Sheet
     /// The new rows hold no Entries; each of their cells takes the number format and alignment of
     /// the cell above it, and each row the format set on the row above, as Excel's default does
     /// (ADR-0046, ADR-0047). Rows inserted at the top take none. A format set on a row moves with
-    /// it, and one pushed off the bottom edge is dropped.
+    /// it, and one pushed off the bottom edge is dropped. A Reference whose cells are pushed off
+    /// the bottom edge is cut at it, or becomes <c>#REF!</c> when none of its cells remain, as in
+    /// Excel.
     /// </summary>
     /// <exception cref="SheetRefusedException">
-    /// A cell holding an Entry, or the cells a Reference names, would be pushed off the Sheet's
-    /// bottom edge. Nothing changes.
+    /// A cell holding an Entry would be pushed off the Sheet's bottom edge. Nothing changes.
     /// </exception>
     public SheetChange InsertRows(int row, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Rows, row, count, true)).Change;
 
@@ -32,7 +33,7 @@ public sealed partial class Sheet
     /// <c>A</c> take none. A width set on a column moves with it, and one pushed off the right edge
     /// is dropped.
     /// </summary>
-    /// <exception cref="SheetRefusedException">Something would be pushed off the Sheet's right edge. Nothing changes.</exception>
+    /// <exception cref="SheetRefusedException">A cell holding an Entry would be pushed off the Sheet's right edge. Nothing changes.</exception>
     public SheetChange InsertColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, true)).Change;
 
     /// <summary>Deletes columns, as <see cref="DeleteRows"/> does rows: the widths set on them go, and those to their right move left with their columns (ADR-0046).</summary>
@@ -51,27 +52,15 @@ public sealed partial class Sheet
     internal SheetRefusal? CheckStructural(StructuralEdit edit)
     {
         edit.Validate();
+        if (!edit.IsInsert) return null;
         foreach (var cell in _cells.Values)
         {
-            var to = edit.Move(cell.Address);
-            if (to is null)
+            // Only an Entry stops an insertion, as in Excel: a format pushed off is dropped, and a
+            // Reference pushed off is cut at the edge or made #REF! (StructuralEdit.Map).
+            if (cell.Entry is not null && edit.Move(cell.Address) is null)
             {
-                if (edit.IsInsert && cell.Entry is not null)
-                {
-                    return new SheetRefusal(SheetRefusalReason.EntriesWouldLeaveSheet,
-                        $"{Capitalise(edit.Describe())} would push {cell.Address}, which holds an Entry, off the Sheet.");
-                }
-                continue;
-            }
-            if (cell.Entry?.Parsed is not { } parsed) continue;
-            foreach (var reference in parsed.References)
-            {
-                edit.Map(reference, this, out var leaves);
-                if (leaves)
-                {
-                    return new SheetRefusal(SheetRefusalReason.ReferenceWouldLeaveSheet,
-                        $"{Capitalise(edit.Describe())} would push the cells a Reference in {cell.Address} names off the Sheet.");
-                }
+                return new SheetRefusal(SheetRefusalReason.EntriesWouldLeaveSheet,
+                    $"{Capitalise(edit.Describe())} would push {cell.Address}, which holds an Entry, off the Sheet.");
             }
         }
         return null;
@@ -126,7 +115,7 @@ public sealed partial class Sheet
             var entry = cell.Entry;
             if (entry?.Parsed is { } parsed)
             {
-                var mapped = ReferenceRewriter.Rewrite(entry, r => edit.Map(r, this, out _));
+                var mapped = ReferenceRewriter.Rewrite(entry, r => edit.Map(r, this));
                 if (!ReferenceEquals(mapped, entry))
                 {
                     rewritten.Add((cell.Address, entry));
@@ -134,7 +123,7 @@ public sealed partial class Sheet
                 }
                 else if (parsed.References.Any(r => edit.Reaches(r, this)))
                 {
-                    // A1:A1048576 or A:A kept its text, but what it covers moved underneath it.
+                    // A:A kept its text, but what it covers moved underneath it.
                     dirty.Add(to);
                 }
                 entry = mapped;

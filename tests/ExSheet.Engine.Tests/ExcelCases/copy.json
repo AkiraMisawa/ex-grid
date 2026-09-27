@@ -168,12 +168,12 @@
     },
     {
       "id": "COPY-019",
-      "source": "documented",
-      "description": "A copy pasted elsewhere shifts its relative References and keeps the whitespace",
+      "source": "observed",
+      "description": "A copy pasted elsewhere shifts its relative References and keeps the whitespace (the trailing space was dropped on entry)",
       "cells": {"B1": "= A1 * $A$1 "},
       "action": {"do": "copy", "source": "B1", "destination": "C3"},
       "check": "C3",
-      "expect": {"formula": "= B3 * $A$1 "}
+      "expect": {"formula": "= B3 * $A$1"}
     },
     {
       "id": "COPY-020",
@@ -230,6 +230,42 @@
       "action": {"do": "pasteText", "at": "A1", "rows": [["1.234,5", "=SUM(1.5,2)"]]},
       "check": "B1",
       "expect": {"value2": 3.5}
+    },
+    {
+      "id": "COPY-026",
+      "source": "uncertain",
+      "description": "A Reference a copy moves off the Sheet becomes #REF!, and the whitespace before it goes with it (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"B1": "= A1 + 1"},
+      "action": {"do": "copy", "source": "B1", "destination": "A1"},
+      "check": "A1",
+      "expect": {"formula": "=#REF! + 1"}
+    },
+    {
+      "id": "COPY-027",
+      "source": "uncertain",
+      "description": "A qualified Reference a copy moves off the Sheet becomes #REF! with its qualifier kept (inferred from Excel's observed deletion, not yet asked of Excel)",
+      "cells": {"B1": "=Sheet1!A1+1"},
+      "action": {"do": "copy", "source": "B1", "destination": "A1"},
+      "check": "A1",
+      "expect": {"formula": "=Sheet1!#REF!+1"}
+    },
+    {
+      "id": "COPY-028",
+      "source": "observed",
+      "description": "Pasted text that cannot be read as a Formula is taken as text, not refused (observed with Ctrl+V, verification/2026-09-27-windows-excel item 10)",
+      "action": {"do": "pasteText", "at": "A1", "rows": [["=1+"]]},
+      "cells": {},
+      "check": "A1",
+      "expect": {"value2": "=1+", "kind": "text"}
+    },
+    {
+      "id": "COPY-029",
+      "source": "uncertain",
+      "description": "An unreadable field beside readable ones is taken as text, and the others as typed (inferred from Excel's observed =1+, not yet asked of Excel)",
+      "action": {"do": "pasteText", "at": "A1", "rows": [["5", "=SUM("]]},
+      "cells": {},
+      "check": "B1",
+      "expect": {"value2": "=SUM(", "kind": "text"}
     }
   ]
 }

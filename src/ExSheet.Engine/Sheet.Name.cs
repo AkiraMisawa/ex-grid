@@ -72,11 +72,14 @@ public sealed partial class Sheet
         foreach (var cell in _cells.Values)
         {
             if (cell.Entry?.Parsed is not { } parsed) continue;
-            if (!parsed.References.Any(r => r.SheetName is not null)) continue;
+            var qualified = parsed.References.Any(r => r.SheetName is not null);
+            // A qualified #REF! (Sheet1!#REF!) is no Reference, but its qualifier is renamed too.
+            if (!qualified && !cell.Entry.Formula!.Contains("!#REF!", StringComparison.OrdinalIgnoreCase)) continue;
             // Whether a qualifier names this Sheet may change with the name: recompute it.
-            dirty.Add(cell.Address);
+            if (qualified) dirty.Add(cell.Address);
+            string Requalify(string qualifier) => string.Equals(qualifier, oldName, StringComparison.OrdinalIgnoreCase) ? name : qualifier;
             var mapped = ReferenceRewriter.Rewrite(cell.Entry, r =>
-                r.SheetName is not null && string.Equals(r.SheetName, oldName, StringComparison.OrdinalIgnoreCase) ? r with { SheetName = name } : r);
+                r.SheetName is not null && string.Equals(r.SheetName, oldName, StringComparison.OrdinalIgnoreCase) ? r with { SheetName = name } : r, Requalify);
             if (!ReferenceEquals(mapped, cell.Entry))
             {
                 rewritten.Add((cell.Address, cell.Entry));

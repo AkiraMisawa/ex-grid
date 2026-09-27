@@ -92,11 +92,11 @@
     },
     {
       "id": "TEXT-012",
-      "source": "documented",
-      "description": "Every Reference form is written back exactly as typed",
+      "source": "observed",
+      "description": "A range spanning every column is written as whole rows, the rows absolute, as Excel writes it",
       "cells": {"ZZ1000": "=A:XFD"},
       "check": "ZZ1000",
-      "expect": {"formula": "=A:XFD"}
+      "expect": {"formula": "=$1:$1048576"}
     },
     {
       "id": "TEXT-013",
@@ -171,21 +171,21 @@
     },
     {
       "id": "TEXT-021",
-      "source": "documented",
-      "description": "Every Reference form is written back exactly as typed",
+      "source": "observed",
+      "description": "A structured reference is written back in single brackets, as Excel writes it",
       "tables": {"Positions": {"columns": ["PV", "Market Value", "Rate#"], "rows": null}},
       "cells": {"ZZ1000": "=Positions[[Market Value]]"},
       "check": "ZZ1000",
-      "expect": {"formula": "=Positions[[Market Value]]"}
+      "expect": {"formula": "=Positions[Market Value]"}
     },
     {
       "id": "TEXT-022",
-      "source": "documented",
-      "description": "Every Reference form is written back exactly as typed",
+      "source": "observed",
+      "description": "A structured reference is written back in single brackets, its escapes kept, as Excel writes it",
       "tables": {"Positions": {"columns": ["PV", "Market Value", "Rate#"], "rows": null}},
       "cells": {"ZZ1000": "=Positions[[Rate'#]]"},
       "check": "ZZ1000",
-      "expect": {"formula": "=Positions[[Rate'#]]"}
+      "expect": {"formula": "=Positions[Rate'#]"}
     },
     {
       "id": "TEXT-023",
@@ -501,11 +501,11 @@
     },
     {
       "id": "TEXT-062",
-      "source": "documented",
-      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "source": "observed",
+      "description": "A Formula keeps the whitespace it was typed with before its tokens, and drops it at the end and before a comma, as Excel does",
       "cells": {"C5": "=SUM( A1:A3 , 4 )"},
       "check": "C5",
-      "expect": {"formula": "=SUM( A1:A3 , 4 )"}
+      "expect": {"formula": "=SUM( A1:A3, 4 )"}
     },
     {
       "id": "TEXT-063",
@@ -517,19 +517,19 @@
     },
     {
       "id": "TEXT-064",
-      "source": "documented",
-      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "source": "observed",
+      "description": "A tab between tokens is refused on entry, as Excel refuses it",
       "cells": {"C5": "=\tA1\t*\t2"},
       "check": "C5",
-      "expect": {"formula": "=\tA1\t*\t2"}
+      "expect": {"refusedEntry": true}
     },
     {
       "id": "TEXT-065",
-      "source": "documented",
-      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "source": "observed",
+      "description": "A Formula keeps the whitespace it was typed with before its tokens, and drops it at the end and before a comma, as Excel does",
       "cells": {"C5": "=A1+1  "},
       "check": "C5",
-      "expect": {"formula": "=A1+1  "}
+      "expect": {"formula": "=A1+1"}
     },
     {
       "id": "TEXT-066",
@@ -549,28 +549,28 @@
     },
     {
       "id": "TEXT-068",
-      "source": "documented",
-      "description": "A Formula keeps the whitespace it was typed with, before, between and after its tokens",
+      "source": "observed",
+      "description": "A Formula keeps the whitespace it was typed with before its tokens, and drops it at the end and before a comma, as Excel does",
       "tables": {"Positions": {"columns": ["PV"], "rows": null}},
       "cells": {"C5": "= Positions[PV] "},
       "check": "C5",
-      "expect": {"formula": "= Positions[PV] "}
+      "expect": {"formula": "= Positions[PV]"}
     },
     {
       "id": "TEXT-069",
-      "source": "documented",
-      "description": "Tokens are written in Excel's spelling; only the whitespace is kept as typed",
+      "source": "observed",
+      "description": "Tokens are written in Excel's spelling; the whitespace is kept where Excel keeps it",
       "cells": {"ZZ1000": "= sum( a1 , $b$2 )"},
       "check": "ZZ1000",
-      "expect": {"formula": "= SUM( A1 , $B$2 )"}
+      "expect": {"formula": "= SUM( A1, $B$2 )"}
     },
     {
       "id": "TEXT-070",
-      "source": "documented",
-      "description": "Tokens are written in Excel's spelling; only the whitespace is kept as typed",
+      "source": "observed",
+      "description": "Tokens are written in Excel's spelling; the whitespace is kept where Excel keeps it",
       "cells": {"ZZ1000": "= b2:a1 "},
       "check": "ZZ1000",
-      "expect": {"formula": "= A1:B2 "}
+      "expect": {"formula": "= A1:B2"}
     },
     {
       "id": "TEXT-071",
@@ -604,6 +604,87 @@
       "cells": {"A1": "1", "B1": "2", "C1": "= A1 + B1"},
       "check": "C1",
       "expect": {"value2": 3, "formula": "= A1 + B1"}
+    },
+    {
+      "id": "TEXT-075",
+      "source": "uncertain",
+      "description": "A line break at the end of a Formula is dropped like a trailing space (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"C5": "=A1+1\n"},
+      "check": "C5",
+      "expect": {"formula": "=A1+1"}
+    },
+    {
+      "id": "TEXT-076",
+      "source": "uncertain",
+      "description": "A line break before a comma is dropped like a space (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"C5": "=IF(A1\n, 1, 0)"},
+      "check": "C5",
+      "expect": {"formula": "=IF(A1, 1, 0)"}
+    },
+    {
+      "id": "TEXT-077",
+      "source": "uncertain",
+      "description": "A carriage return with its line feed is kept between tokens (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"C5": "=A1\r\n+1"},
+      "check": "C5",
+      "expect": {"formula": "=A1\r\n+1"}
+    },
+    {
+      "id": "TEXT-078",
+      "source": "uncertain",
+      "description": "A no-break space between tokens is refused on entry, as a tab is (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"C5": "=A1 +1"},
+      "check": "C5",
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "TEXT-079",
+      "source": "uncertain",
+      "description": "A tab inside quoted text is part of the text, not whitespace between tokens (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"C5": "=\"a\tb\""},
+      "check": "C5",
+      "expect": {"formula": "=\"a\tb\""}
+    },
+    {
+      "id": "TEXT-080",
+      "source": "uncertain",
+      "description": "A range spanning every column is written as whole rows (inferred from Excel's observed A:XFD and A1:A1048576 (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"ZZ1000": "=A1:XFD3"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1:3"}
+    },
+    {
+      "id": "TEXT-081",
+      "source": "uncertain",
+      "description": "A range spanning every row is written as whole columns, the columns' $ kept (inferred from Excel's observed A:XFD and A1:A1048576 (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"ZZ1000": "=$A$1:$B$1048576"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=$A:$B"}
+    },
+    {
+      "id": "TEXT-082",
+      "source": "uncertain",
+      "description": "A range spanning the whole Sheet is written as whole rows (inferred from Excel's observed A:XFD and A1:A1048576 (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "cells": {"ZZ1000": "=A1:XFD1048576"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=1:1048576"}
+    },
+    {
+      "id": "TEXT-083",
+      "source": "uncertain",
+      "description": "A qualified #REF! typed is read and written back with its qualifier (inferred from Excel's observed Sheet1!#REF!, not yet asked of Excel)",
+      "cells": {"ZZ1000": "=sheet1!#ref!*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!", "formula": "=sheet1!#REF!*2"}
+    },
+    {
+      "id": "TEXT-084",
+      "source": "uncertain",
+      "description": "A column name with a comma is written back in single brackets too (inferred from Excel's observed single brackets, not yet asked of Excel)",
+      "tables": {"T": {"columns": ["a,b"], "rows": null}},
+      "cells": {"ZZ1000": "=T[[a,b]]"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=T[a,b]"}
     }
   ]
 }

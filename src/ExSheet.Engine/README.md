@@ -50,8 +50,14 @@ a constant read under the Sheet's culture and recorded already parsed. Typing in
 can give it a format, as in Excel: a date or a percentage typed as one, and a Formula of simple
 arithmetic (`+`, `-`, single-cell References, parentheses) takes the format of the first
 formatted cell it reads, so `=A1+7` over a date shows a date. It happens once, at entry. A Formula keeps the
-whitespace it was typed with; its tokens are written in Excel's spelling (`= sum( a1 )` is kept
-as `= SUM( A1 )`), and rewriting its References changes only the Reference tokens.
+whitespace it was typed with where Excel keeps it — before a token, but not at the end nor before
+a `,` — and a tab between tokens is refused, as Excel refuses it. Its tokens are written in
+Excel's spelling (`= sum( a1 , 2 ) ` is kept as `= SUM( A1, 2 )`), and rewriting its References
+changes only the Reference tokens; one rewritten to `#REF!` takes the whitespace before it along
+and keeps its qualifier (`Sheet1!#REF!`). References are written as Excel writes them: a range
+spanning every row as whole columns (`A1:A1048576` is `A:A`), one spanning every column as whole
+rows (`A:XFD` is `$1:$1048576`), and a structured reference in single brackets
+(`Positions[[Market Value]]` is `Positions[Market Value]`).
 
 A Sheet has a name, `Sheet1` unless it is given one (`new Sheet(culture, "Risk")`), and
 `SheetEdit.Rename` changes it as Excel does, rewriting every Reference qualified with the old
@@ -131,8 +137,10 @@ step.Undo();                                         // Entries, formats and Ref
 
 - **Insertion and deletion** of rows and columns rewrite every Reference, relative and absolute
   alike; a range grows or shrinks as Excel's does, and a Reference whose cells are all deleted is
-  written `#REF!` in the stored Formula. An insertion that would push an Entry, or the cells a
-  Reference names, off the Sheet's edge is refused (`SheetRefusedException`). Inserted rows take
+  written `#REF!` in the stored Formula. An insertion that would push an Entry off the Sheet's
+  edge is refused (`SheetRefusedException`), as Excel refuses it; one that pushes only the cells a
+  Reference names off is done, as in Excel, with a range cut at the edge and a Reference left
+  with no cells written `#REF!`. Inserted rows take
   the number format and alignment of the row above — its cells' and the row's own — and inserted
   columns those of the column to the left, as Excel's default does; Entries are never copied.
   Formats set on rows and columns move with them, and so do column widths.
@@ -162,10 +170,12 @@ step.Undo();                                         // Entries, formats and Ref
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each
-  pasted field as if typed under the Sheet's culture. A copy that reaches a `#GETTING_DATA`
+  pasted field as if typed under the Sheet's culture, except that a field that cannot be read as
+  a Formula (`=1+`) is taken as text, as Excel takes it. A copy that reaches a `#GETTING_DATA`
   Value is refused.
 - **Fill.** `SheetEdit.Fill(source, target, direction)` fills as Excel does for copies (with
-  References shifted), a linear trend from two or more numbers, and a single date by day, and
+  References shifted), a linear trend from two or more numbers (held at 15 significant digits,
+  as Excel holds it), and a single date by day, and
   refuses every other pattern — `Item 1`, day and month names, several dates — rather than fill
   it with copies.
 - `Sheet.Check(edit)` says whether an edit would be refused, without doing it.
