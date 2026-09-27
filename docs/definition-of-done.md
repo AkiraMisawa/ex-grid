@@ -68,7 +68,7 @@ Without that directory, the verification did not happen.
 **In scope: the `ExGrid` package** — the core component and its bundled `GridSource`. That is what
 `CONTEXT.md` calls the specified product.
 
-**Out of scope for this document:** `ExSheet` (future), and the Wrapper packages
+**Out of scope for this document:** `ExSheet` and `ExSheet.Engine` as a release, and the Wrapper packages
 `ExGrid.MudBlazor` / `ExGrid.Fluxor`. The criteria that describe the Wrapper boundary (§4) are
 written as properties of the *core's contract*, verifiable with a stub Wrapper, and do not require
 a real one. **`ExGrid.MudBlazor`'s own release is judged by §23**, which holds the Wrapper to the
@@ -76,8 +76,16 @@ core's criteria with a real design system and adds the criteria only a real one 
 (added 2026-09-24). **Whether ExGrid may be said to run on Blazor Server is judged by §24**
 (added 2026-09-25): the core's criteria are the same on both hosts, and §24 says how they are
 run on the second one and adds the ones only a circuit can fail.
+**ExSheet's own criteria are §27** (added 2026-09-27). ExSheet is built alongside ExGrid but is
+**not part of the release** — decided with the user, 2026-09-27 — so §27 judges ExSheet and never
+gates ExGrid. **The declarations ExSheet asks of ExGrid's core are ExGrid code, and they do gate
+it**: they ship in the `ExGrid` package whether or not ExSheet ships, so §26 is part of "finished"
+like any other section (decided the same day; the alternatives — shipping them unverified because
+they are opt-in, or holding them off `main` — were refused).
 
-**"Finished" means every ADR from 0001 to 0030 is implemented.** This was asked as an open
+**"Finished" means every ADR from 0001 to 0030 is implemented** — and, since 2026-09-27, the
+ExGrid half of [ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md) and
+[ADR-0051](adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md), judged by §26. This was asked as an open
 question and answered deliberately: the narrower alternatives — shipping the display-only slice
 first, or shipping everything except the Cell Editor and `Density` — were both on the table and
 both refused. The consequence is accepted rather than discovered: **the whole of §21 blocks the
@@ -704,7 +712,7 @@ and so that the release gate can be stated as "**§21 lists no open question**" 
 
 | Reserved | Trigger named by |
 |---|---|
-| **The fill handle** — neither the gesture nor the fill semantics | **settled with ExSheet, the editing work that was its trigger**: the core paints the handle, owns the drag and raises a Fill Intent; the Consumer decides what a fill means ([ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md), item 5). Its criteria are still to be written, with the other declarations of ADR-0050 |
+| **The fill handle** — neither the gesture nor the fill semantics | **settled with ExSheet, the editing work that was its trigger**: the core paints the handle, owns the drag and raises a Fill Intent; the Consumer decides what a fill means ([ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md), item 5). Its criteria are §26, DC-17..DC-21 |
 | **The Overlay application and the bundled undo stack** — ADR-0007 promises both as single, library-provided implementations; `InMemoryGridSource.ReplaceRow` covers only the Consumer that owns its rows in memory, and is recorded there as *not* being either | the first scenario-backed Consumer ([ADR-0007](adr/0007-edits-are-an-overlay-owned-by-the-consumer.md)'s "what wiring the editor settled") |
 | **Right-click** — a secondary click leaves the selection alone today | the context menu, a Chrome seam ADR-0010 has not specified (ADR-0008). Double-click likewise "arrives with the editor" |
 | **A copy over an Action Column** — **settled with the wiring that was its trigger**: an empty cell, because the column has no value by declaration and a refusal would fail an ordinary row copy for a column the user cannot sensibly unselect | recorded in [ADR-0005](adr/0005-copy-refuses-rather-than-truncates.md)'s "what wiring the routes settled" ([ADR-0020](adr/0020-action-and-template-columns.md) → ADR-0005) |
@@ -713,7 +721,7 @@ and so that the release gate can be stated as "**§21 lists no open question**" 
 | **The year ▸ month ▸ day tree over a date column's value list** — presentation only over the distinct dates already fetched | a Consumer declaring a value list on a date column (ADR-0044, 2026-09-26) |
 | **`--ex-selection-outline`** — the border Excel draws round a range's perimeter | the selection paint polish (ADR-0029) |
 | **Which Chrome seams `ExGrid.MudBlazor` implements first** | **settled with the package's start, its trigger** — a verification order: no seam, the Cell Editor, the loading bar, then the filter panel, column menu and Context Menu with Inner Popups allowed ([ADR-0030](adr/0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md), [ADR-0039](adr/0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)); criteria in §23 |
-| **Whether ExSheet is a sibling of ExGrid or a Consumer of it** | **settled 2026-09-27: a Consumer** ([ADR-0046](adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)). What ExSheet asks of the core is five opt-in declarations ([ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md)) plus formula entry ([ADR-0051](adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)); being ExGrid features, their criteria belong in this document's ExGrid sections and are not yet written |
+| **Whether ExSheet is a sibling of ExGrid or a Consumer of it** | **settled 2026-09-27: a Consumer** ([ADR-0046](adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)). What ExSheet asks of the core is five opt-in declarations ([ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md)) plus formula entry ([ADR-0051](adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)); being ExGrid features, their criteria are §26; ExSheet's own are §27, which does not gate the release |
 | **A column band** — the Focus band's mechanism turned sideways | **no trigger is named.** ADR-0008 says only "reserved, not specified". It is the one entry here whose *when* nobody has written down; nothing depends on it, and it is recorded rather than quietly promoted to open |
 
 **None of these blocks a criterion above.** That is checked, not assumed: no row in §3–§20 asserts
@@ -928,3 +936,72 @@ depends on which shape it takes.
 | **MK-6** | MUST | After "mark all", a row scrolled into view for the first time is painted marked — at 10⁶ rows, through `GridSource.Fetch`, far from where the header was pressed (ADR-0043) | Layer 3, on both browsers | every painted Detail row in the new Viewport shows its checkbox marked |
 | **MK-7** | MUST | Marks outside the current filter are counted aloud: after marking and narrowing the filter, the count display names how many marks lie outside it (ADR-0043/0014) | Layer 3 | the display reads the total and the outside count; widening the filter back shows the same rows marked |
 | **MK-8** | MUST | "All" is the result as it stood when the header was pressed: a row that arrives afterwards is not marked, and the header turns to "some" (ADR-0043) | Layer 2, pushing a Window with a new row after the press | the new row answers unmarked; the header shows "some" |
+
+---
+
+## 26. Consumer declarations (DC)
+
+*(Added 2026-09-27, with [ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md) and
+[ADR-0051](adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md).)* What ExSheet
+asks of the core, as ExGrid features any Consumer may declare. **Every one gates the release**
+(§2). The first criterion is the one that makes the rest safe to ship: a Consumer who declares
+nothing sees nothing change.
+
+| ID | Level | Statement | Verification | Pass |
+|---|---|---|---|---|
+| **DC-1** | MUST | With no declaration made, the grid behaves exactly as before ADR-0050/0051: every existing criterion of §3–§25 still passes, and no new band, handle or heading is painted (ADR-0050/0051) | the full suite, all three layers; Layer 2 grep of the default markup | green; no `ex-formula-bar`, `ex-row-headings` or `ex-fill-handle` element |
+| **DC-2** | MUST | Declared, a plain click on a column header selects the whole column, Shift+click extends from the Anchor's column, and nothing sorts (ADR-0050, item 1) | Layer 2 | the Selection spans every row of the column(s); `OnSortChanged` is not invoked |
+| **DC-3** | MUST | Row Headings are painted beside every painted row with the Consumer's label; a click selects the whole row and Shift+click extends; the corner selects all (ADR-0050) | Layer 2 + Layer 3 | as stated |
+| **DC-4** | MUST | Row Headings are outside the column index space: they are never in the Selection, a copy, Ctrl+A or the Enter/Tab cycle (ADR-0050/0011/0012) | Layer 1 + Layer 2 | Ctrl+A then copy yields no heading label; Tab never lands on a heading |
+| **DC-5** | MUST | Either Heading can be hidden; hiding the column header removes the header band and the geometry follows (ADR-0050/0028) | Layer 2 | no header band; the first row starts at the Viewport's top |
+| **DC-6** | MUST | The Row Headings' width is resolved geometry emitted inline, with no stylesheet literal paired with a C# constant (ADR-0027/0028) | Layer 2 + grep of `wwwroot` | inline width present; no literal |
+| **DC-7** | MUST | With an edge answer supplied, Ctrl+arrow moves the Focus to the answer and Ctrl+Shift+arrow extends the range to it; without one, both go to the grid's edge as ADR-0012 says (ADR-0050, item 2) | Layer 2 with a stub answer | as stated |
+| **DC-8** | MUST | With spilling declared, an m×n source pasted onto one cell writes the m×n block from that cell, as one paste notification, and the block becomes the Selection with the Anchor at its top-left (ADR-0050, item 3) | Layer 1 for the shape; Layer 2 for the Selection | one notification; the Selection equals the block |
+| **DC-9** | MUST | Without the declaration, range → one cell is refused as ADR-0014 says (ADR-0014/0050) | Layer 1 | the existing refusal reason |
+| **DC-10** | MUST | A spill past the grid's extent is refused by name, and `Editable` is checked on the spilled block before anything is written (ADR-0050/0035) | Layer 1 | distinct refusal reasons; nothing written |
+| **DC-11** | MUST | A Consumer's request to place the Selection and the Focus places them, scrolls the Focus into view and announces the extent once; a request made under an older Row Sequence Version is dropped (ADR-0050, item 4; ADR-0011/0033) | Layer 2 | as stated; the stale request changes nothing |
+| **DC-12** | MUST | With the fill handle declared, it is painted at the bottom-right of the Selection's last range, in the selection overlay; a disjoint Selection shows none (ADR-0050, item 5; ADR-0008) | Layer 2 | one handle element, positioned by the overlay; none for a disjoint Selection |
+| **DC-13** | MUST | Dragging the handle extends along one axis only, paints the target outline, and on release raises exactly one Fill Intent carrying source, target and direction; the grid writes nothing (ADR-0050) | Layer 2 for the intent; Layer 3 for the drag | one intent; no Edit Intent |
+| **DC-14** | MUST | A Fill Intent whose target covers a column that is not `Editable` is refused whole before it is raised (ADR-0050/0035) | Layer 1 + Layer 2 | refusal reason; no intent |
+| **DC-15** | MUST | The drag, the header click, the Headings and the edge answer add no JavaScript (ADR-0021) | inspect `wwwroot` against ADR-0021's list | the allowlisted uses only |
+| **DC-16** | MUST | With an opening text supplied, the Cell Editor opens on it (Caret and Overwrite alike keep their meanings); without it, on the value (ADR-0051) | Layer 2 | as stated |
+| **DC-17** | MUST | With text reporting on, the editor's text and caret reach the Consumer as the user types; its candidates are painted by Chrome as the editor's Inner Popup, inside the grid's box; ↑/↓ choose, Tab accepts, Escape closes the list and leaves the edit open (ADR-0051/0039/0040) | Layer 2 under the built-in Chrome and `ExGrid.MudBlazor`'s; Layer 3 for the box | as stated under both Chromes |
+| **DC-18** | MUST | A candidate list or hint that answers text which has since changed is never shown (ADR-0051) | Layer 2 with a delayed answer | the stale list is dropped |
+| **DC-19** | MUST | With a Point predicate supplied, while it answers true for the text and caret the key carries, arrows and clicks move a pointing outline painted in the selection overlay and the Consumer's Reference text is written at the caret; Shift extends; F2 toggles with Caret; the Selection and the Focus do not move (ADR-0051) | Layer 2; Layer 3 by real keys and mouse | as stated |
+| **DC-20** | MUST | Point is decided from the text and caret the key message carries, never from an earlier answer: typed quickly on a Server circuit with 150 ms injected, no arrow points where the text forbids it (ADR-0051, SRV-5's proxy) | Layer 3 on the Server host | no pointing after a non-operator character |
+| **DC-21** | MUST | Declared, the Formula Bar is a band inside the root above the header, showing the Name Box's label and the Focus cell's text; on a display grid that text is the full value behind a `####` (ADR-0051/0016) | Layer 2 | as stated |
+| **DC-22** | MUST | The Formula Bar is the Cell Editor's second surface: typing in either updates both, a commit from either raises one Edit Intent, Escape from either cancels once, and keys typed in it reach the root's capture listener (ADR-0051/0007/0018) | Layer 2 + Layer 3 | one intent; both surfaces agree after every keystroke |
+| **DC-23** | MUST | The Formula Bar's height is Grid Metrics geometry and the rows take what it leaves; switched off, the geometry is as before (ADR-0028) | Layer 2 | the Viewport arithmetic includes the band exactly |
+| **DC-24** | MUST | The capture-phase `keydown` message's added text and caret are the only change to the JavaScript for ADR-0051 (ADR-0021) | inspect `wwwroot` | nothing else added |
+| **DC-25** | MUST | The declarations are per instance: two grids on one page, one declaring and one not, behave each as its own declarations say (ADR-0018) | Layer 3 | independent |
+
+---
+
+## 27. ExSheet (SH)
+
+*(Added 2026-09-27, with ADR-0046 to ADR-0049.)* **These criteria judge ExSheet and never gate
+ExGrid's release** (§2). They are written now so that "ExSheet works" has a meaning while it is
+built; when ExSheet is proposed for a release of its own, this section becomes its gate and gains
+the preconditions §2 has for ExGrid.
+
+| ID | Level | Statement | Verification | Pass |
+|---|---|---|---|---|
+| **SH-1** | MUST | `ExSheet.Engine` references nothing of ours and no Blazor package; `ExSheet` references it and `ExGrid`; nothing references `ExSheet` (ADR-0046/0047) | `dotnet list … reference` / `package` | as stated |
+| **SH-2** | MUST | A Sheet shows 1,048,576 rows × 16,384 columns; the DOM does not grow with the extent (ADR-0046, DOM-*) | Layer 2 node count at the top and at XFD1048576 | the same bound as §18 |
+| **SH-3** | MUST | A row height at which the full extent exceeds the scroll ceiling is refused by name (ADR-0046, VZ-8) | Layer 1/2 | throws naming the height and the ceiling; 28 px passes |
+| **SH-4** | MUST | An edit repaints only the rows whose Values changed; every other row skips its render (ADR-0046/0003) | Layer 2 render counts | as stated |
+| **SH-5** | MUST | Inserting a row keeps the Row Sequence Version and the Selection where they were, and rewrites every Reference to keep naming the same cells; deleting a referenced cell yields `#REF!` (ADR-0046/0047) | Layer 1 + Layer 2 | as stated |
+| **SH-6** | MUST | The Reference grammar — `A1`, `$A$1`, `A$1`, `A1:B2`, `A:A`, `1:1`, a Sheet qualifier, structured references — parses and round-trips in the invariant syntax in every culture (ADR-0047) | Layer 1 | exact round trip |
+| **SH-7** | MUST | Each function of ADR-0047's set matches a table of Excel's observed results, blanks, text and Error Values in ranges included; an unknown name is `#NAME?` (ADR-0047) | Layer 1 | every row of every table |
+| **SH-8** | MUST | Only dependents of a change recompute, and no pushed Window carries Values from an unfinished recalculation (ADR-0047) | Layer 1 (counted) + Layer 2 | as stated |
+| **SH-9** | MUST | A cycle is `#CIRC!` in every member and every dependent, and breaking it recovers (ADR-0047) | Layer 1 | as stated |
+| **SH-10** | MUST | Date serials match Excel's 1900 system, 29 February 1900 included; display is at most 15 significant digits and `####` when it does not fit (ADR-0047/0016) | Layer 1 + Layer 2 | as Excel |
+| **SH-11** | MUST | Typed constants are parsed under the Sheet's culture and recorded parsed; a document saved under `en-US` reads the same numbers under `de-DE` (ADR-0048) | Layer 1 | as stated |
+| **SH-12** | MUST | A Sheet Document holds no Values, round-trips, and a document of an unknown version is refused (ADR-0048) | Layer 1 | as stated |
+| **SH-13** | MUST | One undo step per user operation (edit, paste, fill, insertion, deletion); a Consumer command lands on the same stack in order; replacing the document clears it; two ExSheets keep separate stacks (ADR-0048/0018) | Layer 2 | as stated |
+| **SH-14** | MUST | Inside ExSheet a copy carries Entries and shifts relative References; outward it carries Values; inward each field is parsed as typed (ADR-0048) | Layer 1 + Layer 3 with the real clipboard | as stated |
+| **SH-15** | MUST | Fill: copy with References shifted, a linear series from two or more numbers, dates by day, each as Excel; any other pattern refused, never filled with copies (ADR-0050) | Layer 1 | as stated |
+| **SH-16** | MUST | A Linked Table is read by structured reference and `XLOOKUP`; before its first snapshot readers show `#GETTING_DATA`, which propagates and which `IFERROR`/`ISERROR` do not catch; a snapshot replaces the last in one step; a copy reaching a waiting cell is refused; an undeclared name is `#NAME?` (ADR-0049) | Layer 1 + Layer 2 | as stated |
+| **SH-17** | MUST | A saved document's Values computed by `ExSheet.Engine` alone equal the Values on screen (ADR-0047/0048) | Layer 1 against a Layer 2 render | equal |
+| **SH-18** | MUST | ExSheet on the DemoHost, both hosts and both browsers: typing, Point, completion, the Formula Bar, fill, paste, Ctrl+arrow, Headings and insertion, with a clean console (CON-*) | Layer 3 | green; no console message |
+| **SH-19** | OBSERVATIONAL | Recalculation time at a large Sheet, and completion's keystroke-to-list time on a circuit | recorded in `metrics.json` | recorded, never gated |
