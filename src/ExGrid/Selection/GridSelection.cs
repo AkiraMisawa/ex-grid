@@ -478,6 +478,31 @@ public sealed record GridSelection
     }
 
     /// <summary>
+    /// A Consumer's placement (ADR-0050, item 4): <paramref name="range"/> becomes the one
+    /// range, with the Anchor and the Focus both on <paramref name="focus"/> — what a click
+    /// leaves, only over a range the Consumer named. Every other range goes. A range reaching
+    /// outside the grid, or a Focus outside the range, is refused by name rather than
+    /// clamped: the Consumer named cells that are not there.
+    /// </summary>
+    public GridSelection Place(SelectionRange range, CellPosition focus, GridExtent extent)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (range.TopRow < 0 || range.LeftColumn < 0
+            || range.BottomRow >= extent.RowCount || range.RightColumn >= extent.ColumnCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(range), range,
+                $"Outside the grid ({extent.RowCount} rows × {extent.ColumnCount} columns) (ADR-0050).");
+        }
+        if (!range.Contains(focus))
+        {
+            throw new ArgumentOutOfRangeException(nameof(focus), focus,
+                "The Focus is placed inside the range it belongs to (ADR-0050/0012).");
+        }
+        return new([range], focus, focus, anchorDetached: false, focusRangeIndex: 0);
+    }
+
+    /// <summary>
     /// A plain click on a column header that a Consumer declared selects (ADR-0050, item
     /// 1): the whole column, as one range, with Anchor and Focus on
     /// <paramref name="anchorRow"/> of it — the holder passes its first visible row, so

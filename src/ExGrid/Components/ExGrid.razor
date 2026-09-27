@@ -324,9 +324,20 @@
            The Name Box names the Focus in the Consumer's words; the text is the Focus
            cell's — the Entry on a Sheet, the full value behind a #### on a display grid
            (ADR-0016). Neither is a tab stop: the grid is one (ADR-0020). *@
+        @* The text field is the Cell Editor's second surface (ADR-0051), and carries the
+           editor's own class: the root's capture listener gates the keys typed in it as it
+           gates the editor's — Enter and Tab commit once, Escape cancels once, F2 switches
+           the mode (ADR-0018). The Name Box's Enter is its form's implicit submission, as the
+           filter panel's is: no key handler, and an IME's confirming Enter is left alone. *@
         <div class="ex-formula-bar" style="@FormulaBarStyle()" role="presentation">
-            <div class="ex-name-box" style="@NameBoxStyle()" aria-label="Name Box">@NameBoxText()</div>
-            <input class="ex-formula-bar-text" value="@FormulaBarText()" readonly tabindex="-1" aria-label="Formula Bar" />
+            <form class="ex-name-box-form" @onsubmit="_onNameBoxSubmit ??= SubmitNameBoxAsync" @onsubmit:preventDefault>
+                <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="Name Box"
+                       @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync" @oninput="_onNameBoxInput ??= OnNameBoxInput"
+                       @onblur="_onNameBoxBlur ??= OnNameBoxBlur" />
+            </form>
+            <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="Formula Bar"
+                   @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync" @oninput="_onFormulaBarInput ??= OnFormulaBarInput"
+                   @ref="_formulaBarElement" />
         </div>
     }
     @if (_menuColumn >= 0 && _menuColumn < Columns.Count)
@@ -1082,6 +1093,13 @@
     /// </summary>
     [Parameter] public Func<CellPosition, string?>? NameBoxLabel { get; set; }
 
+    /// <summary>
+    /// Enter in the Name Box (ADR-0051): the text the user typed there, handed to the
+    /// Consumer, who resolves it to a position — the grid reads no address — and places the
+    /// Selection and the Focus with <see cref="PlaceSelectionAsync"/> (ADR-0050, item 4).
+    /// </summary>
+    [Parameter] public EventCallback<string> OnNameBoxEntered { get; set; }
+
     // What the grid actually paints, resolved from the Source when there is one and
     // from the push parameters when there is not. Every reader below goes through these,
     // so binding a Source adds no branch to the pipeline — only one more way to fill it.
@@ -1303,6 +1321,30 @@
     }
 
     private EditMode _editMode;
+
+    // Which of the Cell Editor's two surfaces the user is working in (ADR-0051): the input
+    // over the cell, or the Formula Bar. One uncommitted text either way; this decides only
+    // where the keyboard goes back to when the core asks for it.
+    private enum EditSurface
+    {
+        Cell = 0,
+        Bar,
+    }
+
+    private EditSurface _editSurface;
+    private ElementReference _formulaBarElement;
+
+    // What the user has typed into the Name Box and not yet entered, or null while it shows
+    // the Focus's label (ADR-0051). Its handlers are held in fields: the bar stands on every
+    // render of the root, and a new delegate per render would re-register its events on
+    // every scroll frame (PF-3).
+    private string? _nameBoxText;
+    private Func<Task>? _onFormulaBarFocus;
+    private Action<ChangeEventArgs>? _onFormulaBarInput;
+    private Func<Task>? _onNameBoxFocus;
+    private Action<ChangeEventArgs>? _onNameBoxInput;
+    private Action? _onNameBoxBlur;
+    private Func<Task>? _onNameBoxSubmit;
     private CellPosition _editingCell;
     private string _editText = "";
     private ElementReference _editorElement;
@@ -1867,6 +1909,7 @@
         if (_editMode != EditMode.None && _selection.Selection.IsEmpty)
         {
             _editMode = EditMode.None;
+            _editSurface = EditSurface.Cell;
             _editText = "";
             _editError = null;
             _editorNeedsFocus = false;
@@ -2202,7 +2245,23 @@
         // for: the input is not in it, and its reference is still unset. Focusing that
         // threw, and the unhandled throw ended the circuit. The request waits instead for
         // the render that paints the input, which is already on its way.
-        if (_editorNeedsFocus && (_editorIsChrome || _editorElement.Context is not null))
+        // The Formula Bar is the editor's second surface (ADR-0051): a request made while
+        // the user works there goes back to the bar, never across to the cell.
+        if (_editorNeedsFocus && _editSurface == EditSurface.Bar)
+        {
+            if (_formulaBarElement.Context is not null)
+            {
+                _editorNeedsFocus = false;
+                try
+                {
+                    await _formulaBarElement.FocusAsync();
+                }
+                catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+                {
+                }
+            }
+        }
+        else if (_editorNeedsFocus && (_editorIsChrome || _editorElement.Context is not null))
         {
             _editorNeedsFocus = false;
             try
@@ -4747,6 +4806,8 @@
                     // and navigation resumes. Returning from a control is leaving a
                     // cell, so an Interactive one the pointer walked away from ends too.
                     EndInteractive();
+                    // Escape in the Name Box abandons what was typed there (ADR-0051).
+                    _nameBoxText = null;
                     await ReclaimFocusAsync();
                     StateHasChanged();
                     return;
@@ -4890,6 +4951,63 @@
         GridKeyKind.MoveToCorner => action.Backward,
         _ => false,
     };
+
+    /// <summary>
+    /// The Consumer asks the grid to place the Selection and the Focus (ADR-0050, item 4):
+    /// <paramref name="range"/> becomes the one range, with the Anchor and the Focus on
+    /// <paramref name="focus"/> inside it. The grid then does what it does after a click: an
+    /// open edit commits first, the Focus is scrolled into view, and the new extent is
+    /// announced once it settles (ADR-0033). The Selection stays the grid's — the Consumer
+    /// asks and the grid places — and positions only mean something under the order they
+    /// were written in: a request made under a <paramref name="rowSequenceVersion"/> other
+    /// than the grid's is dropped, and changes nothing (ADR-0011).
+    /// </summary>
+    /// <returns>Whether the placement was made: false when it was dropped as stale, or when
+    /// a Reject held an open edit (ADR-0034).</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The range reaches outside the grid, or
+    /// the Focus lies outside the range.</exception>
+    public async Task<bool> PlaceSelectionAsync(SelectionRange range, CellPosition focus, int rowSequenceVersion)
+    {
+        // On the renderer's own context: a Consumer resolving a Name Box entry is on it
+        // already, and one answering from elsewhere must not race a render.
+        var placed = false;
+        await InvokeAsync(async () => placed = await PlaceOnRendererAsync(range, focus, rowSequenceVersion));
+        return placed;
+    }
+
+    private async Task<bool> PlaceOnRendererAsync(SelectionRange range, CellPosition focus, int rowSequenceVersion)
+    {
+        if (_disposed || rowSequenceVersion != _sequenceVersion)
+            return false;
+        // Validated before anything changes: a refused request commits nothing.
+        _ = _selection.Selection.Place(range, focus, Extent);
+        if (_editMode != EditMode.None && !await CommitEditAsync())
+        {
+            _suppressRender = false;
+            StateHasChanged();
+            return false;
+        }
+        if (_menuColumn >= 0 || _contextCell is not null)
+            CloseMenus();
+        EndInteractive();
+        // The version can have moved while the commit's intent was handled.
+        if (rowSequenceVersion != _sequenceVersion)
+        {
+            _suppressRender = false;
+            StateHasChanged();
+            return false;
+        }
+        if (PageSize is { } pageSize && focus.Row / pageSize != _pageIndex)
+        {
+            _pageIndex = focus.Row / pageSize;
+            PrepareRender();
+        }
+        if (Apply(_selection.Selection.Place(range, focus, Extent)))
+            RequestFocusReveal();
+        _suppressRender = false;
+        StateHasChanged();
+        return true;
+    }
 
     /// <summary>
     /// The focused cell's full value — the formula-bar role behind <c>####</c>
@@ -5042,6 +5160,7 @@
 
     private async Task StartEditingAsync(CellPosition cell, EditMode mode, string initialText)
     {
+        _editSurface = EditSurface.Cell;
         _editMode = mode;
         _editingCell = cell;
         _editText = initialText;
@@ -5252,6 +5371,7 @@
 
     private async Task EndEditingAsync()
     {
+        _editSurface = EditSurface.Cell;
         _editMode = EditMode.None;
         _editText = "";
         _editError = null;
@@ -5263,7 +5383,96 @@
         await ReclaimFocusAsync();
     }
 
-    private void OnEditorInput(ChangeEventArgs e) => _editText = e.Value?.ToString() ?? "";
+    private void OnEditorInput(ChangeEventArgs e)
+    {
+        _editText = e.Value?.ToString() ?? "";
+        _editSurface = EditSurface.Cell;
+    }
+
+    /// <summary>
+    /// A press into the Formula Bar (ADR-0051): the bar becomes the surface the user is
+    /// typing in. With no edit open it opens one on the Focus cell, in Caret, on the
+    /// opening text — the keyboard stays in the bar, which is the Cell Editor's second
+    /// surface, so the listener gates its keys as the editor's (ADR-0018). A cell that does
+    /// not edit leaves the bar read-only and opens nothing.
+    /// </summary>
+    private async Task OnFormulaBarFocusAsync()
+    {
+        if (_editMode != EditMode.None)
+        {
+            _editSurface = EditSurface.Bar;
+            _suppressRender = true;
+            return;
+        }
+        if (_selection.Selection.IsEmpty || !IsEditableCell(_selection.Selection.Focus))
+        {
+            _suppressRender = true;
+            return;
+        }
+        if (_menuColumn >= 0 || _contextCell is not null)
+            CloseMenus();
+        EndInteractive();
+        var focus = _selection.Selection.Focus;
+        _editSurface = EditSurface.Bar;
+        _editMode = EditMode.Caret;
+        _editingCell = focus;
+        _editText = OpeningTextOf(focus);
+        await PushEditingModeAsync();
+    }
+
+    /// <summary>Typing in the Formula Bar (ADR-0051): the one uncommitted text, so the
+    /// Cell Editor shows it on the render this input causes.</summary>
+    private void OnFormulaBarInput(ChangeEventArgs e)
+    {
+        if (_editMode == EditMode.None)
+        {
+            _suppressRender = true;
+            return;
+        }
+        _editText = e.Value?.ToString() ?? "";
+        _editSurface = EditSurface.Bar;
+    }
+
+    /// <summary>Whether the Formula Bar takes typing: while an edit is open, or when the
+    /// Focus cell edits and one can open there (ADR-0051/0035).</summary>
+    private bool FormulaBarEditable
+        => _editMode != EditMode.None
+            || (!_selection.Selection.IsEmpty && IsEditableCell(_selection.Selection.Focus));
+
+    /// <summary>
+    /// A press into the Name Box (ADR-0051): an open edit commits first, as a press anywhere
+    /// past the editor does (ADR-0010). A Reject holds the editor and takes the keyboard back
+    /// to it — the Name Box does not get to walk away from it (ADR-0034).
+    /// </summary>
+    private async Task OnNameBoxFocusAsync()
+    {
+        if (_editMode == EditMode.None)
+        {
+            _suppressRender = true;
+            return;
+        }
+        if (!await CommitEditAsync())
+            RequestEditorFocus();
+    }
+
+    private void OnNameBoxInput(ChangeEventArgs e) => _nameBoxText = e.Value?.ToString() ?? "";
+
+    private void OnNameBoxBlur() => _nameBoxText = null;
+
+    /// <summary>
+    /// Enter in the Name Box (ADR-0051): the typed text goes to the Consumer, who resolves it
+    /// to a position and asks the grid to place the Selection and the Focus there
+    /// (<see cref="PlaceSelectionAsync"/>, ADR-0050 item 4). The grid reads no address. The
+    /// keyboard comes back to the grid, where the placement lands.
+    /// </summary>
+    private async Task SubmitNameBoxAsync()
+    {
+        var text = _nameBoxText;
+        _nameBoxText = null;
+        await ReclaimFocusAsync();
+        if (text is not null && OnNameBoxEntered.HasDelegate)
+            await OnNameBoxEntered.InvokeAsync(text);
+    }
 
     /// <summary>The core wants the editor's control to hold DOM focus: the built-in
     /// input is focused after the render; a Chrome's control is told through the
@@ -5271,7 +5480,10 @@
     private void RequestEditorFocus()
     {
         _editorNeedsFocus = true;
-        _editorFocusRequest++;
+        // A Chrome's editor focuses itself on a new request number; while the user works
+        // in the Formula Bar, it must not take the keyboard from there (ADR-0051).
+        if (_editSurface == EditSurface.Cell)
+            _editorFocusRequest++;
     }
 
     /// <summary>The editor seam's contract (ADR-0010): the core owns the box, the keys
@@ -5286,7 +5498,15 @@
             _editText,
             _editMode == EditMode.Caret ? CellEditMode.Caret : CellEditMode.Overwrite,
             _editError,
-            text => _editText = text,
+            text =>
+            {
+                _editText = text;
+                _editSurface = EditSurface.Cell;
+                // The bar shows the same uncommitted text (ADR-0051): a Chrome's control
+                // reports into its own component, so the root is told to paint the bar.
+                if (ShowFormulaBar)
+                    StateHasChanged();
+            },
             () => _ = InvokeAsync(() => CommitAndMoveAsync(next => next)),
             () => _ = InvokeAsync(async () =>
             {

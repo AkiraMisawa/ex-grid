@@ -293,6 +293,19 @@
     box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
 }
 .ex-formula-bar-text { flex: 1 1 auto; min-width: 0; }
+/* The bar's text field wears the Cell Editor's class — it is the editor's second surface,
+   and the key listener knows an editor by it (ADR-0051/0018) — but it is laid out in the
+   band, not floated over a cell. */
+.ex-formula-bar > .ex-editor {
+    position: static;
+    z-index: auto;
+    outline: none;
+    line-height: inherit;
+    background: transparent;
+    color: inherit;
+}
+.ex-formula-bar > .ex-editor:focus { outline: var(--ex-editor-outline, 2px solid Highlight); outline-offset: -2px; }
+.ex-name-box-form { display: contents; }
 .ex-row-heading { z-index: 4; }
 .ex-headings-corner { z-index: 7; }
 /* Selection is painted as overlay rectangles, never as a class on the selected cells

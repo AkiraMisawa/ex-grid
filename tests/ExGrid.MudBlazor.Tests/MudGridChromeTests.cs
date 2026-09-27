@@ -71,6 +71,34 @@ public class MudGridChromeTests : MudTestContext
         Assert.Equal("Book", committed.Column);
     }
 
+    [Fact] // ADR-0051/0030 / DC-22: under this Chrome too, the Formula Bar and the editor show one text, and one commit
+    public async Task The_formula_bar_and_the_chrome_editor_agree()
+    {
+        var intents = new List<GridEditIntent<Trade>>();
+        var cut = Render<ExGrid<Trade>>(ps => ps
+            .Add(g => g.Window, Rows(5))
+            .Add(g => g.TotalCount, 5)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 400)
+            .Add(g => g.Chrome, MudGridChrome.Default)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnEdit, intents.Add));
+        await ClickCellAsync(cut, 50, 30);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("x", false, false, false, false, false));
+
+        await cut.Find("input.mud-ex-editor").InputAsync(new ChangeEventArgs { Value = "xyz" });
+        Assert.Equal("xyz", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "xyzw" });
+        Assert.Equal("xyzw", cut.Find("input.mud-ex-editor").GetAttribute("value"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Enter", false, false, false, false, false, fromDescendant: true));
+        Assert.Equal("xyzw", Assert.Single(intents).Value);
+    }
+
     [Fact] // ADR-0010/0030: the loading bar is a MudProgressLinear in the Chrome's colour, only while loading
     public void The_loading_bar_shows_only_while_loading()
     {

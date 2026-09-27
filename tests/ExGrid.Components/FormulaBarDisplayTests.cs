@@ -113,11 +113,11 @@ public class FormulaBarDisplayTests : GridTestContext
         Assert.Equal("", BarText(cut));
 
         await ClickAsync(cut, 50, 45);
-        Assert.Equal("R3C1", cut.Find(".ex-name-box").TextContent);
+        Assert.Equal("R3C1", cut.Find(".ex-name-box").GetAttribute("value"));
         Assert.Equal("=A1*2", BarText(cut));
 
         await PressAsync(cut, "ArrowDown");
-        Assert.Equal("R4C1", cut.Find(".ex-name-box").TextContent);
+        Assert.Equal("R4C1", cut.Find(".ex-name-box").GetAttribute("value"));
         Assert.Equal("Row 000003", BarText(cut));
         Assert.NotNull(bar);
     }
@@ -133,7 +133,7 @@ public class FormulaBarDisplayTests : GridTestContext
         Assert.DoesNotContain(cell.TextContent, c => c != '#');
         Assert.Equal(123456789.125m.ToString(null, CultureInfo.CurrentCulture), BarText(cut));
         // No label supplied: the grid names no cell in words of its own.
-        Assert.Equal("", cut.Find(".ex-name-box").TextContent);
+        Assert.Equal("", cut.Find(".ex-name-box").GetAttribute("value") ?? "");
     }
 
     [Fact] // ADR-0051/0028 / DC-23: the bar's height comes out of the Viewport and the rows take what it leaves
