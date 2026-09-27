@@ -52,8 +52,8 @@ async function click(page, a1, options = {}) {
 
 /**
  * The cell Excel calls the active cell, as the user reads it here: the Name Box's address.
- * Excel's ActiveCell is the fixed end of a Shift-extension; ExGrid's Name Box names its Focus,
- * the moving end (ADR-0012). Where the two part, the probe fails and says so.
+ * ExGrid's Name Box names its Focus, which is Excel's active cell: the fixed end of a
+ * Shift-extension (ADR-0052).
  */
 async function expectActive(page, a1) {
     // Soft: where the Name Box names the other end, the rest of the item still runs.
@@ -146,8 +146,7 @@ test('item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §
     }
 });
 
-test('item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ticket 07)', async ({ page }) => {
-    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
+test('item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ADR-0052, ticket 07)', async ({ page }) => {
     // Excel's layout was C2:G2 with the Focus on D2; the same block sits at E6:I6 here, in a row
     // /sheet leaves empty (row 1 holds headings in A1:D1, which would join the block).
     await click(page, 'E6');
@@ -169,8 +168,7 @@ test('item 2: Ctrl+Shift+Right from inside a row block selects to its end, then 
     await expectSelection(page, 'E6', 'F6');
 });
 
-test('item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ticket 06)', async ({ page }) => {
-    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
+test('item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06)', async ({ page }) => {
     const header = (letter) => sheet(page).locator('.ex-header-cell', { hasText: new RegExp(`^${letter}$`) });
     await click(page, 'C3');
     await header('B').click({ force: true });
@@ -191,8 +189,7 @@ test('item 3: a column letter selects the column, Shift+click extends, the Focus
     await expectActive(page, 'D100');
 });
 
-test('item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ticket 06)', async ({ page }) => {
-    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
+test('item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ADR-0052, ticket 06)', async ({ page }) => {
     const heading = (n) => sheet(page).locator('.ex-row-heading', { hasText: new RegExp(`^${n}$`) }).first();
     await click(page, 'C3');
     await heading(2).click({ force: true });
@@ -207,8 +204,7 @@ test('item 4: a row number selects the row, Shift+click extends, the Focus in th
     await expectActive(page, 'A5');
 });
 
-test('item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ticket 06)', async ({ page }) => {
-    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
+test('item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06)', async ({ page }) => {
     await click(page, 'C3');
     await sheet(page).locator('.ex-headings-corner').click({ force: true });
     await expectSelection(page, 'A1', 'XFD1048576');
@@ -221,6 +217,131 @@ test('item 5: the corner selects every cell, the Focus on the top-left visible c
     await sheet(page).locator('.ex-headings-corner').click({ force: true });
     await expectSelection(page, 'A1', 'XFD1048576');
     await expectActive(page, 'A100');
+});
+
+// ---- The active cell (ADR-0052; verification/2026-09-27-windows-excel-2/active-cell.md) -----
+
+/** That a cell is painted inside the scroller's box — not the page's, which /sheet overruns —
+ * once the scroll the grid asked for has landed. */
+async function expectInView(page, a1) {
+    await expect(async () => {
+        const scroller = await sheet(page).locator('.ex-scroller').boundingBox();
+        const box = await cell(page, a1).boundingBox();
+        expect(box).not.toBeNull();
+        expect(box.y).toBeGreaterThanOrEqual(scroller.y);
+        expect(box.y + box.height).toBeLessThanOrEqual(scroller.y + scroller.height);
+    }).toPass({ timeout: 5000 });
+}
+
+// Excel's cases, driven with real keys and the real mouse. /sheet's data is A1:D13, so the probes
+// that write use E:G, which are empty and on screen.
+
+test('active cell, case 1: Shift+arrows move the far corner, the Focus stays, and the view follows the Extent (ADR-0052)', async ({ page }) => {
+    await click(page, 'B2');
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('Shift+ArrowRight');
+    await expectSelection(page, 'B2', 'C4');
+    await expectActive(page, 'B2');
+    // Far enough down that the Extent leaves the view: the view scrolls to keep it, not B2.
+    for (let i = 0; i < 40; i++) await page.keyboard.press('Shift+ArrowDown');
+    await expectSelection(page, 'B2', 'C44');
+    await expectActive(page, 'B2');
+    await expectInView(page, 'C44');
+    expect(await sheet(page).locator('.ex-scroller').evaluate((s) => s.scrollTop)).toBeGreaterThan(0);
+});
+
+test('active cell, case 2: while a drag is held the Name Box shows 4R x 3C, and D5 stays active after D5 to B2 (ADR-0052)', async ({ page }) => {
+    await click(page, 'E1');
+    const from = await cell(page, 'D5').boundingBox();
+    const to = await cell(page, 'B2').boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+    await expect(nameBox(page)).toHaveValue('4R x 3C');
+    await page.mouse.up();
+    await expect(nameBox(page)).toHaveValue('D5');
+    await expectSelection(page, 'B2', 'D5');
+});
+
+test('active cell, case 3: after Enter, Shift+arrow moves the edge opposite the Focus, and nothing from the middle (ADR-0052)', async ({ page }) => {
+    await click(page, 'E1');
+    await click(page, 'G3', { modifiers: ['Shift'] });
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await expectActive(page, 'E3');
+    await page.keyboard.press('Shift+ArrowRight');
+    await expectSelection(page, 'E1', 'H3');
+    await page.keyboard.press('Shift+ArrowDown');
+    await expectSelection(page, 'E2', 'H3');
+    await expectActive(page, 'E3');
+    // From the middle (F2 in E1:G3, by Tab then Enter), Shift+Left changes nothing: E1:G3 stays,
+    // so typing and Ctrl+Enter fill exactly E1:G3.
+    await click(page, 'E1');
+    await click(page, 'G3', { modifiers: ['Shift'] });
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Enter');
+    await expectActive(page, 'F2');
+    await page.keyboard.press('Shift+ArrowLeft');
+    await page.keyboard.type('m');
+    await page.keyboard.press('Control+Enter');
+    for (const a1 of ['E1', 'G3']) await expect(cell(page, a1)).toHaveText('m');
+    await expect(cell(page, 'D1')).not.toHaveText('m');
+    await expectActive(page, 'F2');
+});
+
+test('active cell, case 6: Ctrl+click on the active cell takes it out and the next cell in Tab order is active (ADR-0052)', async ({ page }) => {
+    await click(page, 'E1');
+    await click(page, 'G3', { modifiers: ['Shift'] });
+    await click(page, 'E1', { modifiers: ['ControlOrMeta'] });
+    await expectActive(page, 'F1');
+    await page.keyboard.press('Shift+ArrowDown');
+    // F1:G1 grew to F1:G2; typing still enters F1.
+    await page.keyboard.type('g');
+    await page.keyboard.press('Enter');
+    await expect(cell(page, 'F1')).toHaveText('g');
+    await expect(cell(page, 'E1')).toHaveText('');
+});
+
+test('active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052)', async ({ page }) => {
+    await click(page, 'E1');
+    await click(page, 'G3', { modifiers: ['Shift'] });
+    for (const corner of ['G1', 'G3', 'E3', 'E1']) {
+        await page.keyboard.press('ControlOrMeta+Period');
+        await expectActive(page, corner);
+    }
+    await expectSelection(page, 'E1', 'G3');
+    await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 299 * 28; });
+    await expect(cell(page, 'E300')).toBeVisible();
+    await page.keyboard.press('Control+Backspace');
+    await expectInView(page, 'E1');
+    await expectSelection(page, 'E1', 'G3');
+    await page.keyboard.press('Shift+Backspace');
+    // Collapsed: Ctrl+Enter now fills E1 alone.
+    await page.keyboard.type('c');
+    await page.keyboard.press('Control+Enter');
+    await expect(cell(page, 'E1')).toHaveText('c');
+    await expect(cell(page, 'F1')).toHaveText('');
+    await expectActive(page, 'E1');
+});
+
+test('active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter fills the Selection and moves nothing (ADR-0052)', async ({ page }) => {
+    await click(page, 'E2');
+    await click(page, 'G4', { modifiers: ['Shift'] });
+    await page.keyboard.type('x');
+    await page.keyboard.press('Enter');
+    await expect(cell(page, 'E2')).toHaveText('x');
+    await expect(cell(page, 'F2')).toHaveText('');
+    await expectActive(page, 'E3');
+    await expectSelection(page, 'E2', 'G4');
+
+    await click(page, 'E6');
+    await click(page, 'G8', { modifiers: ['Shift'] });
+    await page.keyboard.type('y');
+    await page.keyboard.press('Control+Enter');
+    for (const a1 of ['E6', 'F7', 'G8']) await expect(cell(page, a1)).toHaveText('y');
+    await expectActive(page, 'E6');
+    await expectSelection(page, 'E6', 'G8');
 });
 
 test('item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09)', async ({ page }) => {
@@ -440,8 +561,7 @@ waitsOn(14)('item 19 and Part A item 10: pasted text =1+ is taken as that text (
 
 // ---- Fill (ADR-0050, item 5) --------------------------------------------------------------------
 
-test('item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ticket 15)', async ({ page }) => {
-    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
+test('item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ADR-0052, ticket 15)', async ({ page }) => {
     await enter(page, 'E1', '1');
     await enter(page, 'E2', '3');
     await click(page, 'E1');
@@ -479,8 +599,7 @@ test('item 20: 1, 2, 4 continue as Excel\'s trend, to the 15 digits Excel keeps 
     expect(await entryOf(page, 'E5')).toBe('6.83333333333333');
 });
 
-test('item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ticket 15)', async ({ page }) => {
-    test.fail(true, 'ADR-0052: Excel keeps its active cell on the fixed end; ExGrid\'s Focus is still the moving end until ADR-0052 lands');
+test('item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ADR-0052, ticket 15)', async ({ page }) => {
     await enter(page, 'E5', '1');
     await enter(page, 'E6', '3');
     await click(page, 'E5');
@@ -526,7 +645,7 @@ test('item 21: with several ranges selected there is no fill handle (ADR-0050, t
 
 // ---- Structure (ADR-0046) -----------------------------------------------------------------------
 
-waitsOn(13)('item 22: inserting rows above a selected range keeps the Selection where it was (ADR-0046, ticket 13)', async ({ page }) => {
+test('item 22: inserting rows above a selected range keeps the Selection where it was, and the Focus (ADR-0046, ADR-0052, ticket 13)', async ({ page }) => {
     await click(page, 'B3');
     await click(page, 'C4', { modifiers: ['Shift'] });
     await click(page, 'B3', { button: 'right' });
@@ -538,7 +657,7 @@ waitsOn(13)('item 22: inserting rows above a selected range keeps the Selection 
     await expect(cell(page, 'A5')).toHaveText('Pears');
 });
 
-waitsOn(13)('item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13)', async ({ page }) => {
+test('item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13)', async ({ page }) => {
     await enter(page, 'E1', '=B3*2');
     await enter(page, 'F1', '=SUM(B2:B4)');
     await click(page, 'B3', { button: 'right' });

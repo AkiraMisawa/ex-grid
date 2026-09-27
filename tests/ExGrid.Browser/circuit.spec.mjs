@@ -61,7 +61,7 @@ test.describe('keys typed faster than the round trip are neither lost nor reorde
     });
 });
 
-test('a paste past a Server hub\'s message limit arrives whole (CP-21)', async ({ page, context }) => {
+test('a paste past a Server hub\'s message limit arrives whole (CP-21, ADR-0052)', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openFeatures(page);
     // Two cells of about 100 KB each in the HTML flavour, as a spreadsheet puts on the
@@ -81,9 +81,10 @@ test('a paste past a Server hub\'s message limit arrives whole (CP-21)', async (
     await page.keyboard.press('ControlOrMeta+V');
 
     await expect(page.locator('#paste-status')).toContainText('2 cells from 2x1');
-    // The circuit is still there: the grid still answers a key.
+    // The circuit is still there: the grid still answers a key. The arrow moves from the
+    // Focus, which Shift+↓ left on row 0 (ADR-0052).
     await page.keyboard.press('ArrowDown');
-    await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).toMatch(/r2c1$/);
+    await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).toMatch(/r1c1$/);
 });
 
 test('a clipboard write the browser rejects is refused by name (CP-23)', async ({ page }) => {

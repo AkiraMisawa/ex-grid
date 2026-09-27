@@ -71,10 +71,10 @@ test('SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow ex
     await page.keyboard.press('ControlOrMeta+ArrowLeft');
     await expectFocusAt(grid, 'B13');
 
-    // Ctrl+Shift+arrow extends from the Anchor to where Ctrl+arrow would stop.
+    // Ctrl+Shift+arrow runs the Extent to where Ctrl+arrow would stop; the Focus stays (ADR-0052).
     await goTo(grid, 'B2');
     await page.keyboard.press('ControlOrMeta+Shift+ArrowDown');
-    await expectFocusAt(grid, 'B5');
+    await expectFocusAt(grid, 'B2');
     await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'B2', 'B5');
 });
 
@@ -96,7 +96,7 @@ test('SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, an
         expect(box.height).toBeGreaterThan(1_000_000 * 28);
     };
     await coversColumns('C1', 'C1');
-    // Shift+click extends from the Anchor's column.
+    // Shift+click extends from the Focus's column, and the Focus stays in it (ADR-0052).
     await header('E').click({ force: true, modifiers: ['Shift'] });
     await expect.poll(async () => (await boxOf(range)).width).toBeGreaterThan(200);
     await coversColumns('C1', 'E1');

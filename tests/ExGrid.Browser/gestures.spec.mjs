@@ -101,7 +101,7 @@ test('pasting onto an off-screen selection works, and the indicator showed first
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
 });
 
-test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded)', async ({ page, context }, testInfo) => {
+test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded, ADR-0052)', async ({ page, context }, testInfo) => {
     test.setTimeout(120000);
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page);
@@ -122,10 +122,11 @@ test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded)', a
 
     // The grid answers a key within 500ms of the paste completing (PST-5).
     const keyBefore = Date.now();
-    await page.keyboard.press('ArrowUp'); // the Focus sits on the last row after Ctrl+Shift+Down
+    // Ctrl+Shift+Down moved the Extent; the Focus stayed on row 0 (ADR-0052), so Down lands on row 1.
+    await page.keyboard.press('ArrowDown');
     await expect
         .poll(async () => grid(page).getAttribute('aria-activedescendant'), { timeout: 500 })
-        .toMatch(/r398c1$/);
+        .toMatch(/r1c1$/);
     const keyMs = Date.now() - keyBefore;
 
     record(testInfo.project.name, {

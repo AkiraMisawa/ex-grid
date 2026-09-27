@@ -209,7 +209,7 @@ test('WR-7: a Drawer toggle resizes the Fill grid and its geometry follows (ADR-
     }
 });
 
-test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018)', async ({ page }) => {
+test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018, ADR-0052)', async ({ page }) => {
     await open(page);
 
     // Each click is answered a round trip later on the Server host, so each is waited for.
@@ -231,9 +231,10 @@ test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018)', 
     const ordersFocus = await orders(page).getAttribute('aria-activedescendant');
     await clickCell(positions(page), 1, 1);
     await page.keyboard.press('ArrowDown');
-    // Shift+Arrow extends the selection by moving the Focus (ADR-0012).
+    // Shift+Arrow extends the selection by moving the Extent; the Focus stays (ADR-0052).
     await page.keyboard.press('Shift+ArrowRight');
-    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r2c2$/);
+    await expect(positions(page).locator('.ex-range')).not.toHaveCount(0);
+    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
     expect(await orders(page).getAttribute('aria-activedescendant')).toBe(ordersFocus);
 
     // Each paints its own Focus, and each root has its own id space.
@@ -255,7 +256,7 @@ test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018)', 
     expect(leaks.heights).toEqual(['28px', '24px', '26px']);
 });
 
-test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039)", async ({ page }) => {
+test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039/0052)", async ({ page }) => {
     await open(page);
 
     // A selection in each grid, and a Focus.
@@ -309,8 +310,9 @@ test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039
     // And the other direction: the grid takes its keyboard back and the select keeps
     // its value.
     await positions(page).focus();
+    // The arrow moves from the Focus, which the extension left on row 3, column 2 (ADR-0052).
     await page.keyboard.press('ArrowDown');
-    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r5c3$/);
+    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r4c2$/);
     await expect(page.locator('#currency-status')).toHaveText('Reporting currency: JPY');
     expect(await orders(page).getAttribute('aria-activedescendant')).toBe(before.orders.active);
 });
