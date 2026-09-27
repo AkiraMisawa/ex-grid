@@ -373,7 +373,7 @@
                 }
                 else
                 {
-                    <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="Name Box"
+                    <input class="ex-name-box" style="@NameBoxStyle()" value="@(_nameBoxText ?? NameBoxText())" tabindex="-1" aria-label="@WordFor(GridLabelIds.NameBox)"
                            @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync" @oninput="_onNameBoxInput ??= OnNameBoxInput"
                            @onblur="_onNameBoxBlur ??= OnNameBoxBlur" />
                 }
@@ -384,7 +384,7 @@
             }
             else
             {
-                <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="Formula Bar" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
+                <input class="ex-editor ex-formula-bar-text" value="@FormulaBarText()" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarFocusAsync" @oninput="_onFormulaBarInput ??= OnFormulaBarInput"
                        @ref="_formulaBarElement" />
             }
@@ -1141,8 +1141,13 @@
     /// how a Consumer keeping the built-in menu translates it, or renames one item,
     /// without reimplementing the menu. Returning null for an id falls back to
     /// <see cref="BuiltInCommandLabels"/>. A substituted Chrome never consults this — it
-    /// has the ids and resolves its own wording.</summary>
+    /// has the ids and resolves its own wording. The built-in Formula Bar's two fields take
+    /// their accessible names through it too, by <see cref="GridLabelIds"/> (ADR-0036/0051).</summary>
     [Parameter] public Func<string, string?>? CommandLabel { get; set; }
+
+    /// <summary>The built-in Chrome's word for an id: the Consumer's through
+    /// <see cref="CommandLabel"/>, the built-in English where it says nothing (ADR-0036).</summary>
+    private string WordFor(string id) => CommandLabel?.Invoke(id) ?? BuiltInCommandLabels.For(id);
 
     /// <summary>The Consumer's own context-menu commands, appended to the core's
     /// (ADR-0010/0036). It is handed the target — the clicked row, the column, and the
