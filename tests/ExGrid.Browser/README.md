@@ -173,7 +173,7 @@ hide it.
   never pause (PF-1).
 - `memory.spec.mjs` — on `/lifecycle`, a grid mounted and disposed fifty times leaves the
   browser's node and listener counts where they were (MEM-2), and a dispose takes the
-  module's five listeners off the root (MEM-4). The ten-minute soak (MEM-5, with the
+  module's six listeners off the root (MEM-4). The ten-minute soak (MEM-5, with the
   managed heap for MEM-6) runs only with `EXGRID_SOAK=1`:
   ```sh
   EXGRID_SOAK=1 npx playwright test memory.spec.mjs
@@ -226,6 +226,38 @@ hide it.
   change is held back is refused by the store's version check; a note records the
   version it was written against. On the Server host a second browser context approves
   and the first shows the banner.
+
+- `sheet.spec.mjs` — ExSheet on `/sheet` (SH-18, ticket 18 of docs/specs/exsheet): Entries
+  and Formulas typed and recalculated, F2 opening the Entry; Ctrl+arrow stopping at each
+  block's end and Ctrl+Shift+arrow extending (DC-7); a column heading, a Row Heading and the
+  corner selecting, with nothing sorted (DC-2/3); the Row Headings held at the left edge while
+  the Sheet scrolls sideways (DC-3); the Name Box navigating, refusing an unreadable address,
+  committing an open edit and handing an unreadable Formula back to its editor (DC-11); the
+  Formula Bar and the Cell Editor agreeing after every keystroke and committing and cancelling
+  once (DC-22); a row inserted by button and by the Context Menu keeping every Reference, one
+  Ctrl+Z each; the Linked Table reading `#GETTING_DATA` until its snapshot (SH-16); the Focus
+  at XFD1048576 with the DOM no larger than at A1 (SH-2).
+- `declarations.spec.mjs` — the declarations of ADR-0050/0051 (§26) as ExSheet makes them on
+  `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
+  — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed
+  at the reported caret, from the Formula Bar too (DC-17/31); Point by keys, Shift+arrows, the
+  mouse, F2, mid-text, from the bar, a press in the bar's text keeping its caret and ending
+  pointing (DC-19/31/34); DC-20 and DC-28 with 150 ms on the Server host; the fill handle
+  dragged — series, References shifted, a refused pattern, the edge auto-scroll, the Selection
+  after (DC-13/27); a block from the real clipboard spilling (DC-8); a copy inside the Sheet
+  shifting References, and what the paste receives of the `data-ex-grid="invariant"` marker on
+  both copy routes (SH-14/DC-33 — recorded in `metrics.json`); Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z
+  with and without an edit open, and the positions grid, which declares nothing, leaving them
+  to the browser (DC-30); grips without the menu button (DC-36); the positions grid keeping
+  ExGrid's own behaviour beside the Sheet (DC-25). Three tests are marked `test.fail` on the
+  Server host, each naming the criterion it fails (SRV-5/ED-22, DC-28, ADR-0007): see the
+  comments above them.
+- `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
+  Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
+  stack stay with the Sheet that has the keyboard.
+
+`sheet-helpers.mjs` is what those three share: a Sheet's grid, a cell by its A1 address, the
+editor surfaces under either Chrome, the Name Box, and painted-box comparisons.
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error
@@ -282,6 +314,16 @@ Two traps live in that, and the DemoHost has hit both:
 - A grid whose Focus has scrolled out of view — a `Fill` grid narrowed under it, say —
   paints no Focus cell, and `aria-activedescendant` is then rightly empty (ADR-0033).
   Measure a row by its index, not by the Focus's.
+- Playwright's default window is 1280×720, and a Sheet lower on the page than that has its
+  bottom edge — the edge band, the fill handle of a low Selection — outside the window, where
+  the pointer reaches nothing. The ExSheet specs use a 1000 px high window.
+- A cell whose right edge sits under the vertical scrollbar has its fill handle there too,
+  where a press lands on the scrollbar. Drag from a column that is wholly in view.
+- On the Server host, typing into an editor that is already open is not safe at full speed
+  (the SRV-5/ED-22 test in `declarations.spec.mjs` pins why). A test whose subject is not
+  typing speed types with `typeSteadily`, one character waited for at a time; a test that
+  asserts after typing waits for the editor to show the text before a press elsewhere, or
+  the press can land while the edit is still opening and point instead.
 - A chord is two keydowns — the modifier first. A `{ once: true }` listener waiting for
   the key is spent on the modifier; and a `page.evaluate` that registers a listener must
   be awaited before the key is sent, or it races the key through a different channel.
