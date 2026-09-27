@@ -3,7 +3,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/27/2026 - 11:42:09 |
+| Generated on: | 09/27/2026 - 13:14:25 |
 | Parser: | MultiReport (3x Cobertura) |
 | Assemblies: | 2 |
 | Classes: | 130 |
@@ -115,8 +115,8 @@
 |ExGrid.Keys.GridKeyClaims|100%||
 |ExGrid.Keys.GridKeys|100%|100%|
 |ExGrid.RowRange|100%||
-|ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
 |ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
 |ExGrid.Rows.InMemoryRowMarks<TRow>|92.3%|84.1%|
 |ExGrid.Rows.RowMarkAdapter<TRow>|100%||
 |ExGrid.Rows.RowMarkCounts|100%||
