@@ -1,6 +1,6 @@
 # 02: Tracer: a Sheet typed into and drawn through ExGrid
 
-Status: in-progress
+Status: done
 
 **What to build:** The thinnest complete path. The `ExSheet.Engine` and `ExSheet` packages exist, and a DemoHost
 page shows a Sheet. A user clicks a cell, types `2` into A1, `3` into B1 and `=A1+B1` into C1, and
@@ -18,7 +18,7 @@ only `+ - * /` over single-cell References. The rest of the grammar is ticket 03
 - [x] Pinned Columns work on a Sheet
 - [x] The Sheet Document round-trips: out, in, the same Values (ADR-0048)
 - [x] ExGrid's sort and filter are not wired on a Sheet
-- [ ] A DemoHost page shows it on both hosts, with a clean console
+- [x] A DemoHost page shows it on both hosts, with a clean console
 
 ## Comments
 
@@ -52,3 +52,13 @@ SH-3, SH-4, pinned, sort unwired), `SheetDocumentWiringTests`.
 What remains: the DemoHost page (ticket item 5 of this stream) and its browser run on both hosts.
 Scrolling to the extent is layer 2 only (the DOM bound at A1 and at XFD1048576); a real scroll to
 row 1,048,576 is layer 3's, under SH-18.
+
+2026-09-27, the DemoHost page: `/sheet` in `samples/ExGrid.DemoPages` (so both hosts serve it),
+listed in `DemoPageList` under "ExSheet", shows an ExSheet bound two ways to a Sheet Document
+holding values, Formulas (`=B2*C2`, `=SUM(B2:B4)`) and a date, with buttons for undo, redo, a
+number format on the selection and a row insertion as Consumer commands. Layer 3
+`navigation.spec.mjs` (RI-1 to RI-3, clean console on every page) passes on the WebAssembly host
+and on the Server host, run locally under xvfb with Playwright's Chromium. A by-hand probe with
+real keys on the WebAssembly host typed `=D2*2` into E2 (12), jumped A1 → A5 → A7 with Ctrl+↓,
+opened F2 on `=B2*C2`, and read the Name Box's refusal of `nonsense`, with a clean console. That
+probe is not a committed spec: SH-18 (ticket 18) owns the browser suite.
