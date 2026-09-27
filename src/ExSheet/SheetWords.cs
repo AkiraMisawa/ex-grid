@@ -18,9 +18,8 @@ internal static class SheetWords
 
     internal static string Refused(SheetRefusal refusal) => refusal.Message;
 
-    internal static string TooManyCells(long cells, long cap) =>
-        string.Create(CultureInfo.InvariantCulture,
-            $"The selection holds {cells:N0} cells, and formatting is applied to at most {cap:N0} at once. Select fewer cells.");
+    internal static string FormatSeveralWholeRanges =>
+        "Nothing was formatted: whole columns or rows are formatted one selection range at a time. Select one range.";
 
     internal static string PasteUnreadable(FormulaSyntaxException error) =>
         string.Create(CultureInfo.InvariantCulture,

@@ -1,6 +1,5 @@
 using System.Globalization;
 using Bunit;
-using ExGrid.Selection;
 using ExSheet.Components.Tests.Support;
 using ExSheet.Engine;
 using Xunit;
@@ -183,16 +182,98 @@ public class SheetDisplayTests : SheetTestContext
         }
     }
 
-    [Fact] // Principle 1: formatting a million cells at once is refused by name, and nothing changes
-    public async Task Formatting_whole_columns_is_refused_by_name()
+    [Fact] // ADR-0047 second round, SH-21: formatting whole columns records one entry for the columns, not a million cells
+    public async Task Formatting_whole_columns_records_the_columns()
     {
-        var selections = new List<GridSelection>();
-        var cut = RenderSheet(ps => ps.Add(s => s.SelectionChanged, selections.Add));
-        await GoToAsync(cut, "B:B");
+        SheetDocument? raised = null;
+        var cut = RenderSheet(ps => ps
+            .Add(s => s.Document, DocumentOf("en-US", ("B3", "2"), ("D3", "4")))
+            .Add(s => s.DocumentChanged, d => raised = d));
+        await GoToAsync(cut, "B:C");
 
-        Assert.False(await cut.Instance.SetNumberFormatAsync(NumberFormat.Parse("0.00")));
+        Assert.True(await cut.Instance.SetNumberFormatAsync(NumberFormat.Parse("0.00")));
 
-        Assert.Contains("1,048,576 cells", cut.Find(".ex-sheet-notice").TextContent);
+        var run = Assert.Single(raised!.Columns);
+        Assert.Equal((1, 2), (run.First, run.Last));
+        Assert.Empty(raised.Rows);
+        Assert.All(raised.Cells, c => Assert.Null(c.Format));
+        Assert.Equal("2.00", CellText(cut, "B3"));
+        Assert.Equal("4", CellText(cut, "D3"));
+        // One step, and undoing it puts the column back as it was.
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal("2", CellText(cut, "B3"));
         Assert.False(cut.Instance.CanUndo);
+    }
+
+    [Fact] // ADR-0047 second round, SH-21: a cell typed into a formatted column later takes the column's format
+    public async Task A_formatted_column_formats_what_is_typed_later()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "B:B");
+        Assert.True(await cut.Instance.SetNumberFormatAsync(NumberFormat.Parse("0.00")));
+
+        await EnterAsync(cut, "B7", "3");
+
+        Assert.Equal("3.00", CellText(cut, "B7"));
+    }
+
+    [Fact] // ADR-0047 second round, SH-21, DC-29: aligning whole rows records one entry for the rows and paints their cells
+    public async Task Aligning_whole_rows_records_the_rows()
+    {
+        SheetDocument? raised = null;
+        var cut = RenderSheet(ps => ps
+            .Add(s => s.Document, DocumentOf("en-US", ("C2", "12.5")))
+            .Add(s => s.DocumentChanged, d => raised = d));
+        await GoToAsync(cut, "2:2");
+
+        Assert.True(await cut.Instance.SetAlignmentAsync(HorizontalAlignment.Center));
+
+        var run = Assert.Single(raised!.Rows);
+        Assert.Equal((1, 1, HorizontalAlignment.Center), (run.First, run.Last, run.Alignment));
+        Assert.Contains("ex-align-center", Cell(cut, "C2").ClassName);
+    }
+
+    [Fact] // ADR-0048: a Selection of several ordinary ranges is formatted as one step, cell by cell
+    public async Task Several_ranges_are_one_step()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("A1", "1"), ("C3", "3"))));
+        await GoToAsync(cut, "A1");
+        await CtrlClickAsync(cut, "C3");
+
+        Assert.True(await cut.Instance.SetNumberFormatAsync(NumberFormat.Parse("0.0")));
+
+        Assert.Equal("1.0", CellText(cut, "A1"));
+        Assert.Equal("3.0", CellText(cut, "C3"));
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal("1", CellText(cut, "A1"));
+        Assert.Equal("3", CellText(cut, "C3"));
+        Assert.False(cut.Instance.CanUndo);
+    }
+
+    [Fact] // Principle 1, ADR-0048: several ranges one of which is whole columns cannot be one step, so it is refused by name
+    public async Task Several_ranges_with_whole_columns_are_refused_by_name()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf("en-US", ("C3", "3"))));
+        await GoToAsync(cut, "A:A");
+        await CtrlClickAsync(cut, "C3");
+
+        Assert.False(await cut.Instance.SetNumberFormatAsync(NumberFormat.Parse("0.0")));
+
+        Assert.Contains("one selection range at a time", cut.Find(".ex-sheet-notice").TextContent);
+        Assert.Equal("3", CellText(cut, "C3"));
+        Assert.False(cut.Instance.CanUndo);
+    }
+
+    private static async Task CtrlClickAsync(IRenderedComponent<global::ExSheet.Components.ExSheet> cut, string address)
+    {
+        var at = CellAddress.Parse(address);
+        var heading = double.Parse(cut.Find(".ex-row-heading").GetAttribute("style")!.Replace("width:", "").Replace("px", "").Trim(), CultureInfo.InvariantCulture);
+        await cut.Find(".ex-viewport").MouseDownAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs
+        {
+            Button = 0, Buttons = 1, CtrlKey = true,
+            OffsetX = heading + at.Column * SheetColumns.DefaultWidthPx + 5,
+            OffsetY = at.Row * global::ExSheet.Components.ExSheet.DefaultRowHeightPx + 5,
+        });
+        await cut.Find(".ex-viewport").MouseUpAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { Button = 0 });
     }
 }

@@ -37,13 +37,6 @@
     /// <summary>Excel's default row height in ExGrid's geometry, and the Grid's own default: 28 px.</summary>
     public const double DefaultRowHeightPx = 28;
 
-    /// <summary>
-    /// How many cells a formatting command applies to at once. A selection of whole columns
-    /// names a million cells per column, and the Sheet records formatting per cell; past this the
-    /// command is refused and says so rather than stall the page.
-    /// </summary>
-    public const long FormatCellCap = 100_000;
-
     // Rows beyond what the grid asked for, on either side, so that ordinary scrolling is
     // answered from rows already in hand.
     private const int ReadAhead = 50;
@@ -263,20 +256,22 @@
     }
 
     /// <summary>
-    /// Sets the number format of every selected cell as one operation (ADR-0046);
-    /// <see langword="null"/> is General. Answers false, and says why, when nothing is
-    /// selected or the selection holds more than <see cref="FormatCellCap"/> cells.
+    /// Sets the number format of the Selection as one operation (ADR-0046); <see langword="null"/>
+    /// is General. Formats live at three levels, as in Excel (ADR-0047): a Selection of whole
+    /// columns or whole rows sets them on the columns or rows, one entry each, and any other
+    /// range on its cells. Answers false when nothing is selected, and false, saying why, for a
+    /// Selection of several ranges one of which is whole columns or rows: those are not yet one
+    /// operation.
     /// </summary>
     public Task<bool> SetNumberFormatAsync(NumberFormat? format) =>
-        OnDispatcherAsync(() => FormatSelectionAsync(cells => SheetEdit.SetFormat(cells, format)));
+        OnDispatcherAsync(() => FormatSelectionAsync(range => SheetEdit.SetFormat(range, format), cells => SheetEdit.SetFormat(cells, format)));
 
     /// <summary>
-    /// Sets the horizontal alignment of every selected cell as one operation (ADR-0046). Answers
-    /// false, and says why, when nothing is selected or the selection holds more than
-    /// <see cref="FormatCellCap"/> cells.
+    /// Sets the horizontal alignment of the Selection as one operation (ADR-0046), at the levels
+    /// <see cref="SetNumberFormatAsync"/> sets a format at (ADR-0047), and answering as it does.
     /// </summary>
     public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) =>
-        OnDispatcherAsync(() => FormatSelectionAsync(cells => SheetEdit.SetAlignment(cells, alignment)));
+        OnDispatcherAsync(() => FormatSelectionAsync(range => SheetEdit.SetAlignment(range, alignment), cells => SheetEdit.SetAlignment(cells, alignment)));
 
     /// <summary>
     /// The Linked Tables declared on the Sheet, in the order they were declared (ADR-0049): each
@@ -562,23 +557,30 @@
         return new CellPosition(edge.Row, edge.Column);
     }
 
-    private async Task<bool> FormatSelectionAsync(Func<IEnumerable<CellAddress>, SheetEdit> edit)
+    /// <summary>
+    /// A formatting command on the Selection, as one step (ADR-0048). One range goes to the
+    /// engine as a range, which records whole columns and whole rows as one entry each
+    /// (ADR-0047, SH-21). Several ranges go as their cells, in one step; nothing is capped
+    /// (principle 5). Several ranges one of which is whole columns or rows are refused by name:
+    /// the engine takes one range per step, and as cells they would be a million per column.
+    /// </summary>
+    private async Task<bool> FormatSelectionAsync(Func<CellRange, SheetEdit> onRange, Func<IEnumerable<CellAddress>, SheetEdit> onCells)
     {
         var ranges = _selection.Ranges;
         if (ranges.Count == 0) return false;
-        var cells = ranges.Sum(r => r.CellCount);
-        if (cells > FormatCellCap)
+        if (ranges.Count == 1)
         {
-            _notice = SheetWords.TooManyCells(cells, FormatCellCap);
+            await PerformAsync(onRange(SheetFormulaAids.RangeOf(ranges[0])));
+            return true;
+        }
+        var sheetRanges = ranges.Select(SheetFormulaAids.RangeOf).ToList();
+        if (sheetRanges.Any(r => r.IsWholeColumns || r.IsWholeRows))
+        {
+            _notice = SheetWords.FormatSeveralWholeRanges;
             StateHasChanged();
             return false;
         }
-        var addresses = ranges
-            .SelectMany(r => Enumerable.Range(r.TopRow, r.RowCount)
-                .SelectMany(row => Enumerable.Range(r.LeftColumn, r.ColumnCount).Select(column => new CellAddress(row, column))))
-            .Distinct()
-            .ToList();
-        await PerformAsync(edit(addresses));
+        await PerformAsync(onCells(sheetRanges.SelectMany(r => r.Cells()).Distinct().ToList()));
         return true;
     }
 

@@ -82,6 +82,9 @@ await sheet.SetNumberFormatAsync(NumberFormat.Parse("#,##0.00"));   // on the se
 await sheet.UndoAsync();
 ```
 
+A format or an alignment set on a selection of whole columns or whole rows is recorded on the
+columns or rows, one entry each, as Excel records it: cell over row over column.
+
 ## More
 
 The decisions behind ExSheet are ADR-0046 to ADR-0051 in

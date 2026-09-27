@@ -146,3 +146,16 @@ inserted or deleted column does not move them (formats move; widths stay at thei
 default width is sized from ExGrid's default Cell Metrics, not a Wrapper's. Whether a column
 widened by an entry narrows again when that entry is undone is Excel's to observe; here it does
 not.
+
+2026-09-27, component, formats on levels (SH-21, ADR-0047 second round): the interim cap is gone
+(`ExSheet.FormatCellCap` and its refusal are removed). `SetNumberFormatAsync` and
+`SetAlignmentAsync` hand a one-range Selection to the engine as a `CellRange`
+(`SheetEdit.SetFormat(CellRange, …)` / `SetAlignment(CellRange, …)`), so a Selection of whole
+columns or whole rows — a header click, `B:C` in the Name Box — records one entry per run of
+columns or rows, and a cell typed there later takes the level's format. A Selection of several
+ranges is one step over their cells, uncapped (principle 5), except where one of the ranges is
+whole columns or rows: the engine takes one range per step, and cell by cell that would be a
+million cells per column, so it is refused by name and nothing changes. Layer 2:
+`SheetDisplayTests` (whole columns recorded as columns and undone as one step, a later entry in a
+formatted column, whole rows aligned, several ranges as one step, several ranges with whole
+columns refused).
