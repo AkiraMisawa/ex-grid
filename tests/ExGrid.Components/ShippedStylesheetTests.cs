@@ -74,6 +74,21 @@ public class ShippedStylesheetTests
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
+    [Fact] // ADR-0053 / ADR-0021's sixth entry / MEM-4: the Layout Ceiling is told by an observer the instance disconnects
+    public void The_layout_ceiling_is_observed_on_the_instances_probe_and_released_on_dispose()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // The instance's own probe, found under its own root — never the document's.
+        Assert.Matches(new Regex(@"root\.querySelector\(':scope > \.ex-ceiling-probe > div'\)"), script.Text);
+        Assert.Matches(new Regex(@"ceilingObserver\.observe\(ceilingProbe\)"), script.Text);
+        // Reported from one place, only when the size moved.
+        Assert.Single(Regex.Matches(script.Text, @"'OnLayoutCeilingAsync'"));
+        Assert.Matches(new Regex(@"size\.blockSize === ceiling"), script.Text);
+        // And released with the instance, beside the gutter's observer.
+        Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*observer\.disconnect\(\);\s*ceilingObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
+    }
+
     [Fact] // ADR-0037 / KB-26: a held Space engages once — the gate takes and drops a repeated plain Space
     public void The_key_gate_drops_a_repeated_space()
     {

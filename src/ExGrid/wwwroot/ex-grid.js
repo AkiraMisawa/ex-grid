@@ -1,7 +1,7 @@
-// The five permitted uses of JavaScript (ADR-0021): the capture-phase keydown listener,
+// The six permitted uses of JavaScript (ADR-0021): the capture-phase keydown listener,
 // reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
-// out of the box, and being told about the pointer — when it moves onto another row, and
-// when it comes to rest. Beside them, the notes ADR-0021 has added since: a capture-phase
+// out of the box, being told about the pointer — when it moves onto another row, and
+// when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
 // mousedown and mouseup that keep a press on the rows in its place among held keys, and the
 // root taking the keyboard back only while DOM focus is still its own. Anything else — text
 // measurement, overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
@@ -645,14 +645,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     let reportRows = false;
     let reportRest = false;
     let lastPointerRow = -2;
+    // The Viewport's own top edge is the first painted row's, so the offset divides into
+    // rows from there. Which row that is, C# writes on the Viewport: once the height is
+    // compressed the transform no longer says it (ADR-0053).
     const rowUnder = (viewport, offsetY) => {
         const rowHeight = parseFloat(root.style.getPropertyValue('--ex-row-height'));
-        if (!(rowHeight > 0)) {
+        const written = viewport.getAttribute('data-ex-first-row');
+        const firstRow = written === null ? NaN : Number(written);
+        if (!(rowHeight > 0) || !Number.isInteger(firstRow)) {
             return -2;
         }
-        const match = /translateY\(([-\d.]+)px\)/.exec(viewport.style.transform);
-        const translateY = match ? Number(match[1]) : 0;
-        return Math.floor((offsetY + translateY) / rowHeight);
+        return firstRow + Math.floor(offsetY / rowHeight);
     };
     const onPointerMove = (event) => {
         // Cells are pointer-events: none, so the Viewport is what a move over the rows
@@ -977,6 +980,36 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         observer.observe(scroller, { box: 'content-box' });
     }
 
+    // The Layout Ceiling (ADR-0053, the sixth allowlist entry). Chromium clamps any layout
+    // length just under 2^25 zoomed pixels, so in CSS pixels the tallest element it lays out
+    // depends on the display scale and the page zoom — and devicePixelRatio does not say
+    // which: emulation moves one without the other. So it is not computed: C# renders an
+    // element declared 2^25 px tall inside a zero-size box, and the size the browser lays
+    // it out at IS the ceiling. The observer reports it once at attach, and again only when
+    // the scale or the zoom moves it; nothing here reads layout on the path to a paint, and
+    // nothing writes to the DOM.
+    let ceiling = -1;
+    const ceilingProbe = root.querySelector(':scope > .ex-ceiling-probe > div');
+    const ceilingObserver = new ResizeObserver((entries) => {
+        if (!core || entries.length === 0) {
+            return;
+        }
+        const size = entries[entries.length - 1].borderBoxSize[0];
+        if (!size || size.blockSize === ceiling) {
+            return;
+        }
+        ceiling = size.blockSize;
+        core.invokeMethodAsync('OnLayoutCeilingAsync', ceiling)
+            .catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to take the layout ceiling', error);
+                }
+            });
+    });
+    if (ceilingProbe) {
+        ceilingObserver.observe(ceilingProbe);
+    }
+
     return {
         // The two pointer reports' switches (ADR-0021's fifth entry): rows for the
         // hover band, rest for the error popover. Told by C#, which knows who consumes
@@ -1104,6 +1137,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             // scroller and the .NET reference the same way, and a notification arriving
             // after disposal would call into a component that no longer exists.
             observer.disconnect();
+            ceilingObserver.disconnect();
             clearTimeout(restTimer);
             root.removeEventListener('mousemove', onPointerMove);
             root.removeEventListener('mouseleave', onPointerLeave);

@@ -154,7 +154,10 @@
                already measured from its own left and top edge. One handler for the whole
                body: a handler per cell would be ~220 of them re-registered on every
                frame of a scroll, which is the cost ADR-0004 caps. *@
-            <div class="ex-viewport" style="@ViewportStyle()"
+            @* data-ex-first-row: which row the Viewport's own top edge is, for the pointer
+               report's row-change test (ADR-0021's fifth entry). The transform no longer
+               says it once the height is compressed (ADR-0053). *@
+            <div class="ex-viewport" style="@ViewportStyle()" data-ex-first-row="@(_visible?.Start)"
                  role="presentation" @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmousedown:preventDefault="PressKeepsTheEditor" @onmouseup="OnMouseUp"
                  @ondblclick="OnViewportDoubleClickAsync"
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
@@ -176,7 +179,7 @@
                             @* The hover band (ADR-0029, ADR-0021's fifth entry): the row
                                under the pointer, painted exactly as the Focus band is —
                                one rectangle, beneath everything, no row told. *@
-                            @if (HoverRowRange is { } hoverRow && SelectionStyles.Pinned(hoverRow, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedHover)
+                            @if (HoverRowRange is { } hoverRow && SelectionStyles.Pinned(hoverRow, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedHover)
                             {
                                 <div class="ex-hover-row" style="@pinnedHover"></div>
                             }
@@ -184,71 +187,71 @@
                             {
                                 @* The Focus band (ADR-0008): one more rectangle, first in
                                    the layer so every range stays readable over it. *@
-                                @if (HighlightFocusRow && SelectionStyles.Pinned(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedBand)
+                                @if (HighlightFocusRow && SelectionStyles.Pinned(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedBand)
                                 {
                                     <div class="ex-focus-row" style="@pinnedBand"></div>
                                 }
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Pinned(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fill)
+                                    @if (SelectionStyles.Pinned(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } fill)
                                     {
                                         <div class="ex-range" style="@fill"></div>
                                     }
                                 }
-                                @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedFocus)
+                                @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedFocus)
                                 {
                                     <div class="ex-focus" style="@pinnedFocus"></div>
                                 }
                                 @* The fill handle and its target outline (ADR-0050, item 5): one
                                    more rectangle each, painted last so they stand over the
                                    ranges. The handle sits in whichever layer its corner does. *@
-                                @if (FillOutlineRange is { } pinnedFillRange && SelectionStyles.Pinned(pinnedFillRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedFillOutline)
+                                @if (FillOutlineRange is { } pinnedFillRange && SelectionStyles.Pinned(pinnedFillRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedFillOutline)
                                 {
                                     <div class="ex-fill-target" style="@pinnedFillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start, _metrics.FillHandleSizePx, pinnedLayer: true) is { } pinnedHandle)
+                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: true) is { } pinnedHandle)
                                 {
                                     <div class="ex-fill-handle" style="@pinnedHandle"></div>
                                 }
                                 @* The pointing outline (ADR-0051): one more rectangle, over the
                                    ranges; the Selection and the Focus beneath it do not move. *@
-                                @if (PointRange is { } pinnedPointRange && SelectionStyles.Pinned(pinnedPointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedPoint)
+                                @if (PointRange is { } pinnedPointRange && SelectionStyles.Pinned(pinnedPointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedPoint)
                                 {
                                     <div class="ex-point" style="@pinnedPoint"></div>
                                 }
                             }
                         </div>
                         <div class="ex-selection" aria-hidden="true" @key="SelectionLayerKey">
-                            @if (HoverRowRange is { } hoverRowScrollable && SelectionStyles.Scrollable(hoverRowScrollable, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } hoverBand)
+                            @if (HoverRowRange is { } hoverRowScrollable && SelectionStyles.Scrollable(hoverRowScrollable, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } hoverBand)
                             {
                                 <div class="ex-hover-row" style="@hoverBand"></div>
                             }
                             @if (!_selection.Selection.IsEmpty)
                             {
-                                @if (HighlightFocusRow && SelectionStyles.Scrollable(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } band)
+                                @if (HighlightFocusRow && SelectionStyles.Scrollable(FocusRowRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } band)
                                 {
                                     <div class="ex-focus-row" style="@band"></div>
                                 }
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Scrollable(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fill)
+                                    @if (SelectionStyles.Scrollable(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } fill)
                                     {
                                         <div class="ex-range" style="@fill"></div>
                                     }
                                 }
-                                @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } focus)
+                                @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } focus)
                                 {
                                     <div class="ex-focus" style="@focus"></div>
                                 }
-                                @if (FillOutlineRange is { } fillRange && SelectionStyles.Scrollable(fillRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } fillOutline)
+                                @if (FillOutlineRange is { } fillRange && SelectionStyles.Scrollable(fillRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } fillOutline)
                                 {
                                     <div class="ex-fill-target" style="@fillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start, _metrics.FillHandleSizePx, pinnedLayer: false) is { } handle)
+                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: false) is { } handle)
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
                                 }
-                                @if (PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } point)
+                                @if (PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } point)
                                 {
                                     <div class="ex-point" style="@point"></div>
                                 }
@@ -267,7 +270,7 @@
                         @if (_editingCell.Column < _columnStyles.Geometry.PinnedCount)
                         {
                             <div class="ex-editor-pinned" @key="EditorLayerKey">
-                                @if (SelectionStyles.Pinned(SelectionStyles.CellRange(_editingCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } pinnedBox)
+                                @if (SelectionStyles.Pinned(SelectionStyles.CellRange(_editingCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedBox)
                                 {
                                     @* stopPropagation, like every other interactive
                                        element over the delegated viewport: a
@@ -285,7 +288,7 @@
                                 }
                             </div>
                         }
-                        else if (SelectionStyles.Scrollable(SelectionStyles.CellRange(_editingCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible.Start) is { } editorBox)
+                        else if (SelectionStyles.Scrollable(SelectionStyles.CellRange(_editingCell), _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } editorBox)
                         {
                             @if (editorChrome is not null)
                             {
@@ -660,6 +663,11 @@
        render — two mutations, nothing invented, and the sentence stays the Consumer's
        (ADR-0033/0034). *@
     <div class="ex-announce" role="status">@_announcement</div>
+    @* The Layout Ceiling's probe (ADR-0053, ADR-0021's sixth entry): an element declared
+       2^25 px tall inside a zero-size box that clips it. The browser lays it out at the
+       tallest length it will, and a ResizeObserver reports that size — the ceiling in CSS
+       pixels at this scale and zoom. Paint nothing, take nothing, say nothing. *@
+    <div class="ex-ceiling-probe" aria-hidden="true"><div style="@CeilingProbeStyle"></div></div>
 </div>
 
 @code {
@@ -1517,6 +1525,15 @@
     // Whether the scroll offset must be re-anchored after this render: a geometry
     // change re-anchors on the first visible row, never the pixel offset (ADR-0028).
     private double? _anchorScrollTopPx;
+    // A content offset waiting for the geometry it is to be read through: set where the
+    // row height or the Layout Ceiling moves, and turned into a scroll offset by the next
+    // PrepareRender, which builds that geometry (ADR-0028/0053).
+    private double? _anchorContentPx;
+
+    // The tallest element the browser lays out at the current scale and zoom, in CSS
+    // pixels, as the browser tells it (ADR-0053, ADR-0021's sixth entry). The scale-1
+    // ceiling until told, which compresses nothing VZ-8 accepts.
+    private double _layoutCeilingPx = ViewportGeometry.MaxScrollHeightPx;
 
     // What the scrollbars take out of the declared Viewport, as the browser reports it
     // (ADR-0021). Zero until it says otherwise, which is both the right assumption —
@@ -2035,8 +2052,9 @@
                 // Page-local: _visible is absolute, the scroll offset is not — under a
                 // pager, anchoring on the absolute index would land past the page's own
                 // scroll range and clamp the view to its end.
-                _scrollTopPx = (anchored.Start - _pageStartRow) * _metrics.RowHeightPx;
-                _anchorScrollTopPx = _scrollTopPx;
+                // A content offset: the geometry it is read through is built below
+                // (ADR-0053), and is the identity unless the height is compressed.
+                _anchorContentPx = (anchored.Start - _pageStartRow) * _metrics.RowHeightPx;
             }
         }
 
@@ -2383,8 +2401,17 @@
             _pageStartRow = _pageIndex * pageSize;
             geometryRows = Math.Clamp(TotalRows - _pageStartRow, 0, pageSize);
         }
+        // The rows share the scroll content with the header band, so the room the Layout
+        // Ceiling leaves them is the ceiling less the band (ADR-0053).
         _geometry = new ViewportGeometry(
-            _metrics.RowHeightPx, _visibleHeightPx - BandHeightPx, geometryRows);
+            _metrics.RowHeightPx, _visibleHeightPx - BandHeightPx, geometryRows,
+            Math.Max(1, _layoutCeilingPx - BandHeightPx));
+        if (_anchorContentPx is { } anchorContentPx)
+        {
+            _anchorContentPx = null;
+            _scrollTopPx = _geometry.ScrollTopAt(anchorContentPx);
+            _anchorScrollTopPx = _scrollTopPx;
+        }
         var local = _geometry.SliceAt(_scrollTopPx);
         _visible = local is { } slice ? new RowRange(_pageStartRow + slice.Start, slice.Count) : null;
         ObserveAutoWidths();
@@ -2747,6 +2774,7 @@
         var paintedFirstRow = _visible?.Start ?? 0;
         var paintedColumns = _scrollable;
         var previousLeftPx = _scrollLeftPx;
+        var previousTopPx = _scrollTopPx;
         _scrollTopPx = offset.Top;
         _scrollLeftPx = offset.Left;
         _expectedScrollTopPx = offset.Top;
@@ -2785,7 +2813,12 @@
             _hoverRow = -1;
             _ = ForgetPointerAsync();
         }
-        if (moved || _placeholderMode)
+        // Compressed, the rows are placed from the offset itself and not only from the
+        // slice, so every vertical scroll re-places them — the Viewport's transform and
+        // the overlay, no row (ADR-0053). Uncompressed this is never true, and the cost
+        // is today's.
+        var replaced = _geometry.IsCompressed && _scrollTopPx != previousTopPx;
+        if (moved || _placeholderMode || replaced)
         {
             StateHasChanged();
         }
@@ -3155,7 +3188,9 @@
     {
         if (_visible is not { } visible)
             return;
-        _edgePointerViewportYPx = e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow) - _scrollTopPx;
+        // Read through the mapping: the painted rows stand at c(s), not at s (ADR-0053).
+        _edgePointerViewportYPx = e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow)
+            - _geometry.ContentOffsetAt(_scrollTopPx);
         _edgePointerViewportXPx = e.OffsetX - _scrollLeftPx;
         _edgeStepRows = EdgeBand.RowsPerTick(
             _edgePointerViewportYPx, _geometry.ViewportHeightPx, _geometry.RowsPerViewport);
@@ -3207,8 +3242,9 @@
                 return;
             try
             {
-                var maxTopPx = Math.Max(0, _geometry.ScrollHeightPx - _geometry.ViewportHeightPx);
-                var top = Math.Clamp(_scrollTopPx + (_edgeStepRows * _metrics.RowHeightPx), 0, maxTopPx);
+                // The step is in rows, so it moves the content by rows through the
+                // mapping, whatever the compression (ADR-0053).
+                var top = _geometry.ScrollTopStepped(_scrollTopPx, _edgeStepRows * _metrics.RowHeightPx);
                 var left = Math.Clamp(_scrollLeftPx + _edgeStepXPx, 0, _columnStyles.Geometry.MaxScrollLeftPx);
                 var moved = top != _scrollTopPx || left != _scrollLeftPx;
                 if (moved)
@@ -3225,7 +3261,7 @@
                 // The pointer has not moved; the cell under it has. The selection's far
                 // edge tracks it (ADR-0008).
                 var changed = false;
-                var row = _geometry.RowAt(top + _edgePointerViewportYPx);
+                var row = _geometry.RowAt(_geometry.ContentOffsetAt(top) + _edgePointerViewportYPx);
                 var column = _columnStyles.Geometry.ColumnAt(_edgePointerViewportXPx + left, left);
                 // RowAt clamps inside the page, which is exactly ADR-0015's rule: a
                 // drag never turns the page.
@@ -3662,7 +3698,8 @@
         // The popovers are laid out in viewport space, so both axes convert here,
         // exactly as CellCorner and the edge band do.
         _contextLeftPx = e.OffsetX - _scrollLeftPx;
-        _contextTopPx = e.OffsetY + _geometry.OffsetPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow) - _scrollTopPx;
+        _contextTopPx = e.OffsetY + _geometry.OffsetPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow)
+            - _geometry.ContentOffsetAt(_scrollTopPx);
     }
 
     /// <summary>
@@ -3756,7 +3793,7 @@
         // the offset, so with a smooth scroll that row starts up to a row height above the
         // visible top and a popover placed from it would sit a row too low.
         var top = _visible is { } visible
-            ? _geometry.OffsetPxOf(cell.Row - _pageStartRow) - _scrollTopPx
+            ? _geometry.ViewportTopPxOf(cell.Row - _pageStartRow, _scrollTopPx)
             : 0d;
         return (left, top);
     }
@@ -6526,7 +6563,12 @@
         // offset: at the top and bottom the scroll clamps, the relative position cannot
         // be held, and the transition degrades to exactly a reveal there — the Focus is
         // still visible, which is the invariant that actually matters.
-        var steppedTop = _scrollTopPx + (stepRows * _metrics.RowHeightPx);
+        // Stepped through the mapping, so a compressed grid moves by rows and not by
+        // scrollbar pixels (ADR-0053); uncompressed, only the clamp the reveal applies
+        // anyway is taken early.
+        var steppedTop = stepRows == 0
+            ? _scrollTopPx
+            : _geometry.ScrollTopStepped(_scrollTopPx, stepRows * _metrics.RowHeightPx);
         var top = _geometry.ScrollTopToReveal(localRow, steppedTop);
         // "Go to the beginning" is not the same request as "make this cell visible", and
         // Pinned Columns are where the two come apart. ScrollLeftToReveal answers the
@@ -7150,13 +7192,58 @@
         _ => "",
     };
 
+    /// <summary>What the Layout Ceiling's probe is declared: 2^25 px, more than any
+    /// browser lays out, so the size it is laid out at is the ceiling (ADR-0053). Inline,
+    /// from here, because it is geometry (ADR-0027).</summary>
+    private static readonly string CeilingProbeStyle = "width: 1px; height: 33554432px";
+
+    /// <summary>
+    /// The browser told the Layout Ceiling (ADR-0053, ADR-0021's sixth entry): at attach,
+    /// and again only when the display scale or the page zoom moves it. The first visible
+    /// row is kept where it is — a zoom is not a navigation — by anchoring on its content
+    /// offset, as a row-height change does (ADR-0028), and the browser is told the scroll
+    /// offset that shows it under the new mapping.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    [JSInvokable]
+    public async Task OnLayoutCeilingAsync(double ceilingPx)
+    {
+        // It crosses the JS boundary, so nothing here is trusted: a NaN would travel into
+        // every offset, and a zero would refuse a grid for a hidden probe.
+        if (_disposed || !double.IsFinite(ceilingPx) || ceilingPx <= 0 || ceilingPx == _layoutCeilingPx)
+            return;
+        var anchor = _visible is not null ? _geometry.ContentOffsetAt(_scrollTopPx) : (double?)null;
+        _layoutCeilingPx = ceilingPx;
+        try
+        {
+            var wasCompressed = _geometry.IsCompressed;
+            _anchorContentPx = anchor;
+            PrepareRender();
+            // Neither before nor after compressed: the offsets meant the same thing all
+            // along, and there is nothing to tell the browser.
+            if (!wasCompressed && !_geometry.IsCompressed)
+                _anchorScrollTopPx = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Not a UI event, so nothing else would surface this.
+            await DispatchExceptionAsync(ex);
+        }
+    }
+
     /// <summary>The rows' own layer: its offset transform, and — while tiers exist —
     /// the band it starts under, which the stylesheet's one-tier default cannot know
     /// (ADR-0032). Geometry travels inline (ADR-0027).</summary>
     private string ViewportStyle()
     {
+        // Placed from the offset the browser reported: compressed, where the rows stand
+        // depends on it and not only on the slice (ADR-0053); otherwise this is the first
+        // painted row's own offset, as it always was.
         var transform = FormattableString.Invariant(
-            $"transform: translateY({_geometry.OffsetPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow)}px)");
+            $"transform: translateY({_geometry.PaintedTopPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow, _scrollTopPx)}px)");
         // The stylesheet's default is one header tier; tiers and a hidden header
         // (ADR-0050) both move where the rows begin, so the band's height travels inline.
         return _headerLayout.TierCount == 0 && !HideHeader
