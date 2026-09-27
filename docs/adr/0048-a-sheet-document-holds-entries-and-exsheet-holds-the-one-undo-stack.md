@@ -73,9 +73,10 @@ steps are operations on Entries, including structural ones that an Overlay canno
 
 ## Settled while building *(2026-09-27, decided with the user)*
 
-**Renaming the Sheet is an undoable step**, like any other operation on the Sheet. Excel is
-reported not to undo a rename. This is a deliberate difference: undoing a rename never shows a
-wrong value, and it keeps the rule that each user operation is one step.
+**Renaming the Sheet is an undoable step**, like any other operation on the Sheet: it keeps the
+rule that each user operation is one step. *(It was first recorded as a deliberate difference from
+Excel, on a report that Excel does not undo a rename. Observed on 2026-09-27, Excel does undo it,
+so this is no difference at all.)*
 
 - **Copy with headers is off on a Sheet** *(decided with the user, 2026-09-27)*. A Sheet's column
   letters are addresses, not headers, and Excel has no such command. A Consumer that wants it

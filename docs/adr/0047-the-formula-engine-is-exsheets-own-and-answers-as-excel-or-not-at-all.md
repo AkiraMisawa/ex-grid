@@ -150,3 +150,12 @@ places.
 - **A Formula's format at entry is inferred only where Excel's rule has been observed.** Until the
   corpus observes more, that is `+`, `-`, single-cell references, constants and parentheses.
   Everything else stays General.
+
+## Observed in Excel *(2026-09-27, Microsoft 365 16.0.20326.20158 — verification/2026-09-27-windows-excel)*
+
+**The example at the top of this ADR was wrong, and is corrected here.** Excel's answer to
+`=0.1+0.2-0.3` is **0**, not 5.55E-17. Excel sets a *final* addition or subtraction whose result
+nearly cancels to 0, and `=0.1+0.2=0.3` is TRUE. It leaves the same arithmetic alone when it is
+wrapped in a multiplication: `=1*(0.5-0.4-0.1)` is -2.78E-17. The argument for doubles still
+holds: Excel computes in doubles, and "Excel's answer" includes these adjustments, which the
+engine must now reproduce. The `decimal` alternative stays rejected.
