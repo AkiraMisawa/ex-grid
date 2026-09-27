@@ -1209,6 +1209,20 @@
     [Parameter] public Func<RowRange, CancellationToken, Task<IReadOnlyList<TRow>>>? OnCopyRowsNeeded { get; set; }
 
     /// <summary>
+    /// A Consumer declaration (ADR-0050, item 9): the Consumer answers a copy. On both copy
+    /// routes — the <c>copy</c> event's synchronous question and the asynchronous write a
+    /// menu copy or a selection beyond the Window takes — the grid first applies its own
+    /// rules (empty, misaligned, past the cap: ADR-0005), then asks this with the ranges
+    /// being copied, and writes exactly the two flavours it returns. Asked synchronously and
+    /// in process, so no rows are gathered for it and <see cref="OnCopyRowsNeeded"/> is not
+    /// consulted. A refusal leaves the clipboard untouched, announces the Consumer's sentence
+    /// through the root's live region, and raises <see cref="OnCopyRefused"/> as
+    /// <see cref="CopyRefusalReason.RefusedByConsumer"/>. Left null — the default — the grid
+    /// builds the copy itself, exactly as ADR-0005 says.
+    /// </summary>
+    [Parameter] public Func<GridCopyRequest, GridCopyAnswer>? CopyAnswer { get; set; }
+
+    /// <summary>
     /// A Consumer declaration (ADR-0050, item 1): a plain click on a column header selects
     /// the whole column, and nothing sorts — Excel's meaning, where ADR-0012 gives the click
     /// to sorting. Shift+click extends from the Anchor's column, as it always does. Off, the
@@ -4879,6 +4893,8 @@
             NotifyCopyRefused(decision.Reason);
             return ClipboardPayload.None;
         }
+        if (CopyAnswer is not null)
+            return AskCopyAnswer(decision.Plan, withHeaders: false) ?? ClipboardPayload.None;
         if (!WindowCovers(decision.Plan))
         {
             // The async route needs somebody to ask. Without one, refuse by name
@@ -4926,6 +4942,8 @@
             NotifyCopyRefused(decision.Reason);
             return null;
         }
+        if (CopyAnswer is not null)
+            return AskCopyAnswer(decision.Plan, withHeaders);
 
         var rows = await GatherRowsAsync(decision.Plan);
         if (_disposed)
@@ -4994,9 +5012,10 @@
         if (_disposed)
             return;
 
-        var block = ClipboardParse.Parse(html, text);
-        if (block is null)
+        var parsed = ClipboardParse.ParseBlock(html, text);
+        if (parsed is null)
             return;
+        var block = parsed.Values;
 
         var target = _selection.Selection;
         var extent = Extent;
@@ -5011,7 +5030,7 @@
         }
         var version = _sequenceVersion;
         if (OnPaste.HasDelegate)
-            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, version));
+            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, version, parsed.Origins));
         if (PasteMaySpill)
             SelectSpilledBlock(target, decision.Plan, version);
     }
@@ -5106,11 +5125,44 @@
         };
     }
 
+    /// <summary>
+    /// The declared copy answer, asked with the approved plan (ADR-0050, item 9): the two
+    /// flavours it returns, exactly as given, or null when it refused — the clipboard stays
+    /// untouched, the Consumer's sentence is announced, and the refusal is raised by name.
+    /// </summary>
+    private ClipboardPayload? AskCopyAnswer(CopyPlan plan, bool withHeaders)
+    {
+        var answer = CopyAnswer!(new GridCopyRequest(plan, withHeaders, _sequenceVersion));
+        if (answer is null)
+            throw new InvalidOperationException(
+                "CopyAnswer returned null. Answer GridCopyAnswer.Write with both flavours, or GridCopyAnswer.Refuse " +
+                "with a sentence; a copy that is neither would leave the user guessing what landed (ADR-0005).");
+        if (!answer.IsRefused)
+            return ClipboardPayload.Data(answer.Text!, answer.Html!);
+        NotifyCopyRefused(CopyRefusalReason.RefusedByConsumer, answer.Sentence);
+        return null;
+    }
+
     /// <summary>Raised off the synchronous copy path: the event handler cannot await,
     /// and the refusal must still reach the Consumer (ADR-0005: say which one).</summary>
-    private void NotifyCopyRefused(CopyRefusalReason reason)
+    private void NotifyCopyRefused(CopyRefusalReason reason, string? sentence = null)
     {
-        if (_disposed || !OnCopyRefused.HasDelegate)
+        if (_disposed)
+            return;
+        if (sentence is not null)
+        {
+            // The Consumer's own sentence, relayed as a verdict's is (ADR-0034/0036): a
+            // copy that landed nothing and said nothing is the silence ADR-0005 refuses.
+            _ = InvokeAsync(() =>
+            {
+                if (_disposed)
+                    return;
+                Announce(sentence);
+                _suppressRender = false;
+                StateHasChanged();
+            });
+        }
+        if (!OnCopyRefused.HasDelegate)
             return;
         _ = InvokeAsync(() => OnCopyRefused.InvokeAsync(reason));
     }
@@ -5731,7 +5783,10 @@
     /// <returns><c>false</c> when a Reject held the editor: nothing was raised, the
     /// editor is still standing, and the gesture that asked for the commit keeps no
     /// meaning of its own (ADR-0034).</returns>
-    private async Task<bool> CommitEditAsync()
+    /// <param name="reclaimFocus">Whether the keyboard comes back to the root once the edit
+    /// ends. A press into a field of the grid's own (the Name Box) keeps its meaning after
+    /// the commit (ADR-0010), so the keyboard stays where the press put it.</param>
+    private async Task<bool> CommitEditAsync(bool reclaimFocus = true)
     {
         var cell = _editingCell;
         var text = _editText;
@@ -5742,7 +5797,7 @@
         // gesture, so it is raised here rather than deferred.
         if (slice < 0 || slice >= _window.Count)
         {
-            await EndEditingAsync();
+            await EndEditingAsync(reclaimFocus);
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(EditDiscardReason.RowLeftTheWindow);
             return true;
@@ -5752,7 +5807,7 @@
         // is the last write path the gate did not cover.
         if (!ColumnIsEditable(cell.Column))
         {
-            await EndEditingAsync();
+            await EndEditingAsync(reclaimFocus);
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(EditDiscardReason.ColumnNoLongerEditable);
             return true;
@@ -5774,7 +5829,7 @@
         // A Flag raises the intent unchanged: the mark does not travel in it, and comes
         // back through the display channels when the Consumer answers them (ADR-0034).
         _editError = null;
-        await EndEditingAsync();
+        await EndEditingAsync(reclaimFocus);
         if (OnEdit.HasDelegate)
             await OnEdit.InvokeAsync(new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text));
         return true;
@@ -5847,7 +5902,7 @@
         }
     }
 
-    private async Task EndEditingAsync()
+    private async Task EndEditingAsync(bool reclaimFocus = true)
     {
         // The list and the hint answer the edit, and go with it, as the outline does (ADR-0051).
         CloseCompletion();
@@ -5863,7 +5918,8 @@
         // the next editor is not, and the focus above would land nowhere.
         _editorElement = default;
         await PushEditingModeAsync();
-        await ReclaimFocusAsync();
+        if (reclaimFocus)
+            await ReclaimFocusAsync();
     }
 
     private void OnEditorInput(ChangeEventArgs e)
@@ -5878,6 +5934,12 @@
     /// opening text — the keyboard stays in the bar, which is the Cell Editor's second
     /// surface, so the listener gates its keys as the editor's (ADR-0018). A cell that does
     /// not edit leaves the bar read-only and opens nothing.
+    ///
+    /// <para>The caret stays where the press put it, as Excel's does (ADR-0051's third
+    /// round): the bar already showed the opening text, so nothing is placed, and the caret is
+    /// not known until the listener reports it. Only where the opening text differs from what
+    /// the bar showed — rewriting the field moves the browser's caret anyway — is it placed at
+    /// the end, as an edit opened by typing or F2 is.</para>
     /// </summary>
     private async Task OnFormulaBarFocusAsync()
     {
@@ -5896,12 +5958,21 @@
             CloseMenus();
         EndInteractive();
         var focus = _selection.Selection.Focus;
+        var shown = FormulaBarText();
         _editSurface = EditSurface.Bar;
         _editMode = EditMode.Caret;
         _editingCell = focus;
         _editText = OpeningTextOf(focus);
-        _editCaret = _editText.Length;
-        OpenCaret();
+        if (ReportsCaret && string.Equals(_editText, shown, StringComparison.Ordinal))
+        {
+            _editCaret = -1;
+            ForgetCaretPlacement();
+        }
+        else
+        {
+            _editCaret = _editText.Length;
+            OpenCaret();
+        }
         CloseCompletion();
         await PushEditingModeAsync();
     }
@@ -5927,8 +5998,12 @@
 
     /// <summary>
     /// A press into the Name Box (ADR-0051): an open edit commits first, as a press anywhere
-    /// past the editor does (ADR-0010). A Reject holds the editor and takes the keyboard back
-    /// to it — the Name Box does not get to walk away from it (ADR-0034).
+    /// past the editor does, and the press then keeps its own meaning (ADR-0010) — the
+    /// keyboard stays in the Name Box. The Name Box is not an editor surface: taking the
+    /// keyboard back to the root there would land the address typed next on the grid, where
+    /// it opens Overwrite on the Focus cell and is committed into it instead of navigating. A
+    /// Reject holds the editor and takes the keyboard back to it — the Name Box does not get
+    /// to walk away from it (ADR-0034).
     /// </summary>
     private async Task OnNameBoxFocusAsync()
     {
@@ -5937,7 +6012,7 @@
             _suppressRender = true;
             return;
         }
-        if (!await CommitEditAsync())
+        if (!await CommitEditAsync(reclaimFocus: false))
             RequestEditorFocus();
     }
 

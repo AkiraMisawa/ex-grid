@@ -32,12 +32,13 @@ public class FormulaBarEditingTests : GridTestContext
         List<GridEditIntent<TestRow>>? intents = null,
         Action<GridSelection>? onSelection = null,
         Action<string>? onNameBox = null,
-        Action<Bunit.ComponentParameterCollectionBuilder<ExGrid<TestRow>>>? extra = null)
+        Action<Bunit.ComponentParameterCollectionBuilder<ExGrid<TestRow>>>? extra = null,
+        GridColumn<TestRow>[]? columns = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Window, TestRows.Many(50))
               .Add(g => g.TotalCount, 50)
-              .Add(g => g.Columns, Columns())
+              .Add(g => g.Columns, columns ?? Columns())
               .Add(g => g.RowHeight, 20d)
               .Add(g => g.ViewportHeight, 200)
               .Add(g => g.ViewportWidth, 350)
@@ -191,6 +192,67 @@ public class FormulaBarEditingTests : GridTestContext
 
         Assert.Equal("7", Assert.Single(intents).Value);
         Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+    }
+
+    private int RootFocusCalls()
+        => JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+
+    [Fact] // ADR-0010/0051: the press into the Name Box keeps its own meaning — the commit does not take the keyboard back to the root
+    public async Task Committing_by_a_press_into_the_name_box_leaves_the_keyboard_there()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents);
+        await ClickAsync(cut, 50, 45);
+        await PressAsync(cut, "7");
+        var before = RootFocusCalls();
+
+        await cut.Find(".ex-name-box").FocusAsync(new FocusEventArgs());
+
+        // Were the root focused here, the address typed next would land on the grid, open
+        // Overwrite on the Focus cell and be committed into it instead of navigating.
+        Assert.Single(intents);
+        Assert.Equal(before, RootFocusCalls());
+    }
+
+    [Fact] // ADR-0051 / ADR-0050 item 4: with an edit open, an address typed into the Name Box navigates, and the edit commits once
+    public async Task An_address_entered_with_an_edit_open_navigates()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        GridSelection? selection = null;
+        IRenderedComponent<ExGrid<TestRow>>? cut = null;
+        cut = RenderGrid(intents, onSelection: s => selection = s, onNameBox: text =>
+        {
+            Assert.Equal("R41C1", text);
+            _ = cut!.Instance.PlaceSelectionAsync(new SelectionRange(40, 0, 1, 1), new CellPosition(40, 0), 0);
+        });
+        await ClickAsync(cut, 50, 45);
+        await PressAsync(cut, "7");
+
+        await cut.Find(".ex-name-box").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-name-box").InputAsync(new ChangeEventArgs { Value = "R41C1" });
+        await cut.Find(".ex-name-box-form").SubmitAsync();
+
+        Assert.Equal(["7"], intents.Select(i => i.Value));
+        Assert.Equal(new CellPosition(40, 0), selection!.Focus);
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+    }
+
+    [Fact] // ADR-0034/0010: a Reject holds the editor, and the press into the Name Box does not keep its meaning
+    public async Task A_rejected_commit_takes_the_keyboard_back_from_the_name_box()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents, columns:
+        [
+            new("Book", ColumnType.Text, r => r.Book, width: Fixed100, editable: true, validate: (_, _) => EditVerdict.Reject("no")),
+            new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100),
+        ]);
+        await ClickAsync(cut, 50, 45);
+        await PressAsync(cut, "7");
+
+        await cut.Find(".ex-name-box").FocusAsync(new FocusEventArgs());
+
+        Assert.Empty(intents);
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-viewport .ex-editor")));
     }
 
     [Fact] // ADR-0051 / ADR-0050 item 4 / DC-11: the Name Box hands its text over, and the placement lands and scrolls

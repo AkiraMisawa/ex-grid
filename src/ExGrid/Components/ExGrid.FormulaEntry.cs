@@ -237,13 +237,16 @@ public partial class ExGrid<TRow>
         // Caret, a click inside the text. Completion and Point act at the new caret position.
         _editCaret = caret;
         // The outline's Reference was written where the caret stood: moved away, pointing ends,
-        // as typing ends it, and the next arrow or click points from the new caret position.
+        // as typing ends it, and the next click points from the new caret position. The user
+        // has taken the caret into the text, so the edit is in Caret — Excel's Edit mode — and
+        // the arrows move the caret from here, not the outline and not the Focus (ADR-0051's
+        // third round).
         var pointingEnded = _pointer is not null || _editMode == EditMode.Point;
         if (pointingEnded)
         {
             EndPointing();
             if (_editMode == EditMode.Point)
-                _editMode = EditMode.Overwrite;
+                _editMode = EditMode.Caret;
             MarkGateIfMoved();
         }
         if (CompleteEditorText is null && !pointingEnded)

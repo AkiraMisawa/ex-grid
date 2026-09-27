@@ -27,7 +27,7 @@ public class ClipboardDataTests
 
         Assert.Equal("d1.2\td1.3\r\nd2.2\td2.3\r\n", text);
         Assert.Equal(
-            "<table><tr><td>r1.2</td><td>r1.3</td></tr><tr><td>r2.2</td><td>r2.3</td></tr></table>",
+            "<table data-ex-grid=\"invariant\"><tr><td>r1.2</td><td>r1.3</td></tr><tr><td>r2.2</td><td>r2.3</td></tr></table>",
             html);
     }
 
@@ -42,7 +42,7 @@ public class ClipboardDataTests
         var (text, html) = ClipboardData.Assemble(plan, Display, Raw, Header);
 
         Assert.Equal("H2\tH3\r\nd1.2\td1.3\r\nd2.2\td2.3\r\n", text);
-        Assert.StartsWith("<table><tr><th>H2</th><th>H3</th></tr><tr><td>r1.2</td>", html);
+        Assert.StartsWith("<table data-ex-grid=\"invariant\"><tr><th>H2</th><th>H3</th></tr><tr><td>r1.2</td>", html);
     }
 
     [Fact] // ADR-0005 / CP-17: vertical segments share a column span, so one row names them all
@@ -114,6 +114,6 @@ public class ClipboardDataTests
 
         var (_, html) = ClipboardData.Assemble(plan, Display, (_, _) => "a<b>&c");
 
-        Assert.Equal("<table><tr><td>a&lt;b&gt;&amp;c</td></tr></table>", html);
+        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>a&lt;b&gt;&amp;c</td></tr></table>", html);
     }
 }

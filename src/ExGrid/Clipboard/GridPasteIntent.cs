@@ -17,11 +17,21 @@ namespace ExGrid.Clipboard;
 public sealed class GridPasteIntent
 {
     internal GridPasteIntent(
-        PastePlan plan, IReadOnlyList<IReadOnlyList<string>> values, int rowSequenceVersion)
+        PastePlan plan, IReadOnlyList<IReadOnlyList<string>> values, int rowSequenceVersion,
+        IReadOnlyList<IReadOnlyList<PasteFieldOrigin>>? origins = null)
     {
         Plan = plan;
         Values = values;
         RowSequenceVersion = rowSequenceVersion;
+        Origins = origins ?? AllShown(values);
+    }
+
+    private static IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> AllShown(IReadOnlyList<IReadOnlyList<string>> values)
+    {
+        var origins = new IReadOnlyList<PasteFieldOrigin>[values.Count];
+        for (var r = 0; r < values.Count; r++)
+            origins[r] = new PasteFieldOrigin[values[r].Count];
+        return origins;
     }
 
     /// <summary>The approved plan: the target ranges, and how the source block tiles
@@ -32,6 +42,13 @@ public sealed class GridPasteIntent
     /// Raw strings — Excel's HTML flavour supplies full precision where it was on the
     /// clipboard (ADR-0005); the Consumer parses per its own column types.</summary>
     public IReadOnlyList<IReadOnlyList<string>> Values { get; }
+
+    /// <summary>Where each field of <see cref="Values"/> came from, at the same position
+    /// (ADR-0050, item 10): <see cref="PasteFieldOrigin.Invariant"/> for Excel's <c>x:num</c>
+    /// and ExGrid's own unformatted HTML, read under the invariant culture;
+    /// <see cref="PasteFieldOrigin.ShownText"/> for everything else, read as typed. A block
+    /// typed in the grid (Ctrl+Enter) is shown text throughout.</summary>
+    public IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> Origins { get; }
 
     /// <summary>The order these positions are written in (ADR-0011).</summary>
     public int RowSequenceVersion { get; }
@@ -54,5 +71,13 @@ public sealed class GridPasteIntent
     {
         var source = Plan.SourceCellFor(target);
         return Values[source.Row][source.Column];
+    }
+
+    /// <summary>Where the value that lands on one target cell came from, through the plan's
+    /// tiling (ADR-0050, item 10).</summary>
+    public PasteFieldOrigin OriginFor(CellPosition target)
+    {
+        var source = Plan.SourceCellFor(target);
+        return Origins[source.Row][source.Column];
     }
 }

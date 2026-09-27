@@ -15,6 +15,13 @@ namespace ExGrid.Clipboard;
 /// </summary>
 public static class ClipboardData
 {
+    /// <summary>
+    /// The attribute on the table of ExGrid's HTML flavour saying that every field in it is
+    /// raw and locale-free, so a paste reads each one as invariant (ADR-0050, item 10).
+    /// Another program ignores an attribute it does not know.
+    /// </summary>
+    public const string InvariantMarker = "data-ex-grid=\"invariant\"";
+
     /// <summary>Both flavours of one approved copy: <c>Text</c> is the TSV of the
     /// displayed values, <c>Html</c> a table of the raw ones (ADR-0005).</summary>
     /// <param name="plan">The approved copy (ADR-0005/0011).</param>
@@ -36,7 +43,7 @@ public static class ClipboardData
         ArgumentNullException.ThrowIfNull(rawAt);
 
         var text = new StringBuilder();
-        var html = new StringBuilder("<table>");
+        var html = new StringBuilder("<table ").Append(InvariantMarker).Append('>');
 
         if (headerAt is not null)
             AppendHeaderRow(text, html, plan, headerAt);

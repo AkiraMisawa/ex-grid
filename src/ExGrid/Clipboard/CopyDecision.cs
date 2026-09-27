@@ -16,6 +16,8 @@ namespace ExGrid.Clipboard;
 /// and the clipboard still holds whatever it held before. Raised after the fact, from
 /// the asynchronous route: a user told nothing would paste the old contents believing
 /// they were the copy (ADR-0005).
+/// <see cref="RefusedByConsumer"/>: a declared copy answer refused, with its own sentence
+/// (ADR-0050, item 9).
 /// </summary>
 public enum CopyRefusalReason
 {
@@ -38,6 +40,12 @@ public enum CopyRefusalReason
     /// clipboard still holds what it held before. Raised by the component, after the
     /// fact (ADR-0005).</summary>
     ClipboardUnavailable,
+
+    /// <summary>The Consumer's declared copy answer refused the copy (ADR-0050, item 9):
+    /// nothing landed, and the Consumer's own sentence has been announced through the
+    /// root's live region. Raised by the component, never by <see cref="ClipboardRules"/>,
+    /// and never for a grid that declared no copy answer.</summary>
+    RefusedByConsumer,
 }
 
 /// <summary>

@@ -939,12 +939,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // — ADR-0020's interactive cell — is not a mode: it is read off event.target,
         // which is true whether focus arrived by click or by key.)
         setEditing: (mode, reportsCaret) => {
+            const opened = editing === 'none' && mode !== 'none';
             editing = mode;
             reportCaret = reportsCaret === true;
             // A new state starts a new conversation: a report equal to one sent before it is
             // news to the core now (the next edit can open on the same text and caret).
             reportedText = null;
             reportedCaret = -1;
+            // An edit opened by a press into an editor surface's text keeps the caret where the
+            // press put it (ADR-0051's third round). The press's own selectionchange can have
+            // been reported before the core was editing, and was not heard, so the caret is
+            // reported once more as the edit opens. Read, not measured: no layout is read. An
+            // edit opened by typing or F2 is placed by the core, which disregards this report.
+            if (opened && reportCaret && core) {
+                const input = focusedEditorField();
+                if (input) {
+                    reportCaretOf(input);
+                }
+            }
         },
         // After the core wrote the editor's text itself — an accepted candidate, a pointed
         // Reference — the caret goes where the core says (ADR-0051's second round). Only while
