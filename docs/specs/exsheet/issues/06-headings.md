@@ -12,7 +12,7 @@ Heading can be hidden, and hiding the column header is also available to a plain
 - [x] Off by default: an existing ExGrid's header click still sorts (existing suites green)
 - [x] On: click, Shift+click and the corner select as stated; nothing sorts (ADR-0050)
 - [x] Row Headings are not in Selection, copy, Ctrl+A or the Enter/Tab cycle
-- [ ] Either Heading hides; the Sheet still addresses `A1` (the hiding is done in the core; `A1` is ExSheet's, below)
+- [x] Either Heading hides; the Sheet still addresses `A1` (the hiding is done in the core; `A1` is ExSheet's, below)
 - [x] The band's width is resolved geometry, not a stylesheet literal (ADR-0027/0028)
 
 ## Comments
@@ -37,3 +37,9 @@ What remains:
 - Dragging across Row Headings or column headers to select several is not built; Shift+click
   is the route.
 
+2026-09-27, ExSheet's wiring: `HeaderClickSelects` is on, the column headers are the letters, and
+`RowHeadings` labels each row with its 1-based number (a held static delegate). `ShowRowHeadings`
+and `ShowColumnHeadings` hide either Heading (the latter through `HideHeader`); with either hidden,
+the Name Box still names the Focus `C3` (ADR-0050). Layer 2: `HeadingsWiringTests` (letters and
+numbers, a header click and Shift+click selecting columns, a Row Heading click and Shift+click
+selecting rows, each Heading hidden with the addresses kept, the Formula Bar hidden).
