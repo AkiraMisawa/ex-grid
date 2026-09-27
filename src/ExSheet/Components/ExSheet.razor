@@ -74,6 +74,9 @@
 
     private ExGrid<SheetRow>? _grid;
     private SheetColumnList _columns = SheetColumnList.Default;
+    // A resize of several whole columns the grid is still reporting, one column at a time: the
+    // step that began it, and the columns not yet reported (ADR-0016, FN-12c).
+    private (SheetStep First, HashSet<int> Pending)? _resizing;
     private Sheet? _sheet;
     private SheetEdges _edges = new();
     private SheetRow[] _window = [];
@@ -114,17 +117,9 @@
         // an undo re-renders what its change names itself.
         _undo = new EventCallback(null, (Func<Task>)(() => UndoAsync()));
         _redo = new EventCallback(null, (Func<Task>)(() => RedoAsync()));
-        // A resize is the user's: the width is recorded as Fixed, and the column is no longer at
-        // its default width, so an entry never widens it again (ADR-0016, ADR-0047).
-        _columnWidthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)(change =>
-        {
-            if (CellAddress.TryParseColumn(change.Column, out var column))
-            {
-                _columns = _columns.ResizedByUser(column, change.WidthPx);
-                StateHasChanged();
-            }
-            return Task.CompletedTask;
-        }));
+        // A resize is the user's, and the width is the document's (ADR-0046): it is recorded in
+        // the Sheet as one step on the undo stack, and the column list follows the Sheet.
+        _columnWidthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)(change => OnColumnWidthChangedAsync(change)));
     }
 
     /// <summary>
@@ -207,6 +202,11 @@
 
     private Sheet CurrentSheet => _sheet ?? throw new InvalidOperationException("The Sheet opens when the component's parameters arrive.");
 
+    // The Cell Metrics the grid resolves, which convert a width in characters to pixels and back
+    // as the painted text converts the column's width (ADR-0047, third round).
+    private global::ExGrid.Columns.CellTextMetrics CellMetrics =>
+        GridMetrics.Resolve(Presentation?.Density ?? GridDensity.Compact, defaults: Presentation).CellMetrics;
+
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
@@ -230,6 +230,8 @@
             _documentParameter = Document;
             if (Document is null || !_emitted.TryGetValue(Document, out _)) Open(Document);
         }
+        // Widths are recorded in characters; the pixels they paint at follow the Cell Metrics.
+        if (_columns.Metrics is { } metrics && !metrics.Equals(CellMetrics)) _columns = SheetColumnList.Of(CurrentSheet, CellMetrics);
     }
 
     /// <summary>
@@ -267,19 +269,18 @@
     /// Sets the number format of the Selection as one operation (ADR-0046); <see langword="null"/>
     /// is General. Formats live at three levels, as in Excel (ADR-0047): a Selection of whole
     /// columns or whole rows sets them on the columns or rows, one entry each, and any other
-    /// range on its cells. Answers false when nothing is selected, and false, saying why, for a
-    /// Selection of several ranges one of which is whole columns or rows: those are not yet one
-    /// operation.
+    /// range on its cells. A Selection of several ranges, whole columns and rows among them, is
+    /// one operation too (ADR-0046). Answers false when nothing is selected.
     /// </summary>
     public Task<bool> SetNumberFormatAsync(NumberFormat? format) =>
-        OnDispatcherAsync(() => FormatSelectionAsync(range => SheetEdit.SetFormat(range, format), cells => SheetEdit.SetFormat(cells, format)));
+        OnDispatcherAsync(() => FormatSelectionAsync(format ?? NumberFormat.General, null));
 
     /// <summary>
     /// Sets the horizontal alignment of the Selection as one operation (ADR-0046), at the levels
     /// <see cref="SetNumberFormatAsync"/> sets a format at (ADR-0047), and answering as it does.
     /// </summary>
     public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) =>
-        OnDispatcherAsync(() => FormatSelectionAsync(range => SheetEdit.SetAlignment(range, alignment), cells => SheetEdit.SetAlignment(cells, alignment)));
+        OnDispatcherAsync(() => FormatSelectionAsync(null, alignment));
 
     /// <summary>
     /// The Linked Tables declared on the Sheet, in the order they were declared (ADR-0049): each
@@ -364,8 +365,9 @@
         _edges = SheetEdges.Of(_sheet);
         _history.Clear();
         _notice = null;
-        // Widths are this component's, not the document's: a different Sheet starts at the defaults.
-        _columns = SheetColumnList.Default;
+        _resizing = null;
+        // Widths are the document's (ADR-0046): the Sheet opened brings its own.
+        _columns = SheetColumnList.Of(_sheet, CellMetrics);
         // Every row is new: the rows of the Sheet that was replaced say nothing about this one.
         var (start, count) = _window.Length == 0 ? (0, InitialRows) : (_windowStart, _window.Length);
         _window = [];
@@ -466,7 +468,9 @@
     /// equal, field for field, the ones this Sheet's last copy wrote, it is that copy, and its
     /// Entries are pasted with their relative References shifted by the distance pasted.
     /// Otherwise every target cell takes its field as typed under the Sheet's culture: shown text
-    /// as it is, an invariant value as that value (<see cref="SheetClipboard.TypedFor"/>). The
+    /// as it is, an invariant value as that value (<see cref="SheetClipboard.TypedFor"/>) — and an
+    /// invariant number as its exact double, every digit it holds
+    /// (<see cref="SheetClipboard.ExactNumberFor"/>). The
     /// grid has already judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a
     /// spilled block becomes the Selection when this returns. A field beginning with <c>=</c>
     /// that cannot be read refuses the whole paste, and nothing is written.
@@ -483,6 +487,7 @@
         }
         var sheet = CurrentSheet;
         var typed = new Dictionary<CellAddress, string>();
+        var exact = new Dictionary<CellAddress, Entry?>();
         foreach (var range in intent.Plan.Targets)
         {
             for (var row = range.TopRow; row <= range.BottomRow; row++)
@@ -491,6 +496,11 @@
                 {
                     var at = new CellPosition(row, column);
                     var field = intent.ValueFor(at);
+                    if (SheetClipboard.ExactNumberFor(field, intent.OriginFor(at)) is { } number)
+                    {
+                        exact[new CellAddress(row, column)] = Entry.FromValue(Value.FromNumber(number));
+                        continue;
+                    }
                     if (SheetClipboard.TypedFor(field, intent.OriginFor(at), sheet.Culture) is not { } text)
                     {
                         _notice = SheetWords.PasteReadsDifferently(field, sheet.Culture);
@@ -503,7 +513,29 @@
         }
         try
         {
-            await PerformAsync(SheetEdit.Enter(typed));
+            if (exact.Count == 0)
+            {
+                await PerformAsync(SheetEdit.Enter(typed));
+                return;
+            }
+            // The typed fields and the exact numbers are one operation on the undo stack
+            // (ADR-0048). The engine takes typed text, whose reading can give a cell a format,
+            // and exact Entries in separate edits, so the paste is two engine steps, typed first:
+            // a Formula that cannot be read refuses it before anything is written.
+            var steps = new List<SheetStep>(2);
+            if (typed.Count > 0) steps.Add(sheet.Do(SheetEdit.Enter(typed)));
+            try
+            {
+                steps.Add(sheet.Do(SheetEdit.SetEntries(exact)));
+            }
+            catch (SheetRefusedException)
+            {
+                // Nothing is half pasted: the typed fields are put back.
+                if (steps.Count > 0) await ChangedAsync(steps[0].Undo(), raiseDocument: false);
+                throw;
+            }
+            _history.Record(steps);
+            await ChangedAsync([.. steps.Select(step => step.Change)]);
         }
         catch (FormulaSyntaxException error)
         {
@@ -630,37 +662,57 @@
     }
 
     /// <summary>
-    /// A formatting command on the Selection, as one step (ADR-0048). One range goes to the
-    /// engine as a range, which records whole columns and whole rows as one entry each
-    /// (ADR-0047, SH-21). Several ranges go as their cells, in one step; nothing is capped
-    /// (principle 5). Several ranges one of which is whole columns or rows are refused by name:
-    /// the engine takes one range per step, and as cells they would be a million per column.
+    /// A formatting command on the Selection, as one step (ADR-0046, ADR-0048): every range goes
+    /// to the engine as a range, so whole columns and whole rows are recorded as one entry each
+    /// (ADR-0047, SH-21) and any other range sets its cells; nothing is capped (principle 5).
+    /// A null format or alignment is left as it is.
     /// </summary>
-    private async Task<bool> FormatSelectionAsync(Func<CellRange, SheetEdit> onRange, Func<IEnumerable<CellAddress>, SheetEdit> onCells)
+    private async Task<bool> FormatSelectionAsync(NumberFormat? format, HorizontalAlignment? alignment)
     {
         var ranges = _selection.Ranges;
         if (ranges.Count == 0) return false;
-        if (ranges.Count == 1)
-        {
-            await PerformAsync(onRange(SheetFormulaAids.RangeOf(ranges[0])));
-            return true;
-        }
-        var sheetRanges = ranges.Select(SheetFormulaAids.RangeOf).ToList();
-        if (sheetRanges.Any(r => r.IsWholeColumns || r.IsWholeRows))
-        {
-            _notice = SheetWords.FormatSeveralWholeRanges;
-            StateHasChanged();
-            return false;
-        }
-        await PerformAsync(onCells(sheetRanges.SelectMany(r => r.Cells()).Distinct().ToList()));
+        await PerformAsync(SheetEdit.SetStyle(ranges.Select(SheetFormulaAids.RangeOf).ToList(), format, alignment));
         return true;
     }
 
     private async Task PerformAsync(SheetEdit edit, CellAddress? widenFor = null)
     {
         var step = CurrentSheet.Do(edit);
+        // The entry and the width it widens its column to are one operation: one undo puts back
+        // both (ADR-0048).
+        if (widenFor is { } address && WidenOnEntry(address) is { } widened)
+        {
+            _history.Record([step, widened]);
+            await ChangedAsync([step.Change, widened.Change]);
+            return;
+        }
         _history.Record(step);
-        if (widenFor is { } address) WidenOnEntry(address);
+        await ChangedAsync(step.Change);
+    }
+
+    /// <summary>
+    /// A column the user resized — dragged, or sized to fit on a double-click of its edge
+    /// (ADR-0016). The width is recorded in the Sheet, in characters converted from the grid's
+    /// pixels as the painted text converts them (ADR-0047, third round), as one step on the undo
+    /// stack, and <see cref="DocumentChanged"/> is raised (ADR-0046). The grid reports a resize of
+    /// several whole columns one column at a time; the columns of one resize are one step.
+    /// </summary>
+    private async Task OnColumnWidthChangedAsync(ColumnWidthChange change)
+    {
+        if (!CellAddress.TryParseColumn(change.Column, out var column)) return;
+        if (SheetColumns.CharactersOfColumn(change.WidthPx, CellMetrics) is not { } characters) return;
+        var step = CurrentSheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(column, column), characters));
+        if (_resizing is { } resizing && resizing.Pending.Remove(column) && _history.TryExtend(resizing.First, step))
+        {
+            if (resizing.Pending.Count == 0) _resizing = null;
+        }
+        else
+        {
+            _history.Record(step);
+            // The whole columns the grid resizes with this one, as it reports them (FN-12c).
+            var resized = _selection.WholeColumns(new GridExtent(Sheet.RowCount, Sheet.ColumnCount));
+            _resizing = resized.Contains(column) && resized.Count > 1 ? (step, [.. resized.Where(c => c != column)]) : null;
+        }
         await ChangedAsync(step.Change);
     }
 
@@ -670,21 +722,25 @@
     /// says how many characters the entry needs; the width in pixels is what the grid's own
     /// estimate charges for the text the cell shows at that many characters, in the Cell Metrics
     /// the grid resolves, so the widened column holds it and the grid does not hash it
-    /// (ADR-0016). A column the user resized is theirs and is never widened. Only the typed
-    /// entry widens: not a paste, a fill or a recalculated Formula.
+    /// (ADR-0016). The width is recorded in the Sheet like any other (ADR-0046), as a step of
+    /// the entry's own operation; the step, or null where the column is not widened. A column
+    /// whose width the Sheet records — resized by the user, or widened by an entry already — is
+    /// not at its default width and is never widened. Only the typed entry widens: not a paste,
+    /// a fill or a recalculated Formula.
     /// </summary>
-    private void WidenOnEntry(CellAddress address)
+    private SheetStep? WidenOnEntry(CellAddress address)
     {
-        if (!_columns.IsDefault(address.Column)) return;
         var sheet = CurrentSheet;
-        if (sheet.GetWidthOnEntry(address) is not { } characters) return;
-        var metrics = GridMetrics.Resolve(Presentation?.Density ?? GridDensity.Compact, defaults: Presentation).CellMetrics;
+        if (sheet.GetColumnWidth(address.Column) is not null) return null;
+        if (sheet.GetWidthOnEntry(address) is not { } characters) return null;
+        var metrics = CellMetrics;
         var shown = sheet.GetDisplay(address, characters);
         var needed = Math.Ceiling(Math.Max(
-            characters * metrics.DigitWidthPx + 2 * metrics.CellHorizontalPaddingPx,
+            SheetColumns.PxOf(characters, metrics),
             metrics.EstimatePx(shown.Text)));
-        if (needed <= _columns.WidthPxOf(address.Column)) return;
-        _columns = _columns.WidenedTo(address.Column, needed);
+        if (needed <= _columns.WidthPxOf(address.Column)) return null;
+        if (SheetColumns.CharactersOfColumn(needed, metrics) is not { } recorded) return null;
+        return sheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(address.Column, address.Column), recorded));
     }
 
     private Task ChangedAsync(SheetChange change, bool raiseDocument = true) => ChangedAsync([change], raiseDocument);
@@ -695,6 +751,9 @@
         var sheet = CurrentSheet;
         foreach (var change in changes) _edges.Update(sheet, change);
         _notice = null;
+        // The widths the Sheet records follow the change, its undo and redo included (ADR-0046).
+        var widths = changes.SelectMany(change => change.Columns).Distinct().ToList();
+        if (widths.Count > 0) _columns = _columns.Refreshed(sheet, widths, CellMetrics);
         if (changes.Any(change => change.Rows.Count > 0))
         {
             // A new instance for every row the change names, the same instance for every other

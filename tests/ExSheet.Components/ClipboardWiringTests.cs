@@ -333,6 +333,40 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.Equal("1234,5", CellText(cut, "A1"));
     }
 
+    [Fact] // ADR-0048, ADR-0050 item 10: an invariant number keeps every digit its double holds, not the fifteen a typed number keeps
+    public async Task An_invariant_number_keeps_every_digit_of_its_double()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "A1");
+
+        await PasteAsync(cut, "0.123456789012346\r\n", "<table><tr><td x:num=\"0.12345678901234567\">0.123456789012346</td></tr></table>");
+
+        var expected = double.Parse("0.12345678901234567", CultureInfo.InvariantCulture);
+        Assert.NotEqual(double.Parse("0.123456789012346", CultureInfo.InvariantCulture), expected);
+        Assert.Equal(expected, NumberAt(cut, "A1"));
+    }
+
+    [Fact] // ADR-0048: typed fields and exact numbers pasted together are one undo step
+    public async Task Typed_fields_and_exact_numbers_are_one_step()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "old"), ("B1", "old"), ("C1", "old"))));
+        await GoToAsync(cut, "A1");
+
+        await PasteAsync(cut, "", "<table><tr><td x:num=\"1.0000000000000002\">1</td><td>=A1*2</td><td>50%</td></tr></table>");
+
+        Assert.Equal(1.0000000000000002, NumberAt(cut, "A1"));
+        Assert.Equal("2", CellText(cut, "B1"));
+        Assert.Equal("50%", CellText(cut, "C1"));
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal("old", CellText(cut, "A1"));
+        Assert.Equal("old", CellText(cut, "B1"));
+        Assert.Equal("old", CellText(cut, "C1"));
+        Assert.False(cut.Instance.CanUndo);
+    }
+
+    private static double? NumberAt(IRenderedComponent<ExSheet> cut, string address) =>
+        cut.Instance.ToDocument().Cells.Single(c => c.Address == CellAddress.Parse(address)).Entry?.Constant?.Number;
+
     [Fact] // ADR-0050 item 10: shown text is read as typed under the Sheet's culture
     public async Task Shown_text_is_read_as_typed_under_de_DE()
     {
