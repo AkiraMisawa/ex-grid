@@ -5,8 +5,10 @@ namespace ExSheet.Engine;
 public sealed partial class Sheet
 {
     /// <summary>
-    /// Inserts <paramref name="count"/> blank rows at <paramref name="row"/>; what was there and below
+    /// Inserts <paramref name="count"/> rows at <paramref name="row"/>; what was there and below
     /// moves down, and every Reference is rewritten to keep naming the same cells (ADR-0046/0047).
+    /// The new rows hold no Entries; each of their cells takes the number format and alignment of
+    /// the cell above it, as Excel's default does (ADR-0046). Rows inserted at the top take none.
     /// </summary>
     /// <exception cref="SheetRefusedException">
     /// A cell holding an Entry, or the cells a Reference names, would be pushed off the Sheet's
@@ -21,7 +23,10 @@ public sealed partial class Sheet
     /// </summary>
     public SheetChange DeleteRows(int row, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Rows, row, count, false)).Change;
 
-    /// <summary>Inserts blank columns, as <see cref="InsertRows"/> does rows.</summary>
+    /// <summary>
+    /// Inserts columns, as <see cref="InsertRows"/> does rows: each new cell takes the number format
+    /// and alignment of the cell to its left (ADR-0046), and columns inserted at <c>A</c> take none.
+    /// </summary>
     /// <exception cref="SheetRefusedException">Something would be pushed off the Sheet's right edge. Nothing changes.</exception>
     public SheetChange InsertColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, true)).Change;
 
@@ -64,9 +69,33 @@ public sealed partial class Sheet
         return null;
     }
 
+    /// <summary>
+    /// Gives each cell of the inserted rows (columns) the number format and alignment of the cell
+    /// above (to the left of) the insertion — never its Entry (ADR-0046).
+    /// </summary>
+    private void FormatInserted(StructuralEdit edit, List<Cell> moved)
+    {
+        var rows = edit.Axis == SheetAxis.Rows;
+        foreach (var source in moved)
+        {
+            if ((rows ? source.Address.Row : source.Address.Column) != edit.Start - 1) continue;
+            if (source.Format.IsGeneral && source.Alignment == HorizontalAlignment.General) continue;
+            for (var i = 0; i < edit.Count; i++)
+            {
+                var at = rows ? new CellAddress(edit.Start + i, source.Address.Column) : new CellAddress(source.Address.Row, edit.Start + i);
+                _cells[at] = new Cell(at) { Format = source.Format, Alignment = source.Alignment };
+            }
+        }
+    }
+
     private static string Capitalise(string text) => char.ToUpperInvariant(text[0]) + text[1..];
 
-    internal StructuralOutcome Restructure(StructuralEdit edit)
+    /// <param name="edit">The insertion or deletion.</param>
+    /// <param name="formatInserted">
+    /// Whether inserted rows or columns take the formatting of the one before them (ADR-0046). An
+    /// undo's inverse insertion does not: it puts back what was deleted, exactly.
+    /// </param>
+    internal StructuralOutcome Restructure(StructuralEdit edit, bool formatInserted = true)
     {
         if (CheckStructural(edit) is { } refusal) throw new SheetRefusedException(refusal);
 
@@ -103,6 +132,7 @@ public sealed partial class Sheet
 
         _cells.Clear();
         foreach (var cell in moved) _cells[cell.Address] = cell;
+        if (edit.IsInsert && formatInserted && edit.Start > 0) FormatInserted(edit, moved);
         RebuildDependencies();
         var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;
         return new StructuralOutcome(Diff(before, recalculated), dropped, rewritten);

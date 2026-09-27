@@ -95,7 +95,9 @@ step.Undo();                                         // Entries, formats and Ref
 - **Insertion and deletion** of rows and columns rewrite every Reference, relative and absolute
   alike; a range grows or shrinks as Excel's does, and a Reference whose cells are all deleted is
   written `#REF!` in the stored Formula. An insertion that would push an Entry, or the cells a
-  Reference names, off the Sheet's edge is refused (`SheetRefusedException`).
+  Reference names, off the Sheet's edge is refused (`SheetRefusedException`). Inserted rows take
+  the number format and alignment of the row above, and inserted columns those of the column to
+  the left, as Excel's default does; Entries are never copied.
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each

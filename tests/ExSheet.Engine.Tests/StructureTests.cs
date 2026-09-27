@@ -163,6 +163,83 @@ public class StructureTests
         Assert.Equal("=Sheet2!A5", Formula(sheet, "B2"));
     }
 
+    [Fact] // ADR-0046: inserted rows take the number format and alignment of the row above, never its Entries
+    public void Inserted_rows_take_the_formatting_of_the_row_above()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A2", "1.5");
+        sheet.SetFormat(CellAddress.Parse("A2"), NumberFormat.Parse("0.00"));
+        sheet.SetAlignment(CellAddress.Parse("B2"), HorizontalAlignment.Center);
+        sheet.SetFormat(CellAddress.Parse("C3"), NumberFormat.Parse("0%"));
+
+        var change = sheet.InsertRows(2, 2);
+
+        foreach (var name in new[] { "A3", "A4" })
+        {
+            var at = CellAddress.Parse(name);
+            Assert.Equal("0.00", sheet.GetFormat(at).Code);
+            Assert.Equal(HorizontalAlignment.General, sheet.GetAlignment(at));
+            Assert.Null(sheet.GetEntry(at));
+            Assert.Null(sheet.GetValue(at));
+        }
+        Assert.Equal(HorizontalAlignment.Center, sheet.GetAlignment(CellAddress.Parse("B3")));
+        Assert.Equal(HorizontalAlignment.Center, sheet.GetAlignment(CellAddress.Parse("B4")));
+        // The row that was below keeps its own formatting, moved down; it lends nothing upwards.
+        Assert.True(sheet.GetFormat(CellAddress.Parse("C3")).IsGeneral);
+        Assert.Equal("0%", sheet.GetFormat(CellAddress.Parse("C5")).Code);
+        Assert.Equal(1.5, sheet.Number("A2"));
+        Assert.Contains(2, change.Rows);
+        Assert.Contains(3, change.Rows);
+        sheet.Enter("A3", "2");
+        Assert.Equal("2.00", sheet.GetDisplay(CellAddress.Parse("A3")).Text);
+    }
+
+    [Fact] // ADR-0046: inserted columns take the number format and alignment of the column to the left
+    public void Inserted_columns_take_the_formatting_of_the_column_to_the_left()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("B1", "x");
+        sheet.SetAlignment(CellAddress.Parse("B1"), HorizontalAlignment.Right);
+        sheet.SetFormat(CellAddress.Parse("B7"), NumberFormat.Parse("#,##0"));
+
+        sheet.InsertColumns(2, 3);
+
+        foreach (var name in new[] { "C1", "D1", "E1" })
+        {
+            Assert.Equal(HorizontalAlignment.Right, sheet.GetAlignment(CellAddress.Parse(name)));
+            Assert.Null(sheet.GetEntry(CellAddress.Parse(name)));
+        }
+        foreach (var name in new[] { "C7", "D7", "E7" }) Assert.Equal("#,##0", sheet.GetFormat(CellAddress.Parse(name)).Code);
+        Assert.Equal("x", sheet.Value("B1")!.Value.Text);
+    }
+
+    [Fact] // ADR-0046: rows inserted at the top have no row above, and take no formatting
+    public void Rows_inserted_at_the_top_take_no_formatting()
+    {
+        var sheet = NewSheet();
+        sheet.SetFormat(CellAddress.Parse("A1"), NumberFormat.Parse("0.00"));
+
+        sheet.InsertRows(0);
+
+        Assert.True(sheet.GetFormat(CellAddress.Parse("A1")).IsGeneral);
+        Assert.Equal("0.00", sheet.GetFormat(CellAddress.Parse("A2")).Code);
+    }
+
+    [Fact] // ADR-0046/0048: undoing an insertion removes the formatting it copied, exactly
+    public void Undoing_an_insertion_removes_the_copied_formatting()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A2", "1");
+        sheet.SetFormat(CellAddress.Parse("A2"), NumberFormat.Parse("0.00"));
+        var before = sheet.ToDocument().ToJson();
+
+        var step = sheet.Do(SheetEdit.InsertRows(2, 3));
+        Assert.Equal("0.00", sheet.GetFormat(CellAddress.Parse("A5")).Code);
+
+        step.Undo();
+        Assert.Equal(before, sheet.ToDocument().ToJson());
+    }
+
     [Fact] // ADR-0046 (SH-5): Entries move with their formats and alignment
     public void Entries_formats_and_alignment_move()
     {

@@ -37,6 +37,8 @@ public class UndoStepTests
     [
         "enter", "enter formula", "clear", "batched enter", "set entries", "format", "alignment",
         "insert rows", "insert rows inside", "delete rows", "delete referenced row", "insert columns", "delete columns",
+        "insert rows below a formatted row", "insert columns right of a formatted column",
+        "delete rows below a formatted row", "delete columns right of a formatted column",
     ];
 
     private static SheetEdit Operation(string name) => name switch
@@ -54,6 +56,12 @@ public class UndoStepTests
         "delete referenced row" => SheetEdit.DeleteRows(4),
         "insert columns" => SheetEdit.InsertColumns(1, 3),
         "delete columns" => SheetEdit.DeleteColumns(0),
+        // ADR-0046: the new rows and columns take the formatting of the row above / column to the left.
+        "insert rows below a formatted row" => SheetEdit.InsertRows(2, 2),
+        "insert columns right of a formatted column" => SheetEdit.InsertColumns(2),
+        // Undoing these re-inserts the deleted places, which must not take the formatting of their neighbour.
+        "delete rows below a formatted row" => SheetEdit.DeleteRows(2),
+        "delete columns right of a formatted column" => SheetEdit.DeleteColumns(2),
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 
