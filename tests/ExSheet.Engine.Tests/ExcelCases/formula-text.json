@@ -623,11 +623,12 @@
     },
     {
       "id": "TEXT-077",
-      "source": "uncertain",
-      "description": "A carriage return with its line feed is kept between tokens (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+      "source": "observed",
+      "description": "A carriage return with its line feed between tokens is kept as the line feed alone (verification/2026-09-27-windows-excel-2, typed with Alt+Enter)",
       "cells": {"C5": "=A1\r\n+1"},
       "check": "C5",
-      "expect": {"formula": "=A1\r\n+1"}
+      "expect": {"formula": "=A1\n+1"},
+      "oracleSkip": "Range.Formula2 refuses a carriage return, but typed with real keys Excel takes the line break and keeps a line feed (verification/2026-09-27-windows-excel-2); ask by keys"
     },
     {
       "id": "TEXT-078",
@@ -671,11 +672,11 @@
     },
     {
       "id": "TEXT-083",
-      "source": "uncertain",
-      "description": "A qualified #REF! typed is read and written back with its qualifier (inferred from Excel's observed Sheet1!#REF!, not yet asked of Excel)",
+      "source": "observed",
+      "description": "A qualified #REF! typed is written back with the Sheet's own name as its qualifier (verification/2026-09-27-windows-excel-2)",
       "cells": {"ZZ1000": "=sheet1!#ref!*2"},
       "check": "ZZ1000",
-      "expect": {"value2": "#REF!", "formula": "=sheet1!#REF!*2"}
+      "expect": {"value2": "#REF!", "formula": "=Sheet1!#REF!*2"}
     },
     {
       "id": "TEXT-084",
@@ -832,11 +833,11 @@
     },
     {
       "id": "TEXT-103",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the largest power of ten a double holds is scientific",
+      "source": "observed",
+      "description": "=1E308, above Excel's largest number 9.99999999999999E+307, is refused. Excel refuses it through COM and, typed, offers to correct it to =E1308; ExSheet does not correct a Formula into another one (verification/2026-09-27-windows-excel-2; ADR-0047)",
       "cells": {"ZZ1000": "=1E308"},
       "check": "ZZ1000",
-      "expect": {"formula": "=1E+308"}
+      "expect": {"refusedEntry": true}
     },
     {
       "id": "TEXT-104",
@@ -877,6 +878,47 @@
       "cells": {"ZZ1000": "=1.23456789012345E-5"},
       "check": "ZZ1000",
       "expect": {"formula": "=0.0000123456789012345"}
+    },
+    {
+      "id": "TEXT-109",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a qualified Reference typed is written back with the Sheet's own name as its qualifier",
+      "cells": {"ZZ1000": "=sheet1!a1*2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=Sheet1!A1*2"}
+    },
+    {
+      "id": "TEXT-110",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a quoted qualifier naming the Sheet is written in the Sheet's own name, without the quotes it does not need",
+      "cells": {"ZZ1000": "='SHEET1'!A1:A2"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=Sheet1!A1:A2"}
+    },
+    {
+      "id": "TEXT-111",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a qualifier naming a Sheet whose name needs quotes is written in its own name, quoted",
+      "sheetName": "My Sheet",
+      "cells": {"ZZ1000": "='my sheet'!A1"},
+      "check": "ZZ1000",
+      "expect": {"formula": "='My Sheet'!A1"}
+    },
+    {
+      "id": "TEXT-112",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 9.99999999999999E+307, Excel's documented largest number, is taken, and written back in General's spelling",
+      "cells": {"ZZ1000": "=9.99999999999999E+307"},
+      "check": "ZZ1000",
+      "expect": {"formula": "=9.99999999999999E+307"}
+    },
+    {
+      "id": "TEXT-113",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negated 1E308 is refused as 1E308 is",
+      "cells": {"ZZ1000": "=-1E308"},
+      "check": "ZZ1000",
+      "expect": {"refusedEntry": true}
     }
   ]
 }

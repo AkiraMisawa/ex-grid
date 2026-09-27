@@ -185,14 +185,14 @@ public sealed partial class Sheet
                 {
                     entry = Entry.FromValue(Value.FromText(text));
                 }
-                entries.Add(new(address, entry));
+                entries.Add(new(address, entry is null ? null : InOwnName(entry)));
                 continue;
             }
             // A date or a percentage typed into a General cell gives the cell its format, as in Excel.
             var (value, format) = ConstantParser.ParseWithFormat(text, Culture);
             if (value.Kind == ValueKind.Text && Entry.SignedFormula(text) is { } signed)
             {
-                entries.Add(new(address, signed));
+                entries.Add(new(address, InOwnName(signed)));
                 continue;
             }
             entries.Add(new(address, Entry.FromValue(value)));

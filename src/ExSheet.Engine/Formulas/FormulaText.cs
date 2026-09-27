@@ -27,7 +27,8 @@ internal static class FormulaText
         {
             var token = tokens[i];
             // Excel keeps whitespace only where a token follows it; the end is not one, nor a comma.
-            if (token.Kind is not (TokenKind.End or TokenKind.Comma)) text.Append(formula, at, token.Position - at);
+            // A carriage return with its line feed is kept as the line feed alone, as Excel keeps it.
+            if (token.Kind is not (TokenKind.End or TokenKind.Comma)) text.Append(formula[at..token.Position].Replace("\r\n", "\n", StringComparison.Ordinal));
             WriteToken(text, formula, token, i + 1 < tokens.Count ? tokens[i + 1] : null);
             at = token.Position + token.Length;
         }

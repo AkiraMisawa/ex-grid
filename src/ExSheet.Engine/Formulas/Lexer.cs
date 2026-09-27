@@ -68,11 +68,14 @@ internal static partial class Lexer
 
     private static readonly string[] Operators = ["<>", "<=", ">=", "=", "<", ">", "+", "-", "*", "/", "^", "&", "%"];
 
+    /// <summary>The largest number constant a Formula may hold: 9.99999999999999E+307, as Microsoft documents Excel's.</summary>
+    private const double LargestConstant = 9.99999999999999E+307;
+
     /// <summary>
     /// The whitespace a Formula may hold between its tokens: a space and a line break. Excel
-    /// refuses a tab (observed, verification/2026-09-27-windows-excel); a carriage return and the
-    /// other space characters are inferred (a carriage return is taken with its line feed, the
-    /// rest are refused).
+    /// refuses a tab (observed, verification/2026-09-27-windows-excel); a carriage return is taken
+    /// with its line feed, and the pair is stored as the line feed alone (observed with real keys,
+    /// verification/2026-09-27-windows-excel-2); the other space characters are refused (inferred).
     /// </summary>
     public static bool IsFormulaWhitespace(char c) => c is ' ' or '\n' or '\r';
 
@@ -172,7 +175,10 @@ internal static partial class Lexer
                 var number = NumberPattern().Match(formula, i);
                 if (!number.Success) throw new FormulaSyntaxException(formula, i, "this is not a number.");
                 var value = ConstantParser.ParseFormulaNumber(number.Value);
-                if (!double.IsFinite(value)) throw new FormulaSyntaxException(formula, i, "the number is too large.");
+                // Excel takes no number constant above 9.99999999999999E+307, its documented largest:
+                // =1E308 is refused through COM and, typed, offered as the typo =E1308, which
+                // ExSheet does not correct a Formula into (ADR-0047, second run).
+                if (!double.IsFinite(value) || value > LargestConstant) throw new FormulaSyntaxException(formula, i, "the number is too large.");
                 tokens.Add(new Token(TokenKind.Number, i, number.Value, afterSpace) { Number = value, Length = number.Length });
                 i += number.Length;
                 continue;
