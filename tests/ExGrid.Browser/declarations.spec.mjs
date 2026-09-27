@@ -574,16 +574,19 @@ async function pasteAsExcel(grid, cells, width) {
     }, { text: '6\r\n26/09/2026\r\n1,234.50\r\n', html: excelColumnHtml(width, cells) });
 }
 
-test('DC-8/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused, and the notice says why', async ({ page }) => {
+test('DC-38/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused, the notice says why, and the Selection stays', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F7');
     await pasteAsExcel(grid, ['6', '######', '######'], 49);
     const notice = page.locator('.ex-sheet-notice');
     await expect(notice).toContainText('source column was too narrow to show the value');
     await expect(notice).toContainText('F8');
-    // It stands: the grid placing the spilled block afterwards is the paste's own move.
+    // The Sheet refused the spill (GridPasteIntent.Refuse), so the grid selects no block: the
+    // Selection stays on F7, as Excel leaves it, and the notice stands.
     await page.waitForTimeout(500);
     await expect(notice).toContainText('too narrow');
+    await expectFocusAt(grid, 'F7');
+    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'F7', 'F7');
     await expect(cell(grid, 'F7')).toHaveText('');
     await expect(cell(grid, 'F8')).toHaveText('');
     await expect(cell(grid, 'F9')).toHaveText('');

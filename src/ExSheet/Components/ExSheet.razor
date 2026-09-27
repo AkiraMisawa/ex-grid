@@ -92,12 +92,6 @@
     // A notice raised by a commit: the grid moves the Focus after the commit, as part of the
     // same gesture, and that move does not clear it.
     private bool _noticeOutlivesCommitMove;
-    // A notice raised by a paste: after a paste onto one cell the grid makes the spilled block the
-    // Selection (ADR-0050 item 3), whether or not the Sheet wrote it, and that move is the paste's
-    // own. Without this, a refused spill would say nothing (observed on Windows, 2026-09-27).
-    private SelectionRange? _noticeOutlivesSelectionOf;
-    // The range the grid will select once the paste being handled returns; null outside a paste.
-    private SelectionRange? _pasteSelects;
     // The copy this Sheet last wrote, recognised on a paste by its fields (ADR-0050 item 9).
     internal SheetOwnCopy? OwnCopy { get; private set; }
     // The engine's sentence for the copy refused last, for the notice the refusal raises.
@@ -128,8 +122,6 @@
             // A selection change is the user's own action, and clears the notice — except the
             // move that completes the commit gesture whose refusal the notice reports.
             if (_noticeOutlivesCommitMove) _noticeOutlivesCommitMove = false;
-            else if (_noticeOutlivesSelectionOf is { } pasted && selection.Ranges.Count == 1 && selection.Ranges[0] == pasted)
-                _noticeOutlivesSelectionOf = null;
             else if (_notice is not null)
             {
                 ClearNotice();
@@ -457,7 +449,6 @@
     {
         _notice = sentence;
         _noticeOutlivesCommitMove = outlivesCommitMove;
-        _noticeOutlivesSelectionOf = _pasteSelects;
     }
 
     /// <summary>The user acted: what the notice said is behind them.</summary>
@@ -465,7 +456,6 @@
     {
         _notice = null;
         _noticeOutlivesCommitMove = false;
-        _noticeOutlivesSelectionOf = null;
     }
 
     private async Task OnNameBoxEnteredAsync(string typed)
@@ -524,36 +514,26 @@
     /// invariant number as its exact double, every digit it holds
     /// (<see cref="SheetClipboard.ExactNumberFor"/>). The
     /// grid has already judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a
-    /// spilled block becomes the Selection when this returns. A field beginning with <c>=</c>
+    /// spilled block becomes the Selection when this returns, unless the paste is refused. A field beginning with <c>=</c>
     /// that cannot be read as a Formula is taken as text, as Excel takes it (ADR-0048). A shown
     /// field that is a run of <c>#</c> is a value too wide for its source column, the value itself
     /// missing, and refuses the whole paste by name (<see cref="SheetClipboard.IsTooNarrowToShow"/>).
-    /// A refusal's notice outlives the grid placing the spilled block as the Selection when this
-    /// returns: that move is the paste's own, not the user's next action.
+    /// Every refusal is told to the grid (<see cref="global::ExGrid.Clipboard.GridPasteIntent.Refuse"/>)
+    /// before this completes, so the Selection stays where it was, as in Excel (ADR-0050 item 3),
+    /// and the notice stands until the user's own next action.
     /// </summary>
     private async Task OnPasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
     {
         // Rows are places, so the order never moves (ADR-0046); an intent written under any
         // other version names positions that mean something else, and is dropped (ADR-0011).
-        if (intent.RowSequenceVersion != 0) return;
-        // One target is the only shape the grid places afterwards (ADR-0050 item 3); when it is
-        // already the Selection, no move follows, and the user's next one clears the notice.
-        _pasteSelects = intent.Plan.Targets.Count == 1 ? intent.Plan.Targets[0] : null;
-        try
+        if (intent.RowSequenceVersion != 0)
         {
-            await PasteAsync(intent);
+            intent.Refuse();
+            return;
         }
-        finally
-        {
-            _pasteSelects = null;
-        }
-    }
-
-    private async Task PasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
-    {
         if (OwnCopy is { } own && own.IsPastedAs(intent.Values))
         {
-            await PasteEntriesAsync(own.Block, intent.Plan.Targets);
+            await PasteEntriesAsync(own.Block, intent);
             return;
         }
         var sheet = CurrentSheet;
@@ -574,12 +554,14 @@
                     }
                     if (SheetClipboard.IsTooNarrowToShow(field, intent.OriginFor(at)))
                     {
+                        intent.Refuse();
                         Tell(SheetWords.PasteTooNarrowToShow(field, new CellAddress(row, column)));
                         StateHasChanged();
                         return;
                     }
                     if (SheetClipboard.TypedFor(field, intent.OriginFor(at), sheet.Culture) is not { } text)
                     {
+                        intent.Refuse();
                         Tell(SheetWords.PasteReadsDifferently(field, sheet.Culture));
                         StateHasChanged();
                         return;
@@ -615,6 +597,7 @@
         }
         catch (SheetRefusedException refused)
         {
+            intent.Refuse();
             Tell(SheetWords.Refused(refused.Refusal));
             StateHasChanged();
         }
@@ -625,11 +608,13 @@
     /// relative References shifted by the distance pasted, written over each target range the
     /// grid approved — from its top-left when the range is the block's size, repeated over it
     /// when the range is a whole multiple of it. Several ranges exist only for a block of one
-    /// cell (ADR-0014); they are several engine steps and one operation on the undo stack.
+    /// cell (ADR-0014); they are several engine steps and one operation on the undo stack. A
+    /// refusal is told to the grid, which then leaves the Selection where it was.
     /// </summary>
-    private async Task PasteEntriesAsync(SheetBlock block, IReadOnlyList<SelectionRange> targets)
+    private async Task PasteEntriesAsync(SheetBlock block, global::ExGrid.Clipboard.GridPasteIntent intent)
     {
         var sheet = CurrentSheet;
+        var targets = intent.Plan.Targets;
         var steps = new List<SheetStep>(targets.Count);
         try
         {
@@ -646,6 +631,7 @@
             // Nothing is half pasted: what was written before the refusal is put back.
             var undone = new List<SheetChange>();
             for (var i = steps.Count - 1; i >= 0; i--) undone.Add(steps[i].Undo());
+            intent.Refuse();
             if (undone.Count > 0) await ChangedAsync(undone, raiseDocument: false);
             Tell(SheetWords.Refused(refused.Refusal));
             StateHasChanged();
