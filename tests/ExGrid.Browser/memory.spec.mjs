@@ -115,10 +115,13 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     await grid.mount();
     await page.evaluate(() => { window.__disposedRoot = document.querySelector('.ex-grid'); });
     const attached = (await grid.listenersOn('window.__disposedRoot')).map(key).sort();
-    // The per-instance handle's five, on the instance root and nowhere else (ADR-0018):
-    // the capture-phase keys, the pointer report and the two clipboard events.
+    // The per-instance handle's six, on the instance root and nowhere else (ADR-0018):
+    // the capture-phase keys, the pointer report, the two clipboard events, and the
+    // capture-phase input that reports an editor's caret with each input (ADR-0051's second
+    // round, DC-24; its selectionchange listener is the document's, since the event fires
+    // nowhere else, and is checked by the script-shape tests).
     expect(attached).toEqual([
-        'copy', 'keydown (capture)', 'mouseleave', 'mousemove', 'paste',
+        'copy', 'input (capture)', 'keydown (capture)', 'mouseleave', 'mousemove', 'paste',
     ].map((t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.\\w+)?\\.js$`))));
 
     await grid.dispose();
