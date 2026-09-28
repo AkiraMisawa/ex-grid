@@ -101,6 +101,19 @@ public class ExcelKeyWiringTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
+    [Fact] // ADR-0035 / CP-25, SH-23: a source row scrolled out of the Window is still read, never refused as unavailable
+    public async Task Ctrl_d_reads_a_source_scrolled_out_of_the_window()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "=B1"))));
+        await GoToAsync(cut, "A1:A3000");
+        await ScrollToAsync(cut, 2500 * ExSheet.DefaultRowHeightPx, 0);
+
+        await PressAsync(cut, "d", ctrl: true);
+
+        Assert.Equal("=B3000", EntryAt(cut, "A3000")?.Formula);
+        Assert.Equal("", cut.Find(".ex-sheet-notice").TextContent);
+    }
+
     [Fact] // SH-23: an ordinary paste of the same text is still read as typed, not as a fill
     public async Task A_paste_is_not_taken_for_a_fill()
     {

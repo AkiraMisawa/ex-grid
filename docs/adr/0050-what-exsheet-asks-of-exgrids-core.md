@@ -105,6 +105,18 @@ the Consumer decides what it means.**
   later, and each is refused until it arrives.
 - A plain ExGrid Consumer can take Fill Intents too, and resolve them into its Overlay.
 
+*(Added 2026-09-28, when `main`'s fill keys were merged — [ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md)'s
+Ctrl+D and Ctrl+R, decided with the user.)* The keys stay a paste intent in the core, as `main`
+built them: the grid reads the source's raw values and raises one `GridPasteIntent`. That intent
+alone could not tell a Consumer that holds more than values — ExSheet, whose cells hold Formulas —
+a fill by key from a paste of the same text, so **the intent names the range a fill key read, in
+`GridPasteIntent.FillSource`**, and null for a paste from the clipboard and for Ctrl+Enter's typed
+text. ExSheet copies that range's Entries over the target with relative References shifted, formats
+and alignment with them, as Excel's Ctrl+D and Ctrl+R do and as the handle's copy rule does
+(`SheetEdit.FillCopy`, the handle's rule with no series): a date or a number is copied, never
+continued, and no pattern is refused. It also answers `OnCopyRowsNeeded` from the Sheet, so a source
+row scrolled out of the Window is still read.
+
 ## Consequences
 
 - **ADR-0012, ADR-0014 and ADR-0008 each gain a note** saying their rule stands, and which

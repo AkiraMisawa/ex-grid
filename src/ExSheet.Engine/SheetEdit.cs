@@ -197,7 +197,21 @@ public abstract class SheetEdit
     public static SheetEdit Fill(CellRange source, CellRange target, FillDirection direction)
     {
         if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction), direction, "Not a fill direction.");
-        return new FillEdit(source, target, direction);
+        return new FillEdit(source, target, direction, copyOnly: false);
+    }
+
+    /// <summary>
+    /// Excel's fill keys, Ctrl+D and Ctrl+R (ADR-0035; ADR-0050, item 5, 2026-09-28):
+    /// <paramref name="target"/> extends <paramref name="source"/> in <paramref name="direction"/>
+    /// as a copy of it, repeated — Formulas with their relative References shifted, constants as
+    /// they are, formats and alignment with them — and never as a series. Where the fill handle
+    /// continues a date or two numbers, or refuses <c>Item 1</c>, the keys copy, as Excel's do.
+    /// Only a target that does not extend the source along one axis is refused.
+    /// </summary>
+    public static SheetEdit FillCopy(CellRange source, CellRange target, FillDirection direction)
+    {
+        if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction), direction, "Not a fill direction.");
+        return new FillEdit(source, target, direction, copyOnly: true);
     }
 
     /// <summary>
@@ -248,13 +262,13 @@ public abstract class SheetEdit
     }
 
     /// <summary>A fill, planned against the Sheet as it stands when it is checked or done.</summary>
-    internal sealed class FillEdit(CellRange source, CellRange target, FillDirection direction) : SheetEdit
+    internal sealed class FillEdit(CellRange source, CellRange target, FillDirection direction, bool copyOnly) : SheetEdit
     {
-        internal override SheetRefusal? Check(Sheet sheet) => sheet.PlanFill(source, target, direction).Refusal;
+        internal override SheetRefusal? Check(Sheet sheet) => sheet.PlanFill(source, target, direction, copyOnly).Refusal;
 
         internal override SheetStep Apply(Sheet sheet)
         {
-            var (refusal, states) = sheet.PlanFill(source, target, direction);
+            var (refusal, states) = sheet.PlanFill(source, target, direction, copyOnly);
             if (refusal is not null) throw new SheetRefusedException(refusal);
             var settled = sheet.Settle(states);
             return new CellsEdit(settled.Select(s => s.Address), s => s.Restore(settled)).Apply(sheet);

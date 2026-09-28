@@ -71,4 +71,59 @@ public class FillTests
 
         Assert.Equal(before, sheet.ToDocument().ToJson());
     }
+
+    // ---- Excel's fill keys, Ctrl+D and Ctrl+R: a copy, never a series (ADR-0050 item 5, 2026-09-28) ----
+
+    private static SheetStep FillCopy(Sheet sheet, string source, string target, FillDirection direction) =>
+        sheet.Do(SheetEdit.FillCopy(CellRange.Parse(source), CellRange.Parse(target), direction));
+
+    [Fact] // ADR-0050 item 5 / ADR-0035, SH-23: Ctrl+D copies a Formula down with its relative References shifted
+    public void Fill_copy_shifts_a_formulas_relative_references()
+    {
+        var sheet = Column("1", "2", "3");
+        sheet.Enter("B1", "=A1*10+$A$1");
+
+        FillCopy(sheet, "B1", "B2:B3", FillDirection.Down);
+
+        Assert.Equal("=A2*10+$A$1", sheet.GetEntry(At("B2"))!.ToString());
+        Assert.Equal("31", sheet.GetDisplay(At("B3")).Text);
+    }
+
+    [Fact] // ADR-0050 item 5 / ADR-0035, SH-23: Ctrl+R copies across, shifting columns
+    public void Fill_copy_right_shifts_columns()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("B1", "2");
+        sheet.Enter("A2", "=A1*10");
+
+        FillCopy(sheet, "A2", "B2", FillDirection.Right);
+
+        Assert.Equal("20", sheet.GetDisplay(At("B2")).Text);
+    }
+
+    [Theory] // ADR-0050 item 5, SH-23: what the handle would continue or refuse, a fill key copies, as Excel's Ctrl+D does
+    [InlineData("9/26/2026", "9/26/2026")]
+    [InlineData("Item 1", "Item 1")]
+    [InlineData("5", "5")]
+    public void Fill_copy_never_continues_a_series(string typed, string expected)
+    {
+        var sheet = Column(typed);
+
+        Assert.Null(sheet.Check(SheetEdit.FillCopy(CellRange.Parse("A1"), CellRange.Parse("A2:A3"), FillDirection.Down)));
+        FillCopy(sheet, "A1", "A2:A3", FillDirection.Down);
+
+        Assert.Equal(expected, sheet.GetDisplay(At("A3")).Text);
+    }
+
+    [Fact] // ADR-0048 (SH-13): a fill by key is one step, and its undo restores what it wrote over
+    public void A_fill_copy_is_one_step()
+    {
+        var sheet = Column("=B1", "old", "older");
+        var before = sheet.ToDocument().ToJson();
+
+        FillCopy(sheet, "A1", "A2:A3", FillDirection.Down).Undo();
+
+        Assert.Equal(before, sheet.ToDocument().ToJson());
+    }
 }

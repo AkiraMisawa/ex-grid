@@ -999,6 +999,7 @@ nothing sees nothing change.
 | **DC-37** | MUST | With copy with headers left out, the Context Menu offers only Copy on every route, and no other route copies with headers; without the declaration, unchanged (ADR-0050, item 13) | Layer 2 | as stated |
 | **DC-38** | MUST | A spilled paste the Consumer refuses (`GridPasteIntent.Refuse()`) writes nothing and leaves the Selection where it was (ADR-0050, item 3) | Layer 2 | the Selection is unchanged; no block is selected |
 | **DC-39** | MUST | With a size label supplied (`NameBoxSizeLabel`), while a selecting drag's button is down over more than one cell the Name Box shows it (`4R x 3C` on ExSheet), and names the Focus again on release; keyboard extension shows no size (ADR-0052/0051/0021) | Layer 2 + Layer 3 | as stated |
+| **DC-40** | MUST | A fill key's paste intent names the range it read (`GridPasteIntent.FillSource`): Ctrl+D's top row, Ctrl+R's left column, or the row above / column to the left of a range one cell deep; a paste from the clipboard and Ctrl+Enter name none (ADR-0050, item 5, 2026-09-28; ADR-0035) | Layer 2 | as stated |
 | **DC-25** | MUST | The declarations are per instance: two grids on one page, one declaring and one not, behave each as its own declarations say (ADR-0018) | Layer 3 | independent |
 
 ---
@@ -1033,6 +1034,9 @@ the preconditions §2 has for ExGrid.
 | **SH-20** | MUST | General fits the column as Excel's does (`=1/3` in a default column reads `0.333333`), and a number or date typed into a default-width column that does not fit widens it (ADR-0047) | Layer 1 against the case corpus; Layer 2 | as Excel |
 | **SH-21** | MUST | Formats at cell, row and column level, cell over row over column; formatting a whole column records one entry (ADR-0047) | Layer 1 | as stated |
 | **SH-22** | MUST | Column widths are recorded in the Sheet Document and move with inserted and deleted columns; a default width is not recorded (ADR-0046) | Layer 1 + Layer 2 | as stated |
+| **SH-23** | MUST | Ctrl+D and Ctrl+R copy the source's Entries over the target with relative References shifted, formats and alignment with them, as one undo step, leaving the Selection; a date or number is copied, never continued; a source scrolled out of the Window is still read (ADR-0035; ADR-0050, item 5, 2026-09-28) | Layer 1 + Layer 2 | as Excel |
+| **SH-24** | MUST | Delete clears every Entry in the Selection as one undo step, keeps formats, and leaves the Selection and the Focus where they were; over empty cells it records no step (ADR-0054; ADR-0052, case 14) | Layer 2 | as stated |
+| **SH-25** | MUST | Ctrl+F opens the grid's find panel, and a step searches the Sheet's cells by their displayed text, every row, by rows from the cell after the Focus, wrapping, with Match case, Match entire cell contents and a selected scope honoured as `GridFind.Step` honours them (ADR-0055) | Layer 2 | as stated |
 | **SH-19** | OBSERVATIONAL | Recalculation time at a large Sheet, and completion's keystroke-to-list time on a circuit | recorded in `metrics.json` | recorded, never gated |
 
 ---
