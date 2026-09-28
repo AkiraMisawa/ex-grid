@@ -88,7 +88,8 @@ has.)*
   extends the fragment holding the Focus (A1:C1 to A1:C2).
 - **Taking out the Focus's own cell moves the Focus to the next cell of what remains, in Tab
   order**: A1 out of A1:C3 leaves A2:C3 and B1:C1, with B1 active, and Shift+↓ extends B1:C1.
-  *(Observed for the top-left cell only.)*
+  *(Observed for the top-left cell only. Rewritten after the third run, below: "What the third run
+  settled".)*
 - **The only selected cell cannot be taken out**: Ctrl+click on B2 alone leaves B2 selected.
 - **ADR-0012's detached state is withdrawn.** It existed because the Focus could stand on a
   deselected cell. Under this model it never does.
@@ -149,3 +150,26 @@ third Windows run (`docs/specs/exsheet/verify-on-windows-3.md`, Part B):
   first cell" wherever Excel was observed. A source selected bottom-up keeps its bottom Focus.
 - **The drag's size reaches the Consumer through `NameBoxSizeLabel`**, a second parameter beside
   ADR-0051's `NameBoxLabel`.
+
+## What the third run settled *(2026-09-28, verification/2026-09-28-windows-excel-3/active-cell.md; decided with the user)*
+
+Part B asked each reading above of Excel.
+
+- **Agreed with the readings**: after Ctrl+Space from C3, Shift+↓ changes nothing and Shift+→ gives
+  C:D; Ctrl+. from A2 (on the left edge) or B2 (inside) goes to A1 first, then clockwise; B4:B2 made
+  from B4 and filled down by the handle keeps B4 active; and after Enter has cycled into an earlier
+  range, Shift+↓ extends the range holding the Focus from the Focus, so "the range holding the
+  Focus" is now observed, not read.
+- **The cycling order through disjoint ranges** is creation order, as ADR-0012 said, now observed:
+  Enter down each range's columns, Tab along its rows, then the next range in the order they were
+  made, wrapping; Shift+Enter back the same way. **Tab after Enter continues from the cell Enter
+  reached**, by rows: E4 in D4:E5, Tab, is D5.
+- **A take-out resets the Focus, replacing the Tab-successor reading.** After any Ctrl+click that
+  takes a cell out, **the Focus goes to the first remaining cell, by rows, of the range made last**,
+  wherever cycling had moved it: B2, C3, C1 or A3 taken out of A1:C3 leaves A1 active, and A1 taken
+  out leaves B1; with A1:B2 then D4:E5, taking A1 or B2 out leaves D4 active, and so does taking E5
+  out after Enter had cycled the Focus to A1.
+- **The fragments are listed bottom to top**, as Excel's `Selection.Address` lists them: B2 out of
+  A1:C3 leaves A3:C3, C2, A2, A1:C1, in that order, where `SelectionRange.Subtract`'s own order was
+  kept before. **Enter visits the fragment holding the Focus first, then the others in that order**,
+  wrapping.

@@ -261,3 +261,62 @@ The deliberate differences recorded earlier stand, and the second run gave the s
 them: a Linked Table or column that does not exist is `#NAME?` or `#REF!` rather than a refused
 entry (TABLE-011, 013), a pasted Formula is read in the invariant syntax under de-DE (COPY-025),
 `#CIRC!` (ISERROR-010), and a date-time fill (FILL-033).
+
+## Observed in Excel, third run *(2026-09-28, the same build — verification/2026-09-28-windows-excel-3)*
+
+The corpus, now 1144 cases, was asked through COM and with real keys again. Excel's answers to the
+1056 older cases were the second run's, every one. Of the 88 new cases, 61 agree typed and 25
+disagree. The keyboard stays Excel's answer for ExSheet where the two routes differ.
+
+### What the third observation settled *(decided with the user, 2026-09-28)*
+
+Each disagreement goes to Excel's answer, except where a refusal is named.
+
+- **A final addition or subtraction is 0 when its operands are closer than 2⁻⁴⁹ of each** (ARITH-099..105,
+  replacing 2⁻⁵¹). `=1+1E-15-1` and `=1.1-1-0.1` are 0; `=1+2E-15-1` is 1.9984014443252818E-15.
+  Every observation from both runs brackets the boundary between 1.11E-15 and 1.998E-15 relative,
+  and 2⁻⁴⁹ (1.78E-15) is the only power of two inside it.
+- **Two numbers compare equal when they are closer than 20 units in the last place of 1 (4.44E-15)
+  relative to each** (ARITH-106..112, replacing 2⁻⁴⁷). `=1+4E-15=1` is TRUE (second run) and
+  `=1+5E-15=1` is FALSE, so the boundary lies between 3.997E-15 and 4.885E-15. **It is not a power of
+  two, and it is not the zero threshold above**: the recommendation to unify the two at 2⁻⁴⁹ was
+  withdrawn before it was written, because it contradicts the second run's `=1+4E-15=1`. 4.44E-15
+  is a value inside the bracket, taken until the next Windows run narrows it; the corpus gains
+  cases between 4.0E-15 and 4.9E-15.
+- **Text comparison ignores an apostrophe, as it ignores a hyphen, and `ß` equals `ss` under `=`**
+  (ARITH-125, 126), not only in ordering.
+- **`^` is the plain double power, unrounded** (ARITH-133): `=2^0.5` is 1.4142135623730951. The
+  15-digit answer (the engine's, or the case's own expectation) was a defect against the second
+  run's rule above.
+- **A value_if_error left out is empty, not 0** (IFERROR-016): `=IFERROR(1/0,)&""` is `""`, as an
+  empty cell was (IFERROR-013).
+- **`XLOOKUP`'s regular expressions accept lookbehind** (XLOOKUP-153), which PCRE2 and .NET read the
+  same. **A Unicode script (`\p{Greek}`) and `\w` over a character outside the Basic Multilingual
+  Plane stay `#VALUE!`** (XLOOKUP-154, 155), by decision: .NET knows blocks, not scripts, and
+  matches UTF-16 code units, so either answer would be an approximation that looks like Excel's and
+  is not. They are recorded, not disagreements.
+- **A format code with a lower-case `[color n]`, or with `[Color n]` in any section, is refused**
+  (FMT-076, 077), as FMT-075 already is. Only COM was asked; the next run asks it typed.
+- **Typed constants** (TYPED-051, 052, 054):
+  - `$-5` is the number -5 in Excel's currency format, `$#,##0_);[Red]($#,##0)`, as `-$5` is.
+  - `5-Oct` under en-GB shows `05-Oct`: the built-in `d-mmm` is shown in the culture's own form.
+  - `-B2 C2` is **refused by name**, as a Formula using the intersection operator, which the
+    engine does not implement. Excel makes it the Formula `=-B2 C2` (`#NULL!`). Taking it as text
+    would show a plausible entry where Excel shows an error.
+- **A Formula's result format follows every observed case** (FF-023..029, with FF-011, 013, 020,
+  027 and ARITH-006, 064): a date referred to gives a date for `/` and inside `SUM` as for `+`
+  (`=A1/2`, `=SUM(A1,5)`); a percent constant alone or multiplied gives General (`=50%`,
+  `=2*50%`), where added to a number it gives `0.0%` (`=10+50%`); a cell in percent multiplied gives
+  General (`=A1*2`); a date plus a percent gives General (`=A1+50%`). The rule written into the
+  engine is the smallest one consistent with all of these, and the corpus gains cases that bracket
+  it (a percent cell added to, subtracted from, divided; a date multiplied; a percent constant
+  subtracted).
+- **A column a typed entry widened is widened again by a longer entry** (CW-028), and Excel's file
+  still marks it `customWidth` (CW-018, CW-027 for a date, CW-029 for a Formula's number). This is
+  the third kind of width the second run anticipated: see ADR-0046, where a width **widened by
+  entry** is recorded and marked as Excel marks it, and still widens, and only a width the user
+  set stops widening.
+
+Recorded, not changed: `=1E308` and `=-1E308` (TEXT-103, 113) stay refused, where Excel typed offers
+to correct them into `=E1308` and `=-E1308`; and the deliberate differences of the earlier runs
+(TABLE-011, 013, COPY-025, ISERROR-010, FILL-033).

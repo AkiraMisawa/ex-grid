@@ -117,6 +117,14 @@ and alignment with them, as Excel's Ctrl+D and Ctrl+R do and as the handle's cop
 continued, and no pattern is refused. It also answers `OnCopyRowsNeeded` from the Sheet, so a source
 row scrolled out of the Window is still read.
 
+*(Added 2026-09-28, after the third Windows run, decided with the user.)* **Ctrl+Enter with a
+Formula shifts its References, as Excel does**: `=A1` entered over B2:C3 from B2 writes `=A1`,
+`=B1`, `=A2` and `=B2`. The typed text is read as entered in the Focus, and each other cell takes
+it with its relative References moved by that cell's offset from the Focus, by the same rule as
+`SheetEdit.FillCopy`. The intent still names no fill source: the source is the typed text, not a
+range. ExSheet reads the Focus from the Selection it already follows; if that turns out not to be
+reachable when the intent is raised, the core's intent gains it by a note here first.
+
 ## Consequences
 
 - **ADR-0012, ADR-0014 and ADR-0008 each gain a note** saying their rule stands, and which

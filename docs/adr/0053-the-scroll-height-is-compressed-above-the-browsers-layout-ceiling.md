@@ -117,5 +117,18 @@ changes.**
 - **The horizontal axis is not compressed.** Its guard follows the 33,554,428 constant, but no
   column layout comes near the ceiling at any scale a person uses, so a width above a smaller told
   ceiling is not handled. That is recorded, not solved.
+- **A layer-3 test sets a scroll offset through the mapping, never as rows × `RowHeight`**
+  *(2026-09-28, third Windows run)*. Five tests that did so passed on Linux and failed at the
+  display's real 150%, where `n × 28` shows row 1.31 n. They were test defects, and the scale-forcing
+  project now runs them.
 - **A layer-3 test reads a length from the style attribute, not through the CSSOM**, which rounds
   it to six significant figures (`2.23694e+07px`).
+
+## Measured on Windows *(2026-09-28, verification/2026-09-28-windows-3)*
+
+At the display's real 150%, one wheel notch on `/wide` moved 100 px, **4.47 rows** at the top and
+4.33 near the end, on both browsers and both hosts: 1.25 times the uncompressed 3.57, as predicted.
+Excel moves 3 rows a notch at 100% zoom, Windows' 3 lines. On the Server host the rows first moved
+by the uncompressed amount and the render caught up within one to three frames, **at most 0.62 rows
+at a 100 ms round trip**; no frame moved them against the scroll by more than 0.05 rows. Both are
+the costs accepted above, now measured, and nothing is changed for them.

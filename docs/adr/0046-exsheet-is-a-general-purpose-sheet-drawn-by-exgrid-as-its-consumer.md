@@ -172,3 +172,11 @@ Sheet has to rewrite the References to it in the other.
   Excel's file. ExSheet records it as custom too, so a longer entry no longer widens it, and the
   automatic width above is left to documents that already hold one; see ADR-0047, "What the second
   observation settled".)*
+  *(2026-09-28, third Windows run, decided with the user: Excel widens such a column again for a
+  longer number, CW-028, while its file still marks it custom. The note above is withdrawn, and a
+  recorded width has **three** kinds. **Default**: never set, not recorded. **Widened by entry**:
+  set by an entry that widened the column, recorded, marked `customWidth` as Excel marks it, and
+  widened again by a longer entry, as the first form of this bullet said. **Set by the user**: a
+  drag, a size to fit or a command, recorded, marked, and never widened by an entry. A width set by
+  the user replaces one widened by entry; an entry never turns a user's width back into the other
+  kind.)*

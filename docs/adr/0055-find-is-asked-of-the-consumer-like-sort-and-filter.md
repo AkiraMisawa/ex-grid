@@ -156,3 +156,8 @@ by it and a Source matches by it.
 The public surface this ADR adds is therefore also `GridFind` (the reference step), `FindPanelLabelIds`
 (the built-in panel's words), `GridSelection.FocusOn`, and `GridKeyClaims.CanFind` beside the
 other key claims.
+
+*(2026-09-28, third Windows run, decided with the user.)* Excel's Find scrolls a found cell to the
+middle of the view; ExSheet's reveals it as every Focus move does, as far as it must, so a cell below
+the view lands on its bottom row. **Kept**: FD-5 asks that the cell be revealed, and it is, and
+ExGrid keeps one reveal rule rather than a second one for Find.
