@@ -190,7 +190,7 @@ public class ActiveCellWiringTests : GridTestContext
         Assert.EndsWith("r0c2", ActiveDescendant(cut));
     }
 
-    [Fact] // ADR-0052 case 6: Ctrl+click on the Focus's own cell leaves the Focus on the next cell in Tab order, and begins no drag
+    [Fact] // ADR-0052 case 6 / third run: Ctrl+click on the Focus's own cell moves the Focus to the first remaining cell by rows, and begins no drag
     public async Task Ctrl_click_on_the_focus_cell_moves_the_focus_on_and_begins_no_drag()
     {
         GridSelection? selection = null;

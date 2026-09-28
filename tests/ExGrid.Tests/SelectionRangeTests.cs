@@ -59,30 +59,30 @@ public class SelectionRangeTests
         Assert.Equal(new ColumnRange(3, 5), range.ColumnSpan);
     }
 
-    [Fact] // ADR-0012: toggling off an interior cell splits the rectangle into four
+    [Fact] // ADR-0012/0052 third run: toggling off an interior cell splits the rectangle into four, listed bottom to top as Excel lists them
     public void Subtracting_an_interior_cell_splits_into_four()
     {
-        var pieces = new SelectionRange(0, 0, 3, 3).Subtract(new(1, 1));
+        var pieces = new SelectionRange(0, 0, 3, 3).Subtract(new(1, 1)); // B2 out of A1:C3
 
         Assert.Equal(
         [
-            new SelectionRange(0, 0, 1, 3), // band above
-            new SelectionRange(2, 0, 1, 3), // band below
-            new SelectionRange(1, 0, 1, 1), // left of the cell
-            new SelectionRange(1, 2, 1, 1), // right of the cell
+            new SelectionRange(2, 0, 1, 3), // band below: A3:C3
+            new SelectionRange(1, 2, 1, 1), // right of the cell: C2
+            new SelectionRange(1, 0, 1, 1), // left of the cell: A2
+            new SelectionRange(0, 0, 1, 3), // band above: A1:C1
         ], pieces);
     }
 
-    [Fact] // ADR-0012: an edge cell leaves three pieces
+    [Fact] // ADR-0012/0052 third run: an edge cell leaves three pieces, bottom to top
     public void Subtracting_an_edge_cell_splits_into_three()
     {
-        var pieces = new SelectionRange(0, 0, 3, 3).Subtract(new(0, 1));
+        var pieces = new SelectionRange(0, 0, 3, 3).Subtract(new(0, 1)); // B1 out of A1:C3
 
         Assert.Equal(
         [
-            new SelectionRange(1, 0, 2, 3),
-            new SelectionRange(0, 0, 1, 1),
-            new SelectionRange(0, 2, 1, 1),
+            new SelectionRange(1, 0, 2, 3), // below: A2:C3
+            new SelectionRange(0, 2, 1, 1), // right: C1
+            new SelectionRange(0, 0, 1, 1), // left: A1
         ], pieces);
     }
 

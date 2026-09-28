@@ -101,7 +101,7 @@ public class SelectionGestureTests
         Assert.Equal(new CellPosition(0, 0), selection.Focus);
     }
 
-    [Fact] // ADR-0012/0052: ctrl+click on a selected cell takes it out of every containing range, and the Focus stays inside
+    [Fact] // ADR-0012/0052 third run: ctrl+click on a selected cell takes it out of every containing range, each giving way in place to its fragments bottom to top; the Focus goes to the first remaining cell, by rows, of the range made last
     public void Toggle_off_subtracts_the_cell_from_every_containing_range()
     {
         var selection = GridSelection.Empty
@@ -114,15 +114,15 @@ public class SelectionGestureTests
         Assert.False(selection.Contains(new(1, 1)));
         Assert.Equal(
         [
-            new SelectionRange(0, 0, 1, 3), // range 1 minus (1,1)
-            new SelectionRange(2, 0, 1, 3),
-            new SelectionRange(1, 0, 1, 1),
-            new SelectionRange(1, 2, 1, 1),
-            new SelectionRange(2, 1, 3, 4), // range 2 minus its top-left corner
-            new SelectionRange(1, 2, 1, 3),
+            new SelectionRange(2, 0, 1, 3), // range 1 minus (1,1): below
+            new SelectionRange(1, 2, 1, 1), // right
+            new SelectionRange(1, 0, 1, 1), // left
+            new SelectionRange(0, 0, 1, 3), // above
+            new SelectionRange(2, 1, 3, 4), // range 2 minus its top-left corner: below
+            new SelectionRange(1, 2, 1, 3), // right
         ], selection.Ranges);
-        Assert.Equal(new CellPosition(4, 4), selection.Focus); // not the removed cell: it stays
-        Assert.Equal(new SelectionRange(2, 1, 3, 4), selection.FocusRange); // the fragment of its own range
+        Assert.Equal(new CellPosition(1, 2), selection.Focus); // range 2's first remaining cell by rows, not (4,4) where it was
+        Assert.Equal(new SelectionRange(1, 2, 1, 3), selection.FocusRange); // the fragment of range 2 holding it
     }
 
     [Fact] // ADR-0052 case 6: B2 out of A1:C3 (A1 active) keeps A1 active, and Shift+Down extends A1:C1 to A1:C2
@@ -145,8 +145,8 @@ public class SelectionGestureTests
         Assert.Equal(new CellPosition(0, 0), extended.Focus);
     }
 
-    [Fact] // ADR-0052 case 6: A1 out of A1:C3 moves the Focus to B1, the next cell in Tab order, and Shift+Down extends B1:C1
-    public void Taking_out_the_focus_cell_moves_the_focus_to_the_next_cell_in_tab_order()
+    [Fact] // ADR-0052 case 6 / third run: A1 out of A1:C3 moves the Focus to B1, the first remaining cell by rows, and Shift+Down extends B1:C1
+    public void Taking_out_the_focus_cell_moves_the_focus_to_the_first_remaining_cell_by_rows()
     {
         var selection = GridSelection.Empty
             .Click(new(0, 0), Grid)
@@ -163,8 +163,8 @@ public class SelectionGestureTests
         Assert.Equal(new CellPosition(0, 1), extended.Focus);
     }
 
-    [Fact] // ADR-0052: taking out the Focus's cell when it is the last in Tab order of its range goes on into the next range
-    public void Taking_out_the_last_cell_of_the_focus_range_goes_on_to_the_next_range()
+    [Fact] // ADR-0052 third run (not observed in Excel): when the take-out empties the range made last, the latest range still standing takes its place
+    public void Taking_out_the_whole_range_made_last_moves_the_focus_to_the_latest_range_left()
     {
         var selection = GridSelection.Empty
             .Click(new(0, 0), Grid)
@@ -173,7 +173,7 @@ public class SelectionGestureTests
             .ToggleRange(new(5, 5), Grid);
 
         Assert.Equal([new SelectionRange(0, 0, 2, 2)], selection.Ranges);
-        Assert.Equal(new CellPosition(0, 0), selection.Focus); // wrapped to the first range's first cell
+        Assert.Equal(new CellPosition(0, 0), selection.Focus); // A1:B2's first cell by rows
     }
 
     [Fact] // ADR-0052 case 6: the only selected cell cannot be taken out

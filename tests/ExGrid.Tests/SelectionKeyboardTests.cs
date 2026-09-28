@@ -113,11 +113,11 @@ public class SelectionKeyboardTests
         var selection = GridSelection.Empty
             .Click(new(2, 2), Grid)
             .ExtendTo(new(4, 4), Grid)
-            .ToggleRange(new(3, 3), Grid)   // four fragments remain; the Focus stays on (2,2)
+            .ToggleRange(new(3, 3), Grid)   // four fragments, bottom to top; the Focus on (2,2), the first remaining cell by rows
             .SelectWholeColumns(Grid);
 
         Assert.Equal(4, selection.Ranges.Count);
-        Assert.Equal(new SelectionRange(0, 2, 100, 3), selection.Ranges[0]); // the top band, (2,2)-(2,4), made whole columns
+        Assert.Equal(new SelectionRange(0, 2, 100, 3), selection.Ranges[3]); // the top band, (2,2)-(2,4), listed last, made whole columns
         Assert.Equal(new CellPosition(2, 2), selection.Focus);
     }
 

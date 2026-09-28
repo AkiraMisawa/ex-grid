@@ -77,7 +77,10 @@ public readonly record struct SelectionRange
     /// <summary>
     /// Removes one cell, yielding the up-to-four rectangles that remain — the Ctrl+click
     /// toggle (ADR-0012). A cell outside the range leaves it unchanged; subtracting the
-    /// only cell of a 1×1 range yields nothing.
+    /// only cell of a 1×1 range yields nothing. The pieces come bottom to top, in the order
+    /// Excel's <c>Selection.Address</c> lists them: the full-width band below the cell's row,
+    /// what remains of that row to its right, then to its left, then the band above
+    /// (ADR-0052, "What the third run settled").
     /// </summary>
     public IReadOnlyList<SelectionRange> Subtract(CellPosition cell)
     {
@@ -85,16 +88,14 @@ public readonly record struct SelectionRange
             return [this];
 
         var pieces = new List<SelectionRange>(4);
-        // Full-width bands above and below the cell's row, then what remains of that row
-        // to the cell's left and right.
-        if (cell.Row > TopRow)
-            pieces.Add(new(TopRow, LeftColumn, cell.Row - TopRow, ColumnCount));
         if (cell.Row < BottomRow)
             pieces.Add(new(cell.Row + 1, LeftColumn, BottomRow - cell.Row, ColumnCount));
-        if (cell.Column > LeftColumn)
-            pieces.Add(new(cell.Row, LeftColumn, 1, cell.Column - LeftColumn));
         if (cell.Column < RightColumn)
             pieces.Add(new(cell.Row, cell.Column + 1, 1, RightColumn - cell.Column));
+        if (cell.Column > LeftColumn)
+            pieces.Add(new(cell.Row, LeftColumn, 1, cell.Column - LeftColumn));
+        if (cell.Row > TopRow)
+            pieces.Add(new(TopRow, LeftColumn, cell.Row - TopRow, ColumnCount));
         return pieces;
     }
 }

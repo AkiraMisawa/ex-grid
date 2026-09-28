@@ -131,11 +131,11 @@ public class WholeRangeSelectionTests
         var selection = GridSelection.Empty
             .Click(new(2, 2), Grid)
             .ExtendTo(new(4, 4), Grid)
-            .ToggleRange(new(3, 3), Grid)   // four fragments; the Focus stays on (2,2), in the first
+            .ToggleRange(new(3, 3), Grid)   // four fragments, bottom to top; the Focus on (2,2), in the top band, listed last
             .ExtendToColumn(5, Grid);
 
         Assert.Equal(4, selection.Ranges.Count);
-        Assert.Equal(new SelectionRange(0, 2, 100, 4), selection.Ranges[0]);
+        Assert.Equal(new SelectionRange(0, 2, 100, 4), selection.Ranges[3]);
         Assert.Equal(new CellPosition(2, 2), selection.Focus);
     }
 

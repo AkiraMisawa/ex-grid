@@ -38,13 +38,30 @@ public sealed record GridSelection
     /// <summary>Index of the range holding the Focus. Meaningless on Empty.</summary>
     private readonly int _focusRangeIndex;
 
-    private GridSelection(IReadOnlyList<SelectionRange> ranges, CellPosition focus, int focusRangeIndex)
+    /// <summary>
+    /// For each range, which range the user made it as — a number that rises with creation
+    /// order. The fragments a take-out leaves share the number of the range they were cut
+    /// from, which is what "the range made last" means after a take-out (ADR-0052, "What the
+    /// third run settled"). Never exposed: the ranges themselves stay the public shape.
+    /// </summary>
+    private readonly int[] _origins;
+
+    private GridSelection(
+        IReadOnlyList<SelectionRange> ranges, CellPosition focus, int focusRangeIndex, int[]? origins = null)
     {
         if (ranges.Count > 0
             && (focusRangeIndex < 0 || focusRangeIndex >= ranges.Count || !ranges[focusRangeIndex].Contains(focus)))
         {
             throw new InvalidOperationException("Internal: the Focus range index must name a range containing the Focus (ADR-0052).");
         }
+        origins ??= ranges.Count switch
+        {
+            0 => [],
+            1 => [0],
+            _ => throw new InvalidOperationException("Internal: several ranges need their origins (ADR-0052)."),
+        };
+        if (origins.Length != ranges.Count)
+            throw new InvalidOperationException("Internal: every range has one origin (ADR-0052).");
 
         // Stored behind a read-only wrapper so no caller can cast Ranges back to the
         // array and mutate a rectangle in place, past the invariant check above (the
@@ -57,11 +74,14 @@ public sealed record GridSelection
         };
         _focus = focus;
         _focusRangeIndex = focusRangeIndex;
+        _origins = origins;
     }
 
     /// <summary>
     /// The rectangles in creation order — which is also the Enter/Tab cycling order
-    /// (ADR-0012) and the one-overlay-per-range painting order (ADR-0008).
+    /// (ADR-0012) and the one-overlay-per-range painting order (ADR-0008). A take-out puts a
+    /// range's fragments where the range stood, bottom to top, which is the order Excel's
+    /// <c>Selection.Address</c> lists them in (ADR-0052, "What the third run settled").
     /// </summary>
     public IReadOnlyList<SelectionRange> Ranges { get; }
 
@@ -147,15 +167,16 @@ public sealed record GridSelection
             return Collapse(cell);
         RequireFits(extent);
 
-        return new(ReplaceAt(Ranges, _focusRangeIndex, SelectionRange.FromCorners(_focus, cell)), _focus, _focusRangeIndex);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, SelectionRange.FromCorners(_focus, cell)), _focus, _focusRangeIndex, _origins);
     }
 
     /// <summary>
     /// Ctrl+click (ADR-0012 / 0052). On an unselected cell: adds a new 1×1 range holding the
-    /// Focus. On a selected cell: takes it out — the cell is subtracted from every range
-    /// containing it (a rectangle splits into at most four) — and the Focus stays inside the
-    /// Selection: where it was, in the fragment of its range that holds it, or, when its own
-    /// cell was taken out, on the next cell of what remains in Tab order. The only selected
+    /// Focus, the range made last. On a selected cell: takes it out — the cell is subtracted
+    /// from every range containing it, each rectangle giving way, in place, to its fragments
+    /// listed bottom to top as Excel lists them (<see cref="SelectionRange.Subtract"/>) — and
+    /// the Focus goes to the first remaining cell, by rows, of the range made last, wherever
+    /// Enter or Tab had moved it (ADR-0052, "What the third run settled"). The only selected
     /// cell cannot be taken out: the selection is returned unchanged.
     /// </summary>
     public GridSelection ToggleRange(CellPosition cell, GridExtent extent)
@@ -170,7 +191,10 @@ public sealed record GridSelection
         if (!Contains(cell))
         {
             var appended = Append(Ranges, new SelectionRange(cell.Row, cell.Column, 1, 1));
-            return new(appended, cell, appended.Length - 1);
+            var origins = new int[_origins.Length + 1];
+            _origins.CopyTo(origins, 0);
+            origins[^1] = _origins[^1] + 1;
+            return new(appended, cell, appended.Length - 1, origins);
         }
 
         var remaining = new List<SelectionRange>();
@@ -180,29 +204,31 @@ public sealed record GridSelection
             foreach (var piece in Ranges[i].Subtract(cell))
             {
                 remaining.Add(piece);
-                cameFrom.Add(i);
+                cameFrom.Add(_origins[i]);
             }
         }
         if (remaining.Count == 0)
             return this;
 
-        // The Focus stays where it is, or — its own cell gone — takes the next cell in Tab
-        // order, which is never the removed cell and so is still selected (ADR-0052, case 6).
-        var focus = _focus;
-        var fromRange = _focusRangeIndex;
-        var probe = this;
-        while (focus == cell)
-        {
-            probe = probe.StepInside(CycleOrder.RowMajor, backward: false);
-            focus = probe._focus;
-            fromRange = probe._focusRangeIndex;
-        }
+        // The range made last is the one with the highest origin still holding a cell. When
+        // the take-out emptied it — a 1×1 range made last, clicked again — the latest range
+        // still standing takes its place (not observed in Excel; the nearest reading).
+        var last = cameFrom[^1];
+        var focusIndex = -1;
         for (var j = 0; j < remaining.Count; j++)
         {
-            if (cameFrom[j] == fromRange && remaining[j].Contains(focus))
-                return new(remaining, focus, j);
+            if (cameFrom[j] != last)
+                continue;
+            var first = new CellPosition(remaining[j].TopRow, remaining[j].LeftColumn);
+            if (focusIndex < 0 || IsBefore(first, remaining[focusIndex]))
+                focusIndex = j;
         }
-        throw new InvalidOperationException("Internal: the Focus must stay inside the Selection after a cell is taken out (ADR-0052).");
+        var focusRange = remaining[focusIndex];
+        return new(remaining, new(focusRange.TopRow, focusRange.LeftColumn), focusIndex, [.. cameFrom]);
+
+        // By rows: the earlier row, then the earlier column.
+        static bool IsBefore(CellPosition cell, SelectionRange than)
+            => cell.Row < than.TopRow || (cell.Row == than.TopRow && cell.Column < than.LeftColumn);
     }
 
     /// <summary>Arrow: collapses the selection to one cell and moves from the Focus, clamped
@@ -396,13 +422,13 @@ public sealed record GridSelection
                 : _focus.Column == range.RightColumn ? corners[2]
                 : _focus.Row == range.BottomRow ? corners[3]
                 : corners[0];
-            return new(Ranges, next, _focusRangeIndex);
+            return new(Ranges, next, _focusRangeIndex, _origins);
         }
         for (var step = 1; step < corners.Length; step++)
         {
             var candidate = corners[(at + step) % corners.Length];
             if (candidate != _focus)
-                return new(Ranges, candidate, _focusRangeIndex);
+                return new(Ranges, candidate, _focusRangeIndex, _origins);
         }
         return this;
     }
@@ -432,7 +458,7 @@ public sealed record GridSelection
         for (var i = Ranges.Count - 1; i >= 0; i--)
         {
             if (Ranges[i].Contains(cell))
-                return new(Ranges, cell, i);
+                return new(Ranges, cell, i, _origins);
         }
         throw new ArgumentOutOfRangeException(nameof(cell), cell,
             "The cell is not in the selection; moving the Focus out of it is Click (ADR-0055).");
@@ -455,11 +481,12 @@ public sealed record GridSelection
         }
         if (IsEmpty)
             return true;
-        return _focus == other._focus && _focusRangeIndex == other._focusRangeIndex;
+        return _focus == other._focus && _focusRangeIndex == other._focusRangeIndex
+            && _origins.AsSpan().SequenceEqual(other._origins);
     }
 
     /// <summary>Consistent with <see cref="Equals(GridSelection)"/>: the ranges, and the
-    /// Focus and its range when not empty.</summary>
+    /// Focus, its range and which range each was made as when not empty.</summary>
     public override int GetHashCode()
     {
         var hash = new HashCode();
@@ -469,6 +496,8 @@ public sealed record GridSelection
         {
             hash.Add(_focus);
             hash.Add(_focusRangeIndex);
+            foreach (var origin in _origins)
+                hash.Add(origin);
         }
         return hash.ToHashCode();
     }
@@ -520,7 +549,7 @@ public sealed record GridSelection
         var redrawn = horizontal
             ? new SelectionRange(range.TopRow, Math.Min(_focus.Column, moved.Column), range.RowCount, Math.Abs(moved.Column - _focus.Column) + 1)
             : new SelectionRange(Math.Min(_focus.Row, moved.Row), range.LeftColumn, Math.Abs(moved.Row - _focus.Row) + 1, range.ColumnCount);
-        return new(ReplaceAt(Ranges, _focusRangeIndex, redrawn), _focus, _focusRangeIndex);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, redrawn), _focus, _focusRangeIndex, _origins);
     }
 
     /// <summary>
@@ -543,7 +572,7 @@ public sealed record GridSelection
 
         var left = Math.Min(_focus.Column, column);
         var whole = new SelectionRange(0, left, extent.RowCount, Math.Abs(column - _focus.Column) + 1);
-        return new(ReplaceAt(Ranges, _focusRangeIndex, whole), _focus, _focusRangeIndex);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, whole), _focus, _focusRangeIndex, _origins);
     }
 
     /// <summary>
@@ -625,7 +654,7 @@ public sealed record GridSelection
 
         var top = Math.Min(_focus.Row, row);
         var whole = new SelectionRange(top, 0, Math.Abs(row - _focus.Row) + 1, extent.ColumnCount);
-        return new(ReplaceAt(Ranges, _focusRangeIndex, whole), _focus, _focusRangeIndex);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, whole), _focus, _focusRangeIndex, _origins);
     }
 
     /// <summary>
@@ -658,7 +687,7 @@ public sealed record GridSelection
         if (IsEmpty)
             return Empty;
         RequireFits(extent);
-        return new(ReplaceAt(Ranges, _focusRangeIndex, expand(Ranges[_focusRangeIndex])), _focus, _focusRangeIndex);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, expand(Ranges[_focusRangeIndex])), _focus, _focusRangeIndex, _origins);
     }
 
     /// <summary>One step of Enter / Tab inside the Selection: the next cell of the Focus's
@@ -671,15 +700,15 @@ public sealed record GridSelection
         if (next >= range.CellCount)
         {
             var following = (_focusRangeIndex + 1) % Ranges.Count;
-            return new(Ranges, CellAt(Ranges[following], 0, order), following);
+            return new(Ranges, CellAt(Ranges[following], 0, order), following, _origins);
         }
         if (next < 0)
         {
             var preceding = (_focusRangeIndex - 1 + Ranges.Count) % Ranges.Count;
             var entered = Ranges[preceding];
-            return new(Ranges, CellAt(entered, entered.CellCount - 1, order), preceding);
+            return new(Ranges, CellAt(entered, entered.CellCount - 1, order), preceding, _origins);
         }
-        return new(Ranges, CellAt(range, next, order), _focusRangeIndex);
+        return new(Ranges, CellAt(range, next, order), _focusRangeIndex, _origins);
     }
 
     private static GridSelection Collapse(CellPosition cell)

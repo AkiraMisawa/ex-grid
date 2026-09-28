@@ -105,7 +105,7 @@ public class SelectionTests : GridTestContext
         Assert.Equal([Rect(0, 0, 100, 20), Rect(200, 40, 100, 20)], Rects(cut));
     }
 
-    [Fact] // ADR-0012: Ctrl+click on a selected cell deselects it — a rectangle splits into at most four
+    [Fact] // ADR-0012/0052 third run: Ctrl+click on a selected cell deselects it — a rectangle splits into at most four, bottom to top
     public async Task Ctrl_click_on_a_selected_cell_punches_a_hole()
     {
         var cut = RenderGrid();
@@ -114,10 +114,10 @@ public class SelectionTests : GridTestContext
         await PressAsync(cut, Cell(2, 2).X, Cell(2, 2).Y, shift: true);
         await PressAsync(cut, Cell(1, 1).X, Cell(1, 1).Y, ctrl: true);
 
-        // The band above, the band below, then what is left of the middle row either
-        // side of the hole.
+        // As Excel lists them: the band below, what is left of the middle row right of the
+        // hole, then left of it, then the band above.
         Assert.Equal(
-            [Rect(0, 0, 300, 20), Rect(0, 40, 300, 20), Rect(0, 20, 100, 20), Rect(200, 20, 100, 20)],
+            [Rect(0, 40, 300, 20), Rect(200, 20, 100, 20), Rect(0, 20, 100, 20), Rect(0, 0, 300, 20)],
             Rects(cut));
     }
 

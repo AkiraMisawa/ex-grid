@@ -262,13 +262,13 @@ public class SelectionCyclingTests
             () => selection.CycleFocus((CycleOrder)2, backward: false, Grid));
     }
 
-    [Fact] // ADR-0052 (withdrawing ADR-0012's detached state): after the Focus's own cell is taken out, cycling goes on from where the Focus now stands
+    [Fact] // ADR-0052 (withdrawing ADR-0012's detached state; third run): after the Focus's own cell is taken out, cycling goes on from where the Focus now stands
     public void After_a_toggle_off_cycling_goes_on_from_the_focus()
     {
         var selection = GridSelection.Empty
             .Click(new(1, 1), Grid)
             .ExtendTo(new(2, 2), Grid)
-            .ToggleRange(new(1, 1), Grid); // fragments: (2,1,1,2) and (1,2,1,1); the Focus goes on to (1,2)
+            .ToggleRange(new(1, 1), Grid); // fragments bottom to top: (2,1,1,2) and (1,2,1,1); the Focus goes to (1,2), the first remaining cell by rows
         Assert.Equal(new CellPosition(1, 2), selection.Focus);
 
         var forward = selection.CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid);
