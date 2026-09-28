@@ -232,6 +232,25 @@ public class FormulaBarChromeTests : GridTestContext
         await answered;
     }
 
+    [Fact] // ADR-0051/0010/0030, DC-19: a press into the bar straight after typing onto a cell withdraws the cell editor's request — the keyboard stays in the bar
+    public async Task A_press_into_the_bar_withdraws_the_cell_editors_focus_request()
+    {
+        // On a circuit the press into the bar can reach the core before the render that paints
+        // the Chrome's cell editor has been acknowledged; that editor then focused itself for the
+        // request the typed character made, and took the keyboard from the bar the user had just
+        // pressed (layer 3 on the Server host under ExGrid.MudBlazor, 2026-09-28).
+        var chrome = new EditorChrome();
+        var cut = RenderGrid(chrome, []);
+        await ClickAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("5", false, false, false, false, false));
+        Assert.NotEqual(0, chrome.EditorHanded!.FocusRequest);
+
+        await cut.InvokeAsync(() => chrome.BarHanded!.Focused());
+
+        Assert.Equal(0, chrome.EditorHanded!.FocusRequest);
+        Assert.Equal("5", chrome.BarHanded!.Text);
+    }
+
     [Fact] // ADR-0010/0030: an edit opened on the cell asks its editor, and each edit's request is a new one
     public async Task An_edit_opened_on_the_cell_asks_the_chromes_editor_with_a_new_request_each_time()
     {

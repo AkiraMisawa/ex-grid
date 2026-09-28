@@ -6019,7 +6019,14 @@
         if (_editMode != EditMode.None)
         {
             _editSurface = EditSurface.Bar;
-            _suppressRender = true;
+            // A Chrome's Cell Editor asked for the keyboard when the edit opened focuses itself
+            // once it is painted — on a circuit that can be after this press, and it would take
+            // the keyboard from the bar the user has just pressed. The request is withdrawn; a
+            // later one, back on the cell, is a new number (ADR-0010/0030/0051).
+            if (_editorFocusAsked)
+                _editorFocusAsked = false;
+            else
+                _suppressRender = true;
             return;
         }
         if (_selection.Selection.IsEmpty || !IsEditableCell(_selection.Selection.Focus))
