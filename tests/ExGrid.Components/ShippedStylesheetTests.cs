@@ -114,16 +114,16 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
     }
 
-    [Fact] // ADR-0050 item 8 / DC-30: the gate takes undo and redo only from C#'s list, and never while editing
+    [Fact] // ADR-0007 / KB-39 / DC-30: the gate takes undo and redo only from C#'s list, and never while editing
     public void The_history_keys_are_claimed_only_through_the_cores_list()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
         // The listener names no history key of its own: they reach it only in the set C#
-        // hands it, at attach or re-told through setTaken, and that set is consulted only
+        // hands it, at attach or re-told through setClaims, and that set is consulted only
         // while no edit is open. While one is, the editing sets decide, and they carry none.
         Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[zZyY]'"), script.Text);
-        Assert.Matches(new Regex(@"setTaken: \(keys\) => \{\s*taken = new Set\(keys\);\s*\}"), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
         Assert.Matches(new Regex(@"if \(!taken\.has\(canonical\)\)"), script.Text);
     }
 

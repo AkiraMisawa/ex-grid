@@ -1,0 +1,82 @@
+@* The find panel under MudBlazor (ADR-0055/0030): a MudTextField, the two options as
+   MudCheckBoxes and the two steps as MudButtons, inside the core's popover. The search, the
+   Focus it moves and what closes the panel are the core's; this draws and calls back.
+
+   Enter in the field is the browser's implicit submission — which an IME's candidate Enter is
+   not — through a hidden default button that is never disabled, as in the filter panel; Shift
+   held on that Enter makes it "previous". The field takes DOM focus for each change of the
+   context's FocusRequest: each opening, and each Tab off either end, which the core's sentinels
+   around the panel turn into a request (ADR-0039). What the last step came to is worded here
+   and written into a live region, because the grid holds no sentence (ADR-0033). *@
+<form class="mud-ex-grid-find" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+    <button type="submit" class="mud-ex-grid-find-default" hidden tabindex="-1" aria-hidden="true"></button>
+    <MudTextField @ref="_field" T="string" Value="Context.Text" ValueChanged="Context.TextChanged" Immediate="true"
+                  Label="@Own(FindPanelLabelIds.Field)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  OnKeyDown="OnFieldKeyDown" Class="mud-ex-grid-find-field" />
+    <MudCheckBox T="bool" Value="Context.MatchCase" ValueChanged="Context.MatchCaseChanged"
+                 Label="@Own(FindPanelLabelIds.MatchCase)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-match-case" />
+    <MudCheckBox T="bool" Value="Context.WholeCell" ValueChanged="Context.WholeCellChanged"
+                 Label="@Own(FindPanelLabelIds.WholeCell)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-whole-cell" />
+    <div class="mud-ex-grid-find-actions">
+        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
+                   OnClick="Context.Previous" Class="mud-ex-grid-find-previous">@Own(FindPanelLabelIds.Previous)</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                   OnClick="Context.Next" Class="mud-ex-grid-find-next">@Own(FindPanelLabelIds.Next)</MudButton>
+    </div>
+    <MudText Typo="Typo.caption" Color="Color.Error" Class="mud-ex-grid-find-outcome" role="status">@OutcomeText</MudText>
+</form>
+
+@code {
+    /// <summary>The core's contract for the panel (ADR-0055). The core keys its popover by the
+    /// opening, so each opening is a new instance of this component.</summary>
+    [Parameter, EditorRequired] public FindContext Context { get; set; } = default!;
+
+    /// <summary>Where the wording comes from.</summary>
+    [Parameter, EditorRequired] public MudGridChrome Chrome { get; set; } = default!;
+
+    private MudTextField<string>? _field;
+    private int _focusedRequest;
+    private bool _focusOwed;
+    private bool _backwardOnSubmit;
+
+    private string Own(string id) => MudExGridWords.Own(Chrome, id);
+
+    private string OutcomeText => FindPanelLabelIds.For(Context.Outcome) is { } said ? Own(said) : "";
+
+    protected override void OnParametersSet()
+    {
+        if (Context.FocusRequest != _focusedRequest)
+        {
+            _focusedRequest = Context.FocusRequest;
+            _focusOwed = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusOwed || _field is null)
+            return;
+        _focusOwed = false;
+        try
+        {
+            await _field.FocusAsync();
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
+    }
+
+    private void OnFieldKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            _backwardOnSubmit = e.ShiftKey;
+    }
+
+    private Task SubmitAsync()
+    {
+        var backward = _backwardOnSubmit;
+        _backwardOnSubmit = false;
+        return backward ? Context.Previous() : Context.Next();
+    }
+}

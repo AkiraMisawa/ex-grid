@@ -2,6 +2,7 @@
 @implements IDisposable
 @using ExGrid.Chrome
 @using ExGrid.Clipboard
+@using ExGrid.Finding
 @using global::ExGrid.MudBlazor
 @* global::, for the reason MudApp.razor gives (AGENTS.md, the name collisions). *@
 @using global::MudBlazor
@@ -34,12 +35,15 @@
 <p class="demo-status">
     <span id="edit-status">Edited: @_editStatus</span>
     <span id="paste-status">Pasted: @_pasteStatus</span>
+    <span id="clear-status">Cleared: @_clearStatus</span>
+    <span id="history-status">History: @_historyStatus</span>
     <span id="copy-status">Copy refused: @_copyStatus</span>
     @* A refusal is the grid telling the user their write did not happen, and the grid holds no
        string to announce it with (ADR-0035, A11Y-16). Announcing it is Chrome's, so this one is
        a live region where the confirmations above are not: they report what did happen. *@
     <span id="paste-refused-status" role="status">Paste refused: @_pasteRefusedStatus</span>
     <span id="edit-discarded-status" role="status">Edit discarded: @_editDiscardedStatus</span>
+    <span id="find-refused-status" role="status">Find: @_findStatus</span>
     <span id="context-status">Context: @_contextStatus</span>
     <span id="order-status">Order: @string.Join(",", _columns.Select(c => c.Name))</span>
     <span id="width-status">Width: @_widthStatus</span>
@@ -57,9 +61,13 @@
         HighlightFocusRow="true"
         OnEdit="OnEdit"
         OnPaste="OnPaste"
+        OnClear="OnClear"
+        OnUndo="OnUndo"
+        OnRedo="OnRedo"
         OnCopyRefused="OnCopyRefused"
         OnPasteRefused="OnPasteRefused"
         OnEditDiscarded="OnEditDiscarded"
+        OnFindRefused="OnFindRefused"
         OnColumnWidthChanged="OnWidthChanged"
         OnColumnOrderChanged="OnOrderChanged"
         OnColumnHidden="OnHidden"
@@ -202,12 +210,107 @@
         => ((DateTime)value).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
     private string _editStatus = "—";
+    private string _clearStatus = "—";
+    private string _findStatus = "—";
+    private string _historyStatus = "—";
     private string _pasteStatus = "—";
     private string _copyStatus = "—";
     private string _pasteRefusedStatus = "—";
     private string _editDiscardedStatus = "—";
     private string _contextStatus = "—";
     private string _widthStatus = "—";
+
+
+    /// <summary>Find's refusals (ADR-0055). This page's grid is bound to GridSource.From, which
+    /// searches, so Unavailable never arrives here; the panel words NotFound itself too.</summary>
+    private void OnFindRefused(FindRefusalReason reason)
+        => Status(reason, reason.ToString(), s => _findStatus = s);
+
+    /// <summary>One history step: the row instances one intent replaced and the ones it put in
+    /// their place, in the order it replaced them.</summary>
+    private sealed record HistoryStep(IReadOnlyList<(DemoTrade Before, DemoTrade After)> Changes);
+
+    // The undo stack ADR-0007 says the Consumer owns: one step per intent — a typed edit, a
+    // paste, a fill or a clear. The grid only forwards the keys.
+    private readonly Stack<HistoryStep> _undo = new();
+    private readonly Stack<HistoryStep> _redo = new();
+
+    /// <summary>Applies one intent's replacements as one history step.</summary>
+    private int Apply(IEnumerable<(DemoTrade Row, DemoTrade Replacement)> changes)
+    {
+        var step = new List<(DemoTrade, DemoTrade)>();
+        foreach (var (row, replacement) in changes)
+        {
+            try
+            {
+                _source.ReplaceRow(row, replacement);
+                step.Add((row, replacement));
+            }
+            catch (ArgumentException)
+            {
+                // The row left the result mid-apply (a filter the intent itself
+                // falsified); skipping it is the honest outcome for a demo.
+            }
+        }
+        if (step.Count > 0)
+        {
+            _undo.Push(new HistoryStep(step));
+            _redo.Clear();
+        }
+        _rules.Evaluate(_source.Window, _columns);
+        return step.Count;
+    }
+
+    private void OnUndo() => Replay(_undo, _redo, "undone");
+
+    private void OnRedo() => Replay(_redo, _undo, "redone");
+
+    /// <summary>Undoes or redoes one step: its changes reversed, last first, and the reverse
+    /// step — in the order it was just applied — pushed onto the other stack, so replaying that
+    /// one last-first puts the changes back in their original order.</summary>
+    private void Replay(Stack<HistoryStep> from, Stack<HistoryStep> to, string verb)
+    {
+        if (!from.TryPop(out var step))
+        {
+            _historyStatus = $"nothing to be {verb}";
+            return;
+        }
+        var reversed = new List<(DemoTrade, DemoTrade)>();
+        for (var i = step.Changes.Count - 1; i >= 0; i--)
+        {
+            var (before, after) = step.Changes[i];
+            _source.ReplaceRow(after, before);
+            reversed.Add((after, before));
+        }
+        to.Push(new HistoryStep(reversed));
+        _rules.Evaluate(_source.Window, _columns);
+        _historyStatus = $"{step.Changes.Count} changes {verb}";
+    }
+
+    /// <summary>Delete's Clear Intent (ADR-0054): no value at all, mapped per column onto
+    /// this Consumer's own Blank. Trader has one — the empty name; Notional does not, so a
+    /// clear there applies nothing, and says so, rather than writing a zero.</summary>
+    private void OnClear(GridClearIntent intent)
+    {
+        var window = _source.Window;
+        var changes = new List<(DemoTrade, DemoTrade)>();
+        var skipped = 0;
+        foreach (var target in intent.Targets)
+        {
+            for (var row = target.TopRow; row <= Math.Min(target.BottomRow, window.Count - 1); row++)
+            {
+                for (var column = target.LeftColumn; column <= target.RightColumn; column++)
+                {
+                    if (_columns[column].Name == "Trader")
+                        changes.Add((window[row], Edited(window[row], "Trader", "")!));
+                    else
+                        skipped++;
+                }
+            }
+        }
+        var applied = Apply(changes);
+        _clearStatus = $"{intent.CellCount} cells, {applied} applied, {skipped} have no blank";
+    }
 
     private void OnEdit(GridEditIntent<DemoTrade> intent)
     {
@@ -217,10 +320,9 @@
         // unparseable value applies nothing — validation is the Consumer's.
         if (Edited(intent.Row, intent.Column, intent.Value) is { } replacement)
         {
-            _source.ReplaceRow(intent.Row, replacement);
-            // Re-judged after applying, which is the only moment a row rule can be judged
-            // at all (ADR-0034). One call for the rows now held.
-            _rules.Evaluate(_source.Window, _columns);
+            // Re-judged after applying, inside Apply, which is the only moment a row rule
+            // can be judged at all (ADR-0034). One call for the rows now held.
+            Apply([(intent.Row, replacement)]);
         }
         else
         {
@@ -251,32 +353,25 @@
                 }
             }
         }
-        var applied = 0;
+        // One history step for the whole paste, so one Ctrl+Z (ADR-0007). Two targets on
+        // one row replace it twice: each change is built on the instance the previous one
+        // left, followed through the latest replacement.
+        var latest = new Dictionary<DemoTrade, DemoTrade>(ReferenceEqualityComparer.Instance);
+        var changes = new List<(DemoTrade, DemoTrade)>();
         foreach (var (row, column, value) in resolved)
         {
-            // The instance may already have been replaced by an earlier cell of this
-            // same paste (two targets on one row): follow it through the window.
-            var current = _source.Window.FirstOrDefault(r => ReferenceEquals(r, row)) ?? row;
+            var current = latest.TryGetValue(row, out var replaced) ? replaced : row;
             if (Edited(current, column, value) is { } replacement)
             {
-                try
-                {
-                    _source.ReplaceRow(current, replacement);
-                    applied++;
-                }
-                catch (ArgumentException)
-                {
-                    // The row left the result mid-apply (a filter the paste itself
-                    // falsified); skipping it is the honest outcome for a demo.
-                }
+                changes.Add((current, replacement));
+                latest[row] = replacement;
             }
         }
+        var applied = Apply(changes);
         _pasteStatus += $", {applied} applied";
-        // Re-judged, as a typed edit is. Without this the ruleset's own promise — that one
-        // implementation runs whether a change arrived by an edit, a paste or program code
-        // — would be false in the reference Consumer, and a pasted -5 would wear no mark
-        // until an unrelated edit happened to re-evaluate (ADR-0034).
-        _rules.Evaluate(_source.Window, _columns);
+        // Re-judged inside Apply, as a typed edit is. Without it the ruleset's own promise
+        // — that one implementation runs whether a change arrived by an edit, a paste or
+        // program code — would be false in the reference Consumer (ADR-0034).
     }
 
     /// <summary>A new instance with one field changed — identity is the change signal

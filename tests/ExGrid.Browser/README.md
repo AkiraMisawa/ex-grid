@@ -61,7 +61,8 @@ test.
 
 `circuit.spec.mjs` holds what only a circuit can fail — keys typed faster than a round
 trip (ED-22), a paste past the hub's message limit (CP-21), a write the browser rejects
-(CP-23), the Prerendered paint (A11Y-20), two users over one store (SRV-3). It runs on
+(CP-23), the Prerendered paint (A11Y-20), two users over one store (SRV-3), and text typed at
+full speed into the editor, the filter's search box and the find field arriving whole (SRV-7). It runs on
 both hosts; a test that has no meaning on WebAssembly is skipped there by name.
 
 ## Installing the browsers
@@ -121,6 +122,23 @@ test fails at 0 ms with `browserType.launch: Target page, context or browser has
 closed`. That is not a result, but keep the log and say so rather than letting a rerun
 hide it.
 
+## Before the first test of each browser
+
+`fixtures.mjs` opens `/features` once per worker — once per browser — before that browser's
+first test, under a timeout of its own (the `warmedUp` fixture). A browser's first load pays
+for its own start-up and the app's first boot in it, which on a CI runner has taken over half a
+minute and timed out the first two tests of the second project before their bodies ran. The
+warm-up asserts nothing; a page that never loads still fails the first test that needs it.
+
+## Before the first key of each page
+
+Every `page.goto` and `page.reload` in a test returns only once the page is interactive and no
+grid is Prerendered (`aria-busy` gone, a tab stop taken — A11Y-20), on both hosts. Rows paint
+before the grid's listener attaches — on WebAssembly too, where the module import still has to
+land — and a key pressed in that gap is lost, as it would be for a user who ignored the busy
+grid. A test that clicked and typed straight after the rows appeared failed that way on a slow
+runner.
+
 ## What it asserts
 
 - `scrollbar.spec.mjs` — the Scrollbar Gutter: the Focus is never behind a bar, at
@@ -139,6 +157,19 @@ hide it.
   Escape bringing the keyboard back (KB-23/24); a held Space firing once (KB-26);
   Shift+Tab from after the grid landing on the root with buttons on the page
   (A11Y-17); the chosen action outlined under forced colors too (UX-14).
+- `excel-keys.spec.mjs` — Excel's editing keys on `/features`: Ctrl+Z / Ctrl+Y /
+  Ctrl+Shift+Z reaching the page's undo stack (KB-37), Delete's Clear Intent and its
+  refusal (ED-24), Backspace's empty editor (ED-23), Ctrl+D / Ctrl+R and a fill refused by
+  name (CP-24/25), the keys staying the input's own inside the editor, and — on `/cells` —
+  a display-only grid leaving Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25).
+- `find.spec.mjs` — Find (ADR-0055), **run once per Chrome** on `/features`: Ctrl+F taken
+  from the browser and the keys typed after it landing in the panel's field, Enter and
+  Shift+Enter stepping, a match beyond the painted rows revealed, "no match" in a live
+  region, Escape handing the keyboard back, a range searched and kept, a capital and a
+  Shift+Enter typed straight after Ctrl+F keeping their meaning, Ctrl+F in the find field
+  selecting its text and in a column's popover opening Find (FD-1/3/4/5/6); the panel inside the
+  grid's box, one per page, and Tab staying inside it (FD-8); Ctrl+F taken and nothing opened
+  on `/cells`, which wires no search (FD-2); and nothing done in the editor (FD-1).
 - `popovers.spec.mjs` — the popovers on `/features`, **run once per Chrome**: the
   built-in one and `ExGrid.MudBlazor`'s (`/features?chrome=mud`), which must give
   identical outcomes (WR-5, FN-17). The three dismissals, a pointer-down keeping its own
@@ -207,7 +238,7 @@ hide it.
   ordinary MudBlazor app with an AppBar, a Drawer, tabs, a dialog, a toolbar select and
   a light/dark switch (§23's proof-of-concept page). The WR-7 clauses that need no seam
   the Wrapper has yet to fill: a grid mounted in a hidden tab paints its declared row
-  height and the right geometry once shown; a Drawer toggle resizes a `Fill` grid and
+  height and the right geometry once shown; a Drawer toggle resizes a `Stretch` grid and
   the painted columns and End's reveal follow, both ways; the two main-area grids stay
   independent (DOM-4); the toolbar's `MudSelect` never disturbs a grid; a grid in a
   `MudDialog` opens its popovers whole — inside the grid's box, scrolling where they do not
@@ -323,7 +354,7 @@ Two traps live in that, and the DemoHost has hit both:
 - MudBlazor 9's `MudSelect` takes the value on each arrow while its list is open, and
   Enter leaves the list open; Escape closes it. A test that presses Enter and waits for
   the list to go waits forever.
-- A grid whose Focus has scrolled out of view — a `Fill` grid narrowed under it, say —
+- A grid whose Focus has scrolled out of view — a `Stretch` grid narrowed under it, say —
   paints no Focus cell, and `aria-activedescendant` is then rightly empty (ADR-0033).
   Measure a row by its index, not by the Focus's.
 - Playwright's default window is 1280×720, and a Sheet lower on the page than that has its

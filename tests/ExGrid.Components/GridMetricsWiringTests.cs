@@ -10,7 +10,7 @@ namespace ExGrid.Components.Tests;
 /// <summary>
 /// The resolved geometry reaching the component (ADR-0028): the inline Geometry
 /// Tokens, the density presets, the re-anchoring on a geometry change, and what a
-/// Fill axis does with the browser's report.
+/// Stretch axis does with the browser's report.
 /// </summary>
 public class GridMetricsWiringTests : GridTestContext
 {
@@ -117,13 +117,13 @@ public class GridMetricsWiringTests : GridTestContext
     }
 
     [Fact] // ADR-0028 / VZ-12: a reported size of 0 paints nothing and throws nothing
-    public async Task A_fill_viewport_reported_zero_paints_nothing()
+    public async Task A_stretch_viewport_reported_zero_paints_nothing()
     {
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Many(200))
             .Add(g => g.TotalCount, 200)
             .Add(g => g.Columns, TestRows.Wide(3))
-            .Add(g => g.ViewportHeight, ViewportSize.Fill)
+            .Add(g => g.ViewportHeight, ViewportSize.Stretch)
             .Add(g => g.ViewportWidth, 350));
 
         Assert.Empty(cut.FindAll(".ex-row"));
@@ -150,13 +150,13 @@ public class GridMetricsWiringTests : GridTestContext
             .Add(g => g.ViewportWidth, 350)));
     }
 
-    [Fact] // ADR-0028 / VZ-12a: a Fill height takes the parent's height: the root fills it as a column, the scroller takes the rest
-    public void A_fill_height_takes_the_parents_height()
+    [Fact] // ADR-0028 / VZ-12a: a Stretch height takes the parent's height: the root fills it as a column, the scroller takes the rest
+    public void A_stretch_height_takes_the_parents_height()
     {
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Window())
             .Add(g => g.Columns, TestRows.Columns())
-            .Add(g => g.ViewportHeight, ViewportSize.Fill)
+            .Add(g => g.ViewportHeight, ViewportSize.Stretch)
             .Add(g => g.ViewportWidth, 350));
 
         var root = cut.Find(".ex-grid").GetAttribute("style")!;
@@ -170,21 +170,21 @@ public class GridMetricsWiringTests : GridTestContext
         Assert.Contains("width: 350px", scroller);
     }
 
-    [Fact] // ADR-0028: a Fill width may shrink in a flex row; a declared grid carries none of it
-    public void A_fill_width_may_shrink_and_a_declared_grid_carries_no_fill_values()
+    [Fact] // ADR-0028: a Stretch width may shrink in a flex row; a declared grid carries none of it
+    public void A_stretch_width_may_shrink_and_a_declared_grid_carries_no_stretch_values()
     {
-        var fillWidth = Render<ExGrid<TestRow>>(ps => ps
+        var stretchWidth = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Window())
             .Add(g => g.Columns, TestRows.Columns())
             .Add(g => g.ViewportHeight, 200)
-            .Add(g => g.ViewportWidth, ViewportSize.Fill));
+            .Add(g => g.ViewportWidth, ViewportSize.Stretch));
         var declared = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Window())
             .Add(g => g.Columns, TestRows.Columns())
             .Add(g => g.ViewportHeight, 200)
             .Add(g => g.ViewportWidth, 350));
 
-        var root = fillWidth.Find(".ex-grid").GetAttribute("style")!;
+        var root = stretchWidth.Find(".ex-grid").GetAttribute("style")!;
         Assert.Contains("min-width: 0", root);
         Assert.DoesNotContain("height: 100%", root);
         var plain = declared.Find(".ex-grid").GetAttribute("style")!;
@@ -202,7 +202,7 @@ public class GridMetricsWiringTests : GridTestContext
             .Add(g => g.TotalCount, 50)
             .Add(g => g.Columns, TestRows.Columns())
             .Add(g => g.RowHeight, 20d)
-            .Add(g => g.ViewportHeight, ViewportSize.Fill)
+            .Add(g => g.ViewportHeight, ViewportSize.Stretch)
             .Add(g => g.ViewportWidth, 350));
 
         // The scroller is as tall as its content, which is the header band alone.
@@ -231,7 +231,7 @@ public class GridMetricsWiringTests : GridTestContext
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Window())
             .Add(g => g.Columns, TestRows.Columns())
-            .Add(g => g.ViewportHeight, ViewportSize.Fill)
+            .Add(g => g.ViewportHeight, ViewportSize.Stretch)
             .Add(g => g.ViewportWidth, 350));
 
         await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 0, 0));

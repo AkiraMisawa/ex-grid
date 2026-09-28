@@ -465,6 +465,10 @@
 /* The panel's form exists for Enter's implicit submission (ADR-0039) and has no box of its
    own: its controls stay the popover's flex items. */
 .ex-popover-form { display: contents; }
+/* The find panel (ADR-0055): its contents a column like the other popovers'. The outcome line
+   keeps its height when empty, so the panel does not jump when a step says "no match". */
+.ex-popover-find-body { display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+.ex-find-outcome { min-height: 1.2em; }
 /* The Cell Editor (ADR-0010): one input floated over the focused cell, never inside a
    row. Its box is the cell's exactly (ADR-0028); font and line height come from the
    same tokens the cells read, so the text does not jump when editing starts. */

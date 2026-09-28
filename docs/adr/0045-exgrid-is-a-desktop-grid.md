@@ -29,7 +29,7 @@ Linux.** Touch, pen, phones and the iPhone and iPad are out of scope. Android's 
 Chromium, so the grid will load there, and nothing is promised about how it behaves.
 
 **"Responsive" here means following the box.** A desktop window is resized, a Drawer opens, a
-split pane moves. The grid follows its box through `ViewportSize.Fill`, reported by the browser
+split pane moves. The grid follows its box through `ViewportSize.Stretch`, reported by the browser
 ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)), and nothing else
 about it changes with the width. Column widths are not squeezed to fit. When the columns are
 wider than the box, a horizontal scrollbar appears, as in Excel. Density is the Consumer's

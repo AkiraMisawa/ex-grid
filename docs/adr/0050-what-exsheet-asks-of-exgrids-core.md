@@ -135,6 +135,12 @@ it for two things: a user's own alignment, and Excel's centring of booleans and 
 
 **8. Undo and redo reach the Consumer.** [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)
 says the grid forwards Ctrl+Z, but no route existed: the key listener never claimed it.
+*(2026-09-28: `main` reached the same gap and settled it in ADR-0007's section "The forwarding this
+ADR promised was never wired". When the two branches were merged, the user made that section the
+one definition: `OnUndo` and `OnRedo` carry no payload, undo is Ctrl+Z and redo Ctrl+Y and
+Ctrl+Shift+Z, each is claimed only while it has a listener, and never while editing. The bullets
+below say the same thing, and ADR-0007 is the authority where they differ. ExSheet's undo stack is
+one such listener.)*
 - A Consumer can declare undo and redo callbacks. While no edit is open, the core then claims
   Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z and raises them.
 - While an edit is open, the keys stay the editor's own, which undo uncommitted typing (ADR-0007's
