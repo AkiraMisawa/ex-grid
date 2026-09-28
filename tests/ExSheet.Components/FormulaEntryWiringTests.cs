@@ -238,4 +238,38 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal(("IF(logical_test, value_if_true, [value_if_false])", "", ""),
             SheetFormulaAids.HintOf(new ArgumentHint(DeclaredFunction.Find("IF")!, 3, null))!.Parts());
     }
+
+    // ---- The editor's verdict (ADR-0034) ----
+
+    [Fact] // ADR-0034 / TYPED-054: signed text the engine reads as a Formula and refuses is rejected by the editor, which holds it with the engine's reason
+    public async Task Signed_text_the_engine_refuses_holds_the_editor_with_its_reason()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "A1", "-B2 C2");
+
+        await PressAsync(cut, "Enter");
+
+        // The editor holds the text, flagged, rather than committing into OnEditAsync's net.
+        var editor = cut.Find(".ex-viewport .ex-editor");
+        Assert.Equal("-B2 C2", editor.GetAttribute("value"));
+        Assert.Equal("true", editor.GetAttribute("aria-invalid"));
+        Assert.Contains("the intersection operator", cut.Markup);
+        Assert.Empty(cut.Instance.ToDocument().Cells);
+        Assert.Equal("", cut.Find(".ex-sheet-notice").TextContent);
+    }
+
+    [Theory] // ADR-0034: signed text the engine reads — a signed Formula, a signed number — commits
+    [InlineData("-B2", "0")]
+    [InlineData("-5", "-5")]
+    [InlineData("+5", "5")]
+    public async Task Signed_text_the_engine_reads_commits(string typed, string shown)
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "A1", typed);
+
+        await PressAsync(cut, "Enter");
+
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+        Assert.Equal(shown, CellText(cut, "A1"));
+    }
 }

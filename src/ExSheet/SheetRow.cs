@@ -74,11 +74,13 @@ public sealed class SheetRow
     /// <summary>
     /// The verdict on a commit into this row (ADR-0034): a Formula the engine cannot read is
     /// rejected with the engine's reason, and the editor holds the text so it can be corrected.
+    /// Text with a leading <c>+</c> or <c>-</c> is read as the engine reads it, since Excel may
+    /// read it as a Formula (<c>-B2 C2</c>, which the engine refuses by name: TYPED-054).
     /// Anything else is a constant, which always reads — as text if as nothing else.
     /// </summary>
     internal global::ExGrid.Cells.EditVerdict Judge(string typed)
     {
-        if (typed.Length == 0 || typed[0] != '=') return global::ExGrid.Cells.EditVerdict.Accept;
+        if (typed.Length == 0 || typed[0] is not ('=' or '+' or '-')) return global::ExGrid.Cells.EditVerdict.Accept;
         try
         {
             Entry.Parse(typed, _sheet.Culture);
