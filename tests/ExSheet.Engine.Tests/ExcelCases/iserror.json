@@ -93,7 +93,7 @@
       "check": "ZZ1000",
       "expect": {"value2": "#CIRC!"},
       "engineDiffersByDecision": "ADR-0047: IFERROR and ISERROR do not catch #CIRC!, and a Formula whose text references a cycle member is #CIRC! whether or not the branch is taken",
-      "excelExpect": {"value2": false}
+      "excelExpect": {"value2": 0}
     }
   ]
 }

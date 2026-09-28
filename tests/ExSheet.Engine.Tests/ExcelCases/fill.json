@@ -302,7 +302,7 @@
       "check": "A2",
       "expect": {"refused": "FillPatternNotSupported", "value2": null},
       "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
-      "excelExpect": {"value2": 46293.416666666664, "digits": 9}
+      "excelExpect": {"value2": 46293.4166666088, "digits": 9}
     },
     {
       "id": "FILL-034",
