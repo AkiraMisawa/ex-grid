@@ -7216,15 +7216,15 @@
             return;
         var anchor = _visible is not null ? _geometry.ContentOffsetAt(_scrollTopPx) : (double?)null;
         _layoutCeilingPx = ceilingPx;
+        // Neither before nor after compressed — every grid at 100%, and every grid whose
+        // rows fit at any scale: the offsets mean what they meant, and nothing is rendered
+        // or told. The next PrepareRender reads the new ceiling all the same.
+        if (!_geometry.IsCompressed && _geometry.ContentHeightPx <= ceilingPx - BandHeightPx)
+            return;
         try
         {
-            var wasCompressed = _geometry.IsCompressed;
             _anchorContentPx = anchor;
             PrepareRender();
-            // Neither before nor after compressed: the offsets meant the same thing all
-            // along, and there is nothing to tell the browser.
-            if (!wasCompressed && !_geometry.IsCompressed)
-                _anchorScrollTopPx = null;
             StateHasChanged();
         }
         catch (Exception ex)
