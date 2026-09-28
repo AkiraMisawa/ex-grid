@@ -22,12 +22,13 @@ public sealed class GridPasteIntent
 {
     internal GridPasteIntent(
         PastePlan plan, IReadOnlyList<IReadOnlyList<string>> values, int rowSequenceVersion,
-        IReadOnlyList<IReadOnlyList<PasteFieldOrigin>>? origins = null)
+        IReadOnlyList<IReadOnlyList<PasteFieldOrigin>>? origins = null, SelectionRange? fillSource = null)
     {
         Plan = plan;
         Values = values;
         RowSequenceVersion = rowSequenceVersion;
         Origins = origins ?? AllShown(values);
+        FillSource = fillSource;
     }
 
     private static IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> AllShown(IReadOnlyList<IReadOnlyList<string>> values)
@@ -53,6 +54,16 @@ public sealed class GridPasteIntent
     /// <see cref="PasteFieldOrigin.ShownText"/> for everything else, read as typed. A block
     /// typed in the grid (Ctrl+Enter) is shown text throughout.</summary>
     public IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> Origins { get; }
+
+    /// <summary>
+    /// The range a fill key read <see cref="Values"/> from — Ctrl+D's top row, Ctrl+R's left
+    /// column, or the row above (column to the left) of a range one cell deep (ADR-0035) — in
+    /// positions of the same order as <see cref="Plan"/>. Null for a paste from the clipboard and
+    /// for Ctrl+Enter's typed text. A Consumer that holds more than values, such as ExSheet's
+    /// Formulas, copies from this range instead of parsing <see cref="Values"/>, as Excel's fill
+    /// keys do (ADR-0050, item 5, 2026-09-28).
+    /// </summary>
+    public SelectionRange? FillSource { get; }
 
     /// <summary>The order these positions are written in (ADR-0011).</summary>
     public int RowSequenceVersion { get; }

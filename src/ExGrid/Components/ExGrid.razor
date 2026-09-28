@@ -6117,7 +6117,7 @@
             block.Add(values);
         }
         if (OnPaste.HasDelegate)
-            await OnPaste.InvokeAsync(new GridPasteIntent(plan.Paste, block, version));
+            await OnPaste.InvokeAsync(new GridPasteIntent(plan.Paste, block, version, fillSource: source));
     }
 
     private string CellTextOf(CellPosition cell)

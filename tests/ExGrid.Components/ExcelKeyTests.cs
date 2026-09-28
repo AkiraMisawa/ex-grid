@@ -268,6 +268,23 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal(0, heard.Validations);
     }
 
+    [Fact] // ADR-0050 item 5 (2026-09-28) / ADR-0035: a fill key's intent names the range it read, so a Consumer can tell it from a paste
+    public async Task A_fill_key_intent_names_its_source_range()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard);
+        await ClickCellAsync(cut, 50, 50);  // (2, 0)
+        await ClickCellAsync(cut, 150, 90, shift: true); // (4, 1)
+        await PressAsync(cut, "d", ctrl: true);
+        await ClickCellAsync(cut, 150, 10);  // (0, 1)
+        await ClickCellAsync(cut, 150, 50, shift: true); // (2, 1)
+        await PressAsync(cut, "r", ctrl: true);
+
+        Assert.Equal(2, heard.Pastes.Count);
+        Assert.Equal(new SelectionRange(2, 0, 1, 2), heard.Pastes[0].FillSource);
+        Assert.Equal(new SelectionRange(0, 0, 3, 1), heard.Pastes[1].FillSource);
+    }
+
     [Fact] // ADR-0035 / CP-24: Ctrl+R on one column fills from the column to its left
     public async Task Ctrl_r_on_one_column_fills_from_the_left()
     {
