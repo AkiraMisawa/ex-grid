@@ -164,13 +164,13 @@ test('a paste covering a non-editable column is refused whole (CP-16, ADR-0035)'
     await expect(grid(page).locator("[id$='r0c1']")).not.toHaveText('intruder');
 });
 
-test('Ctrl+Enter fill across a non-editable column is refused, and says so (CP-16, ADR-0035)', async ({ page }) => {
+test('Ctrl+Enter fill across a non-editable column is refused, and says so (CP-16, ADR-0035, ADR-0052)', async ({ page }) => {
     const narrow = grid(page).locator("[id$='r0c3']");
     const notional = grid(page).locator("[id$='r0c2']");
     const narrowBefore = await narrow.textContent();
     const notionalBefore = await notional.textContent();
-    await clickCell(page, 0, 3);                   // Narrow, which is not editable
-    await page.keyboard.press('Shift+ArrowLeft');  // Focus lands on Notional, which is
+    await clickCell(page, 0, 2);                   // Notional, which is editable
+    await page.keyboard.press('Shift+ArrowRight'); // the Focus stays on Notional (ADR-0052)
     await page.keyboard.type('7');                 // — so the editor opens, over a selection covering Narrow
 
     await page.keyboard.press('ControlOrMeta+Enter');

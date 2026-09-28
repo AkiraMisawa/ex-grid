@@ -2,7 +2,7 @@ namespace ExGrid.Selection;
 
 /// <summary>
 /// One selected rectangle in position space, held with normalized bounds (ADR-0011).
-/// Orientation lives on the selection's single Anchor/Focus pair, not here — a rectangle
+/// Orientation lives on the selection's Focus and Extent, not here — a rectangle
 /// with a direction would duplicate that state and admit invalid values.
 /// A range covers at least one cell; "nothing selected" is the empty range <em>list</em>.
 /// </summary>
@@ -62,7 +62,7 @@ public readonly record struct SelectionRange
     public bool SpansEveryColumn(GridExtent extent) => LeftColumn == 0 && ColumnCount == extent.ColumnCount;
 
     /// <summary>Normalizes any pair of opposite corners — shrinking a range back through
-    /// its Anchor flips it around the Anchor for free (ADR-0012).</summary>
+    /// the Focus flips it around the Focus for free (ADR-0052).</summary>
     public static SelectionRange FromCorners(CellPosition a, CellPosition b) => new(
         Math.Min(a.Row, b.Row),
         Math.Min(a.Column, b.Column),

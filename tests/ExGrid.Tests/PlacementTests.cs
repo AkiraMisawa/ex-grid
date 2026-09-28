@@ -5,22 +5,22 @@ namespace ExGrid.Tests;
 
 /// <summary>
 /// A Consumer places the Selection and the Focus (ADR-0050, item 4): the pure half. The
-/// named range becomes the one range, with Anchor and Focus on the named cell; a request
+/// named range becomes the one range, with the Focus on the named cell; a request
 /// naming cells that are not there is refused, never clamped.
 /// </summary>
 public class PlacementTests
 {
     private static readonly GridExtent Grid = new(100, 26);
 
-    [Fact] // ADR-0050 item 4: the range replaces every other, with Anchor and Focus on the named cell
-    public void Place_selects_the_range_with_anchor_and_focus_on_the_cell()
+    [Fact] // ADR-0050 item 4/ADR-0052: the range replaces every other, with the Focus on the named cell
+    public void Place_selects_the_range_with_the_focus_on_the_cell()
     {
         var selection = GridSelection.Empty.Click(new(1, 1), Grid).ToggleRange(new(5, 5), Grid)
             .Place(new SelectionRange(10, 2, 3, 4), new CellPosition(10, 2), Grid);
 
         Assert.Equal([new SelectionRange(10, 2, 3, 4)], selection.Ranges);
-        Assert.Equal(new CellPosition(10, 2), selection.Anchor);
         Assert.Equal(new CellPosition(10, 2), selection.Focus);
+        Assert.Equal(new CellPosition(12, 5), selection.Extent);
     }
 
     [Fact] // ADR-0050/0012: a placed range is cycled by Enter like any other

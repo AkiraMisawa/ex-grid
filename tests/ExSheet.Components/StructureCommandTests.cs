@@ -99,6 +99,29 @@ public class StructureCommandTests : SheetTestContext
         Assert.Equal("=SUM(A1:A4)", FormulaBar(cut));
     }
 
+    [Fact] // ADR-0052 case 15: rows inserted over B3:C4 selected from C4 leave B3:C4 selected, and C4 the Focus
+    public async Task Inserting_rows_over_a_selection_keeps_the_addresses_and_the_focus()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps.Add(s => s.SelectionChanged, selections.Add));
+        var viewport = cut.Find(".ex-viewport");
+        double X(int column) => HeadingWidth(cut) + (column * SheetColumns.DefaultWidthPx) + 5;
+        double Y(int row) => (row * ExSheet.DefaultRowHeightPx) + 5;
+        await viewport.MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = X(2), OffsetY = Y(3) });       // C4
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = X(2), OffsetY = Y(3) });
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, ShiftKey = true, OffsetX = X(1), OffsetY = Y(2) }); // B3
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = X(1), OffsetY = Y(2) });
+        var selected = selections[^1];
+        Assert.Equal(new SelectionRange(2, 1, 2, 2), Assert.Single(selected.Ranges));
+        Assert.Equal(new CellPosition(3, 2), selected.Focus);
+
+        await SecondaryClickAsync(cut, "C4");
+        await ChooseAsync(cut, "Insert rows above");
+
+        Assert.Equal(selected, selections[^1]);
+        Assert.Equal("C4", cut.Find(".ex-name-box").GetAttribute("value"));
+    }
+
     [Fact] // ADR-0046: a Selection of two rows inserts two rows
     public async Task A_selection_of_two_rows_inserts_two()
     {

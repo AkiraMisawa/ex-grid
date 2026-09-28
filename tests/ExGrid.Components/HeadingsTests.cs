@@ -85,13 +85,13 @@ public class HeadingsTests : GridTestContext
 
         Assert.Null(sorted);
         Assert.Equal([new SelectionRange(0, 1, 50, 1)], selection!.Ranges);
-        // Anchored on the first visible row: the Viewport does not move for a header click.
+        // The Focus on the first visible row: the Viewport does not move for a header click.
         Assert.Equal(new CellPosition(0, 1), selection.Focus);
         Assert.Empty(Js.ScrolledTo);
     }
 
-    [Fact] // ADR-0050 / DC-2: Shift+click extends whole columns from the Anchor's column
-    public async Task Declared_shift_click_on_a_header_extends_from_the_anchor_column()
+    [Fact] // ADR-0050/0052 / DC-2: Shift+click extends whole columns from the Focus's column, and the Focus stays
+    public async Task Declared_shift_click_on_a_header_extends_from_the_focus_column()
     {
         GridSelection? selection = null;
         IReadOnlyList<SortSpec>? sorted = null;
@@ -102,7 +102,7 @@ public class HeadingsTests : GridTestContext
 
         Assert.Null(sorted);
         Assert.Equal([new SelectionRange(0, 1, 50, 3)], selection!.Ranges);
-        Assert.Equal(new CellPosition(0, 1), selection.Anchor);
+        Assert.Equal(new CellPosition(0, 1), selection.Focus);
     }
 
     [Fact] // ADR-0050 / DC-3: a Row Heading beside every painted row, with the Consumer's label and the resolved width inline
@@ -125,7 +125,7 @@ public class HeadingsTests : GridTestContext
         Assert.Single(cut.FindAll(".ex-header > .ex-headings-corner"));
     }
 
-    [Fact] // ADR-0050 / DC-3: a click on a Row Heading selects the whole row; Shift+click extends
+    [Fact] // ADR-0050/0052 / DC-3: a click on a Row Heading selects the whole row; Shift+click extends, and the Focus stays
     public async Task A_row_heading_click_selects_the_row_and_shift_extends()
     {
         GridSelection? selection = null;
@@ -137,8 +137,8 @@ public class HeadingsTests : GridTestContext
 
         await PressViewportAsync(cut, 10, 105, shift: true);
         Assert.Equal([new SelectionRange(2, 0, 4, 6)], selection.Ranges);
-        Assert.Equal(new CellPosition(2, 0), selection.Anchor);
-        Assert.Equal(new CellPosition(5, 0), selection.Focus);
+        Assert.Equal(new CellPosition(2, 0), selection.Focus);
+        Assert.Equal(new CellPosition(5, 5), selection.Extent);
     }
 
     [Fact] // ADR-0050 / DC-3: the corner where the two Headings meet selects all
@@ -152,6 +152,23 @@ public class HeadingsTests : GridTestContext
 
         Assert.Null(sorted);
         Assert.Equal([new SelectionRange(0, 0, 50, 6)], selection!.Ranges);
+    }
+
+    [Fact] // ADR-0052 (Excel item 5) / DC-3: the corner puts the Focus on the top-left cell on screen, not where it was, and scrolls nothing
+    public async Task The_corner_puts_the_focus_on_the_top_left_visible_cell()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(WithRowHeadings, s => selection = s);
+        await PressViewportAsync(cut, 45, 5);                    // (0, 0)
+        await ScrollToAsync(cut.Find(".ex-scroller"), top: 200, left: 200);
+        var writes = Js.ScrolledTo.Count;
+
+        await ClickHeaderAsync(cut, 220);                        // the band, which stands at the scroll offset
+
+        Assert.Equal([new SelectionRange(0, 0, 50, 6)], selection!.Ranges);
+        // Row 10 is the first on screen; column 2 is the first clear of the 40px band.
+        Assert.Equal(new CellPosition(10, 2), selection.Focus);
+        Assert.Equal(writes, Js.ScrolledTo.Count);
     }
 
     [Fact] // ADR-0050/0008: a press past the band lands on the column the geometry puts there, offset by the band

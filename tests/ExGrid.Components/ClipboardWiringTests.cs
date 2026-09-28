@@ -397,6 +397,29 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(2, Assert.Single(intents).CellCount);
     }
 
+    [Fact] // ADR-0052 case 15 / DC-8: a spilled block running past the Viewport's bottom is selected, and nothing scrolls to show it
+    public async Task A_spilled_paste_selects_the_block_without_scrolling()
+    {
+        GridSelection? selection = null;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20)
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent _) => { })
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 70);                       // Book, row 3 — the last row on screen
+        var writes = Js.ScrolledTo.Count;
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\ne\tf\r\n", null));
+
+        Assert.Equal([new SelectionRange(3, 0, 3, 2)], selection!.Ranges);
+        Assert.Equal(new CellPosition(3, 0), selection.Focus);   // the block's first cell
+        Assert.Equal(writes, Js.ScrolledTo.Count);
+    }
+
     [Fact] // ADR-0050 item 3 / DC-8: declared, a block onto one cell is one intent, and the block becomes the Selection
     public async Task A_spilled_paste_raises_one_intent_and_selects_the_block()
     {
@@ -415,8 +438,8 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(4, intent.CellCount);
         Assert.Equal("d", intent.ValueFor(new CellPosition(1, 1)));
         Assert.Equal([new SelectionRange(0, 0, 2, 2)], selection!.Ranges);
-        Assert.Equal(new CellPosition(0, 0), selection.Anchor);
         Assert.Equal(new CellPosition(0, 0), selection.Focus);
+        Assert.Equal(new CellPosition(1, 1), selection.Extent);
         Assert.Equal(4, selection.CellCount);                    // the count on display is the count written
     }
 
@@ -443,7 +466,7 @@ public class ClipboardWiringTests : GridTestContext
         Assert.True(Assert.Single(intents).IsRefused);
         Assert.Equal(before, changes);
         Assert.Equal([new SelectionRange(0, 0, 1, 1)], selection!.Ranges);
-        Assert.Equal(new CellPosition(0, 0), selection.Anchor);
+        Assert.Equal(new CellPosition(0, 0), selection.Extent);
         Assert.Equal(new CellPosition(0, 0), selection.Focus);
     }
 

@@ -12,7 +12,7 @@ public enum GridKeyKind
     /// <summary>Arrow: collapse and move.</summary>
     Move,
 
-    /// <summary>Shift+arrow: the Anchor stays and the range grows.</summary>
+    /// <summary>Shift+arrow: the Focus stays and the Extent moves (ADR-0052).</summary>
     Extend,
 
     /// <summary>Ctrl+arrow, Home, End: jump to the edge.</summary>
@@ -65,6 +65,17 @@ public enum GridKeyKind
     /// <summary>Ctrl+Y and Ctrl+Shift+Z, while no edit is open: raise the Consumer's redo
     /// (ADR-0050, item 8). Taken only where the Consumer declared one.</summary>
     Redo,
+
+    /// <summary>Ctrl+. (period): move the Focus to the next corner of the range holding it,
+    /// clockwise; the Selection does not change (ADR-0052).</summary>
+    MoveFocusToNextCorner,
+
+    /// <summary>Ctrl+Backspace: scroll the Focus into view and change nothing else
+    /// (ADR-0052).</summary>
+    RevealFocus,
+
+    /// <summary>Shift+Backspace: collapse the Selection to the Focus (ADR-0052).</summary>
+    CollapseToFocus,
 }
 
 /// <summary>

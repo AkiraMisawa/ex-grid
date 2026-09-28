@@ -11,9 +11,10 @@ public class SelectionCyclingTests
 {
     private static readonly GridExtent Grid = new(10, 10);
 
-    /// <summary>B2:D4 selected with the Focus at B2, as in the ADR-0012 diagram.</summary>
+    /// <summary>B2:D4 selected with the Focus at B2, as in the ADR-0012 diagram: from B2,
+    /// which stays the Focus while the Extent goes to D4 (ADR-0052).</summary>
     private static GridSelection B2D4WithFocusAtB2()
-        => GridSelection.Empty.Click(new(3, 3), Grid).ExtendTo(new(1, 1), Grid);
+        => GridSelection.Empty.Click(new(1, 1), Grid).ExtendTo(new(3, 3), Grid);
 
     private static IReadOnlyList<CellPosition> Walk(GridSelection selection, CycleOrder order, bool backward, int steps)
     {
@@ -72,15 +73,25 @@ public class SelectionCyclingTests
         ], Walk(B2D4WithFocusAtB2(), CycleOrder.RowMajor, backward: true, steps: 9));
     }
 
-    [Fact] // ADR-0012: the range stays selected while cycling; only the Focus moves
+    [Fact] // ADR-0012/0052: the range stays selected while cycling; only the Focus moves
     public void Cycling_moves_only_the_focus()
     {
         var before = B2D4WithFocusAtB2();
         var after = before.CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid);
 
         Assert.Equal(before.Ranges, after.Ranges);
-        Assert.Equal(before.Anchor, after.Anchor);
         Assert.Equal(new CellPosition(2, 1), after.Focus);
+    }
+
+    [Fact] // ADR-0052 case 4: C3:A1 selected from C3 makes C3 the Focus, and Enter from the last cell wraps to A1
+    public void Enter_from_a_range_selected_backwards_wraps_to_its_first_cell()
+    {
+        var selection = GridSelection.Empty.Click(new(2, 2), Grid).ExtendTo(new(0, 0), Grid);
+        Assert.Equal(new CellPosition(2, 2), selection.Focus);
+
+        Assert.Equal(
+            [new CellPosition(0, 0), new(1, 0), new(2, 0), new(0, 1)],
+            Walk(selection, CycleOrder.ColumnMajor, backward: false, steps: 4));
     }
 
     [Fact] // ADR-0012: with disjoint ranges, cycling visits them in creation order
@@ -90,8 +101,8 @@ public class SelectionCyclingTests
         var selection = GridSelection.Empty
             .Click(new(0, 0), Grid)
             .ExtendTo(new(1, 1), Grid)
-            .ToggleRange(new(5, 5), Grid)
-            .ExtendTo(new(6, 6), Grid);
+            .ToggleRange(new(6, 6), Grid)
+            .ExtendTo(new(5, 5), Grid);
 
         // Past the last range's last cell, wrap to the first range's first cell,
         // walk range 1 column-major, then enter range 2 at its top-left.
@@ -147,37 +158,99 @@ public class SelectionCyclingTests
     [Fact] // ADR-0012: cycling keeps advancing when the Focus sits where two ranges overlap
     public void Cycling_advances_when_the_focus_sits_in_an_overlap()
     {
-        // Range 1 is (0,0)-(2,2); range 2 is (2,2)-(5,5), created last and holding the Focus.
+        // Range 1 is (0,0)-(2,2); range 2 is (2,2)-(5,5), created last and holding the Focus,
+        // which Ctrl+. walks from (5,5) to the corner the two ranges share (ADR-0052).
         var selection = GridSelection.Empty
             .Click(new(0, 0), Grid)
             .ExtendTo(new(2, 2), Grid)
             .ToggleRange(new(5, 5), Grid)
-            .ExtendTo(new(2, 2), Grid);
+            .ExtendTo(new(2, 2), Grid)
+            .MoveFocusToNextCorner(Grid)   // (5,2)
+            .MoveFocusToNextCorner(Grid);  // (2,2)
+        Assert.Equal(new CellPosition(2, 2), selection.Focus);
 
         var stepped = selection.CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid);
 
         Assert.Equal(new CellPosition(3, 2), stepped.Focus); // walks range 2 — no fixpoint on the shared cell
     }
 
-    [Fact] // ADR-0012: Shift+arrow after cycling into another range re-anchors at the Focus
-    public void Shift_arrow_after_cycling_into_another_range_starts_a_new_range()
+    [Fact] // ADR-0052 (withdrawing ADR-0012's re-anchoring): Shift+arrow after cycling into another range extends that range, from the edge opposite the Focus
+    public void Shift_arrow_after_cycling_into_another_range_extends_the_range_holding_the_focus()
     {
         var selection = GridSelection.Empty
             .Click(new(0, 0), Grid)
             .ExtendTo(new(1, 1), Grid)
             .ToggleRange(new(5, 5), Grid)
-            .CycleFocus(CycleOrder.ColumnMajor, backward: true, Grid); // Focus (1,1) in range 1; Anchor (5,5) in range 2
+            .CycleFocus(CycleOrder.ColumnMajor, backward: true, Grid); // Focus (1,1), range 1's bottom-right
 
         var extended = selection.Extend(GridDirection.Down, Grid);
 
         Assert.Equal(
         [
-            new SelectionRange(0, 0, 2, 2),
-            new SelectionRange(5, 5, 1, 1), // the Anchor's old range is untouched — not bridged into a block
-            new SelectionRange(1, 1, 2, 1),
+            new SelectionRange(1, 0, 1, 2), // the top edge, opposite the Focus, moved down
+            new SelectionRange(5, 5, 1, 1), // the other range is untouched — not bridged into a block
         ], extended.Ranges);
-        Assert.Equal(new CellPosition(1, 1), extended.Anchor);
-        Assert.Equal(new CellPosition(2, 1), extended.Focus);
+        Assert.Equal(new CellPosition(1, 1), extended.Focus);
+    }
+
+    [Fact] // ADR-0052 case 3: A1:C3, Enter twice (A3), then Shift+Right moves the right edge and Shift+Down the top edge
+    public void Shift_arrow_after_enter_moves_the_edge_opposite_the_focus()
+    {
+        var a1c3 = GridSelection.Empty.Click(new(0, 0), Grid).ExtendTo(new(2, 2), Grid);
+        var a3 = a1c3
+            .CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid)
+            .CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid);
+        Assert.Equal(new CellPosition(2, 0), a3.Focus);
+
+        var right = a3.Extend(GridDirection.Right, Grid);
+        Assert.Equal([new SelectionRange(0, 0, 3, 4)], right.Ranges); // A1:D3
+        var down = right.Extend(GridDirection.Down, Grid);
+        Assert.Equal([new SelectionRange(1, 0, 2, 4)], down.Ranges);  // A2:D3
+        Assert.Equal(new CellPosition(2, 0), down.Focus);
+    }
+
+    [Fact] // ADR-0052 case 3: A1:C3, Enter three times (B1), then Shift+Up moves the bottom edge
+    public void Shift_up_with_the_focus_on_the_top_edge_moves_the_bottom_edge()
+    {
+        var b1 = GridSelection.Empty.Click(new(0, 0), Grid).ExtendTo(new(2, 2), Grid)
+            .CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid)
+            .CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid)
+            .CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid);
+        Assert.Equal(new CellPosition(0, 1), b1.Focus);
+
+        var up = b1.Extend(GridDirection.Up, Grid);
+
+        Assert.Equal([new SelectionRange(0, 0, 2, 3)], up.Ranges); // A1:C2
+        Assert.Equal(new CellPosition(0, 1), up.Focus);
+    }
+
+    [Fact] // ADR-0052 case 3: with the Focus on neither edge of an axis (B2 in A1:C3), Shift+arrow along it changes nothing
+    public void Shift_arrow_along_an_axis_where_the_focus_is_interior_changes_nothing()
+    {
+        var b2 = GridSelection.Empty.Click(new(0, 0), Grid).ExtendTo(new(2, 2), Grid)
+            .CycleFocus(CycleOrder.RowMajor, backward: false, Grid)       // Tab: B1
+            .CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid);   // Enter: B2
+        Assert.Equal(new CellPosition(1, 1), b2.Focus);
+        Assert.Equal(new CellPosition(1, 1), b2.Extent);
+
+        Assert.Equal(b2, b2.Extend(GridDirection.Left, Grid));
+        Assert.Equal(b2, b2.Extend(GridDirection.Down, Grid));
+        Assert.Equal(b2, b2.ExtendToEdge(GridDirection.Right, Grid));
+        Assert.Equal(b2, b2.ExtendByViewport(20, Grid));
+    }
+
+    [Fact] // ADR-0052: the Extent is recomputed from the Focus when cycling moves it — the corner opposite, or the Focus's own line inside
+    public void The_extent_follows_the_focus_through_cycling()
+    {
+        var b2d4 = B2D4WithFocusAtB2();
+        Assert.Equal(new CellPosition(3, 3), b2d4.Extent);
+
+        var d4 = b2d4.CycleFocus(CycleOrder.ColumnMajor, backward: true, Grid);
+        Assert.Equal(new CellPosition(3, 3), d4.Focus);
+        Assert.Equal(new CellPosition(1, 1), d4.Extent);
+
+        var b3 = b2d4.CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid);
+        Assert.Equal(new CellPosition(2, 3), b3.Extent); // row: the Focus's own; column: the right edge
     }
 
     [Fact] // ADR-0012: an out-of-range CycleOrder is refused, never silently row-major
@@ -189,18 +262,19 @@ public class SelectionCyclingTests
             () => selection.CycleFocus((CycleOrder)2, backward: false, Grid));
     }
 
-    [Fact] // ADR-0012: a detached Focus (after a toggle-off) enters the first range — or the last, going backward
-    public void Detached_focus_enters_the_first_range()
+    [Fact] // ADR-0052 (withdrawing ADR-0012's detached state): after the Focus's own cell is taken out, cycling goes on from where the Focus now stands
+    public void After_a_toggle_off_cycling_goes_on_from_the_focus()
     {
         var selection = GridSelection.Empty
             .Click(new(1, 1), Grid)
             .ExtendTo(new(2, 2), Grid)
-            .ToggleRange(new(1, 1), Grid); // fragments: (2,1,1,2) and (1,2,1,1); detached at (1,1)
+            .ToggleRange(new(1, 1), Grid); // fragments: (2,1,1,2) and (1,2,1,1); the Focus goes on to (1,2)
+        Assert.Equal(new CellPosition(1, 2), selection.Focus);
 
         var forward = selection.CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid);
         Assert.Equal(new CellPosition(2, 1), forward.Focus);
 
         var backward = selection.CycleFocus(CycleOrder.ColumnMajor, backward: true, Grid);
-        Assert.Equal(new CellPosition(1, 2), backward.Focus);
+        Assert.Equal(new CellPosition(2, 2), backward.Focus);
     }
 }

@@ -84,7 +84,7 @@ public class EdgeAnswerWiringTests : GridTestContext
         Assert.Empty(_asked);
     }
 
-    [Fact] // ADR-0050/0012 / DC-7: without an answer, Ctrl+↓ and Ctrl+Shift+→ go to the grid's edge
+    [Fact] // ADR-0050/0012/0052 / DC-7: without an answer, Ctrl+↓ and Ctrl+Shift+→ go to the grid's edge
     public async Task Without_an_answer_the_grids_edge()
     {
         GridSelection? selection = null;
@@ -94,7 +94,8 @@ public class EdgeAnswerWiringTests : GridTestContext
         await PressAsync(cut, "ArrowRight", ctrl: true, shift: true);
         Assert.Equal([new SelectionRange(2, 0, 1, 4)], selection!.Ranges);
 
+        // Ctrl+↓ moves from the Focus, which the extension left in column 0 (ADR-0052).
         await PressAsync(cut, "ArrowDown", ctrl: true);
-        Assert.Equal(new CellPosition(49, 3), selection.Focus);
+        Assert.Equal(new CellPosition(49, 0), selection.Focus);
     }
 }
