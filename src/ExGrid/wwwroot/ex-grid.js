@@ -290,6 +290,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // answer has landed. Plain navigation changes no mode and is never held behind.
     const held = [];
     let answering = false;
+    // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus
+    // only because a held press on the rows suppressed the default that would have moved it
+    // (onPress); null once the field is pressed again, the hand-back has taken it, or the
+    // press has been answered without one (replayPress).
+    let staleField = null;
 
     // Whether the editor holds DOM focus. Until it does, a key typed with editing on lands
     // on the root, where no editing mode claims a printable key — it would be lost.
@@ -751,9 +756,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // Asked once the press's focus has gone to the core: focusing the bar is the press's default
     // action, dispatched after the listener in the same task, so the question waits for a later
     // task. The core answers once that focus has been handled in full (ExGrid.PressAnsweredAsync).
+    //
+    // The press's focus reaches the core at once, but its turn among the held keys comes later:
+    // a press on the rows held before it can end, in its turn, the edit the bar's focus joined
+    // (a character typed onto a cell, a row pressed, the bar pressed, all within one round
+    // trip). The bar still holds DOM focus, and the keys after it are the bar's — so, at its
+    // turn, the core is told whether the bar is still where the keyboard is, and answers the
+    // press again from there if no edit stands.
     const answerBarPress = async () => {
         await new Promise((resolve) => setTimeout(resolve));
-        await core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
+        const active = document.activeElement;
+        const inBar = active instanceof Element && root.contains(active)
+            && active.closest('.ex-formula-bar-text') !== null;
+        await core.invokeMethodAsync('BarPressAnsweredAsync', inBar).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to answer a press', error);
             }
@@ -774,6 +789,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         button: event.button, buttons: event.buttons,
     });
     const onPress = (event) => {
+        // A press into a field beside the rows gives that field a focus of its own, which a
+        // late hand-back leaves alone (reclaimFocus).
+        if (event.target instanceof Element && event.target.closest('.ex-formula-bar') !== null) {
+            staleField = null;
+        }
         if (opensBarEdit(event)) {
             holdBehindBarPress();
             return;
@@ -794,6 +814,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // press that commits it hands the keyboard to the root then.
         event.preventDefault();
         event.stopPropagation();
+        // The default suppressed here would have taken DOM focus off a field beside the rows
+        // that held it. That focus is now only left standing, not the user's choice: the
+        // hand-back after the press takes it, as the press would have (reclaimFocus).
+        const active = document.activeElement;
+        if (active instanceof Element && root.contains(active) && active.closest('.ex-formula-bar') !== null) {
+            staleField = active;
+        }
         held.push({ press: 'mousedown', target: event.target, init: mouseInit(event) });
     };
     // A release is held only behind its press: once the press has been handed on, the
@@ -827,6 +854,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 console.error('[ex-grid] the grid failed to answer a press', error);
             }
         });
+        // The hand-back the press asked for, if it asked for one, has run by now.
+        staleField = null;
         // An edit the press kept stands with DOM focus in it, and one it ended is gone: the
         // keys after it are gated once that has settled, as after a key.
         await editorSettled();
@@ -1162,10 +1191,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // this root, or on nothing. A second grid the user has pressed in the meantime keeps
         // its keyboard. The condition reads document.activeElement and no layout; this is the
         // one decision about focus made in script.
-        reclaimFocus: () => {
+        //
+        // Nor from a field beside the rows with focus of its own — the Formula Bar and the Name
+        // Box, built in or drawn by a Chrome, all inside the band the core renders them into
+        // (ADR-0021, widened 2026-09-28): a row press's hand-back, landing after a press into
+        // one of them, took the keyboard the user had just put there. Only when the core means
+        // to take the keyboard out of that field — Enter or Escape typed in it, an edit in the
+        // bar ending — does it say so, and the field is left. Everything else inside the root,
+        // the Cell Editor over the rows included, is taken back as before.
+        // A field a held press on the rows left standing (staleField) is not the user's, and
+        // is taken as the press would have taken it.
+        reclaimFocus: (fromField) => {
             const active = document.activeElement;
+            const own = active instanceof Element && active !== staleField
+                && active.closest('.ex-formula-bar') !== null;
             if (root && (!active || active === document.body || active === document.documentElement
-                || root.contains(active))) {
+                || (root.contains(active) && (fromField === true || !own)))) {
+                staleField = null;
                 root.focus({ preventScroll: true });
             }
         },
