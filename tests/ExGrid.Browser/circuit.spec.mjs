@@ -1,4 +1,4 @@
-import { test, expect, patchPage, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 
 // What a Blazor Server circuit can fail and a WebAssembly tab cannot (Definition of Done
@@ -91,9 +91,9 @@ test('a clipboard write the browser rejects is refused by name (CP-23)', async (
     // The browser's rejection, as Chromium raises it for a denied permission or a lost
     // activation. Stubbed rather than provoked: CDP's permission override does not reach
     // a Playwright browser context, and what is under test is the grid's answer to the
-    // rejection, not the browser's reasons for it. Through patchPage, which puts the
+    // rejection, not the browser's reasons for it. Through alterPage, which puts the
     // native back as the test ends: the next test shares this document (ADR-0048).
-    await patchPage(page, () => {
+    await alterPage(page, () => {
         const write = navigator.clipboard.write;
         navigator.clipboard.write = () => Promise.reject(
             new DOMException('Write permission denied.', 'NotAllowedError'));

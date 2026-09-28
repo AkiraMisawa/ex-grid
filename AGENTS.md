@@ -211,10 +211,11 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
 - **A layer-3 spec file boots the app once, and its tests share the document** (ADR-0048).
   Each `page.goto` mounts a new page, but anything a test changes outside its own grids — a
   global, a listener on `window` or `document`, the head, `body`, `<html>`, `#app` (which is
-  the grid's parent on WebAssembly) — goes through `patchPage`, which undoes it. A plain
-  `page.evaluate` that leaves the document or a stubbed native changed fails the test by
-  name, because it would have reached every later test of the file; a listener it leaves is
-  not seen, so it is on you. A test about loading itself asks for `freshDocument`.
+  the grid's parent on WebAssembly) — goes through `alterPage`, which undoes it. A plain
+  `page.evaluate` that leaves the markup, a stylesheet's rules, a global or a stubbed native
+  changed fails the test by name, because it would have reached every later test of the
+  file; a listener, a timer or an observer it leaves is not seen, so that is on you. A test
+  about loading itself asks for `freshDocument`.
 
 - **The packages are checked as a Consumer takes them.** `tests/ExGrid.PackageSmoke/check.sh`
   packs `ExGrid` and `ExGrid.MudBlazor`, reads back each `.nuspec`, and publishes a `net10.0`

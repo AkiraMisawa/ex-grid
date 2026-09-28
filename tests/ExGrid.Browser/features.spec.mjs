@@ -1,4 +1,4 @@
-import { test, expect, patchPage } from './fixtures.mjs';
+import { test, expect, alterPage } from './fixtures.mjs';
 
 // The interaction surface, driven with real keys and the real clipboard against the
 // /features page: the Cell Editor's two states (ADR-0010), the clipboard's two formats
@@ -300,8 +300,8 @@ test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) 
     // on the Control. This test used to pass only when its un-awaited registration
     // happened to land between the two keydowns, which read as "never arrived" about
     // half the time on Edge and looked like the browser swallowing the shortcut. Through
-    // patchPage, which takes the listener off as the test ends (ADR-0048).
-    await patchPage(page, () => {
+    // alterPage, which takes the listener off as the test ends (ADR-0048).
+    await alterPage(page, () => {
         let listener;
         let timer;
         window.__kb15 = new Promise((resolve) => {
@@ -395,7 +395,7 @@ test('a display-only grid does not take printable keys away from the page (ADR-0
     // preventDefaulted, not stopPropagation-ed, and no editor appears. The listener
     // sits in the bubble phase past the grid and is INSTALLED before the press (the
     // KB-15 lesson) — null afterwards means the grid swallowed the keydown outright.
-    await patchPage(page, () => {
+    await alterPage(page, () => {
         window.__printableSeen = null;
         const listener = (e) => {
             window.__printableSeen = !e.defaultPrevented;
@@ -549,8 +549,8 @@ test('Shift+Tab from after the grid lands on the root, not on a button inside it
 
     // Something focusable straight after the grid, as any page would have. Beside the grid is
     // #app on WebAssembly and body on the Server host, which leaving the page does not clear:
-    // patchPage takes the button out as the test ends (ADR-0048).
-    await patchPage(page, () => {
+    // alterPage takes the button out as the test ends (ADR-0048).
+    await alterPage(page, () => {
         const after = document.createElement('button');
         after.id = 'after-grid';
         after.textContent = 'after';

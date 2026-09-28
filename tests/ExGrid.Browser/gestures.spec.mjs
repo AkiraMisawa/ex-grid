@@ -1,4 +1,4 @@
-import { test, expect, patchPage, record } from './fixtures.mjs';
+import { test, expect, alterPage, record } from './fixtures.mjs';
 
 // The drag gestures with a real mouse (ADR-0011/0016/0032), the large-paste and
 // off-screen-paste rules (ADR-0014/0015) with the paste's own number (PST-6), and the
@@ -164,8 +164,8 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
 
     const gutterBefore = await grid(page).locator('.ex-scroller')
         .evaluate((el) => el.offsetWidth - el.clientWidth);
-    // On body, which outlives the page: patchPage takes the tokens off as the test ends (ADR-0048).
-    await patchPage(page, () => {
+    // On body, which outlives the page: alterPage takes the tokens off as the test ends (ADR-0048).
+    await alterPage(page, () => {
         document.body.style.setProperty('--ex-scrollbar-width', '8px');
         document.body.style.setProperty('--ex-scrollbar-color', 'rgba(120,120,120,0.6)');
         return () => {

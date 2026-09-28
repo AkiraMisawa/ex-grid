@@ -331,13 +331,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const editorSettled = () => new Promise((resolve) => {
         const look = () => {
             // A grid disposed during the wait has nothing left to wait for, and is asked
-            // first: its root is gone, and looking for focus inside it would throw from the
-            // next frame, after the page that held it has moved on. Two seconds is past any
-            // round trip the grid is usable over; after it the held keys are replayed
+            // first: its root is gone, and looking for DOM focus inside it would throw from
+            // the next frame, after the page that held it has moved on. Two seconds is past
+            // any round trip the grid is usable over; after it the held keys are replayed
             // against whatever there is, rather than held forever.
-            if (!core
-                || ((editing === 'none' || editorFocused()) && (!awaitingPopover || popoverFocused()) && moved())
-                || performance.now() - holdStartedAt > 2000) {
+            const disposed = !core;
+            const editorReady = disposed || editing === 'none' || editorFocused();
+            const popoverReady = disposed || !awaitingPopover || popoverFocused();
+            if (disposed || (editorReady && popoverReady && moved()) || performance.now() - holdStartedAt > 2000) {
                 awaitingPopover = false;
                 awaitingMove = null;
                 resolve();

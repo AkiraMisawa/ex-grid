@@ -150,14 +150,14 @@ nobody had asked for. What that means when writing a test:
 - **The harness puts back what it owns:** the viewport, the permissions a test granted, the round
   trip, the pointer (to the corner), the scroll, the text selection and where the next Tab
   starts.
-- **Anything outside the test's own grids is changed through `patchPage`:** a global, a
+- **Anything outside the test's own grids is changed through `alterPage`:** a global, a
   listener on `window` or `document`, the head, `body`, `<html>` or `#app`. That includes the
   grid's parent, which is `#app` on WebAssembly and `body` on the Server host, and anything put
-  beside the grid, which Blazor does not remove when it leaves the page. The patch returns the
+  beside the grid, which Blazor does not remove when it leaves the page. The change returns the
   function that undoes it, and the harness calls it as the test ends:
 
   ```js
-  await patchPage(page, () => {
+  await alterPage(page, () => {
       const write = navigator.clipboard.write;
       navigator.clipboard.write = () => Promise.reject(new DOMException('denied', 'NotAllowedError'));
       return () => { navigator.clipboard.write = write; };
@@ -165,21 +165,30 @@ nobody had asked for. What that means when writing a test:
   ```
 
   `watchNextKey` does this for its listener. **The harness checks the rule:** back at the index
-  after each test, the document must be what it was when the file booted there, and the Clipboard
-  API, the timers and the other natives in `fixtures.mjs`'s list must be the ones the app booted
-  with. A difference fails the test by name: "nothing left outside the test's own page". A
-  listener added to `window` or `document` without `patchPage` is the one thing it cannot see.
+  after each test, the document's markup, the rules in its stylesheets and the globals on
+  `window` must be what they were when the file booted there, and the Clipboard API, the timers
+  and the other natives in `fixtures.mjs`'s list — read as a caller reads them, so a stub on
+  `document` counts as much as one on `Document.prototype` — must be the ones the app booted
+  with. A difference fails the test by name: "nothing left outside the test's own page". What it
+  cannot see — a listener on `window` or `document`, a timer or an observer left running, a
+  native outside the list — is held by the rule alone.
 - **A test gets a document of its own** — a context of its own, every navigation real — with
   `test.use({ freshDocument: true })`, for a test about loading itself (A11Y-20's prerender,
   BIG-7's time from a load), and with `viewport: null`. A test that calls a method whose effect
   outlives a navigation — `addInitScript`, `route`, `emulateMedia`, `setExtraHTTPHeaders`, a CDP
   session and the rest of `fixtures.mjs`'s list — makes the page its own from then on: its
-  navigations are real, and its page is not handed on.
-- **A page is not handed on** after a test that failed, left a key or a button held, or whose
-  console reported an error. The next test boots.
+  navigations are real, and its page is not handed on. So does `page.reload()`, and a navigation
+  away from the app's origin. A test whose `use` asks for context options other than the
+  viewport's — a colour scheme, a locale — gets the app booted afresh in a context made with
+  them.
+- **A page is not handed on** after a test that failed — in its body or in the harness's own
+  checks as it ends — left a key or a button held, or whose console reported an error. The next
+  test boots.
 - **The console record is still per test.** What the app says while booting is the file's first
-  test's. What a page says as it is disposed is the test's that mounted it: the harness leaves the
-  page inside that test's teardown. Anything said between two tests is the next one's.
+  test's. What a page says as it is disposed — then, or in the two frames after — is the test's
+  that mounted it: the harness leaves the page inside that test's teardown. Anything said between
+  two tests is the next one's, on the Server host's log as in the browser's console, and so is
+  what a file's last page says as it is closed.
 
 ## What it asserts
 
@@ -265,13 +274,16 @@ nobody had asked for. What that means when writing a test:
   ```sh
   EXGRID_SOAK=1 npx playwright test memory.spec.mjs
   ```
-- `harness.spec.mjs` — the harness itself (ADR-0048): a spec file boots once, at the index, and
-  the next test mounts a new grid on the same document; what a test changed through `patchPage`,
-  the permissions it granted, the viewport it set, the key it watched and the pointer it left
-  are gone for the next; a native stubbed, an element left in the head and an attribute left on
-  the grid's parent without `patchPage` are each named, and the next test has a document of its
-  own; a test that fails or leaves a key held hands no page on; `freshDocument` loads the page for
-  real.
+- `harness.spec.mjs` — the harness itself (ADR-0048), in pairs whose second half skips itself
+  when the first has not run: a spec file boots once, at the index, and the next test mounts a
+  new grid on the same document; what a test changed through `alterPage`, the permissions it
+  granted, the viewport it set, the round trip, the key it watched, the pointer it left, the page
+  it scrolled, the text it selected and where it left the keyboard are gone for the next; a
+  native stubbed on its prototype or its instance, an element left in the head, an attribute left
+  on the grid's parent, a rule inserted into a stylesheet and a global left on `window` without
+  `alterPage` are each named, and the next test has a document of its own; a test that fails —
+  in its body or in its console — or leaves a key or a button held hands no page on;
+  `freshDocument` loads the page for real.
 - `observational.spec.mjs` — the numbers that are recorded, never gated, into
   `metrics.json`: mount to first row at 10⁶ (BIG-7), the DOM with horizontal
   virtualisation on and off (DOM-5), the settle repaint and the frame intervals at both
@@ -360,8 +372,12 @@ Two traps live in that, and the DemoHost has hit both:
 - A change made with `page.evaluate` outside the test's page outlives the test: the next test
   in the file runs on the same document (ADR-0048). CP-23's stubbed `navigator.clipboard.write`
   made the next test's copy fail silently, and DIR-2's `dir="rtl"` landed on `#app` — the grid's
-  parent — and would have held for every test after it. Use `patchPage`; the harness names what
+  parent — and would have held for every test after it. Use `alterPage`; the harness names what
   it finds left behind.
+- `test.use({ expectedHostLog: [/a/, /b/] })` names one pattern, not two. Playwright reads a list
+  whose second item is an object — and a RegExp is one — as its own `[value, options]` pair, so
+  the option becomes `/a/` alone, and a list of expected lines is suddenly not a list. The same
+  holds for `expectedWarnings` and `expectedLeaks`. Give one pattern: `/a|b/`.
 
 - Cells and header cells are `pointer-events: none` by design — the Viewport is the
   delegated target (ADR-0004). Playwright's actionability check must be bypassed with

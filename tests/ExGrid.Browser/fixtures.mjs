@@ -74,22 +74,34 @@ export async function setRoundTrip(ms) {
     return true;
 }
 
-// What the Server host logged while one test ran (CON-6): the file the host appends to,
-// read from where it stood when the test began.
+/** The round trip the latency proxy is set to, in ms; null on WebAssembly, which has none. */
+export async function roundTrip() {
+    if (!SERVER) {
+        return null;
+    }
+    const response = await fetch(`${LATENCY_CONTROL_URL}/`);
+    return Number((await response.text()).trim().replace('rtt=', ''));
+}
+
+// What the Server host logged while one test ran (CON-6): the file the host appends to, read
+// from where the last reading stopped, so a line written between two tests is the next test's,
+// as a console message is (ADR-0048). Answers the lines and where the reading stopped.
 const hostLogSize = () => (fs.existsSync(HOST_LOG) ? fs.statSync(HOST_LOG).size : 0);
-function hostLogSince(offset) {
+function hostLogFrom(offset) {
     if (!SERVER || !fs.existsSync(HOST_LOG)) {
-        return [];
+        return { lines: [], end: offset };
     }
     const handle = fs.openSync(HOST_LOG, 'r');
     try {
-        const length = fs.fstatSync(handle).size - offset;
-        if (length <= 0) {
-            return [];
+        const end = fs.fstatSync(handle).size;
+        // A log shorter than the offset is a new one: the runner clears it as a run starts.
+        const from = end < offset ? 0 : offset;
+        if (end === from) {
+            return { lines: [], end };
         }
-        const buffer = Buffer.alloc(length);
-        fs.readSync(handle, buffer, 0, length, offset);
-        return buffer.toString('utf8').split('\n').filter((line) => line.length > 0);
+        const buffer = Buffer.alloc(end - from);
+        fs.readSync(handle, buffer, 0, end - from, from);
+        return { lines: buffer.toString('utf8').split('\n').filter((line) => line.length > 0), end };
     } finally {
         fs.closeSync(handle);
     }
@@ -108,9 +120,19 @@ async function ready(page) {
     await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
 }
 
+// A real navigation — goto or reload — that returns once the page is ready.
+const thenReady = (page, navigate) => async (...args) => {
+    const response = await navigate(...args);
+    await ready(page);
+    return response;
+};
+
+// What a page said, kept for the verdict of the test it is charged to (ADR-0048).
+const newSink = () => ({ messages: [], pageErrors: [] });
+
 // Every page a test drives is listened to from before its first navigation, so nothing the
 // app says while booting escapes the record. `sinkOf` names the record: a shared page's is
-// whichever test holds it at the moment (ADR-0048).
+// whichever test holds it at the moment.
 function listen(page, sinkOf) {
     page.on('console', (m) => {
         sinkOf().messages.push({ type: m.type(), text: m.text(), url: m.location().url ?? '' });
@@ -118,8 +140,9 @@ function listen(page, sinkOf) {
     page.on('pageerror', (e) => sinkOf().pageErrors.push(String(e)));
 }
 
-// The console verdict every test ends with, and its entry in console.json.
-function verdict({ messages, pageErrors }, hostLogFrom, { expectedHostLog, expectedWarnings }, testInfo) {
+// The console verdict every test ends with, and its entry in console.json. Soft: every check
+// is reported, and the record is written whatever the others found.
+function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedWarnings }, testInfo) {
     const errors = messages.filter((m) => m.type === 'error');
     const warnings = messages.filter((m) => m.type === 'warning');
     // CON-6. The DemoHost is Blazor WebAssembly: its host runs in the page, and the host's
@@ -132,12 +155,11 @@ function verdict({ messages, pageErrors }, hostLogFrom, { expectedHostLog, expec
     // On the Server host the renderer runs in the host's process, and its log is the host's
     // (SERVER in hosting.mjs): every Error or Critical line it appended while the test ran
     // counts, as well as any line naming an unhandled exception.
-    const hostLog = hostLogSince(hostLogFrom);
     const expected = (line) => expectedHostLog.some((pattern) => pattern.test(line));
     const unhandled = [...messages.map((m) => m.text), ...pageErrors, ...hostLog.filter((l) => !expected(l))]
         .filter((text) => /unhandled exception|^\S+ (Error|Critical) /i.test(text));
     for (const pattern of expectedHostLog) {
-        expect(hostLog.some((line) => pattern.test(line)), `the host log names ${pattern}`).toBe(true);
+        expect.soft(hostLog.some((line) => pattern.test(line)), `the host log names ${pattern}`).toBe(true);
     }
 
     // console.json keeps each test's errors and warnings under its title, so a rerun
@@ -160,30 +182,30 @@ function verdict({ messages, pageErrors }, hostLogFrom, { expectedHostLog, expec
         }
     });
 
-    expect(errors.map((m) => m.text), 'zero console errors (CON-1)').toEqual([]);
-    expect(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
+    expect.soft(errors.map((m) => m.text), 'zero console errors (CON-1)').toEqual([]);
+    expect.soft(pageErrors, 'zero uncaught page errors (CON-2)').toEqual([]);
     const named = (text) => expectedWarnings.some((pattern) => pattern.test(text));
     for (const pattern of expectedWarnings) {
-        expect([...warnings.map((m) => m.text), ...hostLog].some((line) => pattern.test(line)),
+        expect.soft([...warnings.map((m) => m.text), ...hostLog].some((line) => pattern.test(line)),
             `the grid warned ${pattern}`).toBe(true);
     }
-    expect(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
+    expect.soft(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
         'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
-    expect(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
+    expect.soft(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
 }
 
-// What a test changed through patchPage, per page, undone as the test ends (ADR-0048).
+// What a test changed through alterPage, per page, undone as the test ends (ADR-0048).
 const undos = new WeakMap();
 
 /**
  * Changes the page outside the test's own grids — a global, a listener on window or document, the
  * head, body, <html> or #app — and has the harness put it back when the test ends (ADR-0048).
- * `patch` runs in the page and returns the function that undoes what it did.
+ * `change` runs in the page and returns the function that undoes what it did.
  */
-export async function patchPage(page, patch, arg) {
-    const undo = await page.evaluateHandle(patch, arg);
+export async function alterPage(page, change, arg) {
+    const undo = await page.evaluateHandle(change, arg);
     if (!await undo.evaluate((f) => typeof f === 'function')) {
-        throw new Error('patchPage: the patch must return the function that undoes it');
+        throw new Error('alterPage: the change must return the function that undoes it');
     }
     if (!undos.has(page)) {
         undos.set(page, []);
@@ -191,9 +213,9 @@ export async function patchPage(page, patch, arg) {
     undos.get(page).push(undo);
 }
 
-// Undoes what patchPage did, the latest first. A patch whose document is gone — the test
+// Undoes what alterPage did, the latest first. A change whose document is gone — the test
 // reloaded, or the page closed — has nothing left to undo.
-async function undoPatches(page) {
+async function undoAlterations(page) {
     const list = undos.get(page) ?? [];
     undos.delete(page);
     for (const undo of list.reverse()) {
@@ -202,65 +224,153 @@ async function undoPatches(page) {
     }
 }
 
-// The natives a test is likely to stub to stand in for the browser. Each must still be the one
-// the app booted with when the test ends; one replaced outside patchPage would reach every later
-// test of the file (ADR-0048: CP-23's stub did).
+// The natives a test is likely to stub to stand in for the browser, each read the way a caller
+// reads it — `document.hasFocus`, not `Document.prototype.hasFocus` — so a stub on the instance
+// counts as much as one on the prototype. Each must still be the one the app booted with when the
+// test ends; one replaced outside alterPage would reach every later test of the file (ADR-0048:
+// CP-23's stub did).
 const WATCHED_NATIVES = [
     'navigator.clipboard.read', 'navigator.clipboard.readText',
-    'navigator.clipboard.write', 'navigator.clipboard.writeText',
-    'fetch', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
-    'requestAnimationFrame', 'cancelAnimationFrame', 'open', 'alert', 'confirm', 'prompt',
+    'navigator.clipboard.write', 'navigator.clipboard.writeText', 'navigator.permissions.query',
+    'fetch', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'queueMicrotask',
+    'requestAnimationFrame', 'cancelAnimationFrame', 'open', 'alert', 'confirm', 'prompt', 'print',
+    'getComputedStyle', 'matchMedia', 'scrollTo', 'scrollBy',
     'ResizeObserver', 'IntersectionObserver', 'MutationObserver',
-    'Document.prototype.execCommand', 'Document.prototype.hasFocus',
+    'document.execCommand', 'document.hasFocus', 'document.getSelection',
+    'document.elementFromPoint', 'document.elementsFromPoint',
     'EventTarget.prototype.addEventListener', 'EventTarget.prototype.removeEventListener',
     'EventTarget.prototype.dispatchEvent',
     'HTMLElement.prototype.focus', 'HTMLElement.prototype.blur', 'HTMLElement.prototype.click',
     'Element.prototype.getBoundingClientRect', 'Element.prototype.scrollIntoView',
-    'Performance.prototype.now', 'Date.now',
+    'performance.now', 'Date.now',
 ];
 
 // Page and context methods whose effect outlives a navigation. A test that calls one has made
 // the page its own: its navigations are real from then on, and its page is not handed on.
-const PAGE_STATE = ['addInitScript', 'addScriptTag', 'addStyleTag', 'emulateMedia', 'exposeBinding',
-    'exposeFunction', 'route', 'routeFromHAR', 'routeWebSocket', 'setDefaultNavigationTimeout',
-    'setDefaultTimeout', 'setExtraHTTPHeaders'];
-const CONTEXT_STATE = ['addCookies', 'addInitScript', 'exposeBinding', 'exposeFunction', 'newCDPSession',
-    'route', 'routeFromHAR', 'routeWebSocket', 'setDefaultNavigationTimeout', 'setDefaultTimeout',
-    'setExtraHTTPHeaders', 'setGeolocation', 'setHTTPCredentials', 'setOffline'];
+const PAGE_METHODS_THAT_OUTLIVE_A_NAVIGATION = ['addInitScript', 'addScriptTag', 'addStyleTag',
+    'emulateMedia', 'exposeBinding', 'exposeFunction', 'route', 'routeFromHAR', 'routeWebSocket',
+    'setDefaultNavigationTimeout', 'setDefaultTimeout', 'setExtraHTTPHeaders'];
+const CONTEXT_METHODS_THAT_OUTLIVE_A_NAVIGATION = ['addCookies', 'addInitScript', 'exposeBinding',
+    'exposeFunction', 'newCDPSession', 'route', 'routeFromHAR', 'routeWebSocket',
+    'setDefaultNavigationTimeout', 'setDefaultTimeout', 'setExtraHTTPHeaders', 'setGeolocation',
+    'setHTTPCredentials', 'setOffline'];
 
-// The document outside a test's page, as the index shows it. Comments aside: they are
-// Blazor's markers, which differ between a prerendered render and an interactive one. And an
-// empty style or class aside, which is what removing the last property or class leaves.
-const markupAtIndex = (page) => page.evaluate(() => document.documentElement.outerHTML
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/ (?:style|class)=""/g, ''));
+// What the document outside a test's page is, as the index shows it: its markup, the rules in its
+// stylesheets, and the globals on window. Comments aside — they are Blazor's markers, which differ
+// between a prerendered render and an interactive one — and an empty style or class aside, which
+// is what removing the last property or class leaves.
+const documentAtIndex = (page) => page.evaluate(() => ({
+    markup: document.documentElement.outerHTML
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/ (?:style|class)=""/g, ''),
+    sheets: [...document.styleSheets].map((sheet) => {
+        let rules;
+        try {
+            rules = sheet.cssRules.length;
+        } catch {
+            rules = 'unreadable';
+        }
+        return `${sheet.href ?? 'a <style>'}: ${rules} rules`;
+    }).concat(`${document.adoptedStyleSheets.length} adopted`),
+    globals: Object.getOwnPropertyNames(window),
+}));
 
 const nativesOf = (page) => page.evaluateHandle((paths) => {
     const read = (path) => path.split('.').reduce((owner, key) => owner?.[key], window);
     return new Map(paths.map((path) => [path, read(path)]));
 }, WATCHED_NATIVES);
 
-// What a test left behind outside its page, as sentences that name it.
-async function leaksSince(app) {
-    const leaks = [];
-    const markup = await markupAtIndex(app.page);
-    if (markup !== app.markup) {
-        let at = 0;
-        while (at < markup.length && at < app.markup.length && markup[at] === app.markup[at]) {
-            at++;
+// The app a spec file boots once (ADR-0048), held by the worker from one test to the next: one
+// browser context and page per spec file, booted at the index by the file's first navigation,
+// with what the document and the natives were there.
+class FileApp {
+    context = null;
+    page = null;
+    file = null;
+    options = null;
+    booted = null;
+    natives = null;
+    // What the app says between two tests is the next test's, so this outlives a close: what a
+    // file's last page says as it goes is heard by the next file's first test.
+    sink = newSink();
+    hostLogAt = null;
+
+    // Opens the app for the test unless it is open for the test's file with its context options.
+    // Options other than the viewport, which the harness sets for each test, belong to the context:
+    // a test asking for other ones gets a context of its own asking.
+    async open(browser, testInfo, contextOptions, viewport) {
+        const { viewport: _, ...options } = contextOptions;
+        const asked = JSON.stringify(options);
+        if (this.page && (this.file !== testInfo.file || this.options !== asked || this.page.isClosed())) {
+            await this.close();
         }
-        const around = (text) => text.slice(Math.max(0, at - 40), at + 160);
-        leaks.push(`back at the index, the document is not the one the file booted: `
-            + `…${around(markup)}… where it was …${around(app.markup)}… — change it with patchPage`);
+        if (this.page) {
+            return;
+        }
+        this.file = testInfo.file;
+        this.options = asked;
+        this.context = await browser.newContext({ ...contextOptions, baseURL: BASE_URL, viewport });
+        this.page = await this.context.newPage();
+        listen(this.page, () => this.sink);
     }
-    const replaced = await app.natives.evaluate((natives) => {
-        const read = (path) => path.split('.').reduce((owner, key) => owner?.[key], window);
-        return [...natives].filter(([path, original]) => read(path) !== original).map(([path]) => path);
-    });
-    for (const path of replaced) {
-        leaks.push(`${path} is not the one the app booted with — stub it with patchPage, which puts it back`);
+
+    async close() {
+        await this.natives?.dispose().catch(() => { });
+        await this.context?.close().catch(() => { });
+        this.context = this.page = this.file = this.options = this.booted = this.natives = null;
     }
-    return leaks;
+
+    // The file's first navigation: a real one, to the index, where what every later test is
+    // checked against is taken.
+    async boot(goto, gotoOptions) {
+        await goto('/', gotoOptions);
+        await ready(this.page);
+        this.booted = await documentAtIndex(this.page);
+        this.natives = await nativesOf(this.page);
+    }
+
+    // What a test left behind outside its page, as sentences that name it.
+    async leaks() {
+        const now = await documentAtIndex(this.page);
+        const leaks = [];
+        if (now.markup !== this.booted.markup) {
+            let at = 0;
+            while (at < now.markup.length && at < this.booted.markup.length && now.markup[at] === this.booted.markup[at]) {
+                at++;
+            }
+            const around = (text) => text.slice(Math.max(0, at - 40), at + 160);
+            leaks.push('back at the index, the document is not the one the file booted: '
+                + `…${around(now.markup)}… where it was …${around(this.booted.markup)}… — change it with alterPage`);
+        }
+        if (now.sheets.join('\n') !== this.booted.sheets.join('\n')) {
+            leaks.push(`the stylesheets are not the ones the file booted with: ${now.sheets.join('; ')} `
+                + `where they were ${this.booted.sheets.join('; ')} — change them with alterPage`);
+        }
+        const booted = new Set(this.booted.globals);
+        for (const name of now.globals.filter((g) => !booted.has(g))) {
+            leaks.push(`window.${name} is new since the file booted — set it with alterPage, which takes it off`);
+        }
+        const replaced = await this.natives.evaluate((natives) => {
+            const read = (path) => path.split('.').reduce((owner, key) => owner?.[key], window);
+            return [...natives].filter(([path, original]) => read(path) !== original).map(([path]) => path);
+        });
+        for (const path of replaced) {
+            leaks.push(`${path} is not the one the app booted with — stub it with alterPage, which puts it back`);
+        }
+        return leaks;
+    }
+
+    // Where the host log is read from: the first test's start, and after that where the last
+    // test's reading stopped.
+    startHostLog() {
+        this.hostLogAt ??= hostLogSize();
+    }
+
+    hostLog() {
+        const { lines, end } = hostLogFrom(this.hostLogAt);
+        this.hostLogAt = end;
+        return lines;
+    }
 }
 
 // Navigates the booted app to `path` without a boot. The router has swapped the page when the
@@ -299,58 +409,33 @@ async function arriveAt(page, target) {
     await ready(page);
 }
 
-// The worker's app: one browser context and page per spec file, booted at the index by the
-// file's first navigation (ADR-0048).
-async function openApp(app, browser, testInfo, viewport) {
-    if (app.page && (app.file !== testInfo.file || app.page.isClosed())) {
-        await closeApp(app);
-    }
-    if (app.page) {
-        return;
-    }
-    app.file = testInfo.file;
-    app.context = await browser.newContext({ baseURL: BASE_URL, viewport });
-    app.page = await app.context.newPage();
-    app.sink = { messages: [], pageErrors: [] };
-    listen(app.page, () => app.sink);
-}
-
-async function closeApp(app) {
-    await app.natives?.dispose().catch(() => { });
-    await app.context?.close().catch(() => { });
-    Object.assign(app, { context: null, page: null, file: null, markup: null, natives: null });
-}
+/** The frames in which what a disposal left to later — a wait that outlived its grid — runs. */
+export const twoFrames = (page) => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
 // A test with a document of its own (ADR-0048): a context of its own, every navigation real.
-async function ownPage(page, use, options, testInfo) {
-    const sink = { messages: [], pageErrors: [] };
+async function ownPage(app, page, use, options, testInfo) {
+    app.startHostLog();
+    const sink = newSink();
     listen(page, () => sink);
-    const hostLogFrom = hostLogSize();
-    for (const name of ['goto', 'reload']) {
-        const navigate = page[name].bind(page);
-        page[name] = async (...args) => {
-            const response = await navigate(...args);
-            await ready(page);
-            return response;
-        };
-    }
+    page.goto = thenReady(page, page.goto.bind(page));
+    page.reload = thenReady(page, page.reload.bind(page));
 
     await use(page);
 
-    await undoPatches(page);
+    await undoAlterations(page);
     // A test that raised the round trip leaves it where the next one expects it.
     await setRoundTrip(0);
     for (const pattern of options.expectedLeaks) {
-        expect(false, `the harness named ${pattern}: a document of the test's own is not checked`).toBe(true);
+        expect.soft(false, `the harness named ${pattern}: a document of the test's own is not checked`).toBe(true);
     }
-    verdict(sink, hostLogFrom, options, testInfo);
+    verdict(sink, app.hostLog(), options, testInfo);
 }
 
 async function sharedPage(app, context, viewport, use, options, testInfo) {
+    app.startHostLog();
     const page = app.page;
     // What the app said since the last test ended — its boot, for the first — is this test's.
     const sink = app.sink;
-    const hostLogFrom = hostLogSize();
     const size = page.viewportSize();
     if (size?.width !== viewport.width || size?.height !== viewport.height) {
         await page.setViewportSize(viewport);
@@ -363,10 +448,10 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
         restore.push(() => { target[name] = original; });
     };
     let owned = false;
-    for (const name of PAGE_STATE) {
+    for (const name of PAGE_METHODS_THAT_OUTLIVE_A_NAVIGATION) {
         wrap(page, name, (call) => (...args) => { owned = true; return call(...args); });
     }
-    for (const name of CONTEXT_STATE) {
+    for (const name of CONTEXT_METHODS_THAT_OUTLIVE_A_NAVIGATION) {
         wrap(context, name, (call) => (...args) => { owned = true; return call(...args); });
     }
     const held = new Set();
@@ -376,28 +461,21 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
     wrap(page.mouse, 'up', (up) => (o) => { held.delete(`the ${o?.button ?? 'left'} button`); return up(o); });
     wrap(page, 'goto', (goto) => async (url, gotoOptions) => {
         const target = new URL(url, BASE_URL);
+        // A navigation away from the app leaves it: the page is the test's own from then on.
         if (owned || target.origin !== new URL(BASE_URL).origin) {
             owned = true;
-            const response = await goto(url, gotoOptions);
-            await ready(page);
-            return response;
+            return thenReady(page, goto)(url, gotoOptions);
         }
-        if (!app.markup) {
-            // The file's first navigation boots the app, at the index, and takes what the
-            // document and the natives are there: what every later test is checked against.
-            await goto('/', gotoOptions);
-            await ready(page);
-            app.markup = await markupAtIndex(page);
-            app.natives = await nativesOf(page);
+        if (!app.booted) {
+            await app.boot(goto, gotoOptions);
         }
         await arriveAt(page, target);
         return null;
     });
-    wrap(page, 'reload', (reload) => async (...args) => {
+    // A reload is a boot the file's record was not taken from: the page is the test's own.
+    wrap(page, 'reload', (reload) => (...args) => {
         owned = true;
-        const response = await reload(...args);
-        await ready(page);
-        return response;
+        return thenReady(page, reload)(...args);
     });
     const listenersBefore = new Map(page.eventNames().map((name) => [name, page.listeners(name)]));
 
@@ -414,42 +492,42 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
             }
         }
     }
-    await undoPatches(page);
+    await undoAlterations(page);
     await setRoundTrip(0);
     for (const other of context.pages().filter((p) => p !== page)) {
         await other.close().catch(() => { });
     }
 
-    // Leaving the test's page disposes it here, inside the test, so what the disposal says is
-    // this test's; then what it left outside its page is looked for.
+    // Leaving the test's page disposes it here, inside the test, so what the disposal says —
+    // now or in the frames after — is this test's; then what it left outside its page is
+    // looked for.
     const failed = testInfo.status !== 'passed' && testInfo.status !== 'skipped';
-    let handOn = !failed && !owned && held.size === 0 && !page.isClosed() && app.markup !== null;
+    const handOn = !failed && !owned && held.size === 0 && !page.isClosed() && app.booted !== null;
     const leaks = [];
     if (handOn) {
         try {
             await navigateInApp(page, '/');
-            // What the disposal left to a later frame — a wait that outlived its grid — runs
-            // here, in the test that mounted the grid, not in the next one.
-            await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-            leaks.push(...await leaksSince(app));
+            await twoFrames(page);
+            leaks.push(...await app.leaks());
         } catch (error) {
             leaks.push(`the page could not be left for the index: ${error.message}`);
         }
     }
     // From here on, what the app says is the next test's.
-    app.sink = { messages: [], pageErrors: [] };
-    const reported = sink.pageErrors.length > 0
-        || sink.messages.some((m) => m.type === 'error' || /unhandled exception/i.test(m.text));
-    if (!handOn || leaks.length > 0 || reported) {
-        await closeApp(app);
-    }
+    app.sink = newSink();
 
+    // Every check is soft, so a leak does not hide the console record; any that fails keeps the
+    // page from the next test, as a failure in the test's own body does.
+    const errorsBefore = testInfo.errors.length;
     for (const pattern of options.expectedLeaks) {
-        expect(leaks.some((leak) => pattern.test(leak)), `the harness named ${pattern}`).toBe(true);
+        expect.soft(leaks.some((leak) => pattern.test(leak)), `the harness named ${pattern}`).toBe(true);
     }
-    expect(leaks.filter((leak) => !options.expectedLeaks.some((pattern) => pattern.test(leak))),
+    expect.soft(leaks.filter((leak) => !options.expectedLeaks.some((pattern) => pattern.test(leak))),
         'nothing left outside the test\'s own page (ADR-0048)').toEqual([]);
-    verdict(sink, hostLogFrom, options, testInfo);
+    verdict(sink, app.hostLog(), options, testInfo);
+    if (!handOn || leaks.length > 0 || testInfo.errors.length > errorsBefore) {
+        await app.close();
+    }
 }
 
 export const test = base.extend({
@@ -478,9 +556,9 @@ export const test = base.extend({
     }, { scope: 'worker', auto: true, timeout: 330_000 }],
     // The app a spec file boots once (ADR-0048), held by the worker from one test to the next.
     app: [async ({ }, use) => {
-        const app = { context: null, page: null, file: null, markup: null, natives: null, sink: null };
+        const app = new FileApp();
         await use(app);
-        await closeApp(app);
+        await app.close();
     }, { scope: 'worker' }],
     // A refusal the grid raises as an exception by decision — a bundled Grid Source
     // attached from a second circuit (ADR-0018) — reaches the host log as an unhandled
@@ -493,30 +571,39 @@ export const test = base.extend({
     // the same way: not a CON-3 failure, and asserted to appear, in the console on
     // WebAssembly or in the host's log on the Server host.
     expectedWarnings: [[], { option: true }],
-    // A change a test makes outside its own page without patchPage, provoked on purpose by the
+    // A change a test makes outside its own page without alterPage, provoked on purpose by the
     // harness's own tests (harness.spec.mjs) and named here: asserted to be reported, and not
     // a failure (ADR-0048).
+    //
+    // Each of these three lists is given one pattern at a time — /a|b/ for two things. Given to
+    // test.use, a list whose second item is an object, and a RegExp is one, is read as
+    // Playwright's own [value, options] pair, and the option becomes the first pattern alone.
     expectedLeaks: [[], { option: true }],
     // A document of the test's own: a context of its own and every navigation real (ADR-0048).
     freshDocument: [false, { option: true }],
-    // The test's context is the file's app's, so what it grants reaches the page it drives;
-    // what it granted is taken back as it ends.
-    context: async ({ app, browser, viewport, freshDocument }, use, testInfo) => {
+    // The test's context is the file's app's, so what it grants reaches the page it drives; what it
+    // granted is taken back as it ends, and what its `use` grants is granted again for the next.
+    // Every context is made with the test's own `use` options — Playwright's, as its own context
+    // fixture makes them.
+    context: async ({ app, browser, viewport, freshDocument, _combinedContextOptions }, use, testInfo) => {
         if (viewport === null || freshDocument) {
-            const context = await browser.newContext({ baseURL: BASE_URL, viewport });
+            const context = await browser.newContext({ ..._combinedContextOptions, baseURL: BASE_URL, viewport });
             await use(context);
             await context.close();
             return;
         }
-        await openApp(app, browser, testInfo, viewport);
+        await app.open(browser, testInfo, _combinedContextOptions, viewport);
         const context = app.context;
+        if (_combinedContextOptions.permissions?.length) {
+            await context.grantPermissions(_combinedContextOptions.permissions);
+        }
         await use(context);
         await context.clearPermissions().catch(() => { });
     },
     page: async ({ app, context, viewport, freshDocument, expectedHostLog, expectedWarnings, expectedLeaks }, use, testInfo) => {
         const options = { expectedHostLog, expectedWarnings, expectedLeaks };
         if (viewport === null || freshDocument) {
-            await ownPage(await context.newPage(), use, options, testInfo);
+            await ownPage(app, await context.newPage(), use, options, testInfo);
         } else {
             await sharedPage(app, context, viewport, use, options, testInfo);
         }
@@ -534,7 +621,7 @@ export { expect };
 // would otherwise reload the page under the test, and Ctrl+D open a bookmark bubble.
 export async function watchNextKey(page, key, { preventAfter = false } = {}) {
     const keys = Array.isArray(key) ? key : [key];
-    await patchPage(page, ({ keys, preventAfter }) => {
+    await alterPage(page, ({ keys, preventAfter }) => {
         window.__keySeen = null;
         const listener = (e) => {
             if (!keys.includes(e.key)) {

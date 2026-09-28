@@ -1,4 +1,4 @@
-import { test, expect, patchPage } from './fixtures.mjs';
+import { test, expect, alterPage } from './fixtures.mjs';
 
 // The presentation contract, measured (ADR-0027/0028/0029/0031): tokens win where the
 // contract says they win, the painted geometry equals the declared geometry, nothing
@@ -20,9 +20,9 @@ test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot
         .evaluate((el) => getComputedStyle(el).height);
     expect(before).toBe('24px');
 
-    // On body and in the head, which outlive the page: patchPage takes both off as the test
+    // On body and in the head, which outlive the page: alterPage takes both off as the test
     // ends (ADR-0048).
-    await patchPage(page, () => {
+    await alterPage(page, () => {
         document.body.style.setProperty('--ex-row-height', '60px');
         // A stylesheet rule on the element the token lives on, as UX-2's
         // verification says. (A rule re-declaring the token on a DESCENDANT — or an
@@ -64,7 +64,7 @@ test('a Visual Token set on an ancestor recolours the paint (UX-5, the paint hal
     const before = await grid(page).locator('.ex-header')
         .evaluate((el) => getComputedStyle(el).backgroundColor);
 
-    await patchPage(page, () => {
+    await alterPage(page, () => {
         document.body.style.setProperty('--ex-header-background', 'rgb(200, 12, 12)');
         return () => document.body.style.removeProperty('--ex-header-background');
     });
@@ -143,8 +143,8 @@ test('under a dark scheme the untouched grid stays readable (UX-8)', async ({ pa
 test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async ({ page }) => {
     await open(page);
     // The grid's parent is #app on WebAssembly and body on the Server host, neither of which
-    // leaving the page clears: patchPage puts the direction back as the test ends (ADR-0048).
-    await patchPage(page, () => {
+    // leaving the page clears: alterPage puts the direction back as the test ends (ADR-0048).
+    await alterPage(page, () => {
         const parent = document.querySelector('.ex-grid').parentElement;
         const was = parent.getAttribute('dir');
         parent.setAttribute('dir', 'rtl');
