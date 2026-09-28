@@ -380,6 +380,54 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+// A press on the rows asks for the keyboard back at the root, and on a circuit that request
+// lands a round trip late — after a press into the Formula Bar or the Name Box that followed it.
+// Before ADR-0021's narrowed hand-back (2026-09-28) it took the keyboard from the field the user
+// had just pressed, and the keys typed there went to the grid instead (found on the Server host,
+// Windows, second run). The fields beside the rows keep their focus. The bar's press reaches the
+// core ahead of the row press held before it, which ends the edit that press joined: in its
+// turn among the held keys the press is answered again, and the key typed after it edits the
+// cell the row press moved to, in the bar.
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0021: a row press's late hand-back does not take the keyboard from the Formula Bar or the Name Box pressed after it, on a 150 ms circuit (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F2');
+        await expect(bar(grid)).toHaveValue('');
+        await setRoundTrip(150);
+        // No wait for anything: a character onto the cell opens an edit there, a press on
+        // another row commits it, and the press into the bar follows as a user's does.
+        await page.keyboard.type('x');
+        await clickCell(grid, 'F5');
+        await clickBarEnd(grid);
+        await page.keyboard.type('7');
+        await expect(bar(grid)).toHaveValue('7');
+        await expect(editor(grid)).toHaveValue('7');
+        await expect(bar(grid)).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'F2')).toHaveText('x');
+        await expect(cell(grid, 'F5')).toHaveText('7');
+        await expectFocusAt(grid, 'F6');
+        // The same for the Name Box, pressed straight after a row that nothing held: the row's
+        // focus asks for the keyboard back a round trip later. The Name Box's press is not held
+        // among the keys, so the render answering the row press can still rewrite its text:
+        // what is typed waits until the round trips have landed — the hand-back among them —
+        // and the Name Box has kept the keyboard through them.
+        await clickCell(grid, 'F8');
+        await nameBox(grid).click();
+        await expect(nameBox(grid)).toHaveValue('F8');
+        await page.waitForTimeout(600);
+        await expect(nameBox(grid)).toBeFocused();
+        await page.keyboard.press('ControlOrMeta+A');
+        await page.keyboard.type('D4');
+        await expect(nameBox(grid)).toHaveValue('D4');
+        await page.keyboard.press('Enter');
+        await expectFocusAt(grid, 'D4');
+        await expect(grid).toBeFocused();
+        await setRoundTrip(0);
+    });
+}
+
 test('DC-20: typed quickly on a 150 ms circuit, no arrow points where the text forbids it', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');

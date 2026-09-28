@@ -89,6 +89,27 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*observer\.disconnect\(\);\s*ceilingObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
     }
 
+    [Fact] // ADR-0021 (widened 2026-09-28) / ADR-0018: the hand-back leaves the fields beside the rows alone, found by the core's band, nothing measured
+    public void The_hand_back_leaves_the_formula_bar_and_the_name_box_alone()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var reclaim = Regex.Match(script.Text, @"reclaimFocus: \(fromField\) => \{.*?\n        \},", RegexOptions.Singleline);
+        Assert.True(reclaim.Success, "reclaimFocus(fromField) is not in the module");
+        var body = reclaim.Value;
+
+        // Only this root's own focus, or none, is taken back (ADR-0018)...
+        Assert.Contains("root.contains(active)", body, StringComparison.Ordinal);
+        Assert.Contains("active === document.body", body, StringComparison.Ordinal);
+        // ...and not a field inside the band the core renders the Formula Bar and the Name Box
+        // into — a Chrome's control sits inside the same band — unless the core says the gesture
+        // was made in that field, or a held press on the rows left its focus standing.
+        Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
+        Assert.Contains("fromField === true", body, StringComparison.Ordinal);
+        Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
+        // A read of document.activeElement, never of layout.
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+    }
+
     [Fact] // ADR-0037 / KB-26: a held Space engages once — the gate takes and drops a repeated plain Space
     public void The_key_gate_drops_a_repeated_space()
     {

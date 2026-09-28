@@ -2977,7 +2977,7 @@
         // — the editor's own elements never let a press through — commits the
         // uncommitted text first, and the press then keeps its own meaning.
         var committed = _editMode != EditMode.None;
-        if (committed && !await CommitEditAsync())
+        if (committed && !await CommitEditAsync(byPress: true))
         {
             // A Reject holds the editor, and the press that would have dismissed it keeps
             // no meaning of its own: the selection must not walk away from an editor that
@@ -3375,7 +3375,7 @@
         // press keeps no meaning of its own (ADR-0034, ED-15). A sort here would bump the
         // Row Sequence Version, drop the selection and take with it the very text the
         // Reject was holding on to.
-        if (_editMode != EditMode.None && !await CommitEditAsync())
+        if (_editMode != EditMode.None && !await CommitEditAsync(byPress: true))
         {
             StateHasChanged();
             return;
@@ -4127,7 +4127,7 @@
         // never ran for it — it has to run here, and a Reject holds the editor and keeps
         // this press meaningless like every other (ADR-0010/0034). Without it "Sort
         // ascending" from the menu is a silent way to lose the held text.
-        if (_editMode != EditMode.None && !await CommitEditAsync())
+        if (_editMode != EditMode.None && !await CommitEditAsync(byPress: true))
         {
             StateHasChanged();
             return;
@@ -5420,9 +5420,10 @@
                     // and navigation resumes. Returning from a control is leaving a
                     // cell, so an Interactive one the pointer walked away from ends too.
                     EndInteractive();
-                    // Escape in the Name Box abandons what was typed there (ADR-0051).
+                    // Escape in the Name Box abandons what was typed there (ADR-0051), and
+                    // leaves it: the hand-back takes the keyboard from the field (ADR-0021).
                     _nameBoxText = null;
-                    await ReclaimFocusAsync();
+                    await ReclaimFocusAsync(fromField: true);
                     StateHasChanged();
                     return;
                 }
@@ -5948,7 +5949,9 @@
     /// <param name="reclaimFocus">Whether the keyboard comes back to the root once the edit
     /// ends. A press into a field of the grid's own (the Name Box) keeps its meaning after
     /// the commit (ADR-0010), so the keyboard stays where the press put it.</param>
-    private async Task<bool> CommitEditAsync(bool reclaimFocus = true)
+    /// <param name="byPress">Whether a press past the editor asked for the commit, rather than
+    /// a key typed in it: see <see cref="EndEditingAsync"/>.</param>
+    private async Task<bool> CommitEditAsync(bool reclaimFocus = true, bool byPress = false)
     {
         var cell = _editingCell;
         var text = _editText;
@@ -5959,7 +5962,7 @@
         // gesture, so it is raised here rather than deferred.
         if (slice < 0 || slice >= _window.Count)
         {
-            await EndEditingAsync(reclaimFocus);
+            await EndEditingAsync(reclaimFocus, byPress);
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(EditDiscardReason.RowLeftTheWindow);
             return true;
@@ -5969,7 +5972,7 @@
         // is the last write path the gate did not cover.
         if (!ColumnIsEditable(cell.Column))
         {
-            await EndEditingAsync(reclaimFocus);
+            await EndEditingAsync(reclaimFocus, byPress);
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(EditDiscardReason.ColumnNoLongerEditable);
             return true;
@@ -5991,7 +5994,7 @@
         // A Flag raises the intent unchanged: the mark does not travel in it, and comes
         // back through the display channels when the Consumer answers them (ADR-0034).
         _editError = null;
-        await EndEditingAsync(reclaimFocus);
+        await EndEditingAsync(reclaimFocus, byPress);
         if (OnEdit.HasDelegate)
             await OnEdit.InvokeAsync(new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text));
         return true;
@@ -6064,8 +6067,19 @@
         }
     }
 
-    private async Task EndEditingAsync(bool reclaimFocus = true)
+    /// <summary>Ends the edit, and hands the keyboard back to the root unless
+    /// <paramref name="reclaimFocus"/> says the gesture keeps it where it put it.</summary>
+    /// <param name="reclaimFocus">Whether the keyboard comes back to the root.</param>
+    /// <param name="byPress">Whether a press past the editor ended it. An edit ended by a key
+    /// typed in the Formula Bar — Enter, Tab, Escape — takes the keyboard out of the bar. One
+    /// ended by a press does not: a press on the rows moves DOM focus itself, and a Formula Bar
+    /// or Name Box that holds it has been pressed since, which its hand-back, a round trip
+    /// late, must leave alone (ADR-0021). A press held behind keys, whose default was
+    /// suppressed, is the listener's to know about, and it takes a field that press left
+    /// standing.</param>
+    private async Task EndEditingAsync(bool reclaimFocus = true, bool byPress = false)
     {
+        var fromBar = _editSurface == EditSurface.Bar && !byPress;
         // The list and the hint answer the edit, and go with it, as the outline does (ADR-0051).
         CloseCompletion();
         EndPointing();
@@ -6082,7 +6096,7 @@
         _editorElement = default;
         await PushEditingModeAsync();
         if (reclaimFocus)
-            await ReclaimFocusAsync();
+            await ReclaimFocusAsync(fromField: fromBar);
     }
 
     /// <summary>
@@ -6210,7 +6224,7 @@
     {
         var text = _nameBoxText;
         _nameBoxText = null;
-        await ReclaimFocusAsync();
+        await ReclaimFocusAsync(fromField: true);
         if (text is not null && OnNameBoxEntered.HasDelegate)
             await OnNameBoxEntered.InvokeAsync(text);
     }
@@ -6556,6 +6570,10 @@
         return CellEngagement.None;
     }
 
+    /// <summary>The hand-back that leaves the Formula Bar and the Name Box alone — every
+    /// one but those made from inside them (<see cref="ReclaimFocusAsync(bool)"/>).</summary>
+    private Task ReclaimFocusAsync() => ReclaimFocusAsync(fromField: false);
+
     /// <summary>
     /// Hands the keyboard back to the root when something of the grid's own that held it
     /// goes — a popover, the editor, a status-line command — and when Escape leaves a
@@ -6568,14 +6586,24 @@
     /// the handle's to read, since only the browser knows where focus is now — the one
     /// decision about focus made in JavaScript (ADR-0021). Before the handle is attached there
     /// is no listener on the root to hand keys to, and nothing is asked.</para>
+    ///
+    /// <para>Nor, unless <paramref name="fromField"/> says so, while it is on a field beside the
+    /// rows with focus of its own — the Formula Bar or the Name Box, built in or a Chrome's,
+    /// inside the band the core renders them into (ADR-0021, widened 2026-09-28). A row
+    /// press's hand-back lands a round trip late, and took the keyboard from a field pressed
+    /// after it. <paramref name="fromField"/> is for the gestures made in that field, whose
+    /// point is to leave it: Enter in the Name Box, Escape in either, an edit in the bar
+    /// ending.</para>
     /// </summary>
-    private async Task ReclaimFocusAsync()
+    /// <param name="fromField">Whether the keyboard is taken from the Formula Bar or the Name
+    /// Box too.</param>
+    private async Task ReclaimFocusAsync(bool fromField)
     {
         if (_disposed || _scrollHandle is null)
             return;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("reclaimFocus");
+            await _scrollHandle.InvokeVoidAsync("reclaimFocus", fromField);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
