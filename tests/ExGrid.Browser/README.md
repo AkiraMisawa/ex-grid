@@ -158,7 +158,7 @@ runner.
   Shift+Tab from after the grid landing on the root with buttons on the page
   (A11Y-17); the chosen action outlined under forced colors too (UX-14).
 - `excel-keys.spec.mjs` — Excel's editing keys on `/features`: Ctrl+Z / Ctrl+Y /
-  Ctrl+Shift+Z reaching the page's undo stack (KB-37), Delete's Clear Intent and its
+  Ctrl+Shift+Z reaching the page's undo stack (KB-39), Delete's Clear Intent and its
   refusal (ED-24), Backspace's empty editor (ED-23), Ctrl+D / Ctrl+R and a fill refused by
   name (CP-24/25), the keys staying the input's own inside the editor, and — on `/cells` —
   a display-only grid leaving Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25).

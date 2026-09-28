@@ -1,6 +1,6 @@
 # What to verify on Windows, third run
 
-Status: ready-for-human — **A and B can run now. C and D wait for the gate's fifth item, the merge of `main`** (E is optional).
+Status: ready-for-human — **all parts can run now, A, B, C, D in order** (the gate below is met; E is optional).
 
 For a Claude Code session on the Windows desktop used for the first two runs (Excel, Chrome, Edge,
 WSL2 with nix). The second run's method, tools and advance authorisation all still apply: read
@@ -40,7 +40,7 @@ origin/claude/exsheet-start-8cx3v1` contains all four of these**. Search with `g
    succeeds. `main` carries #25, which adds Excel's editing keys, Delete, Ctrl+D/R and Find, and
    #26, which warms up layer 3. Parts C and D must test them together with this branch
 
-*(2026-09-28: items 1–4 are on the branch from `1f7d4e0` on, and item 5 is still to come. Check them anyway and record the
+*(2026-09-28: all five are on the branch, `main` merged in from the commit after `7db2677`. Check them anyway and record the
 commits. Check them again before C if the tip has moved since A.)* If one is missing, stop, push
 A and B, and say which one. Part D takes 40 minutes and is only worth running on the finished code.
 
@@ -110,6 +110,14 @@ As the second run's Part C, on both hosts and both browsers:
   circuit to be connected** before the first click, the way `tests/ExGrid.Browser`'s fixtures do.
   The second run's "nothing landed" may have been the page not yet being interactive, so record
   which wait was used.
+
+- **What `main` brought, beside Excel** (ADR-0054, ADR-0055, ADR-0050 item 5). In ExSheet and in
+  Excel side by side, record the cells, the Selection and the active cell for each of these:
+  - Delete over B2:D4, then Ctrl+Z;
+  - Backspace on a filled cell;
+  - Ctrl+D over B2:B5 where B2 holds `=A2*2`, and Ctrl+R over B2:E2 where B2 holds `=B1+1`;
+  - Ctrl+Enter with `=A1` over B2:C3;
+  - Ctrl+F for a value that is only in a row scrolled far out of view.
 
 ## Part D — layer 3, both browsers, both hosts, at 150% (after the gate)
 
