@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, scrollRowToTop } from './fixtures.mjs';
 
 // Row Marks (ADR-0043) on /marks: 1,000,000 rows through GridSource.Fetch with a mark
 // adapter, 28px rows in a 600px Viewport. Columns: Mark 0, Index 1, Desk 2, Amount 3.
@@ -6,7 +6,6 @@ import { test, expect } from './fixtures.mjs';
 // asserted is what the user reads: which checkboxes are ticked and what the count says.
 
 const ROWS = 1_000_000;
-const ROW_HEIGHT = 28;
 
 function cell(page, row, column) {
     return page.locator(`.ex-grid [id$='-r${row}c${column}']`);
@@ -47,7 +46,7 @@ test('after "mark all", rows scrolled to far away paint ticked (MK-6)', async ({
     await expect(headerBox(page)).toHaveAttribute('aria-checked', 'true');
 
     const far = 700_000;
-    await page.locator('.ex-grid .ex-scroller').evaluate((scroller, top) => { scroller.scrollTop = top; }, far * ROW_HEIGHT);
+    await scrollRowToTop(page.locator('.ex-grid'), far);
     await expect(cell(page, far, 1)).toHaveText(String(far), { timeout: 15_000 });
     await expect(page.locator('.ex-grid .ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
 
