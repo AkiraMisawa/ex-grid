@@ -269,3 +269,21 @@ replayed in order behind them. Without this, a click straight after Enter reache
 Enter, and the Enter's move carries the Focus past the clicked cell: a value typed next lands a row
 too low, which was measured on the Server host at 0–60 ms and on WebAssembly at 0 ms. When nothing
 is held, the press passes through untouched. No layout is read.)*
+
+*(Widened 2026-09-28, decided with the user, after the second Windows run's Server failures.)* The
+same `mousedown` covers two more things. Neither adds a listener, reads layout, or moves focus from
+script:
+
+- **A press into an editable, unfocused Formula Bar is held among the keys too.** It opens an edit,
+  but the core hears of it a round trip later. Keys typed in that gap — F2, ↓, a character held
+  for another reason — were read as keys outside an edit, and were lost or did the wrong thing. The
+  press is queued as a marker, and the keys after it wait for the core's answer to it.
+- **A held press on the rows suppresses its default**, which would move DOM focus onto the rows.
+  The rows hand focus back to the root a round trip later, and that hand-over is not held; landing
+  just after the Cell Editor took focus, it pulled the keyboard off the editor and every later key
+  waited for the listener's two-second fallback. A press that is not held keeps its default.
+
+**The hand-back to the root is narrowed with it** (the note above). It now takes focus only when
+DOM focus is on the root, on the rows or on nothing (`body`). A field inside the root that has
+focus of its own — the Formula Bar, the Name Box, a Cell Editor — keeps it. Before this, a row
+click's late hand-back took the keyboard from a Formula Bar pressed after it.)*
