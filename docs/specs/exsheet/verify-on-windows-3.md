@@ -1,6 +1,6 @@
 # What to verify on Windows, third run
 
-Status: ready-for-human — **all parts can run now, A, B, C, D in order** (the gate below is met at `1f7d4e0`; E is optional).
+Status: ready-for-human — **A and B can run now. C and D wait for the gate's fifth item, the merge of `main`** (E is optional).
 
 For a Claude Code session on the Windows desktop used for the first two runs (Excel, Chrome, Edge,
 WSL2 with nix). The second run's method, tools and advance authorisation all still apply: read
@@ -36,7 +36,11 @@ origin/claude/exsheet-start-8cx3v1` contains all four of these**. Search with `g
 3. `GridPasteIntent.Refuse`
 4. The Server Formula Bar fix (DC-19/DC-22)
 
-*(2026-09-28: all four are on the branch from `1f7d4e0` on. Check them anyway and record the
+5. **`main` merged in**: `git merge-base --is-ancestor b894b69 origin/claude/exsheet-start-8cx3v1`
+   succeeds. `main` carries #25, which adds Excel's editing keys, Delete, Ctrl+D/R and Find, and
+   #26, which warms up layer 3. Parts C and D must test them together with this branch
+
+*(2026-09-28: items 1–4 are on the branch from `1f7d4e0` on, and item 5 is still to come. Check them anyway and record the
 commits. Check them again before C if the tip has moved since A.)* If one is missing, stop, push
 A and B, and say which one. Part D takes 40 minutes and is only worth running on the finished code.
 
