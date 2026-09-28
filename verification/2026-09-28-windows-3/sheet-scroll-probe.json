@@ -1,0 +1,55 @@
+{
+  "base": "http://localhost:5299",
+  "runs": [
+    {
+      "forcedScale": null,
+      "steps": [
+        {
+          "asked": 2772,
+          "scrollTop": 2772,
+          "scrollHeight": 22369362,
+          "dpr": 1.0000000298023224,
+          "ceiling": 22369618,
+          "spacerDeclared": 22369362,
+          "topRowNumber": 130,
+          "rowNPlus1Painted": false
+        },
+        {
+          "asked": 8372,
+          "scrollTop": 8372,
+          "scrollHeight": 22369362,
+          "dpr": 1.0000000298023224,
+          "ceiling": 22369618,
+          "spacerDeclared": 22369362,
+          "topRowNumber": 393,
+          "rowNPlus1Painted": false
+        }
+      ]
+    },
+    {
+      "forcedScale": 1,
+      "steps": [
+        {
+          "asked": 2772,
+          "scrollTop": 2772,
+          "scrollHeight": 29360156,
+          "dpr": 1,
+          "ceiling": 33554428,
+          "spacerDeclared": 29360156,
+          "topRowNumber": 100,
+          "rowNPlus1Painted": true
+        },
+        {
+          "asked": 8372,
+          "scrollTop": 8372,
+          "scrollHeight": 29360156,
+          "dpr": 1,
+          "ceiling": 33554428,
+          "spacerDeclared": 29360156,
+          "topRowNumber": 300,
+          "rowNPlus1Painted": true
+        }
+      ]
+    }
+  ]
+}

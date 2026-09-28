@@ -1,0 +1,113 @@
+{
+  "channel": "msedge",
+  "base": "http://localhost:5299",
+  "label": "wasm",
+  "wheel": {},
+  "zoom": [
+    {
+      "order": "as-run",
+      "dprBefore": 1.5,
+      "dprAfter": 3,
+      "zoom": 2,
+      "activeDescendant": "r999999c99",
+      "focus": {
+        "x": 833.3333740234375,
+        "y": 871.5416870117188,
+        "width": 91,
+        "height": 28,
+        "top": 871.5416870117188,
+        "right": 924.3333740234375,
+        "bottom": 899.5416870117188,
+        "left": 833.3333740234375
+      },
+      "readable": {
+        "top": 335.54168701171875,
+        "left": 32,
+        "bottom": 899.5416870117188,
+        "right": 924
+      },
+      "pinnedRight": 282,
+      "window": {
+        "innerWidth": 789,
+        "innerHeight": 454,
+        "scrollX": 0,
+        "scrollY": 0
+      },
+      "focusWholeInGrid": true,
+      "focusWholeInWindow": false,
+      "lastRowPainted": true,
+      "lastRowText": "K-999999",
+      "lastRow": {
+        "x": 32,
+        "y": 871.5416870117188,
+        "width": 140,
+        "height": 28,
+        "top": 871.5416870117188,
+        "right": 172,
+        "bottom": 899.5416870117188,
+        "left": 32
+      },
+      "lastRowWholeInGrid": true,
+      "lastRowWholeInWindow": false,
+      "scrollTop": 11183961,
+      "scrollHeight": 11184553,
+      "clientHeight": 592,
+      "ceiling": 11184810,
+      "spacerDeclared": 11184553,
+      "shot": "shots/D-zoom-200-ctrl-end-as-run-wasm-msedge.png"
+    },
+    {
+      "order": "grid-in-view",
+      "dprBefore": 1.5,
+      "dprAfter": 3,
+      "zoom": 2,
+      "activeDescendant": "r999999c99",
+      "focus": {
+        "x": 833.3333740234375,
+        "y": 563.875,
+        "width": 91,
+        "height": 28,
+        "top": 563.875,
+        "right": 924.3333740234375,
+        "bottom": 591.875,
+        "left": 833.3333740234375
+      },
+      "readable": {
+        "top": 27.875,
+        "left": 32,
+        "bottom": 591.875,
+        "right": 924
+      },
+      "pinnedRight": 282,
+      "window": {
+        "innerWidth": 789,
+        "innerHeight": 454,
+        "scrollX": 0,
+        "scrollY": 307.6666564941406
+      },
+      "focusWholeInGrid": true,
+      "focusWholeInWindow": false,
+      "lastRowPainted": true,
+      "lastRowText": "K-999999",
+      "lastRow": {
+        "x": 32,
+        "y": 563.875,
+        "width": 140,
+        "height": 28,
+        "top": 563.875,
+        "right": 172,
+        "bottom": 591.875,
+        "left": 32
+      },
+      "lastRowWholeInGrid": true,
+      "lastRowWholeInWindow": false,
+      "scrollTop": 11183961,
+      "scrollHeight": 11184553,
+      "clientHeight": 592,
+      "ceiling": 11184810,
+      "spacerDeclared": 11184553,
+      "shot": "shots/D-zoom-200-ctrl-end-grid-in-view-wasm-msedge.png"
+    }
+  ],
+  "console": []
+}

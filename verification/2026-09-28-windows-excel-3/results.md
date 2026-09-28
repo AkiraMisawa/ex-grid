@@ -3,8 +3,9 @@
 **Scope: Part A of [`verify-on-windows-3.md`](../../docs/specs/exsheet/verify-on-windows-3.md).**
 The whole case corpus asked of a real Excel again, through COM and with real keys, with the new
 cases among it. Part B, what ADR-0052 still extrapolates and Excel's scroll steps, is in
-[`active-cell.md`](active-cell.md). **Parts C and D were not run**: the procedure's gate is not
-met (below).
+[`active-cell.md`](active-cell.md). Parts C and D waited for the procedure's gate (below), and
+ran later the same day at a later tip, `b1f569a`: they are in
+[`../2026-09-28-windows-3/results.md`](../2026-09-28-windows-3/results.md).
 
 **Verified commit: `20666707a4c8b7b71a899f25ad3e885a02da402c`**, the tip of
 `claude/exsheet-start-8cx3v1` when this run began. The results are committed on
@@ -302,7 +303,7 @@ NAME-010, STRUCT-021 (a circular reference, ADR-0047 `#CIRC!`); XLOOKUP-048..057
 over unsorted data, ADR-0047); FILL-045, FILL-052..054 (fill patterns ExSheet does not take,
 ADR-0050); REF-006 (`VLOOKUP` outside the declared set, ADR-0047).
 
-## Parts C and D: not run
+## Parts C and D: not run with A and B
 
 The procedure starts Parts C and D only when `origin/claude/exsheet-start-8cx3v1` holds all five
 gate items. Checked at 09:53 on `2066670` and again at 10:41 on `7db2677`:
@@ -315,6 +316,7 @@ gate items. Checked at 09:53 on `2066670` and again at 10:41 on `7db2677`:
 | 4. The Server Formula Bar fix (DC-19/DC-22) | yes | `0efc1fe`, `a07788a` |
 | 5. `main` merged in (`git merge-base --is-ancestor b894b69 origin/claude/exsheet-start-8cx3v1`) | **no** | fails at both tips |
 
-**Item 5 is missing, so Parts C and D were not run**, and A and B are pushed, as the procedure
-says. The narrowed focus hand-back (ADR-0021, "Widened 2026-09-28") is on the branch from
+**Item 5 is missing, so Parts C and D were not run** with A and B, which were pushed, as the
+procedure says. *(Later the same day: item 5 landed at `b1f569a`, and C and D ran there. The gate
+as checked then is in [`../2026-09-28-windows-3/results.md`](../2026-09-28-windows-3/results.md).)* The narrowed focus hand-back (ADR-0021, "Widened 2026-09-28") is on the branch from
 `1f7d4e0`, before the verified commit.

@@ -1,0 +1,45 @@
+
+Running 3 tests using 1 worker
+
+  ok 1 [chrome-150] › virtualisation.spec.mjs:125:1 › the first and the last row paint their own data, there and back again (BIG-5) (962ms)
+  x  2 [chrome-150] › virtualisation.spec.mjs:125:1 › the first and the last row paint their own data, there and back again (BIG-5) (15.4s)
+  ok 3 [chrome-150] › virtualisation.spec.mjs:125:1 › the first and the last row paint their own data, there and back again (BIG-5) (923ms)
+
+
+  1) [chrome-150] › virtualisation.spec.mjs:125:1 › the first and the last row paint their own data, there and back again (BIG-5) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('.ex-grid [id$=\'-r999999c0\']')
+    Expected: "K-999999"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r999999c0\']')
+
+
+      22 | /** What /wide's data says a row holds (DemoData.WideColumns), checked against what is painted. */
+      23 | async function expectRowPainted(page, row) {
+    > 24 |     await expect(cell(page, row, 0)).toHaveText(`K-${String(row).padStart(6, '0')}`, { timeout: 15_000 });
+         |                                      ^
+      25 |     await expect(cell(page, row, 1)).toHaveText(BOOKS[row % BOOKS.length]);
+      26 |     // M01, the first scrollable column: ((row·7919 + 2·104729) mod 1,999,999) / 100.
+      27 |     const expected = ((row * 7919 + 2 * 104729) % 1_999_999) / 100;
+        at expectRowPainted (C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\virtualisation.spec.mjs:24:38)
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\virtualisation.spec.mjs:132:11
+
+    Error Context: test-results-rerun\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--chrome-150-repeat1\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--chrome-150-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\virtualisation-the-first-a-bd6fb-there-and-back-again-BIG-5--chrome-150-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chrome-150] › virtualisation.spec.mjs:125:1 › the first and the last row paint their own data, there and back again (BIG-5) 
+  2 passed (20.4s)
