@@ -147,7 +147,14 @@ test('the first and the last row paint their own data, there and back again (BIG
 // taken: the anchor, computed from row 0, was written over it and the grid went back to the top
 // (BIG-5 on chrome-150, 2 of 4 on Windows, verification/2026-09-28-windows-3). So the scroll is
 // made here in the very task in which the grid stops being busy, before the ceiling can have
-// been heard, and it must stand. At scale 1 nothing is compressed and this is BIG-5's own case.
+// been heard, and it must not be undone. At scale 1 nothing is compressed and this is BIG-5's
+// own case: the last row.
+//
+// Where the rows land when compressed depends on which the grid heard first. The ceiling first
+// (the usual order on a circuit): the scroll is read through the compressed geometry, and the
+// last row is painted. The scroll first (always on WebAssembly, where the offset is read within
+// the frame): the untold geometry showed row 798,894 there, and ADR-0053's anchor keeps it, with
+// the thumb moved to match. Either way the view is where the scroll took it, never the top.
 test('a scroll to the end made as the grid becomes ready is not undone by the Layout Ceiling (BIG-5, ADR-0053)', async ({ page }, testInfo) => {
     await page.addInitScript(() => {
         let done = false;
@@ -166,13 +173,23 @@ test('a scroll to the end made as the grid becomes ready is not undone by the La
     });
     await page.goto('/wide');
     await expect(page.locator('.ex-grid')).toHaveAttribute('aria-rowcount', String(ROWS));
-    // Whether this run caught the ceiling still untold (the spacer the true height) — recorded,
-    // since which comes first is the browser's timing, not the test's.
-    testInfo.annotations.push({ type: 'spacer at the scroll', description: String(await page.evaluate(() => window.__spacerAtScroll)) });
+    const firstRow = async () => Number(await page.locator('.ex-grid .ex-viewport').getAttribute('data-ex-first-row'));
 
-    await expectRowPainted(page, ROWS - 1);
-    await page.waitForTimeout(400); // past the settle delay: nothing moves it back afterwards
-    await expectRowPainted(page, ROWS - 1);
+    await expect.poll(firstRow, { timeout: 15_000 }).toBeGreaterThan(ROWS / 2);
+    await page.waitForTimeout(400); // past the settle delay, and past any anchor still on its way
+    const first = await firstRow();
+    // Recorded, since which the grid heard first is the browser's timing, not the test's.
+    testInfo.annotations.push({
+        type: 'measured',
+        description: JSON.stringify({ spacerAtScroll: await page.evaluate(() => window.__spacerAtScroll), first }),
+    });
+    expect(first, 'the scroll was undone').toBeGreaterThan(ROWS / 2);
+    await expectRowPainted(page, first + 1);
+    // Uncompressed, the geometry never changed under the scroll: the end is the end.
+    const declared = await page.evaluate(() => Number(/height: ([\d.]+)px/.exec(document.querySelector('.ex-spacer').getAttribute('style'))[1]));
+    if (declared >= ROWS * 28) {
+        await expectRowPainted(page, ROWS - 1);
+    }
 });
 
 test('scrolling changes which rows exist, not how many elements do (ADR-0004 P1, across a scroll)', async ({ page }) => {

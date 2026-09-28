@@ -260,8 +260,11 @@ export const keySeenUntouched = (page) => page.evaluate(() => window.__keySeen);
 // CSSOM, which rounds a length to six significant figures (ADR-0053). Below the ceiling k is 1 and
 // the offset is row × row height exactly.
 //
-// scrollTop is quantised to device pixels, and a pixel short at k > 1 would leave the row before
-// on top, so the offset is rounded up and nudged while the browser holds it short. Returns the
+// Compressed, the target is one pixel into the row rather than its top edge: V as the page reads
+// it (clientHeight, whole pixels) can differ from the grid's by a fraction of a pixel at a
+// fractional scale, which moved k by 3e-9 on /wide at 150% and c(s) by 0.04 px at row 500,000 —
+// enough to put row 499,999 first when aimed at the edge. And scrollTop is quantised to device
+// pixels, so the offset is rounded up and nudged while the browser holds it short. Returns the
 // offset the browser holds and k.
 export async function scrollRowToTop(grid, row) {
     return grid.evaluate((root, row) => {
@@ -279,7 +282,7 @@ export async function scrollRowToTop(grid, row) {
         const scrollHeight = px(spacer.getAttribute('style'), 'height') - band;
         const readable = scroller.clientHeight - band;
         const k = contentHeight > scrollHeight ? (contentHeight - readable) / (scrollHeight - readable - 2) : 1;
-        const content = row * rowHeight;
+        const content = row * rowHeight + (k > 1 ? 1 : 0);
         scroller.scrollTop = Math.ceil(content / k);
         for (let i = 0; i < 4 && scroller.scrollTop * k < content; i++) {
             scroller.scrollTop = Math.ceil(scroller.scrollTop) + 1;
