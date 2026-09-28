@@ -1,6 +1,6 @@
 # What to verify on Windows, third run
 
-Status: ready-for-human — **Parts A and B can run now. Parts C and D wait for the gate below.**
+Status: ready-for-human — **all parts can run now, A, B, C, D in order** (the gate below is met at `1f7d4e0`; E is optional).
 
 For a Claude Code session on the Windows desktop used for the first two runs (Excel, Chrome, Edge,
 WSL2 with nix). The second run's method, tools and advance authorisation all still apply: read
@@ -36,8 +36,13 @@ origin/claude/exsheet-start-8cx3v1` contains all four of these**. Search with `g
 3. `GridPasteIntent.Refuse`
 4. The Server Formula Bar fix (DC-19/DC-22)
 
-If they are not all there when A and B finish, stop, push A and B, and say which are missing.
-Part D's run is only worth its 40 minutes on the finished code.
+*(2026-09-28: all four are on the branch from `1f7d4e0` on. Check them anyway and record the
+commits. Check them again before C if the tip has moved since A.)* If one is missing, stop, push
+A and B, and say which one. Part D takes 40 minutes and is only worth running on the finished code.
+
+One more change may land while this run is under way: the focus hand-back narrowed so that it
+does not take the keyboard from the Formula Bar or the Name Box (ADR-0021, "Widened 2026-09-28").
+It is not in the gate. If it has landed before Part C, merge it in and record that you did.
 
 ## Part A — the oracle, new and uncertain cases
 
