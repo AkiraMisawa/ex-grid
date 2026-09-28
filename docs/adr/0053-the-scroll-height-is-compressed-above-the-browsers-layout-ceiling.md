@@ -124,6 +124,20 @@ changes.**
 - **A layer-3 test reads a length from the style attribute, not through the CSSOM**, which rounds
   it to six significant figures (`2.23694e+07px`).
 
+## Settled after the third Windows run *(2026-09-28, decided with the user)*
+
+- **The anchor gives way to a scroll the grid has not yet heard.** A re-anchor after a ceiling or
+  row-height change is written only if the browser's offset is still the one the anchor was taken
+  from; otherwise the grid paints the browser's offset. BIG-5 at 150% on the Server host scrolled to
+  the end while the first ceiling was still arriving, and the anchor wrote row 0 back over it.
+- **The first ceiling told is the initial measurement, not a change.** Nothing is re-anchored when
+  it arrives: the browser's offset at that moment is read through the new geometry, so a scroll to
+  the end made before the grid knew its ceiling stays at the end. Before this, the grid kept the row
+  it had read through the uncompressed geometry, and a scroll to the end landed near 80% of the
+  result. A later ceiling change (the scale or the zoom) still keeps the first visible row.
+  Considered and rejected: keeping the grid busy (ADR-0033) until the first report, which would need
+  a fallback for a grid in a hidden container, whose report never comes.
+
 ## Measured on Windows *(2026-09-28, verification/2026-09-28-windows-3)*
 
 At the display's real 150%, one wheel notch on `/wide` moved 100 px, **4.47 rows** at the top and
