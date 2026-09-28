@@ -1295,7 +1295,7 @@
     },
     {
       "id": "XLOOKUP-149",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: match_mode 3: \\d is Unicode too (UCP), so Arabic-Indic digits are digits",
       "cells": {"B1": "١٢", "B2": "12", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^\\d+$\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
@@ -1303,7 +1303,7 @@
     },
     {
       "id": "XLOOKUP-150",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: match_mode 3: \\w takes a combining mark (PCRE2 10.43 on)",
       "cells": {"B1": "é", "B2": "e", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^\\w+$\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
@@ -1311,7 +1311,7 @@
     },
     {
       "id": "XLOOKUP-151",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: match_mode 3: \\s is Unicode too, so a no-break space is whitespace",
       "cells": {"B1": "a b", "B2": "a b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^a\\sb$\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
@@ -1319,7 +1319,7 @@
     },
     {
       "id": "XLOOKUP-152",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: match_mode 3: a negative lookahead is accepted",
       "cells": {"B1": "ab", "B2": "ac", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"a(?!b)\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",

@@ -395,7 +395,7 @@
     },
     {
       "id": "GW-031",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative number that rounds to 0 at the one decimal a column shows keeps its minus sign",
       "columnWidth": 4,
       "cells": {"A1": "=-1/30"},
@@ -404,7 +404,7 @@
     },
     {
       "id": "GW-032",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negative number too small for any decimal a column shows is -0 there too",
       "columnWidth": 3,
       "cells": {"A1": "=-0.0001"},

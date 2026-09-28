@@ -388,7 +388,7 @@
     },
     {
       "id": "LVL-034",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text pasted into a percent cell is taken as the number it spells, not divided",
       "cells": {},
       "action": [

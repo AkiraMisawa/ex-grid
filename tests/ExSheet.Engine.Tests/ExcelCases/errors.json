@@ -902,7 +902,7 @@
     },
     {
       "id": "ERR-109",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: #BUSY! typed in lower case stays text as typed",
       "cells": {"A1": "#busy!"},
       "check": "A1",

@@ -1,0 +1,567 @@
+{
+    "ran":  "2026-09-28T10:34:33",
+    "excel":  "16.0 (build 20326); EXCEL.EXE 16.0.20326.20158",
+    "windowsRegionalFormat":  "de-DE",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  16,
+                    "disagree":  1,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "COPY-024",
+                      "area":  "copy",
+                      "source":  "observed",
+                      "description":  "Inward text is read under the Sheet\u0027s culture, not the program\u0027s",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1234.5
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1234.5
+                                       },
+                      "excel":  {
+                                    "value2":  1234.5,
+                                    "kind":  "number",
+                                    "number":  "1234.5",
+                                    "text":  "1.234,50",
+                                    "formula":  "1234.5",
+                                    "numberFormat":  "#,##0.00",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "COPY-025",
+                      "area":  "copy",
+                      "source":  "documented",
+                      "description":  "A pasted Formula is in the invariant syntax in every culture",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  3.5
+                                   },
+                      "engineExpect":  {
+                                           "value2":  3.5
+                                       },
+                      "excel":  {
+                                    "value2":  "=SUM(1.5,2)",
+                                    "kind":  "text",
+                                    "text":  "=SUM(1.5,2)",
+                                    "formula":  "=SUM(1.5,2)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected 3.5, Excel \"=SUM(1.5,2)\" (text)"
+                                      ]
+                  },
+                  {
+                      "id":  "DATE-006",
+                      "area":  "dates",
+                      "source":  "observed",
+                      "description":  "A date is typed in the culture\u0027s day order, and records Excel\u0027s built-in short date, shown in the culture\u0027s pattern",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291,
+                                       "text":  "26.09.2026",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291,
+                                           "text":  "26.09.2026",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "26.09.2026",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  9.27,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "DATE-007",
+                      "area":  "dates",
+                      "source":  "observed",
+                      "description":  "A date is typed in the culture\u0027s day order, and records Excel\u0027s built-in short date, shown in the culture\u0027s pattern",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291,
+                                       "text":  "26.09.2026",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291,
+                                           "text":  "26.09.2026",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "26.09.2026",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  9.27,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "DATE-008",
+                      "area":  "dates",
+                      "source":  "observed",
+                      "description":  "A date is typed in the culture\u0027s day order, and records Excel\u0027s built-in short date, shown in the culture\u0027s pattern",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291,
+                                       "text":  "26.09.2026",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291,
+                                           "text":  "26.09.2026",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "26.09.2026",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  9.27,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FILL-047",
+                      "area":  "fill",
+                      "source":  "observed",
+                      "description":  "Day names are refused in the Sheet\u0027s culture too",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "excelExpect",
+                      "expected":  {
+                                       "value2":  "Dienstag"
+                                   },
+                      "engineExpect":  {
+                                           "refused":  "FillPatternNotSupported",
+                                           "value2":  null
+                                       },
+                      "excel":  {
+                                    "value2":  "Dienstag",
+                                    "kind":  "text",
+                                    "text":  "Dienstag",
+                                    "formula":  "Dienstag",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies"
+                  },
+                  {
+                      "id":  "GW-018",
+                      "area":  "general-width",
+                      "source":  "observed",
+                      "description":  "The fitted form uses the culture\u0027s decimal separator",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "0,333333"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "0,333333"
+                                       },
+                      "excel":  {
+                                    "value2":  0.33333333333333331,
+                                    "kind":  "number",
+                                    "number":  "0.33333333333333331",
+                                    "text":  "0,333333",
+                                    "formula":  "=1/3",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FMT-029",
+                      "area":  "number-formats",
+                      "source":  "observed",
+                      "description":  "The culture\u0027s separators, over the invariant code",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "1.234,50"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "1.234,50"
+                                       },
+                      "excel":  {
+                                    "value2":  1234.5,
+                                    "kind":  "number",
+                                    "number":  "1234.5",
+                                    "text":  "1.234,50",
+                                    "formula":  "=1234.5",
+                                    "numberFormat":  "#,##0.00",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FMT-039",
+                      "area":  "number-formats",
+                      "source":  "observed",
+                      "description":  "General uses the culture\u0027s decimal separator",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "1,5"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "1,5"
+                                       },
+                      "excel":  {
+                                    "value2":  1.5,
+                                    "kind":  "number",
+                                    "number":  "1.5",
+                                    "text":  "1,5",
+                                    "formula":  "=1.5",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FMT-060",
+                      "area":  "number-formats",
+                      "source":  "observed",
+                      "description":  "Month names are the culture\u0027s",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "Januar"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "Januar"
+                                       },
+                      "excel":  {
+                                    "value2":  45292,
+                                    "kind":  "number",
+                                    "number":  "45292",
+                                    "text":  "Januar",
+                                    "formula":  "=45292",
+                                    "numberFormat":  "mmmm",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-008",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "A typed number is read with the Sheet\u0027s culture\u0027s separators, and thousands separators with decimals give #,##0.00",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1234.5,
+                                       "text":  "1.234,50",
+                                       "numberFormat":  "#,##0.00"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1234.5,
+                                           "text":  "1.234,50",
+                                           "numberFormat":  "#,##0.00"
+                                       },
+                      "excel":  {
+                                    "value2":  1234.5,
+                                    "kind":  "number",
+                                    "number":  "1234.5",
+                                    "text":  "1.234,50",
+                                    "formula":  "1234.5",
+                                    "numberFormat":  "#,##0.00",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-009",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "A typed number is read with the Sheet\u0027s culture\u0027s separators",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1.5
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1.5
+                                       },
+                      "excel":  {
+                                    "value2":  1.5,
+                                    "kind":  "number",
+                                    "number":  "1.5",
+                                    "text":  "1,5",
+                                    "formula":  "1.5",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-015",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Numeric text in arithmetic is read as a typed number would be, under the Sheet\u0027s culture",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  2.5
+                                   },
+                      "engineExpect":  {
+                                           "value2":  2.5
+                                       },
+                      "excel":  {
+                                    "value2":  2.5,
+                                    "kind":  "number",
+                                    "number":  "2.5",
+                                    "text":  "2,5",
+                                    "formula":  "=\"1,5\"+1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-023",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Ticket 19 row 28: WAHR under de-DE is text",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "WAHR"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "WAHR"
+                                       },
+                      "excel":  {
+                                    "value2":  "WAHR",
+                                    "kind":  "text",
+                                    "text":  "WAHR",
+                                    "formula":  "WAHR",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-040",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "A month name in the culture\u0027s language: a date, whose built-in d-mmm shows as 26. Okt under de-DE (verification/2026-09-27-windows-excel-2)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "26. Okt",
+                                       "numberFormat":  "d-mmm"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "26. Okt",
+                                           "numberFormat":  "d-mmm"
+                                       },
+                      "excel":  {
+                                    "value2":  46321,
+                                    "kind":  "number",
+                                    "number":  "46321",
+                                    "text":  "26. Okt",
+                                    "formula":  "46321",
+                                    "numberFormat":  "d-mmm",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-044",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a date and a time typed under de-DE record the built-in short date with a time, shown in the culture\u0027s pattern",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291.416666666664,
+                                       "digits":  9,
+                                       "text":  "26.09.2026 10:00",
+                                       "numberFormat":  "m/d/yyyy h:mm"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291.416666666664,
+                                           "digits":  9,
+                                           "text":  "26.09.2026 10:00",
+                                           "numberFormat":  "m/d/yyyy h:mm"
+                                       },
+                      "excel":  {
+                                    "value2":  46291.416666666664,
+                                    "kind":  "number",
+                                    "number":  "46291.416666666664",
+                                    "text":  "26.09.2026 10:00",
+                                    "formula":  "46291.4166666667",
+                                    "numberFormat":  "m/d/yyyy h:mm",
+                                    "alignment":  "general",
+                                    "columnWidth":  14.27,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-050",
+                      "area":  "typed-constants",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: the built-in d-mmm shows a one-digit day with two digits under de-DE, as German Excel\u0027s TT. MMM",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "05. Okt",
+                                       "numberFormat":  "d-mmm"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "05. Okt",
+                                           "numberFormat":  "d-mmm"
+                                       },
+                      "excel":  {
+                                    "value2":  46300,
+                                    "kind":  "number",
+                                    "number":  "46300",
+                                    "text":  "05. Okt",
+                                    "formula":  "46300",
+                                    "numberFormat":  "d-mmm",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  }
+              ]
+}

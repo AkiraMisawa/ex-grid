@@ -123,7 +123,7 @@
     },
     {
       "id": "IFERROR-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an empty cell as the fallback is an empty value too: joined to text it is \"\"",
       "cells": {"ZZ1000": "=IFERROR(1/0,A1)&\"\""},
       "check": "ZZ1000",
@@ -131,7 +131,7 @@
     },
     {
       "id": "IFERROR-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the empty value IFERROR gives for an empty cell is 0 in arithmetic",
       "cells": {"ZZ1000": "=IFERROR(A1,\"x\")+1"},
       "check": "ZZ1000",

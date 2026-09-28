@@ -417,7 +417,7 @@
     },
     {
       "id": "TYPED-049",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a minus sign before the dollar sign with cents takes the format with cents",
       "cells": {"A1": "-$5.50"},
       "check": "A1",
@@ -425,7 +425,7 @@
     },
     {
       "id": "TYPED-050",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the built-in d-mmm shows a one-digit day with two digits under de-DE, as German Excel's TT. MMM",
       "culture": "de-DE",
       "cells": {"A1": "5-Okt"},

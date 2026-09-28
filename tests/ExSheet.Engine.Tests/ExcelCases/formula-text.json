@@ -841,7 +841,7 @@
     },
     {
       "id": "TEXT-104",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1E21, whose full form would take 22 characters, is written back in scientific notation",
       "cells": {"ZZ1000": "=1E21"},
       "check": "ZZ1000",
@@ -849,7 +849,7 @@
     },
     {
       "id": "TEXT-105",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1E-19, whose full form takes 21 characters, is written back in full",
       "cells": {"ZZ1000": "=1E-19"},
       "check": "ZZ1000",
@@ -857,7 +857,7 @@
     },
     {
       "id": "TEXT-106",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1E-20, whose full form would take 22 characters, is written back in scientific notation",
       "cells": {"ZZ1000": "=1E-20"},
       "check": "ZZ1000",
@@ -865,7 +865,7 @@
     },
     {
       "id": "TEXT-107",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 15 significant digits at 1E-6, 22 characters in full, are written back in scientific notation",
       "cells": {"ZZ1000": "=1.23456789012345E-6"},
       "check": "ZZ1000",
@@ -873,7 +873,7 @@
     },
     {
       "id": "TEXT-108",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 15 significant digits at 1E-5, 21 characters in full, are written back in full",
       "cells": {"ZZ1000": "=1.23456789012345E-5"},
       "check": "ZZ1000",
@@ -881,7 +881,7 @@
     },
     {
       "id": "TEXT-109",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a qualified Reference typed is written back with the Sheet's own name as its qualifier",
       "cells": {"ZZ1000": "=sheet1!a1*2"},
       "check": "ZZ1000",
@@ -889,7 +889,7 @@
     },
     {
       "id": "TEXT-110",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a quoted qualifier naming the Sheet is written in the Sheet's own name, without the quotes it does not need",
       "cells": {"ZZ1000": "='SHEET1'!A1:A2"},
       "check": "ZZ1000",
@@ -897,7 +897,7 @@
     },
     {
       "id": "TEXT-111",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a qualifier naming a Sheet whose name needs quotes is written in its own name, quoted",
       "sheetName": "My Sheet",
       "cells": {"ZZ1000": "='my sheet'!A1"},
@@ -906,7 +906,7 @@
     },
     {
       "id": "TEXT-112",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 9.99999999999999E+307, Excel's documented largest number, is taken, and written back in General's spelling",
       "cells": {"ZZ1000": "=9.99999999999999E+307"},
       "check": "ZZ1000",
@@ -914,7 +914,7 @@
     },
     {
       "id": "TEXT-113",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negated 1E308 is refused as 1E308 is",
       "cells": {"ZZ1000": "=-1E308"},
       "check": "ZZ1000",

@@ -1,0 +1,146 @@
+{
+    "ran":  "2026-09-28T10:35:59",
+    "excel":  "16.0 (build 20326); EXCEL.EXE 16.0.20326.20158",
+    "windowsRegionalFormat":  "en-GB",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  3,
+                    "disagree":  1,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "DATE-011",
+                      "area":  "dates",
+                      "source":  "observed",
+                      "description":  "A date is typed in the culture\u0027s day order, and records Excel\u0027s built-in short date, shown in the culture\u0027s pattern",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291,
+                                       "text":  "26/09/2026",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291,
+                                           "text":  "26/09/2026",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "26/09/2026",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  9.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-045",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a date typed under en-GB records the built-in short date, shown day first",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "26/09/2026",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "26/09/2026",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "26/09/2026",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  9.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-048",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a dollar amount under en-GB, whose currency is the pound, stays text",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "$5"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "$5"
+                                       },
+                      "excel":  {
+                                    "value2":  "$5",
+                                    "kind":  "text",
+                                    "text":  "$5",
+                                    "formula":  "$5",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-051",
+                      "area":  "typed-constants",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: the built-in d-mmm shows as it is spelled under en-GB",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "5-Oct",
+                                       "numberFormat":  "d-mmm"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "5-Oct",
+                                           "numberFormat":  "d-mmm"
+                                       },
+                      "excel":  {
+                                    "value2":  46300,
+                                    "kind":  "number",
+                                    "number":  "46300",
+                                    "text":  "05-Oct",
+                                    "formula":  "46300",
+                                    "numberFormat":  "d-mmm",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "text: expected \"5-Oct\", Excel \"05-Oct\""
+                                      ]
+                  }
+              ]
+}

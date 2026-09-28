@@ -229,7 +229,7 @@
     },
     {
       "id": "DATE-028",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a two-digit year 50 typed is 1950, the first of Windows' default window",
       "cells": {"A1": "1/1/50"},
       "check": "A1",
