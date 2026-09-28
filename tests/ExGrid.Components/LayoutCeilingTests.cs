@@ -130,10 +130,90 @@ public class LayoutCeilingTests : GridTestContext
         Assert.Equal(7 * RowHeightPx, StyleHeight(range));
     }
 
-    [Fact] // ADR-0053 / ADR-0028: a ceiling that moves keeps the first visible row where it was
+    // The first ceiling the browser tells is the initial measurement (ADR-0053, "Settled after
+    // the third Windows run"). A test about a later ceiling — a scale or zoom change — tells
+    // this one first: the scale-1 ceiling, which compresses nothing.
+    private static Task TellFirstCeilingAsync(IRenderedComponent<ExGrid<TestRow>> cut)
+        => cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(ViewportGeometry.MaxScrollHeightPx));
+
+    private static int FirstRow(IRenderedComponent<ExGrid<TestRow>> cut)
+        => int.Parse(cut.Find(".ex-viewport").GetAttribute("data-ex-first-row")!, CultureInfo.InvariantCulture);
+
+    [Fact] // ADR-0053 / BIG-5: the first ceiling is a measurement — nothing is re-anchored, the browser's offset is read through it
+    public async Task The_first_ceiling_reads_the_browsers_offset_through_the_new_geometry()
+    {
+        // Scrolled to the end before the ceiling was known: the browser clamped the spacer at
+        // its own ceiling, so its offset stands at the ceiling less the Viewport, and the grid,
+        // reading that through the uncompressed geometry, painted a row halfway down the result.
+        var cut = RenderGrid(TestRows.Many(10), Total - 10);
+        await ScrollToAsync(cut.Find(".ex-scroller"), CeilingPx - ViewportHeightPx);
+        Clock.Advance(TimeSpan.FromSeconds(1));
+        Assert.InRange(FirstRow(cut), 0, Total / 2);
+
+        await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(CeilingPx));
+        Clock.Advance(TimeSpan.FromSeconds(1)); // the fling settles and the rows are painted
+
+        // No anchor: the offset the browser holds is read through the compressed mapping,
+        // which clamps it to the end, and the last row is painted.
+        Assert.Empty(Js.Anchored);
+        Assert.Equal(Told.SliceAt(Told.MaxScrollTopPx)!.Value.Start, FirstRow(cut));
+        Assert.Equal("Row 000009", cut.FindAll(".ex-row")[^1].QuerySelector(".ex-cell")!.TextContent);
+    }
+
+    [Fact] // ADR-0053 / BIG-5: the first ceiling reads the browser, so a scroll the grid has not heard yet is painted
+    public async Task The_first_ceiling_paints_a_scroll_the_grid_has_not_heard()
+    {
+        // The grid knows the browser at the top; the user has already scrolled to the end, and
+        // the scroll event is still on its way when the first ceiling arrives (a Server circuit).
+        var cut = RenderGrid(TestRows.Many(10), Total - 10);
+        Js.SetScrollOffset(CeilingPx - ViewportHeightPx, 0);
+
+        await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(CeilingPx));
+        Clock.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Empty(Js.ScrolledTo);
+        Assert.Equal(Told.SliceAt(Told.MaxScrollTopPx)!.Value.Start, FirstRow(cut));
+        Assert.Equal("Row 000009", cut.FindAll(".ex-row")[^1].QuerySelector(".ex-cell")!.TextContent);
+    }
+
+    [Fact] // ADR-0053: a first ceiling that compresses nothing renders nothing and asks nothing
+    public async Task A_first_ceiling_that_compresses_nothing_renders_nothing()
+    {
+        var cut = RenderGrid(TestRows.Many(10), 0);
+        var reads = Js.OffsetReads;
+        var renders = cut.RenderCount;
+
+        await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(ViewportGeometry.MaxScrollHeightPx - 1));
+
+        Assert.Equal(renders, cut.RenderCount);
+        Assert.Equal(reads, Js.OffsetReads);
+        Assert.Empty(Js.ScrolledTo);
+    }
+
+    [Fact] // ADR-0053 / ADR-0028: a second compressing ceiling anchors, where the first did not
+    public async Task A_second_compressing_ceiling_anchors_on_the_first_visible_row()
+    {
+        var cut = RenderGrid(TestRows.Many(10), 0);
+        await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(CeilingPx));
+        Assert.Empty(Js.Anchored);
+        var top = Told.ScrollTopAt(400_000 * RowHeightPx);
+        await ScrollToAsync(cut.Find(".ex-scroller"), top);
+
+        const double halved = CeilingPx / 2;
+        await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(halved));
+
+        var zoomed = new ViewportGeometry(RowHeightPx, ReadablePx, Total, halved - RowHeightPx);
+        var (anchor, from) = Assert.Single(Js.Anchored);
+        Assert.Equal(zoomed.ScrollTopAt(Told.ContentOffsetAt(top)), anchor);
+        Assert.Equal(top, from);
+        Assert.InRange(FirstRow(cut), 399_999, 400_000);
+    }
+
+    [Fact] // ADR-0053 / ADR-0028: a ceiling that moves after the first keeps the first visible row where it was
     public async Task A_moved_ceiling_keeps_the_first_visible_row()
     {
         var cut = RenderGrid(TestRows.Many(10), 0);
+        await TellFirstCeilingAsync(cut);
         await ScrollToAsync(cut.Find(".ex-scroller"), 400_000 * RowHeightPx);
 
         await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(CeilingPx));
@@ -151,6 +231,7 @@ public class LayoutCeilingTests : GridTestContext
     public async Task A_moved_ceiling_writes_its_anchor_only_over_the_offset_the_grid_last_knew()
     {
         var cut = RenderGrid(TestRows.Many(10), 0);
+        await TellFirstCeilingAsync(cut);
         await ScrollToAsync(cut.Find(".ex-scroller"), 400_000 * RowHeightPx);
 
         await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(CeilingPx));
@@ -160,13 +241,15 @@ public class LayoutCeilingTests : GridTestContext
         Assert.Equal(400_000 * RowHeightPx, from);
     }
 
-    [Fact] // ADR-0053 / BIG-5: a scroll the grid has not heard yet is not overwritten when the ceiling is told
-    public async Task A_scroll_made_before_the_ceiling_was_heard_stands()
+    [Fact] // ADR-0053 / BIG-5: a scroll the grid has not heard yet is not overwritten when a later ceiling is told
+    public async Task A_scroll_made_before_a_moved_ceiling_was_heard_stands()
     {
         // The grid knows the browser at the top. The user has already scrolled to the end, and
-        // the scroll event is still on its way when the ceiling arrives (a Server circuit): the
-        // anchor keeps row 0, and the browser, no longer at 0, refuses to write it.
+        // the scroll event is still on its way when a changed ceiling arrives (a zoom, on a
+        // Server circuit): the anchor keeps row 0, and the browser, no longer at 0, refuses to
+        // write it.
         var cut = RenderGrid(TestRows.Many(10), Total - 10);
+        await TellFirstCeilingAsync(cut);
         Js.RefuseAnchors();
         Js.SetScrollOffset(Told.MaxScrollTopPx, 0);
 

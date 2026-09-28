@@ -141,20 +141,20 @@ test('the first and the last row paint their own data, there and back again (BIG
     await expectRowPainted(page, ROWS - 1);
 });
 
-// ADR-0053 / ADR-0028: a change of the Layout Ceiling keeps the first visible row and writes
-// the anchored offset to the browser. On a Server circuit the ceiling can be told after the grid
-// stopped being busy, and a scroll made in between is still on the wire when the anchor is
-// taken: the anchor, computed from row 0, was written over it and the grid went back to the top
-// (BIG-5 on chrome-150, 2 of 4 on Windows, verification/2026-09-28-windows-3). So the scroll is
-// made here in the very task in which the grid stops being busy, before the ceiling can have
-// been heard, and it must not be undone. At scale 1 nothing is compressed and this is BIG-5's
-// own case: the last row.
+// ADR-0053 / ADR-0028: on a Server circuit the Layout Ceiling can be told after the grid stopped
+// being busy, and a scroll made in between is still on the wire when the ceiling arrives: an
+// anchor computed from row 0 was written over it and the grid went back to the top (BIG-5 on
+// chrome-150, 2 of 4 on Windows, verification/2026-09-28-windows-3). So the scroll is made here
+// in the very task in which the grid stops being busy, before the ceiling can have been heard.
 //
-// Where the rows land when compressed depends on which the grid heard first. The ceiling first
-// (the usual order on a circuit): the scroll is read through the compressed geometry, and the
-// last row is painted. The scroll first (always on WebAssembly, where the offset is read within
-// the frame): the untold geometry showed row 798,894 there, and ADR-0053's anchor keeps it, with
-// the thumb moved to match. Either way the view is where the scroll took it, never the top.
+// The first ceiling told is the initial measurement, not a change ("Settled after the third
+// Windows run"): nothing is anchored, and the browser's offset is read through the geometry it
+// gives. So whichever the grid heard first, the scroll to the end paints the last row. The
+// ceiling first (the usual order on a circuit): the scroll is read through the compressed
+// geometry. The scroll first (always on WebAssembly, where the offset is read within the frame):
+// the untold geometry showed row 798,894, and the first ceiling re-reads the same offset as the
+// end — it used to anchor on row 798,894 and stay there. At scale 1 nothing is compressed and
+// this is BIG-5's own case.
 test('a scroll to the end made as the grid becomes ready is not undone by the Layout Ceiling (BIG-5, ADR-0053)', async ({ page }, testInfo) => {
     await page.addInitScript(() => {
         let done = false;
@@ -184,12 +184,8 @@ test('a scroll to the end made as the grid becomes ready is not undone by the La
         description: JSON.stringify({ spacerAtScroll: await page.evaluate(() => window.__spacerAtScroll), first }),
     });
     expect(first, 'the scroll was undone').toBeGreaterThan(ROWS / 2);
-    await expectRowPainted(page, first + 1);
-    // Uncompressed, the geometry never changed under the scroll: the end is the end.
-    const declared = await page.evaluate(() => Number(/height: ([\d.]+)px/.exec(document.querySelector('.ex-spacer').getAttribute('style'))[1]));
-    if (declared >= ROWS * 28) {
-        await expectRowPainted(page, ROWS - 1);
-    }
+    // Compressed or not, on either host: the end is the end.
+    await expectRowPainted(page, ROWS - 1);
 });
 
 test('scrolling changes which rows exist, not how many elements do (ADR-0004 P1, across a scroll)', async ({ page }) => {

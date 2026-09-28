@@ -1630,6 +1630,9 @@
     // pixels, as the browser tells it (ADR-0053, ADR-0021's sixth entry). The scale-1
     // ceiling until told, which compresses nothing VZ-8 accepts.
     private double _layoutCeilingPx = ViewportGeometry.MaxScrollHeightPx;
+    // Whether the browser has told the ceiling yet. The first report is the initial
+    // measurement, not a change, and anchors nothing (ADR-0053).
+    private bool _layoutCeilingTold;
 
     // What the scrollbars take out of the declared Viewport, as the browser reports it
     // (ADR-0021). Zero until it says otherwise, which is both the right assumption —
@@ -7716,10 +7719,17 @@
 
     /// <summary>
     /// The browser told the Layout Ceiling (ADR-0053, ADR-0021's sixth entry): at attach,
-    /// and again only when the display scale or the page zoom moves it. The first visible
-    /// row is kept where it is — a zoom is not a navigation — by anchoring on its content
-    /// offset, as a row-height change does (ADR-0028), and the browser is told the scroll
-    /// offset that shows it under the new mapping.
+    /// and again only when the display scale or the page zoom moves it.
+    ///
+    /// <para>The first report is the initial measurement, not a change: nothing is
+    /// re-anchored. The browser's offset at that moment is read and painted through the new
+    /// geometry, so a scroll to the end made before the grid knew its ceiling — which the
+    /// uncompressed geometry read as a row far short of the end — stays at the end.</para>
+    ///
+    /// <para>A later report keeps the first visible row where it is — a zoom is not a
+    /// navigation — by anchoring on its content offset, as a row-height change does
+    /// (ADR-0028), and the browser is told the scroll offset that shows it under the new
+    /// mapping, unless a scroll the grid has not heard yet has moved it since.</para>
     ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
@@ -7729,7 +7739,11 @@
     {
         // It crosses the JS boundary, so nothing here is trusted: a NaN would travel into
         // every offset, and a zero would refuse a grid for a hidden probe.
-        if (_disposed || !double.IsFinite(ceilingPx) || ceilingPx <= 0 || ceilingPx == _layoutCeilingPx)
+        if (_disposed || !double.IsFinite(ceilingPx) || ceilingPx <= 0)
+            return;
+        var first = !_layoutCeilingTold;
+        _layoutCeilingTold = true;
+        if (ceilingPx == _layoutCeilingPx)
             return;
         var anchor = _visible is not null ? _geometry.ContentOffsetAt(_scrollTopPx) : (double?)null;
         _layoutCeilingPx = ceilingPx;
@@ -7740,9 +7754,16 @@
             return;
         try
         {
-            _anchorContentPx = anchor;
+            // The first report is the measurement, not a change: nothing is anchored, and the
+            // offset last known is painted through the geometry this ceiling gives.
+            _anchorContentPx = first ? null : anchor;
             PrepareRender();
             StateHasChanged();
+            // Then where the browser stands now is read, as any scroll is: a scroll the grid
+            // has not heard yet is painted rather than waited for. Before the module lands
+            // there is nothing to read, and attach reads the offset itself.
+            if (first)
+                await OnScrollAsync();
         }
         catch (Exception ex)
         {
