@@ -22,13 +22,15 @@ public sealed class GridPasteIntent
 {
     internal GridPasteIntent(
         PastePlan plan, IReadOnlyList<IReadOnlyList<string>> values, int rowSequenceVersion,
-        IReadOnlyList<IReadOnlyList<PasteFieldOrigin>>? origins = null, SelectionRange? fillSource = null)
+        IReadOnlyList<IReadOnlyList<PasteFieldOrigin>>? origins = null, SelectionRange? fillSource = null,
+        CellPosition? enteredAt = null)
     {
         Plan = plan;
         Values = values;
         RowSequenceVersion = rowSequenceVersion;
         Origins = origins ?? AllShown(values);
         FillSource = fillSource;
+        EnteredAt = enteredAt;
     }
 
     private static IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> AllShown(IReadOnlyList<IReadOnlyList<string>> values)
@@ -59,11 +61,22 @@ public sealed class GridPasteIntent
     /// The range a fill key read <see cref="Values"/> from — Ctrl+D's top row, Ctrl+R's left
     /// column, or the row above (column to the left) of a range one cell deep (ADR-0035) — in
     /// positions of the same order as <see cref="Plan"/>. Null for a paste from the clipboard and
-    /// for Ctrl+Enter's typed text. A Consumer that holds more than values, such as ExSheet's
+    /// for Ctrl+Enter's typed text, which <see cref="EnteredAt"/> names instead. A Consumer that holds more than values, such as ExSheet's
     /// Formulas, copies from this range instead of parsing <see cref="Values"/>, as Excel's fill
     /// keys do (ADR-0050, item 5, 2026-09-28).
     /// </summary>
     public SelectionRange? FillSource { get; }
+
+    /// <summary>
+    /// The cell Ctrl+Enter's typed text was entered in — the cell the editor was open on — in
+    /// positions of the same order as <see cref="Plan"/>. Null for a paste from the clipboard and
+    /// for a fill key. A Ctrl+Enter over a range and a clipboard paste of one field over the same
+    /// range are otherwise the same intent, field for field; this is how a Consumer tells a typed
+    /// Formula from a pasted one, reads the text as entered here, and shifts its relative
+    /// References for every other target cell by that cell's offset from this one, as Excel does
+    /// (ADR-0050, item 5, 2026-09-28).
+    /// </summary>
+    public CellPosition? EnteredAt { get; }
 
     /// <summary>The order these positions are written in (ADR-0011).</summary>
     public int RowSequenceVersion { get; }

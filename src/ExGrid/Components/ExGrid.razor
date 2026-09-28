@@ -6432,13 +6432,16 @@
             return;
         }
 
+        // Copied before the editor is torn down: the intent names the cell the text was
+        // entered in, which a clipboard paste of the same field does not (ADR-0050 item 5).
         var text = _editText;
+        var enteredAt = _editingCell;
         await EndEditingAsync();
         StateHasChanged();
         if (OnPaste.HasDelegate)
         {
             await OnPaste.InvokeAsync(new GridPasteIntent(
-                decision.Plan, [[text]], _sequenceVersion));
+                decision.Plan, [[text]], _sequenceVersion, enteredAt: enteredAt));
         }
     }
 

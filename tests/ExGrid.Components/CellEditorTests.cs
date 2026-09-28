@@ -240,6 +240,33 @@ public class CellEditorTests : GridTestContext
         Assert.Null(fill.FillSource);
     }
 
+    [Fact] // ADR-0050 item 5 (2026-09-28) / DC-41: Ctrl+Enter and a one-field paste differ only in EnteredAt
+    public async Task Ctrl_enter_names_the_cell_it_was_entered_in_and_a_paste_does_not()
+    {
+        var pastes = new List<GridPasteIntent>();
+        var cut = RenderGrid(onPaste: pastes.Add);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);
+        await PressAsync(cut, "ArrowDown", shift: true);
+        await PressAsync(cut, "9");
+        await PressAsync(cut, "Enter", ctrl: true);
+        // The same Selection, pasted over from the clipboard with the same one field.
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("9", null));
+
+        Assert.Equal(2, pastes.Count);
+        var (typed, pasted) = (pastes[0], pastes[1]);
+        Assert.Equal(new CellPosition(0, 0), typed.EnteredAt);
+        Assert.Null(pasted.EnteredAt);
+        // Field for field the same intent otherwise.
+        Assert.Equal(pasted.Plan.Targets, typed.Plan.Targets);
+        Assert.Equal(pasted.Plan.Source, typed.Plan.Source);
+        Assert.Equal(pasted.Values.Select(r => r.ToArray()), typed.Values.Select(r => r.ToArray()));
+        Assert.Equal(pasted.Origins.Select(r => r.ToArray()), typed.Origins.Select(r => r.ToArray()));
+        Assert.Equal(pasted.RowSequenceVersion, typed.RowSequenceVersion);
+        Assert.Null(typed.FillSource);
+        Assert.Null(pasted.FillSource);
+    }
+
     [Fact] // ADR-0012 / KB-3: the editor's keys fold Command into Control too, where Meta is Command
     public async Task Command_enter_fills_where_meta_is_command()
     {

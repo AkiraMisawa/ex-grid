@@ -283,6 +283,9 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal(2, heard.Pastes.Count);
         Assert.Equal(new SelectionRange(2, 0, 1, 2), heard.Pastes[0].FillSource);
         Assert.Equal(new SelectionRange(0, 0, 3, 1), heard.Pastes[1].FillSource);
+        // A fill key reads a range, it was not typed anywhere (ADR-0050 item 5, 2026-09-28).
+        Assert.Null(heard.Pastes[0].EnteredAt);
+        Assert.Null(heard.Pastes[1].EnteredAt);
     }
 
     [Fact] // ADR-0035 / CP-24: Ctrl+R on one column fills from the column to its left
