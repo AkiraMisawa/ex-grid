@@ -187,6 +187,93 @@ public class FormulaBarEditingTests : GridTestContext
         Assert.Equal(0, Js.BlurCount);
     }
 
+    // What each hand-back asked of the handle: whether the keyboard is taken from the Formula
+    // Bar and the Name Box too (ADR-0021, widened 2026-09-28).
+    private List<bool> HandBacks()
+        => [.. Js.FocusReclaimed.Invocations.Select(i => (bool)i.Arguments[0]!)];
+
+    [Fact] // ADR-0021 (widened 2026-09-28): an edit ended by a key typed in the bar takes the keyboard out of it
+    public async Task A_key_that_ends_an_edit_in_the_bar_takes_the_keyboard_from_it()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 45);
+        await Bar(cut).FocusAsync(new FocusEventArgs());
+        var before = HandBacks().Count;
+
+        await PressInBarAsync(cut, "Enter");
+
+        Assert.Equal([true], HandBacks().Skip(before));
+    }
+
+    [Fact] // ADR-0021 (widened 2026-09-28): a row press's hand-back leaves the Formula Bar and the Name Box alone
+    public async Task A_press_that_ends_an_edit_leaves_a_field_beside_the_rows_alone()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents);
+        await ClickAsync(cut, 50, 45);
+        // On a circuit the bar's focus reaches the core ahead of a row press held before it:
+        // the edit it joined is ended by that press, and the bar was pressed after it.
+        await PressAsync(cut, "x");
+        await Bar(cut).FocusAsync(new FocusEventArgs());
+        var before = HandBacks().Count;
+
+        await ClickAsync(cut, 50, 105);
+        await cut.Find(".ex-scroller").FocusAsync(new FocusEventArgs());
+
+        Assert.Equal("x", Assert.Single(intents).Value);
+        Assert.NotEmpty(HandBacks().Skip(before));
+        Assert.DoesNotContain(true, HandBacks().Skip(before));
+    }
+
+    [Fact] // ADR-0021/0051: the bar's press, in its turn behind a row press that ended its edit, opens one on the new Focus
+    public async Task A_bar_press_answered_behind_a_row_press_opens_an_edit_on_the_new_focus()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 45);
+        await PressAsync(cut, "x");
+        await Bar(cut).FocusAsync(new FocusEventArgs());
+        await ClickAsync(cut, 50, 105);
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+
+        await cut.InvokeAsync(() => cut.Instance.BarPressAnsweredAsync(barHoldsFocus: true));
+
+        Assert.Equal("caret", EditingModesTold()[^1]);
+        Assert.NotEmpty(cut.FindAll(".ex-viewport .ex-editor"));
+        Assert.Equal("R6C1", cut.Find(".ex-name-box").GetAttribute("value"));
+    }
+
+    [Fact] // ADR-0021/0051: a bar press answered in its turn opens nothing more when the bar no longer holds the keyboard, or an edit stands
+    public async Task A_bar_press_answered_in_its_turn_opens_nothing_otherwise()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 45);
+        await PressAsync(cut, "x");
+        await ClickAsync(cut, 50, 105);
+        var told = EditingModesTold().Count;
+
+        await cut.InvokeAsync(() => cut.Instance.BarPressAnsweredAsync(barHoldsFocus: false));
+        Assert.Equal(told, EditingModesTold().Count);
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+
+        await Bar(cut).FocusAsync(new FocusEventArgs());
+        told = EditingModesTold().Count;
+        await cut.InvokeAsync(() => cut.Instance.BarPressAnsweredAsync(barHoldsFocus: true));
+        Assert.Equal(told, EditingModesTold().Count);
+    }
+
+    [Fact] // ADR-0021 (widened 2026-09-28): Enter in the Name Box takes the keyboard from it
+    public async Task Enter_in_the_name_box_takes_the_keyboard_from_it()
+    {
+        var cut = RenderGrid(onNameBox: _ => { });
+        await cut.Find(".ex-name-box").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-name-box").InputAsync(new ChangeEventArgs { Value = "R3C1" });
+        var before = HandBacks().Count;
+
+        await cut.Find(".ex-name-box-form").SubmitAsync();
+
+        Assert.Equal([true], HandBacks().Skip(before));
+    }
+
     [Fact] // ADR-0051/0035: a Focus cell that does not edit leaves the bar read-only and opens nothing
     public async Task A_cell_that_does_not_edit_leaves_the_bar_read_only()
     {
