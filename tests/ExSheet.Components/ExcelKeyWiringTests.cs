@@ -136,11 +136,7 @@ public class ExcelKeyWiringTests : SheetTestContext
         await PressAsync(cut, "Enter", ctrl: true);
     }
 
-    private const string AwaitsTypedIntent =
-        "SH-27: a Ctrl+Enter intent cannot be told from a one-field clipboard paste: both carry [[text]], ShownText origins, " +
-        "no FillSource and the Selection as the target. ADR-0050 needs a note first (the intent names where the text was typed).";
-
-    [Fact(Skip = AwaitsTypedIntent)] // ADR-0050 (2026-09-28), SH-27: Ctrl+Enter with a Formula shifts its relative References from the Focus into every other cell
+    [Fact] // ADR-0050 (2026-09-28), SH-27: Ctrl+Enter with a Formula shifts its relative References from the Focus into every other cell
     public async Task Ctrl_enter_shifts_a_formulas_references_from_the_focus()
     {
         var cut = RenderSheet();
@@ -154,7 +150,7 @@ public class ExcelKeyWiringTests : SheetTestContext
         Assert.Equal("=B2", EntryAt(cut, "C3")!.Formula);
     }
 
-    [Fact(Skip = AwaitsTypedIntent)] // ADR-0050 (2026-09-28), SH-27: References shift relative to the Focus, not the range's top-left, and absolute parts stay
+    [Fact] // ADR-0050 (2026-09-28), SH-27: References shift relative to the Focus, not the range's top-left, and absolute parts stay
     public async Task Ctrl_enter_shifts_relative_to_a_focus_not_at_the_top_left()
     {
         var cut = RenderSheet();
@@ -162,12 +158,26 @@ public class ExcelKeyWiringTests : SheetTestContext
         // Shift+Enter cycles the Focus backwards inside the Selection, from B2 to C3.
         await PressAsync(cut, "Enter", shift: true);
 
-        await CtrlEnterAsync(cut, "=C2+$A$1");
+        await CtrlEnterAsync(cut, "=B2+$A$1");
 
-        Assert.Equal("=C2+$A$1", EntryAt(cut, "C3")!.Formula);
+        Assert.Equal("=B2+$A$1", EntryAt(cut, "C3")!.Formula);
         Assert.Equal("=A1+$A$1", EntryAt(cut, "B2")!.Formula);
         Assert.Equal("=B1+$A$1", EntryAt(cut, "C2")!.Formula);
         Assert.Equal("=A2+$A$1", EntryAt(cut, "B3")!.Formula);
+    }
+
+    [Fact] // ADR-0048, ADR-0050 (2026-09-28), SH-27: Ctrl+Enter is typed text, even when it equals the Sheet's own last copy
+    public async Task Ctrl_enter_of_the_last_copys_text_is_typed_not_pasted()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "=1+1"))));
+        await GoToAsync(cut, "A1");
+        Grid(cut).Instance.BuildCopyPayload(); // the clipboard now holds "2", and the Sheet its Entry =1+1
+        await GoToAsync(cut, "B1:B2");
+
+        await CtrlEnterAsync(cut, "2");
+
+        Assert.All(new[] { "B1", "B2" }, a => Assert.False(EntryAt(cut, a)!.IsFormula));
+        Assert.All(new[] { "B1", "B2" }, a => Assert.Equal("2", CellText(cut, a)));
     }
 
     [Fact] // ADR-0048, ADR-0050 (2026-09-28), SH-27: a Formula entered over a range with Ctrl+Enter is one undo step

@@ -215,6 +215,34 @@ public abstract class SheetEdit
     }
 
     /// <summary>
+    /// Excel's Ctrl+Enter (ADR-0050, item 5, 2026-09-28): <paramref name="typed"/>, read under the
+    /// Sheet's culture as entered in <paramref name="enteredAt"/>, written into every cell of
+    /// <paramref name="targets"/> as one operation. A Formula — <c>=</c>, or a signed text such as
+    /// <c>-A1</c> that Excel reads as one — is written as entered in <paramref name="enteredAt"/>, and
+    /// into every other cell with its relative References shifted by that cell's offset from
+    /// <paramref name="enteredAt"/>, by the rule <see cref="FillCopy"/> shifts them: absolute parts
+    /// stay, and a Reference shifted off the Sheet is <c>#REF!</c>. Anything else is entered into
+    /// every cell as typed. No format or alignment is copied from <paramref name="enteredAt"/>; each
+    /// cell takes what typing implies for it, as Excel's Ctrl+Enter does. Overlapping ranges write
+    /// their shared cells once.
+    /// </summary>
+    /// <exception cref="ArgumentException">There is no target, or <paramref name="enteredAt"/> lies outside every target.</exception>
+    /// <exception cref="FormulaSyntaxException">Thrown when the edit is done: the text is a Formula that cannot be read; nothing changes.</exception>
+    public static SheetEdit EnterInto(IEnumerable<CellRange> targets, CellAddress enteredAt, string typed)
+    {
+        ArgumentNullException.ThrowIfNull(targets);
+        ArgumentNullException.ThrowIfNull(typed);
+        var ranges = targets.ToList();
+        if (ranges.Count == 0) throw new ArgumentException("There is no cell to enter into.", nameof(targets));
+        if (!ranges.Any(range => range.Contains(enteredAt)))
+        {
+            throw new ArgumentException($"{enteredAt} is not inside any target range.", nameof(enteredAt));
+        }
+        var cells = ranges.SelectMany(range => range.Cells()).Distinct().ToList();
+        return new CellsEdit(cells, sheet => sheet.EnterInto(cells, enteredAt, typed));
+    }
+
+    /// <summary>
     /// The Sheet renamed (<see cref="Sheet.Rename"/>): References qualified with the old name are
     /// rewritten to the new one. Undoing it puts back the name and those Formulas exactly.
     /// </summary>

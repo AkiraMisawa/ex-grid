@@ -173,49 +173,87 @@ public sealed partial class Sheet
         var implied = new List<(CellAddress Address, NumberFormat Format)>();
         foreach (var (address, text) in typed)
         {
-            ArgumentNullException.ThrowIfNull(text);
-            if (text.Length == 0 || text[0] == '=')
-            {
-                Entry? entry;
-                try
-                {
-                    entry = Entry.Parse(text, Culture);
-                }
-                catch (FormulaSyntaxException) when (pasted)
-                {
-                    entry = Entry.FromValue(Value.FromText(text));
-                }
-                entries.Add(new(address, entry is null ? null : InOwnName(entry)));
-                continue;
-            }
-            // A date or a percentage typed into a General cell gives the cell its format, as in Excel.
-            var (value, format) = ConstantParser.ParseWithFormat(text, Culture);
-            Entry? signed;
+            var (entry, format) = ReadTyped(address, text, pasted);
+            entries.Add(new(address, entry));
+            if (format is not null) implied.Add((address, format));
+        }
+        return WriteTyped(entries, implied);
+    }
+
+    /// <summary>
+    /// Excel's Ctrl+Enter (ADR-0050 item 5, 2026-09-28): <paramref name="typed"/> read as entered in
+    /// <paramref name="enteredAt"/>. A Formula is written there as entered and into every other cell
+    /// of <paramref name="cells"/> with its relative References shifted by that cell's offset from
+    /// <paramref name="enteredAt"/>, by the rule a copy shifts them (<see cref="ReferenceShift"/>);
+    /// anything else is entered into every cell as typed. No format is copied.
+    /// </summary>
+    /// <exception cref="FormulaSyntaxException">The text is a Formula that cannot be read; nothing changes.</exception>
+    internal SheetChange EnterInto(IReadOnlyList<CellAddress> cells, CellAddress enteredAt, string typed)
+    {
+        var (entered, _) = ReadTyped(enteredAt, typed, pasted: false);
+        if (entered is not { IsFormula: true })
+        {
+            return Enter(cells.Select(cell => new KeyValuePair<CellAddress, string>(cell, typed)), pasted: false);
+        }
+        var entries = new List<KeyValuePair<CellAddress, Entry?>>(cells.Count);
+        foreach (var cell in cells)
+        {
+            entries.Add(new(cell, ReferenceShift.Shift(entered, cell.Row - enteredAt.Row, cell.Column - enteredAt.Column)));
+        }
+        return WriteTyped(entries, []);
+    }
+
+    /// <summary>
+    /// One typed text read as <see cref="Enter(IEnumerable{KeyValuePair{CellAddress, string}}, bool)"/>
+    /// reads it into <paramref name="address"/>: its Entry, and the format typing it implies for a
+    /// General cell, if any.
+    /// </summary>
+    private (Entry? Entry, NumberFormat? Implied) ReadTyped(CellAddress address, string text, bool pasted)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        if (text.Length == 0 || text[0] == '=')
+        {
+            Entry? entry;
             try
             {
-                signed = value.Kind == ValueKind.Text ? Entry.SignedFormula(text) : null;
+                entry = Entry.Parse(text, Culture);
             }
             catch (FormulaSyntaxException) when (pasted)
             {
-                // Pasted text Excel would read as a Formula the engine does not implement is text,
-                // as a pasted Formula that cannot be read is (ADR-0048); typed, it is refused.
-                signed = null;
+                entry = Entry.FromValue(Value.FromText(text));
             }
-            if (signed is not null)
-            {
-                entries.Add(new(address, InOwnName(signed)));
-                continue;
-            }
-            // A plain number typed into a cell that shows percentages is read as a percentage,
-            // Excel's automatic percent entry (on by default): 0.5 into a 0% cell is 0.005
-            // (LVL-015, ADR-0047 second run). Only typed; a paste is taken as it is.
-            if (!pasted && value.Kind == ValueKind.Number && GetFormat(address).IsPercent && ConstantParser.IsPlainNumber(text, Culture))
-            {
-                value = Value.FromNumber(value.Number / 100);
-            }
-            entries.Add(new(address, Entry.FromValue(value)));
-            if (format is not null) implied.Add((address, format));
+            return (entry is null ? null : InOwnName(entry), null);
         }
+        // A date or a percentage typed into a General cell gives the cell its format, as in Excel.
+        var (value, format) = ConstantParser.ParseWithFormat(text, Culture);
+        Entry? signed;
+        try
+        {
+            signed = value.Kind == ValueKind.Text ? Entry.SignedFormula(text) : null;
+        }
+        catch (FormulaSyntaxException) when (pasted)
+        {
+            // Pasted text Excel would read as a Formula the engine does not implement is text,
+            // as a pasted Formula that cannot be read is (ADR-0048); typed, it is refused.
+            signed = null;
+        }
+        if (signed is not null) return (InOwnName(signed), null);
+        // A plain number typed into a cell that shows percentages is read as a percentage,
+        // Excel's automatic percent entry (on by default): 0.5 into a 0% cell is 0.005
+        // (LVL-015, ADR-0047 second run). Only typed; a paste is taken as it is.
+        if (!pasted && value.Kind == ValueKind.Number && GetFormat(address).IsPercent && ConstantParser.IsPlainNumber(text, Culture))
+        {
+            value = Value.FromNumber(value.Number / 100);
+        }
+        return (Entry.FromValue(value), format);
+    }
+
+    /// <summary>
+    /// Typed Entries written as one change: the formats typing implied given to the General cells
+    /// among them, then a Formula entered into a General cell given a format from what it reads.
+    /// </summary>
+    private SheetChange WriteTyped(List<KeyValuePair<CellAddress, Entry?>> entries, List<(CellAddress Address, NumberFormat Format)> implied)
+    {
         var rows = new SortedSet<int>();
         foreach (var (address, format) in implied)
         {

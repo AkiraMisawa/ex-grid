@@ -126,4 +126,95 @@ public class FillTests
 
         Assert.Equal(before, sheet.ToDocument().ToJson());
     }
+
+    // ---- Excel's Ctrl+Enter: the typed text entered in one cell and written into the range (ADR-0050 item 5, 2026-09-28) ----
+
+    private static SheetStep EnterInto(Sheet sheet, string targets, string enteredAt, string typed) =>
+        sheet.Do(SheetEdit.EnterInto([.. targets.Split(',').Select(CellRange.Parse)], At(enteredAt), typed));
+
+    [Fact] // ADR-0050 item 5 (2026-09-28), SH-27: a Formula is read as entered in its cell, and every other cell takes it shifted by its offset from there
+    public void Enter_into_shifts_a_formulas_relative_references_from_where_it_was_entered()
+    {
+        var sheet = NewSheet();
+
+        EnterInto(sheet, "B2:C3", "C3", "=B2+$A$1");
+
+        Assert.Equal("=B2+$A$1", sheet.GetEntry(At("C3"))!.ToString());
+        Assert.Equal("=A1+$A$1", sheet.GetEntry(At("B2"))!.ToString());
+        Assert.Equal("=B1+$A$1", sheet.GetEntry(At("C2"))!.ToString());
+        Assert.Equal("=A2+$A$1", sheet.GetEntry(At("B3"))!.ToString());
+    }
+
+    [Fact] // ADR-0050 item 5 (2026-09-28), SH-27: a Reference shifted off the Sheet is #REF!, as the fill keys make it
+    public void Enter_into_makes_a_reference_shifted_off_the_sheet_ref()
+    {
+        var sheet = NewSheet();
+
+        EnterInto(sheet, "A1:A2", "A2", "=A1");
+
+        Assert.Equal("=A1", sheet.GetEntry(At("A2"))!.ToString());
+        Assert.Equal("#REF!", sheet.GetDisplay(At("A1")).Text);
+    }
+
+    [Fact] // ADR-0050 item 5 (2026-09-28), SH-27: a signed Formula (-A1) is a Formula too, and shifts
+    public void Enter_into_shifts_a_signed_formula()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A2", "2");
+
+        EnterInto(sheet, "B1:B2", "B1", "-A1");
+
+        Assert.Equal("-2", sheet.GetDisplay(At("B2")).Text);
+    }
+
+    [Fact] // ADR-0050 item 5 (2026-09-28), SH-27: text that is not a Formula is written into every cell as typed
+    public void Enter_into_writes_a_constant_as_typed()
+    {
+        var sheet = NewSheet();
+
+        EnterInto(sheet, "A1:B1,D4", "A1", "A1");
+
+        Assert.All(new[] { "A1", "B1", "D4" }, a => Assert.Equal("A1", sheet.GetDisplay(At(a)).Text));
+    }
+
+    [Fact] // ADR-0050 item 5 (2026-09-28), SH-27: the entered cell's format is not copied, as Excel's Ctrl+Enter does not copy it
+    public void Enter_into_does_not_copy_the_entered_cells_format()
+    {
+        var sheet = NewSheet();
+        sheet.SetFormat(At("A1"), NumberFormat.Parse("0.00"));
+        sheet.Enter("C1", "1");
+        sheet.Enter("D1", "1");
+
+        EnterInto(sheet, "A1:B1", "A1", "=C1");
+
+        Assert.Equal("1.00", sheet.GetDisplay(At("A1")).Text);
+        Assert.Equal("1", sheet.GetDisplay(At("B1")).Text);
+    }
+
+    [Fact] // ADR-0048, SH-27: a Ctrl+Enter over a range is one step, and its undo restores what it wrote over
+    public void Enter_into_is_one_step()
+    {
+        var sheet = Column("old", "older");
+        var before = sheet.ToDocument().ToJson();
+
+        EnterInto(sheet, "A1:B2", "A1", "=C1").Undo();
+
+        Assert.Equal(before, sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0034 / TYPED-054: a typed Formula that cannot be read is refused, and nothing is written
+    public void Enter_into_refuses_an_unreadable_formula()
+    {
+        var sheet = NewSheet();
+
+        Assert.Throws<FormulaSyntaxException>(() => EnterInto(sheet, "A1:A2", "A1", "=1+"));
+        Assert.Null(sheet.GetEntry(At("A2")));
+    }
+
+    [Fact] // SH-27: the cell the text was entered in lies in the range it is written into
+    public void Enter_into_refuses_an_entered_cell_outside_the_targets()
+    {
+        Assert.Throws<ArgumentException>(() => SheetEdit.EnterInto([CellRange.Parse("A1:A2")], At("B1"), "1"));
+    }
 }

@@ -563,6 +563,14 @@
             await FillByKeyAsync(fillSource, intent);
             return;
         }
+        // Ctrl+Enter (ADR-0050 item 5, 2026-09-28): text typed, not pasted. The grid names the
+        // cell it was entered in, and the engine reads it there: a Formula goes into every other
+        // cell with its relative References shifted by that cell's offset, as Excel's does.
+        if (intent.EnteredAt is { } enteredAt)
+        {
+            await EnterIntoAsync(enteredAt, intent);
+            return;
+        }
         if (OwnCopy is { } own && own.IsPastedAs(intent.Values))
         {
             await PasteEntriesAsync(own.Block, intent);
@@ -718,6 +726,36 @@
             return;
         }
         await PerformAsync(edit);
+    }
+
+    /// <summary>
+    /// Ctrl+Enter over the Selection (ADR-0050 item 5, 2026-09-28): the typed text, read as entered
+    /// in <paramref name="enteredAt"/>, written into every target cell as one step on the undo stack
+    /// (<see cref="SheetEdit.EnterInto"/>) — a Formula with its relative References shifted by each
+    /// cell's offset from <paramref name="enteredAt"/>, anything else as typed, and no format copied.
+    /// The editor's verdict has already rejected a Formula the engine cannot read (ADR-0034); a
+    /// refusal here is the net under it, told to the grid and to the user, and nothing is written.
+    /// </summary>
+    private async Task EnterIntoAsync(CellPosition enteredAt, global::ExGrid.Clipboard.GridPasteIntent intent)
+    {
+        var targets = intent.Plan.Targets.Select(SheetFormulaAids.RangeOf);
+        var edit = SheetEdit.EnterInto(targets, new CellAddress(enteredAt.Row, enteredAt.Column), intent.ValueFor(enteredAt));
+        try
+        {
+            await PerformAsync(edit);
+        }
+        catch (FormulaSyntaxException error)
+        {
+            intent.Refuse();
+            Tell(SheetWords.FormulaUnreadable(error));
+            StateHasChanged();
+        }
+        catch (SheetRefusedException refused)
+        {
+            intent.Refuse();
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+        }
     }
 
     /// <summary>
