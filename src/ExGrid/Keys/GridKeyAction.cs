@@ -58,13 +58,33 @@ public enum GridKeyKind
     /// header's filter drop-down with (ADR-0039). Before it, only a pointer on ▾ could.</summary>
     OpenColumnMenu,
 
-    /// <summary>Ctrl+Z, while no edit is open: raise the Consumer's undo (ADR-0050,
-    /// item 8). Taken only where the Consumer declared one.</summary>
+    /// <summary>Ctrl+Z: forwarded to the Consumer, who owns the history (ADR-0007). Claimed
+    /// only while <see cref="GridKeyClaims.CanUndo"/>.</summary>
     Undo,
 
-    /// <summary>Ctrl+Y and Ctrl+Shift+Z, while no edit is open: raise the Consumer's redo
-    /// (ADR-0050, item 8). Taken only where the Consumer declared one.</summary>
+    /// <summary>Ctrl+Y or Ctrl+Shift+Z: forwarded like <see cref="Undo"/>. Claimed only
+    /// while <see cref="GridKeyClaims.CanRedo"/>.</summary>
     Redo,
+
+    /// <summary>Delete: one Clear Intent over the selection (ADR-0054). Claimed only on a
+    /// grid with an editable column.</summary>
+    Clear,
+
+    /// <summary>Backspace: Overwrite on the Focus with nothing in it — Excel's "clear this
+    /// cell and type" (ADR-0035). Claimed only on a grid with an editable column.</summary>
+    ClearAndEdit,
+
+    /// <summary>Ctrl+D: fill the range's top row down it (ADR-0035). Claimed only on a grid
+    /// with an editable column.</summary>
+    FillDown,
+
+    /// <summary>Ctrl+R: fill the range's left column across it (ADR-0035). Claimed only on
+    /// a grid with an editable column.</summary>
+    FillRight,
+
+    /// <summary>Ctrl+F: the find panel, or a refusal where nothing can search (ADR-0055).
+    /// Claimed on every grid.</summary>
+    Find,
 
     /// <summary>Ctrl+. (period): move the Focus to the next corner of the range holding it,
     /// clockwise; the Selection does not change (ADR-0052).</summary>

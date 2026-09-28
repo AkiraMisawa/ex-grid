@@ -11,10 +11,10 @@ namespace ExGrid.MudBlazor;
 /// inside the box the core hands it, never a <c>MudTextField</c>, which does not fit
 /// a 28px cell — the loading bar, a <c>MudProgressLinear</c> where the core places its
 /// loading seam, and the column menu and Context Menu, <c>MudButton</c>s with a Material
-/// icon each, and the filter panel — a value list or a condition form of MudBlazor's
-/// controls — all inside the core's popover; the Formula Bar's two fields, bare inputs
-/// in the core's boxes as the Cell Editor is, and the completion list with its argument hint
-/// (ADR-0051).
+/// icon each, the filter panel — a value list or a condition form of MudBlazor's
+/// controls — and the find panel (ADR-0055), all inside the core's popover; the Formula Bar's
+/// two fields, bare inputs in the core's boxes as the Cell Editor is, and the completion list
+/// with its argument hint (ADR-0051).
 ///
 /// <para>What goes inside a popover is the Wrapper's, and may open popups of its own —
 /// a select's options, a picker's calendar — which MudBlazor draws outside the instance
@@ -58,6 +58,20 @@ public sealed class MudGridChrome : IGridChrome
             builder.OpenComponent<MudExGridFilterPanel>(0);
             builder.AddComponentParameter(1, nameof(MudExGridFilterPanel.Context), context);
             builder.AddComponentParameter(2, nameof(MudExGridFilterPanel.Chrome), this);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>The find panel (ADR-0055): a <c>MudTextField</c>, the two options and the two
+    /// steps, inside the core's popover.</summary>
+    public RenderFragment? FindPanel(FindContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            builder.OpenComponent<MudExGridFindPanel>(0);
+            builder.AddComponentParameter(1, nameof(MudExGridFindPanel.Context), context);
+            builder.AddComponentParameter(2, nameof(MudExGridFindPanel.Chrome), this);
             builder.CloseComponent();
         };
     }

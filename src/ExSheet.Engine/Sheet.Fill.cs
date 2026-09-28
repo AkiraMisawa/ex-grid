@@ -38,9 +38,10 @@ public sealed partial class Sheet
     /// Anything else is refused, never filled with copies: text Excel would continue (holding a
     /// digit, like <c>Item 1</c>, or a day or month name), two or more dates (Excel may step them
     /// by month or year), a time of day, and numbers mixed with anything else.
-    /// Formats and alignment are repeated from the source.
+    /// Formats and alignment are repeated from the source. With <paramref name="copyOnly"/>, Excel's
+    /// fill keys (Ctrl+D, Ctrl+R): every line is a copy, and no pattern is continued or refused.
     /// </summary>
-    internal (SheetRefusal? Refusal, List<(CellAddress Address, CellState State)> States) PlanFill(CellRange source, CellRange target, FillDirection direction)
+    internal (SheetRefusal? Refusal, List<(CellAddress Address, CellState State)> States) PlanFill(CellRange source, CellRange target, FillDirection direction, bool copyOnly = false)
     {
         var vertical = direction is FillDirection.Down or FillDirection.Up;
         var forward = direction is FillDirection.Down or FillDirection.Right;
@@ -76,7 +77,7 @@ public sealed partial class Sheet
             // Position along the axis relative to the source's first cell: 0..length-1 is the
             // source; the target is length.. going forward and ..-1 going back.
             var cells = Enumerable.Range(0, length).Select(i => ShownState(SourceAt(i))).ToArray();
-            var rule = FillRule(cells, SourceAt, out var refusal);
+            var rule = FillRule(cells, SourceAt, copyOnly, out var refusal);
             if (refusal is not null) return (refusal, []);
             for (var k = 0; k < count; k++)
             {
@@ -93,7 +94,7 @@ public sealed partial class Sheet
     }
 
     /// <summary>The rule for one line: given a position along the axis, the source cell it repeats and its address, the Entry written there.</summary>
-    private Func<int, int, CellAddress, Entry?> FillRule(CellState[] cells, Func<int, CellAddress> sourceAt, out SheetRefusal? refusal)
+    private Func<int, int, CellAddress, Entry?> FillRule(CellState[] cells, Func<int, CellAddress> sourceAt, bool copyOnly, out SheetRefusal? refusal)
     {
         refusal = null;
         Entry? Copy(int x, int i, CellAddress at)
@@ -101,6 +102,7 @@ public sealed partial class Sheet
             var from = sourceAt(i);
             return cells[i].Entry is { } entry ? ReferenceShift.Shift(entry, at.Row - from.Row, at.Column - from.Column) : null;
         }
+        if (copyOnly) return Copy;
 
         var numbers = 0;
         var dates = 0;

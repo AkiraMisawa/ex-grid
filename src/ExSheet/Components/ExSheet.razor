@@ -33,7 +33,8 @@
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
         CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
-        ShowFillHandle="true" OnFill="OnFillAsync"
+        ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
+        OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
@@ -75,6 +76,8 @@
     private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
     private readonly Func<string, string?> _commandLabel;
     private readonly Func<global::ExGrid.Clipboard.GridCopyRequest, global::ExGrid.Clipboard.GridCopyAnswer> _copyAnswer;
+    private readonly Func<global::ExGrid.Finding.GridFindRequest, CancellationToken, Task<global::ExGrid.Finding.GridFindResult>> _find;
+    private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _rowsNeeded;
     private readonly EventCallback<GridSelection> _selectionChanged;
     private readonly EventCallback _undo;
     private readonly EventCallback<ColumnWidthChange> _columnWidthChanged;
@@ -116,6 +119,22 @@
         _contextCommands = ContextCommandsFor;
         // Asked synchronously on both copy routes (ADR-0050 item 9).
         _copyAnswer = AnswerCopy;
+        // Find over the Sheet's own cells (ADR-0055): answered from the engine at once, since the
+        // Sheet is in hand; a step on another Row Sequence Version names nothing here, as a
+        // Sheet's rows never move (ADR-0046).
+        // Rows the grid reads outside the Window: a fill key's source row scrolled away
+        // (ADR-0035). Every row is in hand, so the answer is whole and at once; a copy never asks
+        // it, since CopyAnswer answers every copy (ADR-0050 item 9).
+        _rowsNeeded = (range, _) =>
+        {
+            var sheet = CurrentSheet;
+            var rows = new SheetRow[range.Count];
+            for (var i = 0; i < rows.Length; i++) rows[i] = new SheetRow(sheet, range.Start + i);
+            return Task.FromResult<IReadOnlyList<SheetRow>>(rows);
+        };
+        _find = (request, _) => Task.FromResult(request.RowSequenceVersion == 0 && _sheet is { } sheet
+            ? SheetFind.Step(sheet, request)
+            : global::ExGrid.Finding.GridFindResult.NotFound);
         // The Consumer's wording first, then ExSheet's own English for its commands; null falls
         // back to the grid's built-in words for the grid's own commands (ADR-0036).
         _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
@@ -536,6 +555,14 @@
             intent.Refuse();
             return;
         }
+        // Ctrl+D and Ctrl+R (ADR-0035): the grid names the range it read, and ExSheet copies that
+        // range's Entries rather than its Values, with relative References shifted, formats and
+        // alignment with them, as Excel's fill keys do (ADR-0050 item 5, 2026-09-28).
+        if (intent.FillSource is { } fillSource)
+        {
+            await FillByKeyAsync(fillSource, intent);
+            return;
+        }
         if (OwnCopy is { } own && own.IsPastedAs(intent.Values))
         {
             await PasteEntriesAsync(own.Block, intent);
@@ -670,6 +697,62 @@
             return;
         }
         await PerformAsync(edit);
+    }
+
+    /// <summary>
+    /// Ctrl+D or Ctrl+R (ADR-0035; ADR-0050 item 5, 2026-09-28): the source the grid read, copied
+    /// over the target it approved as one step on the undo stack — never a series, so a date or a
+    /// number is copied as it is. The target lies below the source for Ctrl+D and to its right for
+    /// Ctrl+R. A refusal is told to the grid and to the user, and nothing is written.
+    /// </summary>
+    private async Task FillByKeyAsync(SelectionRange source, global::ExGrid.Clipboard.GridPasteIntent intent)
+    {
+        var target = intent.Plan.Targets[0];
+        var direction = target.TopRow > source.BottomRow ? FillDirection.Down : FillDirection.Right;
+        var edit = SheetEdit.FillCopy(SheetFormulaAids.RangeOf(source), SheetFormulaAids.RangeOf(target), direction);
+        if (CurrentSheet.Check(edit) is { } refusal)
+        {
+            intent.Refuse();
+            Tell(SheetWords.Refused(refusal));
+            StateHasChanged();
+            return;
+        }
+        await PerformAsync(edit);
+    }
+
+    /// <summary>
+    /// Delete's Clear Intent (ADR-0054): every cell of the Selection that holds an Entry is
+    /// cleared, as one step on the undo stack (ADR-0048), and the Selection and the Focus stay
+    /// where they were (ADR-0052, case 14) — the grid does not move them for a clear. Formats and
+    /// alignment stay, as Excel's Delete leaves them. Only occupied cells are named, so a Delete
+    /// over whole columns costs what they hold, not a million cells each; over nothing, nothing is
+    /// written and no step is recorded.
+    /// </summary>
+    private async Task OnClearAsync(global::ExGrid.Clipboard.GridClearIntent intent)
+    {
+        if (intent.RowSequenceVersion != 0) return;
+        var cleared = new List<KeyValuePair<CellAddress, Entry?>>();
+        foreach (var address in CurrentSheet.EntryAddresses)
+        {
+            foreach (var target in intent.Targets)
+            {
+                if (target.Contains(new CellPosition(address.Row, address.Column)))
+                {
+                    cleared.Add(new(address, null));
+                    break;
+                }
+            }
+        }
+        if (cleared.Count == 0) return;
+        try
+        {
+            await PerformAsync(SheetEdit.SetEntries(cleared));
+        }
+        catch (SheetRefusedException refused)
+        {
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+        }
     }
 
     private static FillDirection DirectionOf(GridDirection direction) => direction switch

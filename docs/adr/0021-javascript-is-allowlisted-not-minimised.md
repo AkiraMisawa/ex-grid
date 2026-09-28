@@ -42,7 +42,7 @@ case, which is the case where the gutter never changes.
 - **A Consumer that sets `scrollbar-width: thin` is followed automatically**, because the
   observation is of the outcome rather than of a platform.
 - *(Refined while designing the presentation contract: the same notification is how a Viewport
-  declared as `Fill` learns its size — the observer already watches the content box, so the
+  declared as `Stretch` learns its size — the observer already watches the content box, so the
   report grows a field rather than this list growing an entry
   ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)). The distinction
   this section draws is unchanged: the grid is told; it never asks.)*
@@ -288,4 +288,9 @@ a field that stands beside the rows and has focus of its own: the Formula Bar an
 built in or drawn by a Chrome. Before this, a row click's late hand-back took the keyboard from a
 Formula Bar pressed after it. Everything else inside the root is still taken back, the Cell Editor
 included, since the hand-back is also how the keyboard returns to the root after an edit
-commits.)*
+commits The band both fields are drawn in is what is checked, so a Chrome's control
+inside it is covered. An edit the user ends with a key in the bar, or Enter in the Name Box, still
+hands the keyboard back; one ended by a press elsewhere does not take it from a field.
+*(Settled while implementing:)* the bar's focus event reaches C# at once, ahead of a row press held
+before it, so the press into the bar is answered again in its turn. If the bar still holds focus
+and no edit is open when its turn comes, the core opens the bar's edit then.)*

@@ -236,6 +236,8 @@ public class CellEditorTests : GridTestContext
         var fill = Assert.Single(pastes);
         Assert.Equal(3, fill.CellCount);
         Assert.Equal("9", fill.ValueFor(new CellPosition(2, 0)));
+        // Typed text, not a range read (ADR-0050 item 5, 2026-09-28): no fill source.
+        Assert.Null(fill.FillSource);
     }
 
     [Fact] // ADR-0012 / KB-3: the editor's keys fold Command into Control too, where Meta is Command

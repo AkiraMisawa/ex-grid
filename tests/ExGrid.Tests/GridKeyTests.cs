@@ -99,10 +99,11 @@ public class GridKeyTests
     {
         // The clipboard and the editor are not wired yet, and the browser's own must not
         // be swallowed by a grid that happens to have focus.
-        // (Alt+↓ stood in this list until ADR-0039 claimed it for the column menu.)
+        // (Alt+↓ stood in this list until ADR-0039 claimed it for the column menu, and
+        // Ctrl+F until ADR-0055 claimed it for Find.)
         foreach (var action in new[]
         {
-            Key("c", ctrl: true), Key("v", ctrl: true), Key("F2"), Key("f", ctrl: true),
+            Key("c", ctrl: true), Key("v", ctrl: true), Key("F2"), Key("p", ctrl: true),
             Key("x"), Key("F5"), Key("ArrowUp", alt: true), Key("ArrowDown", alt: true, shift: true),
         })
         {
@@ -199,33 +200,92 @@ public class GridKeyTests
         Assert.Contains("Shift+F10", GridKeys.Taken);
     }
 
-    [Theory] // ADR-0050 item 8: Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo, in either case (CapsLock, Command+Shift)
+    private static readonly GridKeyClaims Everything = new(CanEdit: true, CanUndo: true, CanRedo: true);
+
+    [Theory] // ADR-0007: undo on Ctrl+Z; redo on both Excel spellings, CapsLock or not
     [InlineData("z", false, GridKeyKind.Undo)]
     [InlineData("Z", false, GridKeyKind.Undo)]
     [InlineData("y", false, GridKeyKind.Redo)]
     [InlineData("Y", false, GridKeyKind.Redo)]
     [InlineData("Z", true, GridKeyKind.Redo)]
     [InlineData("z", true, GridKeyKind.Redo)]
-    public void The_history_keys_resolve(string key, bool shift, GridKeyKind expected)
+    public void Undo_and_redo_resolve_from_both_spellings(string key, bool shift, GridKeyKind expected)
     {
         Assert.Equal(expected, Key(key, ctrl: true, shift: shift).Kind);
+        // Command on a Mac folds into Control, so Cmd+Shift+Z is the same entry (ADR-0012).
         Assert.Equal(expected, Key(key, shift: shift, meta: true).Kind);
+        // And the Windows key does not.
         Assert.Equal(GridKeyKind.None, Key(key, shift: shift, meta: true, metaIsPrimary: false).Kind);
     }
 
-    [Fact] // ADR-0050 item 8 / DC-1: undo and redo are never taken unless declared
-    public void The_history_keys_are_taken_only_where_declared()
+    [Fact] // ADR-0007: a key taken for nobody is a key stolen from the page
+    public void Undo_and_redo_are_claimed_only_when_someone_listens()
     {
-        Assert.Same(GridKeys.Taken, GridKeys.TakenFor(undo: false, redo: false));
-        Assert.DoesNotContain(GridKeys.Taken, key => GridKeys.Resolve(
-            key[(key.LastIndexOf('+') + 1)..], key.Contains("Control+"), key.Contains("Shift+"), false, false, false).Kind
-            is GridKeyKind.Undo or GridKeyKind.Redo);
+        Assert.DoesNotContain("Control+z", GridKeys.Taken);
+        Assert.DoesNotContain("Control+y", GridKeys.Taken);
 
-        Assert.Equal(["Control+z", "Control+Z"], GridKeys.TakenFor(undo: true, redo: false).Except(GridKeys.Taken));
-        Assert.Equal(["Control+y", "Control+Y", "Control+Shift+Z", "Control+Shift+z"],
-            GridKeys.TakenFor(undo: false, redo: true).Except(GridKeys.Taken));
-        Assert.Equal(6, GridKeys.TakenFor(undo: true, redo: true).Except(GridKeys.Taken).Count());
-        // One instance per answer, so the grid re-tells the gate only when a declaration moved.
-        Assert.Same(GridKeys.TakenFor(true, true), GridKeys.TakenFor(true, true));
+        var undoOnly = GridKeys.TakenFor(new(CanEdit: false, CanUndo: true, CanRedo: false));
+        Assert.Contains("Control+z", undoOnly);
+        Assert.DoesNotContain("Control+y", undoOnly);
+        Assert.DoesNotContain("Control+Shift+Z", undoOnly);
+
+        var redoOnly = GridKeys.TakenFor(new(CanEdit: false, CanUndo: false, CanRedo: true));
+        Assert.DoesNotContain("Control+z", redoOnly);
+        Assert.Contains("Control+y", redoOnly);
+        Assert.Contains("Control+Shift+Z", redoOnly);
+    }
+
+    [Theory] // ADR-0035 / ADR-0054: the writing keys
+    [InlineData("Delete", false, GridKeyKind.Clear)]
+    [InlineData("Backspace", false, GridKeyKind.ClearAndEdit)]
+    [InlineData("d", true, GridKeyKind.FillDown)]
+    [InlineData("D", true, GridKeyKind.FillDown)]
+    [InlineData("r", true, GridKeyKind.FillRight)]
+    [InlineData("R", true, GridKeyKind.FillRight)]
+    public void The_writing_keys_resolve(string key, bool ctrl, GridKeyKind expected)
+        => Assert.Equal(expected, Key(key, ctrl: ctrl).Kind);
+
+    [Fact] // ADR-0054 / ED-25: a display-only grid leaves the page Delete, Backspace, Ctrl+D and Ctrl+R
+    public void The_writing_keys_are_claimed_only_on_a_grid_that_edits()
+    {
+        string[] writing = ["Delete", "Backspace", "Control+d", "Control+D", "Control+r", "Control+R"];
+        var displayOnly = GridKeys.TakenFor(new(CanEdit: false, CanUndo: false, CanRedo: false));
+        var editing = GridKeys.TakenFor(new(CanEdit: true, CanUndo: false, CanRedo: false));
+        foreach (var key in writing)
+        {
+            Assert.DoesNotContain(key, GridKeys.Taken);
+            Assert.DoesNotContain(key, displayOnly);
+            Assert.Contains(key, editing);
+        }
+    }
+
+    [Fact] // ADR-0055 / FD-1: Ctrl+F is every grid's, wired or not
+    public void Find_is_claimed_on_every_grid()
+    {
+        Assert.Equal(GridKeyKind.Find, Key("f", ctrl: true).Kind);
+        Assert.Equal(GridKeyKind.Find, Key("F", ctrl: true).Kind);
+        Assert.Equal(GridKeyKind.Find, Key("f", meta: true).Kind);
+        Assert.Contains("Control+f", GridKeys.Taken);
+        Assert.Contains("Control+F", GridKeys.TakenFor(default));
+        // Ctrl+Shift+F is not Find, and stays the browser's.
+        Assert.Equal(GridKeyKind.None, Key("F", ctrl: true, shift: true).Kind);
+    }
+
+    [Fact] // ADR-0010: the widest set a grid can take still resolves, key by key
+    public void Every_conditionally_taken_key_resolves_to_something()
+    {
+        foreach (var canonical in GridKeys.TakenFor(Everything))
+        {
+            var ctrl = canonical.Contains("Control+", StringComparison.Ordinal);
+            var shift = canonical.Contains("Shift+", StringComparison.Ordinal);
+            var alt = canonical.Contains("Alt+", StringComparison.Ordinal);
+            var key = canonical[(canonical.LastIndexOf('+') + 1)..];
+            if (canonical.EndsWith("+ ", StringComparison.Ordinal))
+                key = " ";
+            Assert.NotEqual(
+                GridKeyKind.None,
+                GridKeys.Resolve(key, ctrl, shift, alt, meta: false, metaIsPrimary: false).Kind);
+        }
+        Assert.Superset(new HashSet<string>(GridKeys.Taken), new HashSet<string>(GridKeys.TakenFor(Everything)));
     }
 }

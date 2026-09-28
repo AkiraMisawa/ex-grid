@@ -81,13 +81,10 @@ internal sealed class GridJSInterop
         // gate was told is asserted.
         var setInnerPopup = handle.SetupVoid("setInnerPopup", _ => true);
         setInnerPopup.SetVoidResult();
-        // Whether any column edits, re-told when a parameter change flips it
-        // (ADR-0010/0020) — accepted for the same reason.
-        var setCanEdit = handle.SetupVoid("setCanEdit", _ => true);
-        setCanEdit.SetVoidResult();
-        // The keys the core claims, re-told when undo or redo is declared (ADR-0050, item 8).
-        var setTaken = handle.SetupVoid("setTaken", _ => true);
-        setTaken.SetVoidResult();
+        // Which keys this grid takes, re-told when a parameter change changes the answer
+        // (ADR-0007/0010/0020/0055) — what it was told is asserted.
+        var setClaims = handle.SetupVoid("setClaims", _ => true);
+        setClaims.SetVoidResult();
         // Where the caret goes after the core wrote the editor's text itself (ADR-0051).
         var setCaret = handle.SetupVoid("setCaret", _ => true);
         setCaret.SetVoidResult();
@@ -131,7 +128,7 @@ internal sealed class GridJSInterop
             PointerReporting = setPointerReporting,
             PointerForgotten = forgetPointer,
             InnerPopupTold = setInnerPopup,
-            TakenTold = setTaken,
+            ClaimsTold = setClaims,
             CaretPlaced = setCaret,
             FocusReclaimed = reclaimFocus,
             _focusLog = focusLog,
@@ -167,11 +164,11 @@ internal sealed class GridJSInterop
     /// <summary>Every (text, caret) the listener was told to place the caret at (ADR-0051).</summary>
     internal JSRuntimeInvocationHandler CaretPlaced { get; private init; } = default!;
 
-    /// <summary>Every time the key gate was re-told the keys the core claims (ADR-0050,
-    /// item 8).</summary>
-    internal JSRuntimeInvocationHandler TakenTold { get; private init; } = default!;
+    /// <summary>Every time the key gate was re-told which keys this grid takes
+    /// (ADR-0007/0010/0020/0047).</summary>
+    internal JSRuntimeInvocationHandler ClaimsTold { get; private init; } = default!;
 
-    /// <summary>The keys the core claimed at attach (ADR-0010).</summary>
+    /// <summary>The keys the gate was told at attach: the fourth argument of <c>attach</c>.</summary>
     internal IReadOnlyList<string> TakenAtAttach =>
         (IReadOnlyList<string>)_module!.Invocations["attach"][^1].Arguments[3]!;
 

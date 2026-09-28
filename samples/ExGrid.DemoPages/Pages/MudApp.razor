@@ -71,12 +71,12 @@
                 <span id="currency-status">Reporting currency: @_currency</span>
             </p>
 
-            @* Sized by the layout: ViewportSize.Fill on the width, so the browser's report
+            @* Sized by the layout: ViewportSize.Stretch on the width, so the browser's report
                of the box is the size (ADR-0028), and the Drawer's toggle is a resize. The
                paper is made a full-width block by this page's own class on the outer
                element — the Wrapper's element is the Consumer's to lay out; the grid's
                root is not (ADR-0030). *@
-            <MudExGridPaper id="positions-paper" Class="demo-fill-paper" Elevation="1" Dense="true" Hover="true" Striped="true" Bordered="true">
+            <MudExGridPaper id="positions-paper" Class="demo-stretch-paper" Elevation="1" Dense="true" Hover="true" Striped="true" Bordered="true">
                 <ToolBarContent>
                     <MudText Typo="Typo.h6" Class="mud-ex-grid-title">Positions</MudText>
                     <MudSpacer />
@@ -86,7 +86,7 @@
                     <ExGrid TRow="DemoBlotterTrade"
                             Source="_positions"
                             Columns="_columns"
-                            ViewportWidth="ViewportSize.Fill"
+                            ViewportWidth="ViewportSize.Stretch"
                             ViewportHeight="260"
                             PinnedColumnCount="1"
                             HighlightFocusRow="true"
@@ -129,12 +129,12 @@
                     </MudTabPanel>
                     <MudTabPanel Text="History" ID="@("history")">
                         <div class="pa-4">
-                            <MudExGridPaper id="history-paper" Class="demo-fill-paper" Outlined="true" Hover="true">
+                            <MudExGridPaper id="history-paper" Class="demo-stretch-paper" Outlined="true" Hover="true">
                                 <ExGrid TRow="DemoBlotterTrade"
                                         Source="_history"
                                         Columns="_columns"
                                         RowHeight="26"
-                                        ViewportWidth="ViewportSize.Fill"
+                                        ViewportWidth="ViewportSize.Stretch"
                                         ViewportHeight="220"
                                         PinnedColumnCount="1"
                                         Chrome="MudGridChrome.Default" />
@@ -201,7 +201,7 @@
         _dialogOrders = GridSource.From(DemoData.Blotter(60, seed: 14));
 
         // Thirteen columns, 1420px together: wider than the main area with the Drawer
-        // open or closed, so a Fill grid always scrolls sideways and End always has
+        // open or closed, so a Stretch grid always scrolls sideways and End always has
         // somewhere to go.
         _columns =
         [

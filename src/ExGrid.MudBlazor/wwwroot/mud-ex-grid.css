@@ -82,7 +82,7 @@
 .mud-ex-grid .mud-ex-grid-toolbar {
     padding-left: 8px;
     padding-right: 8px;
-    /* The paper is a column: a Fill-height grid takes what the toolbar leaves, through the
+    /* The paper is a column: a Stretch-height grid takes what the toolbar leaves, through the
        flex values the core writes on its own root, and the toolbar keeps its height
        (ADR-0028/0030). */
     flex: none;
@@ -201,9 +201,21 @@
     flex: 1 1 auto;
     overflow-y: auto;
 }
-.mud-ex-grid-filter-actions {
+.mud-ex-grid-filter-actions,
+.mud-ex-grid-find-actions {
     display: flex;
     justify-content: flex-end;
     gap: 4px;
     flex-shrink: 0;
 }
+/* The find panel (ADR-0055): the filter panel's column, with no list to give way; its actions
+   share the filter panel's rule above. The outcome line keeps its height when empty, so the
+   panel does not jump when a step finds nothing. */
+.mud-ex-grid-find {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px;
+    min-height: 0;
+}
+.mud-ex-grid-find-outcome { min-height: 1.4em; }

@@ -311,3 +311,21 @@ Rejected:
   numbers). The band is the round trip times the drag's speed. A debounce would add its own
   delay to the round trip before the new size is painted, so it would lengthen the band, and
   the frames it would save are not a cost worth that.
+
+## `Fill` is renamed `Stretch` — 2026-09-26
+
+*(Decided with the user when Excel's fill keys were added — ADR-0035's Ctrl+D and Ctrl+R.)* The
+axis this ADR calls **Fill** was named for what the CSS does: it fills the parent. The word already
+belonged to something else for every Excel user — Ctrl+Enter, Ctrl+D, the fill handle — and those
+gestures now exist in the grid. One word naming a sizing mode in the API and an editing gesture in
+the key table is a collision the glossary exists to prevent, and the Excel meaning is the one a
+user brings with them.
+
+**`ViewportSize.Fill` is now `ViewportSize.Stretch`**, and the glossary's **Stretch** is this
+ADR's axis. Nothing about the behaviour changes. Stretch was chosen over `FromParent` and `Parent`
+because it is what CSS itself calls "take the container's size" (`align-self: stretch`), and it
+cannot be read as the column width's Auto
+([ADR-0016](./0016-column-width-and-overflow.md)). The packages are prereleases
+([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)), so
+the rename is made outright rather than behind an obsolete alias. The sections above keep the word
+they were written with; read **Fill** there as **Stretch**.

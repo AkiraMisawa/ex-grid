@@ -52,7 +52,10 @@ Selection, and each field is read as if typed under the Sheet's culture. A copy 
 as the engine writes them: as shown in `text/plain`, unformatted in `text/html`. A copy reaching a
 cell still waiting for a Linked Table's data is refused, and the user is told which cell. The fill handle fills as Excel does: Formulas with their
 References shifted, a series from two or more numbers, and dates by day. Any other pattern is
-refused, and the user is told why.
+refused, and the user is told why. Ctrl+D and Ctrl+R copy the range's first row or column over the
+rest, Formulas with their References shifted, and never continue a series. Delete clears the
+Selection's contents and keeps its formats, as one undo step. Ctrl+F finds text as it is shown, in
+every row of the Sheet.
 
 ## Linked Tables
 

@@ -25,6 +25,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     private readonly Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> _fetch;
     private readonly int _readAheadRows;
     private readonly Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? _distinctValues;
+    private readonly Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? _find;
 
     // Captured where the source is constructed — the Consumer's component, so Blazor's
     // dispatcher. It is where a failure nobody subscribed to is rethrown, since the task
@@ -43,13 +44,15 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
         int readAheadRows,
         Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null,
-        Rows.RowMarkAdapter<TRow>? marks = null)
+        Rows.RowMarkAdapter<TRow>? marks = null,
+        Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null)
     {
         ArgumentNullException.ThrowIfNull(fetch);
         ArgumentOutOfRangeException.ThrowIfNegative(readAheadRows);
         _fetch = fetch;
         _readAheadRows = readAheadRows;
         _distinctValues = distinctValues;
+        _find = find;
         Marks = marks is null ? null : new Rows.FetchingRowMarks<TRow>(this, marks);
     }
 
@@ -476,6 +479,23 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
             return Task.FromResult(Chrome.DistinctValues.TooMany);
 
         return _distinctValues(column, GridFilters.Without(Filter, column), cancellationToken);
+    }
+
+    /// <summary>Whether a <c>find</c> delegate was given (ADR-0055).</summary>
+    public bool CanFind => _find is not null;
+
+    /// <summary>
+    /// A Find step, answered by the <c>find</c> delegate against the Filter and Sorts in force
+    /// (ADR-0055). The position it answers is in that order; the grid discards it if the order
+    /// has moved since the request was read.
+    /// </summary>
+    public Task<Finding.GridFindResult> FindAsync(Finding.GridFindRequest request, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_find is null)
+            throw new NotSupportedException("This source was given no find delegate: CanFind is false (ADR-0055).");
+        return _find(request, Filter, Sorts, cancellationToken);
     }
 
     /// <summary>

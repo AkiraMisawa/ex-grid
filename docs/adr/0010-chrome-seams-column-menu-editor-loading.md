@@ -300,3 +300,16 @@ round trip, so on a Server circuit.
 *(Added 2026-09-27: ED-22's promise, that keys are neither lost nor reordered, covers a primary
 press on the rows as well. A press is ordered among held keys by the root's capture-phase pointer
 listener ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).)*
+
+## One key the listener answers itself — 2026-09-27
+
+*(Recorded when Find was built, [ADR-0055](./0055-find-is-asked-of-the-consumer-like-sort-and-filter.md).)*
+The rule above — the core decides what a key means, the listener only looks it up — has one
+exception, and it is written here so that it stays one. **Ctrl+F in the find panel's own field
+selects the field's text, and the listener does it without asking the core.** Selecting a text
+field's contents has no Blazor API, the core would have nothing to decide (the answer is always
+"select"), and asking would cost a round trip on a circuit for a key whose whole effect is local
+to one input. It takes no new JavaScript use: it runs inside the capture-phase `keydown` handler
+([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s first entry), beside the held-key
+replay that already types into a field. Any further key answered in the listener needs its own
+line here.

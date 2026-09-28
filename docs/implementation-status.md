@@ -302,6 +302,55 @@ it has met `chrome` or `msedge`.
   150 ms — and a sweep while scrolling carries 47–55 frames a second up the circuit
   whatever the round trip, so the reports are not per frame.
 
+**2026-09-27, Excel's editing keys and Find.** A comparison against Excel, grilled with the user,
+found four gaps and one defect. **The defect:** ADR-0007 said the grid forwards Ctrl+Z, and
+nothing did. **The gaps:** Delete, Backspace, Ctrl+D / Ctrl+R and Ctrl+F. Decided as ADR-0007's
+forwarding section, ADR-0054 (Delete raises a Clear Intent, never a paste of empty text), the
+ADR-0035 additions for the fill keys and Backspace, ADR-0055 (Find is asked of the Consumer, and
+the grid takes Ctrl+F even where nothing can search) and ADR-0028's rename of `ViewportSize.Fill`
+to `Stretch`, which frees Fill for Excel's gesture. Built, with the criteria each ADR added
+(KB-39 — KB-37 on `main`, ED-23..25, CP-24/25, FD-1..9):
+
+- `OnUndo` / `OnRedo`, each key taken from the page only while someone listens — the key gate
+  is now told a per-grid set (`GridKeys.TakenFor`) and re-told when it changes.
+- `OnClear` with `GridClearIntent`; Backspace's empty Overwrite editor; Ctrl+D / Ctrl+R planned
+  by `ClipboardRules.PlanFill` and raised as one paste intent of raw values, with three new
+  refusals (`NothingToFillFrom`, `MultipleRanges`, `SourceUnavailable`).
+- Find: `GridFind.Step` as the reference, `IGridSource.CanFind` / `FindAsync` with defaults
+  that say no, `GridSource.Fetch(find:)`, `OnFind` for push mode, the find panel as a Chrome seam
+  drawn by the built-in Chrome and by `ExGrid.MudBlazor`, and `OnFindRefused`.
+- The Features demo keeps an undo stack, so the keys have something to drive.
+
+**Where this ran.** A Linux cloud container, .NET 10.0.401 installed directly, **Google Chrome
+and Microsoft Edge installed from their vendors' packages**, headed under Xvfb. Layers 1 and 2:
+**644 + 600 (1 skipped by name) + 70**. Layer 3, the whole suite on both browsers: **444 pass,
+14 skipped by name, 0 failed** on WebAssembly, and **448 pass, 10 skipped by name, 0 failed** on
+Server. Neither discharges the Windows or real-IME runs.
+
+**A max-depth review of this drop found open items; all are fixed.** Three needed a decision,
+recorded in ADR-0055's "Settled in review" section: Ctrl+F inside the grid's own popovers is the
+grid's (in the find field it selects the text), `OnFind` beside a bound Source is refused by name,
+and an answer outside the request throws rather than being reworded as a reorder. The rest:
+`ColumnInfo` now carries the column's `Format` and answers the displayed text itself, so a rebuilt
+column compares equal again and the rule is written once; `PlanFill` reports the declaration first
+(ADR-0035); a held Shift+Enter keeps its Shift; the demo's redo replays in order; FD-4/5/8/10/11,
+CP-25 and ED-25 have the tests they lacked. A second review of those fixes found a held Ctrl+F
+replayed into a popover (a second drain, and a filter field dropping it with every key after it);
+it now goes to the core. After both rounds: layers 1 and 2 **650 + 611 (1 skipped by name) + 70**;
+layer 3 on both browsers **484 pass, 14 skipped by name, 0 failed** on WebAssembly and **488 pass,
+10 skipped by name, 0 failed** on Server.
+
+**Two defects older than this drop, found by chasing the review's Server failures, are fixed:**
+
+- **Text typed at full speed on a circuit lost characters** — in the Cell Editor
+  (`…123456789` became `…1289`), the filter panel's fields and the find field. Each rendered its
+  value by hand, `value="@x"` beside an `@oninput`, and every render wrote the server's older copy
+  back over the typing. Only `@bind` tells Blazor the field's own value outranks a render's. New
+  criterion SRV-7, and a trap in CLAUDE.md.
+- **A held key replay stopped at the first bare modifier.** The Shift pressed for a capital during a
+  hold — typing straight after Ctrl+F, E or a key that opens the editor — is a keydown of its own,
+  and replaying it failed the "can this be reproduced" test, which dropped every key after it.
+
 ## Working through to the component
 
 | ADR | | Pinned by |
@@ -325,7 +374,7 @@ it has met `chrome` or `msedge`.
 | 0020 | Action and Template Columns | both layers |
 | 0022 | `net10.0`, single-target (rewritten from `net8.0` on 2026-09-25) | the project file |
 | 0025 | `FetchingGridSource` (+ copy rows, + distinct values delegate); `InMemoryGridSource.ReplaceRow` — the in-memory Consumer's apply (deliberately *not* ADR-0007's Overlay application; recorded there) | `GridSourceFetchTests`, `ReplaceRowTests` |
-| 0027 / 0028 / 0029 | **`GridMetrics`, `GridDensity`, `ViewportSize.Fill`**, inline Geometry Tokens, the token vocabulary, the forced-colors block | `GridMetricsTests`, `GridMetricsWiringTests` |
+| 0027 / 0028 / 0029 | **`GridMetrics`, `GridDensity`, `ViewportSize.Stretch` (was `Fill`)**, inline Geometry Tokens, the token vocabulary, the forced-colors block | `GridMetricsTests`, `GridMetricsWiringTests` |
 | 0031 | `dir="ltr"` on the root | `GridRenderingTests` |
 | 0032 | **Header Groups** — rectangles, refusals, the band, group/leaf drag units | `HeaderGroupTests`, `HeaderGroupRenderingTests` |
 | 0033 | **ARIA** — the root surface, absolute indices, `aria-activedescendant`, the live region; **the scroller kept out of the tab sequence**, with focus that reaches it handed to the root, and a key typed on it before then read as the root's (2026-09-26) | `AccessibilityTests`, `features.spec.mjs` (A11Y-17), `circuit.spec.mjs` (ED-22 on the Server host) |

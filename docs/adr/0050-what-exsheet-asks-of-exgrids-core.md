@@ -105,6 +105,18 @@ the Consumer decides what it means.**
   later, and each is refused until it arrives.
 - A plain ExGrid Consumer can take Fill Intents too, and resolve them into its Overlay.
 
+*(Added 2026-09-28, when `main`'s fill keys were merged — [ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md)'s
+Ctrl+D and Ctrl+R, decided with the user.)* The keys stay a paste intent in the core, as `main`
+built them: the grid reads the source's raw values and raises one `GridPasteIntent`. That intent
+alone could not tell a Consumer that holds more than values — ExSheet, whose cells hold Formulas —
+a fill by key from a paste of the same text, so **the intent names the range a fill key read, in
+`GridPasteIntent.FillSource`**, and null for a paste from the clipboard and for Ctrl+Enter's typed
+text. ExSheet copies that range's Entries over the target with relative References shifted, formats
+and alignment with them, as Excel's Ctrl+D and Ctrl+R do and as the handle's copy rule does
+(`SheetEdit.FillCopy`, the handle's rule with no series): a date or a number is copied, never
+continued, and no pattern is refused. It also answers `OnCopyRowsNeeded` from the Sheet, so a source
+row scrolled out of the Window is still read.
+
 ## Consequences
 
 - **ADR-0012, ADR-0014 and ADR-0008 each gain a note** saying their rule stands, and which
@@ -135,6 +147,12 @@ it for two things: a user's own alignment, and Excel's centring of booleans and 
 
 **8. Undo and redo reach the Consumer.** [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)
 says the grid forwards Ctrl+Z, but no route existed: the key listener never claimed it.
+*(2026-09-28: `main` reached the same gap and settled it in ADR-0007's section "The forwarding this
+ADR promised was never wired". When the two branches were merged, the user made that section the
+one definition: `OnUndo` and `OnRedo` carry no payload, undo is Ctrl+Z and redo Ctrl+Y and
+Ctrl+Shift+Z, each is claimed only while it has a listener, and never while editing. The bullets
+below say the same thing, and ADR-0007 is the authority where they differ. ExSheet's undo stack is
+one such listener.)*
 - A Consumer can declare undo and redo callbacks. While no edit is open, the core then claims
   Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z and raises them.
 - While an edit is open, the keys stay the editor's own, which undo uncommitted typing (ADR-0007's

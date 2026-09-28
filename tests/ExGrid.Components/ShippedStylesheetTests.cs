@@ -89,6 +89,27 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*observer\.disconnect\(\);\s*ceilingObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
     }
 
+    [Fact] // ADR-0021 (widened 2026-09-28) / ADR-0018: the hand-back leaves the fields beside the rows alone, found by the core's band, nothing measured
+    public void The_hand_back_leaves_the_formula_bar_and_the_name_box_alone()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var reclaim = Regex.Match(script.Text, @"reclaimFocus: \(fromField\) => \{.*?\n        \},", RegexOptions.Singleline);
+        Assert.True(reclaim.Success, "reclaimFocus(fromField) is not in the module");
+        var body = reclaim.Value;
+
+        // Only this root's own focus, or none, is taken back (ADR-0018)...
+        Assert.Contains("root.contains(active)", body, StringComparison.Ordinal);
+        Assert.Contains("active === document.body", body, StringComparison.Ordinal);
+        // ...and not a field inside the band the core renders the Formula Bar and the Name Box
+        // into — a Chrome's control sits inside the same band — unless the core says the gesture
+        // was made in that field, or a held press on the rows left its focus standing.
+        Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
+        Assert.Contains("fromField === true", body, StringComparison.Ordinal);
+        Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
+        // A read of document.activeElement, never of layout.
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+    }
+
     [Fact] // ADR-0037 / KB-26: a held Space engages once — the gate takes and drops a repeated plain Space
     public void The_key_gate_drops_a_repeated_space()
     {
@@ -114,16 +135,16 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
     }
 
-    [Fact] // ADR-0050 item 8 / DC-30: the gate takes undo and redo only from C#'s list, and never while editing
+    [Fact] // ADR-0007 / KB-39 / DC-30: the gate takes undo and redo only from C#'s list, and never while editing
     public void The_history_keys_are_claimed_only_through_the_cores_list()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
         // The listener names no history key of its own: they reach it only in the set C#
-        // hands it, at attach or re-told through setTaken, and that set is consulted only
+        // hands it, at attach or re-told through setClaims, and that set is consulted only
         // while no edit is open. While one is, the editing sets decide, and they carry none.
         Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[zZyY]'"), script.Text);
-        Assert.Matches(new Regex(@"setTaken: \(keys\) => \{\s*taken = new Set\(keys\);\s*\}"), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
         Assert.Matches(new Regex(@"if \(!taken\.has\(canonical\)\)"), script.Text);
     }
 

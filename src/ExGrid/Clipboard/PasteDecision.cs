@@ -14,8 +14,8 @@ namespace ExGrid.Clipboard;
 /// however it is shaped. Chrome must not offer the "reselect the same shape" advice for
 /// it — no reselection of that shape would be accepted.
 /// <see cref="TooLarge"/> is not about shape either (ADR-0005): the clipboard is past the
-/// grid's byte ceiling, so it was not read at all. Component-level, never produced by the
-/// pure rules.
+/// grid's byte ceiling, so it was not read at all — or a fill key's source is past the copy
+/// cap (ADR-0035). The byte ceiling is component-level, never produced by the pure rules.
 /// <see cref="SpillPastExtent"/> exists only where a Consumer declared that a paste may
 /// spill (ADR-0050, item 3): the block would run past the grid's last row or column.
 /// </summary>
@@ -39,14 +39,31 @@ public enum PasteRefusalReason
     /// of the same shape would be accepted, so Chrome must not advise one.</summary>
     TargetNotEditable,
 
-    /// <summary>The clipboard is past the grid's <c>PasteByteCap</c>, so it was not read
-    /// at all. Raised by the component, never by the pure rules (ADR-0005).</summary>
+    /// <summary>Too much to read: a clipboard past the grid's <c>PasteByteCap</c>, raised by
+    /// the component before the clipboard is read at all (ADR-0005) — or a fill key's source
+    /// past the copy cap, which <see cref="ClipboardRules.PlanFill"/> refuses as a copy of it
+    /// would be refused (ADR-0035).</summary>
     TooLarge,
 
     /// <summary>A spilled paste (ADR-0050, item 3) whose block would run past the grid's
     /// last row or last column. Nothing is written — the block is never clipped to the
     /// edge. Raised only where the Consumer declared that a paste may spill.</summary>
     SpillPastExtent,
+
+    /// <summary>A fill key (Ctrl+D, Ctrl+R) on a range one row tall at the first row, or
+    /// one column wide at the first column: there is no row above, or column to the left,
+    /// to fill from (ADR-0035).</summary>
+    NothingToFillFrom,
+
+    /// <summary>A fill key over more than one range: each would need a source of its own,
+    /// and one intent carries one source block (ADR-0035).</summary>
+    MultipleRanges,
+
+    /// <summary>A fill key whose source rows could not be had whole — nobody to ask for
+    /// rows outside the Window, an answer that came back short, or the order changing
+    /// while they were asked for. The fill is refused rather than filled from a guess
+    /// (ADR-0035). Component-level, never produced by the pure rules.</summary>
+    SourceUnavailable,
 }
 
 /// <summary>

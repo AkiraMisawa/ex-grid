@@ -189,6 +189,8 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(2, intent.CellCount);
         Assert.Equal("x", intent.ValueFor(new CellPosition(0, 0)));
         Assert.Equal("y", intent.ValueFor(new CellPosition(1, 0)));
+        // From the clipboard, not a fill key (ADR-0050 item 5, 2026-09-28): no fill source.
+        Assert.Null(intent.FillSource);
     }
 
     [Fact] // ADR-0005 / CP-21: a paste arrives as streams and means exactly what the strings meant

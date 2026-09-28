@@ -49,7 +49,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 53 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 55 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -92,7 +92,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 53 ADRs. **A new decision that follows these will not
+The principles that run through all 55 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -123,11 +123,13 @@ the kind that still look correct on screen**, so review will not catch them.
 - **`StateHasChanged()` can complete the render synchronously.** A field set just before it may
   already have been cleared by `OnAfterRender` when you read it back — this produced a real
   `NullReferenceException`. Copy to a local first.
-- **An `<input value="@text">` beside a plain `@oninput` writes typing back on a Server
-  circuit.** The render that answers each input puts that input's text back in the field, a
-  round trip late, over whatever was typed since. It loses characters at ordinary typing speed
-  (measured, 2026-09-27). Bind the field with `@bind:get`/`@bind:set` on `oninput`, so a render
-  writes it only when the component itself changes the text.
+- **A text field whose value changes while it is typed in is bound with `@bind` (or
+  `@bind:get`/`@bind:set` on `oninput`), never `value="@x"` beside a plain `@oninput`** (a value
+  fixed for the field's lifetime, such as a Chrome editor's `InitialText`, is safe). Only a binding
+  tells Blazor that the field's own value outranks a render's. Written by hand, every render writes
+  the server's copy back, and on a circuit that copy is a round trip behind the typing:
+  `…123456789` became `…1289` in the Cell Editor, and the page looked fine (SRV-7; measured again
+  2026-09-27).
 - **Three name collisions exist.** A Razor page class with the same name as the root namespace
   shadows the namespace (`Bench.razor` in namespace `Bench` → CS0426). An enum named
   `RenderMode` collides with `Microsoft.AspNetCore.Components.Web.RenderMode`, which

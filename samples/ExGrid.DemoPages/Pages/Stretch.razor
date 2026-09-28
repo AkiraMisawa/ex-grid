@@ -1,4 +1,4 @@
-@page "/fill"
+@page "/stretch"
 @using global::ExGrid.MudBlazor
 @* global::, for the reason Mud.razor gives (AGENTS.md, the name collisions). *@
 @using global::MudBlazor
@@ -14,10 +14,10 @@
 
 <DemoNav />
 
-<h1>Fill — a Viewport that takes its parent's box</h1>
+<h1>Stretch — a Viewport that takes its parent's box</h1>
 
 <p>
-    <code>ViewportHeight="ViewportSize.Fill"</code> takes the parent's height instead of a
+    <code>ViewportHeight="ViewportSize.Stretch"</code> takes the parent's height instead of a
     number (ADR-0028). The parent's side of the contract is one sentence: give it a definite
     height. Each grid here fills a parent that does: a sized box, the rest of a flex column
     under a toolbar, and a Material paper under its toolbar (ADR-0030).
@@ -35,38 +35,38 @@
     case "auto":
         <section id="auto-box">
             <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
-                    ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill" />
+                    ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
         </section>
         break;
     case "window":
         @* The box follows the window's height, so a resize is a change of Viewport. *@
         <section id="window-box" style="height: calc(100vh - 220px); min-height: 0">
             <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
-                    ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill"
+                    ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch"
                     OnSortChanged="OnSortChanged" />
         </section>
         break;
     default:
         <section id="fixed-box" style="height: 300px">
             <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
-                    ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill" />
+                    ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
         </section>
 
         <section id="flex-box" style="display: flex; flex-direction: column; height: 360px; margin-top: 16px">
             <div id="flex-toolbar" style="height: 60px; flex: none">A toolbar the grid sits under</div>
             <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
-                    ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill" />
+                    ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
         </section>
 
         @* The paper's height is the Consumer's, on the outer element, which is theirs
-           (ADR-0030); the Fill grid takes what the toolbar leaves. *@
-        <MudExGridPaper id="fill-paper" Style="display: flex; width: 640px; height: 320px; margin-top: 16px">
+           (ADR-0030); the Stretch grid takes what the toolbar leaves. *@
+        <MudExGridPaper id="stretch-paper" Style="display: flex; width: 640px; height: 320px; margin-top: 16px">
             <ToolBarContent>
                 <MudText Typo="Typo.h6">Positions</MudText>
             </ToolBarContent>
             <ChildContent>
                 <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns"
-                        ViewportHeight="ViewportSize.Fill" ViewportWidth="ViewportSize.Fill" />
+                        ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
             </ChildContent>
         </MudExGridPaper>
 

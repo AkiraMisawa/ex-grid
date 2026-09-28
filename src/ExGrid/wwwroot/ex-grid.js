@@ -18,14 +18,16 @@
  * @param {HTMLElement} scroller the instance's scroll container
  * @param {object} core the .NET object reference the taken keys are forwarded to
  * @param {string[]} takenKeys canonical forms of the keys the core claims, built by
- *   GridKeys.Taken — this file decides nothing about which keys those are
+ *   GridKeys.TakenFor for this grid — this file decides nothing about which keys those are
  * @param {boolean} canEdit whether any column edits at all — a display-only grid must
  *   not take printable keys away from the page (ADR-0010)
  * @param {number} restDelayMs how long the pointer must be still before the core is told
  *   — the core's own constant, so the number lives in one place (ADR-0034)
+ * @param {boolean} canFind whether a search is wired — Ctrl+F then opens the find panel,
+ *   and the keys after it wait for the panel; otherwise it is refused (ADR-0055)
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind) {
     let taken = new Set(takenKeys);
 
     // Whether the synchronous channel exists — WebAssembly has it, a server circuit
@@ -58,8 +60,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     let reportCaret = false;
     // Whether a popover's contents have a popup of their own open (ADR-0039), told by C#.
     let innerPopup = false;
+    // Ctrl+F too, taken and answered with nothing: Find is disabled while a cell is being
+    // edited, and the browser's own find would search only the painted rows (ADR-0055).
     const editingKeys = new Set(
-        ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2']);
+        ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2',
+            'Control+f', 'Control+F']);
     const overwriteKeys = new Set([
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
     // Pointing (ADR-0051's second round): Overwrite's keys and the four Shift+arrows, which
@@ -76,6 +81,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // the grid's (ADR-0010's hold, widened).
     const popoverOpeners = new Set(['Alt+ArrowDown', 'Shift+F10', 'ContextMenu']);
 
+    // Find's key (ADR-0055), both cases for CapsLock, and the modifiers' own keydowns, which
+    // mean nothing by themselves.
+    const findKeys = new Set(['Control+f', 'Control+F']);
+    const modifierKeys = new Set(['Shift', 'Control', 'Alt', 'Meta']);
+
     // What the gate decides a key is for (ADR-0010): 'popover' — the core's, and it opens a
     // popover, so the keys after it are held until the popover holds DOM focus; 'mode' — the
     // core's, and it can change the editing mode, so the keys after it are held until it is
@@ -84,6 +94,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // null — the browser's, or a control's inside the grid. Read from a snapshot of the
     // event rather than the event itself, so a held key can be gated again, against the
     // mode its predecessor's answer left.
+    // The mirror of GridKeys.Canonical — the two must move together. Meta held where it is not
+    // primary still appears in the form, so it cannot pass for an unmodified key: nothing in the
+    // set carries it, and the browser keeps it.
+    const canonicalOf = (k) => {
+        const control = k.ctrlKey || (k.metaKey && metaIsPrimary);
+        const foreign = k.metaKey && !metaIsPrimary;
+        return (control ? 'Control+' : '') + (foreign ? 'Meta+' : '')
+            + (k.shiftKey ? 'Shift+' : '') + (k.altKey ? 'Alt+' : '') + k.key;
+    };
+
     const gate = (k) => {
         // The mirror of GridKeys.Canonical — the two must move together. It exists here
         // only to decide whether to take the key: preventDefault has to happen now, and
@@ -91,13 +111,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // key MEANS is resolved on the C# side, from the raw fields sent below, so a
         // disagreement between the two shows up as a key that does nothing rather than as
         // a key that does something else.
+        const canonical = canonicalOf(k);
         const control = k.ctrlKey || (k.metaKey && metaIsPrimary);
-        // Meta held where it is not primary still appears in the form, so it cannot pass
-        // for an unmodified key: nothing in the set carries it, and the browser keeps it.
         const foreign = k.metaKey && !metaIsPrimary;
-        const prefix = (control ? 'Control+' : '') + (foreign ? 'Meta+' : '')
-            + (k.shiftKey ? 'Shift+' : '') + (k.altKey ? 'Alt+' : '');
-        const canonical = prefix + k.key;
 
         if (editing === 'none') {
             if (!k.onRoot) {
@@ -111,6 +127,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 // taken from there, Space would type nothing, arrows would move the
                 // selection instead of a caret and Ctrl+A would select the grid instead
                 // of the field's text.
+                // Ctrl+F in one of the grid's own popovers is the grid's too (ADR-0055, settled
+                // 2026-09-27): the browser's find would see only the painted rows. In the find
+                // field it selects the field's text, the field's own behaviour and no meaning of
+                // the core's; anywhere else in a popover it opens Find, as from the root. A
+                // Consumer's control in a Template cell keeps the key, as it keeps every other.
+                if (k.inPopover && findKeys.has(canonical)) {
+                    if (k.inFindField) {
+                        return 'select';
+                    }
+                    return canFind ? 'popover' : 'core';
+                }
                 if (canonical !== 'Escape') {
                     return null;
                 }
@@ -163,7 +190,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             if (popoverOpeners.has(canonical)) {
                 return 'popover';
             }
-            return canonical === ' ' ? 'mode' : 'core';
+            // Ctrl+F opens a popover only where a search is wired; elsewhere it is refused
+            // and opens nothing, and holding the keys after it for a panel that never comes
+            // would stall them (ADR-0055).
+            if (findKeys.has(canonical)) {
+                return canFind ? 'popover' : 'core';
+            }
+            // Space and Backspace open an editor (ADR-0010/0035): a mode change.
+            return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';
         }
 
         // Overwrite or Caret: the editor normally holds DOM focus, but a click can
@@ -199,6 +233,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         repeat: event.repeat,
         onRoot: isRoot(event.target),
         inEditor: event.target instanceof Element && event.target.closest('.ex-editor') !== null,
+        inPopover: popoverOf(event.target) !== null,
+        inFindField: isTextField(event.target) && event.target.closest('.ex-popover-find') !== null,
     });
 
     // While editing, the key carries the editor's text and caret (ADR-0051): the core decides
@@ -290,6 +326,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // answer has landed. Plain navigation changes no mode and is never held behind.
     const held = [];
     let answering = false;
+    // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus
+    // only because a held press on the rows suppressed the default that would have moved it
+    // (onPress); null once the field is pressed again, the hand-back has taken it, or the
+    // press has been answered without one (replayPress).
+    let staleField = null;
 
     // Whether the editor holds DOM focus. Until it does, a key typed with editing on lands
     // on the root, where no editing mode claims a printable key — it would be lost.
@@ -503,6 +544,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     const handToPopover = (target, k) => {
         if (isTextField(target) && !k.ctrlKey && !k.metaKey && !k.altKey) {
             if (k.key === 'Enter' && target.form) {
+                // The keydown first, so the field's own handlers hear what the key was — Shift
+                // held turns the find panel's Enter into "previous" (ADR-0055) — then the
+                // submission, which a dispatched keydown does not perform.
+                replayInto(target, k);
                 target.form.requestSubmit();
                 return;
             }
@@ -528,7 +573,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 await replayPress(k);
                 continue;
             }
+            // A modifier's own keydown — the Shift pressed for a capital, or for Shift+Enter —
+            // is held with the rest to keep their order, and means nothing by itself: the key
+            // that follows carries it. Replaying it would be a key no field can reproduce, and
+            // that stops the replay there, dropping every key typed after it.
+            if (modifierKeys.has(k.key)) {
+                continue;
+            }
             const target = focusedControl();
+            // Find's key held behind a popover is the grid's there too (ADR-0055), and is not
+            // replayed into the popover — a menu would take it as a keydown of its own, and a
+            // text field cannot reproduce a Ctrl chord at all, which would drop it and every
+            // key after it. In the find field it selects the text; anywhere else in a popover
+            // the core is asked to open Find, and the keys after it wait for the panel.
+            if (target && popoverOf(target) && findKeys.has(canonicalOf(k))) {
+                if (isTextField(target) && target.closest('.ex-popover-find')) {
+                    target.select();
+                    continue;
+                }
+                const aimed = { ...k, onRoot: false, inEditor: false, inPopover: true, inFindField: false };
+                awaitingPopover = canFind;
+                await forward(aimed);
+                await editorSettled();
+                continue;
+            }
             if (target) {
                 // A held key that itself sends the keyboard across the popover holds the
                 // rest again, until DOM focus has followed it.
@@ -546,7 +614,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             }
             // Aimed at the grid when it was pressed; after the answer, the grid's
             // keyboard is the editor if one stands, and the root if not.
-            const rebased = { ...k, onRoot: editing === 'none', inEditor: editing !== 'none' };
+            const rebased = {
+                ...k, onRoot: editing === 'none', inEditor: editing !== 'none', inPopover: false, inFindField: false,
+            };
             const verdict = gate(rebased);
             if (verdict === 'mode' || verdict === 'popover') {
                 awaitingPopover = verdict === 'popover';
@@ -590,7 +660,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 answering = true;
                 holdStartedAt = performance.now();
                 if (sentinel) {
-                    awaitingMove = { from: event.target, into: '.ex-popover-commands' };
+                    // A column's popover wraps back to its commands; the find panel, which
+                    // has none, to its own contents (ADR-0044/0055).
+                    const into = popoverOf(event.target)?.querySelector('.ex-popover-commands')
+                        ? '.ex-popover-commands'
+                        : '.ex-popover-find-body';
+                    awaitingMove = { from: event.target, into };
                 }
                 drain();
             }
@@ -622,6 +697,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         event.preventDefault();
         event.stopPropagation();
         if (verdict === 'drop') {
+            return;
+        }
+        if (verdict === 'select') {
+            event.target.select();
             return;
         }
         const answer = forward(k);
@@ -751,9 +830,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // Asked once the press's focus has gone to the core: focusing the bar is the press's default
     // action, dispatched after the listener in the same task, so the question waits for a later
     // task. The core answers once that focus has been handled in full (ExGrid.PressAnsweredAsync).
+    //
+    // The press's focus reaches the core at once, but its turn among the held keys comes later:
+    // a press on the rows held before it can end, in its turn, the edit the bar's focus joined
+    // (a character typed onto a cell, a row pressed, the bar pressed, all within one round
+    // trip). The bar still holds DOM focus, and the keys after it are the bar's — so, at its
+    // turn, the core is told whether the bar is still where the keyboard is, and answers the
+    // press again from there if no edit stands.
     const answerBarPress = async () => {
         await new Promise((resolve) => setTimeout(resolve));
-        await core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
+        const active = document.activeElement;
+        const inBar = active instanceof Element && root.contains(active)
+            && active.closest('.ex-formula-bar-text') !== null;
+        await core.invokeMethodAsync('BarPressAnsweredAsync', inBar).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to answer a press', error);
             }
@@ -774,6 +863,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         button: event.button, buttons: event.buttons,
     });
     const onPress = (event) => {
+        // A press into a field beside the rows gives that field a focus of its own, which a
+        // late hand-back leaves alone (reclaimFocus).
+        if (event.target instanceof Element && event.target.closest('.ex-formula-bar') !== null) {
+            staleField = null;
+        }
         if (opensBarEdit(event)) {
             holdBehindBarPress();
             return;
@@ -794,6 +888,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // press that commits it hands the keyboard to the root then.
         event.preventDefault();
         event.stopPropagation();
+        // The default suppressed here would have taken DOM focus off a field beside the rows
+        // that held it. That focus is now only left standing, not the user's choice: the
+        // hand-back after the press takes it, as the press would have (reclaimFocus).
+        const active = document.activeElement;
+        if (active instanceof Element && root.contains(active) && active.closest('.ex-formula-bar') !== null) {
+            staleField = active;
+        }
         held.push({ press: 'mousedown', target: event.target, init: mouseInit(event) });
     };
     // A release is held only behind its press: once the press has been handed on, the
@@ -827,6 +928,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
                 console.error('[ex-grid] the grid failed to answer a press', error);
             }
         });
+        // The hand-back the press asked for, if it asked for one, has run by now.
+        staleField = null;
         // An edit the press kept stands with DOM focus in it, and one it ended is gone: the
         // keys after it are gated once that has settled, as after a key.
         await editorSettled();
@@ -1008,7 +1111,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         const height = Math.max(0, border.blockSize - content.blockSize);
         // A notification carrying no news is dropped here rather than sent: it would
         // re-render the grid on every frame of a window drag. The content box size
-        // rides the same report (ADR-0028) — under ViewportSize.Fill it IS the size —
+        // rides the same report (ADR-0028) — under ViewportSize.Stretch it IS the size —
         // so a change of either is news.
         if (width === gutterWidth && height === gutterHeight
             && content.inlineSize === contentWidth && content.blockSize === contentHeight) {
@@ -1135,15 +1238,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         setInnerPopup: (open) => {
             innerPopup = open;
         },
-        // Whether any column edits — re-told when the column set changes, so a grid
-        // that becomes display-only stops taking printable keys (ADR-0010/0020).
-        setCanEdit: (value) => {
-            canEdit = value;
-        },
-        // The keys the core claims, re-told when a Consumer declares or withdraws undo and
-        // redo (ADR-0050, item 8). Still GridKeys' list, decided in C#.
-        setTaken: (keys) => {
-            taken = new Set(keys);
+        // Which keys this grid takes, whether any column edits and whether a search is
+        // wired — re-told when a parameter change changes the answer, so a grid that
+        // becomes display-only stops taking printable keys, and one whose Consumer stops
+        // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0055).
+        setClaims: (takenKeys, editable, findable) => {
+            taken = new Set(takenKeys);
+            canEdit = editable;
+            canFind = findable;
         },
         getScrollOffset: () => (scroller
             ? { top: scroller.scrollTop, left: scroller.scrollLeft }
@@ -1162,10 +1264,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         // this root, or on nothing. A second grid the user has pressed in the meantime keeps
         // its keyboard. The condition reads document.activeElement and no layout; this is the
         // one decision about focus made in script.
-        reclaimFocus: () => {
+        //
+        // Nor from a field beside the rows with focus of its own — the Formula Bar and the Name
+        // Box, built in or drawn by a Chrome, all inside the band the core renders them into
+        // (ADR-0021, widened 2026-09-28): a row press's hand-back, landing after a press into
+        // one of them, took the keyboard the user had just put there. Only when the core means
+        // to take the keyboard out of that field — Enter or Escape typed in it, an edit in the
+        // bar ending — does it say so, and the field is left. Everything else inside the root,
+        // the Cell Editor over the rows included, is taken back as before.
+        // A field a held press on the rows left standing (staleField) is not the user's, and
+        // is taken as the press would have taken it.
+        reclaimFocus: (fromField) => {
             const active = document.activeElement;
+            const own = active instanceof Element && active !== staleField
+                && active.closest('.ex-formula-bar') !== null;
             if (root && (!active || active === document.body || active === document.documentElement
-                || root.contains(active))) {
+                || (root.contains(active) && (fromField === true || !own)))) {
+                staleField = null;
                 root.focus({ preventScroll: true });
             }
         },
