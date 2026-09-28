@@ -205,7 +205,7 @@ public class VirtualisationTests : GridTestContext
     [Fact] // ADR-0013: the header band spends a row of the browser's budget, and the guard counts it
     public void A_result_that_only_fits_without_the_header_is_refused()
     {
-        // The rows alone clear the 2^25 px ceiling at both of these counts, so the pure
+        // The rows alone clear the scale-1 Layout Ceiling at both of these counts, so the pure
         // guard lets them through; the spacer is a header taller than the rows, and at
         // the second one that is what the browser clamps away — the last row unreachable,
         // in silence.

@@ -116,11 +116,14 @@ jobs:
       - name: Build the DemoHost
         run: dotnet build samples/ExGrid.DemoHost
 
+      # The screen is larger than any window the suite opens, so the chrome-150 project
+      # (ADR-0053: Chrome at --force-device-scale-factor=1.5, its viewport left to the
+      # window) gets its 1280x800 window whole — 1920x1200 device pixels.
       - name: Layer 3, headed under xvfb
         working-directory: tests/ExGrid.Browser
         env:
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" npx playwright test
+        run: xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test
 
       - name: Keep the run's records
         if: always()
@@ -171,7 +174,7 @@ jobs:
         env:
           EXGRID_HOSTING: server
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" npx playwright test
+        run: xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test
 
       - name: Keep the run's records
         if: always()

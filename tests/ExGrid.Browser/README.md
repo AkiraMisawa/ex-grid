@@ -17,6 +17,18 @@ verification**: VZ-10's real clause is about platforms whose scrollbars take spa
 A machine without Edge fails the `msedge` project by name — the honest outcome
 (ADR-0017 requires both browsers; passing on one does not satisfy it).
 
+A third project, `chrome-150`, runs the tests the Layout Ceiling broke (ADR-0053, VZ-15):
+BIG-1, BIG-5, VZ-15, the Focus against the scrollbars, and the Sheet's SH-2, SH-18/DC-2/3/7.
+It launches Chrome with `--force-device-scale-factor=1.5` and `viewport: null`, headed, so
+the display scale reaches layout the way the OS's does and Chrome clamps at 22,369,618 CSS
+px. Playwright's `deviceScaleFactor` would not do: it raises `devicePixelRatio` and leaves
+the clamp where it was. Its 1280×800 window is 1920×1200 device pixels, so the screen it
+runs on has to be at least that (CI's xvfb screen is 2560×1600).
+
+```sh
+npx playwright test --project=chrome --project=chrome-150   # where Edge is absent
+```
+
 **CI runs this suite on every push and pull request** (ADR-0041): Linux, the runner's
 installed Chrome and Edge, headed under `xvfb-run`, with this directory's own config
 unchanged — once against each host, in two jobs. A failure in either turns the run red. Each run keeps `console.json`, `metrics.json` and any

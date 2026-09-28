@@ -85,15 +85,19 @@ test('SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, an
     // A plain click on C's heading selects the whole column; the Focus goes to its first row.
     await header('C').click({ force: true });
     await expectFocusAt(grid, 'C1');
-    // The range starts at row 1 and runs the column's whole height, past every painted row.
+    // The range starts at row 1 and runs past every painted row. It is painted only as far as
+    // the rows are, one row beyond (ADR-0053): laid out a million rows tall, it was clamped by
+    // the browser's Layout Ceiling like any other length.
     const range = grid.locator('.ex-selection .ex-range');
+    const readableBottom = () => grid.locator('.ex-scroller').evaluate((scroller) =>
+        scroller.getBoundingClientRect().top + scroller.clientTop + scroller.clientHeight);
     const coversColumns = async (from, to) => {
         const want = await spanOf(grid, from, to);
         const box = await boxOf(range);
         expect(Math.abs(box.x - want.x)).toBeLessThanOrEqual(1);
         expect(Math.abs(box.width - want.width)).toBeLessThanOrEqual(1);
         expect(Math.abs(box.y - want.y)).toBeLessThanOrEqual(1);
-        expect(box.height).toBeGreaterThan(1_000_000 * 28);
+        expect(box.y + box.height).toBeGreaterThanOrEqual(await readableBottom());
     };
     await coversColumns('C1', 'C1');
     // Shift+click extends from the Anchor's column.
@@ -120,7 +124,10 @@ test('SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, an
 
     // The corner selects all: one range from A1 across every painted row and column.
     await grid.locator('.ex-headings-corner').click({ force: true });
-    await expect.poll(async () => (await boxOf(grid.locator('.ex-selection-pinned .ex-range'))).height).toBeGreaterThan(1_000_000 * 28);
+    await expect.poll(async () => {
+        const box = await boxOf(grid.locator('.ex-selection-pinned .ex-range'));
+        return box.y + box.height >= await readableBottom();
+    }).toBe(true);
     const all = await boxOf(grid.locator('.ex-selection-pinned .ex-range'));
     const a1 = await boxOf(cell(grid, 'A1'));
     expect(Math.abs(all.x - a1.x)).toBeLessThanOrEqual(1);
