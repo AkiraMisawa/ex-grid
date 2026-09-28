@@ -273,7 +273,7 @@ public class ColumnWidthTests : SheetTestContext
 
     // ADR-0046 (2026-09-28), SH-26, CW-018: a width widened by entry is marked custom in the Sheet
     // Document, as Excel's file marks it, while it stays the entry's kind (the test above it).
-    [Fact(Skip = "SH-26: awaits the engine's third width kind. SheetColumnWidth has only IsCustom, which today also means 'never widened', so the entry's kind is recorded as automatic (custom: false).")]
+    [Fact]
     public async Task Widening_on_entry_records_a_custom_width()
     {
         var cut = RenderSheet();

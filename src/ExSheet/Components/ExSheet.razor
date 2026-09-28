@@ -900,7 +900,7 @@
     /// widens. The engine records the user's width as custom and the entry's as automatic, which a
     /// longer entry widens.
     /// </summary>
-    private static bool IsSetByUser(SheetColumnWidth width) => width.IsCustom;
+    private static bool IsSetByUser(SheetColumnWidth width) => width.IsSetByUser;
 
     /// <summary>The edit that records a width an entry widened a column to: the entry's kind, which a longer entry widens again (SH-26).</summary>
     private static SheetEdit WidenedByEntry(int column, double characters) =>

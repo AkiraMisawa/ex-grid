@@ -285,9 +285,11 @@ Each disagreement goes to Excel's answer, except where a refusal is named.
   cases between 4.0E-15 and 4.9E-15.
 - **Text comparison ignores an apostrophe, as it ignores a hyphen, and `ß` equals `ss` under `=`**
   (ARITH-125, 126), not only in ordering.
-- **`^` is the plain double power, unrounded** (ARITH-133): `=2^0.5` is 1.4142135623730951. The
-  15-digit answer (the engine's, or the case's own expectation) was a defect against the second
-  run's rule above.
+- **`^` with an exponent of 0.5 is the square root** (ARITH-133): `=2^0.5` is 1.4142135623730951.
+  *(Corrected in implementation: nothing was rounding. The engine computed e^(0.5 ln 2), one unit
+  in the last place below. `Math.Pow` for every exponent would break `=8^(1/3)` and `=27^(1/3)`,
+  already observed, so every other fractional exponent stays e^(b ln a). ARITH-143, `=3^0.5`, asks
+  whether Excel's square root is general.)*
 - **A value_if_error left out is empty, not 0** (IFERROR-016): `=IFERROR(1/0,)&""` is `""`, as an
   empty cell was (IFERROR-013).
 - **`XLOOKUP`'s regular expressions accept lookbehind** (XLOOKUP-153), which PCRE2 and .NET read the
@@ -296,7 +298,8 @@ Each disagreement goes to Excel's answer, except where a refusal is named.
   matches UTF-16 code units, so either answer would be an approximation that looks like Excel's and
   is not. They are recorded, not disagreements.
 - **A format code with a lower-case `[color n]`, or with `[Color n]` in any section, is refused**
-  (FMT-076, 077), as FMT-075 already is. Only COM was asked; the next run asks it typed.
+  (FMT-076, 077), as FMT-075 already is. Only COM was asked; the next run asks it typed, and asks
+  `[Color3]0` in the first section (FMT-078), which the refusal covers but no run has observed.
 - **Typed constants** (TYPED-051, 052, 054):
   - `$-5` is the number -5 in Excel's currency format, `$#,##0_);[Red]($#,##0)`, as `-$5` is.
   - `5-Oct` under en-GB shows `05-Oct`: the built-in `d-mmm` is shown in the culture's own form.

@@ -122,8 +122,11 @@ Formula shifts its References, as Excel does**: `=A1` entered over B2:C3 from B2
 `=B1`, `=A2` and `=B2`. The typed text is read as entered in the Focus, and each other cell takes
 it with its relative References moved by that cell's offset from the Focus, by the same rule as
 `SheetEdit.FillCopy`. The intent still names no fill source: the source is the typed text, not a
-range. ExSheet reads the Focus from the Selection it already follows; if that turns out not to be
-reachable when the intent is raised, the core's intent gains it by a note here first.
+range. **The intent names the cell the text was entered in, in `GridPasteIntent.EnteredAt`**, and
+null for a paste from the clipboard and for a fill key: a Ctrl+Enter over a range and a clipboard
+paste of one field over the same range were otherwise the same intent, field for field, and a
+Consumer could not tell a typed Formula from a pasted one. *(Decided with the user, 2026-09-28,
+when the implementation found them indistinguishable.)*
 
 ## Consequences
 

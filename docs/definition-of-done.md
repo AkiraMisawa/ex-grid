@@ -1001,6 +1001,7 @@ nothing sees nothing change.
 | **DC-38** | MUST | A spilled paste the Consumer refuses (`GridPasteIntent.Refuse()`) writes nothing and leaves the Selection where it was (ADR-0050, item 3) | Layer 2 | the Selection is unchanged; no block is selected |
 | **DC-39** | MUST | With a size label supplied (`NameBoxSizeLabel`), while a selecting drag's button is down over more than one cell the Name Box shows it (`4R x 3C` on ExSheet), and names the Focus again on release; keyboard extension shows no size (ADR-0052/0051/0021) | Layer 2 + Layer 3 | as stated |
 | **DC-40** | MUST | A fill key's paste intent names the range it read (`GridPasteIntent.FillSource`): Ctrl+D's top row, Ctrl+R's left column, or the row above / column to the left of a range one cell deep; a paste from the clipboard and Ctrl+Enter name none (ADR-0050, item 5, 2026-09-28; ADR-0035) | Layer 2 | as stated |
+| **DC-41** | MUST | A Ctrl+Enter fill's paste intent names the cell the editor was open on (`GridPasteIntent.EnteredAt`); a paste from the clipboard and a fill key name none (ADR-0050, item 5, 2026-09-28) | Layer 2 | a one-field clipboard paste and a Ctrl+Enter over the same Selection differ only in `EnteredAt` |
 | **DC-25** | MUST | The declarations are per instance: two grids on one page, one declaring and one not, behave each as its own declarations say (ADR-0018) | Layer 3 | independent |
 
 ---

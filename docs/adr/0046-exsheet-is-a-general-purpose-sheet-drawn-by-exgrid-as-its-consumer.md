@@ -179,4 +179,5 @@ Sheet has to rewrite the References to it in the other.
   widened again by a longer entry, as the first form of this bullet said. **Set by the user**: a
   drag, a size to fit or a command, recorded, marked, and never widened by an entry. A width set by
   the user replaces one widened by entry; an entry never turns a user's width back into the other
-  kind.)*
+  kind. A document saved under the withdrawn 2026-09-27 rule marked an entry's width custom, and
+  reopens with it as the user's; accepted, since no such document exists outside this repository.)*
