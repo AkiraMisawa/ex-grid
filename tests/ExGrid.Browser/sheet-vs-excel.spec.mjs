@@ -290,7 +290,7 @@ test('active cell, case 3: after Enter, Shift+arrow moves the edge opposite the 
     await expectActive(page, 'F2');
 });
 
-test('active cell, case 6: Ctrl+click on the active cell takes it out and the next cell in Tab order is active (ADR-0052)', async ({ page }) => {
+test('active cell, case 6: Ctrl+click on the active cell takes it out and the first remaining cell of the range made last is active (ADR-0052)', async ({ page }) => {
     await click(page, 'E1');
     await click(page, 'G3', { modifiers: ['Shift'] });
     await click(page, 'E1', { modifiers: ['ControlOrMeta'] });
