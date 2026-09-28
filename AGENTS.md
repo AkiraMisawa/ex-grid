@@ -47,7 +47,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 47 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 48 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -90,7 +90,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 47 ADRs. **A new decision that follows these will not
+The principles that run through all 48 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -205,6 +205,16 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   tautologies. CI runs it on Linux on every push, against both hosts; **Windows (VZ-14) and a real IME are still
   runs by hand**, and a CI artifact does not file the Step 4 record in `verification/`.
   `tests/ExGrid.Browser/README.md` says what it asserts and what it deliberately does not.
+  While iterating, run what you touched — a spec file, `--grep "ADR-0039"`, `--last-failed`,
+  `--project=chrome` — and leave both browsers and both hosts to the full run and to CI.
+
+- **A layer-3 spec file boots the app once, and its tests share the document** (ADR-0048).
+  Each `page.goto` mounts a new page, but anything a test changes outside its own grids — a
+  global, a listener on `window` or `document`, the head, `body`, `<html>`, `#app` (which is
+  the grid's parent on WebAssembly) — goes through `patchPage`, which undoes it. A plain
+  `page.evaluate` that leaves the document or a stubbed native changed fails the test by
+  name, because it would have reached every later test of the file; a listener it leaves is
+  not seen, so it is on you. A test about loading itself asks for `freshDocument`.
 
 - **The packages are checked as a Consumer takes them.** `tests/ExGrid.PackageSmoke/check.sh`
   packs `ExGrid` and `ExGrid.MudBlazor`, reads back each `.nuspec`, and publishes a `net10.0`
@@ -257,8 +267,9 @@ rules that make this safe:
   out afterwards — the ADR is the contract that makes parallel work possible.
 - **Only one agent at a time runs layer 3.** The DemoHost sits on a fixed port and an
   already-running host is reused, so a second runner would be testing the *other*
-  worktree's code and passing. The suite is also single-worker because it changes the
-  page zoom.
+  worktree's code and passing. The suite is also single-worker: the OS clipboard is one
+  per display, the records are read-modify-written, and on the Server host the latency
+  proxy and the host log belong to the whole process (ADR-0048).
 - **Remove a worktree when its agent is done.** `git worktree list` shows the leftovers; a
   stale one starts the next agent from an old tip.
 

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, patchPage } from './fixtures.mjs';
 
 // The presentation contract, measured (ADR-0027/0028/0029/0031): tokens win where the
 // contract says they win, the painted geometry equals the declared geometry, nothing
@@ -20,7 +20,9 @@ test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot
         .evaluate((el) => getComputedStyle(el).height);
     expect(before).toBe('24px');
 
-    await page.evaluate(() => {
+    // On body and in the head, which outlive the page: patchPage takes both off as the test
+    // ends (ADR-0048).
+    await patchPage(page, () => {
         document.body.style.setProperty('--ex-row-height', '60px');
         // A stylesheet rule on the element the token lives on, as UX-2's
         // verification says. (A rule re-declaring the token on a DESCENDANT — or an
@@ -29,6 +31,10 @@ test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot
         const sheet = document.createElement('style');
         sheet.textContent = '.ex-grid { --ex-row-height: 60px; }';
         document.head.append(sheet);
+        return () => {
+            document.body.style.removeProperty('--ex-row-height');
+            sheet.remove();
+        };
     });
 
     const after = await grid(page).locator('.ex-row').first()
@@ -58,8 +64,9 @@ test('a Visual Token set on an ancestor recolours the paint (UX-5, the paint hal
     const before = await grid(page).locator('.ex-header')
         .evaluate((el) => getComputedStyle(el).backgroundColor);
 
-    await page.evaluate(() => {
+    await patchPage(page, () => {
         document.body.style.setProperty('--ex-header-background', 'rgb(200, 12, 12)');
+        return () => document.body.style.removeProperty('--ex-header-background');
     });
 
     const after = await grid(page).locator('.ex-header')
@@ -135,8 +142,13 @@ test('under a dark scheme the untouched grid stays readable (UX-8)', async ({ pa
 
 test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async ({ page }) => {
     await open(page);
-    await page.evaluate(() => {
-        document.querySelector('.ex-grid').parentElement.setAttribute('dir', 'rtl');
+    // The grid's parent is #app on WebAssembly and body on the Server host, neither of which
+    // leaving the page clears: patchPage puts the direction back as the test ends (ADR-0048).
+    await patchPage(page, () => {
+        const parent = document.querySelector('.ex-grid').parentElement;
+        const was = parent.getAttribute('dir');
+        parent.setAttribute('dir', 'rtl');
+        return () => (was === null ? parent.removeAttribute('dir') : parent.setAttribute('dir', was));
     });
 
     // The overlay still lands on its cell to within a pixel.
