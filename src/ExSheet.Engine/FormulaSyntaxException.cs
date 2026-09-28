@@ -26,4 +26,11 @@ public sealed class FormulaSyntaxException : FormatException
 
     /// <summary>Why, in words.</summary>
     public string Reason { get; }
+
+    /// <summary>
+    /// Whether the Formula is one Excel reads, using syntax the engine does not implement (the
+    /// intersection of two References): typed without <c>=</c>, such text is refused by name
+    /// rather than kept as text, since Excel makes it a Formula (ADR-0047, third run).
+    /// </summary>
+    internal bool IsUnimplemented { get; init; }
 }

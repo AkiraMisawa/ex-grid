@@ -205,8 +205,8 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// An empty cell as either argument gives an empty value: a Formula whose result it is shows
     /// 0, as Excel was observed to show (verification/2026-09-27-windows-excel), and joined to
-    /// text it is "" (IFERROR-013, verification/2026-09-27-windows-excel-2). A missing
-    /// value_if_error is the number 0. An Error Value is caught — but not <c>#GETTING_DATA</c>,
+    /// text it is "" (IFERROR-013, verification/2026-09-27-windows-excel-2). A value_if_error
+    /// left out is empty too, not 0 (IFERROR-016, verification/2026-09-28-windows-excel-3). An Error Value is caught — but not <c>#GETTING_DATA</c>,
     /// which waits (ADR-0049), nor <c>#CIRC!</c>, which a Formula reading a cycle shows whatever it
     /// computes (ADR-0047).
     /// </summary>
@@ -217,7 +217,7 @@ internal static partial class FunctionLibrary
         var value = call.Evaluator.ScalarOf(operand);
         if (value is { IsError: true } e && e.Error is not (ErrorValue.GettingData or ErrorValue.Circ))
         {
-            if (!call.Has(1)) return Operand.Of(Value.FromNumber(0));
+            if (!call.Has(1)) return Operand.Blank;
             var fallback = call.Operand(1);
             if (IsArray(fallback)) return Operand.Of(ErrorValue.Value);
             return call.Evaluator.ScalarOf(fallback) is { } caught ? Operand.Of(caught) : Operand.Blank;

@@ -1327,25 +1327,45 @@
     },
     {
       "id": "XLOOKUP-153",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: match_mode 3: a lookbehind, which PCRE2 and .NET bound differently, is refused",
+      "source": "observed",
+      "description": "match_mode 3: a lookbehind is accepted (verification/2026-09-28-windows-excel-3)",
       "cells": {"B1": "ab", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(?<=a)b\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "a"}
     },
     {
       "id": "XLOOKUP-154",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: match_mode 3: a script (\\p{Greek}), which .NET does not name, is refused",
+      "source": "observed",
+      "description": "match_mode 3: a Unicode script (\\p{Greek}) is refused. Excel matches it (verification/2026-09-28-windows-excel-3); .NET knows blocks, not scripts, so any answer would only look like Excel's",
       "cells": {"B1": "α", "B2": "a", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"\\p{Greek}\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047, third run: a Unicode script stays #VALUE! by decision",
+      "excelExpect": {"value2": "a"}
     },
     {
       "id": "XLOOKUP-155",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: match_mode 3: a Unicode class against a value outside the Basic Multilingual Plane is refused, where PCRE2 and .NET read it differently",
+      "source": "observed",
+      "description": "match_mode 3: a Unicode class against a value outside the Basic Multilingual Plane is refused. Excel matches it (verification/2026-09-28-windows-excel-3); .NET matches UTF-16 code units, so any answer would only look like Excel's",
       "cells": {"B1": "𝐀", "B2": "a", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"^\\w$\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047, third run: \\w over a character outside the Basic Multilingual Plane stays #VALUE! by decision",
+      "excelExpect": {"value2": "a"}
+    },
+    {
+      "id": "XLOOKUP-156",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): match_mode 3: a negative lookbehind is accepted, as a lookbehind is (XLOOKUP-153)",
+      "cells": {"B1": "ab", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(?<!a)b\",B1:B2,C1:C2,,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "XLOOKUP-157",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): match_mode 3: a lookbehind of unbounded length is refused, as PCRE2 refuses it",
+      "cells": {"B1": "ab", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(?<=a+)b\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
     }

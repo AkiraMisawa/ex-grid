@@ -13,21 +13,18 @@ namespace ExSheet.Engine.Formulas;
 /// operating system's collation differs by platform and version. Text is compared first on each
 /// character's primary weight — punctuation, symbols and spaces before digits, digits before
 /// letters, and a letter by its base letter, its accents removed and its case ignored — with a
-/// hyphen passed over and <c>ß</c> read as <c>ss</c>; where every primary weight is equal, on the
-/// accents (an unaccented letter before an accented one, <c>ss</c> before <c>ß</c>); and where
-/// those are equal too, on the hyphens passed over (the text with fewer first). What reproduces
-/// Excel is pinned by the case corpus: <c>!</c> before <c>a</c>, <c>é</c> between <c>e</c> and
-/// <c>z</c>, <c>co-op</c> not before <c>coop</c>, and <c>ß</c> not after <c>z</c>, observed
-/// (ADR-0047, second run). The order among punctuation marks (here, by code point), letters with
-/// no decomposition other than <c>ß</c> (<c>æ</c>, <c>ø</c>, after <c>z</c> here), an apostrophe
-/// (not passed over here), and how text differing only by a hyphen or by <c>ß</c> and <c>ss</c>
-/// orders, are <c>uncertain</c> cases until Excel is asked.
+/// hyphen and an apostrophe passed over and <c>ß</c> read as <c>ss</c>; where every primary weight
+/// is equal, on the accents (an unaccented letter before an accented one); and where those are
+/// equal too, on the hyphens and apostrophes passed over (the text with fewer first). What
+/// reproduces Excel is pinned by the case corpus: <c>!</c> before <c>a</c>, <c>é</c> between
+/// <c>e</c> and <c>z</c>, <c>co-op</c> not before <c>coop</c>, and <c>ß</c> not after <c>z</c>
+/// (ADR-0047, second run); <c>it's</c> not before <c>its</c>, and <c>ß</c> equal to <c>ss</c>
+/// (third run). The order among punctuation marks (here, by code point), letters with no
+/// decomposition other than <c>ß</c> (<c>æ</c>, <c>ø</c>, after <c>z</c> here), and how text
+/// differing only by an apostrophe orders, are <c>uncertain</c> cases until Excel is asked.
 /// </remarks>
 internal static class TextOrder
 {
-    /// <summary>The accent mark that tells <c>ß</c> from the <c>ss</c> it sorts as, after every combining accent.</summary>
-    private const string SharpS = "￿";
-
     public static int Compare(string left, string right)
     {
         var a = Weigh(left, out var leftHyphens);
@@ -47,21 +44,21 @@ internal static class TextOrder
         return leftHyphens.CompareTo(rightHyphens);
     }
 
-    /// <summary>The primary weights and accents of the text's characters, a hyphen passed over and counted, <c>ß</c> as <c>ss</c>.</summary>
+    /// <summary>The primary weights and accents of the text's characters, a hyphen or an apostrophe passed over and counted, <c>ß</c> as <c>ss</c>.</summary>
     private static List<(int Class, char Base, string Accents)> Weigh(string text, out int hyphens)
     {
         hyphens = 0;
         var weights = new List<(int, char, string)>(text.Length);
         foreach (var c in text)
         {
-            if (c == '-')
+            if (c is '-' or '\'')
             {
                 hyphens++;
                 continue;
             }
             if (c is 'ß' or 'ẞ')
             {
-                weights.Add((2, 'S', SharpS));
+                weights.Add((2, 'S', ""));
                 weights.Add((2, 'S', ""));
                 continue;
             }

@@ -17,9 +17,12 @@ namespace ExSheet.Engine.Formulas;
 /// escaped metacharacters; <c>\d \w \s \b</c>; a Unicode general category <c>\p{L}</c>,
 /// <c>\p{Lu}</c>, …; the anchors <c>^ $</c>; the quantifiers <c>* + ? {n} {n,} {n,m}</c> and
 /// their lazy forms; groups <c>(…)</c> and alternation <c>|</c>; the lookaheads <c>(?=…)</c> and
-/// <c>(?!…)</c>; a backreference <c>\1</c> to <c>\9</c> to a group already opened; and a
-/// backslash before a metacharacter. Refused: every other <c>(?</c> construct (lookbehind,
-/// non-capturing and named groups, inline options), a quantified lookahead, possessive
+/// <c>(?!…)</c>; the lookbehinds <c>(?&lt;=…)</c> and <c>(?&lt;!…)</c> of a bounded length (no
+/// quantifier, group, lookaround or backreference inside), which PCRE2 and .NET read alike
+/// (XLOOKUP-153, third run); a backreference <c>\1</c> to <c>\9</c> to a group already opened;
+/// and a backslash before a metacharacter. Refused: every other <c>(?</c> construct
+/// (non-capturing and named groups, inline options), a lookbehind whose length PCRE2 could not
+/// bound, a quantified lookaround, possessive
 /// quantifiers, a script or any property that is not a general category, <c>\P{…}</c>, POSIX
 /// classes, <c>\D \W \S \B</c> and every other escape, a <c>{</c> or <c>}</c> that is not a whole
 /// quantifier, an unescaped <c>]</c> outside a class, and characters outside the Basic
@@ -119,7 +122,7 @@ internal static class PortableRegex
     {
         unicode = false;
         var output = new StringBuilder();
-        var groups = new Stack<bool>(); // per open group: whether it is a lookahead
+        var groups = new Stack<Group>();
         var captures = 0;
         var quantifiable = false;
         for (var i = 0; i < pattern.Length; i++)
@@ -161,6 +164,7 @@ internal static class PortableRegex
                             quantifiable = true;
                             break;
                         case >= '1' and <= '9':
+                            if (groups.Contains(Group.Lookbehind)) return null;
                             // A backreference to a group already opened; \10 and up, and a digit after, read differently.
                             if (escaped - '0' > captures || (i + 1 < pattern.Length && char.IsAsciiDigit(pattern[i + 1]))) return null;
                             output.Append('\\').Append(escaped);
@@ -184,26 +188,40 @@ internal static class PortableRegex
                     quantifiable = true;
                     break;
                 case '(':
+                    // Inside a lookbehind nothing opens: PCRE2 wants each of its branches a fixed length.
+                    if (groups.Contains(Group.Lookbehind)) return null;
                     if (i + 1 < pattern.Length && pattern[i + 1] == '?')
                     {
-                        if (i + 2 >= pattern.Length || pattern[i + 2] is not ('=' or '!')) return null;
-                        output.Append("(?").Append(pattern[i + 2]);
-                        i += 2;
-                        groups.Push(true);
+                        if (i + 2 < pattern.Length && pattern[i + 2] is '=' or '!')
+                        {
+                            output.Append("(?").Append(pattern[i + 2]);
+                            i += 2;
+                            groups.Push(Group.Lookahead);
+                        }
+                        else if (i + 3 < pattern.Length && pattern[i + 2] == '<' && pattern[i + 3] is '=' or '!')
+                        {
+                            output.Append("(?<").Append(pattern[i + 3]);
+                            i += 3;
+                            groups.Push(Group.Lookbehind);
+                        }
+                        else
+                        {
+                            return null;
+                        }
                     }
                     else
                     {
                         output.Append('(');
                         captures++;
-                        groups.Push(false);
+                        groups.Push(Group.Capture);
                     }
                     quantifiable = false;
                     break;
                 case ')':
                     if (groups.Count == 0) return null;
                     output.Append(')');
-                    // A quantified lookahead is read differently by the two engines' versions: refused.
-                    quantifiable = !groups.Pop();
+                    // A quantified lookaround is read differently by the two engines' versions: refused.
+                    quantifiable = groups.Pop() == Group.Capture;
                     break;
                 case '|':
                 case '^':
@@ -214,13 +232,13 @@ internal static class PortableRegex
                 case '*':
                 case '+':
                 case '?':
-                    if (!quantifiable) return null;
+                    if (!quantifiable || groups.Contains(Group.Lookbehind)) return null;
                     output.Append(c);
                     if (!Lazy(pattern, ref i, output)) return null;
                     quantifiable = false;
                     break;
                 case '{':
-                    if (!quantifiable) return null;
+                    if (!quantifiable || groups.Contains(Group.Lookbehind)) return null;
                     var closeBrace = pattern.IndexOf('}', i);
                     if (closeBrace < 0 || !Bounds(pattern[(i + 1)..closeBrace])) return null;
                     output.Append(pattern, i, closeBrace - i + 1);
@@ -239,6 +257,14 @@ internal static class PortableRegex
             }
         }
         return groups.Count == 0 ? output.ToString() : null;
+    }
+
+    /// <summary>What an open group is: one that captures, or a lookaround.</summary>
+    private enum Group
+    {
+        Capture,
+        Lookahead,
+        Lookbehind,
     }
 
     /// <summary>A lazy <c>?</c> after a quantifier is copied; a possessive <c>+</c> is refused.</summary>

@@ -434,20 +434,20 @@
     },
     {
       "id": "TYPED-051",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the built-in d-mmm shows as it is spelled under en-GB",
+      "source": "observed",
+      "description": "The built-in d-mmm shows in the culture's own form under en-GB: a one-digit day with two digits, 05-Oct (verification/2026-09-28-windows-excel-3)",
       "culture": "en-GB",
       "cells": {"A1": "5-Oct"},
       "check": "A1",
-      "expect": {"text": "5-Oct", "numberFormat": "d-mmm"}
+      "expect": {"text": "05-Oct", "numberFormat": "d-mmm"}
     },
     {
       "id": "TYPED-052",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a sign after the dollar sign is not read as a dollar amount, and stays text",
+      "source": "observed",
+      "description": "A minus sign after the dollar sign is read as a negative dollar amount, as -$5 is (TYPED-047) (verification/2026-09-28-windows-excel-3)",
       "cells": {"A1": "$-5"},
       "check": "A1",
-      "expect": {"value2": "$-5"}
+      "expect": {"value2": -5, "text": "($5)", "numberFormat": "$#,##0_);[Red]($#,##0)"}
     },
     {
       "id": "TYPED-053",
@@ -460,12 +460,14 @@
     },
     {
       "id": "TYPED-054",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a leading - before two References with a space between them stays text: ExSheet does not read the intersection of References",
+      "source": "observed",
+      "description": "A leading - before two References with a space between them is a Formula using the intersection operator, which the engine does not implement: refused by name. Excel makes it the Formula =-B2 C2, #NULL! (verification/2026-09-28-windows-excel-3)",
       "cells": {"A1": "-B2 C2"},
       "check": "A1",
-      "expect": {"value2": "-B2 C2"},
-      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+      "expect": {"refusedEntry": true},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys",
+      "engineDiffersByDecision": "ADR-0047, third run: the intersection of References is refused by name, not taken as text",
+      "excelExpect": {"value2": "#NULL!", "formula": "=-B2 C2"}
     }
   ]
 }

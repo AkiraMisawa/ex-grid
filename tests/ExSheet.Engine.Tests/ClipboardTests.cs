@@ -95,7 +95,7 @@ public class ClipboardTests
         var sheet = NewSheet();
         sheet.Enter("A1", "1234.5");
         sheet.SetFormat(At("A1"), NumberFormat.Parse("#,##0.00"));
-        sheet.Enter("B1", "=A1/0.5"); // division gives no format on entry (ADR-0047), so B1 goes out in General
+        sheet.Enter("B1", "=ROUND(A1/0.5,0)"); // ROUND gives no format on entry (ADR-0047), so B1 goes out in General
         sheet.Enter("A2", "a\tb");
         sheet.Enter("B2", "=1/0");
         sheet.Enter("A3", "TRUE");
@@ -143,6 +143,23 @@ public class ClipboardTests
         step.Undo();
         Assert.Null(sheet.GetEntry(At("B1")));
         Assert.Throws<FormulaSyntaxException>(() => sheet.Do(SheetEdit.Enter(At("B1"), "=1+")));
+    }
+
+    [Fact] // ADR-0047 (third run, TYPED-054), ADR-0048: text Excel reads as a Formula using the intersection operator is refused by name when typed, and pasted it is text
+    public void A_signed_intersection_is_refused_typed_and_text_pasted()
+    {
+        var sheet = NewSheet();
+
+        var refused = Assert.Throws<FormulaSyntaxException>(() => sheet.Do(SheetEdit.Enter(At("A1"), "-B2 C2")));
+        Assert.Contains("intersection", refused.Reason, StringComparison.Ordinal);
+        Assert.Null(sheet.GetEntry(At("A1")));
+
+        sheet.Do(SheetEdit.PasteText([new(At("A1"), "-B2 C2")]));
+
+        Assert.Equal(Value.FromText("-B2 C2"), sheet.GetValue(At("A1")));
+        Assert.Equal("'-B2 C2", sheet.GetEntryText(At("A1")));
+        sheet.Enter(At("B1"), sheet.GetEntryText(At("A1")));
+        Assert.Equal(Value.FromText("-B2 C2"), sheet.GetValue(At("B1")));
     }
 
     [Fact] // ADR-0048: an empty field clears its cell; a ragged block is refused as an argument

@@ -801,31 +801,31 @@
     {
       "id": "ARITH-099",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a final subtraction 1 unit in the last place apart is 0 (below the engine's threshold, 2^-51 of each operand)",
+      "description": "A final subtraction 1 unit in the last place apart is 0 (below the threshold, 2^-49 of each operand) (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=1+2E-16-1"},
       "check": "ZZ1000",
       "expect": {"value2": 0}
     },
     {
       "id": "ARITH-100",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a final subtraction 2 units in the last place of 1 apart (2^-51 exactly) is not 0: the engine's threshold is strict",
+      "source": "observed",
+      "description": "A final subtraction 2 units in the last place of 1 apart is 0: Excel's threshold is wider than 2^-51 (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=1+5E-16-1"},
       "check": "ZZ1000",
-      "expect": {"value2": 4.440892098500626E-16}
+      "expect": {"value2": 0}
     },
     {
       "id": "ARITH-101",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a final subtraction 5 units in the last place of 1 apart is not 0",
+      "source": "observed",
+      "description": "A final subtraction 5 units in the last place of 1 apart (1.11E-15 of each) is 0 (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=1+1E-15-1"},
       "check": "ZZ1000",
-      "expect": {"value2": 1.1102230246251565E-15}
+      "expect": {"value2": 0}
     },
     {
       "id": "ARITH-102",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a final subtraction 9 units in the last place of 1 apart is not 0",
+      "description": "A final subtraction 9 units in the last place of 1 apart (1.998E-15 of each) is not 0: with ARITH-101, this brackets the threshold, 2^-49 (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=1+2E-15-1"},
       "check": "ZZ1000",
       "expect": {"value2": 1.9984014443252818E-15}
@@ -840,11 +840,11 @@
     },
     {
       "id": "ARITH-104",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a final subtraction 8.3E-16 of each operand apart is not 0 (between ARITH-067's 2.8E-16, which is 0, and ARITH-078's 3.1E-15, which is not)",
+      "source": "observed",
+      "description": "A final subtraction 8.3E-16 of each operand apart is 0 (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=1.1-1-0.1"},
       "check": "ZZ1000",
-      "expect": {"value2": 8.326672684688674E-17}
+      "expect": {"value2": 0}
     },
     {
       "id": "ARITH-105",
@@ -864,24 +864,24 @@
     },
     {
       "id": "ARITH-107",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: numbers 23 units in the last place apart compare equal (below the engine's threshold, 2^-47 of each)",
+      "source": "observed",
+      "description": "Numbers 23 units in the last place apart (5E-15) do not compare equal (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=1+5E-15=1"},
       "check": "ZZ1000",
-      "expect": {"value2": true}
+      "expect": {"value2": false}
     },
     {
       "id": "ARITH-108",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: numbers 27 units in the last place apart compare equal",
+      "source": "observed",
+      "description": "Numbers 27 units in the last place apart do not compare equal (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=1+6E-15=1"},
       "check": "ZZ1000",
-      "expect": {"value2": true}
+      "expect": {"value2": false}
     },
     {
       "id": "ARITH-109",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: numbers 32 units in the last place of 1 apart (2^-47 exactly) are not equal: the engine's threshold is strict",
+      "description": "Numbers 32 units in the last place of 1 apart are not equal (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=1+7E-15=1"},
       "check": "ZZ1000",
       "expect": {"value2": false}
@@ -904,11 +904,11 @@
     },
     {
       "id": "ARITH-112",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: <> agrees with =: numbers 23 units in the last place apart are not unequal",
+      "source": "observed",
+      "description": "<> agrees with =: numbers 23 units in the last place apart are unequal (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=1+5E-15<>1"},
       "check": "ZZ1000",
-      "expect": {"value2": false}
+      "expect": {"value2": true}
     },
     {
       "id": "ARITH-113",
@@ -1008,19 +1008,19 @@
     },
     {
       "id": "ARITH-125",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: an apostrophe is not ignored as a hyphen is: it sorts before a letter",
+      "source": "observed",
+      "description": "An apostrophe is passed over as a hyphen is: it's does not sort before its (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=\"it's\"<\"its\""},
       "check": "ZZ1000",
-      "expect": {"value2": true}
+      "expect": {"value2": false}
     },
     {
       "id": "ARITH-126",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: ß and ss are not equal: ß sorts after ss, as an accented letter after its base",
+      "source": "observed",
+      "description": "ß equals ss under =, not only in ordering (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=\"ß\"=\"ss\""},
       "check": "ZZ1000",
-      "expect": {"value2": false}
+      "expect": {"value2": true}
     },
     {
       "id": "ARITH-127",
@@ -1072,11 +1072,11 @@
     },
     {
       "id": "ARITH-133",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: 2^0.5 is e^(0.5 ln 2), one unit in the last place below the square root",
+      "source": "observed",
+      "description": "2^0.5 is the square root correctly rounded, 1.4142135623730951, not e^(0.5 ln 2) (verification/2026-09-28-windows-excel-3)",
       "cells": {"ZZ1000": "=2^0.5"},
       "check": "ZZ1000",
-      "expect": {"value2": 1.414213562373095}
+      "expect": {"value2": 1.4142135623730951}
     },
     {
       "id": "ARITH-134",
@@ -1093,6 +1093,86 @@
       "cells": {"ZZ1000": "=10^15"},
       "check": "ZZ1000",
       "expect": {"value2": 1000000000000000}
+    },
+    {
+      "id": "ARITH-136",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): numbers 19 units in the last place of 1 apart (4.2E-15) compare equal: below the equality threshold, 20 units (ADR-0047, third run)",
+      "cells": {"ZZ1000": "=1+4.2E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-137",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): numbers 20 units in the last place of 1 apart (4.4E-15) are not equal: the equality threshold is strict",
+      "cells": {"ZZ1000": "=1+4.4E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-138",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): numbers 21 units in the last place of 1 apart (4.6E-15) are not equal",
+      "cells": {"ZZ1000": "=1+4.6E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-139",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): numbers 22 units in the last place of 1 apart (4.8E-15) are not equal",
+      "cells": {"ZZ1000": "=1+4.8E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-140",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a final subtraction 6 units in the last place of 1 apart (1.3E-15) is 0: below 2^-49",
+      "cells": {"ZZ1000": "=1+1.3E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-141",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a final subtraction 7 units in the last place of 1 apart (1.6E-15) is 0: below 2^-49",
+      "cells": {"ZZ1000": "=1+1.6E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-142",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a final subtraction 8 units in the last place of 1 apart (1.8E-15, 2^-49 exactly) is not 0: the threshold is strict",
+      "cells": {"ZZ1000": "=1+1.8E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.7763568394002505e-15}
+    },
+    {
+      "id": "ARITH-143",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): an exponent of 0.5 is the square root correctly rounded, as ARITH-133's is, where e^(0.5 ln 3) would be 1.7320508075688774",
+      "cells": {"ZZ1000": "=3^0.5"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.7320508075688772}
+    },
+    {
+      "id": "ARITH-144",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): text that differs only by an apostrophe sorts the one with it after, as a hyphen does (ARITH-123)",
+      "cells": {"ZZ1000": "=\"it's\">\"its\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-145",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): ß is not before ss: the two are equal (ARITH-126), with no accent between them",
+      "cells": {"ZZ1000": "=\"ß\"<\"ss\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
     }
   ]
 }

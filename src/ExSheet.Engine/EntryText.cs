@@ -24,7 +24,7 @@ internal static class EntryText
             default:
                 var text = constant.Text;
                 // Text that would be read back as something else keeps Excel's leading apostrophe.
-                if (text.Length == 0 || text[0] == '=' || text[0] == '\'' || ConstantParser.Parse(text, culture).Kind != ValueKind.Text || Entry.SignedFormula(text) is not null)
+                if (text.Length == 0 || text[0] == '=' || text[0] == '\'' || ConstantParser.Parse(text, culture).Kind != ValueKind.Text || Entry.IsSignedFormula(text))
                 {
                     return "'" + text;
                 }

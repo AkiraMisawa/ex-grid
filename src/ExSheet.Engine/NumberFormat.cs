@@ -15,9 +15,11 @@ namespace ExSheet.Engine;
 /// <c>0 # ?</c>, the decimal point, thousands separators and scaling commas, <c>%</c>, scientific
 /// <c>E+00</c> with one integer placeholder, <c>@</c>, quoted text, <c>\</c> escapes, <c>_</c>
 /// spacing, and the date and time codes <c>y m d h s</c> with <c>AM/PM</c> and <c>A/P</c>. A
-/// colour at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, … or <c>[Color10]</c>) is
-/// accepted and kept in the code, so the format goes back to Excel intact, but it is not painted
-/// until per-cell styling has its ADR (ADR-0047, ADR-0046). A code outside the subset — conditions,
+/// colour named at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, …) is accepted and kept
+/// in the code, so the format goes back to Excel intact, but it is not painted
+/// until per-cell styling has its ADR (ADR-0047, ADR-0046). A numbered colour (<c>[Color10]</c>,
+/// in any case and any section) is refused, as Excel refused it (FMT-075..077, ADR-0047 third
+/// run). A code outside the subset — conditions,
 /// locales and elapsed time in brackets, fractions, fractional seconds, <c>*</c> fill, era codes,
 /// unquoted letters — is refused rather than shown some other way.
 /// </remarks>
@@ -137,14 +139,30 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
 
     /// <summary>
     /// The built-in <c>d-mmm</c> as it shows under de-DE: <c>dd. mmm</c>, as Excel was observed to
-    /// show <c>26-Okt</c> typed there, <c>26. Okt</c> (TYPED-040, ADR-0047 second run). The day's
-    /// two digits are German Excel's <c>TT. MMM</c>, not observed (TYPED-050 is uncertain). Under
-    /// every other culture it shows as it is spelled (observed under en-US).
+    /// show <c>26-Okt</c> and <c>5-Okt</c> typed there, <c>26. Okt</c> and <c>05. Okt</c>
+    /// (TYPED-040, TYPED-050; ADR-0047 second and third runs), German Excel's <c>TT. MMM</c>.
     /// </summary>
     private static readonly NumberFormat GermanDayMonth = Parse("dd. mmm");
 
-    private NumberFormat? DayMonthIn(CultureInfo culture) =>
-        culture.Name == "de-DE" && string.Equals(Code, DayMonthCode, StringComparison.OrdinalIgnoreCase) ? GermanDayMonth : null;
+    /// <summary>
+    /// The built-in <c>d-mmm</c> under a culture whose short date writes the day with two digits:
+    /// <c>dd-mmm</c>, as Excel was observed to show <c>5-Oct</c> typed under en-GB,
+    /// <c>05-Oct</c> (TYPED-051, ADR-0047 third run).
+    /// </summary>
+    private static readonly NumberFormat TwoDigitDayMonth = Parse("dd-mmm");
+
+    /// <summary>
+    /// The built-in <c>d-mmm</c> in the culture's own form (ADR-0047, third run): German Excel's
+    /// under de-DE, the day with two digits where the culture's short date writes it so (en-GB),
+    /// and as it is spelled otherwise (observed under en-US); <see langword="null"/> for any other
+    /// format, or where the culture's form is the code itself.
+    /// </summary>
+    private NumberFormat? DayMonthIn(CultureInfo culture)
+    {
+        if (!string.Equals(Code, DayMonthCode, StringComparison.OrdinalIgnoreCase)) return null;
+        if (culture.Name == "de-DE") return GermanDayMonth;
+        return culture.DateTimeFormat.ShortDatePattern.Contains("dd", StringComparison.Ordinal) ? TwoDigitDayMonth : null;
+    }
 
     /// <summary>
     /// The pattern the built-in short date (and short date with time, and <c>d-mmm</c>) shows in under
@@ -389,6 +407,11 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                         return null;
                     case '[':
                         var bracketEnd = text.IndexOf(']', i + 1);
+                        if (bracketEnd > i && text[(i + 1)..bracketEnd].StartsWith("Color", StringComparison.OrdinalIgnoreCase))
+                        {
+                            reason = "a numbered colour ([Color n]) is refused, as Excel refuses it; name one of the eight colours instead.";
+                            return null;
+                        }
                         if (bracketEnd > i && IsColour(text[(i + 1)..bracketEnd]))
                         {
                             // A colour is kept in the code and not painted (ADR-0047). Excel reads
@@ -460,19 +483,8 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
 
         private static readonly string[] ColourNames = ["Black", "Blue", "Cyan", "Green", "Magenta", "Red", "White", "Yellow"];
 
-        /// <summary>
-        /// One of Excel's eight colour names, or <c>Colorn</c> with n from 1 to 56, in any case.
-        /// A space before the number is refused, as Excel refuses <c>[Color 10]</c> (FMT-075,
-        /// ADR-0047 second run).
-        /// </summary>
-        private static bool IsColour(string name)
-        {
-            if (ColourNames.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase))) return true;
-            if (!name.StartsWith("Color", StringComparison.OrdinalIgnoreCase)) return false;
-            var number = name[5..];
-            return number.Length is 1 or 2 && number.All(char.IsAsciiDigit)
-                && int.Parse(number, CultureInfo.InvariantCulture) is >= 1 and <= 56;
-        }
+        /// <summary>One of Excel's eight colour names, in any case.</summary>
+        private static bool IsColour(string name) => ColourNames.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase));
 
         private static Section? Classify(List<Part> parts, out string? reason)
         {

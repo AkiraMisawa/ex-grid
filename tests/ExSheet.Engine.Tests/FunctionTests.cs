@@ -59,7 +59,12 @@ public class FunctionTests
     [InlineData("(?:a)")]      // a non-capturing group
     [InlineData("(?i)a")]      // an inline option
     [InlineData("(?<n>a)")]    // a named group
-    [InlineData("(?<=a)b")]    // a lookbehind: PCRE2 wants a bounded length, .NET does not
+    [InlineData("(?<=a+)b")]   // a lookbehind PCRE2 cannot bound: .NET reads it, PCRE2 refuses it
+    [InlineData("(?<=a{2})b")] // no quantifier inside a lookbehind
+    [InlineData("(?<=(a))b")]  // nor a group, which older PCRE2 wants a fixed length
+    [InlineData("(a)(?<=\\1)b")] // nor a backreference
+    [InlineData("(?<=a)*b")]   // a quantified lookbehind
+    [InlineData("(?<a)b")]
     [InlineData("(?=a)*")]     // a quantified lookahead
     [InlineData("\\P{L}")]     // a negated property
     [InlineData("\\pL")]       // a property without braces
@@ -119,6 +124,11 @@ public class FunctionTests
     [InlineData("^[\\w]+$", "café", true)]
     [InlineData("(?=b)b", "b", true)]                 // a lookahead (XLOOKUP-100, observed)
     [InlineData("^(?!a)", "a", false)]                // a negative lookahead
+    [InlineData("(?<=a)b", "ab", true)]               // a lookbehind (XLOOKUP-153, observed)
+    [InlineData("(?<=a)b", "b", false)]
+    [InlineData("(?<=a|bc)d", "bcd", true)]           // branches of different fixed lengths
+    [InlineData("(?<!a)b", "ab", false)]              // a negative lookbehind
+    [InlineData("^.(?<=\\w)$", "é", true)]
     [InlineData("^\\p{L}$", "é", true)]               // a general category (XLOOKUP-101, observed)
     [InlineData("^\\p{Lu}$", "é", false)]
     [InlineData("^(a)\\1$", "aa", true)]              // a backreference (XLOOKUP-102, observed)

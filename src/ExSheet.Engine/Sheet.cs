@@ -190,7 +190,18 @@ public sealed partial class Sheet
             }
             // A date or a percentage typed into a General cell gives the cell its format, as in Excel.
             var (value, format) = ConstantParser.ParseWithFormat(text, Culture);
-            if (value.Kind == ValueKind.Text && Entry.SignedFormula(text) is { } signed)
+            Entry? signed;
+            try
+            {
+                signed = value.Kind == ValueKind.Text ? Entry.SignedFormula(text) : null;
+            }
+            catch (FormulaSyntaxException) when (pasted)
+            {
+                // Pasted text Excel would read as a Formula the engine does not implement is text,
+                // as a pasted Formula that cannot be read is (ADR-0048); typed, it is refused.
+                signed = null;
+            }
+            if (signed is not null)
             {
                 entries.Add(new(address, InOwnName(signed)));
                 continue;

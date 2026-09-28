@@ -58,7 +58,10 @@ public sealed class Entry : IEquatable<Entry>
     /// invariant syntax; anything else is a constant read under <paramref name="culture"/> and
     /// recorded parsed (ADR-0048). Empty text is no Entry, and gives <see langword="null"/>.
     /// </summary>
-    /// <exception cref="FormulaSyntaxException">The text is a Formula that cannot be read.</exception>
+    /// <exception cref="FormulaSyntaxException">
+    /// The text is a Formula that cannot be read, or text with a leading <c>+</c> or <c>-</c> that
+    /// Excel reads as a Formula using syntax the engine does not implement (<c>-B2 C2</c>).
+    /// </exception>
     public static Entry? Parse(string typed, CultureInfo culture)
     {
         ArgumentNullException.ThrowIfNull(typed);
@@ -77,6 +80,11 @@ public sealed class Entry : IEquatable<Entry>
     /// them as text, which is not what a user typing gets). Text that does not read as a Formula
     /// that way stays text. <see langword="null"/> when the text is not such a Formula.
     /// </summary>
+    /// <exception cref="FormulaSyntaxException">
+    /// Excel reads the text as a Formula whose syntax the engine does not implement: <c>-B2 C2</c>,
+    /// the intersection of two References, is refused by name, not kept as text, since Excel makes
+    /// it the Formula <c>=-B2 C2</c> (TYPED-054; ADR-0047, third run).
+    /// </exception>
     internal static Entry? SignedFormula(string typed)
     {
         if (typed.Length < 2 || typed[0] is not ('+' or '-')) return null;
@@ -84,9 +92,22 @@ public sealed class Entry : IEquatable<Entry>
         {
             return FromFormula("=" + typed);
         }
-        catch (FormulaSyntaxException)
+        catch (FormulaSyntaxException e) when (!e.IsUnimplemented)
         {
             return null;
+        }
+    }
+
+    /// <summary>Whether typed text would not be kept as text because of its leading sign: <see cref="SignedFormula"/> reads it as a Formula, or refuses it.</summary>
+    internal static bool IsSignedFormula(string typed)
+    {
+        try
+        {
+            return SignedFormula(typed) is not null;
+        }
+        catch (FormulaSyntaxException)
+        {
+            return true;
         }
     }
 

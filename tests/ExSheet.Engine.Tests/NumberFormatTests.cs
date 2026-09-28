@@ -96,6 +96,10 @@ public class NumberFormatTests
     [InlineData("[Red][Blue]0")]
     [InlineData("[Color 57]0")]
     [InlineData("[Color 3]0")]   // a space before the number: Excel refuses [Color 10] (FMT-075, second run)
+    [InlineData("[Color3]0")]    // a numbered colour in any section and any case (FMT-076, FMT-077, third run)
+    [InlineData("[Color56]0")]
+    [InlineData("0;[Color10]-0")]
+    [InlineData("[color3]0")]
     [InlineData("[Pink]0")]
     [InlineData("[Red0")]
     [InlineData("# ?/?")]
@@ -114,14 +118,12 @@ public class NumberFormatTests
         Assert.Throws<FormatException>(() => NumberFormat.Parse(code));
     }
 
-    [Theory] // ADR-0047: a colour at the start of a section is kept in the code, and not painted
+    [Theory] // ADR-0047: a colour named at the start of a section is kept in the code, and not painted
     [InlineData("[Red]0", 5, "5")]
     [InlineData("[red]0", 5, "5")]
     [InlineData("0.00_);[Red](0.00)", -1.5, "(1.50)")]
     [InlineData("0.00_);[Red](0.00)", 1.5, "1.50 ")]
     [InlineData("[Blue]0;[Magenta]-0;[Green]\"zero\"", 0, "zero")]
-    [InlineData("[Color3]0", 7, "7")]
-    [InlineData("[Color56]0", 7, "7")]
     [InlineData("0;[Yellow]-0", -7, "-7")]
     public void A_colour_is_kept_and_not_painted(string code, double number, string shown)
     {

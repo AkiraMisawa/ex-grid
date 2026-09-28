@@ -687,21 +687,30 @@
     },
     {
       "id": "FMT-076",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a numbered colour written without a space ([Color10]) is accepted like a named one",
+      "source": "observed",
+      "description": "A numbered colour in the second section ([Color10]) is refused: \"Unable to set the NumberFormat property of the Range class\" (verification/2026-09-28-windows-excel-3)",
       "cells": {"A1": "-3"},
       "formats": {"A1": "0;[Color10]-0"},
       "check": "A1",
-      "expect": {"text": "-3", "numberFormat": "0;[Color10]-0"}
+      "expect": {"refusedEntry": true}
     },
     {
       "id": "FMT-077",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a numbered colour in lower case without a space is accepted",
+      "source": "observed",
+      "description": "A numbered colour in lower case ([color3]) is refused, as FMT-075 is (verification/2026-09-28-windows-excel-3)",
       "cells": {"A1": "3"},
       "formats": {"A1": "[color3]0"},
       "check": "A1",
-      "expect": {"text": "3", "numberFormat": "[color3]0"}
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "FMT-078",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a numbered colour in the first section ([Color3]) is refused, as ADR-0047's third run refuses [Color n] in any section",
+      "cells": {"A1": "3"},
+      "formats": {"A1": "[Color3]0"},
+      "check": "A1",
+      "expect": {"refusedEntry": true}
     }
   ]
 }

@@ -131,7 +131,8 @@ internal sealed class Parser
     /// <summary>
     /// The intersection operator, whitespace between two References or names, which binds tighter
     /// than <c>%</c> and negation in Excel. It is read only when a name stands on one side of it;
-    /// between two References it is refused.
+    /// between two References it is refused by name, as an operator the engine does not implement
+    /// (<see cref="FormulaSyntaxException.IsUnimplemented"/>; ADR-0047, third run, TYPED-054).
     /// </summary>
     private Node ParseIntersection()
     {
@@ -142,7 +143,7 @@ internal sealed class Parser
             var right = ParsePrimary();
             if (node is ReferenceNode && right is ReferenceNode)
             {
-                throw new FormulaSyntaxException(_formula, at.Position, "the intersection of References is not read.");
+                throw new FormulaSyntaxException(_formula, at.Position, "the intersection operator (a space between two References) is not implemented.") { IsUnimplemented = true };
             }
             node = new IntersectionNode(node, right);
         }

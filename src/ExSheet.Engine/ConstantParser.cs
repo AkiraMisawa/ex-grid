@@ -60,12 +60,13 @@ internal static partial class ConstantParser
     }
 
     /// <summary>
-    /// A dollar amount under a culture whose currency is written <c>$5</c> (en-US): an optional
-    /// <c>-</c>, <c>$</c>, then an unsigned number with no percentage or exponent. Excel was
-    /// observed to read <c>$5</c> as 5 with the format <c>$#,##0_);[Red]($#,##0)</c> (TYPED-021),
-    /// and <c>-$5</c> as -5 with the same format (TYPED-047, second run); the colour is kept and
-    /// not painted (ADR-0047). Any other currency, or another sign around the symbol, stays text
-    /// until Excel's reading of it is observed.
+    /// A dollar amount under a culture whose currency is written <c>$5</c> (en-US): <c>$</c> with an
+    /// optional <c>-</c> before or after it, then an unsigned number with no percentage or
+    /// exponent. Excel was observed to read <c>$5</c> as 5 with the format
+    /// <c>$#,##0_);[Red]($#,##0)</c> (TYPED-021), and <c>-$5</c> and <c>$-5</c> as -5 with the same
+    /// format (TYPED-047, second run; TYPED-052, third run); the colour is kept and not painted
+    /// (ADR-0047). Any other currency, or another sign around the symbol, stays text until Excel's
+    /// reading of it is observed.
     /// </summary>
     private static bool TryParseDollars(string text, CultureInfo culture, out double number, out NumberShape shape)
     {
@@ -73,7 +74,7 @@ internal static partial class ConstantParser
         shape = NumberShape.Plain;
         var format = culture.NumberFormat;
         if (format.CurrencySymbol != "$" || format.CurrencyPositivePattern != 0) return false;
-        var negative = text.StartsWith("-$", StringComparison.Ordinal);
+        var negative = text.StartsWith("-$", StringComparison.Ordinal) || text.StartsWith("$-", StringComparison.Ordinal);
         var amount = negative ? text[2..] : text.StartsWith('$') ? text[1..] : null;
         if (amount is null || amount.Length == 0 || !char.IsAsciiDigit(amount[0])) return false;
         if (!TryParseNumber(amount, culture, out number, out shape) || shape.HasFlag(NumberShape.Percent) || shape.HasFlag(NumberShape.Exponent)) return false;
