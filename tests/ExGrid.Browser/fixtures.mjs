@@ -249,3 +249,44 @@ export async function watchNextKey(page, key, { preventAfter = false } = {}) {
 }
 
 export const keySeenUntouched = (page) => page.evaluate(() => window.__keySeen);
+
+// Scrolls a grid (its `.ex-grid` root) so that `row`, 0-based among the rows its scrollbar spans,
+// is the top row of the readable area — through ADR-0053's mapping, never as row × row height.
+// Above the Layout Ceiling the spacer is compressed and a scroll offset s shows the content offset
+// c(s) = s × k, k = (H − V) / (S − V − 2): H the true height (aria-rowcount × row height), S the
+// rows' part of the spacer, V the readable height, the last two less the header band. At 150% a
+// Sheet's scrollTop of 99 × 28 showed row 130, not row 100 (verification/2026-09-28-windows-3).
+// S and the row height are read from the style attributes the grid writes, never through the
+// CSSOM, which rounds a length to six significant figures (ADR-0053). Below the ceiling k is 1 and
+// the offset is row × row height exactly.
+//
+// Compressed, the target is one pixel into the row rather than its top edge: V as the page reads
+// it (clientHeight, whole pixels) can differ from the grid's by a fraction of a pixel at a
+// fractional scale, which moved k by 3e-9 on /wide at 150% and c(s) by 0.04 px at row 500,000 —
+// enough to put row 499,999 first when aimed at the edge. And scrollTop is quantised to device
+// pixels, so the offset is rounded up and nudged while the browser holds it short. Returns the
+// offset the browser holds and k.
+export async function scrollRowToTop(grid, row) {
+    return grid.evaluate((root, row) => {
+        const px = (style, name) => {
+            const m = new RegExp(`(?:^|[;\\s])${name}:\\s*([\\d.]+)px`).exec(style ?? '');
+            if (!m) throw new Error(`no ${name} in the style attribute "${style}"`);
+            return Number(m[1]);
+        };
+        const scroller = root.querySelector(':scope > .ex-scroller');
+        const spacer = scroller.querySelector(':scope > .ex-spacer');
+        const header = spacer.querySelector(':scope > .ex-header');
+        const band = header ? header.getBoundingClientRect().height : 0;
+        const rowHeight = px(root.getAttribute('style'), '--ex-row-height');
+        const contentHeight = Number(root.getAttribute('aria-rowcount')) * rowHeight;
+        const scrollHeight = px(spacer.getAttribute('style'), 'height') - band;
+        const readable = scroller.clientHeight - band;
+        const k = contentHeight > scrollHeight ? (contentHeight - readable) / (scrollHeight - readable - 2) : 1;
+        const content = row * rowHeight + (k > 1 ? 1 : 0);
+        scroller.scrollTop = Math.ceil(content / k);
+        for (let i = 0; i < 4 && scroller.scrollTop * k < content; i++) {
+            scroller.scrollTop = Math.ceil(scroller.scrollTop) + 1;
+        }
+        return { scrollTop: scroller.scrollTop, k };
+    }, row);
+}

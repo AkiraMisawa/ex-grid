@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, scrollRowToTop } from './fixtures.mjs';
 
 // Excel's behaviours, observed beside ExSheet (docs/specs/exsheet/excel-behaviours.md). Each test
 // is one item of that list, driven with real keys and the real mouse on /sheet, and its
@@ -183,7 +183,7 @@ test('item 3: a column letter selects the column, Shift+click extends, the Focus
     await expectSelection(page, 'B1', 'D1048576');
     await expectActive(page, 'D1');
     // Scrolled to row 100, Excel's Focus is D100: the top visible row, not row 1.
-    await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    await scrollRowToTop(sheet(page), 99);
     await expect(cell(page, 'A100')).toBeVisible();
     await header('D').click({ force: true });
     await expectActive(page, 'D100');
@@ -212,7 +212,7 @@ test('item 5: the corner selects every cell, the Focus on the top-left visible c
     // Scrolled to row 100 (and column C in Excel), Excel's Focus was the top-left visible cell.
     // Column A is pinned on /sheet, so that is A100 here.
     await click(page, 'C3');
-    await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    await scrollRowToTop(sheet(page), 99);
     await expect(cell(page, 'A100')).toBeVisible();
     await sheet(page).locator('.ex-headings-corner').click({ force: true });
     await expectSelection(page, 'A1', 'XFD1048576');
@@ -311,7 +311,7 @@ test('active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrol
         await expectActive(page, corner);
     }
     await expectSelection(page, 'E1', 'G3');
-    await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 299 * 28; });
+    await scrollRowToTop(sheet(page), 299);
     await expect(cell(page, 'E300')).toBeVisible();
     await page.keyboard.press('Control+Backspace');
     await expectInView(page, 'E1');

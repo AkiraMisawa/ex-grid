@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, scrollRowToTop } from './fixtures.mjs';
 
 // Row Stripes (ADR-0038) as painted, on /stripes: 28px rows in a 420px Viewport, so rows
 // 0-13 are on the first screen. Columns: Name 0 (pinned), Amount 1, Quantity 2, Desk 3.
@@ -72,7 +72,7 @@ test('a pinned and a scrollable cell of one striped row paint the same ground (U
     expect(desk9, 'a striped row differs from an unstriped one').not.toBe(desk10);
 
     // Three rows down, the stripe has moved with its row, not stayed on the screen slot.
-    await page.locator('.ex-grid .ex-scroller').evaluate((s) => { s.scrollTop = 3 * 28; });
+    await scrollRowToTop(page.locator('.ex-grid'), 3);
     await expect(rowOf(page, 16)).toBeVisible();
     expect(await isStriped(page, 9)).toBe(true);
     const [pinnedAfter, deskAfter, plainAfter] = await groundsOf(page, [[9, 0], [9, 3], [10, 3]]);

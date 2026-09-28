@@ -147,6 +147,40 @@ public class LayoutCeilingTests : GridTestContext
         Assert.InRange(first, 399_999, 400_000);
     }
 
+    [Fact] // ADR-0053 / ADR-0028: the anchor is written only where the browser still stands where the grid last knew it
+    public async Task A_moved_ceiling_writes_its_anchor_only_over_the_offset_the_grid_last_knew()
+    {
+        var cut = RenderGrid(TestRows.Many(10), 0);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 400_000 * RowHeightPx);
+
+        await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(CeilingPx));
+
+        var (top, from) = Assert.Single(Js.Anchored);
+        Assert.Equal(Told.ScrollTopAt(400_000 * RowHeightPx), top);
+        Assert.Equal(400_000 * RowHeightPx, from);
+    }
+
+    [Fact] // ADR-0053 / BIG-5: a scroll the grid has not heard yet is not overwritten when the ceiling is told
+    public async Task A_scroll_made_before_the_ceiling_was_heard_stands()
+    {
+        // The grid knows the browser at the top. The user has already scrolled to the end, and
+        // the scroll event is still on its way when the ceiling arrives (a Server circuit): the
+        // anchor keeps row 0, and the browser, no longer at 0, refuses to write it.
+        var cut = RenderGrid(TestRows.Many(10), Total - 10);
+        Js.RefuseAnchors();
+        Js.SetScrollOffset(Told.MaxScrollTopPx, 0);
+
+        await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(CeilingPx));
+        Clock.Advance(TimeSpan.FromSeconds(1)); // the fling settles and the rows are painted
+
+        // Asked with the offset it assumed; refused; and then the grid reads where the browser is
+        // and paints that, the end, rather than the rows it was about to put back.
+        Assert.Equal(0, Assert.Single(Js.Anchored).From);
+        var first = int.Parse(cut.Find(".ex-viewport").GetAttribute("data-ex-first-row")!, CultureInfo.InvariantCulture);
+        Assert.Equal(Told.SliceAt(Told.MaxScrollTopPx)!.Value.Start, first);
+        Assert.Equal("Row 000009", cut.FindAll(".ex-row")[^1].QuerySelector(".ex-cell")!.TextContent);
+    }
+
     [Fact] // ADR-0053: a ceiling that is not a number, or not positive, is not believed
     public async Task A_nonsense_ceiling_is_ignored()
     {

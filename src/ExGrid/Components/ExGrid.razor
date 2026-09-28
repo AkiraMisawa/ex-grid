@@ -1618,6 +1618,9 @@
     // Whether the scroll offset must be re-anchored after this render: a geometry
     // change re-anchors on the first visible row, never the pixel offset (ADR-0028).
     private double? _anchorScrollTopPx;
+    // The scroll offset the browser stood at, as far as this instance knew, when that
+    // anchor was taken: the anchor is written only over it.
+    private double _anchorFromScrollTopPx;
     // A content offset waiting for the geometry it is to be read through: set where the
     // row height or the Layout Ceiling moves, and turned into a scroll offset by the next
     // PrepareRender, which builds that geometry (ADR-0028/0053).
@@ -2500,6 +2503,10 @@
         if (_anchorContentPx is { } anchorContentPx)
         {
             _anchorContentPx = null;
+            // Where the browser was when the anchor was taken, as far as this instance
+            // knows, and clamped as the new spacer will clamp it: the write is made only
+            // over that (AnchorScrollTopAsync).
+            _anchorFromScrollTopPx = Math.Clamp(_expectedScrollTopPx, 0, _geometry.MaxScrollTopPx);
             _scrollTopPx = _geometry.ScrollTopAt(anchorContentPx);
             _anchorScrollTopPx = _scrollTopPx;
         }
@@ -2717,7 +2724,7 @@
         if (_anchorScrollTopPx is { } anchorTopPx)
         {
             _anchorScrollTopPx = null;
-            await PushScrollOffsetAsync(anchorTopPx, _scrollLeftPx);
+            await AnchorScrollTopAsync(anchorTopPx, _anchorFromScrollTopPx);
         }
 
         // The one place a Range Request is raised. Raising it from OnParametersSet would
@@ -3365,6 +3372,35 @@
                 _ = DispatchExceptionAsync(ex);
             }
         });
+    }
+
+    /// <summary>
+    /// Re-anchors the vertical offset after a geometry change (ADR-0028/0053) — but only
+    /// while the browser still stands at <paramref name="fromTop"/>, where this instance
+    /// last knew it. The anchor was computed from that position; a scroll the grid has not
+    /// heard yet has moved the browser since, and writing over it would undo the user's
+    /// scroll: on a Server circuit, a Layout Ceiling told while a scroll to the end was on
+    /// the wire put the grid back at row 0 (BIG-5 at 150%, verification/2026-09-28-windows-3).
+    /// A refused anchor gives way to the browser, whose offset is read and painted as any
+    /// scroll is. The horizontal offset is not the anchor's, and is left alone.
+    /// </summary>
+    private async Task AnchorScrollTopAsync(double top, double fromTop)
+    {
+        if (_scrollHandle is null || _disposed)
+            return;
+        _expectedScrollTopPx = top;
+        _scrollWrites++;
+        bool written;
+        try
+        {
+            written = await _scrollHandle.InvokeAsync<bool>("anchorScrollTop", top, fromTop);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            return;
+        }
+        if (!written && !_disposed)
+            await OnScrollAsync();
     }
 
     private async Task PushScrollOffsetAsync(double top, double left)

@@ -15,19 +15,17 @@ internal sealed class GridJSInterop
     internal const string ModulePath = "./_content/ExGrid/ex-grid.js";
 
     private readonly JSRuntimeInvocationHandler<ScrollOffset> _offset;
-    private readonly JSRuntimeInvocationHandler _setOffset;
     private readonly JSRuntimeInvocationHandler _blur;
     private BunitJSModuleInterop? _module;
+    private BunitContext _context = default!;
     private BunitJSModuleInterop? _handle;
 
     private GridJSInterop(
         JSRuntimeInvocationHandler<ScrollOffset> offset,
-        JSRuntimeInvocationHandler setOffset,
         JSRuntimeInvocationHandler blur,
         JSRuntimeInvocationHandler dispose)
     {
         _offset = offset;
-        _setOffset = setOffset;
         _blur = blur;
         Dispose = dispose;
     }
@@ -52,10 +50,26 @@ internal sealed class GridJSInterop
         ((Microsoft.AspNetCore.Components.ElementReference)_module!.Invocations["attach"][^1].Arguments[0]!).Id;
 
     /// <summary>Where the grid has told the browser to scroll — how Focus-follows-scroll
-    /// is observed without a browser (ADR-0012).</summary>
+    /// is observed without a browser (ADR-0012). A re-anchoring write (ADR-0028/0053) is
+    /// among them, in the order asked, with the horizontal offset it leaves alone as NaN.</summary>
     internal IReadOnlyList<(double Top, double Left)> ScrolledTo =>
-        [.. _setOffset.Invocations
+        [.. _context.JSInterop.Invocations
+            .Where(invocation => invocation.Identifier is "setScrollOffset" or "anchorScrollTop")
+            .Select(invocation => invocation.Identifier == "setScrollOffset"
+                ? ((double)invocation.Arguments[0]!, (double)invocation.Arguments[1]!)
+                : ((double)invocation.Arguments[0]!, double.NaN))];
+
+    /// <summary>Every re-anchoring write the grid asked for (ADR-0028/0053): the offset it
+    /// asked for, and the offset the browser had to be standing at for it to be written.</summary>
+    internal IReadOnlyList<(double Top, double From)> Anchored =>
+        [.. _context.JSInterop.Invocations
+            .Where(invocation => invocation.Identifier == "anchorScrollTop")
             .Select(invocation => ((double)invocation.Arguments[0]!, (double)invocation.Arguments[1]!))];
+
+    /// <summary>From here on, the browser refuses a re-anchoring write: it is no longer where
+    /// the grid last knew it, because a scroll the grid has not heard yet moved it.</summary>
+    internal void RefuseAnchors()
+        => _handle!.Setup<bool>("anchorScrollTop", _ => true).SetResult(false);
 
     internal static GridJSInterop Setup(BunitContext context)
     {
@@ -70,6 +84,9 @@ internal sealed class GridJSInterop
         offset.SetResult(default);
         var setOffset = handle.SetupVoid("setScrollOffset", _ => true);
         setOffset.SetVoidResult();
+        // A re-anchoring write, conditional on where the browser stands (ADR-0028/0053):
+        // written, unless a test says the browser has moved.
+        handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
         var blur = handle.SetupVoid("blur");
         blur.SetVoidResult();
 
@@ -121,8 +138,9 @@ internal sealed class GridJSInterop
         reclaimFocus.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
-        return new GridJSInterop(offset, setOffset, blur, dispose)
+        return new GridJSInterop(offset, blur, dispose)
         {
+            _context = context,
             _module = module,
             _handle = handle,
             PointerReporting = setPointerReporting,

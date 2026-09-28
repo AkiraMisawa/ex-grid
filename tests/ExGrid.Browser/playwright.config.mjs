@@ -79,10 +79,13 @@ export default defineConfig({
         // devicePixelRatio and leaves the clamp where it was, which is why the suite was
         // green while a Windows desktop at 150% could not reach the last 200,000 rows of
         // /wide. Only the tests the clamp broke run here: the far corner and both ends of a
-        // million rows, the Focus against the scrollbars, and the Sheet's extent.
+        // million rows, the Focus against the scrollbars, and the Sheet's extent. And every
+        // test that scrolls a compressed grid to a row (scrollRowToTop in fixtures.mjs): a
+        // scrollTop of rows × row height showed a later row here, which only a run at 150%
+        // could catch (verification/2026-09-28-windows-3).
         {
             name: 'chrome-150',
-            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3/,
+            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8/,
             use: {
                 channel: 'chrome',
                 viewport: null,
