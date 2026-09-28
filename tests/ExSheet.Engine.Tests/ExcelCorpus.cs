@@ -126,10 +126,17 @@ internal static class ExcelCorpus
 
         if (expect.TryGetProperty("widthAtMost", out var widthAtMost))
         {
-            // The check column's width after every typed entry is no wider than this (characters):
-            // a column a typed entry widened is not widened again by a longer one (ADR-0047, CW-018).
+            // The check column's width after every typed entry is no wider than this (characters).
             var actual = sheet.GetColumnWidth(at.Column)?.Width ?? Sheet.DefaultColumnWidth;
             if (actual > widthAtMost.GetDouble()) differences.Add($"widthAtMost: expected at most {widthAtMost.GetDouble().ToString(CultureInfo.InvariantCulture)}, got {actual.ToString(CultureInfo.InvariantCulture)}");
+        }
+
+        if (expect.TryGetProperty("widthAtLeast", out var widthAtLeast))
+        {
+            // The check column's width after every typed entry is at least this (characters): a
+            // column a typed entry widened is widened again by a longer one (ADR-0046, 2026-09-28; CW-028).
+            var actual = sheet.GetColumnWidth(at.Column)?.Width ?? Sheet.DefaultColumnWidth;
+            if (actual < widthAtLeast.GetDouble()) differences.Add($"widthAtLeast: expected at least {widthAtLeast.GetDouble().ToString(CultureInfo.InvariantCulture)}, got {actual.ToString(CultureInfo.InvariantCulture)}");
         }
 
         if (expect.TryGetProperty("width", out var width))
@@ -142,8 +149,8 @@ internal static class ExcelCorpus
 
         if (expect.TryGetProperty("custom", out var custom))
         {
-            // Whether the check column's width is one the user set (Excel's customWidth); a column
-            // with no recorded width is not custom (ADR-0046).
+            // Whether the check column's width is marked custom (Excel's customWidth): every recorded
+            // width is, whichever its kind; a column with no recorded width is not (ADR-0046, 2026-09-28).
             var actual = sheet.GetColumnWidth(at.Column)?.IsCustom ?? false;
             if (actual != custom.GetBoolean()) differences.Add($"custom: expected {custom.GetBoolean()}, got {actual}");
         }
@@ -176,28 +183,29 @@ internal static class ExcelCorpus
 
     /// <summary>
     /// Whether the case asks how the typed entries widened the check column (<c>widens</c>,
-    /// <c>widthAtMost</c>). The oracle types those cases with real keys, and Excel widens the
+    /// <c>widthAtMost</c>, <c>widthAtLeast</c>). The oracle types those cases with real keys, and Excel widens the
     /// column as it goes; the engine leaves widening to the component, so the harness does it
     /// the component's way after each of the case's own cells (<see cref="Widen"/>).
     /// </summary>
     private static bool TypedWidening(JsonElement c) =>
-        c.GetProperty("expect") is var expect && (expect.TryGetProperty("widens", out _) || expect.TryGetProperty("widthAtMost", out _));
+        c.GetProperty("expect") is var expect && (expect.TryGetProperty("widens", out _) || expect.TryGetProperty("widthAtMost", out _) || expect.TryGetProperty("widthAtLeast", out _));
 
     /// <summary>
-    /// The component's widening on entry (<c>ExSheet.razor</c>, <c>WidenOnEntry</c>): a column not
-    /// custom that is narrower than what the entry needs (<see cref="Sheet.GetWidthOnEntry"/>) is
-    /// widened to it, and the width is recorded as custom, as Excel's file marks it (ADR-0047,
-    /// "What the second observation settled", CW-018), so it is not widened again. The component
-    /// converts the width through the grid's pixels; here it is the engine's characters, which is
-    /// why the corpus compares widening, not Excel's exact width.
+    /// The component's widening on entry (<c>ExSheet.razor</c>, <c>WidenOnEntry</c>): a column
+    /// whose width the user did not set that is narrower than what the entry needs
+    /// (<see cref="Sheet.GetWidthOnEntry"/>) is widened to it, and the width is recorded as widened
+    /// by entry: marked custom, as Excel's file marks it (CW-018), and widened again by a longer
+    /// entry (CW-028; ADR-0046, 2026-09-28). The component converts the width through the grid's
+    /// pixels; here it is the engine's characters, which is why the corpus compares widening, not
+    /// Excel's exact width.
     /// </summary>
     private static void Widen(Sheet sheet, CellAddress address)
     {
         var recorded = sheet.GetColumnWidth(address.Column);
-        if (recorded is { IsCustom: true }) return;
+        if (recorded is { IsSetByUser: true }) return;
         if (sheet.GetWidthOnEntry(address) is not { } needed) return;
         if (needed <= (recorded?.Width ?? Sheet.DefaultColumnWidth)) return;
-        sheet.SetColumnWidth(CellRange.WholeColumns(address.Column, address.Column), needed);
+        sheet.SetAutomaticColumnWidth(CellRange.WholeColumns(address.Column, address.Column), needed);
     }
 
     private static Sheet Build(JsonElement c, bool widen)
@@ -302,7 +310,7 @@ internal static class ExcelCorpus
                 return SheetEdit.PasteText(rows, CellAddress.Parse(a.GetProperty("at").GetString()!));
             case "setColumnWidth":
                 var w = a.GetProperty("width");
-                // "automatic" is a width an entry widened the columns to (ADR-0046); "sizeToFit"
+                // "automatic" is a width an entry widened the columns to (ADR-0046, 2026-09-28); "sizeToFit"
                 // is the user's size to fit, a width the user set like any other.
                 if (a.TryGetProperty("automatic", out var automatic) && automatic.GetBoolean()) return SheetEdit.SetAutomaticColumnWidth(Range("range"), w.GetDouble());
                 return SheetEdit.SetColumnWidth(Range("range"), w.ValueKind == JsonValueKind.Null ? null : w.GetDouble());

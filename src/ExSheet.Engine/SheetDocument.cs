@@ -15,17 +15,19 @@ namespace ExSheet.Engine;
 /// <remarks>
 /// The document is a format with a version. A reader meeting a version it does not know refuses
 /// the document rather than guess at it (ADR-0048); so does a reader meeting anything it does not
-/// understand. This engine writes version 5 and reads versions 1 to 5: version 1 recorded no
+/// understand. This engine writes version 6 and reads versions 1 to 6: version 1 recorded no
 /// name and no Linked Table, and a Sheet opened from one is named <see cref="Sheet.DefaultName"/>
 /// and declares none; versions 1 and 2 recorded formats on cells only, where General meant the
 /// cell set nothing; versions 1 to 3 recorded no column width, and every column of a Sheet
 /// opened from one is at the default width; version 4 recorded widths without saying whether the
-/// user set them, and each is read as one the user set (custom), which is what version 4 meant.
+/// user set them, and each is read as one the user set, which is what version 4 meant; version 5
+/// said whether each was custom, and a custom one is read as the user's and any other as widened
+/// by entry, which is what version 5 meant by them (ADR-0046, 2026-09-28).
 /// </remarks>
 public sealed class SheetDocument
 {
     /// <summary>The version this engine writes.</summary>
-    public const int CurrentVersion = 5;
+    public const int CurrentVersion = 6;
 
     /// <summary>The oldest version this engine reads.</summary>
     public const int OldestReadableVersion = 1;
@@ -70,10 +72,10 @@ public sealed class SheetDocument
     public IReadOnlyList<SheetDocumentAxisStyle> Rows { get; init; } = [];
 
     /// <summary>
-    /// The widths recorded on columns, in characters, and whether the user set each, in column
-    /// order, adjacent columns of one width and one origin as one run (ADR-0046). A column at the
-    /// default width is not recorded. Empty for a document read from versions 1 to 3; every width
-    /// of a document read from version 4 is custom.
+    /// The widths recorded on columns, in characters, and the kind of each, in column order,
+    /// adjacent columns of one width and one kind as one run (ADR-0046). A column at the default
+    /// width is not recorded. Empty for a document read from versions 1 to 3; every width of a
+    /// document read from version 4 is the user's.
     /// </summary>
     public IReadOnlyList<SheetDocumentColumnWidth> ColumnWidths { get; init; } = [];
 
@@ -111,7 +113,7 @@ public sealed class SheetDocument
                     json.WriteStartObject();
                     json.WriteString("at", CellAddress.ColumnName(run.First) + ":" + CellAddress.ColumnName(run.Last));
                     json.WriteNumber("width", run.Width);
-                    json.WriteBoolean("custom", run.IsCustom);
+                    json.WriteString("kind", KindName(run.Kind));
                     json.WriteEndObject();
                 }
                 json.WriteEndArray();
@@ -325,7 +327,7 @@ public sealed class SheetDocument
             (int First, int Last)? at = null;
             double? width = null;
             // Version 4 recorded only widths the user set (ADR-0046).
-            bool? custom = version < 5 ? true : null;
+            SheetColumnWidthKind? kind = version < 5 ? SheetColumnWidthKind.SetByUser : null;
             foreach (var property in element.EnumerateObject())
             {
                 switch (property.Name)
@@ -340,10 +342,19 @@ public sealed class SheetDocument
                             ? w
                             : throw new SheetDocumentException($"'{property.Value}' is not a column's width: more than 0 and at most {Sheet.MaxColumnWidth} characters.");
                         break;
-                    case "custom" when version >= 5:
-                        custom = property.Value.ValueKind is JsonValueKind.True or JsonValueKind.False
-                            ? property.Value.GetBoolean()
-                            : throw new SheetDocumentException($"'{property.Value}' does not say whether a column's width is custom.");
+                    case "custom" when version == 5:
+                        // Version 5's custom width stopped widening; any other was widened again (ADR-0046, 2026-09-28).
+                        kind = property.Value.ValueKind switch
+                        {
+                            JsonValueKind.True => SheetColumnWidthKind.SetByUser,
+                            JsonValueKind.False => SheetColumnWidthKind.WidenedByEntry,
+                            _ => throw new SheetDocumentException($"'{property.Value}' does not say whether a column's width is custom."),
+                        };
+                        break;
+                    case "kind" when version >= 6:
+                        kind = property.Value.ValueKind == JsonValueKind.String && KindOf(property.Value.GetString()!) is { } named
+                            ? named
+                            : throw new SheetDocumentException($"'{property.Value}' is not a kind of column width: \"{KindName(SheetColumnWidthKind.WidenedByEntry)}\" or \"{KindName(SheetColumnWidthKind.SetByUser)}\".");
                         break;
                     default:
                         throw new SheetDocumentException($"'{property.Name}' is not part of a version {version} column width.");
@@ -351,13 +362,23 @@ public sealed class SheetDocument
             }
             if (at is not { } span) throw new SheetDocumentException("A column width says no column.");
             if (width is not { } set) throw new SheetDocumentException($"The column width at {CellAddress.ColumnName(span.First)} gives no width.");
-            if (custom is not { } isCustom) throw new SheetDocumentException($"The column width at {CellAddress.ColumnName(span.First)} does not say whether it is custom.");
+            if (kind is not { } recorded) throw new SheetDocumentException($"The column width at {CellAddress.ColumnName(span.First)} does not say its kind.");
             if (runs.Any(r => r.First <= span.Last && span.First <= r.Last)) throw new SheetDocumentException("A column is given a width twice.");
-            runs.Add(new SheetDocumentColumnWidth(span.First, span.Last, set, isCustom));
+            runs.Add(new SheetDocumentColumnWidth(span.First, span.Last, set, recorded));
         }
         runs.Sort((a, b) => a.First.CompareTo(b.First));
         return runs;
     }
+
+    /// <summary>How a Sheet Document writes a width's kind.</summary>
+    private static string KindName(SheetColumnWidthKind kind) => kind == SheetColumnWidthKind.SetByUser ? "setByUser" : "widenedByEntry";
+
+    private static SheetColumnWidthKind? KindOf(string name) => name switch
+    {
+        "setByUser" => SheetColumnWidthKind.SetByUser,
+        "widenedByEntry" => SheetColumnWidthKind.WidenedByEntry,
+        _ => null,
+    };
 
     private static NumberFormat ReadFormat(JsonElement value) =>
         value.ValueKind == JsonValueKind.String && NumberFormat.TryParse(value.GetString()!, out var parsed, out _)
@@ -499,16 +520,17 @@ public sealed record SheetDocumentAxisStyle(int First, int Last, NumberFormat? F
 
 /// <summary>
 /// A width recorded on columns, as a Sheet Document records it: one entry for a run of adjacent
-/// columns of one width and one origin (ADR-0046). A column at the default width has none.
+/// columns of one width and one kind (ADR-0046). A column at the default width has none.
 /// </summary>
 /// <param name="First">The first column of the run, from 0.</param>
 /// <param name="Last">The last column of the run.</param>
 /// <param name="Width">The width, in characters of the default font (Excel's unit, ADR-0047).</param>
-/// <param name="IsCustom">
-/// Whether it is custom (<see cref="SheetColumnWidth.IsCustom"/>); <see langword="false"/> for an
-/// automatic width, which a longer entry widens (ADR-0046).
-/// </param>
-public sealed record SheetDocumentColumnWidth(int First, int Last, double Width, bool IsCustom = true);
+/// <param name="Kind">What recorded it (<see cref="SheetColumnWidth.Kind"/>): the user, or an entry that widened the columns, which a longer entry widens again (ADR-0046, 2026-09-28).</param>
+public sealed record SheetDocumentColumnWidth(int First, int Last, double Width, SheetColumnWidthKind Kind = SheetColumnWidthKind.SetByUser)
+{
+    /// <summary>Whether Excel's file marks the width custom (<see cref="SheetColumnWidth.IsCustom"/>): every recorded width is.</summary>
+    public bool IsCustom => true;
+}
 
 /// <summary>A Linked Table's declaration as a Sheet Document records it: its name and its column names, never its rows (ADR-0049).</summary>
 /// <param name="Name">The name Formulas read it by.</param>

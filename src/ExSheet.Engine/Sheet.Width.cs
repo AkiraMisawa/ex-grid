@@ -11,14 +11,14 @@ public sealed partial class Sheet
     public const double MaxColumnWidth = 255;
 
     /// <summary>
-    /// The widths recorded on columns, in characters, and whether the user set each, by column; a
-    /// column absent is at the default width and records nothing (ADR-0046).
+    /// The widths recorded on columns, in characters, and the kind of each, by column; a column
+    /// absent is at the default width and records nothing (ADR-0046).
     /// </summary>
     private Dictionary<int, SheetColumnWidth> _columnWidths = [];
 
     /// <summary>
-    /// The width recorded on the column, in characters (Excel's unit, ADR-0047), and whether the
-    /// user set it (<see cref="SheetColumnWidth.IsCustom"/>), or <see langword="null"/> when none is:
+    /// The width recorded on the column, in characters (Excel's unit, ADR-0047), and its kind
+    /// (<see cref="SheetColumnWidth.Kind"/>), or <see langword="null"/> when none is:
     /// the column is at the default width, which the component chooses and the Sheet Document does
     /// not record (ADR-0046).
     /// </summary>
@@ -27,8 +27,9 @@ public sealed partial class Sheet
 
     /// <summary>
     /// Sets the width of every column <paramref name="columns"/> spans, in characters, as Excel's
-    /// <c>Range.ColumnWidth</c> sets the columns of a range, as a width the user set: custom, so an
-    /// entry never widens the columns (ADR-0046). <see langword="null"/> puts them back at the
+    /// <c>Range.ColumnWidth</c> sets the columns of a range, as a width the user set
+    /// (<see cref="SheetColumnWidthKind.SetByUser"/>), so an entry never widens the columns
+    /// (ADR-0046). It replaces a width widened by entry. <see langword="null"/> puts them back at the
     /// default width, recording nothing. No Value changes; the change names the columns whose
     /// width changed (<see cref="SheetChange.Columns"/>).
     /// </summary>
@@ -37,19 +38,21 @@ public sealed partial class Sheet
     /// Excel hides a column, and hiding columns is not part of the first version (ADR-0046).
     /// </exception>
     public SheetChange SetColumnWidth(CellRange columns, double? width) =>
-        ApplyColumnWidth(columns, CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, IsCustom: true) : null).Change;
+        ApplyColumnWidth(columns, CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, SheetColumnWidthKind.SetByUser) : null).Change;
 
     /// <summary>
-    /// Sets the width of every column <paramref name="columns"/> spans, in characters, as an
-    /// automatic width, so a longer entry widens them (ADR-0046). It is recorded like any other
-    /// width, so the document reopens as the user saw it. The component no longer widens a column
-    /// to one: a width a typed entry widened a column to is custom (ADR-0047, "What the second
-    /// observation settled", CW-018), and an automatic width is what a document may already hold.
-    /// The change names the columns whose width, or whose origin, changed.
+    /// Sets the width of every column <paramref name="columns"/> spans, in characters, as a width
+    /// an entry widened them to (<see cref="SheetColumnWidthKind.WidenedByEntry"/>): recorded like
+    /// any other, so the document reopens as the user saw it, marked custom as Excel's file marks
+    /// it, and widened again by a longer entry, as Excel was observed to widen it (ADR-0046,
+    /// 2026-09-28; CW-018, CW-028). It is how a component records a typed entry's widening; it
+    /// never replaces a width the user set, which is the component's to check
+    /// (<see cref="SheetColumnWidth.IsSetByUser"/>). The change names the columns whose width, or
+    /// whose kind, changed.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="MaxColumnWidth"/>.</exception>
     public SheetChange SetAutomaticColumnWidth(CellRange columns, double width) =>
-        ApplyColumnWidth(columns, new SheetColumnWidth(CheckColumnWidth(width)!.Value, IsCustom: false)).Change;
+        ApplyColumnWidth(columns, new SheetColumnWidth(CheckColumnWidth(width)!.Value, SheetColumnWidthKind.WidenedByEntry)).Change;
 
     internal static double? CheckColumnWidth(double? width, string name = "width") =>
         width is null or (> 0 and <= MaxColumnWidth)
@@ -80,7 +83,7 @@ public sealed partial class Sheet
     /// <summary>A copy of the widths recorded now.</summary>
     internal Dictionary<int, SheetColumnWidth> ColumnWidthsNow() => new(_columnWidths);
 
-    /// <summary>The columns whose width or its origin differs between <paramref name="before"/> and now, ascending.</summary>
+    /// <summary>The columns whose width or its kind differs between <paramref name="before"/> and now, ascending.</summary>
     private List<int> WidthsChangedSince(Dictionary<int, SheetColumnWidth> before) =>
         [.. before.Keys.Union(_columnWidths.Keys)
             .Where(c => !(before.TryGetValue(c, out var was) && _columnWidths.TryGetValue(c, out var now) && was == now))
@@ -89,7 +92,7 @@ public sealed partial class Sheet
     /// <summary>
     /// The widths after an insertion or deletion of columns: moved with their columns, those
     /// deleted or pushed off the right edge dropped, and inserted columns given the width of the
-    /// column to their left, automatic or custom as it is, when <paramref name="formatInserted"/>,
+    /// column to their left, of its kind, when <paramref name="formatInserted"/>,
     /// as they take its formats (ADR-0046).
     /// </summary>
     private void ShiftColumnWidths(StructuralEdit edit, bool formatInserted)
@@ -107,15 +110,15 @@ public sealed partial class Sheet
         _columnWidths = shifted;
     }
 
-    /// <summary>The widths as a Sheet Document records them: adjacent columns of one width and one origin are one run.</summary>
+    /// <summary>The widths as a Sheet Document records them: adjacent columns of one width and one kind are one run.</summary>
     private IReadOnlyList<SheetDocumentColumnWidth> WidthRuns()
     {
         var runs = new List<SheetDocumentColumnWidth>();
         foreach (var column in _columnWidths.Keys.Order())
         {
             var width = _columnWidths[column];
-            if (runs.Count > 0 && runs[^1] is var last && last.Last == column - 1 && last.Width == width.Width && last.IsCustom == width.IsCustom) runs[^1] = last with { Last = column };
-            else runs.Add(new SheetDocumentColumnWidth(column, column, width.Width, width.IsCustom));
+            if (runs.Count > 0 && runs[^1] is var last && last.Last == column - 1 && last.Width == width.Width && last.Kind == width.Kind) runs[^1] = last with { Last = column };
+            else runs.Add(new SheetDocumentColumnWidth(column, column, width.Width, width.Kind));
         }
         return runs;
     }
@@ -175,9 +178,9 @@ public sealed partial class Sheet
     /// text.</item>
     /// </list>
     /// The component calls it after the user's entry is done, and widens the column to the answer
-    /// when the column is at its default width or an automatic one (<see cref="SetAutomaticColumnWidth"/>),
-    /// never a custom one, and narrower than the answer, recording the width as custom (ADR-0046,
-    /// ADR-0047 CW-018). How Excel
+    /// when the column is at its default width or one widened by entry, never one the user set,
+    /// and narrower than the answer, recording the width as widened by entry
+    /// (<see cref="SetAutomaticColumnWidth"/>; ADR-0046, 2026-09-28; CW-018, CW-028). How Excel
     /// chooses the new width is observed by the case corpus; this rule is uncertain there.
     /// </summary>
     public int? GetWidthOnEntry(CellAddress address)

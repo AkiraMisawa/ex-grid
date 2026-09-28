@@ -218,7 +218,7 @@ public class ColumnWidthTests
         var json = sheet.ToDocument().ToJson();
 
         Assert.Equal(
-            """{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:D","width":20,"custom":true},{"at":"E:E","width":12.5,"custom":true},{"at":"G:G","width":20,"custom":true}],"cells":[{"at":"B2","number":1}]}""",
+            """{"version":6,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:D","width":20,"kind":"setByUser"},{"at":"E:E","width":12.5,"kind":"setByUser"},{"at":"G:G","width":20,"kind":"setByUser"}],"cells":[{"at":"B2","number":1}]}""",
             json);
         var reopened = Sheet.Open(SheetDocument.FromJson(json));
         Assert.Equal(20, reopened.GetColumnWidth(2)?.Width);
@@ -251,25 +251,27 @@ public class ColumnWidthTests
         Assert.Empty(document.ColumnWidths);
         Assert.Null(sheet.GetColumnWidth(1));
         Assert.Equal(
-            """{"version":5,"culture":"en-US","name":"Sheet1","columns":[{"at":"B:B","format":"0.00"}],"cells":[]}""",
+            """{"version":6,"culture":"en-US","name":"Sheet1","columns":[{"at":"B:B","format":"0.00"}],"cells":[]}""",
             sheet.ToDocument().ToJson());
     }
 
-    [Fact] // ADR-0046 (a recorded width says whether the user set it): the existing form records a width the user set
-    public void A_width_set_is_custom()
+    [Fact] // ADR-0046 (2026-09-28, SH-26): the existing form records a width the user set, marked custom
+    public void A_width_set_is_the_users()
     {
         var sheet = NewSheet();
 
         sheet.Do(SheetEdit.SetColumnWidth(Columns("B:C"), 20));
         sheet.SetColumnWidth(Columns("E:E"), 12);
 
-        Assert.Equal(new SheetColumnWidth(20, IsCustom: true), sheet.GetColumnWidth(1));
-        Assert.Equal(new SheetColumnWidth(20, IsCustom: true), sheet.GetColumnWidth(2));
-        Assert.Equal(new SheetColumnWidth(12, IsCustom: true), sheet.GetColumnWidth(4));
+        Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(2));
+        Assert.Equal(new SheetColumnWidth(12, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(4));
+        Assert.True(sheet.GetColumnWidth(1)!.Value.IsCustom);
+        Assert.True(sheet.GetColumnWidth(1)!.Value.IsSetByUser);
     }
 
-    [Fact] // ADR-0046: a width an entry widened the column to is recorded, and is automatic; undone and redone exactly
-    public void A_width_an_entry_widened_to_is_automatic()
+    [Fact] // ADR-0046 (2026-09-28, SH-26): a width an entry widened the column to is recorded as widened by entry, marked custom as Excel marks it; undone and redone exactly
+    public void A_width_an_entry_widened_to_is_widened_by_entry_and_marked_custom()
     {
         var sheet = NewSheet();
         var before = sheet.ToDocument().ToJson();
@@ -277,22 +279,24 @@ public class ColumnWidthTests
         var step = sheet.Do(SheetEdit.SetAutomaticColumnWidth(Columns("B:B"), 11));
         var change = sheet.SetAutomaticColumnWidth(Columns("D:D"), 12);
 
-        Assert.Equal(new SheetColumnWidth(11, IsCustom: false), sheet.GetColumnWidth(1));
-        Assert.Equal(new SheetColumnWidth(12, IsCustom: false), sheet.GetColumnWidth(3));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(12, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(3));
+        Assert.True(sheet.GetColumnWidth(1)!.Value.IsCustom);
+        Assert.False(sheet.GetColumnWidth(1)!.Value.IsSetByUser);
         Assert.Equal([1], step.Change.Columns);
         Assert.Equal([3], change.Columns);
         sheet.SetColumnWidth(Columns("D:D"), null);
         step.Undo();
         Assert.Equal(before, sheet.ToDocument().ToJson());
         step.Redo();
-        Assert.Equal(new SheetColumnWidth(11, IsCustom: false), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(1));
     }
 
-    [Theory] // ADR-0046: an automatic width has the same limits as any other
+    [Theory] // ADR-0046: a width widened by entry has the same limits as any other
     [InlineData(0)]
     [InlineData(255.01)]
     [InlineData(double.NaN)]
-    public void An_automatic_width_outside_Excels_range_is_refused(double width)
+    public void A_width_widened_by_entry_outside_Excels_range_is_refused(double width)
     {
         var sheet = NewSheet();
 
@@ -301,23 +305,23 @@ public class ColumnWidthTests
         Assert.Null(sheet.GetColumnWidth(1));
     }
 
-    [Fact] // ADR-0046: the user setting an automatic column's width makes it custom — a change even at the same width — and undoing it puts the automatic width back
-    public void The_user_setting_an_automatic_width_makes_it_custom()
+    [Fact] // ADR-0046 (2026-09-28, SH-26): the user setting a width over one widened by entry makes it the user's — a change even at the same width — and undoing it puts the entry's kind back
+    public void The_user_setting_a_width_widened_by_entry_makes_it_the_users()
     {
         var sheet = NewSheet();
         sheet.SetAutomaticColumnWidth(Columns("B:B"), 11);
 
         var step = sheet.Do(SheetEdit.SetColumnWidth(Columns("B:B"), 11));
 
-        Assert.Equal(new SheetColumnWidth(11, IsCustom: true), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(1));
         Assert.Equal([1], step.Change.Columns);
         var undone = step.Undo();
-        Assert.Equal(new SheetColumnWidth(11, IsCustom: false), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(1));
         Assert.Equal([1], undone.Columns);
     }
 
-    [Fact] // ADR-0046: inserted columns take the width of the column to their left with its origin, the rest move with theirs, and undoing puts both back
-    public void Insertion_and_deletion_carry_the_origin()
+    [Fact] // ADR-0046: inserted columns take the width of the column to their left with its kind, the rest move with theirs, and undoing puts both back
+    public void Insertion_and_deletion_carry_the_kind()
     {
         var sheet = NewSheet();
         sheet.SetAutomaticColumnWidth(Columns("B:B"), 11);
@@ -326,22 +330,22 @@ public class ColumnWidthTests
 
         var inserted = sheet.Do(SheetEdit.InsertColumns(2, 2));
 
-        Assert.Equal(new SheetColumnWidth(11, IsCustom: false), sheet.GetColumnWidth(2));
-        Assert.Equal(new SheetColumnWidth(11, IsCustom: false), sheet.GetColumnWidth(3));
-        Assert.Equal(new SheetColumnWidth(20, IsCustom: true), sheet.GetColumnWidth(4));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(2));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(3));
+        Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(4));
         inserted.Undo();
         Assert.Equal(before, sheet.ToDocument().ToJson());
 
         var deleted = sheet.Do(SheetEdit.DeleteColumns(1));
 
-        Assert.Equal(new SheetColumnWidth(20, IsCustom: true), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(1));
         deleted.Undo();
         Assert.Equal(before, sheet.ToDocument().ToJson());
-        Assert.Equal(new SheetColumnWidth(11, IsCustom: false), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(1));
     }
 
-    [Fact] // ADR-0046/0048: the document records each width's origin, adjacent columns alike in both as one run, and round-trips it
-    public void The_origin_is_recorded_and_round_trips()
+    [Fact] // ADR-0046 (2026-09-28)/0048: the document records each width's kind, adjacent columns alike in both as one run, and round-trips it
+    public void The_kind_is_recorded_and_round_trips()
     {
         var sheet = NewSheet();
         sheet.SetAutomaticColumnWidth(Columns("B:C"), 11);
@@ -351,25 +355,40 @@ public class ColumnWidthTests
         var json = sheet.ToDocument().ToJson();
 
         Assert.Equal(
-            """{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":11,"custom":false},{"at":"D:D","width":11,"custom":true},{"at":"E:E","width":11,"custom":false}],"cells":[]}""",
+            """{"version":6,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":11,"kind":"widenedByEntry"},{"at":"D:D","width":11,"kind":"setByUser"},{"at":"E:E","width":11,"kind":"widenedByEntry"}],"cells":[]}""",
             json);
         var reopened = Sheet.Open(SheetDocument.FromJson(json));
-        Assert.Equal(new SheetColumnWidth(11, IsCustom: false), reopened.GetColumnWidth(2));
-        Assert.Equal(new SheetColumnWidth(11, IsCustom: true), reopened.GetColumnWidth(3));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), reopened.GetColumnWidth(2));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.SetByUser), reopened.GetColumnWidth(3));
         Assert.Equal(json, reopened.ToDocument().ToJson());
     }
 
-    [Fact] // ADR-0046/0048: a version 4 document still opens, and every width it recorded is custom, as version 4 meant
-    public void A_version_4_documents_widths_are_custom()
+    [Fact] // ADR-0046/0048: a version 4 document still opens, and every width it recorded is the user's, as version 4 meant
+    public void A_version_4_documents_widths_are_the_users()
     {
         var document = SheetDocument.FromJson("""{"version":4,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":20}],"cells":[]}""");
 
         var sheet = Sheet.Open(document);
 
         Assert.True(Assert.Single(document.ColumnWidths).IsCustom);
-        Assert.Equal(new SheetColumnWidth(20, IsCustom: true), sheet.GetColumnWidth(2));
+        Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(2));
         Assert.Equal(
-            """{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":20,"custom":true}],"cells":[]}""",
+            """{"version":6,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":20,"kind":"setByUser"}],"cells":[]}""",
+            sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0046 (2026-09-28)/0048: a version 5 document still opens: a custom width is the user's, and any other was widened by entry, as version 5 meant
+    public void A_version_5_documents_custom_widths_are_the_users_and_the_others_widened_by_entry()
+    {
+        var document = SheetDocument.FromJson("""{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"custom":true},{"at":"C:C","width":11,"custom":false}],"cells":[]}""");
+
+        var sheet = Sheet.Open(document);
+
+        Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(1));
+        Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(2));
+        Assert.All(document.ColumnWidths, w => Assert.True(w.IsCustom));
+        Assert.Equal(
+            """{"version":6,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"kind":"setByUser"},{"at":"C:C","width":11,"kind":"widenedByEntry"}],"cells":[]}""",
             sheet.ToDocument().ToJson());
     }
 }

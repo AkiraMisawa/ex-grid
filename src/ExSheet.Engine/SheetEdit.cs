@@ -81,24 +81,24 @@ public abstract class SheetEdit
 
     /// <summary>
     /// A width the user set on every column <paramref name="columns"/> spans, in characters
-    /// (<see cref="Sheet.SetColumnWidth"/>): custom, so an entry never widens them;
-    /// <see langword="null"/> puts them back at the default width. Undoing the step puts back every
-    /// column's width, and whether it was custom, exactly (ADR-0046).
+    /// (<see cref="Sheet.SetColumnWidth"/>): <see cref="SheetColumnWidthKind.SetByUser"/>, so an
+    /// entry never widens them; <see langword="null"/> puts them back at the default width. Undoing
+    /// the step puts back every column's width, and its kind, exactly (ADR-0046).
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="Sheet.MaxColumnWidth"/>.</exception>
     public static SheetEdit SetColumnWidth(CellRange columns, double? width) =>
-        new ColumnWidthEdit(columns, Sheet.CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, IsCustom: true) : null);
+        new ColumnWidthEdit(columns, Sheet.CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, SheetColumnWidthKind.SetByUser) : null);
 
     /// <summary>
-    /// An automatic width on every column <paramref name="columns"/> spans, in characters
-    /// (<see cref="Sheet.SetAutomaticColumnWidth"/>), so a longer entry widens them (ADR-0046).
-    /// The component no longer records one, since a width a typed entry widened a column to is
-    /// custom (ADR-0047, CW-018); it stands for the automatic widths a document already holds.
-    /// Undoing the step puts back every column's width exactly.
+    /// A width an entry widened every column <paramref name="columns"/> spans to, in characters
+    /// (<see cref="Sheet.SetAutomaticColumnWidth"/>): <see cref="SheetColumnWidthKind.WidenedByEntry"/>,
+    /// marked custom as Excel's file marks it, and widened again by a longer entry (ADR-0046,
+    /// 2026-09-28; CW-028). It is the edit a component records a typed entry's widening with.
+    /// Undoing the step puts back every column's width, and its kind, exactly.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="Sheet.MaxColumnWidth"/>.</exception>
     public static SheetEdit SetAutomaticColumnWidth(CellRange columns, double width) =>
-        new ColumnWidthEdit(columns, new SheetColumnWidth(Sheet.CheckColumnWidth(width)!.Value, IsCustom: false));
+        new ColumnWidthEdit(columns, new SheetColumnWidth(Sheet.CheckColumnWidth(width)!.Value, SheetColumnWidthKind.WidenedByEntry));
 
     /// <summary>Rows inserted (<see cref="Sheet.InsertRows"/>).</summary>
     public static SheetEdit InsertRows(int row, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, true));

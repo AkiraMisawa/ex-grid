@@ -89,7 +89,7 @@ sheet.GetDisplay(CellAddress.Parse("A1")).Text;                             // 0
   for an accessible name or a copy.
 
 `Sheet.GetWidthOnEntry(address)` is the width, in characters, that the number typed into a cell
-needs, for widening a column at its default or an automatic width as Excel does: every integer digit
+needs, for widening a column at its default width or one widened by entry, as Excel does: every integer digit
 without scientific notation (decimals are rounded instead), the scientific form of twelve or more
 digits, or the whole text of a date or another formatted number. It is `null` for text, a
 Formula and anything else that never widens a column. Which of these rules Microsoft documents,
@@ -145,18 +145,21 @@ step.Undo();                                         // Entries, formats and Ref
   columns those of the column to the left, as Excel's default does; Entries are never copied.
   Formats set on rows and columns move with them, and so do column widths.
 - **Column widths** are part of the Sheet Document, in characters as Excel counts them.
-  A recorded width is **custom** (the user set it: a drag, a size to fit, a command) or
-  **automatic** (an entry widened the column to it), as Excel's `customWidth` distinguishes them:
-  an automatic width is recorded, so the document reopens as the user saw it, and a longer entry
-  widens the column again; a custom one stops widening on entry.
-  `SheetEdit.SetColumnWidth(range, width)` sets a custom width on every column the range spans,
+  A width is one of three kinds (ADR-0046, 2026-09-28): **default** (never set, not recorded),
+  **widened by entry** (`SheetColumnWidthKind.WidenedByEntry`: an entry widened the column to it;
+  a longer entry widens it again) or **set by the user** (`SheetColumnWidthKind.SetByUser`: a
+  drag, a size to fit, a command; an entry never widens it). Both recorded kinds are marked
+  custom (`IsCustom`), as Excel's file marks them (`customWidth`).
+  `SheetEdit.SetColumnWidth(range, width)` sets the user's width on every column the range spans,
   from more than 0 to 255 characters; `null` puts them back at the default width, which is not
-  recorded. `SheetEdit.SetAutomaticColumnWidth(range, width)` records an automatic one.
-  `Sheet.GetColumnWidth(column)` is the recorded `SheetColumnWidth` — `Width` and `IsCustom` —
-  or `null`. An inserted column takes the width of the column to its left, custom or automatic
-  as it is, as it takes its formats; a deleted column's width goes with it; undo puts back both.
-  `SheetChange.Columns` names the columns whose width, or its origin, a change (or its undo)
-  changed. A version 4 document recorded only widths the user set, and they open as custom.
+  recorded. `SheetEdit.SetAutomaticColumnWidth(range, width)` records a width widened by entry.
+  `Sheet.GetColumnWidth(column)` is the recorded `SheetColumnWidth` — `Width`, `Kind`,
+  `IsSetByUser` and `IsCustom` — or `null`. An inserted column takes the width of the column to
+  its left, of its kind, as it takes its formats; a deleted column's width goes with it; undo puts
+  back both. `SheetChange.Columns` names the columns whose width, or its kind, a change (or its
+  undo) changed. A version 4 document recorded only widths the user set, and they open as the
+  user's; a version 5 document's custom widths open as the user's and its others as widened by
+  entry.
 - **Formats** are set at three levels, cell over row over column, as in Excel.
   `SheetEdit.SetFormat(range, format)` and `SheetEdit.SetAlignment(range, alignment)` record
   whole columns (`CellRange.Parse("B:D")`) and whole rows (`"2:4"`) as one entry each, and the
