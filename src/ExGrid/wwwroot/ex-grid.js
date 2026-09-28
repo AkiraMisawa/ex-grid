@@ -1259,6 +1259,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 scroller.scrollLeft = left;
             }
         },
+        // The first visible row kept across a change of the row height or the Layout Ceiling
+        // (ADR-0028/0053), written only while the scroller still stands where the core last
+        // knew it (fromTop, to a pixel). A scroll the core has not heard yet moved it, and the
+        // user's scroll wins over an anchor computed from before it: answers false, and the
+        // core reads the offset instead. The comparison is here because only here are the
+        // write and the user's scroll ordered.
+        anchorScrollTop: (top, fromTop) => {
+            if (!scroller || Math.abs(scroller.scrollTop - fromTop) > 1) {
+                return false;
+            }
+            scroller.scrollTop = top;
+            return true;
+        },
         // The keyboard back to this grid's root, asked for by the core a round trip after the
         // gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus is still inside
         // this root, or on nothing. A second grid the user has pressed in the meantime keeps

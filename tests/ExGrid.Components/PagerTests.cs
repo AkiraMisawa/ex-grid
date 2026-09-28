@@ -168,7 +168,8 @@ public class PagerTests : GridTestContext
         cut.Render(ps => ps.Add(g => g.RowHeight, 30d));
 
         // Local row 5 at the new height — never the absolute row 55, which would land
-        // past the page's own scroll range and clamp the view to its end.
-        Assert.Equal((5 * 30d, 0d), Js.ScrolledTo[^1]);
+        // past the page's own scroll range and clamp the view to its end. Written only over
+        // the page-local offset the browser was at (ADR-0053's anchor rule).
+        Assert.Equal((5 * 30d, 100d), Js.Anchored[^1]);
     }
 }

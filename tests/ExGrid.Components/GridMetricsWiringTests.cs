@@ -78,8 +78,9 @@ public class GridMetricsWiringTests : GridTestContext
 
         cut.Render(ps => ps.Add(g => g.RowHeight, 30d));
 
-        // The browser was told the anchored offset through the allowlisted write…
-        Assert.Equal((100 * 30d, 0d), Js.ScrolledTo[^1]);
+        // The browser was told the anchored offset through the allowlisted write, to be
+        // written over the offset it was at — where the anchor was taken from…
+        Assert.Equal((100 * 30d, 100 * 20d), Js.Anchored[^1]);
         // …and the model already paints from it: the first visible row is unchanged.
         Assert.Equal("101", cut.FindAll(".ex-row")[0].GetAttribute("aria-rowindex"));
     }

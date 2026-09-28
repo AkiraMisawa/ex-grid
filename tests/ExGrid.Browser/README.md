@@ -18,7 +18,11 @@ A machine without Edge fails the `msedge` project by name — the honest outcome
 (ADR-0017 requires both browsers; passing on one does not satisfy it).
 
 A third project, `chrome-150`, runs the tests the Layout Ceiling broke (ADR-0053, VZ-15):
-BIG-1, BIG-5, VZ-15, the Focus against the scrollbars, and the Sheet's SH-2, SH-18/DC-2/3/7.
+BIG-1, BIG-5, VZ-15, the Focus against the scrollbars, and the Sheet's SH-2, SH-18/DC-2/3/7;
+and every test that scrolls a compressed grid to a row (MK-6, `sheet-vs-excel` items 3 and 5,
+active-cell cases 7 and 8). Those go through `scrollRowToTop` in `fixtures.mjs`, which maps a
+row to a scroll offset through ADR-0053's `c(s) = s × k`: a `scrollTop` of rows × row height
+shows a later row once the height is compressed, which only a run at 150% can see.
 It launches Chrome with `--force-device-scale-factor=1.5` and `viewport: null`, headed, so
 the display scale reaches layout the way the OS's does and Chrome clamps at 22,369,618 CSS
 px. Playwright's `deviceScaleFactor` would not do: it raises `devicePixelRatio` and leaves
@@ -211,7 +215,9 @@ runner.
   scenario, `/wide` at 10⁶ rows × 100 columns (§12): the far corner reached and painted
   (BIG-1), the same element count at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1 —
   `/wide?rows=N`), the first and last rows painting their own data there and back
-  (BIG-5), Ctrl+A over 10⁸ cells as one rectangle with the next key answered (BIG-3),
+  (BIG-5) — and a scroll to the end made in the very task the grid stops being busy, before
+  the Layout Ceiling can have been heard, not undone by the ceiling's re-anchoring (BIG-5,
+  ADR-0053) — Ctrl+A over 10⁸ cells as one rectangle with the next key answered (BIG-3),
   and at most one interop call per scroll frame, counted over CDP by breakpoints that
   never pause (PF-1).
 - `memory.spec.mjs` — on `/lifecycle`, a grid mounted and disposed fifty times leaves the
