@@ -103,3 +103,19 @@ changes.**
   Chrome with `--force-device-scale-factor=1.5` and the viewport left to the window**, which runs
   headed under xvfb on Linux, so CI can gate it. A test using Playwright's `deviceScaleFactor`
   would pass without testing anything.
+
+## What the implementation settled *(2026-09-28)*
+
+- **The margin is 256 px, and k keeps 2 px of end slack**: `k = (H − V) / (S − V − 2)`. At 150%
+  Chrome held `scrollTop` one device pixel short of the maximum it was asked for, and at k = 1.25
+  that pixel cut 1.67 px off the last row. The slack absorbs it.
+- **An overlay rectangle entirely outside the painted rows is not emitted.** A Focus scrolled far
+  away has no outline element until its rows are painted. On Server the outline arrives with them.
+- **A change of the ceiling keeps the first visible row**, as a change of the row height does
+  (ADR-0028), and writes the new scroll offset to the browser. A told ceiling that compresses
+  nothing, before or after, renders nothing.
+- **The horizontal axis is not compressed.** Its guard follows the 33,554,428 constant, but no
+  column layout comes near the ceiling at any scale a person uses, so a width above a smaller told
+  ceiling is not handled. That is recorded, not solved.
+- **A layer-3 test reads a length from the style attribute, not through the CSSOM**, which rounds
+  it to six significant figures (`2.23694e+07px`).
