@@ -73,6 +73,22 @@ export default defineConfig({
     projects: [
         { name: 'chrome', use: { channel: 'chrome' } },
         { name: 'msedge', use: { channel: 'msedge' } },
+        // The Layout Ceiling at 150% (ADR-0053, VZ-15): Chrome with the display scale set
+        // the way the OS sets it, on the command line, and the viewport left to the window.
+        // Playwright's deviceScaleFactor does NOT reproduce this — it raises
+        // devicePixelRatio and leaves the clamp where it was, which is why the suite was
+        // green while a Windows desktop at 150% could not reach the last 200,000 rows of
+        // /wide. Only the tests the clamp broke run here: the far corner and both ends of a
+        // million rows, the Focus against the scrollbars, and the Sheet's extent.
+        {
+            name: 'chrome-150',
+            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3/,
+            use: {
+                channel: 'chrome',
+                viewport: null,
+                launchOptions: { args: ['--force-device-scale-factor=1.5', '--window-size=1280,800'] },
+            },
+        },
     ],
     use: {
         // Headed by default, which is not a preference. Measured on macOS 15 / Chrome:

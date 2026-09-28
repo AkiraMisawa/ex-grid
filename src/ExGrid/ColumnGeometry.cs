@@ -113,11 +113,12 @@ public sealed class ColumnGeometry
     public const double MinScrollableBandPx = ColumnWidthSpec.DefaultMinWidthPx;
 
     /// <summary>
-    /// The same 2^25 px ceiling the vertical axis hits
+    /// The same scale-1 Layout Ceiling the vertical axis is refused at
     /// (<see cref="ViewportGeometry.MaxScrollHeightPx"/>) — a browser clamps either axis
     /// silently, and content past the clamp cannot be reached with nothing to show for
     /// it. 100 columns at 100px is nowhere near this; a generated ladder is what gets
-    /// close, and the rule is not put on one axis only.
+    /// close, and the rule is not put on one axis only. Only the vertical axis is
+    /// compressed under a smaller ceiling at a higher scale or zoom (ADR-0053).
     /// </summary>
     public const double MaxScrollWidthPx = ViewportGeometry.MaxScrollHeightPx;
 

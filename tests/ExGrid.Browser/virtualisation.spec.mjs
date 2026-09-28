@@ -50,6 +50,65 @@ test('the far corner is reachable and painted at 10⁶ rows (BIG-1)', async ({ p
     await expect(cell(page, 0, 0)).toBeVisible({ timeout: 15_000 });
 });
 
+// ADR-0053: a million rows of 28 px are 28,000,000 px, and at 150% Chrome lays out nothing
+// taller than 22,369,618 CSS px. Above the Layout Ceiling the spacer is compressed; below
+// it, it is the true height. Either way it must be laid out exactly as declared — a clamped
+// spacer is the silent failure — and the last row must end flush with the readable bottom.
+test('the spacer is laid out as declared under the Layout Ceiling, and the last row ends flush (VZ-15)', async ({ page }, testInfo) => {
+    const grid = await openWide(page);
+    const measure = () => page.evaluate(() => {
+        const root = document.querySelector('.ex-grid');
+        const spacer = root.querySelector('.ex-spacer');
+        return {
+            // Read from the attribute: the CSSOM serialises a length to six significant
+            // figures, so spacer.style.height says 2.23694e+07px for 22,369,362.
+            declared: Number(/height: ([\d.]+)px/.exec(spacer.getAttribute('style'))[1]),
+            laidOut: spacer.getBoundingClientRect().height,
+            ceiling: root.querySelector('.ex-ceiling-probe > div').getBoundingClientRect().height,
+            dpr: window.devicePixelRatio,
+        };
+    });
+    // The ceiling is told after attach; the spacer follows it within a render.
+    await expect.poll(async () => {
+        const { declared, ceiling } = await measure();
+        return declared <= ceiling;
+    }, { timeout: 10_000 }).toBe(true);
+    const measured = await measure();
+    testInfo.annotations.push({ type: 'measured', description: JSON.stringify(measured) });
+
+    expect(Math.abs(measured.laidOut - measured.declared), 'the spacer was clamped').toBeLessThanOrEqual(1);
+    if (testInfo.project.name === 'chrome-150') {
+        // What makes this project a test at all: the true height does not fit here.
+        expect(measured.ceiling, 'the display scale did not move the ceiling, so this proves nothing')
+            .toBeLessThan(ROWS * 28);
+        expect(measured.declared).toBeLessThan(ROWS * 28);
+    }
+
+    await page.evaluate(() => {
+        const scroller = document.querySelector('.ex-scroller');
+        scroller.scrollTop = scroller.scrollHeight;
+    });
+    await expectRowPainted(page, ROWS - 1);
+    const edges = await page.evaluate((last) => {
+        const scroller = document.querySelector('.ex-scroller');
+        const box = scroller.getBoundingClientRect();
+        const row = document.querySelector(`.ex-grid [id$='-r${last}c0']`).getBoundingClientRect();
+        return { readableBottom: box.top + scroller.clientTop + scroller.clientHeight, lastBottom: row.bottom };
+    }, ROWS - 1);
+    expect(Math.abs(edges.lastBottom - edges.readableBottom), JSON.stringify(edges)).toBeLessThanOrEqual(1);
+
+    // A selection of every row is painted as the visible part of one rectangle, never laid
+    // out a million rows tall — which the browser would have clamped like the spacer.
+    await cell(page, ROWS - 1, 0).click({ force: true });
+    await page.keyboard.press('ControlOrMeta+A');
+    await expect(grid.locator('.ex-selection .ex-range')).toHaveCount(1);
+    const heights = await page.evaluate(() => ({
+        range: document.querySelector('.ex-selection .ex-range').getBoundingClientRect().height,
+        scroller: document.querySelector('.ex-scroller').clientHeight,
+    }));
+    expect(heights.range, JSON.stringify(heights)).toBeLessThanOrEqual(heights.scroller + (3 * 28));
+});
+
 test('the element count is the same at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1)', async ({ page }) => {
     const counts = {};
     for (const rows of [1_000, 100_000, ROWS]) {

@@ -66,13 +66,13 @@ public class SheetRenderingTests : SheetTestContext
         }
     }
 
-    [Fact] // ADR-0046, SH-3: a row height at which 1,048,576 rows pass the scroll ceiling is refused by name
+    [Fact] // ADR-0046/0053, SH-3: a row height at which 1,048,576 rows pass the scroll ceiling is refused by name
     public void A_row_height_past_the_scroll_ceiling_is_refused_by_name()
     {
         var error = Assert.ThrowsAny<ArgumentOutOfRangeException>(() => RenderSheet(ps => ps.Add(s => s.RowHeight, 32d)));
 
         Assert.Contains("32px", error.Message);
-        Assert.Contains("33,554,432px", error.Message);
+        Assert.Contains("33,554,428px", error.Message);
         Assert.Contains("1,048,576", error.Message);
     }
 

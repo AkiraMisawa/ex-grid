@@ -15,6 +15,13 @@ namespace ExGrid.Components;
 /// move when the painted slice moves — a handful of strings per scroll, against the
 /// alternative of a translucent band drifting across the pinned block.
 ///
+/// A rectangle is clipped to the painted rows, one row beyond each end (ADR-0053). A
+/// whole-column selection is a million rows tall, and a browser clamps a layout length
+/// under its Layout Ceiling as it clamps the spacer: painted whole at 150%, its bottom
+/// edge stood 22,369,617 px down whatever the range said. Only the visible part was ever
+/// needed, and the extra row on each side keeps a clipped edge out of the readable area,
+/// so no border is drawn where the range does not end.
+///
 /// A range spanning the pinned boundary is painted as two rectangles, for the reason the
 /// rest of the horizontal axis is asymmetric (ADR-0004): a Pinned Column covers the
 /// Viewport's edge rather than occupying content ahead of it, so its part of the
@@ -29,48 +36,51 @@ internal static class SelectionStyles
     /// <summary>The part of a range that pans with the content, or null when the range
     /// lies entirely under the Pinned Columns.</summary>
     public static string? Scrollable(
-        SelectionRange range, ColumnGeometry columns, double rowHeightPx, int firstPaintedRow)
+        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted)
     {
         var first = Math.Max(range.LeftColumn, columns.PinnedCount);
-        if (first > range.RightColumn)
+        if (first > range.RightColumn || Clip(range, painted) is not { } rows)
             return null;
         return Rect(
             columns.OffsetPxOf(first),
             columns.OffsetPxOf(range.RightColumn + 1) - columns.OffsetPxOf(first),
-            range,
+            rows,
             rowHeightPx,
-            firstPaintedRow);
+            painted.Start);
     }
 
     /// <summary>The part of a range held against the Viewport's left edge, or null when
     /// the range reaches no Pinned Column.</summary>
     public static string? Pinned(
-        SelectionRange range, ColumnGeometry columns, double rowHeightPx, int firstPaintedRow)
+        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted)
     {
         var last = Math.Min(range.RightColumn, columns.PinnedCount - 1);
-        if (range.LeftColumn > last)
+        if (range.LeftColumn > last || Clip(range, painted) is not { } rows)
             return null;
         return Rect(
             columns.OffsetPxOf(range.LeftColumn),
             columns.OffsetPxOf(last + 1) - columns.OffsetPxOf(range.LeftColumn),
-            range,
+            rows,
             rowHeightPx,
-            firstPaintedRow);
+            painted.Start);
     }
 
     /// <summary>
     /// The fill handle (ADR-0050, item 5): a square of <paramref name="sizePx"/> centred on
     /// the range's bottom-right corner, in the layer that corner belongs to — the pinned one
     /// when the range's last column is pinned, the scrollable one otherwise. Null for the
-    /// other layer, so the handle is one element and never two.
+    /// other layer, so the handle is one element and never two — and null while its corner
+    /// is not among the painted rows (ADR-0053), where it could not be seen or grabbed.
     /// </summary>
     public static string? Handle(
-        SelectionRange range, ColumnGeometry columns, double rowHeightPx, int firstPaintedRow,
+        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted,
         double sizePx, bool pinnedLayer)
     {
         if ((range.RightColumn < columns.PinnedCount) != pinnedLayer)
             return null;
-        var (leftPx, topPx) = HandleCornerPx(range, columns, rowHeightPx, firstPaintedRow);
+        if (range.BottomRow < painted.Start - 1 || range.BottomRow > painted.Start + painted.Count)
+            return null;
+        var (leftPx, topPx) = HandleCornerPx(range, columns, rowHeightPx, painted.Start);
         return FormattableString.Invariant(
             $"left: {leftPx - (sizePx / 2)}px; top: {topPx - (sizePx / 2)}px; width: {sizePx}px; height: {sizePx}px");
     }
@@ -85,14 +95,21 @@ internal static class SelectionStyles
     /// arithmetic.</summary>
     public static SelectionRange CellRange(CellPosition cell) => new(cell.Row, cell.Column, 1, 1);
 
-    private static string Rect(
-        double leftPx, double widthPx, SelectionRange range, double rowHeightPx, int firstPaintedRow)
+    /// <summary>The rows of a range that are painted, one row beyond each end of the
+    /// painted slice, or null when it shares none of them (ADR-0053).</summary>
+    private static (int Top, int Count)? Clip(SelectionRange range, RowRange painted)
     {
-        // A range reaching far above or below the Viewport is emitted whole and clipped
-        // by the scroll container. Trimming it to the painted rows would cost a
-        // comparison per range per frame to save nothing: it is one element either way.
-        var topPx = (range.TopRow - firstPaintedRow) * rowHeightPx;
+        var top = Math.Max(range.TopRow, painted.Start - 1);
+        // Summed as long: a range or a slice at the end of the row space would overflow.
+        var bottom = Math.Min((long)range.BottomRow, (long)painted.Start + painted.Count);
+        return bottom < top ? null : (top, (int)(bottom - top + 1));
+    }
+
+    private static string Rect(
+        double leftPx, double widthPx, (int Top, int Count) rows, double rowHeightPx, int firstPaintedRow)
+    {
+        var topPx = (rows.Top - firstPaintedRow) * rowHeightPx;
         return FormattableString.Invariant(
-            $"left: {leftPx}px; top: {topPx}px; width: {widthPx}px; height: {range.RowCount * rowHeightPx}px");
+            $"left: {leftPx}px; top: {topPx}px; width: {widthPx}px; height: {rows.Count * rowHeightPx}px");
     }
 }
