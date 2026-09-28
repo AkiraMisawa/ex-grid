@@ -283,7 +283,9 @@ script:
   just after the Cell Editor took focus, it pulled the keyboard off the editor and every later key
   waited for the listener's two-second fallback. A press that is not held keeps its default.
 
-**The hand-back to the root is narrowed with it** (the note above). It now takes focus only when
-DOM focus is on the root, on the rows or on nothing (`body`). A field inside the root that has
-focus of its own — the Formula Bar, the Name Box, a Cell Editor — keeps it. Before this, a row
-click's late hand-back took the keyboard from a Formula Bar pressed after it.)*
+**The hand-back to the root is narrowed with it** (the note above). It no longer takes focus from
+a field that stands beside the rows and has focus of its own: the Formula Bar and the Name Box,
+built in or drawn by a Chrome. Before this, a row click's late hand-back took the keyboard from a
+Formula Bar pressed after it. Everything else inside the root is still taken back, the Cell Editor
+included, since the hand-back is also how the keyboard returns to the root after an edit
+commits.)*
