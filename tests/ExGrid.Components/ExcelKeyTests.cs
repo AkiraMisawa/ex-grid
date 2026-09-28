@@ -79,9 +79,9 @@ public class ExcelKeyTests : GridTestContext
     private static Task TypeAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text)
         => cut.Find(".ex-editor").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = text });
 
-    // ---- Undo and redo (ADR-0007, KB-37) ----
+    // ---- Undo and redo (ADR-0007, KB-39) ----
 
-    [Fact] // ADR-0007 / KB-37: Ctrl+Z raises OnUndo, and nothing about the grid changes
+    [Fact] // ADR-0007 / KB-39: Ctrl+Z raises OnUndo, and nothing about the grid changes
     public async Task Ctrl_z_is_forwarded_as_undo()
     {
         var heard = new Heard();
@@ -96,7 +96,7 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal(before, cut.Markup);
     }
 
-    [Theory] // ADR-0007 / KB-37: redo answers both Excel spellings, Command folding in on a Mac
+    [Theory] // ADR-0007 / KB-39: redo answers both Excel spellings, Command folding in on a Mac
     [InlineData("y", false, false)]
     [InlineData("Z", true, false)]
     [InlineData("Z", true, true)]
@@ -111,7 +111,7 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal(0, heard.Undos);
     }
 
-    [Fact] // ADR-0007 / KB-37: a key is taken only for someone listening
+    [Fact] // ADR-0007 / KB-39: a key is taken only for someone listening
     public void The_gate_is_told_to_take_undo_only_with_a_listener()
     {
         var heard = new Heard();
@@ -357,7 +357,7 @@ public class ExcelKeyTests : GridTestContext
         Assert.Empty(heard.Refusals);
     }
 
-    [Fact] // ADR-0007 / KB-37: a Consumer that stops listening gives Ctrl+Z back — the gate is told again
+    [Fact] // ADR-0007 / KB-39: a Consumer that stops listening gives Ctrl+Z back — the gate is told again
     public void The_gate_is_told_again_when_the_claims_change()
     {
         var heard = new Heard();

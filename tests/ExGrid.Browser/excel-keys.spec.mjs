@@ -25,7 +25,7 @@ async function clickCell(page, row, column, modifiers = []) {
     await cell(page, row, column).click({ force: true, modifiers });
 }
 
-test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken (KB-37, ADR-0007)', async ({ page }) => {
+test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken (KB-39, ADR-0007)', async ({ page }) => {
     const trader = cell(page, 0, 1);
     const before = await trader.textContent();
     await clickCell(page, 0, 1);
@@ -140,7 +140,7 @@ test('Ctrl+D on the first row is refused by name (CP-25, ADR-0035)', async ({ pa
     await expect(page.locator('#paste-refused-status')).toContainText('NothingToFillFrom');
 });
 
-test('a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25, KB-37, ADR-0054/0035/0007)', async ({ page }) => {
+test('a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25, KB-39, ADR-0054/0035/0007)', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();

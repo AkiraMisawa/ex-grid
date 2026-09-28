@@ -309,7 +309,7 @@ forwarding section, ADR-0054 (Delete raises a Clear Intent, never a paste of emp
 ADR-0035 additions for the fill keys and Backspace, ADR-0055 (Find is asked of the Consumer, and
 the grid takes Ctrl+F even where nothing can search) and ADR-0028's rename of `ViewportSize.Fill`
 to `Stretch`, which frees Fill for Excel's gesture. Built, with the criteria each ADR added
-(KB-37, ED-23..25, CP-24/25, FD-1..9):
+(KB-39 — KB-37 on `main`, ED-23..25, CP-24/25, FD-1..9):
 
 - `OnUndo` / `OnRedo`, each key taken from the page only while someone listens — the key gate
   is now told a per-grid set (`GridKeys.TakenFor`) and re-told when it changes.
