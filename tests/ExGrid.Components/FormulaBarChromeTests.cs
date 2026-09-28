@@ -214,6 +214,24 @@ public class FormulaBarChromeTests : GridTestContext
         Assert.Equal(0, chrome.EditorHanded!.FocusRequest);
     }
 
+    [Fact] // ADR-0010/0051/0030, DC-19: under a Chrome's bar too, a press into it is answered only once the edit it opened has reached the key gate
+    public async Task A_press_into_the_chromes_bar_is_answered_only_once_the_gate_has_been_told_the_edit()
+    {
+        var chrome = new BarChrome();
+        var cut = RenderGrid(chrome);
+        await ClickAsync(cut, 50, 50);
+        var told = Js.UnansweredGateMode();
+
+        var focus = cut.InvokeAsync(() => chrome.BarHanded!.Focused());
+        var answered = cut.InvokeAsync(() => cut.Instance.PressAnsweredAsync());
+
+        Assert.Equal("caret", (string)told.Invocations["setEditing"][^1].Arguments[0]!);
+        Assert.False(answered.IsCompleted);
+        told.SetVoidResult();
+        await focus;
+        await answered;
+    }
+
     [Fact] // ADR-0010/0030: an edit opened on the cell asks its editor, and each edit's request is a new one
     public async Task An_edit_opened_on_the_cell_asks_the_chromes_editor_with_a_new_request_each_time()
     {

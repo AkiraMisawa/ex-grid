@@ -332,6 +332,54 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+// A press into the Formula Bar opens an edit (ADR-0051) — a change of editing mode, which the
+// key gate hears a round trip later on a circuit. Found on the Server host (2026-09-27, Windows,
+// second run, DC-19/DC-34; reproduced on Linux at 120 ms): F2 and ↓ typed in that gap were
+// gated against "not editing", where the bar's keys are the browser's, so F2 did nothing and ↓
+// only moved the caret — nothing pointed. The keys typed after the press are held until the
+// core has answered it, as after any change of mode (ADR-0010).
+for (const chrome of ['builtin', 'mud']) {
+    test(`DC-19/ADR-0010: keys typed into the Formula Bar before a 150 ms circuit has answered the press into it keep their meaning (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F2');
+        await expect(bar(grid)).toHaveValue('');
+        await setRoundTrip(150);
+        await clickBarEnd(grid);
+        // No wait for anything: the keys follow the press as a user's do.
+        await page.keyboard.type('=SUM(');
+        await page.keyboard.press('F2');
+        await page.keyboard.press('ArrowDown');
+        await expect(bar(grid)).toHaveValue('=SUM(F3');
+        await expect(editor(grid)).toHaveValue('=SUM(F3');
+        await expect(bar(grid)).toBeFocused();
+        await expectCovers(grid.locator('.ex-selection .ex-point'), grid, 'F3', 'F3');
+        // Escape typed straight after a press cancels the edit that press opened.
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await clickBarEnd(grid);
+        await page.keyboard.type('9');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(grid).toBeFocused();
+        await expect(cell(grid, 'F2')).toHaveText('');
+        await expect(bar(grid)).toHaveValue('');
+        // A press into the bar while a key is still held — a character typed onto the cell,
+        // which opens an edit there — takes its place behind it: the edit stays one text, and
+        // the key typed after the press lands in the bar.
+        await page.keyboard.type('x');
+        await clickBarEnd(grid);
+        await page.keyboard.type('5');
+        await expect(bar(grid)).toHaveValue('x5');
+        await expect(editor(grid)).toHaveValue('x5');
+        await expect(bar(grid)).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'F2')).toHaveText('x5');
+        await expectFocusAt(grid, 'F3');
+        await setRoundTrip(0);
+    });
+}
+
 test('DC-20: typed quickly on a 150 ms circuit, no arrow points where the text forbids it', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');

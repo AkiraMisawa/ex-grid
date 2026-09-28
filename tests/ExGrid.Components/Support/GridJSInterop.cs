@@ -200,6 +200,12 @@ internal sealed class GridJSInterop
     internal JSRuntimeInvocationHandler UnansweredCaretPlacement()
         => _handle!.SetupVoid("setCaret", _ => true);
 
+    /// <summary>A <c>setEditing</c> the browser has not carried out yet, finished when the test
+    /// says — how the key gate hearing a mode change a round trip later on a circuit is staged
+    /// (ADR-0010). Every mode told from here on lands on it.</summary>
+    internal JSRuntimeInvocationHandler UnansweredGateMode()
+        => _handle!.SetupVoid("setEditing", _ => true);
+
     /// <summary>What the next <c>getScrollOffset</c> answers — the browser scroll
     /// position the grid is about to read, on both axes at once.</summary>
     internal void SetScrollOffset(double top, double left)
