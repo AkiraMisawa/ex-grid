@@ -1065,7 +1065,9 @@
     /// The one Edit Intent a paste raises (ADR-0007/0014): all cells in one
     /// notification. The grid writes nothing — the screen changes when the Consumer
     /// returns new row instances. Rows off screen or not yet fetched are included in
-    /// the target; that is intended (ADR-0014).
+    /// the target; that is intended (ADR-0014). A Consumer that will not write it calls
+    /// <see cref="GridPasteIntent.Refuse"/> before the handler completes, and the Selection
+    /// stays where it was (ADR-0050, item 3).
     /// </summary>
     [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
 
@@ -1074,7 +1076,8 @@
     /// cells pasted onto one cell then writes the block with that cell at its top-left — one
     /// <see cref="OnPaste"/> intent whose plan is the block — and the block becomes the
     /// Selection, with the Anchor and the Focus at its top-left, so the count on display is
-    /// the count written. <c>Editable</c> is judged on the block before anything is raised,
+    /// the count written — unless the Consumer calls <see cref="GridPasteIntent.Refuse"/>,
+    /// and then the Selection stays where it was. <c>Editable</c> is judged on the block before anything is raised,
     /// and a block running past the grid's last row or column is refused as
     /// <see cref="PasteRefusalReason.SpillPastExtent"/>. Declared by a Consumer that holds
     /// every cell, such as a Sheet. Off — the default — ADR-0014's refusal stands.
@@ -5085,15 +5088,17 @@
             return;
         }
         var version = _sequenceVersion;
+        var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
         if (OnPaste.HasDelegate)
-            await OnPaste.InvokeAsync(new GridPasteIntent(decision.Plan, block, version, parsed.Origins));
-        if (PasteMaySpill)
+            await OnPaste.InvokeAsync(intent);
+        // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
+        if (PasteMaySpill && !intent.IsRefused)
             SelectSpilledBlock(target, decision.Plan, version);
     }
 
     /// <summary>
-    /// After a spilled paste the block is the Selection, with the Anchor and the Focus at
-    /// its top-left (ADR-0050, item 3). Only for a spill — a paste into a selected range
+    /// After a spilled paste the Consumer did not refuse, the block is the Selection, with the
+    /// Anchor and the Focus at its top-left (ADR-0050, item 3). Only for a spill — a paste into a selected range
     /// already has the target selected. Positions mean something only under the order they
     /// were written in: if the Consumer's handling of the intent moved the Row Sequence
     /// Version, or took the block's cells away, nothing is placed (ADR-0011).

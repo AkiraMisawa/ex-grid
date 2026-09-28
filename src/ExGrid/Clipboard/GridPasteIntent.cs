@@ -13,6 +13,10 @@ namespace ExGrid.Clipboard;
 /// are included — that is intended (ADR-0014). A version that no longer matches the
 /// Consumer's own means the order moved under the intent, and it must be discarded
 /// rather than applied to different rows (ADR-0011).</para>
+///
+/// <para>After a spilled paste the Consumer accepts, the block is the Selection; a Consumer
+/// that will not write it calls <see cref="Refuse"/> before its handler completes, and the
+/// Selection stays where it was, as in Excel (ADR-0050, item 3).</para>
 /// </summary>
 public sealed class GridPasteIntent
 {
@@ -52,6 +56,19 @@ public sealed class GridPasteIntent
 
     /// <summary>The order these positions are written in (ADR-0011).</summary>
     public int RowSequenceVersion { get; }
+
+    /// <summary>Whether the Consumer refused the paste through <see cref="Refuse"/>.</summary>
+    public bool IsRefused { get; private set; }
+
+    /// <summary>
+    /// The Consumer's answer that it does not write this paste (ADR-0050, item 3), the paste
+    /// counterpart of <see cref="ExGrid.Selection.GridFillIntent.Refuse"/>. Called before the
+    /// <c>OnPaste</c> handler completes, it leaves the Selection and the Focus where they were;
+    /// a handler that completes without calling it has accepted, and a spilled block becomes
+    /// the Selection. Telling the user why is the Consumer's: the grid knows only that it was
+    /// refused, not the reason.
+    /// </summary>
+    public void Refuse() => IsRefused = true;
 
     /// <summary>How many cells the intent covers — the sum of the target areas, the
     /// same figure the status display shows (ADR-0014).</summary>

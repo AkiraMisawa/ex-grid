@@ -420,6 +420,51 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(4, selection.CellCount);                    // the count on display is the count written
     }
 
+    [Fact] // ADR-0050 item 3 / DC-38: a spilled paste the Consumer refuses leaves the Selection and the Focus where they were
+    public async Task A_spill_the_consumer_refuses_leaves_the_selection_where_it_was()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var changes = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, async (GridPasteIntent i) =>
+            {
+                intents.Add(i);
+                await Task.Yield();                              // a refusal reached asynchronously still counts
+                i.Refuse();
+            })
+            .Add(g => g.SelectionChanged, (GridSelection s) => { selection = s; changes++; }));
+        await ClickCellAsync(cut, 50, 10);                       // Book, row 0 — a single cell
+        var before = changes;
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        Assert.True(Assert.Single(intents).IsRefused);
+        Assert.Equal(before, changes);
+        Assert.Equal([new SelectionRange(0, 0, 1, 1)], selection!.Ranges);
+        Assert.Equal(new CellPosition(0, 0), selection.Anchor);
+        Assert.Equal(new CellPosition(0, 0), selection.Focus);
+    }
+
+    [Fact] // ADR-0050 item 3 / DC-8: a spilled paste the Consumer does not refuse still selects the block
+    public async Task A_spill_the_consumer_accepts_is_not_refused_and_selects_the_block()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, async (GridPasteIntent i) => { intents.Add(i); await Task.Yield(); })
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 10);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        Assert.False(Assert.Single(intents).IsRefused);
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], selection!.Ranges);
+        Assert.Equal(new CellPosition(0, 0), selection.Focus);
+    }
+
     [Fact] // ADR-0050 item 3 / DC-10: a spill past the grid's last row is refused by name, and nothing moves
     public async Task A_spill_past_the_last_row_is_refused_by_name()
     {

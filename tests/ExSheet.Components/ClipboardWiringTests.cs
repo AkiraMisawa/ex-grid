@@ -164,13 +164,21 @@ public class ClipboardWiringTests : SheetTestContext
 
     private const string ExcelColumnText = "6\r\n26/09/2026\r\n1,234.50\r\n";
 
-    [Fact] // ADR-0048, ADR-0050 item 3 (observed on Windows, 2026-09-27): Excel's too-narrow column pasted onto one cell is refused by name, and the notice outlives the paste's own move
+    [Fact] // ADR-0048, ADR-0050 item 3, DC-38 (observed on Windows, 2026-09-27): Excel's too-narrow column pasted onto one cell is refused by name, and the Selection stays where it was
     public async Task A_too_narrow_excel_column_pasted_onto_one_cell_is_refused_by_name()
     {
-        var cut = RenderSheet();
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps.Add(s => s.SelectionChanged, selections.Add));
         await GoToAsync(cut, "F7");
+        var before = selections.Count;
 
         await PasteAsync(cut, ExcelColumnText, ExcelColumnHtml(49, "6", "######", "######"));
+
+        // The Sheet refused the spill (GridPasteIntent.Refuse), so the grid did not select the
+        // unwritten block: no selection change, F7 alone, as Excel leaves it.
+        Assert.Equal(before, selections.Count);
+        Assert.Equal(new SelectionRange(6, 5, 1, 1), Assert.Single(selections[^1].Ranges));
+        Assert.Equal(new CellPosition(6, 5), selections[^1].Focus);
 
         Assert.Equal("", CellText(cut, "F7"));
         Assert.Equal("", CellText(cut, "F8"));
