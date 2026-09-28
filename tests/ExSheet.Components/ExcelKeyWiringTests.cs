@@ -126,6 +126,74 @@ public class ExcelKeyWiringTests : SheetTestContext
         Assert.Equal("1", CellText(cut, "A2"));
     }
 
+    // ---- Ctrl+Enter ----
+
+    /// <summary>Types <paramref name="typed"/> into the Focus of the current Selection and commits it with Ctrl+Enter.</summary>
+    private static async Task CtrlEnterAsync(IRenderedComponent<ExSheet> cut, string typed)
+    {
+        await PressAsync(cut, typed[..1]);
+        await TypeAsync(cut, typed);
+        await PressAsync(cut, "Enter", ctrl: true);
+    }
+
+    private const string AwaitsTypedIntent =
+        "SH-27: a Ctrl+Enter intent cannot be told from a one-field clipboard paste: both carry [[text]], ShownText origins, " +
+        "no FillSource and the Selection as the target. ADR-0050 needs a note first (the intent names where the text was typed).";
+
+    [Fact(Skip = AwaitsTypedIntent)] // ADR-0050 (2026-09-28), SH-27: Ctrl+Enter with a Formula shifts its relative References from the Focus into every other cell
+    public async Task Ctrl_enter_shifts_a_formulas_references_from_the_focus()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "B2:C3");
+
+        await CtrlEnterAsync(cut, "=A1");
+
+        Assert.Equal("=A1", EntryAt(cut, "B2")!.Formula);
+        Assert.Equal("=B1", EntryAt(cut, "C2")!.Formula);
+        Assert.Equal("=A2", EntryAt(cut, "B3")!.Formula);
+        Assert.Equal("=B2", EntryAt(cut, "C3")!.Formula);
+    }
+
+    [Fact(Skip = AwaitsTypedIntent)] // ADR-0050 (2026-09-28), SH-27: References shift relative to the Focus, not the range's top-left, and absolute parts stay
+    public async Task Ctrl_enter_shifts_relative_to_a_focus_not_at_the_top_left()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "B2:C3");
+        // Shift+Enter cycles the Focus backwards inside the Selection, from B2 to C3.
+        await PressAsync(cut, "Enter", shift: true);
+
+        await CtrlEnterAsync(cut, "=C2+$A$1");
+
+        Assert.Equal("=C2+$A$1", EntryAt(cut, "C3")!.Formula);
+        Assert.Equal("=A1+$A$1", EntryAt(cut, "B2")!.Formula);
+        Assert.Equal("=B1+$A$1", EntryAt(cut, "C2")!.Formula);
+        Assert.Equal("=A2+$A$1", EntryAt(cut, "B3")!.Formula);
+    }
+
+    [Fact] // ADR-0048, ADR-0050 (2026-09-28), SH-27: a Formula entered over a range with Ctrl+Enter is one undo step
+    public async Task Ctrl_enter_with_a_formula_over_a_range_is_one_undo_step()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "B2:C3");
+        await CtrlEnterAsync(cut, "=A1");
+
+        Assert.True(await cut.Instance.UndoAsync());
+
+        Assert.All(new[] { "B2", "C2", "B3", "C3" }, a => Assert.Null(EntryAt(cut, a)));
+        Assert.False(cut.Instance.CanUndo);
+    }
+
+    [Fact] // ADR-0050 (2026-09-28), SH-27: text that is not a Formula is written as typed into every cell, as before
+    public async Task Ctrl_enter_writes_text_into_every_cell_as_typed()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "B2:C3");
+
+        await CtrlEnterAsync(cut, "A1");
+
+        Assert.All(new[] { "B2", "C2", "B3", "C3" }, a => Assert.Equal("A1", CellText(cut, a)));
+    }
+
     // ---- Delete ----
 
     [Fact] // ADR-0054 / ADR-0052 case 14, SH-24: Delete clears the Selection, keeps it and the Focus, as one undo step

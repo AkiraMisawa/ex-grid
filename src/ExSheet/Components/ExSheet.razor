@@ -863,26 +863,27 @@
     }
 
     /// <summary>
-    /// A number or date the user typed into a column still at its default width widens the
-    /// column when it does not fit, as Excel's does (ADR-0047, second round; SH-20), and so does
-    /// a typed Formula whose result is a number, as Excel was observed to widen it (WD-007). The engine
-    /// says how many characters the entry needs; the width in pixels is what the grid's own
-    /// estimate charges for the text the cell shows at that many characters, in the Cell Metrics
-    /// the grid resolves, so the widened column holds it and the grid does not hash it
-    /// (ADR-0016). The width is recorded in the Sheet like any other (ADR-0046), as a step of
-    /// the entry's own operation; the step, or null where the column is not widened. The width
-    /// is recorded as custom, with the edit a resize uses, as Excel's file marks a column a typed
-    /// entry widened (<c>customWidth</c>; ADR-0047, "What the second observation settled", CW-018),
-    /// so a longer entry does not widen the column again; nothing narrows it. A column whose width
-    /// is custom — the user's drag or size to fit, or an earlier widening — is never widened. An
-    /// automatic width survives only in a document that already holds one (ADR-0046): a longer
-    /// entry still widens that column, and the width it records is custom. Only the typed entry
-    /// widens: not a paste, a fill or a recalculated Formula.
+    /// A number or date the user typed into a column that does not fit widens the column, as
+    /// Excel's does (ADR-0047, second round; SH-20), and so does a typed Formula whose result is a
+    /// number, as Excel was observed to widen it (WD-007). The engine says how many characters the
+    /// entry needs; the width in pixels is what the grid's own estimate charges for the text the
+    /// cell shows at that many characters, in the Cell Metrics the grid resolves, so the widened
+    /// column holds it and the grid does not hash it (ADR-0016). The width is recorded in the Sheet
+    /// like any other (ADR-0046), as a step of the entry's own operation; the step, or null where
+    /// the column is not widened.
     /// </summary>
+    /// <remarks>
+    /// A recorded width is one of three kinds (ADR-0046, 2026-09-28; SH-26). A column at the
+    /// default width, or one an earlier entry widened, is widened again by a longer entry (CW-028),
+    /// and the width it records is again the entry's kind; nothing narrows it. A width the user
+    /// set — a drag, a size to fit, a command — is never widened by an entry, so an entry never
+    /// turns it back into the entry's kind. Only the typed entry widens: not a paste, a fill or a
+    /// recalculated Formula.
+    /// </remarks>
     private SheetStep? WidenOnEntry(CellAddress address)
     {
         var sheet = CurrentSheet;
-        if (sheet.GetColumnWidth(address.Column) is { IsCustom: true }) return null;
+        if (sheet.GetColumnWidth(address.Column) is { } recorded && IsSetByUser(recorded)) return null;
         if (sheet.GetWidthOnEntry(address) is not { } characters) return null;
         var metrics = CellMetrics;
         var shown = sheet.GetDisplay(address, characters);
@@ -890,9 +891,20 @@
             SheetColumns.PxOf(characters, metrics),
             metrics.EstimatePx(shown.Text)));
         if (needed <= _columns.WidthPxOf(address.Column)) return null;
-        if (SheetColumns.CharactersOfColumn(needed, metrics) is not { } recorded) return null;
-        return sheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(address.Column, address.Column), recorded));
+        if (SheetColumns.CharactersOfColumn(needed, metrics) is not { } width) return null;
+        return sheet.Do(WidenedByEntry(address.Column, width));
     }
+
+    /// <summary>
+    /// Whether a recorded width is the user's (ADR-0046, 2026-09-28; SH-26), which an entry never
+    /// widens. The engine records the user's width as custom and the entry's as automatic, which a
+    /// longer entry widens.
+    /// </summary>
+    private static bool IsSetByUser(SheetColumnWidth width) => width.IsCustom;
+
+    /// <summary>The edit that records a width an entry widened a column to: the entry's kind, which a longer entry widens again (SH-26).</summary>
+    private static SheetEdit WidenedByEntry(int column, double characters) =>
+        SheetEdit.SetAutomaticColumnWidth(CellRange.WholeColumns(column, column), characters);
 
     private Task ChangedAsync(SheetChange change, bool raiseDocument = true, bool byUser = true) => ChangedAsync([change], raiseDocument, byUser);
 
