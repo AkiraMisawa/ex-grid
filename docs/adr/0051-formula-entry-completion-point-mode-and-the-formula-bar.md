@@ -152,3 +152,10 @@ DOM focus. This is the same allowlisted listener doing the same job
 
 - **While pointing, the Name Box names the pointed cell** *(observed in Excel, 2026-09-27)*. It
   names the edited cell again when pointing ends.
+
+*(2026-09-27, with [ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md).)*
+While a selecting drag's button is down over more than one cell, the grid asks a second function,
+`NameBoxSizeLabel`, for the Name Box's text, and ExSheet answers `4R x 3C`. It is separate from
+`NameBoxLabel` so that neither signature changes. While pointing, the Name Box names the pointing
+outline's Focus, its fixed end: `=A3:B3` typed shows A3, and a pointing drag shows where it started.
+No size is offered during a pointing drag or a fill drag.

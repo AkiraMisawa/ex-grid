@@ -61,7 +61,7 @@ Then `-Update`.
 
 ## Part B — what ADR-0052 still extrapolates
 
-The second run's cases 1–15 settled ADR-0052. It still reads four things that were not observed.
+The second run's cases 1–15 settled ADR-0052. It still reads several things that were not observed.
 Record them in the second run's shape: Selection, active cell, view, screenshots. Write them to
 `verification/<date>-windows-excel-3/active-cell.md`.
 
@@ -78,7 +78,13 @@ Record them in the second run's shape: Selection, active cell, view, screenshots
 
    Also Ctrl+click on a cell of the range that does *not* hold the active cell, with two ranges.
    Where does the active cell go, and which fragment extends with Shift+↓?
-4. **Scrolling, for ADR-0053.** At 100% zoom, in an empty sheet, how many rows does one mouse-wheel
+4. **What the implementation read without Excel** (ADR-0052, "What the implementation settled"):
+   - C3, Ctrl+Space, then Shift+↓ and Shift+→. Does anything change?
+   - In A1:C3, Enter to A2 (on no corner), then Ctrl+. five times. Also B2 (inside), the same.
+   - The order Excel lists the fragments in after a take-out (`Selection.Address`), and the order
+     Enter then visits them.
+   - Select B4:B2 from B4, fill down by the handle to B6, then read the active cell.
+5. **Scrolling, for ADR-0053.** At 100% zoom, in an empty sheet, how many rows does one mouse-wheel
    notch move, and does one click on the scrollbar's arrow or track move by rows or by a page?
    Use real input and record the scroll row before and after.
 

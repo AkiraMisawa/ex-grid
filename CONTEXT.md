@@ -435,8 +435,8 @@ _Avoid_: selection snapshot, selection cache (nothing is restored from it)
 
 **Anchor** *(retired by ADR-0052)*:
 ADR-0012's name for the fixed end of range extension. Under ADR-0052 the fixed end is the
-**Focus** and the moving end is the **Extent**; until that lands in the code, older ADRs and
-criteria still say Anchor and mean the fixed end.
+**Focus** and the moving end is the **Extent**. It has left the code and the criteria; older ADRs
+that say it mean the fixed end.
 _Avoid_: using it for anything new
 
 **Row Mark**:

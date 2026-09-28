@@ -21,7 +21,7 @@ specification.
 Conversation with the user may be in any language. **Anything that lands in the repository —
 documents, ADRs, code, comments, commit messages, test names, UI strings — is English.**
 
-Domain terms stay as `CONTEXT.md` defines them (Focus, Anchor, Overlay, Window, Consumer,
+Domain terms stay as `CONTEXT.md` defines them (Focus, Extent, Overlay, Window, Consumer,
 Chrome, Overwrite, Caret, …); do not translate those.
 
 ### 2. JavaScript is allowlisted, not "minimised"
@@ -198,7 +198,7 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
 
 | Layer | Where | Tool | Covers |
 |---|---|---|---|
-| 1. Pure logic | `tests/ExGrid.Tests` | xUnit | Selection rectangle arithmetic, Anchor/Focus, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
+| 1. Pure logic | `tests/ExGrid.Tests` | xUnit | Selection rectangle arithmetic, Focus/Extent, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
 | 2. Component | `tests/ExGrid.Components` | bUnit (no browser) | Which rows get rendered, and **whether row memoisation actually skips** (count renders) |
 | 3. Browser | `tests/ExGrid.Browser` | Playwright | The Scrollbar Gutter, capture-phase keys, the clipboard, popovers under both Chromes, Row Stripes as painted, multiple-instance independence, large data |
 

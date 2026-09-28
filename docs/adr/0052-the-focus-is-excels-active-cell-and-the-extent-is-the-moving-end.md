@@ -130,3 +130,22 @@ ADR-0050).
   uses, and none is taken from a cell editor: the capture-phase listener leaves them to an open
   editor, as it does every key it does not own while editing
   ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)).
+
+## What the implementation settled *(2026-09-27)*
+
+Readings the observation did not reach, taken as the closest to it, and asked of Excel in the
+third Windows run (`docs/specs/exsheet/verify-on-windows-3.md`, Part B):
+
+- **On an axis where the Focus is on neither edge, every extension is a no-op**, not only
+  Shift+arrow: Ctrl+Shift+arrow, Shift+Home/End and Shift+PageUp/PageDown too. So after Ctrl+Space
+  from C3, Shift+↓ does nothing, since C3 is inside a whole column.
+- **Ctrl+. from a Focus that is not on a corner** goes to the corner that ends the Focus's edge
+  going clockwise, or to the top-left from inside the range. A corner shared in a one-row or
+  one-column range is skipped.
+- **Taking out the Focus's own cell** moves the Focus to its Tab successor across ranges,
+  wrapping. The fragments keep the order `SelectionRange.Subtract` gives, which is not Excel's
+  listing, and that order is what cycling visits.
+- **After a fill the Focus stays where it was inside the source.** That agrees with "the source's
+  first cell" wherever Excel was observed. A source selected bottom-up keeps its bottom Focus.
+- **The drag's size reaches the Consumer through `NameBoxSizeLabel`**, a second parameter beside
+  ADR-0051's `NameBoxLabel`.
