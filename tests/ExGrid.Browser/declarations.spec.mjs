@@ -2,7 +2,7 @@ import { test, expect, setRoundTrip, record } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
-    expectCovers, boxOf, readClipboard, candidates, typeSteadily,
+    expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell,
 } from './sheet-helpers.mjs';
 
 // The ExGrid declarations of ADR-0050 and ADR-0051 (§26, DC-*), as ExSheet declares them on
@@ -166,7 +166,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         test('DC-17: completion works from the Formula Bar, its list inside the grid\'s box', async ({ page }) => {
             const grid = sheet(page);
-            await clickCell(grid, 'F2');
+            await pressCell(grid, 'F2');
             await clickBarEnd(grid);
             await typeSteadily(page, bar(grid), '=RO');
             await expect(items(grid).first()).toHaveText('ROUND');
@@ -297,7 +297,7 @@ for (const chrome of ['builtin', 'mud']) {
         await underChrome(page, chrome);
         const grid = sheet(page);
         // D2 holds =B2*C2. A press near the start of the bar's text leaves the caret there.
-        await clickCell(grid, 'D2');
+        await pressCell(grid, 'D2');
         const field = await boxOf(bar(grid));
         await bar(grid).click({ position: { x: 6, y: field.height / 2 } });
         await expect(editor(grid)).toHaveValue('=B2*C2');
@@ -307,7 +307,7 @@ for (const chrome of ['builtin', 'mud']) {
         // From the bar, pointing works as it does from the cell: after an operator typed at the
         // end, ↓ writes a Reference into both surfaces while the bar keeps the keyboard.
         await page.keyboard.press('Escape');
-        await clickCell(grid, 'F2');
+        await pressCell(grid, 'F2');
         await clickBarEnd(grid);
         await typeSteadily(page, bar(grid), '=SUM(');
         // A press into the bar opens Caret (ADR-0051), where arrows move the caret; F2 points.
@@ -329,6 +329,54 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(editor(grid)).toHaveCount(1);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
+    });
+}
+
+// A press into the Formula Bar opens an edit (ADR-0051) — a change of editing mode, which the
+// key gate hears a round trip later on a circuit. Found on the Server host (2026-09-27, Windows,
+// second run, DC-19/DC-34; reproduced on Linux at 120 ms): F2 and ↓ typed in that gap were
+// gated against "not editing", where the bar's keys are the browser's, so F2 did nothing and ↓
+// only moved the caret — nothing pointed. The keys typed after the press are held until the
+// core has answered it, as after any change of mode (ADR-0010).
+for (const chrome of ['builtin', 'mud']) {
+    test(`DC-19/ADR-0010: keys typed into the Formula Bar before a 150 ms circuit has answered the press into it keep their meaning (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F2');
+        await expect(bar(grid)).toHaveValue('');
+        await setRoundTrip(150);
+        await clickBarEnd(grid);
+        // No wait for anything: the keys follow the press as a user's do.
+        await page.keyboard.type('=SUM(');
+        await page.keyboard.press('F2');
+        await page.keyboard.press('ArrowDown');
+        await expect(bar(grid)).toHaveValue('=SUM(F3');
+        await expect(editor(grid)).toHaveValue('=SUM(F3');
+        await expect(bar(grid)).toBeFocused();
+        await expectCovers(grid.locator('.ex-selection .ex-point'), grid, 'F3', 'F3');
+        // Escape typed straight after a press cancels the edit that press opened.
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await clickBarEnd(grid);
+        await page.keyboard.type('9');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(grid).toBeFocused();
+        await expect(cell(grid, 'F2')).toHaveText('');
+        await expect(bar(grid)).toHaveValue('');
+        // A press into the bar while a key is still held — a character typed onto the cell,
+        // which opens an edit there — takes its place behind it: the edit stays one text, and
+        // the key typed after the press lands in the bar.
+        await page.keyboard.type('x');
+        await clickBarEnd(grid);
+        await page.keyboard.type('5');
+        await expect(bar(grid)).toHaveValue('x5');
+        await expect(editor(grid)).toHaveValue('x5');
+        await expect(bar(grid)).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'F2')).toHaveText('x5');
+        await expectFocusAt(grid, 'F3');
+        await setRoundTrip(0);
     });
 }
 
@@ -357,7 +405,7 @@ test('DC-20: typed quickly on a 150 ms circuit, no arrow points where the text f
 
 test('DC-28: keys typed in the Formula Bar behind F2 on a 150 ms circuit land in the bar, in order', async ({ page }) => {
     const grid = sheet(page);
-    await clickCell(grid, 'F2');
+    await pressCell(grid, 'F2');
     await clickBarEnd(grid);
     await typeSteadily(page, bar(grid), '=+1');
     await expect(editor(grid)).toHaveValue('=+1');
@@ -388,7 +436,7 @@ test('DC-28: keys typed in the Formula Bar behind F2 on a 150 ms circuit land in
 // surface's own typing back into it (ADR-0051, ED-22).
 test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key lands at the caret they left', async ({ page }) => {
     const grid = sheet(page);
-    await clickCell(grid, 'F2');
+    await pressCell(grid, 'F2');
     await clickBarEnd(grid);
     await typeSteadily(page, bar(grid), '=+1');
     await expect(editor(grid)).toHaveValue('=+1');

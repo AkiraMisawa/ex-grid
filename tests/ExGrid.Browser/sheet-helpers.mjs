@@ -41,6 +41,20 @@ export async function clickCell(grid, address, options = {}) {
     await cell(grid, address).click({ force: true, ...options });
 }
 
+/**
+ * Presses a cell and waits until the grid has answered: the Focus is there, and the Name Box
+ * and the Formula Bar — painted in the same render — show that cell. For a test that goes on to
+ * read what the bar shows or to press into it. On the Server host the answer is a round trip
+ * away: read before it lands, the bar still shows the cell the Focus left, and a test that takes
+ * that text as the start of what it types expects text the user never saw (found on Windows,
+ * 2026-09-27: DC-19/DC-34 and SH-18/DC-22 expected `=B2*C2=` and `*`, where the grid rightly
+ * held `=` and `=B3+1*`).
+ */
+export async function pressCell(grid, address) {
+    await clickCell(grid, address);
+    await expectFocusAt(grid, address);
+}
+
 // Each field is the core's box: the built-in Chrome's input wears the class itself, a
 // substituted Chrome's control sits inside it (ADR-0010/0051), so both are looked for.
 

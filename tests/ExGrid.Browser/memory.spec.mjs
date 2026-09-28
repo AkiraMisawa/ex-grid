@@ -37,7 +37,14 @@ async function lifecycle(page) {
 
     return {
         client,
-        mount: () => toggle(true),
+        // Mounted and listening: the module attaches after the grid's first render — a round
+        // trip or two later on the Server host — and the grid says it is busy until then
+        // (A11Y-20). Read before that, the root has none of the module's listeners yet (MEM-4
+        // came back empty on Server, Chrome, 2026-09-27).
+        mount: async () => {
+            await toggle(true);
+            await expect(page.locator('.ex-grid')).not.toHaveAttribute('aria-busy', /.*/);
+        },
         dispose: () => toggle(false),
         cycle: async () => {
             await toggle(true);
@@ -109,13 +116,20 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
 
 test('disposal takes the module\'s listeners off the root, and the count comes back (MEM-4)', async ({ page }) => {
     const grid = await lifecycle(page);
-    await grid.cycle(); // Blazor's own delegated listeners land here (MEM-2 checks which)
+    const fromModule = (t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.\\w+)?\\.js$`));
+    const moduleOnDocument = async () => (await grid.listenersOn('document')).map(key)
+        .filter((k) => /@ex-grid(\.\w+)?\.js$/.test(k));
+    // Blazor's own delegated listeners land here (MEM-2 checks which). Mounted until it
+    // listens, and read once the module has let go, so the baseline is not taken while an
+    // attach or a dispose is still on the wire (a Server circuit's round trip).
+    await grid.mount();
+    await grid.dispose();
+    await expect.poll(moduleOnDocument, { message: 'the warm-up grid let go of the document' }).toEqual([]);
     const baseline = await grid.counters();
 
     await grid.mount();
     await page.evaluate(() => { window.__disposedRoot = document.querySelector('.ex-grid'); });
     const attached = (await grid.listenersOn('window.__disposedRoot')).map(key).sort();
-    const fromModule = (t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.\\w+)?\\.js$`));
     // The per-instance handle's eight on the instance root (ADR-0018): the capture-phase
     // keys, the capture-phase press and release that keep a press on the rows among held
     // keys (ADR-0021/0010), the editor's input report (ADR-0051), the pointer report and the
@@ -127,8 +141,6 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     // And one on the document, the only place `selectionchange` fires: it acts only while
     // DOM focus is in this instance's editor surface (ADR-0051), and it goes with the
     // instance.
-    const moduleOnDocument = async () => (await grid.listenersOn('document')).map(key)
-        .filter((k) => /@ex-grid(\.\w+)?\.js$/.test(k));
     expect(await moduleOnDocument()).toEqual([fromModule('selectionchange')]);
 
     await grid.dispose();

@@ -40,6 +40,11 @@
         // nothing: an edit the Formula Bar opened leaves the keyboard in the bar (ADR-0051).
         if (Context.FocusRequest != 0 && Context.FocusRequest != _focusedRequest)
             _needsFocus = true;
+        // A request back to zero is withdrawn: the user pressed into the Formula Bar before the
+        // render that asked had landed — on a circuit, a round trip — and the keyboard is the
+        // bar's now (ADR-0051).
+        else if (Context.FocusRequest == 0)
+            _needsFocus = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -95,6 +95,26 @@ public class FormulaBarEditingTests : GridTestContext
         Assert.Equal("caret", EditingModesTold()[^1]);
     }
 
+    [Fact] // ADR-0010/0051, DC-19: a press into the bar is answered only once the edit it opened has reached the key gate
+    public async Task A_press_into_the_bar_is_answered_only_once_the_gate_has_been_told_the_edit()
+    {
+        // The listener holds the keys typed into the bar behind the press and asks this before
+        // it hands them on (found on the Server host, 2026-09-27: F2 and ↓ typed in that gap
+        // were gated as "not editing", and nothing pointed).
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 45);
+        var told = Js.UnansweredGateMode();
+
+        var focus = Bar(cut).FocusAsync(new FocusEventArgs());
+        var answered = cut.InvokeAsync(() => cut.Instance.PressAnsweredAsync());
+
+        Assert.Equal("caret", (string)told.Invocations["setEditing"][^1].Arguments[0]!);
+        Assert.False(answered.IsCompleted);
+        told.SetVoidResult();
+        await focus;
+        await answered;
+    }
+
     [Fact] // ADR-0051 / DC-22: typing in either surface updates the other
     public async Task Both_surfaces_agree_after_every_keystroke()
     {

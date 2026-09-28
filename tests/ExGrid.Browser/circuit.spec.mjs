@@ -435,6 +435,32 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
         });
     }
 
+    // A press held behind a key kept its default, DOM focus onto the rows, and the rows hand
+    // focus to the root a round trip later. When that hand-over arrived after the Cell Editor the
+    // held key had opened took DOM focus, the root took the keyboard from the editor, and the
+    // listener went on holding every key and click behind it for an editor that no longer had
+    // focus — until its two-second fallback (Server host: typing-probe-2 found nothing landed
+    // 1.5 s later in 6 of 12 trials at 30 ms on Windows, and 4 of 12 at 0 ms on Linux). The
+    // bound here is that fallback, not a performance figure: an answered step takes a round
+    // trip or two.
+    test('a click straight after a key waits for no fallback: each step lands before the hold would give up (ED-22, ADR-0010)', async ({ page }) => {
+        await openSheet(page);
+        const nameBox = sheetGrid(page).locator('input.ex-name-box');
+        // Twelve rows in pairs: the second click of each pair comes while the first pair's key
+        // and Enter are still being answered, which is where the hand-over overtook the editor.
+        for (let row = 0; row < 12; row += 2) {
+            for (const r of [row, row + 1]) {
+                await columnF(page, r).click({ force: true });
+                await page.keyboard.type(String(r % 10));
+                await page.keyboard.press('Enter');
+            }
+            await expect(nameBox, `the pair from F${row + 1} was answered`).toHaveValue(`F${row + 3}`, { timeout: 1500 });
+        }
+        await expect.poll(() => sheetGrid(page).evaluate((root) => [...Array(12).keys()]
+            .map((r) => root.querySelector(`[id$='-r${r}c5']`)?.textContent.trim() ?? '')))
+            .toEqual([...Array(12).keys()].map((r) => String(r % 10)));
+    });
+
     test('with a 150 ms round trip and no pause, each value lands in the cell clicked for it (SRV-5)', async ({ page }) => {
         await openSheet(page);
         await setRoundTrip(150);

@@ -520,6 +520,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         await editorSettled();
         while (held.length > 0 && core) {
             const k = held.shift();
+            if (k.barPress) {
+                await answerBarPress();
+                continue;
+            }
             if (k.press) {
                 await replayPress(k);
                 continue;
@@ -719,6 +723,44 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
     // already have moved its caret (ADR-0010 / ADR-0018).
     root.addEventListener('keydown', onKeyDown, true);
 
+    // A press into the Formula Bar's text, with no edit open, opens one (ADR-0051): a change of
+    // editing mode, which this listener is told a round trip later on a circuit. Until then the
+    // gate would take the keys typed into the bar as the browser's — F2 would do nothing and ↓
+    // would only move the caret (found on the Server host, 2026-09-27) — and a key already held
+    // for another reason would be handed on against "not editing" and lost. So the press takes
+    // its place among held keys, and the keys after it are held until the core has answered it
+    // and gated against the mode it left, as after a key that changes the mode (ADR-0010). The
+    // press itself passes untouched: DOM focus onto the bar is its default, and the bar's focus
+    // is what the core answers. Only a field that takes typing — a read-only bar opens nothing —
+    // and only one not already holding DOM focus, which a press would not focus again.
+    const opensBarEdit = (event) => {
+        const target = event.target;
+        return !!core && !replaying && event.button === 0 && (editing === 'none' || answering)
+            && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
+            && !target.readOnly && !target.disabled && document.activeElement !== target
+            && target.closest('.ex-formula-bar-text') !== null && root.contains(target);
+    };
+    const holdBehindBarPress = () => {
+        held.push({ barPress: true });
+        if (!answering) {
+            answering = true;
+            holdStartedAt = performance.now();
+            drain();
+        }
+    };
+    // Asked once the press's focus has gone to the core: focusing the bar is the press's default
+    // action, dispatched after the listener in the same task, so the question waits for a later
+    // task. The core answers once that focus has been handled in full (ExGrid.PressAnsweredAsync).
+    const answerBarPress = async () => {
+        await new Promise((resolve) => setTimeout(resolve));
+        await core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to answer a press', error);
+            }
+        });
+        await editorSettled();
+    };
+
     // A press on the rows keeps its place among held keys (ADR-0021/0010, ED-22). While keys
     // are held, or a change of editing mode is being answered, a primary-button press on the
     // rows is held too, in order, and its release with it: a click straight after Enter
@@ -732,18 +774,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
         button: event.button, buttons: event.buttons,
     });
     const onPress = (event) => {
+        if (opensBarEdit(event)) {
+            holdBehindBarPress();
+            return;
+        }
         // Cells are pointer-events: none, so the Viewport is what a press on the rows lands on.
         if (!core || replaying || event.button !== 0 || !(event.target instanceof Element)
             || !event.target.classList.contains('ex-viewport') || (!answering && held.length === 0)) {
             return;
         }
-        // Out of Blazor's sight until its turn. Its default — DOM focus onto the rows — is
-        // kept, as the press would have had it, except over an editor surface that holds DOM
-        // focus: whether the press keeps that editor is the core's to say at its turn
-        // (ADR-0051), and a press that commits it hands the keyboard to the root then.
-        if (editing !== 'none' && editorFocused()) {
-            event.preventDefault();
-        }
+        // Out of Blazor's sight until its turn, and so is its default, DOM focus onto the rows:
+        // the rows hand focus on to the root as soon as they get it, a round trip later on a
+        // circuit, and that hand-over is not held. Taken at the press, it overtook the keys
+        // held before it — landing after the Cell Editor a held key had opened took DOM focus,
+        // it took the keyboard from the editor, and every key and click held behind it waited
+        // for an editor that no longer had focus, until the two-second fallback (Server host,
+        // typing-probe-2, 2026-09-27). The keyboard stays where the held keys have it; whether
+        // the press keeps an open edit is the core's to say at its turn (ADR-0051), and a
+        // press that commits it hands the keyboard to the root then.
+        event.preventDefault();
         event.stopPropagation();
         held.push({ press: 'mousedown', target: event.target, init: mouseInit(event) });
     };

@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures.mjs';
 import {
-    sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox,
+    sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
 } from './sheet-helpers.mjs';
 
 // ExSheet on the DemoHost's /sheet, driven with real keys and the real mouse (SH-18, ticket 18):
@@ -256,7 +256,7 @@ test('SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commit
 
     // Escape in the bar cancels once: both surfaces close, the cell is untouched, the grid
     // keeps the keyboard — the next Escape is the grid's own Leave.
-    await clickCell(grid, 'E3');
+    await pressCell(grid, 'E3');
     await clickBarEnd(grid);
     await typeSteadily(page, bar(grid), '*2');
     await expect(editor(grid)).toHaveValue('=B3+1*2');
