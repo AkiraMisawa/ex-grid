@@ -1,6 +1,6 @@
 # What to verify on Windows, third run
 
-Status: ready-for-human — **all parts can run now, A, B, C, D in order** (the gate below is met; E is optional).
+Status: done — run 2026-09-28; results in `verification/2026-09-28-windows-excel-3/` and `verification/2026-09-28-windows-3/`. The next run is [`verify-on-windows-4.md`](verify-on-windows-4.md).
 
 For a Claude Code session on the Windows desktop used for the first two runs (Excel, Chrome, Edge,
 WSL2 with nix). The second run's method, tools and advance authorisation all still apply: read
