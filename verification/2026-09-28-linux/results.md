@@ -27,3 +27,10 @@ numbers, recorded and never gated.
 
 DC-19/DC-34 on the Server host passed in this run. It failed 2 of 30 times on the ADR-0053 branch
 before the merge, so one pass does not settle it; the Server Formula Bar work is looking at it.
+
+## After the third Windows run's fixes *(2026-09-28, at `41a11bf`)*
+
+Layer 3 in the container, headed under xvfb, Chromium (`chromium-local`) plus the `chrome-150`
+selection run with `--force-device-scale-factor=1.5` and the viewport left to the window:
+**WebAssembly 356 passed, 15 skipped (29.3 min); Server 358 passed, 13 skipped (10.9 min); 0
+failed.** Edge is not installed here. `metrics.json` holds this run's observational numbers.
