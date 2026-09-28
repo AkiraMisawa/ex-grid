@@ -44,6 +44,7 @@ public class ViewportCompressionTests
         Assert.Equal(plain.ScrollHeightPx, told.ScrollHeightPx);
         Assert.Equal(told.ContentHeightPx, told.ScrollHeightPx);
         Assert.Equal(Math.Max(0, plain.ScrollHeightPx - viewport), told.MaxScrollTopPx);
+        Assert.Equal(told.MaxScrollTopPx, told.ScrollReachPx);
         foreach (var s in new[] { -50, 0, 0.5, 99.9, 1234.5678, told.MaxScrollTopPx, told.MaxScrollTopPx + 10 })
         {
             Assert.Equal(plain.SliceAt(s), told.SliceAt(s));
@@ -68,9 +69,14 @@ public class ViewportCompressionTests
         Assert.Equal(Rows * RowHeight, geometry.ContentHeightPx);
         Assert.Equal(CeilingAt150 - ViewportGeometry.LayoutCeilingMarginPx, geometry.ScrollHeightPx);
         Assert.Equal(
-            (geometry.ContentHeightPx - Viewport) / (geometry.ScrollHeightPx - Viewport),
+            (geometry.ContentHeightPx - Viewport) / (geometry.ScrollHeightPx - Viewport - ViewportGeometry.EndSlackPx),
             geometry.Compression);
         Assert.InRange(geometry.Compression, 1.25, 1.26);
+        // The browser can stop a device pixel short of the maximum; from EndSlackPx short
+        // of it on, the last row is already flush.
+        Assert.Equal(geometry.MaxScrollTopPx - ViewportGeometry.EndSlackPx, geometry.ScrollReachPx);
+        Assert.Equal(geometry.ContentHeightPx - Viewport, geometry.ContentOffsetAt(geometry.ScrollReachPx), 6);
+        Assert.Equal(Viewport, geometry.ViewportTopPxOf(Rows - 1, geometry.MaxScrollTopPx - 1) + RowHeight, 6);
 
         Assert.Equal(0, geometry.ContentOffsetAt(0));
         Assert.Equal(new RowRange(0, geometry.RowsPerViewport), geometry.SliceAt(0));

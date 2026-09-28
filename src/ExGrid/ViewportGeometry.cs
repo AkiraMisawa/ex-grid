@@ -65,16 +65,18 @@ public readonly record struct ViewportGeometry
         }
 
         // Compressed: the spacer stops a margin short of the ceiling, and k is chosen so
-        // both ends are exact — s = 0 shows the first row, the largest s the last.
+        // both ends are exact — s = 0 shows the first row, and the last row is flush with
+        // the bottom from EndSlackPx short of the largest s on.
         var spacer = scrollRoomPx - LayoutCeilingMarginPx;
-        if (spacer <= viewportHeightPx)
+        if (spacer - EndSlackPx <= viewportHeightPx)
         {
             throw new InvalidOperationException(
                 $"The browser lays out at most {scrollRoomPx}px of rows here, which leaves nothing to scroll a " +
                 $"{viewportHeightPx}px Viewport through {ContentHeightPx}px of content (ADR-0053).");
         }
         ScrollHeightPx = spacer;
-        Compression = (ContentHeightPx - viewportHeightPx) / (spacer - viewportHeightPx);
+        _scrollReachPx = spacer - viewportHeightPx - EndSlackPx;
+        Compression = (ContentHeightPx - viewportHeightPx) / _scrollReachPx;
         IsCompressed = true;
     }
 
@@ -123,7 +125,8 @@ public readonly record struct ViewportGeometry
     public double ScrollHeightPx { get; }
 
     /// <summary>k in <c>c(s) = s × k</c>: 1 where the true height fits, and above it the
-    /// ratio that makes both ends exact, <c>(H − V) / (S − V)</c> (ADR-0053).</summary>
+    /// ratio that makes both ends exact, <c>(H − V) / (S − V − </c><see cref="EndSlackPx"/><c>)</c>
+    /// (ADR-0053).</summary>
     public double Compression { get; }
 
     /// <summary>Whether the scroll height is compressed — whether scroll and content
@@ -135,12 +138,27 @@ public readonly record struct ViewportGeometry
     public double MaxScrollTopPx => Math.Max(0, ScrollHeightPx - ViewportHeightPx);
 
     /// <summary>
+    /// How far short of <see cref="MaxScrollTopPx"/> a compressed grid already shows the
+    /// last row flush with the bottom. The browser quantises <c>scrollTop</c> to device
+    /// pixels and can stop short of the arithmetic maximum — measured at 150%: asked for
+    /// 22,368,777, it held 22,368,776 — and at k = 1.25 that pixel cut the last row by more
+    /// than one. Uncompressed, a pixel short is a pixel short and nothing needs absorbing.
+    /// </summary>
+    public const double EndSlackPx = 2;
+
+    /// <summary>The scroll offset from which the content offset is at its end: the
+    /// maximum less <see cref="EndSlackPx"/> when compressed, the maximum otherwise.</summary>
+    public double ScrollReachPx => IsCompressed ? _scrollReachPx : MaxScrollTopPx;
+
+    private readonly double _scrollReachPx;
+
+    /// <summary>
     /// The content offset a scroll offset shows — <c>c(s) = s × k</c> (ADR-0053). The
     /// identity when not compressed, returned unclamped so nothing downstream changes;
     /// compressed, the offset is clamped to the scroll range first, as the slice is.
     /// </summary>
     public double ContentOffsetAt(double scrollTopPx)
-        => IsCompressed ? Math.Clamp(scrollTopPx, 0, MaxScrollTopPx) * Compression : scrollTopPx;
+        => IsCompressed ? Math.Clamp(scrollTopPx, 0, _scrollReachPx) * Compression : scrollTopPx;
 
     /// <summary>The scroll offset that shows a content offset: the inverse of
     /// <see cref="ContentOffsetAt"/>, unrounded (ADR-0053).</summary>
