@@ -173,3 +173,6 @@ Part B asked each reading above of Excel.
   A1:C3 leaves A3:C3, C2, A2, A1:C1, in that order, where `SelectionRange.Subtract`'s own order was
   kept before. **Enter visits the fragment holding the Focus first, then the others in that order**,
   wrapping.
+- **Read, not observed**: when a take-out removes the whole range made last (A1:B2, then Ctrl+click
+  F6, then Ctrl+click F6 again), the latest range still standing takes its place, so the Focus goes
+  to A1. Asked of Excel in the next Windows run.
