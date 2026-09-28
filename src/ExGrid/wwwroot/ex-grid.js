@@ -780,13 +780,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs) {
             || !event.target.classList.contains('ex-viewport') || (!answering && held.length === 0)) {
             return;
         }
-        // Out of Blazor's sight until its turn. Its default — DOM focus onto the rows — is
-        // kept, as the press would have had it, except over an editor surface that holds DOM
-        // focus: whether the press keeps that editor is the core's to say at its turn
-        // (ADR-0051), and a press that commits it hands the keyboard to the root then.
-        if (editing !== 'none' && editorFocused()) {
-            event.preventDefault();
-        }
+        // Out of Blazor's sight until its turn, and so is its default, DOM focus onto the rows:
+        // the rows hand focus on to the root as soon as they get it, a round trip later on a
+        // circuit, and that hand-over is not held. Taken at the press, it overtook the keys
+        // held before it — landing after the Cell Editor a held key had opened took DOM focus,
+        // it took the keyboard from the editor, and every key and click held behind it waited
+        // for an editor that no longer had focus, until the two-second fallback (Server host,
+        // typing-probe-2, 2026-09-27). The keyboard stays where the held keys have it; whether
+        // the press keeps an open edit is the core's to say at its turn (ADR-0051), and a
+        // press that commits it hands the keyboard to the root then.
+        event.preventDefault();
         event.stopPropagation();
         held.push({ press: 'mousedown', target: event.target, init: mouseInit(event) });
     };
