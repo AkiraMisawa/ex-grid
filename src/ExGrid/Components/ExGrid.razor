@@ -169,7 +169,7 @@
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
                 @if (_visible is { } visible)
                 {
-                    @if (!_selection.Selection.IsEmpty || HoverRowRange is not null)
+                    @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0)
                     {
                         @* One element per range, so what selection costs to paint depends
                            on how many rectangles there are and never on how many cells
@@ -228,14 +228,24 @@
                                         <div class="@pinnedOutline.Class" style="@pinnedReference"></div>
                                     }
                                 }
-                                @* The pointing outline (ADR-0051): one more rectangle, over the
-                                   ranges; the Selection and the Focus beneath it do not move.
-                                   It is the Reference Outline of the range it points at, in that
-                                   range's colour (ADR-0057). *@
-                                @if (PointRange is { } pinnedPointRange && SelectionStyles.Pinned(pinnedPointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedPoint)
+                            }
+                            @* The columns a Consumer asks for (ADR-0057): one rectangle per
+                               column over all its rows, cut to the painted rows as a whole-column
+                               range is. Selection or none, as a Linked Table's grid has none. *@
+                            @for (var c = 0; c < _columnOutlines.Length; c++)
+                            {
+                                @if (ColumnOutlineRange(_columnOutlines[c].Column) is { } pinnedColumnRange && SelectionStyles.Pinned(pinnedColumnRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedColumn)
                                 {
-                                    <div class="@PointOutlineClass(pinnedPointRange)" style="@pinnedPoint"></div>
+                                    <div class="@_columnOutlines[c].Class" style="@pinnedColumn"></div>
                                 }
+                            }
+                            @* The pointing outline (ADR-0051): one more rectangle, over the
+                               ranges; the Selection and the Focus beneath it do not move.
+                               It is the Reference Outline of the range it points at, in that
+                               range's colour (ADR-0057). *@
+                            @if (!_selection.Selection.IsEmpty && PointRange is { } pinnedPointRange && SelectionStyles.Pinned(pinnedPointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedPoint)
+                            {
+                                <div class="@PointOutlineClass(pinnedPointRange)" style="@pinnedPoint"></div>
                             }
                         </div>
                         <div class="ex-selection" aria-hidden="true" @key="SelectionLayerKey">
@@ -275,10 +285,17 @@
                                         <div class="@outline.Class" style="@reference"></div>
                                     }
                                 }
-                                @if (PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } point)
+                            }
+                            @for (var c = 0; c < _columnOutlines.Length; c++)
+                            {
+                                @if (ColumnOutlineRange(_columnOutlines[c].Column) is { } columnRange && SelectionStyles.Scrollable(columnRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } column)
                                 {
-                                    <div class="@PointOutlineClass(pointRange)" style="@point"></div>
+                                    <div class="@_columnOutlines[c].Class" style="@column"></div>
                                 }
+                            }
+                            @if (!_selection.Selection.IsEmpty && PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } point)
+                            {
+                                <div class="@PointOutlineClass(pointRange)" style="@point"></div>
                             }
                         </div>
                     }
@@ -2068,6 +2085,7 @@
     protected override void OnParametersSet()
     {
         ValidatePointDeclaration();
+        ResolveOutlinedColumns();
         // The Source's own change notification lands in the same pipeline (ApplyState),
         // so a re-entrant one raised by the column push below would run it twice.
         _applying = true;

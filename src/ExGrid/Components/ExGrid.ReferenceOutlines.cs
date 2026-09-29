@@ -7,7 +7,9 @@ namespace ExGrid.Components;
 // Reference Outlines (ADR-0057), the fifth formula entry aid: while an edit is open, the
 // Consumer answers the References in the editor's text, the core gives each a colour, and every
 // range answered is outlined in the selection overlay (ADR-0008) in its colour. Point's outline is
-// the Reference Outline of the Reference it writes. The grid does not know what a Formula is.
+// the Reference Outline of the Reference it writes. Beside them, the columns a Consumer asks for
+// are outlined over all their rows, with or without an edit: a Linked Table's columns, in the
+// grid that shows the table. The grid does not know what a Formula is.
 public partial class ExGrid<TRow>
 {
     /// <summary>
@@ -38,6 +40,32 @@ public partial class ExGrid<TRow>
     /// shows the table.
     /// </summary>
     [Parameter] public EventCallback<IReadOnlyList<ReferenceKeyColour>> OnReferenceKeyColoursChanged { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ADR-0057): columns to outline, each in a colour. Each is drawn as a
+    /// Reference Outline over the column's body, across all its rows, in the selection overlay as
+    /// a whole-column range is (ADR-0008): one element per column, cut to the painted rows, and
+    /// the grid never scrolls to show one. It is how the grid that shows a Linked Table outlines
+    /// the columns a Formula edited elsewhere reads, in the colours that Formula's grid told its
+    /// Consumer (<see cref="OnReferenceKeyColoursChanged"/>); it asks for no References function,
+    /// no edit and no selection here.
+    ///
+    /// <para>A column is named as <see cref="GridColumn{TRow}.Name"/> names it, and outlined
+    /// wherever the order puts it. A name the grid does not show is outlined nowhere, as a
+    /// Reference to cells the grid does not have is; a column listed twice has no one colour and
+    /// is refused by name. The grid cannot check that it shows the rows the Formula reads: a grid
+    /// filtered to some of them outlines the rows it shows, and whether that is the table the
+    /// Formula reads is the Consumer's to vouch for. Null or empty — the default — outlines nothing
+    /// (DC-1, DC-50).</para>
+    /// </summary>
+    [Parameter] public IReadOnlyList<OutlinedColumn>? OutlinedColumns { get; set; }
+
+    // The columns asked for, resolved to their places in the current order and their class
+    // lists: once per push, off the render path, as Header Groups are (ADR-0032), and again only
+    // when the list or the columns are a different instance.
+    private (int Column, string Class)[] _columnOutlines = [];
+    private IReadOnlyList<OutlinedColumn>? _outlinesResolvedFrom;
+    private IReadOnlyList<GridColumn<TRow>>? _outlinesResolvedOver;
 
     // The class list of a Reference Outline in each colour, solid and as Point's: interned, since
     // the few there are serve every outline of every render (ADR-0027 P5).
@@ -108,6 +136,54 @@ public partial class ExGrid<TRow>
     /// not, or where no References function is declared.</summary>
     private string PointOutlineClass(SelectionRange pointed)
         => Colouring.ColourOf(pointed) is { } colour ? PointOutlineClasses[colour.Place] : "ex-point";
+
+    /// <summary>
+    /// Resolves <see cref="OutlinedColumns"/> to the places its columns stand in the current
+    /// order (ADR-0057), when the list or the columns changed since they were last resolved. A
+    /// name the grid does not show resolves to nothing; a null entry, or a column listed twice,
+    /// is refused by name.
+    /// </summary>
+    private void ResolveOutlinedColumns()
+    {
+        if (ReferenceEquals(_outlinesResolvedFrom, OutlinedColumns) && ReferenceEquals(_outlinesResolvedOver, Columns))
+            return;
+        _outlinesResolvedFrom = OutlinedColumns;
+        _outlinesResolvedOver = Columns;
+        if (OutlinedColumns is not { Count: > 0 } outlined)
+        {
+            _columnOutlines = [];
+            return;
+        }
+        var resolved = new List<(int Column, string Class)>(outlined.Count);
+        for (var i = 0; i < outlined.Count; i++)
+        {
+            var asked = outlined[i] ?? throw new ArgumentNullException(nameof(OutlinedColumns),
+                "OutlinedColumns holds a null column (ADR-0057).");
+            for (var before = 0; before < i; before++)
+            {
+                if (string.Equals(outlined[before]!.Column, asked.Column, StringComparison.Ordinal))
+                {
+                    throw new ArgumentException(
+                        $"OutlinedColumns lists the column '{asked.Column}' twice: a column is outlined in one colour, " +
+                        "and the grid will not pick one of two (ADR-0057).", nameof(OutlinedColumns));
+                }
+            }
+            for (var column = 0; column < Columns.Count; column++)
+            {
+                if (string.Equals(Columns[column].Name, asked.Column, StringComparison.Ordinal))
+                {
+                    resolved.Add((column, OutlineClasses[asked.Colour.Place]));
+                    break;
+                }
+            }
+        }
+        _columnOutlines = [.. resolved];
+    }
+
+    /// <summary>The body of the column at <paramref name="column"/>: every row the grid has, or
+    /// null when it has none.</summary>
+    private SelectionRange? ColumnOutlineRange(int column)
+        => Extent.RowCount > 0 ? new SelectionRange(0, column, Extent.RowCount, 1) : null;
 
     /// <summary>The part of a range that lies on this grid, or null when none does: an outline
     /// is drawn over cells the grid has, never over columns it would have to invent.</summary>

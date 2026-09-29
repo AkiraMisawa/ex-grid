@@ -78,6 +78,31 @@ Until the first snapshot arrives, a Formula reading the table shows `#GETTING_DA
 recalculate. The declaration is recorded in the Sheet Document. The rows never are, so a Consumer
 pushes again after opening a document.
 
+While a Formula is edited, each Reference in it wears a colour, and the cells it names on the Sheet
+are outlined in that colour (ADR-0057). A table's column is not on the Sheet, so ExSheet tells you
+which declared columns the Formula reads and in which colour, and you outline them in the grid that
+shows the table. The list is empty when the edit ends:
+
+```razor
+@using ExGrid.Cells
+@using ExSheet
+
+<ExSheet @bind-Document="_document" OnLinkedColumnColoursChanged="Outline" />
+<ExGrid TRow="Position" Window="_positions" Columns="_columns" OutlinedColumns="_outlined" />
+
+@code {
+    private IReadOnlyList<OutlinedColumn> _outlined = [];
+
+    // Columns named as the table's are declared: a column the Sheet names is the grid's own.
+    private void Outline(LinkedColumnColours columns) =>
+        _outlined = [.. columns.Where(c => c.Column.Table == "Positions")
+                               .Select(c => new OutlinedColumn(c.Column.Column, c.Colour))];
+}
+```
+
+Only you can say that the grid shows the rows the Formula reads: a grid filtered to some of them
+outlines the rows it shows.
+
 ## Commands and the undo stack
 
 There is one undo stack per ExSheet, and a command the application gives goes onto it in its place

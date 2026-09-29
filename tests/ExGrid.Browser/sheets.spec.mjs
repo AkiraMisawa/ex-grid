@@ -1,11 +1,14 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, enter, candidates, typeSteadily,
+    expectCovers,
 } from './sheet-helpers.mjs';
 
 // Two ExSheets on /sheets (ADR-0018, SH-13, DC-25, ticket 18's second criterion): keys,
 // popovers, undo and the Formula Bar stay with the Sheet that has the keyboard. Each Sheet
-// names itself in A1 and holds B1 and C1 =B1*2, so anything that crossed would show.
+// names itself in A1 and holds B1 and C1 =B1*2, so anything that crossed would show. Both read
+// the page's positions as the Linked Table Positions, and beneath each is a grid of them that the
+// page outlines from that Sheet's word alone (SH-31).
 
 // Tall enough that every Sheet on the page, Formula Bar to horizontal scrollbar, is inside the
 // window: a pointer below the window's edge reaches nothing, and the edge band sits there.
@@ -143,4 +146,42 @@ test('ADR-0018: a Sheet the user has pressed keeps the keyboard when the other o
     await page.keyboard.press('Enter');
     await expect(cell(right, 'D1')).toHaveText('7');
     await expect(cell(left, 'D1')).toHaveText('');
+});
+
+// ExSheet never reaches another instance (ADR-0018, ADR-0049): it tells its own Consumer which
+// Linked Table columns its Formula reads, and the page passes each Sheet's word to the grid beneath
+// that Sheet only (SH-31, DC-25, ADR-0057).
+test('SH-31/DC-25: each Sheet outlines a Linked Table\'s column only in the grid its page wired to it', async ({ page }) => {
+    const left = sheet(page, 0);
+    const right = sheet(page, 1);
+    const leftPositions = page.locator('#sheet-left-positions .ex-grid');
+    const rightPositions = page.locator('#sheet-right-positions .ex-grid');
+
+    await clickCell(left, 'D1');
+    await page.keyboard.type('=SUM(Positions[PV])');
+    await expect(editor(left)).toHaveValue('=SUM(Positions[PV])');
+    const leftPv = leftPositions.locator('.ex-reference-outline');
+    await expect(leftPv).toHaveCount(1);
+    await expect(leftPv).toHaveClass(/\bex-reference-1\b/);
+    await expectCovers(leftPv, leftPositions, 'C1', 'C3');
+    await expect(rightPositions.locator('.ex-reference-outline')).toHaveCount(0);
+    await page.keyboard.press('Enter');
+    await expect(editor(left)).toHaveCount(0);
+    await expect(leftPositions.locator('.ex-reference-outline')).toHaveCount(0);
+    await expectFocusAt(left, 'D2');
+
+    await clickCell(right, 'D1');
+    await expectFocusAt(right, 'D1');
+    await expect(right).toBeFocused();
+    await page.keyboard.type('=B1+COUNTA(Positions[Id])');
+    await expect(editor(right)).toHaveValue('=B1+COUNTA(Positions[Id])');
+    const rightId = rightPositions.locator('.ex-reference-outline');
+    await expect(rightId).toHaveCount(1);
+    await expect(rightId).toHaveClass(/\bex-reference-2\b/);
+    await expectCovers(rightId, rightPositions, 'A1', 'A3');
+    await expect(leftPositions.locator('.ex-reference-outline')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(editor(right)).toHaveCount(0);
+    await expect(rightPositions.locator('.ex-reference-outline')).toHaveCount(0);
+    await expect(leftPositions.locator('.ex-reference-outline')).toHaveCount(0);
 });
