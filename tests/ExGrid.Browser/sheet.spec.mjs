@@ -1,6 +1,8 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { SERVER } from './hosting.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
+    expectCommandsGreyedOut, expectCommandsOffered,
 } from './sheet-helpers.mjs';
 
 // ExSheet on the DemoHost's /sheet, driven with real keys and the real mouse (SH-18, ticket 18):
@@ -421,28 +423,44 @@ test('SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot
 // buttons from ExSheet's notification (ADR-0048, ADR-0050 section 6; ticket 26). Found on this
 // page: 99 typed over C4 (Plums), "Insert a row above row 2" pressed while the edit was open, and
 // Enter wrote 99 into Pears' price — the Cell Editor had stayed on row 4 as Plums moved to row 5.
-const commands = (page) => ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-insert-row'].map((id) => page.locator(id));
 
-async function expectCommands(page, state) {
-    for (const button of commands(page)) {
-        await (state === 'enabled' ? expect(button).toBeEnabled() : expect(button).toBeDisabled());
-    }
-}
-
-test('SH-29 (ADR-0048): 99 over C4, the insert pressed while the edit is open, Enter — 99 lands in Plums\' row', async ({ page }) => {
+test('SH-29 (ADR-0048): the commands grey out while 99 is typed over C4, and Enter puts 99 in Plums\' row', async ({ page }) => {
     const grid = sheet(page);
-    await expectCommands(page, 'enabled');
+    await expectCommandsOffered(page);
 
     await pressCell(grid, 'C4');
     await page.keyboard.type('99');
     await expect(editor(grid)).toHaveValue('99');
-    await expectCommands(page, 'disabled');
-    // Forced: a user's press lands on a greyed-out button as well, and does nothing there.
-    await page.locator('#sheet-insert-row').click({ force: true });
-    await expect(editor(grid)).toHaveValue('99');
+    await expectCommandsGreyedOut(page);
+    // A Linked Table's snapshot is data arriving, not a command (ADR-0049).
+    await expect(page.locator('#sheet-revalue')).toBeEnabled();
 
-    // The edit stays open while the keyboard is away from the grid (ADR-0018 section 6): the
-    // user goes back to it and commits.
+    await page.keyboard.press('Enter');
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(cell(grid, 'C4')).toHaveText('99');
+    await expect(cell(grid, 'A4')).toHaveText('Plums');
+    await expectCommandsOffered(page);
+});
+
+// The press that reaches the refusal: on a circuit the button greys out a round trip after the
+// first key, and a press inside that round trip lands on a button still offered. ExSheet refuses
+// the insertion by name (the page shows the refusal) and nothing moves under the editor.
+test('SH-29 (ADR-0048): the insert pressed on a 150 ms circuit before the button greys out is refused, and 99 lands in Plums\' row', async ({ page }) => {
+    test.skip(!SERVER, 'WebAssembly has no round trip: the button greys out before a press can reach it');
+    const grid = sheet(page);
+    await pressCell(grid, 'C4');
+    await setRoundTrip(150);
+    // No wait for anything: the press follows the typing as a user's does.
+    await page.keyboard.type('99');
+    await page.locator('#sheet-insert-row').click();
+
+    await expect(page.locator('#sheet-status')).toContainText('a cell is being edited');
+    await expect(editor(grid)).toHaveValue('99');
+    await expectCommandsGreyedOut(page);
+    await expect(cell(grid, 'A4')).toHaveText('Plums');
+
+    // The press took the keyboard to the button, and the edit stayed open (ADR-0018 section 6):
+    // the user goes back to it and commits.
     await editor(grid).click();
     await page.keyboard.press('Enter');
     await expect(editor(grid)).toHaveCount(0);
@@ -452,7 +470,8 @@ test('SH-29 (ADR-0048): 99 over C4, the insert pressed while the edit is open, E
     await expect(cell(grid, 'C3')).toHaveText('0.75');
     // 12 × 0.5 + 7 × 0.75 + 20 × 99. The defect painted 703, with 99 as Pears' price.
     await expect(cell(grid, 'D5')).toHaveText('1991.25');
-    await expectCommands(page, 'enabled');
+    await expectCommandsOffered(page);
+    await setRoundTrip(0);
 });
 
 test('SH-29 (ADR-0048/0049): the buttons follow each way an edit opens and ends, and a Linked Table push is taken meanwhile', async ({ page }) => {
@@ -462,27 +481,27 @@ test('SH-29 (ADR-0048/0049): the buttons follow each way an edit opens and ends,
     await pressCell(grid, 'C2');
     await page.keyboard.type('5');
     await expect(editor(grid)).toHaveValue('5');
-    await expectCommands(page, 'disabled');
+    await expectCommandsGreyedOut(page);
     await expect(page.locator('#sheet-revalue')).toBeEnabled();
     await page.locator('#sheet-revalue').click();
     await expect(cell(grid, 'B12')).toHaveText('321.43');
     await expect(editor(grid)).toHaveValue('5');
-    await expectCommands(page, 'disabled');
+    await expectCommandsGreyedOut(page);
 
     // Cancelled: the cell is as it was, and the buttons are back.
     await editor(grid).click();
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
     await expect(cell(grid, 'C2')).toHaveText('0.5');
-    await expectCommands(page, 'enabled');
+    await expectCommandsOffered(page);
 
     // Opened by a press into the Formula Bar, and cancelled from there.
     await pressCell(grid, 'D2');
     await clickBarEnd(grid);
-    await expectCommands(page, 'disabled');
+    await expectCommandsGreyedOut(page);
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
-    await expectCommands(page, 'enabled');
+    await expectCommandsOffered(page);
 
     // Held open by a Reject: a Formula that cannot be read keeps the edit, and the buttons stay
     // grey until it is corrected and committed (ADR-0034).
@@ -490,11 +509,11 @@ test('SH-29 (ADR-0048/0049): the buttons follow each way an edit opens and ends,
     await page.keyboard.type('=SUM(');
     await page.keyboard.press('Enter');
     await expect(editor(grid)).toHaveValue('=SUM(');
-    await expectCommands(page, 'disabled');
+    await expectCommandsGreyedOut(page);
     await typeSteadily(page, editor(grid), '1)');
     await page.keyboard.press('Enter');
     await expect(cell(grid, 'F3')).toHaveText('1');
-    await expectCommands(page, 'enabled');
+    await expectCommandsOffered(page);
 });
 
 test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent', async ({ page }) => {

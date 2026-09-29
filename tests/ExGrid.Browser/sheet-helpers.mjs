@@ -131,6 +131,29 @@ export async function typeSteadily(page, field, text) {
 }
 
 /**
+ * The /sheet toolbar's commands that change the Sheet: the ones the page greys out while an edit
+ * is open, from ExSheet's notification (ADR-0048, SH-29). Revalue, a Linked Table push, is not
+ * among them.
+ */
+export function sheetCommands(page) {
+    return ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-insert-row'].map((id) => page.locator(id));
+}
+
+/** Every command that changes the Sheet is greyed out: an edit is open. */
+export async function expectCommandsGreyedOut(page) {
+    for (const button of sheetCommands(page)) {
+        await expect(button).toBeDisabled();
+    }
+}
+
+/** Every command that changes the Sheet is offered again: no edit is open. */
+export async function expectCommandsOffered(page) {
+    for (const button of sheetCommands(page)) {
+        await expect(button).toBeEnabled();
+    }
+}
+
+/**
  * Types an Entry into a cell and commits it with Enter. The cell is pressed first so the grid
  * holds the keyboard.
  */
