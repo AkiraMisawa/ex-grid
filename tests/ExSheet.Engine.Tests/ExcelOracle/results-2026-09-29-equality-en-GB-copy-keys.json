@@ -1,0 +1,439 @@
+{
+    "ran":  "2026-09-29T14:08:22",
+    "excel":  "16.0 (build 20326); EXCEL.EXE 16.0.20326.20158",
+    "windowsRegionalFormat":  "en-GB",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  8,
+                    "disagree":  6,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "ARITH-136",
+                      "area":  "arithmetic",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): numbers 19 units in the last place of 1 apart (4.2E-15) compare equal: below the equality threshold, 20 units (ADR-0047, third run)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  true
+                                   },
+                      "engineExpect":  {
+                                           "value2":  true
+                                       },
+                      "excel":  {
+                                    "value2":  true,
+                                    "kind":  "boolean",
+                                    "text":  "TRUE",
+                                    "formula":  "=1+0.0000000000000042=1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-137",
+                      "area":  "arithmetic",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): numbers 20 units in the last place of 1 apart (4.4E-15) are not equal: the equality threshold is strict",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  false
+                                   },
+                      "engineExpect":  {
+                                           "value2":  false
+                                       },
+                      "excel":  {
+                                    "value2":  true,
+                                    "kind":  "boolean",
+                                    "text":  "TRUE",
+                                    "formula":  "=1+0.0000000000000044=1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected false, Excel true (boolean)"
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-138",
+                      "area":  "arithmetic",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): numbers 21 units in the last place of 1 apart (4.6E-15) are not equal",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  false
+                                   },
+                      "engineExpect":  {
+                                           "value2":  false
+                                       },
+                      "excel":  {
+                                    "value2":  true,
+                                    "kind":  "boolean",
+                                    "text":  "TRUE",
+                                    "formula":  "=1+0.0000000000000046=1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected false, Excel true (boolean)"
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-139",
+                      "area":  "arithmetic",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): numbers 22 units in the last place of 1 apart (4.8E-15) are not equal",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  false
+                                   },
+                      "engineExpect":  {
+                                           "value2":  false
+                                       },
+                      "excel":  {
+                                    "value2":  true,
+                                    "kind":  "boolean",
+                                    "text":  "TRUE",
+                                    "formula":  "=1+0.0000000000000048=1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected false, Excel true (boolean)"
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-140",
+                      "area":  "arithmetic",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): a final subtraction 6 units in the last place of 1 apart (1.3E-15) is 0: below 2^-49",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  0
+                                   },
+                      "engineExpect":  {
+                                           "value2":  0
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=1+0.0000000000000013-1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-141",
+                      "area":  "arithmetic",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): a final subtraction 7 units in the last place of 1 apart (1.6E-15) is 0: below 2^-49",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  0
+                                   },
+                      "engineExpect":  {
+                                           "value2":  0
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=1+0.0000000000000016-1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-142",
+                      "area":  "arithmetic",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): a final subtraction 8 units in the last place of 1 apart (1.8E-15, 2^-49 exactly) is not 0: the threshold is strict",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1.7763568394002505E-15
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1.7763568394002505E-15
+                                       },
+                      "excel":  {
+                                    "value2":  1.7763568394002505E-15,
+                                    "kind":  "number",
+                                    "number":  "1.7763568394002505E-15",
+                                    "text":  "1.77636E-15",
+                                    "formula":  "=1+0.0000000000000018-1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-143",
+                      "area":  "arithmetic",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): an exponent of 0.5 is the square root correctly rounded, as ARITH-133\u0027s is, where e^(0.5 ln 3) would be 1.7320508075688774",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1.7320508075688772
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1.7320508075688772
+                                       },
+                      "excel":  {
+                                    "value2":  1.7320508075688772,
+                                    "kind":  "number",
+                                    "number":  "1.7320508075688772",
+                                    "text":  "1.732050808",
+                                    "formula":  "=3^0.5",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-144",
+                      "area":  "arithmetic",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): text that differs only by an apostrophe sorts the one with it after, as a hyphen does (ARITH-123)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  true
+                                   },
+                      "engineExpect":  {
+                                           "value2":  true
+                                       },
+                      "excel":  {
+                                    "value2":  true,
+                                    "kind":  "boolean",
+                                    "text":  "TRUE",
+                                    "formula":  "=\"it\u0027s\"\u003e\"its\"",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-145",
+                      "area":  "arithmetic",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the next Windows run): ß is not before ss: the two are equal (ARITH-126), with no accent between them",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  false
+                                   },
+                      "engineExpect":  {
+                                           "value2":  false
+                                       },
+                      "excel":  {
+                                    "value2":  false,
+                                    "kind":  "boolean",
+                                    "text":  "FALSE",
+                                    "formula":  "=\"ß\"\u003c\"ss\"",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-146",
+                      "area":  "arithmetic",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the equality run): numbers 3E-14 apart at 9 (3.3E-15 of each) compare equal: inside the relative threshold. A comparison at 15 significant digits would say FALSE (9.00000000000003 against 9) (ADR-0047, fourth run)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  true
+                                   },
+                      "engineExpect":  {
+                                           "value2":  true
+                                       },
+                      "excel":  {
+                                    "value2":  false,
+                                    "kind":  "boolean",
+                                    "text":  "FALSE",
+                                    "formula":  "=9+0.00000000000003=9",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected true, Excel false (boolean)"
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-147",
+                      "area":  "arithmetic",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the equality run): 1+4E-15 and 1+6E-15, 9 units in the last place of 1 apart, compare equal: inside the relative threshold. A comparison at 15 significant digits would say FALSE (1.00000000000000 against 1.00000000000001) (ADR-0047, fourth run)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  true
+                                   },
+                      "engineExpect":  {
+                                           "value2":  true
+                                       },
+                      "excel":  {
+                                    "value2":  false,
+                                    "kind":  "boolean",
+                                    "text":  "FALSE",
+                                    "formula":  "=1+0.000000000000004=1+0.000000000000006",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected true, Excel false (boolean)"
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-148",
+                      "area":  "arithmetic",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the equality run): numbers 3.6E-12 apart at 1000 (3.6E-15 of each) compare equal: the two readings agree here, a control (ADR-0047, fourth run)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  true
+                                   },
+                      "engineExpect":  {
+                                           "value2":  true
+                                       },
+                      "excel":  {
+                                    "value2":  true,
+                                    "kind":  "boolean",
+                                    "text":  "TRUE",
+                                    "formula":  "=1000+0.0000000000036=1000",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "ARITH-149",
+                      "area":  "arithmetic",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked (the equality run): numbers 3 units in the last place of 9 apart (5.3E-15) compare equal: far inside the relative threshold. A comparison at 15 significant digits would say FALSE (9.00000000000001 against 9) (ADR-0047, fourth run)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  true
+                                   },
+                      "engineExpect":  {
+                                           "value2":  true
+                                       },
+                      "excel":  {
+                                    "value2":  false,
+                                    "kind":  "boolean",
+                                    "text":  "FALSE",
+                                    "formula":  "=9+0.000000000000005=9",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected true, Excel false (boolean)"
+                                      ]
+                  }
+              ]
+}
