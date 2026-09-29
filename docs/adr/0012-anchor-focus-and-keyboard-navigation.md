@@ -397,3 +397,28 @@ Everything above stands for a display grid. ExSheet is the Consumer that makes t
 
 *(2026-09-27: [ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)
 reversed this ADR's Focus and Anchor; the text above has been rewritten to it.)*
+
+## Added after the fifth Windows run: a reveal paints where it is going *(2026-09-29, decided with the user)*
+
+**What happened.** On the Server host, a reveal that jumped far showed a Viewport with no rows for
+one round trip. Ctrl+↓ to a row past the Window is one such jump. The blank lasted about 50–100 ms at
+no added latency, and about 220 ms at 60 ms added. For the same time the status line said
+"1 cells selected (outside the visible range)".
+
+**Why.** The reveal rendered the Focus move first and wrote the scroll offset afterwards. The
+slice of rows then followed the browser's scroll event, as the paragraphs above describe. Nothing
+was lost, but for one round trip the grid showed neither the rows it had left nor the rows it was
+going to. The status line also judged "outside" against where the scroller had been, although this
+ADR already says a reveal is judged against where the scroller is going. The DC-13 investigation
+found it (`verification/2026-09-29-windows-5/results.md`).
+
+**The decision:** the render that writes a reveal's scroll offset also paints the slice at that
+offset. That slice holds the rows the Consumer has, and Placeholders for the rows it does not
+(ADR-0004, ADR-0001), and the Range Request goes out as it always did. The status line and
+anything else that asks "is the Focus in view" read the offset the scroller is going to. The
+browser's scroll event still updates the mirrored offsets. When it arrives it confirms the slice
+already painted, so it re-renders nothing.
+
+This is not the one-round-trip blank that ADR-0028 accepts for a window drag and ADR-0045 for the
+first frame after a resize. In those, the size itself is news from the browser. Here, the grid
+chose the offset and knows it.
