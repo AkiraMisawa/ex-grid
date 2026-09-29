@@ -1,0 +1,90 @@
+
+Running 3 tests using 1 worker
+
+  x  1 [chrome] › declarations.spec.mjs:596:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport (4.3s)
+  x  2 [chrome] › declarations.spec.mjs:596:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport (4.3s)
+  x  3 [chrome] › declarations.spec.mjs:596:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport (4.3s)
+
+
+  1) [chrome] › declarations.spec.mjs:596:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 20
+    Received:   2
+
+      627 |     const end = await nameBox(grid).inputValue();
+      628 |     const last = Number(end.slice(1));
+    > 629 |     expect(last).toBeGreaterThan(20);
+          |                  ^
+      630 |     await expect(cell(grid, end)).toHaveText(String(last - 1));
+      631 | });
+      632 |
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-5\tests\ExGrid.Browser\declarations.spec.mjs:629:18
+
+    Error Context: test-results-parked-dc13-server-chrome\declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-parked-dc13-server-chrome\declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-parked-dc13-server-chrome\declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chrome] › declarations.spec.mjs:596:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 20
+    Received:   2
+
+      627 |     const end = await nameBox(grid).inputValue();
+      628 |     const last = Number(end.slice(1));
+    > 629 |     expect(last).toBeGreaterThan(20);
+          |                  ^
+      630 |     await expect(cell(grid, end)).toHaveText(String(last - 1));
+      631 | });
+      632 |
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-5\tests\ExGrid.Browser\declarations.spec.mjs:629:18
+
+    Error Context: test-results-parked-dc13-server-chrome\declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-chrome-repeat1\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-parked-dc13-server-chrome\declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-chrome-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-parked-dc13-server-chrome\declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-chrome-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chrome] › declarations.spec.mjs:596:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 20
+    Received:   2
+
+      627 |     const end = await nameBox(grid).inputValue();
+      628 |     const last = Number(end.slice(1));
+    > 629 |     expect(last).toBeGreaterThan(20);
+          |                  ^
+      630 |     await expect(cell(grid, end)).toHaveText(String(last - 1));
+      631 | });
+      632 |
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-5\tests\ExGrid.Browser\declarations.spec.mjs:629:18
+
+    Error Context: test-results-parked-dc13-server-chrome\declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-chrome-repeat2\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-parked-dc13-server-chrome\declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-chrome-repeat2\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-parked-dc13-server-chrome\declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-chrome-repeat2\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [chrome] › declarations.spec.mjs:596:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport 
+    [chrome] › declarations.spec.mjs:596:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport 
+    [chrome] › declarations.spec.mjs:596:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport 

@@ -1,0 +1,15 @@
+
+Running 10 tests using 1 worker
+
+  ok  1 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (1.9s)
+  ok  2 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (2.0s)
+  ok  3 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (2.0s)
+  ok  4 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (2.0s)
+  ok  5 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (2.0s)
+  ok  6 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (2.0s)
+  ok  7 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (2.0s)
+  ok  8 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (2.0s)
+  ok  9 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (2.0s)
+  ok 10 [chrome] › sheet-vs-excel.spec.mjs:706:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (2.0s)
+
+  10 passed (28.4s)

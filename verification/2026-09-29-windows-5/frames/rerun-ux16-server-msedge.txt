@@ -1,0 +1,75 @@
+== stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge
+last frame: frames/rerun-ux16-server-msedge/stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge.jpeg
+# Error details
+
+```
+Error: the hover band over a stripe
+
+expect(received).not.toBe(expected) // Object.is equality
+
+Expected: not "248,248,248,255"
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Row Stripes
+  - heading "Row Stripes" [level=1] [ref=e5]
+  - paragraph [ref=e6]: Every second row of the result wears a stripe (ADR-0038). It is decided from the row's position in the whole result, never from its place on the screen, so it stays with its row however far the grid scrolls. The pinned Name column is striped with the rest of the row. A group or total row — and a missing value — paints its own ground over the stripe, and still counts, so the rows after it keep their places. The hover band, the selection and the Focus paint above it all.
+  - grid [ref=e7]:
+  
+
+== stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat1
+last frame: frames/rerun-ux16-server-msedge/stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat1.jpeg
+# Error details
+
+```
+Error: the hover band over a stripe
+
+expect(received).not.toBe(expected) // Object.is equality
+
+Expected: not "248,248,248,255"
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Row Stripes
+  - heading "Row Stripes" [level=1] [ref=e5]
+  - paragraph [ref=e6]: Every second row of the result wears a stripe (ADR-0038). It is decided from the row's position in the whole result, never from its place on the screen, so it stays with its row however far the grid scrolls. The pinned Name column is striped with the rest of the row. A group or total row — and a missing value — paints its own ground over the stripe, and still counts, so the rows after it keep their places. The hover band, the selection and the Focus paint above it all.
+  - grid [ref=e7]:
+  
+
+== stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat2
+last frame: frames/rerun-ux16-server-msedge/stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat2.jpeg
+# Error details
+
+```
+Error: the hover band over a stripe
+
+expect(received).not.toBe(expected) // Object.is equality
+
+Expected: not "248,248,248,255"
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Row Stripes
+  - heading "Row Stripes" [level=1] [ref=e5]
+  - paragraph [ref=e6]: Every second row of the result wears a stripe (ADR-0038). It is decided from the row's position in the whole result, never from its place on the screen, so it stays with its row however far the grid scrolls. The pinned Name column is striped with the rest of the row. A group or total row — and a missing value — paints its own ground over the stripe, and still counts, so the rows after it keep their places. The hover band, the selection and the Focus paint above it all.
+  - grid [ref=e7]:
+  
+

@@ -1,0 +1,15 @@
+
+Running 10 tests using 1 worker
+
+  ok  1 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok  2 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok  3 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok  4 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.0s)
+  ok  5 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.0s)
+  ok  6 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok  7 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.0s)
+  ok  8 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok  9 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok 10 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.0s)
+
+  10 passed (24.3s)

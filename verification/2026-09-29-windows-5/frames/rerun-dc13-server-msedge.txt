@@ -1,0 +1,27 @@
+== declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-msedge
+last frame: frames/rerun-dc13-server-msedge/declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-msedge.jpeg
+# Error details
+
+```
+Error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 20
+Received:   2
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Sheet
+  - heading "Sheet — ExSheet drawn by ExGrid" [level=1] [ref=e5]
+  - paragraph [ref=e6]:
+    - text: ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the Formula Bar, type an address such as
+    - code [ref=e7]: D200
+    - text: into the Name Box, and use Ctrl+arrow to jump to the end of a block. The status line counts the cells of the Sheet Document the page receives after every change (ADR-0048).
+  - paragraph [ref=e8]:
+    - text: The grid on the right shows this page's positions,
+

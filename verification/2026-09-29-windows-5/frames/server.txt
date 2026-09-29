@@ -1,0 +1,119 @@
+== declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-msedge
+last frame: frames/server/declarations-DC-13-the-edg-303c4--the-bottom-of-the-Viewport-msedge.jpeg
+# Error details
+
+```
+Error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 20
+Received:   2
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Sheet
+  - heading "Sheet — ExSheet drawn by ExGrid" [level=1] [ref=e5]
+  - paragraph [ref=e6]:
+    - text: ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the Formula Bar, type an address such as
+    - code [ref=e7]: D200
+    - text: into the Name Box, and use Ctrl+arrow to jump to the end of a block. The status line counts the cells of the Sheet Document the page receives after every change (ADR-0048).
+  - paragraph [ref=e8]:
+    - text: The grid on the right shows this page's positions,
+
+== mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--msedge
+last frame: frames/server/mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--msedge.jpeg
+# Error details
+
+```
+Error: expect(received).toEqual(expected) // deep equality
+
+- Expected  - 1
++ Received  + 0
+
+@@ -6,7 +6,6 @@
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+-   "9",
+  ]
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - toolbar [ref=e4]:
+      - button "Toggle navigation" [ref=e5] [cursor=pointer]
+      - heading "Blotter" [level=6] [ref=e10]
+      - generic [ref=e14]:
+        - generic [ref=e15] [cursor=pointer]:
+          - combobox "Reporting currency" [ref=e16]: USD
+          - group "Reporting currency"
+        - generic: Reporting currency
+      - button "Toggle dark mode" [active] [ref=e21] [cursor=pointer]
+  - complementary [ref=e26]:
+    - navigation [ref=e28]:
+      - link "Blotter" [ref=e30] [cursor=pointer]:
+        - /url: mud-app
+      - link "Wrapper contract" [ref=e36] [cursor=pointer]:
+        - /url: mud
+      - link "Feature
+
+== stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--chrome
+last frame: frames/server/stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--chrome.jpeg
+# Error details
+
+```
+Error: the hover band over a stripe
+
+expect(received).not.toBe(expected) // Object.is equality
+
+Expected: not "248,248,248,255"
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Row Stripes
+  - heading "Row Stripes" [level=1] [ref=e5]
+  - paragraph [ref=e6]: Every second row of the result wears a stripe (ADR-0038). It is decided from the row's position in the whole result, never from its place on the screen, so it stays with its row however far the grid scrolls. The pinned Name column is striped with the rest of the row. A group or total row — and a missing value — paints its own ground over the stripe, and still counts, so the rows after it keep their places. The hover band, the selection and the Focus paint above it all.
+  - grid [ref=e7]:
+  
+
+== stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge
+last frame: frames/server/stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge.jpeg
+# Error details
+
+```
+Error: the hover band over a stripe
+
+expect(received).not.toBe(expected) // Object.is equality
+
+Expected: not "248,248,248,255"
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Row Stripes
+  - heading "Row Stripes" [level=1] [ref=e5]
+  - paragraph [ref=e6]: Every second row of the result wears a stripe (ADR-0038). It is decided from the row's position in the whole result, never from its place on the screen, so it stays with its row however far the grid scrolls. The pinned Name column is striped with the rest of the row. A group or total row — and a missing value — paints its own ground over the stripe, and still counts, so the rows after it keep their places. The hover band, the selection and the Focus paint above it all.
+  - grid [ref=e7]:
+  
+
