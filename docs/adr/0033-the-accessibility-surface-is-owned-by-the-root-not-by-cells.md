@@ -165,3 +165,18 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   when it takes focus. The live region keeps its two writers.
 - **Whether the announcement should name the corner cells by column header or by index** is a
   wording question, settled against a real screen reader in layer 3 rather than in prose here.
+
+## Added after the fifth Windows run: a collapse to one cell empties the range sentence *(2026-09-29, decided with the user)*
+
+The live region kept its last range sentence when the Selection became a single cell. For example,
+it still read "2 rows by 2 columns selected, B 2 to C 3" after a click, an arrow key, or a plain-text
+paste had collapsed B2:C3 to B2. The fifth Windows run saw it after the paste
+(`verification/2026-09-29-windows-5/results.md`, Part B item 3). An existing layer-2 test had pinned
+it as intended.
+
+The region is where "what is selected" can be read at any moment. A sentence naming a range that is
+no longer selected is the plausible wrong answer this design refuses.
+
+**The decision:** when the Selection becomes one cell or none, the region is emptied if it holds a
+range sentence. Emptying a `role="status"` region is not read aloud. A relayed Reject or a copy
+refusal stays where it is. A Focus move that changes no Selection still writes nothing (A11Y-10).
