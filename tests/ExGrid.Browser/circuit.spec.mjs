@@ -487,14 +487,16 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
 test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22)', () => {
     /** Every write of the field's value from script, recorded: none is expected. */
     async function recordWrites(page, selector) {
-        await page.evaluate((sel) => {
+        await alterPage(page, (sel) => {
             window.__valueWrites = [];
             const field = document.querySelector(sel);
             const own = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
             Object.defineProperty(field, 'value', {
+                configurable: true,
                 get() { return own.get.call(this); },
                 set(v) { window.__valueWrites.push(v); own.set.call(this, v); },
             });
+            return () => { delete field.value; delete window.__valueWrites; };
         }, selector);
     }
 
@@ -557,7 +559,7 @@ test('a ← typed as the completion list is painted is left to the editor (ADR-0
     const editor = sheet.locator('input.ex-editor:not(.ex-formula-bar-text)');
     await expect(editor).toHaveValue('=');
     await expect(editor).toBeFocused();
-    await page.evaluate(() => {
+    await alterPage(page, () => {
         window.__arrowTaken = null;
         const root = document.querySelector('.ex-grid');
         const observer = new MutationObserver(() => {
@@ -570,6 +572,7 @@ test('a ← typed as the completion list is painted is left to the editor (ADR-0
             window.__arrowTaken = arrow.defaultPrevented;
         });
         observer.observe(root, { childList: true, subtree: true });
+        return () => { observer.disconnect(); delete window.__arrowTaken; };
     });
 
     await page.keyboard.type('S');

@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, record } from './fixtures.mjs';
+import { test, expect, alterPage, setRoundTrip, record } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
@@ -703,14 +703,16 @@ test('DC-8: Excel\'s column wide enough, with the same flavours, file and RTF in
 // ADR-0050 fourth-round question is what the browser hands a paste, not what a
 // navigator.clipboard.read() — which sanitises again — would say.
 async function capturePastes(page) {
-    await page.evaluate(() => {
+    await alterPage(page, () => {
         window.__pastes = [];
-        document.addEventListener('paste', (event) => {
+        const listener = (event) => {
             window.__pastes.push({
                 html: event.clipboardData.getData('text/html'),
                 text: event.clipboardData.getData('text/plain'),
             });
-        }, true);
+        };
+        document.addEventListener('paste', listener, true);
+        return () => { document.removeEventListener('paste', listener, true); delete window.__pastes; };
     });
     return async () => page.evaluate(() => window.__pastes.at(-1));
 }
@@ -857,13 +859,15 @@ test('DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser\'
     const positions = page.locator('#sheet-positions .ex-grid');
     await positions.locator("[id$='-r1c1']").click({ force: true });
     await expect(positions).toBeFocused();
-    await page.evaluate(() => {
+    await alterPage(page, () => {
         window.__undoPrevented = null;
-        document.addEventListener('keydown', (event) => {
+        const listener = (event) => {
             if (event.key === 'z' || event.key === 'Z') {
                 window.__undoPrevented = event.defaultPrevented;
             }
-        });
+        };
+        document.addEventListener('keydown', listener);
+        return () => { document.removeEventListener('keydown', listener); delete window.__undoPrevented; };
     });
     await page.keyboard.press('ControlOrMeta+Z');
     await expect.poll(() => page.evaluate(() => window.__undoPrevented)).toBe(false);

@@ -103,10 +103,16 @@ async function dragFillHandle(page, toA1) {
 // 0–60 ms on a local circuit, right from 100 ms). These probes ask what Excel does, not that.
 const PACE_MS = 150;
 
+// The file's tests share one page (ADR-0056), so its keyboard is paced once, not once per test.
+const paced = new WeakSet();
+
 test.beforeEach(async ({ page, context }) => {
-    for (const name of ['press', 'type']) {
-        const act = page.keyboard[name].bind(page.keyboard);
-        page.keyboard[name] = async (...args) => { await act(...args); await page.waitForTimeout(PACE_MS); };
+    if (!paced.has(page)) {
+        paced.add(page);
+        for (const name of ['press', 'type']) {
+            const act = page.keyboard[name].bind(page.keyboard);
+            page.keyboard[name] = async (...args) => { await act(...args); await page.waitForTimeout(PACE_MS); };
+        }
     }
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/sheet');
