@@ -128,6 +128,18 @@ paste of one field over the same range were otherwise the same intent, field for
 Consumer could not tell a typed Formula from a pasted one. *(Decided with the user, 2026-09-28,
 when the implementation found them indistinguishable.)*
 
+## 6. The core tells its Consumer when an edit opens and when it ends *(decided with the user, 2026-09-29)*
+
+ExSheet refuses its application's changes while an edit is open
+([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md), same
+day), so it has to know when one is. **The grid raises a notification when an edit opens and when it
+ends**, however it ends: committed, cancelled, refused and held open (which is still open), or
+discarded ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+It carries no text: the uncommitted text stays the grid's
+([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)). It is raised in C#, on the
+side where the editing state lives, so no round trip stands between the state and the Consumer's
+reading of it. A plain ExGrid Consumer may listen too, for its own buttons.
+
 ## Consequences
 
 - **ADR-0012, ADR-0014 and ADR-0008 each gain a note** saying their rule stands, and which
