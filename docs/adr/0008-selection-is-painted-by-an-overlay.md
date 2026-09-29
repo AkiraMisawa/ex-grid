@@ -69,7 +69,8 @@ the concerns stay apart.
 - **Only geometric effects can be painted.** Rectangle fill, outline and fill handle: yes.
   "Invert the text colour of selected cells only": no.
 - **The fill is translucent.** `rgba`, so the cell text shows through. This is also what Excel
-  looks like.
+  looks like. *(Of the range, and not of the active cell, which Excel leaves untinted. Corrected
+  2026-09-29: see "Excel's look for the Focus and a single range" below.)*
 - **Disjoint multi-range selection means one overlay per range.** Operations with many ranges are
   rare, so this does not become a problem.
 - **The overlay lives in the same coordinate space as the rows.** Sharing the scroll translation
@@ -203,3 +204,44 @@ the Focus moves and the rows keep skipping (ADR-0003).
 
 Implemented as specified: `HighlightFocusRow` on the component, one rectangle per layer
 painted first so every range stays readable over it, and `--ex-focus-row-fill` as the colour.
+
+## Excel's look for the Focus and a single range *(decided with the user, 2026-09-29)*
+
+Seen on ExSheet's demo page, the active cell's outline was thinner on one side than on the other
+three, and a selected range had no outline of its own. Both are corrected here, for ExGrid as a
+whole, since the Focus is Excel's active cell everywhere
+([ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
+
+- **The Focus outline is drawn inside its cell.** It was a 2px outline offset by −1px, so it
+  straddled the cell's edge. The outer pixel went beneath whatever is painted above the selection
+  layer: a Pinned Column beside the first scrollable column, the Headings beside column A
+  ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md)), and the header above row 1. Measured
+  in device pixels on 2026-09-29, those edges were 1px and the others 2px. Lifting the outline
+  above those layers is not an option: a cell scrolled beneath the pinned block has to go beneath
+  it, outline and all. So the whole width now lies inside the cell, as the pointing outline and the
+  chosen action already do, and nothing above the layer can cover part of it. The fill handle
+  stays centred on the outline's corner. The forced-colors outline of a range is drawn the same
+  way.
+- **The Focus cell is not tinted, and a selection of one cell is not tinted at all.** The
+  Consequences above say "this is also what Excel looks like" of the translucent fill. That holds
+  for the range and not for the active cell: Excel leaves the active cell untinted inside a tinted
+  range, and tints nothing when one cell is selected. A range that holds the Focus is therefore
+  painted with a hole where the Focus is. **The hole is geometry**, resolved in C# with the
+  rectangle it belongs to and emitted inline
+  ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)). The range stays one
+  element, so the argument above (cost per range, never per cell) is untouched. That the hole adds
+  nothing measurable to a drag is a claim, so it is measured before it is made.
+- **A selection of one range carries one outline, around the whole range**, in the Focus outline's
+  colour and width and drawn inside the range in the same way. The Focus inside it has no outline
+  of its own and is marked only by being untinted. A selection of one cell is the case where the
+  range and the Focus coincide, and it shows the Focus outline alone. *(Read, not observed: that
+  Excel draws no separate outline around the active cell inside a single range. It is on the next
+  Windows run's list.)*
+- **Several ranges are left as they are until Excel has been observed**: each range tinted with
+  no outline, the Focus's cell untinted (the hole above) and outlined. How Excel outlines a
+  selection made with Ctrl+click, and whether its active cell carries a border there, is on the
+  next Windows run's list, and this bullet is replaced by what it finds.
+- **One colour token draws all of it.** The range outline reads `--ex-focus-outline`, as the Focus
+  outline, the pointing outline, the fill handle and the chosen action already do
+  ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)). No new
+  token is added.

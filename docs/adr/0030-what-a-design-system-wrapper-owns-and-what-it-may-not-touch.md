@@ -144,6 +144,18 @@ ink colour (`text-primary`), which contrasts with its own surface by constructio
 schemes; the selection fill, the Focus band and the root's outline keep the primary. The
 requirement was not relaxed to fit the palette.
 
+*(Changed 2026-09-29, decided with the user.)* Under `ExGrid.MudBlazor`, the Focus outline takes
+the palette's primary again, and so does everything else drawn with `--ex-focus-outline`: the
+outline of a selected range
+([ADR-0008](./0008-selection-is-painted-by-an-overlay.md), same day), the pointing outline, the fill
+handle and the chosen action. In the light scheme that is the primary itself. In the dark scheme it
+is the primary with its lightness raised just far enough to clear UX-9's 3:1 against the surface,
+through CSS relative colour syntax, which keeps the hue and which every browser in scope reads
+([ADR-0017](./0017-target-chromium-browsers-only.md)). The 2.83:1 above was a shortfall of
+about 0.015 in relative luminance, so the raise is small. UX-9's browser test measures both
+schemes. **If the raised primary does not clear 3:1, the dark scheme keeps the ink colour** and
+this paragraph records that it did. The requirement is still not relaxed.
+
 ## How a violation is caught rather than trusted away
 
 The contract is enforceable because each prohibition lands somewhere observable:
