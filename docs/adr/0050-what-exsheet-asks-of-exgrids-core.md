@@ -142,6 +142,13 @@ It carries no text: the uncommitted text stays the grid's
 ([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)). It is raised in C#, on the
 side where the editing state lives, so no round trip stands between the state and the Consumer's
 reading of it. A plain ExGrid Consumer may listen too, for its own buttons.
+- *One end is heard late (settled while building, the same day).* A discard caused by a parameter
+  change is announced after the render that applied the change, as `OnEditDiscarded` already is, so
+  on a circuit the Consumer hears that end a round trip late. It errs toward refusing: for that
+  render, the Consumer still believes an edit is open. It never hears an opening late.
+- *Disposal is not announced.* A grid removed while an edit is open raises nothing, because the
+  Consumer that removed it already knows. Raising into a Consumer that may itself be tearing down
+  would be worse than silence.
 
 **A Consumer can also discard an open edit, giving its own reason** *(decided with the user the same
 day)*. The discard is announced through `OnEditDiscarded` like the grid's own discards (ADR-0011), and
