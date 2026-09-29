@@ -239,6 +239,12 @@ Found while building [ADR-0018](./0018-multiple-instances-must-be-independent.md
 `99` typed over a cell, a click on another cell, then `7` at once, and the `7` was lost. It went
 into the Cell Editor the commit was removing, and B2 never opened. That happened on the Server
 host at 150 ms, and without injected latency too.
+*(Settled while building.)* The hold alone still lost the key in 3 runs of 20 at 0 ms on the Server
+host. It went to `body`. An ending edit asked for the keyboard back only after the gate had answered,
+and the render that removed the editor went out first, so for that moment DOM focus was on nothing
+and no root listener heard the key. The core now sends both requests, the gate's new mode and the
+hand-back, before it yields, as closing a popover already does. The gate is still told first. This
+changes the order for every way an edit ends: 0 runs of 30 lost the key afterwards, on each host.
 
 Rejected: **appending on the C# side** — C# receiving the printable keys and adding them to
 the editor's text. Keys typed after the editor has DOM focus go straight into its input,
