@@ -247,6 +247,20 @@ internal static partial class Lexer
         return column.ToString();
     }
 
+    /// <summary>
+    /// The Reference written at <paramref name="at"/>, as this grammar reads one there, or
+    /// <see langword="null"/>: the match's groups say where its Sheet qualifier and each column
+    /// and row part stand, <c>$</c> included — <c>c1</c>, <c>r1</c>, <c>c2</c>, <c>r2</c> for a
+    /// cell or an area, <c>cc1</c>, <c>cc2</c> for whole columns and <c>rr1</c>, <c>rr2</c> for
+    /// whole rows. Nothing that <see cref="Tokenize"/> would not read as a Reference: not a
+    /// function name (<c>LOG10(</c>), a structured reference or a column past <c>XFD</c>.
+    /// </summary>
+    public static Match? MatchReference(string formula, int at)
+    {
+        var match = ReferencePattern().Match(formula, at);
+        return match.Success && TryReadReference(match) is not null ? match : null;
+    }
+
     private static Reference? TryReadReference(Match match)
     {
         string? sheet = null;

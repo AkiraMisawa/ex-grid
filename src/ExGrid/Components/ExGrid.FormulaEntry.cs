@@ -46,14 +46,15 @@ public partial class ExGrid<TRow>
     private int _completionCaret = -1;
 
     // Text the core wrote into the editor, and where the listener is to place the caret once
-    // the render carrying that text has landed (ADR-0051).
-    private (string Text, int Caret)? _caretToPlace;
+    // the render carrying that text has landed (ADR-0051) — or the selection, from the caret
+    // to its end, that F4's rewrite answered.
+    private (string Text, int Caret, int End)? _caretToPlace;
 
     // The placement last asked for, until the listener has carried it out. Until then the
     // browser's caret in that text is its own — where setting the value left it — and a report
     // of it is not the user moving the caret (ADR-0051: reported and set, never inferred). The
     // number tells a placement apart from one made while it was in flight.
-    private (string Text, int Caret)? _caretPlacing;
+    private (string Text, int Caret, int End)? _caretPlacing;
     private int _caretPlacements;
 
     // The answer being shown, the candidate chosen in it, and the number of the last question
@@ -278,10 +279,11 @@ public partial class ExGrid<TRow>
 
     /// <summary>The core wrote the editor's text itself (ADR-0051): once the render carrying it
     /// has landed, the listener places the caret where the core says — after the inserted
-    /// text, wherever in the text that is.</summary>
-    private void PlaceCaret()
+    /// text, wherever in the text that is — or, for a rewrite that answered one, the selection
+    /// from the caret to <paramref name="selectionEnd"/>.</summary>
+    private void PlaceCaret(int? selectionEnd = null)
     {
-        _caretToPlace = (_editText, _editCaret);
+        _caretToPlace = (_editText, _editCaret, selectionEnd ?? _editCaret);
         _caretPlacing = _caretToPlace;
         _caretPlacements++;
     }
@@ -304,9 +306,9 @@ public partial class ExGrid<TRow>
         _caretPlacing = null;
     }
 
-    /// <summary>Hands the caret the core placed to the listener, after the render that carries
-    /// its text. The listener sets it only while the surface still holds that text: typed on
-    /// since, the user's own caret stands.</summary>
+    /// <summary>Hands the caret (or the selection) the core placed to the listener, after the
+    /// render that carries its text. The listener sets it only while the surface still holds
+    /// that text: typed on since, the user's own caret stands.</summary>
     private async Task PushCaretAsync()
     {
         var place = _caretToPlace;
@@ -316,7 +318,7 @@ public partial class ExGrid<TRow>
         {
             if (place is not { } caret || _scrollHandle is null || _disposed || _editMode == EditMode.None)
                 return;
-            await _scrollHandle.InvokeVoidAsync("setCaret", caret.Text, caret.Caret);
+            await _scrollHandle.InvokeVoidAsync("setCaret", caret.Text, caret.Caret, caret.End);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

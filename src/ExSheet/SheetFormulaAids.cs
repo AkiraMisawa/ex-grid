@@ -10,7 +10,8 @@ namespace ExSheet;
 /// editor's text and caret and does not know what a Formula is; the engine's
 /// <see cref="FormulaEntry"/> does. This is only the translation between the two — the engine's
 /// span and replacement onto the grid's candidates, its argument onto the grid's hint, its
-/// insertion site onto the grid's yes or no, and a pointed range onto its Reference text.
+/// insertion site onto the grid's yes or no, a pointed range onto its Reference text, and F4's
+/// cycle onto the grid's rewrite.
 /// </summary>
 internal static class SheetFormulaAids
 {
@@ -64,6 +65,17 @@ internal static class SheetFormulaAids
     /// <summary>The Reference Point mode writes for a pointed range: <c>A3</c>, or <c>B7:C9</c> from its top-left.</summary>
     internal static string ReferenceText(SelectionRange range) =>
         FormulaEntry.ReferenceText(RangeOf(range));
+
+    /// <summary>
+    /// F4 (ADR-0051, 2026-09-29): the Reference at the caret, or every Reference the selection
+    /// covers, cycled to its next form by the engine (<see cref="FormulaEntry.CycleReference"/>),
+    /// with the caret at the end of what was rewritten or the selection over it. Null where
+    /// nothing changes: no Reference there, or text that is not a Formula.
+    /// </summary>
+    internal static EditorRewrite? CycleReference(string text, int selectionStart, int selectionEnd) =>
+        FormulaEntry.CycleReference(text, selectionStart, selectionEnd) is { } cycle
+            ? new EditorRewrite(cycle.Text, cycle.SelectionStart, cycle.SelectionEnd)
+            : null;
 
     /// <summary>The Sheet's name for a range of the grid's positions: rows and columns are places (ADR-0046).</summary>
     internal static CellRange RangeOf(SelectionRange range) =>
