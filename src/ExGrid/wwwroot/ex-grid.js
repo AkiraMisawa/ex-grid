@@ -365,7 +365,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // animation frame, of where the caret stands when the frame comes.
     let caretFrame = 0;
     const onSelectionChange = () => {
-        if (watchingReferenceTexts && focusedEditorField() !== null) {
+        if (watchingReferenceTexts) {
             gateReferenceTexts();
         }
         if (!reportCaret || !core || caretFrame !== 0 || focusedEditorField() === null) {
@@ -386,12 +386,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // rendered for (data-ex-text). On a circuit that is a round trip behind the typing, and colours
     // on text typed past would stand on the wrong characters, so the layer shows — and the field's
     // own text turns transparent — only while the two texts are one: the listener sets one class on
-    // the field then, and the stylesheet does the rest. Compared on each input, when a layer's text
-    // changes (that one attribute, observed while an edit is open) and when the caret moves in a
-    // field, which is how one that has just opened over its layer is first heard. A field holding
-    // an IME composition is ahead of anything rendered, and is never shown over. The layer's line
-    // scrolls with the field: the scroll-offset entry, on one more element (ADR-0021). Reads values,
-    // one attribute and scroll offsets; no layout.
+    // the field then, and the stylesheet does the rest. Only in the surface the edit is in, as Excel
+    // colours it: the field holding DOM focus, the one held keys are handed to (ADR-0051) — the
+    // other surface keeps its plain text, and a press from one into the other takes the colours
+    // with it. Compared on each input, when a layer's text changes (that one attribute, observed
+    // while an edit is open) and whenever the selection moves, which is how a field that has just
+    // taken focus, or just opened over its layer, is heard. A field holding an IME composition is
+    // ahead of anything rendered, and is never shown over. The layer's line scrolls with the field:
+    // the scroll-offset entry, on one more element (ADR-0021). Reads values, one attribute, which
+    // element has focus and scroll offsets; no layout.
     let composingIn = null;
     let watchingReferenceTexts = false;
     const referenceTextOf = (field) => {
@@ -400,7 +403,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     const gateReferenceText = (field, layer) => {
         field.classList.toggle('ex-reference-text-shown',
-            editing !== 'none' && composingIn !== field && layer.getAttribute('data-ex-text') === field.value);
+            editing !== 'none' && field === document.activeElement && composingIn !== field
+            && layer.getAttribute('data-ex-text') === field.value);
         layer.firstElementChild.scrollLeft = field.scrollLeft;
     };
     const gateReferenceTexts = () => {

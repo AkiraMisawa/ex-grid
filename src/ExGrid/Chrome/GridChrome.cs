@@ -269,9 +269,10 @@ public sealed record CellEditorContext(
     /// its control</b>, both directly inside the core's box; the core stands it over the box's
     /// content, which the control fills, in the box's font. A control with no padding and no
     /// background of its own then shows it through. It shows, and the control's own text turns
-    /// transparent, only while it holds the control's value; the core's listener decides that
-    /// from the layer's text, and the control does nothing. Null where no References function
-    /// is declared: there is nothing to place.
+    /// transparent, only in the surface the edit is in — the control holding DOM focus, as Excel
+    /// colours the cell's text or the Formula Bar's and not both — and only while it holds the
+    /// control's value; the core's listener decides that, and the control does nothing. Null where
+    /// no References function is declared: there is nothing to place.
     /// </summary>
     public RenderFragment? ReferenceText { get; init; }
 }

@@ -16,6 +16,10 @@ text turns transparent only while the layer holds the field's current value.
       on that one attribute), the listener compares the layer's text with the field's value and sets
       or clears one class. The field's text is transparent only under that class; the caret keeps its
       colour (DC-47, DC-51)
+- [x] Only the surface the edit is in shows the colours; the other keeps its plain text, and the
+      colours follow a press from one surface into the other mid-edit. Excel colours the cell's
+      text or the Formula Bar's, never both (the eighth Windows run, `range-finder.md` cases 1, 21
+      and 1fb). The surface is the field holding DOM focus, the one held keys go to (ADR-0051)
 - [ ] An IME composition leaves the field ahead, so its own text shows until the composition ends
       and the layer catches up (DC-47). *Its own text shows for the whole composition. The layer
       then shows again at the next input, not when the composition ends: Chrome sends no input

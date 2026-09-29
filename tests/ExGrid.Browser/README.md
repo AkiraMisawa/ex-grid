@@ -386,9 +386,11 @@ nobody had asked for. What that means when writing a test:
   built-in Chrome and `ExGrid.MudBlazor`'s: a burst of typing with 150 ms on the Server host,
   sampled every animation frame in the page, never showing transparent field text over a layer
   that differs, and the colours back once it pauses; on WebAssembly the colours following each
-  keystroke, three References in three colours; an edit opened by F2 or by a press into the
-  Formula Bar coloured before anything is typed, the caret and a selection drawn by the field; an
-  IME composition through CDP drawn by the field while it lasts (DC-47); a Formula longer than
+  keystroke, three References in three colours; only the surface the edit is in coloured, the
+  other plain, as in Excel: an edit opened by F2 or by a press into the Formula Bar coloured there
+  before anything is typed, and the colours following a press from the cell into the bar and back;
+  the caret and a selection drawn by the field; an IME composition through CDP drawn by the field
+  while it lasts (DC-47); a Formula longer than
   either surface, at both ends, the layer's line scrolled with the field, its font, padding and
   spacing the field's, and the two drawings of the text the same picture (DC-48).
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the

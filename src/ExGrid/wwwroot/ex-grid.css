@@ -547,8 +547,9 @@
    before its field, in the field's box, font and line, and keeps every space the field keeps, so
    its characters stand where the field's do; the rest is what the browser gives an input and not
    a div. Paint only: it takes no pointer, and assistive technology reads the field. Hidden unless
-   the field after it wears ex-reference-text-shown, which the editor listener sets only while the
-   layer's text (data-ex-text) is the field's value, and never during an IME composition
+   the field after it wears ex-reference-text-shown, which the editor listener sets only in the
+   surface the edit is in — the field holding DOM focus, as Excel colours only that one — only
+   while the layer's text (data-ex-text) is the field's value, and never during an IME composition
    (ADR-0021's note of ADR-0057): uncoloured for a moment rather than coloured on the wrong
    characters. Its line scrolls sideways with the field, and has room to scroll as far. It is
    painted beneath the field, caret and selection included, whether or not the field is

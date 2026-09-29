@@ -9,8 +9,10 @@ namespace ExGrid.Components;
 // the same text with each Reference in its colour. The core renders it — beside its own inputs,
 // and as a fragment a Chrome places immediately before its control — and carries on it the text it
 // was rendered for. The editor listener shows it, and makes the field's own text transparent, only
-// while that text is the field's value; the stylesheet does the rest. Only where a References
-// function is declared: without one no layer is rendered (DC-1).
+// in the surface the edit is in — the field holding DOM focus; the other keeps its plain text, as
+// Excel's does — and only while that text is the field's value; the stylesheet does the rest. Both
+// surfaces carry the text, so the colours can follow a press from one into the other with nothing
+// to render. Only where a References function is declared: without one no layer is rendered (DC-1).
 public partial class ExGrid<TRow>
 {
     // A distinct object, so the Cell Editor's layer can carry a key beside the rows' and the

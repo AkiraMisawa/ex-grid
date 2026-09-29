@@ -1,11 +1,13 @@
 import { test, expect, alterPage, setRoundTrip, twoFrames } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
-import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf } from './sheet-helpers.mjs';
+import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf, typeSteadily } from './sheet-helpers.mjs';
 
 // The coloured text in the editor (ADR-0057, "The coloured text is a layer that shows only while it
 // is up to date"; DC-47, DC-48), as ExSheet declares its References on /sheet, under the built-in
 // Chrome and ExGrid.MudBlazor's. Beneath each editor surface the core renders the text with each
-// Reference in its colour; the field's own text turns transparent only while the layer holds the
+// Reference in its colour; the field's own text turns transparent only in the surface the edit is
+// in — the one holding DOM focus; Excel colours the cell's text or the Formula Bar's, never both
+// (the eighth Windows run, range-finder cases 1, 21 and 1fb) — and only while the layer holds the
 // field's value. The criterion is a frame: no painted frame may show transparent field text over a
 // layer that differs, so the typing burst is sampled every animation frame in the page.
 
@@ -54,12 +56,14 @@ async function expectColoured(field, text) {
         .toEqual({ value: text, text, drawn: text, shown: true, fill: TRANSPARENT, layer: 'visible' });
 }
 
-/** The field's own text shows, and the layer does not. */
-async function expectOwnText(field) {
-    const now = await colouring(field);
-    expect(now.shown).toBe(false);
-    expect(now.fill).not.toBe(TRANSPARENT);
-    expect(now.layer).toBe('hidden');
+/** The field's own plain text shows, and its layer does not: no edit is open, the edit is in the
+ * other surface, or the field is ahead of its layer. */
+async function expectPlain(field, text) {
+    await expect(field).toHaveValue(text);
+    await expect.poll(async () => {
+        const now = await colouring(field);
+        return { shown: now.shown, own: now.fill !== TRANSPARENT, layer: now.layer };
+    }).toEqual({ shown: false, own: true, layer: 'hidden' });
 }
 
 /**
@@ -122,7 +126,8 @@ for (const chrome of ['builtin', 'mud']) {
         const typed = '=SUM(A1,B2)+C3*D4-A1';
         await expect(editor(grid)).toHaveValue(typed);
         await expectColoured(editor(grid), typed);
-        await expectColoured(bar(grid), typed);
+        // The edit is in the cell: the Formula Bar shows the same text, plain.
+        await expectPlain(bar(grid), typed);
         const frames = await framesRecorded(page);
         expect(frames.wrong).toEqual([]);
         expect(frames.sampled).toBeGreaterThan(10);
@@ -144,6 +149,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type(formula[i - 1]);
             await expectColoured(editor(grid), formula.slice(0, i));
         }
+        await expectPlain(bar(grid), formula);
 
         const spans = await editor(grid).evaluate((input) => [...input.previousElementSibling.querySelectorAll('span')]
             .map((span) => ({ text: span.textContent, class: span.className, colour: getComputedStyle(span).color })));
@@ -159,17 +165,16 @@ for (const chrome of ['builtin', 'mud']) {
     // opened on the text the field already shows changes nothing in the field: the listener hears
     // the Cell Editor take DOM focus, and the Formula Bar's layer, which stands empty while no edit
     // is open, being given the edit's text.
-    test(`DC-47: an edit opened on a Formula, by F2 or by a press into the Formula Bar, is coloured before anything is typed (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-47: an edit opened on a Formula, by F2 or by a press into the Formula Bar, is coloured in that surface before anything is typed, and the other stays plain (${chrome} Chrome)`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'D2');
-        await expect(bar(grid)).toHaveValue('=B2*C2');
         // No edit open: nothing is coloured.
-        await expectOwnText(bar(grid));
+        await expectPlain(bar(grid), '=B2*C2');
 
         await page.keyboard.press('F2');
         await expectColoured(editor(grid), '=B2*C2');
-        await expectColoured(bar(grid), '=B2*C2');
+        await expectPlain(bar(grid), '=B2*C2');
         // The caret keeps the field's colour, and selected text is drawn by the field.
         const kept = await editor(grid).evaluate((input) => ({
             caret: getComputedStyle(input).caretColor,
@@ -179,16 +184,43 @@ for (const chrome of ['builtin', 'mud']) {
         expect(kept.selected).not.toBe(TRANSPARENT);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
-        await expectOwnText(bar(grid));
+        await expectPlain(bar(grid), '=B2*C2');
 
         const box = await boxOf(bar(grid));
         await bar(grid).click({ position: { x: box.width / 2, y: box.height / 2 } });
         await expect(editor(grid)).toHaveCount(1);
         await expectColoured(bar(grid), '=B2*C2');
-        await expectColoured(editor(grid), '=B2*C2');
+        await expectPlain(editor(grid), '=B2*C2');
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
-        await expectOwnText(bar(grid));
+        await expectPlain(bar(grid), '=B2*C2');
+    });
+
+    // The edit is in whichever surface holds DOM focus, and a press moves it from one to the other
+    // mid-edit: the colours go with it, at once, and what is typed in the bar is coloured there.
+    test(`DC-47: the colours follow the edit from the Cell Editor into the Formula Bar and back, the other surface plain (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=A1+B2');
+        await expectColoured(editor(grid), '=A1+B2');
+        await expectPlain(bar(grid), '=A1+B2');
+
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await expectColoured(bar(grid), '=A1+B2');
+        await expectPlain(editor(grid), '=A1+B2');
+        await typeSteadily(page, bar(grid), '+C3');
+        await expectColoured(bar(grid), '=A1+B2+C3');
+        await expectPlain(editor(grid), '=A1+B2+C3');
+
+        // Back into the cell, by a press in the Cell Editor's text.
+        await editor(grid).click();
+        await expect(editor(grid)).toBeFocused();
+        await expectColoured(editor(grid), '=A1+B2+C3');
+        await expectPlain(bar(grid), '=A1+B2+C3');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
     });
 
     // An IME holds its composition in the field, ahead of anything the core has rendered — on
@@ -217,7 +249,7 @@ for (const chrome of ['builtin', 'mud']) {
         // draws it itself.
         await expect.poll(async () => (await colouring(editor(grid))).text).toBe('=A1&にほ');
         await page.waitForTimeout(400);
-        await expectOwnText(editor(grid));
+        await expectPlain(editor(grid), '=A1&にほ');
 
         await client.send('Input.insertText', { text: '日本' });
         await expect(editor(grid)).toHaveValue('=A1&日本');

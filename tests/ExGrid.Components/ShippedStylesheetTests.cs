@@ -231,15 +231,16 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), script.Text);
     }
 
-    [Fact] // ADR-0057 / ADR-0021 / DC-51 / DC-47: the coloured text shows only while the layer's text is the field's value, one class set, nothing measured
+    [Fact] // ADR-0057 / ADR-0021 / DC-51 / DC-47: the coloured text shows only in the focused surface and while the layer's text is the field's value, one class set, nothing measured
     public void The_listener_gates_the_coloured_text_on_its_text_and_sets_one_class()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
         // The comparison: the layer's one attribute against the field's value, never while no
-        // edit is open and never over a field composing. One class, set in one place and taken
-        // away only when the edit closes.
-        Assert.Matches(new Regex(@"field\.classList\.toggle\('ex-reference-text-shown',\s*editing !== 'none' && composingIn !== field && layer\.getAttribute\('data-ex-text'\) === field\.value\);"),
+        // edit is open, only in the surface the edit is in — the field holding DOM focus, as Excel
+        // colours only that one — and never over a field composing. One class, set in one place
+        // and taken away only when the edit closes.
+        Assert.Matches(new Regex(@"field\.classList\.toggle\('ex-reference-text-shown',\s*editing !== 'none' && field === document\.activeElement && composingIn !== field\s*&& layer\.getAttribute\('data-ex-text'\) === field\.value\);"),
             script.Text);
         Assert.Single(Regex.Matches(script.Text, @"classList\.toggle\('ex-reference-text-shown'"));
         Assert.DoesNotMatch(new Regex(@"classList\.add\('ex-reference-text-shown'"), script.Text);
@@ -261,8 +262,9 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"referenceTextObserver\.disconnect\(\);"), script.Text);
         Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{[^}]*\}\s*watchReferenceTexts\(mode !== 'none'\);", RegexOptions.Singleline), script.Text);
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*?watchReferenceTexts\(false\);.*?root = null;", RegexOptions.Singleline), script.Text);
-        // ...and when the caret moves in one of this instance's editor fields, while it is open.
-        Assert.Matches(new Regex(@"const onSelectionChange = \(\) => \{\s*if \(watchingReferenceTexts && focusedEditorField\(\) !== null\) \{\s*gateReferenceTexts\(\);\s*\}"), script.Text);
+        // ...and whenever the selection moves while it is open, as it does when DOM focus moves
+        // from one surface into the other.
+        Assert.Matches(new Regex(@"const onSelectionChange = \(\) => \{\s*if \(watchingReferenceTexts\) \{\s*gateReferenceTexts\(\);\s*\}"), script.Text);
 
         // The layer's line scrolls with its field: the field's scroll offset read, the line's set
         // — the scroll-offset entry — on the field's scroll, heard on this root while an edit is
