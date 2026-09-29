@@ -15,3 +15,14 @@ stacked its keyboard pacing once per test on the shared page. Both were fixed in
 
 `console.json` holds only the harness's own error on purpose. `metrics.json` holds the
 observational numbers, recorded and never gated.
+
+## At `00ba84b`, after the fourth Windows run's fixes and the equality run *(2026-09-29)*
+
+The same setup. This run includes the grid's own scrollbar (ADR-0029), the accepted two device pixels
+deep in a compressed spacer (ADR-0053), the plain-text paste into one cell (ADR-0014), comparison
+at 15 significant digits (ADR-0047), and the fixes for DC-19/DC-34, WR-7 and item 23.
+
+| Host | Result |
+|---|---|
+| WebAssembly | 386 passed, 15 skipped, 0 failed (16.4 min) |
+| Server (`EXGRID_HOSTING=server`) | 388 passed, 13 skipped, 0 failed (9.9 min) |
