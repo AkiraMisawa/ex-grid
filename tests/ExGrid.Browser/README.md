@@ -390,7 +390,10 @@ nobody had asked for. What that means when writing a test:
   (ADR-0010, 2026-09-29), without latency and at 150 ms on the Server host: the keys typed straight
   after a press on the rows while an edit is open, held until it is answered — on `/features` and
   on the Sheet, a press that commits and one that points — and a double click on another cell
-  still committing the edit and opening that cell's text.
+  still committing the edit and opening that cell's text. And ED-27 on `/sheets` under both
+  Chromes (`?chrome=mud` puts each Sheet on the Wrapper's paper): the computed outline of each
+  Sheet's Cell Editor is 1px wide while DOM focus is outside its root, and at the token's full
+  width, in the same colour, while the keyboard is its own.
 
 `sheet-helpers.mjs` is what those four share: opening `/sheet` under either Chrome and waiting
 for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the

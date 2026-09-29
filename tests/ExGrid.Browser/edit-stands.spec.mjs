@@ -286,6 +286,69 @@ test.describe('/sheets', () => {
     });
 });
 
+// ED-27 (ADR-0018 section 6, 2026-09-29): an edit whose keyboard is elsewhere is told apart. While
+// DOM focus is outside a Sheet's root, its Cell Editor's outline is 1px wide, in the style and colour
+// --ex-editor-outline gives it, and at the token's full width again once the keyboard is back —
+// under the core's Chrome, and under ExGrid.MudBlazor's, whose token is 2px of the palette's
+// primary, on the Wrapper's paper. The stylesheet alone does it (`:focus-within` on the root).
+for (const chrome of ['builtin', 'mud']) {
+    test(`ED-27: an edit whose keyboard is elsewhere is outlined 1px wide, and at full width once it returns (${chrome} Chrome)`, async ({ page }) => {
+        await page.goto(chrome === 'builtin' ? '/sheets' : `/sheets?chrome=${chrome}`);
+        const left = sheet(page, 0);
+        const right = sheet(page, 1);
+        await expect(cell(left, 'A1')).toHaveText('Left');
+        await expect(cell(right, 'A1')).toHaveText('Right');
+        if (chrome !== 'builtin') {
+            await expect(left.locator('.mud-ex-editor, .mud-ex-formula-bar-text').first()).toBeAttached();
+        }
+        // The outline of the box the core floats over the cell, as the browser computes it.
+        const outline = (grid) => editor(grid).evaluate((field) => {
+            const style = getComputedStyle(field.closest('.ex-editor'));
+            return { width: style.outlineWidth, style: style.outlineStyle, color: style.outlineColor };
+        });
+
+        await pressCell(left, 'D1');
+        await page.keyboard.type('=');
+        await expect(editor(left)).toBeFocused();
+        const full = await outline(left);
+        expect(full.style).toBe('solid');
+        expect(full.width).toBe('2px');
+        if (chrome !== 'builtin') {
+            // The Wrapper's token, not the core's default: the palette's primary.
+            const primary = await left.evaluate((root) => {
+                const probe = document.createElement('span');
+                probe.style.color = getComputedStyle(root).getPropertyValue('--mud-palette-primary');
+                root.append(probe);
+                const color = getComputedStyle(probe).color;
+                probe.remove();
+                return color;
+            });
+            expect(full.color).toBe(primary);
+        }
+
+        // The keyboard goes to the other Sheet: the left edit stands, outlined 1px, same colour.
+        await pressCell(right, 'D2');
+        await expect(right).toBeFocused();
+        await expect.poll(() => outline(left)).toEqual({ ...full, width: '1px' });
+        await page.keyboard.type('5');
+        await expect(editor(right)).toBeFocused();
+        await expect.poll(() => outline(right)).toEqual(full);
+        await expect.poll(() => outline(left)).toEqual({ ...full, width: '1px' });
+
+        // Back on the left's rows: the keyboard returns to its edit, and the widths swap.
+        await clickCell(left, 'B1');
+        await expect(editor(left)).toHaveValue('=B1');
+        await expect(editor(left)).toBeFocused();
+        await expect.poll(() => outline(left)).toEqual(full);
+        await expect.poll(() => outline(right)).toEqual({ ...full, width: '1px' });
+
+        // To nothing at all: Escape in the right would end its edit, so the page takes focus.
+        await page.locator('h1').click();
+        await expect.poll(() => outline(left)).toEqual({ ...full, width: '1px' });
+        await expect.poll(() => outline(right)).toEqual({ ...full, width: '1px' });
+    });
+}
+
 // ED-22, widened (ADR-0010, 2026-09-29): a press on the rows while an edit is open is a mode change
 // too, and the keys typed after it are held until the core has answered it, then handed on against
 // the mode the answer leaves (ADR-0021's note of the same day). Found building this file: `99` over

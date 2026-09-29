@@ -192,6 +192,25 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script.Text, @"staleField = field;"));
     }
 
+    [Fact] // ADR-0018 section 6 / ED-27: an edit whose keyboard is elsewhere has a 1px outline, from the stylesheet alone, in the token's style and colour
+    public void An_edit_whose_keyboard_is_elsewhere_is_drawn_with_a_1px_outline()
+    {
+        var assets = ShippedAssets();
+        var stylesheet = assets.Single(asset => Path.GetFileName(asset.Path) == "ex-grid.css");
+        var script = assets.Single(asset => Path.GetFileName(asset.Path) == "ex-grid.js");
+
+        // While DOM focus is outside the root, the Cell Editor over the rows — not the Formula
+        // Bar's field, outlined only while it has focus — is drawn with its outline 1px wide.
+        var rule = Regex.Match(stylesheet.Text, @"\.ex-grid:not\(:focus-within\) \.ex-viewport \.ex-editor \{(?<body>[^}]*)\}");
+        Assert.True(rule.Success, "no rule narrows the outline of an editor whose grid does not hold DOM focus");
+        // The width alone: the style and the colour stay --ex-editor-outline's, a Wrapper's too,
+        // and no token is added for it.
+        Assert.Equal("outline-width: 1px;", rule.Groups["body"].Value.Trim());
+        Assert.Matches(new Regex(@"\.ex-editor \{[^}]*outline: var\(--ex-editor-outline, 2px solid Highlight\);"), stylesheet.Text);
+        // No script is involved: the module writes no outline.
+        Assert.DoesNotMatch(new Regex(@"\.style\.outline|outlineWidth|setProperty\('outline"), script.Text);
+    }
+
     [Fact] // ADR-0018 / ED-26: the surface the keyboard comes back to is this grid's own, never one of a grid nested in its cells
     public void The_keyboard_comes_back_only_to_this_grids_own_surfaces()
     {
