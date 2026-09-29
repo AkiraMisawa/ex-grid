@@ -498,6 +498,55 @@ public class CellEditorTests : GridTestContext
         Assert.Equal(EditDiscardReason.RowLeftTheWindow, discarded);
     }
 
+    [Fact] // ADR-0050 section 6 / ADR-0011: the Consumer discards the edit for a reason of its own, and it is announced as its own
+    public async Task A_consumer_discard_throws_the_text_away_and_is_announced_with_its_sentence()
+    {
+        EditDiscardReason? discarded = null;
+        var edits = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(onEdit: edits.Add, onEditDiscarded: r => discarded = r);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+        await TypeAsync(cut, "99");
+
+        var done = await cut.InvokeAsync(() => cut.Instance.DiscardEditAsync("What was typed was not entered: the data was replaced."));
+
+        Assert.True(done);
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.Equal(EditDiscardReason.DiscardedByConsumer, discarded);
+        Assert.Equal("What was typed was not entered: the data was replaced.", cut.Find(".ex-announce").TextContent);
+        // Nothing was committed, and Enter is now an ordinary key: it moves, and writes nothing.
+        await PressAsync(cut, "Enter");
+        Assert.Empty(edits);
+    }
+
+    [Fact] // ADR-0050 section 6: with no edit open, a Consumer's discard changes nothing and says nothing
+    public async Task A_consumer_discard_with_no_edit_open_changes_nothing()
+    {
+        EditDiscardReason? discarded = null;
+        var cut = RenderGrid(onEditDiscarded: r => discarded = r);
+        await ClickCellAsync(cut, 50, 10);
+
+        var done = await cut.InvokeAsync(() => cut.Instance.DiscardEditAsync("The data was replaced."));
+
+        Assert.False(done);
+        Assert.Null(discarded);
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+    }
+
+    [Theory] // ADR-0050 section 6 / ADR-0011: a discard that says nothing is the silent loss the discard rule refuses
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task A_consumer_discard_without_a_sentence_is_refused_and_keeps_the_edit(string reason)
+    {
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+
+        await Assert.ThrowsAsync<ArgumentException>(() => cut.InvokeAsync(() => cut.Instance.DiscardEditAsync(reason)));
+
+        Assert.Equal("9", cut.Find(".ex-editor").GetAttribute("value"));
+    }
+
     [Fact] // ADR-0035 / ED-19: the refusal judged the operation, so it does not take the text with it
     public async Task A_refused_fill_holds_the_editor_and_enter_still_commits_the_one_cell()
     {

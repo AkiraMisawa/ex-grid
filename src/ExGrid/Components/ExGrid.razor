@@ -1269,7 +1269,10 @@
     /// row left the Window. Neither is the user's own doing — a Consumer-pushed sort or
     /// refresh lands and the typing goes — so the grid says so rather than leaving the
     /// loss to be guessed at. Chrome writes the sentence and announces it (A11Y-16); the
-    /// grid holds no strings.</summary>
+    /// grid holds no strings. A discard the Consumer asked for through
+    /// <see cref="DiscardEditAsync"/> is raised here too, as
+    /// <see cref="EditDiscardReason.DiscardedByConsumer"/>, its sentence already announced
+    /// (ADR-0050 section 6).</summary>
     [Parameter] public EventCallback<EditDiscardReason> OnEditDiscarded { get; set; }
 
     /// <summary>
@@ -5869,6 +5872,46 @@
             RequestFocusReveal();
         _suppressRender = false;
         StateHasChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// Discards the open edit for a reason of the Consumer's own (ADR-0050 section 6): what
+    /// was typed is thrown away and nothing is committed. For a change under the editor the
+    /// grid cannot see — ExSheet's whole Sheet Document replaced, where the edit would
+    /// otherwise be committed into another document's cell at the same place (ADR-0048). The
+    /// discard is announced like the grid's own (ADR-0011): <paramref name="reason"/> through
+    /// the root's live region, as a refused copy's sentence is, and
+    /// <see cref="OnEditDiscarded"/> raised as <see cref="EditDiscardReason.DiscardedByConsumer"/>.
+    /// The edit's end is raised through <see cref="OnEditingChanged"/> like any other. The
+    /// keyboard comes back to the root only from inside the grid, never from the Consumer's
+    /// own control.
+    /// </summary>
+    /// <param name="reason">The Consumer's sentence for the user, saying what happened.</param>
+    /// <returns>Whether an edit was open and has been discarded: false, and nothing changed,
+    /// when none was open.</returns>
+    /// <exception cref="ArgumentException"><paramref name="reason"/> is empty: a discard that
+    /// says nothing is the silent loss ADR-0011 refuses.</exception>
+    public async Task<bool> DiscardEditAsync(string reason)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        // On the renderer's own context, as a placement is: a Consumer discarding from outside
+        // it must not race a render.
+        var discarded = false;
+        await InvokeAsync(async () => discarded = await DiscardOnRendererAsync(reason));
+        return discarded;
+    }
+
+    private async Task<bool> DiscardOnRendererAsync(string reason)
+    {
+        if (_disposed || _editMode == EditMode.None)
+            return false;
+        Announce(reason);
+        await EndEditingAsync();
+        _suppressRender = false;
+        StateHasChanged();
+        if (OnEditDiscarded.HasDelegate)
+            await OnEditDiscarded.InvokeAsync(EditDiscardReason.DiscardedByConsumer);
         return true;
     }
 

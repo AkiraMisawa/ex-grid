@@ -340,6 +340,21 @@ public class EditingNotificationTests : GridTestContext
         held.SetResult();
     }
 
+    [Fact] // ADR-0050 section 6: a discard the Consumer asks for ends the edit like any other
+    public async Task A_discard_the_consumer_asks_for_raises_the_end()
+    {
+        var told = new List<bool>();
+        var discarded = new List<EditDiscardReason>();
+        var cut = RenderGrid(told, extra: ps => ps.Add(g => g.OnEditDiscarded, discarded.Add));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+
+        Assert.True(await cut.Instance.DiscardEditAsync("The data under the editor was replaced."));
+
+        Assert.Equal([EditDiscardReason.DiscardedByConsumer], discarded);
+        Assert.Equal([true, false], told);
+    }
+
     [Fact] // ADR-0050 section 6 / ADR-0034: a Reject holds the editor, so the edit has not ended, and nothing is raised
     public async Task A_rejected_commit_raises_nothing_and_the_edit_stays_open()
     {
