@@ -28,10 +28,6 @@ function luminance(rgb) {
     });
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
-function parseRgb(text) {
-    const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(text);
-    return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
-}
 function contrast(a, b) {
     const la = luminance(a);
     const lb = luminance(b);
@@ -77,37 +73,77 @@ test('nothing under the Viewport transitions or animates with the Wrapper loaded
     expect(offenders).toEqual([]);
 });
 
+// A colour's OKLCH hue, in degrees, from sRGB bytes — to say that the dark scheme's raise kept
+// the primary's hue (ADR-0030, 2026-09-29).
+function hue([r, g, b]) {
+    const linear = (v) => {
+        const c = v / 255;
+        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    const [lr, lg, lb] = [linear(r), linear(g), linear(b)];
+    const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+    const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+    const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+    const a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+    const bb = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+    return ((Math.atan2(bb, a) * 180) / Math.PI + 360) % 360;
+}
+
 test('the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9)', async ({ page }) => {
     await open(page);
+    // Any colour the cascade resolved, in whatever syntax it kept — the dark scheme's is an
+    // oklch() — as sRGB bytes, through a canvas.
+    const colours = () => gridA(page).evaluate((g) => {
+        const context = new OffscreenCanvas(1, 1).getContext('2d', { willReadFrequently: true });
+        const rgb = (colour) => {
+            context.clearRect(0, 0, 1, 1);
+            context.fillStyle = colour;
+            context.fillRect(0, 0, 1, 1);
+            return Array.from(context.getImageData(0, 0, 1, 1).data.slice(0, 3));
+        };
+        const focus = [...g.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0);
+        const range = g.querySelector('.ex-range');
+        return {
+            focus: rgb(getComputedStyle(focus).outlineColor),
+            focusStyle: getComputedStyle(focus).outlineStyle,
+            range: range ? rgb(getComputedStyle(range).outlineColor) : null,
+            fill: range ? getComputedStyle(range, '::before').backgroundColor : null,
+            ground: rgb(getComputedStyle(g).backgroundColor),
+            primary: rgb(getComputedStyle(g).getPropertyValue('--mud-palette-primary')),
+        };
+    });
+    const cellAt = (row, column) => gridA(page).locator('.ex-row').nth(row).locator('.ex-cell').nth(column);
     for (const dark of [false, true]) {
         if (dark) {
             await page.locator('#toggle-dark').click();
             await expect(page.locator('#dark-status')).toHaveText('Dark: True');
         }
-        // Click a cell: the Focus outline and the selection fill exist. Forced, because
-        // cells are pointer-events: none by design and the Viewport is the target
-        // (README, "Traps this suite has already hit").
-        await gridA(page).locator('.ex-row').nth(2).locator('.ex-cell').nth(2).click({ force: true });
-        // One cell selected is its Focus outline alone, untinted; a range carries the fill
-        // (ADR-0008, 2026-09-29).
-        await gridA(page).locator('.ex-row').nth(3).locator('.ex-cell').nth(3).click({ force: true, modifiers: ['Shift'] });
+        // One cell: its Focus outline alone, no tint (ADR-0008, 2026-09-29). Forced, because
+        // cells are pointer-events: none by design and the Viewport is the target (README,
+        // "Traps this suite has already hit").
+        await cellAt(2, 2).click({ force: true });
         // Painted a round trip after the click on the Server host.
-        await expect(gridA(page).locator('.ex-range')).not.toHaveCount(0);
         await expect(gridA(page).locator('.ex-focus')).not.toHaveCount(0);
-        const colours = await gridA(page).evaluate((g) => ({
-            outline: getComputedStyle(g.querySelector('.ex-focus')).outlineColor,
-            ground: getComputedStyle(g.querySelector('.ex-cell')).backgroundColor,
-            rootGround: getComputedStyle(g).backgroundColor,
-            // The tint is the range's ::before, clipped round the Focus.
-            fill: getComputedStyle(g.querySelector('.ex-range'), '::before').backgroundColor,
-        }));
-        const ground = parseRgb(colours.ground)?.length && colours.ground !== 'rgba(0, 0, 0, 0)'
-            ? parseRgb(colours.ground) : parseRgb(colours.rootGround);
-        const outline = parseRgb(colours.outline);
-        expect(outline, `outline colour parses (${colours.outline})`).not.toBeNull();
-        expect(ground, `ground colour parses (${colours.rootGround})`).not.toBeNull();
-        expect(contrast(outline, ground), `focus outline against the cell ground, dark=${dark}`).toBeGreaterThanOrEqual(3);
-        expect(colours.fill).not.toBe('rgba(0, 0, 0, 0)');
+        await expect(gridA(page).locator('.ex-range')).toHaveCount(0);
+        const one = await colours();
+        expect(one.focusStyle).toBe('solid');
+        expect(contrast(one.focus, one.ground), `focus outline against the cell ground, dark=${dark} (${JSON.stringify(one)})`)
+            .toBeGreaterThanOrEqual(3);
+        if (dark) {
+            // Raised from the primary, which misses 3:1 on this surface, and the hue kept.
+            expect(contrast(one.primary, one.ground), 'the premise: the dark primary alone misses 3:1').toBeLessThan(3);
+            expect(Math.abs(hue(one.focus) - hue(one.primary)), JSON.stringify(one)).toBeLessThanOrEqual(2);
+        } else {
+            // The palette's primary itself (ADR-0030, 2026-09-29).
+            expect(one.focus, JSON.stringify(one)).toEqual(one.primary);
+        }
+
+        // A range: its fill and its one outline, in the Focus outline's colour.
+        await cellAt(3, 3).click({ force: true, modifiers: ['Shift'] });
+        await expect(gridA(page).locator('.ex-range')).not.toHaveCount(0);
+        const range = await colours();
+        expect(range.range, JSON.stringify(range)).toEqual(one.focus);
+        expect(range.fill).not.toBe('rgba(0, 0, 0, 0)');
     }
 });
 

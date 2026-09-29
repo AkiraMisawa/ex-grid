@@ -25,18 +25,16 @@
     --ex-column-rule-color: transparent;
     --ex-pinned-background: var(--mud-palette-surface);
     /* Selection from the palette's primary, translucent so the value reads through it
-       (ADR-0008). The Focus outline is the INK colour, not the primary: measured in the
-       browser suite, MudBlazor's dark primary (#776be7) against its dark surface
-       (#373740) is 2.83:1, under the 3:1 UX-9 requires — the same finding, one palette
-       over, that put CanvasText rather than Highlight on the core's default. The ink
-       contrasts with its own surface by construction in both schemes. */
+       (ADR-0008). The Focus outline, and everything else drawn with it — a single range's
+       outline, the pointing outline, the fill handle, the chosen action — is the primary
+       too (ADR-0030, 2026-09-29); the dark scheme raises it, below. */
     --ex-selection-fill: rgba(var(--mud-palette-primary-rgb), 0.18);
     --ex-focus-row-fill: rgba(var(--mud-palette-primary-rgb), 0.08);
     --ex-row-hover-background: var(--mud-palette-table-hover);
     /* Row Stripes, where Striped or the grid turns them on (ADR-0038): the palette's
        table-stripe colour, as MudBlazor's own tables paint it. */
     --ex-row-stripe-background: var(--mud-palette-table-striped);
-    --ex-focus-outline: var(--mud-palette-text-primary);
+    --ex-focus-outline: var(--mud-palette-primary);
     --ex-grid-focus-outline: 2px solid var(--mud-palette-primary);
     --ex-editor-background: var(--mud-palette-surface);
     --ex-editor-color: var(--mud-palette-text-primary);
@@ -68,6 +66,21 @@
        would clip the grid's popovers, which UX-11 forbids — so the two never touch. */
     padding: var(--mud-default-borderradius, 4px);
     font-family: var(--mud-typography-default-family, Roboto, "Helvetica Neue", Arial, sans-serif);
+}
+/* The dark scheme's Focus outline (ADR-0030, 2026-09-29; UX-9): the primary with its lightness
+   raised just far enough to clear 3:1 against the surface, the hue and chroma kept. Measured,
+   MudBlazor's dark primary (#776be7) against its dark surface (#373740) is 2.83:1; OKLCH
+   lightness 0.617 clears 3:1 there, and the floor stands a little above it so rounding to the
+   screen's colours cannot take it back under. A primary already lighter than the floor is left
+   as it is, and the light scheme's is never touched.
+   MudBlazor says which scheme it paints only through the variable MudThemeProvider emits beside
+   the palette for its own inputs' color-scheme — no class, and no color-scheme on the page — so
+   the scheme is read from that variable, by a style query on the paper's parent, which inherits
+   it. */
+@container style(--mud-native-html-color-scheme: dark) {
+    .mud-ex-grid {
+        --ex-focus-outline: oklch(from var(--mud-palette-primary) max(l, 0.62) c h);
+    }
 }
 .mud-ex-grid.mud-ex-grid-square {
     border-radius: 0;
