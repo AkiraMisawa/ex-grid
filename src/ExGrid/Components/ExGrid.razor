@@ -5573,18 +5573,27 @@
     [JSInvokable]
     public async Task OnKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
-        bool fromDescendant = false, string? editorText = null, int editorCaret = -1)
+        bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
+        int editorSelectionEnd = -1, bool editorCaretMoved = false)
     {
         if (_disposed)
             return;
         // While editing, the keys the gate forwarded are the editor's contract
         // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite. The key
-        // carries the editor's text and caret as the browser had them (ADR-0051), and what
-        // it means is decided from those.
+        // carries the editor's text and selection as the browser had them (ADR-0051), and
+        // what it means is decided from those.
         if (_editMode != EditMode.None)
         {
             AdoptKeyText(editorText, editorCaret);
-            await OnEditingKeyAsync(GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary));
+            var canonical = GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary);
+            // F4 is claimed only where the Consumer declared what it does (ADR-0051,
+            // 2026-09-29), and is decided from the selection its own message carries.
+            if (canonical == "F4" && CycleReference is not null)
+            {
+                OnCycleReferenceKey(editorText is null ? -1 : editorCaret, editorSelectionEnd, editorCaretMoved);
+                return;
+            }
+            await OnEditingKeyAsync(canonical);
             return;
         }
 
@@ -6394,7 +6403,9 @@
     }
 
     /// <summary>Tells the key gate which set it runs under (ADR-0010): a mode change
-    /// is a different set of claimed keys.</summary>
+    /// is a different set of claimed keys. With it, whether inputs report their caret, and
+    /// whether F4 joins the editing set — only where the Consumer declared what it does
+    /// (ADR-0051, 2026-09-29); the gate consults neither while no edit is open.</summary>
     private async Task PushEditingModeAsync()
     {
         _jsEditingDirty = false;
@@ -6403,7 +6414,7 @@
         try
         {
             _gateTold = GateMode();
-            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold, ReportsCaret);
+            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold, ReportsCaret, CycleReference is not null);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -6415,7 +6426,9 @@
     /// (ADR-0012), so Cmd+Enter fills on a Mac and Win+Enter is nobody's here. A form not
     /// named below is not the editor's and does nothing. <b>The cases mirror
     /// <c>editingKeys</c> / <c>overwriteKeys</c> in <c>ex-grid.js</c></b> — the two must
-    /// move together.</param>
+    /// move together. F4, which the gate adds to them only where the Consumer declared
+    /// <see cref="CycleReference"/>, is answered before this, from the selection its message
+    /// carries (ADR-0051, 2026-09-29).</param>
     private async Task OnEditingKeyAsync(string canonical)
     {
         // An open completion list has the first word on its own keys (ADR-0051).

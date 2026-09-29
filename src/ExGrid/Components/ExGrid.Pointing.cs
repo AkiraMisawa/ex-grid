@@ -31,6 +31,20 @@ public partial class ExGrid<TRow>
     /// </summary>
     [Parameter] public Func<SelectionRange, string>? ReferenceText { get; set; }
 
+    /// <summary>
+    /// A Consumer declaration (ADR-0051, 2026-09-29): what F4 makes of the editor's text — on a
+    /// Sheet, the Reference at the caret cycled through its forms, <c>=B2</c> → <c>=$B$2</c> →
+    /// <c>=B$2</c> → <c>=$B2</c> → <c>=B2</c>. Asked synchronously with the text and the
+    /// selection (start, end) the F4 key carries from the browser, in the Cell Editor or the
+    /// Formula Bar alike; it answers the whole new text and the selection in it, or null for
+    /// nothing to change. The answer is written to both editor surfaces and its selection placed
+    /// in the one being typed in. While pointing, the caret it is asked at is the end of the
+    /// Reference the outline wrote, and pointing goes on over the rewritten Reference. The grid
+    /// never reads a Formula. Declared, the key listener claims F4 while an edit is open, and
+    /// only then; null — the default — leaves F4 to the browser everywhere.
+    /// </summary>
+    [Parameter] public Func<string, int, int, EditorRewrite?>? CycleReference { get; set; }
+
     // The pointing outline as a Focus and an Extent of its own — a one-range selection, so the
     // arrows, Shift and a click move it by the same transitions the Selection's own use — the
     // span of the text its Reference occupies, and the text as the core last wrote it. Pointing
@@ -214,6 +228,90 @@ public partial class ExGrid<TRow>
         }
         _pointer = _pointer.ExtendTo(cell, Extent);
         WritePointedReference(reveal: false);
+    }
+
+    /// <summary>
+    /// F4 while an edit is open (ADR-0051, 2026-09-29): the Consumer's rewrite of the text the
+    /// key carried, at the selection it carried, written back and its selection placed. In two
+    /// cases the selection is not the key's to give. While pointing, it is the caret at the end
+    /// of the Reference the outline wrote: that Reference is the one F4 cycles, and pointing
+    /// goes on over what it became. And while a placement the core asked for is still in flight
+    /// in that very text, the browser's selection there is where setting the value left it —
+    /// the end — and not the user's: the placement's is used, as a caret report ahead of it is
+    /// not taken (ADR-0051's second round). The user's own move in that text is newer, and
+    /// stands.
+    /// </summary>
+    /// <param name="start">The selection start the key carried; -1 when it carried none.</param>
+    /// <param name="end">The selection end it carried.</param>
+    /// <param name="moved">Whether the user moved the caret in that very text.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The answer's selection does not lie inside
+    /// its text.</exception>
+    private void OnCycleReferenceKey(int start, int end, bool moved)
+    {
+        var text = _editText;
+        var pointing = PointingContinues;
+        if (pointing)
+        {
+            start = end = _pointStart + _pointLength;
+        }
+        else if (_caretPlacing is { } placing && string.Equals(placing.Text, text, StringComparison.Ordinal))
+        {
+            if (moved)
+            {
+                _caretPlacing = null;
+                if (_caretToPlace is { } unsent && string.Equals(unsent.Text, text, StringComparison.Ordinal))
+                    _caretToPlace = null;
+            }
+            else
+            {
+                (start, end) = (placing.Caret, placing.End);
+                _editCaret = start;
+            }
+        }
+        // A selection not known is not guessed at: the wrong Reference would change.
+        if (start < 0 || start > text.Length)
+            return;
+        if (end < start || end > text.Length)
+            end = start;
+        if (CycleReference!(text, start, end) is not { } answer)
+            return;
+        var rewritten = answer.Text ?? throw new ArgumentException("A rewrite answers the whole new text (ADR-0051).", nameof(CycleReference));
+        if (answer.SelectionStart < 0 || answer.SelectionEnd < answer.SelectionStart || answer.SelectionEnd > rewritten.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(CycleReference),
+                $"The rewrite's selection {answer.SelectionStart}..{answer.SelectionEnd} does not lie inside its text of {rewritten.Length} characters (ADR-0051).");
+        }
+        // The outline's Reference is what lies between the text before it and the text after
+        // it, both unchanged; a rewrite that touched either has rewritten more than the
+        // outline's Reference, and pointing ends as typing ends it.
+        var before = _pointStart;
+        var after = text.Length - _pointStart - _pointLength;
+        pointing = pointing
+            && rewritten.Length >= before + after
+            && string.CompareOrdinal(rewritten, 0, text, 0, before) == 0
+            && string.CompareOrdinal(rewritten, rewritten.Length - after, text, text.Length - after, after) == 0;
+        _editText = rewritten;
+        _editCaret = answer.SelectionStart;
+        PlaceCaret(answer.SelectionEnd);
+        if (pointing)
+        {
+            _pointLength = rewritten.Length - before - after;
+            _pointWritten = rewritten;
+            CloseCompletion();
+        }
+        else
+        {
+            if (_pointer is not null || _editMode == EditMode.Point)
+            {
+                EndPointing();
+                if (_editMode == EditMode.Point)
+                    _editMode = EditMode.Overwrite;
+            }
+            RequestCompletion();
+        }
+        MarkGateIfMoved();
+        _suppressRender = false;
+        StateHasChanged();
     }
 
     /// <summary>

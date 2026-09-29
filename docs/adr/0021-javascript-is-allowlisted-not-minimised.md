@@ -254,6 +254,12 @@ allowlisted keyboard/editor use. Reading or setting an input's selection reads n
 *(Added the same day: the editor listener also reports the caret on `selectionchange` inside an
 editor surface, and places it when an edit opens. It is the same use, and reads no layout.)*
 
+*(Added 2026-09-29 by ADR-0051, "F4 cycles the Reference at the caret": while an edit is open and
+the Consumer has declared the Reference cycling function, the listener claims F4 and sends it with
+the editor's text and selection, as every claimed key already goes, and with the listener's own
+note of whether the user moved the caret in that text. It then places the selection the core
+answers, as it places the caret after any rewrite. It is the same use, and reads no layout.)*
+
 *(Added 2026-09-27, decided with the user: when the grid hands the keyboard back to its own root, a
 round trip after the gesture that asked for it, the call now does so only if DOM focus is still
 inside that root or on nothing (`body`). Otherwise a second grid the user has since moved to would

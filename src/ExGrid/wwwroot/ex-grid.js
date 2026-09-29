@@ -93,6 +93,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Whether each input in an editor surface reports its caret (ADR-0051), told by C# with
     // the mode: only where completion or pointing is declared.
     let reportCaret = false;
+    // Whether F4 joins the editing set (ADR-0051, 2026-09-29: it cycles the Reference at the
+    // caret), told by C# with the mode: only where the Consumer declared what it does. Never
+    // consulted while no edit is open, where F4 stays the browser's.
+    let cycleReferences = false;
     // Whether a popover's contents have a popup of their own open (ADR-0039), told by C#.
     let innerPopup = false;
     // Ctrl+F too, taken and answered with nothing: Find is disabled while a cell is being
@@ -249,8 +253,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the list on its box (data-ex-list) in the render itself; read, not measured.
         const claimed = listShown() ? completionKeys : (claimedWhile[editing] ?? editingKeys);
         // Every key the core claims while editing commits, cancels, moves or switches
-        // the mode: each is a mode change.
-        return claimed.has(canonical) ? 'mode' : null;
+        // the mode: each is a mode change. F4 rewrites the text, and the keys after it wait
+        // for the rewrite, so that each carries the text the one before it left.
+        return claimed.has(canonical) || (cycleReferences && canonical === 'F4') ? 'mode' : null;
     };
 
     // The scroll container is the grid's own, not a control inside it: it carries
@@ -276,12 +281,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // what an arrow means from what the user sees now, never from an answer a round trip old.
     // Read as the key is forwarded — a held key's after the keys before it were typed — from
     // the editor surface that holds DOM focus. A read of the field's own value, not a
-    // measurement: no layout is read.
+    // measurement: no layout is read. The selection's end goes with it for F4, which cycles
+    // every Reference a selection covers, and so does whether the user moved the caret in that
+    // very text: until the core's placement lands, the browser's own caret there is not the
+    // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29).
     const forward = (k) => {
         const input = editing !== 'none' ? editorInput() : null;
         return core.invokeMethodAsync(
             'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot,
-            input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1)
+            input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1,
+            input ? (input.selectionEnd ?? input.value.length) : -1, input ? movedByUser(input) : false)
             .catch((error) => {
                 // Disposal can overtake a key in flight, and that is not a fault. Anything
                 // else is reported: a swallowed failure here means keys that silently stop
@@ -1279,15 +1288,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // entry — the clipboard — and not a fifth (ADR-0021).
         writeCopy: (withHeaders) => writeAsync(withHeaders === true),
         // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite',
-        // 'caret', 'point' or 'completion' (ADR-0051), and whether inputs report their
-        // caret. Set by the core when the mode changes — a mode change is a
-        // different set of claimed keys. (A focusable descendant holding the keyboard
-        // — ADR-0020's interactive cell — is not a mode: it is read off event.target,
-        // which is true whether focus arrived by click or by key.)
-        setEditing: (mode, reportsCaret) => {
+        // 'caret', 'point' or 'completion' (ADR-0051), whether inputs report their caret,
+        // and whether F4 is claimed while editing. Set by the core when the mode changes —
+        // a mode change is a different set of claimed keys. (A focusable descendant holding
+        // the keyboard — ADR-0020's interactive cell — is not a mode: it is read off
+        // event.target, which is true whether focus arrived by click or by key.)
+        setEditing: (mode, reportsCaret, cyclesReferences) => {
             const opened = editing === 'none' && mode !== 'none';
             editing = mode;
             reportCaret = reportsCaret === true;
+            cycleReferences = cyclesReferences === true;
             if (mode === 'none') {
                 caretMoved = null;
             }
@@ -1308,7 +1318,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         },
         // After the core wrote the editor's text itself — an accepted candidate, a pointed
-        // Reference — the caret goes where the core says (ADR-0051's second round). Only while
+        // Reference, F4's rewrite — the caret goes where the core says (ADR-0051's second
+        // round), or the selection F4's rewrite answered, from the caret to its end. Only while
         // the surface still holds that text: typed on since, the user's own caret stands.
         // Also when an edit opens: the caret goes to the end of the opening text, placed rather
         // than assumed. The caret placed is the core's already, so it is not reported back.
@@ -1316,7 +1327,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // user's caret stands, and is reported once more as the user's — its own report can
         // have reached the core while the placement was in flight, or have been spared as a
         // repeat.
-        setCaret: (text, caret) => {
+        setCaret: (text, caret, end) => {
             const input = editorInput();
             if (input && input.value === text) {
                 if (movedByUser(input)) {
@@ -1324,7 +1335,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     reportCaretOf(input);
                     return;
                 }
-                input.setSelectionRange(caret, caret);
+                input.setSelectionRange(caret, end);
                 reportedText = text;
                 reportedCaret = caret;
             }
