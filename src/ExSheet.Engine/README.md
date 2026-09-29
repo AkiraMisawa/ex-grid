@@ -208,8 +208,10 @@ Value when it has exactly one row, and `#VALUE!` otherwise.
 
 `FormulaEntry` answers, over a Formula's unfinished text and its caret, what an editor needs:
 completion candidates (`Sheet.Complete` adds the Sheet's Linked Tables to the functions), the
-argument hint, whether a Reference can be written at the caret (Point mode), and the Reference
-text for a range.
+argument hint, whether a Reference can be written at the caret (Point mode), the Reference
+text for a range, what F4 makes of the Reference at the caret, and every Reference in the text
+with the cells it names or the Linked Table column it reads, for Reference Outlines
+(`Sheet.References` reads a Sheet qualifier against the Sheet's own name).
 
 ## More
 
