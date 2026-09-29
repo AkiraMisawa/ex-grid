@@ -154,6 +154,38 @@ test('paste raises one intent shaped by the clipboard block (CP-14, PST-1)', asy
     await expect(page.locator('#paste-status')).toContainText('3 cells from 1x1');
 });
 
+// An edit that ends leaves a collapsed caret where the Cell Editor stood, and the next press on
+// the rows moves it to the nearest text the page can select, outside the grid. The browser aims
+// Ctrl+C and Ctrl+V at the selection rather than at the focused root, so the grid heard neither
+// until DOM focus left it and came back (found on /sheet, 2026-09-29). Enter, Tab and Escape each
+// end an edit here.
+test('CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after an edit ends by Enter, Tab or Escape', async ({ page }) => {
+    const copies = async (row, column) => {
+        await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+        const text = (await grid(page).locator(`[id$='r${row}c${column}']`).textContent()).trim();
+        await clickCell(page, row, column);
+        await page.keyboard.press('ControlOrMeta+C');
+        // On the Server host the copy lands a round trip later (ADR-0005).
+        await expect.poll(async () => (await page.evaluate(() => navigator.clipboard.readText())).trimEnd(), { timeout: 5000 })
+            .toBe(text);
+    };
+    const editor = grid(page).locator('input.ex-editor');
+    for (const key of ['Enter', 'Tab', 'Escape']) {
+        await clickCell(page, 0, 1); // Trader, editable
+        await page.keyboard.type('Q');
+        await expect(editor).toHaveValue('Q');
+        await page.keyboard.press(key);
+        await expect(editor).toHaveCount(0);
+        await expect(grid(page)).toBeFocused();
+        await copies(1, 1);
+        await copies(2, 1);
+    }
+    await page.evaluate(() => navigator.clipboard.writeText('Pasted'));
+    await clickCell(page, 1, 1);
+    await page.keyboard.press('ControlOrMeta+V');
+    await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1');
+});
+
 /** Whether the Selection is one painted range lying exactly over one cell, to within a pixel. */
 async function rangeCovers(page, row, column) {
     const ranges = grid(page).locator('.ex-selection .ex-range');
