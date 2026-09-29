@@ -61,7 +61,7 @@ public class SelectionLookTests : GridTestContext
     private static (string Class, string Style)[] Ranges(IRenderedComponent<ExGrid<TestRow>> cut, string layer = ".ex-selection")
         => [.. cut.FindAll($"{layer} > .ex-range").Select(r => (r.GetAttribute("class")!, r.GetAttribute("style")!))];
 
-    [Fact] // ADR-0008 (2026-09-29) / UX-19: a one-cell selection is the Focus outline alone, with no tint
+    [Fact] // ADR-0008 (2026-09-29) / UX-19: a one-cell selection is the Focus outline alone, with no selection tint
     public async Task A_one_cell_selection_is_the_focus_outline_alone()
     {
         var cut = RenderGrid();
@@ -102,14 +102,15 @@ public class SelectionLookTests : GridTestContext
         Assert.Equal(Rect(0, 0, 300, 60) + Hole(100, 20, 200, 40), Assert.Single(Ranges(cut)).Style);
     }
 
-    [Fact] // ADR-0008 (2026-09-29) / UX-19: several ranges are each tinted with no outline, and the Focus cell among them is untinted
-    public async Task Several_ranges_are_tinted_without_an_outline_and_the_focus_cell_is_not()
+    [Fact] // ADR-0008 (2026-09-29) / UX-19: several ranges are each tinted with no outline, and their tint never covers the Focus cell
+    public async Task Several_ranges_are_tinted_without_an_outline_and_their_tint_never_covers_the_focus()
     {
         var cut = RenderGrid();
         await PressAsync(cut, 0, 0);
         await PressAsync(cut, 1, 1, shift: true);
 
-        // Ctrl+click adds a range of one cell, which is the Focus: nothing of it is tinted.
+        // Ctrl+click adds a range of one cell, which is the Focus: the selection's tint covers
+        // none of it, so it is not painted.
         await PressAsync(cut, 3, 2, ctrl: true);
         Assert.Equal([("ex-range", Rect(0, 0, 200, 40))], Ranges(cut));
         Assert.Equal(Rect(200, 60, 100, 20), cut.Find(".ex-focus").GetAttribute("style"));

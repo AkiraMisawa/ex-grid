@@ -122,6 +122,25 @@ public class ShippedStylesheetTests
         }
     }
 
+    [Fact] // ADR-0008/0029 (2026-09-29): a single range's outline reads --ex-selection-outline, which defaults to the Focus outline
+    public void The_range_outline_reads_its_own_token_and_defaults_to_the_focus_outline()
+    {
+        var css = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
+        css = Regex.Replace(css, @"/\*.*?\*/", "", RegexOptions.Singleline);
+
+        var colours = Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
+            .Where(rule => rule.Groups["selectors"].Value.Split(',').Any(selector => selector.Trim() == ".ex-range-single"))
+            .Select(rule => Regex.Match(rule.Groups["body"].Value, @"outline-color:\s*(?<value>[^;]+);"))
+            .Where(colour => colour.Success)
+            .Select(colour => colour.Groups["value"].Value.Trim())
+            .ToList();
+
+        // A Theme or Wrapper that sets only the Focus outline's colour gets both in it.
+        Assert.Equal(["var(--ex-selection-outline, var(--ex-focus-outline, CanvasText))"], colours);
+        // And the token is the range outline's alone: nothing else reads it.
+        Assert.Single(Regex.Matches(css, "--ex-selection-outline"));
+    }
+
     [Fact] // ADR-0012 (2026-09-29) / ADR-0021 / MEM-4: a reveal's write is held on the root's own reveal number, observed only while held and released on dispose
     public void The_reveal_write_is_held_on_the_roots_reveal_number_only()
     {

@@ -49,7 +49,9 @@ internal static class SelectionStyles
     /// is wider than one.
     ///
     /// A range holding the <paramref name="focus"/> carries a hole where the Focus is, in the
-    /// layer the Focus's cell belongs to: Excel leaves the active cell untinted. The hole is
+    /// layer the Focus's cell belongs to: the selection's tint never covers the Focus cell, as
+    /// Excel's never covers the active cell (the Focus band and the hover band are other
+    /// overlays and keep theirs). The hole is
     /// geometry, so it is resolved here with the rectangle and written inline, as the
     /// polygon the stylesheet clips the tint with; the range stays one element whatever its
     /// size. It is left out while the Focus's row is not among the painted rows, where the
