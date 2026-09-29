@@ -422,3 +422,9 @@ already painted, so it re-renders nothing.
 This is not the one-round-trip blank that ADR-0028 accepts for a window drag and ADR-0045 for the
 first frame after a resize. In those, the size itself is news from the browser. Here, the grid
 chose the offset and knows it.
+
+*(Implemented 2026-09-29.)* The render that paints the target slice sends the scroll write as well.
+On Blazor Server the write and the render's batch still travel as two messages, so the write is held
+in the browser until the root carries the render's reveal number (ADR-0021, the scroll-offset
+entry). Without the hold, about half the far reveals at a 150 ms round trip painted one empty frame
+between the two messages.
