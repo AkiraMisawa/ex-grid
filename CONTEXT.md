@@ -620,6 +620,13 @@ without them still addresses its cells `A1`. The Row Headings are a band beside 
 column ([ADR-0050](./docs/adr/0050-what-exsheet-asks-of-exgrids-core.md)).
 _Avoid_: header (that is ExGrid's column header, whose click sorts), labels, row numbers
 
+**Size Tip**:
+The label at the Headings that says how many rows and columns a drag across them covers
+(`1048576R x 3C`), shown at the Heading the Extent is on while the drag covers more than one. The
+Name Box is empty while it shows, as in Excel. A drag over cells shows its size in the Name Box
+instead ([ADR-0052](./docs/adr/0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
+_Avoid_: tooltip, ScreenTip (Excel's name for any hover label), badge
+
 **Sheet Document**:
 The serialisable form of a Sheet that ExSheet hands to its Consumer and takes back. It holds
 Entries, never Values, with constants already parsed — so opening it under another culture

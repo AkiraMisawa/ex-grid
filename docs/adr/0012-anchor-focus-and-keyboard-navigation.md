@@ -422,3 +422,23 @@ already painted, so it re-renders nothing.
 This is not the one-round-trip blank that ADR-0028 accepts for a window drag and ADR-0045 for the
 first frame after a resize. In those, the size itself is news from the browser. Here, the grid
 chose the offset and knows it.
+
+## Added later: a drag and Ctrl+click on the header *(2026-09-29, decided with the user)*
+
+ADR-0050 gave Headings Excel's drag and Ctrl+click (item 1, 2026-09-29), and **a display grid takes
+both on its column header too**. Shift+click already made the header the mouse route to whole
+columns; the drag and Ctrl+click finish that route. The plain click still sorts, so the header must
+tell a click from the start of a drag, and here it differs from a Heading:
+
+- **A press on a header selects nothing by itself.** Released on the same column, with no other
+  column's header crossed, it is a click and sorts, as above. **The drag begins when the pointer
+  reaches another column** — its header, or its cells below — and from then on it is a Heading drag
+  as ADR-0050 describes, from the pressed column to the pointer's. **A press that became a drag
+  never sorts**, even if it is released back over the column it started on. The click a browser
+  fires on the common ancestor after a press and a release on different headers is therefore not a
+  sort either.
+- **Ctrl+click on a header adds or takes out the whole column and does not sort**; Ctrl+drag adds
+  whole columns. The modifier had no meaning on a header before: it was ignored and the click
+  sorted. Multi-column sorting is still never a header click (above).
+- Selecting a column this way is positional, so an unsortable column (an Action Column) is selected
+  like any other, as Shift+click already does.
