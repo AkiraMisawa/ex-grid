@@ -90,3 +90,21 @@ Open, for the orchestrator:
   UX-9 measures against the cell ground, which is the surface, so 0.62 stands as decided.
 - The dark floor is fixed for MudBlazor's default dark surface; a Consumer's own dark palette is not
   recomputed. CSS cannot compare two colours' luminance.
+
+2026-09-29, second round, after the decisions of the same day (ADR-0008/0029/0030 as corrected):
+
+- **The range outline's token.** `ex-range-single` reads `--ex-selection-outline`, defaulting to
+  `--ex-focus-outline`; forced colors still outline every range in Highlight. Checking it by pixel
+  showed the range's `::before` tint painted *over* the range's own outline, so the outline was
+  tinted (rgb(11, 22, 39) where it should have been black). The range now isolates its painting and
+  the tint lies beneath the outline; a drag measured 13.9 ms with that against 15.1 ms without,
+  which is noise. Layer 3 now checks the outline's pixels are its own colour.
+- **A correction to the first round.** Over MudBlazor's dark surface, the Focus band's tint paints
+  rgb(60, 59, 77), which is the band's 8% of the primary over rgb(55, 55, 64). The first round
+  sampled rgb(58, 57, 75) and reported 2.92:1 at a floor of 0.62. The figure at 0.62 is 2.83:1.
+- **Re-check at the floor of 0.63**, painted, headless, the same on `/mud` and `/mud-app`: the dark
+  outline is rgb(127, 116, 241), 3.18:1 against the surface and **2.95:1 against the Focus band's
+  tint**, so it does not clear 3:1 there. UX-9's layer-3 test asserts the band case and is left
+  failing on it. Measured by injecting other floors: 0.635 gives 3.02:1 over the band (3.26:1 over
+  the surface), 0.64 gives 3.06:1 (3.31:1). Proposed: 0.64. The light scheme is the primary
+  #594ae2: 6.00:1 against the surface, 5.36:1 painted over the band.

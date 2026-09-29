@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures.mjs';
+import { painted } from './pixels.mjs';
 
 // The Wrapper contract, measured with a real Wrapper (ADR-0030): ExGrid.MudBlazor on
 // /mud. The Definition of Done wrote UX-3/6/9 against a "stub Wrapper stylesheet";
@@ -137,8 +138,23 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
             // The palette's primary itself (ADR-0030, 2026-09-29).
             expect(one.focus, JSON.stringify(one)).toEqual(one.primary);
         }
+        // And as painted, where this page puts it: on the Focus band's tint over the surface,
+        // which is lighter than the surface in the dark scheme (ADR-0030 sets the floor to clear
+        // that too). The pointer is parked, so no hover band adds to it.
+        await page.mouse.move(0, 0);
+        await expect(gridA(page).locator('.ex-hover-row')).toHaveCount(0);
+        await expect(gridA(page).locator('.ex-focus-row')).not.toHaveCount(0);
+        const box = await cellAt(2, 2).boundingBox();
+        const cellPixels = await painted(page, { x: box.x, y: box.y, width: box.width, height: box.height });
+        const onBand = {
+            outline: cellPixels.at(box.x + box.width / 2, box.y + 1),
+            ground: cellPixels.at(box.x + 6, box.y + 6),
+        };
+        expect(contrast(onBand.outline, onBand.ground), `painted over the Focus band, dark=${dark} (${JSON.stringify(onBand)})`)
+            .toBeGreaterThanOrEqual(3);
 
-        // A range: its fill and its one outline, in the Focus outline's colour.
+        // A range: its fill and its one outline, in the Focus outline's colour — the range's
+        // own token, --ex-selection-outline, defaults to it and the Wrapper leaves it so.
         await cellAt(3, 3).click({ force: true, modifiers: ['Shift'] });
         await expect(gridA(page).locator('.ex-range')).not.toHaveCount(0);
         const range = await colours();
