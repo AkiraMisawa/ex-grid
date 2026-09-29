@@ -89,8 +89,12 @@ public class ReferenceCycleTests
         Assert.Equal(expected, Cycled(marked));
     }
 
-    [Theory] // ADR-0051 / SH-28: a selection cycles every Reference it covers, each to the next form of the first, and covers what was rewritten
+    [Theory] // ADR-0051 / SH-28: a selection cycles every Reference it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten
     [InlineData("=|A1+B2|", "=|$A$1+$B$2|")]
+    [InlineData("=A1|+|B1", "=|$A$1+$B$1|")]
+    [InlineData("=A1|+2|", "=|$A$1|+2")]
+    [InlineData("=|1+|A1", "=1+|$A$1|")]
+    [InlineData("=SUM(A1|,|B2)", "=SUM(|$A$1,$B$2|)")]
     [InlineData("=|$A1+B$2|", "=|A1+B2|")]
     [InlineData("=A|1+B|2", "=|$A$1+$B$2|")]
     [InlineData("=SUM(|A1,B2:C3,$D$4|)", "=SUM(|$A$1,$B$2:$C$3,$D$4|)")]
@@ -151,13 +155,13 @@ public class ReferenceCycleTests
         Assert.Null(Cycled(text));
     }
 
-    [Theory] // ADR-0051 / SH-28: a caret touching no Reference changes nothing, nor does a selection covering none
+    [Theory] // ADR-0051 / SH-28: a caret touching no Reference changes nothing, nor does a selection covering, overlapping and touching none
     [InlineData("=|")]
     [InlineData("|=A1")]
     [InlineData("=SUM(|)")]
     [InlineData("=A1 |+ B2")]
     [InlineData("=A1%|")]
-    [InlineData("=A1|+|B2")]
+    [InlineData("=A1 |+| B2")]
     [InlineData("=|1+2|")]
     public void SH28_nothing_at_the_caret_changes_nothing(string marked)
     {

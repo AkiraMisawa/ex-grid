@@ -68,7 +68,7 @@ internal static class SheetFormulaAids
 
     /// <summary>
     /// F4 (ADR-0051, 2026-09-29): the Reference at the caret, or every Reference the selection
-    /// covers, cycled to its next form by the engine (<see cref="FormulaEntry.CycleReference"/>),
+    /// covers, overlaps or touches, cycled to its next form by the engine (<see cref="FormulaEntry.CycleReference"/>),
     /// with the caret at the end of what was rewritten or the selection over it. Null where
     /// nothing changes: no Reference there, or text that is not a Formula.
     /// </summary>

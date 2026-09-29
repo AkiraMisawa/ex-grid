@@ -178,8 +178,9 @@ public static partial class FormulaEntry
     /// F4 (ADR-0051, 2026-09-29): the Reference at the caret cycled to its next form —
     /// <c>A1</c> → <c>$A$1</c> → <c>A$1</c> → <c>$A1</c> → <c>A1</c> — and the caret at the end of
     /// it. The Reference at the caret is the one the caret is inside or touching, on either side.
-    /// With a selection, every Reference it covers any part of cycles, each to the next form of
-    /// the first one, and the selection covers what was rewritten. A range cycles as one, its
+    /// With a selection, every Reference it covers, overlaps or touches at either end cycles —
+    /// <c>+</c> selected in <c>=A1+B1</c> cycles both — each to the next form of the first one,
+    /// and the selection covers what was rewritten. A range cycles as one, its
     /// next form taken from its first end and given to both; whole columns and whole rows have
     /// two forms (<c>A:A</c> ↔ <c>$A:$A</c>); a Sheet qualifier is kept, and only the cell part
     /// cycles. Only the <c>$</c> signs change: every other character stays as it was typed.
@@ -198,14 +199,14 @@ public static partial class FormulaEntry
         if (selectionEnd < selectionStart || selectionEnd > text.Length) throw new ArgumentOutOfRangeException(nameof(selectionEnd), selectionEnd, "The selection ends from its start to the text's length.");
         if (text.Length == 0 || text[0] != '=') return null;
 
+        // Inside or touching, for a caret and a selection alike (observed in Excel: + selected
+        // in =A1+B1 gives =$A$1+$B$1). A caret takes the first Reference it touches.
         var caret = selectionStart == selectionEnd;
         var targets = new List<Match>();
         foreach (var token in Scan(text))
         {
-            var covered = caret
-                ? token.Start <= selectionStart && selectionStart <= token.End
-                : token.Start < selectionEnd && selectionStart < token.End;
-            if (!covered || token.Kind != TokenKind.Operand || token.Unterminated || token.HasBrackets) continue;
+            var touched = token.Start <= selectionEnd && selectionStart <= token.End;
+            if (!touched || token.Kind != TokenKind.Operand || token.Unterminated || token.HasBrackets) continue;
             // The operand is a Reference only where the grammar reads one over the whole of it.
             if (Formulas.Lexer.MatchReference(text, token.Start) is { } reference && reference.Index + reference.Length == token.End)
             {

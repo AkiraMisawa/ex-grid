@@ -295,6 +295,17 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal("=$B$1+$C$1", EditorText(cut));
     }
 
+    [Fact] // ADR-0051 / SH-28 / DC-45: a selection touching References at its ends cycles them — + selected in =A1+B1 gives =$A$1+$B$1 (observed in Excel)
+    public async Task SH28_a_selection_touching_references_cycles_them()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "C1", "=A1+B1");
+
+        await PressInEditorAsync(cut, "F4", "=A1+B1", 3, selectionEnd: 4);
+
+        Assert.Equal("=$A$1+$B$1", EditorText(cut));
+    }
+
     [Fact] // ADR-0051 / SH-28 / DC-45: while pointing, F4 cycles the pointed Reference and pointing goes on; the next arrow writes the relative form
     public async Task SH28_F4_while_pointing_cycles_the_pointed_reference()
     {

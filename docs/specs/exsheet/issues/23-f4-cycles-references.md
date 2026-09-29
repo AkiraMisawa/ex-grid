@@ -1,6 +1,6 @@
 # 23: F4 cycles the Reference at the caret
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0051, "F4 cycles the Reference at the caret" (2026-09-29), with ADR-0021's
 note of the same day. While an edit is open, F4 cycles the Reference at the caret: `=B2`, F4, gives
@@ -21,7 +21,7 @@ Core (ExGrid):
       edit is, and its selection is placed by the listener that already places the caret (DC-45)
 - [x] While pointing, F4 rewrites the Reference the outline wrote, and pointing goes on; a further
       move writes the next Reference as pointing writes it (ADR-0051 reading) (DC-45)
-- [ ] A burst of F4 presses on the Server host with 150 ms injected gives the four forms in order:
+- [x] A burst of F4 presses on the Server host with 150 ms injected gives the four forms in order:
       each press is decided from the text its own key message carries (DC-45)
 - [x] No JavaScript use is added; the listener stays inside ADR-0021's keyboard/editor use (DC-24)
 
@@ -33,7 +33,7 @@ ExSheet:
       names, numbers and non-Formula text unchanged; the caret at the end of the rewritten Reference,
       or the selection over the rewritten span (SH-28)
 - [x] ExSheet declares the function, so `/sheet` in the DemoHost cycles on F4 (SH-28)
-- [ ] Layer 3: `=B2` and four F4 presses in a cell and in the Formula Bar, on both hosts (DC-45)
+- [x] Layer 3: `=B2` and four F4 presses in a cell and in the Formula Bar, on both hosts (DC-45)
 
 ## Comments
 
@@ -71,3 +71,13 @@ open boxes; the spec is written and has not been run here (the DemoHost's port i
   `+`); a Reference partly inside a selection counts as covered; the text keeps the case and the
   order it was typed in (`=b2` → `=$b$2`, `=B2:A1` → `=$B$2:$A$1`), since only `$` signs are
   written.
+
+2026-09-29, later. The user observed in Excel that `+` selected in `=A1+B1` gives `=$A$1+$B$1`
+(ADR-0051 and SH-28 updated in `8b2824a`), so the reading above that "a selection that overlaps no
+Reference changes nothing" was wrong. `FormulaEntry.CycleReference` now cycles every Reference a
+selection covers, overlaps or touches at either end; the four touching cases in
+`ReferenceCycleTests` failed before the change and pass after it, ExSheet's wiring has the `+` case
+(`SH28_a_selection_touching_references_cycles_them`), and the layer 3 mid-text test selects the `+`
+too. The moved flag and the in-flight placement rule stand as built. Layer 3,
+`declarations.spec.mjs` in Chrome (macOS): 51 of 51 on the WebAssembly host and 51 of 51 on the
+Server host, the nine DC-45 tests among them, with no console message. Edge was not run here.

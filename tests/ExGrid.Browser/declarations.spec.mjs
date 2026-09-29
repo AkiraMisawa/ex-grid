@@ -635,7 +635,7 @@ test('DC-45: with no edit open, F4 is left to the browser and opens nothing', as
     await expect(bar(grid)).toHaveValue('=B2*C2');
 });
 
-test('DC-45: F4 cycles the Reference the caret touches mid-text, and every Reference a selection covers', async ({ page }) => {
+test('DC-45: F4 cycles the Reference the caret touches mid-text, and every Reference a selection covers or touches', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'F2');
     await clickBarEnd(grid);
@@ -658,6 +658,18 @@ test('DC-45: F4 cycles the Reference the caret touches mid-text, and every Refer
     await page.keyboard.press('F4');
     await expect(bar(grid)).toHaveValue('=A$1+B$2');
     await expect(editor(grid)).toHaveValue('=A$1+B$2');
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 8]);
+
+    // Only the + selected: it touches both References, and both cycle, as Excel's F4 does
+    // (observed by the user, 2026-09-29: + selected in =A1+B1 gives =$A$1+$B$1).
+    await page.keyboard.press('Home');
+    for (let i = 0; i < 4; i++) {
+        await page.keyboard.press('ArrowRight');
+    }
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([4, 5]);
+    await page.keyboard.press('F4');
+    await expect(bar(grid)).toHaveValue('=$A1+$B2');
     await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 8]);
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
