@@ -1,4 +1,5 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { SERVER } from './hosting.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, expectFocusAt, pressCell, typeSteadily,
 } from './sheet-helpers.mjs';
@@ -284,3 +285,99 @@ test.describe('/sheets', () => {
         await expectFocusAt(right, 'D2');
     });
 });
+
+// ED-22, widened (ADR-0010, 2026-09-29): a press on the rows while an edit is open is a mode change
+// too, and the keys typed after it are held until the core has answered it, then handed on against
+// the mode the answer leaves (ADR-0021's note of the same day). Found building this file: `99` over
+// C4, a press on B2, `7` at once, and the `7` was lost — on the Sheet, where the core keeps DOM focus
+// in the editor through the press (ADR-0051), it went into the editor the commit was removing. On
+// the Server host at 150 ms and without injected latency; the case without one runs on both hosts.
+for (const rtt of [0, 150]) {
+    test.describe(`ED-22: keys straight after a press on the rows while an edit is open, ${rtt ? `${rtt} ms round trip` : 'no injected latency'}`, () => {
+        test.beforeEach(() => {
+            test.skip(rtt > 0 && !SERVER, 'a round trip is injected on the Server host only; the case without one runs here');
+        });
+
+        test('on a plain editable grid, the key after a press that commits opens an edit on the pressed cell', async ({ page }) => {
+            await page.goto('/features');
+            const grid = page.locator('.ex-grid').first();
+            const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
+            await expect(at(2, 1)).toBeVisible();
+            await at(0, 1).click({ force: true });                // Trader, editable
+            await expect(grid).toHaveAttribute('aria-activedescendant', /-r0c1$/);
+            await page.keyboard.type('99');
+            await expect(grid.locator('input.ex-editor')).toHaveValue('99');
+            await setRoundTrip(rtt);
+
+            // No wait between the two.
+            await at(2, 1).click({ force: true });
+            await page.keyboard.type('7');
+
+            await expect(page.locator('#edit-status')).toContainText('Trader=99');
+            await expect(grid.locator('input.ex-editor')).toHaveValue('7');
+            await expect(grid).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+            await page.keyboard.press('Enter');
+            await expect(at(0, 1)).toHaveText('99');
+            await expect(at(2, 1)).toHaveText('7');
+        });
+
+        test('on a Sheet, the key after a press that commits opens an edit on the pressed cell', async ({ page }) => {
+            await openSheet(page);
+            const grid = sheet(page);
+            await pressCell(grid, 'C4');
+            await page.keyboard.type('99');
+            await expect(editor(grid)).toHaveValue('99');
+            await setRoundTrip(rtt);
+
+            await clickCell(grid, 'B2');
+            await page.keyboard.type('7');
+
+            await expect(cell(grid, 'C4')).toHaveText('99');
+            await expect(editor(grid)).toHaveValue('7');
+            await expectFocusAt(grid, 'B2');
+            await page.keyboard.press('Enter');
+            await expect(cell(grid, 'B2')).toHaveText('7');
+            await expectFocusAt(grid, 'B3');
+        });
+
+        test('on a Sheet, the keys after a press that points are typed after the Reference it wrote', async ({ page }) => {
+            await openSheet(page);
+            const grid = sheet(page);
+            await pressCell(grid, 'C4');
+            await page.keyboard.type('=');
+            await expect(editor(grid)).toHaveValue('=');
+            await setRoundTrip(rtt);
+
+            await clickCell(grid, 'B2');
+            await page.keyboard.type('+1');
+            await page.keyboard.press('Enter');
+
+            await expect(cell(grid, 'C4')).toHaveText('13');
+            await expect(editor(grid)).toHaveCount(0);
+            await expectFocusAt(grid, 'C5');
+        });
+
+        // What the hold must not change: the second press of a double click reaches the core ahead
+        // of the double click, so a double click on another cell still commits the open edit and
+        // opens the clicked cell's text in Caret (ADR-0010).
+        test('on a Sheet, a double click on another cell commits the edit and opens that cell\'s text', async ({ page }) => {
+            await openSheet(page);
+            const grid = sheet(page);
+            await pressCell(grid, 'C4');
+            await page.keyboard.type('99');
+            await expect(editor(grid)).toHaveValue('99');
+            await setRoundTrip(rtt);
+
+            await expect(cell(grid, 'B2')).toBeVisible();
+            await cell(grid, 'B2').dblclick({ force: true });
+
+            await expect(cell(grid, 'C4')).toHaveText('99');
+            await expect(editor(grid)).toHaveValue('12');
+            await expect(editor(grid)).toBeFocused();
+            await expectFocusAt(grid, 'B2');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'B2')).toHaveText('12');
+        });
+    });
+}

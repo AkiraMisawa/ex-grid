@@ -386,7 +386,11 @@ nobody had asked for. What that means when writing a test:
   pointing with the keyboard back in the Cell Editor or the Formula Bar, or committing and
   giving the root the keyboard; a press back on a column heading or a Row Heading; a committing
   press on the rows taking the keyboard out of the bar the edit was typed in; and, with 150 ms
-  on the Server host, the key straight after the press back reaching the Sheet.
+  on the Server host, the key straight after the press back reaching the Sheet. And ED-22 widened
+  (ADR-0010, 2026-09-29), without latency and at 150 ms on the Server host: the keys typed straight
+  after a press on the rows while an edit is open, held until it is answered — on `/features` and
+  on the Sheet, a press that commits and one that points — and a double click on another cell
+  still committing the edit and opening that cell's text.
 
 `sheet-helpers.mjs` is what those four share: opening `/sheet` under either Chrome and waiting
 for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the

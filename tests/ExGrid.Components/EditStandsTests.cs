@@ -205,4 +205,55 @@ public class EditStandsTests : GridTestContext
         // An edit ended by a key typed in the bar takes the keyboard out of it.
         Assert.True(HandBacks()[^1]);
     }
+
+    // The hold behind a press (ADR-0010, widened 2026-09-29; ED-22): the listener holds the keys
+    // typed after a press on the rows while an edit is open until the core has answered the press,
+    // and hands them on against the mode the answer leaves. The holding is the browser's half and
+    // layer 3's (edit-stands.spec.mjs); this is the core's half — what has happened by the time the
+    // answer comes.
+
+    [Fact] // ADR-0010 (widened 2026-09-29) / ED-22: a press that commits is answered only once the gate has heard the edit end and the keyboard has been asked back
+    public async Task A_press_that_commits_is_answered_after_the_gate_and_the_hand_back()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var sheet = RenderGrid(intents);
+        await ClickAsync(sheet, 50, 10);
+        await PressAsync(sheet, "9");
+        var told = Js.UnansweredGateMode();
+        var before = HandBacks().Count;
+
+        var press = ClickAsync(sheet, 150, 70); // B4: no Reference can go after 9
+        var answered = sheet.InvokeAsync(() => sheet.Instance.PressAnsweredAsync());
+
+        // The gate has not heard the edit end, and the keyboard has not been asked back: a key
+        // handed on now would be gated as the editor's, and typed into an editor on its way out.
+        Assert.False(answered.IsCompleted);
+        Assert.Equal(before, HandBacks().Count);
+        told.SetVoidResult();
+        await press;
+        await answered;
+
+        Assert.Equal("9", Assert.Single(intents).Value);
+        Assert.Equal("none", (string)told.Invocations["setEditing"][^1].Arguments[0]!);
+        Assert.Equal([false], HandBacks().Skip(before));
+    }
+
+    [Fact] // ADR-0010 (widened 2026-09-29) / ED-22 / ADR-0051: a press that points is answered with the edit open and the keyboard left where it is
+    public async Task A_press_that_points_is_answered_with_the_edit_open()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var sheet = RenderGrid(intents);
+        await ClickAsync(sheet, 50, 10);
+        await PressAsync(sheet, "=");
+        var before = HandBacks().Count;
+        var focusCalls = Js.FocusCalls;
+
+        await ClickAsync(sheet, 150, 70); // B4
+        await sheet.InvokeAsync(() => sheet.Instance.PressAnsweredAsync());
+
+        Assert.Equal("=B4", EditorText(sheet));
+        Assert.Empty(intents);
+        Assert.Equal(before, HandBacks().Count);
+        Assert.Equal(focusCalls, Js.FocusCalls);
+    }
 }

@@ -2,11 +2,11 @@
 // reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
 // out of the box, being told about the pointer — when it moves onto another row, and
 // when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
-// mousedown and mouseup that keep a press on the rows in its place among held keys, the root
-// taking the keyboard back only while DOM focus is still its own, and that same mousedown
-// bringing the keyboard back to an edit left standing when a press returns to the rows or the
-// headings. Anything else — text measurement, overlay geometry, popovers — stays in C#; adding
-// to this file needs an ADR.
+// mousedown and mouseup that keep a press on the rows in its place among held keys, and hold the
+// keys after one made while an edit is open; the root taking the keyboard back only while DOM
+// focus is still its own; and that same mousedown bringing the keyboard back to an edit left
+// standing when a press returns to the rows or the headings. Anything else — text measurement,
+// overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
@@ -416,11 +416,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answer has landed. Plain navigation changes no mode and is never held behind.
     const held = [];
     let answering = false;
+    // A press on the rows while an edit is open is a mode change too (ADR-0010, widened
+    // 2026-09-29), and the keys after it wait for the core's answer to it (holdBehindPress):
+    // the press still to be asked about, and the answer the keys wait for while one is awaited.
+    let pressAsked = null;
+    let pressAnswer = null;
     // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus only
     // because a press on the rows had the default that would have moved it suppressed: held
     // here, or passed on while an edit is open where the core keeps the keyboard in the edit
     // (onPress). Null once the field is pressed again, the hand-back has taken it, or the press
-    // has been answered (replayPress, unmarkOnceAnswered). Each mark is numbered, so taking one
+    // has been answered (replayPress, askAboutPress). Each mark is numbered, so taking one
     // press's mark off never takes a later press's.
     let staleField = null;
     let staleMarks = 0;
@@ -648,6 +653,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
 
     const drain = async () => {
+        // Behind a press, its answer first (holdBehindPress); a press passed on behind it while
+        // nothing was held replaces the question, and its answer comes after the first one's.
+        while (pressAnswer !== null) {
+            const answer = pressAnswer;
+            await answer;
+            if (pressAnswer === answer) {
+                pressAnswer = null;
+            }
+        }
         // Settled before anything else, even with nothing held yet: the answer can arrive
         // before the popover or the editor has taken DOM focus, and a key typed in that
         // gap must still be held, not gated against the root.
@@ -966,8 +980,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // are held, or a change of editing mode is being answered, a primary-button press on the
     // rows is held too, in order, and its release with it: a click straight after Enter
     // reached C# before the held Enter, and the Enter's move carried the Focus past the
-    // clicked cell. When nothing is held the press passes through untouched. No layout is
-    // read: the press is replayed with the coordinates the browser gave it.
+    // clicked cell. When nothing is held the press passes through untouched, and while an edit
+    // is open the keys after it wait for its answer (holdBehindPress). No layout is read: the
+    // press is replayed with the coordinates the browser gave it.
     const mouseInit = (event) => ({
         bubbles: true, cancelable: true, view: window, detail: event.detail,
         screenX: event.screenX, screenY: event.screenY, clientX: event.clientX, clientY: event.clientY,
@@ -985,35 +1000,53 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The text field to put the keyboard back into: the surface that last held it while it is
     // still there, or else the first of this grid's own (surfaceField).
     const standingField = () => surfaceField(ownSurface(lastSurface));
-    // Takes a passed-on press's mark off its field once the core has answered that press
-    // (ExGrid.PressAnsweredAsync): a press that committed has had its hand-back by then, and
-    // one that pointed has left the edit open, the field the user's again. The core answers for
-    // the press or release it heard last, so the question goes after the press has reached
-    // it and before its release does: from a later task, or from this grid's own release
-    // (onRelease), which runs before Blazor hears it — whichever comes first. A click made in
-    // one go releases before a later task runs, and a release answered in the press's place
-    // took the mark off ahead of the hand-back (found on the Server host).
-    let unmarkAsked = 0;
-    const askThenUnmark = (mark) => {
-        if (unmarkAsked !== mark || !core) {
+    // The hold behind a press (ADR-0010, widened 2026-09-29; ADR-0021's note of the same day). A
+    // press on the rows while an edit is open commits and moves, or points, so the mode the next
+    // key meets is the core's answer to it: the keys typed after it are held, in order, until
+    // that answer, and handed on against the mode it leaves. `99` typed over a cell, a press on
+    // another, `7` at once: where the core keeps DOM focus in the editor through the press
+    // (ADR-0051), the `7` went into the editor the commit was removing, and was lost. The press
+    // itself passes on untouched.
+    //
+    // The core answers for the press or release it heard last (ExGrid.PressAnsweredAsync), so
+    // the question goes after the press has reached it and ahead of its release: from a later
+    // task, or from this grid's own release (onRelease), which runs before Blazor hears it,
+    // whichever comes first. A click made in one go releases before a later task runs, and a
+    // release answered in the press's place overtook the press's hand-back (found on the Server
+    // host). The answer also takes off the mark the press left on a field beside the rows: a
+    // press that committed has had its hand-back by then, and one that pointed has left the edit
+    // open, the field the user's again.
+    const askAboutPress = () => {
+        const press = pressAsked;
+        if (press === null) {
             return;
         }
-        unmarkAsked = 0;
-        core.invokeMethodAsync('PressAnsweredAsync')
-            .catch((error) => {
+        pressAsked = null;
+        const answered = core
+            ? core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to answer a press', error);
                 }
             })
-            .then(() => {
-                if (staleMarks === mark) {
-                    staleField = null;
-                }
-            });
+            : Promise.resolve();
+        answered.then(() => {
+            if (press.mark !== 0 && staleMarks === press.mark) {
+                staleField = null;
+            }
+            press.resolve();
+        });
     };
-    const unmarkOnceAnswered = (mark) => {
-        unmarkAsked = mark;
-        setTimeout(() => askThenUnmark(mark));
+    const holdBehindPress = (mark) => {
+        askAboutPress();
+        pressAnswer = new Promise((resolve) => {
+            pressAsked = { mark, resolve };
+        });
+        setTimeout(askAboutPress);
+        if (!answering) {
+            answering = true;
+            holdStartedAt = performance.now();
+            drain();
+        }
     };
 
     const onPress = (event) => {
@@ -1060,20 +1093,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && focusAfterReturn.closest('.ex-formula-bar') !== null
             ? focusAfterReturn
             : null;
-        if (!answering && held.length === 0) {
-            // Not held, the press goes on as it is. But while an edit is open where a press may
-            // point, the core suppresses its default so the keyboard stays in the edit
-            // (ADR-0051), and a Formula Bar the edit was typed in keeps DOM focus only for that.
-            // Should the press commit instead, that focus is left standing, not the user's
-            // choice, and the hand-back takes it as the press would have (reclaimFocus): the
-            // keyboard left in the bar with no edit open took typing that went nowhere. Where the
-            // default is not suppressed, it has moved DOM focus off the bar already.
-            // The mark is for that hand-back alone. A press that points leaves the edit open with
-            // the keyboard in the bar, and a mark left standing would let a later hand-back — the
-            // rows' focus handed on, a popover's dismissal — take the bar the user is still
-            // typing in. It comes off once the core has answered this press.
-            if (field !== null && editing !== 'none') {
-                unmarkOnceAnswered(markStale(field));
+        // Not held, the press goes on as it is, when there is nothing it could overtake: nothing
+        // held, and no key being answered. Behind a press still being answered, with no key held
+        // after it, it goes on too: Blazor keeps presses in order among themselves, and the
+        // second press of a double click reaches it ahead of the double click, as it always did.
+        if (held.length === 0 && (!answering || pressAnswer !== null)) {
+            // While an edit is open, the keys after it wait for its answer (holdBehindPress).
+            // Where a press may point, the core also suppresses its default so the keyboard stays
+            // in the edit (ADR-0051), and a Formula Bar the edit was typed in keeps DOM focus
+            // only for that. Should the press commit instead, that focus is left standing, not
+            // the user's choice, and the hand-back takes it as the press would have
+            // (reclaimFocus): the keyboard left in the bar with no edit open took typing that went
+            // nowhere. Where the default is not suppressed, it has moved DOM focus off the bar
+            // already. The mark is for that hand-back alone: a press that points leaves the edit
+            // open with the keyboard in the bar, and a mark left standing would let a later
+            // hand-back — the rows' focus handed on, a popover's dismissal — take the bar the
+            // user is still typing in. It comes off with the press's answer.
+            if (editing !== 'none') {
+                holdBehindPress(field !== null ? markStale(field) : 0);
             }
             return;
         }
@@ -1099,10 +1136,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // A release is held only behind its press: once the press has been handed on, the
     // release follows it to Blazor as it comes, and Blazor keeps the two in order.
     const onRelease = (event) => {
-        // A passed-on press whose mark is still to come off is asked about now, ahead of this
-        // release (unmarkOnceAnswered).
-        if (!replaying && unmarkAsked !== 0) {
-            askThenUnmark(unmarkAsked);
+        // A passed-on press the keys wait behind is asked about now, ahead of this release
+        // (holdBehindPress).
+        if (!replaying) {
+            askAboutPress();
         }
         if (!core || replaying || !held.some((k) => k.press === 'mousedown')) {
             return;
@@ -1573,7 +1610,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('paste', onPaste);
             lastSurface = null;
             staleField = null;
-            unmarkAsked = 0;
+            // A press still to be asked about has no core left to answer it: the keys held behind
+            // it are let go with the rest.
+            pressAsked?.resolve();
+            pressAsked = null;
             root = null;
             scroller = null;
             core = null;

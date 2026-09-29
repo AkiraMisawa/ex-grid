@@ -146,29 +146,47 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
     }
 
-    [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
-    public void A_passed_on_press_marks_the_bar_only_until_the_core_has_answered_it()
+    [Fact] // ADR-0010 (widened 2026-09-29) / ADR-0021 / ED-22: a press on the rows while an edit is open holds the keys after it until the core has answered it
+    public void A_press_on_the_rows_while_editing_holds_the_keys_after_it_until_answered()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
         var press = Regex.Match(script.Text, @"const onPress = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
         Assert.True(press.Success, "onPress is not in the module");
         var body = press.Value;
 
-        // A Formula Bar that a press on the rows leaves holding DOM focus while an edit is open is
-        // the hand-back's to take, should the press commit (reclaimFocus)...
-        Assert.Matches(new Regex(@"if \(field !== null && editing !== 'none'\) \{\s*unmarkOnceAnswered\(markStale\(field\)\);"), body);
-        // ...and only that far: the mark comes off once the core has answered the press. A press
-        // that pointed has left the edit open, and a later hand-back must not take the bar the user
-        // is typing in.
-        Assert.Matches(new Regex(@"const askThenUnmark = \(mark\) => \{\s*if \(unmarkAsked !== mark \|\| !core\) \{\s*return;\s*\}\s*unmarkAsked = 0;\s*core\.invokeMethodAsync\('PressAnsweredAsync'\).*?if \(staleMarks === mark\) \{\s*staleField = null;",
+        // The press itself passes on when there is nothing it could overtake — nothing held, and no
+        // key being answered, or only a press, which Blazor keeps in order with it (a double
+        // click's second press) — and while an edit is open it starts the hold.
+        Assert.Matches(new Regex(@"if \(held\.length === 0 && \(!answering \|\| pressAnswer !== null\)\) \{.*?if \(editing !== 'none'\) \{\s*holdBehindPress\(field !== null \? markStale\(field\) : 0\);",
+            RegexOptions.Singleline), body);
+        // The hold: the keys after it are held from now, as behind a key, and the drain waits for
+        // the press's answer before anything else.
+        Assert.Matches(new Regex(@"const holdBehindPress = \(mark\) => \{\s*askAboutPress\(\);\s*pressAnswer = new Promise\(\(resolve\) => \{\s*pressAsked = \{ mark, resolve \};\s*\}\);\s*setTimeout\(askAboutPress\);\s*if \(!answering\) \{\s*answering = true;"),
+            script.Text);
+        Assert.Matches(new Regex(@"const drain = async \(\) => \{.*?while \(pressAnswer !== null\) \{\s*const answer = pressAnswer;\s*await answer;.*?await editorSettled\(\);",
             RegexOptions.Singleline), script.Text);
         // The core answers for the press or the release it heard last, so the question goes after
-        // the press and ahead of its release: from a later task, or from this grid's own release,
-        // whichever comes first.
-        Assert.Matches(new Regex(@"const unmarkOnceAnswered = \(mark\) => \{\s*unmarkAsked = mark;\s*setTimeout\(\(\) => askThenUnmark\(mark\)\);"), script.Text);
+        // the press and ahead of its release: from a later task (above), or from this grid's own
+        // release, whichever comes first.
         var release = Regex.Match(script.Text, @"const onRelease = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
         Assert.True(release.Success, "onRelease is not in the module");
-        Assert.Matches(new Regex(@"^const onRelease = \(event\) => \{\s*(//[^\n]*\s*)*if \(!replaying && unmarkAsked !== 0\) \{\s*askThenUnmark\(unmarkAsked\);"), release.Value);
+        Assert.Matches(new Regex(@"^const onRelease = \(event\) => \{\s*(//[^\n]*\s*)*if \(!replaying\) \{\s*askAboutPress\(\);"), release.Value);
+        Assert.Matches(new Regex(@"const askAboutPress = \(\) => \{.*?core\.invokeMethodAsync\('PressAnsweredAsync'\).*?press\.resolve\(\);",
+            RegexOptions.Singleline), script.Text);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+    }
+
+    [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
+    public void A_passed_on_press_marks_the_bar_only_until_the_core_has_answered_it()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // A Formula Bar that a press on the rows leaves holding DOM focus while an edit is open is
+        // the hand-back's to take, should the press commit (reclaimFocus), and only that far: the
+        // mark comes off with the press's answer. A press that pointed has left the edit open, and a
+        // later hand-back must not take the bar the user is typing in.
+        Assert.Matches(new Regex(@"const askAboutPress = \(\) => \{.*?if \(press\.mark !== 0 && staleMarks === press\.mark\) \{\s*staleField = null;\s*\}",
+            RegexOptions.Singleline), script.Text);
         // Every mark is numbered, a held press's too, so taking one off never takes a later one's.
         Assert.Matches(new Regex(@"const markStale = \(field\) => \{\s*staleField = field;\s*return \+\+staleMarks;"), script.Text);
         Assert.Single(Regex.Matches(script.Text, @"staleField = field;"));
