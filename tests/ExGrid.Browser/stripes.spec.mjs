@@ -35,6 +35,11 @@ async function groundsOf(page, cells) {
         expect(box, `r${row}c${column} is on screen`).not.toBeNull();
         points.push([box.x + 4, box.y + 4]);
     }
+    return pixelsAt(page, points);
+}
+
+/** The painted colour at each page point, read from a screenshot as groundsOf reads it. */
+async function pixelsAt(page, points) {
     const png = await page.screenshot({ scale: 'css', animations: 'disabled', caret: 'hide' });
     const reader = await page.context().newPage();
     try {
@@ -137,4 +142,20 @@ test('under forced colours no stripe is painted (UX-16)', async ({ page }) => {
     const [pinned9, desk9, pinned10, desk10] = await groundsOf(page, [[9, 0], [9, 3], [10, 0], [10, 3]]);
     expect(pinned9).toBe(pinned10);
     expect(desk9).toBe(desk10);
+});
+
+// The grid draws its own scrollbar (ADR-0029). Any rule on ::-webkit-scrollbar makes Chrome's
+// and Edge's bar a custom one, which paints no native part, so a stylesheet that meant to leave
+// the native bar alone painted an empty gutter: the thumb worked and could not be seen (the
+// fourth Windows run, 2026-09-29). Read from the screen, as the stripes are.
+test('the vertical scrollbar paints a thumb in its gutter (ADR-0029, UX-10)', async ({ page }) => {
+    const scroller = page.locator('.ex-grid .ex-scroller');
+    const box = await scroller.boundingBox();
+    const gutter = await scroller.evaluate((el) => el.offsetWidth - el.clientWidth);
+    expect(gutter, 'the bar occupies layout').toBeGreaterThan(0);
+    const x = box.x + box.width - gutter / 2;
+    // At the top of a long list the thumb is at the top of the track, and the bottom of the
+    // track is empty.
+    const [thumb, track] = await pixelsAt(page, [[x, box.y + 12], [x, box.y + box.height - gutter - 4]]);
+    expect(thumb, 'the thumb is painted: it differs from the empty track below it').not.toBe(track);
 });

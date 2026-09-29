@@ -152,8 +152,9 @@ the kind that still look correct on screen**, so review will not catch them.
 - **CSS classes take an `ex-` prefix; JS is a module returning per-instance handles.**
   `spikes/render-bench` uses `.r` `.c` `.sel` and `window.bench` as a **bad example** on
   purpose (it is disposable). Do not carry that into product code (ADR-0018).
-- **A scrollbar takes about 15px out of the Viewport on Windows and Linux, and 0 on macOS.**
-  Every geometry bug this causes is invisible on the development machine. The gutter is
+- **A scrollbar takes a strip out of the Viewport.** The grid draws its own (12px by default,
+  on every platform since 2026-09-29, ADR-0029); a native one is about 15px on Windows and Linux
+  and 0 on macOS. Every geometry bug this causes is invisible where the strip happens to be 0. The gutter is
   reported by the browser and subtracted in `ViewportBox` (ADR-0013 / 0021) — never assumed,
   never measured once at attach (`overflow: auto` shows no bar until the content overflows,
   so attach is the moment the answer is 0).

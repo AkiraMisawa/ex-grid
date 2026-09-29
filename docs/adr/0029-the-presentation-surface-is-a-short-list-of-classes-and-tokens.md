@@ -257,3 +257,34 @@ not quietly in the stylesheet. Each is painted only when a Consumer makes the de
   ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)).
 - **Geometry** (the Row Headings' width, the Formula Bar's height and the fill handle's size) is
   resolved in C# with the Grid Metrics and emitted inline, as every other piece of geometry is.
+
+## A third correction: the grid always draws its own scrollbar *(2026-09-29, decided with the user)*
+
+The scrollbar tokens were applied through `::-webkit-scrollbar`, with an empty fallback, on the
+belief that an unset token left both declarations invalid and the native bar untouched. It did not.
+In Chrome and Edge, any rule that matches `::-webkit-scrollbar` turns the element's bar into a
+custom one, whatever its declarations resolve to, and a custom bar paints no native part. The
+gutter kept its width and the thumb still worked, but nothing was painted in it. The fourth Windows
+run found it (`verification/2026-09-29-windows-4/results.md`, "The grid's scrollbars are not
+painted"), and it reproduced on Linux. Every grid without a Wrapper colour had been showing an empty
+gutter; the MudBlazor Wrapper sets `--ex-scrollbar-color`, which is why its grids showed a thumb.
+
+Three ways were weighed:
+
+- **The standard `scrollbar-width` and `scrollbar-color`.** Unset, they leave the native bar
+  alone. But `scrollbar-width` takes only `auto`, `thin` or `none`, so the width token would stop
+  being a length.
+- **A stable class a Wrapper adds to opt in** to the custom bar. It is one more class in the stable
+  table.
+- **The grid always draws its own bar.** This was chosen.
+
+**The decision:** `--ex-scrollbar-width` and `--ex-scrollbar-color` keep their meaning, and each
+has a default: 12px, and `CanvasText` at 32% over transparent, which reads in both colour schemes.
+The track and the corner are transparent. The bar looks the same on every platform. That includes
+macOS, where the grid's bar now occupies layout instead of overlaying. The gutter is reported by
+the browser, as it always was, so the geometry follows (ADR-0021).
+
+Firefox has no `::-webkit-scrollbar`. There the colour token goes to `scrollbar-color`, and the
+width stays the browser's own.
+
+The painted thumb is asserted from the screen in `stripes.spec.mjs`.

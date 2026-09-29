@@ -155,11 +155,14 @@ test('a window narrower than the pinned block suspends pinning, and widening res
     for (let i = 0; i < 3; i++)
         await page.keyboard.press('ArrowRight');
     await expect(grid(page)).toHaveAttribute('aria-activedescendant', /-r0c3$/);
-    // The reveal's scroll lands a frame after the attribute, or a round trip on a circuit.
+    // The reveal's scroll lands a frame after the attribute, or a round trip on a circuit. While
+    // it flings, the scrollable cells are skipped and the attribute is cleared (ADR-0004,
+    // ADR-0033): that is "not yet", not a cell to wait for.
     await expect.poll(async () => {
         const scroller = await grid(page).locator('.ex-scroller').boundingBox();
-        const focusId = await grid(page).getAttribute('aria-activedescendant');
-        const focused = await page.locator(`[id='${focusId}']`).boundingBox();
+        const focused = await grid(page).locator("[id$='-r0c3']").boundingBox({ timeout: 100 }).catch(() => null);
+        if (focused === null)
+            return false;
         return focused.x >= scroller.x - 0.5 && focused.x + focused.width <= scroller.x + scroller.width + 0.5;
     }, { message: 'the Focus is whole on screen' }).toBe(true);
 
