@@ -181,6 +181,12 @@ SH-6). Nothing in ExGrid or ExSheet did it.
   after a rewrite. **No JavaScript is added**
   ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)): the capture-phase listener
   claims one more key while an edit is open, and only when the function is declared.
+  *(Settled while building, decided with the user the same day.)* The F4 key message also says
+  whether the user moved the caret in that text. On a circuit, writing the answered text leaves the
+  browser's caret at the end until the core's placement lands, and a second F4 in that gap would
+  cycle whatever Reference ends the text: `=A1+B2`, caret after `A1`, F4 twice, gave `=$A$1+$B$2`
+  where `=A$1+B2` is right. **A placement still in flight wins over the browser's own caret, unless
+  the user moved it**, which is the rule the second round (above) already applies to caret reports.
 - **While pointing, F4 cycles the Reference the pointing outline wrote**, and pointing goes on.
 - **On a Mac it is F4 only.** Excel for Mac's own key is ⌘+T, which a browser keeps for a new tab and
   never gives a page. On a Mac laptop's default keyboard settings, F4 is Fn+F4.
@@ -194,8 +200,13 @@ implementation and asked of Excel in `docs/specs/exsheet/verify-on-windows-6.md`
   function name, a number, a string, or text that is not a Formula.
 - **A range cycles as one**: `A1:B2` → `$A$1:$B$2` → `A$1:B$2` → `$A1:$B2` → `A1:B2`. From a range whose
   ends differ, the next form is taken from the first end and given to both.
-- **A selection covering several References** cycles each of them, each to the next form of the
-  first one.
+- **A selection cycles every Reference it covers, overlaps, or touches at either end**, each to the
+  next form of the first one. *(Observed by the user in Excel, Microsoft 365 on Windows,
+  2026-09-29, for the touching case: in `=A1+B1`, selecting only `+` and pressing F4 gives
+  `=$A$1+$B$1`. The first reading, "a selection that overlaps no Reference changes nothing", was
+  wrong. The overlapping case and the form taken from the first Reference are still read.)*
+- **The text keeps the case and the order it was typed in**, since only `$` signs are written:
+  `=b2` gives `=$b$2`, and `=B2:A1` gives `=$B$2:$A$1`.
 - **Whole columns and whole rows have two forms**: `A:A` ↔ `$A:$A`, `1:1` ↔ `$1:$1`.
 - **A Sheet qualifier is kept**, and only the cell part cycles: `Sheet2!A1` → `Sheet2!$A$1`.
 - **A structured reference does not cycle**: `Positions[PV]` is left as it is.

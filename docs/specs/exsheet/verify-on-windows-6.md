@@ -1,7 +1,8 @@
 # What to verify on Windows, sixth run
 
-Status: ready-for-human once `claude/exsheet-f4` is merged into `claude/exsheet-start-8cx3v1` —
-**A, then B**. Part A alone can run before that: it asks only Excel.
+Status: ready-for-human once `claude/exsheet-f4` and `claude/exsheet-headings` are merged into
+`claude/exsheet-start-8cx3v1` — **A, B, then C**. Part A alone can run before that: it asks only
+Excel.
 
 For the Claude Code session on the Windows desktop of the earlier runs. The fifth run's method,
 tools and advance authorisation still apply: read [`verify-on-windows-5.md`](verify-on-windows-5.md)
@@ -47,6 +48,11 @@ sheet, en-US.
 | 15 | `=`, ↓ (pointing: `=A2`), F4, then ↓ | F4 once, then ↓ | after F4 `=$A$2`; after ↓, reading `=A3` (Excel may keep `=$A$3`: record which) |
 | 16 | `=`, ↓, F4 (pointing), then type `+` | — | `=$A$2+` and pointing ends |
 | 17 | Select a cell holding `=B2` without editing, press F4 | 1 | nothing to do with references: record what Excel repeats, if anything |
+| 18 | `=A1+B1`, select only the `+`, F4 | 1 | `=$A$1+$B$1` (observed by the user, 2026-09-29: confirm) |
+| 19 | `=A1+B2`, select from the `1` of `A1` to the `B` of `B2`, F4 | 1 | `=$A$1+$B$2` (a Reference partly inside the selection counts) |
+| 20 | `=A1+$B$2`, select `A1+$B$2`, F4 | 1 | `=$A$1+$B$2`: each takes the next form of the first (`$A$1`); record what Excel does with `$B$2` |
+| 21 | `=b2` (lower case), F4 | 1 | `=$b$2`: the case is kept while editing |
+| 22 | `=B2:A1`, F4 | 1 | `=$B$2:$A$1`: the order is kept while editing |
 
 For each case also record **where the caret is after F4** (the reading is: at the end of the
 rewritten Reference) and, for case 7, **what is selected** (the reading is: the rewritten span).
@@ -64,6 +70,17 @@ Excel's from Part A. Also record:
 
 Results go to `verification/<date>-windows-excel-6/f4.md` (Part A) and
 `verification/<date>-windows-6/f4.md` (Part B).
+
+## Part C — one Heading reading (ADR-0052, "What the user's run settled")
+
+The user observed that Ctrl+Shift+↓ from A1 on an empty sheet selects the whole column and does not
+scroll. One case of the same rule is still read. In Excel, on an empty sheet with the view at the
+top-left, click the Column Heading C, then press Ctrl+Shift+→. Record the Selection, the active
+cell, and whether the view moves sideways, down, or not at all. The reading is that it moves on
+neither axis, since C:XFD spans both. Then do the same in `/sheet`, in Chrome and Edge, and record
+whether ExSheet agrees.
+
+Results go to `verification/<date>-windows-excel-6/headings.md`.
 
 ## Finishing
 
