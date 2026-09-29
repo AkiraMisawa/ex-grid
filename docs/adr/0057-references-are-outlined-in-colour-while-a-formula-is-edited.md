@@ -134,6 +134,13 @@ on the wrong characters. That is SRV-7's failure (`…123456789` became `…1289
   Outline's edge moves it (`A1:A5` becomes `C1:C5`), and dragging its corner resizes it. It is a new
   pointer gesture. It would compete with the fill handle and with a selecting drag for the same
   presses, and it needs a decision of its own.
+  - **The corner squares wait for it** *(decided with the user, 2026-09-30)*. Excel draws a 5×5 px
+    square in the Reference's colour at each corner of every outline, with a 1 px margin of white
+    (the eighth Windows run). They are this gesture's handles. Drawn without the gesture, they would
+    offer a drag that does nothing. So they are not drawn, and they arrive with the gesture.
+  - **The gesture is kept in view** in `docs/definition-of-done.md` §21.11 and in ticket 31 of
+    `docs/specs/exsheet/issues/`, which holds what the eighth run saw of the squares. Whoever builds
+    the gesture builds the squares with it.
 - **Telling Reference Outlines apart under forced colours.** Forced colours replace every colour
   with a system colour, so all the outlines, and all the coloured text, come out alike. The outlines
   still show which cells are read, but not which argument reads them. Line styles could tell three or
@@ -200,4 +207,21 @@ agreed. Where one did not, the rule is now Excel's, as this ADR said it would be
 - **Point starts again from the edited cell after an operator.** Case 20 of the procedure pointed at
   D11 twice for that reason. It was the procedure's mistake, not Excel's. With the keys corrected
   (case `20x`), Excel agrees with the reading.
+
+### Where ExSheet is deliberately unlike Excel *(decided with the user, 2026-09-30)*
+
+- **The outline's line lies inside the cells it outlines.** Excel draws the line over the gridline
+  and 1 px outside the cells, so in row 1 and in column A it goes under the headings' border. Here
+  it lies inside, as the pointing outline already did. Nothing drawn above the overlay (the
+  headings, a Pinned Column, the header) can then cover part of it. Inside the line, a 1 px gap of
+  the cell's own ground separates it from the wash, as Excel's white gap does.
+- **One palette serves both surfaces.** Excel's Formula Bar shows the seven colours in slightly
+  different shades from the cell's (`#006cbe` for `#326ac7`). The shades name the same seven
+  References, and a second set of tokens would buy nothing a reader can use.
+- **A column the Consumer asks to outline twice is outlined twice** (`OutlinedColumns`). Two Sheets
+  on a page can both read `Positions[PV]` in different colours, and a Consumer that passes both
+  notifications to the positions grid has done nothing wrong. Both outlines are drawn, the later
+  over the earlier, as two References to the same cells are. A null entry is still refused, since
+  that is a mistake in the Consumer's code. A name the grid does not show is outlined nowhere, as a
+  Reference to cells the grid does not have is.
 

@@ -130,12 +130,16 @@ the kind that still look correct on screen**, so review will not catch them.
   the server's copy back, and on a circuit that copy is a round trip behind the typing:
   `…123456789` became `…1289` in the Cell Editor, and the page looked fine (SRV-7; measured again
   2026-09-27).
-- **Three name collisions exist.** A Razor page class with the same name as the root namespace
+- **Four name collisions exist.** A Razor page class with the same name as the root namespace
   shadows the namespace (`Bench.razor` in namespace `Bench` → CS0426). An enum named
   `RenderMode` collides with `Microsoft.AspNetCore.Components.Web.RenderMode`, which
   `_Imports.razor` pulls in. And inside any namespace nested under `ExGrid` — the DemoHost,
   the Wrapper itself — a bare `@using MudBlazor` resolves to `ExGrid.MudBlazor`, so `Color`
-  and `Typo` vanish: write `@using global::MudBlazor`.
+  and `Typo` vanish: write `@using global::MudBlazor`. Last, Razor writes `global::` on the
+  outermost type argument of a component parameter only. An `EventCallback<IReadOnlyList<ExSheet.X>>`
+  is emitted with a bare `ExSheet.X` inside, and on a Consumer's page that imports
+  `ExSheet.Components`, `ExSheet` is the component class: CS0426, and no handler binds. Give such
+  a parameter a non-generic argument type of its own (`LinkedColumnColours`, ADR-0057).
 
 ### Specific to this component
 

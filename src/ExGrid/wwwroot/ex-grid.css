@@ -357,8 +357,11 @@
    ground; over a dark one they are lifted a third of the way to white, which Excel was not seen
    to do, so that each reads at 3:1 or more there too. Carried as the element's own color, which it
    has no text to spend on. A solid line over a pale wash of the colour, as Excel's (#ebf0f9 is
-   the first's). Paint only, like every rectangle here. */
-.ex-reference-outline { position: absolute; outline: 2px solid currentColor; outline-offset: -2px; background: color-mix(in srgb, currentColor 10%, transparent); }
+   the first's), with a 1px gap of the cell's own ground between them, as Excel's white gap.
+   The line lies inside the cells, where Excel's lies over the gridline, so that nothing drawn
+   above the overlay can cover part of it (ADR-0057, "deliberately unlike Excel"). The padding is
+   the line and the gap, and it only clips the wash. Paint only, like every rectangle here. */
+.ex-reference-outline { position: absolute; box-sizing: border-box; padding: 3px; outline: 2px solid currentColor; outline-offset: -2px; background: color-mix(in srgb, currentColor 10%, transparent) content-box; }
 /* Point's dashes over the outline of the Reference it writes: in the Focus outline's colour, as
    Excel lays its active-cell green over the pointed Reference's own line, just inside that line
    so both show (the eighth Windows run). */

@@ -132,13 +132,17 @@ public class OutlinedColumnTests : GridTestContext
         Assert.Equal([("ex-reference-outline ex-reference-2", "left: 100px; top: 0px; width: 100px; height: 100px")], Outlines(cut));
     }
 
-    [Fact] // ADR-0057 / DC-50: a column listed twice has no one colour, and is refused by name
-    public void A_column_listed_twice_is_refused_by_name()
+    [Fact] // ADR-0057 / DC-50: a column listed twice — two Sheets reading it, say — is outlined twice, the later over the earlier (decided with the user, 2026-09-30)
+    public void A_column_listed_twice_is_outlined_twice_in_order()
     {
-        var refused = Assert.Throws<ArgumentException>(() => RenderGrid([Outlined("Note", 1), Outlined("Book", 3), Outlined("Note", 2)]));
+        var cut = RenderGrid([Outlined("Note", 1), Outlined("Book", 3), Outlined("Note", 2)], rows: 5);
 
-        Assert.Contains("'Note'", refused.Message);
-        Assert.Contains("ADR-0057", refused.Message);
+        Assert.Equal(
+        [
+            ("ex-reference-outline ex-reference-1", "left: 100px; top: 0px; width: 100px; height: 100px"),
+            ("ex-reference-outline ex-reference-3", "left: 0px; top: 0px; width: 100px; height: 100px"),
+            ("ex-reference-outline ex-reference-2", "left: 100px; top: 0px; width: 100px; height: 100px"),
+        ], Outlines(cut));
     }
 
     [Fact] // ADR-0057 / DC-50: a column is named by a name

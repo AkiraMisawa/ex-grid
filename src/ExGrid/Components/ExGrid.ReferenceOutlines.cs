@@ -52,8 +52,9 @@ public partial class ExGrid<TRow>
     ///
     /// <para>A column is named as <see cref="GridColumn{TRow}.Name"/> names it, and outlined
     /// wherever the order puts it. A name the grid does not show is outlined nowhere, as a
-    /// Reference to cells the grid does not have is; a column listed twice has no one colour and
-    /// is refused by name. The grid cannot check that it shows the rows the Formula reads: a grid
+    /// Reference to cells the grid does not have is. A column listed twice — two Sheets on a page
+    /// reading it, say — is outlined twice in list order, the later over the earlier, as two
+    /// References to the same cells are. The grid cannot check that it shows the rows the Formula reads: a grid
     /// filtered to some of them outlines the rows it shows, and whether that is the table the
     /// Formula reads is the Consumer's to vouch for. Null or empty — the default — outlines nothing
     /// (DC-1, DC-50).</para>
@@ -136,8 +137,8 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// Resolves <see cref="OutlinedColumns"/> to the places its columns stand in the current
     /// order (ADR-0057), when the list or the columns changed since they were last resolved. A
-    /// name the grid does not show resolves to nothing; a null entry, or a column listed twice,
-    /// is refused by name.
+    /// name the grid does not show resolves to nothing, a column listed twice resolves twice, and
+    /// a null entry is refused.
     /// </summary>
     private void ResolveOutlinedColumns()
     {
@@ -155,15 +156,6 @@ public partial class ExGrid<TRow>
         {
             var asked = outlined[i] ?? throw new ArgumentNullException(nameof(OutlinedColumns),
                 "OutlinedColumns holds a null column (ADR-0057).");
-            for (var before = 0; before < i; before++)
-            {
-                if (string.Equals(outlined[before]!.Column, asked.Column, StringComparison.Ordinal))
-                {
-                    throw new ArgumentException(
-                        $"OutlinedColumns lists the column '{asked.Column}' twice: a column is outlined in one colour, " +
-                        "and the grid will not pick one of two (ADR-0057).", nameof(OutlinedColumns));
-                }
-            }
             for (var column = 0; column < Columns.Count; column++)
             {
                 if (string.Equals(Columns[column].Name, asked.Column, StringComparison.Ordinal))
