@@ -189,6 +189,19 @@ public class ValidationTests : GridTestContext
         Assert.Equal("'abc' is not a date", cut.Find(".ex-announce").TextContent);
     }
 
+    [Fact] // ADR-0033/0034: a Focus move after a Reject leaves the relayed sentence alone — only a selection sentence is the selection's to empty
+    public async Task A_focus_move_after_a_reject_leaves_its_sentence()
+    {
+        var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("'abc' is not a date"));
+        await TypeAndCommitAsync(cut, "abc");
+        await PressAsync(cut, "Escape");
+
+        await ClickCellAsync(cut, 50, 50);
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+
+        Assert.Equal("'abc' is not a date", cut.Find(".ex-announce").TextContent);
+    }
+
     [Fact] // ADR-0034 / ED-20: a fill is judged on value, once, against the editor's row
     public async Task A_fill_runs_the_verdict_once_and_a_reject_stops_it()
     {

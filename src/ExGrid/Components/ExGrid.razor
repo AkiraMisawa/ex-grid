@@ -1818,6 +1818,10 @@
     private IReadOnlyList<SelectionRange> _announcedRanges = [];
     private ITimer? _announceTimer;
 
+    /// <summary>Whether the region's text is a selection sentence — the one kind a later
+    /// selection can make untrue — rather than a relayed verdict or refusal.</summary>
+    private bool _announcementDescribesSelection;
+
     private RowRange? _lastRaised;
     private int _lastRaisedWindowStart;
     private int _lastRaisedWindowCount;
@@ -7176,16 +7180,23 @@
         var ranges = _selection.Selection.Ranges;
         if (RangesEqual(ranges, _announcedRanges))
             return;
-        // A 1×1 selection is the Focus by another name; the region neither announces
-        // it nor clears — "live region unchanged" is the criterion.
-        if (ranges.Count == 1 && ranges[0].CellCount == 1)
+        // A 1×1 selection is the Focus by another name, and an empty one has nothing to
+        // name: neither is announced. But a sentence describing the range this one
+        // replaced is no longer true, and the region is where "what is selected" is read
+        // at any moment (ADR-0033) — so a selection sentence is emptied, silently (an
+        // empty status region is no addition to read out). A relayed verdict or refusal
+        // is not the selection's to take away, and an already-empty region is left
+        // unchanged: a bare Focus move writes nothing (A11Y-10). Every route to one cell
+        // comes through here alike — a click, an arrow key, a collapsing paste.
+        if (ranges.Count == 0 || (ranges.Count == 1 && ranges[0].CellCount == 1))
         {
             _announcedRanges = ranges;
-            return;
-        }
-        if (ranges.Count == 0)
-        {
-            _announcedRanges = ranges;
+            if (_announcementDescribesSelection)
+            {
+                Announce("");
+                _suppressRender = false;
+                StateHasChanged();
+            }
             return;
         }
         _announceTimer ??= Time.CreateTimer(OnAnnounceSettled, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
@@ -7198,6 +7209,7 @@
     private void Announce(string? sentence)
     {
         var text = sentence ?? "";
+        _announcementDescribesSelection = false;
         if (text.Length > 0 && text == _announcement)
         {
             // Identical text is no mutation, and the second refusal is the one the user
@@ -7221,6 +7233,7 @@
                 return;
             _announcedRanges = ranges;
             Announce(DescribeSelection(_selection.Selection));
+            _announcementDescribesSelection = true;
             StateHasChanged();
         });
     }
