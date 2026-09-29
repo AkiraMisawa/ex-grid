@@ -51,11 +51,10 @@ internal static class SelectionStyles
     /// A range holding the <paramref name="focus"/> carries a hole where the Focus is, in the
     /// layer the Focus's cell belongs to: the selection's tint never covers the Focus cell, as
     /// Excel's never covers the active cell (the Focus band and the hover band are other
-    /// overlays and keep theirs). The hole is
-    /// geometry, so it is resolved here with the rectangle and written inline, as the
-    /// polygon the stylesheet clips the tint with; the range stays one element whatever its
-    /// size. It is left out while the Focus's row is not among the painted rows, where the
-    /// clipped rectangle does not reach it.
+    /// overlays and keep theirs). The hole is geometry, so it is resolved here with the
+    /// rectangle and written inline, as the polygon the stylesheet clips the tint with; the
+    /// range stays one element whatever its size. It is left out while the Focus's row is not
+    /// among the painted rows, where the clipped rectangle does not reach it.
     /// </summary>
     public static string? Range(
         SelectionRange range, CellPosition focus, ColumnGeometry columns, double rowHeightPx, RowRange painted,
@@ -63,23 +62,20 @@ internal static class SelectionStyles
     {
         if (range.CellCount == 1 && range.Contains(focus))
             return null;
-        var pinned = columns.PinnedCount;
-        var hasPinnedPart = range.LeftColumn < pinned;
-        var hasScrollablePart = range.RightColumn >= pinned;
-        if ((pinnedLayer ? !hasPinnedPart : !hasScrollablePart) || Clip(range, painted) is not { } rows)
+        if (Side(range, columns, pinnedLayer) is null || Clip(range, painted) is not { } rows)
             return null;
 
         var leftPx = columns.OffsetPxOf(range.LeftColumn);
         var rightPx = columns.OffsetPxOf(range.RightColumn + 1);
         var style = Rect(leftPx, rightPx - leftPx, rows, rowHeightPx, painted.Start);
-        if (hasPinnedPart && hasScrollablePart)
+        if (Side(range, columns, !pinnedLayer) is not null)
         {
-            var boundaryPx = columns.OffsetPxOf(pinned);
+            var boundaryPx = columns.OffsetPxOf(columns.PinnedCount);
             style += pinnedLayer
                 ? FormattableString.Invariant($"; clip-path: inset(0 {rightPx - boundaryPx}px 0 0)")
                 : FormattableString.Invariant($"; clip-path: inset(0 0 0 {boundaryPx - leftPx}px)");
         }
-        if (range.Contains(focus) && (focus.Column < pinned) == pinnedLayer
+        if (range.Contains(focus) && Side(CellRange(focus), columns, pinnedLayer) is not null
             && focus.Row >= rows.Top && focus.Row < rows.Top + rows.Count)
         {
             var holeLeftPx = columns.OffsetPxOf(focus.Column) - leftPx;
@@ -97,33 +93,13 @@ internal static class SelectionStyles
     /// lies entirely under the Pinned Columns.</summary>
     public static string? Scrollable(
         SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted)
-    {
-        var first = Math.Max(range.LeftColumn, columns.PinnedCount);
-        if (first > range.RightColumn || Clip(range, painted) is not { } rows)
-            return null;
-        return Rect(
-            columns.OffsetPxOf(first),
-            columns.OffsetPxOf(range.RightColumn + 1) - columns.OffsetPxOf(first),
-            rows,
-            rowHeightPx,
-            painted.Start);
-    }
+        => Part(range, columns, rowHeightPx, painted, pinnedLayer: false);
 
     /// <summary>The part of a range held against the Viewport's left edge, or null when
     /// the range reaches no Pinned Column.</summary>
     public static string? Pinned(
         SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted)
-    {
-        var last = Math.Min(range.RightColumn, columns.PinnedCount - 1);
-        if (range.LeftColumn > last || Clip(range, painted) is not { } rows)
-            return null;
-        return Rect(
-            columns.OffsetPxOf(range.LeftColumn),
-            columns.OffsetPxOf(last + 1) - columns.OffsetPxOf(range.LeftColumn),
-            rows,
-            rowHeightPx,
-            painted.Start);
-    }
+        => Part(range, columns, rowHeightPx, painted, pinnedLayer: true);
 
     /// <summary>
     /// The fill handle (ADR-0050, item 5): a square of <paramref name="sizePx"/> centred on
@@ -136,7 +112,7 @@ internal static class SelectionStyles
         SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted,
         double sizePx, bool pinnedLayer)
     {
-        if ((range.RightColumn < columns.PinnedCount) != pinnedLayer)
+        if (Side(CellRange(new CellPosition(range.BottomRow, range.RightColumn)), columns, pinnedLayer) is null)
             return null;
         if (range.BottomRow < painted.Start - 1 || range.BottomRow > painted.Start + painted.Count)
             return null;
@@ -154,6 +130,32 @@ internal static class SelectionStyles
     /// <summary>The Focus as a rectangle, so one cell and a block are the same
     /// arithmetic.</summary>
     public static SelectionRange CellRange(CellPosition cell) => new(cell.Row, cell.Column, 1, 1);
+
+    /// <summary>A rectangle's part on one side of the pinned boundary, cut at it: what the
+    /// bands, the Focus and the other outlines paint in each layer.</summary>
+    private static string? Part(
+        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted, bool pinnedLayer)
+    {
+        if (Side(range, columns, pinnedLayer) is not { } side || Clip(range, painted) is not { } rows)
+            return null;
+        return Rect(
+            columns.OffsetPxOf(side.First),
+            columns.OffsetPxOf(side.Last + 1) - columns.OffsetPxOf(side.First),
+            rows,
+            rowHeightPx,
+            painted.Start);
+    }
+
+    /// <summary>The columns of a rectangle on one side of the pinned boundary — the Pinned
+    /// Columns' side or the scrollable one — or null when it has none there. The one place
+    /// the split is decided, for a range painted whole and clipped as for a part cut at the
+    /// boundary.</summary>
+    private static (int First, int Last)? Side(SelectionRange range, ColumnGeometry columns, bool pinnedLayer)
+    {
+        var first = pinnedLayer ? range.LeftColumn : Math.Max(range.LeftColumn, columns.PinnedCount);
+        var last = pinnedLayer ? Math.Min(range.RightColumn, columns.PinnedCount - 1) : range.RightColumn;
+        return first > last ? null : (first, last);
+    }
 
     /// <summary>The rows of a range that are painted, one row beyond each end of the
     /// painted slice, or null when it shares none of them (ADR-0053).</summary>

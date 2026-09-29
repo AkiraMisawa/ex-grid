@@ -90,47 +90,50 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*observer\.disconnect\(\);\s*ceilingObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
     }
 
-    [Fact] // ADR-0008 (2026-09-29) / UX-18: the Focus outline and a range's outline lie wholly inside their box
-    public void The_selection_outlines_are_drawn_inside_their_box()
+    /// <summary>The shipped core stylesheet without its comments, and its innermost rules — a
+    /// rule inside an at-rule is read as its own — each as its selectors and its body.</summary>
+    private static (string Css, IReadOnlyList<(string[] Selectors, string Body)> Rules) CoreStylesheet()
     {
         var css = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
         css = Regex.Replace(css, @"/\*.*?\*/", "", RegexOptions.Singleline);
-
-        // Every innermost rule that outlines the Focus, a single range or (under forced
-        // colors) any range. An outline straddling the edge loses its outer pixel beneath the
-        // layers painted above the selection — a Pinned Column, the Headings, the header — so
-        // each must be offset inward by at least its own width.
-        var outlines = Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
-            .Where(rule => rule.Groups["selectors"].Value.Split(',')
-                .Any(selector => selector.Trim() is ".ex-focus" or ".ex-range" or ".ex-range-single"))
+        var rules = Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
             .Select(rule => (
-                Rule: rule.Value.Trim(),
-                Width: Regex.Match(rule.Groups["body"].Value, @"outline:\s*(?<px>[\d.]+)px"),
-                Offset: Regex.Match(rule.Groups["body"].Value, @"outline-offset:\s*(?<px>-?[\d.]+)px")))
-            .Where(outline => outline.Width.Success)
+                rule.Groups["selectors"].Value.Split(',').Select(selector => selector.Trim()).ToArray(),
+                rule.Groups["body"].Value))
+            .ToList();
+        return (css, rules);
+    }
+
+    [Fact] // ADR-0008 (2026-09-29) / UX-18: every outline drawn in the Focus outline's width lies wholly inside its box, from one rule
+    public void The_focus_outlines_width_and_inward_offset_are_written_once()
+    {
+        string[] outlined = [".ex-focus", ".ex-range", ".ex-range-single", ".ex-point", ".ex-action-chosen"];
+        var sizing = CoreStylesheet().Rules
+            .Where(rule => rule.Selectors.Any(outlined.Contains))
+            .Where(rule => Regex.IsMatch(rule.Body, @"outline(-width|-offset)?:"))
             .ToList();
 
-        // The one the Focus and a single range share, and the forced-colors range's.
-        Assert.Equal(2, outlines.Count);
-        foreach (var (rule, width, offset) in outlines)
-        {
-            Assert.True(offset.Success, rule);
-            Assert.True(
-                double.Parse(offset.Groups["px"].Value, CultureInfo.InvariantCulture)
-                    <= -double.Parse(width.Groups["px"].Value, CultureInfo.InvariantCulture),
-                rule);
-        }
+        // One rule gives the Focus, every range, the pointing outline and the chosen action the
+        // width and the offset; no other rule for them restates either.
+        var (selectors, body) = Assert.Single(sizing);
+        Assert.Equal([".ex-action-chosen", ".ex-focus", ".ex-point", ".ex-range"], selectors.Order(StringComparer.Ordinal));
+        // An outline straddling the edge loses its outer pixel beneath the layers painted above
+        // the selection — a Pinned Column, the Headings, the header — so it is offset inward by
+        // at least its own width.
+        var width = double.Parse(Regex.Match(body, @"outline-width:\s*(?<px>[\d.]+)px").Groups["px"].Value, CultureInfo.InvariantCulture);
+        var offset = double.Parse(Regex.Match(body, @"outline-offset:\s*(?<px>-?[\d.]+)px").Groups["px"].Value, CultureInfo.InvariantCulture);
+        Assert.True(width > 0);
+        Assert.True(offset <= -width, body);
     }
 
     [Fact] // ADR-0008/0029 (2026-09-29): a single range's outline reads --ex-selection-outline, which defaults to the Focus outline
     public void The_range_outline_reads_its_own_token_and_defaults_to_the_focus_outline()
     {
-        var css = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
-        css = Regex.Replace(css, @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var (css, rules) = CoreStylesheet();
 
-        var colours = Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
-            .Where(rule => rule.Groups["selectors"].Value.Split(',').Any(selector => selector.Trim() == ".ex-range-single"))
-            .Select(rule => Regex.Match(rule.Groups["body"].Value, @"outline-color:\s*(?<value>[^;]+);"))
+        var colours = rules
+            .Where(rule => rule.Selectors.Contains(".ex-range-single"))
+            .Select(rule => Regex.Match(rule.Body, @"outline-color:\s*(?<value>[^;]+);"))
             .Where(colour => colour.Success)
             .Select(colour => colour.Groups["value"].Value.Trim())
             .ToList();

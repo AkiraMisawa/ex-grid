@@ -204,8 +204,9 @@
 /* The chosen action of an Interactive cell (ADR-0029/0037). The keyboard never leaves the
    root, so :focus-visible has nothing to match; the row paints this one button instead,
    with the Focus outline's token — it is where the keyboard is. Drawn inside the button's
-   own box, because the cell clips anything that reaches past its edge. */
-.ex-action-chosen { outline: 2px solid var(--ex-focus-outline, CanvasText); outline-offset: -2px; }
+   own box, because the cell clips anything that reaches past its edge: its width and inward
+   offset are the Focus outline's, set with it in the selection's rules below. */
+.ex-action-chosen { outline-style: solid; outline-color: var(--ex-focus-outline, CanvasText); }
 /* Cell State (ADR-0006): the grid says which of the five states a cell is in, the theme
    says what that looks like — hence a variable per state with a default that only has to
    be legible. Every one of them decorates; none replaces the text. Missing in particular
@@ -362,21 +363,22 @@
    parameter; this is only its colour, and the default is a shade lighter than the
    Focus band so the two read apart when they coincide. */
 .ex-hover-row { position: absolute; background: var(--ex-row-hover-background, rgba(128, 128, 128, 0.06)); }
-/* The Focus outline, and the one outline a Selection of a single range carries around the
-   whole range, in the Focus outline's width (ADR-0008, 2026-09-29). Both lie wholly inside
-   their box: an outline straddling the edge lost its outer pixel beneath whatever is painted
-   above the selection layer — a Pinned Column, the Headings, the header — and was thinner on
-   that side than on the others (UX-18). Inside, nothing above the layer covers any of it, and
-   a cell scrolled beneath the pinned block still goes beneath it.
-   CanvasText, not Highlight: measured in the browser suite, Chrome's Highlight against
+/* The Focus outline's width, and every outline drawn in it: the Focus's own, a single range's
+   (ADR-0008, 2026-09-29), the pointing outline, the chosen action, and a range's under forced
+   colors. A range's is only drawn where its style is given. Each lies wholly inside its box: an
+   outline straddling the edge lost its outer pixel beneath whatever is painted above the
+   selection layer — a Pinned Column, the Headings, the header — and was thinner on that side
+   than on the others (UX-18). Inside, nothing above the layer covers any of it, and a cell
+   scrolled beneath the pinned block still goes beneath it. */
+.ex-focus, .ex-range, .ex-point, .ex-action-chosen { outline-width: 2px; outline-offset: -2px; }
+/* CanvasText, not Highlight: measured in the browser suite, Chrome's Highlight against
    Canvas is ~2:1 and UX-9 requires 3:1 — the ink colour contrasts by construction in
    both schemes, which is also roughly what Excel's own dark focus border does. */
-.ex-focus { position: absolute; }
-.ex-focus, .ex-range-single { outline: 2px solid var(--ex-focus-outline, CanvasText); outline-offset: -2px; }
-/* The range's outline is the border Excel draws round the range's perimeter, and has the
-   token ADR-0029 reserved for it. It defaults to the Focus outline's colour, so a Theme that
-   sets only that one colours both. */
-.ex-range-single { outline-color: var(--ex-selection-outline, var(--ex-focus-outline, CanvasText)); }
+.ex-focus { position: absolute; outline-style: solid; outline-color: var(--ex-focus-outline, CanvasText); }
+/* The one outline a Selection of a single range carries around the whole range: the border
+   Excel draws round the range's perimeter, with the token ADR-0029 reserved for it. It
+   defaults to the Focus outline's colour, so a Theme that sets only that one colours both. */
+.ex-range-single { outline-style: solid; outline-color: var(--ex-selection-outline, var(--ex-focus-outline, CanvasText)); }
 /* The Focus inside a single range has no outline of its own; the range's tint leaves its
    cell out. Its element stays, because forced colors discard the tint that marks it, and the
    forced-colors block below outlines it again. */
@@ -390,7 +392,7 @@
 /* The pointing outline (ADR-0051): the range a Formula's Reference is being pointed at, while
    the Selection and the Focus stay where they are — dashed and heavier, so it reads as neither.
    Paint only, like every rectangle here. */
-.ex-point { position: absolute; outline: 2px dashed var(--ex-focus-outline, CanvasText); outline-offset: -2px; }
+.ex-point { position: absolute; outline-style: dashed; outline-color: var(--ex-focus-outline, CanvasText); }
 /* A row not yet painted with real data — waiting for the Consumer's Window, or
    deliberately skipped while scrolling fast. One mechanism, so one appearance
    (ADR-0004). It carries no scrollable cells at all: painting them is the cost being
@@ -642,11 +644,11 @@
     /* The selection and the Focus stay visible: outlines, which forced colors keeps, drawn
        inside the range as the Focus outline is. The Focus inside a single range is marked
        only by its missing tint, which is discarded here, so it takes its outline back. */
-    .ex-range { outline: 2px solid Highlight; outline-offset: -2px; }
+    .ex-range { outline-style: solid; outline-color: Highlight; }
     .ex-range-single ~ .ex-focus { outline-style: solid; }
     .ex-focus-row { outline: 1px dotted Highlight; outline-offset: -1px; }
     .ex-hover-row { outline: 1px dotted GrayText; outline-offset: -1px; }
     /* The chosen action stays tellable from its neighbours, which keep their own
        ButtonBorder (ADR-0037). */
-    .ex-action-chosen { outline: 2px solid Highlight; outline-offset: -2px; }
+    .ex-action-chosen { outline-color: Highlight; }
 }
