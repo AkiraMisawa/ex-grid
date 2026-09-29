@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using ExGrid.Cells;
 using ExGrid.Selection;
 using ExSheet.Engine;
@@ -14,7 +13,7 @@ namespace ExSheet;
 /// insertion site onto the grid's yes or no, a pointed range onto its Reference text, F4's cycle
 /// onto the grid's rewrite, and the References in the text onto the grid's Reference Outlines.
 /// </summary>
-internal static partial class SheetFormulaAids
+internal static class SheetFormulaAids
 {
     /// <summary>
     /// Completion and the argument hint for the editor's text at the caret: the declared
@@ -88,37 +87,26 @@ internal static partial class SheetFormulaAids
 
     /// <summary>
     /// The References function (ADR-0057): each Reference in the text being edited, with its span
-    /// and the cells it names on <paramref name="sheet"/>, for the grid to colour and outline.
-    /// Nothing for text that is not a Formula.
+    /// and the cells it names on <paramref name="sheet"/>, for the grid to colour and outline. A
+    /// structured reference names no cells here, so it carries the key of its Linked Table's column
+    /// instead. Nothing for text that is not a Formula.
     /// </summary>
     internal static IReadOnlyList<EditorReference> References(Sheet sheet, string text)
     {
-        if (text.Length == 0 || text[0] != '=') return [];
-        return PlainReferences(text);
-    }
-
-    // PLACEHOLDER until ticket 27 lands. Ticket 27 writes the engine's own answer — the tolerant
-    // scan F4 reads, a Sheet qualifier with this Sheet's name (hence the Sheet above), structured
-    // references as keys, no function name — and References above takes it over, translating its
-    // cells onto the grid's positions with SelectionOf. Until then this reads only plain Sheet
-    // References (A1, $A$1, B2:C3, B2:A1) outside text in quotes: enough for =A1+B2:C3.
-    private static List<EditorReference> PlainReferences(string text)
-    {
-        var references = new List<EditorReference>();
-        var quoted = false;
-        for (var at = 1; at < text.Length; at++)
-        {
-            if (text[at] == '"') quoted = !quoted;
-            if (quoted || !char.IsAsciiLetter(text[at]) && text[at] != '$') continue;
-            if (char.IsAsciiLetterOrDigit(text[at - 1]) || text[at - 1] is '_' or '.' or '$' or '!' or ']' or '"') continue;
-            var match = PlainReference().Match(text, at);
-            if (!match.Success || !CellRange.TryParse(match.Value.Replace("$", "", StringComparison.Ordinal), out var range)) continue;
-            references.Add(new EditorReference(at, match.Length, SelectionOf(range)));
-            at += match.Length - 1;
-        }
+        var found = sheet.References(text);
+        if (found.Count == 0) return [];
+        var references = new List<EditorReference>(found.Count);
+        foreach (var reference in found)
+            references.Add(reference.Cells is { } cells
+                ? new EditorReference(reference.Start, reference.Length, SelectionOf(cells))
+                : new EditorReference(reference.Start, reference.Length, KeyOf(reference.LinkedColumn!)));
         return references;
     }
 
-    [GeneratedRegex(@"\G\$?[A-Za-z]{1,3}\$?[0-9]{1,7}(?::\$?[A-Za-z]{1,3}\$?[0-9]{1,7})?(?![A-Za-z0-9_.(\[!:$])", RegexOptions.CultureInvariant)]
-    private static partial Regex PlainReference();
+    /// <summary>
+    /// The key a Linked Table's column is coloured under (ADR-0057). One per column, however the
+    /// Formula cased its names, since the Sheet finds tables and columns ignoring case.
+    /// </summary>
+    internal static string KeyOf(LinkedTableColumn column) =>
+        (column.Table + "[" + column.Column + "]").ToUpperInvariant();
 }

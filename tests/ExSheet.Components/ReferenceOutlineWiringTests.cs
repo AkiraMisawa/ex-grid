@@ -75,4 +75,24 @@ public class ReferenceOutlineWiringTests : SheetTestContext
 
         Assert.Empty(cut.FindAll(".ex-reference-outline"));
     }
+
+    [Fact] // ADR-0057 / DC-46, SH-30: this Sheet's own qualifier names the same cells, so Sheet1!A1+A1 outlines A1 once
+    public async Task This_sheets_qualifier_names_the_same_cells()
+    {
+        var cut = RenderSheet();
+
+        await StartTypingAsync(cut, "E5", "=Sheet1!A1+A1");
+
+        Assert.Equal(["ex-reference-outline ex-reference-1"], OutlineClasses(cut));
+    }
+
+    [Fact] // ADR-0057 / DC-46, SH-30: an unfinished Formula is outlined as far as it goes
+    public async Task An_unfinished_formula_is_outlined_as_far_as_it_goes()
+    {
+        var cut = RenderSheet();
+
+        await StartTypingAsync(cut, "E5", "=SUM(A1,B2:C3,");
+
+        Assert.Equal(["ex-reference-outline ex-reference-1", "ex-reference-outline ex-reference-2"], OutlineClasses(cut));
+    }
 }
