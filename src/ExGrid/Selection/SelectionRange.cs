@@ -83,19 +83,35 @@ public readonly record struct SelectionRange
     /// (ADR-0052, "What the third run settled").
     /// </summary>
     public IReadOnlyList<SelectionRange> Subtract(CellPosition cell)
+        => Contains(cell) ? SubtractArea(new SelectionRange(cell.Row, cell.Column, 1, 1)) : [this];
+
+    /// <summary>
+    /// Removes the part of this range that <paramref name="area"/> covers, yielding the up-to-four
+    /// rectangles that remain, in the order a cell's do (<see cref="Subtract(CellPosition)"/>): the
+    /// full-width band below the covered rows, what remains of those rows to their right, then to
+    /// their left, then the band above. A Ctrl+click on a wholly selected Heading takes out a whole
+    /// column or row this way (ADR-0050, item 1). An area that misses the range leaves it
+    /// unchanged; one that covers it yields nothing. Not an overload of <c>Subtract</c>: a call
+    /// written <c>Subtract(new(1, 1))</c> would stop compiling.
+    /// </summary>
+    public IReadOnlyList<SelectionRange> SubtractArea(SelectionRange area)
     {
-        if (!Contains(cell))
+        var top = Math.Max(TopRow, area.TopRow);
+        var bottom = Math.Min(BottomRow, area.BottomRow);
+        var left = Math.Max(LeftColumn, area.LeftColumn);
+        var right = Math.Min(RightColumn, area.RightColumn);
+        if (top > bottom || left > right)
             return [this];
 
         var pieces = new List<SelectionRange>(4);
-        if (cell.Row < BottomRow)
-            pieces.Add(new(cell.Row + 1, LeftColumn, BottomRow - cell.Row, ColumnCount));
-        if (cell.Column < RightColumn)
-            pieces.Add(new(cell.Row, cell.Column + 1, 1, RightColumn - cell.Column));
-        if (cell.Column > LeftColumn)
-            pieces.Add(new(cell.Row, LeftColumn, 1, cell.Column - LeftColumn));
-        if (cell.Row > TopRow)
-            pieces.Add(new(TopRow, LeftColumn, cell.Row - TopRow, ColumnCount));
+        if (bottom < BottomRow)
+            pieces.Add(new(bottom + 1, LeftColumn, BottomRow - bottom, ColumnCount));
+        if (right < RightColumn)
+            pieces.Add(new(top, right + 1, bottom - top + 1, RightColumn - right));
+        if (left > LeftColumn)
+            pieces.Add(new(top, LeftColumn, bottom - top + 1, left - LeftColumn));
+        if (top > TopRow)
+            pieces.Add(new(TopRow, LeftColumn, top - TopRow, ColumnCount));
         return pieces;
     }
 }

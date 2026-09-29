@@ -71,35 +71,51 @@ public partial class ExGrid<TRow>
         if (e.Button != 0 || HeaderColumnAt(e) is not { } column)
             return;
         var extends = e.ShiftKey;
+        var toggles = Toggles(e);
         if (HeaderClickSelects)
         {
             _gestureConsumedClick = true;
-            BeginHeadingDrag(HeadingAxis.Columns, column, extends);
+            BeginHeadingDrag(HeadingAxis.Columns, column, extends, toggles);
             return;
         }
-        _headerPress = new HeaderPress(column, extends, Toggles: false);
+        _headerPress = new HeaderPress(column, extends, toggles);
         _headingDrag = HeadingAxis.Columns;
         SetDragging(true);
         AttachHeaderDrag();
     }
 
+    /// <summary>Whether a press on a Heading adds or takes out (ADR-0050, item 1): Ctrl, or Meta
+    /// where Meta is Command, as on cells; Shift outranks it (ADR-0012).</summary>
+    private bool Toggles(MouseEventArgs e) => !e.ShiftKey && (e.CtrlKey || (e.MetaKey && _metaIsPrimary));
+
     /// <summary>
     /// What a press on a Heading selects (ADR-0050, item 1; ADR-0052): the whole column or row with
     /// the Focus on the first one on screen, or with Shift whole columns (rows) from the Focus's to
-    /// this one, the Focus staying — and then the drag, whose moves move the Extent.
+    /// this one, the Focus staying — and then the drag, whose moves move the Extent. With Ctrl the
+    /// column (row) is added as a new range, which the drag then grows; or, wholly selected, it is
+    /// taken out, and no drag begins, as none begins from a cell taken out (ADR-0012).
     /// </summary>
-    private void BeginHeadingDrag(HeadingAxis axis, int index, bool extends)
+    private void BeginHeadingDrag(HeadingAxis axis, int index, bool extends, bool toggles)
     {
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
             return;
         var current = _selection.Selection;
-        Apply(axis == HeadingAxis.Columns
-            ? extends
-                ? current.ExtendToColumn(index, extent, FirstVisibleRow)
+        var columns = axis == HeadingAxis.Columns;
+        if (toggles && (columns ? current.CoversColumn(index, extent) : current.CoversRow(index, extent)))
+        {
+            Apply(columns
+                ? current.ToggleColumn(index, extent, FirstVisibleRow)
+                : current.ToggleRow(index, extent, FirstVisibleColumn));
+            SetDragging(false);
+            return;
+        }
+        Apply(columns
+            ? extends ? current.ExtendToColumn(index, extent, FirstVisibleRow)
+                : toggles ? current.ToggleColumn(index, extent, FirstVisibleRow)
                 : current.SelectColumn(index, extent, FirstVisibleRow)
-            : extends
-                ? current.ExtendToRow(index, extent, FirstVisibleColumn)
+            : extends ? current.ExtendToRow(index, extent, FirstVisibleColumn)
+                : toggles ? current.ToggleRow(index, extent, FirstVisibleColumn)
                 : current.SelectRow(index, extent, FirstVisibleColumn));
         _headingDrag = axis;
         _headerPress = null;
@@ -192,7 +208,9 @@ public partial class ExGrid<TRow>
                     return;
                 }
                 _gestureConsumedClick = true;
-                BeginHeadingDrag(HeadingAxis.Columns, press.Column, press.Extends);
+                BeginHeadingDrag(HeadingAxis.Columns, press.Column, press.Extends, press.Toggles);
+                if (_headingDrag == HeadingAxis.None)
+                    return;
             }
             Apply(_selection.Selection.ExtendToColumn(column, extent, FirstVisibleRow));
         }

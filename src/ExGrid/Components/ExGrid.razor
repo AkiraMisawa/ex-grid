@@ -3109,7 +3109,7 @@
         if (e.Button == 0 && ShowsRowHeadings
             && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx) && CellUnder(e) is { } headed)
         {
-            BeginHeadingDrag(HeadingAxis.Rows, headed.Row, e.ShiftKey);
+            BeginHeadingDrag(HeadingAxis.Rows, headed.Row, e.ShiftKey, Toggles(e));
             if (dismissed || committed || leftInteractive)
                 _suppressRender = false;
             return;
@@ -3528,6 +3528,9 @@
         if (!OnColumnOrderChanged.HasDelegate)
         {
             PressHeader(e);
+            // This handler always renders: a press that selected nothing new may still have
+            // closed a popover or left an Interactive cell above.
+            _suppressRender = false;
             return;
         }
         if (e.Button != 0
@@ -3775,6 +3778,14 @@
             // From nothing selected, the Focus on the first visible row, as the first key is
             // (KB-9): the Viewport does not move for a click on the header.
             Apply(_selection.Selection.ExtendToColumn(column, Extent, _visible?.Start ?? 0));
+            return;
+        }
+        // Ctrl+click adds the whole column as a new range, or takes a wholly selected one out,
+        // and does not sort either (ADR-0012 and ADR-0050 item 1, 2026-09-29). Meta counts where
+        // it is Command, as on cells.
+        if (Toggles(e))
+        {
+            Apply(_selection.Selection.ToggleColumn(column, Extent, _visible?.Start ?? 0));
             return;
         }
         // Declared, the plain click is Excel's too (ADR-0050, item 1): the whole column,

@@ -347,3 +347,54 @@ test('DC-44: the Size Tip is redrawn only when the Extent moves to another Headi
     expect(await writes()).toBeGreaterThan(0);
     await page.mouse.up();
 });
+
+test('SR-2e/DC-42: Ctrl+click on a Column Heading adds the column, and a second takes it out', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'B7');
+    const ranges = grid.locator('.ex-range');
+
+    await heading(grid, 'D').click({ force: true, modifiers: ['ControlOrMeta'] });
+    // B7 stands, and D:D is added with the Focus on its first row.
+    await expectFocusAt(grid, 'D1');
+    await expect(ranges).toHaveCount(2);
+    await expectWholeColumns(grid, 'D', 'D');
+
+    await heading(grid, 'D').click({ force: true, modifiers: ['ControlOrMeta'] });
+    // D:D, the range made last, is gone: the Focus goes to the range still standing.
+    await expectFocusAt(grid, 'B7');
+    await expect(ranges).toHaveCount(1);
+});
+
+test('SR-2e/DC-42: Ctrl+drag across Column Headings adds the columns crossed as one range', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'B7');
+
+    const c = centreOf(await boxOf(heading(grid, 'C')));
+    const e = centreOf(await boxOf(heading(grid, 'E')));
+    await page.mouse.move(c.x, c.y);
+    await page.keyboard.down('ControlOrMeta');
+    await page.mouse.down();
+    await page.mouse.move(e.x, e.y, { steps: 8 });
+    await page.mouse.up();
+    await page.keyboard.up('ControlOrMeta');
+
+    await expectFocusAt(grid, 'C1');
+    await expect(grid.locator('.ex-range')).toHaveCount(2);
+    await expectWholeColumns(grid, 'C', 'E');
+});
+
+test('DC-42: Ctrl+click on a Row Heading adds the row, and a second takes it out', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'C2');
+    const pinnedRanges = grid.locator('.ex-selection-pinned .ex-range');
+
+    await rowHeading(grid, 5).click({ force: true, modifiers: ['ControlOrMeta'] });
+    await expectFocusAt(grid, 'A5');
+    // Row 5 runs across the pinned A as well; C2 is scrollable only.
+    await expect(pinnedRanges).toHaveCount(1);
+    await expectWholeRows(grid, 5, 5);
+
+    await rowHeading(grid, 5).click({ force: true, modifiers: ['ControlOrMeta'] });
+    await expectFocusAt(grid, 'C2');
+    await expect(pinnedRanges).toHaveCount(0);
+});

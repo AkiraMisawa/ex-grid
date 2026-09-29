@@ -172,6 +172,54 @@ test('a press on a header that reaches another column\'s cells selects whole col
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
+test('Ctrl+click on a header adds the whole column, a second takes it out, and neither sorts (SR-2e, ADR-0012)', async ({ page }) => {
+    await clickCell(page, 2, 0);
+
+    await header(page, 'Notional').click({ modifiers: ['ControlOrMeta'], position: { x: 20, y: 12 }, force: true });
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1;0,2,120,1');
+    // The Focus on the added column's first visible row.
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /-r0c2$/);
+
+    await header(page, 'Notional').click({ modifiers: ['ControlOrMeta'], position: { x: 20, y: 12 }, force: true });
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1');
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /-r2c0$/);
+    await page.waitForTimeout(300);
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('Ctrl+drag across headers adds the columns crossed as one range, and does not sort (SR-2e, ADR-0012)', async ({ page }) => {
+    await clickCell(page, 2, 0);
+    const from = await headerCentre(page, 'Notional');
+    const to = await headerCentre(page, 'Narrow');
+
+    await page.mouse.move(from.x, from.y);
+    await page.keyboard.down('ControlOrMeta');
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await page.mouse.up();
+    await page.keyboard.up('ControlOrMeta');
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1;0,2,120,3');
+    await page.waitForTimeout(300);
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('Meta counts as Ctrl on a header only where Meta is Command (SR-2e, ADR-0012)', async ({ page }) => {
+    await clickCell(page, 2, 0);
+
+    await header(page, 'Notional').click({ modifiers: ['Meta'], position: { x: 20, y: 12 }, force: true });
+
+    if (process.platform === 'darwin') {
+        // Cmd+click is Ctrl+click here: the column is added and nothing sorts.
+        await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1;0,2,120,1');
+        await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+    } else {
+        // Meta is the OS's key here: the click is a plain click, and sorts.
+        await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional descending');
+        await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1');
+    }
+});
+
 test('a drag on a resize grip resizes and is not a Heading drag (ticket 21, ADR-0016)', async ({ page }) => {
     await dragGrip(page, 'Note', 30);
 
