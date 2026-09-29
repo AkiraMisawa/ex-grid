@@ -379,8 +379,16 @@ nobody had asked for. What that means when writing a test:
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
   Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
   stack stay with the Sheet that has the keyboard.
+- `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
+  ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
+  `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or
+  nothing takes the keyboard, and the other grid's keys its own; a press back on the rows
+  pointing with the keyboard back in the Cell Editor or the Formula Bar, or committing and
+  giving the root the keyboard; a press back on a column heading or a Row Heading; a committing
+  press on the rows taking the keyboard out of the bar the edit was typed in; and, with 150 ms
+  on the Server host, the key straight after the press back reaching the Sheet.
 
-`sheet-helpers.mjs` is what those three share: a Sheet's grid, a cell by its A1 address, the
+`sheet-helpers.mjs` is what those four share: a Sheet's grid, a cell by its A1 address, the
 editor surfaces under either Chrome, the Name Box, and painted-box comparisons.
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
