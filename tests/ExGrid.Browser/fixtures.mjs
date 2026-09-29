@@ -645,6 +645,25 @@ export async function watchNextKey(page, key, { preventAfter = false } = {}) {
 
 export const keySeenUntouched = (page) => page.evaluate(() => window.__keySeen);
 
+// Waits until a grid (its `.ex-grid` root) has been told its Layout Ceiling (ADR-0053): its spacer
+// is declared no taller than the browser lays its probe out. The ceiling is told after attach, by
+// a ResizeObserver, so it can arrive after the grid stopped being busy — ADR-0053 records it doing
+// so on a circuit, and rejected keeping the grid busy until it has. Until then the grid computes
+// through the scale-1 ceiling, which compresses nothing: at 150% the browser clamps the declared
+// 28,000,028 px spacer, and a reveal or a scroll aimed through that geometry lands where the grid
+// is not painting. CI hit exactly that on the first test of a shard, on both hosts: the spacer was
+// still 28,000,028 px when Ctrl+End was pressed. A test about what a grid does once it knows its
+// geometry waits here first. At scale 1 nothing is compressed and this returns at once. The
+// length is read from the style attribute, never the CSSOM, which rounds it (ADR-0053).
+export async function layoutCeilingTold(grid) {
+    await expect.poll(() => grid.evaluate((root) => {
+        const spacer = root.querySelector(':scope > .ex-scroller > .ex-spacer');
+        const declared = Number(/(?:^|[;\s])height:\s*([\d.]+)px/.exec(spacer.getAttribute('style') ?? '')?.[1]);
+        const ceiling = root.querySelector(':scope > .ex-ceiling-probe > div').getBoundingClientRect().height;
+        return declared <= ceiling;
+    }), { message: 'the grid was never told its Layout Ceiling (ADR-0053)', timeout: 10_000 }).toBe(true);
+}
+
 // Scrolls a grid (its `.ex-grid` root) so that `row`, 0-based among the rows its scrollbar spans,
 // is the top row of the readable area — through ADR-0053's mapping, never as row × row height.
 // Above the Layout Ceiling the spacer is compressed and a scroll offset s shows the content offset
@@ -660,8 +679,10 @@ export const keySeenUntouched = (page) => page.evaluate(() => window.__keySeen);
 // fractional scale, which moved k by 3e-9 on /wide at 150% and c(s) by 0.04 px at row 500,000 —
 // enough to put row 499,999 first when aimed at the edge. And scrollTop is quantised to device
 // pixels, so the offset is rounded up and nudged while the browser holds it short. Returns the
-// offset the browser holds and k.
+// offset the browser holds and k. The spacer read is the one the told ceiling gives, so this
+// waits for it (layoutCeilingTold): read before, k would come out 1 at 150%.
 export async function scrollRowToTop(grid, row) {
+    await layoutCeilingTold(grid);
     return grid.evaluate((root, row) => {
         const px = (style, name) => {
             const m = new RegExp(`(?:^|[;\\s])${name}:\\s*([\\d.]+)px`).exec(style ?? '');
