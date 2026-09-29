@@ -419,7 +419,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // A press on the rows while an edit is open is a mode change too (ADR-0010, widened
     // 2026-09-29), and the keys after it wait for the core's answer to it (holdBehindPress):
     // the press still to be asked about, and the answer the keys wait for while one is awaited.
-    let pressAsked = null;
+    let pressToAsk = null;
     let pressAnswer = null;
     // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus only
     // because a press on the rows had the default that would have moved it suppressed: held
@@ -652,6 +652,20 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         replayInto(target, k);
     };
 
+    // A hold begins: the keys typed from now are held, in order, and handed on by drain — at
+    // once, or once `answer` has come, for a key the core is answering. The two-second fallback
+    // counts from here. Each caller asks first whether a hold stands, and a drain already running
+    // takes what it holds.
+    const startHold = (answer) => {
+        answering = true;
+        holdStartedAt = performance.now();
+        if (answer) {
+            answer.then(drain);
+        } else {
+            drain();
+        }
+    };
+
     const drain = async () => {
         // Behind a press, its answer first (holdBehindPress); a press passed on behind it while
         // nothing was held replaces the question, and its answer comes after the first one's.
@@ -779,8 +793,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             event.stopPropagation();
             held.push(k);
             if (!answering) {
-                answering = true;
-                holdStartedAt = performance.now();
                 if (sentinel) {
                     // A column's popover wraps back to its commands; the find panel, which
                     // has none, to its own contents (ADR-0044/0055).
@@ -789,7 +801,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                         : '.ex-popover-find-body';
                     awaitingMove = { from: event.target, into };
                 }
-                drain();
+                startHold();
             }
             return;
         }
@@ -803,12 +815,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (move.into) {
                 event.preventDefault();
             }
-            holdStartedAt = performance.now();
             awaitingMove = move;
-            // Behind a hold that is over but not yet cleared, its drain takes this one too.
-            if (!answering) {
-                answering = true;
-                drain();
+            // Behind a hold that is over but not yet cleared, its drain takes this one too, and
+            // counts its fallback from here.
+            if (answering) {
+                holdStartedAt = performance.now();
+            } else {
+                startHold();
             }
             return;
         }
@@ -831,10 +844,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         const answer = forward(k);
         if (verdict === 'mode' || verdict === 'popover') {
-            answering = true;
-            holdStartedAt = performance.now();
             awaitingPopover = verdict === 'popover';
-            answer.then(drain);
+            startHold(answer);
         }
     };
 
@@ -948,9 +959,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const holdBehindBarPress = () => {
         held.push({ barPress: true });
         if (!answering) {
-            answering = true;
-            holdStartedAt = performance.now();
-            drain();
+            startHold();
         }
     };
     // Asked once the press's focus has gone to the core: focusing the bar is the press's default
@@ -990,13 +999,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         button: event.button, buttons: event.buttons,
     });
 
-    // This grid's own rows and headings, not those of a grid nested in one of its cells: a
-    // press on the rows lands on the Viewport (cells are pointer-events: none), and one on the
-    // column headings anywhere in their band. A press into the Cell Editor's own text is not
-    // one: it takes the keyboard by its own default.
-    const isOwnRowsOrHeadings = (target) => target instanceof Element && !!scroller
-        && target.closest('.ex-scroller') === scroller
-        && (target.classList.contains('ex-viewport') || target.closest('.ex-header') !== null);
+    // This grid's own rows and headings, not those of a grid nested in one of its cells, whose
+    // own scroller stands nearer: a press on the rows lands on the Viewport (cells are
+    // pointer-events: none), and one on the column headings anywhere in their band. A press into
+    // the Cell Editor's own text is not one: it takes the keyboard by its own default.
+    const inOwnScroller = (target) => target instanceof Element && !!scroller
+        && target.closest('.ex-scroller') === scroller;
+    const isOwnRows = (target) => inOwnScroller(target) && target.classList.contains('ex-viewport');
+    const isOwnRowsOrHeadings = (target) => isOwnRows(target)
+        || (inOwnScroller(target) && target.closest('.ex-header') !== null);
     // The text field to put the keyboard back into: the surface that last held it while it is
     // still there, or else the first of this grid's own (surfaceField).
     const standingField = () => surfaceField(ownSurface(lastSurface));
@@ -1017,11 +1028,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // press that committed has had its hand-back by then, and one that pointed has left the edit
     // open, the field the user's again.
     const askAboutPress = () => {
-        const press = pressAsked;
+        const press = pressToAsk;
         if (press === null) {
             return;
         }
-        pressAsked = null;
+        pressToAsk = null;
         const answered = core
             ? core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
                 if (core) {
@@ -1030,7 +1041,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             })
             : Promise.resolve();
         answered.then(() => {
-            if (press.mark !== 0 && staleMarks === press.mark) {
+            if (press.mark !== null && staleMarks === press.mark) {
                 staleField = null;
             }
             press.resolve();
@@ -1039,13 +1050,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const holdBehindPress = (mark) => {
         askAboutPress();
         pressAnswer = new Promise((resolve) => {
-            pressAsked = { mark, resolve };
+            pressToAsk = { mark, resolve };
         });
         setTimeout(askAboutPress);
         if (!answering) {
-            answering = true;
-            holdStartedAt = performance.now();
-            drain();
+            startHold();
         }
     };
 
@@ -1081,9 +1090,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && isOwnRowsOrHeadings(event.target)) {
             standingField()?.focus({ preventScroll: true });
         }
-        // Cells are pointer-events: none, so the Viewport is what a press on the rows lands on.
-        if (!core || replaying || event.button !== 0 || !(event.target instanceof Element)
-            || !event.target.classList.contains('ex-viewport')) {
+        // Only a press on this grid's own rows is held or holds the keys after it: one on a
+        // nested grid's rows is that grid's to answer, and this core never hears it.
+        if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {
             return;
         }
         // The Formula Bar or the Name Box holding DOM focus, which a press on the rows would take
@@ -1110,7 +1119,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // hand-back — the rows' focus handed on, a popover's dismissal — take the bar the
             // user is still typing in. It comes off with the press's answer.
             if (editing !== 'none') {
-                holdBehindPress(field !== null ? markStale(field) : 0);
+                holdBehindPress(field !== null ? markStale(field) : null);
             }
             return;
         }
@@ -1612,8 +1621,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             staleField = null;
             // A press still to be asked about has no core left to answer it: the keys held behind
             // it are let go with the rest.
-            pressAsked?.resolve();
-            pressAsked = null;
+            pressToAsk?.resolve();
+            pressToAsk = null;
             root = null;
             scroller = null;
             core = null;

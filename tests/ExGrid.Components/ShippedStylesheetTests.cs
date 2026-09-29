@@ -135,7 +135,8 @@ public class ShippedStylesheetTests
         Assert.Contains("editing !== 'none' && !(focusAtPress instanceof Element && root.contains(focusAtPress))", body, StringComparison.Ordinal);
         // ...for a press on this grid's own rows or headings, not a nested grid's...
         Assert.Contains("isOwnRowsOrHeadings(event.target)", body, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"const isOwnRowsOrHeadings = \(target\) => [^;]*target\.closest\('\.ex-scroller'\) === scroller", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"const inOwnScroller = \(target\) => [^;]*target\.closest\('\.ex-scroller'\) === scroller;"), script.Text);
+        Assert.Matches(new Regex(@"const isOwnRowsOrHeadings = \(target\) => isOwnRows\(target\)\s*\|\| \(inOwnScroller\(target\) && target\.closest\('\.ex-header'\) !== null\);"), script.Text);
         // ...into the surface that last held the keyboard, one of this grid's own.
         Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
         Assert.Contains("const standingField = () => surfaceField(ownSurface(lastSurface));", script.Text, StringComparison.Ordinal);
@@ -157,12 +158,21 @@ public class ShippedStylesheetTests
         // The press itself passes on when there is nothing it could overtake — nothing held, and no
         // key being answered, or only a press, which Blazor keeps in order with it (a double
         // click's second press) — and while an edit is open it starts the hold.
-        Assert.Matches(new Regex(@"if \(held\.length === 0 && \(!answering \|\| pressAnswer !== null\)\) \{.*?if \(editing !== 'none'\) \{\s*holdBehindPress\(field !== null \? markStale\(field\) : 0\);",
+        Assert.Matches(new Regex(@"if \(held\.length === 0 && \(!answering \|\| pressAnswer !== null\)\) \{.*?if \(editing !== 'none'\) \{\s*holdBehindPress\(field !== null \? markStale\(field\) : null\);",
             RegexOptions.Singleline), body);
+        // Only a press on this grid's own rows, not on a grid nested in one of its cells, is held
+        // or holds the keys after it: this core never hears the nested one's press.
+        Assert.Contains("if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {", body, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"event\.target\.classList\.contains\('ex-viewport'\)"), body);
+        Assert.Matches(new Regex(@"const isOwnRows = \(target\) => inOwnScroller\(target\) && target\.classList\.contains\('ex-viewport'\);"), script.Text);
         // The hold: the keys after it are held from now, as behind a key, and the drain waits for
         // the press's answer before anything else.
-        Assert.Matches(new Regex(@"const holdBehindPress = \(mark\) => \{\s*askAboutPress\(\);\s*pressAnswer = new Promise\(\(resolve\) => \{\s*pressAsked = \{ mark, resolve \};\s*\}\);\s*setTimeout\(askAboutPress\);\s*if \(!answering\) \{\s*answering = true;"),
+        Assert.Matches(new Regex(@"const holdBehindPress = \(mark\) => \{\s*askAboutPress\(\);\s*pressAnswer = new Promise\(\(resolve\) => \{\s*pressToAsk = \{ mark, resolve \};\s*\}\);\s*setTimeout\(askAboutPress\);\s*if \(!answering\) \{\s*startHold\(\);"),
             script.Text);
+        // One way a hold begins, whoever begins it: a key, a move in a popover, a press into the
+        // bar, a press on the rows.
+        Assert.Single(Regex.Matches(script.Text, @"answering = true;"));
+        Assert.Matches(new Regex(@"const startHold = \(answer\) => \{\s*answering = true;\s*holdStartedAt = performance\.now\(\);"), script.Text);
         Assert.Matches(new Regex(@"const drain = async \(\) => \{.*?while \(pressAnswer !== null\) \{\s*const answer = pressAnswer;\s*await answer;.*?await editorSettled\(\);",
             RegexOptions.Singleline), script.Text);
         // The core answers for the press or the release it heard last, so the question goes after
@@ -185,7 +195,7 @@ public class ShippedStylesheetTests
         // the hand-back's to take, should the press commit (reclaimFocus), and only that far: the
         // mark comes off with the press's answer. A press that pointed has left the edit open, and a
         // later hand-back must not take the bar the user is typing in.
-        Assert.Matches(new Regex(@"const askAboutPress = \(\) => \{.*?if \(press\.mark !== 0 && staleMarks === press\.mark\) \{\s*staleField = null;\s*\}",
+        Assert.Matches(new Regex(@"const askAboutPress = \(\) => \{.*?if \(press\.mark !== null && staleMarks === press\.mark\) \{\s*staleField = null;\s*\}",
             RegexOptions.Singleline), script.Text);
         // Every mark is numbered, a held press's too, so taking one off never takes a later one's.
         Assert.Matches(new Regex(@"const markStale = \(field\) => \{\s*staleField = field;\s*return \+\+staleMarks;"), script.Text);
