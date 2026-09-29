@@ -92,6 +92,21 @@ await sheet.UndoAsync();
 A format or an alignment set on a selection of whole columns or whole rows is recorded on the
 columns or rows, one entry each, as Excel records it: cell over row over column.
 
+While an edit is open — a cell or the Formula Bar typed in, and not yet committed or cancelled —
+these commands, `RedoAsync` and `SetAlignmentAsync` among them, are refused with
+`SheetRefusalReason.EditIsOpen` and change nothing, as Excel greys out its ribbon while a cell is
+edited: a row inserted above the cell would otherwise carry the typing into another row.
+`IsEditing` says whether an edit is open, and `EditingChanged` is raised when that changes, so the
+application can grey out its own buttons:
+
+```razor
+<ExSheet @ref="_sheet" EditingChanged="open => _editing = open" />
+<button disabled="@_editing" @onclick="InsertRowAsync">Insert a row</button>
+```
+
+A Linked Table's declaration and snapshots are data arriving, not commands, and are taken while an
+edit is open.
+
 Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
 column, and a number typed into a column that it widens, are steps on the undo stack like any
 other, and raise `DocumentChanged`; an opened document brings its widths with it. A width an entry
