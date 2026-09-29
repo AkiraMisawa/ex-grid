@@ -246,3 +246,20 @@ whole, since the Focus is Excel's active cell everywhere
   Its default is `--ex-focus-outline`, so a Theme or Wrapper that sets only the Focus outline's
   colour gets both in that colour. *(Corrected the same day. This bullet first said the range
   outline read `--ex-focus-outline` and that no token was added, overlooking the reservation.)*
+
+*(Settled while building, the same day.)*
+
+- **A range across the pinned boundary is drawn whole in both layers, each clipped to its own side.**
+  The earlier "two rectangles" bullet cut the range at the boundary. Cut that way, an outline drawn
+  inside each half would draw a line down the boundary. Drawn whole and clipped, each half shows
+  only its own side of one outline, so no seam shows, and C# never needs the outline's width.
+- **The hole clips the tint only.** It is applied to the range's tint, never to its box, so the
+  outline around a single range is never cut where the Focus is.
+- **Under forced colors, the Focus inside a single range takes its outline back.** Forced colors
+  discard the tint, and the missing tint is the only thing that marks that Focus. Without its
+  outline, the Focus would not be visible.
+- **The fill handle stays where it was**, centred on the range's corner, which is now the outline's
+  outer corner. Centring it on the outline's centre line would need the outline's width in C#.
+  That is a stylesheet value, and pairing it with a C# constant is the defect
+  [ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md) removes.
+
