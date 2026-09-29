@@ -32,11 +32,20 @@ nothing `main` did not, and a second integration branch would only fall behind.)
   Server host (`EXGRID_HOSTING=server`, ADR-0019), and it gates too. That run is the Definition
   of Done's SRV-2, on both browsers. It is a job of its own, not a matrix entry, so the
   WebAssembly job keeps its check name.)*
+  *(Since 2026-09-28 each host's run is split by browser and into two shards, each shard on a
+  runner of its own. A job under each old name passes only when all of its shards did, so the
+  checks keep their names. The suite is the same: this configuration, both projects, every spec.
+  What changed is only which runner runs which files, `--project` and `--shard` choosing them. The
+  reason was the time: the WebAssembly job took 24.3 minutes, Chrome and then Edge on one worker,
+  and it was the wall clock of every push. A shard boundary is a file boundary, so nothing the
+  suite shares within a run — the OS clipboard, the records, a spec file's booted app
+  ([ADR-0056](./0056-layer-three-boots-once-per-spec-file.md)) — is split between runners.)*
   - The **observational** specs still only record: each asserts that it measured something and
     never gates on the number (ADR-0026, "performance never gates").
   - The records a run writes — `console.json`, `metrics.json` — and any failure's trace are
     kept as the run's artifacts. They are not filed into `verification/` automatically, which
-    stays a deliberate act.
+    stays a deliberate act. *(Since 2026-09-28 there is one artifact per shard, each holding the
+    records of the files that shard ran.)*
 - **The long run is weekly, and on demand**: the ten-minute soak (`EXGRID_SOAK=1`, MEM-5/6) on
   both browsers, and ST-1 at 10⁶ rows (`EXGRID_ST1_MILLION=1`). Too slow for every push, and
   what they catch — a leak, a drift at scale — does not arrive in a single commit.

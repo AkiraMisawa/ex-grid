@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, alterPage, twoFrames } from './fixtures.mjs';
 
 // The popovers' behaviour on /features, run once per Chrome (WR-5, FN-17): the built-in
 // Chrome and ExGrid.MudBlazor's (/features?chrome=mud) must give identical outcomes,
@@ -117,9 +117,20 @@ for (const chrome of CHROMES) {
 
         test('a secondary click opens the grid\'s menu, not the browser\'s (CTX-1/CTX-5, ADR-0036)', async ({ page }) => {
             await clickCell(page, 0, 1);
-            const prevented = page.evaluate(() => new Promise((resolve) => {
-                window.addEventListener('contextmenu', (e) => resolve(e.defaultPrevented), { once: true });
-            }));
+            // On window, which outlives the page: alterPage takes the listener off as the test
+            // ends, if the secondary click never reached it (ADR-0056).
+            await alterPage(page, () => {
+                let listener;
+                window.__contextMenuPrevented = new Promise((resolve) => {
+                    listener = (e) => resolve(e.defaultPrevented);
+                    window.addEventListener('contextmenu', listener, { once: true });
+                });
+                return () => {
+                    window.removeEventListener('contextmenu', listener);
+                    delete window.__contextMenuPrevented;
+                };
+            });
+            const prevented = page.evaluate(() => window.__contextMenuPrevented);
 
             await grid(page).locator("[id$='r0c1']").click({ button: 'right', force: true });
 
@@ -233,6 +244,26 @@ for (const chrome of CHROMES) {
             await clickCell(page, 1, 1);
             await page.keyboard.press('Shift+F10');
             await expect.poll(() => activeIsInPopover(page)).toEqual({ role: 'menu', tag: 'BUTTON', text: 'Copy' });
+        });
+
+        test('a grid that goes while keys wait for its popover leaves nothing running (ADR-0010, CON-2)', async ({ page }) => {
+            await clickCell(page, 0, 1);
+            await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
+            // The popover opens and never takes DOM focus, so what Alt+↓ started keeps waiting
+            // for it (ADR-0010) — as it does for a round trip on a circuit, or for the frame
+            // after the popover took it. The grid goes in that wait.
+            await alterPage(page, () => {
+                const focus = HTMLElement.prototype.focus;
+                HTMLElement.prototype.focus = function () { };
+                return () => { HTMLElement.prototype.focus = focus; };
+            });
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect(grid(page).locator('.ex-popover')).toBeVisible();
+            // Away inside the app, so the grid is disposed rather than unloaded with its document.
+            await page.evaluate(() => window.Blazor.navigateTo('/'));
+            await expect(page.locator('#demo-index')).toBeAttached();
+            // The frames in which a wait that outlived its grid would look for it again.
+            await twoFrames(page);
         });
 
         test('however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039)', async ({ page }) => {

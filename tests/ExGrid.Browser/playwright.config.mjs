@@ -54,9 +54,13 @@ const webServer = SERVER
 
 export default defineConfig({
     testDir: '.',
-    // These tests read layout and set the device scale factor on the whole page, so
-    // they are about the browser's own state rather than about the server's. Running
-    // them side by side would have them changing each other's zoom.
+    // One worker, because a run shares what one machine has only one of: the OS clipboard
+    // (one per display, and these browsers are headed), the records fixtures.mjs
+    // read-modify-writes, and on the Server host the latency proxy's round trip and the
+    // host's log. Not the zoom, which this comment used to give: the device scale is
+    // emulated per page, and each worker has a browser of its own (ADR-0056). More at once
+    // is done across machines — CI's shards (ADR-0041) — where none of it is shared, and a
+    // shard is whole spec files, so a file's booted app is never split.
     workers: 1,
     fullyParallel: false,
     reporter: [['list']],

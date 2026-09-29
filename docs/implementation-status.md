@@ -351,6 +351,52 @@ layer 3 on both browsers **484 pass, 14 skipped by name, 0 failed** on WebAssemb
   hold — typing straight after Ctrl+F, E or a key that opens the editor — is a keydown of its own,
   and replaying it failed the "can this be reproduced" test, which dropped every key after it.
 
+**2026-09-28, layer 3's time.** The browser suite took 24.3 minutes a run in CI on WebAssembly
+and 9.0 on the Server host, and the first was the wall clock of every push. Measured, most of it
+was the app booting: every test had a new browser context, so every test loaded the page and
+started the .NET runtime — 1.65 s of about 2.3. A shared context's warm cache, a Release build and
+a trimmed publish did not remove it; not booting did (0.05 s for an in-app navigation). Decided
+with the user as ADR-0056 and an amendment to ADR-0041, after comparing AG Grid's suite, which
+isolates by file and creates and destroys its grids per test:
+
+- **A spec file boots the app once, and every test mounts its page afresh** by an in-app
+  navigation through the index. The harness puts back what it owns. `alterPage` undoes what a
+  test changes outside its page, and a document or a native left changed fails the test by
+  name. `harness.spec.mjs` pins it.
+- **CI splits each host's layer 3 by browser and into two shards,** each on a runner of its
+  own, under a verdict job per host that keeps the old check names.
+- **The audit for the new model found eight tests changing the page outside their grids,** and
+  each of them would have run under every later test of its file: CP-23's clipboard stub, KB-15's
+  listener, the printable key on `/cells`, A11Y-17's button, UX-2, UX-5 and UX-10's tokens on
+  `body`, and DIR-2's `dir` on `#app`. They now go through `alterPage`. A11Y-20 and BIG-7 load
+  their pages for real.
+- **The first full run found one defect in the grid.** A grid disposed while the keys after
+  Alt+↓ waited for its popover threw `Cannot read properties of null (reading 'contains')` from
+  its next frame. The wait looked for DOM focus inside a root that was gone. A closed context never
+  disposed a grid, so nothing had seen it. `ex-grid.js` now asks about disposal first, and
+  `popovers.spec.mjs` pins it under both Chromes.
+- **A two-axis review of the drop found gaps in the harness, all fixed.**
+  - A test that failed only in the harness's own checks as it ended, not in its body, still handed
+    its page on. So did a leak it named, which also kept the test's console record from being
+    written. The checks are now soft, and any that fails keeps the page from the next test.
+  - Server host-log lines between two tests were read by no test, and a file's last page was
+    closed unheard. Both are now the next test's.
+  - A test's `use` options beyond the viewport were not applied to a shared context. A test
+    asking for others now gets the app booted in a context made with them.
+  - The check now also reads the stylesheets' rules, the globals on `window`, and natives as a
+    caller reads them, so a stub on `document` is seen.
+  - The CI verdict jobs run `always()`. A job its `if` skips counts as passed for a required
+    check, so a cancelled layer 3 had read as green.
+  - `patchPage` is `alterPage`, because "patch" is on the Overlay's `_Avoid_` list.
+  - The harness's paired tests skip their second half when it runs alone.
+
+**Where this ran.** A Linux container, .NET 10.0.401, the Playwright-bundled Chromium 1194 (no
+Chrome or Edge), headed under Xvfb, the `chrome` project only. Layer 3 on WebAssembly: **264 pass,
+7 skipped by name, 0 failed, in 7.2 minutes** (12.1 before, on the same machine, for 242). On
+the Server host: **266 pass, 5 skipped by name, 0 failed, in 4.3 minutes** (5.3 before, for 244).
+Layers 1 and 2: **650 + 611 (1 skipped by name) + 70**. None of this is a run on the installed
+Chrome and Edge; CI's first run of the split jobs is.
+
 ## Working through to the component
 
 | ADR | | Pinned by |
