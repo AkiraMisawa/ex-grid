@@ -262,4 +262,10 @@ whole, since the Focus is Excel's active cell everywhere
   outer corner. Centring it on the outline's centre line would need the outline's width in C#.
   That is a stylesheet value, and pairing it with a C# constant is the defect
   [ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md) removes.
-
+- **The hole was measured before it was claimed.** Main-thread time per ten-render selecting drag
+  on `/sheet`, headless Chrome on an M4 Pro. With the hole switched off on the changed build, a drag
+  moved by 0.6 to 0.7 ms (Server 16.2 against 15.6, WebAssembly 33.3 against 32.6). That is inside
+  the 5 to 8 ms interquartile spread of the repeated before-and-after comparison. Style
+  recalculation rose by 0.1 to 0.5 ms per drag. Nothing attributable to the hole was measured. The
+  figures are medians whose per-drag rows were not kept. The script that writes the rows, and the
+  pending re-run on a quiet machine, are in `verification/2026-09-29-selection-hole/`.
