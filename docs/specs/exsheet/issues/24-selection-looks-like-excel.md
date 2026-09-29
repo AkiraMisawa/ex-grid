@@ -21,9 +21,11 @@ Core (ExGrid):
       inside it; a one-cell selection shows the Focus outline alone; several ranges are each tinted
       with no outline, and the Focus cell among them untinted and outlined (UX-19)
 - [x] The header's rule runs under a Pinned Column's header and under the Headings' corner (UX-17)
-- [x] Every one of these reads `--ex-focus-outline` or `--ex-header-rule-color`; no token is added
-      (ADR-0029)
-- [x] The hole adds nothing measurable to a drag: measured before it is claimed (ADR-0008)
+- [x] Every one of these reads an existing token: `--ex-focus-outline`, `--ex-header-rule-color`,
+      and for the single range's outline `--ex-selection-outline`, the token ADR-0029 reserved for
+      it, taken up with the Focus outline as its default; no new token is added (ADR-0029)
+- [x] The hole adds nothing measurable to a drag: measured before it is claimed (ADR-0008;
+      `verification/2026-09-29-selection-hole/`)
 
 ExGrid.MudBlazor:
 
@@ -125,3 +127,11 @@ The two `stripes.spec.mjs` failures seen in the second round's ad-hoc runs, head
   occupies layout" with a gutter of 0, the same way on the pre-change build. Headless Chrome on
   macOS keeps overlay scrollbars, which the suite's README predicts; the real layer-3 run is the one
   that answers it.
+
+2026-09-30, after review: the hole's measurement is recorded in
+`verification/2026-09-29-selection-hole/`, with the script, its driver and a README giving the first
+round's medians and interquartile ranges, their builds, host and date. That round's per-drag rows
+were not kept; a re-run with the committed scripts, which write every drag to `results.json`, is
+pending on a machine no other session is loading. A re-run tried at 23:25 on 2026-09-29 under a load
+average of 60 to 85 from other sessions' layer-3 runs was stopped and is not used. The box on tokens
+above now names `--ex-selection-outline`, the reserved token the single range's outline took up.
