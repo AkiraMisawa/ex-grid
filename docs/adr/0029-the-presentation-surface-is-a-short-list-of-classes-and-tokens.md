@@ -299,3 +299,20 @@ The painted thumb is asserted from the screen in `stripes.spec.mjs`.
 - **Visual Tokens:** `--ex-size-tip-background`, `--ex-size-tip-color` and `--ex-size-tip-outline`.
   Without a theme, they fall back to the system colours `Canvas` and `CanvasText`. `ExGrid.MudBlazor`
   maps them onto the colours MudBlazor gives its tooltips.
+
+## Added by ADR-0057 *(2026-09-29, decided with the user)*
+
+Reference Outlines ([ADR-0057](./0057-references-are-outlined-in-colour-while-a-formula-is-edited.md))
+enter the list here. Each is painted only while a Consumer that declared the References function
+has a Formula open, or while a Consumer asks for columns to be outlined.
+
+- **Internal classes**, which may change without notice:
+  - `ex-reference-outline`: a Reference Outline in the selection overlay, with `ex-reference-1` to
+    `ex-reference-8` naming its colour. `ex-point` stays, now on the Reference Outline Point is
+    moving.
+  - `ex-reference-text`: the layer beneath an editor surface that draws the text with its References
+    coloured, and the class on the field that shows while the layer is up to date.
+- **Visual Tokens:** `--ex-reference-1` to `--ex-reference-8`, one per place in the palette. Their
+  defaults are provisional until Excel's palette is observed. Eight is the palette's length as read
+  and lives in C#: it is behaviour, because it decides which References share a colour. A Theme sets
+  the colours, never the length. `ExGrid.MudBlazor` leaves them at their defaults.

@@ -300,3 +300,13 @@ hands the keyboard back; one ended by a press elsewhere does not take it from a 
 *(Settled while implementing:)* the bar's focus event reaches C# at once, ahead of a row press held
 before it, so the press into the bar is answered again in its turn. If the bar still holds focus
 and no edit is open when its turn comes, the core opens the bar's edit then.)*
+
+*(Added 2026-09-29 by [ADR-0057](./0057-references-are-outlined-in-colour-while-a-formula-is-edited.md),
+decided with the user: the editor listener keeps the layer that colours a Formula's References honest.
+On each input, and when the layer's text changes, it compares the layer's text with the field's value
+and sets or clears one class, so the coloured text shows only while it is the text in the field. It
+notices the layer's change through a `MutationObserver` on one attribute of the layer, as the
+reveal's write waits on one attribute of the root. It also keeps the layer's `scrollLeft` equal to
+the field's, which is the scroll-offset entry's API on one more element. The ground is the first:
+Blazor cannot know that the browser's value is ahead of the value the server rendered for. Neither
+addition reads layout. They are the editor listener and the scroll offsets, not a new entry.)*

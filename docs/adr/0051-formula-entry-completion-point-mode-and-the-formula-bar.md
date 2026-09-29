@@ -214,3 +214,12 @@ implementation and asked of Excel in `docs/specs/exsheet/verify-on-windows-7.md`
   selection covers what was rewritten.
 - **After F4 while pointing, a further move writes the new Reference as pointing writes it**, in the
   relative form. Whether Excel keeps the `$` form while pointing goes on is asked in the run.
+
+## Reference Outlines *(2026-09-29, decided with the user)*
+
+[ADR-0057](./0057-references-are-outlined-in-colour-while-a-formula-is-edited.md) adds a fifth aid:
+while a Formula is edited, each Reference in its text is coloured and its cells are outlined in the
+same colour, as Excel's range finder does. **The pointing outline becomes the Reference Outline of
+the Reference Point is writing**, in that Reference's colour, instead of a single outline in the
+Focus outline's colour. What Point decides (which keys point, what is written, where the Name Box
+points) is unchanged.
