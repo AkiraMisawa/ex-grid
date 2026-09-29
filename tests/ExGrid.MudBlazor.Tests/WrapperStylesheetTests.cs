@@ -32,7 +32,7 @@ public class WrapperStylesheetTests
         Assert.Matches(new Regex($@"(^|[;\s]){Regex.Escape(token)}:\s*{Regex.Escape(value)};"), root.Groups[1].Value);
     }
 
-    [Fact] // ADR-0029/0030: the Wrapper styles no internal class, and the Size Tip's box is the core's
+    [Fact] // ADR-0052/0029 / DC-44: the Wrapper paints the Size Tip through its tokens alone; its box, place and size are the core's
     public void The_wrapper_writes_no_rule_against_the_size_tip()
         => Assert.DoesNotContain(".ex-size-tip", WrapperStylesheet());
 }

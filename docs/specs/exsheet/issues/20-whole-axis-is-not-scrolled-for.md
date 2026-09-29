@@ -75,3 +75,14 @@ refinement of SR-2c from them would come as its own change.
 selects the whole column with A1 active and does not scroll down. "Judged on the range after the
 move" is therefore Excel's rule, as built, and the proposed "before and after" variant is dropped
 (ADR-0052). Whether page turns under a pager take the rule is still with the user.
+
+2026-09-29, the pager, as decided (ADR-0015 and ADR-0052; SR-2c): a page turn is the pager's scroll
+and takes the same rule. The keyboard's page turn in `ExGrid.razor` now skips an extension that
+leaves the range spanning every row, so Shift+→ over whole columns turns no page and Ctrl+Shift+↓
+from the first row stays on its page; a Shift+arrow that leaves the range short of the first or
+last row still turns it. `PagerTests.Shift_arrow_turns_the_page_and_continues` is rewritten to start
+from row 1, where it still holds, and three tests are added:
+`Ctrl_shift_down_from_the_first_row_stays_on_its_page` and
+`Shift_right_over_whole_columns_turns_no_page` (both red before the change), and
+`Shift_up_from_a_whole_column_turns_to_the_extents_page`. No DemoHost page declares a `PageSize`,
+so no layer 3 spec reaches the pager; FN-16's pager is verified on layer 2.

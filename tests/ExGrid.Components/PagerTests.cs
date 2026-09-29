@@ -128,22 +128,66 @@ public class PagerTests : GridTestContext
         Assert.Contains("1 / 4", cut.Find(".ex-pager").TextContent);
     }
 
-    [Fact] // ADR-0015/0052: the keyboard crosses pages — extension continues onto the next page, following the Extent
+    [Fact] // ADR-0015/0052 / SR-2c: the keyboard crosses pages — an extension that leaves the range short of the first or last row turns the page, following the Extent
     public async Task Shift_arrow_turns_the_page_and_continues()
     {
         GridSelection? selection = null;
         var cut = RenderGrid(s => selection = s);
-        await ClickCellAsync(cut, 50, 10);
-        // To the page's last row, then one more.
+        await ClickCellAsync(cut, 50, 30);                           // row 1, so the range cannot span every row
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", true, true, false, false, false)); // Ctrl+Shift+Down: extend to edge
         Assert.Equal(199, selection!.Extent.Row);
-        Assert.Equal(0, selection.Focus.Row);
+        Assert.Equal(1, selection.Focus.Row);
 
         // Ctrl+Shift+Down went to the whole result's edge, so the page turned to the last.
         Assert.Contains("4 / 4", cut.Find(".ex-pager").TextContent);
-        Assert.Equal(200, selection.Ranges[^1].RowCount);
+        Assert.Equal(199, selection.Ranges[^1].RowCount);
     }
 
+    [Fact] // ADR-0015/0052 (2026-09-29) / SR-2c: Ctrl+Shift+Down from the first row selects the whole column and stays on its page
+    public async Task Ctrl_shift_down_from_the_first_row_stays_on_its_page()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(s => selection = s);
+        await ClickCellAsync(cut, 50, 10);                           // row 0
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", true, true, false, false, false));
+
+        // The whole column, its Extent on the last row — and the page is still the first, as
+        // Excel's view stays at the top: a page turn is the pager's scroll.
+        Assert.Equal(200, selection!.Ranges[^1].RowCount);
+        Assert.Equal(199, selection.Extent.Row);
+        Assert.Contains("1 / 4", cut.Find(".ex-pager").TextContent);
+        Assert.Empty(Js.ScrolledTo);
+    }
+
+    [Fact] // ADR-0015/0052 (2026-09-29) / SR-2c: Shift+→ over whole columns turns no page
+    public async Task Shift_right_over_whole_columns_turns_no_page()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(s => selection = s);
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync(" ", true, false, false, false, false)); // Ctrl+Space
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+
+        Assert.Equal([new SelectionRange(0, 0, 200, 2)], selection!.Ranges);
+        Assert.Equal(new CellPosition(199, 1), selection.Extent);
+        Assert.Contains("1 / 4", cut.Find(".ex-pager").TextContent);
+    }
+
+    [Fact] // ADR-0015/0052 (2026-09-29) / SR-2c: Shift+↑ that leaves a whole column short of its last row turns to the Extent's page
+    public async Task Shift_up_from_a_whole_column_turns_to_the_extents_page()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(s => selection = s);
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync(" ", true, false, false, false, false));
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowUp", false, true, false, false, false));
+
+        Assert.Equal([new SelectionRange(0, 0, 199, 1)], selection!.Ranges);
+        Assert.Contains("4 / 4", cut.Find(".ex-pager").TextContent);
+    }
 
     [Fact] // ADR-0012/0015/0052: Ctrl+A names a region — the Focus stays where it stands
     public async Task Ctrl_a_keeps_the_focus_where_it_stands()

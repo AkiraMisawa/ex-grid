@@ -5802,8 +5802,11 @@
         _revealTarget = extending ? new ExtentReveal(revealed, next.FocusRange) : null;
         // The keyboard crosses pages; dragging does not (ADR-0015): a cell the keystroke
         // carried past the page boundary turns the page, and the reveal then positions it
-        // inside the new one.
-        if (PageSize is { } pageSize && revealed.Row / pageSize != _pageIndex)
+        // inside the new one. A page turn is the pager's scroll, so an extension that leaves
+        // the range spanning every row turns none, as the view does not scroll down for it
+        // (ADR-0015 and ADR-0052, 2026-09-29).
+        if (PageSize is { } pageSize && revealed.Row / pageSize != _pageIndex
+            && !(extending && next.FocusRange.SpansEveryRow(extent)))
         {
             _pageIndex = revealed.Row / pageSize;
             PrepareRender();
