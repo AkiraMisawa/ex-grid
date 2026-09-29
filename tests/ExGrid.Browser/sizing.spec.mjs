@@ -107,6 +107,79 @@ test('Shift+click on a header selects whole columns and does not sort (SR-2a, AD
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
+// The pointer at the middle of a header's label, clear of its menu button and its grip.
+async function headerCentre(page, name) {
+    const box = await header(page, name).boundingBox();
+    return { x: box.x + Math.min(20, box.width / 3), y: box.y + (box.height / 2) };
+}
+
+test('a press on a header released on its own column is a click, and sorts (SR-2d, SR-1, ADR-0012)', async ({ page }) => {
+    const from = await headerCentre(page, 'Notional');
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x + 6, from.y, { steps: 3 });
+    await page.mouse.up();
+
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional descending');
+    await expect(page.locator('#selection-status')).toHaveText('Selection:');
+});
+
+test('a press that reaches another header selects whole columns, and never sorts, even released on its own (SR-2d, ADR-0012)', async ({ page }) => {
+    const from = await headerCentre(page, 'Notional');
+    const to = await headerCentre(page, 'Narrow');
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    // A press selects nothing by itself.
+    await page.mouse.move(from.x + 6, from.y, { steps: 3 });
+    await expect(page.locator('#selection-status')).toHaveText('Selection:');
+
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,3');
+    // The Focus on the first visible row, where the Viewport already is.
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /-r0c2$/);
+
+    await page.mouse.move(from.x, from.y, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,1');
+    await page.waitForTimeout(500);
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('a press on one header released on another sorts nothing: the click lands on the header all the same (SR-2d, ADR-0012)', async ({ page }) => {
+    const from = await headerCentre(page, 'Notional');
+    const to = await headerCentre(page, 'Narrow');
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,3');
+    await page.waitForTimeout(500);
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('a press on a header that reaches another column\'s cells selects whole columns (SR-2d, ADR-0012)', async ({ page }) => {
+    const from = await headerCentre(page, 'Notional');
+    const amount = await grid(page).locator("[id$='-r4c3']").boundingBox();
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(amount.x + (amount.width / 2), amount.y + (amount.height / 2), { steps: 8 });
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,2');
+    await page.mouse.up();
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,2');
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('a drag on a resize grip resizes and is not a Heading drag (ticket 21, ADR-0016)', async ({ page }) => {
+    await dragGrip(page, 'Note', 30);
+
+    await expect(page.locator('#width-status')).toHaveText('Widths: Note=150');
+    await expect(page.locator('#selection-status')).toHaveText('Selection:');
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
 test('with the view at the top, a header Shift+click then Shift+→ never scrolls down (SR-2c, ADR-0052)', async ({ page }) => {
     const scroller = grid(page).locator('.ex-scroller');
     await clickCell(page, 0, 2);
