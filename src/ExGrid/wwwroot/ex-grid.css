@@ -277,7 +277,6 @@
     box-sizing: border-box;
     height: 100%;
     margin: 0;
-    padding: 0 var(--ex-cell-padding-x, 8px);
     font: inherit;
     line-height: inherit;
     color: inherit;
@@ -293,6 +292,9 @@
     box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
 }
 .ex-formula-bar-text { flex: 1 1 auto; min-width: 0; }
+/* The text field's padding is the coloured text's beside it too (ADR-0057): one rule, so the
+   two cannot drift. */
+.ex-name-box, .ex-formula-bar-text, .ex-reference-text.ex-reference-text-bar { padding: 0 var(--ex-cell-padding-x, 8px); }
 /* The bar's text field wears the Cell Editor's class — it is the editor's second surface,
    and the key listener knows an editor by it (ADR-0051/0018) — but it is laid out in the
    band, not floated over a cell. */
@@ -521,23 +523,85 @@
 .ex-find-outcome { min-height: 1.2em; }
 /* The Cell Editor (ADR-0010): one input floated over the focused cell, never inside a
    row. Its box is the cell's exactly (ADR-0028); font and line height come from the
-   same tokens the cells read, so the text does not jump when editing starts. */
-.ex-editor {
+   same tokens the cells read, so the text does not jump when editing starts. The coloured
+   text beneath the core's own input (ADR-0057) takes the same box, padding, line and colours,
+   from the same rule, so its characters stand where the input's do; it paints the editor's
+   ground, over which the input turns see-through while it shows (below). */
+.ex-editor,
+.ex-reference-text.ex-reference-text-cell {
     position: absolute;
     z-index: 3;
     box-sizing: border-box;
     margin: 0;
     padding: 0 var(--ex-cell-padding-x, 8px);
     border: none;
-    outline: var(--ex-editor-outline, 2px solid Highlight);
-    outline-offset: -1px;
     font: inherit;
     line-height: var(--ex-row-height);
     background: var(--ex-editor-background, Canvas);
     color: var(--ex-editor-color, CanvasText);
 }
+.ex-editor {
+    outline: var(--ex-editor-outline, 2px solid Highlight);
+    outline-offset: -1px;
+}
 /* The pinned editor's zero-size sticky anchor — the pinned selection layer's trick. */
 .ex-editor-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
+/* The coloured text (ADR-0057): beneath each editor surface, a layer the core renders with the
+   field's text and each Reference in its colour (.ex-reference-1 to -8). It stands immediately
+   before its field, in the field's box, font and line, and keeps every space the field keeps, so
+   its characters stand where the field's do; the rest is what the browser gives an input and not
+   a div. Paint only: it takes no pointer, and assistive technology reads the field. Hidden unless
+   the field after it wears ex-reference-text-shown, which the editor listener sets only in the
+   surface the edit is in — the field holding DOM focus, as Excel colours only that one — only
+   while the layer's text (data-ex-text) is the field's value, and never during an IME composition
+   (ADR-0021's note of ADR-0057): uncoloured for a moment rather than coloured on the wrong
+   characters. Its line scrolls sideways with the field, and has room to scroll as far. It is
+   painted beneath the field, caret and selection included, whether or not the field is
+   positioned: at -1 it goes under everything its stacking context lays out, and over only that
+   context's own ground — the Cell Editor's box, or the Formula Bar, made one for it here. */
+.ex-reference-text {
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: none;
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+    letter-spacing: normal;
+    word-spacing: normal;
+    text-transform: none;
+    text-indent: 0;
+    text-shadow: none;
+    text-align: start;
+    white-space: pre;
+    pointer-events: none;
+    visibility: hidden;
+}
+.ex-reference-text-line { height: 100%; overflow: hidden; }
+.ex-reference-text-line::after { content: ""; display: inline-block; width: 100%; }
+/* A Chrome places the layer inside the core's box, before its control, which fills the box's
+   content (IGridChrome): the layer stands over that content, inside the padding the box has from
+   .ex-editor and .ex-formula-bar-text, with none of its own, as the control has none. The bar's
+   box is laid out in the band, so it is made the layer's containing block, and the band the
+   stacking context both bar layers are painted in; nothing moves. */
+.ex-editor > .ex-reference-text { left: var(--ex-cell-padding-x, 8px); right: var(--ex-cell-padding-x, 8px); }
+.ex-formula-bar > div.ex-editor { position: relative; }
+.ex-formula-bar { isolation: isolate; }
+.ex-reference-text:has(+ .ex-reference-text-shown) { visibility: visible; }
+/* While it shows, the field's own text is transparent: its fill, so its color — and the caret,
+   drawn in it — stay, and a Chrome's own color does not outrank it. Selected text is drawn by
+   the field, in the selection's own colours, so it stays readable. The core's own Cell Editor
+   turns see-through, since the layer paints its ground. The adjacency is part of each rule: a
+   field whose layer has gone shows its own text whatever it still wears. */
+.ex-reference-text + .ex-reference-text-shown { -webkit-text-fill-color: transparent; caret-color: currentColor; }
+.ex-reference-text + .ex-reference-text-shown::selection { color: HighlightText; -webkit-text-fill-color: HighlightText; background-color: Highlight; }
+.ex-reference-text + input.ex-editor.ex-reference-text-shown { background: transparent; }
 /* The completion list and the argument hint (ADR-0051): the editor's Inner Popup, in a box the
    core stands beneath the editor surface, inside the grid's box — its place, its width's clamp
    and its max-height arrive inline (ADR-0027/0040), and contents taller than the room scroll.

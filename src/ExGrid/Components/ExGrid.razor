@@ -324,6 +324,13 @@
                                     }
                                     else
                                     {
+                                        @* The coloured text (ADR-0057): beneath the input, in its
+                                           box, immediately before it — where the listener and the
+                                           stylesheet look for it. A Chrome places its own. *@
+                                        @if (ReferencesIn is not null)
+                                        {
+                                            <div class="ex-reference-text ex-reference-text-cell" style="@pinnedBox" data-ex-text="@_editText" aria-hidden="true"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                        }
                                         <input class="ex-editor" style="@pinnedBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
@@ -337,6 +344,10 @@
                             }
                             else
                             {
+                                @if (ReferencesIn is not null)
+                                {
+                                    <div class="ex-reference-text ex-reference-text-cell" style="@editorBox" data-ex-text="@_editText" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                }
                                 <input class="ex-editor" style="@editorBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
@@ -428,6 +439,13 @@
             }
             else
             {
+                @* The coloured text (ADR-0057), beneath the field and immediately before it. It
+                   stands whenever References are declared, empty while no edit is open, so an
+                   edit opening is a change of its text that the listener hears. *@
+                @if (ReferencesIn is not null)
+                {
+                    <div class="ex-reference-text ex-reference-text-bar" style="@ReferenceTextBarStyle()" data-ex-text="@BarReferenceText" aria-hidden="true"><div class="ex-reference-text-line">@BarReferenceSpans</div></div>
+                }
                 <input class="ex-editor ex-formula-bar-text" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarPressedAsync"
                        @ref="_formulaBarElement" />
@@ -6862,14 +6880,18 @@
             _chromeNameBoxBlurred ??= () => FromChrome(OnNameBoxBlur));
 
     /// <summary>The Formula Bar text field seam's contract (ADR-0051/0030): the Focus cell's
-    /// text, whether it takes typing, the core's handlers, and the focus requests.</summary>
+    /// text, whether it takes typing, the core's handlers, the focus requests, and the coloured
+    /// text to place beneath the control (ADR-0057).</summary>
     private FormulaBarTextContext BuildFormulaBarTextContext()
         => new(
             FormulaBarText(),
             !FormulaBarEditable,
             _chromeFormulaBarFocused ??= () => _pressAnswer = FromChromeAsync(OnFormulaBarFocusAsync),
             _chromeFormulaBarTextChanged ??= text => FromChrome(() => OnFormulaBarInput(text)),
-            _formulaBarFocusRequest);
+            _formulaBarFocusRequest)
+        {
+            ReferenceText = BarReferenceTextForChrome,
+        };
 
     /// <summary>A handler reached from a Chrome's control rather than from an event on the
     /// root: run on the renderer's context, then rendered as the root's own event would be —
@@ -6892,7 +6914,8 @@
 
     /// <summary>The editor seam's contract (ADR-0010): the core owns the box, the keys
     /// and the text's lifecycle; a substitute renders the control and reports its text
-    /// as it changes — Enter and its siblings never reach it.</summary>
+    /// as it changes — Enter and its siblings never reach it — and places the coloured text
+    /// the core renders beneath it (ADR-0057).</summary>
     private CellEditorContext BuildEditorContext()
     {
         var declared = Columns[_editingCell.Column];
@@ -6924,7 +6947,10 @@
                 StateHasChanged();
             }),
             _editError is null ? null : MessageId,
-            _editorFocusAsked ? _editorFocusRequest : 0);
+            _editorFocusAsked ? _editorFocusRequest : 0)
+        {
+            ReferenceText = CellReferenceTextForChrome,
+        };
     }
 
     /// <summary>F2's other door (ADR-0010): a double click enters Caret on an editable

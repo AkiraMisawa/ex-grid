@@ -384,12 +384,23 @@ nobody had asked for. What that means when writing a test:
   with and without an edit open, and the positions grid, which declares nothing, leaving them
   to the browser (DC-30); grips without the menu button (DC-36); the positions grid keeping
   ExGrid's own behaviour beside the Sheet (DC-25).
+- `reference-text.spec.mjs` — the coloured text in the editor (ADR-0057) on `/sheet`, under the
+  built-in Chrome and `ExGrid.MudBlazor`'s: a burst of typing with 150 ms on the Server host,
+  sampled every animation frame in the page, never showing transparent field text over a layer
+  that differs, and the colours back once it pauses; on WebAssembly the colours following each
+  keystroke, three References in three colours; only the surface the edit is in coloured, the
+  other plain, as in Excel: an edit opened by F2 or by a press into the Formula Bar coloured there
+  before anything is typed, and the colours following a press from the cell into the bar and back;
+  the caret and a selection drawn by the field; an IME composition through CDP drawn by the field
+  while it lasts (DC-47); a Formula longer than
+  either surface, at both ends, the layer's line scrolled with the field, its font, padding and
+  spacing the field's, and the two drawings of the text the same picture (DC-48).
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
   Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
   stack stay with the Sheet that has the keyboard, and each Sheet's Linked Table columns are
   outlined only in the grid its page wired to it (SH-31, DC-25).
 
-`sheet-helpers.mjs` is what those three share: a Sheet's grid, a cell by its A1 address, the
+`sheet-helpers.mjs` is what those four share: a Sheet's grid, a cell by its A1 address, the
 editor surfaces under either Chrome, the Name Box, and painted-box comparisons.
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
