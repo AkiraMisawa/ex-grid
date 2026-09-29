@@ -79,7 +79,7 @@ test('SR-2c: Shift+↑ from a whole column leaves it one row short, and scrolls 
     const readable = await readableOf(grid);
     expect(box.y).toBeGreaterThanOrEqual(readable.top - 1);
     expect(box.y + box.height).toBeLessThanOrEqual(readable.bottom + 1);
-    await expect(rowHeading(grid, 1048576)).toBeVisible();
+    await expect(rowHeading(grid, 1048575)).toBeVisible();
     await expectFocusAt(grid, 'C1');
 });
 
@@ -220,7 +220,8 @@ test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never
     expect((await scrollOf(grid)).top).toBe(0);
 
     await page.mouse.up();
-    await expectFocusAt(grid, 'B1');
+    // The Focus stayed on B1, now off screen, so the Name Box is where it is read.
+    await expect(nameBox(grid)).toHaveValue('B1');
     expect((await scrollOf(grid)).top).toBe(0);
 });
 
@@ -239,7 +240,8 @@ test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sidew
     expect((await scrollOf(grid)).left).toBe(0);
 
     await page.mouse.up();
-    await expectFocusAt(grid, 'A3');
+    // The Focus stayed on A3, now off screen, so the Name Box is where it is read.
+    await expect(nameBox(grid)).toHaveValue('A3');
     expect((await scrollOf(grid)).left).toBe(0);
 });
 
