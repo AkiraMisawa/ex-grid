@@ -159,8 +159,10 @@ this paragraph records that it did. The requirement is still not relaxed.
 *(Settled while building, the same day.)* MudBlazor 9 names its scheme only in
 `--mud-native-html-color-scheme`, which `MudThemeProvider` emits beside the palette, and the
 Wrapper's stylesheet reads it with a style query. The dark outline is the primary with its OKLCH
-lightness raised to at least 0.63. That clears 3:1 against the default dark surface (3.1:1) and
-against the Focus band's tint over it, where 0.62 left 2.92:1. The floor is fixed for MudBlazor's
+lightness raised to at least 0.64. That clears 3:1 against the default dark surface (3.31:1) and as
+painted over the Focus band's tint on it (3.06:1). *(Corrected the same day. The first figure over
+the band, 2.92:1 at 0.62, was a mis-sampled pixel, and 0.63 was chosen from it. Measured as painted,
+0.62 gives 2.83:1 and 0.63 gives 2.95:1 there.)* The floor is fixed for MudBlazor's
 default dark palette: CSS cannot compare two colours' luminance, so a Consumer's own dark palette is
 not recomputed, and UX-9 measures only the defaults. The range outline reads
 `--ex-selection-outline`, which defaults to the Focus outline and needs no mapping of its own.
