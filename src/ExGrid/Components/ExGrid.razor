@@ -46,6 +46,7 @@
 @{ StageReveal(); }
 <div class="@RootClass" style="@RootStyle()" tabindex="@(Prerendered ? null : "0")" dir="ltr" @ref="_root"
      role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
+     data-ex-reveal="@_revealToken"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
      aria-activedescendant="@ActiveDescendant()"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
@@ -1548,6 +1549,11 @@
     // PageUp / PageDown, where the two travel together so the Focus keeps its position
     // on screen (ADR-0012). Set alongside _revealFocus, and cleared with it.
     private int _revealStepRows;
+
+    // The number of the last reveal that moved the scroller, rendered on the root as
+    // data-ex-reveal: the script writes a reveal's offset in the first frame whose DOM
+    // carries its number, which is the frame that paints its slice (StageReveal).
+    private long _revealToken;
     private IJSObjectReference? _module;
     private IJSObjectReference? _scrollHandle;
     private bool _disposed;
@@ -3416,7 +3422,7 @@
             await OnScrollAsync();
     }
 
-    private async Task PushScrollOffsetAsync(double top, double left)
+    private async Task PushScrollOffsetAsync(double top, double left, long? revealToken = null)
     {
         if (_scrollHandle is null || _disposed)
             return;
@@ -3425,7 +3431,10 @@
         _scrollWrites++;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left);
+            if (revealToken is { } token)
+                await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left, token);
+            else
+                await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -7177,7 +7186,10 @@
         // The reveal's offset is computed from the anchored one and supersedes it: an
         // anchor written after it would put the view back where the reveal left.
         _anchorScrollTopPx = null;
-        _ = PushScrollOffsetAsync(top, left);
+        // Numbered, and the number rendered on the root by this same render: the script
+        // holds the write until the frame whose DOM carries it, so the offset and the
+        // slice are painted together whichever message lands first.
+        _ = PushScrollOffsetAsync(top, left, ++_revealToken);
         // The rows moved under a still pointer, as they do under a scroll: the band goes
         // (ApplyScrollOffset), because the echo will find nothing moved and keep it.
         if ((_visible?.Start != paintedFirstRow || _scrollable != paintedColumns) && _hoverRow >= 0)

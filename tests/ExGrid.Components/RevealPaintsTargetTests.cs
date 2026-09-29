@@ -73,6 +73,12 @@ public class RevealPaintsTargetTests : GridTestContext
         // The last row, bottom-aligned: 200 rows of 20px less the 100px the header leaves.
         var top = (200 * RowHeightPx) - ReadablePx;
         Assert.Equal((top, 0d), Js.ScrolledTo[^1]);
+        // The write names the render that paints its slice, and that render carries the
+        // number on the root: the script writes the offset in the frame that shows it.
+        var write = JSInterop.Invocations.Last(invocation => invocation.Identifier == "setScrollOffset");
+        Assert.Equal(
+            ((long)write.Arguments[2]!).ToString(CultureInfo.InvariantCulture),
+            cut.Find(".ex-grid").GetAttribute("data-ex-reveal"));
         // No scroll event has been simulated: the slice is the one at the written offset.
         var slice = SliceAt(top, 200);
         Assert.Contains(199, slice);

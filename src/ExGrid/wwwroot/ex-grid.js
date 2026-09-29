@@ -30,6 +30,41 @@
 export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind) {
     let taken = new Set(takenKeys);
 
+    // A reveal's scroll write, held until the render that paints its slice has reached the
+    // DOM (ADR-0012, 2026-09-29). The core sends the write from inside that render, so on a
+    // circuit it arrives as the message just ahead of the render's batch, and a frame
+    // painted between the two showed the scroller at its target over the rows it had left:
+    // an empty Viewport. The render carries the reveal's number on the root, and the write
+    // is made in the same task that applies that render — the attribute's change is
+    // observed, and a MutationObserver's callback runs before the browser can paint — so
+    // the offset and the slice are painted together. It reads an attribute, never layout,
+    // and observes only while a write is held. While it is held, it is where the scroller
+    // stands for every read and every conditional write.
+    let pendingReveal = null;
+    let revealTimer = 0;
+    const revealObserver = new MutationObserver(() => applyReveal(false));
+    const applyReveal = (anyway) => {
+        const reveal = pendingReveal;
+        if (!reveal || (!anyway && Number(root.getAttribute('data-ex-reveal')) < reveal.token)) {
+            return;
+        }
+        dropReveal();
+        scroller.scrollTop = reveal.top;
+        scroller.scrollLeft = reveal.left;
+    };
+    const holdReveal = (reveal) => {
+        pendingReveal = reveal;
+        revealObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-reveal'] });
+        // A batch that never comes — the circuit went — must not hold the write forever.
+        revealTimer = setTimeout(() => applyReveal(true), 2000);
+    };
+    const dropReveal = () => {
+        pendingReveal = null;
+        revealObserver.disconnect();
+        clearTimeout(revealTimer);
+        revealTimer = 0;
+    };
+
     // Whether the synchronous channel exists — WebAssembly has it, a server circuit
     // does not. Probed once with a no-op, so a real .NET failure during a copy is
     // never mistaken for "no channel" (that conflation made a failed copy silent).
@@ -1308,17 +1343,29 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             canEdit = editable;
             canFind = findable;
         },
-        getScrollOffset: () => (scroller
-            ? { top: scroller.scrollTop, left: scroller.scrollLeft }
-            : { top: 0, left: 0 }),
+        getScrollOffset: () => (pendingReveal
+            ? { top: pendingReveal.top, left: pendingReveal.left }
+            : scroller
+                ? { top: scroller.scrollTop, left: scroller.scrollLeft }
+                : { top: 0, left: 0 }),
         // Where the Focus is kept visible (ADR-0012). The offsets are computed in C#,
         // which is what keeps scrollIntoView out of it: that would tuck the cell under the
-        // sticky header or the Pinned Columns, neither of which it knows about.
-        setScrollOffset: (top, left) => {
-            if (scroller) {
-                scroller.scrollTop = top;
-                scroller.scrollLeft = left;
+        // sticky header or the Pinned Columns, neither of which it knows about. A reveal
+        // names the render that paints it (token), and is written as that render lands
+        // (pendingReveal above); any other write is made at once, and replaces a reveal
+        // still held.
+        setScrollOffset: (top, left, token) => {
+            if (!scroller) {
+                return;
             }
+            dropReveal();
+            if (token !== undefined && token !== null
+                && Number(root.getAttribute('data-ex-reveal')) < token) {
+                holdReveal({ top, left, token });
+                return;
+            }
+            scroller.scrollTop = top;
+            scroller.scrollLeft = left;
         },
         // The first visible row kept across a change of the row height or the Layout Ceiling
         // (ADR-0028/0053), written only while the scroller still stands where the core last
@@ -1327,8 +1374,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // core reads the offset instead. The comparison is here because only here are the
         // write and the user's scroll ordered.
         anchorScrollTop: (top, fromTop) => {
-            if (!scroller || Math.abs(scroller.scrollTop - fromTop) > 1) {
+            const standing = pendingReveal ? pendingReveal.top : scroller?.scrollTop;
+            if (!scroller || Math.abs(standing - fromTop) > 1) {
                 return false;
+            }
+            if (pendingReveal) {
+                pendingReveal.top = top;
+                return true;
             }
             scroller.scrollTop = top;
             return true;
@@ -1376,6 +1428,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // after disposal would call into a component that no longer exists.
             observer.disconnect();
             ceilingObserver.disconnect();
+            dropReveal();
             clearTimeout(restTimer);
             root.removeEventListener('mousemove', onPointerMove);
             root.removeEventListener('mouseleave', onPointerLeave);
