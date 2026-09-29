@@ -388,16 +388,21 @@ public class PointModeTests : GridTestContext
     public async Task The_outline_is_kept_on_screen()
     {
         var selections = new List<GridSelection>();
-        var cut = RenderGrid(selections: selections);
+        // Read from the Formula Bar: the Cell Editor stands over A1, and once the outline's
+        // reveal has walked the view past row 1 the editor's cell is no longer painted, so
+        // neither is the editor (ADR-0010); the bar shows the same text (ADR-0051).
+        var cut = RenderGrid(selections: selections, formulaBar: true);
         await StartFormulaAsync(cut);
         var text = "=";
         for (var i = 0; i < 12; i++)
         {
             await PressAsync(cut, "ArrowDown", text: text, caret: text.Length);
-            text = EditorText(cut);
+            text = cut.Find(".ex-formula-bar-text").GetAttribute("value") ?? "";
         }
 
         Assert.Equal("=A13", text);
+        // The outline's row is painted in the render that revealed it (ADR-0012, 2026-09-29).
+        Assert.Contains(cut.FindAll("[role=gridcell]"), cell => cell.Id!.EndsWith("r12c0", StringComparison.Ordinal));
         Assert.Contains(JSInterop.Invocations, i => i.Identifier == "setScrollOffset" && (double)i.Arguments[0]! > 0);
         Assert.Equal(new CellPosition(0, 0), selections[^1].Focus);
     }

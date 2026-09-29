@@ -221,6 +221,10 @@ public class SelectionTests : GridTestContext
         for (var i = 0; i < 10; i++)
             await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
         Assert.Equal(11, selection!.CellCount);
+        // The Extent's reveal walked the view down to row 10 and the Focus with it off screen;
+        // Ctrl+Backspace brings it back, so the Ctrl+A below scrolls nothing and the only
+        // difference measured is the selection's (ADR-0012/0052).
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Backspace", true, false, false, false, false));
         var elements = cut.FindAll(".ex-grid *").Count;
         var rows = cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToArray();
 

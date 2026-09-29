@@ -647,3 +647,82 @@ for (const chrome of ['builtin', 'mud']) {
         });
     });
 }
+
+// A reveal paints where it is going (ADR-0012, 2026-09-29): the render that writes the scroll
+// offset also paints the slice at it — the rows the Consumer has, Placeholders for the rest —
+// so a far jump never shows a Viewport with no rows while its scroll event is on the wire. On
+// a circuit that event was a round trip away, and for that round trip the grid painted
+// neither the rows it had left nor the rows it was going to, and the status line called the
+// Focus "outside the visible range". On WebAssembly the same test is the case without one.
+/**
+ * Samples every frame for `ms`: how many of the Viewport's rows (Placeholders included)
+ * overlap the readable box under the header, and what the status line says. Read in
+ * requestAnimationFrame, so what is sampled is what the next paint shows.
+ */
+function sampleFrames(page, ms) {
+    return page.evaluate((ms) => new Promise((resolve) => {
+        const root = document.querySelector('.ex-grid');
+        const scroller = root.querySelector('.ex-scroller');
+        const header = root.querySelector('.ex-header');
+        const frames = [];
+        const end = performance.now() + ms;
+        const tick = () => {
+            const box = scroller.getBoundingClientRect();
+            const top = header ? header.getBoundingClientRect().bottom : box.top;
+            const bottom = box.top + scroller.clientHeight;
+            let rows = 0;
+            for (const row of root.querySelectorAll('.ex-viewport [role=row]')) {
+                const r = row.getBoundingClientRect();
+                if (r.height > 0 && r.bottom > top + 1 && r.top < bottom - 1) {
+                    rows++;
+                }
+            }
+            frames.push({
+                rows,
+                scrollTop: scroller.scrollTop,
+                status: root.querySelector('.ex-status')?.textContent ?? '',
+                focus: root.getAttribute('aria-activedescendant') ?? '',
+            });
+            if (performance.now() < end) {
+                requestAnimationFrame(tick);
+            } else {
+                resolve(frames);
+            }
+        };
+        requestAnimationFrame(tick);
+    }), ms);
+}
+
+test('a far reveal paints rows in every frame, and never calls the Focus it scrolls to off screen (ADR-0012, ADR-0053)', async ({ page }) => {
+    await page.goto('/wide');
+    const root = grid(page);
+    await expect(root.locator("[id$='-r0c0']")).toHaveText('K-000000', { timeout: 15_000 });
+    await expect(root).toHaveAttribute('tabindex', '0');
+    await clickCell(page, 0, 0);
+    await expect(root).toHaveAttribute('aria-activedescendant', /-r0c0$/);
+    // A round trip long enough that a frame between the Focus move and the scroll event
+    // cannot be missed: before this was fixed, about 220 ms of empty Viewport at 60 ms.
+    await setRoundTrip(150);
+
+    for (const [key, lands] of [
+        ['ControlOrMeta+End', /-r999999c99$/],
+        ['ControlOrMeta+Home', /-r0c0$/],
+        ['ControlOrMeta+ArrowDown', /-r999999c0$/],
+        ['ControlOrMeta+ArrowUp', /-r0c0$/],
+    ]) {
+        const sampling = sampleFrames(page, 2000);
+        await page.keyboard.press(key);
+        const frames = await sampling;
+        await expect(root).toHaveAttribute('aria-activedescendant', lands);
+
+        const detail = `${key}: ${frames.length} frames, ` +
+            JSON.stringify(frames.map((f) => [f.rows, Math.round(f.scrollTop), f.focus.replace(/^.*-r/, 'r'), f.status]));
+        expect(frames.some((frame) => lands.test(frame.focus)), `the Focus landed while sampled; ${detail}`).toBe(true);
+        // Not one frame with the Viewport empty…
+        expect(frames.every((frame) => frame.rows > 0), detail).toBe(true);
+        // …and the status line never judged the Focus against where the scroller had been.
+        expect(frames.some((frame) => frame.status.includes('outside the visible range')), detail).toBe(false);
+        // Once the scroll lands the Consumer's rows arrive, as the Range Request asked.
+        await expect(root.locator('.ex-viewport .ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
+    }
+});
