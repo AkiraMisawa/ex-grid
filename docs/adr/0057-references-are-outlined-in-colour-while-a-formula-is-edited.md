@@ -151,6 +151,11 @@ Excel contradicts is corrected here after the run.
   A1 once, in one colour. `=B2:A1` outlines A1:B2.
 - **`Sheet1!A1`, with this Sheet's own name, is outlined.** A Reference qualified with another name
   names no cells (it is `#REF!`, ADR-0046) and is not coloured.
+- **A structured reference is coloured only when its table and column are declared** *(decided
+  with the user the same day)*. `Nope[PV]` and `Positions[Nope]` name nothing, as a Reference to
+  another Sheet names nothing, and are not coloured: a colour would say they read something, where
+  they read `#NAME?` or `#REF!`. Nothing about them reaches the Consumer either. A declared table
+  still waiting for its data (`#GETTING_DATA`) is coloured, because the column it names exists.
 - **A whole column or row** (`A:A`, `1:1`) is outlined across the whole of it.
 - **An unfinished Formula is coloured as far as it goes.** `=SUM(A1,` colours `A1`. Nothing inside a
   string, and no function name, is coloured.

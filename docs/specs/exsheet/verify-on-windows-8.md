@@ -80,8 +80,8 @@ record the state as described below, then press Escape until Excel is Ready.
 | 24 | — | `+A1` (no `=`) | Coloured? Outlined? Excel reads the entry as `=+A1` once entered | nothing: only text beginning with `=` is a Formula while it is typed, as for F4 and Point |
 | 25 | — | `-B2` (no `=`) | The same | nothing |
 | 26 | — | `=SUM(A1:` (stop after the colon) | Is A1 coloured and outlined before the second corner is typed? | not until the second corner is typed |
-| 27 | No Table named `Nope` | `=SUM(Nope[PV]` | Is `Nope[PV]` coloured? | open (ticket 27 colours it) |
-| 28 | As 11 | `=SUM(Positions[Nope]` | Is `Positions[Nope]`, a column the Table lacks, coloured? | open (ticket 27 colours it) |
+| 27 | No Table named `Nope` | `=SUM(Nope[PV]` | Is `Nope[PV]` coloured? | not coloured: it names no Table |
+| 28 | As 11 | `=SUM(Positions[Nope]` | Is `Positions[Nope]`, a column the Table lacks, coloured? | not coloured: it names no column |
 
 For case 21, find the Formula Bar's text box through UI Automation (Excel's edit control above the
 column headings), or from a screenshot, and record the point clicked.

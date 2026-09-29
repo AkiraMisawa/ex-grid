@@ -203,14 +203,31 @@ public class FormulaReferencesTests
         Assert.Equal(expected, Answered(text));
     }
 
-    [Fact] // ADR-0057: a structured reference is answered from the text alone, its table declared or not (the implementation's reading)
-    public void SH30_a_structured_reference_is_answered_whether_or_not_its_table_is_declared()
+    [Fact] // ADR-0057 reading: a structured reference is coloured only when its table and column are declared — one naming neither names anything, as a Reference to another Sheet does not (decided with the user, 2026-09-29)
+    public void SH30_a_structured_reference_to_an_undeclared_table_or_column_is_not_answered()
     {
         var sheet = NewSheet();
         sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
 
-        Assert.Equal(new LinkedTableColumn("Nope", "PV"), Assert.Single(sheet.References("=SUM(Nope[PV])")).LinkedColumn);
-        Assert.Equal(new LinkedTableColumn("Positions", "Nope"), Assert.Single(sheet.References("=SUM(Positions[Nope])")).LinkedColumn);
+        Assert.Empty(sheet.References("=SUM(Nope[PV])"));
+        Assert.Empty(sheet.References("=SUM(Positions[Nope])"));
+        var answered = Assert.Single(sheet.References("=SUM(Nope[PV])+SUM(positions[pv])+A1"), a => a.LinkedColumn is not null);
+        Assert.Equal(new LinkedTableColumn("positions", "pv"), answered.LinkedColumn);
+    }
+
+    [Fact] // ADR-0057 reading: a declared table still waiting for its data is coloured — it names a column that exists
+    public void SH30_a_declared_table_waiting_for_its_data_is_answered()
+    {
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
+
+        Assert.Equal(new LinkedTableColumn("Positions", "PV"), Assert.Single(sheet.References("=SUM(Positions[PV])")).LinkedColumn);
+    }
+
+    [Fact] // ADR-0057: the text alone does not say which tables are declared, so FormulaEntry answers every structured reference and the Sheet keeps the declared ones
+    public void SH30_the_text_alone_answers_every_structured_reference()
+    {
+        Assert.Equal(new LinkedTableColumn("Nope", "PV"), Assert.Single(FormulaEntry.References("=SUM(Nope[PV])", "Sheet1")).LinkedColumn);
     }
 
     [Fact] // ADR-0057 reading: an unfinished Formula is coloured as far as it goes — every prefix of a Formula as it is typed is answered, and none throws

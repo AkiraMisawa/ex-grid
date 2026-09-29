@@ -521,7 +521,19 @@ public sealed partial class Sheet
 
     /// <summary>
     /// The References in the Formula being edited (ADR-0057), a qualifier naming this Sheet by its
-    /// <see cref="Name"/> as it is now (<see cref="FormulaEntry.References"/>).
+    /// <see cref="Name"/> as it is now (<see cref="FormulaEntry.References"/>). A structured
+    /// reference is kept only when its Linked Table is declared with that column: one naming a table
+    /// or a column that is not names nothing, as a Reference to another Sheet does not. A declared
+    /// table still waiting for its data is kept.
     /// </summary>
-    public IReadOnlyList<FormulaReference> References(string text) => FormulaEntry.References(text, Name);
+    public IReadOnlyList<FormulaReference> References(string text)
+    {
+        var references = FormulaEntry.References(text, Name);
+        return references.Any(r => r.LinkedColumn is { } column && !IsDeclared(column))
+            ? [.. references.Where(r => r.LinkedColumn is not { } column || IsDeclared(column))]
+            : references;
+    }
+
+    private bool IsDeclared(LinkedTableColumn column) =>
+        _tables.TryGetValue(column.Table, out var table) && table.ColumnIndex.ContainsKey(column.Column);
 }

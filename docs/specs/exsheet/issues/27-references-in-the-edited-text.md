@@ -44,7 +44,9 @@ Read by the implementation, and not asked in Part A:
   edited begins with `=`. Entered, the same text becomes the Formula `=-B2` (`Entry.SignedFormula`).
 - `=SUM(A1:`, a range typed as far as its colon, answers nothing: the grammar reads no Reference in
   `A1:`. `A1` is coloured again once the second corner is typed.
-- A structured reference is answered from the text alone, whether or not the table or the column is
-  declared. A column the table does not have is `#REF!` when evaluated, and a Reference qualified
-  with another Sheet's name, also `#REF!`, is not coloured.
+- ~~A structured reference is answered from the text alone, whether or not the table or the column is
+  declared.~~ *Decided with the user, 2026-09-29 (ADR-0057's readings):* `FormulaEntry.References`
+  still answers from the text alone, but `Sheet.References` keeps a structured reference only when
+  its table is declared with that column, as a Reference to another Sheet is not coloured. A
+  declared table still waiting for its data is kept.
 
