@@ -63,6 +63,10 @@ duty.
 stylesheet rule, every cascade layer and every inherited value, so a Wrapper that sets
 `--ex-row-height` on an ancestor — or in its own stylesheet — **loses**, and the grid keeps
 painting what its arithmetic believes. That is not politeness; it is the cascade.
+*(One kind of geometry is written on an overlay element instead: the hole a selected range leaves
+where the Focus is, `--ex-range-hole`, inline on that range, since it belongs to that one rectangle
+and not to the instance. It is inline all the same, so the same cascade protects it. Added
+2026-09-29 with [ADR-0008](./0008-selection-is-painted-by-an-overlay.md).)*
 
 **Visual tokens are only ever read, never written by C#.** `ex-grid.css` reads each one with a
 default (`var(--ex-selection-fill, rgba(60, 120, 216, 0.18))`), and custom properties inherit, so

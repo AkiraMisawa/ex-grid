@@ -181,7 +181,8 @@ transition animates from another row's value. The tokens above set colours, not 
   in advance, with the geometry half needing nothing because the editor's box is the cell's
   (ADR-0028). `--ex-selection-outline` remains reserved, settled with the selection paint
   polish; the Focus band half of that polish has landed (`--ex-focus-row-fill`,
-  [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)).
+  [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). *(The other half landed 2026-09-29:
+  `--ex-selection-outline` is the outline of a single range, ADR-0008.)*
 
 ## A correction found in implementation: the hover token could not work as declared — and how it now does
 
@@ -250,7 +251,8 @@ not quietly in the stylesheet. Each is painted only when a Consumer makes the de
     where the Focus is. It is geometry, not a Visual Token.
 
   These reuse existing tokens (`--ex-selection-fill`, `--ex-focus-outline` and
-  `--ex-grid-focus-outline`) and add none.
+  `--ex-grid-focus-outline`) and add none. `ex-range-single` reads `--ex-selection-outline`, the
+  token reserved above for it.
 - **Visual Tokens:**
   - `--ex-heading-background`, `--ex-heading-color` and `--ex-heading-rule-color`, for both
     Headings.
