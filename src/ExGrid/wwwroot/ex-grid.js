@@ -1019,7 +1019,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         // Cells are pointer-events: none, so the Viewport is what a press on the rows lands on.
         if (!core || replaying || event.button !== 0 || !(event.target instanceof Element)
-            || !event.target.classList.contains('ex-viewport') || (!answering && held.length === 0)) {
+            || !event.target.classList.contains('ex-viewport')) {
+            return;
+        }
+        // The Formula Bar or the Name Box holding DOM focus, which a press on the rows would take
+        // by its default.
+        const active = document.activeElement;
+        const field = active instanceof Element && root.contains(active) && active.closest('.ex-formula-bar') !== null
+            ? active
+            : null;
+        if (!answering && held.length === 0) {
+            // Not held, the press goes on as it is. But while an edit is open where a press may
+            // point, the core suppresses its default so the keyboard stays in the edit
+            // (ADR-0051), and a Formula Bar the edit was typed in keeps DOM focus only for that.
+            // Should the press commit instead, that focus is left standing, not the user's
+            // choice, and the hand-back takes it as the press would have (reclaimFocus): the
+            // keyboard left in the bar with no edit open took typing that went nowhere. Where the
+            // default is not suppressed, it has moved DOM focus off the bar already.
+            if (field !== null && editing !== 'none') {
+                staleField = field;
+            }
             return;
         }
         // Out of Blazor's sight until its turn, and so is its default, DOM focus onto the rows:
@@ -1036,9 +1055,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // The default suppressed here would have taken DOM focus off a field beside the rows
         // that held it. That focus is now only left standing, not the user's choice: the
         // hand-back after the press takes it, as the press would have (reclaimFocus).
-        const active = document.activeElement;
-        if (active instanceof Element && root.contains(active) && active.closest('.ex-formula-bar') !== null) {
-            staleField = active;
+        if (field !== null) {
+            staleField = field;
         }
         held.push({ press: 'mousedown', target: event.target, init: mouseInit(event) });
     };
@@ -1471,8 +1489,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // to take the keyboard out of that field — Enter or Escape typed in it, an edit in the
         // bar ending — does it say so, and the field is left. Everything else inside the root,
         // the Cell Editor over the rows included, is taken back as before.
-        // A field a held press on the rows left standing (staleField) is not the user's, and
-        // is taken as the press would have taken it.
+        // A field a press on the rows left standing (staleField) — held, or kept for an edit it
+        // might have pointed into — is not the user's, and is taken as the press would have
+        // taken it.
         reclaimFocus: (fromField) => {
             const active = document.activeElement;
             const own = active instanceof Element && active !== staleField

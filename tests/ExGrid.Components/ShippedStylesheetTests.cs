@@ -115,7 +115,7 @@ public class ShippedStylesheetTests
         Assert.Contains("active === document.body", body, StringComparison.Ordinal);
         // ...and not a field inside the band the core renders the Formula Bar and the Name Box
         // into — a Chrome's control sits inside the same band — unless the core says the gesture
-        // was made in that field, or a held press on the rows left its focus standing.
+        // was made in that field, or a press on the rows left its focus standing.
         Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
         Assert.Contains("fromField === true", body, StringComparison.Ordinal);
         Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
@@ -139,6 +139,9 @@ public class ShippedStylesheetTests
         // ...into the surface that last held the keyboard, found under this root.
         Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const standingField = \(\) => \{[^}]*root\.contains\(lastSurface\)[^}]*: root\.querySelector\('\.ex-editor'\);", RegexOptions.Singleline), script.Text);
+        // A Formula Bar that a press on the rows leaves holding DOM focus while an edit is open is
+        // the hand-back's to take, should the press commit (reclaimFocus).
+        Assert.Matches(new Regex(@"if \(field !== null && editing !== 'none'\) \{\s*staleField = field;"), body);
         // Script moves DOM focus in these two places only: this, and the hand-back to the root.
         Assert.Equal(2, Regex.Matches(script.Text, @"\.focus\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
