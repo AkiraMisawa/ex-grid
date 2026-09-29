@@ -624,9 +624,14 @@ test('DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport
     // Selection is all of it: Ctrl+↓ from E2 finds its end.
     await goTo(grid, 'E2');
     await page.keyboard.press('ControlOrMeta+ArrowDown');
+    // Waited for, not read once: the Focus moves when the key's answer lands, and on a circuit
+    // that is a round trip — through the Consumer's edge answer (ADR-0050) — after the press
+    // returns. Read at once, the Name Box still said E2 (the fifth Windows run, Server host).
+    await expect.poll(async () => Number((await nameBox(grid).inputValue()).slice(1)))
+        .toBeGreaterThan(20);
     const end = await nameBox(grid).inputValue();
     const last = Number(end.slice(1));
-    expect(last).toBeGreaterThan(20);
+    await expectFocusAt(grid, end);
     await expect(cell(grid, end)).toHaveText(String(last - 1));
 });
 
