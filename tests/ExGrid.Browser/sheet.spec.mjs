@@ -417,6 +417,86 @@ test('SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot
     await expect(cell(grid, 'B12')).toHaveText('321.43');
 });
 
+// While an edit is open, the application's changes are refused, and the page greys out its
+// buttons from ExSheet's notification (ADR-0048, ADR-0050 section 6; ticket 26). Found on this
+// page: 99 typed over C4 (Plums), "Insert a row above row 2" pressed while the edit was open, and
+// Enter wrote 99 into Pears' price — the Cell Editor had stayed on row 4 as Plums moved to row 5.
+const commands = (page) => ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-insert-row'].map((id) => page.locator(id));
+
+async function expectCommands(page, state) {
+    for (const button of commands(page)) {
+        await (state === 'enabled' ? expect(button).toBeEnabled() : expect(button).toBeDisabled());
+    }
+}
+
+test('SH-29 (ADR-0048): 99 over C4, the insert pressed while the edit is open, Enter — 99 lands in Plums\' row', async ({ page }) => {
+    const grid = sheet(page);
+    await expectCommands(page, 'enabled');
+
+    await pressCell(grid, 'C4');
+    await page.keyboard.type('99');
+    await expect(editor(grid)).toHaveValue('99');
+    await expectCommands(page, 'disabled');
+    // Forced: a user's press lands on a greyed-out button as well, and does nothing there.
+    await page.locator('#sheet-insert-row').click({ force: true });
+    await expect(editor(grid)).toHaveValue('99');
+
+    // The edit stays open while the keyboard is away from the grid (ADR-0018 section 6): the
+    // user goes back to it and commits.
+    await editor(grid).click();
+    await page.keyboard.press('Enter');
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(cell(grid, 'C4')).toHaveText('99');
+    await expect(cell(grid, 'A4')).toHaveText('Plums');
+    await expect(cell(grid, 'A3')).toHaveText('Pears');
+    await expect(cell(grid, 'C3')).toHaveText('0.75');
+    // 12 × 0.5 + 7 × 0.75 + 20 × 99. The defect painted 703, with 99 as Pears' price.
+    await expect(cell(grid, 'D5')).toHaveText('1991.25');
+    await expectCommands(page, 'enabled');
+});
+
+test('SH-29 (ADR-0048/0049): the buttons follow each way an edit opens and ends, and a Linked Table push is taken meanwhile', async ({ page }) => {
+    const grid = sheet(page);
+
+    // Opened by typing. A snapshot pushed meanwhile recalculates its readers and leaves the typing.
+    await pressCell(grid, 'C2');
+    await page.keyboard.type('5');
+    await expect(editor(grid)).toHaveValue('5');
+    await expectCommands(page, 'disabled');
+    await expect(page.locator('#sheet-revalue')).toBeEnabled();
+    await page.locator('#sheet-revalue').click();
+    await expect(cell(grid, 'B12')).toHaveText('321.43');
+    await expect(editor(grid)).toHaveValue('5');
+    await expectCommands(page, 'disabled');
+
+    // Cancelled: the cell is as it was, and the buttons are back.
+    await editor(grid).click();
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(cell(grid, 'C2')).toHaveText('0.5');
+    await expectCommands(page, 'enabled');
+
+    // Opened by a press into the Formula Bar, and cancelled from there.
+    await pressCell(grid, 'D2');
+    await clickBarEnd(grid);
+    await expectCommands(page, 'disabled');
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+    await expectCommands(page, 'enabled');
+
+    // Held open by a Reject: a Formula that cannot be read keeps the edit, and the buttons stay
+    // grey until it is corrected and committed (ADR-0034).
+    await pressCell(grid, 'F3');
+    await page.keyboard.type('=SUM(');
+    await page.keyboard.press('Enter');
+    await expect(editor(grid)).toHaveValue('=SUM(');
+    await expectCommands(page, 'disabled');
+    await typeSteadily(page, editor(grid), '1)');
+    await page.keyboard.press('Enter');
+    await expect(cell(grid, 'F3')).toHaveText('1');
+    await expectCommands(page, 'enabled');
+});
+
 test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent', async ({ page }) => {
     const grid = sheet(page);
     const count = () => grid.evaluate((root) => root.querySelectorAll('*').length);
