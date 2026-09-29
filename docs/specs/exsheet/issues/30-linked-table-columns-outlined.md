@@ -9,7 +9,7 @@ connects the two for its positions grid.
 
 **Blocked by:** Tickets 27 (the keys) and 28 (the colours the core tells).
 
-- [ ] ExGrid: a list of columns, each with a colour, that a Consumer gives. The grid outlines each
+- [x] ExGrid: a list of columns, each with a colour, that a Consumer gives. The grid outlines each
       column's body across all its rows in that colour, in the selection overlay. An empty list
       outlines nothing; without the list nothing changes (DC-50)
 - [ ] ExSheet: a notification to its Consumer of each Linked Table column read and its colour,
