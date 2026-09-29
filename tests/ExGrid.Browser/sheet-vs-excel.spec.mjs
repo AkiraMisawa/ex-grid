@@ -1,4 +1,5 @@
 import { test, expect, scrollRowToTop } from './fixtures.mjs';
+import { expectCovers } from './sheet-helpers.mjs';
 
 // Excel's behaviours, observed beside ExSheet (docs/specs/exsheet/excel-behaviours.md). Each test
 // is one item of that list, driven with real keys and the real mouse on /sheet, and its
@@ -563,6 +564,45 @@ waitsOn(14)('item 19 and Part A item 10: pasted text =1+ is taken as that text (
     await pasteText(page, 'E5', '=1+');
     // Excel took unreadable Formula text as the text itself, with no refusal and no dialog.
     await expect(cell(page, 'E5')).toHaveText('=1+');
+});
+
+test('fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29)', async ({ page }) => {
+    // Notepad's clipboard: the text alone, nothing of a spreadsheet's
+    // (verification/2026-09-29-windows-excel-4/active-cell.md, item 3).
+    await page.evaluate(() => navigator.clipboard.writeText('=A1'));
+    await click(page, 'E2');
+    await click(page, 'F3', { modifiers: ['Shift'] });
+    await expectSelection(page, 'E2', 'F3');
+    await page.keyboard.press('Control+V');
+    // Excel: B2 alone holds the Formula =A1 (showing 0), the other three cells stay empty, and
+    // the Selection is B2.
+    await expect(cell(page, 'E2')).not.toHaveText('');
+    await expect(nameBox(page)).toHaveValue('E2');
+    // One range, painted over E2 alone (a 1×1 Selection is not announced: ADR-0033).
+    await expect(sheet(page).locator('.ex-selection .ex-range')).toHaveCount(1);
+    await expectCovers(sheet(page).locator('.ex-selection .ex-range'), sheet(page), 'E2', 'E2');
+    await expect(cell(page, 'F2')).toHaveText('');
+    await expect(cell(page, 'E3')).toHaveText('');
+    await expect(cell(page, 'F3')).toHaveText('');
+    expect(await entryOf(page, 'E2')).toBe('=A1');
+});
+
+test('one cell copied inside the Sheet still fills the whole range, as Excel\'s own copy does (ADR-0014, amended 2026-09-29)', async ({ page }) => {
+    // C2 of the opening data. Copied without an edit before it: a keyboard copy right after an
+    // edit committed with Enter writes nothing on this page today, a separate defect.
+    const value = await cell(page, 'C2').textContent();
+    expect(value).not.toBe('');
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+    await click(page, 'C2');
+    await page.keyboard.press('Control+C');
+    // On the Server host the copy lands a round trip later (ADR-0005).
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
+    await click(page, 'E3');
+    await click(page, 'F4', { modifiers: ['Shift'] });
+    await page.keyboard.press('Control+V');
+    for (const a1 of ['E3', 'F3', 'E4', 'F4']) await expect(cell(page, a1)).toHaveText(value);
+    await expectCovers(sheet(page).locator('.ex-selection .ex-range'), sheet(page), 'E3', 'F4');
+    await expectActive(page, 'E3');
 });
 
 // ---- Fill (ADR-0050, item 5) --------------------------------------------------------------------

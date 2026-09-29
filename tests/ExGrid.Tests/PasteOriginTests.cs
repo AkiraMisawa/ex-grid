@@ -183,4 +183,20 @@ public class PasteOriginTests
         Assert.Equal(ClipboardParse.ParseBlock(ExcelEnUs, null)!.Values, ClipboardParse.Parse(ExcelEnUs, null));
         Assert.Null(ClipboardParse.ParseBlock(null, null));
     }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): a block read from a table in text/html (Excel's, the grid's, any page's) is from a table
+    public void A_block_read_from_an_html_table_is_from_a_table()
+    {
+        Assert.True(ClipboardParse.ParseBlock(ExcelEnUs, "1,234.50\r\n")!.IsFromTable);
+        Assert.True(ClipboardParse.ParseBlock("<table data-ex-grid=\"invariant\"><tr><td>7</td></tr></table>", "7\r\n")!.IsFromTable);
+        Assert.True(ClipboardParse.ParseBlock("<table><tr><td>7</td></tr></table>", null)!.IsFromTable);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): plain text alone, or HTML that holds no table, is not from a table
+    public void Plain_text_alone_or_html_without_a_table_is_not_from_a_table()
+    {
+        Assert.False(ClipboardParse.ParseBlock(null, "=A1")!.IsFromTable);
+        Assert.False(ClipboardParse.ParseBlock("", "=A1")!.IsFromTable);
+        Assert.False(ClipboardParse.ParseBlock("<p>=A1</p>", "=A1")!.IsFromTable);
+    }
 }

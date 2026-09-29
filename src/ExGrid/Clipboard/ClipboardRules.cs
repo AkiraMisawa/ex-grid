@@ -78,9 +78,15 @@ public static class ClipboardRules
     /// block's columns first, then a block crossing the extent is refused as
     /// <see cref="PasteRefusalReason.SpillPastExtent"/>. Null — the default — is ADR-0014
     /// unchanged. Every other shape rule stands either way.</param>
+    /// <param name="plainTextOnly">Whether the block was read from plain text alone, with no
+    /// table in the <c>text/html</c> flavour (<see cref="ClipboardBlock.IsFromTable"/> false).
+    /// Given with a single value over a Selection of more than one cell, the value goes into
+    /// the top-left cell of the range made last alone, and the Selection collapses to it
+    /// (ADR-0014, amended 2026-09-29) — where a value from a table fills every selected cell.
+    /// False — the default, and what a typed Ctrl+Enter passes — fills.</param>
     public static PasteDecision PlanPaste(
         GridSelection target, PasteShape source, Func<int, bool> columnIsEditable,
-        GridExtent? spillWithin = null)
+        GridExtent? spillWithin = null, bool plainTextOnly = false)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(columnIsEditable);
@@ -103,9 +109,21 @@ public static class ClipboardRules
             return PasteDecision.Refuse(PasteRefusalReason.TargetNotEditable);
 
         // A single value fills every selected cell — the bulk-entry shape, and the only
-        // paste a disjoint target accepts (ADR-0011 / 0014).
+        // paste a disjoint target accepts (ADR-0011 / 0014). One value of plain text is the
+        // exception: it goes into one cell alone, the top-left of the range made last, and
+        // the Selection collapses to it, as in Excel (ADR-0014, amended 2026-09-29). The
+        // Editable gate above has judged the whole Selection all the same: that order is
+        // unchanged, and a refusal is never wrong about what would have been written.
         if (source.IsSingleCell)
+        {
+            if (plainTextOnly && target.CellCount > 1)
+            {
+                var cell = target.TopLeftOfRangeMadeLast;
+                return PasteDecision.Approve(new PastePlan(
+                    [new SelectionRange(cell.Row, cell.Column, 1, 1)], source, collapsesSelection: true));
+            }
             return PasteDecision.Approve(new PastePlan(target.Ranges, source));
+        }
 
         // Checked before the single-cell case: a multi-range target containing a 1×1
         // range gets the multi-selection refusal, as in Excel.

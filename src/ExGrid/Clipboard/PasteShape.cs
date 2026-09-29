@@ -24,6 +24,7 @@ public readonly record struct PasteShape
     /// <summary>How many columns the block has.</summary>
     public int Columns { get; }
 
-    /// <summary>A 1×1 source fills every target range — the bulk-entry shape (ADR-0011).</summary>
+    /// <summary>A 1×1 source fills every target range — the bulk-entry shape (ADR-0011) —
+    /// unless it is plain text alone, which goes into one cell (ADR-0014, amended 2026-09-29).</summary>
     public bool IsSingleCell => Rows == 1 && Columns == 1;
 }

@@ -75,16 +75,56 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0014: one value over a selected range fills every cell of it
-    public async Task One_value_fills_the_selected_range()
+    [Fact] // ADR-0014: one value copied as a table (Excel's, or the grid's own) over a selected range fills every cell of it
+    public async Task One_value_copied_as_a_table_fills_the_selected_range()
     {
-        var cut = RenderSheet();
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps.Add(s => s.SelectionChanged, selections.Add));
         await GoToAsync(cut, "A1:A3");
 
-        await PasteAsync(cut, "7\r\n");
+        await PasteAsync(cut, "7\r\n", "<table><tr><td>7</td></tr></table>");
 
         Assert.Equal("7", CellText(cut, "A1"));
+        Assert.Equal("7", CellText(cut, "A2"));
         Assert.Equal("7", CellText(cut, "A3"));
+        Assert.Equal(new SelectionRange(0, 0, 3, 1), Assert.Single(selections[^1].Ranges));
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): one value of plain text over a range goes into its top-left alone, and the Selection collapses to it
+    public async Task One_value_of_plain_text_goes_into_the_top_left_alone_and_the_selection_collapses()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps
+            .Add(s => s.Document, DocumentOf(("C2", "old"), ("B3", "kept")))
+            .Add(s => s.SelectionChanged, selections.Add));
+        await GoToAsync(cut, "B2:C3");
+
+        await PasteAsync(cut, "=1+1");
+
+        Assert.Equal("2", CellText(cut, "B2"));
+        Assert.Equal("old", CellText(cut, "C2"));
+        Assert.Equal("kept", CellText(cut, "B3"));
+        Assert.Equal("", CellText(cut, "C3"));
+        Assert.Equal(new SelectionRange(1, 1, 1, 1), Assert.Single(selections[^1].Ranges));
+        Assert.Equal(new CellPosition(1, 1), selections[^1].Focus);
+        // One step on the undo stack, as every paste is (ADR-0048).
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal("", CellText(cut, "B2"));
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29) / ADR-0050 item 3: a plain-text value the Sheet refuses leaves the range selected
+    public async Task A_refused_plain_text_value_leaves_the_range_selected()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps.Add(s => s.SelectionChanged, selections.Add));
+        await GoToAsync(cut, "B2:C3");
+        var before = selections.Count;
+
+        await PasteAsync(cut, "#####");
+
+        Assert.Equal(before, selections.Count);
+        Assert.Equal(new SelectionRange(1, 1, 2, 2), Assert.Single(selections[^1].Ranges));
+        Assert.Equal("", CellText(cut, "B2"));
     }
 
     [Fact] // ADR-0050 item 3: a spill past the Sheet's edge is refused by name, and nothing is written

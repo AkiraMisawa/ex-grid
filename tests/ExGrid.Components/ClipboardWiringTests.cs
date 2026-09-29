@@ -268,7 +268,7 @@ public class ClipboardWiringTests : GridTestContext
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, " ", ctrl: true);                  // whole column, 100 rows
 
-        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("fill", null));
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("fill", "<table><tr><td>fill</td></tr></table>"));
 
         var intent = Assert.Single(intents);
         Assert.Equal(100, intent.CellCount);
@@ -291,6 +291,98 @@ public class ClipboardWiringTests : GridTestContext
 
         Assert.Empty(intents);
         Assert.Equal(PasteRefusalReason.SingleCellTarget, refused);
+    }
+
+    private static Task CtrlClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
+        => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y, CtrlKey = true });
+
+    private static Task ShiftClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
+        => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y, ShiftKey = true });
+
+    [Fact] // ADR-0014 (amended 2026-09-29): one value of plain text over a range goes into its top-left alone, and the Selection collapses to it
+    public async Task One_value_of_plain_text_over_a_range_goes_into_its_top_left_and_the_selection_collapses()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var changes = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => { selection = s; changes++; }));
+        await ClickCellAsync(cut, 150, 50);                      // Amount, row 2
+        await ShiftClickCellAsync(cut, 50, 30);                  // Book, row 1: B2:C3 drawn from its bottom-right
+        var before = changes;
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("=A1", null));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal([new SelectionRange(1, 0, 1, 1)], intent.Plan.Targets);
+        Assert.Equal(1, intent.CellCount);
+        Assert.Equal("=A1", intent.ValueFor(new CellPosition(1, 0)));
+        // Reported as every Selection change is, once.
+        Assert.Equal(before + 1, changes);
+        Assert.Equal([new SelectionRange(1, 0, 1, 1)], selection!.Ranges);
+        Assert.Equal(new CellPosition(1, 0), selection.Focus);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): with several ranges, the value goes into the top-left of the range made last
+    public async Task One_value_of_plain_text_over_several_ranges_goes_into_the_range_made_last()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 70);                       // Book, row 3 — made first
+        await CtrlClickCellAsync(cut, 150, 30);                  // Amount, row 1 — made last
+        await ShiftClickCellAsync(cut, 150, 50);                 // extended to Amount, row 2
+        await CtrlClickCellAsync(cut, 50, 10);                   // Book, row 0 — made last now
+
+        // Enter cycles the Focus back into the first range; the range made last does not change.
+        await PressAsync(cut, "Enter");
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x\r\n", null));
+
+        Assert.Equal([new SelectionRange(0, 0, 1, 1)], Assert.Single(intents).Plan.Targets);
+        Assert.Equal([new SelectionRange(0, 0, 1, 1)], selection!.Ranges);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): one value copied as a table — from the grid itself — still fills the whole range
+    public async Task One_value_copied_inside_the_grid_fills_the_whole_range()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 10);                       // Book, row 0
+        var copied = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+        await ClickCellAsync(cut, 50, 30);
+        await ShiftClickCellAsync(cut, 150, 50);                 // Book..Amount, rows 1..2
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync(copied.Text, copied.Html));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal([new SelectionRange(1, 0, 2, 2)], intent.Plan.Targets);
+        Assert.Equal(4, intent.CellCount);
+        Assert.Equal("Alpha", intent.ValueFor(new CellPosition(2, 1)));
+        Assert.Equal([new SelectionRange(1, 0, 2, 2)], selection!.Ranges);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29) / ADR-0050 item 3: a refused plain-text value leaves the Selection where it was
+    public async Task A_refused_plain_text_value_leaves_the_range_selected()
+    {
+        GridSelection? selection = null;
+        var changes = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => i.Refuse())
+            .Add(g => g.SelectionChanged, (GridSelection s) => { selection = s; changes++; }));
+        await ClickCellAsync(cut, 50, 10);
+        await ShiftClickCellAsync(cut, 150, 30);
+        var before = changes;
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x", null));
+
+        Assert.Equal(before, changes);
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], selection!.Ranges);
     }
 
     [Fact] // ADR-0014: nothing tabular consults no rule and raises nothing

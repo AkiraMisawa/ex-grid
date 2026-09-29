@@ -118,6 +118,32 @@ public sealed record GridSelection
         : Ranges[_focusRangeIndex];
 
     /// <summary>
+    /// The top-left cell of the range made last — where one value of plain text is pasted
+    /// alone over a Selection of more than one cell (ADR-0014, amended 2026-09-29). When a
+    /// take-out has cut that range into fragments, it is the first cell, by rows, of the
+    /// fragments, as a take-out's own Focus is (ADR-0052). Throws on Empty.
+    /// </summary>
+    internal CellPosition TopLeftOfRangeMadeLast
+    {
+        get
+        {
+            if (IsEmpty)
+                throw new InvalidOperationException("An empty selection has no range made last (ADR-0052).");
+            var last = _origins.Max();
+            CellPosition? first = null;
+            for (var i = 0; i < Ranges.Count; i++)
+            {
+                if (_origins[i] != last)
+                    continue;
+                var corner = new CellPosition(Ranges[i].TopRow, Ranges[i].LeftColumn);
+                if (first is not { } seen || corner.Row < seen.Row || (corner.Row == seen.Row && corner.Column < seen.Column))
+                    first = corner;
+            }
+            return first!.Value;
+        }
+    }
+
+    /// <summary>
     /// The selected-cell count for the status display — the sum of rectangle areas, so it
     /// needs no data (ADR-0014). Overlapping ranges double-count, as Excel's status bar
     /// does.

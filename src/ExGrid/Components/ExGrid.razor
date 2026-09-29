@@ -1119,7 +1119,10 @@
     /// returns new row instances. Rows off screen or not yet fetched are included in
     /// the target; that is intended (ADR-0014). A Consumer that will not write it calls
     /// <see cref="GridPasteIntent.Refuse"/> before the handler completes, and the Selection
-    /// stays where it was (ADR-0050, item 3).
+    /// stays where it was (ADR-0050, item 3). One value of plain text alone on the clipboard —
+    /// no table in <c>text/html</c> — over a Selection of more than one cell targets the
+    /// top-left cell of the range made last only, and once accepted the Selection collapses to
+    /// that cell (ADR-0014, amended 2026-09-29); one value copied as a table fills the Selection.
     /// </summary>
     [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
 
@@ -5248,7 +5251,7 @@
         var extent = Extent;
         var decision = ClipboardRules.PlanPaste(
             target, new PasteShape(block.Count, block[0].Count), ColumnIsEditable,
-            PasteMaySpill ? extent : null);
+            PasteMaySpill ? extent : null, plainTextOnly: !parsed.IsFromTable);
         if (decision.IsRefused)
         {
             if (OnPasteRefused.HasDelegate)
@@ -5260,8 +5263,35 @@
         if (OnPaste.HasDelegate)
             await OnPaste.InvokeAsync(intent);
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
-        if (PasteMaySpill && !intent.IsRefused)
+        if (intent.IsRefused)
+            return;
+        if (decision.Plan.CollapsesSelection)
+            SelectPastedCell(decision.Plan, version);
+        else if (PasteMaySpill)
             SelectSpilledBlock(target, decision.Plan, version);
+    }
+
+    /// <summary>
+    /// After one value of plain text went into one cell of a larger Selection, and the Consumer
+    /// did not refuse it, the Selection collapses to that cell, with the Focus on it (ADR-0014,
+    /// amended 2026-09-29). Reported as every other Selection change is. As for a spill, a
+    /// position means something only under the order it was written in: if the Consumer's
+    /// handling moved the Row Sequence Version, or took the cell away, nothing is placed
+    /// (ADR-0011).
+    /// </summary>
+    private void SelectPastedCell(PastePlan plan, int version)
+    {
+        if (_disposed || version != _sequenceVersion)
+            return;
+        var cell = plan.Targets[0];
+        var extent = Extent;
+        if (cell.BottomRow >= extent.RowCount || cell.RightColumn >= extent.ColumnCount)
+            return;
+        if (Apply(_selection.Selection.Place(cell, new CellPosition(cell.TopRow, cell.LeftColumn), extent)))
+        {
+            _suppressRender = false;
+            StateHasChanged();
+        }
     }
 
     /// <summary>

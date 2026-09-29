@@ -33,9 +33,9 @@ public static class ClipboardParse
     public static ClipboardBlock? ParseBlock(string? html, string? text)
     {
         if (!string.IsNullOrEmpty(html) && ParseHtmlTable(html) is { Count: > 0 } table)
-            return Rectangular(table);
+            return Rectangular(table, fromTable: true);
         if (!string.IsNullOrEmpty(text) && ParseTsv(text) is { Count: > 0 } block)
-            return Rectangular(Shown(block));
+            return Rectangular(Shown(block), fromTable: false);
         return null;
     }
 
@@ -269,7 +269,7 @@ public static class ClipboardParse
         return text.ToString().Trim(' ', '\t', '\n', '\r').Replace('\u00A0', ' ');
     }
 
-    private static ClipboardBlock Rectangular(List<List<(string Value, PasteFieldOrigin Origin)>> rows)
+    private static ClipboardBlock Rectangular(List<List<(string Value, PasteFieldOrigin Origin)>> rows, bool fromTable)
     {
         var width = 0;
         foreach (var row in rows)
@@ -288,7 +288,7 @@ public static class ClipboardParse
             values[r] = rowValues;
             origins[r] = rowOrigins;
         }
-        return new ClipboardBlock(values, origins);
+        return new ClipboardBlock(values, origins, fromTable);
     }
 }
 
@@ -313,11 +313,23 @@ public enum PasteFieldOrigin
 /// </summary>
 public sealed class ClipboardBlock
 {
-    internal ClipboardBlock(IReadOnlyList<IReadOnlyList<string>> values, IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> origins)
+    internal ClipboardBlock(
+        IReadOnlyList<IReadOnlyList<string>> values, IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> origins,
+        bool isFromTable)
     {
         Values = values;
         Origins = origins;
+        IsFromTable = isFromTable;
     }
+
+    /// <summary>
+    /// Whether the block was read from a table in the <c>text/html</c> flavour — a copy from the
+    /// grid, from ExSheet or from Excel — rather than from plain text alone. HTML that holds no
+    /// table counts as plain text, since the block was read from the text flavour. It decides
+    /// where a single value goes over a range (ADR-0014, amended 2026-09-29): from a table it
+    /// fills the range; as plain text it goes into one cell alone.
+    /// </summary>
+    public bool IsFromTable { get; }
 
     /// <summary>The fields, row by row; every row is as wide as the widest.</summary>
     public IReadOnlyList<IReadOnlyList<string>> Values { get; }
