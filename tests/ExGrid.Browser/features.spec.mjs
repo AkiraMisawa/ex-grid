@@ -139,7 +139,12 @@ test('a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-
 });
 
 test('paste raises one intent shaped by the clipboard block (CP-14, PST-1)', async ({ page }) => {
-    await page.evaluate(() => navigator.clipboard.writeText('fill'));
+    // Both flavours, as a spreadsheet puts one cell on the clipboard: a one-cell table fills
+    // the whole range (ADR-0014).
+    await page.evaluate(() => navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob(['<table><tr><td>fill</td></tr></table>'], { type: 'text/html' }),
+        'text/plain': new Blob(['fill\r\n'], { type: 'text/plain' }),
+    })]));
     await clickCell(page, 0, 1);
     await page.keyboard.press('Shift+ArrowDown');
     await page.keyboard.press('Shift+ArrowDown');
@@ -147,6 +152,57 @@ test('paste raises one intent shaped by the clipboard block (CP-14, PST-1)', asy
     await page.keyboard.press('ControlOrMeta+V');
 
     await expect(page.locator('#paste-status')).toContainText('3 cells from 1x1');
+});
+
+/** Whether the Selection is one painted range lying exactly over one cell, to within a pixel. */
+async function rangeCovers(page, row, column) {
+    const ranges = grid(page).locator('.ex-selection .ex-range');
+    if (await ranges.count() !== 1) return `${await ranges.count()} ranges`;
+    const box = await ranges.first().boundingBox();
+    const want = await grid(page).locator(`[id$='r${row}c${column}']`).boundingBox();
+    const near = (p, q) => Math.abs(p - q) <= 1.5;
+    return box && want && near(box.x, want.x) && near(box.y, want.y) && near(box.width, want.width) && near(box.height, want.height)
+        ? 'covers'
+        : JSON.stringify({ box, want });
+}
+
+test('ADR-0014 (amended 2026-09-29): one value of plain text over a range goes into its top-left alone, and the Selection collapses to it', async ({ page }) => {
+    // Text from a text editor: plain text only, no table.
+    await page.evaluate(() => navigator.clipboard.writeText('Solo'));
+    const below = [await grid(page).locator("[id$='r1c1']").textContent(), await grid(page).locator("[id$='r2c1']").textContent()];
+    // Drawn from the bottom, so the Focus is not the top-left: the top-left is taken.
+    await clickCell(page, 2, 1);
+    await page.keyboard.press('Shift+ArrowUp');
+    await page.keyboard.press('Shift+ArrowUp');
+    await expect(grid(page).locator('.ex-announce')).toContainText('3 rows by 1 columns selected');
+
+    await page.keyboard.press('ControlOrMeta+V');
+
+    await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1');
+    await expect(grid(page).locator("[id$='r0c1']")).toHaveText('Solo');
+    await expect(grid(page).locator("[id$='r1c1']")).toHaveText(below[0]);
+    await expect(grid(page).locator("[id$='r2c1']")).toHaveText(below[1]);
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
+    // One range, painted over that cell alone (a 1×1 Selection is not announced: ADR-0033).
+    await expect.poll(() => rangeCovers(page, 0, 1)).toBe('covers');
+});
+
+test('ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills the whole range', async ({ page }) => {
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+    const source = await grid(page).locator("[id$='r0c1']").textContent();
+    await clickCell(page, 0, 1);
+    await page.keyboard.press('ControlOrMeta+C');
+    // On the Server host the copy lands a round trip later (ADR-0005).
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
+    await clickCell(page, 2, 1);
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await page.keyboard.press('ControlOrMeta+V');
+
+    await expect(page.locator('#paste-status')).toContainText('3 cells from 1x1');
+    for (const row of [2, 3, 4]) await expect(grid(page).locator(`[id$='r${row}c1']`)).toHaveText(source);
+    await expect(grid(page).locator('.ex-announce')).toContainText('3 rows by 1 columns selected');
 });
 
 test('a paste covering a non-editable column is refused whole (CP-16, ADR-0035)', async ({ page }) => {

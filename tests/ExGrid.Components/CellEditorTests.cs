@@ -250,8 +250,10 @@ public class CellEditorTests : GridTestContext
         await PressAsync(cut, "ArrowDown", shift: true);
         await PressAsync(cut, "9");
         await PressAsync(cut, "Enter", ctrl: true);
-        // The same Selection, pasted over from the clipboard with the same one field.
-        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("9", null));
+        // The same Selection, pasted over from the clipboard with the same one field, copied as
+        // a table — one field of plain text alone would go into one cell (ADR-0014, amended
+        // 2026-09-29).
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("9", "<table><tr><td>9</td></tr></table>"));
 
         Assert.Equal(2, pastes.Count);
         var (typed, pasted) = (pastes[0], pastes[1]);

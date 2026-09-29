@@ -95,7 +95,12 @@ test('pasting onto an off-screen selection works, and the indicator showed first
     await grid(page).locator('.ex-scroller').evaluate((el) => { el.scrollTop = 6000; });
     await expect(page.locator('.ex-status')).toContainText('outside the visible range');
 
-    await page.evaluate(() => navigator.clipboard.writeText('offscreen'));
+    // One cell copied as a table, which fills the range (a plain-text value would go into one
+    // cell alone: ADR-0014, amended 2026-09-29).
+    await page.evaluate(() => navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob(['<table><tr><td>offscreen</td></tr></table>'], { type: 'text/html' }),
+        'text/plain': new Blob(['offscreen\r\n'], { type: 'text/plain' }),
+    })]));
     await page.keyboard.press('ControlOrMeta+V');
 
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');

@@ -76,11 +76,19 @@ public enum PasteRefusalReason
 /// </summary>
 public sealed class PastePlan
 {
-    internal PastePlan(IReadOnlyList<SelectionRange> targets, PasteShape source)
+    internal PastePlan(IReadOnlyList<SelectionRange> targets, PasteShape source, bool collapsesSelection = false)
     {
         Targets = targets;
         Source = source;
+        CollapsesSelection = collapsesSelection;
     }
+
+    /// <summary>
+    /// One value of plain text over a Selection of more than one cell (ADR-0014, amended
+    /// 2026-09-29): the one target is the top-left cell of the range made last, and once the
+    /// Consumer accepts the paste the Selection collapses to that cell, as Excel's does.
+    /// </summary>
+    internal bool CollapsesSelection { get; }
 
     /// <summary>The ranges to fill. More than one only with a 1×1 source (ADR-0014). A
     /// spilled paste (ADR-0050, item 3) is one range, the block itself.</summary>
