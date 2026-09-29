@@ -213,8 +213,12 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <param name="text">The editor surface's value as the input left it.</param>
     /// <param name="caret">Its <c>selectionStart</c>.</param>
+    /// <param name="moved">Whether the user moved the caret in this very text — a press in it,
+    /// or a caret key the browser carried out. Such a caret is the user's even while a
+    /// placement is in flight: it was made after the core wrote the text, the listener does not
+    /// carry that placement out, and the core does not wait for it.</param>
     [JSInvokable]
-    public Task OnEditorCaretAsync(string text, int caret)
+    public Task OnEditorCaretAsync(string text, int caret, bool moved = false)
     {
         if (_disposed || _editMode == EditMode.None || text is null || caret < 0 || caret > text.Length)
             return Task.CompletedTask;
@@ -225,11 +229,23 @@ public partial class ExGrid<TRow>
             return Task.CompletedTask;
         }
         // The browser's own caret in text the core wrote, before the placement has landed: not
-        // the user's move, and the placement that follows is reported in its turn.
-        if (_caretPlacing is { } placing && placing.Caret != caret
-            && string.Equals(placing.Text, text, StringComparison.Ordinal))
+        // the user's move, and the placement that follows is reported in its turn. The user's
+        // own move in that text is newer than the placement, which the listener then leaves
+        // undone (found on the Server host, Windows, fourth run: a press in the Formula Bar's
+        // text straight after ↓ pointed was put back after the Reference, and pointing went on).
+        if (_caretPlacing is { } placing && string.Equals(placing.Text, text, StringComparison.Ordinal))
         {
-            return Task.CompletedTask;
+            if (!moved)
+            {
+                if (placing.Caret != caret)
+                    return Task.CompletedTask;
+            }
+            else
+            {
+                _caretPlacing = null;
+                if (_caretToPlace is { } unsent && string.Equals(unsent.Text, text, StringComparison.Ordinal))
+                    _caretToPlace = null;
+            }
         }
         if (caret == _editCaret)
             return Task.CompletedTask;

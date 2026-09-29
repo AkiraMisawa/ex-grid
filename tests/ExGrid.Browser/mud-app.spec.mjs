@@ -165,6 +165,21 @@ test('WR-7: a grid in a tab that was hidden paints correctly once its tab is sho
 test('WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028)', async ({ page }) => {
     await open(page);
     await expect(page.locator('#drawer-status')).toHaveText('Drawer: open');
+    // The widths below are the baseline every later one is checked against, so they are taken
+    // once the open Drawer is where the screen shows it. MudLayout mounts with the main content
+    // at the window's edge and then slides it over to the Drawer's (MudBlazor animates its
+    // margin): measured during that slide, the grid is wider than it will be, and the width
+    // expected with the Drawer closed is too wide by as much (found on Windows, fourth run: 1214
+    // received against 1223.3 expected, the grid measured at 983.3 of the 974 it settles at).
+    // Whether the slide is over by the time the page is ready is only a matter of how long the
+    // page took to load — the file's first test pays for MudBlazor's stylesheet, a later one
+    // on the shared page does not (ADR-0056).
+    await expect.poll(() => page.evaluate(() => {
+        const main = document.querySelector('.mud-main-content');
+        const drawer = document.querySelector('#app-drawer');
+        return main.getAnimations().length === 0
+            && Math.abs(main.getBoundingClientRect().left - drawer.getBoundingClientRect().right) < 0.5;
+    }), { message: 'the main content has come to rest against the open Drawer' }).toBe(true);
     const drawerWidth = (await page.locator('#app-drawer').boundingBox()).width;
     expect(drawerWidth).toBeGreaterThan(0);
 

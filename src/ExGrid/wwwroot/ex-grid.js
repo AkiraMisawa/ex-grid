@@ -265,6 +265,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // asked for it, and never a report that says what the last one said.
     let reportedText = null;
     let reportedCaret = -1;
+    // The user's own move of the caret in an editor surface — a press in its text, or a caret
+    // key the browser carries out — with the text it was made in. The core places the caret a
+    // round trip after it wrote the text on a circuit, and a move made in that text before the
+    // placement lands is newer than the placement: the user's caret stands, and the report of
+    // it says it is the user's, so the core takes it over the placement it has in flight
+    // (ADR-0051's third round: a press in the text while pointing ends pointing; found on the
+    // Server host, Windows, fourth run, DC-19/DC-34). Only while the field still holds that
+    // text: once it has changed, the move was made in text the core no longer holds.
+    let caretMoved = null;
+    const noteCaretMove = (input) => {
+        caretMoved = { input, text: input.value };
+    };
+    const movedByUser = (input) => caretMoved !== null && caretMoved.input === input && caretMoved.text === input.value;
     const reportCaretOf = (input) => {
         const caret = input.selectionStart ?? input.value.length;
         if (input.value === reportedText && caret === reportedCaret) {
@@ -272,7 +285,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         reportedText = input.value;
         reportedCaret = caret;
-        core.invokeMethodAsync('OnEditorCaretAsync', input.value, caret)
+        core.invokeMethodAsync('OnEditorCaretAsync', input.value, caret, movedByUser(input))
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to hear the caret', error);
@@ -287,6 +300,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             || input.closest('.ex-editor') === null) {
             return;
         }
+        // Typed on: the text a move was made in is gone, and so is the move.
+        caretMoved = null;
         reportCaretOf(input);
     };
     root.addEventListener('input', onEditorInput, true);
@@ -471,6 +486,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 : k.key === 'End' ? input.value.length
                 : k.key === 'ArrowLeft' ? Math.max(0, start - 1)
                 : Math.min(input.value.length, end + 1);
+            if (input.closest('.ex-editor') !== null) {
+                noteCaretMove(input);
+            }
             input.setSelectionRange(at, at);
             return true;
         } else {
@@ -523,6 +541,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // dropped: the typing stops short rather than going on in a field it was not meant for
     // ("Alpha", Tab, Space, Enter would otherwise search for "Alpha " and apply it).
     const caretKeys = new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter']);
+    // The keys that move the caret in a field without changing its text.
+    const caretMoveKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
     const reproducible = (target, k) => {
         if (k.key === 'Escape' || target.closest('[role=menu]')) {
             return true;
@@ -696,6 +716,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         const verdict = gate(k);
         if (verdict === null) {
+            // A caret key left to an editor surface moves the caret there: the user's move.
+            if (k.inEditor && caretMoveKeys.has(event.key) && isTextField(event.target) && root.contains(event.target)) {
+                noteCaretMove(event.target);
+            }
             return;
         }
         event.preventDefault();
@@ -871,6 +895,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // late hand-back leaves alone (reclaimFocus).
         if (event.target instanceof Element && event.target.closest('.ex-formula-bar') !== null) {
             staleField = null;
+        }
+        // A press in an editor surface's text puts the caret where it lands: the user's move.
+        if (event.button === 0 && !replaying && isTextField(event.target) && event.target.closest('.ex-editor') !== null) {
+            noteCaretMove(event.target);
         }
         if (opensBarEdit(event)) {
             holdBehindBarPress();
@@ -1208,6 +1236,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const opened = editing === 'none' && mode !== 'none';
             editing = mode;
             reportCaret = reportsCaret === true;
+            if (mode === 'none') {
+                caretMoved = null;
+            }
             // A new state starts a new conversation: a report equal to one sent before it is
             // news to the core now (the next edit can open on the same text and caret).
             reportedText = null;
@@ -1229,9 +1260,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the surface still holds that text: typed on since, the user's own caret stands.
         // Also when an edit opens: the caret goes to the end of the opening text, placed rather
         // than assumed. The caret placed is the core's already, so it is not reported back.
+        // Not after the user moved the caret in that same text, before the placement came: the
+        // user's caret stands, and is reported once more as the user's — its own report can
+        // have reached the core while the placement was in flight, or have been spared as a
+        // repeat.
         setCaret: (text, caret) => {
             const input = editorInput();
             if (input && input.value === text) {
+                if (movedByUser(input)) {
+                    reportedText = null;
+                    reportCaretOf(input);
+                    return;
+                }
                 input.setSelectionRange(caret, caret);
                 reportedText = text;
                 reportedCaret = caret;

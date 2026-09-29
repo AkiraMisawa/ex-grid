@@ -708,6 +708,11 @@ test('item 23: deleting a row a Formula references writes #REF! in its place (AD
     await enter(page, 'F1', '=SUM(B2:B4)');
     await click(page, 'B3', { button: 'right' });
     await page.getByRole('menuitem', { name: /delete rows/i }).click();
+    // The deletion lands a round trip after the click on the Server host, and the render that
+    // brings it replaces row 1's cells: a click on E1 made in between reached for an element
+    // being taken out ("Element is not visible", Windows, fourth run), and one made earlier
+    // still would read the Entry from before the deletion. Pears was row 3; Plums moves up.
+    await expect(cell(page, 'A3')).toHaveText('Plums');
     // Excel: =A5*2 became =#REF!*2, and =SUM(A4:A6) became =SUM(A4:A5).
     expect(await entryOf(page, 'E1')).toBe('=#REF!*2');
     expect(await entryOf(page, 'F1')).toBe('=SUM(B2:B3)');

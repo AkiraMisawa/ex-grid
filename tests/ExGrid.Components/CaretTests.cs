@@ -462,6 +462,33 @@ public class CaretTests : GridTestContext
         Assert.Equal("=A3+1", EditorText(cut));
     }
 
+    [Fact] // ADR-0051 third round: a press in the text while the placement is in flight is the user's — pointing ends, and the placement is not waited for
+    public async Task A_users_move_ahead_of_the_placement_ends_pointing()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(complete: false, point: true, intents: intents);
+        await StartFormulaAsync(cut);
+        await InputAsync(cut, "=+1");
+        await ReportAsync(cut, "=+1", 1);
+        var placement = Js.UnansweredCaretPlacement();
+
+        await PressAsync(cut, "ArrowDown", "=+1", 1);
+        Assert.Equal("=A2+1", EditorText(cut));
+        Assert.NotEmpty(cut.FindAll(".ex-point"));
+
+        // A press after the +, before the placement has landed (found on the Server host).
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("=A2+1", 4, moved: true));
+
+        Assert.Empty(cut.FindAll(".ex-point"));
+        Assert.Equal("caret", EditingTold()[^1].Mode);
+        await cut.InvokeAsync(placement.SetVoidResult);
+        Assert.Empty(cut.FindAll(".ex-point"));
+        // The next Reference goes where the user put the caret.
+        await ClickAsync(cut, 50, 70); // A4
+        Assert.Equal("=A2+A41", EditorText(cut));
+        Assert.Empty(intents);
+    }
+
     [Fact] // ADR-0051 second round / ADR-0003: a caret-only report with nothing to answer renders nothing
     public async Task A_caret_only_report_with_nothing_to_answer_renders_nothing()
     {
