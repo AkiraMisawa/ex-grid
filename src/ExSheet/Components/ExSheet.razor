@@ -29,7 +29,7 @@
         RowHeadings="(ShowRowHeadings ? RowLabels : null)"
         DataEdge="_dataEdge"
         ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" NameBoxSizeLabel="NameBoxSizeOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
-        CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf"
+        CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf" CycleReference="CycleReferenceAt"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
         CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
@@ -51,10 +51,11 @@
 
     private static readonly Func<int, string> RowLabels = static row => (row + 1).ToString(CultureInfo.InvariantCulture);
 
-    // Point mode's two answers (ADR-0051) read only the text and the range they are handed, so
-    // one instance of each serves every ExSheet.
+    // Point mode's two answers and F4's rewrite (ADR-0051) read only the text, the caret and the
+    // range they are handed, so one instance of each serves every ExSheet.
     private static readonly Func<string, int, bool> PointAtCaret = SheetFormulaAids.PointAt;
     private static readonly Func<SelectionRange, string> ReferenceTextOf = SheetFormulaAids.ReferenceText;
+    private static readonly Func<string, int, int, EditorRewrite?> CycleReferenceAt = SheetFormulaAids.CycleReference;
 
     private static readonly Func<CellPosition, string?> NameBoxLabelOf =
         static focus => new CellAddress(focus.Row, focus.Column).ToString();

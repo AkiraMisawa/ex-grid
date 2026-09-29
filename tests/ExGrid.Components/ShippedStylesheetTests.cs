@@ -135,17 +135,38 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"canonical === ' ' && k\.repeat"), script.Text);
     }
 
-    [Fact] // ADR-0051/0021 / DC-24: the key message carries the editor's text and caret, read from the field, nothing measured
+    [Fact] // ADR-0051/0021 / DC-24 / DC-45: the key message carries the editor's text and selection, read from the field, nothing measured
     public void The_key_message_carries_the_editors_text_and_caret()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
         // The inspection DC-24 names: the one message to OnKeyAsync, with the value and the
-        // selection start of the editor surface — a read of the field, no layout read.
+        // selection of the editor surface, and whether the user moved the caret in that very
+        // text (F4, ADR-0051 2026-09-29) — reads of the field and of the listener's own note,
+        // no layout read.
         Assert.Single(Regex.Matches(script.Text, @"'OnKeyAsync'"));
-        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1\)",
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false\)",
             RegexOptions.Singleline), script.Text);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
+    }
+
+    [Fact] // ADR-0051 (2026-09-29) / ADR-0021 / DC-45 / DC-24: F4 is claimed only while an edit is open, and only where C# says the Consumer declared what it does
+    public void The_gate_claims_F4_only_while_editing_and_only_when_declared()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var gate = Regex.Match(script.Text, @"const gate = \(k\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(gate.Success, "the gate is not in the module");
+
+        // Named once in the whole module, in the gate's editing branch: after the branch for no
+        // edit open, which returns on its last line — F4 is the browser's there (DC-45).
+        Assert.Single(Regex.Matches(script.Text, @"'F4'"));
+        var noEditReturns = gate.Value.IndexOf("return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';", StringComparison.Ordinal);
+        Assert.True(noEditReturns > 0, "the gate's branch for no edit open has changed shape");
+        Assert.True(gate.Value.IndexOf("'F4'", StringComparison.Ordinal) > noEditReturns);
+        Assert.Matches(new Regex(@"return claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\) \? 'mode' : null;"), gate.Value);
+        // Told by C# with the editing mode, per instance, off until told.
+        Assert.Matches(new Regex(@"let cycleReferences = false;"), script.Text);
+        Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{[^}]*cycleReferences = cyclesReferences === true;", RegexOptions.Singleline), script.Text);
     }
 
     [Fact] // ADR-0007 / KB-39 / DC-30: the gate takes undo and redo only from C#'s list, and never while editing
@@ -196,7 +217,8 @@ public class ShippedStylesheetTests
         // Placed: only while the surface still holds the text the core wrote, and the caret it
         // placed is not reported back. Not over the user's own move in that text, made before
         // the placement came: that caret stands, and is reported again as the user's.
-        Assert.Matches(new Regex(@"setCaret: \(text, caret\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*if \(movedByUser\(input\)\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*input\.setSelectionRange\(caret, caret\);\s*reportedText = text;\s*reportedCaret = caret;",
+        // The same call places the selection F4's rewrite answered (ADR-0051, 2026-09-29).
+        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*if \(movedByUser\(input\)\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
             RegexOptions.Singleline), script.Text);
         // The user's move: a press in an editor surface's text, or a caret key left to it — only
         // while the field still holds the text it was made in.
