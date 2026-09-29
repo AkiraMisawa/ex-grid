@@ -117,10 +117,11 @@ and text from anywhere else does not.
 | **1×1 → range, from a table** (the clipboard carries a one-cell table in `text/html`: a copy from the grid, from ExSheet or from Excel) | the whole range fills with that value | **yes**, unchanged |
 | **1×1 → range, plain text only** (no `text/html` table, e.g. from a text editor) | the value goes into one cell alone, and the Selection becomes that cell | **yes**: into the range's top-left cell alone, and the Selection collapses to it |
 
-In the observation, the active cell and the top-left were both B2, so it did not say which of the
-two Excel writes. The top-left is taken, because it is where every other paste anchors. With several
-ranges selected, it is the top-left of the range made last. This is unobserved until a Windows run
-pastes with the active cell away from the top-left.
+The value goes into the top-left cell, where every other paste anchors. With several ranges
+selected, it is the top-left of the range made last. In the fourth run, the active cell and the
+top-left were both B2, so that observation did not say which. The equality run settled it: pasted
+from C3 over B2:C3, Excel wrote B2, the top-left
+(`verification/2026-09-29-windows-excel-equality/results.md`).
 
 Nothing here writes outside the Selection, so the premise above still holds.
 

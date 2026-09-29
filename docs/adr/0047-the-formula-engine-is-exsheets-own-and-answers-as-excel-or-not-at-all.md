@@ -323,3 +323,37 @@ Each disagreement goes to Excel's answer, except where a refusal is named.
 Recorded, not changed: `=1E308` and `=-1E308` (TEXT-103, 113) stay refused, where Excel typed offers
 to correct them into `=E1308` and `=-E1308`; and the deliberate differences of the earlier runs
 (TABLE-011, 013, COPY-025, ISERROR-010, FILL-033).
+
+## Settled by the equality run *(2026-09-29, decided with the user — verification/2026-09-29-windows-excel-equality)*
+
+The third run's rule for comparing numbers above ("closer than 20 units in the last place of 1,
+relative to each") is **replaced**.
+
+The fourth run found Excel counting `1+x` equal to 1 up to x = 4.8E-15 (ARITH-137..139, where the
+engine said FALSE). Two readings fitted every observation up to then:
+
+- a relative threshold of about 4.9E-15;
+- a comparison at 15 significant digits.
+
+The equality run asked four cases chosen where the two disagree. Excel answered as the 15-digit
+reading in all four, through COM and typed alike:
+
+- `=9+3E-14=9` is FALSE;
+- `=1+4E-15=1+6E-15` is FALSE;
+- `=9+5E-15=9` is FALSE;
+- `=1000+3.6E-12=1000` is TRUE.
+
+Rounding both sides to 15 significant digits, half away from zero on the double's exact decimal
+value, gives Excel's answer in all thirteen cases asked.
+
+**The decision:** two numbers compare as they read at 15 significant digits. Each side is rounded
+to 15 significant digits, and the rounded values are compared. **Every comparison operator** reads
+through this rule (`=`, `<>`, `<`, `>`, `<=`, `>=`), so two numbers that compare equal are neither
+less nor greater. Ordering is unobserved: ARITH-150..152 (`=1+4.4E-15>1` FALSE, `=9+3E-14>9` TRUE,
+`=1+4.8E-15<=1` TRUE) are `uncertain` until a Windows run asks them.
+
+The final-addition rule (2⁻⁴⁹) is unchanged. It is a different adjustment, and the GRID
+reimplementation of Excel documents the same boundary for it.
+
+The equality run also settled ADR-0014's amendment. Plain text pasted over B2:C3 from C3 went into
+B2, the top-left, and not into the active cell.

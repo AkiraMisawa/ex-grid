@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
@@ -9,33 +11,37 @@ namespace ExSheet.Engine.Formulas;
 /// Excel's precision; and a power is e^(b ln a), not the correctly rounded one, except a square root.
 /// </summary>
 /// <remarks>
-/// How near is "nearly" is not documented by Microsoft, and the two adjustments were observed to
-/// use different thresholds (ADR-0047, "What the third observation settled"):
+/// Neither adjustment is documented by Microsoft; both were observed (ADR-0047, "What the third
+/// observation settled" and "Settled by the equality run"):
 /// <list type="bullet">
 /// <item>A final addition is 0 when its operands are closer than 2^-49 (1.78E-15) of each.
 /// Observed: 0 at 1.11E-15 of each (<c>=1+1E-15-1</c>) and below; not 0 at 1.998E-15
 /// (<c>=1+2E-15-1</c>) and above. 2^-49 is the only power of two between the two.</item>
-/// <item>Two numbers compare equal when they are closer than 20 units in the last place of 1
-/// (4.44E-15) of each. Observed: equal at 3.997E-15 (<c>=1+4E-15=1</c>), not equal at 4.885E-15
-/// (<c>=1+5E-15=1</c>). It is not a power of two; it is a value inside the bracket, taken until
-/// the next run on Windows narrows it.</item>
+/// <item>Two numbers compare as they read at 15 significant digits: each is rounded to 15
+/// significant digits, half away from zero on its exact decimal value, and the results are
+/// compared. Observed (verification/2026-09-29-windows-excel-equality): <c>=1+4.8E-15=1</c> is TRUE
+/// (1.0000000000000049 reads 1.00000000000000), <c>=1+5E-15=1</c> is FALSE (1.00000000000001), and
+/// away from 1, where a relative threshold would say TRUE, <c>=9+3E-14=9</c>, <c>=9+5E-15=9</c> and
+/// <c>=1+4E-15=1+6E-15</c> are FALSE. Every comparison operator reads through it, so two numbers
+/// that are equal are neither less nor greater.</item>
 /// </list>
-/// Both boundaries are bracketed by <c>uncertain</c> cases in the corpus (ARITH-136..142).
 /// </remarks>
 internal static class Arithmetic
 {
     /// <summary>2^-49: a final addition whose operands are closer than this, relative to each, is 0.</summary>
     private const double CancelTolerance = 1.0 / 562949953421312.0;
 
-    /// <summary>20 units in the last place of 1 (20 × 2^-52, 4.44E-15): two numbers closer than this, relative to each, are equal at Excel's precision.</summary>
-    private const double EqualTolerance = 20.0 / 4503599627370496.0;
-
     /// <summary>
-    /// Whether two numbers are equal at Excel's precision: identical, or both nonzero and closer
-    /// than 20 units in the last place of 1 of each. <c>=0.1+0.2=0.3</c> and <c>=1+4E-15=1</c> are
-    /// TRUE in Excel; <c>=1+5E-15=1</c> is FALSE.
+    /// Whether two numbers are equal at Excel's precision: identical, or the same when each is
+    /// rounded to 15 significant digits. <c>=0.1+0.2=0.3</c> and <c>=1+4.8E-15=1</c> are TRUE in
+    /// Excel; <c>=1+5E-15=1</c> and <c>=9+3E-14=9</c> are FALSE.
     /// </summary>
-    public static bool ApproximatelyEqual(double a, double b) => Near(a, b, EqualTolerance);
+    public static bool ApproximatelyEqual(double a, double b) => a == b || AtFifteenDigits(a) == AtFifteenDigits(b);
+
+    /// <summary>A number rounded to 15 significant digits. .NET formats the exact decimal value
+    /// of the double and rounds a midpoint away from zero.</summary>
+    private static double AtFifteenDigits(double x) =>
+        double.IsFinite(x) ? double.Parse(x.ToString("E14", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture) : x;
 
     private static bool Near(double a, double b, double tolerance)
     {

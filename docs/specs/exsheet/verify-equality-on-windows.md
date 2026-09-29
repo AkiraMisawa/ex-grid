@@ -1,6 +1,9 @@
 # What to verify on Windows: where Excel's `=` stops counting two numbers equal
 
-Status: ready-for-human — two short parts, about twenty minutes.
+Status: done (2026-09-29, `verification/2026-09-29-windows-excel-equality/`). Excel's `=` matched
+15 significant digits in every case. **A mistake in this procedure:** en-GB was not enough. The oracle
+treats a case that names no culture as en-US, and blocks it elsewhere. The run asked through a copy
+of the corpus marked en-GB instead.
 
 For the Claude Code session on the Windows desktop of the earlier runs. The fourth run's method,
 tools and advance authorisation still apply: read [`verify-on-windows-4.md`](verify-on-windows-4.md)
