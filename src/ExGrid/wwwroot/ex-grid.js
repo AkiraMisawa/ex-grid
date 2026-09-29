@@ -416,11 +416,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answer has landed. Plain navigation changes no mode and is never held behind.
     const held = [];
     let answering = false;
-    // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus
-    // only because a held press on the rows suppressed the default that would have moved it
-    // (onPress); null once the field is pressed again, the hand-back has taken it, or the
-    // press has been answered without one (replayPress).
+    // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus only
+    // because a press on the rows had the default that would have moved it suppressed: held
+    // here, or passed on while an edit is open where the core keeps the keyboard in the edit
+    // (onPress). Null once the field is pressed again, the hand-back has taken it, or the press
+    // has been answered (replayPress, unmarkOnceAnswered). Each mark is numbered, so taking one
+    // press's mark off never takes a later press's.
     let staleField = null;
+    let staleMarks = 0;
+    const markStale = (field) => {
+        staleField = field;
+        return ++staleMarks;
+    };
 
     // Whether the editor holds DOM focus. Until it does, a key typed with editing on lands
     // on the root, where no editing mode claims a printable key — it would be lost.
@@ -978,6 +985,36 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The text field to put the keyboard back into: the surface that last held it while it is
     // still there, or else the first of this grid's own (surfaceField).
     const standingField = () => surfaceField(ownSurface(lastSurface));
+    // Takes a passed-on press's mark off its field once the core has answered that press
+    // (ExGrid.PressAnsweredAsync): a press that committed has had its hand-back by then, and
+    // one that pointed has left the edit open, the field the user's again. The core answers for
+    // the press or release it heard last, so the question goes after the press has reached
+    // it and before its release does: from a later task, or from this grid's own release
+    // (onRelease), which runs before Blazor hears it — whichever comes first. A click made in
+    // one go releases before a later task runs, and a release answered in the press's place
+    // took the mark off ahead of the hand-back (found on the Server host).
+    let unmarkAsked = 0;
+    const askThenUnmark = (mark) => {
+        if (unmarkAsked !== mark || !core) {
+            return;
+        }
+        unmarkAsked = 0;
+        core.invokeMethodAsync('PressAnsweredAsync')
+            .catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to answer a press', error);
+                }
+            })
+            .then(() => {
+                if (staleMarks === mark) {
+                    staleField = null;
+                }
+            });
+    };
+    const unmarkOnceAnswered = (mark) => {
+        unmarkAsked = mark;
+        setTimeout(() => askThenUnmark(mark));
+    };
 
     const onPress = (event) => {
         // A press into a field beside the rows gives that field a focus of its own, which a
@@ -1031,8 +1068,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // choice, and the hand-back takes it as the press would have (reclaimFocus): the
             // keyboard left in the bar with no edit open took typing that went nowhere. Where the
             // default is not suppressed, it has moved DOM focus off the bar already.
+            // The mark is for that hand-back alone. A press that points leaves the edit open with
+            // the keyboard in the bar, and a mark left standing would let a later hand-back — the
+            // rows' focus handed on, a popover's dismissal — take the bar the user is still
+            // typing in. It comes off once the core has answered this press.
             if (field !== null && editing !== 'none') {
-                staleField = field;
+                unmarkOnceAnswered(markStale(field));
             }
             return;
         }
@@ -1051,13 +1092,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // that held it. That focus is now only left standing, not the user's choice: the
         // hand-back after the press takes it, as the press would have (reclaimFocus).
         if (field !== null) {
-            staleField = field;
+            markStale(field);
         }
         held.push({ press: 'mousedown', target: event.target, init: mouseInit(event) });
     };
     // A release is held only behind its press: once the press has been handed on, the
     // release follows it to Blazor as it comes, and Blazor keeps the two in order.
     const onRelease = (event) => {
+        // A passed-on press whose mark is still to come off is asked about now, ahead of this
+        // release (unmarkOnceAnswered).
+        if (!replaying && unmarkAsked !== 0) {
+            askThenUnmark(unmarkAsked);
+        }
         if (!core || replaying || !held.some((k) => k.press === 'mousedown')) {
             return;
         }
@@ -1482,8 +1528,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // bar ending — does it say so, and the field is left. Everything else inside the root,
         // the Cell Editor over the rows included, is taken back as before.
         // A field a press on the rows left standing (staleField) — held, or kept for an edit it
-        // might have pointed into — is not the user's, and is taken as the press would have
-        // taken it.
+        // might have pointed into, until that press is answered — is not the user's, and is
+        // taken as the press would have taken it.
         reclaimFocus: (fromField) => {
             const active = document.activeElement;
             const own = active instanceof Element && active !== staleField
@@ -1527,6 +1573,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('paste', onPaste);
             lastSurface = null;
             staleField = null;
+            unmarkAsked = 0;
             root = null;
             scroller = null;
             core = null;

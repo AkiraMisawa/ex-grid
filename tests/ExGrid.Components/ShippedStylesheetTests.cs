@@ -139,14 +139,39 @@ public class ShippedStylesheetTests
         // ...into the surface that last held the keyboard, one of this grid's own.
         Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
         Assert.Contains("const standingField = () => surfaceField(ownSurface(lastSurface));", script.Text, StringComparison.Ordinal);
-        // A Formula Bar that a press on the rows leaves holding DOM focus while an edit is open is
-        // the hand-back's to take, should the press commit (reclaimFocus).
-        Assert.Matches(new Regex(@"if \(field !== null && editing !== 'none'\) \{\s*staleField = field;"), body);
         // Script moves DOM focus in these two places only: this, and the hand-back to the root.
         Assert.Equal(2, Regex.Matches(script.Text, @"\.focus\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
+    }
+
+    [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
+    public void A_passed_on_press_marks_the_bar_only_until_the_core_has_answered_it()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var press = Regex.Match(script.Text, @"const onPress = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(press.Success, "onPress is not in the module");
+        var body = press.Value;
+
+        // A Formula Bar that a press on the rows leaves holding DOM focus while an edit is open is
+        // the hand-back's to take, should the press commit (reclaimFocus)...
+        Assert.Matches(new Regex(@"if \(field !== null && editing !== 'none'\) \{\s*unmarkOnceAnswered\(markStale\(field\)\);"), body);
+        // ...and only that far: the mark comes off once the core has answered the press. A press
+        // that pointed has left the edit open, and a later hand-back must not take the bar the user
+        // is typing in.
+        Assert.Matches(new Regex(@"const askThenUnmark = \(mark\) => \{\s*if \(unmarkAsked !== mark \|\| !core\) \{\s*return;\s*\}\s*unmarkAsked = 0;\s*core\.invokeMethodAsync\('PressAnsweredAsync'\).*?if \(staleMarks === mark\) \{\s*staleField = null;",
+            RegexOptions.Singleline), script.Text);
+        // The core answers for the press or the release it heard last, so the question goes after
+        // the press and ahead of its release: from a later task, or from this grid's own release,
+        // whichever comes first.
+        Assert.Matches(new Regex(@"const unmarkOnceAnswered = \(mark\) => \{\s*unmarkAsked = mark;\s*setTimeout\(\(\) => askThenUnmark\(mark\)\);"), script.Text);
+        var release = Regex.Match(script.Text, @"const onRelease = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(release.Success, "onRelease is not in the module");
+        Assert.Matches(new Regex(@"^const onRelease = \(event\) => \{\s*(//[^\n]*\s*)*if \(!replaying && unmarkAsked !== 0\) \{\s*askThenUnmark\(unmarkAsked\);"), release.Value);
+        // Every mark is numbered, a held press's too, so taking one off never takes a later one's.
+        Assert.Matches(new Regex(@"const markStale = \(field\) => \{\s*staleField = field;\s*return \+\+staleMarks;"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"staleField = field;"));
     }
 
     [Fact] // ADR-0018 / ED-26: the surface the keyboard comes back to is this grid's own, never one of a grid nested in its cells
