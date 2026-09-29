@@ -98,7 +98,7 @@
     private int _windowStart;
     private GridSelection _selection = GridSelection.Empty;
     // The Linked Table columns the Consumer was last told, so a change is told once (SH-31).
-    private IReadOnlyList<LinkedColumnColour> _linkedColumnsTold = [];
+    private LinkedColumnColours _linkedColumnsTold = LinkedColumnColours.None;
     // What ExSheet has to tell the user. It stands until the user's own next action — an edit,
     // a paste, a command, a selection change — and a Consumer's Linked Table push, declaration
     // or new Sheet Document does not clear it: the user has not yet acted on what it says.
@@ -248,7 +248,7 @@
     /// the list to the grid that shows the table (ExGrid's <c>OutlinedColumns</c>), and only the
     /// Consumer can vouch that that grid shows the rows the Formula reads.
     /// </summary>
-    [Parameter] public EventCallback<IReadOnlyList<LinkedColumnColour>> OnLinkedColumnColoursChanged { get; set; }
+    [Parameter] public EventCallback<LinkedColumnColours> OnLinkedColumnColoursChanged { get; set; }
 
     /// <summary>
     /// The wording for a command id in the menus the built-in Chrome renders (ADR-0036): the
@@ -408,7 +408,7 @@
     // they name (ADR-0057): told to the Consumer when they differ from what it was last told.
     private Task OnKeyColoursChangedAsync(IReadOnlyList<ReferenceKeyColour> keys)
     {
-        var columns = _sheet is { } sheet ? SheetFormulaAids.LinkedColumnsOf(sheet, keys) : [];
+        var columns = _sheet is { } sheet ? SheetFormulaAids.LinkedColumnsOf(sheet, keys) : LinkedColumnColours.None;
         if (SameLinkedColumns(columns, _linkedColumnsTold)) return Task.CompletedTask;
         _linkedColumnsTold = columns;
         return OnLinkedColumnColoursChanged.InvokeAsync(columns);

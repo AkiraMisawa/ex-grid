@@ -45,11 +45,7 @@ public abstract class SheetTestContext : BunitContext
     /// <summary>Renders an ExSheet as a connected, interactive component.</summary>
     internal IRenderedComponent<SheetComponent> RenderSheet(Action<ComponentParameterCollectionBuilder<SheetComponent>>? parameters = null)
     {
-        if (!_rendererInfoSet)
-        {
-            _rendererInfoSet = true;
-            SetRendererInfo(new RendererInfo("Server", isInteractive: true));
-        }
+        Interactive();
         return Render<SheetComponent>(ps =>
         {
             ps.Add(s => s.ViewportHeight, (ViewportSize)400)
@@ -57,6 +53,21 @@ public abstract class SheetTestContext : BunitContext
               .Add(s => s.Culture, System.Globalization.CultureInfo.GetCultureInfo("en-US"));
             parameters?.Invoke(ps);
         });
+    }
+
+    /// <summary>Renders a Consumer's page holding an ExSheet, connected and interactive as <see cref="RenderSheet"/> renders one.</summary>
+    internal IRenderedComponent<TPage> RenderPage<TPage>() where TPage : IComponent
+    {
+        Interactive();
+        return Render<TPage>();
+    }
+
+    // Telling bUnit the renderer's info builds the renderer, so it is told once, at the first render.
+    private void Interactive()
+    {
+        if (_rendererInfoSet) return;
+        _rendererInfoSet = true;
+        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
     }
 
     internal static IRenderedComponent<ExGrid<SheetRow>> Grid(IRenderedComponent<SheetComponent> cut) =>

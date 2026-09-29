@@ -23,9 +23,9 @@ public class LinkedColumnOutlineTests : SheetTestContext
         new(new LinkedTableColumn(table, column), new ReferenceColour(place));
 
     /// <summary>A Sheet with <c>Positions</c> declared and waiting for its data, and what it tells.</summary>
-    private async Task<IRenderedComponent<SheetComponent>> RenderDeclaredAsync(List<IReadOnlyList<LinkedColumnColour>> told)
+    private async Task<IRenderedComponent<SheetComponent>> RenderDeclaredAsync(List<LinkedColumnColours> told)
     {
-        var cut = RenderSheet(ps => ps.Add(s => s.OnLinkedColumnColoursChanged, (IReadOnlyList<LinkedColumnColour> columns) => told.Add(columns)));
+        var cut = RenderSheet(ps => ps.Add(s => s.OnLinkedColumnColoursChanged, (LinkedColumnColours columns) => told.Add(columns)));
         await cut.Instance.DeclareLinkedTableAsync("Positions", Columns);
         return cut;
     }
@@ -51,7 +51,7 @@ public class LinkedColumnOutlineTests : SheetTestContext
     [Fact] // ADR-0057 / SH-31: =SUM(Positions[PV]) tells Positions[PV] in the first colour, and outlines nothing on the Sheet
     public async Task A_formula_reading_a_linked_column_tells_it_and_its_colour()
     {
-        var told = new List<IReadOnlyList<LinkedColumnColour>>();
+        var told = new List<LinkedColumnColours>();
         var cut = await RenderDeclaredAsync(told);
 
         await StartTypingAsync(cut, "E5", "=SUM(Positions[PV])");
@@ -64,7 +64,7 @@ public class LinkedColumnOutlineTests : SheetTestContext
     [Fact] // ADR-0057 / SH-31: a column's colour is its place in order of first appearance, cells counted
     public async Task A_columns_colour_follows_the_references_before_it()
     {
-        var told = new List<IReadOnlyList<LinkedColumnColour>>();
+        var told = new List<LinkedColumnColours>();
         var cut = await RenderDeclaredAsync(told);
 
         await StartTypingAsync(cut, "E5", "=A1+XLOOKUP(\"R-1\", Positions[Id], Positions[PV])");
@@ -76,7 +76,7 @@ public class LinkedColumnOutlineTests : SheetTestContext
     [Fact] // ADR-0057 / SH-31: a column read twice, in any case, is told once, under the names as the Consumer declared them
     public async Task A_column_read_twice_in_any_case_is_told_once_as_declared()
     {
-        var told = new List<IReadOnlyList<LinkedColumnColour>>();
+        var told = new List<LinkedColumnColours>();
         var cut = await RenderDeclaredAsync(told);
 
         await StartTypingAsync(cut, "E5", "=positions[pv]+POSITIONS[Pv]");
@@ -87,7 +87,7 @@ public class LinkedColumnOutlineTests : SheetTestContext
     [Fact] // ADR-0057 / SH-31 / DC-49: raised when the columns or their colours change, and not on a keystroke that changes neither
     public async Task Told_only_when_the_columns_or_their_colours_change()
     {
-        var told = new List<IReadOnlyList<LinkedColumnColour>>();
+        var told = new List<LinkedColumnColours>();
         var cut = await RenderDeclaredAsync(told);
         await StartTypingAsync(cut, "E5", "=SUM(Positions[PV])");
         Assert.Single(told);
@@ -106,7 +106,7 @@ public class LinkedColumnOutlineTests : SheetTestContext
     [Fact] // ADR-0057 / SH-31: Enter commits and tells the empty list, once
     public async Task A_commit_tells_the_empty_list()
     {
-        var told = new List<IReadOnlyList<LinkedColumnColour>>();
+        var told = new List<LinkedColumnColours>();
         var cut = await RenderDeclaredAsync(told);
         await StartTypingAsync(cut, "E5", "=SUM(Positions[PV])");
 
@@ -121,7 +121,7 @@ public class LinkedColumnOutlineTests : SheetTestContext
     [Fact] // ADR-0057 / SH-31: Escape cancels and tells the empty list
     public async Task A_cancel_tells_the_empty_list()
     {
-        var told = new List<IReadOnlyList<LinkedColumnColour>>();
+        var told = new List<LinkedColumnColours>();
         var cut = await RenderDeclaredAsync(told);
         await StartTypingAsync(cut, "E5", "=Positions[Id]+Positions[PV]");
 
@@ -135,7 +135,7 @@ public class LinkedColumnOutlineTests : SheetTestContext
     [Fact] // ADR-0057 "coloured only when its table and column are declared" / SH-31: an undeclared table or column is not told
     public async Task An_undeclared_table_or_column_is_not_told()
     {
-        var told = new List<IReadOnlyList<LinkedColumnColour>>();
+        var told = new List<LinkedColumnColours>();
         var cut = await RenderDeclaredAsync(told);
 
         await StartTypingAsync(cut, "E5", "=Nope[PV]+Positions[Nope]");
@@ -148,7 +148,7 @@ public class LinkedColumnOutlineTests : SheetTestContext
     [Fact] // ADR-0057 / SH-31: a Formula of cells alone reads no Linked Table, and tells nothing from start to end
     public async Task A_formula_of_cells_tells_nothing()
     {
-        var told = new List<IReadOnlyList<LinkedColumnColour>>();
+        var told = new List<LinkedColumnColours>();
         var cut = await RenderDeclaredAsync(told);
 
         await StartTypingAsync(cut, "E5", "=A1+B2:C3");
@@ -160,8 +160,8 @@ public class LinkedColumnOutlineTests : SheetTestContext
     [Fact] // ADR-0057 / SH-31: with no table declared, Positions[PV] names nothing and is not told
     public async Task Nothing_is_told_before_the_table_is_declared()
     {
-        var told = new List<IReadOnlyList<LinkedColumnColour>>();
-        var cut = RenderSheet(ps => ps.Add(s => s.OnLinkedColumnColoursChanged, (IReadOnlyList<LinkedColumnColour> columns) => told.Add(columns)));
+        var told = new List<LinkedColumnColours>();
+        var cut = RenderSheet(ps => ps.Add(s => s.OnLinkedColumnColoursChanged, (LinkedColumnColours columns) => told.Add(columns)));
 
         await StartTypingAsync(cut, "E5", "=SUM(Positions[PV])");
 
@@ -179,5 +179,25 @@ public class LinkedColumnOutlineTests : SheetTestContext
         Assert.Equal(["ex-reference-outline ex-reference-1"], cut.FindAll(".ex-selection .ex-reference-outline").Select(e => e.GetAttribute("class")));
         await PressAsync(cut, "Escape");
         Assert.Empty(cut.FindAll(".ex-reference-outline"));
+    }
+
+    [Fact] // ADR-0057 / SH-31 / ADR-0049: a page passing the list to the grid that shows the table outlines its column there, over all its rows, until the edit ends
+    public async Task A_page_passes_the_list_to_the_grid_that_shows_the_table()
+    {
+        var page = RenderPage<SheetBesideTable>();
+        await page.Instance.Sheet!.DeclareLinkedTableAsync("Positions", Columns);
+        var cut = page.FindComponent<SheetComponent>();
+        var positions = page.FindComponent<global::ExGrid.Components.ExGrid<SheetBesideTable.Position>>();
+
+        await StartTypingAsync(cut, "E5", "=A1+SUM(Positions[PV])");
+
+        // PV is the third of three columns of 90, 90 and 120, and the table's three rows are 20px each.
+        var outline = Assert.Single(positions.FindAll(".ex-reference-outline"));
+        Assert.Equal("ex-reference-outline ex-reference-2", outline.GetAttribute("class"));
+        Assert.Equal("left: 180px; top: 0px; width: 120px; height: 60px", outline.GetAttribute("style"));
+        Assert.Equal(["ex-reference-outline ex-reference-1"], Grid(cut).FindAll(".ex-reference-outline").Select(e => e.GetAttribute("class")));
+
+        await PressAsync(cut, "Escape");
+        Assert.Empty(positions.FindAll(".ex-reference-outline"));
     }
 }

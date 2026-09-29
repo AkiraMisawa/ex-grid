@@ -117,9 +117,9 @@ internal static class SheetFormulaAids
     /// upper-cased, and the Consumer knows its table by the names it gave. A key no declared column
     /// carries names nothing, and is left out.
     /// </summary>
-    internal static IReadOnlyList<LinkedColumnColour> LinkedColumnsOf(Sheet sheet, IReadOnlyList<ReferenceKeyColour> keys)
+    internal static LinkedColumnColours LinkedColumnsOf(Sheet sheet, IReadOnlyList<ReferenceKeyColour> keys)
     {
-        if (keys.Count == 0) return [];
+        if (keys.Count == 0) return LinkedColumnColours.None;
         var declared = new Dictionary<string, LinkedTableColumn>(StringComparer.Ordinal);
         foreach (var table in sheet.LinkedTables)
         {
@@ -134,6 +134,6 @@ internal static class SheetFormulaAids
         {
             if (declared.TryGetValue(key.Key, out var column)) columns.Add(new LinkedColumnColour(column, key.Colour));
         }
-        return columns;
+        return new LinkedColumnColours(columns);
     }
 }
