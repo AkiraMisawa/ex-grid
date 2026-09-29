@@ -11,7 +11,8 @@ namespace ExSheet;
 /// <see cref="FormulaEntry"/> does. This is only the translation between the two — the engine's
 /// span and replacement onto the grid's candidates, its argument onto the grid's hint, its
 /// insertion site onto the grid's yes or no, a pointed range onto its Reference text, F4's cycle
-/// onto the grid's rewrite, and the References in the text onto the grid's Reference Outlines.
+/// onto the grid's rewrite, the References in the text onto the grid's Reference Outlines, and the
+/// keys the grid told colours for back onto the Linked Table columns they name.
 /// </summary>
 internal static class SheetFormulaAids
 {
@@ -109,4 +110,30 @@ internal static class SheetFormulaAids
     /// </summary>
     internal static string KeyOf(LinkedTableColumn column) =>
         (column.Table + "[" + column.Column + "]").ToUpperInvariant();
+
+    /// <summary>
+    /// The Linked Table columns behind the keys the grid told colours for (ADR-0057), in the
+    /// grid's order, each under the names the Consumer declared: the key is the Formula's casing,
+    /// upper-cased, and the Consumer knows its table by the names it gave. A key no declared column
+    /// carries names nothing, and is left out.
+    /// </summary>
+    internal static IReadOnlyList<LinkedColumnColour> LinkedColumnsOf(Sheet sheet, IReadOnlyList<ReferenceKeyColour> keys)
+    {
+        if (keys.Count == 0) return [];
+        var declared = new Dictionary<string, LinkedTableColumn>(StringComparer.Ordinal);
+        foreach (var table in sheet.LinkedTables)
+        {
+            foreach (var column in table.Columns)
+            {
+                var named = new LinkedTableColumn(table.Name, column);
+                declared[KeyOf(named)] = named;
+            }
+        }
+        var columns = new List<LinkedColumnColour>(keys.Count);
+        foreach (var key in keys)
+        {
+            if (declared.TryGetValue(key.Key, out var column)) columns.Add(new LinkedColumnColour(column, key.Colour));
+        }
+        return columns;
+    }
 }

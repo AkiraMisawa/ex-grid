@@ -30,7 +30,7 @@
         DataEdge="_dataEdge"
         ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" NameBoxSizeLabel="NameBoxSizeOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf" CycleReference="CycleReferenceAt"
-        ReferencesIn="_references"
+        ReferencesIn="_references" OnReferenceKeyColoursChanged="_keyColoursChanged"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
         CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
@@ -76,6 +76,7 @@
     private readonly Func<CellPosition, GridDirection, CellPosition> _dataEdge;
     private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
     private readonly Func<string, IReadOnlyList<EditorReference>> _references;
+    private readonly EventCallback<IReadOnlyList<ReferenceKeyColour>> _keyColoursChanged;
     private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
     private readonly Func<string, string?> _commandLabel;
     private readonly Func<global::ExGrid.Clipboard.GridCopyRequest, global::ExGrid.Clipboard.GridCopyAnswer> _copyAnswer;
@@ -96,6 +97,8 @@
     private SheetRow[] _window = [];
     private int _windowStart;
     private GridSelection _selection = GridSelection.Empty;
+    // The Linked Table columns the Consumer was last told, so a change is told once (SH-31).
+    private IReadOnlyList<LinkedColumnColour> _linkedColumnsTold = [];
     // What ExSheet has to tell the user. It stands until the user's own next action — an edit,
     // a paste, a command, a selection change — and a Consumer's Linked Table push, declaration
     // or new Sheet Document does not clear it: the user has not yet acted on what it says.
@@ -145,6 +148,10 @@
         // The References the grid colours and outlines while a Formula is edited (ADR-0057),
         // answered from the engine at once. It reads this Sheet's name, so it is the instance's own.
         _references = text => _sheet is { } sheet ? SheetFormulaAids.References(sheet, text) : [];
+        // The grid tells the colour each Linked Table column's key was given; the Consumer is told
+        // the columns (ADR-0057). No receiver: nothing on this Sheet changes for it.
+        _keyColoursChanged = new EventCallback<IReadOnlyList<ReferenceKeyColour>>(null,
+            (Func<IReadOnlyList<ReferenceKeyColour>, Task>)(keys => OnKeyColoursChangedAsync(keys)));
         // No receiver: a selection change re-renders the grid, not this component.
         _selectionChanged = new EventCallback<GridSelection>(null, (Func<GridSelection, Task>)(selection =>
         {
@@ -230,6 +237,18 @@
     /// status line counts, and what the formatting commands act on.
     /// </summary>
     [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
+
+    /// <summary>
+    /// Tells the Consumer each Linked Table column the Formula being edited reads, and the colour
+    /// its References wear in the editor (ADR-0057, ADR-0049): each column once, in order of first
+    /// appearance, under the table's and the column's names as the Consumer declared them. Raised
+    /// once whenever that list changes and never when it does not, and with an empty list when the
+    /// edit ends. A table or column not declared names nothing and is not told. ExSheet does not
+    /// know where, or whether, the table is on screen, and outlines none of it: the Consumer passes
+    /// the list to the grid that shows the table (ExGrid's <c>OutlinedColumns</c>), and only the
+    /// Consumer can vouch that that grid shows the rows the Formula reads.
+    /// </summary>
+    [Parameter] public EventCallback<IReadOnlyList<LinkedColumnColour>> OnLinkedColumnColoursChanged { get; set; }
 
     /// <summary>
     /// The wording for a command id in the menus the built-in Chrome renders (ADR-0036): the
@@ -384,6 +403,24 @@
         ArgumentNullException.ThrowIfNull(rows);
         return InvokeAsync(() => ChangedAsync(CurrentSheet.PushLinkedTable(name, rows), raiseDocument: false, byUser: false));
     }
+
+    // The colours the grid gave the keys of the Formula being edited, as the Linked Table columns
+    // they name (ADR-0057): told to the Consumer when they differ from what it was last told.
+    private Task OnKeyColoursChangedAsync(IReadOnlyList<ReferenceKeyColour> keys)
+    {
+        var columns = _sheet is { } sheet ? SheetFormulaAids.LinkedColumnsOf(sheet, keys) : [];
+        if (SameLinkedColumns(columns, _linkedColumnsTold)) return Task.CompletedTask;
+        _linkedColumnsTold = columns;
+        return OnLinkedColumnColoursChanged.InvokeAsync(columns);
+    }
+
+    // Told in order, each column once, so the same list is the same entries at the same places;
+    // the names compared as declared.
+    private static bool SameLinkedColumns(IReadOnlyList<LinkedColumnColour> a, IReadOnlyList<LinkedColumnColour> b) =>
+        a.Count == b.Count && a.Zip(b).All(p =>
+            p.First.Colour == p.Second.Colour
+            && string.Equals(p.First.Column.Table, p.Second.Column.Table, StringComparison.Ordinal)
+            && string.Equals(p.First.Column.Column, p.Second.Column.Column, StringComparison.Ordinal));
 
     // What the Sheet Document records of the tables: names and columns, in order (ADR-0049).
     private static bool SameDeclarations(IReadOnlyList<LinkedTable> a, IReadOnlyList<LinkedTable> b) =>
