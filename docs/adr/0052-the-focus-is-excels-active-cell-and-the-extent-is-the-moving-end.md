@@ -215,3 +215,6 @@ the two agreed on each point below.
   rule, not a reading, and it is kept. The implementation had applied it this way and asked whether
   "spanned both before and after the move" was meant; it was not. Ctrl+Shift+→ from whole columns to
   the whole grid, which then scrolls on neither axis, is still read, not observed.
+- **Under a pager, a page turn is the scroll** *(decided with the user the same day)*. Whole columns
+  extended sideways turn no page, and Ctrl+Shift+↓ from the first row stays on its page
+  ([ADR-0015](./0015-paging-is-another-driver-for-range-requests.md)).
