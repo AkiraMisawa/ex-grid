@@ -340,6 +340,27 @@ public class EditingNotificationTests : GridTestContext
         held.SetResult();
     }
 
+    [Fact] // ADR-0050 section 6 / ADR-0010: the browser's messages go out before the Consumer hears, so a render the Consumer causes comes behind them
+    public async Task The_key_gate_and_the_keyboard_are_told_before_the_consumer_hears()
+    {
+        // A Consumer that renders on hearing — /sheet greys out its buttons, and renders the
+        // grid with it — sends that render the moment it hears. Heard first on a circuit, the
+        // render removed the editor while it held DOM focus, ahead of the hand-back, and a paste
+        // after the edit went past the grid (found by layer 3 on the Server host, 2026-09-30).
+        var heard = new List<(bool Open, string Gate, int Reclaims)>();
+        var cut = RenderGrid(told: null, extra: ps => ps.Add(g => g.OnEditingChanged, (bool open) =>
+            heard.Add((open, GateModesTold()[^1], Js.FocusReclaimed.Invocations.Count))));
+        await ClickCellAsync(cut, 50, 10);
+
+        await PressAsync(cut, "9");
+        await PressAsync(cut, "Escape");
+
+        Assert.Equal([true, false], heard.Select(h => h.Open));
+        Assert.Equal("overwrite", heard[0].Gate);
+        Assert.Equal("none", heard[1].Gate);
+        Assert.Equal(heard[0].Reclaims + 1, heard[1].Reclaims);
+    }
+
     [Fact] // ADR-0050 section 6: a discard the Consumer asks for ends the edit like any other
     public async Task A_discard_the_consumer_asks_for_raises_the_end()
     {

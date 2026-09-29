@@ -6372,19 +6372,41 @@
 
     /// <summary>
     /// Tells both listeners where the edit stands, in one call, so that no path can tell one
-    /// and not the other: the Consumer whether an edit is open, when that is not what it last
-    /// heard (ADR-0050 section 6), and the key gate which set of keys it claims (ADR-0010) — a
-    /// change of mode is a different set. The Consumer hears first: on a circuit the gate is a
-    /// round trip away, and a press on the Consumer's own button landing inside it would find
-    /// the Consumer not yet told. The gate is told without waiting for the Consumer's handler.
-    /// Every path that opens, ends or changes an edit comes through here; the one that cannot
-    /// at once, an edit a parameter change discarded, marks the gate, and the render that
-    /// follows comes through here for it, since no Consumer handler may run inside the render
-    /// stack that discarded it.
+    /// and not the other: the key gate which set of keys it claims (ADR-0010) — a change of
+    /// mode is a different set — and the Consumer whether an edit is open, when that is not
+    /// what it last heard (ADR-0050 section 6).
+    ///
+    /// <para>The browser's messages are sent first, the Consumer is told next, and only then
+    /// is anything waited for. No round trip stands between the change and the Consumer's
+    /// hearing of it, so a press on the Consumer's own button cannot land in between. And a
+    /// Consumer that renders on hearing it — a page greying out its buttons, which renders the
+    /// grid with it — has that render sent behind the browser's messages: the gate hears the
+    /// new mode, and an ending edit hands the keyboard back, before a render paints or removes
+    /// the editor, in the order the grid kept when nobody listened. Sent the other way round on
+    /// a circuit, the editor was removed while it held DOM focus, a paste after the edit went
+    /// past the grid, and a press into the Formula Bar lost the keyboard to the render.</para>
+    ///
+    /// <para>Every path that opens, ends or changes an edit comes through here; the one that
+    /// cannot at once, an edit a parameter change discarded, marks the gate, and the render
+    /// that follows comes through here for it, since no Consumer handler may run inside the
+    /// render stack that discarded it.</para>
     /// </summary>
-    private async Task PushEditingStateAsync()
+    /// <param name="reclaimFocus">Whether the keyboard comes back to the root with this change:
+    /// see <see cref="EndEditingAsync"/>.</param>
+    /// <param name="fromField">Whether the keyboard is taken out of the Formula Bar's field.</param>
+    private async Task PushEditingStateAsync(bool reclaimFocus = false, bool fromField = false)
     {
+        var gate = TellGateAsync();
+        var keyboard = reclaimFocus ? ReclaimFocusAsync(fromField) : Task.CompletedTask;
         TellConsumerWhetherEditOpen();
+        await gate;
+        await keyboard;
+    }
+
+    /// <summary>Tells the key gate which set it runs under (ADR-0010). The message is sent
+    /// before the first await.</summary>
+    private async Task TellGateAsync()
+    {
         _jsEditingDirty = false;
         if (_scrollHandle is null || _disposed)
             return;
@@ -6667,9 +6689,7 @@
         // The input goes with the mode: a reference kept past it would name an element
         // the next editor is not, and the focus above would land nowhere.
         _editorElement = default;
-        await PushEditingStateAsync();
-        if (reclaimFocus)
-            await ReclaimFocusAsync(fromField: fromBar);
+        await PushEditingStateAsync(reclaimFocus, fromField: fromBar);
     }
 
     /// <summary>
