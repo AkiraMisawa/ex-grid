@@ -2,9 +2,11 @@
 // reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
 // out of the box, being told about the pointer — when it moves onto another row, and
 // when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
-// mousedown and mouseup that keep a press on the rows in its place among held keys, and the
-// root taking the keyboard back only while DOM focus is still its own. Anything else — text
-// measurement, overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
+// mousedown and mouseup that keep a press on the rows in its place among held keys, the root
+// taking the keyboard back only while DOM focus is still its own, and that same mousedown
+// bringing the keyboard back to an edit left standing when a press returns to the rows or the
+// headings. Anything else — text measurement, overlay geometry, popovers — stays in C#; adding
+// to this file needs an ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
@@ -327,10 +329,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
             });
     };
+    // The editor surface that last held the keyboard here (ADR-0018, section 6): the box that
+    // wears .ex-editor — the Cell Editor over its cell, or the Formula Bar's text — in which this
+    // listener last saw a key, an input or a press. An edit stands when DOM focus leaves the
+    // root, and a press back on the rows or the headings puts the keyboard here (onPress). Taken
+    // afresh as an edit opens, from the surface holding DOM focus then, and forgotten as it ends:
+    // the bar outlives an edit, and one typed in there must not claim the next.
+    let lastSurface = null;
+    const noteSurface = (target) => {
+        const surface = target instanceof Element ? target.closest('.ex-editor') : null;
+        if (surface !== null && root !== null && root.contains(surface)) {
+            lastSurface = surface;
+        }
+    };
+
     // Each input reports at once: Blazor's input event is on its way, and the core waits for
     // this report before it asks anything about the new text.
     const onEditorInput = (event) => {
         const input = event.target;
+        noteSurface(input);
         if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
             || input.closest('.ex-editor') === null) {
             return;
@@ -694,6 +711,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core) {
             return;
         }
+        // A key typed in an editor surface: that surface holds the keyboard.
+        noteSurface(event.target);
         // Mid-composition an IME owns Enter, Escape and the arrows — they choose and
         // commit a candidate. Taking them there breaks typing in any language that needs
         // one, and the grid would move under a half-finished word.
@@ -942,12 +961,38 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ctrlKey: event.ctrlKey, shiftKey: event.shiftKey, altKey: event.altKey, metaKey: event.metaKey,
         button: event.button, buttons: event.buttons,
     });
+
+    // This grid's own rows and headings, not those of a grid nested in one of its cells: a
+    // press on the rows lands on the Viewport (cells are pointer-events: none), and one on the
+    // column headings anywhere in their band. A press into the Cell Editor's own text is not
+    // one: it takes the keyboard by its own default.
+    const onRowsOrHeadings = (target) => target instanceof Element && !!scroller
+        && target.closest('.ex-scroller') === scroller
+        && (target.classList.contains('ex-viewport') || target.closest('.ex-header') !== null);
+    // The text field to put the keyboard back into: the surface that last held it while it is
+    // still there, or else the first one in the markup — the Cell Editor while its cell is
+    // painted, the Formula Bar's text when it is not. A Chrome's surface is a box around its
+    // control.
+    const standingField = () => {
+        const surface = lastSurface !== null && lastSurface.isConnected && root.contains(lastSurface)
+            ? lastSurface
+            : root.querySelector('.ex-editor');
+        if (!surface) {
+            return null;
+        }
+        return surface instanceof HTMLInputElement || surface instanceof HTMLTextAreaElement
+            ? surface
+            : surface.querySelector('input, textarea');
+    };
+
     const onPress = (event) => {
         // A press into a field beside the rows gives that field a focus of its own, which a
         // late hand-back leaves alone (reclaimFocus).
         if (event.target instanceof Element && event.target.closest('.ex-formula-bar') !== null) {
             staleField = null;
         }
+        // A press into an editor surface puts the keyboard there.
+        noteSurface(event.target);
         // A press in an editor surface's text puts the caret where it lands: the user's move.
         if (event.button === 0 && !replaying && isTextField(event.target) && event.target.closest('.ex-editor') !== null) {
             noteCaretMove(event.target);
@@ -955,6 +1000,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (opensBarEdit(event)) {
             holdBehindBarPress();
             return;
+        }
+        // An edit is left standing here when DOM focus goes elsewhere — to another grid, a
+        // control of the page's, or nothing (ADR-0018, section 6). A press on this grid's rows
+        // or headings puts the keyboard back into the surface that last held it, now, before
+        // anything hears the press. The press then points, or commits and moves, exactly as if
+        // the keyboard had never left: where the core keeps DOM focus through a press on the rows
+        // (ADR-0051) it keeps it in the edit, and the hand-back after a commit finds it inside
+        // this root. Handed back from C#, a round trip later, the keys typed in between would
+        // reach the grid the user had just left. This is the second decision about focus made in
+        // script (ADR-0021, added 2026-09-29), beside reclaimFocus; it reads
+        // document.activeElement and no layout. Held or not, the press keeps its place among the
+        // keys: only where the keyboard is has changed.
+        const away = document.activeElement;
+        if (core && !replaying && editing !== 'none' && !(away instanceof Element && root.contains(away))
+            && onRowsOrHeadings(event.target)) {
+            standingField()?.focus({ preventScroll: true });
         }
         // Cells are pointer-events: none, so the Viewport is what a press on the rows lands on.
         if (!core || replaying || event.button !== 0 || !(event.target instanceof Element)
@@ -1291,6 +1352,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (mode === 'none') {
                 caretMoved = null;
             }
+            // The surface an edit belongs to starts as the one holding DOM focus as it opens — the
+            // Formula Bar a press opened it from — or none yet, and the Cell Editor is taken for
+            // it (standingField); the edit's end forgets it.
+            if (opened || mode === 'none') {
+                const active = document.activeElement;
+                lastSurface = opened && root && active instanceof Element && root.contains(active)
+                    ? active.closest('.ex-editor')
+                    : null;
+            }
             // A new state starts a new conversation: a report equal to one sent before it is
             // news to the core now (the next edit can open on the same text and caret).
             reportedText = null;
@@ -1388,8 +1458,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // The keyboard back to this grid's root, asked for by the core a round trip after the
         // gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus is still inside
         // this root, or on nothing. A second grid the user has pressed in the meantime keeps
-        // its keyboard. The condition reads document.activeElement and no layout; this is the
-        // one decision about focus made in script.
+        // its keyboard. The condition reads document.activeElement and no layout. It is one of
+        // the two decisions about focus made in script, both for the same reason — made from
+        // C#, a round trip late, they would take or leave the keyboard in the wrong grid; the
+        // other is the press that brings the keyboard back to an edit left standing (onPress,
+        // ADR-0018 section 6).
         //
         // Nor from a field beside the rows with focus of its own — the Formula Bar and the Name
         // Box, built in or drawn by a Chrome, all inside the band the core renders them into
@@ -1441,6 +1514,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             caretFrame = 0;
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
+            lastSurface = null;
+            staleField = null;
             root = null;
             scroller = null;
             core = null;

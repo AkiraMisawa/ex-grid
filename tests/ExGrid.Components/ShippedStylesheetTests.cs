@@ -123,6 +123,29 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
     }
 
+    [Fact] // ADR-0018 section 6 / ADR-0021 (added 2026-09-29) / ED-26: the keyboard comes back to an edit left standing in the allowlisted mousedown, into this root's own surface, nothing measured
+    public void A_press_back_on_the_rows_brings_the_keyboard_back_in_the_existing_mousedown()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var press = Regex.Match(script.Text, @"const onPress = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(press.Success, "onPress is not in the module");
+        var body = press.Value;
+
+        // Only while an edit is open here and DOM focus is outside this root (ADR-0018)...
+        Assert.Contains("editing !== 'none' && !(away instanceof Element && root.contains(away))", body, StringComparison.Ordinal);
+        // ...for a press on this grid's own rows or headings, not a nested grid's...
+        Assert.Contains("onRowsOrHeadings(event.target)", body, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const onRowsOrHeadings = \(target\) => [^;]*target\.closest\('\.ex-scroller'\) === scroller", RegexOptions.Singleline), script.Text);
+        // ...into the surface that last held the keyboard, found under this root.
+        Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const standingField = \(\) => \{[^}]*root\.contains\(lastSurface\)[^}]*: root\.querySelector\('\.ex-editor'\);", RegexOptions.Singleline), script.Text);
+        // Script moves DOM focus in these two places only: this, and the hand-back to the root.
+        Assert.Equal(2, Regex.Matches(script.Text, @"\.focus\(").Count);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+        // The surface is forgotten with the instance.
+        Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
+    }
+
     [Fact] // ADR-0037 / KB-26: a held Space engages once — the gate takes and drops a repeated plain Space
     public void The_key_gate_drops_a_repeated_space()
     {
