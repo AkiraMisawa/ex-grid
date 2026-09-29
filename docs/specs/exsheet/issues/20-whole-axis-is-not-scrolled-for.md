@@ -70,3 +70,8 @@ the `SR-2c: Shift+↑ …` test on the test's own last line: it read the Focus f
 `aria-activedescendant`, which is cleared while the Focus is off screen (ADR-0033); it reads the
 Name Box now. Done as specified; the two open points above stand with the orchestrator, and a
 refinement of SR-2c from them would come as its own change.
+
+2026-09-29, the user's observation (orchestrator): on an empty sheet, Excel's Ctrl+Shift+↓ from A1
+selects the whole column with A1 active and does not scroll down. "Judged on the range after the
+move" is therefore Excel's rule, as built, and the proposed "before and after" variant is dropped
+(ADR-0052). Whether page turns under a pager take the rule is still with the user.

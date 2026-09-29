@@ -442,3 +442,10 @@ tell a click from the start of a drag, and here it differs from a Heading:
   sorted. Multi-column sorting is still never a header click (above).
 - Selecting a column this way is positional, so an unsortable column (an Action Column) is selected
   like any other, as Shift+click already does.
+- **Where the Consumer wires a column reorder (`OnColumnOrderChanged`), a header drag stays the
+  reorder** [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)
+  gave it, a Ctrl+drag included. There Shift+click and Ctrl+click still select, and whole columns
+  are selected by those. *(Decided with the user the same day, when the implementation met the
+  reorder: the two readings of a header drag collided, and the one a Consumer asked for by wiring it
+  wins. Google Sheets' way, where a drag on a column already selected moves it and any other drag
+  selects, was not taken: it would change the reorder gesture every existing Consumer has.)*

@@ -1,6 +1,6 @@
 # 21: A drag across Headings, and the Size Tip
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0050, item 1 (added 2026-09-29), ADR-0012 ("a drag and Ctrl+click on the
 header", 2026-09-29) and ADR-0052 (the Size Tip). A drag across Column Headings or Row Headings
@@ -17,7 +17,7 @@ lands second takes the other's change.
 - [x] The pointer over the cells keeps it a Heading drag: only its column (row) counts (DC-42)
 - [x] Shift+press extends from the Focus's column (row), and the drag goes on (DC-42)
 - [x] The edge band auto-scrolls along the Heading's axis only (DC-43)
-- [ ] Plain ExGrid: a press on a header selects nothing; released on the same column having
+- [x] Plain ExGrid: a press on a header selects nothing; released on the same column having
       crossed no other, it sorts; reaching another column's header or cells makes it a drag that
       selects whole columns and never sorts, even released back over the pressed column (SR-2d)
 - [x] The browser's `click` on the common ancestor after a press and a release on different headers
@@ -25,7 +25,7 @@ lands second takes the other's change.
 - [x] The Size Tip: with `NameBoxSizeLabel` supplied and the drag over more than one column or row,
       the label at the Extent's Heading, inside the grid's box, and the Name Box empty; otherwise
       none, and the Name Box names the Focus. Redrawn only when the Extent changes Heading (DC-44)
-- [ ] The Size Tip's class and Visual Tokens are added to the presentation surface (ADR-0029), and
+- [x] The Size Tip's class and Visual Tokens are added to the presentation surface (ADR-0029), and
       the MudBlazor Chrome paints it from the same tokens
 - [x] No JavaScript is added (DC-15)
 - [x] A drag on a column's resize grip still resizes, and is not a Heading drag
@@ -89,3 +89,8 @@ tick reads them. `HeadingDragTests.Over_a_resize_grip_the_pointer_places_the_ext
 before the fix). The other first-run failures were the tests': a locator that matched both ranges
 after a Ctrl+click, and a sort status the page writes in lower case. The two boxes above stay open
 for the reasons given.
+
+2026-09-29, decided with the user (orchestrator): where a column reorder is wired, a header drag stays
+the reorder, and Shift+click and Ctrl+click still select (ADR-0012, the same day's addition; SR-2d).
+That is what was built, so the Plain ExGrid box closes on it. `ex-size-tip` is a stable class and
+its three tokens are Visual Tokens (ADR-0029, "Added by ADR-0052's Size Tip").

@@ -209,3 +209,9 @@ the two agreed on each point below.
   and it adds one class and its Visual Tokens to the presentation surface
   ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)).
   A drag over cells is unchanged: the size is in the Name Box, as above.
+- **A move that itself makes the range span an axis holds that axis too** *(observed by the user in
+  Excel, the same day)*. On an empty sheet, Ctrl+Shift+↓ from A1 selects the whole of column A with
+  A1 active, and the view does not move down. So "judged on the range after the move" is Excel's
+  rule, not a reading, and it is kept. The implementation had applied it this way and asked whether
+  "spanned both before and after the move" was meant; it was not. Ctrl+Shift+→ from whole columns to
+  the whole grid, which then scrolls on neither axis, is still read, not observed.
