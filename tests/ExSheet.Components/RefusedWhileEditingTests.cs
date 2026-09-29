@@ -142,6 +142,27 @@ public class RefusedWhileEditingTests : SheetTestContext
         Assert.Equal("2", EditorText(cut));
     }
 
+    [Fact] // ADR-0050 item 8 / section 6, SH-29: undo and redo the grid forwards while ExSheet still hears an edit open are said, never thrown into the key handler
+    public async Task Undo_and_redo_from_the_grids_keys_while_an_edit_is_heard_open_are_said_not_thrown()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "A1", "1");
+        await OpenEditAsync(cut, "A2", "2");
+        var grid = Grid(cut);
+
+        // The grid forwards the keys only once its edit has ended, and after a discard a
+        // parameter change caused, ExSheet hears that end a render later (ADR-0050 section 6).
+        // The keys landing in that render are staged by raising the grid's own callbacks while
+        // ExSheet still hears the edit open.
+        await grid.InvokeAsync(() => grid.Instance.OnUndo.InvokeAsync());
+        await grid.InvokeAsync(() => grid.Instance.OnRedo.InvokeAsync());
+
+        Assert.Equal("1", CellText(cut, "A1"));
+        Assert.True(cut.Instance.CanUndo);
+        Assert.Equal(SheetWords.EditIsOpen, cut.Find(".ex-sheet-notice").TextContent);
+        Assert.Equal("2", EditorText(cut));
+    }
+
     [Fact] // ADR-0048, SH-29: SetNumberFormatAsync is refused while an edit is open
     public async Task SetNumberFormatAsync_is_refused()
     {

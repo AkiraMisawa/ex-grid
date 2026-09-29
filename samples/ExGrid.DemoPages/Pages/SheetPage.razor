@@ -62,7 +62,7 @@
 
 <div class="demo-side-by-side">
     <ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
-             EditingChanged="OnEditingChanged" ViewportHeight="420" ViewportWidth="720" />
+             EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" />
     <div id="sheet-positions">
         <ExGrid TRow="Position" Window="_positions" Columns="PositionColumns" RowHeight="28"
                 ViewportHeight="420" ViewportWidth="330" />
@@ -125,6 +125,7 @@
     // Whether an edit is open in the Sheet, as ExSheet raises it: the toolbar's commands are
     // greyed out while it is (ADR-0048).
     private bool _editing;
+    private EventCallback<bool> _editingChanged;
 
     // A few values, Formulas over them, and a date: the tracer's A1 + B1 and a little more.
     private static SheetDocument Opening()
@@ -150,7 +151,13 @@
         return sheet.ToDocument();
     }
 
-    protected override void OnInitialized() => Count();
+    protected override void OnInitialized()
+    {
+        // Held in a field: a method group would be a new delegate on every render (AGENTS.md,
+        // the Blazor traps).
+        _editingChanged = EventCallback.Factory.Create<bool>(this, OnEditingChanged);
+        Count();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

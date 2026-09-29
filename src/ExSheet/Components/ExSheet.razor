@@ -155,10 +155,11 @@
             return SelectionChanged.InvokeAsync(selection);
         }));
         // Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z while no edit is open (ADR-0050 item 8, ADR-0048):
-        // the same stack a Consumer walks with UndoAsync and RedoAsync. No receiver, as above:
-        // an undo re-renders what its change names itself.
-        _undo = new EventCallback(null, (Func<Task>)(() => UndoAsync()));
-        _redo = new EventCallback(null, (Func<Task>)(() => RedoAsync()));
+        // the same stack a Consumer walks with UndoAsync and RedoAsync, with a refusal said
+        // rather than thrown into the grid's key handler. No receiver, as above: an undo
+        // re-renders what its change names itself.
+        _undo = new EventCallback(null, (Func<Task>)(() => StepByKeyAsync(UndoAsync)));
+        _redo = new EventCallback(null, (Func<Task>)(() => StepByKeyAsync(RedoAsync)));
         // A resize is the user's, and the width is the document's (ADR-0046): it is recorded in
         // the Sheet as one step on the undo stack, and the column list follows the Sheet.
         _columnWidthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)(change => OnColumnWidthChangedAsync(change)));
@@ -360,16 +361,39 @@
     /// one operation too (ADR-0046). Answers false when nothing is selected.
     /// </summary>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
-    public Task<bool> SetNumberFormatAsync(NumberFormat? format) =>
-        OnDispatcherAsync(() => FormatSelectionAsync(format ?? NumberFormat.General, null));
+    public Task<bool> SetNumberFormatAsync(NumberFormat? format) => OnDispatcherAsync(() =>
+    {
+        RefuseWhileEditing();
+        return FormatSelectionAsync(format ?? NumberFormat.General, null);
+    });
 
     /// <summary>
     /// Sets the horizontal alignment of the Selection as one operation (ADR-0046), at the levels
     /// <see cref="SetNumberFormatAsync"/> sets a format at (ADR-0047), and answering as it does.
     /// </summary>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
-    public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) =>
-        OnDispatcherAsync(() => FormatSelectionAsync(null, alignment));
+    public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) => OnDispatcherAsync(() =>
+    {
+        RefuseWhileEditing();
+        return FormatSelectionAsync(null, alignment);
+    });
+
+    // Undo or redo from the grid's own keys (ADR-0050 item 8). The grid forwards them only while
+    // no edit is open, but ExSheet hears an edit end a render late when a parameter change
+    // discarded it (ADR-0050 section 6); a refusal in that render is said, as ExSheet says the
+    // grid's refusals, and never thrown into the grid's key handler.
+    private async Task StepByKeyAsync(Func<Task<bool>> step)
+    {
+        try
+        {
+            await step();
+        }
+        catch (SheetRefusedException refused)
+        {
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+        }
+    }
 
     // While an edit is open, a command that changes the Sheet is refused by name and changes
     // nothing (ADR-0048): the Cell Editor stands over a place, and a row inserted above it would
@@ -897,11 +921,10 @@
     /// A formatting command on the Selection, as one step (ADR-0046, ADR-0048): every range goes
     /// to the engine as a range, so whole columns and whole rows are recorded as one entry each
     /// (ADR-0047, SH-21) and any other range sets its cells; nothing is capped (principle 5).
-    /// A null format or alignment is left as it is. Refused while an edit is open (ADR-0048).
+    /// A null format or alignment is left as it is.
     /// </summary>
     private async Task<bool> FormatSelectionAsync(NumberFormat? format, HorizontalAlignment? alignment)
     {
-        RefuseWhileEditing();
         var ranges = _selection.Ranges;
         if (ranges.Count == 0) return false;
         await PerformAsync(SheetEdit.SetStyle(ranges.Select(SheetFormulaAids.RangeOf).ToList(), format, alignment));
