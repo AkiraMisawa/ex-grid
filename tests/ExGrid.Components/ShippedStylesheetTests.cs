@@ -159,7 +159,7 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script.Text, @"'OnEditorCaretAsync'"));
         Assert.Matches(new Regex(@"const caret = input\.selectionStart \?\? input\.value\.length;\s*if \(input\.value === reportedText && caret === reportedCaret\) \{\s*return;",
             RegexOptions.Singleline), script.Text);
-        Assert.Matches(new Regex(@"'OnEditorCaretAsync', input\.value, caret\)"), script.Text);
+        Assert.Matches(new Regex(@"'OnEditorCaretAsync', input\.value, caret, movedByUser\(input\)\)"), script.Text);
         Assert.Matches(new Regex(@"reportCaret = reportsCaret === true;"), script.Text);
 
         // With each input in an editor surface: on the instance root, removed on dispose.
@@ -181,9 +181,14 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script.Text, @"document\.addEventListener\("));
 
         // Placed: only while the surface still holds the text the core wrote, and the caret it
-        // placed is not reported back.
-        Assert.Matches(new Regex(@"setCaret: \(text, caret\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*input\.setSelectionRange\(caret, caret\);\s*reportedText = text;\s*reportedCaret = caret;",
+        // placed is not reported back. Not over the user's own move in that text, made before
+        // the placement came: that caret stands, and is reported again as the user's.
+        Assert.Matches(new Regex(@"setCaret: \(text, caret\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*if \(movedByUser\(input\)\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*input\.setSelectionRange\(caret, caret\);\s*reportedText = text;\s*reportedCaret = caret;",
             RegexOptions.Singleline), script.Text);
+        // The user's move: a press in an editor surface's text, or a caret key left to it — only
+        // while the field still holds the text it was made in.
+        Assert.Matches(new Regex(@"const movedByUser = \(input\) => caretMoved !== null && caretMoved\.input === input && caretMoved\.text === input\.value;"), script.Text);
+        Assert.Equal(3, Regex.Matches(script.Text, @"noteCaretMove\((event\.target|input)\);").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), script.Text);
     }
 

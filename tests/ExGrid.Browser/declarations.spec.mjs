@@ -332,6 +332,41 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+// A Reference written by pointing is followed by the core placing the caret after it, a round trip
+// after the render that carries the text on a circuit. A press in the text in that gap is the
+// user's and newer: it ends pointing and its caret stands (ADR-0051, third round). Found on the
+// Server host (Windows, fourth run, DC-19/DC-34 above, 5 of 10): the late placement put the caret
+// back after the Reference, the core had set the press's report aside as the browser's own caret,
+// and pointing went on.
+for (const chrome of ['builtin', 'mud']) {
+    test(`DC-19/DC-34: a press in the Formula Bar's text before a 150 ms circuit has placed the caret after a pointed Reference ends pointing (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F2');
+        await clickBarEnd(grid);
+        await typeSteadily(page, bar(grid), '=SUM(');
+        await page.keyboard.press('F2');
+        const field = await boxOf(bar(grid));
+        await setRoundTrip(150);
+        await page.keyboard.press('ArrowDown');
+        await expect(bar(grid)).toHaveValue('=SUM(F3');
+        // No wait for the placement: the press follows what the user sees.
+        await bar(grid).click({ position: { x: 6, y: field.height / 2 } });
+        await expect(grid.locator('.ex-point')).toHaveCount(0);
+        await expect.poll(() => caret(bar(grid))).toBeLessThan(3);
+        // Long past the placement's round trip, the caret is still where the press put it.
+        await page.waitForTimeout(500);
+        expect(await caret(bar(grid))).toBeLessThan(3);
+        await expect(grid.locator('.ex-point')).toHaveCount(0);
+        await page.keyboard.press('ArrowDown');
+        await expect(bar(grid)).toHaveValue('=SUM(F3');
+        await expect(grid.locator('.ex-point')).toHaveCount(0);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await setRoundTrip(0);
+    });
+}
+
 // A press into the Formula Bar opens an edit (ADR-0051) — a change of editing mode, which the
 // key gate hears a round trip later on a circuit. Found on the Server host (2026-09-27, Windows,
 // second run, DC-19/DC-34; reproduced on Linux at 120 ms): F2 and ↓ typed in that gap were
