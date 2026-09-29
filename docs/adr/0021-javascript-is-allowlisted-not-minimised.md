@@ -294,3 +294,12 @@ hands the keyboard back; one ended by a press elsewhere does not take it from a 
 *(Settled while implementing:)* the bar's focus event reaches C# at once, ahead of a row press held
 before it, so the press into the bar is answered again in its turn. If the bar still holds focus
 and no edit is open when its turn comes, the core opens the bar's edit then.)*
+
+*(Added 2026-09-29, decided with the user, with
+[ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6: the capture-phase `mousedown`
+on the root also brings the keyboard back to an edit left standing. When a press lands on this
+root's rows or headings while an edit is open here and DOM focus is outside this root, the listener
+focuses the editor surface that last held the keyboard before the press goes on. This is the second
+decision about focus made in script, made for the same reason as the first: done from C#, a round
+trip later, the keys typed in between would reach the grid the user had just left. The condition
+reads `document.activeElement` and no layout, and the listener is the one already attached.)*
