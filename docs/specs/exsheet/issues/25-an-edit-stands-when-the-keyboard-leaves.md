@@ -19,7 +19,7 @@ the Sheet's rows pointed while the keyboard stayed with the positions grid.
 - [x] After that press, a press that points leaves the keyboard in the edit's surface and the next
       Escape cancels this edit; a press that commits leaves it on the root (ED-26)
 - [x] The Formula Bar case: an edit last typed in the bar gets the keyboard back in the bar
-- [x] Held keys and held presses (ED-22) still keep their order when the keyboard comes back
+- [ ] Held keys and held presses (ED-22) still keep their order when the keyboard comes back
 - [x] The comment on `reclaimFocus` no longer calls itself the one decision about focus made in
       script
 - [x] No JavaScript use is added; the listener stays the allowlisted `mousedown` (ADR-0021)
@@ -60,3 +60,21 @@ stands, and changing it needs a decision:
 - A press back within one round trip of the key that opens the edit (or of any key still being
   answered, with no edit open yet) is held, and a held press suppresses its default: DOM focus
   stays in the other grid, and the keys typed next go there.
+
+**2026-09-29, after review.** The box for held keys and held presses is open again. No test covers
+keys or a press held as the keyboard comes back, and the second case above is exactly where it does
+not come back: a press back within one round trip of the key that opens the edit is held, its
+default is suppressed, and the keys typed next go to the grid the user left. That case was put to
+the user as a round-trip gap, and ADR-0018 section 6 now records it as accepted (381d4a1). The
+first case above, keys lost after a press that commits, is decided as ED-22 widened (ADR-0010,
+the same commit) and is not built under this ticket.
+
+A column heading's press does not suppress its default: DOM focus goes on to the scroller and from
+there to the root, as it did before this ticket. The listener's `focus()` into the edit's surface
+is therefore a no-op there; it matters for a Row Heading's press, which is a press on the rows.
+
+Fixed from the review: the surface the keyboard comes back to is one of this grid's own, never an
+editor of a grid nested in one of its cells, and one helper finds it for the return and for the
+field a held key is typed into; the Formula Bar's mark left by a press that passes on lasts only
+until the core has answered that press, so a press that points does not leave it for a later
+hand-back; and the /sheet setup and the positions grid's locator live in `sheet-helpers.mjs`.
