@@ -41,8 +41,12 @@
    aria-selected; the live region below announces the extent instead. *@
 @* A Prerendered grid is painted before anything can reach it, so it takes no tab stop
    and says it is busy; the first interactive render lifts both (ADR-0033). *@
+@* A reveal moves the scroller in the render that paints where it is going (ADR-0012,
+   2026-09-29): the slice below is computed at the offset the write asks for. *@
+@{ StageReveal(); }
 <div class="@RootClass" style="@RootStyle()" tabindex="@(Prerendered ? null : "0")" dir="ltr" @ref="_root"
      role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
+     data-ex-reveal="@_revealToken"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
      aria-activedescendant="@ActiveDescendant()"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
@@ -1558,6 +1562,11 @@
     // PageUp / PageDown, where the two travel together so the Focus keeps its position
     // on screen (ADR-0012). Set alongside _revealFocus, and cleared with it.
     private int _revealStepRows;
+
+    // The number of the last reveal that moved the scroller, rendered on the root as
+    // data-ex-reveal: the script writes a reveal's offset in the first frame whose DOM
+    // carries its number, which is the frame that paints its slice (StageReveal).
+    private long _revealToken;
     private IJSObjectReference? _module;
     private IJSObjectReference? _scrollHandle;
     private bool _disposed;
@@ -1580,6 +1589,9 @@
     private double _edgePointerViewportYPx;
     private double _edgePointerViewportXPx;
 
+    // The offsets the slice is painted at: the browser's, mirrored from its scroll events,
+    // except where the grid moved them itself ahead of its own write — a reveal
+    // (StageReveal), an edge auto-scroll tick, a page turn — and the echo then confirms.
     private double _scrollTopPx;
     private double _scrollLeftPx;
     // Where the scroller is going to be: the last scroll event or the last write this
@@ -2755,7 +2767,8 @@
         // answering synchronously would re-enter the same batch. From here the cycle is
         // structurally finite: raise, the Consumer pushes, an ordinary render follows,
         // and this check finds the range covered and stays quiet.
-        await RevealFocusIfNeededAsync();
+        // A reveal has already moved the scroller, in the render this pass follows
+        // (StageReveal): what it painted is what the Range Request below is judged on.
         await RaiseRangeIfUncoveredAsync();
         await RaiseSelectionIfChangedAsync();
         if (_pendingDiscard is { } discarded)
@@ -3453,7 +3466,7 @@
             await OnScrollAsync();
     }
 
-    private async Task PushScrollOffsetAsync(double top, double left)
+    private async Task PushScrollOffsetAsync(double top, double left, long? revealToken = null)
     {
         if (_scrollHandle is null || _disposed)
             return;
@@ -3462,7 +3475,10 @@
         _scrollWrites++;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left);
+            if (revealToken is { } token)
+                await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left, token);
+            else
+                await _scrollHandle.InvokeVoidAsync("setScrollOffset", top, left);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -7173,7 +7189,17 @@
         return new CellPosition(visible.Start, column);
     }
 
-    private async Task RevealFocusIfNeededAsync()
+    /// <summary>
+    /// Moves the scroller to where an armed reveal is going, in the render that paints it
+    /// there (ADR-0012, 2026-09-29). Called at the top of the render: the model takes the
+    /// target offsets first, the slice is recomputed at them — the rows the Consumer has,
+    /// Placeholders for the rest, the Range Request raised after the render as always —
+    /// and the browser is told the same offsets before the batch that paints them leaves.
+    /// Its scroll event then confirms what is already painted and renders nothing. Before,
+    /// the write went out after the render and the slice followed the scroll event, so a
+    /// far jump on a circuit showed a Viewport with no rows for a round trip.
+    /// </summary>
+    private void StageReveal()
     {
         if (!_revealFocus)
             return;
@@ -7252,9 +7278,33 @@
         if (top == _expectedScrollTopPx && left == _expectedScrollLeftPx)
             return;
 
-        // The browser answers with a scroll event, which is what updates the offsets
-        // and, if the Focus went past the Window, raises the Range Request (ADR-0012).
-        await PushScrollOffsetAsync(top, left);
+        // The model moves first, as an edge auto-scroll tick's does (ADR-0008), so this
+        // render paints the slice at the target and everything that asks "is the Focus in
+        // view" — the status line among them — reads where the scroller is going. The
+        // write leaves now, from inside the render, so it reaches the browser with the
+        // batch that paints it: on WebAssembly in the same task, on a circuit as the
+        // message just ahead of the batch. After the render, on a circuit, would be a round
+        // trip later, when the batch is acknowledged. The write is counted as it leaves, so a
+        // read already on the wire is set aside, as any crossed read is.
+        var paintedFirstRow = _visible?.Start;
+        var paintedColumns = _scrollable;
+        _scrollTopPx = top;
+        _scrollLeftPx = left;
+        PrepareRender();
+        // The reveal's offset is computed from the anchored one and supersedes it: an
+        // anchor written after it would put the view back where the reveal left.
+        _anchorScrollTopPx = null;
+        // Numbered, and the number rendered on the root by this same render: the script
+        // holds the write until the frame whose DOM carries it, so the offset and the
+        // slice are painted together whichever message lands first.
+        _ = PushScrollOffsetAsync(top, left, ++_revealToken);
+        // The rows moved under a still pointer, as they do under a scroll: the band goes
+        // (ApplyScrollOffset), because the echo will find nothing moved and keep it.
+        if ((_visible?.Start != paintedFirstRow || _scrollable != paintedColumns) && _hoverRow >= 0)
+        {
+            _hoverRow = -1;
+            _ = ForgetPointerAsync();
+        }
     }
 
     private async Task RaiseSelectionIfChangedAsync()
@@ -7924,7 +7974,8 @@
     /// (ADR-0032). Geometry travels inline (ADR-0027).</summary>
     private string ViewportStyle()
     {
-        // Placed from the offset the browser reported: compressed, where the rows stand
+        // Placed from the offset the slice is painted at — the browser's, or the one a
+        // reveal is writing in this same render (ADR-0012): compressed, where the rows stand
         // depends on it and not only on the slice (ADR-0053); otherwise this is the first
         // painted row's own offset, as it always was.
         var transform = FormattableString.Invariant(

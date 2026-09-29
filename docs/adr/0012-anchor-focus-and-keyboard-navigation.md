@@ -423,6 +423,12 @@ This is not the one-round-trip blank that ADR-0028 accepts for a window drag and
 first frame after a resize. In those, the size itself is news from the browser. Here, the grid
 chose the offset and knows it.
 
+*(Implemented 2026-09-29.)* The render that paints the target slice sends the scroll write as well.
+On Blazor Server the write and the render's batch still travel as two messages, so the write is held
+in the browser until the root carries the render's reveal number (ADR-0021, the scroll-offset
+entry). Without the hold, about half the far reveals at a 150 ms round trip painted one empty frame
+between the two messages.
+
 ## Added later: a drag and Ctrl+click on the header *(2026-09-29, decided with the user)*
 
 ADR-0050 gave Headings Excel's drag and Ctrl+click (item 1, 2026-09-29), and **a display grid takes
