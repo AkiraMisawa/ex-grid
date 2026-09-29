@@ -156,6 +156,9 @@ test('the row under the pointer is highlighted by an overlay band, in the hovere
     await page.mouse.move(second.x + 60, second.y + second.height / 2);
     const band = gridA(page).locator('.ex-hover-row');
     await expect(band.first()).toBeVisible();
+    // Visible is not yet there: a band a real OS cursor put on another row is visible too,
+    // until the move's report arrives (UX-16's race, the fifth Windows run).
+    await expect.poll(async () => Math.round((await band.first().boundingBox())?.y ?? -1)).toBe(Math.round(second.y));
     const bandBox = await band.first().boundingBox();
     expect(Math.round(bandBox.y)).toBe(Math.round(second.y));
     expect(Math.round(bandBox.height)).toBe(Math.round(second.height));

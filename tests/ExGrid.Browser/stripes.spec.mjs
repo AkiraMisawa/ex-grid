@@ -58,6 +58,25 @@ async function pixelsAt(page, points) {
     }
 }
 
+/**
+ * For each hover band painted, the row it covers exactly, among the given rows; a band on
+ * none of them is left out. The band is where the pointer is only once the report has
+ * travelled (ADR-0029) — on Server, a round trip after the move.
+ */
+async function hoverBandRows(page, rows) {
+    const bands = await page.locator('.ex-grid .ex-hover-row').all();
+    const found = [];
+    for (const band of bands) {
+        const b = await band.boundingBox();
+        if (!b) continue;
+        for (const row of rows) {
+            const r = await rowOf(page, row).boundingBox();
+            if (r && Math.abs(b.y - r.y) < 1 && Math.abs(b.height - r.height) < 1) found.push(row);
+        }
+    }
+    return found;
+}
+
 async function isStriped(page, row) {
     return (await rowOf(page, row).getAttribute('class')).split(' ').includes('ex-row-stripe');
 }
@@ -116,11 +135,16 @@ test('a Cell State ground and the overlays paint over the stripe (UX-16)', async
     expect(missingPlain, 'missing is visible on an unstriped row').not.toBe(plainBeside);
 
     // The hover band paints over a striped row…
+    // Read unhovered: the band can stand somewhere already — a real OS cursor over where the
+    // window opened moves it (the fifth Windows run) — but not on row 11.
+    await expect.poll(() => hoverBandRows(page, [11])).toEqual([]);
     const [before] = await groundsOf(page, [[11, 3]]);
     const box = await cell(page, 11, 3).boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    // One band in the pinned layer and one in the scrollable (ADR-0008's two layers).
-    await expect(page.locator('.ex-grid .ex-hover-row').first()).toBeVisible();
+    // One band in the pinned layer and one in the scrollable (ADR-0008's two layers), both on
+    // row 11 before a pixel is read: a band merely visible may still stand on the row a real
+    // cursor put it on, and reach row 11 only after the screenshot (UX-16, fifth Windows run).
+    await expect.poll(() => hoverBandRows(page, [11])).toEqual([11, 11]);
     const [hovered] = await groundsOf(page, [[11, 3]]);
     expect(hovered, 'the hover band over a stripe').not.toBe(before);
 
