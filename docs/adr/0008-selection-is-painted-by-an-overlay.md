@@ -241,7 +241,8 @@ whole, since the Focus is Excel's active cell everywhere
   no outline, the Focus's cell untinted (the hole above) and outlined. How Excel outlines a
   selection made with Ctrl+click, and whether its active cell carries a border there, is on the
   next Windows run's list, and this bullet is replaced by what it finds.
-- **One colour token draws all of it.** The range outline reads `--ex-focus-outline`, as the Focus
-  outline, the pointing outline, the fill handle and the chosen action already do
-  ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)). No new
-  token is added.
+- **The range outline has the token ADR-0029 reserved for it.** `--ex-selection-outline` was
+  reserved there as "the border Excel draws around the range's perimeter", and this is that border.
+  Its default is `--ex-focus-outline`, so a Theme or Wrapper that sets only the Focus outline's
+  colour gets both in that colour. *(Corrected the same day. This bullet first said the range
+  outline read `--ex-focus-outline` and that no token was added, overlooking the reservation.)*

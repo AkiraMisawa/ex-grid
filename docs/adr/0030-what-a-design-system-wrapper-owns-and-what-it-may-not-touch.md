@@ -156,6 +156,15 @@ about 0.015 in relative luminance, so the raise is small. UX-9's browser test me
 schemes. **If the raised primary does not clear 3:1, the dark scheme keeps the ink colour** and
 this paragraph records that it did. The requirement is still not relaxed.
 
+*(Settled while building, the same day.)* MudBlazor 9 names its scheme only in
+`--mud-native-html-color-scheme`, which `MudThemeProvider` emits beside the palette, and the
+Wrapper's stylesheet reads it with a style query. The dark outline is the primary with its OKLCH
+lightness raised to at least 0.63. That clears 3:1 against the default dark surface (3.1:1) and
+against the Focus band's tint over it, where 0.62 left 2.92:1. The floor is fixed for MudBlazor's
+default dark palette: CSS cannot compare two colours' luminance, so a Consumer's own dark palette is
+not recomputed, and UX-9 measures only the defaults. The range outline reads
+`--ex-selection-outline`, which defaults to the Focus outline and needs no mapping of its own.
+
 ## How a violation is caught rather than trusted away
 
 The contract is enforceable because each prohibition lands somewhere observable:
