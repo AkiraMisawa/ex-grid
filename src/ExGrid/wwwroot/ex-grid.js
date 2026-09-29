@@ -666,6 +666,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         const k = snapshot(event);
+        // While the root itself holds the keyboard, the document keeps no text selection: a
+        // key here is the grid's, and so is the clipboard command it may be (ADR-0005). The
+        // browser aims `copy` and `paste` at the element holding the document's selection, and
+        // at the focused element only while there is none. An edit that ends leaves a collapsed
+        // caret where its field stood, and the next press on the rows — user-select: none —
+        // moves that caret to the nearest text the page can select, outside the grid: every
+        // Ctrl+C and Ctrl+V after the first edit went there, and the root never heard them,
+        // until DOM focus left the grid and came back (found on /sheet, 2026-09-29). Dropped
+        // here, in the keydown, before the browser runs the command it is the default of. The
+        // user's own selection is never the grid's to copy (CP-10); a selection inside a field
+        // is not touched, since the root does not hold the keyboard then.
+        if (k.onRoot) {
+            const selection = document.getSelection();
+            if (selection && selection.rangeCount > 0) {
+                selection.removeAllRanges();
+            }
+        }
         // Held while a mode change is unanswered, and also while editing is on but the
         // editor has not yet taken DOM focus — the answer can land before the focus does.
         // Every key under the root is held then, whatever it was aimed at: one that went

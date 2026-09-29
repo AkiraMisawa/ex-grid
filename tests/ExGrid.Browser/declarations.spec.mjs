@@ -674,6 +674,79 @@ test('DC-8: a block pasted from the real clipboard onto one cell spills, and bec
     await expect(cell(grid, 'G3')).toHaveText('');
 });
 
+// An edit that ends leaves a collapsed caret in the document where its field stood, while the
+// root holds DOM focus again; the next press on the rows moves that caret to the nearest text
+// the page can select, outside the grid. The browser aims Ctrl+C and Ctrl+V at the selection,
+// not at the focused root, so after the first edit every copy and paste went past the grid until
+// DOM focus left it and came back (found on /sheet, 2026-09-29). Every way out of an edit, under
+// both Chromes, followed by a copy and a paste by keyboard.
+for (const chrome of ['builtin', 'mud']) {
+    test(`CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after every way out of an edit (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        const copied = async (address, text) => {
+            await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+            await clickCell(grid, address);
+            await page.keyboard.press('ControlOrMeta+C');
+            // On the Server host every copy takes the asynchronous route (ADR-0005).
+            await expect.poll(async () => ((await readClipboard(page))['text/plain'] ?? '').trimEnd(), { timeout: 5000 })
+                .toBe(text);
+        };
+        // Before any edit: the copy route as it always was.
+        await copied('B2', '12');
+
+        // Enter in the Cell Editor commits and moves.
+        await enter(page, grid, 'E1', '5');
+        await expect(cell(grid, 'E1')).toHaveText('5');
+        await expect(grid).toBeFocused();
+        await copied('C2', '0.5');
+        await copied('B3', '7');
+
+        // Tab commits and moves right.
+        await clickCell(grid, 'E2');
+        await page.keyboard.type('6');
+        await expect(editor(grid)).toHaveValue('6');
+        await page.keyboard.press('Tab');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'E2')).toHaveText('6');
+        await copied('B2', '12');
+
+        // Escape cancels.
+        await clickCell(grid, 'E3');
+        await page.keyboard.type('7');
+        await expect(editor(grid)).toHaveValue('7');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'E3')).toHaveText('');
+        await copied('C2', '0.5');
+
+        // Enter and Escape in the Formula Bar, whose field stays in the page.
+        await clickCell(grid, 'E4');
+        await clickBarEnd(grid);
+        await typeSteadily(page, bar(grid), '8');
+        await page.keyboard.press('Enter');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'E4')).toHaveText('8');
+        await expect(grid).toBeFocused();
+        await copied('B3', '7');
+        await clickCell(grid, 'E5');
+        await clickBarEnd(grid);
+        await typeSteadily(page, bar(grid), '9');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'E5')).toHaveText('');
+        await expect(grid).toBeFocused();
+        await copied('B2', '12');
+
+        // And a paste after an edit lands where the Selection is.
+        await enter(page, grid, 'E6', '1');
+        await page.evaluate(() => navigator.clipboard.writeText('42'));
+        await clickCell(grid, 'F6');
+        await page.keyboard.press('ControlOrMeta+V');
+        await expect(cell(grid, 'F6')).toHaveText('42');
+    });
+}
+
 // Excel's HTML flavour for one column of three cells, as a paste event on Windows Chrome hands
 // it over (verification/2026-09-27-windows-excel-2/clipboard-probe-chrome.json): Excel's head
 // and style sheet, each cell's shown text, no x:num.
