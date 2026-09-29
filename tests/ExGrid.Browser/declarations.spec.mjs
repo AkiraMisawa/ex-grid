@@ -690,7 +690,7 @@ test('DC-45: while pointing, F4 cycles the pointed Reference and pointing goes o
     await expect.poll(() => caret(editor(grid))).toBe(5);
 
     // The outline moves on, and writes its Reference as pointing writes it (ADR-0051's reading;
-    // whether Excel keeps the $ form is asked in the sixth Windows run).
+    // whether Excel keeps the $ form is asked in the seventh Windows run).
     await page.keyboard.press('ArrowDown');
     await expect(editor(grid)).toHaveValue('=F4');
     await expectCovers(point, grid, 'F4', 'F4');

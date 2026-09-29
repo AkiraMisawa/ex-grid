@@ -89,6 +89,19 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*observer\.disconnect\(\);\s*ceilingObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
     }
 
+    [Fact] // ADR-0012 (2026-09-29) / ADR-0021 / MEM-4: a reveal's write is held on the root's own reveal number, observed only while held and released on dispose
+    public void The_reveal_write_is_held_on_the_roots_reveal_number_only()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // One attribute of this instance's own root, nothing wider and nothing measured.
+        Assert.Single(Regex.Matches(script.Text, @"new MutationObserver\("));
+        Assert.Matches(new Regex(@"revealObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-reveal'\] \}\)"), script.Text);
+        // Let go as soon as the write is made or replaced, and with the instance.
+        Assert.Matches(new Regex(@"const dropReveal = \(\) => \{[^}]*revealObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*dropReveal\(\);", RegexOptions.Singleline), script.Text);
+    }
+
     [Fact] // ADR-0021 (widened 2026-09-28) / ADR-0018: the hand-back leaves the fields beside the rows alone, found by the core's band, nothing measured
     public void The_hand_back_leaves_the_formula_bar_and_the_name_box_alone()
     {

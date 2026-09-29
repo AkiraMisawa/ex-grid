@@ -191,9 +191,9 @@ SH-6). Nothing in ExGrid or ExSheet did it.
 - **On a Mac it is F4 only.** Excel for Mac's own key is ⌘+T, which a browser keeps for a new tab and
   never gives a page. On a Mac laptop's default keyboard settings, F4 is Fn+F4.
 
-**Readings, until the sixth Windows run observes them.** The rules above are Excel's documented
+**Readings, until the seventh Windows run observes them.** The rules above are Excel's documented
 behaviour. These are the closest readings of what it does at the edges, taken for the
-implementation and asked of Excel in `docs/specs/exsheet/verify-on-windows-6.md`:
+implementation and asked of Excel in `docs/specs/exsheet/verify-on-windows-7.md`:
 
 - **The Reference at the caret** is the one the caret is inside or touching, on either side: `=A1|+B2`
   and `=|A1+B2` both cycle `A1`. A caret touching no Reference changes nothing, as does F4 in a

@@ -1,89 +1,57 @@
 # What to verify on Windows, sixth run
 
-Status: ready-for-human once `claude/exsheet-f4` and `claude/exsheet-headings` are merged into
-`claude/exsheet-start-8cx3v1` — **A, B, then C**. Part A alone can run before that: it asks only
-Excel.
+Status: ready-for-human — **A, B in order**.
 
 For the Claude Code session on the Windows desktop of the earlier runs. The fifth run's method,
 tools and advance authorisation still apply: read [`verify-on-windows-5.md`](verify-on-windows-5.md)
-and [`verify-on-windows-4.md`](verify-on-windows-4.md) first, and reuse the key-sending scripts in
-`verification/2026-09-28-windows-excel-3/` (`active-cell.ps1`, `by-hand.ps1`). **Decide nothing.
-Record everything.** Do not change any ADR, `CONTEXT.md` or `docs/definition-of-done.md`.
+first. Reuse the scripts in `verification/2026-09-29-windows-5/`. **Decide nothing. Record
+everything.** Do not change any ADR, `CONTEXT.md` or `docs/definition-of-done.md`.
 
 ## Setup
 
-- Fetch `claude/exsheet-start-8cx3v1`. Branch **`claude/exsheet-windows-verify-6`** from its tip, and
-  record that tip as the verified commit of every part. If the tip moves during the run, do not
-  merge it in.
-- **The user has authorised this run in advance**, as for the fifth: real keys and mouse to Excel
-  and the browsers. **Do not stop to ask.** Say "starting" before the first input and "finished"
-  after the last.
-- Every F4 below is a real key press sent to Excel's window, never `Range.Formula` written through
-  COM: what is asked is what the key does to the text being edited. Read each result from the
-  Formula Bar's text before the edit is committed (a screenshot, or the text copied out with
-  Ctrl+A, Ctrl+C inside the edit), then press Escape.
+- Fetch `claude/exsheet-start-8cx3v1`. Branch **`claude/exsheet-windows-verify-6`** from its tip,
+  and record that tip as the verified commit. If the tip moves during the run, do not merge it in.
+- Build, then run layers 1–2 in WSL, and record the counts. Run `npm ci` afresh in the Windows copy
+  of `tests/ExGrid.Browser`.
+- **The user has authorised this run in advance:** real keys and mouse to the browsers. Excel is not
+  needed. **Do not stop to ask.** Say "starting" before the first input and "finished" after the
+  last.
 
-## Part A — F4 in Excel (ADR-0051, "F4 cycles the Reference at the caret")
+## Part A — by hand, what changed since the fifth run
 
-ADR-0051 took the readings below for the implementation. Record, for each case, the text and where
-the caret or selection is after each press, and say whether it agrees with the reading. A blank
-sheet, en-US.
+On both hosts and both browsers, at the display's 150%:
 
-| # | Type, then do this | Presses | Reading |
-|---|---|---|---|
-| 1 | `=B2`, F4 | 1 to 4 | `=$B$2`, `=B$2`, `=$B2`, `=B2` |
-| 2 | `=A1+B2`, then ← ← ← (caret just after `A1`), F4 | 1 | `=$A$1+B2` |
-| 3 | `=A1+B2`, then Home, → (caret just before `A1`), F4 | 1 | `=$A$1+B2` |
-| 4 | `=A1+B2`, then Home, → → (caret inside `A1`), F4 | 1 | `=$A$1+B2` |
-| 5 | `=SUM(A1:B2)`, then ← (caret just after `B2`), F4 | 1 to 4 | `$A$1:$B$2`, `A$1:B$2`, `$A1:$B2`, `A1:B2` |
-| 6 | `=$A1:B2`, then ← (caret after `B2`), F4 | 1 | the next form of the first end (`$A1` → `A1`), given to both: `=A1:B2` |
-| 7 | `=A1+B2`, then Shift+Home, Shift+→ (select `A1+B2`), F4 | 1 | `=$A$1+$B$2` |
-| 8 | `=SUM(A:A)`, then ← , F4 | 1 to 3 | `$A:$A`, `A:A`, `$A:$A` |
-| 9 | `=SUM(1:1)`, then ←, F4 | 1 to 3 | `$1:$1`, `1:1`, `$1:$1` |
-| 10 | `=Sheet2!A1` (add a Sheet2 first), F4 | 1 | `=Sheet2!$A$1` |
-| 11 | Make A1:B3 a Table named `Positions` with a column `PV`; in D1 type `=SUM(Positions[PV])`, then ←, F4 | 1 | unchanged |
-| 12 | `=SUM(A1)`, then Home, → → (caret inside `SUM`), F4 | 1 | unchanged |
-| 13 | `=1+2`, F4 | 1 | unchanged |
-| 14 | `B2` (no `=`), F4 | 1 | unchanged |
-| 15 | `=`, ↓ (pointing: `=A2`), F4, then ↓ | F4 once, then ↓ | after F4 `=$A$2`; after ↓, reading `=A3` (Excel may keep `=$A$3`: record which) |
-| 16 | `=`, ↓, F4 (pointing), then type `+` | — | `=$A$2+` and pointing ends |
-| 17 | Select a cell holding `=B2` without editing, press F4 | 1 | nothing to do with references: record what Excel repeats, if anything |
-| 18 | `=A1+B1`, select only the `+`, F4 | 1 | `=$A$1+$B$1` (observed by the user, 2026-09-29: confirm) |
-| 19 | `=A1+B2`, select from the `1` of `A1` to the `B` of `B2`, F4 | 1 | `=$A$1+$B$2` (a Reference partly inside the selection counts) |
-| 20 | `=A1+$B$2`, select `A1+$B$2`, F4 | 1 | `=$A$1+$B$2`: each takes the next form of the first (`$A$1`); record what Excel does with `$B$2` |
-| 21 | `=b2` (lower case), F4 | 1 | `=$b$2`: the case is kept while editing |
-| 22 | `=B2:A1`, F4 | 1 | `=$B$2:$A$1`: the order is kept while editing |
+1. **A far jump paints its rows at once** (ADR-0012, "a reveal paints where it is going"). Open
+   `/wide`, click a cell, and press Ctrl+End, Ctrl+Home, Ctrl+↓ and Ctrl+↑. Record the screen during
+   each jump as a screen recording, or with screenshots as fast as the tools allow.
+   - Record whether any frame shows the Viewport with no rows.
+   - Record whether the status line ever says "outside the visible range".
+   - The fifth run's traces showed both on Server, for about a round trip.
+2. **The live region after a collapse** (ADR-0033, added after the fifth run). In `/sheet`, select
+   B2:C3, then click D5. Record the text of `.ex-announce` (read it through the page, not by
+   screen reader). It should be empty. Then paste `=A1` from Notepad over B2:C3 again, and record it.
+   Close only the Notepad tab you opened.
 
-For each case also record **where the caret is after F4** (the reading is: at the end of the
-rewritten Reference) and, for case 7, **what is selected** (the reading is: the rewritten span).
+## Part B — layer 3, both browsers, both hosts, at 150%
 
-## Part B — the same cases in ExSheet
+The whole suite on both hosts, as in the fifth run, with `chrome-150`.
+- **Do not park the cursor for the first run on each host.** Leave it wherever it is: UX-16's fix
+  is meant to hold with the real cursor over the window.
+- Record every failure with its criterion ID, and rerun each failure three times.
 
-On the verified commit, `/sheet` in Chrome and Edge, both hosts. Type each case from Part A into a
-cell, and again into the Formula Bar. Record the text after each press and whether it agrees with
-Excel's from Part A. Also record:
+Then run each of these with `--repeat-each=10`. Record the count, and for each failure the trace's
+last frame and the received value:
 
-- whether F4 with no edit open does anything at all (it should not);
-- on the Server host behind the latency proxy (150 ms), case 1 typed as fast as `by-hand.ps1` sends
-  it: `=B2` then four F4 presses in a burst, the text after each;
-- any console message.
-
-Results go to `verification/<date>-windows-excel-6/f4.md` (Part A) and
-`verification/<date>-windows-6/f4.md` (Part B).
-
-## Part C — one Heading reading (ADR-0052, "What the user's run settled")
-
-The user observed that Ctrl+Shift+↓ from A1 on an empty sheet selects the whole column and does not
-scroll. One case of the same rule is still read. In Excel, on an empty sheet with the view at the
-top-left, click the Column Heading C, then press Ctrl+Shift+→. Record the Selection, the active
-cell, and whether the view moves sideways, down, or not at all. The reading is that it moves on
-neither axis, since C:XFD spans both. Then do the same in `/sheet`, in Chrome and Edge, and record
-whether ExSheet agrees.
-
-Results go to `verification/<date>-windows-excel-6/headings.md`.
+- **DC-13**, the edge auto-scroll test, on Server `chrome` and `msedge`. It failed 3 of 3 in the
+  fifth run, and was fixed as a test that read the Name Box before Ctrl+↓ had answered.
+- **UX-16**, "a Cell State ground and the overlays paint over the stripe", on Server `chrome` and
+  `msedge`, with the cursor **not** parked.
+- **WR-6** on Server `chrome` and `msedge`. It is now compared by row index.
+- **"a far reveal paints rows in every frame"** (`circuit.spec.mjs`) on Server `chrome`, `msedge`
+  and `chrome-150`.
 
 ## Finishing
 
 Commit everything to `claude/exsheet-windows-verify-6` and push. The last message lists every
-disagreement between Excel and a reading, and between ExSheet and Excel, each with the ADR
-paragraph or criterion it belongs to. It proposes nothing on the user's behalf.
+disagreement and failure, each with the ADR or criterion it belongs to. It proposes nothing on the
+user's behalf.

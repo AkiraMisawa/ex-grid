@@ -37,7 +37,7 @@ ExSheet:
 
 ## Comments
 
-The readings are asked of Excel in [verify-on-windows-6.md](../verify-on-windows-6.md), Part A. A
+The readings are asked of Excel in [verify-on-windows-7.md](../verify-on-windows-7.md), Part A. A
 reading Excel contradicts is a defect of the reading, fixed after the run with the ADR paragraph.
 
 2026-09-29, built on `claude/exsheet-f4`. What is left is the layer 3 run, which settles the two

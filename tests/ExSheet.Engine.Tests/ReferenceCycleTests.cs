@@ -175,7 +175,7 @@ public class ReferenceCycleTests
         Assert.Equal("=IF(A1>0,$C$3|", Cycled("=IF(A1>0,C3|"));
     }
 
-    [Fact] // ADR-0051: only the $ signs are written — the case and the order typed are kept until the Formula is entered (the implementation's reading, asked of Excel in the sixth run)
+    [Fact] // ADR-0051: only the $ signs are written — the case and the order typed are kept until the Formula is entered (the implementation's reading, asked of Excel in the seventh run)
     public void Only_the_dollar_signs_change()
     {
         Assert.Equal("=$b$2|", Cycled("=b2|"));
