@@ -154,5 +154,11 @@ Excel contradicts is corrected here after the run.
 - **A whole column or row** (`A:A`, `1:1`) is outlined across the whole of it.
 - **An unfinished Formula is coloured as far as it goes.** `=SUM(A1,` colours `A1`. Nothing inside a
   string, and no function name, is coloured.
+- **A range typed up to its colon colours nothing** until its second corner is typed: `=SUM(A1:`
+  leaves `A1` uncoloured, because the grammar reads no Reference in `A1:`. *(Taken while building
+  ticket 27.)*
+- **Only text beginning with `=` is a Formula while it is typed**, as for F4 and Point. `+A1` and
+  `-B2` colour nothing, although ExSheet enters them as `=+A1` and `=-B2`. *(Taken while building
+  ticket 27.)*
 - **Point's outline is dashed**, in its Reference's colour. Every other outline is solid, over a pale
   wash of its colour.
