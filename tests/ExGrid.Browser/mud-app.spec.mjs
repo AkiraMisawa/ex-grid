@@ -473,12 +473,30 @@ test("WR-6: Striped paints the palette's table-stripe colour in both schemes, an
     expect(light.rowImage, 'a striped row paints the stripe').toContain(light.token);
     expect(await parity()).not.toContain(false);
 
-    // Mark the rows: an element a render re-created loses the mark.
-    const count = await positions(page).evaluate((root) => {
-        const rows = [...root.querySelectorAll('.ex-row')];
-        rows.forEach((row, i) => { row.dataset.probe = String(i); });
-        return rows.length;
+    // Mark the rows: an element a render re-created loses the mark. Each row is marked with
+    // its own index, and whether any of it is inside the scroller's client box — what the
+    // reader can see — is noted with it.
+    //
+    // The rows painted can still change for a reason of their own while this runs: the grid
+    // assumes no Scrollbar Gutter until the browser reports one (ADR-0013/0021), and until
+    // that report lands it paints one row more, wholly behind the horizontal scrollbar. On
+    // Server the report is a round trip, and in the fifth Windows run it landed between the
+    // marking and the reading 1 time in 10: row 9 was unmounted, rows 0..8 kept their marks.
+    // A row that leaves the DOM was not re-rendered; a row re-created in place is, and loses
+    // its mark. So each row is compared by its index, not the list by position.
+    const marked = await positions(page).evaluate((root) => {
+        const scroller = root.querySelector('.ex-scroller');
+        const top = scroller.getBoundingClientRect().top + scroller.clientTop;
+        const bottom = top + scroller.clientHeight;
+        return [...root.querySelectorAll('.ex-row')].map((row) => {
+            const index = row.getAttribute('aria-rowindex');
+            row.dataset.probe = index;
+            const box = row.getBoundingClientRect();
+            return { index, visible: box.bottom > top && box.top < bottom };
+        });
     });
+    const seen = marked.filter((row) => row.visible).map((row) => row.index);
+    expect(seen.length, 'rows are on screen to be marked').toBeGreaterThan(0);
     await page.locator('#theme-toggle').click();
     await expect(page.locator('#dark-status')).toHaveText('Dark: True');
 
@@ -486,6 +504,14 @@ test("WR-6: Striped paints the palette's table-stripe colour in both schemes, an
     expect(dark.token).toBe(dark.palette);
     expect(dark.token, 'the stripe recoloured with the scheme').not.toBe(light.token);
     expect(dark.rowImage).toContain(dark.token);
-    const probes = await positions(page).evaluate((root) => [...root.querySelectorAll('.ex-row')].map((row) => row.dataset.probe));
-    expect(probes).toEqual([...Array(count).keys()].map(String));
+    const after = await positions(page).evaluate((root) => [...root.querySelectorAll('.ex-row')]
+        .map((row) => ({ index: row.getAttribute('aria-rowindex'), probe: row.dataset.probe ?? null })));
+    const wasMarked = new Set(marked.map((row) => row.index));
+    // Every row that was in the DOM before the switch and is in it after is the same element.
+    expect(after.filter((row) => wasMarked.has(row.index) && row.probe !== row.index), 'rows the switch re-rendered')
+        .toEqual([]);
+    // And every row the reader saw is still there: the only row allowed to go is one the
+    // gutter hid.
+    const present = new Set(after.map((row) => row.index));
+    expect(seen.filter((index) => !present.has(index)), 'rows on screen that went away').toEqual([]);
 });

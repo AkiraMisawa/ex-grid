@@ -217,6 +217,8 @@ test('ADR-0014 (amended 2026-09-29): one value of plain text over a range goes i
     await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
     // One range, painted over that cell alone (a 1×1 Selection is not announced: ADR-0033).
     await expect.poll(() => rangeCovers(page, 0, 1)).toBe('covers');
+    // ...and the live region no longer names the range the paste replaced (fifth Windows run).
+    await expect(grid(page).locator('.ex-announce')).toHaveText('');
 });
 
 test('ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills the whole range', async ({ page }) => {

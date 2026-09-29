@@ -324,6 +324,22 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(new CellPosition(1, 0), selection.Focus);
     }
 
+    [Fact] // ADR-0033 / ADR-0014 (amended 2026-09-29): the paste's collapse to one cell leaves no sentence naming the range
+    public async Task One_value_of_plain_text_over_a_range_leaves_the_live_region_naming_no_range()
+    {
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent _) => { }));
+        await ClickCellAsync(cut, 150, 50);
+        await ShiftClickCellAsync(cut, 50, 30);
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        Assert.Contains("2 rows by 2 columns selected", cut.Find(".ex-announce").TextContent);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("=A1", null));
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+
+        // A 1×1 Selection is not announced, and the range it replaced is no longer true.
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+    }
+
     [Fact] // ADR-0014 (amended 2026-09-29): with several ranges, the value goes into the top-left of the range made last
     public async Task One_value_of_plain_text_over_several_ranges_goes_into_the_range_made_last()
     {

@@ -270,10 +270,37 @@ public class AccessibilityTests : GridTestContext
         var sentence = cut.Find(".ex-announce").TextContent;
         Assert.Contains("5 rows by 2 columns selected", sentence);
 
-        // Arrow keys without Shift collapse to the Focus: the region is unchanged.
+        // A bare Focus move from one cell to another announces nothing: the region is
+        // unchanged (A11Y-10).
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        var afterCollapse = cut.Find(".ex-announce").TextContent;
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false));
         await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
-        Assert.Equal(sentence, cut.Find(".ex-announce").TextContent);
+        Assert.Equal(afterCollapse, cut.Find(".ex-announce").TextContent);
+    }
+
+    [Theory] // ADR-0033: a collapse to one cell announces nothing, and leaves no sentence naming the range it replaced
+    [InlineData("arrow")]
+    [InlineData("click")]
+    public async Task A_collapse_to_one_cell_empties_the_range_sentence(string how)
+    {
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 50, 10);
+        await cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = 150, OffsetY = 50 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = 150, OffsetY = 50 });
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        Assert.Contains("3 rows by 2 columns selected", cut.Find(".ex-announce").TextContent);
+
+        if (how == "arrow")
+            await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false));
+        else
+            await ClickCellAsync(cut, 250, 90);
+
+        // Emptied at once, not after the settle: the sentence is untrue from this render on.
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
     }
 
     [Fact] // A11Y-14: announcing costs no row render — the counts match a drag without it
