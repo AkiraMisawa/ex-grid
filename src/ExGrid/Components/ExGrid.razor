@@ -5716,8 +5716,9 @@
         // While extending, the grid keeps the Extent in view, not the Focus, which stays
         // where the extension started and may be left off screen (ADR-0052). Every other key
         // moves the Focus, and the Focus is what has to end up on screen (ADR-0012).
-        var revealed = Extends(action) ? next.Extent : next.Focus;
-        _revealTarget = Extends(action) ? revealed : null;
+        var extending = Extends(action);
+        var revealed = extending ? next.Extent : next.Focus;
+        _revealTarget = extending ? new ExtentReveal(revealed, next.FocusRange) : null;
         // The keyboard crosses pages; dragging does not (ADR-0015): a cell the keystroke
         // carried past the page boundary turns the page, and the reveal then positions it
         // inside the new one.
@@ -7100,7 +7101,7 @@
         if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)
             return;
 
-        var focus = target ?? _selection.Selection.Focus;
+        var focus = target?.Cell ?? _selection.Selection.Focus;
         if (focus.Row >= TotalRows || focus.Column >= _columnStyles.Geometry.Count)
             return;
         // Under a PageSize the reveal works in page-local rows; a Focus that left the
@@ -7137,6 +7138,21 @@
         var left = toRowStart
             ? 0
             : _columnStyles.Geometry.ScrollLeftToReveal(focus.Column, _scrollLeftPx);
+        // While extending, an axis the range spans end to end is not scrolled for, judged on
+        // the range after the move (ADR-0052, 2026-09-29). Its Extent is on the far end only
+        // because the range covers the whole axis: whole columns selected from the first row
+        // keep the view where it is when Shift+→ moves them on, as Excel's and Google Sheets'
+        // do, rather than taking it to the last row. The scroller stays where it is going.
+        // Shift+Home is not asking for the Extent to be kept in view but for the start of the
+        // row, which is a different request (above), so it still goes there.
+        if (target is { } extending)
+        {
+            var extent = Extent;
+            if (extending.Range.SpansEveryRow(extent))
+                top = _expectedScrollTopPx;
+            if (extending.Range.SpansEveryColumn(extent) && !toRowStart)
+                left = _expectedScrollLeftPx;
+        }
         // The no-op check compares against where the scroller is GOING TO BE — the last
         // scroll event or the last write, whichever is newer — never against the event
         // mirror alone. A previous reveal's write can still be in flight; judged against

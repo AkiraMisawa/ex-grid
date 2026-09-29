@@ -107,6 +107,39 @@ test('Shift+click on a header selects whole columns and does not sort (SR-2a, AD
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
+test('with the view at the top, a header Shift+click then Shift+→ never scrolls down (SR-2c, ADR-0052)', async ({ page }) => {
+    const scroller = grid(page).locator('.ex-scroller');
+    await clickCell(page, 0, 2);
+    await header(page, 'Narrow').click({ modifiers: ['Shift'], position: { x: 20, y: 12 }, force: true });
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,3');
+
+    await page.keyboard.press('Shift+ArrowRight');
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,4');
+    // A reveal writes after the render, and on a circuit its scroll event is a round trip behind.
+    await page.waitForTimeout(500);
+    expect(await scroller.evaluate((el) => el.scrollTop)).toBe(0);
+});
+
+test('with the view at the top, Ctrl+Space on the first row then Shift+→ never scrolls down (SR-2c, ADR-0052)', async ({ page }) => {
+    const scroller = grid(page).locator('.ex-scroller');
+    await clickCell(page, 0, 2);
+    await page.keyboard.press('Control+Space');
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,1');
+
+    await page.keyboard.press('Shift+ArrowRight');
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,2');
+    await page.waitForTimeout(500);
+    expect(await scroller.evaluate((el) => el.scrollTop)).toBe(0);
+
+    // Shift+↑ leaves the columns a row short of the last, and the view goes to the Extent.
+    await page.keyboard.press('Shift+ArrowUp');
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,119,2');
+    await expect(grid(page).locator("[id$='-r118c3']")).toBeVisible();
+    await expect.poll(async () => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+});
+
 test('dragging the edge of one of several whole columns resizes them all (FN-12c, ADR-0016)', async ({ page }) => {
     await clickCell(page, 2, 2);
     await header(page, 'Narrow').click({ modifiers: ['Shift'], position: { x: 20, y: 12 }, force: true });
