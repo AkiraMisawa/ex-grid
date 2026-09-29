@@ -349,8 +349,9 @@ value, gives Excel's answer in all thirteen cases asked.
 **The decision:** two numbers compare as they read at 15 significant digits. Each side is rounded
 to 15 significant digits, and the rounded values are compared. **Every comparison operator** reads
 through this rule (`=`, `<>`, `<`, `>`, `<=`, `>=`), so two numbers that compare equal are neither
-less nor greater. Ordering is unobserved: ARITH-150..152 (`=1+4.4E-15>1` FALSE, `=9+3E-14>9` TRUE,
-`=1+4.8E-15<=1` TRUE) are `uncertain` until a Windows run asks them.
+less nor greater. Ordering was then observed in the fifth Windows run, and it agrees: ARITH-150..152 (`=1+4.4E-15>1`
+FALSE, `=9+3E-14>9` TRUE, `=1+4.8E-15<=1` TRUE), through COM and typed
+(`verification/2026-09-29-windows-excel-5/results.md`).
 
 The final-addition rule (2⁻⁴⁹) is unchanged. It is a different adjustment, and the GRID
 reimplementation of Excel documents the same boundary for it.
