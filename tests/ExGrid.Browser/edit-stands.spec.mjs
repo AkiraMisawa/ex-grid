@@ -1,6 +1,6 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import {
-    sheet, cell, clickCell, clickBarEnd, editor, bar, expectFocusAt, pressCell, typeSteadily,
+    sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, expectFocusAt, pressCell, typeSteadily,
 } from './sheet-helpers.mjs';
 
 // An edit stands when the keyboard leaves the grid, and a press brings it back (ED-26,
@@ -20,8 +20,6 @@ import {
 // window: a pointer below the window's edge reaches nothing, and the edge band sits there.
 test.use({ viewport: { width: 1280, height: 1000 } });
 
-const positions = (page) => page.locator('#sheet-positions .ex-grid');
-
 /** Presses the positions grid's FX cell: the keyboard is that grid's once its root has it. */
 async function pressPositions(page) {
     const fx = positions(page).locator('.ex-cell', { hasText: /^FX$/ }).first();
@@ -29,20 +27,6 @@ async function pressPositions(page) {
     // Cells are pointer-events: none; the press lands on the Viewport (ADR-0004).
     await fx.click({ force: true });
     await expect(positions(page)).toBeFocused();
-}
-
-async function openSheet(page, chrome) {
-    await page.goto(chrome === 'mud' ? '/sheet?chrome=mud' : '/sheet');
-    // A WebAssembly page boots the runtime on every navigation, which can take longer than an
-    // assertion's default wait on a loaded machine.
-    await expect(page.locator('#demo-interactive')).toBeAttached({ timeout: 30_000 });
-    await expect(cell(sheet(page), 'A1')).toHaveText('Item');
-    if (chrome === 'mud') {
-        await expect(page.locator('.mud-ex-formula-bar-text').first()).toBeAttached();
-    }
-    // The page pushes the Linked Table's first snapshot 1.5 s after the Sheet opens, and every
-    // change to the Sheet clears ExSheet's notice (see sheet.spec.mjs): wait for it.
-    await expect(cell(sheet(page), 'B12')).toHaveText('318.25', { timeout: 10_000 });
 }
 
 // Under the built-in Chrome and ExGrid.MudBlazor's: a Chrome paints the surfaces as boxes around
@@ -190,7 +174,7 @@ for (const chrome of ['builtin', 'mud']) {
 // Sheet's edit would stand with nothing able to reach it (ADR-0018 section 6). On WebAssembly
 // there is no round trip, and this is the case without one.
 test('ED-26/ADR-0021: with a 150 ms round trip, the key straight after the press back is the Sheet\'s', async ({ page }) => {
-    await openSheet(page, 'builtin');
+    await openSheet(page);
     const grid = sheet(page);
     await pressCell(grid, 'C4');
     await page.keyboard.type('=');
@@ -212,7 +196,6 @@ test('ED-26/ADR-0021: with a 150 ms round trip, the key straight after the press
 test.describe('/sheets', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/sheets');
-        await expect(page.locator('#demo-interactive')).toBeAttached({ timeout: 30_000 });
         await expect(cell(sheet(page, 0), 'A1')).toHaveText('Left');
         await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
     });

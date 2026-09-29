@@ -388,7 +388,8 @@ nobody had asked for. What that means when writing a test:
   press on the rows taking the keyboard out of the bar the edit was typed in; and, with 150 ms
   on the Server host, the key straight after the press back reaching the Sheet.
 
-`sheet-helpers.mjs` is what those four share: a Sheet's grid, a cell by its A1 address, the
+`sheet-helpers.mjs` is what those four share: opening `/sheet` under either Chrome and waiting
+for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the
 editor surfaces under either Chrome, the Name Box, and painted-box comparisons.
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
