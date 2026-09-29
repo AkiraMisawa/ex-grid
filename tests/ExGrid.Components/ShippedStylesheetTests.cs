@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Xunit;
@@ -87,6 +88,38 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"size\.blockSize === ceiling"), script.Text);
         // And released with the instance, beside the gutter's observer.
         Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*observer\.disconnect\(\);\s*ceilingObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
+    }
+
+    [Fact] // ADR-0008 (2026-09-29) / UX-18: the Focus outline and a range's outline lie wholly inside their box
+    public void The_selection_outlines_are_drawn_inside_their_box()
+    {
+        var css = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
+        css = Regex.Replace(css, @"/\*.*?\*/", "", RegexOptions.Singleline);
+
+        // Every innermost rule that outlines the Focus, a single range or (under forced
+        // colors) any range. An outline straddling the edge loses its outer pixel beneath the
+        // layers painted above the selection — a Pinned Column, the Headings, the header — so
+        // each must be offset inward by at least its own width.
+        var outlines = Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
+            .Where(rule => rule.Groups["selectors"].Value.Split(',')
+                .Any(selector => selector.Trim() is ".ex-focus" or ".ex-range" or ".ex-range-single"))
+            .Select(rule => (
+                Rule: rule.Value.Trim(),
+                Width: Regex.Match(rule.Groups["body"].Value, @"outline:\s*(?<px>[\d.]+)px"),
+                Offset: Regex.Match(rule.Groups["body"].Value, @"outline-offset:\s*(?<px>-?[\d.]+)px")))
+            .Where(outline => outline.Width.Success)
+            .ToList();
+
+        // The one the Focus and a single range share, and the forced-colors range's.
+        Assert.Equal(2, outlines.Count);
+        foreach (var (rule, width, offset) in outlines)
+        {
+            Assert.True(offset.Success, rule);
+            Assert.True(
+                double.Parse(offset.Groups["px"].Value, CultureInfo.InvariantCulture)
+                    <= -double.Parse(width.Groups["px"].Value, CultureInfo.InvariantCulture),
+                rule);
+        }
     }
 
     [Fact] // ADR-0012 (2026-09-29) / ADR-0021 / MEM-4: a reveal's write is held on the root's own reveal number, observed only while held and released on dispose
