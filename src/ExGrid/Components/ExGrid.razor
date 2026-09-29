@@ -219,11 +219,22 @@
                                 {
                                     <div class="ex-fill-handle" style="@pinnedHandle"></div>
                                 }
+                                @* Reference Outlines (ADR-0057): one rectangle per range the
+                                   Consumer's References name, in its colour, over the ranges. *@
+                                @for (var o = 0; o < Colouring.Ranges.Count; o++)
+                                {
+                                    @if (ReferenceOutline(Colouring.Ranges[o]) is { } pinnedOutline && SelectionStyles.Pinned(pinnedOutline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedReference)
+                                    {
+                                        <div class="@pinnedOutline.Class" style="@pinnedReference"></div>
+                                    }
+                                }
                                 @* The pointing outline (ADR-0051): one more rectangle, over the
-                                   ranges; the Selection and the Focus beneath it do not move. *@
+                                   ranges; the Selection and the Focus beneath it do not move.
+                                   It is the Reference Outline of the range it points at, in that
+                                   range's colour (ADR-0057). *@
                                 @if (PointRange is { } pinnedPointRange && SelectionStyles.Pinned(pinnedPointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedPoint)
                                 {
-                                    <div class="ex-point" style="@pinnedPoint"></div>
+                                    <div class="@PointOutlineClass(pinnedPointRange)" style="@pinnedPoint"></div>
                                 }
                             }
                         </div>
@@ -257,9 +268,16 @@
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
                                 }
+                                @for (var o = 0; o < Colouring.Ranges.Count; o++)
+                                {
+                                    @if (ReferenceOutline(Colouring.Ranges[o]) is { } outline && SelectionStyles.Scrollable(outline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } reference)
+                                    {
+                                        <div class="@outline.Class" style="@reference"></div>
+                                    }
+                                }
                                 @if (PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } point)
                                 {
-                                    <div class="ex-point" style="@point"></div>
+                                    <div class="@PointOutlineClass(pointRange)" style="@point"></div>
                                 }
                             }
                         </div>
@@ -2771,6 +2789,7 @@
         // (StageReveal): what it painted is what the Range Request below is judged on.
         await RaiseRangeIfUncoveredAsync();
         await RaiseSelectionIfChangedAsync();
+        await RaiseKeyColoursIfChangedAsync();
         if (_pendingDiscard is { } discarded)
         {
             _pendingDiscard = null;
@@ -6874,10 +6893,10 @@
             {
                 _editSurface = EditSurface.Cell;
                 TextTyped(text);
-                // The bar shows the same uncommitted text, and the completion box answers it
-                // (ADR-0051): a Chrome's control reports into its own component, so the root
-                // is told to paint them.
-                if (ShowFormulaBar || CompleteEditorText is not null)
+                // The bar shows the same uncommitted text, the completion box answers it
+                // (ADR-0051) and the Reference Outlines follow it (ADR-0057): a Chrome's
+                // control reports into its own component, so the root is told to paint them.
+                if (ShowFormulaBar || CompleteEditorText is not null || ReferencesIn is not null)
                     StateHasChanged();
             },
             () => _ = InvokeAsync(() => CommitAndMoveAsync(next => next)),
