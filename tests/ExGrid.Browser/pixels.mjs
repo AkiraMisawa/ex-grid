@@ -5,7 +5,7 @@ import zlib from 'node:zlib';
 // layer painted above an outline hid one of its pixels, which is what UX-17/18/19 are about.
 
 /** Decodes the PNG a Chromium screenshot writes: 8-bit RGB or RGBA, not interlaced. */
-export function decodePng(buffer) {
+function decodePng(buffer) {
     let offset = 8;
     let width = 0;
     let height = 0;
@@ -84,7 +84,6 @@ export async function painted(page, { x, y, width, height }) {
             for (let j = row(fromY); j <= row(toY); j++) out.push(image.at(col(px), j));
             return out;
         },
-        lastRow: (px) => image.at(col(px), image.height - 1),
     };
 }
 

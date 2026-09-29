@@ -2,7 +2,7 @@ import { test, expect, alterPage, setRoundTrip, record } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
-    expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell,
+    expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell, expectSelectionIsCell,
 } from './sheet-helpers.mjs';
 
 // The ExGrid declarations of ADR-0050 and ADR-0051 (§26, DC-*), as ExSheet declares them on
@@ -795,9 +795,7 @@ test('DC-38/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused
     await page.waitForTimeout(500);
     await expect(notice).toContainText('too narrow');
     await expectFocusAt(grid, 'F7');
-    // One cell selected is the Focus alone, with no range tinted (ADR-0008, 2026-09-29).
-    await expect(grid.locator('.ex-range')).toHaveCount(0);
-    await expectCovers(grid.locator('.ex-selection .ex-focus'), grid, 'F7', 'F7');
+    await expectSelectionIsCell(grid, 'F7');
     await expect(cell(grid, 'F7')).toHaveText('');
     await expect(cell(grid, 'F8')).toHaveText('');
     await expect(cell(grid, 'F9')).toHaveText('');

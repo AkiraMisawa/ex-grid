@@ -15,53 +15,12 @@ namespace ExGrid.Components.Tests;
 /// right cell, that the rectangles land where the cells are, and that none of it reaches
 /// the rows.
 ///
-/// 100 columns of 100px in a 350px Viewport, 20px rows in a 100px Viewport of which the
-/// header takes the first 20: five rows painted, and cell (r, c) is at
-/// (c × 100 + 50, (r − first painted row) × 20 + 10).
+/// The grid is <see cref="SelectionGridContext"/>'s.
 /// </summary>
-public class SelectionTests : GridTestContext
+public class SelectionTests : SelectionGridContext
 {
-    private const double RowHeightPx = 20;
-    private const double ViewportHeightPx = 100;
-    private const double ViewportWidthPx = 350;
-    private const int RowsPerViewport = 5;
-
-    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
-        int pinnedColumnCount = 0,
-        int windowCount = 200,
-        Action<GridSelection>? onSelectionChanged = null)
-        => Render<ExGrid<TestRow>>(ps =>
-        {
-            ps.Add(g => g.Window, TestRows.Many(windowCount))
-              .Add(g => g.TotalCount, 200)
-              .Add(g => g.Columns, TestRows.Wide(100))
-              .Add(g => g.RowHeight, RowHeightPx)
-              .Add(g => g.ViewportHeight, ViewportHeightPx)
-              .Add(g => g.ViewportWidth, ViewportWidthPx)
-              .Add(g => g.PinnedColumnCount, pinnedColumnCount);
-            if (onSelectionChanged is not null)
-                ps.Add(g => g.SelectionChanged, onSelectionChanged);
-        });
-
-    private static Task PressAsync(
-        IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, bool shift = false, bool ctrl = false)
-        => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs
-        {
-            OffsetX = x,
-            OffsetY = y,
-            Button = 0,
-            Buttons = 1,
-            ShiftKey = shift,
-            CtrlKey = ctrl,
-        });
-
     private static Task DragAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, long buttons = 1)
         => cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { OffsetX = x, OffsetY = y, Buttons = buttons });
-
-    /// <summary>The centre of cell (row, column) as the browser would report it, with the
-    /// row measured from the first painted one.</summary>
-    private static (double X, double Y) Cell(int row, int column, int firstPaintedRow = 0)
-        => ((column * 100) + 50, ((row - firstPaintedRow) * RowHeightPx) + 10);
 
     /// <summary>Where each range in a layer is painted: its box, without the clip and the
     /// hole Excel's look adds to it (<see cref="SelectionLookTests"/> pins those). A range of
@@ -73,9 +32,6 @@ public class SelectionTests : GridTestContext
     /// selection paints.</summary>
     private static string[] Focus(IRenderedComponent<ExGrid<TestRow>> cut, string layer = ".ex-selection")
         => [.. cut.FindAll($"{layer} > .ex-focus").Select(r => r.GetAttribute("style")!)];
-
-    private static string Rect(double left, double top, double width, double height)
-        => FormattableString.Invariant($"left: {left}px; top: {top}px; width: {width}px; height: {height}px");
 
     [Fact] // ADR-0008: selection is an overlay rectangle, not a class on the selected cells
     public async Task A_click_paints_one_rectangle_over_the_cell_it_names()

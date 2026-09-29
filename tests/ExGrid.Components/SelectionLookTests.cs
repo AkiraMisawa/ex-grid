@@ -1,7 +1,5 @@
 using Bunit;
 using ExGrid.Components.Tests.Support;
-using ExGrid.Selection;
-using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -12,46 +10,12 @@ namespace ExGrid.Components.Tests;
 /// outline. What the outline looks like is the stylesheet's; that it is drawn around the right
 /// rectangle, and that the hole lies where the Focus is, is geometry and is pinned here.
 ///
-/// The grid is <see cref="SelectionTests"/>' own: 100 columns of 100px in a 350px Viewport,
-/// 20px rows in a 100px Viewport of which the header takes the first 20.
+/// The grid is <see cref="SelectionGridContext"/>'s, as <see cref="SelectionTests"/>' is.
 /// </summary>
-public class SelectionLookTests : GridTestContext
+public class SelectionLookTests : SelectionGridContext
 {
-    private const double RowHeightPx = 20;
-
-    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
-        int pinnedColumnCount = 0, Action<GridSelection>? onSelectionChanged = null)
-        => Render<ExGrid<TestRow>>(ps =>
-        {
-            ps.Add(g => g.Window, TestRows.Many(200))
-              .Add(g => g.TotalCount, 200)
-              .Add(g => g.Columns, TestRows.Wide(100))
-              .Add(g => g.RowHeight, RowHeightPx)
-              .Add(g => g.ViewportHeight, 100)
-              .Add(g => g.ViewportWidth, 350)
-              .Add(g => g.PinnedColumnCount, pinnedColumnCount);
-            if (onSelectionChanged is not null)
-                ps.Add(g => g.SelectionChanged, onSelectionChanged);
-        });
-
-    /// <summary>Presses the centre of cell (row, column), the rows measured from the top.</summary>
-    private static Task PressAsync(
-        IRenderedComponent<ExGrid<TestRow>> cut, int row, int column, bool shift = false, bool ctrl = false)
-        => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs
-        {
-            OffsetX = (column * 100) + 50,
-            OffsetY = (row * RowHeightPx) + 10,
-            Button = 0,
-            Buttons = 1,
-            ShiftKey = shift,
-            CtrlKey = ctrl,
-        });
-
     private static Task KeyAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, bool ctrl = false, bool shift = false)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
-
-    private static string Rect(double left, double top, double width, double height)
-        => FormattableString.Invariant($"left: {left}px; top: {top}px; width: {width}px; height: {height}px");
 
     /// <summary>The hole a range is painted with, in the range's own box.</summary>
     private static string Hole(double left, double top, double right, double bottom)
@@ -66,7 +30,7 @@ public class SelectionLookTests : GridTestContext
     {
         var cut = RenderGrid();
 
-        await PressAsync(cut, 1, 1);
+        await PressCellAsync(cut, 1, 1);
 
         Assert.Empty(cut.FindAll(".ex-range"));
         Assert.Equal(Rect(100, 20, 100, 20), cut.Find(".ex-focus").GetAttribute("style"));
@@ -77,8 +41,8 @@ public class SelectionLookTests : GridTestContext
     {
         var cut = RenderGrid();
 
-        await PressAsync(cut, 1, 1);
-        await PressAsync(cut, 3, 3, shift: true);
+        await PressCellAsync(cut, 1, 1);
+        await PressCellAsync(cut, 3, 3, shift: true);
 
         // One element for the whole range, whatever its size (ADR-0008's economy): the Focus
         // is its top-left cell, so the hole is the box's first 100 x 20.
@@ -92,8 +56,8 @@ public class SelectionLookTests : GridTestContext
     public async Task The_hole_follows_the_focus_round_the_range()
     {
         var cut = RenderGrid();
-        await PressAsync(cut, 0, 0);
-        await PressAsync(cut, 2, 2, shift: true);
+        await PressCellAsync(cut, 0, 0);
+        await PressCellAsync(cut, 2, 2, shift: true);
 
         await KeyAsync(cut, "Enter");                        // (1, 0)
         Assert.Equal(Rect(0, 0, 300, 60) + Hole(0, 20, 100, 40), Assert.Single(Ranges(cut)).Style);
@@ -106,17 +70,17 @@ public class SelectionLookTests : GridTestContext
     public async Task Several_ranges_are_tinted_without_an_outline_and_their_tint_never_covers_the_focus()
     {
         var cut = RenderGrid();
-        await PressAsync(cut, 0, 0);
-        await PressAsync(cut, 1, 1, shift: true);
+        await PressCellAsync(cut, 0, 0);
+        await PressCellAsync(cut, 1, 1, shift: true);
 
         // Ctrl+click adds a range of one cell, which is the Focus: the selection's tint covers
         // none of it, so it is not painted.
-        await PressAsync(cut, 3, 2, ctrl: true);
+        await PressCellAsync(cut, 3, 2, ctrl: true);
         Assert.Equal([("ex-range", Rect(0, 0, 200, 40))], Ranges(cut));
         Assert.Equal(Rect(200, 60, 100, 20), cut.Find(".ex-focus").GetAttribute("style"));
 
         // Extended, it is tinted round a hole where the Focus is, and still carries no outline.
-        await PressAsync(cut, 4, 3, shift: true);
+        await PressCellAsync(cut, 4, 3, shift: true);
         Assert.Equal(
             [("ex-range", Rect(0, 0, 200, 40)), ("ex-range", Rect(200, 60, 200, 40) + Hole(0, 0, 100, 20))],
             Ranges(cut));
@@ -127,8 +91,8 @@ public class SelectionLookTests : GridTestContext
     {
         var cut = RenderGrid(pinnedColumnCount: 2);
 
-        await PressAsync(cut, 0, 0);
-        await PressAsync(cut, 1, 2, shift: true);
+        await PressCellAsync(cut, 0, 0);
+        await PressCellAsync(cut, 1, 2, shift: true);
 
         // Each layer paints the whole range and clips it at the boundary, so each draws the
         // outline's outer sides only and no seam stands where the two meet. The hole is in
@@ -146,8 +110,8 @@ public class SelectionLookTests : GridTestContext
     {
         var cut = RenderGrid(pinnedColumnCount: 2);
 
-        await PressAsync(cut, 0, 2);
-        await PressAsync(cut, 1, 0, shift: true);
+        await PressCellAsync(cut, 0, 2);
+        await PressCellAsync(cut, 1, 0, shift: true);
 
         Assert.Equal(
             [("ex-range ex-range-single", Rect(0, 0, 300, 40) + "; clip-path: inset(0 100px 0 0)")],
@@ -161,8 +125,8 @@ public class SelectionLookTests : GridTestContext
     public async Task A_split_range_keeps_its_boxes_when_the_content_scrolls_sideways()
     {
         var cut = RenderGrid(pinnedColumnCount: 1);
-        await PressAsync(cut, 0, 0);
-        await PressAsync(cut, 0, 2, shift: true);
+        await PressCellAsync(cut, 0, 0);
+        await PressCellAsync(cut, 0, 2, shift: true);
         var before = (Pinned: Ranges(cut, ".ex-selection-pinned"), Scrollable: Ranges(cut));
 
         // One column across, not a fling: the scrollable layer moves with the content, the
@@ -178,7 +142,7 @@ public class SelectionLookTests : GridTestContext
     public async Task A_focus_outside_the_painted_rows_makes_no_hole()
     {
         var cut = RenderGrid();
-        await PressAsync(cut, 0, 0);
+        await PressCellAsync(cut, 0, 0);
         await KeyAsync(cut, "a", ctrl: true);
         Assert.Contains("--ex-range-hole", Assert.Single(Ranges(cut)).Style);
 

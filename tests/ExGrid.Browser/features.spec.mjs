@@ -1,4 +1,5 @@
 import { test, expect, alterPage } from './fixtures.mjs';
+import { expectSelectionIsCell } from './sheet-helpers.mjs';
 
 // The interaction surface, driven with real keys and the real clipboard against the
 // /features page: the Cell Editor's two states (ADR-0010), the clipboard's two formats
@@ -186,21 +187,6 @@ test('CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after an edit ends by E
     await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1');
 });
 
-/**
- * Whether the Selection is one cell, to within a pixel: no range tinted, and the Focus outline
- * lying exactly over that cell (ADR-0008, 2026-09-29).
- */
-async function selectsOnly(page, row, column) {
-    const ranges = await grid(page).locator('.ex-range').count();
-    if (ranges !== 0) return `${ranges} ranges`;
-    const box = await grid(page).locator('.ex-selection .ex-focus').first().boundingBox();
-    const want = await grid(page).locator(`[id$='r${row}c${column}']`).boundingBox();
-    const near = (p, q) => Math.abs(p - q) <= 1.5;
-    return box && want && near(box.x, want.x) && near(box.y, want.y) && near(box.width, want.width) && near(box.height, want.height)
-        ? 'covers'
-        : JSON.stringify({ box, want });
-}
-
 test('ADR-0014 (amended 2026-09-29): one value of plain text over a range goes into its top-left alone, and the Selection collapses to it', async ({ page }) => {
     // Text from a text editor: plain text only, no table.
     await page.evaluate(() => navigator.clipboard.writeText('Solo'));
@@ -218,8 +204,9 @@ test('ADR-0014 (amended 2026-09-29): one value of plain text over a range goes i
     await expect(grid(page).locator("[id$='r1c1']")).toHaveText(below[0]);
     await expect(grid(page).locator("[id$='r2c1']")).toHaveText(below[1]);
     await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
-    // That cell alone (a 1×1 Selection is not announced: ADR-0033).
-    await expect.poll(() => selectsOnly(page, 0, 1)).toBe('covers');
+    // That cell alone, row 0 and column 1: B1 in A1 terms (a 1×1 Selection is not announced:
+    // ADR-0033).
+    await expectSelectionIsCell(grid(page), 'B1');
     // ...and the live region no longer names the range the paste replaced (fifth Windows run).
     await expect(grid(page).locator('.ex-announce')).toHaveText('');
 });

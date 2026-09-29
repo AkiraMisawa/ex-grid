@@ -177,6 +177,15 @@ export async function expectCovers(locator, grid, from, to) {
     }).toBe('covers');
 }
 
+/**
+ * Asserts the Selection is the one cell at an A1 address: no range is tinted, and the Focus outline
+ * lies over that cell alone. One cell selected is the Focus alone (ADR-0008, 2026-09-29).
+ */
+export async function expectSelectionIsCell(grid, address) {
+    await expect(grid.locator('.ex-range')).toHaveCount(0);
+    await expectCovers(grid.locator('.ex-focus'), grid, address, address);
+}
+
 /** Reads what the clipboard holds, both flavours; an overlapping write reads as nothing yet. */
 export function readClipboard(page) {
     return page.evaluate(async () => {

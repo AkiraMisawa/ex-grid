@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import { painted } from './pixels.mjs';
+import { painted, contrast, resolvedColour } from './pixels.mjs';
 
 // The Wrapper contract, measured with a real Wrapper (ADR-0030): ExGrid.MudBlazor on
 // /mud. The Definition of Done wrote UX-3/6/9 against a "stub Wrapper stylesheet";
@@ -19,20 +19,6 @@ async function open(page) {
     // one the page's own stylesheet does not restate (the header tokens it does).
     await expect.poll(async () => gridA(page).evaluate((g) => getComputedStyle(g).getPropertyValue('--ex-editor-outline').trim()))
         .not.toBe('');
-}
-
-// Relative luminance and contrast ratio, WCAG's definitions, for UX-9.
-function luminance(rgb) {
-    const [r, g, b] = rgb.map((v) => {
-        const c = v / 255;
-        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-function contrast(a, b) {
-    const la = luminance(a);
-    const lb = luminance(b);
-    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
 test('the painted geometry equals the declared metrics under the real Wrapper stylesheet (UX-3)', async ({ page }) => {
@@ -92,27 +78,29 @@ function hue([r, g, b]) {
 
 test('the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9)', async ({ page }) => {
     await open(page);
-    // Any colour the cascade resolved, in whatever syntax it kept — the dark scheme's is an
-    // oklch() — as sRGB bytes, through a canvas.
-    const colours = () => gridA(page).evaluate((g) => {
-        const context = new OffscreenCanvas(1, 1).getContext('2d', { willReadFrequently: true });
-        const rgb = (colour) => {
-            context.clearRect(0, 0, 1, 1);
-            context.fillStyle = colour;
-            context.fillRect(0, 0, 1, 1);
-            return Array.from(context.getImageData(0, 0, 1, 1).data.slice(0, 3));
-        };
-        const focus = [...g.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0);
-        const range = g.querySelector('.ex-range');
+    // The colours the cascade resolved, in whatever syntax it kept them — the dark scheme's is
+    // an oklch() — as sRGB bytes.
+    const colours = async () => {
+        const css = await gridA(page).evaluate((g) => {
+            const focus = [...g.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0);
+            const range = g.querySelector('.ex-range');
+            return {
+                focus: getComputedStyle(focus).outlineColor,
+                focusStyle: getComputedStyle(focus).outlineStyle,
+                range: range ? getComputedStyle(range).outlineColor : null,
+                fill: range ? getComputedStyle(range, '::before').backgroundColor : null,
+                ground: getComputedStyle(g).backgroundColor,
+                primary: getComputedStyle(g).getPropertyValue('--mud-palette-primary'),
+            };
+        });
         return {
-            focus: rgb(getComputedStyle(focus).outlineColor),
-            focusStyle: getComputedStyle(focus).outlineStyle,
-            range: range ? rgb(getComputedStyle(range).outlineColor) : null,
-            fill: range ? getComputedStyle(range, '::before').backgroundColor : null,
-            ground: rgb(getComputedStyle(g).backgroundColor),
-            primary: rgb(getComputedStyle(g).getPropertyValue('--mud-palette-primary')),
+            ...css,
+            focus: await resolvedColour(page, css.focus),
+            range: css.range === null ? null : await resolvedColour(page, css.range),
+            ground: await resolvedColour(page, css.ground),
+            primary: await resolvedColour(page, css.primary),
         };
-    });
+    };
     const cellAt = (row, column) => gridA(page).locator('.ex-row').nth(row).locator('.ex-cell').nth(column);
     for (const dark of [false, true]) {
         if (dark) {
@@ -126,17 +114,17 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         // Painted a round trip after the click on the Server host.
         await expect(gridA(page).locator('.ex-focus')).not.toHaveCount(0);
         await expect(gridA(page).locator('.ex-range')).toHaveCount(0);
-        const one = await colours();
-        expect(one.focusStyle).toBe('solid');
-        expect(contrast(one.focus, one.ground), `focus outline against the cell ground, dark=${dark} (${JSON.stringify(one)})`)
+        const oneCell = await colours();
+        expect(oneCell.focusStyle).toBe('solid');
+        expect(contrast(oneCell.focus, oneCell.ground), `focus outline against the cell ground, dark=${dark} (${JSON.stringify(oneCell)})`)
             .toBeGreaterThanOrEqual(3);
         if (dark) {
             // Raised from the primary, which misses 3:1 on this surface, and the hue kept.
-            expect(contrast(one.primary, one.ground), 'the premise: the dark primary alone misses 3:1').toBeLessThan(3);
-            expect(Math.abs(hue(one.focus) - hue(one.primary)), JSON.stringify(one)).toBeLessThanOrEqual(2);
+            expect(contrast(oneCell.primary, oneCell.ground), 'the premise: the dark primary alone misses 3:1').toBeLessThan(3);
+            expect(Math.abs(hue(oneCell.focus) - hue(oneCell.primary)), JSON.stringify(oneCell)).toBeLessThanOrEqual(2);
         } else {
             // The palette's primary itself (ADR-0030, 2026-09-29).
-            expect(one.focus, JSON.stringify(one)).toEqual(one.primary);
+            expect(oneCell.focus, JSON.stringify(oneCell)).toEqual(oneCell.primary);
         }
         // And as painted, where this page puts it: on the Focus band's tint over the surface,
         // which is lighter than the surface in the dark scheme (ADR-0030 sets the floor to clear
@@ -157,9 +145,9 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         // own token, --ex-selection-outline, defaults to it and the Wrapper leaves it so.
         await cellAt(3, 3).click({ force: true, modifiers: ['Shift'] });
         await expect(gridA(page).locator('.ex-range')).not.toHaveCount(0);
-        const range = await colours();
-        expect(range.range, JSON.stringify(range)).toEqual(one.focus);
-        expect(range.fill).not.toBe('rgba(0, 0, 0, 0)');
+        const withRange = await colours();
+        expect(withRange.range, JSON.stringify(withRange)).toEqual(oneCell.focus);
+        expect(withRange.fill).not.toBe('rgba(0, 0, 0, 0)');
     }
 });
 

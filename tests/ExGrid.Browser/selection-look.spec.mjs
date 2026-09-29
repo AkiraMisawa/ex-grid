@@ -67,7 +67,7 @@ async function groundOf(page, locator) {
 // ---- UX-17: the header's rule runs under every header cell -------------------------------------
 
 for (const [chrome, query] of CHROMES) {
-    test(`UX-17 (${chrome} Chrome): the header's rule runs under the Headings' corner and a pinned header as under any other`, async ({ page }) => {
+    test(`UX-17 (${chrome} Chrome): the header's rule runs under the Headings' corner and a pinned header as under any other (ADR-0029/0050)`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         const places = await grid.evaluate((root) => {
@@ -101,7 +101,7 @@ for (const [chrome, query] of CHROMES) {
 
 // ---- UX-18: the Focus outline is as wide on each of its four sides wherever it stands -------------
 
-test('UX-18: the Focus outline has four equal edges beside a Pinned Column, beside the Headings, under the header and in the open', async ({ page }) => {
+test('UX-18: the Focus outline has four equal edges beside a Pinned Column, beside the Headings, under the header and in the open (ADR-0008)', async ({ page }) => {
     await openSheet(page, '');
     const grid = sheet(page);
     // B4 beside the pinned A, A4 beside the Headings, C1 under the header, C4 away from all three.
@@ -122,7 +122,7 @@ test('UX-18: the Focus outline has four equal edges beside a Pinned Column, besi
     expect(new Set(Object.values(found).map((e) => e.left)).size, JSON.stringify(found)).toBe(1);
 });
 
-test('UX-18: with Pinned Columns and no Headings, the Focus outline has four equal edges beside the pinned block, under the header and at the grid\'s left edge', async ({ page }) => {
+test('UX-18: with Pinned Columns and no Headings, the Focus outline has four equal edges beside the pinned block, under the header and at the grid\'s left edge (ADR-0008)', async ({ page }) => {
     await page.goto('/wide');
     const grid = page.locator('.ex-grid').first();
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -145,7 +145,7 @@ test('UX-18: with Pinned Columns and no Headings, the Focus outline has four equ
 // ---- UX-19: Excel's look for the Focus and a single range ------------------------------------------
 
 for (const [chrome, query] of CHROMES) {
-    test(`UX-19 (${chrome} Chrome): one cell selected is the Focus outline alone, with no selection tint`, async ({ page }) => {
+    test(`UX-19 (${chrome} Chrome): one cell selected is the Focus outline alone, with no selection tint (ADR-0008)`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await clickCell(grid, 'C3');
@@ -158,7 +158,7 @@ for (const [chrome, query] of CHROMES) {
         expect([edges.across.length, edges.down.length], JSON.stringify(edges)).toEqual([2, 2]);
     });
 
-    test(`UX-19 (${chrome} Chrome): a single range carries one outline round it, and its tint leaves out the Focus inside it, which has no outline`, async ({ page }) => {
+    test(`UX-19 (${chrome} Chrome): a single range carries one outline round it, and its tint leaves out the Focus inside it, which has no outline (ADR-0008/0029)`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await clickCell(grid, 'C3');
@@ -188,7 +188,7 @@ for (const [chrome, query] of CHROMES) {
         expect(sameColour(edge, colour, 8), JSON.stringify({ edge, colour })).toBe(true);
     });
 
-    test(`UX-19 (${chrome} Chrome): several ranges are each tinted with no outline, and their tint never covers the Focus, which is outlined`, async ({ page }) => {
+    test(`UX-19 (${chrome} Chrome): several ranges are each tinted with no outline, and their tint never covers the Focus, which is outlined (ADR-0008)`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await clickCell(grid, 'B3');
@@ -217,7 +217,7 @@ for (const [chrome, query] of CHROMES) {
         expect(runsOf(beyond.across(f6.y + 4, f6.x + 4, f6.x + f6.width + 2), colour)).toEqual([]);
     });
 
-    test(`UX-19 (${chrome} Chrome): a single range across the pinned boundary shows no seam there, and slides beneath the pinned block`, async ({ page }) => {
+    test(`UX-19 (${chrome} Chrome): a single range across the pinned boundary shows no seam there, and slides beneath the pinned block (ADR-0008/0004)`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await clickCell(grid, 'A3');
@@ -257,7 +257,7 @@ for (const [chrome, query] of CHROMES) {
     });
 }
 
-test('UX-19/ADR-0029: the range outline reads --ex-selection-outline, and a Theme that sets only the Focus outline colours both', async ({ page }) => {
+test('UX-19: the range outline reads --ex-selection-outline, and a Theme that sets only the Focus outline colours both (ADR-0008/0029)', async ({ page }) => {
     await openSheet(page, '');
     const grid = sheet(page);
     await clickCell(grid, 'B3');
