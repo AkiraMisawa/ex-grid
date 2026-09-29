@@ -41,6 +41,8 @@ public class RefusedWhileEditingTests : SheetTestContext
         await TypeAsync(cut, typed);
     }
 
+    private static string Notice(IRenderedComponent<ExSheet> cut) => cut.Find(".ex-sheet-notice").TextContent;
+
     /// <summary>The command is refused, naming the open edit, and the Sheet Document is as it was.</summary>
     private static async Task AssertRefusedAsync(IRenderedComponent<ExSheet> cut, Func<Task> command)
     {
@@ -221,6 +223,73 @@ public class RefusedWhileEditingTests : SheetTestContext
         Assert.Equal("Plums", CellText(cut, "A4"));
     }
 
+    // ---- The Sheet Document replaced while an edit is open (ADR-0048, decided 2026-09-29) ----
+
+    // Another document, whose C4 is not Plums' price: where a kept edit would have landed.
+    private static SheetDocument Other()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("A4"), "Figs");
+        sheet.Enter(CellAddress.Parse("C4"), "3");
+        return sheet.ToDocument();
+    }
+
+    [Fact] // ADR-0048 / ADR-0050 section 6, SH-29: a replaced Document discards the open edit, says so, and writes nothing
+    public async Task Replacing_the_document_while_an_edit_is_open_discards_it_and_says_so()
+    {
+        var told = new List<bool>();
+        var raised = new List<SheetDocument>();
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Fruit()).Add(s => s.EditingChanged, told.Add).Add(s => s.DocumentChanged, raised.Add));
+        await OpenEditAsync(cut, "C4", "99");
+
+        cut.Render(ps => ps.Add(s => s.Document, Other()));
+
+        Assert.False(cut.Instance.IsEditing);
+        Assert.Equal([true, false], told);
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+        Assert.Equal(SheetWords.EditDiscardedByNewDocument, Notice(cut));
+        // The grid announced the same sentence in its own live region, as the Consumer's (ADR-0050 section 6).
+        Assert.Equal(SheetWords.EditDiscardedByNewDocument, Grid(cut).Find(".ex-announce").TextContent);
+        Assert.Equal("Figs", CellText(cut, "A4"));
+        Assert.Equal("3", CellText(cut, "C4"));
+
+        // Nothing is left to commit: Enter moves, and writes nothing into the new document.
+        await PressAsync(cut, "Enter");
+        Assert.Equal("3", CellText(cut, "C4"));
+        Assert.Empty(raised);
+    }
+
+    [Fact] // ADR-0048, SH-29: the document the Sheet raised, handed back as a two-way binding does, is no replacement and keeps the edit
+    public async Task Handing_back_the_raised_document_keeps_the_edit()
+    {
+        SheetDocument? raised = null;
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Fruit()).Add(s => s.DocumentChanged, d => raised = d));
+        await OpenEditAsync(cut, "C4", "99");
+        // A declaration is recorded in the document, so it raises one while the edit stays open.
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["Id", "PV"]);
+        Assert.NotNull(raised);
+
+        cut.Render(ps => ps.Add(s => s.Document, raised));
+
+        Assert.True(cut.Instance.IsEditing);
+        Assert.Equal("99", EditorText(cut));
+        Assert.Equal("", Notice(cut));
+        await PressAsync(cut, "Enter");
+        Assert.Equal("99", CellText(cut, "C4"));
+    }
+
+    [Fact] // ADR-0048, SH-29: a replaced Document with no edit open has nothing to discard, and says nothing
+    public void Replacing_the_document_with_no_edit_open_says_nothing()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Fruit()));
+
+        cut.Render(ps => ps.Add(s => s.Document, Other()));
+
+        Assert.Equal("", Notice(cut));
+        Assert.Equal("", Grid(cut).Find(".ex-announce").TextContent);
+        Assert.Equal("Figs", CellText(cut, "A4"));
+    }
+
     // ---- The ways an edit ends (SH-29: one per way) ----
 
     [Fact] // ADR-0048 / ADR-0050 section 6, SH-29: once the edit is committed, the commands are taken again
@@ -262,6 +331,8 @@ public class RefusedWhileEditingTests : SheetTestContext
 
         await PressAsync(cut, "Enter");
         Assert.False(cut.Instance.IsEditing);
+        // Said, and it stands past the move that completes the Enter (ADR-0011).
+        Assert.Equal(SheetWords.EditDiscarded(global::ExGrid.Cells.EditDiscardReason.RowLeftTheWindow), Notice(cut));
         await cut.Instance.DoAsync(SheetEdit.InsertRows(1));
 
         await ScrollToAsync(cut, 0, 0);

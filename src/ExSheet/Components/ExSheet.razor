@@ -35,7 +35,7 @@
         CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnCopyRowsNeeded="_rowsNeeded"
-        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" />
+        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -83,6 +83,7 @@
     private readonly EventCallback<ColumnWidthChange> _columnWidthChanged;
     private readonly EventCallback _redo;
     private readonly EventCallback<bool> _editingChanged;
+    private readonly EventCallback<EditDiscardReason> _editDiscarded;
 
     private ExGrid<SheetRow>? _grid;
     private SheetColumnList _columns = SheetColumnList.Default;
@@ -107,6 +108,11 @@
     private string? _copyRefusal;
     private bool _initialised;
     private SheetDocument? _documentParameter;
+    // Set when a new Sheet Document was opened in place of the one shown, until any edit open
+    // over it has been discarded (ADR-0048).
+    private bool _documentReplaced;
+    // ExSheet's own sentence for a discard it asked of the grid, said when the grid raises it.
+    private string? _ownDiscard;
     private CultureInfo? _cultureParameter;
 
     /// <summary>Creates the component; the Sheet is opened when its parameters arrive.</summary>
@@ -171,6 +177,13 @@
             IsEditing = open;
             return EditingChanged.InvokeAsync(open);
         }));
+        // Typing thrown away is said, whoever discarded it: the grid, or ExSheet itself for a
+        // replaced Sheet Document (ADR-0011, ADR-0048). No receiver: the notice renders itself.
+        _editDiscarded = new EventCallback<EditDiscardReason>(null, (Func<EditDiscardReason, Task>)(reason =>
+        {
+            OnEditDiscarded(reason);
+            return Task.CompletedTask;
+        }));
     }
 
     /// <summary>
@@ -182,9 +195,10 @@
 
     /// <summary>
     /// The Sheet Document to show (ADR-0048). Handing over a different document replaces the
-    /// Sheet and clears the undo stack; handing back a document this component raised through
-    /// <see cref="DocumentChanged"/> — as binding <c>Document</c> two ways does — changes nothing. Null is
-    /// an empty Sheet in <see cref="Culture"/>.
+    /// Sheet and clears the undo stack, and an edit open over the Sheet it replaces is discarded,
+    /// and said, rather than committed into the new one; handing back a document this component
+    /// raised through <see cref="DocumentChanged"/> — as binding <c>Document</c> two ways does —
+    /// changes nothing. Null is an empty Sheet in <see cref="Culture"/>.
     /// </summary>
     /// <exception cref="SheetDocumentException">The document's version is one the engine does not know.</exception>
     [Parameter] public SheetDocument? Document { get; set; }
@@ -305,10 +319,29 @@
         if (!ReferenceEquals(Document, _documentParameter))
         {
             _documentParameter = Document;
-            if (Document is null || !_emitted.TryGetValue(Document, out _)) Open(Document);
+            if (Document is null || !_emitted.TryGetValue(Document, out _))
+            {
+                Open(Document);
+                _documentReplaced = true;
+            }
         }
         // Widths are recorded in characters; the pixels they paint at follow the Cell Metrics.
         if (_columns.Metrics is { } metrics && !metrics.Equals(CellMetrics)) _columns = SheetColumnList.Of(CurrentSheet, CellMetrics);
+    }
+
+    /// <summary>
+    /// A new Sheet Document shown while an edit is open discards the edit, and says so (ADR-0048,
+    /// ADR-0050 section 6): kept open, it would be committed into the new document's cell at the
+    /// same place, and a parameter cannot be refused. The grid discards it with ExSheet's own
+    /// sentence; the Sheet already shown is the new one.
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_documentReplaced) return;
+        _documentReplaced = false;
+        if (_grid is not { } grid) return;
+        _ownDiscard = SheetWords.EditDiscardedByNewDocument;
+        if (!await grid.DiscardEditAsync(_ownDiscard)) _ownDiscard = null;
     }
 
     /// <summary>
@@ -535,6 +568,20 @@
         {
             Tell(SheetWords.Refused(refused.Refusal), outlivesCommitMove: true);
         }
+    }
+
+    /// <summary>
+    /// Says that typing was thrown away (ADR-0011): in ExSheet's own words for a discard it asked
+    /// for, and in its words for the grid's reason otherwise. A discard at the commit is part of
+    /// the commit gesture, so the move that completes the gesture leaves the notice standing.
+    /// </summary>
+    private void OnEditDiscarded(EditDiscardReason reason)
+    {
+        var own = reason == EditDiscardReason.DiscardedByConsumer ? _ownDiscard : null;
+        _ownDiscard = null;
+        Tell(own ?? SheetWords.EditDiscarded(reason),
+            outlivesCommitMove: reason is EditDiscardReason.RowLeftTheWindow or EditDiscardReason.ColumnNoLongerEditable);
+        StateHasChanged();
     }
 
     /// <summary>

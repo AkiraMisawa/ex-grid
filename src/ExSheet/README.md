@@ -29,8 +29,9 @@ computes, ExGrid paints, selects, navigates and reports.
 
 - **The Sheet Document is yours to keep.** `DocumentChanged` is raised after every change with the
   Sheet's Entries — never its Values — and ExSheet never stores anything. Handing over a different
-  document replaces the Sheet and clears the undo stack; handing back the one it raised changes
-  nothing.
+  document replaces the Sheet and clears the undo stack, and an edit open at that moment is
+  discarded, and said, rather than entered into the new document; handing back the one it raised
+  changes nothing.
 - **`Culture`** is the declared culture of a Sheet started empty; a document carries its own.
 - **`PinnedColumnCount`** freezes leading columns. Every row has the same height, and a
   `RowHeight` at which the full extent would pass the browser's scroll ceiling is refused by name.
