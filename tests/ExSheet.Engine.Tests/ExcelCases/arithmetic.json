@@ -1173,6 +1173,38 @@
       "cells": {"ZZ1000": "=\"ß\"<\"ss\""},
       "check": "ZZ1000",
       "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-146",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the equality run): numbers 3E-14 apart at 9 (3.3E-15 of each) compare equal: inside the relative threshold. A comparison at 15 significant digits would say FALSE (9.00000000000003 against 9) (ADR-0047, fourth run)",
+      "cells": {"ZZ1000": "=9+3E-14=9"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-147",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the equality run): 1+4E-15 and 1+6E-15, 9 units in the last place of 1 apart, compare equal: inside the relative threshold. A comparison at 15 significant digits would say FALSE (1.00000000000000 against 1.00000000000001) (ADR-0047, fourth run)",
+      "cells": {"ZZ1000": "=1+4E-15=1+6E-15"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-148",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the equality run): numbers 3.6E-12 apart at 1000 (3.6E-15 of each) compare equal: the two readings agree here, a control (ADR-0047, fourth run)",
+      "cells": {"ZZ1000": "=1000+3.6E-12=1000"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-149",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the equality run): numbers 3 units in the last place of 9 apart (5.3E-15) compare equal: far inside the relative threshold. A comparison at 15 significant digits would say FALSE (9.00000000000001 against 9) (ADR-0047, fourth run)",
+      "cells": {"ZZ1000": "=9+5E-15=9"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
     }
   ]
 }
