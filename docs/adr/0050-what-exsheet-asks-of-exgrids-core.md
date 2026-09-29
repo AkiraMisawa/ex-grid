@@ -9,7 +9,10 @@ ExSheet draws a Sheet by being ExGrid's Consumer, and most of Excel's behaviour 
 for free. Five things do not. ExGrid made the opposite choice in each, and made it for a display
 grid on purpose. **Each one enters the core as a declaration a Consumer makes.** A Consumer who
 does not make it sees the grid exactly as before, so no existing criterion changes. Each change
-has to be right for any Consumer that makes the declaration, ExSheet or not.
+has to be right for any Consumer that makes the declaration, ExSheet or not. *(A sixth was added
+on 2026-09-29, and it is a notification rather than a declaration: the core tells its Consumer when
+an edit opens and ends (section 6). A Consumer that does not listen still sees the grid exactly as
+before. The title keeps its first count.)*
 
 ## 1. A header click that selects, and Headings
 
