@@ -146,3 +146,40 @@ Excel moves 3 rows a notch at 100% zoom, Windows' 3 lines. On the Server host th
 by the uncompressed amount and the render caught up within one to three frames, **at most 0.62 rows
 at a 100 ms round trip**; no frame moved them against the scroll by more than 0.05 rows. Both are
 the costs accepted above, now measured, and nothing is changed for them.
+
+## Accepted after the fourth Windows run: two device pixels deep in the spacer *(2026-09-29, decided with the user)*
+
+**What happened.** The grid now draws its own 12px scrollbar (ADR-0029's third correction). After
+that change, the last row at 150% stood 1.33 CSS px (2 device px) below the readable bottom after
+Ctrl+End on /wide, and the Focus test in `scrollbar.spec.mjs` failed every time.
+
+**The grid's arithmetic is exact.** The row stack's offset puts the last row's bottom at 588 px, the
+readable height.
+
+**The browser moves it.** Chromium holds scroll offsets and positions deep in a scrolled element as
+32-bit floats in device pixels. Above 2^24 device px, which is the upper half of any compressed
+spacer, a float holds only every second device pixel. So at 150% the scroll offset 33,553,161 device
+px is held as 33,553,160, and the stack's offset 33,553,119 as 33,553,120. The rows land 2 device px
+low. Across the range the error reaches ±2 device px, near the end only. The earlier ~15px native bar
+passed only because its numbers happened to round the right way.
+
+**No arithmetic on the grid's side can remove it.** `scrollTop` itself is reported to two device
+pixels there. Ctrl+End and `scrollTop = scrollHeight` both report 22,368,774, yet they are painted
+2 device px apart. An offset split between a layout `top` and a small transform fixed one path and
+put the other 1.33 px above the bottom instead.
+
+**Two exact fixes were weighed and not taken:**
+
+- Keeping the compressed spacer under 2^24 device px. This doubles k (a wheel notch moves about 2.5
+  rows' worth instead of 1.25 at 150%).
+- A sticky row stack. On the Server host, this lets the rows stand still for a whole round trip
+  instead of the (k−1)·Δs accepted above.
+
+**The decision:** a placement error of up to two device pixels, where the scroll offset is past 2^24
+device pixels, is accepted. It is at most 1.33 CSS px at 150%, and 2 at 100%, in the vertical
+direction only. Only a compressed grid ever scrolls that deep, so an uncompressed grid still places
+every row exactly.
+
+**The assertion is loosened only there.** `scrollbar.spec.mjs` allows `2 / devicePixelRatio` more
+slack, and only when `scrollTop × devicePixelRatio ≥ 2^24`. Everywhere else, "flush" (ADR-0012)
+still means within the one pixel it always did.
