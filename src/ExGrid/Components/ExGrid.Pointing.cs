@@ -57,8 +57,12 @@ public partial class ExGrid<TRow>
 
     // A cell to reveal in the Focus's place: the Extent while a range is extended (ADR-0052),
     // or the pointing outline's moving end, which may be walked off screen while the Focus
-    // itself stays put (ADR-0012's reveal, ADR-0051).
-    private CellPosition? _revealTarget;
+    // itself stays put (ADR-0012's reveal, ADR-0051). With it, the range being extended: an
+    // axis it spans end to end is not scrolled for (ADR-0052, 2026-09-29).
+    private ExtentReveal? _revealTarget;
+
+    /// <summary>The moving end to keep in view, and the range it is the end of.</summary>
+    private readonly record struct ExtentReveal(CellPosition Cell, SelectionRange Range);
 
     /// <summary>Refuses a Point predicate without the Reference text it would need: pointing
     /// would have nothing to write (ADR-0051).</summary>
@@ -334,7 +338,7 @@ public partial class ExGrid<TRow>
             // The outline's moving end is kept on screen as the Extent is (ADR-0052): the
             // pointed cell when the outline moves, the far end when Shift extends it. The Focus
             // itself does not move.
-            _revealTarget = _pointer.Extent;
+            _revealTarget = new ExtentReveal(_pointer.Extent, _pointer.FocusRange);
             _revealFocus = true;
         }
     }

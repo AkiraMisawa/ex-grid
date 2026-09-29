@@ -72,12 +72,13 @@
                cells are pointer-events: none, so the click's offsets are measured from
                the header's own left edge — content coordinates, which is what ColumnAt
                reads. Clicking a header sorts (ADR-0012), unless the Consumer declared that it
-               selects the column (ADR-0050). *@
+               selects the column (ADR-0050). A drag across it selects whole columns; its move
+               and release handlers are splatted only while one runs (ADR-0050 item 1, ADR-0008). *@
             @* A Consumer may hide the header (ADR-0050): the band goes, and the rows start
                at the Viewport's top — BandHeightPx is zero, so the arithmetic follows. *@
             @if (!HideHeader)
             {
-            <div class="ex-header" role="row" style="@HeaderBandStyle()" @onclick="OnHeaderClickAsync" @onmousedown="OnHeaderMouseDown">
+            <div class="ex-header" role="row" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="OnHeaderMouseDown">
                 @if (_rowHeadingStyle is not null)
                 {
                     @* Where the two Headings meet (ADR-0050): held at the left edge as the
@@ -397,6 +398,18 @@
                        @ref="_formulaBarElement" />
             }
         </div>
+    }
+    @if (SizeTipText() is { } sizeTip)
+    {
+        @* The Size Tip (ADR-0052, 2026-09-29): while a drag across Headings covers more than one
+           column or row, the Consumer's size label at the Heading the Extent is on, and the Name
+           Box empty. It follows the Extent's Heading, not the pointer's pixel, so it is redrawn
+           only when the Extent moves to another one, and nothing is measured (ADR-0021). Under
+           the root and outside the scroll container, like a popover, and inside the grid's box
+           (ADR-0040). Paint only: it takes no pointer, which is dragging across it, and it says
+           nothing to assistive technology, to which the live region describes the range
+           (ADR-0033). *@
+        <div class="ex-size-tip" style="@SizeTipStyle(sizeTip)" aria-hidden="true">@sizeTip</div>
     }
     @if (_menuColumn >= 0 && _menuColumn < Columns.Count)
     {
@@ -2926,7 +2939,12 @@
         // the overlay, no row (ADR-0053). Uncompressed this is never true, and the cost
         // is today's.
         var replaced = _geometry.IsCompressed && _scrollTopPx != previousTopPx;
-        if (moved || _placeholderMode || replaced)
+        // The Size Tip stands at its Heading in the Viewport's own coordinates, so a scroll
+        // during a Heading drag moves it even where no row or column did (ADR-0052).
+        var tipMoved = _headingDrag != HeadingAxis.None
+            && (_scrollLeftPx != previousLeftPx || _scrollTopPx != previousTopPx)
+            && SizeTipText() is not null;
+        if (moved || _placeholderMode || replaced || tipMoved)
         {
             StateHasChanged();
         }
@@ -3098,18 +3116,15 @@
         // press that lands elsewhere is supposed to do.
         // A press on a Row Heading (ADR-0050): the whole row, or with Shift whole rows from
         // the Focus's. The band stands outside the column index space, so the Focus lands
-        // in the first column on screen — where the Viewport already is — and no drag
-        // begins: a drag's moves extend by cell, and would collapse the whole rows.
+        // in the first column on screen — where the Viewport already is. The drag that
+        // begins is a Heading drag, whose moves extend by row: a cell drag's would extend by
+        // cell and collapse the whole rows (ADR-0050 item 1, 2026-09-29).
         if (e.Button == 0 && ShowsRowHeadings
             && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx) && CellUnder(e) is { } headed)
         {
-            var rowExtent = Extent;
-            var focusColumn = FirstVisibleCell()?.Column ?? 0;
-            var selected = _selection.Selection;
-            var changed = Apply(e.ShiftKey
-                ? selected.ExtendToRow(headed.Row, rowExtent, focusColumn)
-                : selected.SelectRow(headed.Row, rowExtent, focusColumn));
-            if (!changed && (dismissed || committed || leftInteractive))
+            RememberHeadingPress(e, ViewportYOf(e));
+            BeginHeadingDrag(HeadingAxis.Rows, headed.Row, e.ShiftKey, Toggles(e));
+            if (dismissed || committed || leftInteractive)
                 _suppressRender = false;
             return;
         }
@@ -3172,6 +3187,12 @@
         {
             _suppressRender = true;
             SetDragging(false);
+            return;
+        }
+        // A Heading drag over the cells: only the pointer's column (row) counts (ADR-0050).
+        if (_headingDrag != HeadingAxis.None)
+        {
+            MoveHeadingDrag(e);
             return;
         }
         if (CellUnder(e) is not { } cell)
@@ -3293,13 +3314,23 @@
     /// content scrolls beneath it.
     /// </summary>
     private void UpdateEdgeBand(MouseEventArgs e)
+        => UpdateEdgeBand(e.OffsetX - _scrollLeftPx, ViewportYOf(e));
+
+    /// <summary>How far below the top of the rows a pointer over the row Viewport is — read
+    /// through the mapping: the painted rows stand at c(s), not at s (ADR-0053).</summary>
+    private double ViewportYOf(MouseEventArgs e)
+        => _visible is { } visible
+            ? e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow) - _geometry.ContentOffsetAt(_scrollTopPx)
+            : e.OffsetY;
+
+    /// <summary>The edge bands for a pointer at (<paramref name="viewportX"/>,
+    /// <paramref name="viewportY"/>) in the Viewport's readable box.</summary>
+    private void UpdateEdgeBand(double viewportX, double viewportY)
     {
-        if (_visible is not { } visible)
+        if (_visible is null)
             return;
-        // Read through the mapping: the painted rows stand at c(s), not at s (ADR-0053).
-        _edgePointerViewportYPx = e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow)
-            - _geometry.ContentOffsetAt(_scrollTopPx);
-        _edgePointerViewportXPx = e.OffsetX - _scrollLeftPx;
+        _edgePointerViewportYPx = viewportY;
+        _edgePointerViewportXPx = viewportX;
         _edgeStepRows = EdgeBand.RowsPerTick(
             _edgePointerViewportYPx, _geometry.ViewportHeightPx, _geometry.RowsPerViewport);
         // Sideways the unit is a row height per rate step — the band has no natural
@@ -3307,6 +3338,13 @@
         // reasoning (stay under the fling) holds trivially at eight row heights.
         _edgeStepXPx = EdgeBand.RowsPerTick(
             _edgePointerViewportXPx, _visibleWidthPx, int.MaxValue) * _metrics.RowHeightPx;
+        // A Heading drag scrolls along its Heading's axis only (ADR-0050, item 1): the Column
+        // Headings sit at the Viewport's top edge, and a gesture about columns must not scroll
+        // the rows under it.
+        if (_headingDrag == HeadingAxis.Columns)
+            _edgeStepRows = 0;
+        else if (_headingDrag == HeadingAxis.Rows)
+            _edgeStepXPx = 0;
         if (_edgeStepRows != 0 || _edgeStepXPx != 0)
             StartEdgeTimer();
         else
@@ -3378,7 +3416,9 @@
                     var under = new CellPosition(_pageStartRow + r, c);
                     changed = _fillSource is not null
                         ? MoveFillPointer(under)
-                        : Apply(_selection.Selection.ExtendTo(under, Extent));
+                        : _headingDrag != HeadingAxis.None
+                            ? ExtendHeadingDragTo(under)
+                            : Apply(_selection.Selection.ExtendTo(under, Extent));
                 }
 
                 // Not a UI event: an armed suppression would swallow whatever renders
@@ -3452,6 +3492,10 @@
             await FinishFillAsync(CellUnder(e));
             return;
         }
+        // Where a Heading drag is released counts as a move: a fast release reaches another
+        // column or row without a move between (ADR-0050, item 1; ADR-0012).
+        if (_headingDrag != HeadingAxis.None)
+            MoveHeadingDrag(e);
         _suppressRender = true;
         SetDragging(false);
     }
@@ -3506,7 +3550,17 @@
             StateHasChanged();
             return;
         }
-        if (e.Button != 0 || !OnColumnOrderChanged.HasDelegate
+        // Where no reorder is wired, a press on a column's header begins a Heading drag (ADR-0050
+        // item 1, ADR-0012). Where one is, dragging a header moves it (ADR-0011), as before.
+        if (!OnColumnOrderChanged.HasDelegate)
+        {
+            PressHeader(e);
+            // This handler always renders: a press that selected nothing new may still have
+            // closed a popover or left an Interactive cell above.
+            _suppressRender = false;
+            return;
+        }
+        if (e.Button != 0
             || _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx)
             || e.OffsetX < 0 || e.OffsetX >= _columnStyles.Geometry.TotalWidthPx
             || _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx) is not { } column)
@@ -3678,11 +3732,29 @@
     private async Task OnHeaderClickAsync(MouseEventArgs e)
     {
         // A resize or reorder just released here: the click is the gesture's tail, not
-        // a sort (ADR-0016/0011).
+        // a sort (ADR-0016/0011). So is the click after a Heading drag, and after a press
+        // that selected at once (ADR-0050, item 1). The button is up, so a Heading drag
+        // whose release was not heard ends here.
         if (_gestureConsumedClick)
         {
             _gestureConsumedClick = false;
+            if (_headingDrag != HeadingAxis.None)
+                SetDragging(false);
             return;
+        }
+        // A press on a plain header whose release was not heard — on a circuit the release
+        // can come before the handler that hears it is attached — ends with its click. The
+        // browser fires the click on the header wherever along it each end was, so a click on
+        // another column than the one pressed is a drag's tail, and sorts nothing (ADR-0012,
+        // 2026-09-29).
+        if (_headerPress is not null)
+        {
+            MoveHeadingDrag(e);
+            var dragged = _headerPress is null;
+            _gestureConsumedClick = false;
+            SetDragging(false);
+            if (dragged)
+                return;
         }
         // An editor still standing means the mouse-down's commit was Rejected, and this
         // click is the same gesture: it keeps no meaning of its own (ADR-0034, ED-15).
@@ -3733,6 +3805,14 @@
             // From nothing selected, the Focus on the first visible row, as the first key is
             // (KB-9): the Viewport does not move for a click on the header.
             Apply(_selection.Selection.ExtendToColumn(column, Extent, _visible?.Start ?? 0));
+            return;
+        }
+        // Ctrl+click adds the whole column as a new range, or takes a wholly selected one out,
+        // and does not sort either (ADR-0012 and ADR-0050 item 1, 2026-09-29). Meta counts where
+        // it is Command, as on cells.
+        if (Toggles(e))
+        {
+            Apply(_selection.Selection.ToggleColumn(column, Extent, _visible?.Start ?? 0));
             return;
         }
         // Declared, the plain click is Excel's too (ADR-0050, item 1): the whole column,
@@ -4908,6 +4988,7 @@
             _dragHandler.Remove("onmousemove");
             StopEdgeTimer();
             _pointDragging = false;
+            ForgetHeadingDrag();
             // A fill drag ends with the drag, however it ends; a release outside the grid
             // is not seen, so it raises nothing rather than fill to a guessed cell.
             _fillSource = null;
@@ -5741,12 +5822,16 @@
         // While extending, the grid keeps the Extent in view, not the Focus, which stays
         // where the extension started and may be left off screen (ADR-0052). Every other key
         // moves the Focus, and the Focus is what has to end up on screen (ADR-0012).
-        var revealed = Extends(action) ? next.Extent : next.Focus;
-        _revealTarget = Extends(action) ? revealed : null;
+        var extending = Extends(action);
+        var revealed = extending ? next.Extent : next.Focus;
+        _revealTarget = extending ? new ExtentReveal(revealed, next.FocusRange) : null;
         // The keyboard crosses pages; dragging does not (ADR-0015): a cell the keystroke
         // carried past the page boundary turns the page, and the reveal then positions it
-        // inside the new one.
-        if (PageSize is { } pageSize && revealed.Row / pageSize != _pageIndex)
+        // inside the new one. A page turn is the pager's scroll, so an extension that leaves
+        // the range spanning every row turns none, as the view does not scroll down for it
+        // (ADR-0015 and ADR-0052, 2026-09-29).
+        if (PageSize is { } pageSize && revealed.Row / pageSize != _pageIndex
+            && !(extending && next.FocusRange.SpansEveryRow(extent)))
         {
             _pageIndex = revealed.Row / pageSize;
             PrepareRender();
@@ -6252,6 +6337,10 @@
             return NameBoxLabel?.Invoke(pointer.Focus) ?? "";
         if (_selection.Selection.IsEmpty)
             return "";
+        // A drag across Headings shows its size in the Size Tip instead, and the Name Box is empty
+        // while the tip shows; over one column or row it names the Focus (ADR-0052, 2026-09-29).
+        if (_headingDrag != HeadingAxis.None)
+            return SizeTipText() is null ? NameBoxLabel?.Invoke(_selection.Selection.Focus) ?? "" : "";
         if (_dragging && _fillSource is null && !_pointDragging && NameBoxSizeLabel is { } sizeLabel
             && _selection.Selection.FocusRange is { CellCount: > 1 } dragged
             && sizeLabel(dragged) is { } size)
@@ -7139,7 +7228,7 @@
         if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)
             return;
 
-        var focus = target ?? _selection.Selection.Focus;
+        var focus = target?.Cell ?? _selection.Selection.Focus;
         if (focus.Row >= TotalRows || focus.Column >= _columnStyles.Geometry.Count)
             return;
         // Under a PageSize the reveal works in page-local rows; a Focus that left the
@@ -7176,6 +7265,21 @@
         var left = toRowStart
             ? 0
             : _columnStyles.Geometry.ScrollLeftToReveal(focus.Column, _scrollLeftPx);
+        // While extending, an axis the range spans end to end is not scrolled for, judged on
+        // the range after the move (ADR-0052, 2026-09-29). Its Extent is on the far end only
+        // because the range covers the whole axis: whole columns selected from the first row
+        // keep the view where it is when Shift+→ moves them on, as Excel's and Google Sheets'
+        // do, rather than taking it to the last row. The scroller stays where it is going.
+        // Shift+Home is not asking for the Extent to be kept in view but for the start of the
+        // row, which is a different request (above), so it still goes there.
+        if (target is { } extending)
+        {
+            var extent = Extent;
+            if (extending.Range.SpansEveryRow(extent))
+                top = _expectedScrollTopPx;
+            if (extending.Range.SpansEveryColumn(extent) && !toRowStart)
+                left = _expectedScrollLeftPx;
+        }
         // The no-op check compares against where the scroller is GOING TO BE — the last
         // scroll event or the last write, whichever is newer — never against the event
         // mirror alone. A previous reveal's write can still be in flight; judged against

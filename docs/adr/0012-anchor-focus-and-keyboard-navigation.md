@@ -428,3 +428,30 @@ On Blazor Server the write and the render's batch still travel as two messages, 
 in the browser until the root carries the render's reveal number (ADR-0021, the scroll-offset
 entry). Without the hold, about half the far reveals at a 150 ms round trip painted one empty frame
 between the two messages.
+
+## Added later: a drag and Ctrl+click on the header *(2026-09-29, decided with the user)*
+
+ADR-0050 gave Headings Excel's drag and Ctrl+click (item 1, 2026-09-29), and **a display grid takes
+both on its column header too**. Shift+click already made the header the mouse route to whole
+columns; the drag and Ctrl+click finish that route. The plain click still sorts, so the header must
+tell a click from the start of a drag, and here it differs from a Heading:
+
+- **A press on a header selects nothing by itself.** Released on the same column, with no other
+  column's header crossed, it is a click and sorts, as above. **The drag begins when the pointer
+  reaches another column** — its header, or its cells below — and from then on it is a Heading drag
+  as ADR-0050 describes, from the pressed column to the pointer's. **A press that became a drag
+  never sorts**, even if it is released back over the column it started on. The click a browser
+  fires on the common ancestor after a press and a release on different headers is therefore not a
+  sort either.
+- **Ctrl+click on a header adds or takes out the whole column and does not sort**; Ctrl+drag adds
+  whole columns. The modifier had no meaning on a header before: it was ignored and the click
+  sorted. Multi-column sorting is still never a header click (above).
+- Selecting a column this way is positional, so an unsortable column (an Action Column) is selected
+  like any other, as Shift+click already does.
+- **Where the Consumer wires a column reorder (`OnColumnOrderChanged`), a header drag stays the
+  reorder** [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)
+  gave it, a Ctrl+drag included. There Shift+click and Ctrl+click still select, and whole columns
+  are selected by those. *(Decided with the user the same day, when the implementation met the
+  reorder: the two readings of a header drag collided, and the one a Consumer asked for by wiring it
+  wins. Google Sheets' way, where a drag on a column already selected moves it and any other drag
+  selects, was not taken: it would change the reorder gesture every existing Consumer has.)*

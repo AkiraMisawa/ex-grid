@@ -47,7 +47,8 @@ has.)*
   went down, whichever way it then moves: D5 → B2 leaves D5 active.
 - **The grid keeps the Extent in view while extending, not the Focus** (cases 1, 11). The view
   scrolls as soon as the Extent reaches its edge, and Shift+PageDown moves the view a page with the
-  Extent, leaving the Focus off screen. A move back inside the view scrolls nothing.
+  Extent, leaving the Focus off screen. A move back inside the view scrolls nothing. *(Not on an
+  axis the range spans end to end: see "What the user's run settled", 2026-09-29.)*
 - **After Enter or Tab has moved the Focus inside a range, Shift+arrow moves the edge opposite the
   Focus** (case 3). With A1:C3 and A3 active, Shift+→ moves the right edge (A1:D3) and Shift+↓ the
   top edge (A2:D3). With B1 active, Shift+↑ moves the bottom edge. **On an axis where the Focus is on
@@ -176,3 +177,44 @@ Part B asked each reading above of Excel.
 - **Read, not observed**: when a take-out removes the whole range made last (A1:B2, then Ctrl+click
   F6, then Ctrl+click F6 again), the latest range still standing takes its place, so the Focus goes
   to A1. Asked of Excel in the next Windows run.
+
+## What the user's run settled *(2026-09-29, decided with the user)*
+
+The user compared ExSheet with Excel (Microsoft 365, Windows) and with Google Sheets by hand, and
+the two agreed on each point below.
+
+- **An axis the range spans end to end is not scrolled for.** A Column Heading click with the view
+  at the top puts the Focus on row 1, which is the range's top edge, so the Extent is the column's
+  last row. Shift+→ then moved the Extent to the last row of the next column, and keeping it in view
+  scrolled the Sheet to its bottom. Excel and Google Sheets both extend to C:D and leave the view
+  where it was. **While extending, the grid keeps the Extent in view only on an axis the range
+  holding the Focus does not span end to end**, judged on the range after the move. Whole columns
+  scroll sideways and never down; whole rows scroll down and never sideways; the whole grid scrolls
+  for neither. The Extent itself is unchanged: this is a rule about the view, not about the
+  Selection. A plain ExGrid reaches the same state through Shift+click on a header or Ctrl+Space
+  on row 1, and takes the same rule.
+- **A whole column that stops being whole scrolls as any range does.** With C:C selected from C1,
+  Shift+↑ moves the Extent from the last row to the one above it, leaving C1:C(last − 1), and the
+  Sheet scrolls to the bottom to show it. Excel does the same, so nothing about the Extent changes.
+- **A Heading drag shows its size beside the Headings, not in the Name Box.** While a drag over
+  Column Headings or Row Headings covers one column or row, the Name Box names the Focus (`C3`,
+  `A3`). Once it covers more, Excel empties the Name Box and shows the size (`10R x 16384C`) in a
+  label at the Headings, which follows the drag. ExGrid takes it: the **Size Tip** is painted at the
+  Heading the Extent is on, and the Name Box is empty while it shows. The text is the size label
+  the Consumer already supplies for a selecting drag (`NameBoxSizeLabel`, DC-39); without one,
+  nothing is painted. It follows the Extent's Heading, not the pointer's pixel, so it is redrawn
+  only when the Extent moves to another column or row: no pointer position reaches C# and no
+  JavaScript is added ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)). The Size Tip
+  is painted inside the grid's box ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)),
+  and it adds one class and its Visual Tokens to the presentation surface
+  ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)).
+  A drag over cells is unchanged: the size is in the Name Box, as above.
+- **A move that itself makes the range span an axis holds that axis too** *(observed by the user in
+  Excel, the same day)*. On an empty sheet, Ctrl+Shift+↓ from A1 selects the whole of column A with
+  A1 active, and the view does not move down. So "judged on the range after the move" is Excel's
+  rule, not a reading, and it is kept. The implementation had applied it this way and asked whether
+  "spanned both before and after the move" was meant; it was not. Ctrl+Shift+→ from whole columns to
+  the whole grid, which then scrolls on neither axis, is still read, not observed.
+- **Under a pager, a page turn is the scroll** *(decided with the user the same day)*. Whole columns
+  extended sideways turn no page, and Ctrl+Shift+↓ from the first row stays on its page
+  ([ADR-0015](./0015-paging-is-another-driver-for-range-requests.md)).
