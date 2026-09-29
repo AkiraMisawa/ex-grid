@@ -41,13 +41,6 @@
     table recalculate. Type <code>=SUM(Po</code> into a cell to see the table offered.
 </p>
 
-<p>
-    While a cell is being edited, the commands that change the Sheet are greyed out, as Excel greys
-    out its ribbon: ExSheet refuses them until the edit is committed or cancelled, so a row inserted
-    above the cell cannot carry the typing into another row (ADR-0048). <i>Revalue</i> stays: a
-    Linked Table's snapshot is data arriving, not a command (ADR-0049).
-</p>
-
 <div class="demo-toolbar">
     <button id="sheet-undo" disabled="@_editing" @onclick="UndoAsync">Undo</button>
     <button id="sheet-redo" disabled="@_editing" @onclick="RedoAsync">Redo</button>
@@ -68,6 +61,15 @@
                 ViewportHeight="420" ViewportWidth="330" />
     </div>
 </div>
+
+@* Below the Sheet, not above it: the page's tests press cells by where the grid stands in a
+   720 px window, and text above the grid moves every row down. *@
+<p>
+    While a cell is being edited, the commands that change the Sheet are greyed out, as Excel greys
+    out its ribbon: ExSheet refuses them until the edit is committed or cancelled, so a row inserted
+    above the cell cannot carry the typing into another row (ADR-0048). <i>Revalue</i> stays: a
+    Linked Table's snapshot is data arriving, not a command (ADR-0049).
+</p>
 
 @code {
     /// <summary>Which Chrome the Sheet runs with: absent or <c>builtin</c> is the core's own,
