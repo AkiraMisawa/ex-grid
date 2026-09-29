@@ -795,7 +795,9 @@ test('DC-38/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused
     await page.waitForTimeout(500);
     await expect(notice).toContainText('too narrow');
     await expectFocusAt(grid, 'F7');
-    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'F7', 'F7');
+    // One cell selected is the Focus alone, with no range tinted (ADR-0008, 2026-09-29).
+    await expect(grid.locator('.ex-range')).toHaveCount(0);
+    await expectCovers(grid.locator('.ex-selection .ex-focus'), grid, 'F7', 'F7');
     await expect(cell(grid, 'F7')).toHaveText('');
     await expect(cell(grid, 'F8')).toHaveText('');
     await expect(cell(grid, 'F9')).toHaveText('');

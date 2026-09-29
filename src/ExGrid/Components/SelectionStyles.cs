@@ -25,7 +25,9 @@ namespace ExGrid.Components;
 /// A range spanning the pinned boundary is painted as two rectangles, for the reason the
 /// rest of the horizontal axis is asymmetric (ADR-0004): a Pinned Column covers the
 /// Viewport's edge rather than occupying content ahead of it, so its part of the
-/// selection has to travel with it while the rest pans underneath.
+/// selection has to travel with it while the rest pans underneath. A selected range's two
+/// rectangles are each the whole range clipped to its own side (<see cref="Range"/>); the
+/// bands and outlines that are not a range are cut at the boundary instead.
 ///
 /// It lives in the component layer for the reason <see cref="ColumnStyles"/> does: the
 /// pure layer answers where a column is, and this answers how that is written down for a
@@ -33,6 +35,62 @@ namespace ExGrid.Components;
 /// </summary>
 internal static class SelectionStyles
 {
+    /// <summary>
+    /// A selected range as one layer paints it (ADR-0008, "Excel's look for the Focus and a
+    /// single range"), or null when the layer holds no part of it — and null for a range that
+    /// is the Focus's cell alone, which is not tinted at all: the Focus outline marks it.
+    ///
+    /// A range that spans the pinned boundary is painted <em>whole</em> in both layers, each
+    /// clipped to its own side of the boundary. Whatever is drawn inside the range's edge —
+    /// the outline of a single range, the forced-colors outline of every range — then stops
+    /// at the boundary on each side instead of being drawn along it, so the two parts meet
+    /// with no seam; and the scrollable part keeps its box while it slides beneath the
+    /// pinned block. Nothing here needs to know how wide an outline is, only that a column
+    /// is wider than one.
+    ///
+    /// A range holding the <paramref name="focus"/> carries a hole where the Focus is, in the
+    /// layer the Focus's cell belongs to: Excel leaves the active cell untinted. The hole is
+    /// geometry, so it is resolved here with the rectangle and written inline, as the
+    /// polygon the stylesheet clips the tint with; the range stays one element whatever its
+    /// size. It is left out while the Focus's row is not among the painted rows, where the
+    /// clipped rectangle does not reach it.
+    /// </summary>
+    public static string? Range(
+        SelectionRange range, CellPosition focus, ColumnGeometry columns, double rowHeightPx, RowRange painted,
+        bool pinnedLayer)
+    {
+        if (range.CellCount == 1 && range.Contains(focus))
+            return null;
+        var pinned = columns.PinnedCount;
+        var hasPinnedPart = range.LeftColumn < pinned;
+        var hasScrollablePart = range.RightColumn >= pinned;
+        if ((pinnedLayer ? !hasPinnedPart : !hasScrollablePart) || Clip(range, painted) is not { } rows)
+            return null;
+
+        var leftPx = columns.OffsetPxOf(range.LeftColumn);
+        var rightPx = columns.OffsetPxOf(range.RightColumn + 1);
+        var style = Rect(leftPx, rightPx - leftPx, rows, rowHeightPx, painted.Start);
+        if (hasPinnedPart && hasScrollablePart)
+        {
+            var boundaryPx = columns.OffsetPxOf(pinned);
+            style += pinnedLayer
+                ? FormattableString.Invariant($"; clip-path: inset(0 {rightPx - boundaryPx}px 0 0)")
+                : FormattableString.Invariant($"; clip-path: inset(0 0 0 {boundaryPx - leftPx}px)");
+        }
+        if (range.Contains(focus) && (focus.Column < pinned) == pinnedLayer
+            && focus.Row >= rows.Top && focus.Row < rows.Top + rows.Count)
+        {
+            var holeLeftPx = columns.OffsetPxOf(focus.Column) - leftPx;
+            var holeRightPx = columns.OffsetPxOf(focus.Column + 1) - leftPx;
+            var holeTopPx = (focus.Row - rows.Top) * rowHeightPx;
+            var holeBottomPx = holeTopPx + rowHeightPx;
+            // evenodd: the box, then the Focus's cell inside it, is the box less the cell.
+            style += FormattableString.Invariant(
+                $"; --ex-range-hole: polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, {holeLeftPx}px {holeTopPx}px, {holeRightPx}px {holeTopPx}px, {holeRightPx}px {holeBottomPx}px, {holeLeftPx}px {holeBottomPx}px, {holeLeftPx}px {holeTopPx}px)");
+        }
+        return style;
+    }
+
     /// <summary>The part of a range that pans with the content, or null when the range
     /// lies entirely under the Pinned Columns.</summary>
     public static string? Scrollable(

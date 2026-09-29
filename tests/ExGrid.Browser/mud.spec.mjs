@@ -88,6 +88,9 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         // cells are pointer-events: none by design and the Viewport is the target
         // (README, "Traps this suite has already hit").
         await gridA(page).locator('.ex-row').nth(2).locator('.ex-cell').nth(2).click({ force: true });
+        // One cell selected is its Focus outline alone, untinted; a range carries the fill
+        // (ADR-0008, 2026-09-29).
+        await gridA(page).locator('.ex-row').nth(3).locator('.ex-cell').nth(3).click({ force: true, modifiers: ['Shift'] });
         // Painted a round trip after the click on the Server host.
         await expect(gridA(page).locator('.ex-range')).not.toHaveCount(0);
         await expect(gridA(page).locator('.ex-focus')).not.toHaveCount(0);
@@ -95,7 +98,8 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
             outline: getComputedStyle(g.querySelector('.ex-focus')).outlineColor,
             ground: getComputedStyle(g.querySelector('.ex-cell')).backgroundColor,
             rootGround: getComputedStyle(g).backgroundColor,
-            fill: getComputedStyle(g.querySelector('.ex-range')).backgroundColor,
+            // The tint is the range's ::before, clipped round the Focus.
+            fill: getComputedStyle(g.querySelector('.ex-range'), '::before').backgroundColor,
         }));
         const ground = parseRgb(colours.ground)?.length && colours.ground !== 'rgba(0, 0, 0, 0)'
             ? parseRgb(colours.ground) : parseRgb(colours.rootGround);
