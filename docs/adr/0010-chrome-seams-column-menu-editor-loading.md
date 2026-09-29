@@ -232,6 +232,14 @@ Plain navigation is not held. An arrow outside editing changes no mode; holding 
 would pace a held-down arrow key to one row per round trip on Server, for no correctness
 gained.
 
+*(Widened 2026-09-29, decided with the user.)* **A press on the rows while an edit is open is a
+mode change too**, and the keys after it are held until the core has answered it. The press
+commits and moves, or points; either way the mode the next key meets is decided by the answer.
+Found while building [ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6:
+`99` typed over a cell, a click on another cell, then `7` at once, and the `7` was lost. It went
+into the Cell Editor the commit was removing, and B2 never opened. That happened on the Server
+host at 150 ms, and without injected latency too.
+
 Rejected: **appending on the C# side** — C# receiving the printable keys and adding them to
 the editor's text. Keys typed after the editor has DOM focus go straight into its input,
 while keys still in flight arrive later and are appended behind them: `1500` can come out

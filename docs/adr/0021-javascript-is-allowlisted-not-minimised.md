@@ -299,8 +299,8 @@ hands the keyboard back; one ended by a press elsewhere does not take it from a 
 before it, so the press into the bar is answered again in its turn. If the bar still holds focus
 and no edit is open when its turn comes, the core opens the bar's edit then.)*
 
-*(Added 2026-09-29, with [ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6,
-whose outcome the user decided; the user is asked to confirm this means: the capture-phase `mousedown`
+*(Added 2026-09-29, decided with the user, with
+[ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6: the capture-phase `mousedown`
 on the root also brings the keyboard back to an edit left standing. When a press lands on this
 root's rows or headings while an edit is open here and DOM focus is outside this root, the listener
 focuses the editor surface that last held the keyboard before the press goes on. This is the second
@@ -318,3 +318,10 @@ commits an edit typed in the Formula Bar instead, the bar's focus is only left s
 keyboard stayed in the bar with no edit open, and typing there went nowhere. That focus is now
 marked as left standing, as a held press's already was, and the hand-back after the commit takes
 it.
+
+*(Added 2026-09-29, decided with the user, with
+[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s widened hold: a press on the rows
+while an edit is open starts a hold in the same listener. The keys typed after it are held, in
+order, until the core has answered the press (`PressAnsweredAsync`, already asked for a held
+press), and are then replayed against the mode the answer leaves. No listener is added and no
+layout is read.)*

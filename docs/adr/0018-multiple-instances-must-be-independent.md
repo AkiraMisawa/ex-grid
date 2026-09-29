@@ -143,6 +143,17 @@ too.
     trip later, and the keys typed in between would go to the grid the user had just left.
 - A click into the editor's own text, the Formula Bar or the Name Box already brought the keyboard
   back, and is unchanged.
+- **An edit whose keyboard is elsewhere is told apart** *(decided with the user the same day)*.
+  While DOM focus is outside the grid's root, the Cell Editor's outline is drawn 1px wide instead of
+  its full width, and it is drawn at full width again when the keyboard returns. The consequence
+  below ("distinguish the focused state visually") asks for this once two grids can each hold an
+  open edit. The stylesheet does it with `:focus-within` on the root. The colour stays
+  `--ex-editor-outline`'s, and no script is involved.
+- **A press back within one round trip of the key that opens the edit is not brought back**
+  *(accepted with the user the same day)*. Such a press is held behind that key (ADR-0021's
+  `mousedown` note of 2026-09-27), and a held press suppresses its default, so DOM focus stays
+  where it was and the keys typed next go there. It takes a key, a press elsewhere and a press back,
+  all inside one round trip, and only on a circuit. It is recorded here rather than built around.
 
 ## Consequences
 
