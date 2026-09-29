@@ -1,0 +1,29 @@
+using global::ExGrid.Chrome;
+using global::ExGrid.MudBlazor;
+
+namespace ExGrid.DemoPages;
+
+/// <summary>
+/// The <c>?chrome=</c> switch the pages that the browser suite runs under both Chromes share
+/// (FN-17, WR-5, DC-17, ED-27): absent or <c>builtin</c> is the core's own Chrome, <c>mud</c> is
+/// ExGrid.MudBlazor's. Anything else is refused by name rather than quietly run as the built-in
+/// one — a mistyped value would otherwise make a test "under both Chromes" pass twice against the
+/// same one. What a page under the Wrapper's Chrome needs besides is <see cref="DemoChromeAssets"/>.
+/// </summary>
+public static class DemoChrome
+{
+    /// <summary>Whether <paramref name="name"/> asks for ExGrid.MudBlazor's Chrome.</summary>
+    public static bool IsMud(string? name) => name == "mud";
+
+    /// <summary>The Chrome <paramref name="name"/> asks for: null for the core's own,
+    /// <see cref="MudGridChrome.Default"/> for <c>mud</c>.</summary>
+    /// <exception cref="ArgumentException">The name is neither.</exception>
+    public static IGridChrome? From(string? name) => name switch
+    {
+        null or "builtin" => null,
+        "mud" => MudGridChrome.Default,
+        _ => throw new ArgumentException(
+            $"Unknown chrome '{name}': this page runs with ?chrome=builtin (the default) or ?chrome=mud.",
+            nameof(name)),
+    };
+}

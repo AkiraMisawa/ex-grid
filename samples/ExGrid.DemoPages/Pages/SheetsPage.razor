@@ -5,22 +5,12 @@
 @using global::ExSheet.Engine
 @using global::ExGrid.Chrome
 @using global::ExGrid.MudBlazor
-@using global::MudBlazor
 
 @* ?chrome=mud runs both Sheets with ExGrid.MudBlazor's Chrome, each on the Wrapper's paper, whose
    stylesheet maps the grid's Visual Tokens onto MudBlazor's palette (ADR-0030) — so the browser
-   tests that look at a Sheet's paint run under both Chromes (ED-27). Without the parameter
-   nothing here renders, and each Sheet stands on the page as it always did. *@
-@if (_mudChrome)
-{
-    <HeadContent>
-        <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
-        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-        <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
-    </HeadContent>
-    <MudThemeProvider />
-    <MudPopoverProvider />
-}
+   tests that look at a Sheet's paint run under both Chromes (ED-27; DemoChrome). Without the
+   parameter each Sheet stands on the page as it always did. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" />
 
 <DemoNav />
 
@@ -46,32 +36,18 @@
 </p>
 
 @code {
-    /// <summary>Which Chrome the Sheets run with: absent or <c>builtin</c> is the core's own,
-    /// <c>mud</c> is <see cref="MudGridChrome.Default"/> on a <see cref="MudExGridPaper"/>.
-    /// Anything else is refused, as on /sheet, so a test "under both Chromes" cannot pass twice
-    /// against the same one.</summary>
+    /// <summary>Which Chrome the Sheets run with (<see cref="DemoChrome"/>); under the Wrapper's,
+    /// each stands on a <see cref="MudExGridPaper"/>.</summary>
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
 
     private IGridChrome? _chrome;
-    private bool _mudChrome;
 
-    protected override void OnParametersSet()
-    {
-        _mudChrome = ChromeName == "mud";
-        _chrome = ChromeName switch
-        {
-            null or "builtin" => null,
-            "mud" => MudGridChrome.Default,
-            _ => throw new ArgumentException(
-                $"Unknown chrome '{ChromeName}': this page runs with ?chrome=builtin (the default) or ?chrome=mud.",
-                nameof(ChromeName)),
-        };
-    }
+    protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
 
     // A Sheet under the Wrapper's Chrome stands on its paper; under the core's, on the page.
     private RenderFragment OnPaper(RenderFragment sheet)
-        => _mudChrome ? @<MudExGridPaper>@sheet</MudExGridPaper> : sheet;
+        => DemoChrome.IsMud(ChromeName) ? @<MudExGridPaper>@sheet</MudExGridPaper> : sheet;
 
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
 
