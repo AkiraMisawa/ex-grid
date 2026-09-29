@@ -350,25 +350,26 @@
    the Selection and the Focus stay where they are — dashed and heavier, so it reads as neither.
    Paint only, like every rectangle here. */
 .ex-point { position: absolute; outline: 2px dashed var(--ex-focus-outline, CanvasText); outline-offset: -2px; }
-/* Reference Outlines (ADR-0057): while a Formula is edited, each range its References name,
-   solid in the Reference's colour over a pale wash of it. Point's outline is the Reference Outline
-   of the range it points at: dashed in that colour, with no wash, so it still reads as the one that
-   moves. The palette's length is behaviour and lives in C#; the colours are the Visual Tokens
-   --ex-reference-1 to --ex-reference-8, and a Theme sets them, never how many there are
-   (ADR-0027/0029). The defaults are provisional until Excel's palette is observed: eight hues
-   apart from each other, each at 3:1 or more against a white ground and a dark one. Carried as
-   the element's own color, which it has no text to spend on. Paint only, like every rectangle
-   here. */
-.ex-reference-outline { position: absolute; outline: 2px solid currentColor; outline-offset: -2px; background: color-mix(in srgb, currentColor 12%, transparent); }
-.ex-reference-outline.ex-point { outline: 2px dashed currentColor; background: none; }
-.ex-reference-1 { color: var(--ex-reference-1, #3c78d8); }
-.ex-reference-2 { color: var(--ex-reference-2, #e03131); }
-.ex-reference-3 { color: var(--ex-reference-3, #7950f2); }
-.ex-reference-4 { color: var(--ex-reference-4, #2f9e44); }
-.ex-reference-5 { color: var(--ex-reference-5, #cc3fa4); }
-.ex-reference-6 { color: var(--ex-reference-6, #1098ad); }
-.ex-reference-7 { color: var(--ex-reference-7, #e8590c); }
-.ex-reference-8 { color: var(--ex-reference-8, #b0761a); }
+/* Reference Outlines (ADR-0057): the cells each Reference in an edited Formula names, in the
+   colour its text wears. The palette's length is behaviour and lives in C# (seven, as Excel's);
+   its colours are --ex-reference-1 to --ex-reference-7, which a Theme sets, never how many there
+   are (ADR-0027/0029). The defaults are Excel's, as the eighth Windows run read them, over a light
+   ground; over a dark one they are lifted a third of the way to white, which Excel was not seen
+   to do, so that each reads at 3:1 or more there too. Carried as the element's own color, which it
+   has no text to spend on. A solid line over a pale wash of the colour, as Excel's (#ebf0f9 is
+   the first's). Paint only, like every rectangle here. */
+.ex-reference-outline { position: absolute; outline: 2px solid currentColor; outline-offset: -2px; background: color-mix(in srgb, currentColor 10%, transparent); }
+/* Point's dashes over the outline of the Reference it writes: in the Focus outline's colour, as
+   Excel lays its active-cell green over the pointed Reference's own line, just inside that line
+   so both show (the eighth Windows run). */
+.ex-point.ex-point-on-reference { outline-offset: -4px; }
+.ex-reference-1 { color: var(--ex-reference-1, light-dark(#326ac7, color-mix(in srgb, #326ac7 67%, white))); }
+.ex-reference-2 { color: var(--ex-reference-2, light-dark(#c0353e, color-mix(in srgb, #c0353e 67%, white))); }
+.ex-reference-3 { color: var(--ex-reference-3, light-dark(#8157b7, color-mix(in srgb, #8157b7 67%, white))); }
+.ex-reference-4 { color: var(--ex-reference-4, light-dark(#007c20, color-mix(in srgb, #007c20 67%, white))); }
+.ex-reference-5 { color: var(--ex-reference-5, light-dark(#b03e84, color-mix(in srgb, #b03e84 67%, white))); }
+.ex-reference-6 { color: var(--ex-reference-6, light-dark(#b64900, color-mix(in srgb, #b64900 67%, white))); }
+.ex-reference-7 { color: var(--ex-reference-7, light-dark(#267392, color-mix(in srgb, #267392 67%, white))); }
 /* CanvasText, not Highlight: measured in the browser suite, Chrome's Highlight against
    Canvas is ~2:1 and UX-9 requires 3:1 — the ink colour contrasts by construction in
    both schemes, which is also roughly what Excel's own dark focus border does. */

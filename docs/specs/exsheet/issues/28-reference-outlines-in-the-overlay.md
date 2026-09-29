@@ -30,3 +30,9 @@ Reference Outline is drawn as a range's outline is drawn.
 - [ ] ExSheet declares the function from ticket 27, so `/sheet` shows the outlines (DC-46)
 - [ ] Layer 3 on both hosts: `=A1+B2:C3` outlines A1 and B2:C3 in two colours; `=A1+A1` outlines
       A1 once; `=`, ↓, ↓ moves a dashed outline in the first colour; Enter removes them all (DC-46)
+
+*(2026-09-30, after the eighth Windows run, ADR-0057 "What the eighth Windows run settled".)* The
+palette is seven colours with Excel's values. Each Reference draws its own outline (`Outlines`), so
+a range named twice lays its wash twice. Point's element is now dashes in the Focus outline's colour
+(`ex-point ex-point-on-reference`), laid over the pointed Reference's own outline, which is no longer
+left out.

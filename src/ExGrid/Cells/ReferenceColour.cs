@@ -12,10 +12,10 @@ public readonly record struct ReferenceColour
     /// <summary>
     /// How many colours the palette has. It is behaviour, not appearance: it decides which
     /// References share a colour, so it lives here and not in the stylesheet (ADR-0057). A Theme
-    /// sets the colours, never how many there are. Eight, as read from Excel until the eighth
-    /// Windows run observes it.
+    /// sets the colours, never how many there are. Seven, as the eighth Windows run observed
+    /// Excel's range finder cycle.
     /// </summary>
-    public const int PaletteLength = 8;
+    public const int PaletteLength = 7;
 
     // The place less one, so that the default is the first colour rather than no colour.
     private readonly int _index;
@@ -35,7 +35,7 @@ public readonly record struct ReferenceColour
     public int Place => _index + 1;
 
     /// <summary>The colour handed to the <paramref name="appearance"/>th distinct thing a text
-    /// refers to, counted from 0 in order of first appearance: round the palette, so the ninth
+    /// refers to, counted from 0 in order of first appearance: round the palette, so the eighth
     /// takes the first colour again.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The count is negative.</exception>
     public static ReferenceColour ForAppearance(int appearance)

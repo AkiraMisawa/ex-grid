@@ -150,6 +150,7 @@ implementation, and asked of Excel in `docs/specs/exsheet/verify-on-windows-8.md
 Excel contradicts is corrected here after the run.
 
 - **The palette** has eight colours. Its length, order and colours are taken from Excel in the run.
+  *(Excel has seven: see "What the eighth Windows run settled".)*
   Until then, the defaults are provisional.
 - **The same cells share a colour however they are written**: `=A1+A1` and `=A1+$A$1` each outline
   A1 once, in one colour. `=B2:A1` outlines A1:B2.

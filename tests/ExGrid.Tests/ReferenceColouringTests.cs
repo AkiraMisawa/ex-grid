@@ -7,7 +7,7 @@ namespace ExGrid.Tests;
 /// <summary>
 /// Who wears which colour among the References in one text (ADR-0057, DC-46): the same cells or
 /// the same key share a colour, colours are handed out in order of first appearance, round a
-/// palette of eight whose length is behaviour and lives in C#; an answer that would colour the
+/// palette of seven whose length is behaviour and lives in C#; an answer that would colour the
 /// wrong characters is refused by name.
 /// </summary>
 public class ReferenceColouringTests
@@ -31,13 +31,22 @@ public class ReferenceColouringTests
         Assert.Empty(colouring.Keys);
     }
 
-    [Fact] // ADR-0057 / DC-46: =A1+A1 names one range, so it is one colour and one outline
-    public void The_same_range_twice_is_one_colour_and_one_range()
+    [Fact] // ADR-0057 / DC-46, the eighth Windows run: =A1+A1 names one range, so it is one colour, but each Reference draws its own outline
+    public void The_same_range_twice_is_one_colour_and_two_outlines()
     {
         var colouring = ReferenceColouring.Of("=A1+A1", [Cells(1, 2, A1), Cells(4, 2, A1)]);
 
         Assert.Equal([1, 1], Places(colouring));
         Assert.Equal([(A1, new ReferenceColour(1))], colouring.Ranges);
+        Assert.Equal([(A1, new ReferenceColour(1)), (A1, new ReferenceColour(1))], colouring.Outlines);
+    }
+
+    [Fact] // ADR-0057 / DC-46, the eighth Windows run: the outlines follow the text, one per Reference with cells, and a key draws none here
+    public void The_outlines_are_one_per_reference_with_cells_in_the_texts_order()
+    {
+        var colouring = ReferenceColouring.Of("=B2:C3+T[a]+A1", [Cells(12, 2, A1), Keyed(7, 4, "t/a"), Cells(1, 5, B2C3)]);
+
+        Assert.Equal([(B2C3, new ReferenceColour(1)), (A1, new ReferenceColour(3))], colouring.Outlines);
     }
 
     [Fact] // ADR-0057 (reading): =A1+$A$1 — however written, the same cells share a colour, and a range named again takes no new one
@@ -83,16 +92,16 @@ public class ReferenceColouringTests
         Assert.Equal([1, 2], Places(colouring));
     }
 
-    [Fact] // ADR-0057 / DC-46: the palette has eight colours, and the ninth thing named takes the first again
-    public void The_colours_go_round_a_palette_of_eight()
+    [Fact] // ADR-0057 / DC-46, the eighth Windows run: the palette has seven colours, as Excel's, and the eighth thing named takes the first again
+    public void The_colours_go_round_a_palette_of_seven()
     {
-        Assert.Equal(8, ReferenceColour.PaletteLength);
+        Assert.Equal(7, ReferenceColour.PaletteLength);
         var references = Enumerable.Range(0, 10).Select(i => Cells(1 + (3 * i), 2, new SelectionRange(i, 0, 1, 1))).ToArray();
         var text = "=" + string.Concat(Enumerable.Repeat("A1+", 10));
 
         var colouring = ReferenceColouring.Of(text, references);
 
-        Assert.Equal([1, 2, 3, 4, 5, 6, 7, 8, 1, 2], Places(colouring));
+        Assert.Equal([1, 2, 3, 4, 5, 6, 7, 1, 2, 3], Places(colouring));
         Assert.Equal(10, colouring.Ranges.Count);
     }
 
@@ -155,9 +164,9 @@ public class ReferenceColouringTests
         Assert.Equal("t/pv", keyed.Key);
     }
 
-    [Theory] // ADR-0057 / UX-1: a colour is a place in the palette, 1 to 8, and nothing else
+    [Theory] // ADR-0057 / UX-1: a colour is a place in the palette, 1 to 7, and nothing else
     [InlineData(0)]
-    [InlineData(9)]
+    [InlineData(8)]
     public void A_place_outside_the_palette_is_refused(int place)
         => Assert.Throws<ArgumentOutOfRangeException>(() => new ReferenceColour(place));
 
@@ -166,8 +175,8 @@ public class ReferenceColouringTests
     {
         Assert.Equal(1, default(ReferenceColour).Place);
         Assert.Equal(new ReferenceColour(1), ReferenceColour.ForAppearance(0));
-        Assert.Equal(new ReferenceColour(8), ReferenceColour.ForAppearance(7));
-        Assert.Equal(new ReferenceColour(1), ReferenceColour.ForAppearance(8));
+        Assert.Equal(new ReferenceColour(7), ReferenceColour.ForAppearance(6));
+        Assert.Equal(new ReferenceColour(1), ReferenceColour.ForAppearance(7));
         Assert.Throws<ArgumentOutOfRangeException>(() => ReferenceColour.ForAppearance(-1));
     }
 }

@@ -221,9 +221,9 @@
                                 }
                                 @* Reference Outlines (ADR-0057): one rectangle per range the
                                    Consumer's References name, in its colour, over the ranges. *@
-                                @for (var o = 0; o < Colouring.Ranges.Count; o++)
+                                @for (var o = 0; o < Colouring.Outlines.Count; o++)
                                 {
-                                    @if (ReferenceOutline(Colouring.Ranges[o]) is { } pinnedOutline && SelectionStyles.Pinned(pinnedOutline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedReference)
+                                    @if (ReferenceOutline(Colouring.Outlines[o]) is { } pinnedOutline && SelectionStyles.Pinned(pinnedOutline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedReference)
                                     {
                                         <div class="@pinnedOutline.Class" style="@pinnedReference"></div>
                                     }
@@ -278,9 +278,9 @@
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
                                 }
-                                @for (var o = 0; o < Colouring.Ranges.Count; o++)
+                                @for (var o = 0; o < Colouring.Outlines.Count; o++)
                                 {
-                                    @if (ReferenceOutline(Colouring.Ranges[o]) is { } outline && SelectionStyles.Scrollable(outline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } reference)
+                                    @if (ReferenceOutline(Colouring.Outlines[o]) is { } outline && SelectionStyles.Scrollable(outline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } reference)
                                     {
                                         <div class="@outline.Class" style="@reference"></div>
                                     }

@@ -22,16 +22,18 @@ public sealed class ReferenceColouring
         IReadOnlyList<EditorReference> references,
         IReadOnlyList<ReferenceColour> colours,
         IReadOnlyList<(SelectionRange Range, ReferenceColour Colour)> ranges,
+        IReadOnlyList<(SelectionRange Range, ReferenceColour Colour)> outlines,
         IReadOnlyList<ReferenceKeyColour> keys)
     {
         References = references;
         Colours = colours;
         Ranges = ranges;
+        Outlines = outlines;
         Keys = keys;
     }
 
     /// <summary>No Reference, and so no colour.</summary>
-    public static ReferenceColouring None { get; } = new([], [], [], []);
+    public static ReferenceColouring None { get; } = new([], [], [], [], []);
 
     /// <summary>The References, in the order they stand in the text.</summary>
     public IReadOnlyList<EditorReference> References { get; }
@@ -40,8 +42,15 @@ public sealed class ReferenceColouring
     public IReadOnlyList<ReferenceColour> Colours { get; }
 
     /// <summary>Each range the text names, once however often and however it is written, with
-    /// its colour, in order of first appearance: one Reference Outline each.</summary>
+    /// its colour, in order of first appearance.</summary>
     public IReadOnlyList<(SelectionRange Range, ReferenceColour Colour)> Ranges { get; }
+
+    /// <summary>
+    /// One Reference Outline per Reference that names cells, in the order they stand in the text:
+    /// a range named twice is outlined twice, in its one colour, as Excel draws it (the eighth
+    /// Windows run, ADR-0057), so a later outline lies over an earlier one where they meet.
+    /// </summary>
+    public IReadOnlyList<(SelectionRange Range, ReferenceColour Colour)> Outlines { get; }
 
     /// <summary>Each key the text carries, once, with its colour, in order of first appearance:
     /// what the core tells the Consumer.</summary>
@@ -90,6 +99,7 @@ public sealed class ReferenceColouring
 
         var colours = new ReferenceColour[ordered.Length];
         var ranges = new List<(SelectionRange Range, ReferenceColour Colour)>();
+        var outlines = new List<(SelectionRange Range, ReferenceColour Colour)>();
         var keys = new List<ReferenceKeyColour>();
         for (var i = 0; i < ordered.Length; i++)
         {
@@ -98,17 +108,22 @@ public sealed class ReferenceColouring
             if (known is { } colour)
             {
                 colours[i] = colour;
+                if (reference.Range is { } again)
+                    outlines.Add((again, colour));
                 continue;
             }
             // Something not named before takes the next colour: one on from every range and key
             // named so far.
             colours[i] = ReferenceColour.ForAppearance(ranges.Count + keys.Count);
             if (reference.Range is { } first)
+            {
                 ranges.Add((first, colours[i]));
+                outlines.Add((first, colours[i]));
+            }
             else
                 keys.Add(new ReferenceKeyColour(reference.Key!, colours[i]));
         }
-        return new ReferenceColouring(ordered, colours, ranges, keys);
+        return new ReferenceColouring(ordered, colours, ranges, outlines, keys);
     }
 
     // Indexed rather than enumerated: the component reads a colour every render an outline is

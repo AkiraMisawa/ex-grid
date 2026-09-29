@@ -67,10 +67,9 @@ public partial class ExGrid<TRow>
     private IReadOnlyList<OutlinedColumn>? _outlinesResolvedFrom;
     private IReadOnlyList<GridColumn<TRow>>? _outlinesResolvedOver;
 
-    // The class list of a Reference Outline in each colour, solid and as Point's: interned, since
-    // the few there are serve every outline of every render (ADR-0027 P5).
+    // The class list of a Reference Outline in each colour: interned, since the few there are serve
+    // every outline of every render (ADR-0027 P5).
     private static readonly string[] OutlineClasses = OutlineClassesOf("");
-    private static readonly string[] PointOutlineClasses = OutlineClassesOf(" ex-point");
 
     // The colouring of the editor's text, and the text and the function it was asked of: asked
     // again only when either changes, so a render that changed neither asks nothing.
@@ -119,23 +118,20 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>
-    /// How one range the text names is outlined solid (ADR-0057): cut to the grid's extent, in
-    /// its colour. Null for the range Point's outline stands on — that one is Point's, dashed in
-    /// its colour (<see cref="PointOutlineClass"/>), so a range is outlined once — and for a range
-    /// that lies off the grid.
+    /// How one Reference is outlined (ADR-0057): cut to the grid's extent, in its colour. The
+    /// Reference Point is writing is outlined like any other, and Point's dashes are laid over it
+    /// (<see cref="PointOutlineClass"/>), as Excel draws it (the eighth Windows run). Null for a
+    /// range that lies off the grid.
     /// </summary>
     private (SelectionRange Range, string Class)? ReferenceOutline((SelectionRange Range, ReferenceColour Colour) named)
-    {
-        if (named.Range == PointRange || WithinExtent(named.Range, Extent) is not { } drawn)
-            return null;
-        return (drawn, OutlineClasses[named.Colour.Place]);
-    }
+        => WithinExtent(named.Range, Extent) is { } drawn ? (drawn, OutlineClasses[named.Colour.Place]) : null;
 
-    /// <summary>Point's outline (ADR-0051/0057): the Reference Outline of the range it points
-    /// at, dashed in that range's colour, where the text names it; its own look where it does
-    /// not, or where no References function is declared.</summary>
+    /// <summary>Point's outline (ADR-0051/0057): dashes in the Focus outline's colour. Where the
+    /// text names the range it points at, that range has its Reference Outline, and the dashes lie
+    /// just inside its line; where it does not, or where no References function is declared, the
+    /// dashes are Point's own look.</summary>
     private string PointOutlineClass(SelectionRange pointed)
-        => Colouring.ColourOf(pointed) is { } colour ? PointOutlineClasses[colour.Place] : "ex-point";
+        => Colouring.ColourOf(pointed) is not null ? "ex-point ex-point-on-reference" : "ex-point";
 
     /// <summary>
     /// Resolves <see cref="OutlinedColumns"/> to the places its columns stand in the current

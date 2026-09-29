@@ -144,14 +144,18 @@ public partial class ReferenceOutlineTests : GridTestContext
         Assert.Empty(Outlines(cut, ".ex-selection-pinned"));
     }
 
-    [Fact] // ADR-0057 / DC-46: =A1+A1 names A1 twice and outlines it once
-    public async Task The_same_range_twice_is_outlined_once()
+    [Fact] // ADR-0057 / DC-46, the eighth Windows run: =A1+A1 names A1 twice, in one colour, and each Reference draws its own outline
+    public async Task The_same_range_twice_is_outlined_twice_in_one_colour()
     {
         var cut = RenderGrid();
 
         await TypeFormulaAsync(cut, "=A1+A1");
 
-        Assert.Equal([("ex-reference-outline ex-reference-1", "left: 0px; top: 0px; width: 100px; height: 20px")], Outlines(cut));
+        Assert.Equal(
+        [
+            ("ex-reference-outline ex-reference-1", "left: 0px; top: 0px; width: 100px; height: 20px"),
+            ("ex-reference-outline ex-reference-1", "left: 0px; top: 0px; width: 100px; height: 20px"),
+        ], Outlines(cut));
     }
 
     [Fact] // ADR-0057 / DC-46 / ADR-0008: one element per range, never one per cell: nine cells are one rectangle
@@ -202,8 +206,8 @@ public partial class ReferenceOutlineTests : GridTestContext
         Assert.Equal([("ex-reference-outline ex-reference-2", "left: 100px; top: 0px; width: 200px; height: 20px")], Outlines(cut));
     }
 
-    [Fact] // ADR-0057 / DC-46: Point's outline is the Reference Outline of what it points at — dashed in the first colour for = ↓ ↓
-    public async Task Points_outline_takes_its_references_colour()
+    [Fact] // ADR-0057 / DC-46, the eighth Windows run: what Point points at is outlined as any Reference is, in the first colour for = ↓ ↓, and Point's dashes lie over it
+    public async Task Points_dashes_lie_over_its_references_outline()
     {
         var cut = RenderGrid();
         await TypeFormulaAsync(cut, "=");
@@ -213,13 +217,13 @@ public partial class ReferenceOutlineTests : GridTestContext
 
         var point = Point(cut);
         Assert.NotNull(point);
-        Assert.Equal("ex-reference-outline ex-reference-1 ex-point", point.GetAttribute("class"));
+        Assert.Equal("ex-point ex-point-on-reference", point.GetAttribute("class"));
         Assert.Equal("left: 0px; top: 40px; width: 100px; height: 20px", point.GetAttribute("style"));
-        // A3 is outlined once: by Point, not a second time solid beneath it.
-        Assert.Empty(Outlines(cut));
+        // A3 has its own outline in its colour beneath the dashes, as Excel draws it.
+        Assert.Equal([("ex-reference-outline ex-reference-1", "left: 0px; top: 40px; width: 100px; height: 20px")], Outlines(cut));
     }
 
-    [Fact] // ADR-0057 / DC-46: pointed after another Reference, Point's outline takes the second colour and the first stays solid
+    [Fact] // ADR-0057 / DC-46: pointed after another Reference, what Point points at takes the second colour, and Point's dashes lie over it
     public async Task Point_after_another_reference_takes_the_next_colour()
     {
         var cut = RenderGrid();
@@ -228,12 +232,16 @@ public partial class ReferenceOutlineTests : GridTestContext
         await PressAsync(cut, "ArrowDown", text: "=B1+", caret: 4);
 
         Assert.Equal("=B1+A2", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
-        Assert.Equal("ex-reference-outline ex-reference-2 ex-point", Point(cut)!.GetAttribute("class"));
-        Assert.Equal([("ex-reference-outline ex-reference-1", "left: 100px; top: 0px; width: 100px; height: 20px")], Outlines(cut));
+        Assert.Equal("ex-point ex-point-on-reference", Point(cut)!.GetAttribute("class"));
+        Assert.Equal(
+        [
+            ("ex-reference-outline ex-reference-1", "left: 100px; top: 0px; width: 100px; height: 20px"),
+            ("ex-reference-outline ex-reference-2", "left: 0px; top: 20px; width: 100px; height: 20px"),
+        ], Outlines(cut));
     }
 
-    [Fact] // ADR-0057 / DC-46: pointing at cells the text already names shares their colour and their one outline
-    public async Task Pointing_at_a_range_already_named_shares_its_outline()
+    [Fact] // ADR-0057 / DC-46, the eighth Windows run: pointing at cells the text already names shares their colour, and each Reference draws its outline
+    public async Task Pointing_at_a_range_already_named_shares_its_colour()
     {
         var cut = RenderGrid();
         await TypeFormulaAsync(cut, "=A2+");
@@ -241,8 +249,12 @@ public partial class ReferenceOutlineTests : GridTestContext
         await PressAsync(cut, "ArrowDown", text: "=A2+", caret: 4);
 
         Assert.Equal("=A2+A2", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
-        Assert.Equal("ex-reference-outline ex-reference-1 ex-point", Point(cut)!.GetAttribute("class"));
-        Assert.Empty(Outlines(cut));
+        Assert.Equal("ex-point ex-point-on-reference", Point(cut)!.GetAttribute("class"));
+        Assert.Equal(
+        [
+            ("ex-reference-outline ex-reference-1", "left: 0px; top: 20px; width: 100px; height: 20px"),
+            ("ex-reference-outline ex-reference-1", "left: 0px; top: 20px; width: 100px; height: 20px"),
+        ], Outlines(cut));
     }
 
     [Fact] // ADR-0057 / DC-46: Enter commits and takes every outline away

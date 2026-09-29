@@ -791,19 +791,21 @@ test('DC-46: =A1+B2:C3 outlines A1 and B2:C3, each once and in a colour of its o
     await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
 });
 
-test('DC-46: =A1+A1 outlines A1 once', async ({ page }) => {
+test('DC-46: =A1+A1 outlines A1 once per Reference, in one colour (the eighth Windows run)', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=A1+A1');
     await expect(editor(grid)).toHaveValue('=A1+A1');
 
-    await expect(grid.locator('.ex-reference-outline')).toHaveCount(1);
-    await expectCovers(grid.locator('.ex-reference-outline.ex-reference-1'), grid, 'A1', 'A1');
+    // Excel draws each Reference's outline, so the wash over A1 is laid twice.
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(2);
+    await expect(grid.locator('.ex-reference-outline.ex-reference-1')).toHaveCount(2);
+    await expectCovers(grid.locator('.ex-reference-outline.ex-reference-1').first(), grid, 'A1', 'A1');
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
 });
 
-test('DC-46: =, ↓, ↓ moves a dashed outline in the first colour, which stays solid once an operator follows; Enter removes them all', async ({ page }) => {
+test('DC-46: =, ↓, ↓ outlines the pointed cell in the first colour under dashes in the Focus outline\'s colour, which go once an operator follows; Enter removes them all', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=');
@@ -811,29 +813,33 @@ test('DC-46: =, ↓, ↓ moves a dashed outline in the first colour, which stays
     await page.keyboard.press('ArrowDown');
     await expect(editor(grid)).toHaveValue('=F4');
 
-    // Point's outline is the Reference Outline of F4: dashed, in the first colour, no wash.
+    // As Excel draws it (the eighth Windows run): F4 has its own Reference Outline, solid in the
+    // first colour over a wash, and Point's dashes lie over it in the Focus outline's colour.
     const point = grid.locator('.ex-selection .ex-point');
-    await expect(point).toHaveClass(/\bex-reference-outline\b/);
-    await expect(point).toHaveClass(/\bex-reference-1\b/);
+    await expect(point).toHaveClass(/\bex-point-on-reference\b/);
     await expectCovers(point, grid, 'F4', 'F4');
+    const f4 = grid.locator('.ex-selection .ex-reference-outline.ex-reference-1');
     await expect(grid.locator('.ex-reference-outline')).toHaveCount(1);
+    await expectCovers(f4, grid, 'F4', 'F4');
     const pointed = await paintOf(point);
+    const outlined = await paintOf(f4);
+    const focus = await paintOf(grid.locator('.ex-selection .ex-focus'));
     expect(pointed.line).toBe('dashed');
-    expect(pointed.ground).toBe('rgba(0, 0, 0, 0)');
+    expect(pointed.colour).toBe(focus.colour);
+    expect(outlined.line).toBe('solid');
+    expect(outlined.colour).not.toBe(focus.colour);
+    expect(outlined.ground).not.toBe('rgba(0, 0, 0, 0)');
 
-    // An operator ends pointing: F4 is still outlined, solid now and in the same colour, and the
-    // next ↓ points afresh in the second.
+    // An operator ends pointing: the dashes go, F4 keeps its outline in the same colour, and the
+    // next ↓ points afresh from the edited cell, in the second colour.
     await page.keyboard.type('+');
     await expect(point).toHaveCount(0);
-    const f4 = grid.locator('.ex-selection .ex-reference-outline.ex-reference-1');
     await expectCovers(f4, grid, 'F4', 'F4');
-    const solid = await paintOf(f4);
-    expect(solid.line).toBe('solid');
-    expect(solid.colour).toBe(pointed.colour);
+    expect((await paintOf(f4)).colour).toBe(outlined.colour);
     await page.keyboard.press('ArrowDown');
     await expect(editor(grid)).toHaveValue('=F4+F3');
-    await expect(point).toHaveClass(/\bex-reference-2\b/);
     await expectCovers(point, grid, 'F3', 'F3');
+    await expectCovers(grid.locator('.ex-selection .ex-reference-outline.ex-reference-2'), grid, 'F3', 'F3');
     await expect(grid.locator('.ex-reference-outline')).toHaveCount(2);
 
     await page.keyboard.press('Enter');
