@@ -1,9 +1,10 @@
 # Every layer, on every push to main and on every pull request
 # (ADR-0041). Layers 1 and 2 with coverage; layer 3 on the runner's installed Chrome and
-# Edge, headed under xvfb, as ADR-0026 asks. All three gate; coverage is reported, never
-# gated. The weekly run adds the soak and ST-1 at 10⁶ rows. The packages are packed and
-# taken by an application as a Consumer takes them (ADR-0042); the release workflow calls
-# this one and publishes exactly what that job tested.
+# Edge, headed under xvfb, as ADR-0026 asks, split by browser and into shards that each
+# run on a runner of their own. All three gate; coverage is reported, never gated. The
+# weekly run adds the soak and ST-1 at 10⁶ rows. The packages are packed and taken by an
+# application as a Consumer takes them (ADR-0042); the release workflow calls this one
+# and publishes exactly what that job tested.
 name: CI
 
 on:
@@ -86,10 +87,20 @@ jobs:
           path: coverage/
           retention-days: 30
 
+  # Layer 3 in four parts: each browser, in two shards, on a runner of its own. The suite is
+  # the one playwright.config.mjs defines, unchanged; --project and --shard only choose which
+  # files a runner takes, and a shard is a set of whole spec files, so what a run shares —
+  # the OS clipboard, the records, a spec file's booted app (ADR-0048) — is never split
+  # between runners (ADR-0041).
   browser:
-    name: Layer 3 on Chrome and Edge (Linux, headed)
+    name: Layer 3 on ${{ matrix.project }}, shard ${{ matrix.shard }}/2 (Linux, headed)
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chrome, msedge]
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v7
 
@@ -120,27 +131,46 @@ jobs:
         working-directory: tests/ExGrid.Browser
         env:
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" npx playwright test
+        run: >
+          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24"
+          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
 
       - name: Keep the run's records
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: layer3-records
+          name: layer3-records-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             verification/
             tests/ExGrid.Browser/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
+  # The check the WebAssembly run has always been, green only when every shard of it was.
+  # Always run: a job its `if` skips counts as passed for a required check, so a cancelled or
+  # skipped layer 3 would otherwise read as green.
+  browser-verdict:
+    name: Layer 3 on Chrome and Edge (Linux, headed)
+    needs: browser
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every shard passed
+        run: test "${{ needs.browser.result }}" = success
+
   # The same suite against the Blazor Server host (ADR-0019, Definition of Done SRV-2):
   # every page served over a circuit, prerendered, behind latency-proxy.mjs, with the host's
-  # own log read for CON-6. A job of its own rather than a matrix entry, so the WebAssembly
-  # job keeps its check name.
+  # own log read for CON-6. Split the same way, with a verdict job of its own, so the
+  # WebAssembly run keeps its check name.
   browser-server:
-    name: Layer 3 on Chrome and Edge against the Server host (Linux, headed)
+    name: Layer 3 against the Server host on ${{ matrix.project }}, shard ${{ matrix.shard }}/2 (Linux, headed)
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chrome, msedge]
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v7
 
@@ -171,18 +201,29 @@ jobs:
         env:
           EXGRID_HOSTING: server
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" npx playwright test
+        run: >
+          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24"
+          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
 
       - name: Keep the run's records
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: layer3-records-server
+          name: layer3-records-server-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             verification/
             tests/ExGrid.Browser/test-results/
           if-no-files-found: ignore
           retention-days: 30
+
+  browser-server-verdict:
+    name: Layer 3 on Chrome and Edge against the Server host (Linux, headed)
+    needs: browser-server
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every shard passed
+        run: test "${{ needs.browser-server.result }}" = success
 
   package:
     name: Packages, taken as a Consumer takes them

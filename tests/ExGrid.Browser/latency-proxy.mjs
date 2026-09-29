@@ -8,7 +8,7 @@
 //   node latency-proxy.mjs <listenPort> <targetPort> <controlPort>
 //
 // The round trip starts at 0. POST http://localhost:<controlPort>/?rtt=150 sets it for
-// every chunk that arrives after.
+// every chunk that arrives after, and GET answers what it is set to.
 import http from 'node:http';
 import net from 'node:net';
 
@@ -70,7 +70,9 @@ net.createServer((client) => {
 
 http.createServer((request, response) => {
     const rtt = Number(new URL(request.url, 'http://localhost').searchParams.get('rtt'));
-    if (request.method === 'POST' && Number.isFinite(rtt) && rtt >= 0) {
+    if (request.method === 'GET') {
+        response.end(`rtt=${halfTripMs * 2}\n`);
+    } else if (request.method === 'POST' && Number.isFinite(rtt) && rtt >= 0) {
         halfTripMs = rtt / 2;
         response.end(`rtt=${rtt}\n`);
     } else {

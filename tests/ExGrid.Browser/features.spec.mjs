@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, alterPage } from './fixtures.mjs';
 
 // The interaction surface, driven with real keys and the real clipboard against the
 // /features page: the Cell Editor's two states (ADR-0010), the clipboard's two formats
@@ -299,14 +299,23 @@ test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) 
     // as two keydowns — Control first, then PageDown — and a once-listener is spent
     // on the Control. This test used to pass only when its un-awaited registration
     // happened to land between the two keydowns, which read as "never arrived" about
-    // half the time on Edge and looked like the browser swallowing the shortcut.
-    await page.evaluate(() => {
+    // half the time on Edge and looked like the browser swallowing the shortcut. Through
+    // alterPage, which takes the listener off as the test ends (ADR-0048).
+    await alterPage(page, () => {
+        let listener;
+        let timer;
         window.__kb15 = new Promise((resolve) => {
-            document.addEventListener('keydown', (event) => {
+            listener = (event) => {
                 if (event.key === 'PageDown') resolve(event.defaultPrevented);
-            }, { capture: false });
-            setTimeout(() => resolve('never arrived'), 3000);
+            };
+            document.addEventListener('keydown', listener, { capture: false });
+            timer = setTimeout(() => resolve('never arrived'), 3000);
         });
+        return () => {
+            document.removeEventListener('keydown', listener);
+            clearTimeout(timer);
+            delete window.__kb15;
+        };
     });
     await page.keyboard.press('ControlOrMeta+PageDown');
 
@@ -386,11 +395,16 @@ test('a display-only grid does not take printable keys away from the page (ADR-0
     // preventDefaulted, not stopPropagation-ed, and no editor appears. The listener
     // sits in the bubble phase past the grid and is INSTALLED before the press (the
     // KB-15 lesson) — null afterwards means the grid swallowed the keydown outright.
-    await page.evaluate(() => {
+    await alterPage(page, () => {
         window.__printableSeen = null;
-        document.addEventListener('keydown', (e) => {
+        const listener = (e) => {
             window.__printableSeen = !e.defaultPrevented;
-        }, { once: true });
+        };
+        document.addEventListener('keydown', listener, { once: true });
+        return () => {
+            document.removeEventListener('keydown', listener);
+            delete window.__printableSeen;
+        };
     });
     await page.keyboard.press('x');
     await expect(cells.locator('.ex-editor')).toHaveCount(0);
@@ -533,12 +547,15 @@ test('Shift+Tab from after the grid lands on the root, not on a button inside it
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-action').first()).toBeVisible();
 
-    // Something focusable straight after the grid, as any page would have.
-    await page.evaluate(() => {
+    // Something focusable straight after the grid, as any page would have. Beside the grid is
+    // #app on WebAssembly and body on the Server host, which leaving the page does not clear:
+    // alterPage takes the button out as the test ends (ADR-0048).
+    await alterPage(page, () => {
         const after = document.createElement('button');
         after.id = 'after-grid';
         after.textContent = 'after';
         document.querySelector('.ex-grid').insertAdjacentElement('afterend', after);
+        return () => after.remove();
     });
     await page.locator('#after-grid').focus();
 

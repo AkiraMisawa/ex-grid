@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 
 // What a Blazor Server circuit can fail and a WebAssembly tab cannot (Definition of Done
@@ -91,10 +91,13 @@ test('a clipboard write the browser rejects is refused by name (CP-23)', async (
     // The browser's rejection, as Chromium raises it for a denied permission or a lost
     // activation. Stubbed rather than provoked: CDP's permission override does not reach
     // a Playwright browser context, and what is under test is the grid's answer to the
-    // rejection, not the browser's reasons for it.
-    await page.evaluate(() => {
+    // rejection, not the browser's reasons for it. Through alterPage, which puts the
+    // native back as the test ends: the next test shares this document (ADR-0048).
+    await alterPage(page, () => {
+        const write = navigator.clipboard.write;
         navigator.clipboard.write = () => Promise.reject(
             new DOMException('Write permission denied.', 'NotAllowedError'));
+        return () => { navigator.clipboard.write = write; };
     });
     await clickCell(page, 0, 1);
 
@@ -326,19 +329,25 @@ test('a menu taking the keyboard a round trip late keeps the scroll the user gav
     await expect(last).toBeInViewport();
 });
 
-test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20)', async ({ page }) => {
-    test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
-    // The document as the server sends it, before any script has run.
-    const html = await (await page.request.get('/features')).text();
-    const root = html.match(/<div class="ex-grid[^"]*"[^>]*>/)?.[0] ?? '';
+test.describe(() => {
+    // The prerender and the circuit connecting happen on a load, which an in-app navigation
+    // skips: this test loads its page for real (ADR-0048).
+    test.use({ freshDocument: true });
 
-    expect(root).toContain('ex-loading');
-    expect(root).toContain('aria-busy="true"');
-    expect(root).not.toContain('tabindex');
+    test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20)', async ({ page }) => {
+        test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
+        // The document as the server sends it, before any script has run.
+        const html = await (await page.request.get('/features')).text();
+        const root = html.match(/<div class="ex-grid[^"]*"[^>]*>/)?.[0] ?? '';
 
-    await openFeatures(page);
-    await expect(grid(page)).not.toHaveAttribute('aria-busy', /.*/);
-    await expect(grid(page)).not.toHaveClass(/ex-loading/);
+        expect(root).toContain('ex-loading');
+        expect(root).toContain('aria-busy="true"');
+        expect(root).not.toContain('tabindex');
+
+        await openFeatures(page);
+        await expect(grid(page)).not.toHaveAttribute('aria-busy', /.*/);
+        await expect(grid(page)).not.toHaveClass(/ex-loading/);
+    });
 });
 
 test.describe('two users, one store (SRV-3, ADR-0018)', () => {

@@ -125,16 +125,22 @@ async function frameIntervals(page, axis, step, count) {
     }), { axis, step, count });
 }
 
-test('mount to first painted row at 10⁶ rows (BIG-7)', async ({ page }, testInfo) => {
-    const started = Date.now();
-    await page.goto('/wide');
-    await expect(page.locator('.ex-grid .ex-row').first()).toBeVisible();
-    const firstPaintMs = Date.now() - started;
+test.describe(() => {
+    // Measured from a load, boot included, as every record filed so far was: the page is
+    // loaded for real rather than reached inside a booted app (ADR-0048).
+    test.use({ freshDocument: true });
 
-    record(testInfo.project.name, {
-        'BIG-7': { mountToFirstPaintedRowMs: firstPaintMs, totalRows: 1_000_000 },
+    test('mount to first painted row at 10⁶ rows (BIG-7)', async ({ page }, testInfo) => {
+        const started = Date.now();
+        await page.goto('/wide');
+        await expect(page.locator('.ex-grid .ex-row').first()).toBeVisible();
+        const firstPaintMs = Date.now() - started;
+
+        record(testInfo.project.name, {
+            'BIG-7': { mountToFirstPaintedRowMs: firstPaintMs, totalRows: 1_000_000 },
+        });
+        expect(firstPaintMs).toBeGreaterThan(0);
     });
-    expect(firstPaintMs).toBeGreaterThan(0);
 });
 
 test('the DOM, the settle repaint and the frame intervals, virtualised and not (DOM-5, PF-6, BIG-6)', async ({ page }, testInfo) => {

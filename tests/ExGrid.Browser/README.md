@@ -19,10 +19,19 @@ A machine without Edge fails the `msedge` project by name — the honest outcome
 
 **CI runs this suite on every push and pull request** (ADR-0041): Linux, the runner's
 installed Chrome and Edge, headed under `xvfb-run`, with this directory's own config
-unchanged — once against each host, in two jobs. A failure in either turns the run red. Each run keeps `console.json`, `metrics.json` and any
-failure's trace as artifacts. The weekly run, or a dispatch asking for the long run, adds the
-soak (`EXGRID_SOAK=1`). The VZ-14 test still skips itself off Windows, so it stays a run by
-hand.
+unchanged — against each host, each browser in two shards, every shard on a runner of its own
+(`--project=chrome --shard=1/2` and so on). A shard is a set of whole spec files. One job per
+host, under the name the host's run has always had, passes only when all four of its shards
+did, and a failure in any turns the run red. Each shard keeps `console.json`, `metrics.json`
+and any failure's trace as an artifact of its own. The weekly run, or a dispatch asking for the
+long run, adds the soak (`EXGRID_SOAK=1`). The VZ-14 test still skips itself off Windows, so it
+stays a run by hand.
+
+To run one shard as CI does:
+
+```sh
+npx playwright test --project=chrome --shard=1/2
+```
 
 ## The two hosts
 
@@ -127,6 +136,60 @@ land — and a key pressed in that gap is lost, as it would be for a user who ig
 grid. A test that clicked and typed straight after the rows appeared failed that way on a slow
 runner.
 
+## What a test shares with the rest of its file
+
+A spec file boots the app once; every test in it mounts its page afresh (ADR-0048). Booting
+was most of a test's time — 1.65 s of about 2.3 on WebAssembly — and it bought an isolation
+nobody had asked for. What that means when writing a test:
+
+- **The file's first navigation boots the app at the index, `/`. Every `page.goto` after it is
+  an in-app navigation (`Blazor.navigateTo`) through the index,** so the page and every grid on
+  it are new for every test. The document, the .NET runtime, the grid's JS module and the DI
+  singletons last for the file, and on the Server host the circuit does. `page.reload()` is a
+  real reload. The next spec file gets a new browser context.
+- **The harness puts back what it owns:** the viewport, the permissions a test granted, the round
+  trip, the pointer (to the corner), the scroll, the text selection and where the next Tab
+  starts.
+- **Anything outside the test's own grids is changed through `alterPage`:** a global, a
+  listener on `window` or `document`, the head, `body`, `<html>` or `#app`. That includes the
+  grid's parent, which is `#app` on WebAssembly and `body` on the Server host, and anything put
+  beside the grid, which Blazor does not remove when it leaves the page. The change returns the
+  function that undoes it, and the harness calls it as the test ends:
+
+  ```js
+  await alterPage(page, () => {
+      const write = navigator.clipboard.write;
+      navigator.clipboard.write = () => Promise.reject(new DOMException('denied', 'NotAllowedError'));
+      return () => { navigator.clipboard.write = write; };
+  });
+  ```
+
+  `watchNextKey` does this for its listener. **The harness checks the rule:** back at the index
+  after each test, the document's markup, the rules in its stylesheets and the globals on
+  `window` must be what they were when the file booted there, and the Clipboard API, the timers
+  and the other natives in `fixtures.mjs`'s list — read as a caller reads them, so a stub on
+  `document` counts as much as one on `Document.prototype` — must be the ones the app booted
+  with. A difference fails the test by name: "nothing left outside the test's own page". What it
+  cannot see — a listener on `window` or `document`, a timer or an observer left running, a
+  native outside the list — is held by the rule alone.
+- **A test gets a document of its own** — a context of its own, every navigation real — with
+  `test.use({ freshDocument: true })`, for a test about loading itself (A11Y-20's prerender,
+  BIG-7's time from a load), and with `viewport: null`. A test that calls a method whose effect
+  outlives a navigation — `addInitScript`, `route`, `emulateMedia`, `setExtraHTTPHeaders`, a CDP
+  session and the rest of `fixtures.mjs`'s list — makes the page its own from then on: its
+  navigations are real, and its page is not handed on. So does `page.reload()`, and a navigation
+  away from the app's origin. A test whose `use` asks for context options other than the
+  viewport's — a colour scheme, a locale — gets the app booted afresh in a context made with
+  them.
+- **A page is not handed on** after a test that failed — in its body or in the harness's own
+  checks as it ends — left a key or a button held, or whose console reported an error. The next
+  test boots.
+- **The console record is still per test.** What the app says while booting is the file's first
+  test's. What a page says as it is disposed — then, or in the two frames after — is the test's
+  that mounted it: the harness leaves the page inside that test's teardown. Anything said between
+  two tests is the next one's, on the Server host's log as in the browser's console, and so is
+  what a file's last page says as it is closed.
+
 ## What it asserts
 
 - `scrollbar.spec.mjs` — the Scrollbar Gutter: the Focus is never behind a bar, at
@@ -174,7 +237,9 @@ runner.
   meaning — and under `ModalOverlay` (`/features?chrome=mud&modal=1`) only the popup —
   Escape closing the popup first and the panel next, and focus back on the root after a
   choice and Apply. Under both Chromes, a menu taller than its grid stays inside the
-  grid's box and scrolls (UX-11, ADR-0040).
+  grid's box and scrolls (UX-11, ADR-0040), and a grid that goes while the keys after
+  Alt+↓ are still waiting for its popover leaves nothing running to throw from a later
+  frame (ADR-0010, CON-2).
 - `stripes.spec.mjs` — Row Stripes on `/stripes` (ADR-0038), read as painted colours
   from a screenshot rather than as computed styles: a pinned and a scrollable cell of
   one striped row paint the same ground, and the stripe moves with its row (UX-15); a
@@ -209,6 +274,16 @@ runner.
   ```sh
   EXGRID_SOAK=1 npx playwright test memory.spec.mjs
   ```
+- `harness.spec.mjs` — the harness itself (ADR-0048), in pairs whose second half skips itself
+  when the first has not run: a spec file boots once, at the index, and the next test mounts a
+  new grid on the same document; what a test changed through `alterPage`, the permissions it
+  granted, the viewport it set, the round trip, the key it watched, the pointer it left, the page
+  it scrolled, the text it selected and where it left the keyboard are gone for the next; a
+  native stubbed on its prototype or its instance, an element left in the head, an attribute left
+  on the grid's parent, a rule inserted into a stylesheet and a global left on `window` without
+  `alterPage` are each named, and the next test has a document of its own; a test that fails —
+  in its body or in its console — or leaves a key or a button held hands no page on;
+  `freshDocument` loads the page for real.
 - `observational.spec.mjs` — the numbers that are recorded, never gated, into
   `metrics.json`: mount to first row at 10⁶ (BIG-7), the DOM with horizontal
   virtualisation on and off (DOM-5), the settle repaint and the frame intervals at both
@@ -293,6 +368,16 @@ Two traps live in that, and the DemoHost has hit both:
   bury the one message that matters.
 
 ## Traps this suite has already hit
+
+- A change made with `page.evaluate` outside the test's page outlives the test: the next test
+  in the file runs on the same document (ADR-0048). CP-23's stubbed `navigator.clipboard.write`
+  made the next test's copy fail silently, and DIR-2's `dir="rtl"` landed on `#app` — the grid's
+  parent — and would have held for every test after it. Use `alterPage`; the harness names what
+  it finds left behind.
+- `test.use({ expectedHostLog: [/a/, /b/] })` names one pattern, not two. Playwright reads a list
+  whose second item is an object — and a RegExp is one — as its own `[value, options]` pair, so
+  the option becomes `/a/` alone, and a list of expected lines is suddenly not a list. The same
+  holds for `expectedWarnings` and `expectedLeaks`. Give one pattern: `/a|b/`.
 
 - Cells and header cells are `pointer-events: none` by design — the Viewport is the
   delegated target (ADR-0004). Playwright's actionability check must be bypassed with
