@@ -69,11 +69,11 @@
     font-family: var(--mud-typography-default-family, Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 /* The dark scheme's Focus outline (ADR-0030, 2026-09-29; UX-9): the primary with its lightness
-   raised to clear 3:1, the hue and chroma kept. Measured, MudBlazor's dark primary (#776be7)
-   against its dark surface (#373740) is 2.83:1. The floor is ADR-0030's 0.63: painted, 3.18:1
-   against the surface and 2.95:1 against the Focus band's tint over it, short of the 3:1 the
-   floor was set to clear there (ticket 24 records the measurement for a decision). A primary
-   already lighter than the floor is left as it is, and the light scheme's is never touched.
+   raised just far enough to clear 3:1 against what it is drawn on, the hue and chroma kept.
+   Measured, MudBlazor's dark primary (#776be7) against its dark surface (#373740) is 2.83:1.
+   An OKLCH lightness of 0.64, painted, is 3.31:1 against the surface and 3.06:1 against the
+   Focus band's tint over it; 0.63 was 2.95:1 there. A primary already lighter than the floor
+   is left as it is, and the light scheme's is never touched.
    The floor is set for MudBlazor's default dark palette: CSS cannot compare two colours'
    luminance, so a Consumer's own is not recomputed. The range outline follows through
    --ex-selection-outline, which defaults to this token.
@@ -83,7 +83,7 @@
    it. */
 @container style(--mud-native-html-color-scheme: dark) {
     .mud-ex-grid {
-        --ex-focus-outline: oklch(from var(--mud-palette-primary) max(l, 0.63) c h);
+        --ex-focus-outline: oklch(from var(--mud-palette-primary) max(l, 0.64) c h);
     }
 }
 .mud-ex-grid.mud-ex-grid-square {

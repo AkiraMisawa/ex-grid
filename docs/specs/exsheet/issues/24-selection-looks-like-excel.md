@@ -108,3 +108,20 @@ Open, for the orchestrator:
   failing on it. Measured by injecting other floors: 0.635 gives 3.02:1 over the band (3.26:1 over
   the surface), 0.64 gives 3.06:1 (3.31:1). Proposed: 0.64. The light scheme is the primary
   #594ae2: 6.00:1 against the surface, 5.36:1 painted over the band.
+
+2026-09-29, third round: the dark floor is 0.64 (ADR-0030 as corrected). Re-checked headless, as
+painted, the same on `/mud` and `/mud-app`: the dark outline is rgb(130, 119, 244), 3.31:1 against
+the surface rgb(55, 55, 64) and 3.06:1 over the Focus band's tint rgb(60, 59, 77). The light outline
+is the primary rgb(89, 74, 226), 6.00:1 against the surface and 5.36:1 over the band's tint
+rgb(242, 241, 253). UX-9's band assertion passes at device scales 1 and 2, and so does the rest of
+`mud.spec.mjs`.
+
+The two `stripes.spec.mjs` failures seen in the second round's ad-hoc runs, headless on macOS:
+
+- *a pinned and a scrollable cell of one striped row paint the same ground (UX-15)*: an artefact of
+  the ad-hoc harness, which lacked `scrollRowToTop`. With it, the test passes on both the changed
+  build and the pre-change build.
+- *the vertical scrollbar paints a thumb in its gutter (ADR-0029, UX-10)*: fails at "the bar
+  occupies layout" with a gutter of 0, the same way on the pre-change build. Headless Chrome on
+  macOS keeps overlay scrollbars, which the suite's README predicts; the real layer-3 run is the one
+  that answers it.
