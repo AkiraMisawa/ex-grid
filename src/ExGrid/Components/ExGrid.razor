@@ -3109,6 +3109,7 @@
         if (e.Button == 0 && ShowsRowHeadings
             && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx) && CellUnder(e) is { } headed)
         {
+            RememberHeadingPress(e, ViewportYOf(e));
             BeginHeadingDrag(HeadingAxis.Rows, headed.Row, e.ShiftKey, Toggles(e));
             if (dismissed || committed || leftInteractive)
                 _suppressRender = false;
@@ -3300,13 +3301,23 @@
     /// content scrolls beneath it.
     /// </summary>
     private void UpdateEdgeBand(MouseEventArgs e)
+        => UpdateEdgeBand(e.OffsetX - _scrollLeftPx, ViewportYOf(e));
+
+    /// <summary>How far below the top of the rows a pointer over the row Viewport is — read
+    /// through the mapping: the painted rows stand at c(s), not at s (ADR-0053).</summary>
+    private double ViewportYOf(MouseEventArgs e)
+        => _visible is { } visible
+            ? e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow) - _geometry.ContentOffsetAt(_scrollTopPx)
+            : e.OffsetY;
+
+    /// <summary>The edge bands for a pointer at (<paramref name="viewportX"/>,
+    /// <paramref name="viewportY"/>) in the Viewport's readable box.</summary>
+    private void UpdateEdgeBand(double viewportX, double viewportY)
     {
-        if (_visible is not { } visible)
+        if (_visible is null)
             return;
-        // Read through the mapping: the painted rows stand at c(s), not at s (ADR-0053).
-        _edgePointerViewportYPx = e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow)
-            - _geometry.ContentOffsetAt(_scrollTopPx);
-        _edgePointerViewportXPx = e.OffsetX - _scrollLeftPx;
+        _edgePointerViewportYPx = viewportY;
+        _edgePointerViewportXPx = viewportX;
         _edgeStepRows = EdgeBand.RowsPerTick(
             _edgePointerViewportYPx, _geometry.ViewportHeightPx, _geometry.RowsPerViewport);
         // Sideways the unit is a row height per rate step — the band has no natural

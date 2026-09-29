@@ -76,3 +76,16 @@ Left open, each raised with the orchestrator:
   ADR-0029's lists are the presentation surface, and an agent does not edit an ADR. That box stays
   open until the orchestrator enters `ex-size-tip` and its tokens there (and says whether the class
   is stable or internal).
+
+2026-09-29, layer 3 run: the `DC-42:`, `DC-43:` and `DC-44:` tests of `headings.spec.mjs` and the
+`(SR-2d, …)` and resize-grip tests of `sizing.spec.mjs` pass in Chrome on macOS against both hosts
+(Edge and Linux are CI's). The first run caught a product defect the layer 2 tests could not: the
+DC-44 test counted four writes to the Size Tip while the pointer went along one column. A move over
+a column's resize grip reports offsets measured from the grip, and the header's handler read them
+as the header's, so the Extent jumped to column A and back. Every event of a Heading gesture is now
+placed by its client delta from the press, whatever element it fired on — as the resize and the
+reorder already read ClientX deltas — and the rows are read through the mapping as the edge band's
+tick reads them. `HeadingDragTests.Over_a_resize_grip_the_pointer_places_the_extent` pins it (red
+before the fix). The other first-run failures were the tests': a locator that matched both ranges
+after a Ctrl+click, and a sort status the page writes in lower case. The two boxes above stay open
+for the reasons given.

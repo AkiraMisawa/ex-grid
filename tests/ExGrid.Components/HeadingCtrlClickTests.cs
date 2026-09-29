@@ -43,21 +43,32 @@ public class HeadingCtrlClickTests : GridTestContext
         => ps.Add(g => g.RowHeadings, row => (row + 1).ToString(CultureInfo.InvariantCulture))
              .Add(g => g.RowHeadingWidth, 40d);
 
-    private static MouseEventArgs Press(double x, double y, bool ctrl = false, bool meta = false)
-        => new() { Button = 0, Buttons = 1, CtrlKey = ctrl, MetaKey = meta, OffsetX = x, OffsetY = y };
+    // Client positions as a grid at the page's top-left corner, scrolled nowhere, would see them:
+    // across, the header's and the Viewport's own offsets; down, the Viewport's under the 20px
+    // header band. A Heading gesture places its events by their client delta from the press.
+    private const double BandPx = 20;
+
+    private static MouseEventArgs Press(double x, double y, bool ctrl = false, bool meta = false, double clientY = double.NaN)
+        => new()
+        {
+            Button = 0, Buttons = 1, CtrlKey = ctrl, MetaKey = meta, OffsetX = x, OffsetY = y,
+            ClientX = x, ClientY = double.IsNaN(clientY) ? BandPx + y : clientY,
+        };
 
     private static Task PressHeaderAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, bool ctrl = false, bool meta = false)
-        => cut.Find(".ex-header").MouseDownAsync(Press(x, 10, ctrl, meta));
+        => cut.Find(".ex-header").MouseDownAsync(Press(x, 10, ctrl, meta, clientY: 10));
 
     private static Task MoveOverHeaderAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x)
-        => cut.Find(".ex-header").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = x, OffsetY = 10 });
+        => cut.Find(".ex-header").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = x, OffsetY = 10, ClientX = x, ClientY = 10 });
 
     /// <summary>The release over the header, and the click the browser fires after it, both with
     /// the modifiers of the press.</summary>
     private static async Task ReleaseOverHeaderAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, bool ctrl = false, bool meta = false)
     {
-        await cut.Find(".ex-header").MouseUpAsync(new MouseEventArgs { Button = 0, CtrlKey = ctrl, MetaKey = meta, OffsetX = x, OffsetY = 10 });
-        await cut.Find(".ex-header").ClickAsync(new MouseEventArgs { Button = 0, CtrlKey = ctrl, MetaKey = meta, OffsetX = x, OffsetY = 10 });
+        await cut.Find(".ex-header").MouseUpAsync(new MouseEventArgs
+            { Button = 0, CtrlKey = ctrl, MetaKey = meta, OffsetX = x, OffsetY = 10, ClientX = x, ClientY = 10 });
+        await cut.Find(".ex-header").ClickAsync(new MouseEventArgs
+            { Button = 0, CtrlKey = ctrl, MetaKey = meta, OffsetX = x, OffsetY = 10, ClientX = x, ClientY = 10 });
     }
 
     private static async Task CtrlClickHeaderAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, bool ctrl = true, bool meta = false)
@@ -69,17 +80,20 @@ public class HeadingCtrlClickTests : GridTestContext
     private static async Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
     {
         await cut.Find(".ex-viewport").MouseDownAsync(Press(x, y));
-        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = x, OffsetY = y });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs
+            { Button = 0, OffsetX = x, OffsetY = y, ClientX = x, ClientY = BandPx + y });
     }
 
     private static Task PressViewportAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, bool ctrl = false)
         => cut.Find(".ex-viewport").MouseDownAsync(Press(x, y, ctrl));
 
     private static Task MoveOverViewportAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
-        => cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = x, OffsetY = y });
+        => cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs
+            { Buttons = 1, OffsetX = x, OffsetY = y, ClientX = x, ClientY = BandPx + y });
 
     private static Task ReleaseOverViewportAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
-        => cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = x, OffsetY = y });
+        => cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs
+            { Button = 0, OffsetX = x, OffsetY = y, ClientX = x, ClientY = BandPx + y });
 
     private static SelectionRange Column(int column) => new(0, column, 50, 1);
 

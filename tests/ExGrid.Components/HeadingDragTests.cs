@@ -58,33 +58,43 @@ public class HeadingDragTests : GridTestContext
              .Add(g => g.NameBoxLabel, cell => FormattableString.Invariant($"R{cell.Row + 1}C{cell.Column + 1}"))
              .Add(g => g.NameBoxSizeLabel, SizeLabel);
 
+    // The pointer's client position is the one a grid standing at the page's top-left corner, and
+    // scrolled nowhere, would see: across, the header's and the Viewport's own offsets; down, the
+    // Viewport's under the 20px header band. A Heading gesture places its events by their client
+    // delta from the press, so the two must agree, as they do in a browser.
+    private const double BandPx = 20;
+
     private static Task PressHeaderAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, bool shift = false)
         => cut.Find(".ex-header").MouseDownAsync(new MouseEventArgs
-            { Button = 0, Buttons = 1, ShiftKey = shift, OffsetX = x, OffsetY = 10 });
+            { Button = 0, Buttons = 1, ShiftKey = shift, OffsetX = x, OffsetY = 10, ClientX = x, ClientY = 10 });
 
     private static Task MoveOverHeaderAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, long buttons = 1)
-        => cut.Find(".ex-header").MouseMoveAsync(new MouseEventArgs { Buttons = buttons, OffsetX = x, OffsetY = 10 });
+        => cut.Find(".ex-header").MouseMoveAsync(new MouseEventArgs
+            { Buttons = buttons, OffsetX = x, OffsetY = 10, ClientX = x, ClientY = 10 });
 
     /// <summary>A release over the header, and the click the browser then fires on the header —
     /// the common ancestor of the press and the release, wherever along the band each was.</summary>
     private static async Task ReleaseOverHeaderAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x)
     {
-        await cut.Find(".ex-header").MouseUpAsync(new MouseEventArgs { Button = 0, Buttons = 0, OffsetX = x, OffsetY = 10 });
+        await cut.Find(".ex-header").MouseUpAsync(new MouseEventArgs
+            { Button = 0, Buttons = 0, OffsetX = x, OffsetY = 10, ClientX = x, ClientY = 10 });
         await ClickHeaderAsync(cut, x);
     }
 
     private static Task ClickHeaderAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x)
-        => cut.Find(".ex-header").ClickAsync(new MouseEventArgs { Button = 0, OffsetX = x, OffsetY = 10 });
+        => cut.Find(".ex-header").ClickAsync(new MouseEventArgs { Button = 0, OffsetX = x, OffsetY = 10, ClientX = x, ClientY = 10 });
 
     private static Task PressViewportAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, bool shift = false)
         => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs
-            { Button = 0, Buttons = 1, ShiftKey = shift, OffsetX = x, OffsetY = y });
+            { Button = 0, Buttons = 1, ShiftKey = shift, OffsetX = x, OffsetY = y, ClientX = x, ClientY = BandPx + y });
 
     private static Task MoveOverViewportAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, long buttons = 1)
-        => cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = buttons, OffsetX = x, OffsetY = y });
+        => cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs
+            { Buttons = buttons, OffsetX = x, OffsetY = y, ClientX = x, ClientY = BandPx + y });
 
     private static Task ReleaseOverViewportAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
-        => cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, Buttons = 0, OffsetX = x, OffsetY = y });
+        => cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs
+            { Button = 0, Buttons = 0, OffsetX = x, OffsetY = y, ClientX = x, ClientY = BandPx + y });
 
     private async Task TickAsync(IRenderedComponent<ExGrid<TestRow>> cut)
         => await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(50)));
@@ -221,6 +231,31 @@ public class HeadingDragTests : GridTestContext
         Assert.Equal(new ColumnWidthChange(TestRows.ColumnName(1), 160), change);
         Assert.Null(selection);
         await Assert.ThrowsAsync<MissingEventHandlerException>(() => MoveOverHeaderAsync(cut, 320));
+    }
+
+    [Fact] // ADR-0050 item 1 (2026-09-29) / DC-42, DC-44: a move or a release over a resize grip is placed by the pointer, not by the grip's own offsets
+    public async Task Over_a_resize_grip_the_pointer_places_the_extent()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(s => selection = s, extra: ps =>
+        {
+            Declared(ps);
+            ps.Add(g => g.OnColumnWidthChanged, _ => { });
+        });
+        await PressHeaderAsync(cut, 150);
+        await MoveOverHeaderAsync(cut, 250);
+
+        // Column 2's grip, its right-hand 5px, reports offsets measured from itself. Read as the
+        // header's, 2px would be column 0 — which the layer 3 run caught, as a Size Tip that
+        // jumped to column A and back while the pointer went along one column.
+        await cut.FindAll(".ex-resize-grip")[2].MouseMoveAsync(new MouseEventArgs
+            { Buttons = 1, OffsetX = 2, OffsetY = 10, ClientX = 298, ClientY = 10 });
+        Assert.Equal([new SelectionRange(0, 1, 50, 2)], selection!.Ranges);
+
+        await cut.FindAll(".ex-resize-grip")[3].MouseUpAsync(new MouseEventArgs
+            { Button = 0, OffsetX = 2, OffsetY = 10, ClientX = 398, ClientY = 10 });
+        Assert.Equal([new SelectionRange(0, 1, 50, 3)], selection.Ranges);
+        await Assert.ThrowsAsync<MissingEventHandlerException>(() => MoveOverHeaderAsync(cut, 20));
     }
 
     // ---- DC-43: the edge band scrolls along the Heading's axis only ----

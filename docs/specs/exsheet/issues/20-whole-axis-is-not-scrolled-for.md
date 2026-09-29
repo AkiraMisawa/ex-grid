@@ -1,6 +1,6 @@
 # 20: An axis the range spans end to end is not scrolled for
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0052, "What the user's run settled" (2026-09-29). With the view at the top,
 a Column Heading click puts the Focus on row 1, the range's top edge, so the Extent is the column's
@@ -24,7 +24,7 @@ column today). All of them take the rule.
       Shift+Home/End, Shift+PageUp/PageDown, Shift+click, and a drag
 - [x] The Focus reveal (non-extending moves), Ctrl+Backspace and the Consumer's placement are
       unchanged
-- [ ] Layer 3: with the view at the top, a Column Heading click then Shift+→ leaves `scrollTop`
+- [x] Layer 3: with the view at the top, a Column Heading click then Shift+→ leaves `scrollTop`
       where it was, on both hosts
 
 ## Comments
@@ -62,3 +62,11 @@ empty column, or Ctrl+Shift+→ from a whole column to the whole grid, scrolls n
 Layer 3 is written and not yet run: `tests/ExGrid.Browser/headings.spec.mjs` (the three `SR-2c:`
 tests, on /sheet) and `tests/ExGrid.Browser/sizing.spec.mjs` (the two `(SR-2c, ADR-0052)` tests,
 on a plain ExGrid). The last box waits for that run.
+
+2026-09-29, layer 3 run: `headings.spec.mjs`, `sizing.spec.mjs` and `sheet.spec.mjs` pass in Chrome
+on macOS against both hosts, WebAssembly and Server (46 of 46 on each; `headings.spec.mjs` three
+times over on each as well). Edge, and Linux, are CI's. The first run, by the orchestrator, failed
+the `SR-2c: Shift+↑ …` test on the test's own last line: it read the Focus from
+`aria-activedescendant`, which is cleared while the Focus is off screen (ADR-0033); it reads the
+Name Box now. Done as specified; the two open points above stand with the orchestrator, and a
+refinement of SR-2c from them would come as its own change.

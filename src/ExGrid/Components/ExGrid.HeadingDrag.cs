@@ -29,6 +29,17 @@ public partial class ExGrid<TRow>
     private HeadingAxis _headingDrag;
     private HeaderPress? _headerPress;
 
+    // Where the press was, relative to the Viewport's readable box — across from its left edge,
+    // down from the top of the rows — and the client position it was made at. Every later event of
+    // the gesture is placed by its client delta from the press, whatever element it fired on: a
+    // resize grip or a menu button in the header takes the pointer for its own gesture, and an
+    // event over it reports offsets measured from itself. The resize and the reorder read ClientX
+    // deltas for the same reason; nothing is measured (ADR-0021).
+    private double _headingPressX;
+    private double _headingPressY;
+    private double _headingPressClientX;
+    private double _headingPressClientY;
+
     // The header's own move and release handlers, splatted onto the header only while a Heading
     // drag or a header press runs — for the reason the Viewport's move handler is (ADR-0008): a
     // pointer merely crossing the header would otherwise raise an event per frame.
@@ -70,6 +81,8 @@ public partial class ExGrid<TRow>
     {
         if (e.Button != 0 || HeaderColumnAt(e) is not { } column)
             return;
+        // Pressed on the header itself: its grips, buttons and checkbox keep their presses.
+        RememberHeadingPress(e, e.OffsetY - BandHeightPx);
         var extends = e.ShiftKey;
         var toggles = Toggles(e);
         if (HeaderClickSelects)
@@ -122,6 +135,22 @@ public partial class ExGrid<TRow>
         SetDragging(true);
         AttachHeaderDrag();
     }
+
+    /// <summary>Remembers where a Heading press was, the Viewport's readable box being what stays
+    /// put while the content scrolls beneath it: across from the offsets the press carries, and
+    /// down by <paramref name="viewportY"/>, which the caller reads from the element it was on.</summary>
+    private void RememberHeadingPress(MouseEventArgs e, double viewportY)
+    {
+        _headingPressX = e.OffsetX - _scrollLeftPx;
+        _headingPressY = viewportY;
+        _headingPressClientX = e.ClientX;
+        _headingPressClientY = e.ClientY;
+    }
+
+    /// <summary>Where the pointer of a Heading gesture is now, relative to the Viewport's readable
+    /// box, from the event's client delta from the press.</summary>
+    private (double X, double Y) HeadingPointer(MouseEventArgs e)
+        => (_headingPressX + (e.ClientX - _headingPressClientX), _headingPressY + (e.ClientY - _headingPressClientY));
 
     /// <summary>The row the Focus lands on when a Column Heading is pressed: the first on screen,
     /// so the Viewport does not move for a press on the header (KB-9).</summary>
@@ -193,9 +222,15 @@ public partial class ExGrid<TRow>
     private void MoveHeadingDrag(MouseEventArgs e)
     {
         var extent = Extent;
+        var (x, y) = HeadingPointer(e);
+        if (!double.IsFinite(x) || !double.IsFinite(y))
+        {
+            _suppressRender = true;
+            return;
+        }
         if (_headingDrag == HeadingAxis.Columns)
         {
-            if (!double.IsFinite(e.OffsetX) || _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx) is not { } column)
+            if (_columnStyles.Geometry.ColumnAt(x + _scrollLeftPx, _scrollLeftPx) is not { } column)
             {
                 _suppressRender = true;
                 return;
@@ -216,14 +251,16 @@ public partial class ExGrid<TRow>
         }
         else
         {
-            if (CellUnder(e) is not { } cell)
+            // Read through the mapping, as the edge band's tick reads it (ADR-0053); RowAt clamps
+            // inside the page, so a drag never turns it (ADR-0015).
+            if (_geometry.RowAt(_geometry.ContentOffsetAt(_scrollTopPx) + y) is not { } row)
             {
                 _suppressRender = true;
                 return;
             }
-            Apply(_selection.Selection.ExtendToRow(cell.Row, extent, FirstVisibleColumn));
+            Apply(_selection.Selection.ExtendToRow(_pageStartRow + row, extent, FirstVisibleColumn));
         }
-        UpdateEdgeBand(e);
+        UpdateEdgeBand(x, y);
     }
 
     /// <summary>

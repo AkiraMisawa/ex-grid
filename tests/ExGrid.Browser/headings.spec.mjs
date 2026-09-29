@@ -80,7 +80,9 @@ test('SR-2c: Shift+↑ from a whole column leaves it one row short, and scrolls 
     expect(box.y).toBeGreaterThanOrEqual(readable.top - 1);
     expect(box.y + box.height).toBeLessThanOrEqual(readable.bottom + 1);
     await expect(rowHeading(grid, 1048575)).toBeVisible();
-    await expectFocusAt(grid, 'C1');
+    // The Focus stayed on C1, now off screen, so the Name Box is where it is read: the root's
+    // aria-activedescendant is cleared while the Focus is not painted (ADR-0033).
+    await expect(nameBox(grid)).toHaveValue('C1');
 });
 
 test('SR-2c: with the view at the left, a Row Heading click then Shift+↓ leaves scrollLeft where it was', async ({ page }) => {
@@ -101,11 +103,12 @@ test('SR-2c: with the view at the left, a Row Heading click then Shift+↓ leave
 
 const centreOf = (box) => ({ x: box.x + (box.width / 2), y: box.y + (box.height / 2) });
 
-/** Waits until the range painted over the scrollable columns is whole columns from..to: across
- *  exactly their headings, from row 1 down past the bottom of the readable area. Column A is
- *  pinned, so B onwards are painted in the scrollable layer. */
+/** Waits until the range made last, painted over the scrollable columns, is whole columns
+ *  from..to: across exactly their headings, from row 1 down past the bottom of the readable area.
+ *  Column A is pinned, so B onwards are painted in the scrollable layer, one rectangle per range
+ *  in the order the ranges were made (ADR-0008), so the range made last is the layer's last. */
 async function expectWholeColumns(grid, from, to) {
-    const range = grid.locator('.ex-selection .ex-range');
+    const range = grid.locator('.ex-selection .ex-range').last();
     const want = await spanOf(grid, `${from}1`, `${to}1`);
     const { bottom } = await readableOf(grid);
     await expect.poll(async () => {

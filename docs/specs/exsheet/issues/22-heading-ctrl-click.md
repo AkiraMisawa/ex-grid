@@ -1,6 +1,6 @@
 # 22: Ctrl+click and Ctrl+drag on Headings
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0050, item 1 (added 2026-09-29) and ADR-0012 (2026-09-29). Ctrl+click on a
 Heading, or on a plain ExGrid's column header, adds the whole column (row) as a new range, or takes
@@ -42,3 +42,8 @@ works at the click, but a Ctrl+drag on the header reorders, as ticket 21 records
 
 The boxes are ticked on layers 1 and 2. SR-2e is verified on layer 3 as well, so the ticket stays
 open until that run: `Status: done` waits for it.
+
+2026-09-29, layer 3 run: the `SR-2e/DC-42:` and `DC-42: Ctrl+click on a Row Heading` tests of
+`headings.spec.mjs` and the three `(SR-2e, ADR-0012)` tests of `sizing.spec.mjs` pass in Chrome on
+macOS against both hosts; Edge and Linux are CI's. The Meta test takes its macOS branch there, where
+Cmd+click adds the column. Done.

@@ -120,7 +120,8 @@ test('a press on a header released on its own column is a click, and sorts (SR-2
     await page.mouse.move(from.x + 6, from.y, { steps: 3 });
     await page.mouse.up();
 
-    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional descending');
+    // The page writes a sort it is told of in lower case; only its opening status is capitalised.
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: notional descending');
     await expect(page.locator('#selection-status')).toHaveText('Selection:');
 });
 
@@ -215,7 +216,7 @@ test('Meta counts as Ctrl on a header only where Meta is Command (SR-2e, ADR-001
         await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
     } else {
         // Meta is the OS's key here: the click is a plain click, and sorts.
-        await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional descending');
+        await expect(page.locator('#sort-status')).toHaveText('Sorts: notional descending');
         await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1');
     }
 });
