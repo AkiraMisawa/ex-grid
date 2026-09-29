@@ -132,13 +132,13 @@ public class ShippedStylesheetTests
         var body = press.Value;
 
         // Only while an edit is open here and DOM focus is outside this root (ADR-0018)...
-        Assert.Contains("editing !== 'none' && !(away instanceof Element && root.contains(away))", body, StringComparison.Ordinal);
+        Assert.Contains("editing !== 'none' && !(focusAtPress instanceof Element && root.contains(focusAtPress))", body, StringComparison.Ordinal);
         // ...for a press on this grid's own rows or headings, not a nested grid's...
-        Assert.Contains("onRowsOrHeadings(event.target)", body, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"const onRowsOrHeadings = \(target\) => [^;]*target\.closest\('\.ex-scroller'\) === scroller", RegexOptions.Singleline), script.Text);
-        // ...into the surface that last held the keyboard, found under this root.
+        Assert.Contains("isOwnRowsOrHeadings(event.target)", body, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const isOwnRowsOrHeadings = \(target\) => [^;]*target\.closest\('\.ex-scroller'\) === scroller", RegexOptions.Singleline), script.Text);
+        // ...into the surface that last held the keyboard, one of this grid's own.
         Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"const standingField = \(\) => \{[^}]*root\.contains\(lastSurface\)[^}]*: root\.querySelector\('\.ex-editor'\);", RegexOptions.Singleline), script.Text);
+        Assert.Contains("const standingField = () => surfaceField(ownSurface(lastSurface));", script.Text, StringComparison.Ordinal);
         // A Formula Bar that a press on the rows leaves holding DOM focus while an edit is open is
         // the hand-back's to take, should the press commit (reclaimFocus).
         Assert.Matches(new Regex(@"if \(field !== null && editing !== 'none'\) \{\s*staleField = field;"), body);
@@ -147,6 +147,24 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
+    }
+
+    [Fact] // ADR-0018 / ED-26: the surface the keyboard comes back to is this grid's own, never one of a grid nested in its cells
+    public void The_keyboard_comes_back_only_to_this_grids_own_surfaces()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // A surface is this grid's when this root is the nearest grid root above it: a grid nested
+        // in a cell stands nearer to its own editor, and root.contains alone would not tell them apart.
+        Assert.Matches(new Regex(@"const ownSurface = \(element\) => \{[^}]*surface\.closest\('\.ex-grid'\) === root", RegexOptions.Singleline), script.Text);
+        // The surface noted as holding the keyboard, and the one an edit opens in, go through it...
+        Assert.Contains("lastSurface = ownSurface(target) ?? lastSurface;", script.Text, StringComparison.Ordinal);
+        Assert.Contains("lastSurface = opened ? ownSurface(document.activeElement) : null;", script.Text, StringComparison.Ordinal);
+        // ...and so does the first surface in the markup, taken when none is known, for the field a
+        // held key is typed into as much as for the keyboard's return: one helper for both.
+        Assert.Matches(new Regex(@"const surfaceField = \(surface\) => \{\s*const chosen = surface\s*\?\? \(root \? \[\.\.\.root\.querySelectorAll\('\.ex-editor'\)\]\.find\(\(box\) => ownSurface\(box\) === box\) : null\);"), script.Text);
+        Assert.Contains("const editorInput = () => surfaceField(ownSurface(document.activeElement));", script.Text, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"root\.querySelector\('\.ex-editor'\)"), script.Text);
     }
 
     [Fact] // ADR-0037 / KB-26: a held Space engages once — the gate takes and drops a repeated plain Space

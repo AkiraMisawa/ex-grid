@@ -329,18 +329,41 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
             });
     };
-    // The editor surface that last held the keyboard here (ADR-0018, section 6): the box that
-    // wears .ex-editor — the Cell Editor over its cell, or the Formula Bar's text — in which this
-    // listener last saw a key, an input or a press. An edit stands when DOM focus leaves the
-    // root, and a press back on the rows or the headings puts the keyboard here (onPress). Taken
-    // afresh as an edit opens, from the surface holding DOM focus then, and forgotten as it ends:
-    // the bar outlives an edit, and one typed in there must not claim the next.
+    // The editor surface of this grid's own that `element` is, or is inside: the box that wears
+    // .ex-editor — the Cell Editor over this grid's rows, or its Formula Bar's text — and never
+    // a surface of a grid nested in one of its cells, whose own root stands nearer (ADR-0018).
+    const ownSurface = (element) => {
+        const surface = element instanceof Element ? element.closest('.ex-editor') : null;
+        return surface !== null && root !== null && surface.closest('.ex-grid') === root ? surface : null;
+    };
+    // The text field of an editor surface: of `surface`, one of this grid's own, or, given none,
+    // of the first of them in the markup — the Cell Editor while its cell is painted, the
+    // Formula Bar's text when it is not. A substituted Chrome's surface is a box around its
+    // control (ADR-0010): the control that has DOM focus inside it, if one has, or its first.
+    const surfaceField = (surface) => {
+        const chosen = surface
+            ?? (root ? [...root.querySelectorAll('.ex-editor')].find((box) => ownSurface(box) === box) : null);
+        if (!chosen) {
+            return null;
+        }
+        if (chosen instanceof HTMLInputElement || chosen instanceof HTMLTextAreaElement) {
+            return chosen;
+        }
+        const active = document.activeElement;
+        return (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) && chosen.contains(active)
+            ? active
+            : chosen.querySelector('input, textarea');
+    };
+
+    // The editor surface that last held the keyboard here (ADR-0018, section 6): the one of this
+    // grid's own in which this listener last saw a key, an input or a press. An edit stands when
+    // DOM focus leaves the root, and a press back on the rows or the headings puts the keyboard
+    // here (onPress). Taken afresh as an edit opens, from the surface holding DOM focus then, and
+    // forgotten as it ends: the bar outlives an edit, and one typed in there must not claim the
+    // next.
     let lastSurface = null;
     const noteSurface = (target) => {
-        const surface = target instanceof Element ? target.closest('.ex-editor') : null;
-        if (surface !== null && root !== null && root.contains(surface)) {
-            lastSurface = surface;
-        }
+        lastSurface = ownSurface(target) ?? lastSurface;
     };
 
     // Each input reports at once: Blazor's input event is on its way, and the core waits for
@@ -479,24 +502,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // surfaces, the one holding DOM focus: the Formula Bar when the user was typing there,
     // not the cell's editor that comes first in the markup (ADR-0051). The first one only
     // when none holds it — the two-second hold has run out.
-    const editorInput = () => {
-        const active = document.activeElement;
-        const focused = root && active instanceof Element && root.contains(active)
-            ? active.closest('.ex-editor')
-            : null;
-        const editor = focused ?? (root && root.querySelector('.ex-editor'));
-        if (!editor) {
-            return null;
-        }
-        if (editor instanceof HTMLInputElement || editor instanceof HTMLTextAreaElement) {
-            return editor;
-        }
-        // A substituted Chrome editor is a box around its control: the control that has
-        // DOM focus inside it, if one has.
-        return focused && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
-            ? active
-            : editor.querySelector('input, textarea');
-    };
+    const editorInput = () => surfaceField(ownSurface(document.activeElement));
     // When the hold that is standing began: two seconds from it, whatever the keys held
     // since have asked for, the rest is handed on (ADR-0010).
     let holdStartedAt = 0;
@@ -966,24 +972,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // press on the rows lands on the Viewport (cells are pointer-events: none), and one on the
     // column headings anywhere in their band. A press into the Cell Editor's own text is not
     // one: it takes the keyboard by its own default.
-    const onRowsOrHeadings = (target) => target instanceof Element && !!scroller
+    const isOwnRowsOrHeadings = (target) => target instanceof Element && !!scroller
         && target.closest('.ex-scroller') === scroller
         && (target.classList.contains('ex-viewport') || target.closest('.ex-header') !== null);
     // The text field to put the keyboard back into: the surface that last held it while it is
-    // still there, or else the first one in the markup — the Cell Editor while its cell is
-    // painted, the Formula Bar's text when it is not. A Chrome's surface is a box around its
-    // control.
-    const standingField = () => {
-        const surface = lastSurface !== null && lastSurface.isConnected && root.contains(lastSurface)
-            ? lastSurface
-            : root.querySelector('.ex-editor');
-        if (!surface) {
-            return null;
-        }
-        return surface instanceof HTMLInputElement || surface instanceof HTMLTextAreaElement
-            ? surface
-            : surface.querySelector('input, textarea');
-    };
+    // still there, or else the first of this grid's own (surfaceField).
+    const standingField = () => surfaceField(ownSurface(lastSurface));
 
     const onPress = (event) => {
         // A press into a field beside the rows gives that field a focus of its own, which a
@@ -1012,9 +1006,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // script (ADR-0021, added 2026-09-29), beside reclaimFocus; it reads
         // document.activeElement and no layout. Held or not, the press keeps its place among the
         // keys: only where the keyboard is has changed.
-        const away = document.activeElement;
-        if (core && !replaying && editing !== 'none' && !(away instanceof Element && root.contains(away))
-            && onRowsOrHeadings(event.target)) {
+        const focusAtPress = document.activeElement;
+        if (core && !replaying && editing !== 'none' && !(focusAtPress instanceof Element && root.contains(focusAtPress))
+            && isOwnRowsOrHeadings(event.target)) {
             standingField()?.focus({ preventScroll: true });
         }
         // Cells are pointer-events: none, so the Viewport is what a press on the rows lands on.
@@ -1023,10 +1017,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         // The Formula Bar or the Name Box holding DOM focus, which a press on the rows would take
-        // by its default.
-        const active = document.activeElement;
-        const field = active instanceof Element && root.contains(active) && active.closest('.ex-formula-bar') !== null
-            ? active
+        // by its default — read again, after the keyboard may have been put back above.
+        const focusAfterReturn = document.activeElement;
+        const field = focusAfterReturn instanceof Element && root.contains(focusAfterReturn)
+            && focusAfterReturn.closest('.ex-formula-bar') !== null
+            ? focusAfterReturn
             : null;
         if (!answering && held.length === 0) {
             // Not held, the press goes on as it is. But while an edit is open where a press may
@@ -1374,10 +1369,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // Formula Bar a press opened it from — or none yet, and the Cell Editor is taken for
             // it (standingField); the edit's end forgets it.
             if (opened || mode === 'none') {
-                const active = document.activeElement;
-                lastSurface = opened && root && active instanceof Element && root.contains(active)
-                    ? active.closest('.ex-editor')
-                    : null;
+                lastSurface = opened ? ownSurface(document.activeElement) : null;
             }
             // A new state starts a new conversation: a report equal to one sent before it is
             // news to the core now (the next edit can open on the same text and caret).
