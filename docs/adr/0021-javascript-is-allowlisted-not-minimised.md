@@ -308,8 +308,8 @@ decision about focus made in script, made for the same reason as the first: done
 trip later, the keys typed in between would reach the grid the user had just left. The condition
 reads `document.activeElement` and no layout, and the listener is the one already attached.)*
 
-*(Proposed 2026-09-29, found while building ADR-0018 section 6, and waiting for the user's
-confirmation, since the 2026-09-28 sentence can also be read the other way.)* "One ended by a press elsewhere
+*(Decided with the user 2026-09-29, found while building ADR-0018 section 6; the 2026-09-28
+sentence could be read the other way, and the user chose this reading.)* "One ended by a press elsewhere
 does not take it from a field" (the 2026-09-28 note) means a press into another field, such as the
 Name Box, which keeps the focus it was given. A press on the rows is not one. Where pointing is
 declared, the core suppresses the default of every press on the rows while an edit is open
