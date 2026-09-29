@@ -1355,7 +1355,7 @@
     },
     {
       "id": "XLOOKUP-156",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): match_mode 3: a negative lookbehind is accepted, as a lookbehind is (XLOOKUP-153)",
       "cells": {"B1": "ab", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(?<!a)b\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",
@@ -1363,7 +1363,7 @@
     },
     {
       "id": "XLOOKUP-157",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): match_mode 3: a lookbehind of unbounded length is refused, as PCRE2 refuses it",
       "cells": {"B1": "ab", "B2": "b", "C1": "a", "C2": "b", "ZZ1000": "=XLOOKUP(\"(?<=a+)b\",B1:B2,C1:C2,,3)"},
       "check": "ZZ1000",

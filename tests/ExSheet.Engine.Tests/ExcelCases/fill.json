@@ -295,7 +295,7 @@
     },
     {
       "id": "FILL-033",
-      "source": "documented",
+      "source": "observed",
       "description": "A date with a time is a pattern ExSheet does not yet take: refused",
       "cells": {"A1": "9/27/2026 10:00"},
       "action": {"do": "fill", "source": "A1", "target": "A2:A4", "direction": "down"},

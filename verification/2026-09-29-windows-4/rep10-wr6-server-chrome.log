@@ -1,0 +1,52 @@
+
+Running 10 tests using 1 worker
+
+  ok  1 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (639ms)
+  x   2 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (588ms)
+  ok  3 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (596ms)
+  ok  4 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (616ms)
+  ok  5 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (570ms)
+  ok  6 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (623ms)
+  ok  7 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (578ms)
+  ok  8 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (618ms)
+  ok  9 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (568ms)
+  ok 10 [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (565ms)
+
+
+  1) [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 0
+
+    @@ -6,7 +6,6 @@
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+    -   "9",
+      ]
+
+      473 |     expect(dark.rowImage).toContain(dark.token);
+      474 |     const probes = await positions(page).evaluate((root) => [...root.querySelectorAll('.ex-row')].map((row) => row.dataset.probe));
+    > 475 |     expect(probes).toEqual([...Array(count).keys()].map(String));
+          |                    ^
+      476 | });
+      477 |
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-4\tests\ExGrid.Browser\mud-app.spec.mjs:475:20
+
+    Error Context: test-results-rep10-wr6-server-chrome\mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--chrome-repeat1\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rep10-wr6-server-chrome\mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--chrome-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rep10-wr6-server-chrome\mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--chrome-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chrome] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) 
+  9 passed (14.9s)

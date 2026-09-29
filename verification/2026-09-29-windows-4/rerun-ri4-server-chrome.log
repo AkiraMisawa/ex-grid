@@ -1,0 +1,8 @@
+
+Running 3 tests using 1 worker
+
+  ok 1 [chrome] › inspectors.spec.mjs:88:5 › RI-4: modal, by click, handler returning once the dialog is shown: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037) (1.0s)
+  ok 2 [chrome] › inspectors.spec.mjs:88:5 › RI-4: modal, by click, handler returning once the dialog is shown: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037) (1.0s)
+  ok 3 [chrome] › inspectors.spec.mjs:88:5 › RI-4: modal, by click, handler returning once the dialog is shown: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037) (1.0s)
+
+  3 passed (6.3s)

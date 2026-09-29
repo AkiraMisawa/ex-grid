@@ -705,7 +705,7 @@
     },
     {
       "id": "FMT-078",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a numbered colour in the first section ([Color3]) is refused, as ADR-0047's third run refuses [Color n] in any section",
       "cells": {"A1": "3"},
       "formats": {"A1": "[Color3]0"},

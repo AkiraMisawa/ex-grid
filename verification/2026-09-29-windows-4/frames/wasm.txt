@@ -1,0 +1,78 @@
+== mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--chrome
+last frame: frames/wasm/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--chrome.jpeg
+# Error details
+
+```
+Error: the Stretch grid's width with the Drawer closed
+
+the Stretch grid's width with the Drawer closed
+
+expect(received).toBeCloseTo(expected, precision)
+
+Expected: 1229.8021240234375
+Received: 1214
+
+Expected precision:    0
+Expected difference: < 0.5
+Received difference:   15.8021240234375
+
+Call Log:
+- Timeout 5000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - toolbar [ref=e5]:
+      - button "Toggle navigation" [active] [ref=e6] [cursor=pointer]
+      - heading "Blotter" [level=6] [ref=e11]
+      - generic [ref=e15]:
+        - generic [ref=e16] [cursor=pointer]:
+          - combobox "Reporting currency" [ref=e17]: USD
+          - group "Reporting currency"
+        - generic: Reporting currency
+      - button "Toggle dark mode" [ref=e22] [cursor=pointer]
+  - complementary [ref=e27]:
+    - navi
+
+== mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--msedge
+last frame: frames/wasm/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--msedge.jpeg
+# Error details
+
+```
+Error: the Stretch grid's width with the Drawer closed
+
+the Stretch grid's width with the Drawer closed
+
+expect(received).toBeCloseTo(expected, precision)
+
+Expected: 1223.28125
+Received: 1214
+
+Expected precision:    0
+Expected difference: < 0.5
+Received difference:   9.28125
+
+Call Log:
+- Timeout 5000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - toolbar [ref=e5]:
+      - button "Toggle navigation" [active] [ref=e6] [cursor=pointer]
+      - heading "Blotter" [level=6] [ref=e11]
+      - generic [ref=e15]:
+        - generic [ref=e16] [cursor=pointer]:
+          - combobox "Reporting currency" [ref=e17]: USD
+          - group "Reporting currency"
+        - generic: Reporting currency
+      - button "Toggle dark mode" [ref=e22] [cursor=pointer]
+  - complementary [ref=e27]:
+    - navigation [ref=e29]:
+

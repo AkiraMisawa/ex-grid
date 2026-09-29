@@ -1,0 +1,807 @@
+{
+  "channel": "chrome",
+  "base": "http://localhost:6298",
+  "label": "server",
+  "mode": "drag",
+  "when": "ready",
+  "thumbY": 8,
+  "tries": [
+    {
+      "try": 1,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 153,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 22369362px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 158
+      },
+      "gesture": {
+        "cmd": "drag 1457 600 1457 1713 12 8",
+        "answer": "ok drag down=1005 t=1195",
+        "sinceNavigationMs": 394
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 7.399999976158142,
+        "firstRow": 149,
+        "interactive": 99,
+        "lastRow": 616,
+        "spacer": [
+          {
+            "t": 13,
+            "declared": 28000028
+          },
+          {
+            "t": 149,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 26,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 241,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 242,
+            "scrollTop": 4883324.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 250,
+            "scrollTop": 7298733.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 267,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 283,
+            "scrollTop": 12182059,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 316,
+            "scrollTop": 14597467,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 333,
+            "scrollTop": 17039128,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 350,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 361,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 366,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 202,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 273,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 391,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1015,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 26,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-chrome-drag-ready-1.png",
+        "answer": "ok shot 60,60,2460,1560 t=5111"
+      }
+    },
+    {
+      "try": 2,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 150,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 22369362px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 154
+      },
+      "gesture": {
+        "cmd": "drag 1457 600 1457 1713 12 8",
+        "answer": "ok drag down=5838 t=6045",
+        "sinceNavigationMs": 382
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 6.699999988079071,
+        "firstRow": 147,
+        "interactive": 97,
+        "lastRow": 589,
+        "spacer": [
+          {
+            "t": 10,
+            "declared": 28000028
+          },
+          {
+            "t": 147,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 22,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 222,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 223,
+            "scrollTop": 4883324.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 230,
+            "scrollTop": 7298733.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 247,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 264,
+            "scrollTop": 12182059,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 281,
+            "scrollTop": 17039128,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 305,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 322,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 339,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 173,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 273,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 380,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1015,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 22,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-chrome-drag-ready-2.png",
+        "answer": "ok shot 60,60,2460,1560 t=9931"
+      }
+    },
+    {
+      "try": 3,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 151,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 28000028px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 155
+      },
+      "gesture": {
+        "cmd": "drag 1457 600 1457 1713 12 8",
+        "answer": "ok drag down=10655 t=10852",
+        "sinceNavigationMs": 382
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 7.199999988079071,
+        "firstRow": 148,
+        "interactive": 97,
+        "lastRow": 597,
+        "spacer": [
+          {
+            "t": 11,
+            "declared": 28000028
+          },
+          {
+            "t": 197,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 24,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 222,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 223,
+            "scrollTop": 4883324.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 231,
+            "scrollTop": 7298733.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 248,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 264,
+            "scrollTop": 12182059,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 297,
+            "scrollTop": 14597467,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 314,
+            "scrollTop": 17039128,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 330,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 343,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 347,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 182,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 273,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 379,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1015,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 24,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-chrome-drag-ready-3.png",
+        "answer": "ok shot 60,60,2460,1560 t=14759"
+      }
+    },
+    {
+      "try": 4,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 148,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 22369362px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 153
+      },
+      "gesture": {
+        "cmd": "drag 1457 600 1457 1713 12 8",
+        "answer": "ok drag down=15472 t=15671",
+        "sinceNavigationMs": 382
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 6.899999976158142,
+        "firstRow": 146,
+        "interactive": 96,
+        "lastRow": 597,
+        "spacer": [
+          {
+            "t": 11,
+            "declared": 28000028
+          },
+          {
+            "t": 146,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 23,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 221,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 221,
+            "scrollTop": 4883324.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 229,
+            "scrollTop": 7298733.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 246,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 287,
+            "scrollTop": 14597467,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 312,
+            "scrollTop": 17039128,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 329,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 341,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 346,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 181,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 273,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 380,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1015,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 23,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-chrome-drag-ready-4.png",
+        "answer": "ok shot 60,60,2460,1560 t=19580"
+      }
+    },
+    {
+      "try": 5,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 150,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 28000028px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 154
+      },
+      "gesture": {
+        "cmd": "drag 1457 600 1457 1713 12 8",
+        "answer": "ok drag down=20297 t=20497",
+        "sinceNavigationMs": 382
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 6.600000023841858,
+        "firstRow": 147,
+        "interactive": 95,
+        "lastRow": 637,
+        "spacer": [
+          {
+            "t": 10,
+            "declared": 28000028
+          },
+          {
+            "t": 195,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 23,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 220,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 221,
+            "scrollTop": 4883324.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 237,
+            "scrollTop": 7298733.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 253,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 270,
+            "scrollTop": 12182059,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 287,
+            "scrollTop": 14597467,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 303,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 328,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 362,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 181,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 273,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 380,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1015,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 23,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-chrome-drag-ready-5.png",
+        "answer": "ok shot 60,60,2460,1560 t=24417"
+      }
+    }
+  ],
+  "browserVersion": "153.0.8010.54",
+  "console": []
+}

@@ -1,0 +1,687 @@
+{
+  "channel": "chrome",
+  "base": "http://localhost:5299",
+  "label": "wasm",
+  "mode": "ctrl-end",
+  "when": "ready",
+  "thumbY": 8,
+  "tries": [
+    {
+      "try": 1,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 505,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 28000028px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 522
+      },
+      "gesture": {
+        "click": "ok click t=1392",
+        "keys": "ok keys t=1404",
+        "sinceNavigationMs": 608
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": "ex1-r999999c99",
+        "busy": false
+      },
+      "record": {
+        "t0": 6.699999988079071,
+        "firstRow": 503,
+        "interactive": 424,
+        "lastRow": 777,
+        "spacer": [
+          {
+            "t": 424,
+            "declared": 28000028
+          },
+          {
+            "t": 521,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 433,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 619,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 563,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 593,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 605,
+            "type": "keydown",
+            "key": "Control",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          },
+          {
+            "t": 605,
+            "type": "keydown",
+            "key": "End",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 433,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-wasm-chrome-ctrl-end-ready-1.png",
+        "answer": "ok shot 60,60,2460,1560 t=5335"
+      }
+    },
+    {
+      "try": 2,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 434,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 28000028px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 450
+      },
+      "gesture": {
+        "click": "ok click t=6401",
+        "keys": "ok keys t=6410",
+        "sinceNavigationMs": 518
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": "ex1-r999999c99",
+        "busy": false
+      },
+      "record": {
+        "t0": 5.599999964237213,
+        "firstRow": 432,
+        "interactive": 358,
+        "lastRow": 681,
+        "spacer": [
+          {
+            "t": 358,
+            "declared": 28000028
+          },
+          {
+            "t": 449,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 366,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 523,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 476,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 507,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 510,
+            "type": "keydown",
+            "key": "Control",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          },
+          {
+            "t": 511,
+            "type": "keydown",
+            "key": "End",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 366,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-wasm-chrome-ctrl-end-ready-2.png",
+        "answer": "ok shot 60,60,2460,1560 t=10304"
+      }
+    },
+    {
+      "try": 3,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 441,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 28000028px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 457
+      },
+      "gesture": {
+        "click": "ok click t=11351",
+        "keys": "ok keys t=11360",
+        "sinceNavigationMs": 525
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": "ex1-r999999c99",
+        "busy": false
+      },
+      "record": {
+        "t0": 5.399999976158142,
+        "firstRow": 439,
+        "interactive": 363,
+        "lastRow": 687,
+        "spacer": [
+          {
+            "t": 363,
+            "declared": 28000028
+          },
+          {
+            "t": 456,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 372,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 529,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 483,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 514,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 517,
+            "type": "keydown",
+            "key": "Control",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          },
+          {
+            "t": 517,
+            "type": "keydown",
+            "key": "End",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 372,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-wasm-chrome-ctrl-end-ready-3.png",
+        "answer": "ok shot 60,60,2460,1560 t=15265"
+      }
+    },
+    {
+      "try": 4,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 435,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 28000028px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 451
+      },
+      "gesture": {
+        "click": "ok click t=16475",
+        "keys": "ok keys t=16483",
+        "sinceNavigationMs": 522
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": "ex1-r999999c99",
+        "busy": false
+      },
+      "record": {
+        "t0": 5.699999988079071,
+        "firstRow": 433,
+        "interactive": 359,
+        "lastRow": 688,
+        "spacer": [
+          {
+            "t": 359,
+            "declared": 28000028
+          },
+          {
+            "t": 450,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 367,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 529,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 482,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 512,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 515,
+            "type": "keydown",
+            "key": "Control",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          },
+          {
+            "t": 515,
+            "type": "keydown",
+            "key": "End",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 367,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-wasm-chrome-ctrl-end-ready-4.png",
+        "answer": "ok shot 60,60,2460,1560 t=20395"
+      }
+    },
+    {
+      "try": 5,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 671,
+            "py": 641,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 432,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 28000028px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 447
+      },
+      "gesture": {
+        "click": "ok click t=21435",
+        "keys": "ok keys t=21443",
+        "sinceNavigationMs": 517
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": "ex1-r999999c99",
+        "busy": false
+      },
+      "record": {
+        "t0": 5.599999964237213,
+        "firstRow": 429,
+        "interactive": 356,
+        "lastRow": 680,
+        "spacer": [
+          {
+            "t": 356,
+            "declared": 28000028
+          },
+          {
+            "t": 446,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 364,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 521,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 475,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 505,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 327,
+            "y": 391,
+            "target": "ex-viewport"
+          },
+          {
+            "t": 508,
+            "type": "keydown",
+            "key": "Control",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          },
+          {
+            "t": 509,
+            "type": "keydown",
+            "key": "End",
+            "ctrl": true,
+            "x": null,
+            "y": null,
+            "target": "ex-grid"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 364,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-wasm-chrome-ctrl-end-ready-5.png",
+        "answer": "ok shot 60,60,2460,1560 t=25350"
+      }
+    }
+  ],
+  "browserVersion": "153.0.8010.54",
+  "console": []
+}

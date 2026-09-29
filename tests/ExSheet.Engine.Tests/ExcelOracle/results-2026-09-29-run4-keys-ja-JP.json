@@ -1,0 +1,186 @@
+{
+    "ran":  "2026-09-29T10:54:31",
+    "excel":  "16.0 (build 20326); EXCEL.EXE 16.0.20326.20158",
+    "windowsRegionalFormat":  "ja-JP",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  5,
+                    "disagree":  0,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "DATE-009",
+                      "area":  "dates",
+                      "source":  "observed",
+                      "description":  "A date is typed in the culture\u0027s day order, and records Excel\u0027s built-in short date, shown in the culture\u0027s pattern",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291,
+                                       "text":  "2026/09/26",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291,
+                                           "text":  "2026/09/26",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "2026/09/26",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "DATE-010",
+                      "area":  "dates",
+                      "source":  "observed",
+                      "description":  "A date is typed in the culture\u0027s day order, and records Excel\u0027s built-in short date, shown in the culture\u0027s pattern",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291,
+                                       "text":  "2026/09/26",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291,
+                                           "text":  "2026/09/26",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "2026/09/26",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "FMT-030",
+                      "area":  "number-formats",
+                      "source":  "observed",
+                      "description":  "The culture\u0027s separators, over the invariant code",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "text":  "1,234.50"
+                                   },
+                      "engineExpect":  {
+                                           "text":  "1,234.50"
+                                       },
+                      "excel":  {
+                                    "value2":  1234.5,
+                                    "kind":  "number",
+                                    "number":  "1234.5",
+                                    "text":  "1,234.50",
+                                    "formula":  "=1234.5",
+                                    "numberFormat":  "#,##0.00",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-010",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "A typed number is read with the Sheet\u0027s culture\u0027s separators, and thousands separators with decimals give #,##0.00",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1234.5,
+                                       "text":  "1,234.50",
+                                       "numberFormat":  "#,##0.00"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1234.5,
+                                           "text":  "1,234.50",
+                                           "numberFormat":  "#,##0.00"
+                                       },
+                      "excel":  {
+                                    "value2":  1234.5,
+                                    "kind":  "number",
+                                    "number":  "1234.5",
+                                    "text":  "1,234.50",
+                                    "formula":  "1234.5",
+                                    "numberFormat":  "#,##0.00",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "TYPED-027",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Ticket 19 row 30: a date typed under ja-JP records Excel\u0027s built-in short date (m/d/yyyy in the invariant codes), which shows in the culture\u0027s short-date pattern; it is not recorded as the pattern yyyy/mm/dd",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  46291,
+                                       "text":  "2026/09/26",
+                                       "numberFormat":  "m/d/yyyy"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  46291,
+                                           "text":  "2026/09/26",
+                                           "numberFormat":  "m/d/yyyy"
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "2026/09/26",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  }
+              ]
+}

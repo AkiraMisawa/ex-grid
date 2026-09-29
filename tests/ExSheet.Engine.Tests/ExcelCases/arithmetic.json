@@ -1096,7 +1096,7 @@
     },
     {
       "id": "ARITH-136",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): numbers 19 units in the last place of 1 apart (4.2E-15) compare equal: below the equality threshold, 20 units (ADR-0047, third run)",
       "cells": {"ZZ1000": "=1+4.2E-15=1"},
       "check": "ZZ1000",
@@ -1128,7 +1128,7 @@
     },
     {
       "id": "ARITH-140",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a final subtraction 6 units in the last place of 1 apart (1.3E-15) is 0: below 2^-49",
       "cells": {"ZZ1000": "=1+1.3E-15-1"},
       "check": "ZZ1000",
@@ -1136,7 +1136,7 @@
     },
     {
       "id": "ARITH-141",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a final subtraction 7 units in the last place of 1 apart (1.6E-15) is 0: below 2^-49",
       "cells": {"ZZ1000": "=1+1.6E-15-1"},
       "check": "ZZ1000",
@@ -1144,7 +1144,7 @@
     },
     {
       "id": "ARITH-142",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): a final subtraction 8 units in the last place of 1 apart (1.8E-15, 2^-49 exactly) is not 0: the threshold is strict",
       "cells": {"ZZ1000": "=1+1.8E-15-1"},
       "check": "ZZ1000",
@@ -1152,7 +1152,7 @@
     },
     {
       "id": "ARITH-143",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): an exponent of 0.5 is the square root correctly rounded, as ARITH-133's is, where e^(0.5 ln 3) would be 1.7320508075688774",
       "cells": {"ZZ1000": "=3^0.5"},
       "check": "ZZ1000",
@@ -1160,7 +1160,7 @@
     },
     {
       "id": "ARITH-144",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): text that differs only by an apostrophe sorts the one with it after, as a hyphen does (ARITH-123)",
       "cells": {"ZZ1000": "=\"it's\">\"its\""},
       "check": "ZZ1000",
@@ -1168,7 +1168,7 @@
     },
     {
       "id": "ARITH-145",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked (the next Windows run): ß is not before ss: the two are equal (ARITH-126), with no accent between them",
       "cells": {"ZZ1000": "=\"ß\"<\"ss\""},
       "check": "ZZ1000",

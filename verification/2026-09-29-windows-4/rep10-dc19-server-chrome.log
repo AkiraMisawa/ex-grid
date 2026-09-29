@@ -1,0 +1,197 @@
+
+Running 10 tests using 1 worker
+
+  x   1 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (9.3s)
+  ok  2 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.4s)
+  ok  3 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.4s)
+  x   4 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (9.3s)
+  ok  5 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.3s)
+  x   6 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (9.2s)
+  ok  7 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.4s)
+  x   8 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (9.3s)
+  ok  9 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.4s)
+  x  10 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (9.3s)
+
+
+  1) [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      322 |         // (ADR-0051, third round): the outline goes, and ↓ then points at nothing.
+      323 |         await bar(grid).click({ position: { x: 6, y: field.height / 2 } });
+    > 324 |         await expect(grid.locator('.ex-point')).toHaveCount(0);
+          |                                                 ^
+      325 |         await expect.poll(() => caret(bar(grid))).toBeLessThan(3);
+      326 |         await page.keyboard.press('ArrowDown');
+      327 |         await expect(bar(grid)).toHaveValue('=SUM(F3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-4\tests\ExGrid.Browser\declarations.spec.mjs:324:49
+
+    Error Context: test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      322 |         // (ADR-0051, third round): the outline goes, and ↓ then points at nothing.
+      323 |         await bar(grid).click({ position: { x: 6, y: field.height / 2 } });
+    > 324 |         await expect(grid.locator('.ex-point')).toHaveCount(0);
+          |                                                 ^
+      325 |         await expect.poll(() => caret(bar(grid))).toBeLessThan(3);
+      326 |         await page.keyboard.press('ArrowDown');
+      327 |         await expect(bar(grid)).toHaveValue('=SUM(F3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-4\tests\ExGrid.Browser\declarations.spec.mjs:324:49
+
+    Error Context: test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat3\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat3\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat3\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      322 |         // (ADR-0051, third round): the outline goes, and ↓ then points at nothing.
+      323 |         await bar(grid).click({ position: { x: 6, y: field.height / 2 } });
+    > 324 |         await expect(grid.locator('.ex-point')).toHaveCount(0);
+          |                                                 ^
+      325 |         await expect.poll(() => caret(bar(grid))).toBeLessThan(3);
+      326 |         await page.keyboard.press('ArrowDown');
+      327 |         await expect(bar(grid)).toHaveValue('=SUM(F3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-4\tests\ExGrid.Browser\declarations.spec.mjs:324:49
+
+    Error Context: test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat5\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat5\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat5\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      322 |         // (ADR-0051, third round): the outline goes, and ↓ then points at nothing.
+      323 |         await bar(grid).click({ position: { x: 6, y: field.height / 2 } });
+    > 324 |         await expect(grid.locator('.ex-point')).toHaveCount(0);
+          |                                                 ^
+      325 |         await expect.poll(() => caret(bar(grid))).toBeLessThan(3);
+      326 |         await page.keyboard.press('ArrowDown');
+      327 |         await expect(bar(grid)).toHaveValue('=SUM(F3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-4\tests\ExGrid.Browser\declarations.spec.mjs:324:49
+
+    Error Context: test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat7\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat7\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat7\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      322 |         // (ADR-0051, third round): the outline goes, and ↓ then points at nothing.
+      323 |         await bar(grid).click({ position: { x: 6, y: field.height / 2 } });
+    > 324 |         await expect(grid.locator('.ex-point')).toHaveCount(0);
+          |                                                 ^
+      325 |         await expect.poll(() => caret(bar(grid))).toBeLessThan(3);
+      326 |         await page.keyboard.press('ArrowDown');
+      327 |         await expect(bar(grid)).toHaveValue('=SUM(F3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-4\tests\ExGrid.Browser\declarations.spec.mjs:324:49
+
+    Error Context: test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat9\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat9\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rep10-dc19-server-chrome\declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat9\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5 failed
+    [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+    [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+    [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+    [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+    [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) 
+  5 passed (1.3m)

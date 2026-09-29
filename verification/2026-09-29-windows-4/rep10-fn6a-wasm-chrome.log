@@ -1,0 +1,69 @@
+
+Running 10 tests using 1 worker
+
+  ok  1 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok  2 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  x   3 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (6.7s)
+  ok  4 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok  5 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  x   6 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (6.7s)
+  ok  7 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok  8 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok  9 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok 10 [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+
+
+  1) [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) 
+
+    Error: the Focus is whole on screen
+
+    Timeout 5000ms exceeded while waiting on the predicate
+
+      162 |         const focused = await page.locator(`[id='${focusId}']`).boundingBox();
+      163 |         return focused.x >= scroller.x - 0.5 && focused.x + focused.width <= scroller.x + scroller.width + 0.5;
+    > 164 |     }, { message: 'the Focus is whole on screen' }).toBe(true);
+          |                                                     ^
+      165 |
+      166 |     await page.setViewportSize({ width: 1280, height: 800 });
+      167 |     await expect(grid(page).locator('.ex-cell.ex-pinned').first()).toBeVisible();
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-4\tests\ExGrid.Browser\sizing.spec.mjs:164:53
+
+    Error Context: test-results-rep10-fn6a-wasm-chrome\sizing-a-window-narrower-t-5e433-restores-it-FN-6a-ADR-0045--chrome-repeat2\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rep10-fn6a-wasm-chrome\sizing-a-window-narrower-t-5e433-restores-it-FN-6a-ADR-0045--chrome-repeat2\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rep10-fn6a-wasm-chrome\sizing-a-window-narrower-t-5e433-restores-it-FN-6a-ADR-0045--chrome-repeat2\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) 
+
+    Error: the Focus is whole on screen
+
+    Timeout 5000ms exceeded while waiting on the predicate
+
+      162 |         const focused = await page.locator(`[id='${focusId}']`).boundingBox();
+      163 |         return focused.x >= scroller.x - 0.5 && focused.x + focused.width <= scroller.x + scroller.width + 0.5;
+    > 164 |     }, { message: 'the Focus is whole on screen' }).toBe(true);
+          |                                                     ^
+      165 |
+      166 |     await page.setViewportSize({ width: 1280, height: 800 });
+      167 |     await expect(grid(page).locator('.ex-cell.ex-pinned').first()).toBeVisible();
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-4\tests\ExGrid.Browser\sizing.spec.mjs:164:53
+
+    Error Context: test-results-rep10-fn6a-wasm-chrome\sizing-a-window-narrower-t-5e433-restores-it-FN-6a-ADR-0045--chrome-repeat5\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rep10-fn6a-wasm-chrome\sizing-a-window-narrower-t-5e433-restores-it-FN-6a-ADR-0045--chrome-repeat5\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rep10-fn6a-wasm-chrome\sizing-a-window-narrower-t-5e433-restores-it-FN-6a-ADR-0045--chrome-repeat5\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) 
+    [chrome] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) 
+  8 passed (39.3s)

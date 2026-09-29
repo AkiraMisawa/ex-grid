@@ -1,0 +1,812 @@
+{
+  "channel": "msedge",
+  "base": "http://localhost:6298",
+  "label": "server",
+  "mode": "drag",
+  "when": "painted",
+  "thumbY": 8,
+  "tries": [
+    {
+      "try": 1,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 677,
+            "py": 630,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 152,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 22369362px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 158
+      },
+      "gesture": {
+        "cmd": "drag 1463 589 1463 1702 12 8",
+        "answer": "ok drag down=1045 t=1240",
+        "sinceNavigationMs": 394
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 8.900000035762787,
+        "firstRow": 152,
+        "interactive": 102,
+        "lastRow": 611,
+        "spacer": [
+          {
+            "t": 15,
+            "declared": 28000028
+          },
+          {
+            "t": 152,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 27,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 236,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 237,
+            "scrollTop": 4857070,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 244,
+            "scrollTop": 7298733.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 262,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 278,
+            "scrollTop": 12182059,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 311,
+            "scrollTop": 14623720,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 328,
+            "scrollTop": 17039128,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 344,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 356,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 361,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 197,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 272,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 390,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1014,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 27,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-msedge-drag-painted-1.png",
+        "answer": "ok shot 60,60,2460,1560 t=5175"
+      }
+    },
+    {
+      "try": 2,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 677,
+            "py": 630,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 149,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 22369362px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 154
+      },
+      "gesture": {
+        "cmd": "drag 1463 589 1463 1702 12 8",
+        "answer": "ok drag down=5920 t=6122",
+        "sinceNavigationMs": 386
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 7.600000023841858,
+        "firstRow": 146,
+        "interactive": 96,
+        "lastRow": 640,
+        "spacer": [
+          {
+            "t": 14,
+            "declared": 28000028
+          },
+          {
+            "t": 146,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 24,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 222,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 222,
+            "scrollTop": 4857070,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 238,
+            "scrollTop": 7298733.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 255,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 272,
+            "scrollTop": 12182059,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 305,
+            "scrollTop": 14623720,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 322,
+            "scrollTop": 17039128,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 333,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 338,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 372,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 181,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 272,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 383,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1014,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 24,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-msedge-drag-painted-2.png",
+        "answer": "ok shot 60,60,2460,1560 t=10043"
+      }
+    },
+    {
+      "try": 3,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 677,
+            "py": 630,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 147,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 28000028px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 152
+      },
+      "gesture": {
+        "cmd": "drag 1463 589 1463 1702 12 8",
+        "answer": "ok drag down=10762 t=10964",
+        "sinceNavigationMs": 390
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 9.699999988079071,
+        "firstRow": 144,
+        "interactive": 93,
+        "lastRow": 592,
+        "spacer": [
+          {
+            "t": 14,
+            "declared": 28000028
+          },
+          {
+            "t": 200,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 24,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 226,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 226,
+            "scrollTop": 4857070,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 242,
+            "scrollTop": 7298733.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 259,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 276,
+            "scrollTop": 12182059,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 292,
+            "scrollTop": 14623720,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 309,
+            "scrollTop": 17039128,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 326,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 342,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 359,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 185,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 272,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 387,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1014,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 24,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-msedge-drag-painted-3.png",
+        "answer": "ok shot 60,60,2460,1560 t=14867"
+      }
+    },
+    {
+      "try": 4,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 677,
+            "py": 630,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 147,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 28000028px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 152
+      },
+      "gesture": {
+        "cmd": "drag 1463 589 1463 1702 12 8",
+        "answer": "ok drag down=15571 t=15773",
+        "sinceNavigationMs": 376
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 7.300000011920929,
+        "firstRow": 144,
+        "interactive": 94,
+        "lastRow": 586,
+        "spacer": [
+          {
+            "t": 12,
+            "declared": 28000028
+          },
+          {
+            "t": 186,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 22,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 219,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 220,
+            "scrollTop": 4857070,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 236,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 261,
+            "scrollTop": 12182059,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 278,
+            "scrollTop": 14623720,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 294,
+            "scrollTop": 17039128,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 311,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 328,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 344,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 171,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 272,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 373,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1014,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 22,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-msedge-drag-painted-4.png",
+        "answer": "ok shot 60,60,2460,1560 t=19707"
+      }
+    },
+    {
+      "try": 5,
+      "calibration": {
+        "dpr": 1.5,
+        "tries": [
+          {
+            "px": 677,
+            "py": 630,
+            "client": {
+              "x": 400,
+              "y": 300
+            }
+          }
+        ]
+      },
+      "seen": {
+        "left": 32,
+        "top": 264.875,
+        "right": 932,
+        "bottom": 864.875,
+        "clientWidth": 885,
+        "clientHeight": 585,
+        "t": 145,
+        "cell": {
+          "x": 327.5,
+          "y": 390.875
+        },
+        "spacer": "width: 9168px; height: 22369362px",
+        "busy": false,
+        "interactive": true,
+        "sinceNavigationMs": 149
+      },
+      "gesture": {
+        "cmd": "drag 1463 589 1463 1702 12 8",
+        "answer": "ok drag down=20437 t=20631",
+        "sinceNavigationMs": 384
+      },
+      "settled": {
+        "scrollTop": 22368778,
+        "scrollHeight": 22369362,
+        "clientHeight": 585,
+        "atEnd": true,
+        "thumbFraction": 1.000000044705171,
+        "firstVisibleRow": 999980,
+        "lastVisibleRow": 999999,
+        "lastRowPainted": true,
+        "lastRowWhole": true,
+        "lastRowRect": {
+          "top": 820.875,
+          "bottom": 848.875
+        },
+        "viewBottom": 849.875,
+        "headBottom": 292.875,
+        "spacerDeclared": 22369362,
+        "ceilingProbe": 22369618,
+        "activeDescendant": null,
+        "busy": false
+      },
+      "record": {
+        "t0": 7.600000023841858,
+        "firstRow": 145,
+        "interactive": 95,
+        "lastRow": 603,
+        "spacer": [
+          {
+            "t": 14,
+            "declared": 28000028
+          },
+          {
+            "t": 145,
+            "declared": 22369362
+          }
+        ],
+        "scroll": [
+          {
+            "t": 24,
+            "scrollTop": 0,
+            "scrollHeight": 22369618
+          },
+          {
+            "t": 229,
+            "scrollTop": 2441662.75,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 229,
+            "scrollTop": 4857070,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 246,
+            "scrollTop": 7298733.5,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 262,
+            "scrollTop": 9740396,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 278,
+            "scrollTop": 12182059,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 312,
+            "scrollTop": 17039128,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 337,
+            "scrollTop": 19480790,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 350,
+            "scrollTop": 21922454,
+            "scrollHeight": 22369362
+          },
+          {
+            "t": 353,
+            "scrollTop": 22368778,
+            "scrollHeight": 22369362
+          }
+        ],
+        "events": [
+          {
+            "t": 188,
+            "type": "mousedown",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 272,
+            "target": "ex-scroller"
+          },
+          {
+            "t": 382,
+            "type": "mouseup",
+            "key": null,
+            "ctrl": false,
+            "x": 924,
+            "y": 1014,
+            "target": "ex-scroller"
+          }
+        ],
+        "ceilingProbe": [
+          {
+            "t": 24,
+            "height": 22369618
+          }
+        ]
+      },
+      "shot": {
+        "file": "shots/D-end-server-msedge-drag-painted-5.png",
+        "answer": "ok shot 60,60,2460,1560 t=24537"
+      }
+    }
+  ],
+  "browserVersion": "154.0.4258.37",
+  "console": []
+}

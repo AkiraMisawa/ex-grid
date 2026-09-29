@@ -87,7 +87,7 @@
     },
     {
       "id": "ISERROR-010",
-      "source": "documented",
+      "source": "observed",
       "description": "ISERROR does not catch #CIRC!",
       "cells": {"A1": "=B1", "B1": "=A1", "ZZ1000": "=ISERROR(A1)"},
       "check": "ZZ1000",

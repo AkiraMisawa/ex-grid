@@ -1,0 +1,50 @@
+{
+  "chrome": {
+    "a test whose console reports an error hands no page on (ADR-0056)": {
+      "at": "2026-09-29T10:31:33.581Z",
+      "errors": [
+        {
+          "text": "harness.spec: an error on purpose",
+          "url": ""
+        }
+      ],
+      "warnings": [],
+      "pageErrors": []
+    },
+    "RI-4: modal, by click, handler returning once the dialog is shown: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037)": {
+      "at": "2026-09-29T10:31:39.315Z",
+      "errors": [
+        {
+          "text": "WebSocket connection to 'ws://localhost:5298/_blazor?id=o7mDAMXlS5jurgrkJCDTcw' failed: Error in connection establishment: net::ERR_NO_BUFFER_SPACE",
+          "url": "http://localhost:5298/_framework/blazor.web.hwaxidwiwj.js"
+        },
+        {
+          "text": "[2026-09-29T10:31:38.570Z] Error: Failed to start the transport 'WebSockets': Error: WebSocket failed to connect. The connection could not be found on the server, either the endpoint may not be a SignalR endpoint, the connection ID is not present on the server, or there is a proxy blocking WebSockets. If you have multiple servers check that sticky sessions are enabled.",
+          "url": "http://localhost:5298/_framework/blazor.web.hwaxidwiwj.js"
+        }
+      ],
+      "warnings": [
+        {
+          "text": "[2026-09-29T10:31:38.580Z] Warning: Failed to connect via WebSockets, using the Long Polling fallback transport. This may be due to a VPN or proxy blocking the connection. To troubleshoot this, visit https://aka.ms/blazor-server-using-fallback-long-polling.",
+          "url": "http://localhost:5298/_framework/blazor.web.hwaxidwiwj.js",
+          "exgrid": false
+        }
+      ],
+      "pageErrors": []
+    }
+  },
+  "msedge": {
+    "a test whose console reports an error hands no page on (ADR-0056)": {
+      "at": "2026-09-29T10:38:49.413Z",
+      "errors": [
+        {
+          "text": "harness.spec: an error on purpose",
+          "url": ""
+        }
+      ],
+      "warnings": [],
+      "pageErrors": []
+    }
+  },
+  "chrome-150": {}
+}

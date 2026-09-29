@@ -1,0 +1,178 @@
+== inspectors-RI-4-modal-by-c-5afdf-en-it-closes-ADR-0020-0037--chrome
+last frame: frames/server/inspectors-RI-4-modal-by-c-5afdf-en-it-closes-ADR-0020-0037--chrome.jpeg
+# Error details
+
+```
+Error: zero console errors (CON-1)
+
+expect(received).toEqual(expected) // deep equality
+
+- Expected  - 1
++ Received  + 4
+
+- Array []
++ Array [
++   "WebSocket connection to 'ws://localhost:5298/_blazor?id=o7mDAMXlS5jurgrkJCDTcw' failed: Error in connection establishment: net::ERR_NO_BUFFER_SPACE",
++   "[2026-09-29T10:31:38.570Z] Error: Failed to start the transport 'WebSockets': Error: WebSocket failed to connect. The connection could not be found on the server, either the endpoint may not be a SignalR endpoint, the connection ID is not present on the server, or there is a proxy blocking WebSockets. If you have multiple servers check that sticky sessions are enabled.",
++ ]
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]: All pages
+  - heading "ExGrid demo host" [level=1] [ref=e4]
+  - paragraph [ref=e5]:
+    - 
+
+== mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--msedge
+last frame: frames/server/mud-app-WR-6-Striped-paint-137c0--no-row-ADR-0038-0030-RR-1--msedge.jpeg
+# Error details
+
+```
+Error: expect(received).toEqual(expected) // deep equality
+
+- Expected  - 1
++ Received  + 0
+
+@@ -6,7 +6,6 @@
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+-   "9",
+  ]
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - toolbar [ref=e4]:
+      - button "Toggle navigation" [ref=e5] [cursor=pointer]
+      - heading "Blotter" [level=6] [ref=e10]
+      - generic [ref=e14]:
+        - generic [ref=e15] [cursor=pointer]:
+          - combobox "Reporting currency" [ref=e16]: USD
+          - group "Reporting currency"
+        - generic: Reporting currency
+      - button "Toggle dark mode" [active] [ref=e21] [cursor=pointer]
+  - complementary [ref=e26]:
+    - navigation [ref=e28]:
+      - link "Blotter" [ref=e30] [cursor=pointer]:
+        - /url: mud-app
+      - link "Wrapper contract" [ref=e36] [cursor=pointer]:
+        - /url: mud
+      - link "Feature
+
+== mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--chrome
+last frame: frames/server/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--chrome.jpeg
+# Error details
+
+```
+Error: the Stretch grid's width with the Drawer closed
+
+the Stretch grid's width with the Drawer closed
+
+expect(received).toBeCloseTo(expected, precision)
+
+Expected: 1243.6771240234375
+Received: 1214
+
+Expected precision:    0
+Expected difference: < 0.5
+Received difference:   29.6771240234375
+
+Call Log:
+- Timeout 5000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - toolbar [ref=e4]:
+      - button "Toggle navigation" [active] [ref=e5] [cursor=pointer]
+      - heading "Blotter" [level=6] [ref=e10]
+      - generic [ref=e14]:
+        - generic [ref=e15] [cursor=pointer]:
+          - combobox "Reporting currency" [ref=e16]: USD
+          - group "Reporting currency"
+        - generic: Reporting currency
+      - button "Toggle dark mode" [ref=e21] [cursor=pointer]
+  - complementary [ref=e26]:
+    - navi
+
+== mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--msedge
+last frame: frames/server/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--msedge.jpeg
+# Error details
+
+```
+Error: the Stretch grid's width with the Drawer closed
+
+the Stretch grid's width with the Drawer closed
+
+expect(received).toBeCloseTo(expected, precision)
+
+Expected: 1220.6979370117188
+Received: 1214
+
+Expected precision:    0
+Expected difference: < 0.5
+Received difference:   6.69793701171875
+
+Call Log:
+- Timeout 5000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - toolbar [ref=e4]:
+      - button "Toggle navigation" [active] [ref=e5] [cursor=pointer]
+      - heading "Blotter" [level=6] [ref=e10]
+      - generic [ref=e14]:
+        - generic [ref=e15] [cursor=pointer]:
+          - combobox "Reporting currency" [ref=e16]: USD
+          - group "Reporting currency"
+        - generic: Reporting currency
+      - button "Toggle dark mode" [ref=e21] [cursor=pointer]
+  - complementary [ref=e26]:
+    - navi
+
+== sheet-vs-excel-item-23-del-db6a5-s-place-ADR-0046-ticket-13--chrome
+last frame: frames/server/sheet-vs-excel-item-23-del-db6a5-s-place-ADR-0046-ticket-13--chrome.jpeg
+# Error details
+
+```
+Error: locator.click: Element is not visible
+Call log:
+  - waiting for locator('.ex-grid').first().locator('[id$=\'-r0c4\']')
+    - locator resolved to <div role="gridcell" id="ex179-r0c4" aria-colindex="5" class="ex-cell ex-cell-numeric">14</div>
+  - attempting click action
+    - scrolling into view if needed
+    - done scrolling
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Sheet
+  - heading "Sheet — ExSheet drawn by ExGrid" [level=1] [ref=e5]
+  - paragraph [ref=e6]:
+    - text: ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the Formula Bar, type an address such as
+    - code [ref=e7]: D200
+    - text: into 
+

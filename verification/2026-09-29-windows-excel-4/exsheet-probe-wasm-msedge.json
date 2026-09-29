@@ -1,0 +1,337 @@
+{
+  "channel": "msedge",
+  "base": "http://localhost:5299",
+  "host": "wasm",
+  "browserVersion": "154.0.4258.37",
+  "cases": {
+    "ctrl-enter-from-B2": {
+      "steps": [
+        {
+          "step": "B2:C3 selected",
+          "nameBox": "B2",
+          "selection": "2 rows by 2 columns selected, B 2 to C 3",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "12",
+          "cells": {
+            "B2": "12",
+            "C2": "0.5",
+            "B3": "7",
+            "C3": "0.75"
+          },
+          "shot": "shots/C-M5-B2-C3-selected-exsheet-wasm-msedge.png"
+        },
+        {
+          "step": "typed =A1, Ctrl+Enter",
+          "nameBox": "B2",
+          "selection": "2 rows by 2 columns selected, B 2 to C 3",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "=A1",
+          "cells": {
+            "A1": "Item",
+            "B1": "Qty",
+            "A2": "Apples",
+            "B2": "Item",
+            "C2": "Qty",
+            "B3": "Apples",
+            "C3": "Item"
+          },
+          "shot": "shots/C-M5-Ctrl-Enter-exsheet-wasm-msedge.png"
+        }
+      ],
+      "entries": {
+        "B2": "=A1",
+        "C2": "=B1",
+        "B3": "=A2",
+        "C3": "=B2"
+      },
+      "ms": 5070
+    },
+    "ctrl-enter-from-C3": {
+      "steps": [
+        {
+          "step": "C3, Shift+click B2",
+          "nameBox": "C3",
+          "selection": "2 rows by 2 columns selected, B 2 to C 3",
+          "activeDescendant": "r2c2",
+          "editor": null,
+          "bar": "0.75",
+          "cells": {
+            "B2": "12",
+            "C2": "0.5",
+            "B3": "7",
+            "C3": "0.75"
+          },
+          "shot": "shots/C-B2-from-C3-selected-exsheet-wasm-msedge.png"
+        },
+        {
+          "step": "typed =B2+$A$1, Ctrl+Enter",
+          "nameBox": "C3",
+          "selection": "2 rows by 2 columns selected, B 2 to C 3",
+          "activeDescendant": "r2c2",
+          "editor": null,
+          "bar": "=B2+$A$1",
+          "cells": {
+            "B2": "#VALUE!",
+            "C2": "#VALUE!",
+            "B3": "#VALUE!",
+            "C3": "#VALUE!"
+          },
+          "shot": "shots/C-B2-from-C3-Ctrl-Enter-exsheet-wasm-msedge.png"
+        }
+      ],
+      "entries": {
+        "B2": "=A1+$A$1",
+        "C2": "=B1+$A$1",
+        "B3": "=A2+$A$1",
+        "C3": "=B2+$A$1"
+      },
+      "ms": 4933
+    },
+    "ctrl-enter-from-B3": {
+      "steps": [
+        {
+          "step": "B2, Shift+click C3, Enter",
+          "nameBox": "B3",
+          "selection": "2 rows by 2 columns selected, B 2 to C 3",
+          "activeDescendant": "r2c1",
+          "editor": null,
+          "bar": "7",
+          "cells": {
+            "B2": "12",
+            "C2": "0.5",
+            "B3": "7",
+            "C3": "0.75"
+          },
+          "shot": "shots/C-B2-from-B3-selected-exsheet-wasm-msedge.png"
+        },
+        {
+          "step": "typed =B2+$A$1, Ctrl+Enter",
+          "nameBox": "B3",
+          "selection": "2 rows by 2 columns selected, B 2 to C 3",
+          "activeDescendant": "r2c1",
+          "editor": null,
+          "bar": "=B2+$A$1",
+          "cells": {
+            "B2": "#VALUE!",
+            "C2": "#VALUE!",
+            "B3": "#VALUE!",
+            "C3": "#VALUE!"
+          },
+          "shot": "shots/C-B2-from-B3-Ctrl-Enter-exsheet-wasm-msedge.png"
+        }
+      ],
+      "entries": {
+        "B2": "=B1+$A$1",
+        "C2": "=C1+$A$1",
+        "B3": "=B2+$A$1",
+        "C3": "=C2+$A$1"
+      },
+      "ms": 5030
+    },
+    "refused": {
+      "steps": [
+        {
+          "step": "F2, typed -B2 C2",
+          "nameBox": "F2",
+          "selection": "",
+          "activeDescendant": "r1c5",
+          "editor": "-B2 C2",
+          "bar": "-B2 C2",
+          "cells": {
+            "F2": ""
+          },
+          "shot": "shots/C-R-typed-exsheet-wasm-msedge.png"
+        },
+        {
+          "step": "then Enter",
+          "nameBox": "F2",
+          "selection": "This Formula cannot be read at character 6: the intersection operator (a space between two References) is not implemented.",
+          "activeDescendant": "r1c5",
+          "editor": "-B2 C2",
+          "bar": "-B2 C2",
+          "cells": {
+            "F2": "",
+            "F3": ""
+          },
+          "messages": [
+            {
+              "tag": "input",
+              "cls": "ex-editor",
+              "role": null,
+              "ariaInvalid": "true",
+              "title": null,
+              "describedBy": "ex1-message",
+              "text": "",
+              "visible": true
+            },
+            {
+              "tag": "div",
+              "cls": "ex-message",
+              "role": "tooltip",
+              "ariaInvalid": null,
+              "title": null,
+              "describedBy": null,
+              "text": "This Formula cannot be read at character 6: the intersection operator (a space between two References) is not implemented.",
+              "visible": true
+            },
+            {
+              "tag": "div",
+              "cls": "ex-announce",
+              "role": "status",
+              "ariaInvalid": null,
+              "title": null,
+              "describedBy": null,
+              "text": "This Formula cannot be read at character 6: the intersection operator (a space between two References) is not implemented.",
+              "visible": true
+            },
+            {
+              "tag": "div",
+              "cls": "ex-announce",
+              "role": "status",
+              "ariaInvalid": null,
+              "title": null,
+              "describedBy": null,
+              "text": "",
+              "visible": true
+            }
+          ],
+          "editorDescribedBy": [
+            "This Formula cannot be read at character 6: the intersection operator (a space between two References) is not implemented."
+          ],
+          "activeElement": "input.ex-editor",
+          "shot": "shots/C-R-then-Enter-exsheet-wasm-msedge.png"
+        },
+        {
+          "step": "then Escape",
+          "nameBox": "F2",
+          "selection": "This Formula cannot be read at character 6: the intersection operator (a space between two References) is not implemented.",
+          "activeDescendant": "r1c5",
+          "editor": null,
+          "bar": "",
+          "cells": {
+            "F2": ""
+          },
+          "messages": [
+            {
+              "tag": "div",
+              "cls": "ex-announce",
+              "role": "status",
+              "ariaInvalid": null,
+              "title": null,
+              "describedBy": null,
+              "text": "This Formula cannot be read at character 6: the intersection operator (a space between two References) is not implemented.",
+              "visible": true
+            },
+            {
+              "tag": "div",
+              "cls": "ex-announce",
+              "role": "status",
+              "ariaInvalid": null,
+              "title": null,
+              "describedBy": null,
+              "text": "",
+              "visible": true
+            }
+          ],
+          "editorDescribedBy": null,
+          "activeElement": "div.ex-grid",
+          "shot": "shots/C-R-then-Escape-exsheet-wasm-msedge.png"
+        }
+      ],
+      "ms": 4383
+    },
+    "widths": {
+      "steps": [
+        {
+          "step": "empty column F",
+          "nameBox": "",
+          "selection": "",
+          "activeDescendant": "",
+          "editor": null,
+          "bar": "",
+          "cells": {
+            "F2": "",
+            "F3": "",
+            "F4": ""
+          },
+          "widthF": 99,
+          "widthE": 99,
+          "f2Overflows": false,
+          "shot": "shots/C-W-empty-exsheet-wasm-msedge.png"
+        },
+        {
+          "step": "typed 1234567890 in F2",
+          "nameBox": "F3",
+          "selection": "",
+          "activeDescendant": "r2c5",
+          "editor": null,
+          "bar": "",
+          "cells": {
+            "F2": "1234567890",
+            "F3": "",
+            "F4": ""
+          },
+          "widthF": 114,
+          "widthE": 99,
+          "f2Overflows": false,
+          "shot": "shots/C-W-F2-exsheet-wasm-msedge.png"
+        },
+        {
+          "step": "typed 12345678901 in F3",
+          "nameBox": "F4",
+          "selection": "",
+          "activeDescendant": "r3c5",
+          "editor": null,
+          "bar": "",
+          "cells": {
+            "F2": "1234567890",
+            "F3": "12345678901",
+            "F4": ""
+          },
+          "widthF": 124,
+          "widthE": 99,
+          "f2Overflows": false,
+          "shot": "shots/C-W-F3-exsheet-wasm-msedge.png"
+        },
+        {
+          "step": "F dragged 27 CSS px narrower",
+          "nameBox": "F4",
+          "selection": "",
+          "activeDescendant": "r3c5",
+          "editor": null,
+          "bar": "",
+          "cells": {
+            "F2": "1.23E+09",
+            "F3": "1.23E+10",
+            "F4": ""
+          },
+          "widthF": 97,
+          "widthE": 99,
+          "f2Overflows": false,
+          "shot": "shots/C-W-dragged-exsheet-wasm-msedge.png"
+        },
+        {
+          "step": "typed 123456789012 in F4",
+          "nameBox": "F5",
+          "selection": "",
+          "activeDescendant": "r4c5",
+          "editor": null,
+          "bar": "",
+          "cells": {
+            "F2": "1.23E+09",
+            "F3": "1.23E+10",
+            "F4": "1.23E+11"
+          },
+          "widthF": 97,
+          "widthE": 99,
+          "f2Overflows": false,
+          "shot": "shots/C-W-F4-exsheet-wasm-msedge.png"
+        }
+      ],
+      "ms": 7948
+    }
+  },
+  "console": []
+}
