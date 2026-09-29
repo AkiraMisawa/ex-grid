@@ -28,10 +28,11 @@ ExSheet:
 - [ ] Layer 2, one test per command and per way an edit ends; layer 3 on `/sheet`: `99` over C4,
       the insert button, Enter: 99 is in Plums' row (SH-29)
 
-Waiting for a decision (do not build):
-
-- Replacing the whole Sheet Document (`Document` set by the application) while an edit is open. A
-  parameter cannot be refused. Asked of the user on 2026-09-29.
+- [ ] Replacing the whole Sheet Document (`Document` set by the application) while an edit is open
+      discards the edit and announces it with the reason that the document was replaced (decided
+      with the user 2026-09-29; ADR-0048, ADR-0050 section 6, SH-29)
+- [ ] The core lets a Consumer discard an open edit with a reason of its own, announced through
+      `OnEditDiscarded` (ADR-0050 section 6)
 
 ## Comments
 

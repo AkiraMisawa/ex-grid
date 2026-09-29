@@ -143,6 +143,11 @@ It carries no text: the uncommitted text stays the grid's
 side where the editing state lives, so no round trip stands between the state and the Consumer's
 reading of it. A plain ExGrid Consumer may listen too, for its own buttons.
 
+**A Consumer can also discard an open edit, giving its own reason** *(decided with the user the same
+day)*. The discard is announced through `OnEditDiscarded` like the grid's own discards (ADR-0011), and
+the reason is the Consumer's, so it is true of what happened. ExSheet uses it when its Sheet Document
+is replaced while an edit is open (ADR-0048).
+
 ## Consequences
 
 - **ADR-0012, ADR-0014 and ADR-0008 each gain a note** saying their rule stands, and which

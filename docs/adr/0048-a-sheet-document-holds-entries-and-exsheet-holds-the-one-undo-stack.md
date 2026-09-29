@@ -75,6 +75,12 @@ the open edit. This is Excel's behaviour: its ribbon greys out while a cell is b
 own buttons in the same way. It learns this from its grid
 ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), section 6).
 
+- **Replacing the whole Sheet Document while an edit is open discards the edit, and says so**
+  *(decided with the user the same day)*. A parameter cannot be refused. Keeping the edit open would
+  write it into the new document's cell at the same place, which is the failure above. So the edit is
+  dropped and announced, as ADR-0011 announces a discard, with the reason that is true of it: the
+  document was replaced. The grid gains the means for a Consumer to discard an open edit with its
+  own reason ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), section 6).
 - **A Linked Table's declaration and snapshots are not refused.** They are data arriving, not a
   command ([ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)). They change
   Values and never move a place, and the open edit holds text, not a Value.
