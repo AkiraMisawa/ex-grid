@@ -10,6 +10,17 @@ was not run: it waits for tickets 27–30.
 `claude/exsheet-windows-verify-8`, branched from that commit. Part A asks Excel only, so nothing was
 built. Nothing here changes an ADR, `CONTEXT.md` or the Definition of Done.
 
+**Cases 24–32 were added to the procedure afterwards, at `dd503100473a74f007ac4bdba1e937c16254c6ca`**
+("The eighth run's cases 29-32: when Excel shows the pointed text selected"). That commit was the tip of
+`claude/exsheet-reference-outlines` when they were run, on 2026-09-30.
+
+- They were run by the same script, with the same methods, and are added to this record on the same
+  branch.
+- That tip was not merged into this branch, so the procedure beside this record is still `7628ab9`'s.
+- The keys, questions and readings of cases 24–32 below are quoted from `dd50310`'s procedure.
+- ADR-0057 is quoted as it reads at `dd50310`. By then it had been corrected after cases 0–23 of this
+  run.
+
 Files beside this one:
 
 - `range-finder.ps1`: the script, one case or a list (`-Case 1,2`), and `-Analyse` to read the saved
@@ -17,13 +28,16 @@ Files beside this one:
 - `range-finder.jsonl`: one line per case (the environment is case `0`), holding:
   - the geometry, read through COM before the edit;
   - the Formula Bar's content, read through UI Automation in each state;
-  - the pixel readings.
+  - the pixel readings;
+  - from cases 24–32 on, and for 19, 20 and `20x` read again, two more readings in each state: the
+    ground behind the text, and the selection read through UI Automation (method item 8).
 - `shots/`: for each state:
   - `A<case>-<state>-window.png`, the window at 600 ms, with the account's initials blanked;
   - crops of the Formula Bar (`-formula-bar`), of row 10 from D10 rightwards (`-cell`), and of the
     cells the case names, at 600 ms (`-cells`), at 900 ms (`-cells-900ms`) and before the keys
     (`-before-cells`);
-  - `Z*.png`, enlargements with no smoothing, used for the readings below.
+  - `Z*.png`, enlargements with no smoothing, used for the readings below. `Z31-status-x2` and
+    `Z32-*-status-x2` show the status bar's mode.
 - `type-probe.ps1`, `type-probe-2.ps1`: the checks behind the change of key method (below).
   `zoom-crop.ps1` makes the enlargements.
 
@@ -45,8 +59,8 @@ Files beside this one:
   - For each run, Excel's window was switched from the Japanese keyboard (0x04110411) to **English
     (UK) (0x08090809)** by `WM_INPUTLANGCHANGEREQUEST`. The script's own thread was switched too,
     because characters are turned into keys through the sender's layout.
-  - The keyboard was switched back after each run (three times, each back to 0x04110411), with the IME
-    turned off.
+  - The keyboard was switched back after each run (three times, and a fourth after cases 24–32, each
+    back to 0x04110411), with the IME turned off.
   - Case 0 typed `'=Sheet1!A1+$B$2:C3,"x"&(D4)[E]a` into D10. It read back **the same**.
 - **Excel was the script's own.** Each run started one with `New-Object` (never `GetActiveObject`) and
   ended it with `Quit`.
@@ -57,6 +71,16 @@ Files beside this one:
 - Times. The recorded run of cases 0–23 went from 23:59:25 to 00:01:08. The two additions went from
   00:04:17 to 00:04:28 (`1fb`) and from 00:05:59 to 00:06:10 (`20x`). The attempts between 23:34 and
   23:53 are described below. No Excel was running afterwards.
+- **Cases 24–32 ran on 2026-09-30, from 00:38:59 to 00:39:37**, in an Excel of the script's own
+  (process 38436).
+  - Excel's build, read again, was unchanged: 16.0.20430.20092.
+  - Before them, at 00:36:
+    - no Excel was running;
+    - the AutoRecovered folder was byte for byte the backup;
+    - the screen copy still returned every pixel as 0, so the shots are again the window's own
+      rendering.
+  - Every key reached Excel as typed. The Formula Bar held exactly the keys in every state
+    (`formulaBarHolds`).
 
 ## How this run differs from the procedure's method
 
@@ -123,6 +147,23 @@ Files beside this one:
    - 23:52: case 0 and case 1 with `SendInput`, whose shots the recorded run replaced.
 
    Nothing from them is in the results.
+8. **Cases 24–32 (2026-09-30) used the same methods**: `SendInput`, `PrintWindow`, and the readings
+   above. Two readings were added for the question of cases 29–32.
+   - **The ground behind the text** (`cellGround`, `formulaBarGround`).
+     - Each column of the text strip stands for its lightest pixel. That pixel is the ground, whatever
+       strokes cross the column.
+     - Columns whose ground is not the editor's make a run, and a run is a highlight.
+     - Runs three columns wide or less (the caret, a gridline, a border) are counted but not listed.
+   - **The selection, read through UI Automation** (`selections`).
+     - From the Formula Bar's `TextPattern`: its selection and its whole text. The Formula Bar reports
+       a selection even while the edit is in the cell.
+     - From the element with the keyboard focus. That element, an `EXCEL6` pane, has no `TextPattern`.
+   - **The status bar's mode** (Point, Enter) was read from the enlargements.
+   - **Cases 19, 20 and `20x` were read again** from their saved screenshots (`-Analyse`), for the
+     ground only.
+     - Their lines gained `cellGround`, `formulaBarGround` and an empty `selections`.
+     - Every other field is unchanged; this was checked field by field.
+     - No key was sent again for them.
 
 ## What Excel draws
 
@@ -167,8 +208,18 @@ Common to every case.
   - Over the line runs **a dashed line in green (`#217346`, the colour of the active cell's border)**,
     2 px wide. The dashes are about 7 px long, with gaps of about 2 px: 11 dashes along an 88-px edge.
   - Nothing but the caret changed between the two captures 300 ms apart.
-  - Once the Formula holds more than one Reference, the pointed Reference's text is shown selected: a
-    grey ground, the text darkened (cases 20 and `20x`).
+  - In some cases, **the pointed Reference's text is shown selected**:
+    - the whole Reference is on a grey ground (`#c6c6c6`);
+    - its text is darkened: `#0401a2` for the first colour, `#630101` for the second.
+
+    It is shown selected in cases 20, `20x`, 29, 30 and 32, but not in 19 and 31. In these cases, it
+    shows where Point began after more than the `=`, and not where Point began right after the `=`.
+    *(Before cases 29–32, this bullet said "once the Formula holds more than one Reference". Cases 29
+    and 30 hold only one.)*
+  - While the edit is in the cell, the Formula Bar shows no grey. Yet in cases 29–32, UI Automation
+    gives the pointed Reference as the Formula Bar's selection exactly where the cell shows the grey:
+    in 29, in 30, and in 32 before the `5`. (Cases 19, 20 and `20x` were run before the selection was
+    read.)
 
 ## The cases
 
@@ -202,6 +253,15 @@ Common to every case.
 | 21 | `=A1+B1` written into D10 through COM | (1) D10 selected, no edit; (2) F2; (3) Escape, then a double-click at (377, 629), D10's middle; (4) Escape, then a click at (448, 295), in the Formula Bar's text. The Formula Bar is UI Automation's `XLFormulaBarEditor`, 328,267–3840,324 | Outlines shown in each state | none when only selected; shown for F2, the double-click and the Formula Bar | (1) **none**; (2) A1 blue, B1 red, the cell's text coloured, the Formula Bar black; (3) the same; (4) A1 blue, B1 red, **the Formula Bar's text coloured `#006cbe`, `#bc2f34`**, and the cell's text black (`Z21`) | Yes |
 | 22 | — | `=D10` | Is D10, the cell being edited, outlined? | yes | `D10` is `#326ac7` in the text. D10 has **blue corner squares at its four corners**. Along its edges is the active cell's green border (solid), with no blue line showing and no fill: the in-cell editor's ground (`Z22`) | **In part**: the corner squares only |
 | 23 | Zoom 400% | Case 1's keys | One outline close up: its width in screen pixels, the fill, the corner squares | solid, a pale fill, corner squares | Solid. The line is **2 px**, the white gap 1 px, and the corner squares **5×5 px**, the same as at 100%. The fill is `#ebf0f9`. The colours are as case 1's (`Z23`) | Yes |
+| 24 | — | `+A1` (no `=`) | Coloured? Outlined? Excel reads the entry as `=+A1` once entered | nothing: only text beginning with `=` is a Formula while it is typed, as for F4 and Point | **`A1` is `#326ac7`**, and the `+` is black. **A1 is outlined**: the fill `#ebf0f9`, the line `#326ac7` on its right and bottom (the top and left lie under the headings), and corner squares. The Formula Bar is black. The entry was not committed (the procedure presses no Enter), so `=+A1` was not read | **No**: coloured and outlined, as after `=` |
+| 25 | — | `-B2` (no `=`) | The same | nothing | **`B2` is `#326ac7`**, and the `-` is black. **B2 is outlined** on all four sides, with the fill `#ebf0f9` and corner squares | **No**: as 24 |
+| 26 | — | `=SUM(A1:` (stop after the colon) | Is A1 coloured and outlined before the second corner is typed? | not until the second corner is typed | **`A1` is `#326ac7`**. `=SUM(` and the `:` are black. **A1 is outlined**, alone, as in 24 | **No**: coloured and outlined before the second corner |
+| 27 | No Table named `Nope` (the fresh workbook has no Table at all; checked through COM) | `=SUM(Nope[PV]` | Is `Nope[PV]` coloured? | not coloured: it names no Table | All the text is black. Nothing is outlined: A1:B4, where case 11's Table stands, is untouched | Yes |
+| 28 | As 11 | `=SUM(Positions[Nope]` | Is `Positions[Nope]`, a column the Table lacks, coloured? | not coloured: it names no column | All the text is black. The Table's cells A1:B4 are as they were before the keys: their fills are unchanged, and no pixel sampled on their edges changed. Nothing is outlined | Yes |
+| 29 | — | `=SUM(`, then `{DOWN}` (`=SUM(D11`) | Is the pointed `D11`'s text shown selected (a grey ground, as `D12` in case `20x`)? | open | **Shown selected**: `D11` is on a grey ground (`#c6c6c6`, x 390–425, the whole of `D11`), with its text `#0401a2`. UI Automation gives the Formula Bar's selection as `D11`. The Formula Bar shows no grey. D11 has the first colour's outline with the green dashes (`Z29`) | — (open) |
+| 30 | — | `=1+`, then `{DOWN}` (`=1+D11`) | The same | open | **Shown selected**: `D11` on `#c6c6c6` (x 364–399), text `#0401a2`. The Formula Bar's selection is `D11`. D11 is outlined in the first colour, with the green dashes (`Z30`) | — (open) |
+| 31 | — | `=`, `{DOWN}{DOWN}` (`=D12`, one Reference, pointed twice) | The same | open | **Not shown selected**: `D12` is `#326ac7` on the editor's white ground. The Formula Bar's selection is empty. D12 has the first colour's outline with the green dashes, and D11 has none. The status bar reads Point (`Z31`, `Z31-status-x2`) | — (open) |
+| 32 | — | `=D11+`, `{DOWN}{DOWN}` (`=D11+D12`, as case `20x`), then type `5` | The Formula Bar's text after `5` (UI Automation): does `5` replace the grey `D12` (`=D11+5`) or follow it (`=D11+D125`)? Is D12 still outlined, and are the dashes still there? | open | **Before `5`**: `D12` is on `#c6c6c6` (x 389–424), with its text `#630101`, and the Formula Bar's selection is `D12`. D11 is solid blue; D12 is red with the green dashes. The status bar reads Point. **After `5`: the Formula Bar holds `=D11+D125`.** The `5` follows `D12`; it does not replace it. `D125` is one run of `#c0353e`. Nothing is grey, and the selection is empty. **D12 is no longer outlined** (no fill, no line), and **no dashes remain**. D11 stays solid blue. The status bar reads Enter. D125 lies below the view (A1:AN58), so its outline could not be seen (`Z32-*`) | — (open) |
 
 ## Where Excel and the readings differ
 
@@ -230,6 +290,29 @@ Each item names the paragraph of ADR-0057 it bears on. Nothing is decided here.
    active cell's green border, and the fill under the editor's ground. The procedure's reading was
    "yes". ADR-0057 says nothing of this cell.
 
+From cases 24–32 (2026-09-30). ADR-0057 is quoted as it reads at `dd50310`.
+
+7. **`+A1` and `-B2` are coloured and outlined** (cases 24, 25).
+   - Excel colours the Reference after the `+` or the `-`, and outlines its cell, as it does after
+     an `=`.
+   - "Readings" says: "Only text beginning with `=` is a Formula while it is typed, as for F4 and
+     Point. `+A1` and `-B2` colour nothing, although ExSheet enters them as `=+A1` and `=-B2`."
+   - "What shows, and when", second bullet, ends: "Neither does text that is not a Formula."
+   - Whether Excel enters them as `=+A1` and `=-B2` was not read, because the procedure presses no
+     Enter.
+8. **`=SUM(A1:` colours and outlines A1** (case 26).
+   - The colon is black, `A1` is `#326ac7`, and A1 is outlined alone.
+   - "Readings" says: "A range typed up to its colon colours nothing until its second corner is
+     typed: `=SUM(A1:` leaves `A1` uncoloured, because the grammar reads no Reference in `A1:`."
+
+Cases 27 and 28 agree with "Readings": "A structured reference is coloured only when its table and
+column are declared". Cases 29–32 had no reading ("open"); their answers are in the table above and
+under "What Excel draws". ADR-0057 does not speak of either of these:
+
+- the pointed Reference's text shown selected;
+- what a key typed during Point does to that Reference (case 32: the `5` follows `D12`, which becomes
+  `D125`).
+
 Also recorded here, though no reading names them:
 
 - the corner squares;
@@ -245,3 +328,10 @@ Also recorded here, though no reading names them:
 - The AutoRecovered folder is byte for byte the backup taken first.
 - Excel's keyboard was switched back to 0x04110411 after each run, with the IME off.
 - The regional format is en-GB, unchanged.
+
+After cases 24–32 (checked at 00:41 on 2026-09-30):
+
+- No Excel is running.
+- The AutoRecovered folder is byte for byte the backup.
+- The keyboard is back to 0x04110411, with the IME off.
+- The regional format is en-GB.

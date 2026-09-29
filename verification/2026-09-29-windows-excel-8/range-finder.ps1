@@ -394,6 +394,38 @@ public static class Px {
         return o;
     }
 
+    // The ground behind text, left to right (cases 29-32: is the pointed text shown selected?). Each
+    // column stands for its lightest pixel, which is the ground whatever strokes cross it. Columns
+    // whose ground differs from `ground` by more than tol, next to each other, make a run: a
+    // selection's highlight. Runs three columns wide or less (a caret, a gridline, a border) are
+    // counted but not listed.
+    public static Dictionary<string, object> Grounds(Img img, int x0, int y0, int x1, int y1, int ground, int tol, int ox) {
+        var runs = new List<object>(); int narrow = 0;
+        int start = -1, last = -1; var counts = new Dictionary<int, int>();
+        Action close = () => {
+            if (start < 0) return;
+            if (last - start + 1 <= 3) narrow++;
+            else {
+                int m; int mode = ArgMax(counts, out m);
+                var r = new Dictionary<string, object>();
+                r["x0"] = start + ox; r["x1"] = last + ox; r["colour"] = Hex(mode); r["columns"] = m + "/" + (last - start + 1);
+                runs.Add(r);
+            }
+            start = -1; counts = new Dictionary<int, int>();
+        };
+        for (int x = x0; x < x1; x++) {
+            int light = -1, lum = -1;
+            for (int y = y0; y < y1; y++) { int c = img.At(x, y); if (c < 0) continue; int l = (R(c) * 30 + G(c) * 59 + B(c) * 11) / 100; if (l > lum) { lum = l; light = c; } }
+            if (light < 0 || Dist(light, ground) <= tol) { close(); continue; }
+            if (start < 0) start = x;
+            last = x;
+            int n; counts.TryGetValue(light, out n); counts[light] = n + 1;
+        }
+        close();
+        var o = new Dictionary<string, object>(); o["ground"] = Hex(ground); o["runs"] = runs; o["narrowRuns"] = narrow;
+        return o;
+    }
+
     // Pixels that differ between two shots in a box, and the box around them.
     public static Dictionary<string, object> Diff(Img a, Img b, int x0, int y0, int x1, int y1, int tol, int ox, int oy) {
         int n = 0, minX = int.MaxValue, minY = int.MaxValue, maxX = -1, maxY = -1;
@@ -579,11 +611,31 @@ function Get-Geometry([string[]]$Cells, [string]$Reference) {
 # What the Formula Bar holds, read through UI Automation (not COM, which Excel refuses mid-edit): the
 # check that the keys arrived as typed.
 $script:FbEl = $null
+$script:ReadSelections = $true
 function Read-FormulaBarText {
     if ($null -eq $script:FbEl) { return $null }
     try { return [string]$script:FbEl.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern).Current.Value } catch { }
     try { return [string]$script:FbEl.GetCurrentPattern([Windows.Automation.TextPattern]::Pattern).DocumentRange.GetText(-1) } catch { }
     return $null
+}
+# The selected text, read through UI Automation's TextPattern (cases 29-32): in the Formula Bar, and
+# in whatever element of Excel's has the keyboard focus (the in-cell editor, when it is one).
+function Read-Selection($El) {
+    if ($null -eq $El) { return $null }
+    try {
+        $tp = $El.GetCurrentPattern([Windows.Automation.TextPattern]::Pattern)
+        return [ordered]@{ selection = @($tp.GetSelection() | ForEach-Object { [string]$_.GetText(-1) }); document = [string]$tp.DocumentRange.GetText(-1) }
+    } catch { return [ordered]@{ error = ([string]$_.Exception.Message).Split("`n")[0] } }
+}
+function Read-Selections {
+    $o = [ordered]@{ formulaBar = (Read-Selection $script:FbEl) }
+    try {
+        $fe = [Windows.Automation.AutomationElement]::FocusedElement
+        if ($fe -and $fe.Current.ProcessId -eq $script:OwnPid) {
+            $o.focused = [ordered]@{ class = [string]$fe.Current.ClassName; control = [string]$fe.Current.ControlType.ProgrammaticName; text = (Read-Selection $fe) }
+        } else { $o.focused = 'the focus is not in this run''s Excel' }
+    } catch { $o.focused = [ordered]@{ error = ([string]$_.Exception.Message).Split("`n")[0] } }
+    return $o
 }
 
 # ---- Screenshots --------------------------------------------------------------------------------
@@ -656,7 +708,9 @@ function Take-State([string]$Id, [string]$State, [scriptblock]$Action) {
     $a.Dispose(); $b.Dispose()
     $seen = Read-FormulaBarText
     Say "  $Id $State shots at ${atA} ms and ${atB} ms after the action; the Formula Bar holds: $seen"
-    return [ordered]@{ state = $State; shotAtMs = $atA; secondShotAtMs = $atB; formulaBarHolds = $seen }
+    $row = [ordered]@{ state = $State; shotAtMs = $atA; secondShotAtMs = $atB; formulaBarHolds = $seen }
+    if ($script:ReadSelections) { $row.selections = Read-Selections; Say ("  selections: " + ($row.selections | ConvertTo-Json -Compress -Depth 6)) }
+    return $row
 }
 
 # ---- The readings, from the saved screenshots ---------------------------------------------------
@@ -711,13 +765,20 @@ function Read-State($Geo, [string]$Id, $StateRow) {
         # the element's top, 11 px inside its bottom and 5 px inside its left, at 150%.
         $text['formulaBar'] = [RangeFinder.Px]::TextByDarkest($open, $f.L + 8, $f.T + 16, $f.R - 30, $f.B - 15, 60, $cap.Left, 6)
         $text['formulaBarMovedIn300ms'] = [RangeFinder.Px]::Diff($open, $open2, $f.L, $f.T, $f.R, $f.B, $script:Tol, $cap.Left, $cap.Top)
+        # The ground behind the Formula Bar's text: a run is a highlight (text shown selected).
+        $fg = [RangeFinder.Px]::Mode($open, $f.L + 8, $f.T + 16, $f.R - 30, $f.B - 15)
+        $text['formulaBarGround'] = [RangeFinder.Px]::Grounds($open, $f.L + 8, $f.T + 16, $f.R - 30, $f.B - 15, $fg, $script:Tol, $cap.Left)
     }
     $d = Local-Rect $Geo.cells.D10 $cap
     $editor = @{ L = $d.L + 3; T = $d.T + 3; R = [Math]::Min($d.L + 1500, $open.W); B = $d.B - 3 }
     $text['cell'] = [RangeFinder.Px]::TextByDarkest($open, $editor.L, $editor.T, $editor.R, $editor.B, 60, $cap.Left, 6)
+    # The ground behind the in-cell editor's text, within D10 (the editor's ground is D10's).
+    $eg = [RangeFinder.Px]::Mode($open, $editor.L, $editor.T, $d.R - 3, $editor.B)
+    $text['cellGround'] = [RangeFinder.Px]::Grounds($open, $editor.L, $editor.T, $editor.R, $editor.B, $eg, $script:Tol, $cap.Left)
     return [ordered]@{
         state = $StateRow.state; shotAtMs = $StateRow.shotAtMs; secondShotAtMs = $StateRow.secondShotAtMs
         formulaBarHolds = $StateRow.formulaBarHolds
+        selections = $(if ($StateRow.PSObject.Properties['selections']) { $StateRow.selections } else { $null })
         action = $(if ($StateRow.PSObject.Properties['action']) { $StateRow.action } else { $null })
         keysSent = $(if ($StateRow.PSObject.Properties['keys']) { $StateRow.keys } else { $null })
         groundAtReference = [RangeFinder.Px]::Hex($ground); gridline = [RangeFinder.Px]::Hex($grid)
@@ -825,6 +886,9 @@ function Analyse-Case([string]$Id) {
         $fmt = { param($t) ($t['runs'] | ForEach-Object { if ($_['kind'] -eq 'dark') { 'dark' } else { '#' + $_['colour'] } }) -join ' ' }
         if ($r.text.Contains('formulaBar')) { Say ("    Formula Bar text: {0}" -f (& $fmt $r.text['formulaBar'])) }
         Say ("    cell text: {0}" -f (& $fmt $r.text['cell']))
+        $gfmt = { param($g) ('ground #' + $g['ground'] + '; ' + (($g['runs'] | ForEach-Object { '#{0} at {1}-{2}' -f $_['colour'], $_['x0'], $_['x1'] }) -join ', ')) }
+        if ($r.text.Contains('formulaBarGround')) { Say ("    Formula Bar ground: {0}" -f (& $gfmt $r.text['formulaBarGround'])) }
+        Say ("    cell ground: {0}" -f (& $gfmt $r.text['cellGround']))
     }
 }
 
@@ -894,6 +958,23 @@ Def '1fb' 'Not in the procedure: the colours in the Formula Bar when case 1 is t
     @{ state = 'typed-in-formula-bar'; action = 'formula-bar-type'; keys = (Lit '=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1') })
 Def '22' 'Is D10, the cell being edited, outlined?' 'yes' '=D10' @('D10', 'C10', 'E10')
 Def '23' 'One outline close up: its width in screen pixels, the fill, the corner squares' 'solid, a pale fill, corner squares' '=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1' @('A1', 'B1', 'C1') -Zoom 400 -SetUpText 'Zoom 400%'
+# Cases 24-32, added to the procedure at dd50310 and run on 2026-09-30.
+Def '24' 'Coloured? Outlined? Excel reads the entry as =+A1 once entered' 'nothing: only text beginning with = is a Formula while it is typed, as for F4 and Point' '+A1' @('A1', 'B1', 'A2')
+Def '25' 'Coloured? Outlined?' 'nothing' '-B2' @('B2', 'A1', 'C3')
+Def '26' 'Is A1 coloured and outlined before the second corner is typed?' 'not until the second corner is typed' '=SUM(A1:' @('A1', 'B1', 'A2')
+Def '27' 'Is Nope[PV] coloured?' 'not coloured: it names no Table' '=SUM(Nope[PV]' $tableCells -SetUpText 'No Table named Nope (the workbook has no Table at all; checked through COM)' -SetUp {
+    if ($script:Xl.ActiveSheet.ListObjects.Count -ne 0) { throw 'the fresh workbook has a Table' }
+}
+Def '28' 'Is Positions[Nope], a column the Table lacks, coloured?' 'not coloured: it names no column' '=SUM(Positions[Nope]' $tableCells -SetUp $table -SetUpText 'As 11'
+Def '29' 'Is the pointed D11''s text shown selected (a grey ground, as D12 in case 20x)?' 'open' '=SUM(, then {DOWN} (=SUM(D11)' @('D11', 'D12') -States @(
+    @{ state = 'pointing'; keys = ((Lit '=SUM(') + '{DOWN}') })
+Def '30' 'Is the pointed D11''s text shown selected?' 'open' '=1+, then {DOWN} (=1+D11)' @('D11', 'D12') -States @(
+    @{ state = 'pointing'; keys = ((Lit '=1+') + '{DOWN}') })
+Def '31' 'Is the pointed D12''s text shown selected (one Reference, pointed twice)?' 'open' '=, {DOWN}{DOWN} (=D12)' @('D11', 'D12', 'D13') -States @(
+    @{ state = 'pointing'; keys = '={DOWN}{DOWN}' })
+Def '32' 'The Formula Bar''s text after 5 (UI Automation): does 5 replace the grey D12 (=D11+5) or follow it (=D11+D125)? Is D12 still outlined, and are the dashes still there?' 'open' '=D11+, {DOWN}{DOWN} (=D11+D12), then 5' @('D11', 'D12', 'D13') -States @(
+    @{ state = 'pointing'; keys = ((Lit '=D11+') + '{DOWN}{DOWN}') },
+    @{ state = 'after-5'; keys = '5' })
 
 function Run-Case($C) {
     Say "case $($C.Id): $($C.Typed)"
@@ -1033,7 +1114,7 @@ try {
     foreach ($id in $Case) {
         if ($id -eq '0') { Set-CaseDue 120; Run-Environment; $keyboardSet = $true; Clear-CaseDue; continue }
         if (-not $Cases.Contains($id)) { throw "no case $id" }
-        if (-not $keyboardSet) { [void](New-CaseBook 100); $k = Set-EnglishKeyboard; Write-Line ([ordered]@{ case = "keyboard"; time = (Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'); keyboard = $k }); $keyboardSet = $true }
+        if (-not $keyboardSet) { [void](New-CaseBook 100); $k = Set-EnglishKeyboard; $c2r = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Office\ClickToRun\Configuration' -ErrorAction SilentlyContinue; Write-Line ([ordered]@{ case = "keyboard"; time = (Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'); keyboard = $k; excel = [ordered]@{ version = [string]$script:Xl.Version; build = [string]$script:Xl.Build; versionToReport = [string]$c2r.VersionToReport }; screenshots = $script:Capture }); $keyboardSet = $true }
         Set-CaseDue 90
         try { Run-Case $Cases[$id]; Clear-CaseDue; Analyse-Case $id }
         catch {
