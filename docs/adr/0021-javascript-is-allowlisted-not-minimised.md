@@ -303,3 +303,13 @@ focuses the editor surface that last held the keyboard before the press goes on.
 decision about focus made in script, made for the same reason as the first: done from C#, a round
 trip later, the keys typed in between would reach the grid the user had just left. The condition
 reads `document.activeElement` and no layout, and the listener is the one already attached.)*
+
+*(Clarified 2026-09-29, found while building ADR-0018 section 6.)* "One ended by a press elsewhere
+does not take it from a field" (the 2026-09-28 note) means a press into another field, such as the
+Name Box, which keeps the focus it was given. A press on the rows is not one. Where pointing is
+declared, the core suppresses the default of every press on the rows while an edit is open
+(ADR-0051), so that a press which points leaves the keyboard in the edit. When such a press
+commits an edit typed in the Formula Bar instead, the bar's focus is only left standing: the
+keyboard stayed in the bar with no edit open, and typing there went nowhere. That focus is now
+marked as left standing, as a held press's already was, and the hand-back after the commit takes
+it.
