@@ -8,8 +8,9 @@ import {
 // The ExGrid declarations of ADR-0050, ADR-0051 and ADR-0057 (§26, DC-*), as ExSheet declares them on
 // /sheet, driven with real keys, the real mouse and the real clipboard: completion, Point, the
 // Formula Bar under a delayed circuit, F4 cycling the Reference at the caret, the Reference Outlines, the fill handle, a spilling paste, copy and paste inside
-// the Sheet, undo and redo, the resize grips. The positions grid beside the Sheet declares
-// nothing, and is the "one not declaring" of DC-25. Two ExSheets on one page are on /sheets.
+// the Sheet, undo and redo, the resize grips. The positions grid beside the Sheet declares none
+// of them, and is the "one not declaring" of DC-25; it outlines the table's columns the page
+// passes it (SH-31). Two ExSheets on one page are on /sheets.
 
 // Tall enough that every Sheet on the page, Formula Bar to horizontal scrollbar, is inside the
 // window: a pointer below the window's edge reaches nothing, and the edge band sits there.
@@ -839,6 +840,78 @@ test('DC-46: =, ↓, ↓ moves a dashed outline in the first colour, which stays
     await expect(editor(grid)).toHaveCount(0);
     await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
     await expect(grid.locator('.ex-point')).toHaveCount(0);
+});
+
+// ---------------------------------------------------------------------------------------------
+// A Linked Table's columns, outlined in the grid that shows them (SH-31, DC-50; ADR-0057). The
+// Sheet tells the page which of the table's columns the Formula being edited reads, and in which
+// colour; the page passes that to the positions grid beside it, which outlines each column over
+// all its rows. The positions grid holds no Selection and no edit for it, and its five rows are
+// all painted.
+
+const positionsGrid = (page) => page.locator('#sheet-positions .ex-grid');
+
+test('SH-31/DC-50: =A1+SUM(Positions[PV]) outlines the positions grid\'s PV column in the colour Positions[PV] was given; Escape removes it', async ({ page }) => {
+    const grid = sheet(page);
+    const positions = positionsGrid(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=A1+SUM(Positions[PV])');
+    await expect(editor(grid)).toHaveValue('=A1+SUM(Positions[PV])');
+
+    // A1 comes first and takes the first colour, on the Sheet. Positions[PV] takes the second, and
+    // its outline is in the positions grid, over the PV column's body, first row to last: never
+    // on the Sheet, which does not show the table.
+    const pv = positions.locator('.ex-reference-outline');
+    await expect(pv).toHaveCount(1);
+    await expect(pv).toHaveClass(/\bex-reference-2\b/);
+    await expectCovers(pv, positions, 'C1', 'C5');
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(1);
+    await expect(grid.locator('.ex-reference-outline')).toHaveClass(/\bex-reference-1\b/);
+    // Painted as a Reference Outline is — solid, over a wash — and in a colour of its own.
+    const column = await paintOf(pv);
+    const a1 = await paintOf(grid.locator('.ex-reference-outline'));
+    expect(column.line).toBe('solid');
+    expect(column.ground).not.toBe('rgba(0, 0, 0, 0)');
+    expect(column.colour).not.toBe(a1.colour);
+    // The positions grid was not selected or edited for it.
+    await expect(positions.locator('.ex-range, .ex-focus, .ex-editor')).toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(positions.locator('.ex-reference-outline')).toHaveCount(0);
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
+});
+
+test('SH-31/DC-50: each column read is outlined once in its colour, whatever the Formula\'s casing; Enter removes them all', async ({ page }) => {
+    const grid = sheet(page);
+    const positions = positionsGrid(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=XLOOKUP("R-4471", positions[id], Positions[PV])+SUM(POSITIONS[pv])');
+    await expect(editor(grid)).toHaveValue('=XLOOKUP("R-4471", positions[id], Positions[PV])+SUM(POSITIONS[pv])');
+
+    // Id first, PV second; PV read twice is outlined once. Book is not read.
+    await expect(positions.locator('.ex-reference-outline')).toHaveCount(2);
+    await expectCovers(positions.locator('.ex-reference-outline.ex-reference-1'), positions, 'A1', 'A5');
+    await expectCovers(positions.locator('.ex-reference-outline.ex-reference-2'), positions, 'C1', 'C5');
+
+    await page.keyboard.press('Enter');
+    await expect(editor(grid)).toHaveCount(0);
+    // 318.25 + 1189.4: the Formula reads the table the grid shows.
+    await expect(cell(grid, 'F2')).toHaveText('1507.65');
+    await expect(positions.locator('.ex-reference-outline')).toHaveCount(0);
+});
+
+test('SH-31: a table or column not declared outlines nothing in the positions grid', async ({ page }) => {
+    const grid = sheet(page);
+    const positions = positionsGrid(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=B2+SUM(Nope[PV])+SUM(Positions[Nope])');
+    await expect(editor(grid)).toHaveValue('=B2+SUM(Nope[PV])+SUM(Positions[Nope])');
+    // B2 is outlined on the Sheet, in the first colour, and the two that name nothing take none.
+    await expect(grid.locator('.ex-reference-outline.ex-reference-1')).toHaveCount(1);
+    await expect(positions.locator('.ex-reference-outline')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
 });
 
 // ---------------------------------------------------------------------------------------------

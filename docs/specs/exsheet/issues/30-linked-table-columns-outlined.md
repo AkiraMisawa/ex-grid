@@ -14,7 +14,7 @@ connects the two for its positions grid.
       outlines nothing; without the list nothing changes (DC-50)
 - [x] ExSheet: a notification to its Consumer of each Linked Table column read and its colour,
       raised when that changes and emptied when the edit ends (SH-31)
-- [ ] `/sheet` passes the notification to its positions grid (SH-31)
+- [x] `/sheet` passes the notification to its positions grid (SH-31)
 - [ ] Layer 3 on both hosts: typing `=SUM(Positions[PV])` outlines the positions grid's PV column in
       the colour `Positions[PV]` wears in the editor; Escape removes it; two Sheets on a page each
       outline only through their own Consumer's wiring (SH-31, DC-25)

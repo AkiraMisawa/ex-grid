@@ -374,7 +374,9 @@ nobody had asked for. What that means when writing a test:
   before the caret is placed with 150 ms on the Server host (DC-45); the Reference Outlines —
   `=A1+B2:C3` outlined once each in two colours across the pinned boundary, `=A1+A1` once, `=` ↓ ↓
   dashed in the first colour and solid once an operator follows, gone on Escape and on Enter
-  (DC-46); the fill handle
+  (DC-46); the Linked Table's columns a Formula reads outlined in the positions grid, over all
+  its rows, in the colour class the core gave them, once each whatever the Formula's casing, none
+  for an undeclared table or column, gone on Escape and on Enter (SH-31, DC-50); the fill handle
   dragged — series, References shifted, a refused pattern, the edge auto-scroll, the Selection
   after (DC-13/27); a block from the real clipboard spilling (DC-8); a copy inside the Sheet
   shifting References, and what the paste receives of the `data-ex-grid="invariant"` marker on
@@ -384,7 +386,8 @@ nobody had asked for. What that means when writing a test:
   ExGrid's own behaviour beside the Sheet (DC-25).
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
   Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
-  stack stay with the Sheet that has the keyboard.
+  stack stay with the Sheet that has the keyboard, and each Sheet's Linked Table columns are
+  outlined only in the grid its page wired to it (SH-31, DC-25).
 
 `sheet-helpers.mjs` is what those three share: a Sheet's grid, a cell by its A1 address, the
 editor surfaces under either Chrome, the Name Box, and painted-box comparisons.
