@@ -363,7 +363,7 @@ nobody had asked for. What that means when writing a test:
   the References rewritten, a deleted target `#REF!`, the Selection left in place, and one
   Ctrl+Z restoring each (SH-5, ticket 13); the Linked Table reading `#GETTING_DATA` until its snapshot (SH-16); the Focus
   at XFD1048576 with the DOM no larger than at A1 (SH-2).
-- `declarations.spec.mjs` — the declarations of ADR-0050/0051 (§26) as ExSheet makes them on
+- `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed
   at the reported caret, from the Formula Bar too (DC-17/31); Point by keys, Shift+arrows, the
@@ -371,7 +371,10 @@ nobody had asked for. What that means when writing a test:
   pointing (DC-19/31/34); DC-20 and DC-28 with 150 ms on the Server host; F4 cycling the
   Reference at the caret in a cell and in the Formula Bar under both Chromes, mid-text, over a
   selection and a selection only touching References (`+` in `=A1+B1`), while pointing, left to the browser with no edit open, and in a burst and twice
-  before the caret is placed with 150 ms on the Server host (DC-45); the fill handle
+  before the caret is placed with 150 ms on the Server host (DC-45); the Reference Outlines —
+  `=A1+B2:C3` outlined once each in two colours across the pinned boundary, `=A1+A1` once, `=` ↓ ↓
+  dashed in the first colour and solid once an operator follows, gone on Escape and on Enter
+  (DC-46); the fill handle
   dragged — series, References shifted, a refused pattern, the edge auto-scroll, the Selection
   after (DC-13/27); a block from the real clipboard spilling (DC-8); a copy inside the Sheet
   shifting References, and what the paste receives of the `data-ex-grid="invariant"` marker on

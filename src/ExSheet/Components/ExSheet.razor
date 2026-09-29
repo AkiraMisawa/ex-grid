@@ -30,6 +30,7 @@
         DataEdge="_dataEdge"
         ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" NameBoxSizeLabel="NameBoxSizeOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf" CycleReference="CycleReferenceAt"
+        ReferencesIn="_references"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
         CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
@@ -74,6 +75,7 @@
 
     private readonly Func<CellPosition, GridDirection, CellPosition> _dataEdge;
     private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
+    private readonly Func<string, IReadOnlyList<EditorReference>> _references;
     private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
     private readonly Func<string, string?> _commandLabel;
     private readonly Func<global::ExGrid.Clipboard.GridCopyRequest, global::ExGrid.Clipboard.GridCopyAnswer> _copyAnswer;
@@ -140,6 +142,9 @@
         // back to the grid's built-in words for the grid's own commands (ADR-0036).
         _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
         _complete = (text, caret) => ValueTask.FromResult(_sheet is { } sheet ? SheetFormulaAids.Complete(sheet, text, caret) : null);
+        // The References the grid colours and outlines while a Formula is edited (ADR-0057),
+        // answered from the engine at once. It reads this Sheet's name, so it is the instance's own.
+        _references = text => _sheet is { } sheet ? SheetFormulaAids.References(sheet, text) : [];
         // No receiver: a selection change re-renders the grid, not this component.
         _selectionChanged = new EventCallback<GridSelection>(null, (Func<GridSelection, Task>)(selection =>
         {
