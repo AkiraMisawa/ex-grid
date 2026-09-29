@@ -212,7 +212,7 @@ public class EditStandsTests : GridTestContext
     // layer 3's (edit-stands.spec.mjs); this is the core's half — what has happened by the time the
     // answer comes.
 
-    [Fact] // ADR-0010 (widened 2026-09-29) / ED-22: a press that commits is answered only once the gate has heard the edit end and the keyboard has been asked back
+    [Fact] // ADR-0010 (widened 2026-09-29) / ED-22: a press that commits asks for the keyboard back while the editor still stands, and is answered only once the gate has heard the edit end
     public async Task A_press_that_commits_is_answered_after_the_gate_and_the_hand_back()
     {
         var intents = new List<GridEditIntent<TestRow>>();
@@ -221,21 +221,26 @@ public class EditStandsTests : GridTestContext
         await PressAsync(sheet, "9");
         var told = Js.UnansweredGateMode();
         var before = HandBacks().Count;
+        bool? editorStoodAtHandBack = null;
+        Js.OnFocusReclaimed(() => editorStoodAtHandBack ??= sheet.FindAll(".ex-viewport .ex-editor").Count > 0);
 
         var press = ClickAsync(sheet, 150, 70); // B4: no Reference can go after 9
         var answered = sheet.InvokeAsync(() => sheet.Instance.PressAnsweredAsync());
 
-        // The gate has not heard the edit end, and the keyboard has not been asked back: a key
-        // handed on now would be gated as the editor's, and typed into an editor on its way out.
+        // The keyboard was asked back before the render that removes the editor: after that
+        // render alone, DOM focus would be on body until the hand-back landed, and a key typed in
+        // between reached no listener at all.
+        Assert.Equal([false], HandBacks().Skip(before));
+        Assert.True(editorStoodAtHandBack);
+        // And the press is not answered while the gate has not heard the edit end: a key handed on
+        // now would be gated as the editor's.
         Assert.False(answered.IsCompleted);
-        Assert.Equal(before, HandBacks().Count);
         told.SetVoidResult();
         await press;
         await answered;
 
         Assert.Equal("9", Assert.Single(intents).Value);
         Assert.Equal("none", (string)told.Invocations["setEditing"][^1].Arguments[0]!);
-        Assert.Equal([false], HandBacks().Skip(before));
     }
 
     [Fact] // ADR-0010 (widened 2026-09-29) / ED-22 / ADR-0051: a press that points is answered with the edit open and the keyboard left where it is

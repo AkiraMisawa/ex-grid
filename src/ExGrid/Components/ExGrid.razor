@@ -6561,9 +6561,16 @@
         // The input goes with the mode: a reference kept past it would name an element
         // the next editor is not, and the focus above would land nowhere.
         _editorElement = default;
-        await PushEditingModeAsync();
-        if (reclaimFocus)
-            await ReclaimFocusAsync(fromField: fromBar);
+        // Both asked of the browser before this handler yields, and so ahead of the render that
+        // removes the editor, as a popover's close asks for the root (ClosePopoverAndReturnFocus).
+        // Asked for after the gate's answer, the hand-back landed a round trip after that render:
+        // DOM focus was on body in between, where the root's listener hears nothing, and a key
+        // typed straight after a press that committed was lost (ADR-0010's hold behind a press,
+        // found on the Server host at 0 ms as well as at 150).
+        var gateTold = PushEditingModeAsync();
+        var handedBack = reclaimFocus ? ReclaimFocusAsync(fromField: fromBar) : Task.CompletedTask;
+        await gateTold;
+        await handedBack;
     }
 
     /// <summary>
