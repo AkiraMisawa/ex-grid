@@ -2,8 +2,9 @@
 // reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
 // out of the box, being told about the pointer — when it moves onto another row, and
 // when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
-// mousedown and mouseup that keep a press on the rows in its place among held keys, and the
-// root taking the keyboard back only while DOM focus is still its own. Anything else — text
+// mousedown and mouseup that keep a press on the rows in its place among held keys, the
+// root taking the keyboard back only while DOM focus is still its own, and the editor listener
+// keeping the coloured text beneath a field honest (ADR-0057). Anything else — text
 // measurement, overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
@@ -339,6 +340,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Each input reports at once: Blazor's input event is on its way, and the core waits for
     // this report before it asks anything about the new text.
     const onEditorInput = (event) => {
+        heardReferenceInput(event);
         const input = event.target;
         if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
             || input.closest('.ex-editor') === null) {
@@ -363,6 +365,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // animation frame, of where the caret stands when the frame comes.
     let caretFrame = 0;
     const onSelectionChange = () => {
+        if (watchingReferenceTexts && focusedEditorField() !== null) {
+            gateReferenceTexts();
+        }
         if (!reportCaret || !core || caretFrame !== 0 || focusedEditorField() === null) {
             return;
         }
@@ -375,6 +380,72 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         });
     };
     document.addEventListener('selectionchange', onSelectionChange);
+
+    // The coloured text (ADR-0057): beneath an editor surface, a layer the core renders with each
+    // Reference in its colour stands immediately before the field, and carries the text it was
+    // rendered for (data-ex-text). On a circuit that is a round trip behind the typing, and colours
+    // on text typed past would stand on the wrong characters, so the layer shows — and the field's
+    // own text turns transparent — only while the two texts are one: the listener sets one class on
+    // the field then, and the stylesheet does the rest. Compared on each input, when a layer's text
+    // changes (that one attribute, observed while an edit is open) and when the caret moves in a
+    // field, which is how one that has just opened over its layer is first heard. A field holding
+    // an IME composition is ahead of anything rendered, and is never shown over. The layer's line
+    // scrolls with the field: the scroll-offset entry, on one more element (ADR-0021). Reads values,
+    // one attribute and scroll offsets; no layout.
+    let composingIn = null;
+    let watchingReferenceTexts = false;
+    const referenceTextOf = (field) => {
+        const layer = field.previousElementSibling;
+        return layer !== null && layer.classList.contains('ex-reference-text') ? layer : null;
+    };
+    const gateReferenceText = (field, layer) => {
+        field.classList.toggle('ex-reference-text-shown',
+            editing !== 'none' && composingIn !== field && layer.getAttribute('data-ex-text') === field.value);
+        layer.firstElementChild.scrollLeft = field.scrollLeft;
+    };
+    const gateReferenceTexts = () => {
+        for (const layer of root.getElementsByClassName('ex-reference-text')) {
+            const field = layer.nextElementSibling;
+            if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+                gateReferenceText(field, layer);
+            }
+        }
+    };
+    const referenceTextObserver = new MutationObserver(gateReferenceTexts);
+    const heardReferenceInput = (event) => {
+        const field = event.target;
+        const layer = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? referenceTextOf(field) : null;
+        if (layer !== null) {
+            composingIn = event.isComposing === true ? field : null;
+            gateReferenceText(field, layer);
+        }
+    };
+    const onFieldScroll = (event) => {
+        const field = event.target;
+        const layer = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? referenceTextOf(field) : null;
+        if (layer !== null) {
+            layer.firstElementChild.scrollLeft = field.scrollLeft;
+        }
+    };
+    // Only while an edit is open, which is the only time a layer holds a text; closing takes every
+    // field's class away with it.
+    const watchReferenceTexts = (on) => {
+        if (on === watchingReferenceTexts) {
+            return;
+        }
+        watchingReferenceTexts = on;
+        if (on) {
+            referenceTextObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-text'], subtree: true });
+            root.addEventListener('scroll', onFieldScroll, true);
+            return;
+        }
+        referenceTextObserver.disconnect();
+        root.removeEventListener('scroll', onFieldScroll, true);
+        composingIn = null;
+        for (const field of root.querySelectorAll('.ex-reference-text-shown')) {
+            field.classList.remove('ex-reference-text-shown');
+        }
+    };
 
     // Keys that follow a mode change are held until it lands (ADR-0010). The mode is
     // C#'s, and it tells this listener after the fact: in-process on WebAssembly, a round
@@ -1301,6 +1372,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (mode === 'none') {
                 caretMoved = null;
             }
+            watchReferenceTexts(mode !== 'none');
             // A new state starts a new conversation: a report equal to one sent before it is
             // news to the core now (the next edit can open on the same text and caret).
             reportedText = null;
@@ -1450,6 +1522,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             document.removeEventListener('selectionchange', onSelectionChange);
             cancelAnimationFrame(caretFrame);
             caretFrame = 0;
+            watchReferenceTexts(false);
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
             root = null;

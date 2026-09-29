@@ -68,9 +68,12 @@ public class ShippedStylesheetTests
         // use, reporting the caret with each input and whenever it moves: ADR-0021's notes of
         // ADR-0051's second round), copy and paste (the clipboard), and the two that report a
         // pointer coming to rest, and the capture-phase mousedown and mouseup that keep a press on
-        // the rows in its place among held keys (ADR-0021's note of 2026-09-27). Scrolling is
-        // Blazor's own @onscroll and the gutter is a ResizeObserver, so neither appears here.
-        string[] allowed = ["copy", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "selectionchange"];
+        // the rows in its place among held keys (ADR-0021's note of 2026-09-27). The grid's own
+        // scrolling is Blazor's @onscroll and the gutter is a ResizeObserver, so neither appears
+        // here; scroll is an editor field's, heard while an edit is open so the coloured text
+        // beneath it scrolls with it — the scroll-offset entry on one more element (ADR-0021's
+        // note of ADR-0057, DC-51).
+        string[] allowed = ["copy", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -94,8 +97,9 @@ public class ShippedStylesheetTests
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
-        // One attribute of this instance's own root, nothing wider and nothing measured.
-        Assert.Single(Regex.Matches(script.Text, @"new MutationObserver\("));
+        // One attribute of this instance's own root, nothing wider and nothing measured. The
+        // module's other observer is the coloured text's, on one attribute of a layer (DC-51).
+        Assert.Equal(2, Regex.Matches(script.Text, @"new MutationObserver\(").Count);
         Assert.Matches(new Regex(@"revealObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-reveal'\] \}\)"), script.Text);
         // Let go as soon as the write is made or replaced, and with the instance.
         Assert.Matches(new Regex(@"const dropReveal = \(\) => \{[^}]*revealObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
@@ -225,6 +229,79 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"const movedByUser = \(input\) => caretMoved !== null && caretMoved\.input === input && caretMoved\.text === input\.value;"), script.Text);
         Assert.Equal(3, Regex.Matches(script.Text, @"noteCaretMove\((event\.target|input)\);").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), script.Text);
+    }
+
+    [Fact] // ADR-0057 / ADR-0021 / DC-51 / DC-47: the coloured text shows only while the layer's text is the field's value, one class set, nothing measured
+    public void The_listener_gates_the_coloured_text_on_its_text_and_sets_one_class()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // The comparison: the layer's one attribute against the field's value, never while no
+        // edit is open and never over a field composing. One class, set in one place and taken
+        // away only when the edit closes.
+        Assert.Matches(new Regex(@"field\.classList\.toggle\('ex-reference-text-shown',\s*editing !== 'none' && composingIn !== field && layer\.getAttribute\('data-ex-text'\) === field\.value\);"),
+            script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"classList\.toggle\('ex-reference-text-shown'"));
+        Assert.DoesNotMatch(new Regex(@"classList\.add\('ex-reference-text-shown'"), script.Text);
+        Assert.Matches(new Regex(@"field\.classList\.remove\('ex-reference-text-shown'\);"), script.Text);
+        // The layer is the field's own: the element immediately before it, found by the core's
+        // class — never another instance's, never measured.
+        Assert.Matches(new Regex(@"const layer = field\.previousElementSibling;\s*return layer !== null && layer\.classList\.contains\('ex-reference-text'\) \? layer : null;"),
+            script.Text);
+        Assert.Matches(new Regex(@"for \(const layer of root\.getElementsByClassName\('ex-reference-text'\)\)"), script.Text);
+
+        // On each input — from the editor listener itself, which reads the composition off the
+        // event — ...
+        Assert.Matches(new Regex(@"const onEditorInput = \(event\) => \{\s*heardReferenceInput\(event\);"), script.Text);
+        Assert.Matches(new Regex(@"composingIn = event\.isComposing === true \? field : null;"), script.Text);
+        // ...when the layer's text changes: one attribute, in this root, observed only while an
+        // edit is open and let go when it closes or the instance goes...
+        Assert.Matches(new Regex(@"referenceTextObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-text'\], subtree: true \}\);"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"referenceTextObserver\.observe\("));
+        Assert.Matches(new Regex(@"referenceTextObserver\.disconnect\(\);"), script.Text);
+        Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{[^}]*\}\s*watchReferenceTexts\(mode !== 'none'\);", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"dispose: \(\) => \{.*?watchReferenceTexts\(false\);.*?root = null;", RegexOptions.Singleline), script.Text);
+        // ...and when the caret moves in one of this instance's editor fields, while it is open.
+        Assert.Matches(new Regex(@"const onSelectionChange = \(\) => \{\s*if \(watchingReferenceTexts && focusedEditorField\(\) !== null\) \{\s*gateReferenceTexts\(\);\s*\}"), script.Text);
+
+        // The layer's line scrolls with its field: the field's scroll offset read, the line's set
+        // — the scroll-offset entry — on the field's scroll, heard on this root while an edit is
+        // open, and after each comparison.
+        Assert.Equal(2, Regex.Matches(script.Text, @"layer\.firstElementChild\.scrollLeft = field\.scrollLeft;").Count);
+        Assert.Matches(new Regex(@"root\.addEventListener\('scroll', onFieldScroll, true\);"), script.Text);
+        Assert.Matches(new Regex(@"root\.removeEventListener\('scroll', onFieldScroll, true\);"), script.Text);
+
+        // No layout is read anywhere in the module.
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"),
+            script.Text);
+    }
+
+    [Fact] // ADR-0057 / DC-47 / DC-48: the field's own text is transparent only beside its layer and under the listener's class; the caret and a selection stay
+    public void The_stylesheet_hides_the_fields_text_only_under_the_listeners_class()
+    {
+        var sheet = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
+
+        // Hidden unless the field right after it wears the class; paint only; every space kept.
+        var layer = Regex.Match(sheet, @"\n\.ex-reference-text \{([^}]*)\}");
+        Assert.True(layer.Success, "no .ex-reference-text rule");
+        Assert.Contains("visibility: hidden;", layer.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Contains("pointer-events: none;", layer.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Contains("white-space: pre;", layer.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"\.ex-reference-text:has\(\+ \.ex-reference-text-shown\) \{ visibility: visible; \}"), sheet);
+
+        // Transparent only under the class and beside a layer, the caret in the field's colour,
+        // and a selection drawn by the field in the selection's own colours.
+        var transparent = Regex.Matches(sheet, @"(?m)^[^\n{]*\{[^}]*(?<![\w-])(?:-webkit-text-fill-color|color): transparent[^}]*\}")
+            .Select(match => match.Value.Split('{')[0].Trim())
+            .ToList();
+        Assert.Equal([".ex-reference-text + .ex-reference-text-shown"], transparent);
+        Assert.Matches(new Regex(@"\.ex-reference-text \+ \.ex-reference-text-shown \{ -webkit-text-fill-color: transparent; caret-color: currentColor; \}"), sheet);
+        Assert.Matches(new Regex(@"\.ex-reference-text \+ \.ex-reference-text-shown::selection \{ color: HighlightText; -webkit-text-fill-color: HighlightText; background-color: Highlight; \}"), sheet);
+
+        // The core's own Cell Editor and its layer share one rule for box, padding, line and
+        // colours, and the bar's field and its layer one for padding (DC-48).
+        Assert.Matches(new Regex(@"\.ex-editor,\s*\.ex-reference-text\.ex-reference-text-cell \{"), sheet);
+        Assert.Matches(new Regex(@"\.ex-name-box, \.ex-formula-bar-text, \.ex-reference-text\.ex-reference-text-bar \{ padding: 0 var\(--ex-cell-padding-x, 8px\); \}"), sheet);
     }
 
     [Fact] // ADR-0051 second round / DC-31: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys

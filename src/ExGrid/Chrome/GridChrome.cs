@@ -262,6 +262,18 @@ public sealed record CellEditorContext(
     /// render (ADR-0010/0030), which is the rule <see cref="TemplateCellContext{TRow}.FocusRequest"/>
     /// follows too (ADR-0037).</summary>
     public int FocusRequest { get; init; } = FocusRequest;
+
+    /// <summary>
+    /// The coloured text (ADR-0057): the editor's text with each Reference in its colour, drawn by
+    /// the core, for the control to be painted over. The Chrome renders it <b>immediately before
+    /// its control</b>, both directly inside the core's box; the core stands it over the box's
+    /// content, which the control fills, in the box's font. A control with no padding and no
+    /// background of its own then shows it through. It shows, and the control's own text turns
+    /// transparent, only while it holds the control's value; the core's listener decides that
+    /// from the layer's text, and the control does nothing. Null where no References function
+    /// is declared: there is nothing to place.
+    /// </summary>
+    public RenderFragment? ReferenceText { get; init; }
 }
 
 /// <summary>
@@ -342,7 +354,16 @@ public sealed record FormulaBarTextContext(
     bool ReadOnly,
     Func<Task> Focused,
     Action<string> TextChanged,
-    int FocusRequest = 0);
+    int FocusRequest = 0)
+{
+    /// <summary>
+    /// The coloured text (ADR-0057), as <see cref="CellEditorContext.ReferenceText"/> is for the
+    /// cell: rendered immediately before the control, directly inside the core's box. It stands
+    /// whenever a References function is declared, and holds the edit's text while an edit is
+    /// open on the Focus cell. Null where none is declared.
+    /// </summary>
+    public RenderFragment? ReferenceText { get; init; }
+}
 
 /// <summary>
 /// The completion seam (ADR-0051/0039/0040): the candidates the Consumer offered for the
@@ -395,7 +416,9 @@ public interface IGridChrome
     /// outline and background — the control fills it — and <b>the fragment focuses its
     /// own control</b>, when it appears and when <see cref="CellEditorContext.Mode"/>
     /// changes: the core holds no reference to a control it did not render, and does
-    /// not try (ADR-0010/0030).</summary>
+    /// not try (ADR-0010/0030). Where the context carries
+    /// <see cref="CellEditorContext.ReferenceText"/>, the fragment renders it immediately
+    /// before its control (ADR-0057).</summary>
     RenderFragment? CellEditor(CellEditorContext context);
 
     /// <summary>Null falls back to the core's built-in find panel (ADR-0055).</summary>
@@ -414,7 +437,8 @@ public interface IGridChrome
     /// input. A fragment is rendered inside the core's <c>ex-editor</c> box in the bar, and
     /// <b>focuses its own control</b> whenever
     /// <see cref="FormulaBarTextContext.FocusRequest"/> changes, as the Cell Editor's
-    /// does.</summary>
+    /// does, and renders <see cref="FormulaBarTextContext.ReferenceText"/> immediately before
+    /// its control where the context carries it (ADR-0057).</summary>
     RenderFragment? FormulaBarText(FormulaBarTextContext context) => null;
 
     /// <summary>The completion list and argument hint (ADR-0051). Null falls back to the core's
