@@ -82,6 +82,10 @@ record the state as described below, then press Escape until Excel is Ready.
 | 26 | — | `=SUM(A1:` (stop after the colon) | Is A1 coloured and outlined before the second corner is typed? | not until the second corner is typed |
 | 27 | No Table named `Nope` | `=SUM(Nope[PV]` | Is `Nope[PV]` coloured? | not coloured: it names no Table |
 | 28 | As 11 | `=SUM(Positions[Nope]` | Is `Positions[Nope]`, a column the Table lacks, coloured? | not coloured: it names no column |
+| 29 | — | `=SUM(`, then `{DOWN}` (`=SUM(D11`) | Is the pointed `D11`'s text shown selected (a grey ground, as `D12` in case `20x`)? | open |
+| 30 | — | `=1+`, then `{DOWN}` (`=1+D11`) | The same | open |
+| 31 | — | `=`, `{DOWN}{DOWN}` (`=D12`, one Reference, pointed twice) | The same | open |
+| 32 | — | `=D11+`, `{DOWN}{DOWN}` (`=D11+D12`, as case `20x`), then type `5` | The Formula Bar's text after `5` (UI Automation): does `5` replace the grey `D12` (`=D11+5`) or follow it (`=D11+D125`)? Is D12 still outlined, and are the dashes still there? | open |
 
 For case 21, find the Formula Bar's text box through UI Automation (Excel's edit control above the
 column headings), or from a screenshot, and record the point clicked.
