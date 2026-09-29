@@ -308,11 +308,11 @@ has a Formula open, or while a Consumer asks for columns to be outlined.
 
 - **Internal classes**, which may change without notice:
   - `ex-reference-outline`: a Reference Outline in the selection overlay, with `ex-reference-1` to
-    `ex-reference-8` naming its colour. `ex-point` stays, now on the Reference Outline Point is
+    `ex-reference-7` naming its colour (eight until the eighth Windows run observed Excel's seven). `ex-point` stays, now on the Reference Outline Point is
     moving.
   - `ex-reference-text`: the layer beneath an editor surface that draws the text with its References
     coloured, and the class on the field that shows while the layer is up to date.
-- **Visual Tokens:** `--ex-reference-1` to `--ex-reference-8`, one per place in the palette. Their
-  defaults are provisional until Excel's palette is observed. Eight is the palette's length as read
-  and lives in C#: it is behaviour, because it decides which References share a colour. A Theme sets
+- **Visual Tokens:** `--ex-reference-1` to `--ex-reference-7`, one per place in the palette. Their
+  defaults are Excel's, as the eighth Windows run observed them (ADR-0057). Seven is the palette's
+  length and lives in C#: it is behaviour, because it decides which References share a colour. A Theme sets
   the colours, never the length. `ExGrid.MudBlazor` leaves them at their defaults.

@@ -14,14 +14,18 @@ Formula is.
 ## What shows, and when
 
 - **Every Reference in the Formula being edited has a colour.** Its text wears that colour in the
-  Cell Editor and in the Formula Bar. Its cells on the grid are outlined in the same colour.
+  surface the edit is in, the Cell Editor or the Formula Bar. Its cells on the grid are outlined in
+  the same colour. *(Corrected 2026-09-30 by the eighth Windows run. This bullet first said the text
+  was coloured in both surfaces at once; Excel colours only the one being edited. See "What the eighth
+  Windows run settled".)*
 - **The outlines show in every editing state while a Formula is open**: Overwrite, Caret and Point.
   They show however the edit was opened: typed onto a cell, F2, a double click, or a click into the
   Formula Bar. They go when the edit commits or is cancelled. Selecting a cell that holds a Formula,
   without editing it, shows none. Neither does text that is not a Formula.
 - **Point's outline is the Reference Outline of the Reference it is writing.** It takes that
   Reference's colour. What Excel draws differently for it, a dashed or moving line, is a reading
-  (below).
+  (below). *(Settled by the eighth Windows run: the outline is drawn as any other, and a dashed line
+  in the Focus outline's colour is laid over it.)*
 - **The outline is drawn in the selection overlay**
   ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) as a range is drawn there: one element
   per outlined range, never a class on each cell, and cut to the painted rows as a range is. A
@@ -167,3 +171,32 @@ Excel contradicts is corrected here after the run.
   ticket 27.)*
 - **Point's outline is dashed**, in its Reference's colour. Every other outline is solid, over a pale
   wash of its colour.
+
+## What the eighth Windows run settled *(2026-09-30)*
+
+Part A of `verify-on-windows-8.md` asked Excel (Microsoft 365, Version 2609) every reading above, and
+recorded what it draws in `verification/2026-09-29-windows-excel-8/range-finder.md`. Most readings
+agreed. Where one did not, the rule is now Excel's, as this ADR said it would be.
+
+- **The palette has seven colours, not eight.** In order of first appearance they are `#326ac7`,
+  `#c0353e`, `#8157b7`, `#007c20`, `#b03e84`, `#b64900` and `#267392`, and then the order starts
+  again. An outline's line and its Reference's text wear the colour. Its fill is a pale wash of it
+  (`#ebf0f9` for the first). These are the defaults of `--ex-reference-1` to `--ex-reference-7`, and
+  the palette's length in C# is seven.
+- **The text is coloured only in the surface the edit is in.** While the edit is in the cell, the
+  Formula Bar's text stays plain. While it is in the Formula Bar, the cell's text stays plain. Both
+  surfaces carry the layer, because either can hold the edit.
+- **Point's outline is its Reference's outline, with the Focus outline's dashes laid over it.** Excel
+  draws the pointed Reference's outline as it draws any other: the line and the fill in the
+  Reference's colour. Over the line it lays a dashed line in the active cell's border colour
+  (`#217346`). So the dashes take `--ex-focus-outline`, not the Reference's colour. The dashes stand
+  still. This corrects the reading "Point's outline is dashed, in its Reference's colour".
+- **Each Reference draws its own outline**, even where another names the same cells. `=A1+A1` puts
+  one outline in one colour over A1, but draws it twice, so the fill is laid twice and reads darker
+  (`#d9e2f4` against `#ebf0f9`). Two outlines that overlap lay their fills together in the same way.
+  The rule that the same cells share one colour stands.
+- **Where two outlines meet, the one drawn later covers the shared edge.**
+- **Point starts again from the edited cell after an operator.** Case 20 of the procedure pointed at
+  D11 twice for that reason. It was the procedure's mistake, not Excel's. With the keys corrected
+  (case `20x`), Excel agrees with the reading.
+
