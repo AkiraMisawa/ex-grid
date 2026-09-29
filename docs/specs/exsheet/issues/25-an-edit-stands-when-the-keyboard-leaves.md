@@ -24,6 +24,15 @@ the Sheet's rows pointed while the keyboard stayed with the positions grid.
       script
 - [x] No JavaScript use is added; the listener stays the allowlisted `mousedown` (ADR-0021)
 - [ ] Layer 3 on `/sheet` and `/sheets`, both hosts (ED-26)
+- [x] A press on the rows while an edit is open holds the keys typed after it until the core has
+      answered it, and hands them on against the mode the answer leaves: on a plain editable grid and
+      on a Sheet, a press that commits or points. Plain navigation is not held, and a double click on
+      another cell still commits and opens that cell's text (ADR-0010 widened 2026-09-29, ADR-0021,
+      ED-22)
+- [x] While DOM focus is outside the root, the Cell Editor's outline is 1px wide in
+      `--ex-editor-outline`'s style and colour, and at full width once the keyboard returns, under
+      both Chromes, by the stylesheet alone (ADR-0018 section 6, ED-27)
+- [ ] Layer 3 for both, on both hosts (ED-22 widened, ED-27)
 
 ## Comments
 
@@ -78,3 +87,35 @@ editor of a grid nested in one of its cells, and one helper finds it for the ret
 field a held key is typed into; the Formula Bar's mark left by a press that passes on lasts only
 until the core has answered that press, so a press that points does not leave it for a later
 hand-back; and the /sheet setup and the positions grid's locator live in `sheet-helpers.mjs`.
+
+**2026-09-30, the hold behind a press and the standing edit's look.** The box for held keys and held
+presses as the keyboard comes back stays open, and is Q24's: the one case where the keyboard does
+not come back — a press back within one round trip of the key that opens the edit, held behind that
+key with its default suppressed — was accepted by the user as a one-round-trip gap (ADR-0018 section
+6, last bullet), and the rest has no test of its own. The first case recorded on 2026-09-29, keys
+lost after a press that commits, is built now as ED-22 widened.
+
+- **The hold.** The capture-phase `mousedown` starts it for a press on the rows while an edit is
+  open; the press passes on untouched, the keys after it are held, and the drain waits for the
+  core's answer to the press before anything else. The question goes after the press has reached
+  the core and ahead of its release — from a later task, or from this grid's own capture `mouseup` —
+  because the core answers for the press or release it heard last; its answer also takes off the
+  mark the press left on a Formula Bar. A press while only a press is being answered, with no key
+  held behind it, passes on too, so the second press of a double click keeps its place before the
+  double click.
+- **The editor's removal.** With the hold alone, 3 in 20 runs on the Server host at 0 ms still lost
+  the `7`: the edit's end asked for the hand-back only after the gate's answer, while the render that
+  removes the editor went out first, and DOM focus sat on `body` in between, where no listener of
+  the root hears a key. `EndEditingAsync` now makes both calls before it yields, as a popover's close
+  does. 0 in 30 at 0 ms on each host, and 0 in 15 at 150 ms on the Server host.
+- **The look.** One rule, `.ex-grid:not(:focus-within) .ex-viewport .ex-editor { outline-width:
+  1px; }`. `/sheets` takes `?chrome=mud`, each Sheet on the Wrapper's paper, where the token is 2px of
+  the palette's primary; the colour is unchanged at 1px under both Chromes.
+
+Layer 2: `EditStandsTests` (the core's half of the hold, and the hand-back asked while the editor
+still stands) and `ShippedStylesheetTests` (the hold's and the rule's shape). Layer 3:
+`edit-stands.spec.mjs`, executed through a stand-in harness on private DemoHosts, headless: 26/26 on
+the Server host and 22/22 on WebAssembly (the four 150 ms cases skip themselves there). Against the
+module before the hold, the committing cases fail on the Sheet at 0 and 150 ms and on `/features` at
+150 ms. The runner has not run it.
+
