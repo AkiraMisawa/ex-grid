@@ -5,6 +5,10 @@
    error colour while a Reject stands (ADR-0034). A MudTextField with its label,
    helper text and 48px of comfort would not fit a 28px cell and is the wrong control
    here. *@
+@* The coloured text the core draws, where it draws any (ADR-0057): immediately before the
+   input, which has no padding and no background of its own, so the core's layer shows through
+   it while the core's listener says it may. *@
+@Context.ReferenceText
 <input class="@(Context.Error is null ? "mud-ex-editor" : "mud-ex-editor mud-ex-editor-error")"
        @bind:get="_text.Shown" @bind:set="OnInput" @bind:event="oninput" @ref="_input"
        aria-label="@Context.Column"
