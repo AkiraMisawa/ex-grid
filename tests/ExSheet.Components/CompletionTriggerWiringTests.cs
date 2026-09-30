@@ -13,7 +13,10 @@ namespace ExSheet.Components.Tests;
 /// "Completion, aligned with Excel", ADR-0051's note of 2026-09-30, SH-36): an argument's value
 /// list opens as the argument begins, takes ↑/↓, Tab and Escape while it is open, and gives the
 /// arrows back to Point once closed; a press still points; <c>Table[</c> lists the columns; the
-/// list comes back after Backspace; and F3 is left to the browser.
+/// list comes back after Backspace; and F3 is left to the browser. As the tenth Windows run saw
+/// it (ticket 44): a value typed whole lists that value alone, any other beginning every value;
+/// Tab closes any list, which does not come back on what Tab wrote; and → or ← at an open value
+/// list points and closes it.
 /// </summary>
 public class CompletionTriggerWiringTests : SheetTestContext
 {
@@ -57,8 +60,35 @@ public class CompletionTriggerWiringTests : SheetTestContext
         Assert.Equal(MatchModes, Candidates(cut));
         Assert.Equal("0 - Exact match", Chosen(cut));
         Assert.Equal("[match_mode]", cut.Find(".ex-completion .ex-completion-hint strong").TextContent);
-        // A Reference can go at the caret too, and the open list is what the gate is told.
+        // A Reference can go at the caret too: the list is open over Point, and the gate is told
+        // so, and reads it off the list's box (ADR-0058, the tenth Windows run).
+        Assert.Equal("completionOverPoint", GateModesTold()[^1]);
+        Assert.True(cut.Find(".ex-completion").HasAttribute("data-ex-over-point"));
+    }
+
+    [Fact] // ADR-0058 (the tenth Windows run, case 1), SH-36: a value typed whole lists that value alone, chosen
+    public async Task SH36_a_value_typed_whole_lists_that_value_alone()
+    {
+        var cut = RenderSheet();
+
+        await StartTypingAsync(cut, "D10", AtMatchMode + "0");
+
+        Assert.Equal(["0 - Exact match"], Candidates(cut));
+        Assert.Equal("0 - Exact match", Chosen(cut));
+        // No Reference can go after the 0: ← and → are the editor's.
         Assert.Equal("completion", GateModesTold()[^1]);
+        Assert.False(cut.Find(".ex-completion").HasAttribute("data-ex-over-point"));
+    }
+
+    [Fact] // ADR-0058 (the tenth Windows run, case 2), SH-36: any other text at a value-list argument lists every value, the first chosen
+    public async Task SH36_the_beginning_of_a_value_lists_every_value_the_first_chosen()
+    {
+        var cut = RenderSheet();
+
+        await StartTypingAsync(cut, "D10", AtMatchMode + "-");
+
+        Assert.Equal(MatchModes, Candidates(cut));
+        Assert.Equal("0 - Exact match", Chosen(cut));
     }
 
     [Fact] // ADR-0058, SH-36: at search_mode its four values are listed, as the ninth Windows run read them
@@ -89,8 +119,8 @@ public class CompletionTriggerWiringTests : SheetTestContext
         Assert.Equal(MatchModes, Candidates(cut));
     }
 
-    [Fact] // ADR-0058, SH-36: Tab writes the chosen value's number, not its text, and the list, having nothing left to offer, closes
-    public async Task SH36_tab_writes_the_values_number()
+    [Fact] // ADR-0058 (the tenth Windows run, case 3), SH-36: Tab writes the chosen value's number, not its text, and closes the list, which is not opened again on the value written; the hint stays
+    public async Task SH36_tab_writes_the_values_number_and_closes_the_list()
     {
         var cut = RenderSheet();
         await StartTypingAsync(cut, "D10", AtMatchMode);
@@ -99,21 +129,73 @@ public class CompletionTriggerWiringTests : SheetTestContext
         await PressInEditorAsync(cut, "Tab", AtMatchMode, AtMatchMode.Length);
 
         Assert.Equal(AtMatchMode + "-1", EditorText(cut));
+        // The Sheet lists -1 alone for the text Tab wrote, and the grid does not show it.
+        Assert.Single((await Grid(cut).Instance.CompleteEditorText!(AtMatchMode + "-1", AtMatchMode.Length + 2))!.Candidates);
         Assert.Empty(Candidates(cut));
         Assert.Equal("[match_mode]", cut.Find(".ex-completion .ex-completion-hint strong").TextContent);
+        Assert.Equal("overwrite", GateModesTold()[^1]);
     }
 
-    [Fact] // ADR-0058, SH-36: Tab replaces the prefix typed with the whole value
-    public async Task SH36_tab_replaces_the_prefix_typed()
+    [Fact] // ADR-0058, SH-36: Tab replaces the beginning typed with the whole value
+    public async Task SH36_tab_replaces_the_beginning_typed()
     {
         var cut = RenderSheet();
         await StartTypingAsync(cut, "D10", AtMatchMode + "0,-");
-        Assert.Equal(["-1 - Search last-to-first", "-2 - Binary search (sorted descending order)"], Candidates(cut));
+        Assert.Equal(4, Candidates(cut).Count);
 
+        await PressInEditorAsync(cut, "ArrowDown", AtMatchMode + "0,-", AtMatchMode.Length + 3);
+        await PressInEditorAsync(cut, "ArrowDown", AtMatchMode + "0,-", AtMatchMode.Length + 3);
         await PressInEditorAsync(cut, "ArrowDown", AtMatchMode + "0,-", AtMatchMode.Length + 3);
         await PressInEditorAsync(cut, "Tab", AtMatchMode + "0,-", AtMatchMode.Length + 3);
 
         Assert.Equal(AtMatchMode + "0,-2", EditorText(cut));
+        Assert.Empty(Candidates(cut));
+    }
+
+    // ---- → at an open value list ----------------------------------------------------------------
+
+    [Fact] // ADR-0058 (the tenth Windows run, case 6), SH-36: → at an open value list, where a Reference can go, points — E10 from D10, shown selected — and closes the list
+    public async Task SH36_right_arrow_at_an_open_value_list_points_and_closes_it()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", AtMatchMode);
+        Assert.Equal(MatchModes, Candidates(cut));
+
+        await PressInEditorAsync(cut, "ArrowRight", AtMatchMode, AtMatchMode.Length);
+
+        Assert.Equal(AtMatchMode + "E10", EditorText(cut));
+        Assert.Empty(Candidates(cut));
+        Assert.Equal("point", GateModesTold()[^1]);
+        Assert.EndsWith(",,<span class=\"ex-reference-3 ex-reference-pointed\">E10</span>",
+            Grid(cut).Find(".ex-viewport > .ex-reference-text > .ex-reference-text-line").InnerHtml, StringComparison.Ordinal);
+        // Pointing goes on from there: ↓ moves the outline, as after any arrow that pointed.
+        await PressInEditorAsync(cut, "ArrowDown", AtMatchMode + "E10", AtMatchMode.Length + 3);
+        Assert.Equal(AtMatchMode + "E11", EditorText(cut));
+    }
+
+    [Fact] // ADR-0058 (the tenth Windows run), SH-36: ← at an open value list points as →, and closes the list
+    public async Task SH36_left_arrow_at_an_open_value_list_points_too()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", AtMatchMode);
+
+        await PressInEditorAsync(cut, "ArrowLeft", AtMatchMode, AtMatchMode.Length);
+
+        Assert.Equal(AtMatchMode + "C10", EditorText(cut));
+        Assert.Empty(Candidates(cut));
+    }
+
+    [Fact] // ADR-0058 / ADR-0051 second round, SH-36: in a list of names ← and → are not claimed — they move the caret — and the box says so
+    public async Task SH36_in_a_list_of_names_left_and_right_are_the_editors()
+    {
+        var cut = RenderSheet();
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["Id", "PV"]);
+
+        await StartTypingAsync(cut, "D10", "=Posit");
+
+        Assert.Equal(["Positions"], Candidates(cut));
+        Assert.Equal("completion", GateModesTold()[^1]);
+        Assert.False(cut.Find(".ex-completion").HasAttribute("data-ex-over-point"));
     }
 
     [Fact] // ADR-0058, SH-36: Escape closes the list first and leaves the edit open, and ↓ then points
@@ -178,7 +260,7 @@ public class CompletionTriggerWiringTests : SheetTestContext
 
     // ---- After Table[, and Backspace ----------------------------------------------------------
 
-    [Fact] // ADR-0058, SH-36: after Table[ the table's columns are listed, and only they; Tab writes the column's name
+    [Fact] // ADR-0058 (the tenth Windows run, case 4), SH-36: after Table[ the table's columns are listed, and only they; Tab writes the column's name without the ], closes the list, and it is not opened again on the column written; SUM's hint stays
     public async Task SH36_table_bracket_lists_the_columns_only()
     {
         var cut = RenderSheet();
@@ -190,6 +272,24 @@ public class CompletionTriggerWiringTests : SheetTestContext
         await PressInEditorAsync(cut, "Tab", "=SUM(Positions[", 15);
 
         Assert.Equal("=SUM(Positions[PV", EditorText(cut));
+        Assert.Empty(Candidates(cut));
+        Assert.StartsWith("SUM(", cut.Find(".ex-completion .ex-completion-hint").TextContent, StringComparison.Ordinal);
+        Assert.NotEqual("completion", GateModesTold()[^1]);
+    }
+
+    [Fact] // ADR-0058 (the tenth Windows run, case 5), SH-36: Tab on a table's name writes the name, closes the list, and nothing is shown for the name written
+    public async Task SH36_tab_on_a_tables_name_closes_the_list()
+    {
+        var cut = RenderSheet();
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["Id", "PV"]);
+        await StartTypingAsync(cut, "D10", "=Posit");
+        Assert.Equal(["Positions"], Candidates(cut));
+
+        await PressInEditorAsync(cut, "Tab", "=Posit", 6);
+
+        Assert.Equal("=Positions", EditorText(cut));
+        Assert.Empty(cut.FindAll(".ex-completion"));
+        Assert.Equal("overwrite", GateModesTold()[^1]);
     }
 
     [Fact] // ADR-0058, SH-36: Backspace back into a name lists again, after Escape closed the list (the ninth Windows run, case 11)

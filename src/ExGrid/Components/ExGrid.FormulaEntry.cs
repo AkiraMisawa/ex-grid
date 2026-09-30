@@ -21,7 +21,10 @@ public partial class ExGrid<TRow>
     /// open, the editor's text and the caret are handed to this as the user types — in the Cell
     /// Editor and in the Formula Bar alike — and the answer is painted beneath the editor
     /// surface as a list of candidates and a hint. ↑/↓ choose, Tab accepts the chosen
-    /// candidate, and Escape closes the list and leaves the edit open.
+    /// candidate and closes the list — the text it wrote is asked about again for its hint
+    /// alone, and no list is shown for it — and Escape closes the list and leaves the edit open.
+    /// A list takes no other key: where <see cref="PointAt"/> says a Reference can go at the
+    /// caret, ← and → point past it and close it, as they point without it (ADR-0058).
     ///
     /// <para>A <see cref="ValueTask{TResult}"/>, so the answer can be synchronous — a sheet's
     /// own parser answers at once, allocating nothing and showing the list in the render the
@@ -73,14 +76,27 @@ public partial class ExGrid<TRow>
     private bool CompletionListOpen
         => _editMode != EditMode.None && _completion is { Candidates.Count: > 0 };
 
+    /// <summary>
+    /// Whether a list is open over Point (ADR-0058, "What the tenth Windows run settled"): the
+    /// caret stands where the Consumer says a Reference can go, outside Caret, whose arrows are
+    /// the editor's. A list takes only ↑, ↓, Tab and Escape, so ← and → then point, as they would
+    /// without it — an argument's value list after <c>,,</c> — where in a list of names they move
+    /// the caret.
+    /// </summary>
+    private bool CompletionListOverPoint
+        => CompletionListOpen && _editMode != EditMode.Caret && ReferenceText is not null
+           && PointAt is { } pointAt && _editCaret >= 0 && _editCaret <= _editText.Length
+           && pointAt(_editText, _editCaret);
+
     /// <summary>The key gate's set for the current state (ADR-0010): Caret leaves the arrows
     /// to the editor. While a list is open, in any state, only its ↑/↓ are claimed beside the
-    /// editing keys, so ← and → move the caret. Point claims Overwrite's keys and the four
-    /// Shift+arrows, which extend the outline (ADR-0051's second round).</summary>
+    /// editing keys, so ← and → move the caret — and ← and → too while it is open over Point,
+    /// where they point (ADR-0058). Point claims Overwrite's keys and the four Shift+arrows,
+    /// which extend the outline (ADR-0051's second round).</summary>
     private string GateMode() => _editMode switch
     {
         EditMode.None => "none",
-        _ when CompletionListOpen => "completion",
+        _ when CompletionListOpen => CompletionListOverPoint ? "completionOverPoint" : "completion",
         EditMode.Point => "point",
         EditMode.Overwrite => "overwrite",
         _ => "caret",
@@ -128,7 +144,10 @@ public partial class ExGrid<TRow>
     /// text until its own answer comes. A synchronous answer is shown in the render already
     /// on its way.
     /// </summary>
-    private void RequestCompletion()
+    /// <param name="listed">Whether the answer's candidates are shown. Not for the text Tab
+    /// wrote: Tab closes the list, and the answer for that text — the name just accepted, as a
+    /// rule — shows its hint alone (ADR-0058, the tenth Windows run).</param>
+    private void RequestCompletion(bool listed = true)
     {
         _completion = null;
         var asked = ++_completionAsked;
@@ -153,13 +172,13 @@ public partial class ExGrid<TRow>
             return;
         }
         if (answer.IsCompletedSuccessfully)
-            ShowCompletion(asked, text, caret, answer.Result);
+            ShowCompletion(asked, text, caret, answer.Result, listed);
         else
-            _ = AwaitCompletionAsync(asked, text, caret, answer);
+            _ = AwaitCompletionAsync(asked, text, caret, answer, listed);
         MarkGateIfMoved();
     }
 
-    private async Task AwaitCompletionAsync(int asked, string text, int caret, ValueTask<EditorCompletion?> answer)
+    private async Task AwaitCompletionAsync(int asked, string text, int caret, ValueTask<EditorCompletion?> answer, bool listed)
     {
         EditorCompletion? result;
         try
@@ -173,7 +192,7 @@ public partial class ExGrid<TRow>
         }
         await InvokeAsync(() =>
         {
-            if (!ShowCompletion(asked, text, caret, result))
+            if (!ShowCompletion(asked, text, caret, result, listed))
                 return;
             MarkGateIfMoved();
             // Not a UI event: an armed suppression would swallow this render (the OnKeyAsync
@@ -184,10 +203,13 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>Shows an answer, unless it is stale: asked before a later question, for text
-    /// that is no longer the editor's, or after the edit closed (ADR-0051, DC-18).</summary>
+    /// that is no longer the editor's, or after the edit closed (ADR-0051, DC-18). Its hint
+    /// alone where it was asked for without a list.</summary>
     /// <returns>Whether anything was shown.</returns>
-    private bool ShowCompletion(int asked, string text, int caret, EditorCompletion? answer)
+    private bool ShowCompletion(int asked, string text, int caret, EditorCompletion? answer, bool listed)
     {
+        if (!listed && answer is { Candidates.Count: > 0 })
+            answer = answer with { Candidates = [] };
         if (_disposed || asked != _completionAsked || _editMode == EditMode.None
             || !string.Equals(text, _editText, StringComparison.Ordinal)
             || answer is null || answer.IsEmpty)
@@ -355,9 +377,11 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>
-    /// A key the gate forwarded while a list is open (ADR-0051): ↑/↓ choose, Tab accepts,
-    /// Escape closes the list and leaves the edit open. The gate leaves ←, →, Home and End to
-    /// the editor while a list is open; one that arrives all the same was claimed by a gate
+    /// A key the gate forwarded while a list is open (ADR-0051): ↑/↓ choose, Tab accepts and
+    /// closes the list, Escape closes the list and leaves the edit open. A list takes no other
+    /// key (ADR-0058, the tenth Windows run). Open over Point, ← and → close it and are not the
+    /// list's: they point, as they would without it. Elsewhere the gate leaves ←, →, Home and End
+    /// to the editor while a list is open; one that arrives all the same was claimed by a gate
     /// not yet told the list opened, and its default was prevented, so it only closes the
     /// list — it neither moves the caret nor commits. Every other key keeps its meaning, and
     /// whatever it does to the edit takes the list with it.
@@ -386,6 +410,9 @@ public partial class ExGrid<TRow>
                 CloseCompletion();
                 StateHasChanged();
                 return true;
+            case "ArrowLeft" or "ArrowRight" when CompletionListOverPoint:
+                CloseCompletion();
+                return false;
             case "ArrowLeft" or "ArrowRight" or "Home" or "End":
                 CloseCompletion();
                 StateHasChanged();
@@ -396,8 +423,10 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// Accepts a candidate (ADR-0051): its span of the text is replaced by what it writes, and
-    /// the caret stands after it. The new text is reported like any other, so the hint for
-    /// what was just accepted can follow.
+    /// the caret stands after it. The list closes (ADR-0058, the tenth Windows run): the new
+    /// text is reported for its hint alone, so the hint for what was just accepted can follow,
+    /// and the list does not come back on the name just written — after a table's name, or a
+    /// column's without its <c>]</c>, it would, and Tab could never move on.
     /// </summary>
     private void AcceptCandidate(int index)
     {
@@ -407,7 +436,7 @@ public partial class ExGrid<TRow>
         _editText = text;
         _editCaret = caret;
         PlaceCaret();
-        RequestCompletion();
+        RequestCompletion(listed: false);
         TellConsumerPointState();
     }
 
