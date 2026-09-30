@@ -131,9 +131,6 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
     /// <summary>How many trades there are now, once ready.</summary>
     public long? TradeCount => _latest?.Trades;
 
-    /// <summary>What the store was started with.</summary>
-    public DemoApiOptions Options => options;
-
     /// <summary>The file this run serves, once ready.</summary>
     public string? WorkingPath => _workingPath;
 
@@ -171,12 +168,12 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             File.Copy(generated, working, overwrite: true);
             _workingPath = working;
 
-            var writer = TradeDatabase.Open(working, SqliteOpenMode.ReadWrite);
+            // Held from here on, so DisposeAsync closes it whatever fails below.
+            var writer = _writer = TradeDatabase.Open(working, SqliteOpenMode.ReadWrite);
             // Write-ahead logging: a read sees the data as it was when the read began, and a
             // live update never waits for a read to finish, nor a read for an update.
             TradeDatabase.Execute(writer, null, "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;");
             var (counter, trades) = ReadLatest(writer, null);
-            _writer = writer;
             _readConnectionString = TradeDatabase.ConnectionString(working, SqliteOpenMode.ReadOnly, pooling: true);
             _latest = new Latest(counter, trades, NextNumber(writer));
             _state = TradeStoreState.Ready;
