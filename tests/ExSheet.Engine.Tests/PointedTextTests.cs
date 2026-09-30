@@ -72,6 +72,23 @@ public class PointedTextTests
         Assert.Throws<ArgumentException>(() => FormulaEntry.LookupText("Positions", "Id", Value.FromError(ErrorValue.NA), "PV"));
     }
 
+    [Fact] // ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it
+    public void ADR0058_the_row_a_lookup_finds_is_matched_as_xlookup_matches()
+    {
+        Assert.True(FormulaEntry.LookupFinds(Value.FromText("R-4471"), Value.FromText("R-4471")));
+        // Text without regard to case, as XLOOKUP reads it.
+        Assert.True(FormulaEntry.LookupFinds(Value.FromText("r-4471"), Value.FromText("R-4471")));
+        Assert.False(FormulaEntry.LookupFinds(Value.FromText("R-4471"), Value.FromText("R-4472")));
+        // The number 1250 and the text 1250 are two keys.
+        Assert.False(FormulaEntry.LookupFinds(Value.FromNumber(1250), Value.FromText("1250")));
+        Assert.True(FormulaEntry.LookupFinds(Value.FromNumber(0.1), Value.FromNumber(0.1)));
+        Assert.True(FormulaEntry.LookupFinds(Value.FromBoolean(true), Value.FromBoolean(true)));
+        Assert.False(FormulaEntry.LookupFinds(Value.FromBoolean(true), Value.FromNumber(1)));
+        // A blank is not a key, and an Error Value matches nothing.
+        Assert.False(FormulaEntry.LookupFinds(Value.FromText(""), null));
+        Assert.False(FormulaEntry.LookupFinds(Value.FromError(ErrorValue.NA), Value.FromError(ErrorValue.NA)));
+    }
+
     [Fact] // ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind
     public void ADR0058_what_is_written_reads_the_pressed_cell()
     {

@@ -23,6 +23,13 @@ namespace ExSheet;
 /// (<c>ExSheet.OnPointingRefused</c>). Only the Sheet that holds the keyboard points; when the
 /// keyboard leaves it, no grid is pointed at, and the edit stands. A Sheet is never pointed at.</para>
 ///
+/// <para>The Scope also draws in its grids what ADR-0057 and ADR-0058 ask of them. While a Formula
+/// is edited in a Sheet of the Scope, the Linked Table columns it reads are outlined in the grids
+/// that show them, in the colours their References wear: the page wires no <c>OutlinedColumns</c>
+/// for a registered grid, and states the correspondence of columns once, when it registers it. And
+/// the cell or column a press wrote for is dashed in the Focus outline's colour — a cell found by
+/// its row's key, wherever a sort puts it — until Point over what it wrote ends.</para>
+///
 /// <para>The key column is the table's own: the Scope reads it, and the table's column names, from
 /// the declaration of the Sheet that points (<c>DeclareLinkedTableAsync</c>). A Scope belongs to one
 /// page, on one renderer: it is not shared between users.</para>
@@ -41,6 +48,24 @@ public sealed class PointingScope
     // it back. Any other press forgets it.
     private GridMember? _wrote;
 
+    // What each Sheet last told of the Linked Table columns its Formula reads, the latest last, so
+    // that its outlines are drawn over the others' (ADR-0057). A Sheet whose edit ended has none.
+    private readonly List<(IPointingSheet Sheet, LinkedColumnColours Columns)> _linkedColumns = [];
+
+    // The dashes over the cell or column a press wrote for, while what it wrote stands in that
+    // Sheet's edit; and those that stood before the last write, which a drag from its press brings
+    // back with the text it takes back.
+    private Dashed? _dashed;
+    private Dashed? _dashedBeforeWrite;
+
+    /// <summary>The dashes a press asked for: on which grid, for which Sheet's Point, and where.</summary>
+    private sealed record Dashed(GridMember Grid, IPointingSheet Sheet, PointDashes Where);
+
+    /// <summary>Where a press's dashes stand in its grid: over the named grid column's cell in the row
+    /// <paramref name="IsRow"/> answers true for, read as the table's row, or down the column's body
+    /// when it is null.</summary>
+    private sealed record PointDashes(string Column, Func<IReadOnlyList<Value?>, bool>? IsRow);
+
     /// <summary>
     /// Registers a grid that shows a Linked Table, and gives back the declaration to pass it as its
     /// <c>PointedAt</c> parameter. The Scope declares the grid pointed at while a Sheet of the Scope
@@ -52,12 +77,17 @@ public sealed class PointingScope
     /// <param name="tableRow">A grid row as the table's row: one Value per declared column, in the
     /// order the columns are declared — what the Consumer pushes for the row
     /// (<c>PushLinkedTableAsync</c>). A pressed cell's key is read from it, so the key written is
-    /// the one the table holds. Null is a blank. Asked only for a pressed cell's row.</param>
+    /// the one the table holds. Null is a blank. Asked for a pressed cell's row and, while that
+    /// cell is dashed, for the rows the grid paints, to find the one with its key: it must be cheap
+    /// and must not throw.</param>
     /// <param name="tableColumns">Which of the table's columns each grid column is, by the grid
     /// column's name (<c>GridColumn.Name</c>), for the grid columns named otherwise than their table
-    /// column. A grid column with the same name as its table column needs no entry, and a grid column
-    /// that is not one of the table's is simply not the table's: a press on it is refused. Null — the
-    /// default — for a grid whose columns are all named as the table's.</param>
+    /// column. A grid column with the same name as its table column needs no entry — named exactly as
+    /// the Sheets declare the column, so that the column is outlined while a Formula reads it — and a
+    /// grid column that is not one of the table's is simply not the table's: a press on it is
+    /// refused. Null — the default — for a grid whose columns are all named as the table's. The
+    /// Scope outlines each table column a Formula reads over the grid columns this makes it, so the
+    /// page states the correspondence here and nowhere else.</param>
     /// <returns>The declaration to pass to the grid's <c>PointedAt</c> parameter.</returns>
     /// <exception cref="ArgumentException">The table's name is empty, or an entry of
     /// <paramref name="tableColumns"/> names no column.</exception>
@@ -81,6 +111,7 @@ public sealed class PointingScope
         var grid = new GridMember<TRow>(this, table, tableRow, columns);
         _grids.Add(grid);
         grid.DeclarePointedAt(_pointing is not null);
+        grid.Outline(_linkedColumns);
         return grid.Declaration;
     }
 
@@ -99,6 +130,8 @@ public sealed class PointingScope
         _sheets.Remove(sheet);
         if (ReferenceEquals(_pointedLast, sheet))
             _pointedLast = null;
+        PointStateChanged(sheet, PointState.None);
+        OutlineLinkedColumns(sheet, LinkedColumnColours.None);
     }
 
     /// <summary>
@@ -133,6 +166,52 @@ public sealed class PointingScope
     }
 
     /// <summary>
+    /// A Sheet of the Scope tells the Linked Table columns the Formula it edits reads, and their
+    /// colours, or none once the edit ends (ADR-0057). Each registered grid outlines those of its
+    /// table over the grid columns that are them, whether or not the Sheet points: the outlines stay
+    /// while the edit is open, as every Reference Outline does.
+    /// </summary>
+    internal void OutlineLinkedColumns(IPointingSheet sheet, LinkedColumnColours columns)
+    {
+        var told = _linkedColumns.FindIndex(entry => ReferenceEquals(entry.Sheet, sheet));
+        if (told >= 0)
+            _linkedColumns.RemoveAt(told);
+        if (columns.Count > 0 && _sheets.Contains(sheet))
+            _linkedColumns.Add((sheet, columns));
+        else if (told < 0)
+            return;
+        foreach (var grid in _grids)
+            grid.Outline(_linkedColumns);
+    }
+
+    /// <summary>
+    /// A Sheet of the Scope tells where its edit stands with respect to Point. While what a press on
+    /// a registered grid wrote stands, that is <see cref="PointState.WrittenFromOutside"/>. Anything
+    /// else means Point over it has ended — an operator typed, the caret moved, a press on the
+    /// Sheet, a commit or a cancel — and the dashes that press asked for go (ADR-0058, "What is
+    /// drawn"). The column outlines stay until the edit ends.
+    /// </summary>
+    internal void PointStateChanged(IPointingSheet sheet, PointState state)
+    {
+        if (state == PointState.WrittenFromOutside)
+            return;
+        if (ReferenceEquals(_dashedBeforeWrite?.Sheet, sheet))
+            _dashedBeforeWrite = null;
+        if (ReferenceEquals(_dashed?.Sheet, sheet))
+            Dash(null);
+    }
+
+    /// <summary>Dashes where a press asked, or nowhere; the grid that had them before loses
+    /// them.</summary>
+    private void Dash(Dashed? dashed)
+    {
+        if (_dashed is { } shown && !ReferenceEquals(shown.Grid, dashed?.Grid))
+            shown.Grid.ShowDashes(null);
+        _dashed = dashed;
+        dashed?.Grid.ShowDashes(dashed.Where);
+    }
+
+    /// <summary>
     /// A press a registered grid handed over (ADR-0058): written into the pointing Sheet's edit where
     /// Point writes, or refused with the reason, and a drag takes back what its press wrote.
     /// </summary>
@@ -144,6 +223,9 @@ public sealed class PointingScope
         var tookBack = dragged && ReferenceEquals(_wrote, grid) && _pointing is { } writer
             && await writer.TakeBackPointedTextAsync();
         _wrote = null;
+        if (tookBack)
+            Dash(_dashedBeforeWrite);
+        _dashedBeforeWrite = null;
         if (_pointing is not { } sheet)
         {
             // Handed over by a grid still painted pointed at, after the Sheet stopped pointing.
@@ -174,9 +256,11 @@ public sealed class PointingScope
             return;
         }
         string text;
+        PointDashes dashes;
         if (kind == GridPointedPressKind.ColumnHeader)
         {
             text = FormulaEntry.StructuredReferenceText(table.Name, tableColumn);
+            dashes = new PointDashes(column, IsRow: null);
         }
         else
         {
@@ -197,7 +281,8 @@ public sealed class PointingScope
                     $"The row a grid registered for '{table.Name}' gave has {values?.Count ?? 0} Values, and the table declares {table.Columns.Count} columns: " +
                     "RegisterGrid's tableRow gives one Value per declared column, in the declared order, as a push does (ADR-0058).");
             }
-            var key = values[IndexOf(table, keyColumn)];
+            var keyIndex = IndexOf(table, keyColumn);
+            var key = values[keyIndex];
             if (key is not { } value)
             {
                 await RefuseAsync(sheet, PointingRefusalReason.BlankKey, table.Name, tableColumn, false);
@@ -209,7 +294,10 @@ public sealed class PointingScope
                 return;
             }
             text = FormulaEntry.LookupText(table.Name, keyColumn, value, tableColumn);
+            var width = table.Columns.Count;
+            dashes = new PointDashes(column, candidate => candidate.Count == width && FormulaEntry.LookupFinds(value, candidate[keyIndex]));
         }
+        var dashedBefore = _dashed;
         if (!await sheet.WritePointedTextAsync(text))
         {
             // The Sheet's edit left Point while the press was on its way.
@@ -217,6 +305,8 @@ public sealed class PointingScope
             return;
         }
         _wrote = grid;
+        _dashedBeforeWrite = ReferenceEquals(dashedBefore?.Sheet, sheet) ? dashedBefore : null;
+        Dash(new Dashed(grid, sheet, dashes));
     }
 
     private static Task RefuseAsync(IPointingSheet sheet, PointingRefusalReason reason, string table, string? column, bool tookBack)
@@ -270,8 +360,51 @@ public sealed class PointingScope
         public string TableColumnOf(string gridColumn)
             => tableColumns.TryGetValue(gridColumn, out var tableColumn) ? tableColumn : gridColumn;
 
+        /// <summary>The grid columns that are a table column, as a press finds them: each given it as
+        /// its entry, and the one of its own name unless that one is given another.</summary>
+        private IEnumerable<string> GridColumnsOf(string tableColumn)
+        {
+            foreach (var (gridColumn, entry) in tableColumns)
+            {
+                if (string.Equals(entry, tableColumn, StringComparison.OrdinalIgnoreCase))
+                    yield return gridColumn;
+            }
+            if (!tableColumns.ContainsKey(tableColumn))
+                yield return tableColumn;
+        }
+
+        /// <summary>
+        /// Outlines the columns of this grid's table that the Sheets told, each in its colour, over
+        /// the grid columns that are it (ADR-0057, ADR-0058): a new list only when it differs from the
+        /// one the grid holds, since the list instance is the declaration's change signal.
+        /// </summary>
+        public void Outline(IReadOnlyList<(IPointingSheet Sheet, LinkedColumnColours Columns)> told)
+        {
+            List<OutlinedColumn>? outlined = null;
+            foreach (var (_, columns) in told)
+            {
+                foreach (var column in columns)
+                {
+                    if (!string.Equals(column.Column.Table, Table, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    foreach (var gridColumn in GridColumnsOf(column.Column.Column))
+                        (outlined ??= []).Add(new OutlinedColumn(gridColumn, column.Colour));
+                }
+            }
+            var current = OutlinedColumns;
+            if (outlined is null ? current is null : current is not null && current.SequenceEqual(outlined))
+                return;
+            OutlinedColumns = outlined;
+        }
+
         /// <summary>Declares the grid pointed at, or not.</summary>
         public abstract void DeclarePointedAt(bool pointedAt);
+
+        /// <summary>The columns the grid's declaration outlines.</summary>
+        protected abstract IReadOnlyList<OutlinedColumn>? OutlinedColumns { get; set; }
+
+        /// <summary>Draws the dashes a press asked for, or takes them away.</summary>
+        public abstract void ShowDashes(PointDashes? dashes);
     }
 
     /// <summary>A registered grid of rows of <typeparamref name="TRow"/>: its declaration hands each
@@ -279,9 +412,12 @@ public sealed class PointingScope
     private sealed class GridMember<TRow> : GridMember
         where TRow : class
     {
+        private readonly Func<TRow, IReadOnlyList<Value?>> _tableRow;
+
         public GridMember(PointingScope scope, string table, Func<TRow, IReadOnlyList<Value?>> tableRow, IReadOnlyDictionary<string, string> tableColumns)
             : base(table, tableColumns)
         {
+            _tableRow = tableRow;
             Declaration = new GridPointedAt<TRow>(press => scope.OnPressAsync(
                 this,
                 press.Kind,
@@ -294,5 +430,21 @@ public sealed class PointingScope
         public GridPointedAt<TRow> Declaration { get; }
 
         public override void DeclarePointedAt(bool pointedAt) => Declaration.IsPointedAt = pointedAt;
+
+        protected override IReadOnlyList<OutlinedColumn>? OutlinedColumns
+        {
+            get => Declaration.OutlinedColumns;
+            set => Declaration.OutlinedColumns = value;
+        }
+
+        // A cell is found by its row's key in the rows the grid paints, so the dashes follow the row
+        // through a sort, and through a Window of new instances, and are drawn nowhere while it is
+        // not painted (DC-53).
+        public override void ShowDashes(PointDashes? dashes) => Declaration.Dashes = dashes switch
+        {
+            null => null,
+            { IsRow: { } isRow } => GridPointDashes<TRow>.OverCell(row => isRow(_tableRow(row)), dashes.Column),
+            _ => GridPointDashes<TRow>.OverColumn(dashes.Column),
+        };
     }
 }

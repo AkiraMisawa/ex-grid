@@ -29,6 +29,11 @@ public partial class ExSheet : IPointingSheet, IDisposable
     /// <para>After such a press the Name Box is empty, F4 changes nothing, and the arrow keys move and
     /// write nothing. Give several Sheets the same Scope and each points in turn, while it holds the
     /// keyboard; a Sheet is never pointed at.</para>
+    ///
+    /// <para>The Scope also draws in its grids (ADR-0058, "What is drawn"): while a Formula is edited
+    /// here, the Linked Table columns it reads are outlined in the grids registered for their table,
+    /// in the colours <see cref="OnLinkedColumnColoursChanged"/> tells, until the edit ends; and the
+    /// cell or column a press wrote for is dashed until Point over what it wrote ends.</para>
     /// </summary>
     [Parameter] public PointingScope? PointingScope { get; set; }
 
@@ -69,6 +74,9 @@ public partial class ExSheet : IPointingSheet, IDisposable
         {
             _pointState = state;
             TellScopeWhetherPointing();
+            // Whether or not this Sheet holds the keyboard: the dashes go once Point over what a
+            // press wrote has ended, and only then (ADR-0058, "What is drawn").
+            _joinedScope?.PointStateChanged(this, state);
         }));
     }
 
@@ -90,6 +98,8 @@ public partial class ExSheet : IPointingSheet, IDisposable
             return;
         }
         _joinedScope.Join(this);
+        // The columns an edit already open reads are outlined in the new Scope's grids.
+        _joinedScope.OutlineLinkedColumns(this, _linkedColumnsTold);
         // A delegate whose target is not the component: Blazor re-renders a handler's target after
         // every event, and a focus change here paints nothing.
         _keyboardListener ??= new KeyboardListener(this);

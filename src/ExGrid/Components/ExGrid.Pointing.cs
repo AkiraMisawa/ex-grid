@@ -441,9 +441,10 @@ public partial class ExGrid<TRow>
     /// in Point, written from outside (<see cref="PointState.WrittenFromOutside"/>): no outline stands
     /// over this grid's cells, the Name Box is empty, F4 changes nothing, and the arrows move nothing.
     /// A further press, on this grid or outside it, replaces the text, and anything typed or a caret
-    /// moved ends Point over it, as it ends Point over a Reference. The text wears the pointed look
-    /// where one of the Consumer's References stands exactly over it (ADR-0057). The grid reads
-    /// nothing of the text: what it means is the Consumer's.
+    /// moved ends Point over it, as it ends Point over a Reference. The whole text wears the pointed
+    /// look, unless it follows the text's first character directly, with the Consumer's References
+    /// inside it in their colours (ADR-0057; ADR-0058, "What is drawn"). The grid reads nothing of
+    /// the text: what it means is the Consumer's.
     /// </summary>
     /// <param name="text">What to write; never empty.</param>
     /// <returns>Whether it was written: false, and nothing changed, when no edit is open, when
