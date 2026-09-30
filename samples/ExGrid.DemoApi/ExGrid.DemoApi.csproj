@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!-- The demo API server (ADR-0068): a Consumer's server that the pages on both hosts call
+         over HTTP, with the trades in a SQLite file it generates and owns and a SignalR hub
+         that says when they change. Nothing references it but its tests (ADR-0019), and it is
+         not shipped, so it targets what the SDK provides (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SignalR's server is the framework's; SQLite is the one package (ADR-0068). -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExGrid.DemoApi.Tests" />
+  </ItemGroup>
+
+</Project>

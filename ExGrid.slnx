@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="samples/ExGrid.DemoApi/ExGrid.DemoApi.csproj" />
   <Project Path="samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj" />
   <Project Path="samples/ExGrid.DemoHost.Server/ExGrid.DemoHost.Server.csproj" />
   <Project Path="samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj" />
