@@ -10,18 +10,28 @@ The agent building ticket 29 found it (the DC-48 layer-3 test timed out on macOS
 
 **Blocked by:** None.
 
-- [ ] On Apple platforms, with an edit open in Caret in the Cell Editor or the Formula Bar, the
+- [x] On Apple platforms, with an edit open in Caret in the Cell Editor or the Formula Bar, the
       capture-phase listener claims Home, End, Shift+Home and Shift+End. It places or extends the
       caret to the start or end of the text, as the browser does on Windows and Linux (ADR-0010,
       ADR-0021)
-- [ ] Any other key macOS binds to a scroll inside a text field (check Playwright's macOS
+- [x] Any other key macOS binds to a scroll inside a text field (check Playwright's macOS
       key-binding table: PageUp, PageDown and the rest) is handled so that nothing scrolls the grid
       away from an open edit. Its meaning stays what it is on Windows and Linux
-- [ ] Overwrite is unchanged: Home and End there are the core's, commit and move (ADR-0010, ADR-0012)
-- [ ] Windows and Linux are unchanged: the listener claims these keys only on Apple platforms
-- [ ] Layer 3 on macOS: F2 on a cell with long text, End then Home, and the same in the Formula
+- [x] Overwrite is unchanged: Home and End there are the core's, commit and move (ADR-0010, ADR-0012)
+- [x] Windows and Linux are unchanged: the listener claims these keys only on Apple platforms
+- [x] Layer 3 on macOS: F2 on a cell with long text, End then Home, and the same in the Formula
       Bar. The caret moves to each end, the scroller does not move, and the edit stays open with DOM
       focus in its field. The test also passes on Linux, where the browser does it
-- [ ] The script-shape tests pin the claimed keys; no layout is read (DC-24)
+- [x] The script-shape tests pin the claimed keys; no layout is read (DC-24)
 
 ## Comments
+
+*(2026-09-30, built with ticket 29's fixes.)* Pressed one by one in Caret on `/sheet` at F200 on
+macOS, only Home, End, PageUp and PageDown moved the grid; in the Cell Editor, Home, End and PageUp
+also lost the edit. Control+↑ and Control+↓, which Playwright's macOS table binds to a page scroll,
+did not scroll. The listener places the caret for Home and End (and Shift with them) in Caret. It
+drops PageUp and PageDown whenever they would reach an editor field on a Mac, in Overwrite and Point
+too, since there they would scroll the edit away as well. `setSelectionRange` does not scroll the
+field, so the listener sets the field's `scrollLeft` with it (ADR-0021's scroll-offset entry).
+Whether Windows and Linux need the same for PageUp and PageDown is put to the user.
+
