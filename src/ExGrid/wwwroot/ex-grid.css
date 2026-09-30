@@ -228,6 +228,43 @@
    is what the reader is here for. box-shadow paints inside the cell's own box, so it
    costs no extra element and cannot shift the row's flow. */
 .ex-cell.ex-state-modified { box-shadow: var(--ex-state-modified-mark, inset -6px 6px 0 -3px rgba(106, 68, 166, 0.9)); }
+/* The Change Highlight (ADR-0067): the Consumer said the cell's shown value changed less than
+   ChangeHighlightDuration ago. One colour, whichever way the value moved, and the system
+   colour Mark by default, so the bare grid takes it from the host (ADR-0029). The class comes
+   and goes in one step and nothing here transitions or animates: rows are recycled, and a fade
+   would run from another row's colour to this one's (ADR-0027 P8).
+
+   A tint, so a background IMAGE over the Pinned Column's opaque ground, as every tint is
+   (ADR-0006): a translucent mark never makes a pinned cell see-through. Declared after the
+   stripes, Row Kind and Cell State, so the mark wins the cell over a stripe and a role. A
+   stripe's or a group's own layer on the cell stays beneath the mark, so a translucent mark
+   reads the same on a pinned cell as on the scrollable cells beside it, over the row's ground.
+   A total row's rule stays above the mark, as a line and not a ground. A Missing cell's tint
+   stays above it too: a state must never be the thing that disappears (ADR-0006). The overlays
+   paint above every cell, so no mark hides a selection, the Focus or a band. */
+.ex-cell.ex-changed {
+    background-image: linear-gradient(var(--ex-change-highlight-background, Mark), var(--ex-change-highlight-background, Mark));
+}
+.ex-row-stripe .ex-pinned.ex-changed {
+    background-image:
+        linear-gradient(var(--ex-change-highlight-background, Mark), var(--ex-change-highlight-background, Mark)),
+        linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
+}
+.ex-row-group .ex-cell.ex-changed {
+    background-image:
+        linear-gradient(var(--ex-change-highlight-background, Mark), var(--ex-change-highlight-background, Mark)),
+        linear-gradient(var(--ex-row-group-background, rgba(128, 128, 128, 0.08)), var(--ex-row-group-background, rgba(128, 128, 128, 0.08)));
+}
+.ex-row-total .ex-cell.ex-changed {
+    background-image:
+        linear-gradient(var(--ex-row-total-rule-color, rgba(128, 128, 128, 0.45)) 0 1px, transparent 1px),
+        linear-gradient(var(--ex-change-highlight-background, Mark), var(--ex-change-highlight-background, Mark));
+}
+.ex-cell.ex-state-missing.ex-changed {
+    background-image:
+        linear-gradient(var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)), var(--ex-state-missing-background, rgba(128, 128, 128, 0.10))),
+        linear-gradient(var(--ex-change-highlight-background, Mark), var(--ex-change-highlight-background, Mark));
+}
 /* What stands in for the columns left out to the left of the first painted one. It must
    not be allowed to shrink: a flex-shrunk spacer would slide every painted column left
    of where the arithmetic put it, and the header and the body would disagree. */
@@ -770,6 +807,12 @@
    system colours, because the browser discards the background images and tints above.
    No state may rely on a discarded layer alone, and no two may collapse together. */
 @media (forced-colors: active) {
+    /* The Change Highlight (ADR-0067): its ground is an image, which forced colours discard, so
+       it is restated as an outline. That is painted and not laid out, as the states' outlines
+       are, and dashed, which no state's is. Declared before the states: on a cell that carries a
+       state as well, the state's own restatement is the one kept, because a state must never be
+       the thing that disappears (ADR-0006). */
+    .ex-cell.ex-changed { outline: 2px dashed Highlight; outline-offset: -2px; }
     .ex-cell.ex-state-stale { color: GrayText; }
     .ex-cell.ex-state-missing { outline: 1px dotted GrayText; outline-offset: -2px; }
     .ex-cell.ex-state-error { color: LinkText; }

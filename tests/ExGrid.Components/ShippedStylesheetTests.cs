@@ -581,4 +581,90 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"\} else if \(verdict === 'caret'\) \{\s*const input = editorInput\(\);\s*if \(input\) \{\s*placeCaretAtEnd\(input, rebased\);"), script);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
+
+    /// <summary>The core stylesheet without its comments, split into the rules outside the
+    /// forced-colors block and the rules inside it, each in source order.</summary>
+    private static (IReadOnlyList<(string[] Selectors, string Body)> Outside, IReadOnlyList<(string[] Selectors, string Body)> ForcedColors) ForcedColorsSplit()
+    {
+        var (css, _) = CoreStylesheet();
+        var media = Regex.Match(css, @"@media \(forced-colors: active\) \{(?<body>(?:[^{}]|\{[^{}]*\})*)\}");
+        Assert.True(media.Success, "no @media (forced-colors: active) block in the core stylesheet");
+        return (RulesOf(css.Remove(media.Index, media.Length)), RulesOf(media.Groups["body"].Value));
+
+        static IReadOnlyList<(string[] Selectors, string Body)> RulesOf(string css)
+            => Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
+                .Select(rule => (
+                    rule.Groups["selectors"].Value.Split(',').Select(selector => selector.Trim()).ToArray(),
+                    rule.Groups["body"].Value))
+                .ToList();
+    }
+
+    [Fact] // ADR-0067 / ADR-0029: the Change Highlight's one token defaults to the system colour Mark, and the core only reads it
+    public void The_change_highlight_token_defaults_to_mark_and_is_only_read()
+    {
+        var (css, _) = CoreStylesheet();
+
+        var reads = Regex.Matches(css, @"var\(--ex-change-highlight-background(?<fallback>[^)]*)\)");
+        Assert.NotEmpty(reads);
+        Assert.All(reads, read => Assert.Equal(", Mark", read.Groups["fallback"].Value));
+        // A theme sets it; the core never does (ADR-0027).
+        Assert.DoesNotMatch(new Regex(@"--ex-change-highlight-background\s*:"), css);
+    }
+
+    [Fact] // ADR-0067 / ADR-0006 / UX-16: the mark is a tint over the cell's ground that wins over a stripe and a role, beneath a Missing state's tint and a total row's rule
+    public void The_change_highlight_is_a_tint_ordered_against_the_other_grounds()
+    {
+        var (rules, _) = ForcedColorsSplit();
+        int IndexOf(string selector) => rules.ToList().FindIndex(rule => rule.Selectors.Contains(selector));
+        const string mark = "linear-gradient(var(--ex-change-highlight-background, Mark), var(--ex-change-highlight-background, Mark))";
+
+        var marked = rules.Where(rule => rule.Selectors.Any(s => s.Contains("ex-changed", StringComparison.Ordinal))).ToList();
+        Assert.Equal(
+            [".ex-cell.ex-changed", ".ex-row-stripe .ex-pinned.ex-changed", ".ex-row-group .ex-cell.ex-changed",
+             ".ex-row-total .ex-cell.ex-changed", ".ex-cell.ex-state-missing.ex-changed"],
+            marked.Select(rule => Assert.Single(rule.Selectors)));
+        foreach (var (selectors, body) in marked)
+        {
+            // An image layer, never the shorthand or a colour: either would take the Pinned
+            // Column's opaque ground away, and a translucent mark would let the columns passing
+            // beneath show through (ADR-0006).
+            Assert.Matches(new Regex(@"(?<![\w-])background-image:"), body);
+            Assert.DoesNotMatch(new Regex(@"(?<![\w-])background(-color)?\s*:"), body);
+            var layers = Regex.Replace(Regex.Match(body, @"background-image:\s*(?<value>[^;]+);").Groups["value"].Value, @"\s+", " ");
+            // The mark is the top layer, except under a total row's rule and a Missing state's
+            // tint: a line stays a line, and a state is never the thing that disappears.
+            var beneath = selectors[0] is ".ex-row-total .ex-cell.ex-changed" or ".ex-cell.ex-state-missing.ex-changed";
+            Assert.Equal(beneath, !layers.StartsWith(mark, StringComparison.Ordinal));
+            Assert.Contains(mark, layers, StringComparison.Ordinal);
+        }
+        // At equal specificity the later rule wins: the mark is declared after the stripes, the
+        // Row Kinds and Cell State, whose grounds it outranks or keeps, and the combinations in
+        // the order stripe, role, state, as those grounds rank among themselves.
+        foreach (var ground in new[] { ".ex-row-stripe .ex-pinned", ".ex-row-group .ex-cell", ".ex-row-total .ex-cell", ".ex-cell.ex-state-missing" })
+            Assert.True(IndexOf(".ex-cell.ex-changed") > IndexOf(ground), $"{ground} is declared after the mark");
+    }
+
+    [Fact] // ADR-0067 / ADR-0027 / DC-55 / UX-7: the forced-colors block restates the mark as a painted outline, before the states so a state keeps its own
+    public void The_forced_colors_block_restates_the_change_highlight()
+    {
+        var (_, forced) = ForcedColorsSplit();
+        int IndexOf(string selector) => forced.ToList().FindIndex(rule => rule.Selectors.Contains(selector));
+
+        var restated = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-cell.ex-changed"));
+        // Not on a background alone, which forced colours may discard; painted, never laid out.
+        Assert.Matches(new Regex(@"(?<![\w-])outline:\s*\d+px dashed Highlight;"), restated.Body);
+        Assert.Matches(new Regex(@"outline-offset:\s*-\d+px;"), restated.Body);
+        Assert.DoesNotMatch(new Regex(@"background|border|margin|padding|width|height"), restated.Body);
+        // A state that is restated by an outline too keeps it on a cell carrying both.
+        Assert.True(IndexOf(".ex-cell.ex-changed") < IndexOf(".ex-cell.ex-state-missing"));
+        Assert.True(IndexOf(".ex-cell.ex-changed") < IndexOf(".ex-cell.ex-state-modified"));
+    }
+
+    [Fact] // ADR-0067 / ADR-0027 P8 / UX-6 / DC-55: a mark comes and goes in one step — nothing in the core's stylesheet transitions or animates
+    public void Nothing_in_the_core_stylesheet_transitions_or_animates()
+    {
+        var (css, _) = CoreStylesheet();
+
+        Assert.DoesNotMatch(new Regex(@"(?<![\w-])(transition|animation)(-[\w-]+)?\s*:|@keyframes"), css);
+    }
 }

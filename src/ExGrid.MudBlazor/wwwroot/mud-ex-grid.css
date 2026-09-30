@@ -57,6 +57,12 @@
     --ex-state-modified-mark: var(--mud-palette-info);
     --ex-state-stale-color: var(--mud-palette-text-secondary);
     --ex-state-missing-background: var(--mud-palette-background-gray);
+    /* The Change Highlight (ADR-0067): one colour, whichever way the value moved. The palette's
+       warning, a highlighter's amber, which is none of the colours above: not the selection's
+       primary, the Modified mark's info, or the tones' success and error. Translucent, so the
+       value reads through it. At 0.25, over MudBlazor's default surfaces, the default text keeps
+       8.3:1 in the light scheme and 4.5:1 in the dark one; 0.3 fell to 4.2:1 there. */
+    --ex-change-highlight-background: rgba(var(--mud-palette-warning-rgb), 0.25);
     --ex-scrollbar-color: var(--mud-palette-gray-light);
 
     /* The surface itself. Inline-flex so the paper is as wide as its grids, and the
