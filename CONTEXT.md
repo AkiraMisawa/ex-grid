@@ -164,6 +164,17 @@ by an ADR of its own.
 _Avoid_: DataTable, DataSet (.NET's own types), data frame, table (a Linked Table is ExSheet's),
 pivot cache (Excel's word, for a pivot's alone)
 
+**Change Batch**:
+The records added, the records changed and the Record Keys removed since a Snapshot, applied as
+one to make the next Snapshot. A component shows the Snapshot before it or the one after it, never
+a batch half applied.
+_Avoid_: delta (a risk measure here — rate delta, credit delta), diff, patch, transaction
+
+**Record Key**:
+The declared field, or fields, whose value tells one record of a Snapshot from every other. A
+Change Batch changes and removes records by it, and two records under one key are refused.
+_Avoid_: Row Identity (the grid's test for sameness), id, primary key (the database's)
+
 **Query**:
 The whole of what the grid asks for — which range, under which Filter, under which Sort. Being
 serialisable is a requirement
