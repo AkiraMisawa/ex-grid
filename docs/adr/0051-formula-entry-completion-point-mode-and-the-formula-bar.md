@@ -263,3 +263,10 @@ triggers, and each is settled in ADR-0058. After `Table[` the list offers the ta
 where Excel also lists `@ - This Row`, `#All` and the rest. Backspace back into a name lists again.
 F3 is left to the browser: Excel shows nothing without a Name, its Paste Name never lists a table, and
 ExSheet has no Names.
+
+*(Corrected by the tenth Windows run, 2026-09-30.)* The second round's rule, "while the completion list
+is open, only ↑, ↓, Tab and Escape are claimed; ← and → move the caret", was seen in a list of names,
+where the caret never stands at a Reference's place. At an open value list it does, and Excel's →
+points there, closing the list. So a list takes only ↑, ↓, Tab and Escape, and ← and → do what they do
+without it: point where Point can, and move the caret elsewhere. Tab closes any list, and the grid does
+not open it again on the text Tab wrote.

@@ -201,8 +201,9 @@ until a name's first letter is typed, and a list open after `=` would take ↓, 
 typed, and by then the caret no longer stands where a Reference can go, so it never takes ↓ from
 Point. A user who does not know a table's name meets it by pointing. The one list that opens before
 anything is typed is an argument's value list, below. While it is open, ↑ and ↓ choose in it, as the
-user asked of every open list and as Excel's does. Escape closes it, and ↓ then points. A press on
-the grid still points while it is open. *(Corrected 2026-09-30 while the tickets were handed out: this
+user asked of every open list and as Excel's does. Escape closes it, and ↓ then points. → points
+while it is open, and closes it (the tenth Windows run). A press on the grid still points while it is
+open. *(Corrected 2026-09-30 while the tickets were handed out: this
 paragraph first said that the list and Point never compete, which the value list contradicts.)*
 
 | After | Excel | ExSheet |
@@ -238,6 +239,22 @@ that Excel contradicts is corrected here after the run.
 - **As built, and asked with them:** while any list is open, ← and → move the caret (ADR-0051), so →
   does not point from an open value list. Accepting a table's or a column's name leaves the list open
   on that same name, as accepting a table's name already did.
+
+**What the tenth Windows run settled** *(2026-09-30, `verification/2026-09-30-windows-excel-10/`)*.
+Excel contradicted the first reading and the two lines built with it, and agreed with the second. The
+rules are now Excel's:
+
+- **A value typed whole lists that value alone, selected.** `0` at `match_mode` shows
+  `0 - Exact match` and nothing else.
+- **Text that is not a whole value lists every value, with the first selected.** `-` shows all five
+  of `match_mode`'s values, `0 - Exact match` selected. Excel does not narrow a value list by prefix.
+- **Tab closes the list**, whether it accepted a value (`-1`), a column (`Positions[PV`, without the
+  `]`, as read) or a table's name (`Positions`). The grid does not open the list again on the text it
+  has just written, so the reason for the first reading is gone.
+- **→ with a value list open points**, where the caret stands at a Reference's place: `,,` then →
+  writes `E10`, shown selected, and the list closes. A list takes only ↑, ↓, Tab and Escape; ← and →
+  do what they do without it: they point where Point can, and move the caret elsewhere, as they do in
+  a list of names (ADR-0051).
 
 ## Not in the first version, and what watches for it
 
