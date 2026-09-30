@@ -80,6 +80,10 @@ and `/sheets` in Chrome and Edge, both hosts, at 150%.
   the Name Box (empty while pointing into the grid).
 - Each refusal of ADR-0058's table (Shift+click, a drag, a column the table does not have): nothing
   written, and the reason shown.
+- **Ask Excel too**, beside it (ADR-0058, "Readings, until Excel is observed"), with the Table
+  `Positions` of Part A: `=XLOOKUP(1,A2:A4,B2:B4,,0` with the caret after the `0` — is the list shown?
+  `=SUM(Positions[`, ↓ to `PV`, Tab — the text written (with or without `]`), and whether a list is
+  still open. `=Posit`, Tab — whether a list is still open. Then do the same in ExSheet on `/sheet`.
 - The pointer over the positions grid while pointing (`cell`), and not otherwise.
 - The positions grid narrowed until it shows its own scrollbars: the outlines and the dashes on its
   last column and its last painted row are whole, not cut by the Scrollbar Gutter.

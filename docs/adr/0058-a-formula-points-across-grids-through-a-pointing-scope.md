@@ -219,6 +219,20 @@ paragraph first said that the list and Point never compete, which the value list
   candidate the grammar refuses would break the Formula the moment it was chosen. This is a
   deliberate difference from Excel.
 
+**Readings, until Excel is observed** *(taken while building ticket 39, 2026-09-30, and accepted by
+the user as readings)*. Part B of `docs/specs/exsheet/verify-on-windows-9.md` asks Excel. A reading
+that Excel contradicts is corrected here after the run.
+
+- **A value typed whole lists nothing.** With `0` typed at `match_mode` and the caret after it, no
+  list is shown; a prefix of a value, such as `-`, still lists the values it begins. Were the whole
+  value listed, the grid would ask again after Tab accepted it, the list would open again, and Tab
+  could never move on.
+- **Tab on a column name writes the name without the `]`**: `Positions[` and Tab on `PV` gives
+  `Positions[PV`, as Tab on a table's name writes the name alone.
+- **As built, and asked with them:** while any list is open, ← and → move the caret (ADR-0051), so →
+  does not point from an open value list. Accepting a table's or a column's name leaves the list open
+  on that same name, as accepting a table's name already did.
+
 ## Not in the first version, and what watches for it
 
 - **A key of several columns.** The Consumer adds a column that joins them (`ACME|5Y`), and declares
