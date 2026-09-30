@@ -191,13 +191,20 @@ public class MudGridChromeTests : MudTestContext
         Assert.DoesNotContain("mud-ex-editor-error", clean.Find("input.mud-ex-editor").ClassName);
     }
 
-    [Fact] // ADR-0051/0010/0030, DC-34: a request of zero asks nothing — an edit the Formula Bar opened keeps the keyboard in the bar
+    [Fact] // ADR-0051/0010/0030, DC-34, ED-28: a request of zero asks nothing — an edit the Formula Bar opened keeps the keyboard in the bar; each request is answered through the core's focus function
     public void The_editor_takes_the_keyboard_only_for_a_request_it_has_not_answered()
     {
-        const string focus = "Blazor._internal.domWrapper.focus";
-        int FocusCalls() => JSInterop.Invocations.Count(i => i.Identifier == focus);
+        // Asked of the core, never taken with the control's own FocusAsync: the core grants it only
+        // while the keyboard is still this grid's (ADR-0010, ADR-0021's note of 2026-09-30).
+        var asked = 0;
+        int FocusCalls() => asked;
         CellEditorContext Editor(int request) => new(
-            "Book", ColumnType.Text, "x", CellEditMode.Caret, null, _ => { }, () => { }, () => { }, FocusRequest: request);
+            "Book", ColumnType.Text, "x", CellEditMode.Caret, null, _ => { }, () => { }, () => { }, FocusRequest: request,
+            TakeFocus: () =>
+            {
+                asked++;
+                return Task.CompletedTask;
+            });
 
         // Mounted by an edit the Formula Bar opened: asked nothing, it takes nothing.
         var editor = Render<MudCellEditor>(ps => ps.Add(c => c.Context, Editor(0)));
@@ -214,6 +221,44 @@ public class MudGridChromeTests : MudTestContext
         // Mounted by an edit that asked: at once.
         Render<MudCellEditor>(ps => ps.Add(c => c.Context, Editor(6)));
         Assert.Equal(3, FocusCalls());
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "Blazor._internal.domWrapper.focus");
+    }
+
+    [Fact] // ADR-0051/0010/0030, ED-28: the bar's control answers a new request through the core's focus function, never its own FocusAsync
+    public void The_bar_takes_the_keyboard_through_the_cores_function()
+    {
+        var asked = 0;
+        FormulaBarTextContext Bar(int request) => new(
+            "=A1", false, () => Task.CompletedTask, _ => { }, request,
+            TakeFocus: () =>
+            {
+                asked++;
+                return Task.CompletedTask;
+            });
+
+        // The bar stands before anything asks for it: the number it is painted with asks nothing.
+        var bar = Render<MudFormulaBarText>(ps => ps.Add(c => c.Context, Bar(2)).Add(c => c.Label, "Formula Bar"));
+        Assert.Equal(0, asked);
+
+        bar.Render(ps => ps.Add(c => c.Context, Bar(3)));
+        Assert.Equal(1, asked);
+        bar.Render(ps => ps.Add(c => c.Context, Bar(3)));
+        Assert.Equal(1, asked);
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "Blazor._internal.domWrapper.focus");
+    }
+
+    [Fact] // ADR-0021 (note of 2026-09-30) / ADR-0010, ED-28: under this Chrome an opening edit's control is focused by the grid's module, which grants it only while the keyboard is this grid's
+    public async Task Under_this_chrome_an_opening_edit_asks_the_grids_module_for_its_control()
+    {
+        var handle = JSInterop.SetupModule("./_content/ExGrid/ex-grid.js").SetupModule("attach", _ => true);
+        var cut = RenderGrid(MudGridChrome.Default);
+        await ClickCellAsync(cut, 50, 30);
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("x", false, false, false, false, false));
+
+        var asked = Assert.Single(handle.Invocations["focusEditor"]);
+        Assert.Equal(false, asked.Arguments[0]);
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "Blazor._internal.domWrapper.focus");
     }
 
     [Fact] // ADR-0028/0030: Material's dense is Compact, never Excel
