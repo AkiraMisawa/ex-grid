@@ -259,6 +259,12 @@ for (const surface of ['cell', 'bar']) {
         }
         await expect(field).toBeFocused();
         await expect(field).toHaveValue(LONG_TEXT);
+        // The edit is open before the first key. The bar shows the Focus cell's text before any
+        // edit, so the value alone does not say so. On a circuit the edit a press into the bar
+        // opens lands a round trip later, and writing the field then puts the caret at the end and
+        // the view back at the start. End pressed before that measured the write, not the key
+        // (seen in CI on the Server host, Linux, where the browser moves the caret itself).
+        await expect(grid).toHaveClass(/ex-editing/);
         // F2 leaves the caret at the end; a press into the bar's text, where the press was.
         const end = LONG_TEXT.length;
         const { grid: gridAt, page: pageAt } = await whereTheEditIs(field);

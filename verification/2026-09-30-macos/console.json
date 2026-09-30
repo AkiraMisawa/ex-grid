@@ -1,7 +1,7 @@
 {
   "chrome": {
     "a test whose console reports an error hands no page on (ADR-0056)": {
-      "at": "2026-09-30T02:20:15.114Z",
+      "at": "2026-09-30T02:56:17.311Z",
       "errors": [
         {
           "text": "harness.spec: an error on purpose",
