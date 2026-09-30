@@ -404,6 +404,68 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+// An edit in the Formula Bar is never in Overwrite (ED-29; ADR-0051, 2026-09-30). Part B of the
+// eighth Windows run typed =A1+B1 into the bar and pressed Home: the Formula was entered into D10
+// and the Focus moved to A10 (case 7k). Excel's bar is always in Edit, so there Home, → and Delete
+// edit the text. Three ways the text reaches the bar: typed there; pointed from there with a press
+// on A1 and typed on, which ends Point; and begun in the cell (Overwrite) and carried into the bar
+// by a press, which goes into Caret.
+const writtenIntoTheBar = {
+    'typed into the bar': async (page, grid) => {
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '=A1+B1');
+    },
+    'pointed from the bar, then typed on': async (page, grid) => {
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '=');
+        await clickCell(grid, 'A1');
+        await expect(bar(grid)).toHaveValue('=A1');
+        await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(1);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '+B1');
+    },
+    'begun in the cell, then pressed into the bar': async (page, grid) => {
+        await page.keyboard.type('=A1+');
+        await expect(editor(grid)).toHaveValue('=A1+');
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), 'B1');
+    },
+};
+for (const chrome of ['builtin', 'mud']) {
+    for (const [how, write] of Object.entries(writtenIntoTheBar)) {
+        test(`ED-29: =A1+B1 ${how}, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (${chrome} Chrome)`, async ({ page }) => {
+            await underChrome(page, chrome);
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+            await write(page, grid);
+            await expect(bar(grid)).toHaveValue('=A1+B1');
+            // The Cell Editor shows the one text once the core has heard it (ADR-0051).
+            await expect(editor(grid)).toHaveValue('=A1+B1');
+            await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
+            await expect(candidates(grid)).toHaveCount(0);
+            await page.waitForTimeout(150); // typing that ends Point tells the gate after its render
+
+            await page.keyboard.press('Home');
+            await page.keyboard.press('ArrowRight');
+            await page.keyboard.press('Delete');
+            await page.keyboard.press('Delete');
+            await page.keyboard.press('Delete');
+
+            await expect(bar(grid)).toHaveValue('=B1');
+            await expect(editor(grid)).toHaveValue('=B1');
+            await expect(bar(grid)).toBeFocused();
+            await expect(grid).toHaveClass(/ex-editing/);
+            await expectFocusAt(grid, 'D10');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+    }
+}
+
 // A press on the rows asks for the keyboard back at the root, and on a circuit that request
 // lands a round trip late — after a press into the Formula Bar or the Name Box that followed it.
 // Before ADR-0021's narrowed hand-back (2026-09-28) it took the keyboard from the field the user
