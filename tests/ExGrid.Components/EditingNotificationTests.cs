@@ -33,7 +33,8 @@ public class EditingNotificationTests : GridTestContext
         List<GridEditIntent<TestRow>>? edits = null,
         Func<TestRow, string, EditVerdict>? validate = null,
         int totalCount = 50,
-        Action<ComponentParameterCollectionBuilder<ExGrid<TestRow>>>? extra = null)
+        Action<ComponentParameterCollectionBuilder<ExGrid<TestRow>>>? extra = null,
+        Action<GridEditIntent<TestRow>>? onEdit = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Window, TestRows.Many(50))
@@ -42,7 +43,11 @@ public class EditingNotificationTests : GridTestContext
               .Add(g => g.RowHeight, 20d)
               .Add(g => g.ViewportHeight, 160)
               .Add(g => g.ViewportWidth, 350)
-              .Add(g => g.OnEdit, (GridEditIntent<TestRow> intent) => edits?.Add(intent));
+              .Add(g => g.OnEdit, (GridEditIntent<TestRow> intent) =>
+              {
+                  edits?.Add(intent);
+                  onEdit?.Invoke(intent);
+              });
             if (told is not null)
                 ps.Add(g => g.OnEditingChanged, told.Add);
             extra?.Invoke(ps);
@@ -359,6 +364,53 @@ public class EditingNotificationTests : GridTestContext
         Assert.Equal("overwrite", heard[0].Gate);
         Assert.Equal("none", heard[1].Gate);
         Assert.Equal(heard[0].Reclaims + 1, heard[1].Reclaims);
+    }
+
+    [Fact] // ADR-0050 section 6 / ADR-0007: the Edit Intent reaches the Consumer before the end, so the value is handled before anything done on hearing the end
+    public async Task The_edit_intent_is_raised_before_the_end()
+    {
+        var heard = new List<string>();
+        var cut = RenderGrid(
+            told: null,
+            extra: ps => ps.Add(g => g.OnEditingChanged, (bool open) => heard.Add(open ? "open" : "end")),
+            onEdit: _ => heard.Add("intent"));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+
+        await PressAsync(cut, "Enter");
+
+        Assert.Equal(["open", "intent", "end"], heard);
+    }
+
+    [Fact] // ADR-0050 section 6 / ADR-0035: a Ctrl+Enter fill's paste intent reaches the Consumer before the end
+    public async Task A_fill_by_ctrl_enter_is_raised_before_the_end()
+    {
+        var heard = new List<string>();
+        var cut = RenderGrid(told: null, extra: ps => ps
+            .Add(g => g.OnEditingChanged, (bool open) => heard.Add(open ? "open" : "end"))
+            .Add(g => g.OnPaste, (GridPasteIntent _) => heard.Add("paste")));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+
+        await PressAsync(cut, "Enter", ctrl: true);
+
+        Assert.Equal(["open", "paste", "end"], heard);
+    }
+
+    [Fact] // ADR-0050 section 6 / ADR-0011: a discard at the commit is raised before the end
+    public async Task A_discard_at_the_commit_is_raised_before_the_end()
+    {
+        var heard = new List<string>();
+        var cut = RenderGrid(told: null, totalCount: 500, extra: ps => ps
+            .Add(g => g.OnEditingChanged, (bool open) => heard.Add(open ? "open" : "end"))
+            .Add(g => g.OnEditDiscarded, (EditDiscardReason reason) => heard.Add(reason.ToString())));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+        cut.Render(ps => ps.Add(g => g.WindowStart, 100).Add(g => g.Window, TestRows.Many(50)));
+
+        await PressAsync(cut, "Enter");
+
+        Assert.Equal(["open", nameof(EditDiscardReason.RowLeftTheWindow), "end"], heard);
     }
 
     [Fact] // ADR-0050 section 6: a discard the Consumer asks for ends the edit like any other

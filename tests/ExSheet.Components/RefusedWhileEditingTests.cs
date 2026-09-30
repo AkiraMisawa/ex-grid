@@ -95,6 +95,29 @@ public class RefusedWhileEditingTests : SheetTestContext
         Assert.True(second.Instance.CanUndo);
     }
 
+    [Fact] // ADR-0048 / ADR-0050 section 6, SH-29: a command the application gives as the edit ends comes after the committed value, which stays in its row
+    public async Task A_command_given_on_hearing_the_end_comes_after_the_committed_value()
+    {
+        // The application inserts the moment the edit ends, as a click on a button the end has
+        // just re-enabled would. Heard before the value was handled, the insertion moved Plums
+        // down first, and 99 went into Pears' price.
+        IRenderedComponent<ExSheet>? cut = null;
+        cut = RenderSheet(ps => ps
+            .Add(s => s.Document, Fruit())
+            .Add(s => s.EditingChanged, async (bool open) =>
+            {
+                if (!open) await cut!.Instance.DoAsync(SheetEdit.InsertRows(1));
+            }));
+        await OpenEditAsync(cut, "C4", "99");
+
+        await PressAsync(cut, "Enter");
+
+        Assert.Equal("Plums", CellText(cut, "A5"));
+        Assert.Equal("99", CellText(cut, "C5"));
+        Assert.Equal("Pears", CellText(cut, "A4"));
+        Assert.Equal("0.75", CellText(cut, "C4"));
+    }
+
     // ---- The commands (SH-29: one per command) ----
 
     [Fact] // ADR-0048, SH-29: the /sheet repro — 99 over C4, a row inserted above row 2, Enter: 99 lands in Plums' row
