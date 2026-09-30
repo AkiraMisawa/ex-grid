@@ -209,3 +209,10 @@ The contract is enforceable because each prohibition lands somewhere observable:
   root, and layer 3 verifies the rest rather than trusting it.)* The package also serves as the
   place the Wrapper is verified against a Consumer: a proof-of-concept page in the DemoHost shaped
   like an ordinary MudBlazor application, with nothing of any real Consumer's domain in it.
+
+*(Added 2026-09-30 by [ADR-0057](./0057-references-are-outlined-in-colour-while-a-formula-is-edited.md),
+decided with the user.)* The Chrome's editor fields meet the core's contract for the coloured text
+(no padding, no background, the field filling the core's box) only through this package's
+stylesheet, scoped under `.mud-ex-grid`. The Chrome is therefore used with `MudExGridPaper` and
+`mud-ex-grid.css` wherever References are coloured.
+

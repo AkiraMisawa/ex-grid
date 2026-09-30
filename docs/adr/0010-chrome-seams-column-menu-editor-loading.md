@@ -313,3 +313,16 @@ to one input. It takes no new JavaScript use: it runs inside the capture-phase `
 ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s first entry), beside the held-key
 replay that already types into a field. Any further key answered in the listener needs its own
 line here.
+
+*(Added 2026-09-30, decided with the user.)* **On macOS the capture-phase listener places the caret
+for Home and End in Caret, rather than leaving them to the browser.** The table above gives those
+keys to the editor in Caret, to move the caret. That holds on Windows and Linux, where an
+`<input>`'s Home and End move the caret. Chrome on macOS binds them to scrolling the document
+instead. The grid's scroller then scrolled away from the open edit, the edited cell left the painted
+rows, and the Cell Editor lost DOM focus with the user's text in it. So on Apple platforms, with an
+edit open in Caret (in the Cell Editor or the Formula Bar), the listener claims Home and End, and
+Shift+Home and Shift+End, and moves or extends the caret to the start or end of the text, as the
+same keys do elsewhere. Any other key that macOS binds to a scroll inside a text field is treated
+the same way. It is the allowlisted listener placing a caret, as it already does after a rewrite
+([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)); it reads no layout.
+

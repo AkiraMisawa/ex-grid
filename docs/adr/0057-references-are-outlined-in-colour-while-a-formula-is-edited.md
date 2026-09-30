@@ -279,3 +279,22 @@ file.
   Both err towards plain text or stale placement of correct colours. Neither can put a colour on the
   wrong characters.
 
+## The Wrapper's shape is required for the coloured text under `ExGrid.MudBlazor` *(2026-09-30, decided with the user)*
+
+The layer relies on its Chrome's field having no padding and no background, and on the field
+filling the core's box, as the Chrome contract on `CellEditorContext.ReferenceText` says.
+`ExGrid.MudBlazor`'s fields meet that contract through `mud-ex-grid.css`, whose rules are all scoped
+under `.mud-ex-grid` (ADR-0030). `/sheet?chrome=mud` loaded neither the stylesheet nor
+`MudExGridPaper`. Its Mud fields were bare browser inputs, 154 px wide, on an opaque white ground.
+The layer sat beneath that ground, so while a Formula was edited the Mud Cell Editor and Formula
+Bar showed no text at all.
+
+- **The Wrapper's documented shape, `MudExGridPaper` with `mud-ex-grid.css`, is the supported way
+  to use `ExGrid.MudBlazor`'s Chrome where References are coloured.** `/sheet?chrome=mud` uses it.
+  The Chrome used alone, without the Wrapper, is not supported with coloured text.
+- **The core keeps a mistake from hiding the text.** While a field's layer shows, the core's own
+  stylesheet makes that field's ground transparent, so a page that forgets the Wrapper's stylesheet
+  still shows the text: the layer's, in colour. What such a page can still get wrong is where the
+  layer's text lies, if its field is narrower than the core's box. That is a mistake in the page's
+  setup, and it shows in plain sight.
+
