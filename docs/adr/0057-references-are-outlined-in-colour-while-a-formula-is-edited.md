@@ -320,9 +320,13 @@ configurations drew the same.
 - **The pointed Reference's text is Excel's dark shade of its colour** *(decided with the user)*. The
   shade was approximated by mixing the colour 55% toward black, which gave `#1b3a6d` and `#6a1d22`
   where Excel draws `#0401a2` and `#630101`. Each place in the palette now has a Visual Token for its
-  pointed shade. The first two take Excel's values. The other five keep the approximation until a
-  Windows run observes them, and a Theme may set all seven. Dark mode keeps the mix toward white;
-  Excel's dark shades were not observed.
+  pointed shade, and a Theme may set all seven. Their defaults are Excel's: `#0401a2` and `#630101`,
+  and, as the tenth Windows run read them (`verification/2026-09-30-windows-excel-10/`, group 2),
+  `#44007c`, `#003600`, `#550059`, `#531c00` and `#00323f`. Over a dark ground each is the colour mixed
+  toward white: Excel keeps its cells white under its Black theme, with the same seven shades, so it
+  has no dark ground to take them from. The tenth run also saw Excel leave the grey off `=1+D11` in
+  4 passes of 5 when ↓ came 30 ms after the `+`, and always show it after a second's wait. That is
+  taken as Excel's timing, and ExSheet shows the grey every time.
 - **Seen with no Excel reading to compare**:
   - In the Formula Bar, ↓ after `=` does not point. Excel's bar does not either (2026-09-27, item 12).
   - **In the Formula Bar, `Home` committed the Formula and moved the Focus.** F2 had taken the bar's

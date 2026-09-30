@@ -22,8 +22,10 @@ The shade was approximated (55% toward black); Excel's are `#0401a2` for the fir
 - [ ] Layer 3 under both Chromes: `=D11+`, ↓↓ in the cell gives the pointed text `#0401a2` on
       `#c6c6c6`, and a second Reference pointed gives `#630101` (DC-56). Write it; the orchestrator runs
       it. *Written, not run*
-- [ ] The next Windows run asks Excel for the other five shades (`verify-on-windows-10.md`, group
-      2, on `claude/exsheet-pointing-scope`)
+- [x] The next Windows run asks Excel for the other five shades (`verify-on-windows-10.md`, group
+      2, on `claude/exsheet-pointing-scope`): `#44007c`, `#003600`, `#550059`, `#531c00`, `#00323f`
+- [x] The other five light defaults are Excel's, as the tenth run read them; dark mode keeps the mix
+      toward white (Excel's Black theme keeps its cells white) (DC-56)
 
 ## Comments
 
@@ -50,3 +52,7 @@ The shade was approximated (55% toward black); Excel's are `#0401a2` for the fir
   in the second colour, `rgb(99, 1, 1)`. Then `=SUM(`, ↓, ↓ gives the first colour's shade.
 - **Not done here**: asking Excel for the other five shades is in `verify-on-windows-10.md`, group
   2, on `claude/exsheet-pointing-scope`, not on this branch.
+
+2026-09-30, after the tenth Windows run: the other five shades were observed and are now the light
+defaults of `--ex-reference-3-pointed` to `--ex-reference-7-pointed`. The shipped-stylesheet test
+pins all seven.

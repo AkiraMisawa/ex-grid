@@ -530,17 +530,20 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"\.ex-name-box, \.ex-formula-bar-text, \.ex-reference-text\.ex-reference-text-bar \{ padding: 0 var\(--ex-cell-padding-x, 8px\); \}"), sheet);
     }
 
-    [Fact] // ADR-0057/0029 (2026-09-30) / DC-56: the pointed Reference's text wears one Visual Token per place in the palette, Excel's shade for the first two, the approximation for the rest and over a dark ground
+    [Fact] // ADR-0057/0029 (2026-09-30) / DC-56: the pointed Reference's text wears one Visual Token per place in the palette, Excel's shade for all seven, the approximation over a dark ground
     public void DC56_the_pointed_shade_is_one_token_per_place_in_the_palette()
     {
         var sheet = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
 
-        const string towardBlack = "color-mix(in srgb, currentColor 55%, black)";
         const string towardWhite = "color-mix(in srgb, currentColor 55%, white)";
         for (var place = 1; place <= Cells.ReferenceColour.PaletteLength; place++)
         {
-            // Excel's, as Part B of the eighth Windows run read them; the other five until observed.
-            var light = place switch { 1 => "#0401a2", 2 => "#630101", _ => towardBlack };
+            // Excel's: the first two as Part B of the eighth Windows run read them, the rest the tenth run.
+            var light = place switch
+            {
+                1 => "#0401a2", 2 => "#630101", 3 => "#44007c", 4 => "#003600",
+                5 => "#550059", 6 => "#531c00", _ => "#00323f",
+            };
             Assert.Contains(
                 $".ex-reference-text .ex-reference-{place}.ex-reference-pointed {{ -webkit-text-fill-color: var(--ex-reference-{place}-pointed, light-dark({light}, {towardWhite})); }}",
                 sheet, StringComparison.Ordinal);
