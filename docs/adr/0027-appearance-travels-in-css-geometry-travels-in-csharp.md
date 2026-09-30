@@ -186,3 +186,16 @@ root, the header or a popover are fine; inside `.ex-viewport` they are not.
   every row for `aria-rowindex`, so a stripe is one class derived from a parameter each row already
   re-renders on. The third still holds too — the Focus band answers *where am I*; a stripe is
   appearance, off unless a Consumer asks, and one asked.
+
+## A Sheet's Paper does not follow the colour scheme *(2026-09-30, decided with the user)*
+
+**The defaults above stay on CSS system colours, so an untouched grid follows the host into dark
+mode. A Sheet's Paper and Ink are the one deliberate exception.**
+- The tokens are `--ex-sheet-paper` and `--ex-sheet-ink`. Their default is Excel's white and black
+  in every scheme ([ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+- **Why**: a Sheet's colours are document data a user recorded. On a ground that changes with the
+  scheme, some of them become unreadable.
+- **Excel does the same**: its cells stayed white under Office Theme "Black" (the tenth Windows run).
+- **They are still Visual Tokens.** A Consumer may set them.
+- **Forced-colors mode still wins**, as it does for every colour here.
+

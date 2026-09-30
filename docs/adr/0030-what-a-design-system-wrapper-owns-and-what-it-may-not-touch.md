@@ -239,3 +239,16 @@ decided with the user.)* The Chrome's editor fields meet the core's contract for
 stylesheet, scoped under `.mud-ex-grid`. The Chrome is therefore used with `MudExGridPaper` and
 `mud-ex-grid.css` wherever References are coloured.
 
+## Two additions from a Sheet's Cell Format *(2026-09-30, decided with the user)*
+
+[ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) adds two things
+to the boundary above.
+- **The metrics-bearing obligation grows.** A Wrapper supplies `CellMetrics` with bold widths
+  beside the regular ones, for its own font: each character class measured at the bold weight. A
+  bold cell's `####` decision rests on them.
+- **A Wrapper must not map `--ex-sheet-paper` or `--ex-sheet-ink` onto its palette.** A Sheet's
+  Paper is Excel's white in every scheme, because the colours a user recorded on it must read as
+  they were chosen ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)'s
+  note of the same day). The frame around the Paper, which is the Headings, the Name Box and the
+  Formula Bar, stays the Wrapper's to theme.
+

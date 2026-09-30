@@ -67,3 +67,9 @@ structure and every Reference (read back in the Formula Bar), and Ctrl+Y redoes 
 under xvfb with Playwright's Chromium (build 1194) against the WebAssembly host and the Server
 host behind the latency proxy: `sheet.spec.mjs` 13/13 on each. The committed config's `chrome`
 and `msedge` projects are CI's to run. All four criteria are met.
+
+2026-09-30, a note for readers of the first comment: "the engine inserts blank rows" is no longer
+so. ADR-0046 settled that an inserted row takes the formatting of the row above, and a column that
+of the column to its left, and the engine copies it (`FormatInserted`, `ShiftAxisStyles`). ADR-0063
+extends the same rule to Font, Fill and Border.
+

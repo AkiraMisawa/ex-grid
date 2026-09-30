@@ -299,3 +299,49 @@ Menu does not offer copy with headers. On a Sheet the column letters are address
 declares it by default and offers the command only when its own Consumer switches it on
 ([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
 Without the declaration nothing changes.
+
+## Added for Cell Format *(2026-09-30, decided with the user)*
+
+[ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) puts Fonts,
+Fills and Borders into a Sheet, with Excel's formatting keys and a Format Cells dialog. Three more
+declarations follow from it. Each is opt-in, and a Consumer that declares none of them sees no
+change (DC-1).
+
+**14. Declared keys.** A Consumer can declare keys the core claims and raises. ExSheet declares
+Excel's formatting keys: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+2 to Ctrl+5; Ctrl+Shift with `~`, `!`,
+`@`, `#`, `$`, `%`, `^`, `&` and `_`; and Ctrl+1.
+- **The core claims a declared key whether or not an edit is open, and raises it together with
+  whether one is.** While an edit is open, the Consumer decides what the key does. ExSheet refuses
+  it and says why (ADR-0063).
+- **Without the declaration, the key stays the browser's**, as today.
+- **The key table keeps its arbitration** ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)).
+  A declared key never takes a key the core already answers for itself. A declaration naming one is
+  refused by name.
+
+**15. A per-cell appearance.** A Consumer can supply a cell's Font (a colour, bold, italic,
+underline and strikethrough), its Fill, and its four Border sides.
+- **Without the declaration, cells look as they do today.**
+- **A bold cell is judged by bold widths.** `CellTextMetrics` gains them: each character class
+  measured at the bold weight. A bold cell's `####` decision
+  ([ADR-0016](./0016-column-width-and-overflow.md)), and the width it hands to a Consumer's painted
+  text (item 11), use them.
+- **How the appearance is painted is ADR-0063's measurement to decide.** It might be an inline
+  `style`, a per-cell custom property or interned classes for the Font and Fill, and a layer over
+  the rows or lines inside each cell for the Border. Whatever is chosen must keep P1–P9
+  ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)). A row repaints when
+  its appearance changes and skips otherwise. Nothing per cell reaches JavaScript. The DOM does not
+  grow with the extent.
+- **Borders are drawn as Excel draws them.** Each line is centred on the gridline. A thick line
+  reaches into both cells. Lines lie above Fills and below the Focus, the Selection and the
+  Reference Outlines. Which of two lines recorded on one edge is drawn is the Consumer's answer, so
+  ExSheet can give Excel's rule.
+
+**16. A Consumer's popover.** A Consumer can have the grid show its own content in the grid's
+popover frame. The frame is placed inside the grid's box and bounded by it
+([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)). It takes the keyboard and returns it
+on closing ([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)),
+and it closes as a Cancel when the box shrinks below one row. ExSheet uses it for Format Cells under
+the built-in Chrome.
+- Without the declaration, nothing changes.
+- The MudBlazor Chrome does not use it. It shows Format Cells in a `MudDialog`, whose frame is its
+  own (ADR-0063; ADR-0010's note of 2026-09-30).

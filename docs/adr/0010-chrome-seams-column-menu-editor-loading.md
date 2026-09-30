@@ -363,3 +363,28 @@ caret in a one-line field, and a browser scrolls the grid with them from the fie
 lost the edit outright. Whether Excel commits and moves a page from an edit was not asked; if it is
 wanted, it is a decision of its own.
 
+
+## A seam whose frame the Chrome chooses — 2026-09-30
+
+*(Decided with the user, with [ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md).)* ExSheet's **Format Cells** is a Chrome seam. As at every
+other seam, ExSheet decides what is offered: the tabs, the Number Format categories, the palette and
+the line styles. It also decides what OK means. The Chrome draws the dialog and calls back with the
+change.
+
+**Unlike every seam above, the frame is the Chrome's.** Where the dialog shows, and how it opens and
+closes, belong to the Chrome.
+- The built-in Chrome puts it in the grid's popover frame
+  ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md);
+  [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), item 16).
+- The MudBlazor Chrome shows it in a `MudDialog` at page level.
+
+**Why this seam is different.** A dialog of five tabs is too large for a small grid's box. A design
+system that already has a page-level dialog can show it whole without a script of ours, while the
+built-in Chrome could do so only with `showModal()`, which is not on ADR-0021's allowlist.
+
+**What a Chrome that takes the frame must still do.**
+- It returns the keyboard to the grid when it closes, through the core's focus function (ADR-0021's
+  note of 2026-09-30).
+- It holds nothing of the grid's state, and decides nothing.
+
+Every other seam keeps the core's frame.

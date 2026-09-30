@@ -116,6 +116,11 @@ Sheet has to rewrite the References to it in the other.
   does not forbid it. But per-cell styling is paid for on every painted cell
   ([ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)). It waits for a
   `spikes/render-bench` mode that measures it, and an ADR that reads the result.
+  *(Replaced 2026-09-30, decided with the user, by
+  [ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md). Fonts, fills
+  and borders are now in the first version. The measurement is still the precondition, but only for
+  how they are painted, and no longer for whether they are in. The bullet is kept as it was
+  written.)*
 - **Merged cells are not supported.** A merge is a cell that is not a rectangle of one, and
   Selection is rectangles in index space (ADR-0011).
 - **What the first version holds**, beyond this ADR's own decisions:

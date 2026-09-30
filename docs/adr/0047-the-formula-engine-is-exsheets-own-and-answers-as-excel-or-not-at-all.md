@@ -187,6 +187,10 @@ engine must now reproduce. The `decimal` alternative stays rejected.
   goes back to Excel intact. `[Red]` is not painted until per-cell styling has its ADR
   ([ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)). The
   parentheses still mark a negative, so the sign is never lost.
+  *(2026-09-30, decided with the user: the colour is now painted, in Excel's colour for its name,
+  and it wins over the cell's Font colour, as Excel's does
+  ([ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)). `[ColorN]`
+  stays refused.)*
 - **`XLOOKUP`'s binary search over duplicate keys answers as Excel was observed to**: the first
   equal key ascending, the last descending. Longer layouts are checked in the next Windows run.
   Unsorted data is still refused.
