@@ -11,7 +11,7 @@ namespace ExPivot.Engine;
 /// </summary>
 public sealed record PivotItemKey
 {
-    private const string DateFormat = "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF";
+    internal const string DateFormat = "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF";
 
     /// <summary>The Item <c>(blank)</c>.</summary>
     public static PivotItemKey Blank { get; } = new(PivotItemKind.Blank, null);

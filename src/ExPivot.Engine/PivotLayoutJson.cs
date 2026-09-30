@@ -212,7 +212,7 @@ public static class PivotLayoutJson
             : value.ValueKind == JsonValueKind.String ? parse(value.GetString()!)
             : throw new FormatException($"'{name}' is a string.");
 
-    private static FormatException Unknown(string name, string text) => new($"'{text}' is not a {name} this reader knows.");
+    internal static FormatException Unknown(string name, string text) => new($"'{text}' is not a {name} this reader knows.");
 
     private static string Name(PivotReportForm form) => form switch
     {
@@ -263,7 +263,7 @@ public static class PivotLayoutJson
         _ => throw Unknown("showValuesAs", text),
     };
 
-    private static string Name(PivotItemKind kind) => kind switch
+    internal static string Name(PivotItemKind kind) => kind switch
     {
         PivotItemKind.Number => "number",
         PivotItemKind.Date => "date",
@@ -274,7 +274,7 @@ public static class PivotLayoutJson
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown Item kind."),
     };
 
-    private static PivotItemKind ParseKind(string text) => text switch
+    internal static PivotItemKind ParseKind(string text) => text switch
     {
         "number" => PivotItemKind.Number,
         "date" => PivotItemKind.Date,
