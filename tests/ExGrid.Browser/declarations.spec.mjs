@@ -431,7 +431,8 @@ const writtenIntoTheBar = {
         await typeSteadily(page, bar(grid), '=');
         await clickCell(grid, 'A1');
         await expect(bar(grid)).toHaveValue('=A1');
-        await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(1);
+        // A1 is in /sheet's Pinned Column, so its outline is in the pinned layer, not .ex-selection.
+        await expect(grid.locator('.ex-point')).toHaveCount(1);
         await expect(bar(grid)).toBeFocused();
         await typeSteadily(page, bar(grid), '+B1');
     },
