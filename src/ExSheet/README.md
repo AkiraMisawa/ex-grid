@@ -44,7 +44,9 @@ computes, ExGrid paints, selects, navigates and reports.
 What the user gets: typing constants and Formulas, the Formula shown when a cell is edited and in
 the Formula Bar, a Name Box that says where the Focus is and takes an address to go to, column and
 row selection from the Headings, and Ctrl+arrow stopping where a block of values ends. While a
-Formula is typed, function names are completed (Tab accepts), the argument hint shows the
+Formula is typed, function and Linked Table names are completed (Tab accepts), a table's columns
+are listed after `Table[`, an argument that takes one of a fixed list — `XLOOKUP`'s `match_mode` and
+`search_mode` — lists its values with Excel's texts and Tab writes the value, the argument hint shows the
 function's arguments, and the arrows and the mouse point at cells to write their References. The
 Context Menu inserts and deletes the rows or columns the Selection spans; References keep naming
 the same cells, and a deleted target is `#REF!`. `CommandLabel` words the menu, by the ids in
