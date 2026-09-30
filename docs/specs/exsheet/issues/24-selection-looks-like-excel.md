@@ -135,3 +135,13 @@ were not kept; a re-run with the committed scripts, which write every drag to `r
 pending on a machine no other session is loading. A re-run tried at 23:25 on 2026-09-29 under a load
 average of 60 to 85 from other sessions' layer-3 runs was stopped and is not used. The box on tokens
 above now names `--ex-selection-outline`, the reserved token the single range's outline took up.
+
+2026-09-30, layer 3 by the suite's own runner, headless (the user's instruction on this machine),
+Chrome only (Edge is not installed here), both hosts, at 18a6e2e's code: the eight specs this ticket
+touched (selection-look, mud, sheet, declarations, sheet-vs-excel, features, stripes, presentation)
+157 passed, 4 failed, 7 skipped on each host; the other specs that read the overlay (gestures, find,
+mud-app, scrollbar, virtualisation, sheets) 52 passed, 5 failed, 1 skipped on each. Every failure also
+fails on the unchanged base (dd63bb6), in a full headless run on the same machine: the macOS overlay
+scrollbar (UX-10, the scrollbar spec, the stripes thumb), the system clipboard (the two sheet-vs-excel
+copies), DC-13, and WR-7's Drawer and tab. Nothing fails here that passes there. Headless macOS cannot
+answer the scrollbar cases; CI's Linux run is where they count.
