@@ -36,7 +36,7 @@
         CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnCopyRowsNeeded="_rowsNeeded"
-        OnUndo="_undo" OnRedo="_redo" />
+        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -86,6 +86,8 @@
     private readonly EventCallback _undo;
     private readonly EventCallback<ColumnWidthChange> _columnWidthChanged;
     private readonly EventCallback _redo;
+    private readonly EventCallback<bool> _editingChanged;
+    private readonly EventCallback<EditDiscardReason> _editDiscarded;
 
     private ExGrid<SheetRow>? _grid;
     private SheetColumnList _columns = SheetColumnList.Default;
@@ -112,6 +114,11 @@
     private string? _copyRefusal;
     private bool _initialised;
     private SheetDocument? _documentParameter;
+    // Set when a new Sheet Document was opened in place of the one shown, until any edit open
+    // over it has been discarded (ADR-0048).
+    private bool _documentReplaced;
+    // ExSheet's own sentence for a discard it asked of the grid, said when the grid raises it.
+    private string? _ownDiscard;
     private CultureInfo? _cultureParameter;
 
     /// <summary>Creates the component; the Sheet is opened when its parameters arrive.</summary>
@@ -167,13 +174,29 @@
             return SelectionChanged.InvokeAsync(selection);
         }));
         // Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z while no edit is open (ADR-0050 item 8, ADR-0048):
-        // the same stack a Consumer walks with UndoAsync and RedoAsync. No receiver, as above:
-        // an undo re-renders what its change names itself.
-        _undo = new EventCallback(null, (Func<Task>)(() => UndoAsync()));
-        _redo = new EventCallback(null, (Func<Task>)(() => RedoAsync()));
+        // the same stack a Consumer walks with UndoAsync and RedoAsync, with a refusal said
+        // rather than thrown into the grid's key handler. No receiver, as above: an undo
+        // re-renders what its change names itself.
+        _undo = new EventCallback(null, (Func<Task>)(() => StepByKeyAsync(UndoAsync)));
+        _redo = new EventCallback(null, (Func<Task>)(() => StepByKeyAsync(RedoAsync)));
         // A resize is the user's, and the width is the document's (ADR-0046): it is recorded in
         // the Sheet as one step on the undo stack, and the column list follows the Sheet.
         _columnWidthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)(change => OnColumnWidthChangedAsync(change)));
+        // The grid says when an edit opens and ends, at the change and before the browser hears
+        // of it (ADR-0050 section 6), so a command given in between is refused (ADR-0048). No
+        // receiver: nothing this component paints depends on it.
+        _editingChanged = new EventCallback<bool>(null, (Func<bool, Task>)(open =>
+        {
+            IsEditing = open;
+            return EditingChanged.InvokeAsync(open);
+        }));
+        // Typing thrown away is said, whoever discarded it: the grid, or ExSheet itself for a
+        // replaced Sheet Document (ADR-0011, ADR-0048). No receiver: the notice renders itself.
+        _editDiscarded = new EventCallback<EditDiscardReason>(null, (Func<EditDiscardReason, Task>)(reason =>
+        {
+            OnEditDiscarded(reason);
+            return Task.CompletedTask;
+        }));
     }
 
     /// <summary>
@@ -185,9 +208,10 @@
 
     /// <summary>
     /// The Sheet Document to show (ADR-0048). Handing over a different document replaces the
-    /// Sheet and clears the undo stack; handing back a document this component raised through
-    /// <see cref="DocumentChanged"/> — as binding <c>Document</c> two ways does — changes nothing. Null is
-    /// an empty Sheet in <see cref="Culture"/>.
+    /// Sheet and clears the undo stack, and an edit open over the Sheet it replaces is discarded,
+    /// and said, rather than committed into the new one; handing back a document this component
+    /// raised through <see cref="DocumentChanged"/> — as binding <c>Document</c> two ways does —
+    /// changes nothing. Null is an empty Sheet in <see cref="Culture"/>.
     /// </summary>
     /// <exception cref="SheetDocumentException">The document's version is one the engine does not know.</exception>
     [Parameter] public SheetDocument? Document { get; set; }
@@ -268,6 +292,24 @@
     /// <summary>The grid's Chrome, passed to ExGrid as is (ADR-0010).</summary>
     [Parameter] public IGridChrome? Chrome { get; set; }
 
+    /// <summary>
+    /// Raised when <see cref="IsEditing"/> changes: <see langword="true"/> when an edit opens,
+    /// <see langword="false"/> when it is committed, cancelled or discarded (ADR-0048). While an
+    /// edit is open the commands that change the Sheet are refused, so this is where the
+    /// application greys out its own buttons for them, as Excel greys out its ribbon.
+    /// </summary>
+    [Parameter] public EventCallback<bool> EditingChanged { get; set; }
+
+    /// <summary>
+    /// Whether an edit is open in the grid: from the moment a cell or the Formula Bar is typed in,
+    /// or opened with F2 or a double click, until the edit is committed, cancelled or discarded.
+    /// A commit the Sheet rejects — a Formula it cannot read — leaves it open (ADR-0034). While it
+    /// is, <see cref="DoAsync"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
+    /// <see cref="SetNumberFormatAsync"/> and <see cref="SetAlignmentAsync"/> are refused by name
+    /// (ADR-0048). ExSheet learns it from its grid (ADR-0050 section 6).
+    /// </summary>
+    public bool IsEditing { get; private set; }
+
     /// <summary>Whether there is a step to undo.</summary>
     public bool CanUndo => _history.CanUndo;
 
@@ -302,26 +344,49 @@
         if (!ReferenceEquals(Document, _documentParameter))
         {
             _documentParameter = Document;
-            if (Document is null || !_emitted.TryGetValue(Document, out _)) Open(Document);
+            if (Document is null || !_emitted.TryGetValue(Document, out _))
+            {
+                Open(Document);
+                _documentReplaced = true;
+            }
         }
         // Widths are recorded in characters; the pixels they paint at follow the Cell Metrics.
         if (_columns.Metrics is { } metrics && !metrics.Equals(CellMetrics)) _columns = SheetColumnList.Of(CurrentSheet, CellMetrics);
     }
 
     /// <summary>
+    /// A new Sheet Document shown while an edit is open discards the edit, and says so (ADR-0048,
+    /// ADR-0050 section 6): kept open, it would be committed into the new document's cell at the
+    /// same place, and a parameter cannot be refused. The grid discards it with ExSheet's own
+    /// sentence; the Sheet already shown is the new one.
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_documentReplaced) return;
+        _documentReplaced = false;
+        if (_grid is not { } grid) return;
+        _ownDiscard = SheetWords.EditDiscardedByNewDocument;
+        if (!await grid.DiscardEditAsync(_ownDiscard)) _ownDiscard = null;
+    }
+
+    /// <summary>
     /// Undoes the latest operation — the user's or a Consumer command's, whichever came last
     /// (ADR-0048). Answers false when there is nothing to undo.
     /// </summary>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     public Task<bool> UndoAsync() => OnDispatcherAsync(async () =>
     {
+        RefuseWhileEditing();
         if (_history.Undo() is not { } changes) return false;
         await ChangedAsync(changes);
         return true;
     });
 
     /// <summary>Redoes the operation undone last. Answers false when there is nothing to redo.</summary>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     public Task<bool> RedoAsync() => OnDispatcherAsync(async () =>
     {
+        RefuseWhileEditing();
         if (_history.Redo() is not { } changes) return false;
         await ChangedAsync(changes);
         return true;
@@ -331,12 +396,19 @@
     /// A Consumer command: does <paramref name="edit"/> as one operation on the user's undo
     /// stack, in its place in the order (ADR-0048), and raises <see cref="DocumentChanged"/>.
     /// </summary>
-    /// <exception cref="SheetRefusedException">The Sheet refuses the operation; nothing changed.</exception>
+    /// <exception cref="SheetRefusedException">The Sheet refuses the operation, or an edit is open
+    /// (<see cref="IsEditing"/>); nothing changed.</exception>
     /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read; nothing changed.</exception>
     public Task DoAsync(SheetEdit edit)
     {
         ArgumentNullException.ThrowIfNull(edit);
-        return InvokeAsync(() => PerformAsync(edit));
+        // Async, so the refusal arrives in the returned task, as the engine's own do, even when the
+        // caller is already on the renderer's context and the work runs inline.
+        return InvokeAsync(async () =>
+        {
+            RefuseWhileEditing();
+            await PerformAsync(edit);
+        });
     }
 
     /// <summary>
@@ -346,15 +418,49 @@
     /// range on its cells. A Selection of several ranges, whole columns and rows among them, is
     /// one operation too (ADR-0046). Answers false when nothing is selected.
     /// </summary>
-    public Task<bool> SetNumberFormatAsync(NumberFormat? format) =>
-        OnDispatcherAsync(() => FormatSelectionAsync(format ?? NumberFormat.General, null));
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> SetNumberFormatAsync(NumberFormat? format) => OnDispatcherAsync(() =>
+    {
+        RefuseWhileEditing();
+        return FormatSelectionAsync(format ?? NumberFormat.General, null);
+    });
 
     /// <summary>
     /// Sets the horizontal alignment of the Selection as one operation (ADR-0046), at the levels
     /// <see cref="SetNumberFormatAsync"/> sets a format at (ADR-0047), and answering as it does.
     /// </summary>
-    public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) =>
-        OnDispatcherAsync(() => FormatSelectionAsync(null, alignment));
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) => OnDispatcherAsync(() =>
+    {
+        RefuseWhileEditing();
+        return FormatSelectionAsync(null, alignment);
+    });
+
+    // Undo or redo from the grid's own keys (ADR-0050 item 8). The grid forwards them only while
+    // no edit is open, but ExSheet hears an edit end a render late when a parameter change
+    // discarded it (ADR-0050 section 6); a refusal in that render is said, as ExSheet says the
+    // grid's refusals, and never thrown into the grid's key handler.
+    private async Task StepByKeyAsync(Func<Task<bool>> step)
+    {
+        try
+        {
+            await step();
+        }
+        catch (SheetRefusedException refused)
+        {
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+        }
+    }
+
+    // While an edit is open, a command that changes the Sheet is refused by name and changes
+    // nothing (ADR-0048): the Cell Editor stands over a place, and a row inserted above it would
+    // carry the typing into another row when it is committed. Asked on the renderer's context,
+    // where IsEditing is written.
+    private void RefuseWhileEditing()
+    {
+        if (IsEditing) throw new SheetRefusedException(new SheetRefusal(SheetRefusalReason.EditIsOpen, SheetWords.EditIsOpen));
+    }
 
     /// <summary>
     /// The Linked Tables declared on the Sheet, in the order they were declared (ADR-0049): each
@@ -505,6 +611,20 @@
         {
             Tell(SheetWords.Refused(refused.Refusal), outlivesCommitMove: true);
         }
+    }
+
+    /// <summary>
+    /// Says that typing was thrown away (ADR-0011): in ExSheet's own words for a discard it asked
+    /// for, and in its words for the grid's reason otherwise. A discard at the commit is part of
+    /// the commit gesture, so the move that completes the gesture leaves the notice standing.
+    /// </summary>
+    private void OnEditDiscarded(EditDiscardReason reason)
+    {
+        var own = reason == EditDiscardReason.DiscardedByConsumer ? _ownDiscard : null;
+        _ownDiscard = null;
+        Tell(own ?? SheetWords.EditDiscarded(reason),
+            outlivesCommitMove: reason is EditDiscardReason.RowLeftTheWindow or EditDiscardReason.ColumnNoLongerEditable);
+        StateHasChanged();
     }
 
     /// <summary>

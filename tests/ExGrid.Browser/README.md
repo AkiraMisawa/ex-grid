@@ -361,7 +361,13 @@ nobody had asked for. What that means when writing a test:
   once (DC-22); a row inserted by button and by the Context Menu keeping every Reference, one
   Ctrl+Z each; a row deleted, a column inserted and a column deleted by the Context Menu, with
   the References rewritten, a deleted target `#REF!`, the Selection left in place, and one
-  Ctrl+Z restoring each (SH-5, ticket 13); the Linked Table reading `#GETTING_DATA` until its snapshot (SH-16); the Focus
+  Ctrl+Z restoring each (SH-5, ticket 13); the Linked Table reading `#GETTING_DATA` until its snapshot (SH-16); the
+  application's changes refused while an edit is open — the page's buttons greying out while `99`
+  is typed over C4 and Enter putting it in Plums' row; on the Server host, *Insert a row above row
+  2* pressed on a 150 ms circuit before the button has greyed out, refused by name in the status
+  line, and `99` still in Plums' row; the buttons following an edit opened by typing and by the
+  Formula Bar and ended by a cancel and by a commit after a Reject; a Linked Table push taken while
+  an edit is open (SH-29, ticket 26); the Focus
   at XFD1048576 with the DOM no larger than at A1 (SH-2); Home, End, Shift+Home and Shift+End in
   Caret in the Cell Editor and the Formula Bar moving and extending the caret with nothing
   scrolled and the edit kept, which on macOS the listener answers (ticket 32).

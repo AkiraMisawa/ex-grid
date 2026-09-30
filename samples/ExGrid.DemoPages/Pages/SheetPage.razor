@@ -42,10 +42,10 @@
 </p>
 
 <div class="demo-toolbar">
-    <button id="sheet-undo" @onclick="UndoAsync">Undo</button>
-    <button id="sheet-redo" @onclick="RedoAsync">Redo</button>
-    <button id="sheet-money" @onclick="FormatMoneyAsync">Format selection as #,##0.00</button>
-    <button id="sheet-insert-row" @onclick="InsertRowAsync">Insert a row above row 2</button>
+    <button id="sheet-undo" disabled="@_editing" @onclick="UndoAsync">Undo</button>
+    <button id="sheet-redo" disabled="@_editing" @onclick="RedoAsync">Redo</button>
+    <button id="sheet-money" disabled="@_editing" @onclick="FormatMoneyAsync">Format selection as #,##0.00</button>
+    <button id="sheet-insert-row" disabled="@_editing" @onclick="InsertRowAsync">Insert a row above row 2</button>
     <button id="sheet-revalue" @onclick="RevalueAsync">Revalue the positions by +1%</button>
 </div>
 
@@ -68,6 +68,15 @@
     </div>
 </div>
 
+@* Below the Sheet, not above it: the page's tests press cells by where the grid stands in a
+   720 px window, and text above the grid moves every row down. *@
+<p>
+    While a cell is being edited, the commands that change the Sheet are greyed out, as Excel greys
+    out its ribbon: ExSheet refuses them until the edit is committed or cancelled, so a row inserted
+    above the cell cannot carry the typing into another row (ADR-0048). <i>Revalue</i> stays: a
+    Linked Table's snapshot is data arriving, not a command (ADR-0049).
+</p>
+
 @code {
     /// <summary>Which Chrome the Sheet runs with (<see cref="DemoChrome"/>).</summary>
     [SupplyParameterFromQuery(Name = "chrome")]
@@ -77,7 +86,7 @@
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
     private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
-                                              ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions" />;
+                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions" />;
 
     protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
 
@@ -115,6 +124,10 @@
     // table (ADR-0049's first rule, ADR-0018).
     private IReadOnlyList<OutlinedColumn> _outlinedPositions = [];
     private string _status = "";
+    // Whether an edit is open in the Sheet, as ExSheet raises it: the toolbar's commands are
+    // greyed out while it is (ADR-0048).
+    private bool _editing;
+    private EventCallback<bool> _editingChanged;
 
     // A few values, Formulas over them, and a date: the tracer's A1 + B1 and a little more.
     private static SheetDocument Opening()
@@ -140,7 +153,13 @@
         return sheet.ToDocument();
     }
 
-    protected override void OnInitialized() => Count();
+    protected override void OnInitialized()
+    {
+        // Held in a field: a method group would be a new delegate on every render (AGENTS.md,
+        // the Blazor traps).
+        _editingChanged = EventCallback.Factory.Create<bool>(this, OnEditingChanged);
+        Count();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -184,28 +203,31 @@
         _closing.Dispose();
     }
 
-    private async Task UndoAsync()
-    {
-        if (_sheet is not null) await _sheet.UndoAsync();
-        Count();
-    }
+    private void OnEditingChanged(bool open) => _editing = open;
 
-    private async Task RedoAsync()
-    {
-        if (_sheet is not null) await _sheet.RedoAsync();
-        Count();
-    }
+    private Task UndoAsync() => CommandAsync(sheet => sheet.UndoAsync());
 
-    private async Task FormatMoneyAsync()
-    {
-        if (_sheet is not null) await _sheet.SetNumberFormatAsync(NumberFormat.Parse("#,##0.00"));
-        Count();
-    }
+    private Task RedoAsync() => CommandAsync(sheet => sheet.RedoAsync());
 
-    private async Task InsertRowAsync()
+    private Task FormatMoneyAsync() => CommandAsync(sheet => sheet.SetNumberFormatAsync(NumberFormat.Parse("#,##0.00")));
+
+    private Task InsertRowAsync() => CommandAsync(sheet => sheet.DoAsync(SheetEdit.InsertRows(1)));
+
+    // A command ExSheet refuses changes nothing and says why (ADR-0048): an insertion that would
+    // push an Entry off the Sheet, or any command while an edit is open. The buttons are greyed
+    // out then, but a press can still land before the render that greys them does.
+    private async Task CommandAsync(Func<ExSheet, Task> command)
     {
-        if (_sheet is not null) await _sheet.DoAsync(SheetEdit.InsertRows(1));
-        Count();
+        if (_sheet is null) return;
+        try
+        {
+            await command(_sheet);
+            Count();
+        }
+        catch (SheetRefusedException refused)
+        {
+            _status = refused.Message;
+        }
     }
 
     private void Count() => _status = $"{_document?.Cells.Count ?? 0} cells in the Sheet Document.";

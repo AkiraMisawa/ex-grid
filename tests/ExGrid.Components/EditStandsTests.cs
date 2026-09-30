@@ -212,7 +212,7 @@ public class EditStandsTests : GridTestContext
     // layer 3's (edit-stands.spec.mjs); this is the core's half — what has happened by the time the
     // answer comes.
 
-    [Fact] // ADR-0010 (widened 2026-09-29) / ED-22: a press that commits asks for the keyboard back while the editor still stands, and is answered only once the gate has heard the edit end
+    [Fact] // ADR-0010 (widened 2026-09-29) / ED-22: a press that commits asks for the keyboard back while the editor still stands, and is answered behind the gate's new mode
     public async Task A_press_that_commits_is_answered_after_the_gate_and_the_hand_back()
     {
         var intents = new List<GridEditIntent<TestRow>>();
@@ -232,15 +232,16 @@ public class EditStandsTests : GridTestContext
         // between reached no listener at all.
         Assert.Equal([false], HandBacks().Skip(before));
         Assert.True(editorStoodAtHandBack);
-        // And the press is not answered while the gate has not heard the edit end: a key handed on
-        // now would be gated as the editor's.
-        Assert.False(answered.IsCompleted);
+        // And the press is answered behind the gate's new mode: the browser runs the requests in
+        // the order they were sent, so a key handed on after the answer is gated against "none".
+        // Its reply is not waited for (ADR-0050 section 6, 2026-09-30): the Consumer has rendered
+        // the committed value by now, and a key typed on seeing it must not wait a round trip
+        // behind an answer that orders nothing more.
+        Assert.Equal("none", (string)told.Invocations["setEditing"][^1].Arguments[0]!);
+        Assert.Equal("9", Assert.Single(intents).Value);
         told.SetVoidResult();
         await press;
         await answered;
-
-        Assert.Equal("9", Assert.Single(intents).Value);
-        Assert.Equal("none", (string)told.Invocations["setEditing"][^1].Arguments[0]!);
     }
 
     [Fact] // ADR-0010 (widened 2026-09-29) / ED-22 / ADR-0051: a press that points is answered with the edit open and the keyboard left where it is

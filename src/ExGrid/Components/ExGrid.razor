@@ -1339,8 +1339,32 @@
     /// row left the Window. Neither is the user's own doing — a Consumer-pushed sort or
     /// refresh lands and the typing goes — so the grid says so rather than leaving the
     /// loss to be guessed at. Chrome writes the sentence and announces it (A11Y-16); the
-    /// grid holds no strings.</summary>
+    /// grid holds no strings. A discard the Consumer asked for through
+    /// <see cref="DiscardEditAsync"/> is raised here too, as
+    /// <see cref="EditDiscardReason.DiscardedByConsumer"/>, its sentence already announced
+    /// (ADR-0050 section 6).</summary>
     [Parameter] public EventCallback<EditDiscardReason> OnEditDiscarded { get; set; }
+
+    /// <summary>
+    /// Raised with <see langword="true"/> when an edit opens — a character typed onto a
+    /// cell, F2, a double click, a press into the Formula Bar — and with
+    /// <see langword="false"/> when it ends, however it ends: committed, cancelled or
+    /// discarded (ADR-0050 section 6). An edit a Reject holds open has not ended, and a move
+    /// between Overwrite, Caret and Point is the same edit: neither raises anything. It
+    /// carries no text, which is the grid's until it is committed (ADR-0007). It is raised in
+    /// C# with the change, nothing waited for in between — the browser's messages are sent
+    /// just before it, so a render the Consumer causes follows them — and a Consumer that
+    /// refuses its own commands while an edit is open, or greys out its buttons, is never a
+    /// round trip behind the grid (ADR-0048). An end is raised after what the edit ended in —
+    /// the Edit Intent, a Ctrl+Enter fill's paste intent, the discard — so a committed value
+    /// is handled before anything the Consumer does on hearing the edit end. It is raised and
+    /// not waited for: the key gate and the rest of the gesture go on while a handler awaits,
+    /// and a handler's failure surfaces as any event handler's does. The one late case errs
+    /// towards "open": an edit a parameter change discards is said to have ended after that
+    /// render, as the discard itself is (<see cref="OnEditDiscarded"/>). Without a delegate
+    /// nothing changes.
+    /// </summary>
+    [Parameter] public EventCallback<bool> OnEditingChanged { get; set; }
 
     /// <summary>The wording for a command id, for the menus the built-in Chrome renders
     /// (ADR-0036). The core names commands and does not name them in a language: this is
@@ -1776,6 +1800,9 @@
     }
 
     private EditMode _editMode;
+    // Whether an edit is open as the Consumer last heard it (ADR-0050 section 6): what keeps
+    // the notification to one per opening and one per end, whichever path reaches it.
+    private bool _consumerHeardEditOpen;
 
     // Which of the Cell Editor's two surfaces the user is working in (ADR-0051): the input
     // over the cell, or the Formula Bar. One uncommitted text either way; this decides only
@@ -2748,8 +2775,11 @@
             _announcement = pending;
             StateHasChanged();
         }
-        if (_jsEditingDirty)
-            await PushEditingModeAsync();
+        // An edit a parameter change discarded (ADR-0011) marked the gate, and ends here for
+        // the Consumer too (ADR-0050 section 6); the second test is the net under any path
+        // that changed the edit without either.
+        if (_jsEditingDirty || (_editMode != EditMode.None) != _consumerHeardEditOpen)
+            await PushEditingStateAsync();
         await PushPointerReportingAsync();
         // A display-only grid must not take printable keys away from the page
         // (ADR-0010/0020), nor a grid nobody listens to take Ctrl+Z (ADR-0007) — the
@@ -6008,6 +6038,44 @@
     }
 
     /// <summary>
+    /// Discards the open edit for a reason of the Consumer's own (ADR-0050 section 6): what
+    /// was typed is thrown away and nothing is committed. For a change under the editor the
+    /// grid cannot see — ExSheet's whole Sheet Document replaced, where the edit would
+    /// otherwise be committed into another document's cell at the same place (ADR-0048). The
+    /// discard is announced like the grid's own (ADR-0011): <paramref name="reason"/> through
+    /// the root's live region, as a refused copy's sentence is, and
+    /// <see cref="OnEditDiscarded"/> raised as <see cref="EditDiscardReason.DiscardedByConsumer"/>.
+    /// The edit's end is raised through <see cref="OnEditingChanged"/> like any other. The
+    /// keyboard comes back to the root only from inside the grid, never from the Consumer's
+    /// own control.
+    /// </summary>
+    /// <param name="reason">The Consumer's sentence for the user, saying what happened.</param>
+    /// <returns>Whether an edit was open and has been discarded: false, and nothing changed,
+    /// when none was open.</returns>
+    /// <exception cref="ArgumentException"><paramref name="reason"/> is empty: a discard that
+    /// says nothing is the silent loss ADR-0011 refuses.</exception>
+    public async Task<bool> DiscardEditAsync(string reason)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        // On the renderer's own context, as a placement is: a Consumer discarding from outside
+        // it must not race a render.
+        var discarded = false;
+        await InvokeAsync(async () => discarded = await DiscardOnRendererAsync(reason));
+        return discarded;
+    }
+
+    private async Task<bool> DiscardOnRendererAsync(string reason)
+    {
+        if (_disposed || _editMode == EditMode.None)
+            return false;
+        Announce(reason);
+        await EndEditingAsync(endedIn: DiscardedIn(EditDiscardReason.DiscardedByConsumer));
+        _suppressRender = false;
+        StateHasChanged();
+        return true;
+    }
+
+    /// <summary>
     /// The focused cell's full value — the formula-bar role behind <c>####</c>
     /// (ADR-0016): the raw value, never the hashes, and null when there is no Focus or
     /// its row is not in hand. Producing the value is the core's; painting it is
@@ -6462,15 +6530,81 @@
         else
             CloseCompletion();
         RequestEditorFocus();
-        await PushEditingModeAsync();
+        await PushEditingStateAsync();
         StateHasChanged();
     }
 
-    /// <summary>Tells the key gate which set it runs under (ADR-0010): a mode change
-    /// is a different set of claimed keys. With it, whether inputs report their caret, and
-    /// whether F4 joins the editing set — only where the Consumer declared what it does
-    /// (ADR-0051, 2026-09-29); the gate consults neither while no edit is open.</summary>
-    private async Task PushEditingModeAsync()
+    /// <summary>
+    /// Tells both listeners where the edit stands, in one call, so that no path can tell one
+    /// and not the other: the key gate which set of keys it claims (ADR-0010) — a change of
+    /// mode is a different set — and the Consumer whether an edit is open, when that is not
+    /// what it last heard (ADR-0050 section 6).
+    ///
+    /// <para>The browser's messages are sent first, the Consumer is told next, and only then
+    /// is anything waited for. No round trip stands between the change and the Consumer's
+    /// hearing of it, so a press on the Consumer's own button cannot land in between. And a
+    /// Consumer that renders on hearing it — a page greying out its buttons, which renders the
+    /// grid with it — has that render sent behind the browser's messages: the gate hears the
+    /// new mode, and an ending edit hands the keyboard back, before a render paints or removes
+    /// the editor, in the order the grid kept when nobody listened. Sent the other way round on
+    /// a circuit, the editor was removed while it held DOM focus, a paste after the edit went
+    /// past the grid, and a press into the Formula Bar lost the keyboard to the render.</para>
+    ///
+    /// <para>What an edit ended in — the Edit Intent of a commit, a Ctrl+Enter fill's paste
+    /// intent, a discard's reason — reaches the Consumer before the end itself. A committed
+    /// value is handled, and repainted with the editor's removal in one render, before anything
+    /// the Consumer does on hearing the edit end: heard first, a row inserted from a button the
+    /// end re-enabled could land before the value, which then went into the row the insertion
+    /// moved there (ADR-0048), and the cell showed its old value between the two renders.</para>
+    ///
+    /// <para>An edit that ends is not waited on at all: the gesture that ended it goes on at
+    /// once — the Focus move of Enter or Tab, the render — and the key or press is answered
+    /// behind them. The Consumer renders a committed value the moment it hears it, before
+    /// anything is waited for, so waiting for the browser's replies here only held the rest of
+    /// the gesture a round trip behind that render: on a circuit the page showed the value with
+    /// the Focus still on the edited cell, and a Ctrl+C typed on seeing it was held behind the
+    /// unanswered key, which the listener cannot replay as the browser's copy, and lost (CI,
+    /// Server host, 2026-09-30). The replies ordered nothing: the browser runs the gate's new
+    /// mode and the hand-back in the order they were sent, before the render and the answer
+    /// sent after them, so a key handed on after the answer meets the gate in its new mode with
+    /// the keyboard back at the root. An edit that opens or stays open is still waited on
+    /// before its gesture answers, as before: a key held behind that answer is typed into the
+    /// editor on replay, and the press into the Formula Bar is answered only once the gate has
+    /// the edit (DC-19).</para>
+    ///
+    /// <para>Every path that opens, ends or changes an edit comes through here; the one that
+    /// cannot at once, an edit a parameter change discarded, marks the gate, and the render
+    /// that follows comes through here for it, since no Consumer handler may run inside the
+    /// render stack that discarded it.</para>
+    /// </summary>
+    /// <param name="reclaimFocus">Whether the keyboard comes back to the root with this change:
+    /// see <see cref="EndEditingAsync"/>.</param>
+    /// <param name="fromField">Whether the keyboard is taken out of the Formula Bar's field.</param>
+    /// <param name="endedIn">What an ending edit ended in, raised before the end is.</param>
+    private async Task PushEditingStateAsync(bool reclaimFocus = false, bool fromField = false, Func<Task>? endedIn = null)
+    {
+        // Sent before anything is awaited, in this order: the gate's mode, then the hand-back.
+        var gate = TellGateAsync();
+        var keyboard = reclaimFocus ? ReclaimFocusAsync(fromField) : Task.CompletedTask;
+        // The committed value before the end, so that a command the Consumer runs on hearing
+        // the end comes after the value, never before it (ADR-0048).
+        if (endedIn is not null)
+            await endedIn();
+        TellConsumerWhetherEditOpen();
+        // An ending waits for no reply (see above). Its two tasks are safe to leave: each catches
+        // the browser's failures itself, so neither can fault unobserved.
+        if (_editMode == EditMode.None)
+            return;
+        await gate;
+        await keyboard;
+    }
+
+    /// <summary>Tells the key gate which set it runs under (ADR-0010): a mode change is a
+    /// different set of claimed keys. With it, whether inputs report their caret, and whether
+    /// F4 joins the editing set — only where the Consumer declared what it does (ADR-0051,
+    /// 2026-09-29); the gate consults neither while no edit is open. The message is sent
+    /// before the first await.</summary>
+    private async Task TellGateAsync()
     {
         _jsEditingDirty = false;
         if (_scrollHandle is null || _disposed)
@@ -6482,6 +6616,35 @@
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
+        }
+    }
+
+    /// <summary>Raises <see cref="OnEditingChanged"/> when whether an edit is open is not what
+    /// the Consumer last heard (ADR-0050 section 6). Raised and not waited for: the handler
+    /// runs at once up to its first await, and whatever it awaits holds up neither the key
+    /// gate nor the rest of the gesture. A disposed grid raises nothing: the Consumer that
+    /// removed it already knows.</summary>
+    private void TellConsumerWhetherEditOpen()
+    {
+        var open = _editMode != EditMode.None;
+        if (open == _consumerHeardEditOpen || _disposed)
+            return;
+        _consumerHeardEditOpen = open;
+        if (OnEditingChanged.HasDelegate)
+            _ = RaiseUnwaitedAsync(() => OnEditingChanged.InvokeAsync(open));
+    }
+
+    /// <summary>A Consumer handler the grid does not wait for, with its failure surfaced as an
+    /// event handler's is, rather than lost with the task.</summary>
+    private async Task RaiseUnwaitedAsync(Func<Task> handler)
+    {
+        try
+        {
+            await handler();
+        }
+        catch (Exception ex)
+        {
+            await DispatchExceptionAsync(ex);
         }
     }
 
@@ -6533,7 +6696,7 @@
                     _ => EditMode.Caret,
                 };
                 EndPointing();
-                await PushEditingModeAsync();
+                await PushEditingStateAsync();
                 RequestEditorFocus();
                 StateHasChanged();
                 return;
@@ -6592,9 +6755,7 @@
         // gesture, so it is raised here rather than deferred.
         if (slice < 0 || slice >= _window.Count)
         {
-            await EndEditingAsync(reclaimFocus, byPress);
-            if (OnEditDiscarded.HasDelegate)
-                await OnEditDiscarded.InvokeAsync(EditDiscardReason.RowLeftTheWindow);
+            await EndEditingAsync(reclaimFocus, byPress, DiscardedIn(EditDiscardReason.RowLeftTheWindow));
             return true;
         }
         // Asked again, not assumed from when the editor opened: a Consumer may revoke the
@@ -6602,9 +6763,7 @@
         // is the last write path the gate did not cover.
         if (!ColumnIsEditable(cell.Column))
         {
-            await EndEditingAsync(reclaimFocus, byPress);
-            if (OnEditDiscarded.HasDelegate)
-                await OnEditDiscarded.InvokeAsync(EditDiscardReason.ColumnNoLongerEditable);
+            await EndEditingAsync(reclaimFocus, byPress, DiscardedIn(EditDiscardReason.ColumnNoLongerEditable));
             return true;
         }
 
@@ -6624,11 +6783,15 @@
         // A Flag raises the intent unchanged: the mark does not travel in it, and comes
         // back through the display channels when the Consumer answers them (ADR-0034).
         _editError = null;
-        await EndEditingAsync(reclaimFocus, byPress);
-        if (OnEdit.HasDelegate)
-            await OnEdit.InvokeAsync(new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text));
+        var intent = new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text);
+        await EndEditingAsync(reclaimFocus, byPress, OnEdit.HasDelegate ? () => OnEdit.InvokeAsync(intent) : null);
         return true;
     }
+
+    /// <summary>A discard's reason, as what an edit ended in (ADR-0011): raised before the end
+    /// itself, see <see cref="PushEditingStateAsync"/>. Null with no listener.</summary>
+    private Func<Task>? DiscardedIn(EditDiscardReason reason)
+        => OnEditDiscarded.HasDelegate ? () => OnEditDiscarded.InvokeAsync(reason) : null;
 
     private async Task CommitAndMoveAsync(Func<GridSelection, GridSelection> move)
     {
@@ -6689,15 +6852,9 @@
 
         // Copied before the editor is torn down: the intent names the cell the text was
         // entered in, which a clipboard paste of the same field does not (ADR-0050 item 5).
-        var text = _editText;
-        var enteredAt = _editingCell;
-        await EndEditingAsync();
+        var intent = new GridPasteIntent(decision.Plan, [[_editText]], _sequenceVersion, enteredAt: _editingCell);
+        await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
         StateHasChanged();
-        if (OnPaste.HasDelegate)
-        {
-            await OnPaste.InvokeAsync(new GridPasteIntent(
-                decision.Plan, [[text]], _sequenceVersion, enteredAt: enteredAt));
-        }
     }
 
     /// <summary>Ends the edit, and hands the keyboard back to the root unless
@@ -6710,7 +6867,10 @@
     /// late, must leave alone (ADR-0021). A press held behind keys, whose default was
     /// suppressed, is the listener's to know about, and it takes a field that press left
     /// standing.</param>
-    private async Task EndEditingAsync(bool reclaimFocus = true, bool byPress = false)
+    /// <param name="endedIn">What the edit ended in, for the Consumer — a commit's intent, a
+    /// discard's reason — raised before the Consumer hears that the edit ended: see
+    /// <see cref="PushEditingStateAsync"/>.</param>
+    private async Task EndEditingAsync(bool reclaimFocus = true, bool byPress = false, Func<Task>? endedIn = null)
     {
         var fromBar = _editSurface == EditSurface.Bar && !byPress;
         // The list and the hint answer the edit, and go with it, as the outline does (ADR-0051).
@@ -6727,16 +6887,15 @@
         // The input goes with the mode: a reference kept past it would name an element
         // the next editor is not, and the focus above would land nowhere.
         _editorElement = default;
-        // Both asked of the browser before this handler yields, and so ahead of the render that
-        // removes the editor, as a popover's close asks for the root (ClosePopoverAndReturnFocus).
-        // Asked for after the gate's answer, the hand-back landed a round trip after that render:
-        // DOM focus was on body in between, where the root's listener hears nothing, and a key
-        // typed straight after a press that committed was lost (ADR-0010's hold behind a press,
-        // found on the Server host at 0 ms as well as at 150).
-        var tellingTheGate = PushEditingModeAsync();
-        var handingBack = reclaimFocus ? ReclaimFocusAsync(fromField: fromBar) : Task.CompletedTask;
-        await tellingTheGate;
-        await handingBack;
+        // The gate's new mode and the hand-back are both asked of the browser before anything is
+        // awaited (PushEditingStateAsync), and so ahead of the render that removes the editor, as a
+        // popover's close asks for the root (ClosePopoverAndReturnFocus). Asked for after the gate's
+        // answer, the hand-back landed a round trip after that render: DOM focus was on body in
+        // between, where the root's listener hears nothing, and a key typed straight after a press
+        // that committed was lost (ADR-0010's hold behind a press, found on the Server host at 0 ms
+        // as well as at 150). Their replies are not waited for: the caller's gesture goes on at
+        // once, behind the Consumer's render of what the edit ended in (PushEditingStateAsync).
+        await PushEditingStateAsync(reclaimFocus, fromField: fromBar, endedIn);
     }
 
     /// <summary>
@@ -6808,7 +6967,7 @@
             OpenCaret();
         }
         CloseCompletion();
-        await PushEditingModeAsync();
+        await PushEditingStateAsync();
     }
 
     /// <summary>Typing in the Formula Bar (ADR-0051): the one uncommitted text, so the
