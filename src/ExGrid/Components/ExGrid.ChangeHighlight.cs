@@ -66,6 +66,13 @@ public partial class ExGrid<TRow>
     // A wait cut short ends no mark: the timer is armed again for what remains.
     private static readonly TimeSpan LongestHighlightWait = TimeSpan.FromDays(1);
 
+    // The wait for an end that has already passed when the timer is armed. Only the moment
+    // between a render and its arming can bring that about, since a render leaves no mark
+    // painted past the time it painted by. It is waited for by a millisecond rather than none,
+    // so the timer never fires inside the render that armed it, and a defect that left a mark
+    // standing past its end would show as a mark that stays, never as renders without pause.
+    private static readonly TimeSpan ShortestHighlightWait = TimeSpan.FromMilliseconds(1);
+
     private TimeProvider HighlightClock => Clock ?? Time;
 
     /// <summary>The time every row of one render paints its marks by: read once per render of
@@ -111,7 +118,7 @@ public partial class ExGrid<TRow>
         }
         var wait = end - clock.GetUtcNow();
         _highlightTimer.Change(
-            wait <= TimeSpan.Zero ? TimeSpan.Zero : wait < LongestHighlightWait ? wait : LongestHighlightWait,
+            wait <= TimeSpan.Zero ? ShortestHighlightWait : wait < LongestHighlightWait ? wait : LongestHighlightWait,
             Timeout.InfiniteTimeSpan);
     }
 

@@ -114,14 +114,22 @@ internal sealed class CountingHandle(CountingJSRuntime runtime) : CountingRefere
         });
 }
 
-/// <summary>A clock that counts each timer it hands out, and each disposal of one.</summary>
+/// <summary>A clock that counts each timer it hands out, each disposal of one, and each time
+/// it is read.</summary>
 internal sealed class CountingTimeProvider(TimeProvider inner) : TimeProvider
 {
     private readonly List<CountingTimer> _timers = [];
 
     internal IReadOnlyList<CountingTimer> Timers => _timers;
 
-    public override DateTimeOffset GetUtcNow() => inner.GetUtcNow();
+    /// <summary>How many times the time was read.</summary>
+    internal int Reads { get; private set; }
+
+    public override DateTimeOffset GetUtcNow()
+    {
+        Reads++;
+        return inner.GetUtcNow();
+    }
 
     public override long GetTimestamp() => inner.GetTimestamp();
 
