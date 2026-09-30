@@ -4,7 +4,8 @@
     groups, asked with real keys and the real mouse. Group 1, completion (ADR-0058, "Readings, until
     Excel is observed"); group 2, the shade of the Reference Point is writing (ADR-0057, ticket 43);
     group 3, the Formula Bar's keys (ADR-0051's note "An edit in the Formula Bar never enters
-    Overwrite", ticket 42).
+    Overwrite", ticket 42); group 4, added afterwards, F2 in the Formula Bar and the keys after it
+    (ADR-0051's rule for F2 there, ticket 42).
 
         powershell -File excel-only.ps1 -Case 0                 the environment, and the keyboard checked
         powershell -File excel-only.ps1 -Case 1,2,7             cases of the procedure's tables
@@ -1133,6 +1134,34 @@ Def '19' 'bar' 'As 18 (without its Home), then click back into D10''s own text; 
     @{ state = 'clicked-bar'; steps = @((ClickBar 400)) },
     @{ state = 'clicked-cell'; steps = @((ClickCell 'D10' 30)) },
     @{ state = 'left'; steps = @((K '{LEFT}')) })
+
+# Group 4: F2 in the Formula Bar, and the keys after it (added to the procedure after groups 1-3, at
+# 632b323; ADR-0051's rule for F2 there, ticket 42). The click into the empty bar and the typing are
+# one state, as in 14-17's pass b.
+Def '20' 'bar-f2' 'Click into the empty Formula Bar, type =A1+B1, {F2}, then {HOME}' 'The mode after F2 and after Home; the Formula Bar''s text and caret; the active cell; is the edit still open, or was the Formula entered (and into which cell)' '(asked)' @(
+    @{ state = 'typed'; steps = @((ClickBar 200), (K (Lit '=A1+B1'))) },
+    @{ state = 'f2'; steps = @((K '{F2}')) },
+    @{ state = 'home'; steps = @((K '{HOME}')) })
+Def '21' 'bar-f2' 'As 20 without Home, then {RIGHT}' 'The same' '(asked)' @(
+    @{ state = 'typed'; steps = @((ClickBar 200), (K (Lit '=A1+B1'))) },
+    @{ state = 'f2'; steps = @((K '{F2}')) },
+    @{ state = 'right'; steps = @((K '{RIGHT}')) })
+Def '22' 'bar-f2' 'As 20 without Home, then {DOWN}' 'The same' '(asked)' @(
+    @{ state = 'typed'; steps = @((ClickBar 200), (K (Lit '=A1+B1'))) },
+    @{ state = 'f2'; steps = @((K '{F2}')) },
+    @{ state = 'down'; steps = @((K '{DOWN}')) })
+Def '23' 'bar-f2' 'As 20 without Home, then {F2} again' 'The mode after the second F2' '(asked)' @(
+    @{ state = 'typed'; steps = @((ClickBar 200), (K (Lit '=A1+B1'))) },
+    @{ state = 'f2'; steps = @((K '{F2}')) },
+    @{ state = 'f2-again'; steps = @((K '{F2}')) })
+Def '24' 'bar-f2' 'Click into the empty Formula Bar, type =A1+, {F2}; then {DOWN}' 'The mode after F2 (Point, Enter or Edit); then Down: the text (is D11 written?) and the mode' '(asked)' @(
+    @{ state = 'typed'; steps = @((ClickBar 200), (K (Lit '=A1+'))) },
+    @{ state = 'f2'; steps = @((K '{F2}')) },
+    @{ state = 'down'; steps = @((K '{DOWN}')) })
+Def '25' 'bar-f2' 'Type =A1+B1 into D10 (the cell), {F2}, {F2}' 'The mode after each F2, in the cell: the cell''s own cycle, for comparison' '(asked)' @(
+    @{ state = 'typed'; steps = @((K (Lit '=A1+B1'))) },
+    @{ state = 'f2-1'; steps = @((K '{F2}')) },
+    @{ state = 'f2-2'; steps = @((K '{F2}')) })
 
 # Not cases: probes for why 14-17's keys did not reach the Formula Bar (20:01). p1: the click and
 # the keys in one state, with no reading between them. p2: a reading after the click, then one key.

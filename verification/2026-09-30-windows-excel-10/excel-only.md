@@ -1,7 +1,7 @@
 # Verification — 2026-09-30, Windows, Excel only: completion, the pointed shade, the Formula Bar's keys (tenth run)
 
-**Scope: [`verify-on-windows-10.md`](../../docs/specs/exsheet/verify-on-windows-10.md), all three
-groups.** Excel alone was asked, so nothing was built.
+**Scope: [`verify-on-windows-10.md`](../../docs/specs/exsheet/verify-on-windows-10.md), groups 1–3,
+and group 4, which the procedure gained after them.** Excel alone was asked, so nothing was built.
 
 - Group 1 asks about completion: the readings in
   [ADR-0058](../../docs/adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md), "Readings,
@@ -10,11 +10,19 @@ groups.** Excel alone was asked, so nothing was built.
   the eighth Windows run settled", and ticket 43. Both are on `claude/exsheet-eighth-run-b`.
 - Group 3 asks about the Formula Bar's keys. It belongs to ADR-0051's note "An edit in the Formula Bar
   never enters Overwrite", ticket 42 and ED-29, all on the same branch.
+- Group 4 asks what F2 does in the Formula Bar, and what the keys after it do. It decides ADR-0051's
+  rule for F2 there (ticket 42).
 
-**Verified commit: `261666c0bdd4b75fd3548e6e26ec0306eca2a0ff`**, the tip of
-`claude/exsheet-pointing-scope` when this run began. The results are committed on
-`claude/exsheet-windows-verify-10`, branched from that commit. Nothing here changes an ADR,
-`CONTEXT.md` or the Definition of Done.
+**Verified commits.**
+
+- Groups 1–3: **`261666c0bdd4b75fd3548e6e26ec0306eca2a0ff`**, the tip of
+  `claude/exsheet-pointing-scope` when this run began. The results are committed on
+  `claude/exsheet-windows-verify-10`, branched from that commit.
+- Group 4: **`632b323eb52a4339ae072a87c42e60044fc28a71`**, the tip of the same branch when group 4
+  ran. That commit added group 4 to the procedure. The results are a second commit on
+  `claude/exsheet-windows-verify-10`.
+
+Nothing here changes an ADR, `CONTEXT.md` or the Definition of Done.
 
 Files beside this one:
 
@@ -78,8 +86,9 @@ Files beside this one:
 
    After the last state, Escape until Excel answers COM. Then the active cell, D10's formula and the
    used range are read through COM.
-   - **Every case ended with the active cell D10, D10 empty, and the used range A1:B4.** Nothing was
-     committed in any case.
+   - **In groups 1–3, every case ended with the active cell D10, D10 empty, and the used range
+     A1:B4.** Nothing was committed in any case.
+   - **In group 4, cases 20–22 entered the Formula into D10.** Their tables below say so.
 3. **The caret** is the Formula Bar's selection, read through its TextPattern: the text before the
    selection's start, counted.
    - The Formula Bar reports it while the edit is in the cell too, as the eighth run found.
@@ -101,7 +110,8 @@ Files beside this one:
 7. **Additions**: cases or states not in the procedure. They are marked *(addition)*:
    - `7x`, `8x`: the eighth run's keys for the first two shades, as a control;
    - `7s`, `8s`: cases 7 and 8 with a wait of 1 s before the ↓;
-   - further passes of 7–13.
+   - further passes of 7–13;
+   - a second pass of 20–25 (pass b).
 8. **A trial of case 1** (19:32:49), before the recorded run, gave what case 1 gave in the run. It is
    not in the `.jsonl`.
 
@@ -234,6 +244,44 @@ the typing. Pass a's lines and the probes stay in the `.jsonl` (`group` `bar` pa
 `probe`). Cases 18 and 19 read a state after a click into a bar that already held text, and their
 next keys landed.
 
+## Group 4 — F2 in the Formula Bar, and the keys after it
+
+The procedure gained this group at `632b323`, after groups 1–3. The run:
+
+- pass a at 20:22:33–20:23:40;
+- pass b, the same six cases again, at 20:23:50–20:24:57 *(addition)*.
+
+**Both passes gave the same modes, texts, carets, active cells and cells written, state for state.**
+The table is pass a. The `.jsonl` lines are `group` `bar-f2`.
+
+The click into the empty Formula Bar and the typing are one state, with no reading between them, as in
+pass b of 14–17. The click lands 200 px right of the bar's left edge. In every case the keys landed.
+
+The procedure gives no reading for this group, so the table has no "Agrees" column. "Open" means Excel
+was still editing D10 when the state was read. "Entered" means the edit closed and the Formula was
+written into a cell.
+
+| # | Keys and clicks | What is asked | Excel |
+|---|---|---|---|
+| 20 | Click into the empty Formula Bar, type `=A1+B1`, `{F2}`, then `{HOME}` | The mode after F2 and after Home; the Formula Bar's text and caret; the active cell; is the edit still open, or was the Formula entered (and into which cell) | Typed: **Edit**, `=A1+B1`, caret 6, the focus in the Formula Bar. After F2: **Enter**, `=A1+B1`, caret 6, the focus still in the bar, open. **After Home: Ready. The Formula was entered into D10**, which shows `#VALUE!`. **The active cell is A10**, and the Formula Bar shows A10's empty contents. The focus is on the sheet's cell |
+| 21 | As 20 without Home, then `{RIGHT}` | The same | After F2: **Enter**, caret 6, open. **After →: Ready. Entered into D10** (`#VALUE!`). **The active cell is E10**, and the bar is empty |
+| 22 | As 20 without Home, then `{DOWN}` | The same | After F2: **Enter**, caret 6, open. **After ↓: Ready. Entered into D10** (`#VALUE!`). **The active cell is D11**, and the bar is empty |
+| 23 | As 20 without Home, then `{F2}` again | The mode after the second F2 | After the first F2: **Enter**, caret 6. After the second: **Edit**, `=A1+B1`, caret 6. The focus stays in the Formula Bar and the edit stays open. Nothing was entered (D10 empty after Escape) |
+| 24 | Click into the empty Formula Bar, type `=A1+`, `{F2}`; then `{DOWN}` | The mode after F2 (Point, Enter or Edit); then Down: the text (is `D11` written?) and the mode | Typed: **Edit**, `=A1+`, caret 4. **After F2: Enter** (not Point), `=A1+`, caret 4. **After ↓: Point. `D11` is written**: the bar holds `=A1+D11` with `D11` selected (24–27). D11 is outlined in the second colour's dashes (`#c0353e`, fill `#f9ebec`). The active cell is still D10, the edit is open and the focus stays in the Formula Bar. A value tip `0` shows above the bar. Nothing was entered (D10 empty after Escape) |
+| 25 | Type `=A1+B1` into D10 (the cell), `{F2}`, `{F2}` | The mode after each F2, in the cell: the cell's own cycle, for comparison | Typed: **Enter**, caret 6, the focus on the sheet (the edit is in the cell). After the first F2: **Edit**, caret 6. After the second: **Enter**, caret 6. The References stay coloured in the cell throughout (`#326ac7`, `#c0353e`). Nothing was entered |
+
+What the states show besides, and nothing asks:
+
+- **The Formula Bar's F2 cycle is Edit → Enter → Edit** (23). The cell's is Enter → Edit → Enter (25).
+  A click into the empty bar starts at Edit; typing into the cell starts at Enter.
+- **The caret does not move on F2**, in the bar or in the cell (20–25).
+- **F2 does not move the edit between the bar and the cell.** After F2 in the bar, the References
+  stay coloured in the bar (`#006cbe`, `#bc2f34`) and the cell's text stays plain, and the focus stays
+  in the bar. In the cell (25) they stay coloured in the cell.
+- **The pointed `D11` in the bar (24)** is drawn light on a `#616161` ground. In the cell, group 2
+  read the pointed Reference on `#c6c6c6`. This was not asked, and the bar's colour was read only
+  roughly (the text's pixels mix with the grey).
+
 ## Where Excel and the readings differ
 
 Each item is a difference from a reading of the procedure, or from a statement an ADR makes about
@@ -261,6 +309,11 @@ Excel. Nothing here is decided.
    - ADR-0057, "What cases 24–32 settled", says the grey "shows for `=SUM(D11`, `=1+D11` and
      `=D11+D12`". Its `=1+D11` is the eighth run's case 30, seen once.
    - ADR-0051, "The Reference being written is shown selected", says the same.
+7. **F2 takes Excel's Formula Bar out of Edit** (17, 20–24). After F2 the bar is in Enter. From there,
+   Home, → and ↓ entered the Formula into D10 and moved the active cell (20–22). Where a Reference can
+   go, ↓ pointed (24). ADR-0051, "An edit in the Formula Bar never enters Overwrite" (on
+   `claude/exsheet-eighth-run-b`), says: "Excel's Formula Bar is always in Edit (2026-09-27, item 12,
+   "status Edit")."
 
 ## Shades observed in group 2
 
@@ -311,3 +364,8 @@ above).
   in `%APPDATA%\Microsoft\Excel` hash as the backup taken before the first Excel started
   (`%LOCALAPPDATA%\exgrid-layer3\autorecover-backup-run10`).
 - **The keyboard** is English (UK), 0x08090809, as the run found it.
+- **After group 4 (checked at about 20:25) the same holds.** No Excel process was running before it or
+  is left after it: all twelve of its Excels quit by themselves. The AutoRecover workbooks still hash
+  as the backup. The keyboard is 0x08090809. `UI Theme` is still `6`, and group 4's pictures show the
+  light ribbon, so it ran under "Use system setting" as groups 1–3 did. The environment (case `0`) was
+  not read again for group 4.
