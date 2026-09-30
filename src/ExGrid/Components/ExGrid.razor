@@ -6681,12 +6681,19 @@
                 // F2 moves between the two states (ADR-0010) — and, where pointing is
                 // declared, between Caret and Point: from Caret it points where the Consumer
                 // says a Reference can go at the caret, and from Point it moves the caret
-                // again, the outline gone and its Reference left written (ADR-0051).
+                // again, the outline gone and its Reference left written (ADR-0051). In the
+                // Formula Bar it moves only between Caret and Point: where no Reference can go
+                // it changes nothing, as the bar is never in Overwrite (ADR-0051, 2026-09-30;
+                // ED-29). The surface is the core's record, which hears a press back into the
+                // cell only when text is next typed there: F2 in the cell straight after such a
+                // press, before anything is typed, stays in Caret as in the bar. Accepted: it
+                // errs toward Caret, and never commits.
                 _editMode = _editMode switch
                 {
                     EditMode.Point => EditMode.Caret,
                     EditMode.Caret when PointAt is { } pointAt && ReferenceText is not null
                         && _editCaret >= 0 && pointAt(_editText, _editCaret) => EditMode.Point,
+                    EditMode.Caret when _editSurface == EditSurface.Bar => EditMode.Caret,
                     EditMode.Caret => EditMode.Overwrite,
                     _ => EditMode.Caret,
                 };

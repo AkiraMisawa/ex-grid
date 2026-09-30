@@ -22,8 +22,8 @@ The shade was approximated (55% toward black); Excel's are `#0401a2` for the fir
 - [ ] Layer 3 under both Chromes: `=D11+`, ↓↓ in the cell gives the pointed text `#0401a2` on
       `#c6c6c6`, and a second Reference pointed gives `#630101` (DC-56). Write it; the orchestrator runs
       it. *Written, not run*
-- [ ] The next Windows run asks Excel for the other five shades (`verify-on-windows-9.md` Part B, on
-      `claude/exsheet-pointing-scope`, when the branches meet)
+- [ ] The next Windows run asks Excel for the other five shades (`verify-on-windows-10.md`, group
+      2, on `claude/exsheet-pointing-scope`)
 
 ## Comments
 
@@ -48,6 +48,5 @@ The shade was approximated (55% toward black); Excel's are `#0401a2` for the fir
   ExGrid.MudBlazor's. From D10, as the run typed Excel's cases 20 and 20x: `=D11+`, then ↓ points
   D11 in the first colour, with text `rgb(4, 1, 162)` on `rgb(198, 198, 198)`. ↓ again points D12
   in the second colour, `rgb(99, 1, 1)`. Then `=SUM(`, ↓, ↓ gives the first colour's shade.
-- **Not done here**: asking Excel for the other five shades belongs in `verify-on-windows-9.md`
-  Part B. That file is on `claude/exsheet-pointing-scope`, not on this branch. It is for when the
-  branches meet.
+- **Not done here**: asking Excel for the other five shades is in `verify-on-windows-10.md`, group
+  2, on `claude/exsheet-pointing-scope`, not on this branch.

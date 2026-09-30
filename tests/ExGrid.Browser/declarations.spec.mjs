@@ -405,16 +405,25 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 // An edit in the Formula Bar is never in Overwrite (ED-29; ADR-0051, 2026-09-30). Part B of the
-// eighth Windows run typed =A1+B1 into the bar and pressed Home: the Formula was entered into D10
-// and the Focus moved to A10 (case 7k). Excel's bar is always in Edit, so there Home, → and Delete
-// edit the text. Three ways the text reaches the bar: typed there; pointed from there with a press
-// on A1 and typed on, which ends Point; and begun in the cell (Overwrite) and carried into the bar
-// by a press, which goes into Caret.
+// eighth Windows run typed =A1+B1 into the bar, pressed F2 and then Home: F2 had taken the edit
+// from Caret to Overwrite, and Home entered the Formula into D10 and moved the Focus to A10 (case
+// 7k). Excel's bar is always in Edit, so there Home, → and Delete edit the text. The ways the text
+// reaches the bar: typed there, with and without the run's F2, which in the bar moves only between
+// Caret and Point; pointed from there with a press on A1 and typed on, which ends Point; and begun
+// in the cell (Overwrite) and carried into the bar by a press, which goes into Caret.
 const writtenIntoTheBar = {
     'typed into the bar': async (page, grid) => {
         await clickBarEnd(grid);
         await expect(bar(grid)).toBeFocused();
         await typeSteadily(page, bar(grid), '=A1+B1');
+    },
+    'typed into the bar, then F2 (case 7k)': async (page, grid) => {
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '=A1+B1');
+        // No Reference can go after B1: F2 changes nothing here.
+        await page.keyboard.press('F2');
+        await expect(bar(grid)).toBeFocused();
     },
     'pointed from the bar, then typed on': async (page, grid) => {
         await clickBarEnd(grid);

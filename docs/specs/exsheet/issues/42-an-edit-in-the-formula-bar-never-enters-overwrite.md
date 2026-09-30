@@ -5,8 +5,9 @@ Status: ready-for-agent
 **What to build:** ADR-0051's note of 2026-09-30, "An edit in the Formula Bar never enters
 Overwrite". Found by Part B of the eighth Windows run
 (`verification/2026-09-30-windows-8/reference-outlines.md`, case `7k`): `=A1+B1` typed into the
-Formula Bar, then `Home`, committed the Formula and moved the Focus to column A. Typing the `A` had
-ended Point in Overwrite. Excel's Formula Bar is always in Edit.
+Formula Bar, then F2 and `Home`, committed the Formula and moved the Focus to column A. F2 had taken
+the edit from Caret to Overwrite. Excel's Formula Bar is always in Edit. *(Corrected when built, as
+ADR-0051's note was: this first said typing had ended Point in Overwrite.)*
 
 **Blocked by:** None (can start immediately)
 
@@ -14,17 +15,19 @@ ended Point in Overwrite. Excel's Formula Bar is always in Edit.
       Overwrite (`ExGrid.FormulaEntry.cs`, where typing ends Point) (ED-29)
 - [x] An edit that moves from the cell into the bar (`OnFormulaBarFocusAsync` with an edit open)
       goes into Caret; one that moves back into the cell keeps the mode it has (ED-29)
-- [ ] `Home`, `End`, ← and → in the bar move the caret and commit nothing; Enter, Tab and Escape keep
-      their meanings; the key listener's gate follows the mode the core tells it (ED-29). *Open:
-      every path above now holds, but F2 in the bar still enters Overwrite where no Reference can
-      go, and `Home` then commits. See the comment below*
+- [x] F2 in the bar moves only between Caret and Point: where no Reference can go it changes
+      nothing; F2 in the cell still goes from Caret to Overwrite there (ADR-0051, 2026-09-30,
+      decided with the user when this ticket was built; ED-29)
+- [x] `Home`, `End`, ← and → in the bar move the caret and commit nothing; Enter, Tab and Escape keep
+      their meanings; the key listener's gate follows the mode the core tells it (ED-29)
 - [x] Nothing changes for an edit in the cell: typing onto a cell still opens Overwrite, and the arrows
       still commit and move there (ADR-0012)
-- [x] Layer 2: the mode after typing in the bar, after a press into the bar mid-edit, and in the cell
-      (ED-29)
-- [ ] Layer 3 on `/sheet` under both Chromes: `=A1+B1` typed into the bar, then `Home`, →, three
-      Deletes: the bar holds `=B1`, the edit is open, and the Focus has not moved (ED-29). Write it;
-      the orchestrator runs it. *Written, not run*
+- [x] Layer 2: the mode after typing in the bar, after a press into the bar mid-edit, after F2 in
+      the bar, and in the cell (ED-29)
+- [ ] Layer 3 on `/sheet` under both Chromes: `=A1+B1` typed into the bar, F2, `Home`, →, three
+      Deletes (case `7k`); the same after pointing from the bar, and after an edit begun in the cell
+      is pressed into the bar: the bar holds `=B1`, the edit is open, and the Focus has not moved
+      (ED-29). Write it; the orchestrator runs it. *Written, not run*
 
 ## Comments
 
@@ -53,20 +56,29 @@ ended Point in Overwrite. Excel's Formula Bar is always in Edit.
   were `=A1+B1`, **F2**, `Home`. From Caret, F2 goes to Point where a Reference can go and to
   Overwrite everywhere else (ADR-0010, `OnEditingKeyAsync`). After `B1` no Reference can go, so
   F2 put the bar into Overwrite, and `Home` committed. A layer-2 probe, not kept, gave this result
-  on 4179010 and on this branch alike: after `=A1+B1` in the bar the gate is told `caret`, and
+  on 4179010 and on this branch before the F2 rule below: after `=A1+B1` in the bar the gate is told `caret`, and
   `Home` commits nothing. After F2 it is told `overwrite`, and `Home` commits `=A1+B1` and moves
   the Focus from B1 to A1. So:
-  - **Proposal, needing a decision.** ADR-0051's note says the bar is "never in Overwrite", but also
-    that F2 in the bar "is left as it is". Left as it is, F2 enters Overwrite. The proposal is
-    that in the bar F2 moves between Caret and Point only. Where no Reference can go, it changes
-    nothing, which is what the run saw. Not built.
-  - **The ticket's layer-3 case alone does not catch the defect.** `=A1+B1` typed into the bar,
-    `Home`, →, three Deletes, is expected to pass on 4179010 too. The test written for it
-    therefore runs two more ways into the bar, both of which fail on 4179010 at layer 2. One points
-    from the bar with a press on A1 and types on. The other begins in the cell and presses into
-    the bar.
-- **Layer 2** (`tests/ExGrid.Components/FormulaBarModeTests.cs`, nine tests). Seven of them fail
-  on 4179010. The two that pass there are about the cell's unchanged behaviour and about Point
-  kept when the core hands the keyboard back.
+  - ADR-0051's note said the bar is "never in Overwrite", but also that F2 in the bar "is left as it
+    is". Left as it is, F2 enters Overwrite. Put to the user, who decided that F2 in the bar moves
+    only between Caret and Point. ADR-0051's note and ED-29 were corrected (2629c97).
+  - The first layer-3 case, `=A1+B1` typed into the bar, `Home`, →, three Deletes, without F2, is
+    expected to pass on 4179010 too. ED-29 now takes 7k's own keys, F2 included. The case without
+    F2 is kept beside it.
+
+*(2026-09-30, the F2 rule built.)* One arm in the F2 switch in `OnEditingKeyAsync`: from Caret in
+the bar, where no Reference can go, the mode stays Caret. F2 still asks for the keyboard, and the
+gate is told the unchanged mode. Point → Caret and Caret → Point are as before, so pointing from
+the bar with F2 (DC-19, DC-28) is untouched. The surface is the core's record. That record hears a
+press back into the cell only when text is next typed there. So F2 in the cell, straight after
+such a press and before anything is typed, stays in Caret, as in the bar. That is accepted, and
+said in the code: it errs toward Caret, and never commits.
+
+- **Layer 2** (`tests/ExGrid.Components/FormulaBarModeTests.cs`, twelve tests). Eight fail on
+  4179010's component source. The four that pass there pin what did not change: the cell's
+  Overwrite, F2 in the cell, F2 once the edit is typed in the cell again, and Point kept when the
+  core hands the keyboard back.
 - **Layer 3, written, not run**: `ED-29: =A1+B1 … (builtin|mud Chrome)` in
-  `tests/ExGrid.Browser/declarations.spec.mjs`, three ways under each Chrome, from D10.
+  `tests/ExGrid.Browser/declarations.spec.mjs`, from D10, under each Chrome. Four ways into the bar:
+  typed there, typed there then F2 (case `7k`), pointed from there and typed on, and begun in the
+  cell then pressed into the bar.

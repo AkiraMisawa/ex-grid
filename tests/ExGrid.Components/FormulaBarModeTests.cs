@@ -195,6 +195,70 @@ public class FormulaBarModeTests : GridTestContext
         AssertTheEditStandsOnB1(cut, intents, selections);
     }
 
+    [Fact] // ADR-0051 (2026-09-30) / ED-29, case 7k: F2 in the bar moves only between Caret and Point — where no Reference can go it changes nothing, and Home then commits nothing
+    public async Task ED29_F2_in_the_bar_moves_only_between_caret_and_point()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var selections = new List<GridSelection>();
+        var cut = RenderGrid(intents, selections);
+        await ClickAsync(cut, 150, 10);
+        await PressIntoBarAsync(cut);
+        await TypeInBarAsync(cut, "=A1+B1");
+
+        // No Reference can go after B1: Caret stays Caret, where Overwrite used to follow.
+        await PressAsync(cut, "F2", "=A1+B1", 6, fromBar: true);
+        Assert.Equal("caret", EditingModesTold()[^1]);
+        await PressAsync(cut, "Home", "=A1+B1", 6, fromBar: true);
+        AssertTheEditStandsOnB1(cut, intents, selections);
+        Assert.Equal("=A1+B1", BarText(cut));
+
+        // Where one can, F2 points, and F2 again returns to Caret.
+        await TypeInBarAsync(cut, "=A1+B1+");
+        await PressAsync(cut, "F2", "=A1+B1+", 7, fromBar: true);
+        Assert.Equal("point", EditingModesTold()[^1]);
+        await PressAsync(cut, "ArrowDown", "=A1+B1+", 7, fromBar: true);
+        Assert.Equal("=A1+B1+B2", BarText(cut));
+        await PressAsync(cut, "F2", "=A1+B1+B2", 9, fromBar: true);
+        Assert.Equal("caret", EditingModesTold()[^1]);
+        Assert.Empty(cut.FindAll(".ex-selection .ex-point"));
+        AssertTheEditStandsOnB1(cut, intents, selections);
+    }
+
+    [Fact] // ADR-0051 (2026-09-30)/0010 / ED-29: F2 in the cell is unchanged — from Caret where no Reference can go it is Overwrite, whose arrows commit and move
+    public async Task ED29_F2_in_the_cell_still_goes_from_caret_to_overwrite()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var selections = new List<GridSelection>();
+        var cut = RenderGrid(intents, selections);
+        await ClickAsync(cut, 150, 10);
+        await PressAsync(cut, "F2");
+        Assert.Equal("caret", EditingModesTold()[^1]);
+
+        await PressAsync(cut, "F2", "Row 000001", 10);
+
+        Assert.Equal("overwrite", EditingModesTold()[^1]);
+        await PressAsync(cut, "ArrowDown", "Row 000001", 10);
+        Assert.Equal("Row 000001", Assert.Single(intents).Value);
+        Assert.Equal(new CellPosition(1, 1), selections[^1].Focus);
+    }
+
+    [Fact] // ADR-0051 (2026-09-30) / ED-29: an edit carried from the bar back into the cell, once typed in there, has the cell's F2 again
+    public async Task ED29_F2_after_the_edit_is_typed_in_the_cell_again_is_the_cells()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var selections = new List<GridSelection>();
+        var cut = RenderGrid(intents, selections);
+        await ClickAsync(cut, 150, 10);
+        await PressIntoBarAsync(cut);
+        await TypeInBarAsync(cut, "5");
+
+        await cut.Find(".ex-viewport .ex-editor").InputAsync(new ChangeEventArgs { Value = "56" });
+        Assert.Equal("caret", EditingModesTold()[^1]);
+        await PressAsync(cut, "F2", "56", 2);
+
+        Assert.Equal("overwrite", EditingModesTold()[^1]);
+    }
+
     [Fact] // ADR-0051 (2026-09-30) / ED-29: an edit that moves back into the cell keeps the mode it has — Caret, whose arrows commit nothing
     public async Task ED29_an_edit_moved_back_into_the_cell_keeps_caret()
     {
