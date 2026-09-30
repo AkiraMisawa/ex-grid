@@ -359,6 +359,13 @@ come from different batch runs, so it cannot be expressed per row.
 of (book × metric) and the Consumer can answer it.
 _Avoid_: attribute, tag, annotation
 
+**Change Highlight**:
+A cell's mark, held for a short time, that its displayed value has just changed with the data —
+never with a change of layout, sort or collapse. The Consumer says when a cell changed, as it
+answers Cell Metadata; the grid paints the mark and takes it away, without animating either.
+_Avoid_: flash, blink, tick (it does not animate), Mark (that is a Row Mark), Cell State (a state
+lasts; this passes)
+
 **Overflow**:
 The state of a value not fitting the column width. **Text is cut with an ellipsis; numbers and
 dates become `####`** — truncated text is visibly truncated, whereas a truncated number **looks
