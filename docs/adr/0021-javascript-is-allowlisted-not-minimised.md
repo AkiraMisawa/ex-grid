@@ -182,7 +182,9 @@ These are the places where reaching for JS would be the easy answer, and where w
   with its own `FocusAsync` when the core asks through the fragment's context. "Focus the first
   focusable thing in the cell" was the JavaScript answer and is recorded there as rejected. The
   one change to `ex-grid.js` is inside the first entry's filter: a repeated plain Space is taken
-  and dropped, so a held Space engages once.)*
+  and dropped, so a held Space engages once.)* *(Two decisions about focus are now made in script,
+  both in notes at the end of this ADR: the hand-back of 2026-09-27, and the press that brings the
+  keyboard back to an edit left standing, 2026-09-29.)*
 - **Measuring the scrollbar.** The gutter is *reported*, never read — see the fourth entry above
   for why those are different things. Nothing in the grid calls `getBoundingClientRect`,
   `clientWidth` or `offsetWidth` on the path to a paint.
@@ -266,7 +268,8 @@ inside that root or on nothing (`body`). Otherwise a second grid the user has si
 have its keyboard taken. The call was already a JavaScript focus call made through Blazor. The
 condition reads `document.activeElement` and no layout. This is the one decision about focus made
 in JavaScript, and the reason is recorded here: [ADR-0018](./0018-multiple-instances-must-be-independent.md)'s
-independence cannot be kept on a circuit otherwise.)*
+independence cannot be kept on a circuit otherwise.)* *(No longer the only one: see the note of
+2026-09-29 at the end.)*
 
 *(Added 2026-09-27, decided with the user: a capture-phase `mousedown` and `mouseup` on the
 instance root. They exist so that a primary-button press on the rows keeps its place among held keys.
@@ -277,7 +280,8 @@ too low, which was measured on the Server host at 0–60 ms and on WebAssembly a
 is held, the press passes through untouched. No layout is read.)*
 
 *(Widened 2026-09-28, decided with the user, after the second Windows run's Server failures.)* The
-same `mousedown` covers two more things. Neither adds a listener, reads layout, or moves focus from
+same `mousedown` covers two more things *(and, since 2026-09-29, a third that does move focus: see the
+last note)*. Neither adds a listener, reads layout, or moves focus from
 script:
 
 - **A press into an editable, unfocused Formula Bar is held among the keys too.** It opens an edit,
@@ -300,3 +304,30 @@ hands the keyboard back; one ended by a press elsewhere does not take it from a 
 *(Settled while implementing:)* the bar's focus event reaches C# at once, ahead of a row press held
 before it, so the press into the bar is answered again in its turn. If the bar still holds focus
 and no edit is open when its turn comes, the core opens the bar's edit then.)*
+
+*(Added 2026-09-29, decided with the user, with
+[ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6: the capture-phase `mousedown`
+on the root also brings the keyboard back to an edit left standing. When a press lands on this
+root's rows or headings while an edit is open here and DOM focus is outside this root, the listener
+focuses the editor surface that last held the keyboard before the press goes on. This is the second
+decision about focus made in script, made for the same reason as the first: done from C#, a round
+trip later, the keys typed in between would reach the grid the user had just left. The condition
+reads `document.activeElement` and no layout, and the listener is the one already attached.)*
+
+*(Decided with the user 2026-09-29, found while building ADR-0018 section 6; the 2026-09-28
+sentence could be read the other way, and the user chose this reading.)* "One ended by a press elsewhere
+does not take it from a field" (the 2026-09-28 note) means a press into another field, such as the
+Name Box, which keeps the focus it was given. A press on the rows is not one. Where pointing is
+declared, the core suppresses the default of every press on the rows while an edit is open
+(ADR-0051), so that a press which points leaves the keyboard in the edit. When such a press
+commits an edit typed in the Formula Bar instead, the bar's focus is only left standing: the
+keyboard stayed in the bar with no edit open, and typing there went nowhere. That focus is now
+marked as left standing, as a held press's already was, and the hand-back after the commit takes
+it.
+
+*(Added 2026-09-29, decided with the user, with
+[ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s widened hold: a press on the rows
+while an edit is open starts a hold in the same listener. The keys typed after it are held, in
+order, until the core has answered the press (`PressAnsweredAsync`, already asked for a held
+press), and are then replayed against the mode the answer leaves. No listener is added and no
+layout is read.)*

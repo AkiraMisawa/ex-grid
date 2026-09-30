@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures.mjs';
 import {
-    sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
+    sheet, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
 } from './sheet-helpers.mjs';
 
 // ExSheet on the DemoHost's /sheet, driven with real keys and the real mouse (SH-18, ticket 18):
@@ -18,15 +18,7 @@ import {
 test.use({ viewport: { width: 1280, height: 1000 } });
 
 test.beforeEach(async ({ page }) => {
-    await page.goto('/sheet');
-    // A WebAssembly page boots the runtime on every navigation, which can take longer than an
-    // assertion's default wait on a loaded machine.
-    await expect(page.locator('#demo-interactive')).toBeAttached({ timeout: 30_000 });
-    await expect(cell(sheet(page), 'A1')).toHaveText('Item');
-    // The page pushes the Linked Table's first snapshot 1.5 s after the Sheet opens. Every
-    // change to the Sheet clears ExSheet's notice, a Consumer's push included
-    // (ExSheet.ChangedAsync), so a refusal read before the push lands can be wiped by it.
-    await expect(cell(sheet(page), 'B12')).toHaveText('318.25', { timeout: 10_000 });
+    await openSheet(page);
 });
 
 test('SH-18: an Entry and a Formula typed into cells commit, compute and move the Focus down', async ({ page }) => {

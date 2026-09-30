@@ -1,0 +1,32 @@
+@* What a page run under ExGrid.MudBlazor's Chrome (DemoChrome) needs for MudBlazor's own controls
+   to render: its stylesheet, and its theme and popover providers. A page that stands its grids on
+   the Wrapper's paper also takes the Wrapper's stylesheet, which maps the grid's Visual Tokens onto
+   the palette (ADR-0030), and the font the paper's widths were measured for. Under the core's
+   Chrome nothing here renders, and the page is what it always was. *@
+@using global::MudBlazor
+
+@if (DemoChrome.IsMud(Name))
+{
+    <HeadContent>
+        @if (Paper)
+        {
+            <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+        }
+        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+        @if (Paper)
+        {
+            <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
+        }
+    </HeadContent>
+    <MudThemeProvider />
+    <MudPopoverProvider />
+}
+
+@code {
+    /// <summary>The page's <c>?chrome=</c> value.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>Whether the page stands its grids on the Wrapper's paper under the Wrapper's
+    /// Chrome.</summary>
+    [Parameter] public bool Paper { get; set; }
+}
