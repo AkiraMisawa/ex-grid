@@ -1,8 +1,13 @@
 # ExPivot.MudBlazor is a Chrome and a stylesheet, around the grid Wrapper it reuses
 
-*(Proposed 2026-09-30 with [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md),
-and not yet decided with the user, who asked for "a Wrapper for a MudBlazor-like design". Brought in
-line with what was built the same day: the list of controls, and where the words come from.)*
+*(Proposed 2026-09-30 with [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md).
+The user had asked for "a Wrapper for a MudBlazor-like design". The proposal was brought in line with
+what was built the same day: the list of controls, and where the words come from.*
+
+*Decided with the user the same day. The look was accepted as built (Q7): a placed field is an
+outlined button with a ▾, as in Excel; the list uses `MudCheckBox`; the panels use `MudTextField` and
+`MudSelect`; menus and panels drop down at the pane's width; and it follows dark mode. The grilling
+added surfaces for the Wrapper to draw, which are marked **Changed when decided** below.)*
 
 A MudBlazor application should show a pivot that looks like the rest of it: a Material surface, the
 palette's colours in both schemes, Roboto, and MudBlazor's own controls in the Field List and its
@@ -27,13 +32,26 @@ structure or state.
   cascaded value to size its label column, so the font on screen and the widths in the arithmetic
   still leave one hand. A second paper would be a second copy of that obligation.
 - **`MudPivotChrome`** is the `IPivotChrome` ([ADR-0060](./0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md))
-  that draws the Field List, the report filter band, the menus and the panels with MudBlazor's
-  controls: `MudCheckBox`, `MudTextField`, `MudSelect`, `MudRadioGroup`, `MudButton`, `MudText`,
-  Material icons. It supplies `MudGridChrome` as the report grid's Chrome, so one parameter dresses
-  both.
-- **`mud-ex-pivot.css`** maps ExPivot's own Visual Tokens — the `±` button, the Field List's
-  surfaces and rules, the drop indicator — onto MudBlazor's palette variables, scoped under
-  `.mud-ex-grid` as the grid Wrapper's rules are, so load order cannot matter.
+  that draws the Field List, the toolbar with its report filter band, the menus and the panels.
+  - It uses MudBlazor's controls: `MudCheckBox`, `MudTextField`, `MudSelect`, `MudRadioGroup`,
+    `MudButton`, `MudText` and Material icons.
+  - It supplies `MudGridChrome` as the report grid's Chrome, so one parameter dresses both.
+  - *Changed when decided:* it also draws the surfaces the grilling added.
+    - The toolbar's Layout menu, Refresh and the pane's toggle are MudBlazor buttons and menu
+      items.
+    - Defer Layout Update is a `MudCheckBox` with a `MudButton` beside it.
+    - The Details tabs are `MudTabs` placed at the bottom, as Q26 put them.
+    - The Stale Report's notice is a `MudAlert`.
+    - The Details dialog is ExPivot's frame with MudBlazor's controls inside it, never a
+      `MudDialog` (the boundary below).
+- **`mud-ex-pivot.css`** maps ExPivot's own Visual Tokens onto MudBlazor's palette variables.
+  - The tokens cover the `±` button, the Field List's surfaces and rules, the drop indicator, the
+    toolbar, the tabs and the Stale Report's notice.
+  - They are scoped under `.mud-ex-grid`, as the grid Wrapper's rules are, so load order cannot
+    matter.
+  - The Change Highlight is the grid's token
+    ([ADR-0067](./0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)),
+    so `ExGrid.MudBlazor`'s stylesheet maps it, for every grid, not only a pivot's.
 
 **Nothing is forwarded.** There is no `MudExPivot` re-declaring ExPivot's parameters; ADR-0030
 recorded why the forwarding sketch was wrong for the grid, and it is wrong here for the same

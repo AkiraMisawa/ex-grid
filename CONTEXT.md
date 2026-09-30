@@ -164,6 +164,13 @@ by an ADR of its own.
 _Avoid_: DataTable, DataSet (.NET's own types), data frame, table (a Linked Table is ExSheet's),
 pivot cache (Excel's word, for a pivot's alone)
 
+**Schema**:
+How a delimited text file is read into a Snapshot: each column's header, kind and format and the
+strings that count as a Blank, and the file's encoding and separator. It is declared, never
+guessed; one suggested from a file's first rows is used only once the user has confirmed it
+([ADR-0063](./docs/adr/0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)).
+_Avoid_: import settings, mapping, dialect, type inference (there is none)
+
 **Change Batch**:
 The records added, the records changed and the Record Keys removed since a Snapshot, applied as
 one to make the next Snapshot. A component shows the Snapshot before it or the one after it, never
@@ -682,9 +689,9 @@ _Avoid_: file, workbook, Snapshot (that is the Consumer's tabular data), save da
 ### Pivots
 
 **Source Record**:
-One record of the data a pivot aggregates. Handed to the bundled Pivot Source, it is held by
-reference and never written to, and a new list is a refresh, as in Excel; behind a server's Pivot
-Source it stays on the server
+One record of the data a pivot aggregates. The bundled Pivot Source holds it in a Snapshot and
+never writes to it, and a new Snapshot or a Change Batch is a refresh, as in Excel; behind a
+server's Pivot Source it stays on the server
 ([ADR-0058](./docs/adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: row (a row is the report's), item (that is a field's distinct value), fact, entity
 
@@ -701,6 +708,14 @@ Items are asked for under the version the report was computed from, and a source
 longer answer under it refuses rather than answer from newer data.
 _Avoid_: data version (it names nothing here), Row Sequence Version (that is the grid's order),
 timestamp, revision
+
+**Leaf Aggregate**:
+What a Pivot Source answers a report with: for each combination of the row and column fields'
+Items that has records, the parts each Value Field's Aggregation is computed from — counts, sums,
+extremes. ExPivot computes every cell, subtotal and grand total from them; a source never answers
+with the report itself
+([ADR-0065](./docs/adr/0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+_Avoid_: cube (the engine's own word for what it holds), summary, pre-aggregate, rollup
 
 **Pivot Field**:
 A named attribute of the Source Records the user can place in an Area: its caption, how it is read
@@ -771,6 +786,19 @@ computed and read-only
 ([ADR-0058](./docs/adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: pivot table (the whole product on screen), result (ExGrid's word for rows after a
 filter), view
+
+**Stale Report**:
+A Pivot Report left on the last version of the data it could be computed from, because the newest
+cannot be shown — the layout would break a cap, or the source failed — and saying so: what
+happened, and as of when
+([ADR-0066](./docs/adr/0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+_Avoid_: cached report, outdated, frozen (it is not stopped; it is waiting for an answer)
+
+**Defer Layout Update**:
+Excel's switch at the foot of the Field List: while it is on, the pane's changes build a pending
+Pivot Layout that the report does not follow until Update
+([ADR-0060](./docs/adr/0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+_Avoid_: manual mode, batch edit, draft layout (a draft is a panel's, until OK)
 
 **Report Form**:
 How a Pivot Report sets out its row labels — **Compact** (one indented label column, Excel's

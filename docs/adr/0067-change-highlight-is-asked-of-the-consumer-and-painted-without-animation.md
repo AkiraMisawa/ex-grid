@@ -1,0 +1,96 @@
+# Change Highlight: the Consumer says when a cell changed, and the grid marks it without animating
+
+*(Decided with the user, 2026-09-30, in the ExPivot grilling — Q59 with its parts a to d, and Q60.
+The user asked for it in the first version, and in ExGrid rather than only in ExPivot. It is an
+opt-in declaration, shaped like the ones [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md)
+gave ExSheet: without it, nothing changes.)*
+
+A trading screen marks a value the moment it changes, so the eye finds what moved. **ExGrid gains
+an opt-in declaration for this, the Change Highlight.**
+
+- The Consumer says when a cell's shown value last changed.
+- The grid marks the cell for a short time, and then takes the mark away.
+
+## It does not animate, and P8 stands
+
+Rows are recycled. The element that painted row 400 paints row 460 after a scroll, which is why
+[ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)'s P8 and the Definition of
+Done's UX-6 let nothing inside `.ex-viewport` transition or animate. A fade would run from the
+previous row's colour to this one's, so every scroll would send a wave of colour across the grid.
+
+**The mark is therefore static (Q59a).**
+
+- **It is a class on the cell** for as long as the mark lasts, and it is removed in one step when
+  the mark ends.
+- **It is keyed by row and column, never by the element.** A recycled element asks again for the
+  row it now paints, so the mark stays on the cell and does not travel with the element.
+- **A user who asks for reduced motion sees the same thing**, because there is no motion to reduce.
+
+Rejected: **rewriting P8 to allow a one-off fade on a changed cell** (Q59a, option b). A fade needs
+rules against recycling that no measurement supports, and it would weaken a criterion that holds
+the whole Viewport.
+
+## The Consumer knows; the grid asks
+
+(Q59b) **`CellChangedAt` is asked by (row, column), as Cell State is**
+([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)). It answers with the time the
+cell's shown value last changed, or null.
+
+**The grid never compares values itself** (principle 3). A comparison would need a key to tell rows
+apart across Windows, and the grid has none: Row Identity is a reference
+([ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)).
+
+- **The delegate's identity is the change signal**, as it is for Cell State. When the Consumer hands
+  over a new delegate, the painted rows ask again. Rewriting what an unchanged delegate answers
+  leaves the marks as they were.
+- **A cell is marked while the current time is before its change time plus
+  `ChangeHighlightDuration`.** The duration defaults to 1 s, and the Consumer may set it.
+- **The grid takes the mark away itself.** It keeps one timer, for the earliest end among the marks
+  it has painted, and re-renders only the rows whose marks end. No other row renders, and nothing
+  is read from the page.
+- **The grid reads the time from its `Clock`**, a `TimeProvider` that defaults to the system's.
+  A test hands in its own.
+- **The delegate is asked of value cells only**, as a per-cell kind is. An Action, Template or Mark
+  cell paints no value that could change.
+- **ExPivot answers the delegate by comparing the text it paints**
+  ([ADR-0066](./0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+- **A plain Consumer answers from its own knowledge.** For example, a server's notice that trade
+  T100123's P&L changed is enough, and this is where a server does the telling (Q59b's follow-up).
+  The `/grid-live` demo shows it.
+
+## One colour
+
+(Q59c) The mark is one colour, whichever way the value moved: `--ex-change-highlight-background`.
+
+- **Its default is the system colour `Mark`**, so the bare grid follows the host's colour scheme
+  ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)).
+- **The MudBlazor Wrapper maps the token onto its palette.**
+- **The forced-colors block restates the mark** in system colours, as it restates every state.
+
+Rejected: **green for a rise and red for a fall.**
+
+- Red and green are the Tone's colours (ADR-0006), so a loss and a fall would look the same.
+- For a risk measure, a rise is not good news.
+- A direction, if one is ever wanted, is a small arrow, not a colour.
+
+## Seen, not announced
+
+The mark is visual only. **No live region announces it.**
+
+- A screen that changes four times a second would be unusable read aloud.
+- The grid's one live region, which is `polite`
+  ([ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)), keeps its
+  two writers and nothing more.
+
+A Consumer that wants an audible alert on one value writes its own, from the knowledge it answers
+the delegate with.
+
+## Consequences
+
+- **§26 of the Definition of Done gains DC-53 to DC-55**, which gate ExGrid as every declaration
+  there does.
+- **Without the declaration nothing changes**: no timer, no class and no call.
+- **The cost is that of Cell State**: one delegate call per painted value cell of a row that renders,
+  plus one timer while any mark is showing.
+- **ExSheet and plain Consumers can use the same declaration later.** For ExSheet, the obvious case
+  is a cell whose value a recalculation changed.

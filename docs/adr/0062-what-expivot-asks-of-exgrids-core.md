@@ -1,9 +1,13 @@
 # What ExPivot asks of ExGrid's core — a double click where no edit opens
 
-*(Proposed 2026-09-30 with [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md),
-and not yet decided with the user. It is the only change to the core ExPivot's first version
-makes, and it is the shape [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md) gave ExSheet's:
-opt-in, and right for any Consumer.)*
+*(Proposed 2026-09-30 with [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md).
+It is shaped as [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md) shaped ExSheet's requests of
+the core: opt-in, and right for any Consumer.*
+
+*Decided with the user the same day, as proposed (Q9). The grilling added one more request of the
+core, the Change Highlight
+([ADR-0067](./0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)), so
+this is no longer the only core change ExPivot's first version makes.)*
 
 In Excel a double click on a PivotTable does the two things its users reach for most: on a value
 it shows the records behind it (Show Details), and on an outer row label it expands or collapses
