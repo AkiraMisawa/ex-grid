@@ -596,11 +596,16 @@
 .ex-reference-text:has(+ .ex-reference-text-shown) { visibility: visible; }
 /* While it shows, the field's own text is transparent: its fill, so its color — and the caret,
    drawn in it — stay, and a Chrome's own color does not outrank it. Selected text is drawn by
-   the field, in the selection's own colours, so it stays readable. The core's own Cell Editor
-   turns see-through, since the layer paints its ground. The adjacency is part of each rule: a
-   field whose layer has gone shows its own text whatever it still wears. */
+   the field, in the selection's own colours, so it stays readable. A word the browser's spelling
+   or grammar check marks is the field's own text too: Chrome paints it again through a highlight,
+   in the highlight's color, which neither inherits the field's fill nor takes one of its own, so
+   it stood over the layer's text a second time (DC-48, measured 2026-09-30). Its color is taken
+   away; its underline is not drawn in that color, and stays. The core's own Cell Editor turns
+   see-through, since the layer paints its ground. The adjacency is part of each rule: a field
+   whose layer has gone shows its own text whatever it still wears. */
 .ex-reference-text + .ex-reference-text-shown { -webkit-text-fill-color: transparent; caret-color: currentColor; }
 .ex-reference-text + .ex-reference-text-shown::selection { color: HighlightText; -webkit-text-fill-color: HighlightText; background-color: Highlight; }
+.ex-reference-text + .ex-reference-text-shown::spelling-error, .ex-reference-text + .ex-reference-text-shown::grammar-error { color: transparent; }
 .ex-reference-text + input.ex-editor.ex-reference-text-shown { background: transparent; }
 /* The completion list and the argument hint (ADR-0051): the editor's Inner Popup, in a box the
    core stands beneath the editor surface, inside the grid's box — its place, its width's clamp

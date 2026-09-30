@@ -300,7 +300,9 @@ function pixelsApart(page, a, b) {
 /**
  * A stylesheet over the page that draws a field one of two ways, by a mark the test sets on the
  * field: `own` — by its own text, the layer hidden, as it is while the layer is behind; `layer` —
- * by the layer, as the listener has it, with the colours taken off so the ink is the field's.
+ * by the layer, as the listener has it, with the colours taken off so the ink is the field's. A
+ * word the spelling check marks is drawn by the field in its highlight's colour, which the
+ * stylesheet takes away only while the layer shows, so `own` gives it back.
  */
 async function overlayDrawingWays(page) {
     await alterPage(page, () => {
@@ -308,6 +310,8 @@ async function overlayDrawingWays(page) {
         style.textContent = `
             .ex-reference-text:has(+ [data-drawn="own"]) { visibility: hidden !important; }
             .ex-reference-text + [data-drawn="own"] { -webkit-text-fill-color: currentColor !important; }
+            .ex-reference-text + [data-drawn="own"]::spelling-error,
+            .ex-reference-text + [data-drawn="own"]::grammar-error { color: inherit !important; }
             .ex-reference-text + input.ex-editor[data-drawn="own"] { background: var(--ex-editor-background, Canvas) !important; }
             .ex-reference-text:has(+ [data-drawn="layer"]) span { color: inherit !important; }`;
         document.head.append(style);
@@ -339,6 +343,15 @@ const FORMULA = '=IF(AND(B2>0,C2>0),ROUND(B2*C2*(1+D2),2),"Enter both the quanti
     + 'before the amount of this line is worked out, and check the discount in the next column")'
     + '&" as of "&TEXT(B7,"yyyy-mm-dd")&", due "&TEXT(B8,"yyyy-mm-dd")';
 
+// The keys that take a text field's caret to either end of its line. On macOS, End and Home
+// scroll the document instead (scrollToEndOfDocument:, as the platform binds them and Playwright
+// sends them): there they scroll the grid to its last row, the Cell Editor's cell is no longer
+// painted, and the editor goes with it. Command+→ and Command+← are the platform's line ends, and
+// reach the field in Caret as End and Home do elsewhere (ADR-0010).
+const LINE_END = process.platform === 'darwin'
+    ? { End: 'Meta+ArrowRight', Home: 'Meta+ArrowLeft' }
+    : { End: 'End', Home: 'Home' };
+
 for (const chrome of ['builtin', 'mud']) {
     for (const surface of ['cell', 'bar']) {
         test(`DC-48: a Formula longer than the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} keeps its colours over the right characters at either end (${chrome} Chrome)`, async ({ page }) => {
@@ -369,7 +382,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(metrics.layer).toEqual(metrics.field);
 
             for (const end of ['End', 'Home']) {
-                await page.keyboard.press(end);
+                await page.keyboard.press(LINE_END[end]);
                 // The field scrolled to show its caret — past the start at the end, back to it at the
                 // start — and the layer's line with it (DC-48).
                 await expect.poll(() => field.evaluate((input, at) => {

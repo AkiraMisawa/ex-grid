@@ -292,13 +292,21 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"\.ex-reference-text:has\(\+ \.ex-reference-text-shown\) \{ visibility: visible; \}"), sheet);
 
         // Transparent only under the class and beside a layer, the caret in the field's colour,
-        // and a selection drawn by the field in the selection's own colours.
+        // and a selection drawn by the field in the selection's own colours. A word the spelling
+        // or grammar check marks, which Chrome draws again in its highlight's colour, is the
+        // field's own text as well (DC-48).
         var transparent = Regex.Matches(sheet, @"(?m)^[^\n{]*\{[^}]*(?<![\w-])(?:-webkit-text-fill-color|color): transparent[^}]*\}")
             .Select(match => match.Value.Split('{')[0].Trim())
             .ToList();
-        Assert.Equal([".ex-reference-text + .ex-reference-text-shown"], transparent);
+        Assert.Equal(
+            [
+                ".ex-reference-text + .ex-reference-text-shown",
+                ".ex-reference-text + .ex-reference-text-shown::spelling-error, .ex-reference-text + .ex-reference-text-shown::grammar-error",
+            ],
+            transparent);
         Assert.Matches(new Regex(@"\.ex-reference-text \+ \.ex-reference-text-shown \{ -webkit-text-fill-color: transparent; caret-color: currentColor; \}"), sheet);
         Assert.Matches(new Regex(@"\.ex-reference-text \+ \.ex-reference-text-shown::selection \{ color: HighlightText; -webkit-text-fill-color: HighlightText; background-color: Highlight; \}"), sheet);
+        Assert.Matches(new Regex(@"::grammar-error \{ color: transparent; \}"), sheet);
 
         // The core's own Cell Editor and its layer share one rule for box, padding, line and
         // colours, and the bar's field and its layer one for padding (DC-48).
