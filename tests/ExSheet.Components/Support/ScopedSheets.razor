@@ -4,7 +4,7 @@
    table does not have (Note, which edits), groups Book and Value under a Header Group, and holds
    fewer rows than it counts, so its last rows have not arrived. A position with an empty Id has a
    blank key. The test can show the registered grid other rows — sorted, revalued or filtered — as a
-   Consumer pushes a new Window. *@
+   Consumer pushes a new Window, and its columns in another order. *@
 @using System.Globalization
 @using global::ExGrid
 @using global::ExGrid.Cells
@@ -17,7 +17,7 @@
 <ExSheet @ref="Left" ViewportHeight="300" ViewportWidth="600" Culture="Culture" PointingScope="Scope" OnPointingRefused="RefusedLeft" />
 <ExSheet @ref="Right" ViewportHeight="300" ViewportWidth="600" Culture="Culture" PointingScope="Scope" OnPointingRefused="RefusedRight" />
 <div id="positions">
-    <ExGrid TRow="Position" Window="Shown" TotalCount="Shown.Count + 20" Columns="PositionColumns" RowHeight="20"
+    <ExGrid TRow="Position" Window="Shown" TotalCount="Shown.Count + 20" Columns="ShownColumns" RowHeight="20"
             ViewportHeight="200" ViewportWidth="450" HeaderGroups="Groups" PointedAt="_pointedAt" OnEdit="Edited" />
 </div>
 <div id="unregistered">
@@ -65,6 +65,18 @@
     public Task ShowAsync(IReadOnlyList<Position> rows) => InvokeAsync(() =>
     {
         Shown = rows;
+        StateHasChanged();
+    });
+
+    /// <summary>The registered grid's columns, in the order it shows them: Id, Book, Value, Note
+    /// until the test reorders them.</summary>
+    public IReadOnlyList<GridColumn<Position>> ShownColumns { get; private set; } = PositionColumns;
+
+    /// <summary>Shows the registered grid's columns in the order <paramref name="names"/> gives, as a
+    /// user reorders them; Book and Value stay side by side under their Header Group.</summary>
+    public Task ReorderAsync(params string[] names) => InvokeAsync(() =>
+    {
+        ShownColumns = [.. names.Select(name => PositionColumns.Single(column => column.Name == name))];
         StateHasChanged();
     });
 

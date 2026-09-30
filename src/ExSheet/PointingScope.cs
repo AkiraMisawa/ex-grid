@@ -1,4 +1,5 @@
 using ExGrid.Cells;
+using ExGrid.Selection;
 using ExSheet.Engine;
 
 namespace ExSheet;
@@ -21,7 +22,9 @@ namespace ExSheet;
 /// headers moves neither DOM focus nor its Selection, and is written into that Sheet's edit where
 /// Point writes, or refused with a reason the Sheet tells its Consumer
 /// (<c>ExSheet.OnPointingRefused</c>). Only the Sheet that holds the keyboard points; when the
-/// keyboard leaves it, no grid is pointed at, and the edit stands. A Sheet is never pointed at.</para>
+/// keyboard leaves it, no grid is pointed at, and the edit stands. A Sheet is never pointed at. After
+/// a press on a cell, that Sheet's arrow keys point inside the grid pressed: one row up or down in its
+/// current order, or to the next column its table has (ADR-0058, "The keyboard").</para>
 ///
 /// <para>The Scope also draws in its grids what ADR-0057 and ADR-0058 ask of them. While a Formula
 /// is edited in a Sheet of the Scope, the Linked Table columns it reads are outlined in the grids
@@ -264,38 +267,12 @@ public sealed class PointingScope
         }
         else
         {
-            if (row is null)
+            if (CellLookup(table, tableColumn, column, row, out var refused) is not { } lookup)
             {
-                await RefuseAsync(sheet, PointingRefusalReason.RowNotArrived, table.Name, tableColumn, false);
+                await RefuseAsync(sheet, refused, table.Name, tableColumn, false);
                 return;
             }
-            if (table.Key is not { } keyColumn)
-            {
-                await RefuseAsync(sheet, PointingRefusalReason.NoKey, table.Name, tableColumn, false);
-                return;
-            }
-            var values = row();
-            if (values is null || values.Count != table.Columns.Count)
-            {
-                throw new InvalidOperationException(
-                    $"The row a grid registered for '{table.Name}' gave has {values?.Count ?? 0} Values, and the table declares {table.Columns.Count} columns: " +
-                    "RegisterGrid's tableRow gives one Value per declared column, in the declared order, as a push does (ADR-0058).");
-            }
-            var keyIndex = IndexOf(table, keyColumn);
-            var key = values[keyIndex];
-            if (key is not { } value)
-            {
-                await RefuseAsync(sheet, PointingRefusalReason.BlankKey, table.Name, tableColumn, false);
-                return;
-            }
-            if (value.IsError)
-            {
-                await RefuseAsync(sheet, PointingRefusalReason.KeyIsAnError, table.Name, tableColumn, false);
-                return;
-            }
-            text = FormulaEntry.LookupText(table.Name, keyColumn, value, tableColumn);
-            var width = table.Columns.Count;
-            dashes = new PointDashes(column, candidate => candidate.Count == width && FormulaEntry.LookupFinds(value, candidate[keyIndex]));
+            (text, dashes) = lookup;
         }
         var dashedBefore = _dashed;
         if (!await sheet.WritePointedTextAsync(text))
@@ -307,6 +284,125 @@ public sealed class PointingScope
         _wrote = grid;
         _dashedBeforeWrite = ReferenceEquals(dashedBefore?.Sheet, sheet) ? dashedBefore : null;
         Dash(new Dashed(grid, sheet, dashes));
+    }
+
+    /// <summary>
+    /// An arrow key in a Sheet of the Scope while what a press on a registered grid wrote stands in its
+    /// edit (ADR-0058, "The keyboard"): the cell that press wrote for moves one step inside that grid —
+    /// a row up or down in its current order, or to the next column the table has left or right,
+    /// passing over the grid's columns the table does not have — and the text is rewritten for the cell
+    /// reached, replacing what this Point wrote. The dashes move with it, and the grid scrolls it into
+    /// view. At an edge nothing moves. A row that has not arrived, Shift and an arrow, the Primary
+    /// Modifier and an arrow, and an arrow after a press on a column's header write nothing, leave the
+    /// text as it was, and the reason is told.
+    /// </summary>
+    internal async Task PointArrowAsync(IPointingSheet sheet, GridPointArrow arrow)
+    {
+        // The dashes name the cell this Sheet's Point wrote for: without them, nothing a press on a
+        // registered grid wrote stands there.
+        if (!ReferenceEquals(_pointing, sheet) || _dashed is not { } dashed || !ReferenceEquals(dashed.Sheet, sheet))
+            return;
+        var grid = dashed.Grid;
+        if (arrow.ToEdge)
+        {
+            await sheet.TellPointingRefusedAsync(Refusal(PointingRefusalReason.DataEdge, grid.Table, null, false));
+            return;
+        }
+        if (arrow.Extends)
+        {
+            await sheet.TellPointingRefusedAsync(new PointingRefusal(PointingRefusalReason.SeveralCells, SheetWords.PointingExtendedByKey(grid.Table)));
+            return;
+        }
+        // After a press on a column's header, which cell an arrow reaches is not decided until Excel
+        // is observed: nothing moves, the text stands, and the reason is told (decided with the user,
+        // 2026-10-01).
+        if (dashed.Where.IsRow is null)
+        {
+            await RefuseAsync(sheet, PointingRefusalReason.FromColumnHeader, grid.Table, null, false);
+            return;
+        }
+        if (FindTable(sheet, grid.Table) is not { } table)
+        {
+            await RefuseAsync(sheet, PointingRefusalReason.TableNotDeclared, grid.Table, null, false);
+            return;
+        }
+        var step = await grid.StepAsync(dashed.Where, arrow.Direction, gridColumn => FindColumn(table, grid.TableColumnOf(gridColumn)) is not null);
+        switch (step.Kind)
+        {
+            case GridPointedStepKind.Edge:
+                return;
+            case GridPointedStepKind.RowNotArrived:
+                await RefuseAsync(sheet, PointingRefusalReason.RowNotArrived, table.Name, null, false);
+                return;
+            case GridPointedStepKind.NotHeld:
+                await RefuseAsync(sheet, PointingRefusalReason.CellNotHeld, table.Name, null, false);
+                return;
+        }
+        var column = step.Column!;
+        if (FindColumn(table, grid.TableColumnOf(column)) is not { } tableColumn)
+        {
+            await RefuseAsync(sheet, PointingRefusalReason.ColumnNotInTable, table.Name, column, false);
+            return;
+        }
+        if (CellLookup(table, tableColumn, column, step.Row, out var refused) is not { } lookup)
+        {
+            await RefuseAsync(sheet, refused, table.Name, tableColumn, false);
+            return;
+        }
+        var (text, dashes) = lookup;
+        if (!await sheet.WritePointedTextAsync(text))
+        {
+            await RefuseAsync(sheet, PointingRefusalReason.NotPointing, table.Name, tableColumn, false);
+            return;
+        }
+        // A gesture of its own: a drag from the press that began this no longer takes anything back.
+        _wrote = null;
+        _dashedBeforeWrite = null;
+        Dash(new Dashed(grid, sheet, dashes));
+        await grid.RevealAsync(dashes);
+    }
+
+    /// <summary>
+    /// What a cell of a registered grid writes, <c>XLOOKUP(&lt;key&gt;, T[&lt;key column&gt;],
+    /// T[&lt;column&gt;])</c>, and the dashes that find it by its row's key; or null, with the reason
+    /// nothing is written: a row that has not arrived, a table declared without a key, a blank key or
+    /// an Error Value as the key.
+    /// </summary>
+    private static (string Text, PointDashes Dashes)? CellLookup(
+        LinkedTable table, string tableColumn, string gridColumn, Func<IReadOnlyList<Value?>>? row, out PointingRefusalReason refused)
+    {
+        refused = default;
+        if (row is null)
+        {
+            refused = PointingRefusalReason.RowNotArrived;
+            return null;
+        }
+        if (table.Key is not { } keyColumn)
+        {
+            refused = PointingRefusalReason.NoKey;
+            return null;
+        }
+        var values = row();
+        if (values is null || values.Count != table.Columns.Count)
+        {
+            throw new InvalidOperationException(
+                $"The row a grid registered for '{table.Name}' gave has {values?.Count ?? 0} Values, and the table declares {table.Columns.Count} columns: " +
+                "RegisterGrid's tableRow gives one Value per declared column, in the declared order, as a push does (ADR-0058).");
+        }
+        var keyIndex = IndexOf(table, keyColumn);
+        if (values[keyIndex] is not { } key)
+        {
+            refused = PointingRefusalReason.BlankKey;
+            return null;
+        }
+        if (key.IsError)
+        {
+            refused = PointingRefusalReason.KeyIsAnError;
+            return null;
+        }
+        var width = table.Columns.Count;
+        return (FormulaEntry.LookupText(table.Name, keyColumn, key, tableColumn),
+            new PointDashes(gridColumn, candidate => candidate.Count == width && FormulaEntry.LookupFinds(key, candidate[keyIndex])));
     }
 
     private static Task RefuseAsync(IPointingSheet sheet, PointingRefusalReason reason, string table, string? column, bool tookBack)
@@ -406,7 +502,17 @@ public sealed class PointingScope
 
         /// <summary>Draws the dashes a press asked for, or takes them away.</summary>
         public abstract void ShowDashes(PointDashes? dashes);
+
+        /// <summary>Asks the grid for the cell one step from the dashed one (DC-55): the row it
+        /// reached, read as the table's row, and the grid column.</summary>
+        public abstract Task<Step> StepAsync(PointDashes from, GridDirection direction, Func<string, bool> isColumn);
+
+        /// <summary>Asks the grid to scroll the dashed cell into view (DC-55).</summary>
+        public abstract Task RevealAsync(PointDashes cell);
     }
+
+    /// <summary>Where a step from a cell of a registered grid landed, whatever its row type.</summary>
+    private sealed record Step(GridPointedStepKind Kind, Func<IReadOnlyList<Value?>>? Row, string? Column);
 
     /// <summary>A registered grid of rows of <typeparamref name="TRow"/>: its declaration hands each
     /// press to the Scope, with the pressed row read as the table's row.</summary>
@@ -455,5 +561,19 @@ public sealed class PointingScope
             { IsRow: { } isRow } => GridPointDashes<TRow>.OverCell(row => isRow(_tableRow(row)), dashes.Column),
             _ => GridPointDashes<TRow>.OverColumn(dashes.Column),
         };
+
+        // The cell stepped from, and the one revealed, are found by their row's key, as the dashes are.
+        public override async Task<Step> StepAsync(PointDashes from, GridDirection direction, Func<string, bool> isColumn)
+        {
+            var isRow = from.IsRow!;
+            var step = await Declaration.StepAsync(row => isRow(_tableRow(row)), from.Column, direction, isColumn);
+            return new Step(step.Kind, step.Row is { } reached ? () => _tableRow(reached) : null, step.Column);
+        }
+
+        public override Task RevealAsync(PointDashes cell)
+        {
+            var isRow = cell.IsRow!;
+            return Declaration.RevealAsync(row => isRow(_tableRow(row)), cell.Column);
+        }
     }
 }

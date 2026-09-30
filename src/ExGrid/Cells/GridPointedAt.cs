@@ -1,3 +1,5 @@
+using ExGrid.Selection;
+
 namespace ExGrid.Cells;
 
 /// <summary>
@@ -142,4 +144,76 @@ public sealed class GridPointedAt<TRow>
     /// <summary>Raised after <see cref="IsPointedAt"/>, <see cref="PointingRootId"/>,
     /// <see cref="Dashes"/> or <see cref="OutlinedColumns"/> changed, so the grid repaints.</summary>
     public event Action? Changed;
+
+    // The grid this declaration is passed to, which answers the two requests below: set as the grid
+    // takes the declaration, and cleared as it lets it go.
+    internal IPointedAtGrid<TRow>? Grid { get; set; }
+
+    /// <summary>
+    /// Asks the grid this declaration is passed to for the cell one step from a cell (ADR-0058, "The
+    /// keyboard"; DC-55), as arrow keys pressed elsewhere move what a press on the grid pointed at: up
+    /// or down by one row in the grid's current order, or left or right to the nearest column that
+    /// <paramref name="isColumn"/> answers true for, passing over the others. At the first or last row,
+    /// or with no such column that way, there is none (<see cref="GridPointedStepKind.Edge"/>); a row
+    /// that has not arrived is answered as such (<see cref="GridPointedStepKind.RowNotArrived"/>). The
+    /// grid answers while it is pointed at, and moves nothing: neither its Selection nor its scroll.
+    /// </summary>
+    /// <param name="isRow">Which row the cell to step from is in: the row, of those the grid holds, it
+    /// answers true for — named by something the Consumer reads from it, such as its key, so that it
+    /// is found through a sort and through a Window of new instances. It must be cheap and must not
+    /// throw.</param>
+    /// <param name="column">The name of the column the cell to step from is in, as
+    /// <see cref="GridColumn{TRow}.Name"/> names it.</param>
+    /// <param name="direction">Which way to step.</param>
+    /// <param name="isColumn">Which columns a step left or right may land on, by name. Not asked for
+    /// a step up or down, which stays in <paramref name="column"/>.</param>
+    /// <returns>The cell one step away, or why there is none — <see cref="GridPointedStepKind.NotHeld"/>
+    /// when the grid does not hold the cell to step from, is not pointed at, or is not given this
+    /// declaration.</returns>
+    /// <exception cref="ArgumentNullException">A function or the name is null.</exception>
+    /// <exception cref="ArgumentException">The name is empty.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The direction is not one of
+    /// <see cref="GridDirection"/>'s.</exception>
+    public Task<GridPointedStep<TRow>> StepAsync(Func<TRow, bool> isRow, string column, GridDirection direction, Func<string, bool> isColumn)
+    {
+        ArgumentNullException.ThrowIfNull(isRow);
+        ArgumentException.ThrowIfNullOrEmpty(column);
+        ArgumentNullException.ThrowIfNull(isColumn);
+        if (!Enum.IsDefined(direction))
+            throw new ArgumentOutOfRangeException(nameof(direction), direction, "An arrow's direction is Up, Down, Left or Right (ADR-0012).");
+        return Grid is { } grid
+            ? grid.StepAsync(isRow, column, direction, isColumn)
+            : Task.FromResult(new GridPointedStep<TRow>(GridPointedStepKind.NotHeld));
+    }
+
+    /// <summary>
+    /// Asks the grid this declaration is passed to to scroll a cell into view (ADR-0058, "The
+    /// keyboard"; DC-55), as Point scrolls to keep its pointed cell in view (ADR-0051): the cell arrow
+    /// keys pressed elsewhere have just moved to. It moves the grid's view only — not its Selection,
+    /// and not DOM focus — and turns the page where a <c>PageSize</c> pages the grid. A cell already in
+    /// view scrolls nothing. The dashes are not scrolled to (ADR-0057): only this request scrolls.
+    /// </summary>
+    /// <param name="isRow">Which row the cell is in, as <see cref="StepAsync"/> names it.</param>
+    /// <param name="column">The name of the column the cell is in.</param>
+    /// <returns>Whether the grid holds the cell, and so brought it into view: false when no row it holds
+    /// is the one named, it shows no column of that name, or it is not given this declaration.</returns>
+    /// <exception cref="ArgumentNullException">The function or the name is null.</exception>
+    /// <exception cref="ArgumentException">The name is empty.</exception>
+    public Task<bool> RevealAsync(Func<TRow, bool> isRow, string column)
+    {
+        ArgumentNullException.ThrowIfNull(isRow);
+        ArgumentException.ThrowIfNullOrEmpty(column);
+        return Grid is { } grid ? grid.RevealAsync(isRow, column) : Task.FromResult(false);
+    }
+}
+
+/// <summary>What a grid given a <see cref="GridPointedAt{TRow}"/> answers for it (DC-55).</summary>
+internal interface IPointedAtGrid<TRow>
+    where TRow : class
+{
+    /// <summary>See <see cref="GridPointedAt{TRow}.StepAsync"/>.</summary>
+    Task<GridPointedStep<TRow>> StepAsync(Func<TRow, bool> isRow, string column, GridDirection direction, Func<string, bool> isColumn);
+
+    /// <summary>See <see cref="GridPointedAt{TRow}.RevealAsync"/>.</summary>
+    Task<bool> RevealAsync(Func<TRow, bool> isRow, string column);
 }

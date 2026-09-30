@@ -122,10 +122,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the tenth Windows run).
     const pointKeys = new Set([
         ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+    // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
+    // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys and the
+    // Primary Modifier's arrows, with Shift or without, which the Consumer refuses rather than let
+    // them move the caret.
+    const pointedKeys = new Set([
+        ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
+        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
     const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
     const completionOverPointKeys = new Set([...completionKeys, 'ArrowLeft', 'ArrowRight']);
     const claimedWhile = {
-        overwrite: overwriteKeys, point: pointKeys, completion: completionKeys, completionOverPoint: completionOverPointKeys,
+        overwrite: overwriteKeys, point: pointKeys, pointed: pointedKeys, completion: completionKeys,
+        completionOverPoint: completionOverPointKeys,
     };
     // The keys macOS binds to a scroll in a text field, where Windows and Linux move the caret
     // (ADR-0010's note of 2026-09-30, ticket 32): Home and End scroll the document there, PageUp
@@ -1747,8 +1755,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // entry — the clipboard — and not a fifth (ADR-0021).
         writeCopy: (withHeaders) => writeAsync(withHeaders === true),
         // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite',
-        // 'caret', 'point', 'completion' (ADR-0051) or 'completionOverPoint' (ADR-0058: a list
-        // open where ← and → point), whether inputs report their caret,
+        // 'caret', 'point', 'completion' (ADR-0051), 'completionOverPoint' (ADR-0058: a list
+        // open where ← and → point) or 'pointed' (ADR-0058: what Point wrote came from a press
+        // on another grid), whether inputs report their caret,
         // and whether F4 is claimed while editing. Set by the core when the mode changes —
         // a mode change is a different set of claimed keys. (A focusable descendant holding
         // the keyboard — ADR-0020's interactive cell — is not a mode: it is read off

@@ -6719,6 +6719,9 @@
             _suppressRender = false;
             return;
         }
+        // After a press outside the grid wrote, the arrows are the Consumer's that wrote (ADR-0058).
+        if (await HandOnPointArrowAsync(canonical))
+            return;
         // Where the Consumer says a Reference can go, the arrows point (ADR-0051).
         if (OnPointKey(canonical))
             return;
@@ -7543,10 +7546,11 @@
         _revealRowStart = false;
         _revealStepRows = 0;
         // The Extent while extending (ADR-0052), or the pointing outline's moving end
-        // (ADR-0051), where one asked; the Focus otherwise.
+        // (ADR-0051), where one asked; the Focus otherwise. A cell pointed at from outside is
+        // revealed whether or not this grid has a Selection of its own (ADR-0058, DC-55).
         var target = _revealTarget;
         _revealTarget = null;
-        if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)
+        if (_disposed || _scrollHandle is null || (target is null && _selection.Selection.IsEmpty))
             return;
 
         var focus = target?.Cell ?? _selection.Selection.Focus;

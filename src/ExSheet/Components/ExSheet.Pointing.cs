@@ -26,9 +26,13 @@ public partial class ExSheet : IPointingSheet, IDisposable
     /// nothing, and is told through <see cref="OnPointingRefused"/>. When the keyboard leaves this
     /// Sheet, no grid is pointed at, and the edit stands.
     ///
-    /// <para>After such a press the Name Box is empty, F4 changes nothing, and the arrow keys move and
-    /// write nothing. Give several Sheets the same Scope and each points in turn, while it holds the
-    /// keyboard; a Sheet is never pointed at.</para>
+    /// <para>After such a press the Name Box is empty, F4 changes nothing, and the arrow keys point
+    /// inside the grid pressed: ↑ and ↓ one row further in its current order, ← and → to the next
+    /// column its table has, rewriting what this Point wrote, and the grid scrolls the cell into view.
+    /// At an edge nothing moves; a row that has not arrived, Shift and an arrow, and Ctrl and an arrow
+    /// write nothing and are told through <see cref="OnPointingRefused"/>. Give several Sheets the
+    /// same Scope and each points in turn, while it holds the keyboard; a Sheet is never pointed
+    /// at.</para>
     ///
     /// <para>The Scope also draws in its grids (ADR-0058, "What is drawn"): while a Formula is edited
     /// here, the Linked Table columns it reads are outlined in the grids registered for their table,
@@ -41,8 +45,10 @@ public partial class ExSheet : IPointingSheet, IDisposable
     /// Tells the Consumer that a press on a grid of <see cref="PointingScope"/> wrote nothing into the
     /// Formula being edited, and why (ADR-0058): more than one cell or column, a Header Group, a
     /// column the table does not have, a table declared without a key, a blank key, a row not yet
-    /// arrived. A drag that reached another cell took back what its press wrote. The Formula's text
-    /// is as it was before the press. ExSheet shows nothing of it itself: show the
+    /// arrived. A drag that reached another cell took back what its press wrote. After a press, an
+    /// arrow key that wrote nothing is told too: Shift and an arrow, Ctrl and an arrow, a row not yet
+    /// arrived, a cell the grid no longer holds, or an arrow after a press on a column's header. The Formula's text is as it was before the press
+    /// or the key. ExSheet shows nothing of it itself: show the
     /// <see cref="PointingRefusal.Message"/> where the page tells its user things.
     /// </summary>
     [Parameter] public EventCallback<PointingRefusal> OnPointingRefused { get; set; }
@@ -65,9 +71,11 @@ public partial class ExSheet : IPointingSheet, IDisposable
     private readonly Dictionary<string, object> _keyboardListeners = new(StringComparer.Ordinal);
     private KeyboardListener? _keyboardListener;
     private EventCallback<PointState> _pointStateChanged;
+    private EventCallback<GridPointArrow> _pointArrow;
 
-    /// <summary>Hears the grid's word of its edit's Point: no receiver, since nothing this component
-    /// paints changes with it.</summary>
+    /// <summary>Hears the grid's word of its edit's Point, and the arrow keys pressed while what a
+    /// press on a registered grid wrote stands there: no receiver, since nothing this component
+    /// paints changes with either.</summary>
     private void InitialisePointing()
     {
         _pointStateChanged = new EventCallback<PointState>(null, (Action<PointState>)(state =>
@@ -78,6 +86,9 @@ public partial class ExSheet : IPointingSheet, IDisposable
             // press wrote has ended, and only then (ADR-0058, "What is drawn").
             _joinedScope?.PointStateChanged(this, state);
         }));
+        // The arrows point inside the grid the press landed on (ADR-0058, "The keyboard").
+        _pointArrow = new EventCallback<GridPointArrow>(null, (Func<GridPointArrow, Task>)(arrow =>
+            _joinedScope is { } scope ? scope.PointArrowAsync(this, arrow) : Task.CompletedTask));
     }
 
     /// <summary>Joins the Scope given, leaving one no longer given, and listens to the keyboard only

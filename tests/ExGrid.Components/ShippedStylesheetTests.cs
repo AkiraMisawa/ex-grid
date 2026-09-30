@@ -639,13 +639,26 @@ public class ShippedStylesheetTests
         // ADR-0058 (the tenth Windows run) / SH-36: a list open over Point takes only ↑, ↓, Tab and
         // Escape, and ← and → are claimed beside them, to point; Shift and Home and End are not.
         Assert.Matches(new Regex(@"const completionOverPointKeys = new Set\(\[\.\.\.completionKeys, 'ArrowLeft', 'ArrowRight'\]\);"), script.Text);
-        Assert.Matches(new Regex(@"const claimedWhile = \{\s*overwrite: overwriteKeys, point: pointKeys, completion: completionKeys, completionOverPoint: completionOverPointKeys,\s*\};"), script.Text);
+        // ADR-0058 ("The keyboard") / SH-35: Point written from outside has a set of its own beside them.
+        Assert.Matches(new Regex(@"const claimedWhile = \{\s*overwrite: overwriteKeys, point: pointKeys, pointed: pointedKeys, completion: completionKeys,\s*completionOverPoint: completionOverPointKeys,\s*\};"), script.Text);
         // A list painted is open from its own render, before the gate is told (ADR-0051/0010):
         // read off the marks the core writes on the list's box, and nothing measured — whether it
         // is open over Point too.
         Assert.Matches(new Regex(@"const listShown = \(\) => \(root \? root\.querySelector\('\.ex-completion\[data-ex-list\]'\) : null\);"), script.Text);
         Assert.Matches(new Regex(@"const list = listShown\(\);\s*const claimed = list === null\s*\? \(claimedWhile\[editing\] \?\? editingKeys\)\s*: \(list\.hasAttribute\('data-ex-over-point'\) \? completionOverPointKeys : completionKeys\);"), script.Text);
         Assert.Single(Regex.Matches(script.Text, @"listShown\(\)"));
+    }
+
+    [Fact] // ADR-0058 ("The keyboard") / SH-35: while what Point wrote came from outside, the gate claims Point's keys and the Primary Modifier's arrows, with Shift or without, and nothing else
+    public void The_gate_has_a_set_for_point_written_from_outside()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        Assert.Matches(new Regex(
+            @"const pointedKeys = new Set\(\[\s*\.\.\.pointKeys, 'Control\+ArrowUp', 'Control\+ArrowDown', 'Control\+ArrowLeft', 'Control\+ArrowRight',\s*"
+            + @"'Control\+Shift\+ArrowUp', 'Control\+Shift\+ArrowDown', 'Control\+Shift\+ArrowLeft', 'Control\+Shift\+ArrowRight'\]\);"),
+            script);
+        Assert.Contains("pointed: pointedKeys", script, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0010's note of 2026-09-30 / ticket 32 / DC-24: on Apple platforms Home and End left to an editor field are answered by the listener, and on every platform PageUp and PageDown are taken, so nothing scrolls the grid away from an open edit

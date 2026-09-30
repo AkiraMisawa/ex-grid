@@ -14,8 +14,10 @@ namespace ExGrid.Components;
 // the press keeps its place among that grid's keys: it is handed over once the keys typed there
 // before it have been handed on, and that grid holds the keys typed after it until it has been
 // answered (ADR-0058, "On a circuit"). The grid also draws the dashes and the column outlines the
-// declaration asks for. What a press means is the Consumer's: the grid knows no Formula.
-public partial class ExGrid<TRow>
+// declaration asks for, and answers it where one step from a cell lands and scrolls a cell into
+// view, for arrow keys pressed elsewhere (ADR-0058, "The keyboard"; DC-55). What a press means is
+// the Consumer's: the grid knows no Formula.
+public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
 {
     /// <summary>
     /// A Consumer declaration (ADR-0058): that this grid is pointed at from outside — a Formula edited
@@ -113,23 +115,31 @@ public partial class ExGrid<TRow>
     /// (ADR-0058).</summary>
     private bool RowsPressKeepsFocus => PressKeepsTheEditor || PointedAtNow;
 
-    /// <summary>Listens to the declaration passed, and stops listening to one no longer passed.</summary>
+    /// <summary>Listens to the declaration passed, and answers for it (DC-55); stops listening to one
+    /// no longer passed.</summary>
     private void BindPointedAt()
     {
         if (ReferenceEquals(_boundPointedAt, PointedAt))
             return;
-        if (_boundPointedAt is not null)
-            _boundPointedAt.Changed -= _onPointedAtChanged;
+        UnbindPointedAt();
         _boundPointedAt = PointedAt;
         if (_boundPointedAt is not null)
+        {
             _boundPointedAt.Changed += _onPointedAtChanged ??= OnPointedAtChanged;
+            _boundPointedAt.Grid = this;
+        }
     }
 
-    /// <summary>Stops listening, as the grid is disposed.</summary>
+    /// <summary>Stops listening, as the grid is disposed or given another declaration, and stops
+    /// answering for the declaration.</summary>
     private void UnbindPointedAt()
     {
         if (_boundPointedAt is not null)
+        {
             _boundPointedAt.Changed -= _onPointedAtChanged;
+            if (ReferenceEquals(_boundPointedAt.Grid, this))
+                _boundPointedAt.Grid = null;
+        }
         _boundPointedAt = null;
     }
 
@@ -470,6 +480,108 @@ public partial class ExGrid<TRow>
         return true;
     }
 
+    /// <inheritdoc />
+    async Task<GridPointedStep<TRow>> IPointedAtGrid<TRow>.StepAsync(
+        Func<TRow, bool> isRow, string column, GridDirection direction, Func<string, bool> isColumn)
+    {
+        // On the renderer's own context: the request comes from another instance's key, and must not
+        // race this grid's render.
+        var step = new GridPointedStep<TRow>(GridPointedStepKind.NotHeld);
+        await InvokeAsync(() => step = PointedStep(isRow, column, direction, isColumn));
+        return step;
+    }
+
+    /// <inheritdoc />
+    async Task<bool> IPointedAtGrid<TRow>.RevealAsync(Func<TRow, bool> isRow, string column)
+    {
+        var revealed = false;
+        await InvokeAsync(() => revealed = RevealPointedCell(isRow, column));
+        return revealed;
+    }
+
+    /// <summary>
+    /// The cell one step from the named one (ADR-0058, "The keyboard"; DC-55): a row up or down in
+    /// the current order, in the same column, or the nearest column the Consumer names left or right,
+    /// in the same row. The Selection, the Focus and the scroll do not move.
+    /// </summary>
+    private GridPointedStep<TRow> PointedStep(Func<TRow, bool> isRow, string column, GridDirection direction, Func<string, bool> isColumn)
+    {
+        if (_disposed || !PointedAtNow || ColumnNamed(column) is not { } from || PointedRowOf(isRow) is not { } row)
+            return new GridPointedStep<TRow>(GridPointedStepKind.NotHeld);
+        if (direction is GridDirection.Up or GridDirection.Down)
+        {
+            var next = direction == GridDirection.Up ? row - 1 : row + 1;
+            if (next < 0 || next >= TotalRows)
+                return new GridPointedStep<TRow>(GridPointedStepKind.Edge);
+            return WindowRowAt(next) is { } data
+                ? new GridPointedStep<TRow>(GridPointedStepKind.Cell, data, column)
+                : new GridPointedStep<TRow>(GridPointedStepKind.RowNotArrived, Column: column);
+        }
+        var step = direction == GridDirection.Left ? -1 : 1;
+        for (var c = from + step; c >= 0 && c < Columns.Count; c += step)
+        {
+            if (isColumn(Columns[c].Name))
+                return new GridPointedStep<TRow>(GridPointedStepKind.Cell, WindowRowAt(row), Columns[c].Name);
+        }
+        return new GridPointedStep<TRow>(GridPointedStepKind.Edge);
+    }
+
+    /// <summary>
+    /// Scrolls the named cell into view, as Point's outline is kept in view (ADR-0051, ADR-0058;
+    /// DC-55): the page turns where one is paged, and the reveal runs at the top of the render, as
+    /// every reveal does. The Selection and the Focus do not move.
+    /// </summary>
+    /// <returns>Whether the grid holds the cell.</returns>
+    private bool RevealPointedCell(Func<TRow, bool> isRow, string column)
+    {
+        if (_disposed || ColumnNamed(column) is not { } c || PointedRowOf(isRow) is not { } row)
+            return false;
+        var cell = new CellPosition(row, c);
+        _revealTarget = new ExtentReveal(cell, new SelectionRange(row, c, 1, 1));
+        if (PageSize is { } pageSize && row / pageSize != _pageIndex)
+        {
+            _pageIndex = row / pageSize;
+            PrepareRender();
+        }
+        _revealFocus = true;
+        // Not a UI event of this grid's: an armed suppression would swallow this render.
+        _suppressRender = false;
+        StateHasChanged();
+        return true;
+    }
+
+    /// <summary>The position, in the whole result, of the row <paramref name="isRow"/> names: the
+    /// painted rows are asked first, since the cell pointed at was pressed or revealed there, and
+    /// then the rest of the Window. Null when the grid holds no such row.</summary>
+    private int? PointedRowOf(Func<TRow, bool> isRow)
+    {
+        if (_visible is { } painted)
+        {
+            for (var row = painted.Start; row < painted.Start + painted.Count; row++)
+            {
+                if (WindowRowAt(row) is { } data && isRow(data))
+                    return row;
+            }
+        }
+        for (var slice = 0; slice < _window.Count; slice++)
+        {
+            if (isRow(_window[slice]))
+                return _windowStart + slice;
+        }
+        return null;
+    }
+
+    /// <summary>The index of the column of that name, or null for a name the grid does not show.</summary>
+    private int? ColumnNamed(string column)
+    {
+        for (var c = 0; c < Columns.Count; c++)
+        {
+            if (string.Equals(Columns[c].Name, column, StringComparison.Ordinal))
+                return c;
+        }
+        return null;
+    }
+
     /// <summary>
     /// The dashes the declaration asks for (ADR-0058), as the range they are drawn over: the named
     /// column's body across all its rows, or its cell in the first painted row the declaration names.
@@ -483,16 +595,7 @@ public partial class ExGrid<TRow>
         var extent = Extent;
         if (extent.RowCount <= 0)
             return null;
-        var column = -1;
-        for (var c = 0; c < Columns.Count; c++)
-        {
-            if (string.Equals(Columns[c].Name, dashes.Column, StringComparison.Ordinal))
-            {
-                column = c;
-                break;
-            }
-        }
-        if (column < 0)
+        if (ColumnNamed(dashes.Column) is not { } column)
             return null;
         if (dashes.Row is not { } isRow)
             return new SelectionRange(0, column, extent.RowCount, 1);

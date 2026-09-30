@@ -168,6 +168,15 @@ things. A drag that reaches another cell takes back what its press wrote. After 
 the Name Box is empty and F4 changes nothing. Several Sheets can share a Scope, and each points while
 it holds the keyboard; two Scopes on one page keep their Sheets and grids apart.
 
+After a press on a cell of a grid, the arrow keys point inside that grid, as Excel's move inside
+another workbook once it points there: ↑ and ↓ one row further in the order the grid shows, ← and →
+to the next column the table has, passing over the grid's own columns. Each rewrites what the press
+wrote, and the grid scrolls to keep the cell in view. At the grid's first or last row, or its last
+table column, nothing moves. Shift and an arrow, which would point at a range, Ctrl and an arrow,
+which would go to the edge of the data the grid does not hold, and a row not yet arrived write
+nothing, and `OnPointingRefused` says why. After a press on a column's header, the arrows write
+nothing either, and say so: they move from a cell.
+
 The Scope draws in its grids too. While a Formula is edited in one of its Sheets, the table columns
 the Formula reads are outlined in the grids registered for that table, in the colours their
 References wear, over the grid columns the registration makes them: pass no `OutlinedColumns` to a
