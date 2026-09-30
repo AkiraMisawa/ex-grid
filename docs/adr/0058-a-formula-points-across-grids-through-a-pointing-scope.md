@@ -97,6 +97,12 @@ stands under CVA, FVA and MVA alike, so it cannot be a name.
   grid's Refusals. The Sheet's text is left as it was. `/sheet` shows the reason.
 - **The text is written where Point writes.** A further press, on a registered grid or on the Sheet,
   replaces what this Point wrote (ADR-0051).
+- **A drag that reaches another cell takes back what its press wrote** *(decided with the user,
+  2026-09-30, while ticket 37 was handed out)*. The grid hands a press over at once, so that a click
+  writes without waiting for the release, and a drag is known only when it reaches another cell. The
+  text then returns to what it was before the press, the dashes go, and the reason is told. Keeping
+  the first cell's `XLOOKUP(...)` was rejected: a user who meant a range would be left with a Formula
+  that reads one cell of it.
 - **While Point writes from a registered grid, the Name Box is empty.** Excel's names the pointed
   cell, but the pressed cell has no address in the Sheet's words, and naming the edited cell would
   read as pointing there. The Name Box is empty while a Size Tip shows for the same kind of reason

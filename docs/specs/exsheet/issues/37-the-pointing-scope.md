@@ -31,6 +31,9 @@ What is written:
 - [ ] More than one cell, several columns, a Header Group's rectangle, a column the table does not
       have, a table declared without a key, or a blank key: nothing is written, and ExSheet tells its
       Consumer the reason through a new notification (SH-32)
+- [ ] A drag: the grid hands over the press as one cell, then once more as several cells or columns
+      when the drag reaches another. The text written at the press is taken back, to what it was
+      before the press, the dashes go, and the reason is told (ADR-0058, decided 2026-09-30) (SH-32)
 
 The keyboard:
 
@@ -41,8 +44,9 @@ The keyboard:
 
 The DemoHost:
 
-- [ ] `/sheet` registers its positions grid in a Scope and drops `OutlinePositions`. `/sheets` gives
-      each side its own Scope. Each shows the notification's reason in a status line (SH-32)
+- [ ] `/sheet` registers its positions grid in a Scope. `/sheets` gives each side its own Scope. Each
+      shows the notification's reason in a status line. The pages keep their hand-written
+      `OutlinedColumns` wiring until ticket 38 moves it into the Scope (SH-32)
 
 Tests:
 

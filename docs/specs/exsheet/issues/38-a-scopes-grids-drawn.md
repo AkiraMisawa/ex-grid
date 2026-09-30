@@ -11,6 +11,8 @@ written `XLOOKUP(...)` lies on the grey ground as a whole.
 - [ ] While a Formula is edited in a Sheet of the Scope, the Linked Table columns it reads are
       outlined in its registered grids in their colours (ExSheet's `OnLinkedColumnColoursChanged`,
       mapped through the correspondence), with no `OutlinedColumns` written by the page (SH-34)
+- [ ] `/sheet` drops `OutlinePositions` and `/sheets` drops `OutlineLeft`/`OutlineRight`: their
+      Scopes do it now, and SH-31's layer 3 test still passes (SH-34, SH-31)
 - [ ] A pressed cell: dashes over it (ticket 34's request), found by the row's key, following the row
       through a sort; not drawn while the row is not painted, never scrolled to (SH-34, DC-53)
 - [ ] A pressed column header: dashes over the column's body (SH-34)
