@@ -656,10 +656,18 @@ _Avoid_: file, workbook, snapshot, save data
 ### Pivots
 
 **Source Record**:
-One record of the data a pivot aggregates, as the Consumer pushes it to ExPivot. ExPivot holds the
-pushed list by reference and never writes to it; a new list is a refresh, as in Excel
+One record of the data a pivot aggregates. Handed to the bundled Pivot Source, it is held by
+reference and never written to, and a new list is a refresh, as in Excel; behind a server's Pivot
+Source it stays on the server
 ([ADR-0058](./docs/adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: row (a row is the report's), item (that is a field's distinct value), fact, entity
+
+**Pivot Source**:
+What ExPivot asks for a report's aggregates, a field's Items and the Source Records behind a cell.
+The bundled one aggregates a snapshot in process and is the reference implementation, as
+`GridSource.From` is ExGrid's; a Consumer's server may answer instead, and is held to the bundled
+one's answers.
+_Avoid_: data source, provider, backend, pivot cache (Excel's word for the snapshot alone)
 
 **Pivot Field**:
 A named attribute of the Source Records the user can place in an Area: its caption, how it is read
@@ -739,8 +747,9 @@ decides what each gesture means; its Chrome draws it
 _Avoid_: field chooser, designer, pivot panel
 
 **Show Details**:
-The Source Records behind one cell of the report, raised to the Consumer to show — Excel's
-drill-down, from a double click on a value or the Context Menu
+The Source Records behind one cell of the report — Excel's drill-down, from a double click on a
+value or the Context Menu — which ExPivot shows in a tab beside the report or in a dialog, or hands
+to the Consumer to show, as the Consumer chooses
 ([ADR-0062](./docs/adr/0062-what-expivot-asks-of-exgrids-core.md)).
 _Avoid_: drill-through, drill-down (Excel's older name), underlying data
 
