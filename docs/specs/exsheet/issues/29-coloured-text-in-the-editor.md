@@ -20,16 +20,27 @@ text turns transparent only while the layer holds the field's current value.
       colours follow a press from one surface into the other mid-edit. Excel colours the cell's
       text or the Formula Bar's, never both (the eighth Windows run, `range-finder.md` cases 1, 21
       and 1fb). The surface is the field holding DOM focus, the one held keys go to (ADR-0051)
-- [ ] An IME composition leaves the field ahead, so its own text shows until the composition ends
-      and the layer catches up (DC-47). *Its own text shows for the whole composition. The layer
-      then shows again at the next input, not when the composition ends: Chrome sends no input
-      after `compositionend`, and the listener hears inputs and the layer's text only. Hearing
-      `compositionend` too is a proposal, not done.*
+- [x] The Reference Point is writing is shown selected: its span in the layer lies on a grey ground
+      (`--ex-reference-pointed-background`), its text a darker shade of its colour
+      (`--ex-reference-pointed-color`), unless the span starts right after the text's first
+      character (`=` ↓ ↓ shows none; `=SUM(` ↓, `=1+` ↓ and `=D11+` ↓ ↓ do). A look on the layer,
+      never a selection of the field's text: `5` typed next follows the Reference and ends Point
+      (ADR-0051's newest section; ADR-0057, "What cases 24–32 settled")
+- [x] An IME composition leaves the field ahead, so its own text shows until the composition ends
+      and the layer catches up (DC-47). *Every input of a composition, its last included, carries
+      `isComposing`, and Chrome sends no input after `compositionend`. So the listener also hears
+      `compositionend` (capture phase, on the root, only while an edit is open, as the field's
+      `scroll` is), clears the composing mark and compares again: the colours come back when the
+      composition ends, with no keystroke after it (decided with the user, 2026-09-30). Layer 3
+      passes on both hosts, through CDP; a real IME is still a run by hand.*
 - [x] Selected text in the field stays readable while the layer shows (DC-47)
 - [x] The layer's `scrollLeft` follows the field's (DC-48, DC-51)
 - [x] No layout is read; the script-shape tests say so (DC-51)
-- [ ] Layer 3: on the Server host with 150 ms injected, a burst of typing sampled every animation
+- [x] Layer 3: on the Server host with 150 ms injected, a burst of typing sampled every animation
       frame never shows transparent field text over a layer that differs; on WebAssembly the colours
       follow each keystroke; a Formula longer than the field keeps its colours over the right
-      characters at either end (DC-47, DC-48). *Written in
-      `tests/ExGrid.Browser/reference-text.spec.mjs`, not yet run.*
+      characters at either end (DC-47, DC-48). *In `tests/ExGrid.Browser/reference-text.spec.mjs`.
+      Passed 2026-09-30 on macOS, headless Chrome, both hosts, both Chromes, once three causes of
+      DC-48 were fixed: a word the spelling check marks was drawn a second time over the layer; End
+      on macOS scrolled the grid away (ticket 32); and `/sheet?chrome=mud` lacked the Wrapper's
+      shape (ADR-0057, "The Wrapper's shape is required…"). Linux and Edge are CI's.*

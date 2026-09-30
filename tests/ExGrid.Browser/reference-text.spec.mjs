@@ -227,11 +227,10 @@ for (const chrome of ['builtin', 'mud']) {
     // WebAssembly the core renders the composing text straight back, and the texts agree, but the
     // composition is still the field's to draw, underline and all. What Chrome sends, checked on
     // 2026-09-30: every input of a composition, its last included, carries isComposing, and
-    // compositionend follows with no input after it. The listener hears inputs and the layer's
-    // text, not compositionend (ADR-0021's note of ADR-0057), so after the composition ends the
-    // colours come back with the next keystroke rather than at once: uncoloured for a moment, never
-    // coloured on the wrong characters.
-    test(`DC-47: an IME composition shows the field's own text while it lasts, and never the layer over it (${chrome} Chrome)`, async ({ page }) => {
+    // compositionend follows with no input after it. So the listener hears compositionend too, and
+    // the colours come back when the composition ends, once the layer holds its text, with no
+    // keystroke after it (ticket 29, decided with the user 2026-09-30).
+    test(`DC-47: an IME composition shows the field's own text while it lasts, never the layer over it, and the colours come back when it ends (${chrome} Chrome)`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');
@@ -251,14 +250,167 @@ for (const chrome of ['builtin', 'mud']) {
         await page.waitForTimeout(400);
         await expectPlain(editor(grid), '=A1&にほ');
 
+        // The composition ends, and nothing is typed after it.
         await client.send('Input.insertText', { text: '日本' });
         await expect(editor(grid)).toHaveValue('=A1&日本');
-        await expect.poll(async () => (await colouring(editor(grid))).text).toBe('=A1&日本');
-        await page.keyboard.type('&');
-        await expectColoured(editor(grid), '=A1&日本&');
+        await expectColoured(editor(grid), '=A1&日本');
         expect((await framesRecorded(page)).wrong).toEqual([]);
         await client.detach();
         await setRoundTrip(0);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+}
+
+// A page that loses the Wrapper's shape: the Chrome's fields are then the browser's own inputs, with
+// a ground of their own and not the core's box's width. The core makes a shown field see-through,
+// so the layer's text shows, in colour, over the ground the core's box paints, rather than nothing
+// at all (ADR-0057, "The Wrapper's shape is required…"). /sheet?chrome=mud has the shape; taking
+// the paper's class away takes every rule of mud-ex-grid.css with it.
+test("ADR-0057: under the Mud Chrome without the Wrapper's stylesheet, the Cell Editor's text still shows, in the layer's colours", async ({ page }) => {
+    await underChrome(page, 'mud');
+    await alterPage(page, () => {
+        const paper = document.querySelector('.mud-ex-grid:has(.ex-formula-bar)');
+        paper.classList.remove('mud-ex-grid');
+        return () => paper.classList.add('mud-ex-grid');
+    });
+    const grid = sheet(page);
+    await pressCell(grid, 'F3');
+    await page.keyboard.type('=A1+B2');
+
+    await expectColoured(editor(grid), '=A1+B2');
+    const grounds = await editor(grid).evaluate((input) => ({
+        field: getComputedStyle(input).backgroundColor,
+        box: getComputedStyle(input.closest('.ex-editor')).backgroundColor,
+    }));
+    expect(grounds.field).toBe(TRANSPARENT);
+    expect(grounds.box).not.toBe(TRANSPARENT);
+    // What is seen is the layer's text, through the field: hiding the layer takes it away.
+    const box = editor(grid).locator('xpath=..');
+    const shown = await box.screenshot();
+    await alterPage(page, () => {
+        const style = document.createElement('style');
+        style.textContent = '.ex-reference-text { visibility: hidden !important; }';
+        document.head.append(style);
+        return () => style.remove();
+    });
+    await twoFrames(page);
+    const hidden = await box.screenshot();
+    expect((await pixelsApart(page, shown, hidden)).apart, 'pixels the layer puts in the Cell Editor').toBeGreaterThan(20);
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
+// ---------------------------------------------------------------------------------------------
+// The Reference Point is writing, shown selected (ADR-0051; ADR-0057, "What cases 24–32 settled")
+
+/** Each span of a field's layer: its text, whether the core marked it as the Reference being
+ * pointed, and how the stylesheet paints it — its ground, its ink, and the colour it wears. */
+const spansOf = (field) => field.evaluate((input) => [...input.previousElementSibling.querySelectorAll('span')]
+    .map((span) => {
+        const style = getComputedStyle(span);
+        return {
+            text: span.textContent,
+            pointed: span.classList.contains('ex-reference-pointed'),
+            ground: style.backgroundColor,
+            ink: style.webkitTextFillColor,
+            colour: style.color,
+        };
+    }));
+
+/** The field's selection: the look is never one. */
+const selectionOf = (field) => field.evaluate((input) => [input.selectionStart, input.selectionEnd]);
+
+// Excel's grey, #c6c6c6, over the light ground /sheet has (the default of
+// --ex-reference-pointed-background).
+const POINTED_GROUND = 'rgb(198, 198, 198)';
+
+/** The one span pointed, on the grey, its ink a shade of its colour and not the colour itself. */
+async function expectPointedLook(field, text) {
+    await expect.poll(async () => (await spansOf(field)).filter((span) => span.pointed).map((span) => span.text)).toEqual([text]);
+    const span = (await spansOf(field)).find((one) => one.pointed);
+    expect(span.ground).toBe(POINTED_GROUND);
+    expect(span.ink).not.toBe(span.colour);
+    expect(span.ink).not.toBe(TRANSPARENT);
+}
+
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0051/0057: after =SUM( the Reference Point writes is shown selected in the Cell Editor, and the Formula Bar stays plain (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=SUM(');
+        await expect(editor(grid)).toHaveValue('=SUM(');
+
+        await page.keyboard.press('ArrowDown');
+
+        await expectColoured(editor(grid), '=SUM(F4');
+        await expectPointedLook(editor(grid), 'F4');
+        // A look on the layer, not a selection of the field's text: the caret after the Reference.
+        expect(await selectionOf(editor(grid))).toEqual([7, 7]);
+        await expectPlain(bar(grid), '=SUM(F4');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
+    test(`ADR-0051/0057: pointed from the Formula Bar after =SUM(, the Reference is shown selected there, and the Cell Editor stays plain (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F3');
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '=SUM(');
+        // Caret, as a press into the bar leaves it: F2 points (ADR-0051).
+        await page.keyboard.press('F2');
+
+        await page.keyboard.press('ArrowDown');
+
+        await expectColoured(bar(grid), '=SUM(F4');
+        await expectPointedLook(bar(grid), 'F4');
+        expect(await selectionOf(bar(grid))).toEqual([7, 7]);
+        await expectPlain(editor(grid), '=SUM(F4');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
+    test(`ADR-0051/0057: = ↓ ↓ writes =F5 with no grey, however often it is pointed (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toHaveValue('=');
+
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+
+        await expectColoured(editor(grid), '=F5');
+        await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(1);
+        const spans = await spansOf(editor(grid));
+        expect(spans.map((span) => [span.text, span.pointed])).toEqual([['F5', false]]);
+        expect(spans[0].ground).not.toBe(POINTED_GROUND);
+        expect(spans[0].ink).toBe(spans[0].colour);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
+    // Excel's case 32: the grey is not a selection that typing replaces. The digit follows the
+    // Reference, and Point ends.
+    test(`ADR-0051/0057: 5 typed after =D11+ ↓ ↓ follows the Reference, and the grey goes with Point (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=D11+');
+        await expect(editor(grid)).toHaveValue('=D11+');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await expectColoured(editor(grid), '=D11+F5');
+        await expectPointedLook(editor(grid), 'F5');
+
+        await page.keyboard.type('5');
+
+        await expectColoured(editor(grid), '=D11+F55');
+        await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
+        expect((await spansOf(editor(grid))).map((span) => [span.text, span.pointed])).toEqual([['D11', false], ['F55', false]]);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
     });
@@ -300,7 +452,9 @@ function pixelsApart(page, a, b) {
 /**
  * A stylesheet over the page that draws a field one of two ways, by a mark the test sets on the
  * field: `own` — by its own text, the layer hidden, as it is while the layer is behind; `layer` —
- * by the layer, as the listener has it, with the colours taken off so the ink is the field's.
+ * by the layer, as the listener has it, with the colours taken off so the ink is the field's. A
+ * word the spelling check marks is drawn by the field in its highlight's colour, which the
+ * stylesheet takes away only while the layer shows, so `own` gives it back.
  */
 async function overlayDrawingWays(page) {
     await alterPage(page, () => {
@@ -308,6 +462,8 @@ async function overlayDrawingWays(page) {
         style.textContent = `
             .ex-reference-text:has(+ [data-drawn="own"]) { visibility: hidden !important; }
             .ex-reference-text + [data-drawn="own"] { -webkit-text-fill-color: currentColor !important; }
+            .ex-reference-text + [data-drawn="own"]::spelling-error,
+            .ex-reference-text + [data-drawn="own"]::grammar-error { color: inherit !important; }
             .ex-reference-text + input.ex-editor[data-drawn="own"] { background: var(--ex-editor-background, Canvas) !important; }
             .ex-reference-text:has(+ [data-drawn="layer"]) span { color: inherit !important; }`;
         document.head.append(style);
@@ -346,7 +502,8 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await pressCell(grid, 'F3');
             const field = surface === 'cell' ? editor(grid) : bar(grid);
-            // Caret, where Home and End move the caret rather than the Focus (ADR-0010).
+            // Caret, where Home and End move the caret rather than the Focus (ADR-0010) — on macOS
+            // too, where the listener answers them (ticket 32).
             if (surface === 'cell') {
                 await page.keyboard.press('F2');
             } else {

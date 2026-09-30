@@ -10,13 +10,20 @@
 @using global::ExGrid.MudBlazor
 @using global::MudBlazor
 
-@* ?chrome=mud runs the Sheet with ExGrid.MudBlazor's Chrome instead of the built-in one, as
-   /features does, so the browser tests of the Formula Bar and the completion list run under
-   both Chromes (DC-17, ADR-0030). Without the parameter nothing here renders. *@
+@* ?chrome=mud runs the Sheet with ExGrid.MudBlazor's Chrome instead of the built-in one, so the
+   browser tests of the Formula Bar, the completion list and the coloured text run under both
+   Chromes (DC-17, ADR-0030). Unlike /features, which changes the Chrome alone, the Sheet is put in
+   the Wrapper's documented shape: MudExGridPaper and mud-ex-grid.css, with Roboto, the font whose
+   widths the paper cascades. The Chrome's fields meet the coloured text's contract (no padding, no
+   ground, filling the core's box) only through that stylesheet, and the Chrome used alone is not
+   supported where References are coloured (ADR-0057, "The Wrapper's shape is required…";
+   ADR-0030). Without the parameter nothing here renders. *@
 @if (_mudChrome)
 {
     <HeadContent>
+        <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
         <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+        <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
     </HeadContent>
     <MudThemeProvider />
     <MudPopoverProvider />
@@ -58,8 +65,14 @@
 </p>
 
 <div class="demo-side-by-side">
-    <ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
-             ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions" />
+    @if (_mudChrome)
+    {
+        <MudExGridPaper>@Sheet</MudExGridPaper>
+    }
+    else
+    {
+        @Sheet
+    }
     <div id="sheet-positions">
         <ExGrid TRow="Position" Window="_positions" Columns="PositionColumns" RowHeight="28"
                 ViewportHeight="420" ViewportWidth="330" OutlinedColumns="_outlinedPositions" />
@@ -75,6 +88,10 @@
 
     private IGridChrome? _chrome;
     private bool _mudChrome;
+
+    // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
+    private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
+                                              ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions" />;
 
     protected override void OnParametersSet()
     {

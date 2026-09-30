@@ -19,9 +19,10 @@ public partial class ExGrid<TRow>
     // editor's own, as every sibling there does (ADR-0003).
     private static readonly object ReferenceTextLayerKey = new();
 
-    // The class of a Reference's span in each colour: interned, since the few there are serve
-    // every span of every render (ADR-0027 P5).
-    private static readonly string[] ReferenceTextClasses = ReferenceTextClassesOf();
+    // The class of a Reference's span in each colour, and of the span of the Reference Point is
+    // writing: interned, since the few there are serve every span of every render (ADR-0027 P5).
+    private static readonly string[] ReferenceTextClasses = ReferenceTextClassesOf("");
+    private static readonly string[] PointedReferenceTextClasses = ReferenceTextClassesOf(" ex-reference-pointed");
 
     // Cached, so a render hands a Chrome's control the same delegate each time (ADR-0003). Each
     // reads the edit as it stands when it is rendered.
@@ -30,11 +31,11 @@ public partial class ExGrid<TRow>
     private RenderFragment? _cellReferenceText;
     private RenderFragment? _barReferenceText;
 
-    private static string[] ReferenceTextClassesOf()
+    private static string[] ReferenceTextClassesOf(string suffix)
     {
         var classes = new string[ReferenceColour.PaletteLength + 1];
         for (var place = 1; place <= ReferenceColour.PaletteLength; place++)
-            classes[place] = FormattableString.Invariant($"ex-reference-{place}");
+            classes[place] = FormattableString.Invariant($"ex-reference-{place}{suffix}");
         return classes;
     }
 
@@ -49,9 +50,22 @@ public partial class ExGrid<TRow>
     /// bar already showed the opening text.</summary>
     private string BarReferenceText => BarShowsTheEdit ? _editText : "";
 
+    /// <summary>
+    /// Where the Reference Point is writing stands in the edit's text, to be shown selected
+    /// (ADR-0051, "The Reference being written is shown selected"; ADR-0057, "What cases 24–32
+    /// settled"): while pointing, unless it starts right after the text's first character. Excel
+    /// shows <c>=D11</c>, pointed straight after the <c>=</c>, without the look however often it
+    /// was pointed, and <c>=SUM(D11</c>, <c>=1+D11</c> and <c>=D11+D12</c> with it; the core
+    /// reads no Formula, and says so of the first character whatever it is. Null while nothing
+    /// is. A look only: the field's text is never selected, so a key typed next follows the
+    /// Reference, and ends pointing, as it always did.
+    /// </summary>
+    private (int Start, int Length)? PointedSpan
+        => PointingContinues && _pointStart != 1 ? (_pointStart, _pointLength) : null;
+
     /// <summary>The spans of the edit's text, for the core's own layers.</summary>
     private RenderFragment EditReferenceSpans
-        => _editReferenceSpans ??= builder => AddReferenceSpans(builder, _editText, Colouring);
+        => _editReferenceSpans ??= builder => AddReferenceSpans(builder, _editText, Colouring, PointedSpan);
 
     /// <summary>The spans of what the Formula Bar's layer draws: the edit's while the bar shows
     /// it; nothing otherwise.</summary>
@@ -59,7 +73,7 @@ public partial class ExGrid<TRow>
         => _barReferenceSpans ??= builder =>
         {
             if (BarShowsTheEdit)
-                AddReferenceSpans(builder, _editText, Colouring);
+                AddReferenceSpans(builder, _editText, Colouring, PointedSpan);
         };
 
     /// <summary>The Cell Editor's layer as a Chrome places it (<see cref="Chrome.CellEditorContext.ReferenceText"/>);
@@ -99,9 +113,11 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// The text, each Reference a span in its colour and the rest as it stands — nothing added,
     /// nothing left out, so the layer's characters stand where the field's do. The colouring is
-    /// always of this very text (<see cref="Colouring"/>).
+    /// always of this very text (<see cref="Colouring"/>), and so is the pointed span: the
+    /// Reference standing exactly there wears the pointed look beside its colour. Only the layer
+    /// of the surface the edit is in shows, so only there is it seen.
     /// </summary>
-    private static void AddReferenceSpans(RenderTreeBuilder builder, string text, ReferenceColouring colouring)
+    private static void AddReferenceSpans(RenderTreeBuilder builder, string text, ReferenceColouring colouring, (int Start, int Length)? pointed)
     {
         var at = 0;
         for (var i = 0; i < colouring.References.Count; i++)
@@ -109,8 +125,11 @@ public partial class ExGrid<TRow>
             var reference = colouring.References[i];
             if (reference.Start > at)
                 builder.AddContent(0, text[at..reference.Start]);
+            var classes = pointed is { } span && span.Start == reference.Start && span.Length == reference.Length
+                ? PointedReferenceTextClasses
+                : ReferenceTextClasses;
             builder.OpenElement(1, "span");
-            builder.AddAttribute(2, "class", ReferenceTextClasses[colouring.Colours[i].Place]);
+            builder.AddAttribute(2, "class", classes[colouring.Colours[i].Place]);
             builder.AddContent(3, text.Substring(reference.Start, reference.Length));
             builder.CloseElement();
             at = reference.Start + reference.Length;
