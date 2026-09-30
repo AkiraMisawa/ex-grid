@@ -15,3 +15,8 @@ ADR-0058 leaves for later on exactly that ground.
 - [ ] The numbers recorded, with the machine they came from
 
 ## Comments
+
+2026-09-30: Measured during the grilling and recorded in ADR-0063 and ADR-0065: the first
+engine took 687 ms on CoreCLR and 6.8 s in a published WebAssembly build to aggregate a million
+records, and a columnar prototype 33 ms and 0.20 s. PV-21 now holds the targets the user set (Q52);
+what remains is recording them for the rebuilt engine, which this ticket keeps.

@@ -81,4 +81,18 @@ cell.
     innermost field's label ExPivot does nothing, where Excel asks which field to show the detail
     by — an Excel command the first version leaves out.
 
+## Added by the grilling (ADR-0059, ADR-0060)
+
+26. **Date parts** are labelled `2026`, `Qtr3` and `Sep` in the English edition and `2026年`,
+    `第3四半期` and `9月` in the Japanese one, and ordered by the calendar.
+27. **The Japanese edition's words**: `行ラベル`, `列ラベル`, `総計`, `集計`, `合計 / 金額`,
+    `データの個数 / 地域`, `(空白)`, `(すべて)`, `(複数のアイテム)`, `値`, and the pane's
+    `ピボットテーブルのフィールド`, each read against Excel's own screens.
+28. **The Design tab's Layout choices** carry these names: Subtotals (Do Not Show Subtotals, Show all
+    Subtotals at Bottom of Group, Show all Subtotals at Top of Group), Grand Totals (Off for Rows and
+    Columns, On for Rows and Columns, On for Rows Only, On for Columns Only), and Report Layout (Show
+    in Compact Form, Show in Outline Form, Show in Tabular Form, Repeat All Item Labels, Do Not Repeat
+    Item Labels). The choices that would change nothing are greyed out, as in Tabular's Subtotals
+    position.
+
 ## Comments

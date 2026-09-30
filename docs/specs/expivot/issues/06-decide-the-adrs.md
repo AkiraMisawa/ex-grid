@@ -1,6 +1,6 @@
 # 06: Decide ADR-0058 to ADR-0062 with the user
 
-Status: ready-for-human
+Status: done
 
 **What to do:** ADR-0058 to ADR-0062 were written as proposals while ExPivot was built, and each
 says so. Put them in front of the user together, as AGENTS.md asks of decisions made alongside
@@ -18,3 +18,7 @@ The choices most worth their attention:
 **Blocked by:** None
 
 ## Comments
+
+2026-09-30: Decided with the user in a grilling of the requirements (Q1 to Q63). ADR-0058 to
+ADR-0062 are marked decided, each change kept in the text with its reason; the grilling added
+ADR-0063 to ADR-0068. The build follows them through tickets 09 to 20.

@@ -12,3 +12,7 @@ scope sentence in §2 that says §29 never gates ExGrid, and DC-52 in §26 for t
 - [x] Every "as Excel" in §29 points at `excel-behaviours.md`
 
 ## Comments
+
+2026-09-30: Revised with the grilling. §29 now runs PV-1 to PV-38 (PV-21 holds the user's targets),
+§30 (DA-1 to DA-17) judges the data packages, and DC-53 to DC-55 in §26 judge the Change Highlight;
+§2 says which of them gate ExGrid.
