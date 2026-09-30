@@ -1632,8 +1632,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const active = document.activeElement;
             if (!active || active === document.body || active === document.documentElement || root.contains(active)) {
                 focusDeclined = false;
-                field.focus({ preventScroll: true });
+                // Scrolled into view as Blazor's FocusAsync scrolled it: an editor opened by keys
+                // below the fold is brought on screen.
+                field.focus();
             } else if (editing !== 'none') {
+                // The surface the core asked for is the edit's: the held keys go into it, and a
+                // press back puts the keyboard there (standingField), the bar's when it was the bar.
+                lastSurface = box;
                 focusDeclined = true;
             }
         },

@@ -309,7 +309,11 @@ public class ShippedStylesheetTests
         Assert.Contains("surfaceField(box)", body, StringComparison.Ordinal);
         // Granted only while DOM focus is inside this root or on nothing: reclaimFocus's condition.
         Assert.Contains("!active || active === document.body || active === document.documentElement || root.contains(active)", body, StringComparison.Ordinal);
-        Assert.Contains("field.focus({ preventScroll: true })", body, StringComparison.Ordinal);
+        // Scrolled into view as Blazor's FocusAsync did: no preventScroll here.
+        Assert.Contains("field.focus();", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("preventScroll", body, StringComparison.Ordinal);
+        // Declined, the surface asked for is the edit's, where the held keys and a press back go.
+        Assert.Contains("lastSurface = box;", body, StringComparison.Ordinal);
         Assert.Contains("focusDeclined = true", body, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // A decline ends the hold's wait for the editor's focus, and the held keys go into the edit
