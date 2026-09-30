@@ -585,6 +585,21 @@
 }
 .ex-reference-text-line { height: 100%; overflow: hidden; }
 .ex-reference-text-line::after { content: ""; display: inline-block; width: 100%; }
+/* The Reference Point is writing, shown selected (ADR-0051/0057; the eighth Windows run, cases 19
+   to 32): on a grey ground, its text a darker shade of its colour. A look on the layer, never a
+   selection of the field's text, so a key typed next follows the Reference; and only where the
+   core marks it, which it does not for a Reference straight after the text's first character.
+   Excel's ground is #c6c6c6, and its text #0401a2 for the first colour (#326ac7) and #630101 for
+   the second (#c0353e). Approximated: the Reference's own colour mixed 55% toward black gives
+   #1c3a6d and #6a1d22, as dark as Excel's, the blue less saturated. Excel was not seen over a dark
+   ground; there the grey stands as far from the dark Canvas as #c6c6c6 does from white, and the
+   shade is mixed toward white. The shade is the text's fill, so the span's color stays its
+   Reference's, and currentColor reads it — in the default and in a Theme's
+   --ex-reference-pointed-color alike. */
+.ex-reference-text .ex-reference-pointed {
+    background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b));
+    -webkit-text-fill-color: var(--ex-reference-pointed-color, light-dark(color-mix(in srgb, currentColor 55%, black), color-mix(in srgb, currentColor 55%, white)));
+}
 /* A Chrome places the layer inside the core's box, before its control, which fills the box's
    content (IGridChrome): the layer stands over that content, inside the padding the box has from
    .ex-editor and .ex-formula-bar-text, with none of its own, as the control has none. The bar's

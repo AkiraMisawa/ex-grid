@@ -20,6 +20,12 @@ text turns transparent only while the layer holds the field's current value.
       colours follow a press from one surface into the other mid-edit. Excel colours the cell's
       text or the Formula Bar's, never both (the eighth Windows run, `range-finder.md` cases 1, 21
       and 1fb). The surface is the field holding DOM focus, the one held keys go to (ADR-0051)
+- [x] The Reference Point is writing is shown selected: its span in the layer lies on a grey ground
+      (`--ex-reference-pointed-background`), its text a darker shade of its colour
+      (`--ex-reference-pointed-color`), unless the span starts right after the text's first
+      character (`=` ↓ ↓ shows none; `=SUM(` ↓, `=1+` ↓ and `=D11+` ↓ ↓ do). A look on the layer,
+      never a selection of the field's text: `5` typed next follows the Reference and ends Point
+      (ADR-0051's newest section; ADR-0057, "What cases 24–32 settled")
 - [ ] An IME composition leaves the field ahead, so its own text shows until the composition ends
       and the layer catches up (DC-47). *Its own text shows for the whole composition. The layer
       then shows again at the next input, not when the composition ends: Chrome sends no input

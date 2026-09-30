@@ -168,7 +168,79 @@ public partial class ReferenceTextTests : GridTestContext
 
         var layer = cut.Find(".ex-viewport > .ex-reference-text");
         Assert.Equal("=B1+A2", layer.GetAttribute("data-ex-text"));
-        Assert.Equal("=<span class=\"ex-reference-1\">B1</span>+<span class=\"ex-reference-2\">A2</span>", Drawn(layer));
+        Assert.Equal("=<span class=\"ex-reference-1\">B1</span>+<span class=\"ex-reference-2 ex-reference-pointed\">A2</span>", Drawn(layer));
+    }
+
+    /// <summary>The <c>setCaret</c> calls the core made: the text, and the selection it placed in it.</summary>
+    private List<(string Text, int Start, int End)> SelectionsPlaced()
+        => [.. JSInterop.Invocations.Where(i => i.Identifier == "setCaret")
+            .Select(i => ((string)i.Arguments[0]!, (int)i.Arguments[1]!, (int)i.Arguments[2]!))];
+
+    [Theory] // ADR-0051 / ADR-0057 (cases 29–31): the Reference Point is writing is shown selected, in both surfaces' layers
+    [InlineData("=SUM(", "=SUM(<span class=\"ex-reference-1 ex-reference-pointed\">A2</span>")]
+    [InlineData("=1+", "=1+<span class=\"ex-reference-1 ex-reference-pointed\">A2</span>")]
+    public async Task The_reference_point_is_writing_is_shown_selected(string typed, string drawn)
+    {
+        var cut = RenderGrid(more: ps => ps.Add(g => g.ShowFormulaBar, true));
+        await TypeFormulaAsync(cut, typed);
+
+        await PressAsync(cut, "ArrowDown", text: typed, caret: typed.Length);
+
+        Assert.Equal(drawn, Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
+        // Only the layer of the surface the edit is in shows, which is the listener's to decide:
+        // both carry the look.
+        Assert.Equal(drawn, Drawn(cut.Find(".ex-formula-bar > .ex-reference-text")));
+    }
+
+    [Fact] // ADR-0051 / ADR-0057 (cases 19, 20x): a Reference straight after the text's first character is not shown selected, however often it is pointed
+    public async Task A_reference_pointed_straight_after_the_first_character_is_not_shown_selected()
+    {
+        var cut = RenderGrid();
+        await TypeFormulaAsync(cut, "=");
+
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+        Assert.Equal("=<span class=\"ex-reference-1\">A2</span>", Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
+        await PressAsync(cut, "ArrowDown", text: "=A2", caret: 3);
+
+        var layer = cut.Find(".ex-viewport > .ex-reference-text");
+        Assert.Equal("=A3", layer.GetAttribute("data-ex-text"));
+        Assert.Equal("=<span class=\"ex-reference-1\">A3</span>", Drawn(layer));
+        Assert.Single(cut.FindAll(".ex-point"));
+    }
+
+    [Fact] // ADR-0051 / ADR-0057 (case 32): the look is not a selection — the caret is placed after the Reference with nothing selected, and a key typed next follows it and ends pointing
+    public async Task A_key_typed_after_pointing_follows_the_reference()
+    {
+        var cut = RenderGrid();
+        await TypeFormulaAsync(cut, "=B2+");
+        await PressAsync(cut, "ArrowDown", text: "=B2+", caret: 4);
+        await PressAsync(cut, "ArrowDown", text: "=B2+A2", caret: 6);
+        Assert.Equal(
+            "=<span class=\"ex-reference-1\">B2</span>+<span class=\"ex-reference-2 ex-reference-pointed\">A3</span>",
+            Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
+        // The field's text is never selected: every placement while pointing is a caret, after
+        // the Reference.
+        Assert.Equal([("=B2+A2", 6, 6), ("=B2+A3", 6, 6)], SelectionsPlaced().Where(p => p.Text.StartsWith("=B2+A", StringComparison.Ordinal)));
+
+        // The browser types at that caret: the digit follows the Reference.
+        await TypeAsync(cut, "=B2+A35");
+
+        var layer = cut.Find(".ex-viewport > .ex-reference-text");
+        Assert.Equal("=B2+A35", layer.GetAttribute("data-ex-text"));
+        Assert.Equal("=<span class=\"ex-reference-1\">B2</span>+<span class=\"ex-reference-2\">A35</span>", Drawn(layer));
+        Assert.Empty(cut.FindAll(".ex-point"));
+    }
+
+    [Fact] // ADR-0051 / ADR-0057: F2 from Point moves the caret again, the Reference left written and no longer shown selected
+    public async Task F2_takes_the_look_with_the_outline()
+    {
+        var cut = RenderGrid();
+        await TypeFormulaAsync(cut, "=SUM(");
+        await PressAsync(cut, "ArrowDown", text: "=SUM(", caret: 5);
+
+        await PressAsync(cut, "F2", text: "=SUM(A2", caret: 7);
+
+        Assert.Equal("=SUM(<span class=\"ex-reference-1\">A2</span>", Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
     }
 
     [Fact] // ADR-0057 / DC-48: over a pinned cell, the layer rides the editor's sticky anchor, immediately before it

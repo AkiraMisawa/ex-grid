@@ -265,6 +265,121 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// The Reference Point is writing, shown selected (ADR-0051; ADR-0057, "What cases 24–32 settled")
+
+/** Each span of a field's layer: its text, whether the core marked it as the Reference being
+ * pointed, and how the stylesheet paints it — its ground, its ink, and the colour it wears. */
+const spansOf = (field) => field.evaluate((input) => [...input.previousElementSibling.querySelectorAll('span')]
+    .map((span) => {
+        const style = getComputedStyle(span);
+        return {
+            text: span.textContent,
+            pointed: span.classList.contains('ex-reference-pointed'),
+            ground: style.backgroundColor,
+            ink: style.webkitTextFillColor,
+            colour: style.color,
+        };
+    }));
+
+/** The field's selection: the look is never one. */
+const selectionOf = (field) => field.evaluate((input) => [input.selectionStart, input.selectionEnd]);
+
+// Excel's grey, #c6c6c6, over the light ground /sheet has (the default of
+// --ex-reference-pointed-background).
+const POINTED_GROUND = 'rgb(198, 198, 198)';
+
+/** The one span pointed, on the grey, its ink a shade of its colour and not the colour itself. */
+async function expectPointedLook(field, text) {
+    await expect.poll(async () => (await spansOf(field)).filter((span) => span.pointed).map((span) => span.text)).toEqual([text]);
+    const span = (await spansOf(field)).find((one) => one.pointed);
+    expect(span.ground).toBe(POINTED_GROUND);
+    expect(span.ink).not.toBe(span.colour);
+    expect(span.ink).not.toBe(TRANSPARENT);
+}
+
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0051/0057: after =SUM( the Reference Point writes is shown selected in the Cell Editor, and the Formula Bar stays plain (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=SUM(');
+        await expect(editor(grid)).toHaveValue('=SUM(');
+
+        await page.keyboard.press('ArrowDown');
+
+        await expectColoured(editor(grid), '=SUM(F4');
+        await expectPointedLook(editor(grid), 'F4');
+        // A look on the layer, not a selection of the field's text: the caret after the Reference.
+        expect(await selectionOf(editor(grid))).toEqual([7, 7]);
+        await expectPlain(bar(grid), '=SUM(F4');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
+    test(`ADR-0051/0057: pointed from the Formula Bar after =SUM(, the Reference is shown selected there, and the Cell Editor stays plain (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F3');
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '=SUM(');
+        // Caret, as a press into the bar leaves it: F2 points (ADR-0051).
+        await page.keyboard.press('F2');
+
+        await page.keyboard.press('ArrowDown');
+
+        await expectColoured(bar(grid), '=SUM(F4');
+        await expectPointedLook(bar(grid), 'F4');
+        expect(await selectionOf(bar(grid))).toEqual([7, 7]);
+        await expectPlain(editor(grid), '=SUM(F4');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
+    test(`ADR-0051/0057: = ↓ ↓ writes =F5 with no grey, however often it is pointed (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toHaveValue('=');
+
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+
+        await expectColoured(editor(grid), '=F5');
+        await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(1);
+        const spans = await spansOf(editor(grid));
+        expect(spans.map((span) => [span.text, span.pointed])).toEqual([['F5', false]]);
+        expect(spans[0].ground).not.toBe(POINTED_GROUND);
+        expect(spans[0].ink).toBe(spans[0].colour);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
+    // Excel's case 32: the grey is not a selection that typing replaces. The digit follows the
+    // Reference, and Point ends.
+    test(`ADR-0051/0057: 5 typed after =D11+ ↓ ↓ follows the Reference, and the grey goes with Point (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=D11+');
+        await expect(editor(grid)).toHaveValue('=D11+');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await expectColoured(editor(grid), '=D11+F5');
+        await expectPointedLook(editor(grid), 'F5');
+
+        await page.keyboard.type('5');
+
+        await expectColoured(editor(grid), '=D11+F55');
+        await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
+        expect((await spansOf(editor(grid))).map((span) => [span.text, span.pointed])).toEqual([['D11', false], ['F55', false]]);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+}
+
+// ---------------------------------------------------------------------------------------------
 // Over the right characters (DC-48)
 
 /** Differing pixels between two PNG screenshots of one element, compared in the page. */
