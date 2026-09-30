@@ -362,7 +362,9 @@ nobody had asked for. What that means when writing a test:
   Ctrl+Z each; a row deleted, a column inserted and a column deleted by the Context Menu, with
   the References rewritten, a deleted target `#REF!`, the Selection left in place, and one
   Ctrl+Z restoring each (SH-5, ticket 13); the Linked Table reading `#GETTING_DATA` until its snapshot (SH-16); the Focus
-  at XFD1048576 with the DOM no larger than at A1 (SH-2).
+  at XFD1048576 with the DOM no larger than at A1 (SH-2); Home, End, Shift+Home and Shift+End in
+  Caret in the Cell Editor and the Formula Bar moving and extending the caret with nothing
+  scrolled and the edit kept, which on macOS the listener answers (ticket 32).
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed
@@ -385,14 +387,18 @@ nobody had asked for. What that means when writing a test:
   to the browser (DC-30); grips without the menu button (DC-36); the positions grid keeping
   ExGrid's own behaviour beside the Sheet (DC-25).
 - `reference-text.spec.mjs` — the coloured text in the editor (ADR-0057) on `/sheet`, under the
-  built-in Chrome and `ExGrid.MudBlazor`'s: a burst of typing with 150 ms on the Server host,
+  built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`, the Sheet on the Wrapper's paper
+  with its stylesheet): a burst of typing with 150 ms on the Server host,
   sampled every animation frame in the page, never showing transparent field text over a layer
   that differs, and the colours back once it pauses; on WebAssembly the colours following each
   keystroke, three References in three colours; only the surface the edit is in coloured, the
   other plain, as in Excel: an edit opened by F2 or by a press into the Formula Bar coloured there
   before anything is typed, and the colours following a press from the cell into the bar and back;
   the caret and a selection drawn by the field; an IME composition through CDP drawn by the field
-  while it lasts (DC-47); a Formula longer than
+  while it lasts, and the colours back when it ends (DC-47); the Mud Cell Editor still showing the
+  layer's text with the Wrapper's stylesheet taken away; the Reference Point is writing on a grey
+  ground after `=SUM(`, in the cell and in the bar, none after `=` ↓ ↓, and a `5` typed after
+  pointing following the Reference (ADR-0051); a Formula longer than
   either surface, at both ends, the layer's line scrolled with the field, its font, padding and
   spacing the field's, and the two drawings of the text the same picture (DC-48).
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
