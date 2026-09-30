@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>The Ex family's immutable data: a Snapshot of tabular data held column by column — text as a dictionary, money as exact scaled integers — built from objects or from columns, and moved on by Change Batches keyed by a Record Key. No dependency.</Description>
+    <PackageTags>snapshot;columnar;immutable;change-batch;pivot;excel</PackageTags>
+  </PropertyGroup>
+
+  <!-- No package and no project references, deliberately (ADR-0063, DA-1): every bundled source
+       of the family can read a Snapshot, a server with no UI included. -->
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExGrid.Data.Tests" />
+  </ItemGroup>
+
+</Project>
