@@ -9,7 +9,10 @@ ExSheet draws a Sheet by being ExGrid's Consumer, and most of Excel's behaviour 
 for free. Five things do not. ExGrid made the opposite choice in each, and made it for a display
 grid on purpose. **Each one enters the core as a declaration a Consumer makes.** A Consumer who
 does not make it sees the grid exactly as before, so no existing criterion changes. Each change
-has to be right for any Consumer that makes the declaration, ExSheet or not.
+has to be right for any Consumer that makes the declaration, ExSheet or not. *(A sixth was added
+on 2026-09-29, and it is a notification rather than a declaration: the core tells its Consumer when
+an edit opens and ends (section 6). A Consumer that does not listen still sees the grid exactly as
+before. The title keeps its first count.)*
 
 ## 1. A header click that selects, and Headings
 
@@ -158,6 +161,48 @@ null for a paste from the clipboard and for a fill key: a Ctrl+Enter over a rang
 paste of one field over the same range were otherwise the same intent, field for field, and a
 Consumer could not tell a typed Formula from a pasted one. *(Decided with the user, 2026-09-28,
 when the implementation found them indistinguishable.)*
+
+## 6. The core tells its Consumer when an edit opens and when it ends *(decided with the user, 2026-09-29)*
+
+ExSheet refuses its application's changes while an edit is open
+([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md), same
+day), so it has to know when one is. **The grid raises a notification when an edit opens and when it
+ends**, however it ends: committed, cancelled, refused and held open (which is still open), or
+discarded ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
+It carries no text: the uncommitted text stays the grid's
+([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)). It is raised in C#, on the
+side where the editing state lives, so no round trip stands between the state and the Consumer's
+reading of it. A plain ExGrid Consumer may listen too, for its own buttons.
+- *One end is heard late (settled while building, the same day).* A discard caused by a parameter
+  change is announced after the render that applied the change, as `OnEditDiscarded` already is, so
+  on a circuit the Consumer hears that end a round trip late. It errs toward refusing: for that
+  render, the Consumer still believes an edit is open. It never hears an opening late.
+- *The order, settled by the full browser run the same day.* Telling the Consumer lets it
+  re-render, and on a circuit that render could reach the browser before the grid's own messages:
+  the editor was removed while it still held the keyboard, and the Formula Bar lost it. So the grid
+  sends its own messages to the browser first (the key gate's new mode, the hand-back of the
+  keyboard), then tells the Consumer, and only then waits for replies. What the edit ended in (the
+  committed Edit Intent, a Ctrl+Enter fill's paste, a discard's reason) reaches the Consumer before
+  the end does, so that a command the Consumer runs on hearing the end comes after the value, never
+  before it. Nothing is waited for in between, so the Consumer still hears without a round trip.
+- *An edit that ends waits for no reply (settled by CI the same day).* The order above first waited
+  for the browser's replies after telling the Consumer. For an edit that ended, that wait put the
+  rest of the gesture, the Focus move and the key's answer, a round trip behind the committed value
+  the Consumer had already painted. On the Server host, the Focus stayed on the edited cell, and a
+  Ctrl+C typed on seeing the value was held behind the unanswered key and lost (ED-2/ED-4 and
+  CP-6/10/14 failed intermittently in CI; 22 of 50 runs failed with a 40 ms round trip injected, and
+  none after this change). The wait ordered nothing, because the browser runs the requests in the
+  order they were sent, ahead of the render and the answer that follow them. So an edit that ends
+  waits for no reply. An edit that opens, or changes its mode and stays open, still waits for the
+  gate's reply, and DC-19 depends on that.
+- *Disposal is not announced.* A grid removed while an edit is open raises nothing, because the
+  Consumer that removed it already knows. Raising into a Consumer that may itself be tearing down
+  would be worse than silence.
+
+**A Consumer can also discard an open edit, giving its own reason** *(decided with the user the same
+day)*. The discard is announced through `OnEditDiscarded` like the grid's own discards (ADR-0011), and
+the reason is the Consumer's, so it is true of what happened. ExSheet uses it when its Sheet Document
+is replaced while an edit is open (ADR-0048).
 
 ## Consequences
 

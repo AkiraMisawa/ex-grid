@@ -54,6 +54,42 @@ This is not the bundled undo stack ADR-0007 promises. That one is for an ExGrid 
 edits are Overlays over a fetched base, and it stays reserved with its own trigger. ExSheet's
 steps are operations on Entries, including structural ones that an Overlay cannot express.
 
+### While an edit is open, the application's changes are refused *(decided with the user, 2026-09-29)*
+
+Found on ExSheet's demo page. `99` was typed over the price in C4 (Plums), and "Insert a row above
+row 2" was pressed while the edit was open. Plums moved to row 5, and the Cell Editor stayed at row
+4, over Pears. Enter then wrote 99 into Pears' price, and the total changed, with nothing said.
+Rows and columns are places on a Sheet, so its Row Sequence Version never moves
+([ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)), and
+the rule that drops an edit when the order changes
+([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) never
+fired. [ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6, now keeps an edit
+open when the keyboard leaves the grid, so a click on the application's own button is the ordinary
+way to reach this.
+
+**While an edit is open, every command that changes the Sheet is refused by name**, as ExSheet
+refuses everything it will not do: `DoAsync` (an insertion, a deletion, any edit), `UndoAsync`,
+`RedoAsync`, `SetNumberFormatAsync` and `SetAlignmentAsync`. Nothing changes, and the refusal names
+the open edit. This is Excel's behaviour: its ribbon greys out while a cell is being edited.
+**ExSheet says whether an edit is open, and when that changes**, so the application can grey out its
+own buttons in the same way. It learns this from its grid
+([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), section 6).
+
+- **Replacing the whole Sheet Document while an edit is open discards the edit, and says so**
+  *(decided with the user the same day)*. A parameter cannot be refused. Keeping the edit open would
+  write it into the new document's cell at the same place, which is the failure above. So the edit is
+  dropped and announced, as ADR-0011 announces a discard, with the reason that is true of it: the
+  document was replaced. The grid gains the means for a Consumer to discard an open edit with its
+  own reason ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), section 6).
+- **A Linked Table's declaration and snapshots are not refused.** They are data arriving, not a
+  command ([ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)). They change
+  Values and never move a place, and the open edit holds text, not a Value.
+- Considered: letting the edit follow its cell, so that C4's edit becomes C5's. It needs the grid
+  to move an open editor at the Consumer's word, and it still leaves the question of what the user
+  meant. Considered: dropping the edit with an announcement, as ADR-0011 does. The typed text is
+  lost to a button the user pressed. Refusing keeps the text and changes nothing, which is the
+  project's first principle.
+
 ## The clipboard carries Entries inside, and Values outward
 
 - **From ExSheet to ExSheet, a copy carries Entries.** Formulas travel, and their relative

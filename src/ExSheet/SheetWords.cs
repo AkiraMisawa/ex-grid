@@ -1,4 +1,5 @@
 using System.Globalization;
+using ExGrid.Cells;
 using ExGrid.Clipboard;
 using ExSheet.Engine;
 
@@ -18,6 +19,21 @@ internal static class SheetWords
 
     internal static string Refused(SheetRefusal refusal) => refusal.Message;
 
+    internal static string EditIsOpen =>
+        "Nothing was changed: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again.";
+
+    internal static string EditDiscardedByNewDocument =>
+        "What was typed was not entered: another Sheet Document was opened while the cell was being edited.";
+
+    internal static string EditDiscarded(EditDiscardReason reason) => reason switch
+    {
+        EditDiscardReason.RowLeftTheWindow =>
+            "What was typed was not entered: the row being edited was scrolled too far away to be written. Go back to it and type it again.",
+        EditDiscardReason.OrderChanged => "What was typed was not entered: the rows moved while the cell was being edited.",
+        EditDiscardReason.ColumnsChanged => "What was typed was not entered: the columns changed while the cell was being edited.",
+        EditDiscardReason.ColumnNoLongerEditable => "What was typed was not entered: the cell stopped taking entries while it was being edited.",
+        _ => "What was typed was not entered.",
+    };
 
     internal static string PasteReadsDifferently(string field, CultureInfo culture) =>
         $"Nothing was pasted: '{field}' came as a value no culture changes, and typed under {culture.Name} it would not read as that value.";

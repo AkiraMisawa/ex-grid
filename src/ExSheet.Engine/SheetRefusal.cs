@@ -26,6 +26,15 @@ public enum SheetRefusalReason
 
     /// <summary>A fill whose target does not extend its source along one axis (ADR-0050).</summary>
     FillShapeNotSupported,
+
+    /// <summary>
+    /// A command that changes the Sheet, given while an edit is open. The Cell Editor stands over
+    /// a place, and a change under it — a row inserted above it — would carry the typing to
+    /// another cell when it is committed. It is refused, as Excel greys out its ribbon while a
+    /// cell is being edited. A Linked Table's data is not a command, and is never refused this
+    /// way (ADR-0048, ADR-0049).
+    /// </summary>
+    EditIsOpen,
 }
 
 /// <summary>An operation a Sheet refused, and why. Nothing was changed.</summary>

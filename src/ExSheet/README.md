@@ -29,8 +29,9 @@ computes, ExGrid paints, selects, navigates and reports.
 
 - **The Sheet Document is yours to keep.** `DocumentChanged` is raised after every change with the
   Sheet's Entries — never its Values — and ExSheet never stores anything. Handing over a different
-  document replaces the Sheet and clears the undo stack; handing back the one it raised changes
-  nothing.
+  document replaces the Sheet and clears the undo stack, and an edit open at that moment is
+  discarded, and said, rather than entered into the new document; handing back the one it raised
+  changes nothing.
 - **`Culture`** is the declared culture of a Sheet started empty; a document carries its own.
 - **`PinnedColumnCount`** freezes leading columns. Every row has the same height, and a
   `RowHeight` at which the full extent would pass the browser's scroll ceiling is refused by name.
@@ -91,6 +92,21 @@ await sheet.UndoAsync();
 
 A format or an alignment set on a selection of whole columns or whole rows is recorded on the
 columns or rows, one entry each, as Excel records it: cell over row over column.
+
+While an edit is open — a cell or the Formula Bar typed in, and not yet committed or cancelled —
+these commands, `RedoAsync` and `SetAlignmentAsync` among them, are refused with
+`SheetRefusalReason.EditIsOpen` and change nothing, as Excel greys out its ribbon while a cell is
+edited: a row inserted above the cell would otherwise carry the typing into another row.
+`IsEditing` says whether an edit is open, and `EditingChanged` is raised when that changes, so the
+application can grey out its own buttons:
+
+```razor
+<ExSheet @ref="_sheet" EditingChanged="open => _editing = open" />
+<button disabled="@_editing" @onclick="InsertRowAsync">Insert a row</button>
+```
+
+A Linked Table's declaration and snapshots are data arriving, not commands, and are taken while an
+edit is open.
 
 Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
 column, and a number typed into a column that it widens, are steps on the undo stack like any
