@@ -18,9 +18,14 @@ script, that a press was handed on, and the Sheet holds its keys behind it.
       rows (`holdBehindPress` / `askAboutPress`). The hold ends when the core has answered the press.
       The Sheet's core answers once the Scope has written or refused; a press the Scope did not take
       is answered too, so no hold waits for the two-second fallback (DC-54, ADR-0010)
+- [ ] The press does not overtake the keys typed before it that the Sheet still holds (found while
+      building ticket 37: on the Server host at 0 ms, `=1+` and a press at once gave `=XLOOKUP(...)`
+      in 2 runs of 4). The Scope answers a handed-on press only once the Sheet's listener has passed
+      the event's place in its queue (ADR-0021's note, widened 2026-09-30; DC-54)
 - [ ] The comments on the allowlist at the head of `ex-grid.js` name the event
 - [ ] Script-shape tests: no layout read, no listener on `document` or `window`, no module-level
       state for another instance (DC-54)
 - [ ] Layer 3 on `/sheet`, Server host, 150 ms injected: `=`, a press on a PV cell and `*` at once
       gives `=XLOOKUP("R-4471", Positions[Id], Positions[PV])*`; `=SUM(1,`, a press, then `)` and Enter
-      at once, commits `=SUM(1,XLOOKUP(…))`, never `=SUM(1,)` (DC-54)
+      at once, commits `=SUM(1,XLOOKUP(…))`, never `=SUM(1,)`; `=1+` and a press at once, at 0 ms and
+      at 150 ms, gives `=1+XLOOKUP(…)`, never `=XLOOKUP(…)` (DC-54)

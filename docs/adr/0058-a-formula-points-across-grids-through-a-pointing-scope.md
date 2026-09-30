@@ -312,3 +312,25 @@ the rule above is now Excel's, or the difference is decided here with the user.
 - **Backspace back into a name lists again**, and both argument lists read as the table above.
 - **Seen and not asked:** Excel shows the pointed Reference's value in a tip above the edited cell
   while it points (`20`, `{10;20;30}`). Nothing here decides it.
+
+## Settled while building ticket 37 *(2026-09-30)*
+
+- **Three more reasons are told**, beside the table's: the pointing Sheet has not declared the table
+  a grid shows; the pressed row's key is an Error Value, which no constant can write; and a press
+  that arrives after pointing has ended, which on a circuit a grid still painted pointed at can
+  send. Nothing is written for any of them.
+- **A grid with an open edit of its own is not pointed at, whatever it is told.** The Scope never
+  tells it so, and the grid checks it too.
+- **The Sheet learns where DOM focus is from Blazor's `focusin` and `focusout`**, on an element that
+  wraps ExSheet's markup and takes no box (`display: contents`). No script is added. A `focusout`
+  waits one turn, because a move inside the Sheet, from its root to the Cell Editor, raises a
+  `focusout` and a `focusin` together.
+- **The reason is told to the Consumer only.** ExSheet draws nothing of its own for it; `/sheet` and
+  `/sheets` show it below their grids.
+- **Until the arrow keys point inside a registered grid** (ticket 41), after a press on one the
+  arrow keys, `Home` and `End` move nothing.
+- **A press overtook keys typed before it.** On the Server host, `=1+` typed and the positions grid
+  pressed at once gave `=XLOOKUP(...)` in 2 runs of 4: the `1+` was still held behind the `=` by the
+  Sheet's listener, and the press, which the grid sends to the core itself, arrived first. The hold of
+  "On a circuit" now keeps the keys typed before a press ahead of it as well (ADR-0021's note, widened
+  the same day; DC-54; ticket 35).

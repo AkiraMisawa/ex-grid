@@ -386,7 +386,12 @@ the grid hands on, its capture-phase `mousedown`, the listener above, dispatches
 root. The Sheet hears the event through one listener for it on its own root. It then starts the hold
 it starts for a press on its own rows: the keys typed after it are held, in order, until the Sheet's
 core has answered the press, and are then replayed
-([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s hold).
+([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s hold). *(Widened the same day,
+when ticket 37 was built:)* the press also waits behind the keys typed before it that the Sheet still
+holds. The pressed grid sends its press to the core itself, so it can reach the core ahead of them:
+on the Server host at 0 ms, `=1+` typed and the positions grid pressed at once gave
+`=XLOOKUP(...)` in 2 runs of 4, the `1+` lost. The Scope therefore answers a handed-on press only
+once the Sheet's listener has passed the place the event took in its queue.
 
 - **Why script: the ground is the first, technically required.** On a circuit, the text Point writes
   reaches the Sheet's field a round trip after the press. A key typed meanwhile reaches the field
