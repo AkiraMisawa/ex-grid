@@ -1,7 +1,8 @@
 # ExPivot.MudBlazor is a Chrome and a stylesheet, around the grid Wrapper it reuses
 
 *(Proposed 2026-09-30 with [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md),
-and not yet decided with the user, who asked for "a Wrapper for a MudBlazor-like design".)*
+and not yet decided with the user, who asked for "a Wrapper for a MudBlazor-like design". Brought in
+line with what was built the same day: the list of controls, and where the words come from.)*
 
 A MudBlazor application should show a pivot that looks like the rest of it: a Material surface, the
 palette's colours in both schemes, Roboto, and MudBlazor's own controls in the Field List and its
@@ -27,7 +28,7 @@ structure or state.
   still leave one hand. A second paper would be a second copy of that obligation.
 - **`MudPivotChrome`** is the `IPivotChrome` ([ADR-0060](./0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md))
   that draws the Field List, the report filter band, the menus and the panels with MudBlazor's
-  controls: `MudCheckBox`, `MudTextField`, `MudSelect`, `MudButton`, `MudIconButton`, `MudText`,
+  controls: `MudCheckBox`, `MudTextField`, `MudSelect`, `MudRadioGroup`, `MudButton`, `MudText`,
   Material icons. It supplies `MudGridChrome` as the report grid's Chrome, so one parameter dresses
   both.
 - **`mud-ex-pivot.css`** maps ExPivot's own Visual Tokens — the `±` button, the Field List's
@@ -51,6 +52,11 @@ reasons.
   ([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)): MudBlazor
   draws its list outside ExPivot's root, through the application's `MudPopoverProvider`, which a
   MudBlazor application already has. Escape closes the list first and the panel next.
+- **The words are ExPivot's.** MudBlazor has none for a pivot, so the pane, the menus and the
+  panels speak ExPivot's words by id, and the report grid's `MudGridChrome` is handed ExPivot's
+  words for its pivot commands ([ADR-0060](./0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)):
+  one `Label` on ExPivot words the whole pivot, while the grid's own commands keep MudBlazor's
+  words where it has them.
 - **The `±` button in a label cell is the core's plain markup**, restyled by tokens. A
   `MudIconButton` there would be a component in every painted row — the path ADR-0003 measured and
   ADR-0030 forbids a Wrapper.

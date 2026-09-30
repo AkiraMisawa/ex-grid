@@ -6,19 +6,24 @@
 
 An Excel-like grid component for Blazor.
 
-Two products share this repository and ship as separate packages
+Three products share this repository and ship as separate packages
 ([ADR-0019](docs/adr/0019-one-repository-many-packages.md)):
 
 - **ExGrid** — display-oriented. Fully specified; this is what gets built first.
 - **ExSheet** — edit-oriented. Being specified: decided in ADR-0046 to ADR-0051, specified in
   `docs/specs/exsheet/`.
+- **ExPivot** — Excel's PivotTable, drawn by ExGrid, with a MudBlazor Wrapper
+  (`ExPivot.MudBlazor`). Proposed in ADR-0058 to ADR-0062, not yet decided; specified in
+  `docs/specs/expivot/`. See it on the demo host's `/pivot` page, and `/pivot?chrome=mud`.
+
+ExSheet and ExPivot are built alongside ExGrid and are not part of its release.
 
 **Current status: the specification is settled; implementation is underway** — the
 pure-logic core and the component layer exist, virtualised on both axes, with pinned
 columns, selection, the keyboard (including entering a cell), the Cell Editor and the
 clipboard. What is left is recorded in
 [`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
-in [`docs/adr/`](docs/adr/) (43 decision records) and the domain glossary in
+in [`docs/adr/`](docs/adr/) (62 decision records) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
 ## Using the packages

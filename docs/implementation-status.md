@@ -716,3 +716,49 @@ header-click sort cycle (recorded in ADR-0012). Still reserved, triggers unfired
 fill handle, `--ex-selection-outline`, ExSheet's shape, the column band. *(Since then:
 right-click was settled by the Context Menu, ADR-0036; the Wrapper seam order by the
 package's start and ADR-0039, 2026-09-24.)*
+
+## ExPivot (2026-09-30)
+
+*(Built on `claude/expivot-mudblazor-wrapper-j25225`. [ADR-0058](adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)
+to [ADR-0062](adr/0062-what-expivot-asks-of-exgrids-core.md) are proposed and not yet decided with
+the user; §29 of the Definition of Done judges ExPivot and never gates ExGrid, and DC-52 in §26 is
+the one core change, which does.)*
+
+**What exists.** `ExPivot.Engine`, `ExPivot` and `ExPivot.MudBlazor`, holding everything ADR-0058's
+"first version" column lists; ADR-0062's `OnCellDoubleClick` in the core; `/pivot` on both demo
+hosts, and `/pivot?chrome=mud` dressed by the MudBlazor Wrapper. The spec and its tickets are in
+`docs/specs/expivot/`.
+
+```sh
+dotnet test ExGrid.slnx                 # all pass: ExGrid 826 + 1068 (1 skipped, as before),
+                                        # ExGrid.MudBlazor 88, ExSheet 1969 + 290,
+                                        # ExPivot.Engine 158, ExPivot 48, ExPivot.MudBlazor 27
+tests/ExGrid.PackageSmoke/check.sh      # passed: ExPivot's three packages in .pivot-feed, none in .feed
+npx playwright test pivot.spec.mjs navigation.spec.mjs   # WebAssembly and Server hosts: all pass
+```
+
+**Layer 3 ran here only in part.** It ran on Linux, headed under xvfb, against the container's
+Chromium (Playwright's build 1194), because neither Chrome nor Edge was installed: the targeted
+run AGENTS.md asks for, not the full one, which is CI's. `pivot.spec.mjs` (18 tests) and
+`navigation.spec.mjs` passed on both hosts, and `mud.spec.mjs` on WebAssembly. In
+`sheet.spec.mjs`, *SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot*
+failed, and fails the same way on the base commit here: the page pushes its first snapshot 1.5 s
+after the Sheet opens, and on this container the Sheet takes longer than that to be ready, so the
+cell already shows the value. It is left to CI's runners, as AGENTS.md says of a failure seen only
+locally.
+
+**Found in the browser, and fixed before it was decided.** Under MudBlazor the pane's content
+was taller than the report, so the Rows and Values Areas stood below the pane's edge, and a drag
+that needed a scroll to reach them was cancelled before it began. And a panel opened under an
+entry was only as wide as that entry's Area, half the pane. The pane now keeps its Areas in view
+and lets the list of fields scroll, and a menu or panel drops down at its static position, as wide
+as the pane; ADR-0060 records the revision.
+
+**Not done.**
+
+- **The ADRs are proposed** (ticket 06). Nothing in ExPivot is decided until the user has seen
+  them.
+- **Excel's behaviour was read, not observed.** Every reading is listed in
+  `docs/specs/expivot/excel-behaviours.md`, for a run beside Excel on Windows (ticket 07).
+- **PV-21 is not measured** (ticket 08). Nothing is claimed about ExPivot's speed.
+- **Edge, Windows and a real IME** have not run any of it.

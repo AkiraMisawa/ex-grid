@@ -411,6 +411,16 @@ nobody had asked for. What that means when writing a test:
   Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
   stack stay with the Sheet that has the keyboard, and each Sheet's Linked Table columns are
   outlined only in the grid its page wired to it (SH-31, DC-25).
+- `pivot.spec.mjs` — ExPivot on `/pivot` (§29, docs/specs/expivot), **run once per Chrome**:
+  ExPivot's own markup and `ExPivot.MudBlazor`'s (`/pivot?chrome=mud`), found by role and name,
+  which both give the same. A field dragged from the list of fields onto an Area with the
+  browser's own drag and drop, an entry dropped before another and back onto the list (PV-10);
+  the `−` button collapsing an Item with the Focus kept (PV-13); a double click on a value
+  listing the trades behind it (PV-14, DC-52); the keyboard into a field's menu and back to its
+  entry, a menu dropping down under its entry as wide as the pane, and a command moving the field
+  (PV-11); the report filter band filtering (PV-12). Under MudBlazor alone, a MudSelect's list
+  in Value Field Settings… taking Escape before its panel (PV-11), and the palette reaching the
+  pane, the entries and the `−` button in both schemes (PV-18).
 - `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
   ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
   `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or
