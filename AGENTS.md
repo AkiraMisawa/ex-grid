@@ -190,6 +190,20 @@ nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
   took first — which is exactly why layer 3 exists, and why the worst bugs in this project were
   invisible to suites that were passing at the time. Use `tests/ExGrid.Browser`, and read the
   layer 3 rules below before trusting a pass.
+- **The browser that exercises a change is a targeted run locally, and CI's full run.**
+  - **Locally, run the targeted run**: the spec files and `--grep` the change bears on, on one
+    host with `--project=chrome`. When CI fails, fix that test and rerun it alone.
+  - **The full run, both hosts and both browsers, is CI's.** CI runs it sharded on Linux in
+    about ten minutes. One host on a Mac takes about twenty-five, and the worktree cannot be
+    rebuilt meanwhile, because a rebuild under a running DemoHost breaks it.
+  - **CI is also the judge of a failure seen only locally.** A Mac has failures of its own, so a
+    local failure in a spec the change does not touch is left to CI, not settled by a full run
+    of the base.
+  - **CI runs a pull request only while it merges cleanly with its base**, so resolve conflicts
+    before waiting on it.
+  - **A background agent's brief carries the same scope.**
+  - **A full local run earns its time only where CI cannot look**: a macOS-only path, or a trace CI
+    did not keep.
 - **An unexpected console message or runtime exception is a failure**, not noise to scroll past.
   This component displays money; something the browser is complaining about may be something the
   reader is already seeing wrong.
@@ -218,8 +232,7 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   tautologies. CI runs it on Linux on every push, against both hosts; **Windows (VZ-14) and a real IME are still
   runs by hand**, and a CI artifact does not file the Step 4 record in `verification/`.
   `tests/ExGrid.Browser/README.md` says what it asserts and what it deliberately does not.
-  While iterating, run what you touched — a spec file, `--grep "ADR-0039"`, `--last-failed`,
-  `--project=chrome` — and leave both browsers and both hosts to the full run and to CI.
+  What to run locally, and what to leave to CI, is in "What counts as verified".
 
 - **A layer-3 spec file boots the app once, and its tests share the document** (ADR-0056).
   Each `page.goto` mounts a new page, but anything a test changes outside its own grids — a
@@ -320,8 +333,8 @@ onto this repo as follows:
 
 - **"Typechecking"** is `nix develop -c dotnet build ExGrid.slnx`; **a single test file** is
   `nix develop -c dotnet test <project> --filter <class>`; **the full suite** is the one in
-  "What counts as verified", plus layer 3 when the change faces the UI. A green build is still
-  not a result.
+  "What counts as verified", plus the targeted layer-3 run when the change faces the UI, with the
+  full layer-3 run left to CI. A green build is still not a result.
 - **Invoking `/implement` is the request to commit** its work to the current branch. It is not a
   request to push.
 - **A ticket that turns out to need a decision stops there.** Record the ADR first (or, as a
