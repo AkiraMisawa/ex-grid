@@ -669,6 +669,13 @@ The bundled one aggregates a snapshot in process and is the reference implementa
 one's answers.
 _Avoid_: data source, provider, backend, pivot cache (Excel's word for the snapshot alone)
 
+**Source Version**:
+Which state of the data a Pivot Source's answer came from. The records behind a cell and a field's
+Items are asked for under the version the report was computed from, and a source that can no
+longer answer under it refuses rather than answer from newer data.
+_Avoid_: data version (it names nothing here), Row Sequence Version (that is the grid's order),
+timestamp, revision
+
 **Pivot Field**:
 A named attribute of the Source Records the user can place in an Area: its caption, how it is read
 from a record, and its declared type, which decides where a ticked field goes and which
@@ -704,6 +711,12 @@ report, totals included. The layout holds what is hidden, not what is shown, so 
 appears later is shown
 ([ADR-0059](./docs/adr/0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
 _Avoid_: filtered item, excluded value, and Filter (that is ExGrid's model of conditions)
+
+**Order Key**:
+A Pivot Field's function from a value to what its Items are ordered by, ascending — a tenor to its
+length. An Item it gives no key comes after the keyed ones. It orders Items and never makes two
+values one Item: `18M` and `1Y6M` stay two Items, side by side.
+_Avoid_: comparer, custom sort, custom list (that is a field's declared Item order, Excel's word)
 
 **Value Field**:
 A Pivot Field placed in Values, with its **Aggregation**, its caption (`Sum of Amount`), its number
