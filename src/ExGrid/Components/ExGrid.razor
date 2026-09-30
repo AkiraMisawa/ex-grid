@@ -6698,6 +6698,13 @@
         // The input goes with the mode: a reference kept past it would name an element
         // the next editor is not, and the focus above would land nowhere.
         _editorElement = default;
+        // The gate's new mode and the hand-back are both asked of the browser before anything is
+        // awaited (PushEditingStateAsync), and so ahead of the render that removes the editor, as a
+        // popover's close asks for the root (ClosePopoverAndReturnFocus). Asked for after the gate's
+        // answer, the hand-back landed a round trip after that render: DOM focus was on body in
+        // between, where the root's listener hears nothing, and a key typed straight after a press
+        // that committed was lost (ADR-0010's hold behind a press, found on the Server host at 0 ms
+        // as well as at 150).
         await PushEditingStateAsync(reclaimFocus, fromField: fromBar, endedIn);
     }
 
@@ -7185,9 +7192,11 @@
     /// <para>Only while DOM focus is still inside this root, or on nothing (<c>body</c>): on a
     /// circuit this lands a round trip after the gesture that asked for it, and a second grid
     /// the user has pressed in the meantime keeps its keyboard (ADR-0018). The condition is
-    /// the handle's to read, since only the browser knows where focus is now — the one
-    /// decision about focus made in JavaScript (ADR-0021). Before the handle is attached there
-    /// is no listener on the root to hand keys to, and nothing is asked.</para>
+    /// the handle's to read, since only the browser knows where focus is now — one of the two
+    /// decisions about focus made in JavaScript (ADR-0021); the other is the press on the rows
+    /// or the headings that brings the keyboard back to an edit left standing (ADR-0018,
+    /// section 6). Before the handle is attached there is no listener on the root to hand keys
+    /// to, and nothing is asked.</para>
     ///
     /// <para>Nor, unless <paramref name="fromField"/> says so, while it is on a field beside the
     /// rows with focus of its own — the Formula Bar or the Name Box, built in or a Chrome's,

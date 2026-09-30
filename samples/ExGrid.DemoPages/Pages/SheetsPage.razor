@@ -3,6 +3,14 @@
 @* global::, for the reasons SheetPage.razor gives. *@
 @using global::ExSheet.Components
 @using global::ExSheet.Engine
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+
+@* ?chrome=mud runs both Sheets with ExGrid.MudBlazor's Chrome, each on the Wrapper's paper, whose
+   stylesheet maps the grid's Visual Tokens onto MudBlazor's palette (ADR-0030) — so the browser
+   tests that look at a Sheet's paint run under both Chromes (ED-27; DemoChrome). Without the
+   parameter each Sheet stands on the page as it always did. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" />
 
 <DemoNav />
 
@@ -16,10 +24,10 @@
 
 <div class="demo-side-by-side">
     <div id="sheet-left">
-        <ExSheet @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" ViewportHeight="360" ViewportWidth="520" />
+        @OnPaper(@<ExSheet @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520" />)
     </div>
     <div id="sheet-right">
-        <ExSheet @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" ViewportHeight="360" ViewportWidth="520" />
+        @OnPaper(@<ExSheet @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520" />)
     </div>
 </div>
 
@@ -28,6 +36,19 @@
 </p>
 
 @code {
+    /// <summary>Which Chrome the Sheets run with (<see cref="DemoChrome"/>); under the Wrapper's,
+    /// each stands on a <see cref="MudExGridPaper"/>.</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    private IGridChrome? _chrome;
+
+    protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
+
+    // A Sheet under the Wrapper's Chrome stands on its paper; under the core's, on the page.
+    private RenderFragment OnPaper(RenderFragment sheet)
+        => DemoChrome.IsMud(ChromeName) ? @<MudExGridPaper>@sheet</MudExGridPaper> : sheet;
+
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
 
     private SheetDocument? _left = Opening("Left", 10);
