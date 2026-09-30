@@ -77,8 +77,9 @@ script, that a press was handed on, and the Sheet holds its keys behind it.
   - Before (src/ at 0dd013f, the new spec): 20 runs of 20 failed. The `*` was lost; `=SUM(1,)`
     committed (the cell showed 1); `=XLOOKUP(…)` without `1+` in round 1 of every run, at 0 ms and
     at 150 ms.
-  - After: 20 of 20 and 8 of 8 passed; the `=1+` tests play 4 rounds per run, 28 rounds at each
-    latency.
+  - After: 20 of 20 and 8 of 8 passed, with each DC-54 test repeated 5 and 2 times. The `=1+`
+    tests play 4 rounds per run, so with the two-file run below they played 32 rounds at each
+    latency, none failing.
   - The two files `pointing-scope` and `edit-stands` on Server: 47 passed. One test's teardown
     hung for 16 minutes (`Tearing down "page" exceeded the test timeout`); it passed 10 of 10 when
     rerun alone. The same hang struck a base run too, so it is left as an environment issue.
