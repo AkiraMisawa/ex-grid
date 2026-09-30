@@ -54,6 +54,8 @@ public static class DemoPageList
             "ExSheet drawn by ExGrid: Formulas with completion and pointing, the Formula Bar, fill, paste, insertion, and a Linked Table read from the positions grid beside it (ADR-0046, ADR-0049, ADR-0051)."),
         new("sheets", "Two sheets", "ExSheet",
             "Two ExSheets on one page: keys, completion, undo and the Formula Bar stay with the Sheet that has the keyboard, and each outlines a Linked Table's columns only in the grid its page wired to it (ADR-0018, ADR-0048, ADR-0057)."),
+        new("pivot", "Pivot", "ExPivot",
+            "Excel's PivotTable drawn by ExGrid: the PivotTable Fields pane with drag and drop, each field's menu and panels, collapse and expand, and Show Details; ?chrome=mud dresses it in MudBlazor (ADR-0058, ADR-0060, ADR-0061)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null

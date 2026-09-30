@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>The pivot engine of ExPivot: Source Records aggregated under a serialisable Pivot Layout into a Pivot Report, with Excel's PivotTable semantics — Items, Hidden Items, Sum to Varp, subtotals, grand totals, the three report forms and Show Values As. No UI and no dependency: a server computes the same report the screen shows.</Description>
+    <PackageTags>pivot;pivottable;excel;aggregation;report</PackageTags>
+  </PropertyGroup>
+
+  <!-- No package and no project references, deliberately (ADR-0058/0059): the engine runs
+       wherever a report is needed, a server included, and is the reference a server-side
+       answer is held to. -->
+
+</Project>

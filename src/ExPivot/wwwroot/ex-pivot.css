@@ -1,0 +1,226 @@
+/* ExPivot's stylesheet (ADR-0058/0060). Every class is ex-pivot- prefixed and scoped to the
+   instance (ADR-0018). The Geometry Tokens — the Field List's width and the indent a level of the
+   Compact form takes — are written inline on the root from C# (ADR-0027); every colour is a
+   Visual Token with a system-colour default, so the bare pivot follows the host's scheme and a
+   Wrapper sets the tokens on its own element (ADR-0029/0030/0061). The report itself is ExGrid,
+   styled by ex-grid.css; nothing here reaches inside the grid but the label cells' own content,
+   which ExPivot renders. */
+
+/* The root: the report beside the Field List. A Stretch height is written inline as the grid's
+   is: a flex item as tall as its parent (ADR-0028). */
+.ex-pivot {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    min-width: 0;
+    box-sizing: border-box;
+    font-family: var(--ex-font-family, system-ui, sans-serif);
+    font-size: var(--ex-pivot-font-size, 14px);
+    color: var(--ex-pivot-color, CanvasText);
+}
+.ex-pivot-report {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+}
+.ex-pivot-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    text-align: center;
+    color: var(--ex-pivot-muted-color, GrayText);
+    border: 1px dashed var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+    background: var(--ex-pivot-empty-background, Canvas);
+}
+.ex-pivot-notice { color: var(--ex-pivot-refusal-color, CanvasText); padding: 4px 0; }
+
+/* The Field List: its width from C#, as tall as the report — its content scrolls inside it and
+   never makes the pivot taller. */
+.ex-pivot-field-list {
+    position: relative;
+    flex: 0 0 var(--ex-pivot-field-list-width);
+    width: var(--ex-pivot-field-list-width);
+    min-height: 240px;
+    box-sizing: border-box;
+    border-left: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+    background: var(--ex-pivot-pane-background, Canvas);
+    color: var(--ex-pivot-pane-color, CanvasText);
+}
+.ex-pivot-field-list-scroll {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+}
+/* The pane as tall as the Field List, with the Areas always in view at its foot and the list of
+   fields taking what is left, scrolling on its own — as Excel's pane does, so a field is dragged
+   to an Area without either scrolling away. Where even the least of each does not fit, the Field
+   List scrolls as a whole. */
+.ex-pivot-pane { display: flex; flex-direction: column; gap: 6px; padding: 8px; box-sizing: border-box; height: 100%; }
+.ex-pivot-pane > * { flex: none; }
+.ex-pivot-pane-title { font-weight: 600; font-size: 1.05em; }
+.ex-pivot-pane-caption { color: var(--ex-pivot-muted-color, GrayText); font-size: 0.9em; }
+.ex-pivot-search, .ex-pivot-text, .ex-pivot-select {
+    box-sizing: border-box;
+    width: 100%;
+    font: inherit;
+    padding: 2px 6px;
+    color: inherit;
+    background: var(--ex-pivot-input-background, Field);
+    border: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+}
+.ex-pivot-pane > .ex-pivot-fields {
+    flex: 1 1 0;
+    list-style: none;
+    margin: 0;
+    padding: 2px;
+    min-height: 4.5em;
+    overflow: auto;
+    border: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+}
+.ex-pivot-fields.ex-pivot-drop-remove { outline: 2px dashed var(--ex-pivot-drop-color, Highlight); outline-offset: -2px; }
+.ex-pivot-field { display: flex; align-items: center; gap: 4px; padding: 1px 2px; cursor: grab; }
+.ex-pivot-field-label { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; cursor: inherit; }
+.ex-pivot-field-caption { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-pivot-dragging { opacity: 0.5; }
+.ex-pivot-filtered-mark::before { content: "\25BF"; color: var(--ex-pivot-accent-color, Highlight); }
+
+/* The four Areas, two by two as Excel's default pane has them, one above another when narrow. */
+.ex-pivot-areas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px;
+}
+.ex-pivot-area {
+    display: flex;
+    flex-direction: column;
+    min-height: 88px;
+    border: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+    background: var(--ex-pivot-area-background, Canvas);
+}
+.ex-pivot-area.ex-pivot-drop-target { outline: 2px solid var(--ex-pivot-drop-color, Highlight); outline-offset: -2px; }
+.ex-pivot-area-title {
+    padding: 2px 6px;
+    font-size: 0.9em;
+    font-weight: 600;
+    border-bottom: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+}
+.ex-pivot-area-entries { display: flex; flex-direction: column; gap: 2px; padding: 3px; flex: 1 1 auto; }
+.ex-pivot-entry.ex-pivot-drop-before { box-shadow: 0 -2px 0 var(--ex-pivot-drop-color, Highlight); }
+.ex-pivot-entry-button, .ex-pivot-filter-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    text-align: left;
+    padding: 1px 6px;
+    cursor: pointer;
+    color: var(--ex-pivot-entry-color, ButtonText);
+    background: var(--ex-pivot-entry-background, ButtonFace);
+    border: 1px solid var(--ex-pivot-entry-border-color, ButtonBorder);
+}
+.ex-pivot-entry-values .ex-pivot-entry-button { font-style: italic; }
+.ex-pivot-entry-caption, .ex-pivot-filter-summary { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-pivot-entry-arrow { flex: none; }
+
+/* A menu or a panel, in ExPivot's frame (ADR-0060). */
+.ex-pivot-popup {
+    box-sizing: border-box;
+    margin: 2px 0 4px;
+    padding: 4px;
+    color: var(--ex-pivot-popup-color, CanvasText);
+    background: var(--ex-pivot-popup-background, Canvas);
+    border: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+    box-shadow: var(--ex-pivot-popup-shadow, 0 2px 8px rgba(0, 0, 0, 0.2));
+}
+/* In the Field List: directly under the entry that opened it, at the place the flow gives it — its
+   top is left to its static position, so nothing is measured — as wide as the pane and over what
+   follows, as a menu drops down. The Field List's scroller is its containing block, so it scrolls
+   with the pane. */
+.ex-pivot-field-list .ex-pivot-popup {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    z-index: 2;
+}
+/* Under the report filter band, over the report, with the backdrop that closes it beneath. */
+.ex-pivot-popup-overlay {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 21;
+    min-width: 240px;
+    max-width: 360px;
+    max-height: 60vh;
+    overflow: auto;
+}
+.ex-pivot-backdrop { position: fixed; inset: 0; z-index: 20; background: transparent; }
+.ex-pivot-menu { display: flex; flex-direction: column; }
+.ex-pivot-menu-item {
+    font: inherit;
+    text-align: left;
+    padding: 3px 8px;
+    color: inherit;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+.ex-pivot-menu-item:hover:not(:disabled), .ex-pivot-menu-item:focus-visible {
+    background: var(--ex-pivot-hover-background, rgba(128, 128, 128, 0.15));
+    outline: none;
+}
+.ex-pivot-menu-item:disabled { color: var(--ex-pivot-muted-color, GrayText); cursor: default; }
+.ex-pivot-panel { display: flex; flex-direction: column; gap: 6px; }
+.ex-pivot-panel-title { font-weight: 600; }
+.ex-pivot-row { display: flex; flex-direction: column; gap: 2px; }
+.ex-pivot-source { color: var(--ex-pivot-muted-color, GrayText); }
+.ex-pivot-fieldset { margin: 0; padding: 4px 6px; border: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45)); }
+.ex-pivot-choice { display: flex; align-items: center; gap: 6px; }
+.ex-pivot-item-list { display: flex; flex-direction: column; max-height: 220px; overflow: auto; }
+.ex-pivot-item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ex-pivot-note, .ex-pivot-sample { color: var(--ex-pivot-muted-color, GrayText); font-size: 0.9em; }
+.ex-pivot-refusal { color: var(--ex-pivot-refusal-color, CanvasText); font-weight: 600; }
+.ex-pivot-panel-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.ex-pivot-ok, .ex-pivot-cancel { font: inherit; padding: 2px 12px; }
+
+/* The report filter band, above the report. */
+.ex-pivot-filters { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 0 0 6px; }
+.ex-pivot-filter { display: flex; align-items: center; gap: 6px; }
+.ex-pivot-filter-caption { font-weight: 600; }
+.ex-pivot-filter-anchor { position: relative; min-width: 140px; }
+.ex-pivot-filter-active { border-color: var(--ex-pivot-accent-color, Highlight); }
+
+/* A label cell's own content (ADR-0058): the indent is written inline from C#, and the button
+   takes the indent's width, so a child's label starts where its parent's did. The button carries
+   ex-interactive, which ex-grid.css gives the pointer. */
+.ex-pivot-label { display: inline-flex; align-items: center; max-width: 100%; box-sizing: border-box; }
+.ex-pivot-label-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-pivot-toggle {
+    flex: none;
+    box-sizing: border-box;
+    width: var(--ex-pivot-indent);
+    height: var(--ex-pivot-indent);
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+    line-height: calc(var(--ex-pivot-indent) - 2px);
+    text-align: center;
+    cursor: pointer;
+    color: var(--ex-pivot-toggle-color, CanvasText);
+    background: var(--ex-pivot-toggle-background, transparent);
+    border: 1px solid var(--ex-pivot-toggle-border-color, rgba(128, 128, 128, 0.6));
+    border-radius: 2px;
+}
+.ex-pivot-toggle:focus-visible { outline: 2px solid var(--ex-focus-outline, CanvasText); outline-offset: 0; }
+
+@media (forced-colors: active) {
+    .ex-pivot-area.ex-pivot-drop-target, .ex-pivot-fields.ex-pivot-drop-remove { outline-color: Highlight; }
+    .ex-pivot-entry.ex-pivot-drop-before { box-shadow: 0 -2px 0 Highlight; }
+}

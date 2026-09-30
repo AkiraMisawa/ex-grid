@@ -1,0 +1,36 @@
+@* A placed field's menu under MudBlazor (ADR-0060/0061): exactly ExPivot's commands, in its order,
+   each with its Enabled state, as text MudButtons with role="menuitem" and a Material icon — the
+   frame around them is ExPivot's, and so are what closes it and what each command does. The first
+   enabled command takes DOM focus when the menu opens, scrolled into view: a menu opened at the
+   foot of the pane is shown. *@
+<div class="mud-ex-pivot-menu" role="none">
+    @for (var i = 0; i < Context.Commands.Count; i++)
+    {
+        var command = Context.Commands[i];
+        <MudPivotButton @key="command.Id" role="menuitem" Variant="Variant.Text" Size="Size.Small" FullWidth="true"
+                        Disabled="!command.Enabled" StartIcon="@Chrome.IconFor(command.Id)" OnClick="command.Invoke"
+                        FocusRequest="@(i == FirstEnabled ? Context.FocusRequest : 0)"
+                        Class="mud-ex-pivot-menu-item">@command.Label</MudPivotButton>
+    }
+</div>
+
+@code {
+    /// <summary>The commands and the request to take the keyboard (ADR-0060).</summary>
+    [Parameter, EditorRequired] public PivotMenuContext Context { get; set; } = default!;
+
+    /// <summary>Where the icons come from.</summary>
+    [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+
+    private int FirstEnabled
+    {
+        get
+        {
+            for (var i = 0; i < Context.Commands.Count; i++)
+            {
+                if (Context.Commands[i].Enabled)
+                    return i;
+            }
+            return -1;
+        }
+    }
+}

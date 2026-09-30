@@ -1,0 +1,42 @@
+@* The expand / collapse button of an outer Item, in the one label cell Space asked to enter
+   (ADR-0037/0058): the same markup ExPivot paints in every other such cell, and it takes DOM
+   focus itself, once per request — the core never reaches into markup it did not render. *@
+<button @ref="_button" type="button" class="@ClassFor(Collapsed)" tabindex="-1"
+        aria-expanded="@(Collapsed ? "false" : "true")" aria-label="@Name"
+        @onclick="OnToggle" @ondblclick:stopPropagation>@GlyphFor(Collapsed)</button>
+
+@code {
+    private ElementReference _button;
+    private int _focused;
+
+    /// <summary>Whether the Item is collapsed: the button then expands it.</summary>
+    [Parameter] public bool Collapsed { get; set; }
+
+    /// <summary>The button's accessible name: "Expand East", "Collapse East".</summary>
+    [Parameter] public string Name { get; set; } = "";
+
+    /// <summary>Pressed.</summary>
+    [Parameter] public EventCallback<MouseEventArgs> OnToggle { get; set; }
+
+    /// <summary>The template's focus request (ADR-0037): the button takes DOM focus once for each
+    /// number it has not acted on.</summary>
+    [Parameter] public int FocusRequest { get; set; }
+
+    /// <summary>The classes the button carries: <c>ex-interactive</c> lets it take the pointer
+    /// inside a Template cell (ADR-0020).</summary>
+    public static string ClassFor(bool collapsed)
+        => collapsed ? "ex-pivot-toggle ex-interactive ex-pivot-toggle-collapsed" : "ex-pivot-toggle ex-interactive";
+
+    /// <summary>The button's glyph: a plus to expand, a minus to collapse.</summary>
+    public static string GlyphFor(bool collapsed) => collapsed ? "+" : "−";
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (FocusRequest != 0 && FocusRequest != _focused)
+        {
+            _focused = FocusRequest;
+            await _button.FocusAsync();
+        }
+    }
+}

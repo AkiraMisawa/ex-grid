@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExPivot.MudBlazor</RootNamespace>
+    <Description>MudBlazor for ExPivot: a Chrome that draws the PivotTable Fields pane, its menus and panels and the report filter band with MudBlazor's own controls, and a stylesheet mapping ExPivot's tokens onto the MudBlazor palette. The report's grid is dressed by ExGrid.MudBlazor. Ships at the same version as ExPivot and depends on exactly that version.</Description>
+    <PackageTags>$(PackageTags);pivot;pivottable;mudblazor;material</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The lowest 9.x, as ExGrid.MudBlazor takes it (ADR-0022). -->
+    <PackageReference Include="MudBlazor" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0061): the Wrapper references ExPivot and the grid's
+         Wrapper; nothing in either knows this package exists. -->
+    <ProjectReference Include="..\ExPivot\ExPivot.csproj" />
+    <ProjectReference Include="..\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
+  </ItemGroup>
+
+  <!-- Exactly the ExPivot and ExGrid.MudBlazor it was built with (ADR-0042), as the grid's
+       Wrapper depends on exactly its core. -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

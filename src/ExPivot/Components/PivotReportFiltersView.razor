@@ -1,0 +1,26 @@
+@* The built-in report filter band (ADR-0060): each field in Filters with what it shows — (All),
+   the one Item shown, or (Multiple Items) — as Excel shows its page fields above the report. The
+   button's wrapper is positioned, so Filter… opens under it, over the report. *@
+<div class="ex-pivot-filters" role="group" aria-label="@Context.Title">
+    @foreach (var filter in Context.Filters)
+    {
+        <div @key="filter.Field" class="ex-pivot-filter">
+            <span class="ex-pivot-filter-caption">@filter.Caption</span>
+            <span class="ex-pivot-filter-anchor">
+                <PivotFocusButton Class="@(filter.IsFiltered ? "ex-pivot-filter-button ex-pivot-filter-active" : "ex-pivot-filter-button")"
+                                  OnClick="filter.Open" FocusRequest="filter.FocusRequest"
+                                  aria-haspopup="dialog" aria-expanded="@(filter.IsOpen ? "true" : "false")"
+                                  aria-label="@PivotWords.Fill(Context.Word("filter-of"), filter.Caption)">
+                    <span class="ex-pivot-filter-summary">@filter.Summary</span>
+                    <span class="ex-pivot-entry-arrow" aria-hidden="true">▾</span>
+                </PivotFocusButton>
+                @filter.Popup
+            </span>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The report filters and whom to call back (ADR-0060).</summary>
+    [Parameter, EditorRequired] public PivotReportFiltersContext Context { get; set; } = default!;
+}

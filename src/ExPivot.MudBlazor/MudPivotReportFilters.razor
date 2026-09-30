@@ -1,0 +1,31 @@
+@* The report filter band under MudBlazor (ADR-0060/0061): each field in Filters with an outlined
+   MudButton saying what it shows — (All), the one Item shown, or (Multiple Items) — in the primary
+   colour while it hides Items. The button's wrapper is positioned, so ExPivot's Filter… frame
+   opens under it, over the report. *@
+<div class="mud-ex-pivot-filters" role="group" aria-label="@Context.Title">
+    @foreach (var filter in Context.Filters)
+    {
+        <div @key="filter.Field" class="mud-ex-pivot-filter">
+            <MudText Typo="Typo.body2" Class="mud-ex-pivot-filter-caption">@filter.Caption</MudText>
+            <span class="mud-ex-pivot-filter-anchor">
+                <MudPivotButton Variant="Variant.Outlined" Size="Size.Small"
+                                Color="@(filter.IsFiltered ? Color.Primary : Color.Default)"
+                                EndIcon="@Icons.Material.Filled.ArrowDropDown" Class="mud-ex-pivot-filter-button"
+                                OnClick="filter.Open" FocusRequest="filter.FocusRequest"
+                                aria-haspopup="dialog" aria-expanded="@(filter.IsOpen ? "true" : "false")"
+                                aria-label="@PivotWords.Fill(Context.Word("filter-of"), filter.Caption)">
+                    <span class="mud-ex-pivot-filter-summary">@filter.Summary</span>
+                </MudPivotButton>
+                @filter.Popup
+            </span>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The report filters and whom to call back (ADR-0060).</summary>
+    [Parameter, EditorRequired] public PivotReportFiltersContext Context { get; set; } = default!;
+
+    /// <summary>The Chrome this band belongs to.</summary>
+    [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+}

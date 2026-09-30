@@ -1,0 +1,58 @@
+@using System.Globalization
+@* The built-in Filter… (ADR-0060): the field's Items, each ticked while shown, (Select All), a
+   search that narrows the list, and OK / Cancel. The ticks are ExPivot's draft. *@
+<div class="ex-pivot-panel ex-pivot-item-filter">
+    <input @ref="_search" type="search" class="ex-pivot-search" placeholder="@Context.Word("search-items")"
+           aria-label="@Context.Word("search-items")"
+           @bind:get="Context.Search" @bind:set="Context.SearchChanged" @bind:event="oninput" />
+    <div class="ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption">
+        @if (Context.MatchCount > 0)
+        {
+            <label class="ex-pivot-item ex-pivot-select-all">
+                <input type="checkbox" checked="@(Context.AllTicked == true)" @onchange="e => Context.SetAll(e.Value is true)" />
+                <span>@Context.Word("select-all")</span>
+            </label>
+        }
+        @foreach (var item in Context.Items)
+        {
+            <label @key="item.Key" class="ex-pivot-item">
+                <input type="checkbox" checked="@item.Ticked" @onchange="e => Context.SetTicked(item.Key, e.Value is true)" />
+                <span>@item.Label</span>
+            </label>
+        }
+        @if (Context.MatchCount > Context.Items.Count)
+        {
+            <div class="ex-pivot-note">@PivotWords.Fill(Context.Word("too-many-items"), Context.ListCap.ToString("N0", CultureInfo.CurrentCulture))</div>
+        }
+        @if (Context.MatchCount == 0)
+        {
+            <div class="ex-pivot-note">@Context.Word("no-items-match")</div>
+        }
+    </div>
+    @if (Context.Refusal is { } refusal)
+    {
+        <div class="ex-pivot-refusal" role="alert">@refusal</div>
+    }
+    <div class="ex-pivot-panel-actions">
+        <button type="button" class="ex-pivot-ok" disabled="@(!Context.CanApply)" @onclick="Context.Apply">@Context.Word("ok")</button>
+        <button type="button" class="ex-pivot-cancel" @onclick="Context.Cancel">@Context.Word("cancel")</button>
+    </div>
+</div>
+
+@code {
+    private ElementReference _search;
+    private int _acted;
+
+    /// <summary>The Items, the draft and the exits (ADR-0060).</summary>
+    [Parameter, EditorRequired] public PivotItemFilterContext Context { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Context.FocusRequest != 0 && Context.FocusRequest != _acted)
+        {
+            _acted = Context.FocusRequest;
+            await _search.FocusAsync();
+        }
+    }
+}

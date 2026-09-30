@@ -1,0 +1,61 @@
+@* Value Field Settings… under MudBlazor (ADR-0060/0061): the caption and the number format as
+   MudTextFields, the Aggregation and Show Values As as MudSelects, a sample of the format, and
+   Cancel / OK — ExPivot's draft until OK, which a taken caption or an unusable format refuses with
+   ExPivot's sentence shown here. Each select's list is an Inner Popup (ADR-0039), reported so that
+   Escape closes the list before the panel. The caption takes DOM focus for each request. *@
+<div class="mud-ex-pivot-panel mud-ex-pivot-value-settings">
+    <MudText Typo="Typo.subtitle2" Class="mud-ex-pivot-panel-title">@Context.Word("value-field-settings")</MudText>
+    <MudText Typo="Typo.caption" Class="mud-ex-pivot-source">@Context.FieldCaption</MudText>
+    <MudTextField @ref="_caption" T="string" Value="Context.Caption" ValueChanged="Context.CaptionChanged" Immediate="true"
+                  Label="@Context.Word("custom-name")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Class="mud-ex-pivot-caption" />
+    <MudSelect T="PivotAggregation" Value="Context.Aggregation" ValueChanged="Context.AggregationChanged" ToStringFunc="AggregationLabel"
+               Label="@Context.Word("summarize-by")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+               OpenChanged="Context.InnerPopupChanged" Class="mud-ex-pivot-aggregation">
+        @foreach (var choice in Context.Aggregations)
+        {
+            <MudSelectItem T="PivotAggregation" Value="choice.Value">@choice.Label</MudSelectItem>
+        }
+    </MudSelect>
+    <MudSelect T="PivotShowValuesAs" Value="Context.ShowValuesAs" ValueChanged="Context.ShowValuesAsChanged" ToStringFunc="ShowValuesAsLabel"
+               Label="@Context.Word("show-values-as")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+               OpenChanged="Context.InnerPopupChanged" Class="mud-ex-pivot-show-values-as">
+        @foreach (var choice in Context.ShowValuesAsChoices)
+        {
+            <MudSelectItem T="PivotShowValuesAs" Value="choice.Value">@choice.Label</MudSelectItem>
+        }
+    </MudSelect>
+    <MudTextField T="string" Value="Context.NumberFormat" ValueChanged="Context.NumberFormatChanged" Immediate="true"
+                  Label="@Context.Word("number-format")" Placeholder="@Context.Word("number-format-general")"
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-pivot-number-format" />
+    <MudText Typo="Typo.caption" Class="mud-ex-pivot-sample">@Context.Sample</MudText>
+    @if (Context.Refusal is { } refusal)
+    {
+        <MudText Typo="Typo.body2" Color="Color.Error" Class="mud-ex-pivot-refusal" role="alert">@refusal</MudText>
+    }
+    <div class="mud-ex-pivot-panel-actions">
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Context.Cancel" Class="mud-ex-pivot-cancel">@Context.Word("cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="Context.Apply" Class="mud-ex-pivot-ok">@Context.Word("ok")</MudButton>
+    </div>
+</div>
+
+@code {
+    private MudTextField<string>? _caption;
+    private int _acted;
+
+    /// <summary>The draft and the exits (ADR-0060).</summary>
+    [Parameter, EditorRequired] public PivotValueFieldSettingsContext Context { get; set; } = default!;
+
+    /// <summary>The Chrome this panel belongs to.</summary>
+    [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+
+    private string AggregationLabel(PivotAggregation aggregation)
+        => Context.Aggregations.FirstOrDefault(c => c.Value == aggregation)?.Label ?? aggregation.ToString();
+
+    private string ShowValuesAsLabel(PivotShowValuesAs showAs)
+        => Context.ShowValuesAsChoices.FirstOrDefault(c => c.Value == showAs)?.Label ?? showAs.ToString();
+
+    /// <inheritdoc />
+    protected override Task OnAfterRenderAsync(bool firstRender)
+        => MudPivotFocus.TakeAsync(Context.FocusRequest, ref _acted, _caption is { } caption ? () => caption.FocusAsync() : null);
+}

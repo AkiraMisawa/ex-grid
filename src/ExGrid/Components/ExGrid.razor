@@ -1160,6 +1160,18 @@
     [Parameter] public EventCallback<GridActionEventArgs<TRow>> OnAction { get; set; }
 
     /// <summary>
+    /// Raised when a double click lands on a cell where no edit opens — a cell that is not
+    /// Editable — with the cell's position, after the click has placed the Focus there
+    /// (ADR-0062). The grid changes nothing: what the gesture means is the Consumer's, as
+    /// Show Details is on a pivot. Where an edit opens, the edit is the double click's meaning
+    /// and nothing is raised; while one is open, the double click is the editor's. A double
+    /// click on a control inside an Action, Template or Mark cell stops at that cell and
+    /// raises nothing, because its offsets would name another cell. No key raises it: a
+    /// Consumer offers the same command in the Context Menu.
+    /// </summary>
+    [Parameter] public EventCallback<CellPosition> OnCellDoubleClick { get; set; }
+
+    /// <summary>
     /// The Row Marks on the push form (ADR-0043): who holds them, answers whether a row
     /// is marked, counts them, and takes each marking gesture. Needed only when a Mark
     /// Column is declared; a Source keeps its own, and passing both is refused — one of
@@ -7156,9 +7168,19 @@
     /// cell — the original value stays, with the caret inside it.</summary>
     private async Task OnViewportDoubleClickAsync(MouseEventArgs e)
     {
-        if (_editMode != EditMode.None || CellUnder(e) is not { } cell || !IsEditableCell(cell))
+        if (_editMode != EditMode.None || CellUnder(e) is not { } cell)
         {
             _suppressRender = true;
+            return;
+        }
+        if (!IsEditableCell(cell))
+        {
+            // Where no edit opens, a listener hears the double click and decides what it means
+            // (ADR-0062). The grid changed nothing; it renders only what the answer may change.
+            if (OnCellDoubleClick.HasDelegate)
+                await OnCellDoubleClick.InvokeAsync(cell);
+            else
+                _suppressRender = true;
             return;
         }
         var extent = Extent;

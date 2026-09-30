@@ -2,23 +2,32 @@
    to render: its stylesheet, and its theme and popover providers. A page that stands its grids on
    the Wrapper's paper also takes the Wrapper's stylesheet, which maps the grid's Visual Tokens onto
    the palette (ADR-0030), and the font the paper's widths were measured for. Under the core's
-   Chrome nothing here renders, and the page is what it always was. *@
+   Chrome nothing here renders, and the page is what it always was. A page that shows its grids
+   under both schemes says which one through Dark, and one that needs a stylesheet of its own under
+   either Chrome hands it in through Head. *@
 @using global::MudBlazor
 
-@if (DemoChrome.IsMud(Name))
+@if (DemoChrome.IsMud(Name) || Head is not null)
 {
     <HeadContent>
-        @if (Paper)
+        @if (DemoChrome.IsMud(Name))
         {
-            <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+            @if (Paper)
+            {
+                <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+            }
+            <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+            @if (Paper)
+            {
+                <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
+            }
         }
-        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-        @if (Paper)
-        {
-            <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
-        }
+        @Head
     </HeadContent>
-    <MudThemeProvider />
+}
+@if (DemoChrome.IsMud(Name))
+{
+    <MudThemeProvider IsDarkMode="Dark" />
     <MudPopoverProvider />
 }
 
@@ -29,4 +38,12 @@
     /// <summary>Whether the page stands its grids on the Wrapper's paper under the Wrapper's
     /// Chrome.</summary>
     [Parameter] public bool Paper { get; set; }
+
+    /// <summary>Whether MudBlazor paints its dark scheme.</summary>
+    [Parameter] public bool Dark { get; set; }
+
+    /// <summary>What else the page puts in the head, under either Chrome — a package's own
+    /// stylesheet. Here rather than in a HeadContent of the page's: only the last HeadContent
+    /// rendered reaches the head, and this component's renders after the page's.</summary>
+    [Parameter] public RenderFragment? Head { get; set; }
 }

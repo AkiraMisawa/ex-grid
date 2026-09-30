@@ -1,0 +1,189 @@
+@typeparam TRecord
+@using System.Globalization
+@using System.Runtime.CompilerServices
+
+@*
+    ExPivot holds the Pivot Layout and computes; ExGrid paints, selects, navigates, copies and
+    reports (ADR-0058). This component renders the report filter band, exactly one ExGrid over
+    the Pivot Report — its rows the Window, its label columns pinned Template Columns, its value
+    columns under Header Groups — and the Field List beside it (ADR-0060).
+
+    What is deliberately not wired on the grid: sorting, filtering, editing, paste and fill. Item
+    order and Hidden Items are the Pivot Layout's, and a report is computed, so no column is
+    Editable and every write is refused by the grid's own gate (ADR-0035). The header click
+    selects, and the column menu is left out; the grips stay.
+*@
+<div class="ex-pivot" style="@RootStyle">
+    <div class="ex-pivot-report">
+        @if (_layout.Filters.Count > 0)
+        {
+            @ReportFilters()
+        }
+        @if (_report is null || _report.IsEmpty)
+        {
+            <div class="ex-pivot-empty" style="@EmptyStyle" role="status">@Word("empty-report")</div>
+        }
+        else
+        {
+            @Grid()
+        }
+        @if (_notice is not null)
+        {
+            <div class="ex-pivot-notice" role="status">@_notice</div>
+        }
+    </div>
+    @if (_fieldListShown)
+    {
+        <div class="ex-pivot-field-list" role="region" aria-label="@Word("field-list")">
+            <div class="ex-pivot-field-list-scroll">@FieldList()</div>
+        </div>
+    }
+    @if (_open is { OnBand: true })
+    {
+        <div class="ex-pivot-backdrop" @onclick="CloseOpen" aria-hidden="true"></div>
+    }
+</div>
+
+@code {
+    private readonly ConditionalWeakTable<PivotLayout, object> _emitted = new();
+    private PivotLayout _layout = PivotLayout.Empty;
+    private PivotLayout? _layoutParameter;
+    private IReadOnlyList<TRecord>? _records;
+    private IReadOnlyList<PivotField<TRecord>>? _fields;
+    private CultureInfo _culture = CultureInfo.InvariantCulture;
+    private Func<string, string?>? _label;
+    private bool _showFieldListParameter = true;
+    private bool _fieldListShown = true;
+    private bool _initialised;
+    private string? _notice;
+
+    /// <summary>The Source Records (ADR-0058): held by reference, never written to. A new list
+    /// instance is a refresh; a list rewritten in place is not seen, which is Row Identity's rule
+    /// for the same reason (ADR-0003).</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<TRecord> Records { get; set; } = [];
+
+    /// <summary>The Pivot Fields the records carry, in the order the Field List shows them. Names
+    /// are unique; a new list instance is a new declaration.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<PivotField<TRecord>> Fields { get; set; } = [];
+
+    /// <summary>
+    /// The Pivot Layout — which fields stand where, with their settings (ADR-0058). It is View
+    /// State: the Consumer persists it and may bind it with <c>@bind-Layout</c>. A layout handed
+    /// in replaces the one on screen; one this ExPivot raised through <see cref="LayoutChanged"/>
+    /// and handed back is the one already on screen. Null starts from nothing and keeps the
+    /// user's changes inside the component. A layout naming an undeclared field is refused by
+    /// name (<see cref="PivotLayout.KeepingOnly"/> drops them knowingly).
+    /// </summary>
+    [Parameter] public PivotLayout? Layout { get; set; }
+
+    /// <summary>Raised with the new layout after every change the user makes, which is applied at
+    /// once (ADR-0060).</summary>
+    [Parameter] public EventCallback<PivotLayout> LayoutChanged { get; set; }
+
+    /// <summary>The culture labels and values are written in and text Items ordered by; the
+    /// current culture when left out.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+
+    /// <summary>The Consumer's word for an id of <see cref="PivotWords"/> or
+    /// <see cref="PivotCommandIds"/>, or null to keep the English. Hold it in a field: it is read
+    /// on every render.</summary>
+    [Parameter] public Func<string, string?>? Label { get; set; }
+
+    /// <summary>What draws the Field List, the report filter band, the menus and the panels
+    /// (ADR-0060); null for ExPivot's built-in markup. It may also supply the report grid's
+    /// Chrome.</summary>
+    [Parameter] public IPivotChrome? PivotChrome { get; set; }
+
+    /// <summary>The report grid's Chrome (ADR-0010); beats <see cref="IPivotChrome.GridChrome"/>.</summary>
+    [Parameter] public IGridChrome? Chrome { get; set; }
+
+    /// <summary>Whether the Field List stands beside the report. The Context Menu's Show and Hide
+    /// Field List change it for the user until this parameter changes.</summary>
+    [Parameter] public bool ShowFieldList { get; set; } = true;
+
+    /// <summary>The Field List's width in pixels, emitted inline (ADR-0027).</summary>
+    [Parameter] public double FieldListWidth { get; set; } = 300;
+
+    /// <summary>The report grid's height, header included (ADR-0013/0028). A Stretch height takes
+    /// the parent's, which must be definite.</summary>
+    [Parameter] public ViewportSize ViewportHeight { get; set; } = 400;
+
+    /// <summary>The report grid's width. Stretch, the default, takes what the Field List leaves.</summary>
+    [Parameter] public ViewportSize ViewportWidth { get; set; } = ViewportSize.Stretch;
+
+    /// <summary>The report's row height, or null for the Density's (ADR-0013/0028).</summary>
+    [Parameter] public double? RowHeight { get; set; }
+
+    /// <summary>The report's Density, or null for a Wrapper's, or Compact (ADR-0028).</summary>
+    [Parameter] public GridDensity? Density { get; set; }
+
+    /// <summary>The report's Cell Metrics, or null for a Wrapper's, or the Density's (ADR-0016/0030).</summary>
+    [Parameter] public CellTextMetrics? CellMetrics { get; set; }
+
+    /// <summary>Raised with the records behind a value cell — Show Details, from a double click or
+    /// the Context Menu (ADR-0062). Without it, neither is offered.</summary>
+    [Parameter] public EventCallback<PivotDetails<TRecord>> OnShowDetails { get; set; }
+
+    /// <summary>The report grid's Selection, as ExGrid raises it (ADR-0011).</summary>
+    [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
+
+    /// <summary>What a Wrapper cascades (ADR-0030): read to size the label columns with the same
+    /// metrics the grid resolves, and handed on to the grid by the cascade itself.</summary>
+    [CascadingParameter] public GridPresentationDefaults? Presentation { get; set; }
+
+    /// <summary>The layout on screen.</summary>
+    public PivotLayout CurrentLayout => _layout;
+
+    /// <summary>The report on screen, or null before the first parameters arrive.</summary>
+    public PivotReport? Report => _report;
+
+    private string Word(string id) => PivotWords.Resolve(id, Label);
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (FieldListWidth is not (> 0 and < 10_000) || !double.IsFinite(FieldListWidth))
+            throw new ArgumentOutOfRangeException(nameof(FieldListWidth), FieldListWidth, "A width in pixels, above zero.");
+        ArgumentNullException.ThrowIfNull(Records);
+        ArgumentNullException.ThrowIfNull(Fields);
+
+        var dirty = !_initialised;
+        if (!ReferenceEquals(Layout, _layoutParameter))
+        {
+            _layoutParameter = Layout;
+            // A layout this instance raised and the Consumer bound back is the one on screen.
+            if (Layout is not null && !_emitted.TryGetValue(Layout, out _) && !ReferenceEquals(Layout, _layout))
+            {
+                _layout = Layout;
+                CloseOpenQuietly();
+                dirty = true;
+            }
+        }
+        if (!ReferenceEquals(Records, _records) || !ReferenceEquals(Fields, _fields))
+        {
+            _records = Records;
+            _fields = Fields;
+            dirty = true;
+        }
+        var culture = Culture ?? CultureInfo.CurrentCulture;
+        if (!Equals(culture, _culture) || !ReferenceEquals(Label, _label))
+        {
+            _culture = culture;
+            _label = Label;
+            dirty = true;
+        }
+        if (ShowFieldList != _showFieldListParameter || !_initialised)
+        {
+            _showFieldListParameter = ShowFieldList;
+            _fieldListShown = ShowFieldList;
+        }
+        _initialised = true;
+        // Whatever the Consumer passed may reach the grid: its geometry, its Chrome, its callbacks.
+        _gridVersion++;
+        var geometryMoved = ResolveGeometry();
+        if (dirty)
+            Recompute();
+        else if (geometryMoved)
+            BuildColumns();
+    }
+}

@@ -48,6 +48,10 @@
                with offsets measured from a button, which would move the selection to
                whichever cell that arithmetic happened to name.
 
+               dblclick stops here too (ADR-0062): its offsets are the control's as well, and
+               carried on they would name another cell for OnCellDoubleClick — or open the
+               editor of an Editable cell nobody double-clicked.
+
                mouseup is deliberately NOT stopped: it carries no position into the
                Viewport's handler, which only ends the drag. Swallowed here, a drag
                released over a button would leave the grid still dragging, and the next
@@ -60,7 +64,7 @@
                P5's scope). *@
             <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: true, StateOf(column), column.Align)" style="@Styles.PinnedCell(i)"
                  role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                 @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column, i)</div>
+                 @onmousedown:stopPropagation @onmousemove:stopPropagation @ondblclick:stopPropagation>@CellContent(column, i)</div>
         }
         else
         {
@@ -91,7 +95,7 @@
             {
                 <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: false, StateOf(column), column.Align)" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                     @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column, i)</div>
+                     @onmousedown:stopPropagation @onmousemove:stopPropagation @ondblclick:stopPropagation>@CellContent(column, i)</div>
             }
             else
             {

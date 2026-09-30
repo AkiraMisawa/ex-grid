@@ -28,6 +28,10 @@
     <!-- ExSheet's page (/sheet): the demo pages are one of the two things that reference
          ExSheet, its tests being the other (ADR-0046, SH-1). -->
     <ProjectReference Include="..\..\src\ExSheet\ExSheet.csproj" />
+    <!-- ExPivot's page (/pivot), plain and under its MudBlazor Wrapper: with its tests, the only
+         things that reference ExPivot and ExPivot.MudBlazor (ADR-0058, ADR-0061). -->
+    <ProjectReference Include="..\..\src\ExPivot\ExPivot.csproj" />
+    <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
   </ItemGroup>
 
 </Project>

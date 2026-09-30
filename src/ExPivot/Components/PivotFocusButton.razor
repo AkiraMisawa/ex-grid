@@ -1,0 +1,37 @@
+@* A button that takes DOM focus when ExPivot asks (ADR-0060): once for each request number it
+   has not acted on, as a template's control does (ADR-0037). The built-in views put the keyboard
+   back on an entry this way when its menu or panel closes. *@
+<button @ref="_button" type="button" class="@Class" disabled="@Disabled" @onclick="OnClick" @attributes="Attributes">@ChildContent</button>
+
+@code {
+    private ElementReference _button;
+    private int _acted;
+
+    /// <summary>The button's classes.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Whether the button is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Pressed.</summary>
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    /// <summary>The request to take DOM focus; zero asks nothing.</summary>
+    [Parameter] public int FocusRequest { get; set; }
+
+    /// <summary>What the button shows.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Any other attribute, on the button.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (FocusRequest != 0 && FocusRequest != _acted)
+        {
+            _acted = FocusRequest;
+            await _button.FocusAsync();
+        }
+    }
+}

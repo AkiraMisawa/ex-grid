@@ -1,0 +1,28 @@
+@* The built-in menu of a placed field (ADR-0060): ExPivot's commands, in its order, each with
+   its Enabled state. The first enabled one takes DOM focus when the menu opens. *@
+<div class="ex-pivot-menu" role="none">
+    @for (var i = 0; i < Context.Commands.Count; i++)
+    {
+        var command = Context.Commands[i];
+        <PivotFocusButton @key="command.Id" Class="ex-pivot-menu-item" role="menuitem" Disabled="!command.Enabled"
+                          OnClick="command.Invoke" FocusRequest="@(i == FirstEnabled ? Context.FocusRequest : 0)">@command.Label</PivotFocusButton>
+    }
+</div>
+
+@code {
+    /// <summary>The commands and the request to take the keyboard (ADR-0060).</summary>
+    [Parameter, EditorRequired] public PivotMenuContext Context { get; set; } = default!;
+
+    private int FirstEnabled
+    {
+        get
+        {
+            for (var i = 0; i < Context.Commands.Count; i++)
+            {
+                if (Context.Commands[i].Enabled)
+                    return i;
+            }
+            return -1;
+        }
+    }
+}

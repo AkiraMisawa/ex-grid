@@ -23,5 +23,6 @@ docs/agent-runs/
 # The package smoke check (tests/ExGrid.PackageSmoke/check.sh)
 .feed/
 .sheet-feed/
+.pivot-feed/
 .nuget-packages/
 .publish/

@@ -1,0 +1,168 @@
+@page "/pivot"
+@using System.Globalization
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExPivot
+@using global::ExPivot.Chrome
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@using global::ExPivot.MudBlazor
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+
+@* ?chrome=mud stands the pivot on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's Chrome
+   with both Wrappers' stylesheets (ADR-0061); absent or builtin is ExPivot's own markup. The
+   browser tests run the page under both, because swapping the Chrome must change no behaviour
+   (ADR-0060). The details grid below takes the same Chrome as the report's. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" Dark="_dark">
+    <Head>
+        <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
+        @if (DemoChrome.IsMud(ChromeName))
+        {
+            <link href="_content/ExPivot.MudBlazor/mud-ex-pivot.css" rel="stylesheet" />
+        }
+    </Head>
+</DemoChromeAssets>
+
+<DemoNav />
+
+<h1>Pivot — ExPivot drawn by ExGrid</h1>
+
+<p>
+    Excel's PivotTable over 2,000 invented trades (ADR-0058). Tick fields in the PivotTable Fields
+    pane, or drag them between Filters, Columns, Rows and Values; each placed field has Excel's
+    menu, with Filter…, Field Settings… and Value Field Settings… (ADR-0060). The report is one
+    ExGrid: select, copy, and press the <code>−</code> and <code>+</code> buttons to collapse and
+    expand. Double-click a value, or use the Context Menu's Show Details, to list the trades behind
+    it below (ADR-0062).
+</p>
+
+<div class="demo-toolbar">
+    <button id="pivot-reset" @onclick="Reset">Reset the layout</button>
+    <button id="pivot-save" @onclick="Save">Save the layout</button>
+    <button id="pivot-restore" disabled="@(_saved is null)" @onclick="Restore">Restore the saved layout</button>
+    <button id="pivot-revalue" @onclick="Revalue">Revalue the trades by +1%</button>
+    @if (DemoChrome.IsMud(ChromeName))
+    {
+        <button id="toggle-dark" @onclick="() => _dark = !_dark">Toggle dark mode</button>
+        <span id="dark-status">Dark: @_dark</span>
+    }
+</div>
+
+<p class="demo-status">
+    <span id="pivot-status">@_status</span>
+</p>
+
+@if (DemoChrome.IsMud(ChromeName))
+{
+    <MudExGridPaper Elevation="1" Class="demo-stretch-paper">@Pivot</MudExGridPaper>
+}
+else
+{
+    @Pivot
+}
+
+<h2>Details</h2>
+<p id="pivot-details-caption">@_detailsCaption</p>
+<div id="pivot-details">
+    <ExGrid TRow="DemoPivotTrade" Window="_details" Columns="DetailColumns" RowHeight="28"
+            ViewportHeight="240" ViewportWidth="900" Chrome="_gridChrome" />
+</div>
+
+@code {
+    private static readonly GridColumn<DemoPivotTrade>[] DetailColumns =
+    [
+        new("Id", ColumnType.Text, t => t.Id),
+        new("Region", ColumnType.Text, t => t.Region),
+        new("Desk", ColumnType.Text, t => t.Desk),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Product", ColumnType.Text, t => t.Product),
+        new("Currency", ColumnType.Text, t => t.Currency),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date"),
+        new("Notional", ColumnType.Number, t => t.Notional),
+        new("Pnl", ColumnType.Number, t => t.Pnl, header: "P&L"),
+    ];
+
+    private DemoPivotTrade[] _trades = DemoPivotData.Trades();
+    private decimal _revaluation = 1m;
+    private PivotLayout _layout = DemoPivotData.FirstLayout();
+    private string? _saved;
+    private IReadOnlyList<DemoPivotTrade> _details = [];
+    private string _detailsCaption = "Double-click a value in the report.";
+    private string _status = "";
+    private int _changes;
+    private bool _dark;
+    private IGridChrome? _gridChrome;
+    private IPivotChrome? _pivotChrome;
+    // Held in a field: a delegate made per render would reach the pivot as a change (ADR-0003).
+    private EventCallback<PivotDetails<DemoPivotTrade>> _showDetails;
+
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    private RenderFragment Pivot => @<ExPivot TRecord="DemoPivotTrade" Records="_trades" Fields="DemoPivotData.Fields"
+                                               @bind-Layout="_layout" @bind-Layout:after="Changed"
+                                               PivotChrome="_pivotChrome" Chrome="_gridChrome" OnShowDetails="_showDetails"
+                                               Culture="Culture" ViewportHeight="460" />;
+
+    private static CultureInfo Culture => CultureInfo.GetCultureInfo("en-US");
+
+    protected override void OnInitialized()
+    {
+        _showDetails = EventCallback.Factory.Create<PivotDetails<DemoPivotTrade>>(this, ShowDetails);
+        Describe();
+    }
+
+    protected override void OnParametersSet()
+    {
+        // The report grid takes ExPivot.MudBlazor's grid Chrome through the pivot Chrome; the
+        // details grid takes ExGrid.MudBlazor's directly (DemoChrome refuses any other name).
+        _gridChrome = DemoChrome.IsMud(ChromeName) ? null : DemoChrome.From(ChromeName);
+        _pivotChrome = DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null;
+    }
+
+    private void Changed()
+    {
+        _changes++;
+        Describe();
+    }
+
+    private void Reset()
+    {
+        _layout = DemoPivotData.FirstLayout();
+        Describe();
+    }
+
+    private void Save()
+    {
+        _saved = PivotLayoutJson.Write(_layout);
+        Describe();
+    }
+
+    private void Restore()
+    {
+        if (_saved is null)
+            return;
+        _layout = PivotLayoutJson.Read(_saved);
+        Describe();
+    }
+
+    private void Revalue()
+    {
+        _revaluation *= 1.01m;
+        _trades = DemoPivotData.Trades(_revaluation);
+        Describe();
+    }
+
+    private void ShowDetails(PivotDetails<DemoPivotTrade> details)
+    {
+        _details = details.Records;
+        var items = details.RowItems.Concat(details.ColumnItems).Select(i => $"{i.Field} = {i.Item}");
+        var where = string.Join(", ", items);
+        _detailsCaption = $"{details.Records.Count.ToString("N0", Culture)} trades behind {details.ValueField ?? "the cell"}"
+            + (where.Length > 0 ? $" where {where}." : ".");
+    }
+
+    private void Describe()
+        => _status = $"{_changes.ToString(Culture)} changes made in the pane; "
+            + (_saved is null ? "no layout saved." : $"the saved layout is {_saved.Length.ToString("N0", Culture)} characters of JSON.");
+}
