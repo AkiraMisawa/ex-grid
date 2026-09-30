@@ -226,7 +226,7 @@ paragraph first said that the list and Point never compete, which the value list
   deliberate difference from Excel.
 
 **Readings, until Excel is observed** *(taken while building ticket 39, 2026-09-30, and accepted by
-the user as readings)*. Part B of `docs/specs/exsheet/verify-on-windows-9.md` asks Excel. A reading
+the user as readings)*. `docs/specs/exsheet/verify-on-windows-10.md` asks Excel. A reading
 that Excel contradicts is corrected here after the run.
 
 - **A value typed whole lists nothing.** With `0` typed at `match_mode` and the caret after it, no
