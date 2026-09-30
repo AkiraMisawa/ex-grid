@@ -156,6 +156,14 @@ defines whether `contains` is case-sensitive and whether nulls sort first or las
 server-side implementations match it.
 _Avoid_: data provider, repository, feed, data source (which suggests the grid pulls)
 
+**Snapshot**:
+An immutable copy of the Consumer's tabular data at one version, which the Ex family's bundled
+sources read. A change to the data is a new Snapshot, never a rewrite of this one. ExPivot's bundled
+Pivot Source aggregates one; ExGrid's and ExSheet's bundled sources may read one, each adopting it
+by an ADR of its own.
+_Avoid_: DataTable, DataSet (.NET's own types), data frame, table (a Linked Table is ExSheet's),
+pivot cache (Excel's word, for a pivot's alone)
+
 **Query**:
 The whole of what the grid asks for — which range, under which Filter, under which Sort. Being
 serialisable is a requirement
@@ -651,7 +659,7 @@ _Avoid_: tooltip, ScreenTip (Excel's name for any hover label), badge
 The serialisable form of a Sheet that ExSheet hands to its Consumer and takes back. It holds
 Entries, never Values, with constants already parsed — so opening it under another culture
 cannot change a number. The Consumer persists it; ExSheet does not ([ADR-0048](./docs/adr/0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
-_Avoid_: file, workbook, snapshot, save data
+_Avoid_: file, workbook, Snapshot (that is the Consumer's tabular data), save data
 
 ### Pivots
 
@@ -664,10 +672,10 @@ _Avoid_: row (a row is the report's), item (that is a field's distinct value), f
 
 **Pivot Source**:
 What ExPivot asks for a report's aggregates, a field's Items and the Source Records behind a cell.
-The bundled one aggregates a snapshot in process and is the reference implementation, as
+The bundled one aggregates a Snapshot in process and is the reference implementation, as
 `GridSource.From` is ExGrid's; a Consumer's server may answer instead, and is held to the bundled
 one's answers.
-_Avoid_: data source, provider, backend, pivot cache (Excel's word for the snapshot alone)
+_Avoid_: data source, provider, backend, pivot cache (Excel's word; here that is the Snapshot)
 
 **Source Version**:
 Which state of the data a Pivot Source's answer came from. The records behind a cell and a field's
