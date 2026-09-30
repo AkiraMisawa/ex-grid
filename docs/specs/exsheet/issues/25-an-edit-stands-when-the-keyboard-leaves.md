@@ -23,7 +23,7 @@ the Sheet's rows pointed while the keyboard stayed with the positions grid.
 - [x] The comment on `reclaimFocus` no longer calls itself the one decision about focus made in
       script
 - [x] No JavaScript use is added; the listener stays the allowlisted `mousedown` (ADR-0021)
-- [ ] Layer 3 on `/sheet` and `/sheets`, both hosts (ED-26)
+- [x] Layer 3 on `/sheet` and `/sheets`, both hosts (ED-26)
 - [x] A press on the rows while an edit is open holds the keys typed after it until the core has
       answered it, and hands them on against the mode the answer leaves: on a plain editable grid and
       on a Sheet, a press that commits or points. Plain navigation is not held, and a double click on
@@ -32,7 +32,7 @@ the Sheet's rows pointed while the keyboard stayed with the positions grid.
 - [x] While DOM focus is outside the root, the Cell Editor's outline is 1px wide in
       `--ex-editor-outline`'s style and colour, and at full width once the keyboard returns, under
       both Chromes, by the stylesheet alone (ADR-0018 section 6, ED-27)
-- [ ] Layer 3 for both, on both hosts (ED-22 widened, ED-27)
+- [x] Layer 3 for both, on both hosts (ED-22 widened, ED-27)
 
 ## Comments
 
@@ -134,3 +134,11 @@ Known limit of the standing edit's look, not changed: while the keyboard is in a
 this one, this grid's root still matches `:focus-within`, so its standing edit keeps the full-width
 outline.
 
+2026-09-30, layer 3 by the suite's own runner at f938607, the full suite, headless (the user's
+instruction on this machine), macOS, Chrome only (Edge is not installed here), both hosts:
+WebAssembly 391 passed, 9 failed, 20 skipped; Server 397 passed, 11 failed, 12 skipped. Nothing
+fails that passes on the unchanged base (dd63bb6) in a full headless run on the same machine. The
+failures are the base's: the macOS overlay scrollbar (UX-10, the scrollbar spec, the stripes thumb),
+the system clipboard (two sheet-vs-excel copies), DC-13, WR-7's Drawer and tab, and SRV-7 on Server.
+`edit-stands.spec.mjs` passes whole on both hosts. The held-keys box stays open as Q24's accepted
+round-trip gap (ADR-0018 section 6).
