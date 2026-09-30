@@ -232,16 +232,24 @@ layer, not a selection of the field's text. A key typed next follows the Referen
 
 ## An edit in the Formula Bar never enters Overwrite *(2026-09-30, decided with the user)*
 
-Part B of the eighth Windows run typed `=A1+B1` into the Formula Bar, then pressed `Home`. The
-Formula was committed, and the Focus moved to column A. Typing the `A` had ended Point, and Point
-ends in Overwrite (Excel's Enter mode), where `Home`, the arrows and `End` move between cells. That
-is right in the cell, and wrong in the bar: Excel's Formula Bar is always in Edit (2026-09-27, item
-12, "status Edit"). A press into the bar already opens an edit in Caret.
+Part B of the eighth Windows run typed `=A1+B1` into the Formula Bar, pressed F2, then `Home`. The
+Formula was committed, and the Focus moved to column A. The edit had opened in Caret, as a press into
+the bar opens it, and F2 had taken it to Overwrite (Excel's Enter mode), where `Home`, the arrows and
+`End` move between cells. F2 goes from Caret to Overwrite wherever no Reference can go, and it did
+not ask which surface the edit is in. Typing that ends Point is a second way into Overwrite, reached
+after F2 has pointed from the bar or a press has pointed. Both are right in the cell, and wrong in
+the bar: Excel's Formula Bar is always in Edit (2026-09-27, item 12, "status Edit"). *(Corrected the
+same day, when ticket 42 was built. This paragraph first gave typing that ends Point as the cause of
+the run's case. It was F2.)*
 
 - **While the edit is in the Formula Bar, it is in Caret or in Point, never in Overwrite.** Typing
   that ends Point there returns to Caret. `Home`, `End`, ← and → move the caret, as they do in Caret
   anywhere, and Enter, Tab and Escape keep their meanings.
 - **An edit that moves from the cell into the bar goes into Caret**, and one that moves back into the
   cell keeps the mode it has. Excel's cell does not return to Enter mode once it is in Edit.
-- F2 in the bar was seen to change nothing. What Excel's F2 does there was not observed, and it is
-  left as it is.
+- **F2 in the bar moves only between Caret and Point** *(decided with the user)*. Where a Reference
+  can go, it points, as before, and F2 again returns to Caret. Anywhere else it changes nothing, which
+  is what the run saw on screen. F2 in the cell is unchanged, and still goes from Caret to Overwrite
+  there (ADR-0010). Making F2 do nothing in the bar was rejected: it is the only key that points from
+  the bar, since ↓ in Caret does not. Excel's F2 in its bar is asked in
+  `docs/specs/exsheet/verify-on-windows-10.md` (on `claude/exsheet-pointing-scope`).
