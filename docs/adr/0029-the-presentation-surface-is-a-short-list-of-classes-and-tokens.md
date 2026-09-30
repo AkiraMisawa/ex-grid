@@ -311,7 +311,11 @@ has a Formula open, or while a Consumer asks for columns to be outlined.
     `ex-reference-7` naming its colour (eight until the eighth Windows run observed Excel's seven). `ex-point` stays, now on the Reference Outline Point is
     moving.
   - `ex-reference-text`: the layer beneath an editor surface that draws the text with its References
-    coloured, and the class on the field that shows while the layer is up to date.
+    coloured, with `ex-reference-text-line` its part that scrolls with the field, and
+    `ex-reference-text-cell` and `ex-reference-text-bar` the built-in Chrome's two placements of it.
+  - `ex-reference-text-shown`: the class on a field while its layer holds the field's value and the
+    edit is in that field, which makes the field's own text transparent. *(Named while building
+    ticket 29; this entry first gave the layer's name to the field's class too.)*
 - **Visual Tokens:** `--ex-reference-1` to `--ex-reference-7`, one per place in the palette. Their
   defaults are Excel's, as the eighth Windows run observed them (ADR-0057). Seven is the palette's
   length and lives in C#: it is behaviour, because it decides which References share a colour. A Theme sets

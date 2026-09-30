@@ -173,10 +173,10 @@ Excel contradicts is corrected here after the run.
   string, and no function name, is coloured.
 - **A range typed up to its colon colours nothing** until its second corner is typed: `=SUM(A1:`
   leaves `A1` uncoloured, because the grammar reads no Reference in `A1:`. *(Taken while building
-  ticket 27.)*
+  ticket 27. Excel colours `A1` there: see "What cases 24–32 settled".)*
 - **Only text beginning with `=` is a Formula while it is typed**, as for F4 and Point. `+A1` and
   `-B2` colour nothing, although ExSheet enters them as `=+A1` and `=-B2`. *(Taken while building
-  ticket 27.)*
+  ticket 27. Excel colours both: see "What cases 24–32 settled".)*
 - **Point's outline is dashed**, in its Reference's colour. Every other outline is solid, over a pale
   wash of its colour.
 
@@ -224,4 +224,28 @@ agreed. Where one did not, the rule is now Excel's, as this ADR said it would be
   over the earlier, as two References to the same cells are. A null entry is still refused, since
   that is a mistake in the Consumer's code. A name the grid does not show is outlined nowhere, as a
   Reference to cells the grid does not have is.
+
+## What cases 24–32 settled *(2026-09-30)*
+
+The eighth run was extended with cases 24–32, asked of the same Excel. They are recorded in the same
+file.
+
+- **Text beginning with `+` or `-` is coloured as a Formula is** (cases 24, 25). `+A1` colours and
+  outlines A1, and `-B2` does the same for B2, as they would after `=`. ExSheet enters such text as
+  `=+A1` and `=-B2` already, so colouring it is consistent. This corrects the reading "Only text
+  beginning with `=` is a Formula while it is typed". F4 and Point still act only after `=`
+  (ADR-0051). Whether Excel points or cycles after a leading sign was not asked.
+- **A range typed up to its colon colours its first corner** (case 26). `=SUM(A1:` colours and
+  outlines A1, and leaves the colon plain. This corrects the reading that it colours nothing. The same
+  holds, as a reading, while the second corner is still incomplete (`=SUM(A1:B`).
+- **A table or a column that is not there is not coloured** (cases 27, 28), as the reading said.
+- **The Reference Point is writing is shown selected, unless it follows the Formula's `=` directly**
+  (cases 19, 20, `20x`, 29–32). Its text lies on a grey ground (`#c6c6c6`), in a darker shade of its
+  colour (`#0401a2` for the first, `#630101` for the second). The grey shows for `=SUM(D11`,
+  `=1+D11` and `=D11+D12`, and not for `=D11` however often it was pointed. It shows only in the
+  surface the edit is in. *(Built, decided with the user: ADR-0051's Point gains this look.)*
+- **The grey is not a selection that typing replaces** (case 32). A `5` typed after pointing at D12
+  gives `=D11+D125`, and Point ends, as ADR-0051 has it: the digit follows the Reference. Excel's
+  Formula Bar reports the grey span as its selection through UI Automation, but a keystroke does not
+  replace it. So ExSheet paints the grey as a look on the layer, and never selects the field's text.
 
