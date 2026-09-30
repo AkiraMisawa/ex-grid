@@ -72,8 +72,10 @@ public class ShippedStylesheetTests
         // scrolling is Blazor's @onscroll and the gutter is a ResizeObserver, so neither appears
         // here; scroll is an editor field's, heard while an edit is open so the coloured text
         // beneath it scrolls with it — the scroll-offset entry on one more element (ADR-0021's
-        // note of ADR-0057, DC-51).
-        string[] allowed = ["copy", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
+        // note of ADR-0057, DC-51); and compositionend is the same editor listener hearing an IME
+        // composition end, which comes with no input after it, so the coloured text can show again
+        // (ticket 29, decided with the user 2026-09-30).
+        string[] allowed = ["compositionend", "copy", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -272,6 +274,15 @@ public class ShippedStylesheetTests
         Assert.Equal(2, Regex.Matches(script.Text, @"layer\.firstElementChild\.scrollLeft = field\.scrollLeft;").Count);
         Assert.Matches(new Regex(@"root\.addEventListener\('scroll', onFieldScroll, true\);"), script.Text);
         Assert.Matches(new Regex(@"root\.removeEventListener\('scroll', onFieldScroll, true\);"), script.Text);
+
+        // An IME composition's end, which comes with no input after it: heard on this root in the
+        // capture phase while an edit is open, as the field's scroll is, and let go with it. It
+        // clears the composing mark and compares again; nothing else.
+        Assert.Matches(new Regex(@"root\.addEventListener\('scroll', onFieldScroll, true\);\s*root\.addEventListener\('compositionend', onCompositionEnd, true\);"), script.Text);
+        Assert.Matches(new Regex(@"root\.removeEventListener\('scroll', onFieldScroll, true\);\s*root\.removeEventListener\('compositionend', onCompositionEnd, true\);"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"addEventListener\('compositionend'"));
+        Assert.Matches(new Regex(@"const onCompositionEnd = \(event\) => \{\s*const field = event\.target;\s*const layer = [^;]*referenceTextOf\(field\) : null;\s*if \(layer !== null\) \{\s*composingIn = null;\s*gateReferenceText\(field, layer\);\s*\}\s*\};"),
+            script.Text);
 
         // No layout is read anywhere in the module.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"),

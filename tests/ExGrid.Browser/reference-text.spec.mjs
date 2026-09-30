@@ -227,11 +227,10 @@ for (const chrome of ['builtin', 'mud']) {
     // WebAssembly the core renders the composing text straight back, and the texts agree, but the
     // composition is still the field's to draw, underline and all. What Chrome sends, checked on
     // 2026-09-30: every input of a composition, its last included, carries isComposing, and
-    // compositionend follows with no input after it. The listener hears inputs and the layer's
-    // text, not compositionend (ADR-0021's note of ADR-0057), so after the composition ends the
-    // colours come back with the next keystroke rather than at once: uncoloured for a moment, never
-    // coloured on the wrong characters.
-    test(`DC-47: an IME composition shows the field's own text while it lasts, and never the layer over it (${chrome} Chrome)`, async ({ page }) => {
+    // compositionend follows with no input after it. So the listener hears compositionend too, and
+    // the colours come back when the composition ends, once the layer holds its text, with no
+    // keystroke after it (ticket 29, decided with the user 2026-09-30).
+    test(`DC-47: an IME composition shows the field's own text while it lasts, never the layer over it, and the colours come back when it ends (${chrome} Chrome)`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');
@@ -251,11 +250,10 @@ for (const chrome of ['builtin', 'mud']) {
         await page.waitForTimeout(400);
         await expectPlain(editor(grid), '=A1&にほ');
 
+        // The composition ends, and nothing is typed after it.
         await client.send('Input.insertText', { text: '日本' });
         await expect(editor(grid)).toHaveValue('=A1&日本');
-        await expect.poll(async () => (await colouring(editor(grid))).text).toBe('=A1&日本');
-        await page.keyboard.type('&');
-        await expectColoured(editor(grid), '=A1&日本&');
+        await expectColoured(editor(grid), '=A1&日本');
         expect((await framesRecorded(page)).wrong).toEqual([]);
         await client.detach();
         await setRoundTrip(0);

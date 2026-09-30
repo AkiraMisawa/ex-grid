@@ -26,11 +26,13 @@ text turns transparent only while the layer holds the field's current value.
       character (`=` ↓ ↓ shows none; `=SUM(` ↓, `=1+` ↓ and `=D11+` ↓ ↓ do). A look on the layer,
       never a selection of the field's text: `5` typed next follows the Reference and ends Point
       (ADR-0051's newest section; ADR-0057, "What cases 24–32 settled")
-- [ ] An IME composition leaves the field ahead, so its own text shows until the composition ends
-      and the layer catches up (DC-47). *Its own text shows for the whole composition. The layer
-      then shows again at the next input, not when the composition ends: Chrome sends no input
-      after `compositionend`, and the listener hears inputs and the layer's text only. Hearing
-      `compositionend` too is a proposal, not done.*
+- [x] An IME composition leaves the field ahead, so its own text shows until the composition ends
+      and the layer catches up (DC-47). *Every input of a composition, its last included, carries
+      `isComposing`, and Chrome sends no input after `compositionend`. So the listener also hears
+      `compositionend` (capture phase, on the root, only while an edit is open, as the field's
+      `scroll` is), clears the composing mark and compares again: the colours come back when the
+      composition ends, with no keystroke after it (decided with the user, 2026-09-30). Layer 3
+      passes on both hosts, through CDP; a real IME is still a run by hand.*
 - [x] Selected text in the field stays readable while the layer shows (DC-47)
 - [x] The layer's `scrollLeft` follows the field's (DC-48, DC-51)
 - [x] No layout is read; the script-shape tests say so (DC-51)

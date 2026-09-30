@@ -392,9 +392,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // with it. Compared on each input, when a layer's text changes (that one attribute, observed
     // while an edit is open) and whenever the selection moves, which is how a field that has just
     // taken focus, or just opened over its layer, is heard. A field holding an IME composition is
-    // ahead of anything rendered, and is never shown over. The layer's line scrolls with the field:
-    // the scroll-offset entry, on one more element (ADR-0021). Reads values, one attribute, which
-    // element has focus and scroll offsets; no layout.
+    // ahead of anything rendered, and is never shown over; every input of a composition, its last
+    // included, says so, and the composition's end comes with no input after it, so the end is
+    // heard too, and the colours come back then rather than at the next keystroke. The layer's
+    // line scrolls with the field: the scroll-offset entry, on one more element (ADR-0021). Reads
+    // values, one attribute, which element has focus and scroll offsets; no layout.
     let composingIn = null;
     let watchingReferenceTexts = false;
     const referenceTextOf = (field) => {
@@ -431,6 +433,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             layer.firstElementChild.scrollLeft = field.scrollLeft;
         }
     };
+    const onCompositionEnd = (event) => {
+        const field = event.target;
+        const layer = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? referenceTextOf(field) : null;
+        if (layer !== null) {
+            composingIn = null;
+            gateReferenceText(field, layer);
+        }
+    };
     // Only while an edit is open, which is the only time a layer holds a text; closing takes every
     // field's class away with it.
     const watchReferenceTexts = (on) => {
@@ -441,10 +451,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (on) {
             referenceTextObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-text'], subtree: true });
             root.addEventListener('scroll', onFieldScroll, true);
+            root.addEventListener('compositionend', onCompositionEnd, true);
             return;
         }
         referenceTextObserver.disconnect();
         root.removeEventListener('scroll', onFieldScroll, true);
+        root.removeEventListener('compositionend', onCompositionEnd, true);
         composingIn = null;
         for (const field of root.querySelectorAll('.ex-reference-text-shown')) {
             field.classList.remove('ex-reference-text-shown');
