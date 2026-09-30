@@ -128,6 +128,12 @@ jobs:
       - name: Build the DemoHost
         run: dotnet build samples/ExGrid.DemoHost
 
+      # The demo API server the pages call (ADR-0068), which the suite starts beside the host.
+      # Its first start on a fresh runner generates the 20,000 trades the suite asks for, which
+      # takes about a second, well inside the webServer's timeout.
+      - name: Build the demo API server
+        run: dotnet build samples/ExGrid.DemoApi
+
       # The screen is larger than any window the suite opens, so the chrome-150 project
       # (ADR-0053: Chrome at --force-device-scale-factor=1.5, its viewport left to the
       # window) gets its 1280x800 window whole — 1920x1200 device pixels.
@@ -199,6 +205,10 @@ jobs:
 
       - name: Build the Server host
         run: dotnet build samples/ExGrid.DemoHost.Server
+
+      # As beside the WebAssembly host: the suite starts it with 20,000 trades.
+      - name: Build the demo API server
+        run: dotnet build samples/ExGrid.DemoApi
 
       - name: Layer 3 against the Server host, headed under xvfb
         working-directory: tests/ExGrid.Browser

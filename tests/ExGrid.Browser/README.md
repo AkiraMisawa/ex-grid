@@ -78,6 +78,21 @@ trip (ED-22), a paste past the hub's message limit (CP-21), a write the browser 
 full speed into the editor, the filter's search box and the find field arriving whole (SRV-7). It runs on
 both hosts; a test that has no meaning on WebAssembly is skipped there by name.
 
+## The demo API server
+
+Beside either host, the run also starts `samples/ExGrid.DemoApi`, the server the database and
+live pages call (ADR-0068), where the pages look for it: BASE_URL's port plus 3000 (8299, or
+8298 beside the Server host's proxy; `API_URL` in `hosting.mjs`). It is asked for 20,000 trades
+unless `EXGRID_DEMO_TRADES` says otherwise; the first start for a count generates them in about
+a second into a file outside the repository (`exgrid-demo-api` in the temporary directory, or
+`EXGRID_DEMO_DATA`), and each start serves a fresh copy of that file, so every run begins from
+the same trades. `/api/status` answers 503 until they are ready, so the run waits for the data
+and not only for the port. The server lives for the whole run, across spec files: live updates
+stay off until a test turns them on (`POST /api/live`), a test that does turns them off again,
+and trades it moved stay moved. A server already on that port is reused with whatever count it
+was started with, so a test reads the count and the Source Version from `/api/status` rather
+than assuming them.
+
 ## Installing the browsers
 
 The flake ships none on purpose, and `flake.nix` says why: `channel: 'chrome'` means the

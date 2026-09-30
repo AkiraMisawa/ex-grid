@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import fs from 'node:fs';
-import { BASE_URL, HOST_LOG, HOST_PORT, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
+import { API_URL, BASE_URL, HOST_LOG, HOST_PORT, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
 
 // The host is started on whatever port BASE_URL names, so two checkouts — one per
 // parallel agent — do not share a port: with reuseExistingServer a second runner on
@@ -23,7 +23,7 @@ if (SERVER && process.env.TEST_WORKER_INDEX === undefined) {
 // the dev server's side. On Server the circuit's log is this process's, and the host
 // also appends it to HOST_LOG so the fixture can read it per test (CON-6). A reused
 // host was started elsewhere and its output is wherever that was.
-const webServer = SERVER
+const hostServers = SERVER
     ? [
         {
             command: `dotnet run --project ../../samples/ExGrid.DemoHost.Server --urls ${HOST_URL}`,
@@ -43,14 +43,38 @@ const webServer = SERVER
             timeout: 180_000,
         },
     ]
-    : {
-        command: `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
-        url: `${BASE_URL}/wide`,
-        reuseExistingServer: true,
-        timeout: 180_000,
-        stdout: 'pipe',
-        stderr: 'pipe',
-    };
+    : [
+        {
+            command: `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
+            url: `${BASE_URL}/wide`,
+            reuseExistingServer: true,
+            timeout: 180_000,
+            stdout: 'pipe',
+            stderr: 'pipe',
+        },
+    ];
+
+// The demo API server (ADR-0068), beside either host: the pages on both call it over HTTP,
+// at their own port plus 3000 (hosting.mjs). Its first start for a count generates the
+// trades into a file outside the repository, which every later start reuses; the run asks
+// for 20,000, about a second's work, unless EXGRID_DEMO_TRADES asks for another count.
+// /api/status answers 503 until the trades are ready, so the run waits for the data, not
+// only for the port. A reused server keeps the count it was started with, so no test
+// assumes one. Stopped with SIGTERM rather than killed, so it deletes the copy of the trades
+// it served (a killed one's copy is removed by the next start).
+const apiServer = {
+    name: 'DemoApi',
+    command: `dotnet run --project ../../samples/ExGrid.DemoApi --urls ${API_URL}`,
+    url: `${API_URL}/api/status`,
+    env: { EXGRID_DEMO_TRADES: process.env.EXGRID_DEMO_TRADES ?? '20000' },
+    reuseExistingServer: true,
+    timeout: 300_000,
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 5_000 },
+    stdout: 'pipe',
+    stderr: 'pipe',
+};
+
+const webServer = [...hostServers, apiServer];
 
 export default defineConfig({
     testDir: '.',
