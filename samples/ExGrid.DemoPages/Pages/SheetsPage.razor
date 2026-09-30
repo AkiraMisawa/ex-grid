@@ -71,6 +71,8 @@
 
     private const string Table = "Positions";
     private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+    // A row is read by its Id, and no Id appears twice in a snapshot (ADR-0049, 2026-09-30).
+    private const string TableKey = "Id";
 
     // The page's own data, shown by both grids and read by both Sheets (ADR-0049).
     private sealed record Position(string Id, string Book, double PV);
@@ -110,7 +112,7 @@
         sheet.Enter(CellAddress.Parse("B1"), value.ToString(CultureInfo.InvariantCulture));
         sheet.Enter(CellAddress.Parse("C1"), "=B1*2");
         // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
-        sheet.DeclareLinkedTable(Table, TableColumns);
+        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
         return sheet.ToDocument();
     }
 
