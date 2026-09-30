@@ -309,6 +309,13 @@ public class ShippedStylesheetTests
         Assert.Contains("root.ownerDocument.getElementById(pointing)", handOn.Value, StringComparison.Ordinal);
         Assert.Contains("event.button !== 0 || !isOwnRowsOrHeadings(event.target)", handOn.Value, StringComparison.Ordinal);
         Assert.Single(Regex.Matches(script.Text, @"getElementById\("));
+        // The whole message, built afresh for each press inside the pressing instance: when the
+        // press may be answered (inTurn), and the promise of its answer, which the pressing grid's
+        // own core settles (answered). The listener that hears it keeps nothing of the other grid
+        // but what it queues for that one press.
+        Assert.Matches(new Regex(@"const answered = new Promise\(\(resolve\) => \{\s*answer = resolve;\s*\}\);\s*const detail = \{\s*inTurn: \(\) => \{.*?\},\s*answered,\s*\};", RegexOptions.Singleline), handOn.Value);
+        Assert.Contains("answer(core.invokeMethodAsync('PressHandedOnAsync', press, inTurn)", handOn.Value, StringComparison.Ordinal);
+        Assert.Contains("const hand = event.detail;", heard.Value, StringComparison.Ordinal);
         // Told as the press goes on to Blazor, and only then: where it passes on untouched, and where
         // it leaves the listener — a heading's, or one replayed after it was held here.
         Assert.Equal(2, Regex.Matches(press.Value, @"handOn\(event\);").Count);
