@@ -36,8 +36,11 @@ text turns transparent only while the layer holds the field's current value.
 - [x] Selected text in the field stays readable while the layer shows (DC-47)
 - [x] The layer's `scrollLeft` follows the field's (DC-48, DC-51)
 - [x] No layout is read; the script-shape tests say so (DC-51)
-- [ ] Layer 3: on the Server host with 150 ms injected, a burst of typing sampled every animation
+- [x] Layer 3: on the Server host with 150 ms injected, a burst of typing sampled every animation
       frame never shows transparent field text over a layer that differs; on WebAssembly the colours
       follow each keystroke; a Formula longer than the field keeps its colours over the right
-      characters at either end (DC-47, DC-48). *Written in
-      `tests/ExGrid.Browser/reference-text.spec.mjs`, not yet run.*
+      characters at either end (DC-47, DC-48). *In `tests/ExGrid.Browser/reference-text.spec.mjs`.
+      Passed 2026-09-30 on macOS, headless Chrome, both hosts, both Chromes, once three causes of
+      DC-48 were fixed: a word the spelling check marks was drawn a second time over the layer; End
+      on macOS scrolled the grid away (ticket 32); and `/sheet?chrome=mud` lacked the Wrapper's
+      shape (ADR-0057, "The Wrapper's shape is required…"). Linux and Edge are CI's.*

@@ -315,7 +315,12 @@ public class ShippedStylesheetTests
                 ".ex-reference-text + .ex-reference-text-shown::spelling-error, .ex-reference-text + .ex-reference-text-shown::grammar-error",
             ],
             transparent);
-        Assert.Matches(new Regex(@"\.ex-reference-text \+ \.ex-reference-text-shown \{ -webkit-text-fill-color: transparent; caret-color: currentColor; \}"), sheet);
+        // Every field turns see-through while its layer shows, a Chrome's control included, so a
+        // page that loses the Chrome's stylesheet shows the layer's text rather than nothing
+        // (ADR-0057, "The Wrapper's shape is required…"); the ground is painted beneath the layer.
+        Assert.Matches(new Regex(@"\.ex-reference-text \+ \.ex-reference-text-shown \{ -webkit-text-fill-color: transparent; caret-color: currentColor; background: transparent; \}"), sheet);
+        Assert.DoesNotMatch(new Regex(@"input\.ex-editor\.ex-reference-text-shown"), sheet);
+        Assert.Matches(new Regex(@"\.ex-editor,\s*\.ex-reference-text\.ex-reference-text-cell \{[^}]*background: var\(--ex-editor-background, Canvas\);"), sheet);
         Assert.Matches(new Regex(@"\.ex-reference-text \+ \.ex-reference-text-shown::selection \{ color: HighlightText; -webkit-text-fill-color: HighlightText; background-color: Highlight; \}"), sheet);
         Assert.Matches(new Regex(@"::grammar-error \{ color: transparent; \}"), sheet);
 

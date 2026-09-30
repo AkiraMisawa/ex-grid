@@ -615,13 +615,16 @@
    or grammar check marks is the field's own text too: Chrome paints it again through a highlight,
    in the highlight's color, which neither inherits the field's fill nor takes one of its own, so
    it stood over the layer's text a second time (DC-48, measured 2026-09-30). Its color is taken
-   away; its underline is not drawn in that color, and stays. The core's own Cell Editor turns
-   see-through, since the layer paints its ground. The adjacency is part of each rule: a field
-   whose layer has gone shows its own text whatever it still wears. */
-.ex-reference-text + .ex-reference-text-shown { -webkit-text-fill-color: transparent; caret-color: currentColor; }
+   away; its underline is not drawn in that color, and stays. Every field turns see-through while
+   its layer shows, a Chrome's control included, whose contract is to have no ground of its own
+   anyway: a page that loses the Chrome's stylesheet then shows the layer's text rather than
+   nothing (ADR-0057, "The Wrapper's shape is required…"). The ground is still painted beneath the
+   layer: by the core's own Cell Editor layer, by the core's box a Chrome's control stands in, and
+   by the Formula Bar. The adjacency is part of each rule: a field whose layer has gone shows its
+   own text whatever it still wears. */
+.ex-reference-text + .ex-reference-text-shown { -webkit-text-fill-color: transparent; caret-color: currentColor; background: transparent; }
 .ex-reference-text + .ex-reference-text-shown::selection { color: HighlightText; -webkit-text-fill-color: HighlightText; background-color: Highlight; }
 .ex-reference-text + .ex-reference-text-shown::spelling-error, .ex-reference-text + .ex-reference-text-shown::grammar-error { color: transparent; }
-.ex-reference-text + input.ex-editor.ex-reference-text-shown { background: transparent; }
 /* The completion list and the argument hint (ADR-0051): the editor's Inner Popup, in a box the
    core stands beneath the editor surface, inside the grid's box — its place, its width's clamp
    and its max-height arrive inline (ADR-0027/0040), and contents taller than the room scroll.
