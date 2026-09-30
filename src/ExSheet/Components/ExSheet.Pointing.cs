@@ -47,7 +47,7 @@ public partial class ExSheet : IPointingSheet, IDisposable
     /// column the table does not have, a table declared without a key, a blank key, a row not yet
     /// arrived. A drag that reached another cell took back what its press wrote. After a press, an
     /// arrow key that wrote nothing is told too: Shift and an arrow, Ctrl and an arrow, a row not yet
-    /// arrived, or a cell the grid no longer holds. The Formula's text is as it was before the press
+    /// arrived, a cell the grid no longer holds, or an arrow after a press on a column's header. The Formula's text is as it was before the press
     /// or the key. ExSheet shows nothing of it itself: show the
     /// <see cref="PointingRefusal.Message"/> where the page tells its user things.
     /// </summary>

@@ -445,7 +445,8 @@ nobody had asked for. What that means when writing a test:
   after a press: ↓ from R-1's PV writing R-2's lookup and moving the dashes, and ↑ back; → from an
   Id cell passing over Book, the grid's own column, to PV; ↓ past the painted rows scrolling the
   positions grid with the pointed cell in view; Shift+↓ and Ctrl+↓ writing nothing, with the page
-  saying why; and ↓ and `*2` typed at once, 150 ms injected on the Server host, keeping their order.
+  saying why; ↓ after a press on the PV header writing nothing, with the page saying to press a cell;
+  and ↓ and `*2` typed at once, 150 ms injected on the Server host, keeping their order.
 
 `sheet-helpers.mjs` is what those five share: opening `/sheet` under either Chrome and waiting
 for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the

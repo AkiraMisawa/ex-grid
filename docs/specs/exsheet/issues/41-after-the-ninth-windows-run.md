@@ -66,9 +66,10 @@ ExSheet:
   with its own message; Ctrl+arrow (and Ctrl+Shift+arrow) is a new `DataEdge`; a row not arrived is
   `RowNotArrived`; a blank or Error key reached is refused as a press there is, and nothing moves; a
   cell the grid no longer holds (its row left the Window, or its column went) is a new `CellNotHeld`.
-  An edge moves nothing and tells nothing. **After a press on a column's header, the arrows move
-  nothing and tell nothing** (Shift and Ctrl with one are told): which cell they reach from a header is
-  not decided by ADR-0058, and is left for the user.
+  An edge moves nothing and tells nothing. After a press on a column's header, an arrow writes
+  nothing and tells a new `FromColumnHeader` ("Press a cell to point by keys"); Shift and Ctrl with one
+  are told as after a cell (decided with the user on 2026-10-01, until Excel is observed; asked while
+  this ticket was built, since ADR-0058 did not say which cell an arrow reaches from a header).
 - **The DemoHost.** `/pointing`, a new page in the index: a Sheet and a grid of 40 positions in one
   Scope, the table declaring `Id` and `PV`, and the grid showing Book as its own column between them.
   `/sheet` and `/sheets` have no column the table lacks and paint all their rows, and other specs
@@ -83,7 +84,7 @@ ExSheet:
   not handing on), `ShippedStylesheetTests` (+1, and the `claimedWhile` pin), and
   `PointingScopeKeyboardTests` (12, in `PointingScopeTests`; `ScopedSheets` can reorder its columns).
   Layers 1–2 after the merge: 826 + 2072 + 88 + 1148 (1 skipped, as before) + 361, all passing.
-  Layer 3, headless on macOS, chrome, on a private port: `pointing-scope.spec.mjs` (+5 on `/pointing`)
-  20 passed and 1 skipped (Server-only) on WebAssembly, 21 passed on Server; the five `/pointing` tests
-  5 times each on Server, 25 passed; `declarations.spec.mjs --grep "SH-36|DC-19|DC-28|DC-31"` and
-  `navigation.spec.mjs`, 25 passed on each host.
+  Layer 3, headless on macOS, chrome, on a private port: `pointing-scope.spec.mjs` (+6 on `/pointing`)
+  21 passed and 1 skipped (Server-only) on WebAssembly, 22 passed on Server; the first five `/pointing`
+  tests 5 times each on Server, 25 passed; `declarations.spec.mjs --grep "SH-36|DC-19|DC-28|DC-31"`
+  and `navigation.spec.mjs`, 25 passed on each host.

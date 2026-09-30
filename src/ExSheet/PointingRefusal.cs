@@ -54,6 +54,11 @@ public enum PointingRefusalReason
     /// row has left the rows the grid holds, or the grid no longer shows its column — so there is no
     /// cell to move from. Nothing moves; a press points again.</summary>
     CellNotHeld,
+
+    /// <summary>An arrow key after a press on a column's header: the arrows move from a cell, and which
+    /// cell one reaches from a header is not decided until Excel is observed. Nothing moves; a press on
+    /// a cell points by keys (ADR-0058).</summary>
+    FromColumnHeader,
 }
 
 /// <summary>A press on a grid of a Pointing Scope that wrote nothing, and why (ADR-0058). The text of

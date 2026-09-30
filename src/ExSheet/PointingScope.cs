@@ -292,8 +292,9 @@ public sealed class PointingScope
     /// a row up or down in its current order, or to the next column the table has left or right,
     /// passing over the grid's columns the table does not have — and the text is rewritten for the cell
     /// reached, replacing what this Point wrote. The dashes move with it, and the grid scrolls it into
-    /// view. At an edge nothing moves. A row that has not arrived, Shift and an arrow, and the Primary
-    /// Modifier and an arrow write nothing, leave the text as it was, and the reason is told.
+    /// view. At an edge nothing moves. A row that has not arrived, Shift and an arrow, the Primary
+    /// Modifier and an arrow, and an arrow after a press on a column's header write nothing, leave the
+    /// text as it was, and the reason is told.
     /// </summary>
     internal async Task PointArrowAsync(IPointingSheet sheet, GridPointArrow arrow)
     {
@@ -312,10 +313,14 @@ public sealed class PointingScope
             await sheet.TellPointingRefusedAsync(new PointingRefusal(PointingRefusalReason.SeveralCells, SheetWords.PointingExtendedByKey(grid.Table)));
             return;
         }
-        // After a press on a column's header, which cell an arrow reaches is not decided: nothing
-        // moves, and the text stands.
+        // After a press on a column's header, which cell an arrow reaches is not decided until Excel
+        // is observed: nothing moves, the text stands, and the reason is told (decided with the user,
+        // 2026-10-01).
         if (dashed.Where.IsRow is null)
+        {
+            await RefuseAsync(sheet, PointingRefusalReason.FromColumnHeader, grid.Table, null, false);
             return;
+        }
         if (FindTable(sheet, grid.Table) is not { } table)
         {
             await RefuseAsync(sheet, PointingRefusalReason.TableNotDeclared, grid.Table, null, false);

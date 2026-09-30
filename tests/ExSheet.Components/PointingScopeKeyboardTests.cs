@@ -203,8 +203,8 @@ public partial class PointingScopeTests
         Assert.Empty(page.Cut.Instance.LeftRefusals);
     }
 
-    [Fact] // ADR-0058 ("The keyboard"): after a press on a column's header the arrows move nothing — which cell they reach from a header is not decided — while Shift or Ctrl with one is still told
-    public async Task After_a_header_press_the_arrows_move_nothing()
+    [Fact] // ADR-0058 ("The keyboard"; decided with the user 2026-10-01, until Excel is observed) / SH-35: after a press on a column's header an arrow writes nothing, leaves the text, and tells why; Shift and Ctrl with one are told as after a cell
+    public async Task After_a_header_press_an_arrow_writes_nothing_and_tells_why()
     {
         var page = await RenderAsync();
         await StartTypingAsync(page.Left, "D2", "=SUM(");
@@ -212,11 +212,21 @@ public partial class PointingScopeTests
 
         await ArrowAsync(page.Left, "ArrowDown");
         await ArrowAsync(page.Left, "ArrowLeft");
+        await ArrowAsync(page.Left, "ArrowDown", shift: true);
+        await ArrowAsync(page.Left, "ArrowDown", ctrl: true);
 
         Assert.Equal("=SUM(Positions[PV]", EditorText(page.Left));
-        Assert.Empty(page.Cut.Instance.LeftRefusals);
-        await ArrowAsync(page.Left, "ArrowDown", shift: true);
-        Assert.Equal(PointingRefusalReason.SeveralCells, Assert.Single(page.Cut.Instance.LeftRefusals).Reason);
+        // The column stays dashed: Point over what the press wrote goes on.
+        Assert.StartsWith("left: 200px; top: 0px; width: 100px; height: ", Assert.Single(DashesOf(page.Positions)));
+        var refusals = page.Cut.Instance.LeftRefusals;
+        Assert.Equal(
+            [PointingRefusalReason.FromColumnHeader, PointingRefusalReason.FromColumnHeader, PointingRefusalReason.SeveralCells, PointingRefusalReason.DataEdge],
+            refusals.Select(r => r.Reason));
+        Assert.Contains("Press a cell to point by keys", refusals[0].Message);
+        // A press on a cell, and the arrows point by keys.
+        await PressCellAsync(page.Positions, ValueX, Row(0));
+        await ArrowAsync(page.Left, "ArrowDown");
+        Assert.Equal("=SUM(" + LookupR2, EditorText(page.Left));
     }
 
     [Fact] // ADR-0058 ("The keyboard") / SH-35: a cell the grid no longer holds has nowhere to move from: nothing is written, and the reason is told

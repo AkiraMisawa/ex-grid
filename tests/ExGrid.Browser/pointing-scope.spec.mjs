@@ -615,6 +615,27 @@ test.describe('/pointing', () => {
         await expect(editor(grid)).toHaveValue(lookup('R-2'));
     });
 
+    test('ADR-0058/SH-35: after a press on the PV header an arrow writes nothing, and the page says to press a cell (decided 2026-10-01)', async ({ page }) => {
+        const grid = sheet(page);
+        const positions = table(page);
+        await pressCell(grid, 'C3');
+        await page.keyboard.type('=SUM(');
+        await expect(editor(grid)).toHaveValue('=SUM(');
+        await expectPointedAt(positions);
+        await header(positions, 'PV').click({ force: true });
+        await expect(editor(grid)).toHaveValue('=SUM(Positions[PV]');
+
+        await page.keyboard.press('ArrowDown');
+
+        await expect(refused(page)).toContainText('Press a cell to point by keys');
+        await expect(editor(grid)).toHaveValue('=SUM(Positions[PV]');
+        await expect(editor(grid)).toBeFocused();
+        await expect(positions.locator('.ex-point-dashes')).toHaveCount(1);
+        await page.keyboard.type(')');
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'C3')).toHaveText('8200');
+    });
+
     // The keys typed after an arrow keep their place behind it (ADR-0010's hold): the arrow is answered
     // once the Scope has rewritten the text, and on a circuit that is a round trip after the key.
     test('ADR-0058/SH-35: with a 150 ms round trip, ↓ and *2 typed at once give R-2\'s lookup and the *2', async ({ page }) => {

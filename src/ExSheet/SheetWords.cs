@@ -95,6 +95,8 @@ internal static class SheetWords
             $"Nothing was written: Ctrl+arrow goes to the edge of the data, and the grid holds only the rows near those it shows, so where '{table}' ends is not known. Use the arrow alone.",
         PointingRefusalReason.CellNotHeld =>
             $"Nothing was written: the grid no longer holds the cell of '{table}' pointed at, so the arrow has no cell to move from. Press a cell to point again.",
+        PointingRefusalReason.FromColumnHeader =>
+            $"Nothing was written: the arrow keys move from a cell, and a column's header of '{table}' was pressed. Press a cell to point by keys.",
         _ => "Nothing was written.",
     };
 
