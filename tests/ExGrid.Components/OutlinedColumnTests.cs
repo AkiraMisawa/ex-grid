@@ -50,6 +50,10 @@ public class OutlinedColumnTests : GridTestContext
 
     private static OutlinedColumn Outlined(string column, int place) => new(column, new ReferenceColour(place));
 
+    /// <summary>A rectangle's inline style without the hole a range holding the Focus carries.</summary>
+    private static string Rectangle(string? style)
+        => System.Text.RegularExpressions.Regex.Replace(style ?? "", @";\s*--ex-range-hole:[^;]*;?$", "");
+
     /// <summary>The Reference Outlines in one layer of the overlay, as class and style.</summary>
     private static List<(string? Class, string? Style)> Outlines(IRenderedComponent<ExGrid<TestRow>> cut, string layer = ".ex-selection")
         => [.. cut.FindAll($"{layer} .ex-reference-outline").Select(e => (e.GetAttribute("class"), e.GetAttribute("style")))];
@@ -90,14 +94,16 @@ public class OutlinedColumnTests : GridTestContext
 
         var outline = Assert.Single(Outlines(cut));
         Assert.Equal("ex-reference-outline ex-reference-2", outline.Class);
-        Assert.Equal(column.GetAttribute("style"), outline.Style);
+        // The same rectangle. A range holding the Focus also carries the hole where the Focus is
+        // (--ex-range-hole, ADR-0008), which an outline, being no selection, never has.
+        Assert.Equal(Rectangle(column.GetAttribute("style")), outline.Style);
         Assert.StartsWith("left: 100px; top: 0px; width: 100px; height: ", outline.Style);
 
         // Past the Window, the painted rows are Placeholders, and the outline is still over them.
         await ScrollToAsync(cut.Find(".ex-scroller"), 500 * 20);
         Clock.Advance(SettleDelay);
         cut.WaitForAssertion(() => Assert.Equal(
-            cut.Find(".ex-selection .ex-range").GetAttribute("style"),
+            Rectangle(cut.Find(".ex-selection .ex-range").GetAttribute("style")),
             Assert.Single(Outlines(cut)).Style));
         Assert.NotEqual(outline.Style, Assert.Single(Outlines(cut)).Style);
         Assert.Equal(scrolls, JSInterop.Invocations.Count(i => i.Identifier == "setScrollOffset"));

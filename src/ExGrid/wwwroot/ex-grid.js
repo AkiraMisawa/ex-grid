@@ -2,10 +2,12 @@
 // reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
 // out of the box, being told about the pointer — when it moves onto another row, and
 // when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
-// mousedown and mouseup that keep a press on the rows in its place among held keys, the
-// root taking the keyboard back only while DOM focus is still its own, and the editor listener
-// keeping the coloured text beneath a field honest (ADR-0057). Anything else — text
-// measurement, overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
+// mousedown and mouseup that keep a press on the rows in its place among held keys, and hold the
+// keys after one made while an edit is open; the root taking the keyboard back only while DOM
+// focus is still its own; that same mousedown bringing the keyboard back to an edit left
+// standing when a press returns to the rows or the headings; and the editor listener keeping
+// the coloured text beneath a field honest (ADR-0057). Anything else — text measurement,
+// overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
@@ -361,11 +363,49 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
             });
     };
+    // The editor surface of this grid's own that `element` is, or is inside: the box that wears
+    // .ex-editor — the Cell Editor over this grid's rows, or its Formula Bar's text — and never
+    // a surface of a grid nested in one of its cells, whose own root stands nearer (ADR-0018).
+    const ownSurface = (element) => {
+        const surface = element instanceof Element ? element.closest('.ex-editor') : null;
+        return surface !== null && root !== null && surface.closest('.ex-grid') === root ? surface : null;
+    };
+    // The text field of an editor surface: of `surface`, one of this grid's own, or, given none,
+    // of the first of them in the markup — the Cell Editor while its cell is painted, the
+    // Formula Bar's text when it is not. A substituted Chrome's surface is a box around its
+    // control (ADR-0010): the control that has DOM focus inside it, if one has, or its first.
+    const surfaceField = (surface) => {
+        const chosen = surface
+            ?? (root ? [...root.querySelectorAll('.ex-editor')].find((box) => ownSurface(box) === box) : null);
+        if (!chosen) {
+            return null;
+        }
+        if (chosen instanceof HTMLInputElement || chosen instanceof HTMLTextAreaElement) {
+            return chosen;
+        }
+        const active = document.activeElement;
+        return (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) && chosen.contains(active)
+            ? active
+            : chosen.querySelector('input, textarea');
+    };
+
+    // The editor surface that last held the keyboard here (ADR-0018, section 6): the one of this
+    // grid's own in which this listener last saw a key, an input or a press. An edit stands when
+    // DOM focus leaves the root, and a press back on the rows or the headings puts the keyboard
+    // here (onPress). Taken afresh as an edit opens, from the surface holding DOM focus then, and
+    // forgotten as it ends: the bar outlives an edit, and one typed in there must not claim the
+    // next.
+    let lastSurface = null;
+    const noteSurface = (target) => {
+        lastSurface = ownSurface(target) ?? lastSurface;
+    };
+
     // Each input reports at once: Blazor's input event is on its way, and the core waits for
     // this report before it asks anything about the new text.
     const onEditorInput = (event) => {
         heardReferenceInput(event);
         const input = event.target;
+        noteSurface(input);
         if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
             || input.closest('.ex-editor') === null) {
             return;
@@ -496,11 +536,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answer has landed. Plain navigation changes no mode and is never held behind.
     const held = [];
     let answering = false;
-    // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus
-    // only because a held press on the rows suppressed the default that would have moved it
-    // (onPress); null once the field is pressed again, the hand-back has taken it, or the
-    // press has been answered without one (replayPress).
+    // A press on the rows while an edit is open is a mode change too (ADR-0010, widened
+    // 2026-09-29), and the keys after it wait for the core's answer to it (holdBehindPress):
+    // the press still to be asked about, and the answer the keys wait for while one is awaited.
+    let pressToAsk = null;
+    let pressAnswer = null;
+    // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus only
+    // because a press on the rows had the default that would have moved it suppressed: held
+    // here, or passed on while an edit is open where the core keeps the keyboard in the edit
+    // (onPress). Null once the field is pressed again, the hand-back has taken it, or the press
+    // has been answered (replayPress, askAboutPress). Each mark is numbered, so taking one
+    // press's mark off never takes a later press's.
     let staleField = null;
+    let staleMarks = 0;
+    const markStale = (field) => {
+        staleField = field;
+        return ++staleMarks;
+    };
 
     // Whether the editor holds DOM focus. Until it does, a key typed with editing on lands
     // on the root, where no editing mode claims a printable key — it would be lost.
@@ -582,24 +634,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // surfaces, the one holding DOM focus: the Formula Bar when the user was typing there,
     // not the cell's editor that comes first in the markup (ADR-0051). The first one only
     // when none holds it — the two-second hold has run out.
-    const editorInput = () => {
-        const active = document.activeElement;
-        const focused = root && active instanceof Element && root.contains(active)
-            ? active.closest('.ex-editor')
-            : null;
-        const editor = focused ?? (root && root.querySelector('.ex-editor'));
-        if (!editor) {
-            return null;
-        }
-        if (editor instanceof HTMLInputElement || editor instanceof HTMLTextAreaElement) {
-            return editor;
-        }
-        // A substituted Chrome editor is a box around its control: the control that has
-        // DOM focus inside it, if one has.
-        return focused && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
-            ? active
-            : editor.querySelector('input, textarea');
-    };
+    const editorInput = () => surfaceField(ownSurface(document.activeElement));
     // When the hold that is standing began: two seconds from it, whatever the keys held
     // since have asked for, the rest is handed on (ADR-0010).
     let holdStartedAt = 0;
@@ -759,7 +794,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         replayInto(target, k);
     };
 
+    // A hold begins: the keys typed from now are held, in order, and handed on by drain — at
+    // once, or once `answer` has come, for a key the core is answering. The two-second fallback
+    // counts from here. Each caller asks first whether a hold stands, and a drain already running
+    // takes what it holds.
+    const startHold = (answer) => {
+        answering = true;
+        holdStartedAt = performance.now();
+        if (answer) {
+            answer.then(drain);
+        } else {
+            drain();
+        }
+    };
+
     const drain = async () => {
+        // Behind a press, its answer first (holdBehindPress); a press passed on behind it while
+        // nothing was held replaces the question, and its answer comes after the first one's.
+        while (pressAnswer !== null) {
+            const answer = pressAnswer;
+            await answer;
+            if (pressAnswer === answer) {
+                pressAnswer = null;
+            }
+        }
         // Settled before anything else, even with nothing held yet: the answer can arrive
         // before the popover or the editor has taken DOM focus, and a key typed in that
         // gap must still be held, not gated against the root.
@@ -841,6 +899,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core) {
             return;
         }
+        // A key typed in an editor surface: that surface holds the keyboard.
+        noteSurface(event.target);
         // Mid-composition an IME owns Enter, Escape and the arrows — they choose and
         // commit a candidate. Taking them there breaks typing in any language that needs
         // one, and the grid would move under a half-finished word.
@@ -880,8 +940,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             event.stopPropagation();
             held.push(k);
             if (!answering) {
-                answering = true;
-                holdStartedAt = performance.now();
                 if (sentinel) {
                     // A column's popover wraps back to its commands; the find panel, which
                     // has none, to its own contents (ADR-0044/0055).
@@ -890,7 +948,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                         : '.ex-popover-find-body';
                     awaitingMove = { from: event.target, into };
                 }
-                drain();
+                startHold();
             }
             return;
         }
@@ -904,12 +962,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (move.into) {
                 event.preventDefault();
             }
-            holdStartedAt = performance.now();
             awaitingMove = move;
-            // Behind a hold that is over but not yet cleared, its drain takes this one too.
-            if (!answering) {
-                answering = true;
-                drain();
+            // Behind a hold that is over but not yet cleared, its drain takes this one too, and
+            // counts its fallback from here.
+            if (answering) {
+                holdStartedAt = performance.now();
+            } else {
+                startHold();
             }
             return;
         }
@@ -941,10 +1000,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         const answer = forward(k);
         if (verdict === 'mode' || verdict === 'popover') {
-            answering = true;
-            holdStartedAt = performance.now();
             awaitingPopover = verdict === 'popover';
-            answer.then(drain);
+            startHold(answer);
         }
     };
 
@@ -1058,9 +1115,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const holdBehindBarPress = () => {
         held.push({ barPress: true });
         if (!answering) {
-            answering = true;
-            holdStartedAt = performance.now();
-            drain();
+            startHold();
         }
     };
     // Asked once the press's focus has gone to the core: focusing the bar is the press's default
@@ -1090,20 +1145,83 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // are held, or a change of editing mode is being answered, a primary-button press on the
     // rows is held too, in order, and its release with it: a click straight after Enter
     // reached C# before the held Enter, and the Enter's move carried the Focus past the
-    // clicked cell. When nothing is held the press passes through untouched. No layout is
-    // read: the press is replayed with the coordinates the browser gave it.
+    // clicked cell. When nothing is held the press passes through untouched, and while an edit
+    // is open the keys after it wait for its answer (holdBehindPress). No layout is read: the
+    // press is replayed with the coordinates the browser gave it.
     const mouseInit = (event) => ({
         bubbles: true, cancelable: true, view: window, detail: event.detail,
         screenX: event.screenX, screenY: event.screenY, clientX: event.clientX, clientY: event.clientY,
         ctrlKey: event.ctrlKey, shiftKey: event.shiftKey, altKey: event.altKey, metaKey: event.metaKey,
         button: event.button, buttons: event.buttons,
     });
+
+    // This grid's own rows and headings, not those of a grid nested in one of its cells, whose
+    // own scroller stands nearer: a press on the rows lands on the Viewport (cells are
+    // pointer-events: none), and one on the column headings anywhere in their band. A press into
+    // the Cell Editor's own text is not one: it takes the keyboard by its own default.
+    const inOwnScroller = (target) => target instanceof Element && !!scroller
+        && target.closest('.ex-scroller') === scroller;
+    const isOwnRows = (target) => inOwnScroller(target) && target.classList.contains('ex-viewport');
+    const isOwnRowsOrHeadings = (target) => isOwnRows(target)
+        || (inOwnScroller(target) && target.closest('.ex-header') !== null);
+    // The text field to put the keyboard back into: the surface that last held it while it is
+    // still there, or else the first of this grid's own (surfaceField).
+    const standingField = () => surfaceField(ownSurface(lastSurface));
+    // The hold behind a press (ADR-0010, widened 2026-09-29; ADR-0021's note of the same day). A
+    // press on the rows while an edit is open commits and moves, or points, so the mode the next
+    // key meets is the core's answer to it: the keys typed after it are held, in order, until
+    // that answer, and handed on against the mode it leaves. `99` typed over a cell, a press on
+    // another, `7` at once: where the core keeps DOM focus in the editor through the press
+    // (ADR-0051), the `7` went into the editor the commit was removing, and was lost. The press
+    // itself passes on untouched.
+    //
+    // The core answers for the press or release it heard last (ExGrid.PressAnsweredAsync), so
+    // the question goes after the press has reached it and ahead of its release: from a later
+    // task, or from this grid's own release (onRelease), which runs before Blazor hears it,
+    // whichever comes first. A click made in one go releases before a later task runs, and a
+    // release answered in the press's place overtook the press's hand-back (found on the Server
+    // host). The answer also takes off the mark the press left on a field beside the rows: a
+    // press that committed has had its hand-back by then, and one that pointed has left the edit
+    // open, the field the user's again.
+    const askAboutPress = () => {
+        const press = pressToAsk;
+        if (press === null) {
+            return;
+        }
+        pressToAsk = null;
+        const answered = core
+            ? core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to answer a press', error);
+                }
+            })
+            : Promise.resolve();
+        answered.then(() => {
+            if (press.mark !== null && staleMarks === press.mark) {
+                staleField = null;
+            }
+            press.resolve();
+        });
+    };
+    const holdBehindPress = (mark) => {
+        askAboutPress();
+        pressAnswer = new Promise((resolve) => {
+            pressToAsk = { mark, resolve };
+        });
+        setTimeout(askAboutPress);
+        if (!answering) {
+            startHold();
+        }
+    };
+
     const onPress = (event) => {
         // A press into a field beside the rows gives that field a focus of its own, which a
         // late hand-back leaves alone (reclaimFocus).
         if (event.target instanceof Element && event.target.closest('.ex-formula-bar') !== null) {
             staleField = null;
         }
+        // A press into an editor surface puts the keyboard there.
+        noteSurface(event.target);
         // A press in an editor surface's text puts the caret where it lands: the user's move.
         if (event.button === 0 && !replaying && isTextField(event.target) && event.target.closest('.ex-editor') !== null) {
             noteCaretMove(event.target);
@@ -1112,9 +1230,53 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             holdBehindBarPress();
             return;
         }
-        // Cells are pointer-events: none, so the Viewport is what a press on the rows lands on.
-        if (!core || replaying || event.button !== 0 || !(event.target instanceof Element)
-            || !event.target.classList.contains('ex-viewport') || (!answering && held.length === 0)) {
+        // An edit is left standing here when DOM focus goes elsewhere — to another grid, a
+        // control of the page's, or nothing (ADR-0018, section 6). A press on this grid's rows
+        // or headings puts the keyboard back into the surface that last held it, now, before
+        // anything hears the press. The press then points, or commits and moves, exactly as if
+        // the keyboard had never left: where the core keeps DOM focus through a press on the rows
+        // (ADR-0051) it keeps it in the edit, and the hand-back after a commit finds it inside
+        // this root. Handed back from C#, a round trip later, the keys typed in between would
+        // reach the grid the user had just left. This is the second decision about focus made in
+        // script (ADR-0021, added 2026-09-29), beside reclaimFocus; it reads
+        // document.activeElement and no layout. Held or not, the press keeps its place among the
+        // keys: only where the keyboard is has changed.
+        const focusAtPress = document.activeElement;
+        if (core && !replaying && editing !== 'none' && !(focusAtPress instanceof Element && root.contains(focusAtPress))
+            && isOwnRowsOrHeadings(event.target)) {
+            standingField()?.focus({ preventScroll: true });
+        }
+        // Only a press on this grid's own rows is held or holds the keys after it: one on a
+        // nested grid's rows is that grid's to answer, and this core never hears it.
+        if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {
+            return;
+        }
+        // The Formula Bar or the Name Box holding DOM focus, which a press on the rows would take
+        // by its default — read again, after the keyboard may have been put back above.
+        const focusAfterReturn = document.activeElement;
+        const field = focusAfterReturn instanceof Element && root.contains(focusAfterReturn)
+            && focusAfterReturn.closest('.ex-formula-bar') !== null
+            ? focusAfterReturn
+            : null;
+        // Not held, the press goes on as it is, when there is nothing it could overtake: nothing
+        // held, and no key being answered. Behind a press still being answered, with no key held
+        // after it, it goes on too: Blazor keeps presses in order among themselves, and the
+        // second press of a double click reaches it ahead of the double click, as it always did.
+        if (held.length === 0 && (!answering || pressAnswer !== null)) {
+            // While an edit is open, the keys after it wait for its answer (holdBehindPress).
+            // Where a press may point, the core also suppresses its default so the keyboard stays
+            // in the edit (ADR-0051), and a Formula Bar the edit was typed in keeps DOM focus
+            // only for that. Should the press commit instead, that focus is left standing, not
+            // the user's choice, and the hand-back takes it as the press would have
+            // (reclaimFocus): the keyboard left in the bar with no edit open took typing that went
+            // nowhere. Where the default is not suppressed, it has moved DOM focus off the bar
+            // already. The mark is for that hand-back alone: a press that points leaves the edit
+            // open with the keyboard in the bar, and a mark left standing would let a later
+            // hand-back — the rows' focus handed on, a popover's dismissal — take the bar the
+            // user is still typing in. It comes off with the press's answer.
+            if (editing !== 'none') {
+                holdBehindPress(field !== null ? markStale(field) : null);
+            }
             return;
         }
         // Out of Blazor's sight until its turn, and so is its default, DOM focus onto the rows:
@@ -1131,15 +1293,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // The default suppressed here would have taken DOM focus off a field beside the rows
         // that held it. That focus is now only left standing, not the user's choice: the
         // hand-back after the press takes it, as the press would have (reclaimFocus).
-        const active = document.activeElement;
-        if (active instanceof Element && root.contains(active) && active.closest('.ex-formula-bar') !== null) {
-            staleField = active;
+        if (field !== null) {
+            markStale(field);
         }
         held.push({ press: 'mousedown', target: event.target, init: mouseInit(event) });
     };
     // A release is held only behind its press: once the press has been handed on, the
     // release follows it to Blazor as it comes, and Blazor keeps the two in order.
     const onRelease = (event) => {
+        // A passed-on press the keys wait behind is asked about now, ahead of this release
+        // (holdBehindPress).
+        if (!replaying) {
+            askAboutPress();
+        }
         if (!core || replaying || !held.some((k) => k.press === 'mousedown')) {
             return;
         }
@@ -1448,6 +1614,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (mode === 'none') {
                 caretMoved = null;
             }
+            // The surface an edit belongs to starts as the one holding DOM focus as it opens — the
+            // Formula Bar a press opened it from — or none yet, and the Cell Editor is taken for
+            // it (standingField); the edit's end forgets it.
+            if (opened || mode === 'none') {
+                lastSurface = opened ? ownSurface(document.activeElement) : null;
+            }
             watchReferenceTexts(mode !== 'none');
             // A new state starts a new conversation: a report equal to one sent before it is
             // news to the core now (the next edit can open on the same text and caret).
@@ -1547,8 +1719,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // The keyboard back to this grid's root, asked for by the core a round trip after the
         // gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus is still inside
         // this root, or on nothing. A second grid the user has pressed in the meantime keeps
-        // its keyboard. The condition reads document.activeElement and no layout; this is the
-        // one decision about focus made in script.
+        // its keyboard. The condition reads document.activeElement and no layout. It is one of
+        // the two decisions about focus made in script, both for the same reason — made from
+        // C#, a round trip late, they would take or leave the keyboard in the wrong grid; the
+        // other is the press that brings the keyboard back to an edit left standing (onPress,
+        // ADR-0018 section 6).
         //
         // Nor from a field beside the rows with focus of its own — the Formula Bar and the Name
         // Box, built in or drawn by a Chrome, all inside the band the core renders them into
@@ -1557,8 +1732,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // to take the keyboard out of that field — Enter or Escape typed in it, an edit in the
         // bar ending — does it say so, and the field is left. Everything else inside the root,
         // the Cell Editor over the rows included, is taken back as before.
-        // A field a held press on the rows left standing (staleField) is not the user's, and
-        // is taken as the press would have taken it.
+        // A field a press on the rows left standing (staleField) — held, or kept for an edit it
+        // might have pointed into, until that press is answered — is not the user's, and is
+        // taken as the press would have taken it.
         reclaimFocus: (fromField) => {
             const active = document.activeElement;
             const own = active instanceof Element && active !== staleField
@@ -1601,6 +1777,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             watchReferenceTexts(false);
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
+            lastSurface = null;
+            staleField = null;
+            // A press still to be asked about has no core left to answer it: the keys held behind
+            // it are let go with the rest.
+            pressToAsk?.resolve();
+            pressToAsk = null;
             root = null;
             scroller = null;
             core = null;

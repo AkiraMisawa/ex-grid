@@ -1,13 +1,36 @@
 import { expect } from './fixtures.mjs';
 
-// What sheet.spec.mjs and declarations.spec.mjs share: finding an ExSheet's grid, a cell of it
-// by its A1 address, and the surfaces ADR-0051 adds — the Cell Editor, the Formula Bar's text
-// and the Name Box. An ExSheet is the ExGrid that has a Formula Bar; the positions grid beside
-// it on /sheet declares nothing and has none.
+// What the Sheet's specs share — sheet, declarations, sheets and edit-stands: opening /sheet,
+// finding an ExSheet's grid, a cell of it by its A1 address, and the surfaces ADR-0051 adds — the
+// Cell Editor, the Formula Bar's text and the Name Box. An ExSheet is the ExGrid that has a
+// Formula Bar; the positions grid beside it on /sheet declares nothing and has none.
 
 /** The index-th ExSheet on the page: the grid that paints a Formula Bar. */
 export function sheet(page, index = 0) {
     return page.locator('.ex-grid:has(> .ex-formula-bar)').nth(index);
+}
+
+/** The positions grid beside the Sheet on /sheet: an ExGrid that declares nothing (DC-25). */
+export function positions(page) {
+    return page.locator('#sheet-positions .ex-grid');
+}
+
+/**
+ * Opens /sheet, under ExGrid.MudBlazor's Chrome when `chrome` is 'mud', and waits for the Sheet
+ * and its Linked Table. `page.goto` (fixtures.mjs) returns once the page is interactive: the
+ * file's first navigation boots the app at the index, and every later one is an in-app
+ * navigation (ADR-0056). The page pushes the Linked Table's first snapshot 1.5 s after the Sheet
+ * opens, and every change to the Sheet clears ExSheet's notice, a Consumer's push included
+ * (ExSheet.ChangedAsync), so a refusal read before the push lands can be wiped by it: B12 shows
+ * its value once the push has landed.
+ */
+export async function openSheet(page, chrome = 'builtin') {
+    await page.goto(chrome === 'builtin' ? '/sheet' : `/sheet?chrome=${chrome}`);
+    await expect(cell(sheet(page), 'A1')).toHaveText('Item');
+    if (chrome !== 'builtin') {
+        await expect(page.locator('.mud-ex-formula-bar-text, .mud-ex-name-box').first()).toBeAttached();
+    }
+    await expect(cell(sheet(page), 'B12')).toHaveText('318.25', { timeout: 10_000 });
 }
 
 /** 'B7' → { row: 6, column: 1 }, zero-based, as the grid's cell ids count. */
@@ -175,6 +198,15 @@ export async function expectCovers(locator, grid, from, to) {
             ? 'covers'
             : JSON.stringify({ box, want });
     }).toBe('covers');
+}
+
+/**
+ * Asserts the Selection is the one cell at an A1 address: no range is tinted, and the Focus outline
+ * lies over that cell alone. One cell selected is the Focus alone (ADR-0008, 2026-09-29).
+ */
+export async function expectSelectionIsCell(grid, address) {
+    await expect(grid.locator('.ex-range')).toHaveCount(0);
+    await expectCovers(grid.locator('.ex-focus'), grid, address, address);
 }
 
 /** Reads what the clipboard holds, both flavours; an overlapping write reads as nothing yet. */

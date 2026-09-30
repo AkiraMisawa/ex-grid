@@ -197,11 +197,15 @@
                                 {
                                     <div class="ex-focus-row" style="@pinnedBand"></div>
                                 }
+                                @* Each range tinted round a hole where the Focus is, and a single
+                                   range outlined as well; the Focus's own element follows, so the
+                                   stylesheet can tell it stands inside a single range (ADR-0008,
+                                   2026-09-29). *@
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Pinned(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } fill)
+                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true) is { } fill)
                                     {
-                                        <div class="ex-range" style="@fill"></div>
+                                        <div class="@RangeClass" style="@fill"></div>
                                     }
                                 }
                                 @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedFocus)
@@ -223,7 +227,7 @@
                                    Consumer's References name, in its colour, over the ranges. *@
                                 @for (var o = 0; o < Colouring.Outlines.Count; o++)
                                 {
-                                    @if (ReferenceOutline(Colouring.Outlines[o]) is { } pinnedOutline && SelectionStyles.Pinned(pinnedOutline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedReference)
+                                    @if (ReferenceOutline(Colouring.Outlines[o]) is { } pinnedOutline && SelectionStyles.Whole(pinnedOutline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true) is { } pinnedReference)
                                     {
                                         <div class="@pinnedOutline.Class" style="@pinnedReference"></div>
                                     }
@@ -261,9 +265,9 @@
                                 }
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Scrollable(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } fill)
+                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false) is { } fill)
                                     {
-                                        <div class="ex-range" style="@fill"></div>
+                                        <div class="@RangeClass" style="@fill"></div>
                                     }
                                 }
                                 @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } focus)
@@ -280,7 +284,7 @@
                                 }
                                 @for (var o = 0; o < Colouring.Outlines.Count; o++)
                                 {
-                                    @if (ReferenceOutline(Colouring.Outlines[o]) is { } outline && SelectionStyles.Scrollable(outline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } reference)
+                                    @if (ReferenceOutline(Colouring.Outlines[o]) is { } outline && SelectionStyles.Whole(outline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false) is { } reference)
                                     {
                                         <div class="@outline.Class" style="@reference"></div>
                                     }
@@ -2004,6 +2008,11 @@
     /// same arithmetic. Only read where the selection is known not to be empty — an empty
     /// one has no Focus to draw.</summary>
     private SelectionRange FocusRange => SelectionStyles.CellRange(_selection.Selection.Focus);
+
+    /// <summary>A range's classes (ADR-0008, 2026-09-29): a Selection of one range carries
+    /// one outline, around the whole range, and several ranges carry none. Interned, so a
+    /// render composes nothing for them.</summary>
+    private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
 
     /// <summary>The Focus row, every column wide — the Focus band's rectangle
     /// (ADR-0008): which row am I on, in a grid a hundred columns wide.</summary>
@@ -6718,9 +6727,16 @@
         // The input goes with the mode: a reference kept past it would name an element
         // the next editor is not, and the focus above would land nowhere.
         _editorElement = default;
-        await PushEditingModeAsync();
-        if (reclaimFocus)
-            await ReclaimFocusAsync(fromField: fromBar);
+        // Both asked of the browser before this handler yields, and so ahead of the render that
+        // removes the editor, as a popover's close asks for the root (ClosePopoverAndReturnFocus).
+        // Asked for after the gate's answer, the hand-back landed a round trip after that render:
+        // DOM focus was on body in between, where the root's listener hears nothing, and a key
+        // typed straight after a press that committed was lost (ADR-0010's hold behind a press,
+        // found on the Server host at 0 ms as well as at 150).
+        var tellingTheGate = PushEditingModeAsync();
+        var handingBack = reclaimFocus ? ReclaimFocusAsync(fromField: fromBar) : Task.CompletedTask;
+        await tellingTheGate;
+        await handingBack;
     }
 
     /// <summary>
@@ -7215,9 +7231,11 @@
     /// <para>Only while DOM focus is still inside this root, or on nothing (<c>body</c>): on a
     /// circuit this lands a round trip after the gesture that asked for it, and a second grid
     /// the user has pressed in the meantime keeps its keyboard (ADR-0018). The condition is
-    /// the handle's to read, since only the browser knows where focus is now — the one
-    /// decision about focus made in JavaScript (ADR-0021). Before the handle is attached there
-    /// is no listener on the root to hand keys to, and nothing is asked.</para>
+    /// the handle's to read, since only the browser knows where focus is now — one of the two
+    /// decisions about focus made in JavaScript (ADR-0021); the other is the press on the rows
+    /// or the headings that brings the keyboard back to an edit left standing (ADR-0018,
+    /// section 6). Before the handle is attached there is no listener on the root to hand keys
+    /// to, and nothing is asked.</para>
     ///
     /// <para>Nor, unless <paramref name="fromField"/> says so, while it is on a field beside the
     /// rows with focus of its own — the Formula Bar or the Name Box, built in or a Chrome's,

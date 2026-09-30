@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures.mjs';
 import {
-    sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
+    sheet, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
+    expectSelectionIsCell,
 } from './sheet-helpers.mjs';
 
 // ExSheet on the DemoHost's /sheet, driven with real keys and the real mouse (SH-18, ticket 18):
@@ -18,15 +19,7 @@ import {
 test.use({ viewport: { width: 1280, height: 1000 } });
 
 test.beforeEach(async ({ page }) => {
-    await page.goto('/sheet');
-    // A WebAssembly page boots the runtime on every navigation, which can take longer than an
-    // assertion's default wait on a loaded machine.
-    await expect(page.locator('#demo-interactive')).toBeAttached({ timeout: 30_000 });
-    await expect(cell(sheet(page), 'A1')).toHaveText('Item');
-    // The page pushes the Linked Table's first snapshot 1.5 s after the Sheet opens. Every
-    // change to the Sheet clears ExSheet's notice, a Consumer's push included
-    // (ExSheet.ChangedAsync), so a refusal read before the push lands can be wiped by it.
-    await expect(cell(sheet(page), 'B12')).toHaveText('318.25', { timeout: 10_000 });
+    await openSheet(page);
 });
 
 test('SH-18: an Entry and a Formula typed into cells commit, compute and move the Focus down', async ({ page }) => {
@@ -401,7 +394,7 @@ test('SH-5/SH-18: deleting a row rewrites the References below it, a deleted tar
     await expect(cell(grid, 'A3')).toHaveText('Plums');
     // The Selection stays where it was: the same address, now over the row that moved up.
     await expectFocusAt(grid, 'B3');
-    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'B3', 'B3');
+    await expectSelectionIsCell(grid, 'B3');
     await expect(grid).toBeFocused();
     // The total moved up a row and shrank with its range; the row below kept its own cells.
     await expect(cell(grid, 'B4')).toHaveText('32');
@@ -468,7 +461,7 @@ test('SH-5/SH-18: deleting a column makes a Reference to it #REF!, and one Ctrl+
     // Amount moved into C; its Price operand is gone.
     await expect(cell(grid, 'C1')).toHaveText('Amount');
     await expectFocusAt(grid, 'C2');
-    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'C2', 'C2');
+    await expectSelectionIsCell(grid, 'C2');
     await expect(grid).toBeFocused();
     await expect(cell(grid, 'C2')).toHaveText('#REF!');
     await expect(cell(grid, 'C5')).toHaveText('#REF!');

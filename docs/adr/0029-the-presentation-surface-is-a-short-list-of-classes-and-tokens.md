@@ -95,7 +95,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Rules | `--ex-row-rule-color`, `--ex-column-rule-color`, `--ex-rule-width` — painted as gradients/inset shadows, **never borders** ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)) |
 | Hover | `--ex-row-hover-background` *(unimplementable as stated — see the correction below)* |
 | Pinned | `--ex-pinned-background` *(exists)* |
-| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(reserved — the border Excel draws around the range's perimeter; decided with the selection paint polish)*, `--ex-focus-outline` *(exists)*, `--ex-grid-focus-outline` *(exists)* |
+| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(the border Excel draws around the range's perimeter, reserved here and taken up by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-09-29; it defaults to `--ex-focus-outline`)*, `--ex-focus-outline` *(exists)*, `--ex-grid-focus-outline` *(exists)* |
 | Cell State | the six `--ex-state-*` *(exist)* |
 | Tone | `--ex-tone-positive-color`, `--ex-tone-negative-color` — default `inherit`, so a declared tone paints nothing until a theme says what colour it is ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | Row Kind | the four `--ex-row-group/total-*` *(exist)* |
@@ -181,7 +181,8 @@ transition animates from another row's value. The tokens above set colours, not 
   in advance, with the geometry half needing nothing because the editor's box is the cell's
   (ADR-0028). `--ex-selection-outline` remains reserved, settled with the selection paint
   polish; the Focus band half of that polish has landed (`--ex-focus-row-fill`,
-  [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)).
+  [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). *(The other half landed 2026-09-29:
+  `--ex-selection-outline` is the outline of a single range, ADR-0008.)*
 
 ## A correction found in implementation: the hover token could not work as declared — and how it now does
 
@@ -244,9 +245,14 @@ not quietly in the stylesheet. Each is painted only when a Consumer makes the de
     completion list, painted by the built-in Chrome.
   - `ex-completion-hint`: the argument hint beneath the list.
   - `ex-point`: the pointing outline (Point mode).
+  - `ex-range-single`: the one range of a Selection that has only one, which carries the range
+    outline ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md), 2026-09-29). The custom
+    property `--ex-range-hole`, written inline on a range and never on the root, carries the hole
+    where the Focus is. It is geometry, not a Visual Token.
 
   These reuse existing tokens (`--ex-selection-fill`, `--ex-focus-outline` and
-  `--ex-grid-focus-outline`) and add none.
+  `--ex-grid-focus-outline`) and add none. `ex-range-single` reads `--ex-selection-outline`, the
+  token reserved above for it.
 - **Visual Tokens:**
   - `--ex-heading-background`, `--ex-heading-color` and `--ex-heading-rule-color`, for both
     Headings.

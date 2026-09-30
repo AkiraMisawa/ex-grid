@@ -144,6 +144,29 @@ ink colour (`text-primary`), which contrasts with its own surface by constructio
 schemes; the selection fill, the Focus band and the root's outline keep the primary. The
 requirement was not relaxed to fit the palette.
 
+*(Changed 2026-09-29, decided with the user.)* Under `ExGrid.MudBlazor`, the Focus outline takes
+the palette's primary again, and so does everything else drawn with `--ex-focus-outline`: the
+outline of a selected range
+([ADR-0008](./0008-selection-is-painted-by-an-overlay.md), same day), the pointing outline, the fill
+handle and the chosen action. In the light scheme that is the primary itself. In the dark scheme it
+is the primary with its lightness raised just far enough to clear UX-9's 3:1 against the surface,
+through CSS relative colour syntax, which keeps the hue and which every browser in scope reads
+([ADR-0017](./0017-target-chromium-browsers-only.md)). The 2.83:1 above was a shortfall of
+about 0.015 in relative luminance, so the raise is small. UX-9's browser test measures both
+schemes. **If the raised primary does not clear 3:1, the dark scheme keeps the ink colour** and
+this paragraph records that it did. The requirement is still not relaxed.
+
+*(Settled while building, the same day.)* MudBlazor 9 names its scheme only in
+`--mud-native-html-color-scheme`, which `MudThemeProvider` emits beside the palette, and the
+Wrapper's stylesheet reads it with a style query. The dark outline is the primary with its OKLCH
+lightness raised to at least 0.64. That clears 3:1 against the default dark surface (3.31:1) and as
+painted over the Focus band's tint on it (3.06:1). *(Corrected the same day. The first figure over
+the band, 2.92:1 at 0.62, was a mis-sampled pixel, and 0.63 was chosen from it. Measured as painted,
+0.62 gives 2.83:1 and 0.63 gives 2.95:1 there.)* The floor is fixed for MudBlazor's
+default dark palette: CSS cannot compare two colours' luminance, so a Consumer's own dark palette is
+not recomputed, and UX-9 measures only the defaults. The range outline reads
+`--ex-selection-outline`, which defaults to the Focus outline and needs no mapping of its own.
+
 ## How a violation is caught rather than trusted away
 
 The contract is enforceable because each prohibition lands somewhere observable:

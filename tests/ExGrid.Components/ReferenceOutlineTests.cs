@@ -169,15 +169,15 @@ public partial class ReferenceOutlineTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-cell.ex-reference-outline, .ex-cell .ex-reference-outline, .ex-row .ex-reference-outline"));
     }
 
-    [Fact] // ADR-0057 / DC-46 / ADR-0004: a range across the pinned boundary is one element in each layer
-    public async Task A_range_across_the_pinned_boundary_is_one_element_per_layer()
+    [Fact] // ADR-0057 / DC-46 / ADR-0008 (2026-09-29): a range across the pinned boundary is drawn whole in each layer and clipped to that layer's side, as a selected range is, so its outline shows no seam at the boundary
+    public async Task A_range_across_the_pinned_boundary_is_drawn_whole_and_clipped_in_each_layer()
     {
         var cut = RenderGrid(more: ps => ps.Add(g => g.PinnedColumnCount, 1));
 
         await TypeFormulaAsync(cut, "=A1:B2");
 
-        Assert.Equal([("ex-reference-outline ex-reference-1", "left: 0px; top: 0px; width: 100px; height: 40px")], Outlines(cut, ".ex-selection-pinned"));
-        Assert.Equal([("ex-reference-outline ex-reference-1", "left: 100px; top: 0px; width: 100px; height: 40px")], Outlines(cut));
+        Assert.Equal([("ex-reference-outline ex-reference-1", "left: 0px; top: 0px; width: 200px; height: 40px; clip-path: inset(0 100px 0 0)")], Outlines(cut, ".ex-selection-pinned"));
+        Assert.Equal([("ex-reference-outline ex-reference-1", "left: 0px; top: 0px; width: 200px; height: 40px; clip-path: inset(0 0 0 100px)")], Outlines(cut));
     }
 
     [Fact] // ADR-0057 / DC-46 / ADR-0053: an outline is cut to the painted rows, and the grid never scrolls to show one

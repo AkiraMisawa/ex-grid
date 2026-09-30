@@ -1,8 +1,8 @@
 import { test, expect, alterPage, setRoundTrip, record, watchNextKey, keySeenUntouched } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
-    sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
-    expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell,
+    sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
+    expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell, expectSelectionIsCell,
 } from './sheet-helpers.mjs';
 
 // The ExGrid declarations of ADR-0050, ADR-0051 and ADR-0057 (§26, DC-*), as ExSheet declares them on
@@ -18,15 +18,7 @@ test.use({ viewport: { width: 1280, height: 1000 } });
 
 test.beforeEach(async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto('/sheet');
-    // A WebAssembly page boots the runtime on every navigation, which can take longer than an
-    // assertion's default wait on a loaded machine.
-    await expect(page.locator('#demo-interactive')).toBeAttached({ timeout: 30_000 });
-    await expect(cell(sheet(page), 'A1')).toHaveText('Item');
-    // The page pushes the Linked Table's first snapshot 1.5 s after the Sheet opens. Every
-    // change to the Sheet clears ExSheet's notice, a Consumer's push included
-    // (ExSheet.ChangedAsync), so a refusal read before the push lands can be wiped by it.
-    await expect(cell(sheet(page), 'B12')).toHaveText('318.25', { timeout: 10_000 });
+    await openSheet(page);
 });
 
 // Reopens /sheet under ExGrid.MudBlazor's Chrome; the built-in one is what beforeEach opened.
@@ -34,11 +26,7 @@ async function underChrome(page, chrome) {
     if (chrome === 'builtin') {
         return;
     }
-    await page.goto(`/sheet?chrome=${chrome}`);
-    await expect(page.locator('#demo-interactive')).toBeAttached({ timeout: 30_000 });
-    await expect(cell(sheet(page), 'A1')).toHaveText('Item');
-    await expect(page.locator('.mud-ex-formula-bar-text, .mud-ex-name-box').first()).toBeAttached();
-    await expect(cell(sheet(page), 'B12')).toHaveText('318.25', { timeout: 10_000 });
+    await openSheet(page, chrome);
 }
 
 const completion = (grid) => grid.locator('.ex-completion');
@@ -791,6 +779,24 @@ test('DC-46: =A1+B2:C3 outlines A1 and B2:C3, each once and in a colour of its o
     await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
 });
 
+test('DC-46: a Reference across the pinned boundary is drawn whole in each layer and clipped to its side, as a selected range is (ADR-0008)', async ({ page }) => {
+    const grid = sheet(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=A1:B2');
+    await expect(editor(grid)).toHaveValue('=A1:B2');
+
+    // Column A is pinned on /sheet: one element in each layer, each the whole of A1:B2, each cut
+    // to its own side, so the outline drawn inside the edge has no line down the boundary.
+    const pinned = grid.locator('.ex-selection-pinned .ex-reference-outline.ex-reference-1');
+    const scrollable = grid.locator('.ex-selection .ex-reference-outline.ex-reference-1');
+    await expectCovers(pinned, grid, 'A1', 'B2');
+    await expectCovers(scrollable, grid, 'A1', 'B2');
+    expect(await pinned.evaluate((element) => getComputedStyle(element).clipPath)).toMatch(/^inset\(0(px)? \d/);
+    expect(await scrollable.evaluate((element) => getComputedStyle(element).clipPath)).toMatch(/^inset\(0(px)? 0(px)? 0(px)? \d/);
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
 test('DC-46: =A1+A1 outlines A1 once per Reference, in one colour (the eighth Windows run)', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
@@ -1174,7 +1180,7 @@ test('DC-38/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused
     await page.waitForTimeout(500);
     await expect(notice).toContainText('too narrow');
     await expectFocusAt(grid, 'F7');
-    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'F7', 'F7');
+    await expectSelectionIsCell(grid, 'F7');
     await expect(cell(grid, 'F7')).toHaveText('');
     await expect(cell(grid, 'F8')).toHaveText('');
     await expect(cell(grid, 'F9')).toHaveText('');
@@ -1348,9 +1354,9 @@ test('SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 
 });
 
 test('DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser\'s', async ({ page }) => {
-    const positions = page.locator('#sheet-positions .ex-grid');
-    await positions.locator("[id$='-r1c1']").click({ force: true });
-    await expect(positions).toBeFocused();
+    const positionsGrid = positions(page);
+    await positionsGrid.locator("[id$='-r1c1']").click({ force: true });
+    await expect(positionsGrid).toBeFocused();
     await alterPage(page, () => {
         window.__undoPrevented = null;
         const listener = (event) => {
@@ -1397,13 +1403,13 @@ test('DC-36: the grips resize a column and size it to fit, and no header carries
 });
 
 test('DC-25: the positions grid, declaring nothing, keeps ExGrid\'s own behaviour beside the Sheet', async ({ page }) => {
-    const positions = page.locator('#sheet-positions .ex-grid');
-    await expect(positions.locator('.ex-formula-bar, .ex-row-heading, .ex-headings-corner, .ex-fill-handle')).toHaveCount(0);
+    const positionsGrid = positions(page);
+    await expect(positionsGrid.locator('.ex-formula-bar, .ex-row-heading, .ex-headings-corner, .ex-fill-handle')).toHaveCount(0);
     // Ctrl+↓ goes to the grid's edge, not to a block's end: it has no edge answer.
-    await positions.locator("[id$='-r0c0']").click({ force: true });
+    await positionsGrid.locator("[id$='-r0c0']").click({ force: true });
     await page.keyboard.press('ControlOrMeta+ArrowDown');
-    await expect(positions).toHaveAttribute('aria-activedescendant', /-r4c0$/);
-    await expect(positions.locator('.ex-fill-handle')).toHaveCount(0);
+    await expect(positionsGrid).toHaveAttribute('aria-activedescendant', /-r4c0$/);
+    await expect(positionsGrid.locator('.ex-fill-handle')).toHaveCount(0);
     // A block pasted onto one cell is refused, as ADR-0014 says; nothing lands in the Sheet.
     const grid = sheet(page);
     await page.evaluate(() => navigator.clipboard.writeText('a\tb\r\nc\td\r\n'));
@@ -1413,7 +1419,7 @@ test('DC-25: the positions grid, declaring nothing, keeps ExGrid\'s own behaviou
     await clickCell(grid, 'F2');
     await page.keyboard.type('=SU');
     await expect(completion(grid)).toHaveCount(1);
-    await expect(positions.locator('.ex-completion, .ex-editor')).toHaveCount(0);
+    await expect(positionsGrid.locator('.ex-completion, .ex-editor')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
 });

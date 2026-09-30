@@ -110,6 +110,51 @@ correct, a source built to be shared. And **documentation only**, as the Fluxor 
 handled — the Fluxor case shows itself on one screen; this one shows itself as another user's
 data changing, which nobody present can trace.
 
+## 6. An open edit stands when the keyboard leaves the grid *(decided with the user, 2026-09-29)*
+
+Found on ExSheet's demo page: `=` typed into a cell, then a click on the positions grid beside it.
+The positions grid took DOM focus, as it should. The Sheet's edit stayed open with `=` in it, and
+nothing could reach it again. Escape went to the positions grid. A click back on the Sheet's rows
+pointed (`=B2`) while the keyboard stayed with the positions grid, so the next Escape went there
+too.
+
+- **Nothing is committed or discarded because DOM focus left the root**, whether it went to
+  another grid, to a control of the Consumer's, or to nothing. The edit waits, as Excel's does when
+  the user switches to another window and comes back.
+  - Committing on leaving was rejected. A Formula half typed (`=`, `=SUM(`) is refused by its
+    column's verdict ([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md))
+    and would stay open anyway, so leaving would commit some texts and not others. On a Server
+    circuit the commit would also race the click that took the focus, such as a Consumer's Undo
+    button.
+  - Discarding on leaving was rejected. A stray click would throw a long Formula away without a
+    word.
+- **A key belongs to the grid that has the keyboard** (section 1). Escape pressed in the other grid
+  is that grid's, and does not cancel this one's edit. Two grids may each hold an open edit.
+- **A press on the grid's own rows or headings brings the keyboard back first, and then means
+  what it would have meant.** Where pointing is declared, a press on the rows keeps DOM focus in
+  the editor ([ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md)), and
+  that is what left the keyboard in the other grid. Now the capture-phase `mousedown` on the root
+  sees that an edit stands here while DOM focus is outside the root, and puts the keyboard back into
+  the editor surface that last held it before the press is handled. The press then points, or
+  commits and moves, exactly as if the keyboard had never left, and the hand-back after a commit
+  finds the keyboard inside the root.
+  [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) records the line of script.
+  - Handing the keyboard back from C# after the press was rejected. On a circuit it lands a round
+    trip later, and the keys typed in between would go to the grid the user had just left.
+- A click into the editor's own text, the Formula Bar or the Name Box already brought the keyboard
+  back, and is unchanged.
+- **An edit whose keyboard is elsewhere is told apart** *(decided with the user the same day)*.
+  While DOM focus is outside the grid's root, the Cell Editor's outline is drawn 1px wide instead of
+  its full width, and it is drawn at full width again when the keyboard returns. The consequence
+  below ("distinguish the focused state visually") asks for this once two grids can each hold an
+  open edit. The stylesheet does it with `:focus-within` on the root. The colour stays
+  `--ex-editor-outline`'s, and no script is involved.
+- **A press back within one round trip of the key that opens the edit is not brought back**
+  *(accepted with the user the same day)*. Such a press is held behind that key (ADR-0021's
+  `mousedown` note of 2026-09-27), and a held press suppresses its default, so DOM focus stays
+  where it was and the keys typed next go there. It takes a key, a press elsewhere and a press back,
+  all inside one round trip, and only on a circuit. It is recorded here rather than built around.
+
 ## Consequences
 
 - **The selection overlay and the cell editor live in the same coordinate space as the root**
