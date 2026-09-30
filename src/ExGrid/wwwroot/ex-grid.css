@@ -476,6 +476,27 @@
     color: var(--ex-state-error-color, #b3261e);
     outline: 1px solid var(--ex-state-error-color, #b3261e);
 }
+/* The Size Tip (ADR-0052, 2026-09-29): how many rows and columns a drag across Headings covers,
+   at the Heading the Extent is on. Placed and sized by the core, inline: its width is the Cell
+   Metrics' estimate of its text, so the padding is the cell's own token and the text never
+   wraps (ADR-0027/0028). Outside the scroll container like a popover, painted inside the grid's
+   box — its outline too — and it takes no pointer, which is dragging across it (ADR-0040). Its
+   look is its own Visual Tokens (ADR-0029). */
+.ex-size-tip {
+    position: absolute;
+    z-index: 9;
+    box-sizing: border-box;
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    background: var(--ex-size-tip-background, Canvas);
+    color: var(--ex-size-tip-color, CanvasText);
+    outline: var(--ex-size-tip-outline, 1px solid color-mix(in srgb, CanvasText 45%, transparent));
+    outline-offset: -1px;
+}
 /* The column's one popover (ADR-0044): its commands, and below them its filter, set off by a
    rule. Each half is a column of the popover's column; the filter is what gives when the
    room is short, through its value list (ADR-0040). */
@@ -532,6 +553,13 @@
     background: var(--ex-editor-background, Canvas);
     color: var(--ex-editor-color, CanvasText);
 }
+/* An edit whose keyboard is elsewhere is told apart (ADR-0018 section 6, ED-27): while DOM focus
+   is outside the grid's root, the Cell Editor's outline is 1px wide, in the style and colour
+   --ex-editor-outline gives it, and at that token's full width again once the keyboard is back.
+   Two grids can each hold an open edit, and only one of them has the keyboard. The width alone
+   is overridden, so a Wrapper's token keeps its colour; no script is involved. The Formula Bar's
+   field is outlined only while it has focus, and needs nothing. */
+.ex-grid:not(:focus-within) .ex-viewport .ex-editor { outline-width: 1px; }
 /* The pinned editor's zero-size sticky anchor — the pinned selection layer's trick. */
 .ex-editor-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
 /* The completion list and the argument hint (ADR-0051): the editor's Inner Popup, in a box the

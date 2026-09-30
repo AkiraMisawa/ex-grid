@@ -368,7 +368,10 @@ nobody had asked for. What that means when writing a test:
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed
   at the reported caret, from the Formula Bar too (DC-17/31); Point by keys, Shift+arrows, the
   mouse, F2, mid-text, from the bar, a press in the bar's text keeping its caret and ending
-  pointing (DC-19/31/34); DC-20 and DC-28 with 150 ms on the Server host; the fill handle
+  pointing (DC-19/31/34); DC-20 and DC-28 with 150 ms on the Server host; F4 cycling the
+  Reference at the caret in a cell and in the Formula Bar under both Chromes, mid-text, over a
+  selection and a selection only touching References (`+` in `=A1+B1`), while pointing, left to the browser with no edit open, and in a burst and twice
+  before the caret is placed with 150 ms on the Server host (DC-45); the fill handle
   dragged — series, References shifted, a refused pattern, the edge auto-scroll, the Selection
   after (DC-13/27); a block from the real clipboard spilling (DC-8); a copy inside the Sheet
   shifting References, and what the paste receives of the `data-ex-grid="invariant"` marker on
@@ -379,8 +382,27 @@ nobody had asked for. What that means when writing a test:
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
   Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
   stack stay with the Sheet that has the keyboard.
+- `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
+  ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
+  `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or
+  nothing takes the keyboard, and the other grid's keys its own; a press back on the rows
+  pointing with the keyboard back in the Cell Editor or the Formula Bar, or committing and
+  giving the root the keyboard; a press back on a column heading or a Row Heading; a committing
+  press on the rows taking the keyboard out of the bar the edit was typed in; and, with 150 ms
+  on the Server host, the key straight after the press back reaching the Sheet. And ED-22 widened
+  (ADR-0010, 2026-09-29), without latency and at 150 ms on the Server host: the keys typed straight
+  after a press on the rows while an edit is open, held until it is answered — on `/features` and
+  on the Sheet, a press that commits and one that points; a double click on another cell still
+  committing the edit and opening that cell's text, on `/features` and on the Sheet; outside an
+  edit, a press and an arrow holding nothing, read by a page listener the held keys never reach;
+  and a press on the rows of a stand-in for a grid nested in the Sheet starting no hold of the
+  Sheet's, the key after it reaching the nested grid as the browser's own keydown. And ED-27 on `/sheets` under both
+  Chromes (`?chrome=mud` puts each Sheet on the Wrapper's paper): the computed outline of each
+  Sheet's Cell Editor is 1px wide while DOM focus is outside its root, and at the token's full
+  width, in the same colour, while the keyboard is its own.
 
-`sheet-helpers.mjs` is what those three share: a Sheet's grid, a cell by its A1 address, the
+`sheet-helpers.mjs` is what those four share: opening `/sheet` under either Chrome and waiting
+for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the
 editor surfaces under either Chrome, the Name Box, and painted-box comparisons.
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its

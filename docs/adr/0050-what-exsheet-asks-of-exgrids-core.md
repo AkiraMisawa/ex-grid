@@ -32,6 +32,33 @@ the only meaning available.
   also useful to an ExGrid Consumer drawing a headerless list, which today has no way to say so.
   Whole columns stay reachable with Ctrl+Space.
 
+*(Added 2026-09-29, decided with the user after comparing the Headings with Excel — Microsoft 365
+on Windows — and Google Sheets by hand. The first build left the drag out: "Dragging across Row
+Headings or column headers to select several is not built; Shift+click is the route", ticket 06.
+Ctrl+click was not mentioned at all. Both are Excel's, and both were observed.)*
+
+- **A drag across Headings selects whole columns or rows.** The press selects the column or row, as
+  a click does, with the Focus on the first visible row or column
+  ([ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)); each
+  move then puts the Extent on the column or row under the pointer, and the range is whole columns
+  (whole rows) from the pressed one to it. **The pointer leaving the Heading band for the cells
+  keeps it a Heading drag**: only the pointer's column (row) counts, whatever row (column) it is
+  over, as Excel does. **The edge band auto-scrolls along the Heading's axis only**
+  ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)): sideways for Column Headings, down
+  and up for Row Headings. Column Headings sit at the Viewport's top edge, and an auto-scroll that
+  moved rows there would scroll the Sheet under a gesture that is about columns.
+  **Shift+press** extends from the Focus's column (row) to the pressed one, as Shift+click does,
+  and the drag goes on moving the Extent; the Focus stays. While the drag covers more than one
+  column or row, its size shows in the Size Tip (ADR-0052, 2026-09-29).
+- **Ctrl+click on a Heading adds or takes out a whole column or row.** On a column not wholly
+  selected, it adds the whole column as a new range, with the Focus on its first visible row. On a
+  column already wholly selected, it takes the column out, and the Focus follows ADR-0052's
+  take-out rule. **Ctrl+drag** across Headings adds whole columns (rows) from the pressed one to the
+  pointer's as one new range. Meta counts as Ctrl where Meta is Command, as it does on cells
+  ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)).
+- **Both hold for a plain ExGrid too, on its column header** (decided with the user), with one
+  difference that follows from the header's click sorting there. See ADR-0012, "Added later".
+
 ## 2. Ctrl+arrow asks where the data ends
 
 In ExGrid, Ctrl+arrow goes to the edge of the grid. The grid does not hold the data, so it cannot
@@ -92,7 +119,11 @@ the Consumer decides what it means.**
 
 - **The core paints the handle** at the bottom-right corner of the Selection's last range, in the
   selection overlay, when the Consumer declares that fill is enabled. **The core owns the drag.** It
-  extends along one axis, like Excel, and paints the target outline.
+  extends along one axis, like Excel, and paints the target outline. *(Observed 2026-09-29: a
+  diagonal drag from A1 towards C3 fills one axis only, in Excel — Microsoft 365 on Windows — and in
+  Google Sheets alike. Filling down and across takes two drags, as it does here. A two-axis fill was
+  asked for and dropped: it is not Excel's, and a series filled both ways would depend on which axis
+  went first.)*
 - **On release the grid raises a Fill Intent**: the source range, the target range, and the
   direction. It writes nothing. `Editable` is checked on the target first (ADR-0035). The only
   shape is one rectangle extended along one axis, and a disjoint Selection shows no handle, as in

@@ -43,6 +43,11 @@
     --ex-placeholder-background: var(--mud-palette-skeleton);
     --ex-resize-guide-color: var(--mud-palette-primary);
     --ex-drop-indicator-color: var(--mud-palette-primary);
+    /* The Size Tip (ADR-0052): the colours MudBlazor gives its own tooltips, which read in
+       both schemes; a tooltip draws no outline. */
+    --ex-size-tip-background: var(--mud-palette-gray-darker);
+    --ex-size-tip-color: var(--mud-palette-dark-text);
+    --ex-size-tip-outline: none;
     /* Tone (ADR-0006): a loss in the palette's error, a gain in its success. The
        Consumer's rule says which cell; the palette says which colour. */
     --ex-tone-negative-color: var(--mud-palette-error);

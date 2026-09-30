@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ExSheet.Engine;
@@ -43,12 +44,18 @@ public sealed record ArgumentHint(DeclaredFunction Function, int ArgumentIndex, 
 /// <param name="Length">How many characters it replaces.</param>
 public readonly record struct PointSite(int Start, int Length);
 
+/// <summary>What F4 makes of the text being edited (ADR-0051): the new text, and the selection in it — collapsed to a caret, or over what was rewritten.</summary>
+/// <param name="Text">The text with the Reference or References cycled.</param>
+/// <param name="SelectionStart">Where the selection starts in <paramref name="Text"/>.</param>
+/// <param name="SelectionEnd">Where it ends; equal to <paramref name="SelectionStart"/> for a caret.</param>
+public sealed record ReferenceCycle(string Text, int SelectionStart, int SelectionEnd);
+
 /// <summary>
 /// Pure answers over the text of a Formula being typed and its caret, for the aids ADR-0051 asks
 /// of the Consumer: completion candidates, the argument hint, whether a Reference can go at the
-/// caret (Point mode), and the Reference text for a pointed range. Each works on unfinished text:
-/// nothing here requires the Formula to parse. Text not beginning with <c>=</c> is not a Formula,
-/// and gets no aid.
+/// caret (Point mode), the Reference text for a pointed range, and what F4 makes of the Reference
+/// at the caret. Each works on unfinished text: nothing here requires the Formula to parse. Text
+/// not beginning with <c>=</c> is not a Formula, and gets no aid.
 /// </summary>
 public static partial class FormulaEntry
 {
@@ -166,6 +173,104 @@ public static partial class FormulaEntry
 
     /// <summary>The Reference Point mode writes for a pointed range: <c>B7</c> for one cell, <c>B7:C9</c> from its top-left otherwise.</summary>
     public static string ReferenceText(CellRange range) => range.ToString();
+
+    /// <summary>
+    /// F4 (ADR-0051, 2026-09-29): the Reference at the caret cycled to its next form —
+    /// <c>A1</c> → <c>$A$1</c> → <c>A$1</c> → <c>$A1</c> → <c>A1</c> — and the caret at the end of
+    /// it. The Reference at the caret is the one the caret is inside or touching, on either side.
+    /// With a selection, every Reference it covers, overlaps or touches at either end cycles —
+    /// <c>+</c> selected in <c>=A1+B1</c> cycles both — each to the next form of the first one,
+    /// and the selection covers what was rewritten. A range cycles as one, its
+    /// next form taken from its first end and given to both; whole columns and whole rows have
+    /// two forms (<c>A:A</c> ↔ <c>$A:$A</c>); a Sheet qualifier is kept, and only the cell part
+    /// cycles. Only the <c>$</c> signs change: every other character stays as it was typed.
+    /// <see langword="null"/> — nothing changes — for text that is not a Formula, and where no
+    /// Reference is at the caret or in the selection: a function name, a number, text in
+    /// quotes, a structured reference. A Reference is what the formula grammar reads as one.
+    /// </summary>
+    /// <param name="text">The text being edited.</param>
+    /// <param name="selectionStart">Where the selection starts, or the caret.</param>
+    /// <param name="selectionEnd">Where the selection ends; <paramref name="selectionStart"/> for a caret.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The selection does not lie inside the text.</exception>
+    public static ReferenceCycle? CycleReference(string text, int selectionStart, int selectionEnd)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        if ((uint)selectionStart > (uint)text.Length) throw new ArgumentOutOfRangeException(nameof(selectionStart), selectionStart, "The selection starts 0 to the text's length.");
+        if (selectionEnd < selectionStart || selectionEnd > text.Length) throw new ArgumentOutOfRangeException(nameof(selectionEnd), selectionEnd, "The selection ends from its start to the text's length.");
+        if (text.Length == 0 || text[0] != '=') return null;
+
+        // Inside or touching, for a caret and a selection alike (observed in Excel: + selected
+        // in =A1+B1 gives =$A$1+$B$1). A caret takes the first Reference it touches.
+        var caret = selectionStart == selectionEnd;
+        var targets = new List<Match>();
+        foreach (var token in Scan(text))
+        {
+            var touched = token.Start <= selectionEnd && selectionStart <= token.End;
+            if (!touched || token.Kind != TokenKind.Operand || token.Unterminated || token.HasBrackets) continue;
+            // The operand is a Reference only where the grammar reads one over the whole of it.
+            if (Formulas.Lexer.MatchReference(text, token.Start) is { } reference && reference.Index + reference.Length == token.End)
+            {
+                targets.Add(reference);
+                if (caret) break;
+            }
+        }
+        if (targets.Count == 0) return null;
+
+        var form = NextForm(targets[0]);
+        var rewritten = new StringBuilder(text.Length + 4 * targets.Count);
+        var at = 0;
+        var start = targets[0].Index;
+        foreach (var reference in targets)
+        {
+            rewritten.Append(text, at, reference.Index - at);
+            at = reference.Index;
+            foreach (var (part, column) in Parts(reference))
+            {
+                rewritten.Append(text, at, part.Index - at);
+                if (column ? form.Column : form.Row) rewritten.Append('$');
+                rewritten.Append(part.Value.TrimStart('$'));
+                at = part.Index + part.Length;
+            }
+            rewritten.Append(text, at, reference.Index + reference.Length - at);
+            at = reference.Index + reference.Length;
+        }
+        var end = rewritten.Length;
+        rewritten.Append(text, at, text.Length - at);
+        return new ReferenceCycle(rewritten.ToString(), caret ? end : start, end);
+    }
+
+    /// <summary>
+    /// The form F4 gives next, from the first end of <paramref name="reference"/>: whether
+    /// columns and rows are written with <c>$</c>. A cell's four forms run relative, both, the
+    /// row alone, the column alone; whole columns and whole rows have two, relative and
+    /// absolute, and give both axes the one they take, so that in a selection a cell after them
+    /// follows the same way.
+    /// </summary>
+    private static (bool Column, bool Row) NextForm(Match reference)
+    {
+        if (reference.Groups["cc1"].Success) return reference.Groups["cc1"].Value[0] == '$' ? (false, false) : (true, true);
+        if (reference.Groups["rr1"].Success) return reference.Groups["rr1"].Value[0] == '$' ? (false, false) : (true, true);
+        return (reference.Groups["c1"].Value[0] == '$', reference.Groups["r1"].Value[0] == '$') switch
+        {
+            (false, false) => (true, true),
+            (true, true) => (false, true),
+            (false, true) => (true, false),
+            _ => (false, false),
+        };
+    }
+
+    /// <summary>The column and row parts of a Reference the grammar matched, in the order written, each with whether it is a column.</summary>
+    private static IEnumerable<(Group Part, bool Column)> Parts(Match reference)
+    {
+        foreach (var (name, column) in PartNames)
+        {
+            var group = reference.Groups[name];
+            if (group.Success) yield return (group, column);
+        }
+    }
+
+    private static readonly (string Name, bool Column)[] PartNames =
+        [("c1", true), ("r1", false), ("c2", true), ("r2", false), ("cc1", true), ("cc2", true), ("rr1", false), ("rr2", false)];
 
     private static bool IsFormula(string text, int caret)
     {

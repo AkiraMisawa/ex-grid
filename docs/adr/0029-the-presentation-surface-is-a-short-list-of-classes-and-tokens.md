@@ -294,3 +294,14 @@ Firefox has no `::-webkit-scrollbar`. There the colour token goes to `scrollbar-
 width stays the browser's own.
 
 The painted thumb is asserted from the screen in `stripes.spec.mjs`.
+
+## Added by ADR-0052's Size Tip *(2026-09-29, decided with the user)*
+
+- **Stable class:** `ex-size-tip`, the Size Tip a drag across Headings shows while it covers more
+  than one column or row ([ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
+  It is stable for the reason `ex-drop-indicator` is: it marks the meaning of a gesture, not a
+  mechanism, and its box carries nothing the virtualisation depends on. It is placed from the
+  geometry in C# and emitted inline, and it is `aria-hidden`.
+- **Visual Tokens:** `--ex-size-tip-background`, `--ex-size-tip-color` and `--ex-size-tip-outline`.
+  Without a theme, they fall back to the system colours `Canvas` and `CanvasText`. `ExGrid.MudBlazor`
+  maps them onto the colours MudBlazor gives its tooltips.

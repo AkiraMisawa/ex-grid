@@ -170,12 +170,128 @@ public class ShippedStylesheetTests
         Assert.Contains("active === document.body", body, StringComparison.Ordinal);
         // ...and not a field inside the band the core renders the Formula Bar and the Name Box
         // into — a Chrome's control sits inside the same band — unless the core says the gesture
-        // was made in that field, or a held press on the rows left its focus standing.
+        // was made in that field, or a press on the rows left its focus standing.
         Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
         Assert.Contains("fromField === true", body, StringComparison.Ordinal);
         Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
         // A read of document.activeElement, never of layout.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+    }
+
+    [Fact] // ADR-0018 section 6 / ADR-0021 (added 2026-09-29) / ED-26: the keyboard comes back to an edit left standing in the allowlisted mousedown, into this root's own surface, nothing measured
+    public void A_press_back_on_the_rows_brings_the_keyboard_back_in_the_existing_mousedown()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var press = Regex.Match(script.Text, @"const onPress = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(press.Success, "onPress is not in the module");
+        var body = press.Value;
+
+        // Only while an edit is open here and DOM focus is outside this root (ADR-0018)...
+        Assert.Contains("editing !== 'none' && !(focusAtPress instanceof Element && root.contains(focusAtPress))", body, StringComparison.Ordinal);
+        // ...for a press on this grid's own rows or headings, not a nested grid's...
+        Assert.Contains("isOwnRowsOrHeadings(event.target)", body, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const inOwnScroller = \(target\) => [^;]*target\.closest\('\.ex-scroller'\) === scroller;"), script.Text);
+        Assert.Matches(new Regex(@"const isOwnRowsOrHeadings = \(target\) => isOwnRows\(target\)\s*\|\| \(inOwnScroller\(target\) && target\.closest\('\.ex-header'\) !== null\);"), script.Text);
+        // ...into the surface that last held the keyboard, one of this grid's own.
+        Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
+        Assert.Contains("const standingField = () => surfaceField(ownSurface(lastSurface));", script.Text, StringComparison.Ordinal);
+        // Script moves DOM focus in these two places only: this, and the hand-back to the root.
+        Assert.Equal(2, Regex.Matches(script.Text, @"\.focus\(").Count);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+        // The surface is forgotten with the instance.
+        Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
+    }
+
+    [Fact] // ADR-0010 (widened 2026-09-29) / ADR-0021 / ED-22: a press on the rows while an edit is open holds the keys after it until the core has answered it
+    public void A_press_on_the_rows_while_editing_holds_the_keys_after_it_until_answered()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var press = Regex.Match(script.Text, @"const onPress = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(press.Success, "onPress is not in the module");
+        var body = press.Value;
+
+        // The press itself passes on when there is nothing it could overtake — nothing held, and no
+        // key being answered, or only a press, which Blazor keeps in order with it (a double
+        // click's second press) — and while an edit is open it starts the hold.
+        Assert.Matches(new Regex(@"if \(held\.length === 0 && \(!answering \|\| pressAnswer !== null\)\) \{.*?if \(editing !== 'none'\) \{\s*holdBehindPress\(field !== null \? markStale\(field\) : null\);",
+            RegexOptions.Singleline), body);
+        // Only a press on this grid's own rows, not on a grid nested in one of its cells, is held
+        // or holds the keys after it: this core never hears the nested one's press.
+        Assert.Contains("if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {", body, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"event\.target\.classList\.contains\('ex-viewport'\)"), body);
+        Assert.Matches(new Regex(@"const isOwnRows = \(target\) => inOwnScroller\(target\) && target\.classList\.contains\('ex-viewport'\);"), script.Text);
+        // The hold: the keys after it are held from now, as behind a key, and the drain waits for
+        // the press's answer before anything else.
+        Assert.Matches(new Regex(@"const holdBehindPress = \(mark\) => \{\s*askAboutPress\(\);\s*pressAnswer = new Promise\(\(resolve\) => \{\s*pressToAsk = \{ mark, resolve \};\s*\}\);\s*setTimeout\(askAboutPress\);\s*if \(!answering\) \{\s*startHold\(\);"),
+            script.Text);
+        // One way a hold begins, whoever begins it: a key, a move in a popover, a press into the
+        // bar, a press on the rows.
+        Assert.Single(Regex.Matches(script.Text, @"answering = true;"));
+        Assert.Matches(new Regex(@"const startHold = \(answer\) => \{\s*answering = true;\s*holdStartedAt = performance\.now\(\);"), script.Text);
+        Assert.Matches(new Regex(@"const drain = async \(\) => \{.*?while \(pressAnswer !== null\) \{\s*const answer = pressAnswer;\s*await answer;.*?await editorSettled\(\);",
+            RegexOptions.Singleline), script.Text);
+        // The core answers for the press or the release it heard last, so the question goes after
+        // the press and ahead of its release: from a later task (above), or from this grid's own
+        // release, whichever comes first.
+        var release = Regex.Match(script.Text, @"const onRelease = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(release.Success, "onRelease is not in the module");
+        Assert.Matches(new Regex(@"^const onRelease = \(event\) => \{\s*(//[^\n]*\s*)*if \(!replaying\) \{\s*askAboutPress\(\);"), release.Value);
+        Assert.Matches(new Regex(@"const askAboutPress = \(\) => \{.*?core\.invokeMethodAsync\('PressAnsweredAsync'\).*?press\.resolve\(\);",
+            RegexOptions.Singleline), script.Text);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+    }
+
+    [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
+    public void A_passed_on_press_marks_the_bar_only_until_the_core_has_answered_it()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // A Formula Bar that a press on the rows leaves holding DOM focus while an edit is open is
+        // the hand-back's to take, should the press commit (reclaimFocus), and only that far: the
+        // mark comes off with the press's answer. A press that pointed has left the edit open, and a
+        // later hand-back must not take the bar the user is typing in.
+        Assert.Matches(new Regex(@"const askAboutPress = \(\) => \{.*?if \(press\.mark !== null && staleMarks === press\.mark\) \{\s*staleField = null;\s*\}",
+            RegexOptions.Singleline), script.Text);
+        // Every mark is numbered, a held press's too, so taking one off never takes a later one's.
+        Assert.Matches(new Regex(@"const markStale = \(field\) => \{\s*staleField = field;\s*return \+\+staleMarks;"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"staleField = field;"));
+    }
+
+    [Fact] // ADR-0018 section 6 / ED-27: an edit whose keyboard is elsewhere has a 1px outline, from the stylesheet alone, in the token's style and colour
+    public void An_edit_whose_keyboard_is_elsewhere_is_drawn_with_a_1px_outline()
+    {
+        var assets = ShippedAssets();
+        var stylesheet = assets.Single(asset => Path.GetFileName(asset.Path) == "ex-grid.css");
+        var script = assets.Single(asset => Path.GetFileName(asset.Path) == "ex-grid.js");
+
+        // While DOM focus is outside the root, the Cell Editor over the rows — not the Formula
+        // Bar's field, outlined only while it has focus — is drawn with its outline 1px wide.
+        var rule = Regex.Match(stylesheet.Text, @"\.ex-grid:not\(:focus-within\) \.ex-viewport \.ex-editor \{(?<body>[^}]*)\}");
+        Assert.True(rule.Success, "no rule narrows the outline of an editor whose grid does not hold DOM focus");
+        // The width alone: the style and the colour stay --ex-editor-outline's, a Wrapper's too,
+        // and no token is added for it.
+        Assert.Equal("outline-width: 1px;", rule.Groups["body"].Value.Trim());
+        Assert.Matches(new Regex(@"\.ex-editor \{[^}]*outline: var\(--ex-editor-outline, 2px solid Highlight\);"), stylesheet.Text);
+        // No script is involved: the module writes no outline.
+        Assert.DoesNotMatch(new Regex(@"\.style\.outline|outlineWidth|setProperty\('outline"), script.Text);
+    }
+
+    [Fact] // ADR-0018 / ED-26: the surface the keyboard comes back to is this grid's own, never one of a grid nested in its cells
+    public void The_keyboard_comes_back_only_to_this_grids_own_surfaces()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // A surface is this grid's when this root is the nearest grid root above it: a grid nested
+        // in a cell stands nearer to its own editor, and root.contains alone would not tell them apart.
+        Assert.Matches(new Regex(@"const ownSurface = \(element\) => \{[^}]*surface\.closest\('\.ex-grid'\) === root", RegexOptions.Singleline), script.Text);
+        // The surface noted as holding the keyboard, and the one an edit opens in, go through it...
+        Assert.Contains("lastSurface = ownSurface(target) ?? lastSurface;", script.Text, StringComparison.Ordinal);
+        Assert.Contains("lastSurface = opened ? ownSurface(document.activeElement) : null;", script.Text, StringComparison.Ordinal);
+        // ...and so does the first surface in the markup, taken when none is known, for the field a
+        // held key is typed into as much as for the keyboard's return: one helper for both.
+        Assert.Matches(new Regex(@"const surfaceField = \(surface\) => \{\s*const chosen = surface\s*\?\? \(root \? \[\.\.\.root\.querySelectorAll\('\.ex-editor'\)\]\.find\(\(box\) => ownSurface\(box\) === box\) : null\);"), script.Text);
+        Assert.Contains("const editorInput = () => surfaceField(ownSurface(document.activeElement));", script.Text, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"root\.querySelector\('\.ex-editor'\)"), script.Text);
     }
 
     [Fact] // ADR-0037 / KB-26: a held Space engages once — the gate takes and drops a repeated plain Space
@@ -190,17 +306,38 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"canonical === ' ' && k\.repeat"), script.Text);
     }
 
-    [Fact] // ADR-0051/0021 / DC-24: the key message carries the editor's text and caret, read from the field, nothing measured
+    [Fact] // ADR-0051/0021 / DC-24 / DC-45: the key message carries the editor's text and selection, read from the field, nothing measured
     public void The_key_message_carries_the_editors_text_and_caret()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
         // The inspection DC-24 names: the one message to OnKeyAsync, with the value and the
-        // selection start of the editor surface — a read of the field, no layout read.
+        // selection of the editor surface, and whether the user moved the caret in that very
+        // text (F4, ADR-0051 2026-09-29) — reads of the field and of the listener's own note,
+        // no layout read.
         Assert.Single(Regex.Matches(script.Text, @"'OnKeyAsync'"));
-        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1\)",
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false\)",
             RegexOptions.Singleline), script.Text);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
+    }
+
+    [Fact] // ADR-0051 (2026-09-29) / ADR-0021 / DC-45 / DC-24: F4 is claimed only while an edit is open, and only where C# says the Consumer declared what it does
+    public void The_gate_claims_F4_only_while_editing_and_only_when_declared()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var gate = Regex.Match(script.Text, @"const gate = \(k\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(gate.Success, "the gate is not in the module");
+
+        // Named once in the whole module, in the gate's editing branch: after the branch for no
+        // edit open, which returns on its last line — F4 is the browser's there (DC-45).
+        Assert.Single(Regex.Matches(script.Text, @"'F4'"));
+        var noEditReturns = gate.Value.IndexOf("return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';", StringComparison.Ordinal);
+        Assert.True(noEditReturns > 0, "the gate's branch for no edit open has changed shape");
+        Assert.True(gate.Value.IndexOf("'F4'", StringComparison.Ordinal) > noEditReturns);
+        Assert.Matches(new Regex(@"return claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\) \? 'mode' : null;"), gate.Value);
+        // Told by C# with the editing mode, per instance, off until told.
+        Assert.Matches(new Regex(@"let cycleReferences = false;"), script.Text);
+        Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{[^}]*cycleReferences = cyclesReferences === true;", RegexOptions.Singleline), script.Text);
     }
 
     [Fact] // ADR-0007 / KB-39 / DC-30: the gate takes undo and redo only from C#'s list, and never while editing
@@ -251,7 +388,8 @@ public class ShippedStylesheetTests
         // Placed: only while the surface still holds the text the core wrote, and the caret it
         // placed is not reported back. Not over the user's own move in that text, made before
         // the placement came: that caret stands, and is reported again as the user's.
-        Assert.Matches(new Regex(@"setCaret: \(text, caret\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*if \(movedByUser\(input\)\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*input\.setSelectionRange\(caret, caret\);\s*reportedText = text;\s*reportedCaret = caret;",
+        // The same call places the selection F4's rewrite answered (ADR-0051, 2026-09-29).
+        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*if \(movedByUser\(input\)\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
             RegexOptions.Singleline), script.Text);
         // The user's move: a press in an editor surface's text, or a caret key left to it — only
         // while the field still holds the text it was made in.
