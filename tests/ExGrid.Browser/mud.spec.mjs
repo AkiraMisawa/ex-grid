@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures.mjs';
+import { painted, contrast, resolvedColour } from './pixels.mjs';
 
 // The Wrapper contract, measured with a real Wrapper (ADR-0030): ExGrid.MudBlazor on
 // /mud. The Definition of Done wrote UX-3/6/9 against a "stub Wrapper stylesheet";
@@ -18,24 +19,6 @@ async function open(page) {
     // one the page's own stylesheet does not restate (the header tokens it does).
     await expect.poll(async () => gridA(page).evaluate((g) => getComputedStyle(g).getPropertyValue('--ex-editor-outline').trim()))
         .not.toBe('');
-}
-
-// Relative luminance and contrast ratio, WCAG's definitions, for UX-9.
-function luminance(rgb) {
-    const [r, g, b] = rgb.map((v) => {
-        const c = v / 255;
-        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-function parseRgb(text) {
-    const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(text);
-    return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
-}
-function contrast(a, b) {
-    const la = luminance(a);
-    const lb = luminance(b);
-    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
 test('the painted geometry equals the declared metrics under the real Wrapper stylesheet (UX-3)', async ({ page }) => {
@@ -77,33 +60,94 @@ test('nothing under the Viewport transitions or animates with the Wrapper loaded
     expect(offenders).toEqual([]);
 });
 
+// A colour's OKLCH hue, in degrees, from sRGB bytes — to say that the dark scheme's raise kept
+// the primary's hue (ADR-0030, 2026-09-29).
+function hue([r, g, b]) {
+    const linear = (v) => {
+        const c = v / 255;
+        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    const [lr, lg, lb] = [linear(r), linear(g), linear(b)];
+    const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+    const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+    const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+    const a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+    const bb = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+    return ((Math.atan2(bb, a) * 180) / Math.PI + 360) % 360;
+}
+
 test('the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9)', async ({ page }) => {
     await open(page);
+    // The colours the cascade resolved, in whatever syntax it kept them — the dark scheme's is
+    // an oklch() — as sRGB bytes.
+    const colours = async () => {
+        const css = await gridA(page).evaluate((g) => {
+            const focus = [...g.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0);
+            const range = g.querySelector('.ex-range');
+            return {
+                focus: getComputedStyle(focus).outlineColor,
+                focusStyle: getComputedStyle(focus).outlineStyle,
+                range: range ? getComputedStyle(range).outlineColor : null,
+                fill: range ? getComputedStyle(range, '::before').backgroundColor : null,
+                ground: getComputedStyle(g).backgroundColor,
+                primary: getComputedStyle(g).getPropertyValue('--mud-palette-primary'),
+            };
+        });
+        return {
+            ...css,
+            focus: await resolvedColour(page, css.focus),
+            range: css.range === null ? null : await resolvedColour(page, css.range),
+            ground: await resolvedColour(page, css.ground),
+            primary: await resolvedColour(page, css.primary),
+        };
+    };
+    const cellAt = (row, column) => gridA(page).locator('.ex-row').nth(row).locator('.ex-cell').nth(column);
     for (const dark of [false, true]) {
         if (dark) {
             await page.locator('#toggle-dark').click();
             await expect(page.locator('#dark-status')).toHaveText('Dark: True');
         }
-        // Click a cell: the Focus outline and the selection fill exist. Forced, because
-        // cells are pointer-events: none by design and the Viewport is the target
-        // (README, "Traps this suite has already hit").
-        await gridA(page).locator('.ex-row').nth(2).locator('.ex-cell').nth(2).click({ force: true });
+        // One cell: its Focus outline alone, no tint (ADR-0008, 2026-09-29). Forced, because
+        // cells are pointer-events: none by design and the Viewport is the target (README,
+        // "Traps this suite has already hit").
+        await cellAt(2, 2).click({ force: true });
         // Painted a round trip after the click on the Server host.
-        await expect(gridA(page).locator('.ex-range')).not.toHaveCount(0);
         await expect(gridA(page).locator('.ex-focus')).not.toHaveCount(0);
-        const colours = await gridA(page).evaluate((g) => ({
-            outline: getComputedStyle(g.querySelector('.ex-focus')).outlineColor,
-            ground: getComputedStyle(g.querySelector('.ex-cell')).backgroundColor,
-            rootGround: getComputedStyle(g).backgroundColor,
-            fill: getComputedStyle(g.querySelector('.ex-range')).backgroundColor,
-        }));
-        const ground = parseRgb(colours.ground)?.length && colours.ground !== 'rgba(0, 0, 0, 0)'
-            ? parseRgb(colours.ground) : parseRgb(colours.rootGround);
-        const outline = parseRgb(colours.outline);
-        expect(outline, `outline colour parses (${colours.outline})`).not.toBeNull();
-        expect(ground, `ground colour parses (${colours.rootGround})`).not.toBeNull();
-        expect(contrast(outline, ground), `focus outline against the cell ground, dark=${dark}`).toBeGreaterThanOrEqual(3);
-        expect(colours.fill).not.toBe('rgba(0, 0, 0, 0)');
+        await expect(gridA(page).locator('.ex-range')).toHaveCount(0);
+        const oneCell = await colours();
+        expect(oneCell.focusStyle).toBe('solid');
+        expect(contrast(oneCell.focus, oneCell.ground), `focus outline against the cell ground, dark=${dark} (${JSON.stringify(oneCell)})`)
+            .toBeGreaterThanOrEqual(3);
+        if (dark) {
+            // Raised from the primary, which misses 3:1 on this surface, and the hue kept.
+            expect(contrast(oneCell.primary, oneCell.ground), 'the premise: the dark primary alone misses 3:1').toBeLessThan(3);
+            expect(Math.abs(hue(oneCell.focus) - hue(oneCell.primary)), JSON.stringify(oneCell)).toBeLessThanOrEqual(2);
+        } else {
+            // The palette's primary itself (ADR-0030, 2026-09-29).
+            expect(oneCell.focus, JSON.stringify(oneCell)).toEqual(oneCell.primary);
+        }
+        // And as painted, where this page puts it: on the Focus band's tint over the surface,
+        // which is lighter than the surface in the dark scheme (ADR-0030 sets the floor to clear
+        // that too). The pointer is parked, so no hover band adds to it.
+        await page.mouse.move(0, 0);
+        await expect(gridA(page).locator('.ex-hover-row')).toHaveCount(0);
+        await expect(gridA(page).locator('.ex-focus-row')).not.toHaveCount(0);
+        const box = await cellAt(2, 2).boundingBox();
+        const cellPixels = await painted(page, { x: box.x, y: box.y, width: box.width, height: box.height });
+        const onBand = {
+            outline: cellPixels.at(box.x + box.width / 2, box.y + 1),
+            ground: cellPixels.at(box.x + 6, box.y + 6),
+        };
+        expect(contrast(onBand.outline, onBand.ground), `painted over the Focus band, dark=${dark} (${JSON.stringify(onBand)})`)
+            .toBeGreaterThanOrEqual(3);
+
+        // A range: its fill and its one outline, in the Focus outline's colour — the range's
+        // own token, --ex-selection-outline, defaults to it and the Wrapper leaves it so.
+        await cellAt(3, 3).click({ force: true, modifiers: ['Shift'] });
+        await expect(gridA(page).locator('.ex-range')).not.toHaveCount(0);
+        const withRange = await colours();
+        expect(withRange.range, JSON.stringify(withRange)).toEqual(oneCell.focus);
+        expect(withRange.fill).not.toBe('rgba(0, 0, 0, 0)');
     }
 });
 

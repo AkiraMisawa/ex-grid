@@ -1,5 +1,5 @@
 import { test, expect, scrollRowToTop } from './fixtures.mjs';
-import { expectCovers } from './sheet-helpers.mjs';
+import { expectCovers, expectSelectionIsCell } from './sheet-helpers.mjs';
 
 // Excel's behaviours, observed beside ExSheet (docs/specs/exsheet/excel-behaviours.md). Each test
 // is one item of that list, driven with real keys and the real mouse on /sheet, and its
@@ -578,9 +578,8 @@ test('fourth run, active cell item 3: one value of plain text over a range goes 
     // the Selection is B2.
     await expect(cell(page, 'E2')).not.toHaveText('');
     await expect(nameBox(page)).toHaveValue('E2');
-    // One range, painted over E2 alone (a 1×1 Selection is not announced: ADR-0033).
-    await expect(sheet(page).locator('.ex-selection .ex-range')).toHaveCount(1);
-    await expectCovers(sheet(page).locator('.ex-selection .ex-range'), sheet(page), 'E2', 'E2');
+    // E2 alone (a 1×1 Selection is not announced: ADR-0033).
+    await expectSelectionIsCell(sheet(page), 'E2');
     // ...and the live region no longer names E2:F3 (the fifth Windows run, Part B).
     await expect(announced(page)).toHaveText('');
     await expect(cell(page, 'F2')).toHaveText('');

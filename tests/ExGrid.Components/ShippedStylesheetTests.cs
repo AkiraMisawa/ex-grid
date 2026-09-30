@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Xunit;
@@ -87,6 +88,60 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"size\.blockSize === ceiling"), script.Text);
         // And released with the instance, beside the gutter's observer.
         Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*observer\.disconnect\(\);\s*ceilingObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
+    }
+
+    /// <summary>The shipped core stylesheet without its comments, and its innermost rules — a
+    /// rule inside an at-rule is read as its own — each as its selectors and its body.</summary>
+    private static (string Css, IReadOnlyList<(string[] Selectors, string Body)> Rules) CoreStylesheet()
+    {
+        var css = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
+        css = Regex.Replace(css, @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var rules = Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
+            .Select(rule => (
+                rule.Groups["selectors"].Value.Split(',').Select(selector => selector.Trim()).ToArray(),
+                rule.Groups["body"].Value))
+            .ToList();
+        return (css, rules);
+    }
+
+    [Fact] // ADR-0008 (2026-09-29) / UX-18: every outline drawn in the Focus outline's width lies wholly inside its box, from one rule
+    public void The_focus_outlines_width_and_inward_offset_are_written_once()
+    {
+        string[] outlined = [".ex-focus", ".ex-range", ".ex-range-single", ".ex-point", ".ex-action-chosen"];
+        var sizing = CoreStylesheet().Rules
+            .Where(rule => rule.Selectors.Any(outlined.Contains))
+            .Where(rule => Regex.IsMatch(rule.Body, @"outline(-width|-offset)?:"))
+            .ToList();
+
+        // One rule gives the Focus, every range, the pointing outline and the chosen action the
+        // width and the offset; no other rule for them restates either.
+        var (selectors, body) = Assert.Single(sizing);
+        Assert.Equal([".ex-action-chosen", ".ex-focus", ".ex-point", ".ex-range"], selectors.Order(StringComparer.Ordinal));
+        // An outline straddling the edge loses its outer pixel beneath the layers painted above
+        // the selection — a Pinned Column, the Headings, the header — so it is offset inward by
+        // at least its own width.
+        var width = double.Parse(Regex.Match(body, @"outline-width:\s*(?<px>[\d.]+)px").Groups["px"].Value, CultureInfo.InvariantCulture);
+        var offset = double.Parse(Regex.Match(body, @"outline-offset:\s*(?<px>-?[\d.]+)px").Groups["px"].Value, CultureInfo.InvariantCulture);
+        Assert.True(width > 0);
+        Assert.True(offset <= -width, body);
+    }
+
+    [Fact] // ADR-0008/0029 (2026-09-29): a single range's outline reads --ex-selection-outline, which defaults to the Focus outline
+    public void The_range_outline_reads_its_own_token_and_defaults_to_the_focus_outline()
+    {
+        var (css, rules) = CoreStylesheet();
+
+        var colours = rules
+            .Where(rule => rule.Selectors.Contains(".ex-range-single"))
+            .Select(rule => Regex.Match(rule.Body, @"outline-color:\s*(?<value>[^;]+);"))
+            .Where(colour => colour.Success)
+            .Select(colour => colour.Groups["value"].Value.Trim())
+            .ToList();
+
+        // A Theme or Wrapper that sets only the Focus outline's colour gets both in it.
+        Assert.Equal(["var(--ex-selection-outline, var(--ex-focus-outline, CanvasText))"], colours);
+        // And the token is the range outline's alone: nothing else reads it.
+        Assert.Single(Regex.Matches(css, "--ex-selection-outline"));
     }
 
     [Fact] // ADR-0012 (2026-09-29) / ADR-0021 / MEM-4: a reveal's write is held on the root's own reveal number, observed only while held and released on dispose
