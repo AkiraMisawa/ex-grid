@@ -58,14 +58,19 @@ public partial class ExGrid<TRow>
     /// filtered to some of them outlines the rows it shows, and whether that is the table the
     /// Formula reads is the Consumer's to vouch for. Null or empty — the default — outlines nothing
     /// (DC-1, DC-50).</para>
+    ///
+    /// <para>A declaration of pointing from outside (<see cref="PointedAt"/>, ADR-0058) may ask for
+    /// columns too; they are drawn after these, in the same way.</para>
     /// </summary>
     [Parameter] public IReadOnlyList<OutlinedColumn>? OutlinedColumns { get; set; }
 
-    // The columns asked for, resolved to their places in the current order and their class
-    // lists: once per push, off the render path, as Header Groups are (ADR-0032), and again only
-    // when the list or the columns are a different instance.
+    // The columns asked for — by the parameter, then by a declaration of pointing from outside
+    // (ADR-0058) — resolved to their places in the current order and their class lists: once per
+    // push or change, off the render path, as Header Groups are (ADR-0032), and again only when a
+    // list or the columns are a different instance.
     private (int Column, string Class)[] _columnOutlines = [];
     private IReadOnlyList<OutlinedColumn>? _outlinesResolvedFrom;
+    private IReadOnlyList<OutlinedColumn>? _pointedOutlinesResolvedFrom;
     private IReadOnlyList<GridColumn<TRow>>? _outlinesResolvedOver;
 
     // The class list of a Reference Outline in each colour: interned, since the few there are serve
@@ -135,37 +140,52 @@ public partial class ExGrid<TRow>
         => Colouring.ColourOf(pointed) is not null ? "ex-point ex-point-on-reference" : "ex-point";
 
     /// <summary>
-    /// Resolves <see cref="OutlinedColumns"/> to the places its columns stand in the current
-    /// order (ADR-0057), when the list or the columns changed since they were last resolved. A
-    /// name the grid does not show resolves to nothing, a column listed twice resolves twice, and
-    /// a null entry is refused.
+    /// Resolves <see cref="OutlinedColumns"/>, and then the columns a declaration of pointing from
+    /// outside asks for (<see cref="GridPointedAt{TRow}.OutlinedColumns"/>, ADR-0058), to the places
+    /// their columns stand in the current order (ADR-0057), when a list or the columns changed since
+    /// they were last resolved. A name the grid does not show resolves to nothing, a column listed
+    /// twice — in one list or across the two — resolves twice, and a null entry is refused.
     /// </summary>
     private void ResolveOutlinedColumns()
     {
-        if (ReferenceEquals(_outlinesResolvedFrom, OutlinedColumns) && ReferenceEquals(_outlinesResolvedOver, Columns))
+        var pointed = PointedAt?.OutlinedColumns;
+        if (ReferenceEquals(_outlinesResolvedFrom, OutlinedColumns) && ReferenceEquals(_pointedOutlinesResolvedFrom, pointed)
+            && ReferenceEquals(_outlinesResolvedOver, Columns))
+        {
             return;
+        }
         _outlinesResolvedFrom = OutlinedColumns;
+        _pointedOutlinesResolvedFrom = pointed;
         _outlinesResolvedOver = Columns;
-        if (OutlinedColumns is not { Count: > 0 } outlined)
+        var count = (OutlinedColumns?.Count ?? 0) + (pointed?.Count ?? 0);
+        if (count == 0)
         {
             _columnOutlines = [];
             return;
         }
-        var resolved = new List<(int Column, string Class)>(outlined.Count);
-        for (var i = 0; i < outlined.Count; i++)
+        var resolved = new List<(int Column, string Class)>(count);
+        Resolve(OutlinedColumns, nameof(OutlinedColumns));
+        Resolve(pointed, $"{nameof(PointedAt)}.{nameof(GridPointedAt<TRow>.OutlinedColumns)}");
+        _columnOutlines = [.. resolved];
+
+        void Resolve(IReadOnlyList<OutlinedColumn>? outlined, string name)
         {
-            var asked = outlined[i] ?? throw new ArgumentNullException(nameof(OutlinedColumns),
-                "OutlinedColumns holds a null column (ADR-0057).");
-            for (var column = 0; column < Columns.Count; column++)
+            if (outlined is null)
+                return;
+            for (var i = 0; i < outlined.Count; i++)
             {
-                if (string.Equals(Columns[column].Name, asked.Column, StringComparison.Ordinal))
+                var asked = outlined[i] ?? throw new ArgumentNullException(name,
+                    $"{name} holds a null column (ADR-0057).");
+                for (var column = 0; column < Columns.Count; column++)
                 {
-                    resolved.Add((column, OutlineClasses[asked.Colour.Place]));
-                    break;
+                    if (string.Equals(Columns[column].Name, asked.Column, StringComparison.Ordinal))
+                    {
+                        resolved.Add((column, OutlineClasses[asked.Colour.Place]));
+                        break;
+                    }
                 }
             }
         }
-        _columnOutlines = [.. resolved];
     }
 
     /// <summary>The body of the column at <paramref name="column"/>: every row the grid has, or
