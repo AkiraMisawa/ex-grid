@@ -83,6 +83,27 @@ record the same. Put the theme back to what it was.
 | 18 | Type `=A1+B1` into D10 (the cell, not the bar), then click into the Formula Bar's text after `B1` | The mode before and after the click; then `{HOME}`: the caret, the active cell | Enter, then Edit; Home moves the caret |
 | 19 | As 18, then click back into D10's own text | The mode after the click; then `{LEFT}`: does it move the caret or commit and move the cell | Edit stays; the caret moves |
 
+## Group 4 — F2 in the Formula Bar, and the keys after it *(added 2026-09-30, after groups 1–3)*
+
+Case 17 found that F2 in the Formula Bar takes Edit to **Enter**. What the keys do in the bar after
+that decides ADR-0051's rule for F2 there (ticket 42), and was not asked. Run these on the branch's
+tip as it is now; commit the results to `claude/exsheet-windows-verify-10` as a second commit.
+
+**Click into the empty Formula Bar and type as one state**, with no reading between the click and
+the first key: in groups 1–3, a reading there moved the focus to the Name Box (pass a of 14–17).
+
+| # | Keys and clicks | What is asked |
+|---|---|---|
+| 20 | Click into the empty Formula Bar, type `=A1+B1`, `{F2}`, then `{HOME}` | The mode after F2 and after Home; the Formula Bar's text and caret; the active cell; is the edit still open, or was the Formula entered (and into which cell) |
+| 21 | As 20 without Home, then `{RIGHT}` | The same |
+| 22 | As 20 without Home, then `{DOWN}` | The same |
+| 23 | As 20 without Home, then `{F2}` again | The mode after the second F2 |
+| 24 | Click into the empty Formula Bar, type `=A1+`, `{F2}` | The mode after F2 (Point, Enter or Edit); then `{DOWN}`: the text (is `D11` written?) and the mode |
+| 25 | Type `=A1+B1` into D10 (the cell), `{F2}`, `{F2}` | The mode after each F2, in the cell: the cell's own cycle, for comparison |
+
+Record as for groups 1–3, in the same files (`excel-only.md` gains a "Group 4" section, the `.jsonl`
+gains the lines).
+
 ## Finishing
 
 Commit everything to `claude/exsheet-windows-verify-10` and push. The results go to
