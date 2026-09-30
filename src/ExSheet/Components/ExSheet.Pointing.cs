@@ -136,6 +136,9 @@ public partial class ExSheet : IPointingSheet, IDisposable
     }
 
     /// <inheritdoc />
+    string? IPointingSheet.RootId => _grid?.RootId;
+
+    /// <inheritdoc />
     Task<bool> IPointingSheet.WritePointedTextAsync(string text)
         => _grid is { } grid ? grid.WritePointedTextAsync(text) : Task.FromResult(false);
 

@@ -44,9 +44,11 @@
 @* A reveal moves the scroller in the render that paints where it is going (ADR-0012,
    2026-09-29): the slice below is computed at the offset the write asks for. *@
 @{ StageReveal(); }
+@* data-ex-pointed-from: while the grid is pointed at, the root of the grid that points, which the
+   script tells of each press handed over (ADR-0058, "On a circuit"). *@
 <div class="@RootClass" style="@RootStyle()" tabindex="@(Prerendered ? null : "0")" dir="ltr" @ref="_root"
-     role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
-     data-ex-reveal="@_revealToken"
+     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
+     data-ex-reveal="@_revealToken" data-ex-pointed-from="@PointedFrom"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
      aria-activedescendant="@ActiveDescendant()"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
@@ -8140,6 +8142,7 @@
             _boundMarks = null;
         }
         UnbindPointedAt();
+        ReleaseHandedOnPresses();
         try
         {
             try

@@ -487,6 +487,59 @@ public class PointingScopeTests : SheetTestContext
         Assert.False(PointedAt(page.Positions));
     }
 
+    [Fact] // ADR-0058 ("On a circuit") / ADR-0018 section 7 / DC-54: a registered grid names the root of the Sheet that points, and only while one points
+    public async Task A_registered_grid_names_the_root_of_the_sheet_that_points()
+    {
+        var page = await RenderAsync();
+        string? PointedFrom() => page.Positions.Find(".ex-grid").GetAttribute("data-ex-pointed-from");
+        var left = Grid(page.Left);
+        var right = Grid(page.Right);
+        Assert.Null(PointedFrom());
+
+        await StartTypingAsync(page.Left, "D2", "=");
+        Assert.Equal(left.Instance.RootId, PointedFrom());
+        Assert.Equal(left.Instance.RootId, left.Find(".ex-grid").GetAttribute("id"));
+
+        // The keyboard goes to the right Sheet, which then points in its turn.
+        await KeyboardOutAsync(page.Left);
+        await KeyboardInAsync(page.Right);
+        Assert.Null(PointedFrom());
+        await GoToAsync(page.Right, "E5");
+        await PressAsync(page.Right, "=");
+        Assert.Equal(right.Instance.RootId, PointedFrom());
+        Assert.NotEqual(left.Instance.RootId, right.Instance.RootId);
+        // A grid in no Scope names nothing.
+        Assert.Null(page.Unregistered.Find(".ex-grid").GetAttribute("data-ex-pointed-from"));
+    }
+
+    [Fact] // ADR-0058 ("On a circuit", settled while building ticket 37) / ADR-0021 (note of 2026-09-30) / DC-54: a press handed on is written only once it is in turn, after the keys typed before it
+    public async Task A_press_handed_on_is_written_after_the_keys_typed_before_it()
+    {
+        var page = await RenderAsync();
+        await StartTypingAsync(page.Left, "D2", "=");
+        Assert.True(PointedAt(page.Positions));
+
+        // The script tells the pressed grid's core of the press ahead of it: `1` and `+` were typed
+        // before it, and the Sheet's listener still holds them.
+        Task answered = null!;
+        await page.Positions.InvokeAsync(() => { answered = page.Positions.Instance.PressHandedOnAsync(1, inTurn: false); });
+        var pressing = page.Positions.Find(".ex-viewport").MouseDownAsync(
+            new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = ValueX, OffsetY = Row(1), ClientX = ValueX, ClientY = 40 + Row(1) });
+        Assert.Equal("=", EditorText(page.Left));
+        Assert.False(answered.IsCompleted);
+
+        // The Sheet hands them on — `=1` leaves Point, and `=1+` comes back to it — and then says the
+        // press is in turn.
+        await TypeAsync(page.Left, "=1");
+        await TypeAsync(page.Left, "=1+");
+        await page.Positions.InvokeAsync(() => page.Positions.Instance.PressInTurn(1));
+        await answered.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        await pressing.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+
+        Assert.Equal("=1+" + LookupR2, EditorText(page.Left));
+        Assert.Empty(page.Cut.Instance.LeftRefusals);
+    }
+
     [Fact] // ADR-0058 / SH-32: registering refuses a correspondence that names no column
     public void Registering_refuses_an_unnamed_column()
     {

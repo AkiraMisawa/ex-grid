@@ -80,7 +80,7 @@ public sealed class PointingScope
         }
         var grid = new GridMember<TRow>(this, table, tableRow, columns);
         _grids.Add(grid);
-        grid.DeclarePointedAt(_pointing is not null);
+        grid.DeclarePointedAt(_pointing);
         return grid.Declaration;
     }
 
@@ -129,7 +129,7 @@ public sealed class PointingScope
     private void DeclarePointedAt(bool pointedAt)
     {
         foreach (var grid in _grids)
-            grid.DeclarePointedAt(pointedAt);
+            grid.DeclarePointedAt(pointedAt ? _pointing : null);
     }
 
     /// <summary>
@@ -270,8 +270,9 @@ public sealed class PointingScope
         public string TableColumnOf(string gridColumn)
             => tableColumns.TryGetValue(gridColumn, out var tableColumn) ? tableColumn : gridColumn;
 
-        /// <summary>Declares the grid pointed at, or not.</summary>
-        public abstract void DeclarePointedAt(bool pointedAt);
+        /// <summary>Declares the grid pointed at from the Sheet that points, or, given none, not
+        /// pointed at.</summary>
+        public abstract void DeclarePointedAt(IPointingSheet? pointing);
     }
 
     /// <summary>A registered grid of rows of <typeparamref name="TRow"/>: its declaration hands each
@@ -293,6 +294,14 @@ public sealed class PointingScope
         /// <summary>The declaration passed to the grid.</summary>
         public GridPointedAt<TRow> Declaration { get; }
 
-        public override void DeclarePointedAt(bool pointedAt) => Declaration.IsPointedAt = pointedAt;
+        public override void DeclarePointedAt(IPointingSheet? pointing)
+        {
+            // The Sheet's root is named first, so the render that paints the grid pointed at names
+            // it too: a press on the grid then keeps its place among the Sheet's keys (ADR-0058, "On
+            // a circuit").
+            if (pointing is not null)
+                Declaration.PointingRootId = pointing.RootId;
+            Declaration.IsPointedAt = pointing is not null;
+        }
     }
 }
