@@ -117,11 +117,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
     // Pointing (ADR-0051's second round): Overwrite's keys and the four Shift+arrows, which
     // extend the outline rather than select text in the input. And while a completion list
-    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ← and → move the caret.
+    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ← and → move the caret —
+    // unless the list is open over Point, where they point, as they do without it (ADR-0058,
+    // the tenth Windows run).
     const pointKeys = new Set([
         ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
     const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
-    const claimedWhile = { overwrite: overwriteKeys, point: pointKeys, completion: completionKeys };
+    const completionOverPointKeys = new Set([...completionKeys, 'ArrowLeft', 'ArrowRight']);
+    const claimedWhile = {
+        overwrite: overwriteKeys, point: pointKeys, completion: completionKeys, completionOverPoint: completionOverPointKeys,
+    };
     // The keys macOS binds to a scroll in a text field, where Windows and Linux move the caret
     // (ADR-0010's note of 2026-09-30, ticket 32): Home and End scroll the document there, PageUp
     // and PageDown a page. Left to the browser in an editor surface, they scrolled the grid away
@@ -134,7 +139,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the core claims — Home and End in Overwrite and Point — stay the core's.
     const appleCaretKeys = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
     const pageKeys = new Set(['PageUp', 'PageDown']);
-    const listShown = () => !!root && root.querySelector('.ex-completion[data-ex-list]') !== null;
+    const listShown = () => (root ? root.querySelector('.ex-completion[data-ex-list]') : null);
 
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
     // round trip later on a circuit, and a key typed in between must be the popover's, not
@@ -272,8 +277,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A list of candidates painted is open, whatever the gate was last told: on a circuit
         // the render that paints it and the message that tells the gate are two messages, and a
         // ← typed between them would be claimed as Overwrite's and swallowed. The core marks
-        // the list on its box (data-ex-list) in the render itself; read, not measured.
-        const claimed = listShown() ? completionKeys : (claimedWhile[editing] ?? editingKeys);
+        // the list on its box (data-ex-list) in the render itself, and a list open over Point
+        // (data-ex-over-point), whose ← and → point (ADR-0058); read, not measured.
+        const list = listShown();
+        const claimed = list === null
+            ? (claimedWhile[editing] ?? editingKeys)
+            : (list.hasAttribute('data-ex-over-point') ? completionOverPointKeys : completionKeys);
         // Every key the core claims while editing commits, cancels, moves or switches
         // the mode: each is a mode change. F4 rewrites the text, and the keys after it wait
         // for the rewrite, so that each carries the text the one before it left.
@@ -1738,7 +1747,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // entry — the clipboard — and not a fifth (ADR-0021).
         writeCopy: (withHeaders) => writeAsync(withHeaders === true),
         // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite',
-        // 'caret', 'point' or 'completion' (ADR-0051), whether inputs report their caret,
+        // 'caret', 'point', 'completion' (ADR-0051) or 'completionOverPoint' (ADR-0058: a list
+        // open where ← and → point), whether inputs report their caret,
         // and whether F4 is claimed while editing. Set by the core when the mode changes —
         // a mode change is a different set of claimed keys. (A focusable descendant holding
         // the keyboard — ADR-0020's interactive cell — is not a mode: it is read off

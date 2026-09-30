@@ -126,8 +126,10 @@ public static partial class FormulaEntry
     /// grammar refuses (ADR-0047);</item>
     /// <item>at an argument that takes one of a fixed list of values (<see cref="DeclaredFunction.ValuesOf"/>),
     /// holding nothing yet or the beginning of a value, those values, in Excel's order, before
-    /// anything is typed. A value typed whole, with the caret after it, lists nothing: there is
-    /// nothing left to choose, and accepting it would change nothing.</item>
+    /// anything is typed. A value typed whole, with the caret after it, lists that value alone
+    /// (<c>0</c> lists <c>0 - Exact match</c>); any other beginning lists every value, as Excel
+    /// does not narrow a value list by what is typed (<c>-</c> lists all five of
+    /// <c>match_mode</c>'s; the tenth Windows run).</item>
     /// </list>
     /// <see langword="null"/> anywhere else — after <c>=</c>, an operator, <c>(</c> or <c>,</c> at any
     /// other argument, inside text in quotes, a Reference, a number — and when nothing matches.
@@ -235,9 +237,10 @@ public static partial class FormulaEntry
 
     /// <summary>
     /// The values of the argument the caret stands at, when it takes one of a fixed list (ADR-0058):
-    /// the argument holds nothing yet, or the beginning of a value and nothing else, and the
-    /// values beginning with what is typed before the caret are listed. Accepting one writes it
-    /// over the whole of the value being typed.
+    /// the argument holds nothing yet, or the beginning of a value and nothing else. A value typed
+    /// whole before the caret, with nothing of it after the caret, is listed alone; anything else
+    /// lists every value, the first to be chosen (ADR-0058, "What the tenth Windows run settled").
+    /// Accepting one writes it over the whole of the value being typed.
     /// </summary>
     private static FormulaCompletion? CompleteValue(string text, int caret, List<Token> tokens)
     {
@@ -258,11 +261,11 @@ public static partial class FormulaEntry
         while (after < text.Length && char.IsWhiteSpace(text[after])) after++;
         if (after < text.Length && text[after] is not (',' or ')')) return null;
 
-        var candidates = values
-            .Where(v => v.Value.StartsWith(typed, StringComparison.Ordinal) && !(end == caret && v.Value == typed))
+        var whole = end == caret ? values.Where(v => v.Value == typed).ToList() : [];
+        var candidates = (whole.Count > 0 ? whole : values)
             .Select(v => new CompletionCandidate(v.Text, CompletionKind.ArgumentValue, v.Value, null))
             .ToList();
-        return candidates.Count == 0 ? null : new FormulaCompletion(start, end - start, candidates);
+        return new FormulaCompletion(start, end - start, candidates);
     }
 
     /// <summary>
