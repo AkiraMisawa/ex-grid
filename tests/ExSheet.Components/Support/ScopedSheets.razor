@@ -3,7 +3,8 @@
    grid names one column otherwise than the table does (Value is the table's PV), shows a column the
    table does not have (Note, which edits), groups Book and Value under a Header Group, and holds
    fewer rows than it counts, so its last rows have not arrived. A position with an empty Id has a
-   blank key. *@
+   blank key. The test can show the registered grid other rows — sorted, revalued or filtered — as a
+   Consumer pushes a new Window. *@
 @using System.Globalization
 @using global::ExGrid
 @using global::ExGrid.Cells
@@ -16,7 +17,7 @@
 <ExSheet @ref="Left" ViewportHeight="300" ViewportWidth="600" Culture="Culture" PointingScope="Scope" OnPointingRefused="RefusedLeft" />
 <ExSheet @ref="Right" ViewportHeight="300" ViewportWidth="600" Culture="Culture" PointingScope="Scope" OnPointingRefused="RefusedRight" />
 <div id="positions">
-    <ExGrid TRow="Position" Window="Positions" TotalCount="Positions.Length + 20" Columns="PositionColumns" RowHeight="20"
+    <ExGrid TRow="Position" Window="Shown" TotalCount="Shown.Count + 20" Columns="PositionColumns" RowHeight="20"
             ViewportHeight="200" ViewportWidth="450" HeaderGroups="Groups" PointedAt="_pointedAt" OnEdit="Edited" />
 </div>
 <div id="unregistered">
@@ -56,6 +57,16 @@
         [p.Id.Length == 0 ? null : Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
 
     private GridPointedAt<Position>? _pointedAt;
+
+    /// <summary>The rows the registered grid shows: <see cref="Positions"/> until the test shows others.</summary>
+    public IReadOnlyList<Position> Shown { get; private set; } = Positions;
+
+    /// <summary>Shows the registered grid <paramref name="rows"/>, as a Consumer pushes a new Window.</summary>
+    public Task ShowAsync(IReadOnlyList<Position> rows) => InvokeAsync(() =>
+    {
+        Shown = rows;
+        StateHasChanged();
+    });
 
     /// <summary>The Scope the Sheets and the registered grid are in.</summary>
     public PointingScope Scope { get; } = new();

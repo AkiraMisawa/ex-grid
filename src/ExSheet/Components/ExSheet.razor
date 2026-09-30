@@ -275,9 +275,11 @@
     /// appearance, under the table's and the column's names as the Consumer declared them. Raised
     /// once whenever that list changes and never when it does not, and with an empty list when the
     /// edit ends. A table or column not declared names nothing and is not told. ExSheet does not
-    /// know where, or whether, the table is on screen, and outlines none of it: the Consumer passes
-    /// the list to the grid that shows the table (ExGrid's <c>OutlinedColumns</c>), and only the
-    /// Consumer can vouch that that grid shows the rows the Formula reads.
+    /// know where, or whether, the table is on screen, and outlines none of it itself. A
+    /// <see cref="PointingScope"/> outlines the columns in the grids registered in it (ADR-0058); for
+    /// any other grid, the Consumer passes the list to the grid that shows the table (ExGrid's
+    /// <c>OutlinedColumns</c>). Either way, only the Consumer can vouch that that grid shows the rows
+    /// the Formula reads.
     /// </summary>
     [Parameter] public EventCallback<LinkedColumnColours> OnLinkedColumnColoursChanged { get; set; }
 
@@ -558,6 +560,8 @@
         var columns = _sheet is { } sheet ? SheetFormulaAids.LinkedColumnsOf(sheet, keys) : LinkedColumnColours.None;
         if (SameLinkedColumns(columns, _linkedColumnsTold)) return Task.CompletedTask;
         _linkedColumnsTold = columns;
+        // The Scope outlines them in its grids, and the Consumer hears them for any other grid.
+        _joinedScope?.OutlineLinkedColumns(this, columns);
         return OnLinkedColumnColoursChanged.InvokeAsync(columns);
     }
 

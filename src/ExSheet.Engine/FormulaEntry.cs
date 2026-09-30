@@ -413,6 +413,19 @@ public static partial class FormulaEntry
     }
 
     /// <summary>
+    /// Whether the lookup <see cref="LookupText"/> writes for <paramref name="key"/> finds a row whose
+    /// key is <paramref name="candidate"/>: <c>XLOOKUP</c>'s exact match, which tells a number from
+    /// text and text apart without regard to case, and never matches a blank or an Error Value. A
+    /// Pointing Scope finds the row a press was written for by it, wherever the grid that shows the
+    /// table has sorted that row to, and in a Window of new row instances alike (ADR-0058, "What is
+    /// drawn").
+    /// </summary>
+    /// <param name="key">The key the lookup was written for.</param>
+    /// <param name="candidate">A row's key; <see langword="null"/> is a blank.</param>
+    public static bool LookupFinds(Value key, Value? candidate) =>
+        candidate is { } value && value.Kind == key.Kind && !key.IsError && Formulas.Evaluator.Compare(value, key) == 0;
+
+    /// <summary>
     /// F4 (ADR-0051, 2026-09-29): the Reference at the caret cycled to its next form —
     /// <c>A1</c> → <c>$A$1</c> → <c>A$1</c> → <c>$A1</c> → <c>A1</c> — and the caret at the end of
     /// it. The Reference at the caret is the one the caret is inside or touching, on either side.

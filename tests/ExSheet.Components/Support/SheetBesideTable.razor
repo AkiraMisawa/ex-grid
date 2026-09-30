@@ -1,6 +1,7 @@
-@* A Consumer's page in small, wired as /sheet is (ADR-0057, ADR-0049): an ExSheet reading the
-   Linked Table Positions, and a grid showing that table, outlined from what the Sheet tells the
-   page. ExSheet never reaches the grid; the page passes the list on. A method is bound to the
+@* A Consumer's page in small, with no Pointing Scope, wired by hand as such a page is (ADR-0057,
+   ADR-0049; /sheet puts its grid in a Scope instead, ADR-0058): an ExSheet reading the Linked Table
+   Positions, and a grid showing that table, outlined from what the Sheet tells the page. ExSheet
+   never reaches the grid; the page passes the list on. A method is bound to the
    callback as a page binds one, which is what LinkedColumnColours exists for: bound to a list of
    a type in the ExSheet namespace, Razor's code would not compile here. *@
 @using System.Globalization

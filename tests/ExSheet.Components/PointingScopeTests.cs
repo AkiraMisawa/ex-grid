@@ -20,7 +20,7 @@ namespace ExSheet.Components.Tests;
 /// <see cref="ScopedSheets"/>: rows of 20px under a header band of 40px (one tier of Header Groups);
 /// Id, Book, Value (the table's PV) and Note (the grid's own) are 100px each.
 /// </summary>
-public class PointingScopeTests : SheetTestContext
+public partial class PointingScopeTests : SheetTestContext
 {
     private const string LookupR2 = "XLOOKUP(\"R-2\", Positions[Id], Positions[PV])";
 

@@ -655,9 +655,15 @@
    ground; there the grey stands as far from the dark Canvas as #c6c6c6 does from white, and the
    shade is mixed toward white. The shade is the text's fill, so the span's color stays its
    Reference's, and currentColor reads it — in the default and in a Theme's
-   --ex-reference-pointed-color alike. */
+   --ex-reference-pointed-color alike. Text a press on another grid wrote, such as
+   XLOOKUP("R-4471", Positions[Id], Positions[PV]), is shown selected as a whole (ADR-0058): one
+   span on the grey, and the References inside it, each in a span of its own colour, take the
+   shade of that colour. The shade is declared on them, not inherited, so each currentColor is
+   its own Reference's and not the span's around it. */
 .ex-reference-text .ex-reference-pointed {
     background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b));
+}
+.ex-reference-text :is(.ex-reference-pointed, .ex-reference-pointed span) {
     -webkit-text-fill-color: var(--ex-reference-pointed-color, light-dark(color-mix(in srgb, currentColor 55%, black), color-mix(in srgb, currentColor 55%, white)));
 }
 /* A Chrome places the layer inside the core's box, before its control, which fills the box's

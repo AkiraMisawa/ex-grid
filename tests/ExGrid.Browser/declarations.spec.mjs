@@ -9,8 +9,8 @@ import {
 // /sheet, driven with real keys, the real mouse and the real clipboard: completion, Point, the
 // Formula Bar under a delayed circuit, F4 cycling the Reference at the caret, the Reference Outlines, the fill handle, a spilling paste, copy and paste inside
 // the Sheet, undo and redo, the resize grips. The positions grid beside the Sheet declares none
-// of them, and is the "one not declaring" of DC-25; it outlines the table's columns the page
-// passes it (SH-31). Two ExSheets on one page are on /sheets.
+// of them, and is the "one not declaring" of DC-25; it outlines the table's columns the Sheet's
+// Pointing Scope passes it (SH-31, ADR-0058). Two ExSheets on one page are on /sheets.
 
 // Tall enough that every Sheet on the page, Formula Bar to horizontal scrollbar, is inside the
 // window: a pointer below the window's edge reaches nothing, and the edge band sits there.
@@ -856,10 +856,10 @@ test('DC-46: =, ↓, ↓ outlines the pointed cell in the first colour under das
 
 // ---------------------------------------------------------------------------------------------
 // A Linked Table's columns, outlined in the grid that shows them (SH-31, DC-50; ADR-0057). The
-// Sheet tells the page which of the table's columns the Formula being edited reads, and in which
-// colour; the page passes that to the positions grid beside it, which outlines each column over
-// all its rows. The positions grid holds no Selection and no edit for it, and its five rows are
-// all painted.
+// Sheet tells which of the table's columns the Formula being edited reads, and in which colour; the
+// Pointing Scope /sheet puts it in with the positions grid beside it passes that to the grid, which
+// outlines each column over all its rows (ADR-0058). The page wires no OutlinedColumns. The
+// positions grid holds no Selection and no edit for it, and its five rows are all painted.
 
 const positionsGrid = (page) => page.locator('#sheet-positions .ex-grid');
 

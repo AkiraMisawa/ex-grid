@@ -90,8 +90,9 @@ joins them (`ACME|5Y`) as its key.
 
 While a Formula is edited, each Reference in it wears a colour, and the cells it names on the Sheet
 are outlined in that colour (ADR-0057). A table's column is not on the Sheet, so ExSheet tells you
-which declared columns the Formula reads and in which colour, and you outline them in the grid that
-shows the table. The list is empty when the edit ends:
+which declared columns the Formula reads and in which colour, and the grid that shows the table
+outlines them. A grid registered in a Pointing Scope (below) is outlined by the Scope, with nothing
+more to write. For a grid in no Scope, you pass the list on yourself. It is empty when the edit ends:
 
 ```razor
 @using ExGrid.Cells
@@ -166,6 +167,16 @@ tells you why through `OnPointingRefused`; show `refusal.Message` where your pag
 things. A drag that reaches another cell takes back what its press wrote. After a press on a grid,
 the Name Box is empty and F4 changes nothing. Several Sheets can share a Scope, and each points while
 it holds the keyboard; two Scopes on one page keep their Sheets and grids apart.
+
+The Scope draws in its grids too. While a Formula is edited in one of its Sheets, the table columns
+the Formula reads are outlined in the grids registered for that table, in the colours their
+References wear, over the grid columns the registration makes them: pass no `OutlinedColumns` to a
+registered grid, since the correspondence is stated once, when you register it. A grid column that
+is its table column by name is named exactly as the table declares it. The cell a press wrote for
+is dashed, found by its row's key wherever a sort puts it and drawn nowhere while that row is not
+painted; a pressed header dashes the column. The dashes go once something is typed after what the
+press wrote, the caret moves, or the edit ends; the column outlines stay until the edit ends. In the
+editor, the written `XLOOKUP(...)` is shown selected as a whole, unless it follows the `=` directly.
 
 ## Commands and the undo stack
 
