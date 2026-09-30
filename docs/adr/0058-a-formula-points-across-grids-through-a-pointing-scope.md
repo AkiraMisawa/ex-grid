@@ -18,11 +18,12 @@ the Consumer did not join.
 
 ## What Excel writes cannot be brought over
 
-Pointing from outside a Table at one of its cells, Excel writes the cell's address: `C5`, or
-`[Book2]Sheet1!$C$5` from another workbook. *(Recalled, not observed. The ninth Windows run asks
-Excel.)* An address is the positional Reference that ADR-0049's rule 2 refuses. Once the user of the
-positions grid sorts it, the same Formula reads another row, and nobody has edited anything. What is
-brought over is the gesture: pointing writes a name.
+Pointing from outside a Table at one of its cells, Excel writes the cell's address: `B3`, or
+`[Book2]Sheet1!$B$3` from another workbook. *(Recalled when this was decided, and observed by the
+ninth Windows run: see "What the ninth Windows run settled".)* An address is the positional
+Reference that ADR-0049's rule 2 refuses. Once the user of the positions grid sorts it, the same
+Formula reads another row, and nobody has edited anything. What is brought over is the gesture:
+pointing writes a name.
 
 ## Why the grids cannot do it alone
 
@@ -96,9 +97,12 @@ stands under CVA, FVA and MVA alike, so it cannot be a name.
   grid's Refusals. The Sheet's text is left as it was. `/sheet` shows the reason.
 - **The text is written where Point writes.** A further press, on a registered grid or on the Sheet,
   replaces what this Point wrote (ADR-0051).
-- **While Point writes from a registered grid, the Name Box names the edited cell.** The pressed cell
-  has no address in the Sheet's words. The ninth Windows run asks what Excel's Name Box shows while it
-  points into another workbook.
+- **While Point writes from a registered grid, the Name Box is empty.** Excel's names the pointed
+  cell, but the pressed cell has no address in the Sheet's words, and naming the edited cell would
+  read as pointing there. The Name Box is empty while a Size Tip shows for the same kind of reason
+  ([ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
+  *(Corrected 2026-09-30, decided with the user after the ninth Windows run. This bullet first said
+  the Name Box names the edited cell.)*
 
 ### What is drawn
 
@@ -134,10 +138,25 @@ ADR-0057 decides the colours. This section says how they reach a registered grid
   and the edit stands (ADR-0018, section 6). A press back on the Sheet brings the keyboard back, and
   pointing can go on. This is what keeps the Scope clear of ADR-0018 section 6's rule that an edit
   which opens takes the keyboard only while it is still its grid's.
-- **After a press on a registered grid, the arrow keys move nothing.** ExSheet tells its Consumer
-  that pointing goes on by a press. Shift+arrow does the same. The Sheet's own arrows would point from
-  the edited cell and write `D11` beside the `XLOOKUP(...)`. Moving inside the other grid instead is
-  not yet known to be what Excel does ("Not in the first version").
+- **After a press on a registered grid, the arrow keys point inside that grid**, as Excel's arrow
+  keys move inside another workbook once it is pointed at (the ninth Windows run). The text is rewritten for the
+  cell they reach, replacing what this Point wrote, and the dashes move with it.
+  - **↑ and ↓ move one row in the grid's current order.** At its first or last row, nothing moves.
+  - **← and → move to the next column the table has**, passing over the grid's columns that the table
+    does not have. With no such column that way, nothing moves.
+  - **The grid scrolls to keep the pointed cell in view**, as the Sheet does while it points, and as
+    Excel scrolls the other workbook. ADR-0057's "the grid never scrolls to show a Reference" is about
+    the References a Formula holds, not about a cell the user is moving.
+  - **A row that has not arrived yet** (a Placeholder) writes nothing, and the reason is told.
+  - **Shift+arrow is refused as a range is**: nothing is written, the text stays as it was, and the
+    reason is told. **Ctrl+arrow is not built**: it moves nothing, and the reason is told. Excel's goes
+    to the edge of the data, and the grid holds only its Window.
+  - The keys reach the grid through C#: the Sheet's core hears them, as it hears every key in Point,
+    and the Scope asks the grid for the next cell. No script is added.
+
+  *(Corrected 2026-09-30, decided with the user after the ninth Windows run. This bullet first said
+  the arrow keys move nothing until Excel was observed, which the user chose on 2026-09-30 as a3,
+  with a1 to follow the observation.)*
 
 ## On a circuit
 
@@ -181,16 +200,16 @@ table's name meets it by pointing.
 | `=`, an operator, `(`, `,` | no list | no list, as today |
 | a name's first letter | functions and names, by prefix | functions and Linked Tables, as today (observed 2026-09-27, item 13) |
 | an argument whose values are a fixed list, such as XLOOKUP's `match_mode` | the values: `0 - Exact match`, … (observed 2026-09-27, item 14) | **the values, built now** |
-| `Table[` | the columns, and `#All`, `#Data`, `#Headers`, `#Totals`, `@` (recalled) | after the ninth Windows run |
-| F3 | Paste Name; whether it lists tables is not known | after the ninth Windows run |
-| Backspace back into a name | the list again (recalled) | after the ninth Windows run |
+| `Table[` | `@ - This Row`, the columns, `#All`, `#Data`, `#Headers`, `#Totals` (observed by the ninth run) | **the columns only, built now** |
+| F3 | nothing without a Name; Paste Name, which lists Names and never tables, with one (observed) | nothing: ExSheet has no Names, and F3 is left to the browser |
+| Backspace back into a name | the list again (observed) | **the list again, built now** |
 
 - **Argument value lists are built now**, because Excel was seen to show them and ExSheet lacks them.
   It is a completion list: ↑ and ↓ choose, Tab accepts and writes the value's number, and Escape
-  closes the list before it cancels the edit (ADR-0051). The texts are Excel's. `match_mode`'s were
-  observed. `search_mode`'s are read from Excel's documentation, and the ninth Windows run asks for
-  them.
-- **After `Table[`, once it is built, the list offers the table's column names only.** ExSheet reads
+  closes the list before it cancels the edit (ADR-0051). The texts are Excel's, and the ninth Windows
+  run observed both lists: `search_mode`'s last two end in "order)", as `2 - Binary search (sorted
+  ascending order)`.
+- **After `Table[`, the list offers the table's column names only.** ExSheet reads
   `Table[Column]` and nothing else: its grammar refuses `#All`, `@` and a range of columns
   ([ADR-0047](./0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)). A
   candidate the grammar refuses would break the Formula the moment it was chosen. This is a
@@ -208,9 +227,6 @@ table's name meets it by pointing.
   next to each other in the table's order. The grid does not show that order, because the user
   reorders columns ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
   ADR-0032 declares a group's members by name for the same reason.
-- **Moving the pointed cell inside a registered grid with the arrow keys**, and Shift+arrow refused
-  there as a range is. This waits for the ninth Windows run to show what Excel does after it points
-  into another workbook.
 - **Two layer 1 tests pin today's refusals**, so that the day either one goes cannot pass unnoticed.
   One pins that `(Cds[Entity]="ACME")` over two rows is `#VALUE!`. The other pins that the grammar
   refuses `Xva[[A]:[B]]`. Each fails when its refusal goes. Its message says what to do next: open
@@ -237,5 +253,38 @@ table's name meets it by pointing.
 - `CONTEXT.md` gains **Pointing Scope**.
 - `/sheet` registers its positions grid in a Scope, and stops wiring the Reference Outlines by hand.
   `/sheets` gives each side a Scope of its own.
-- The criteria are DC-52 to DC-54 and SH-32 to SH-37 in `docs/definition-of-done.md`. The tickets are
+- The criteria are DC-52 to DC-55 and SH-32 to SH-37 in `docs/definition-of-done.md`. The tickets are
   34 to 41 in `docs/specs/exsheet/issues/`. Excel is asked in `docs/specs/exsheet/verify-on-windows-9.md`.
+
+## What the ninth Windows run settled *(2026-09-30)*
+
+Part A of `docs/specs/exsheet/verify-on-windows-9.md` asked Excel (Microsoft 365, Version 2609) what
+it writes and shows while it points into a Table and into another workbook, and what it lists. It is
+recorded in `verification/2026-09-30-windows-excel-9/pointing.md`. Where Excel and a reading differed,
+the rule above is now Excel's, or the difference is decided here with the user.
+
+- **Excel writes an address**: `=B3` inside one workbook, `=[Book2]Sheet1!$B$3` from another. That
+  is what this ADR declines to bring over.
+- **Excel points into another workbook only from the second click.** The first click on that
+  workbook's window writes nothing, and the arrow keys then point from that workbook's own active
+  cell. From the second click on, the arrow keys move inside it, and Shift+arrow extends there. So the
+  arrow keys point inside a registered grid (above).
+- **A registered grid points from the first press** *(decided with the user)*. Excel's first click
+  switches the workbook it points into. A Scope's grids are on one page, and a press that did nothing
+  would look broken. This is a deliberate difference from Excel.
+- **Excel's Name Box names the pointed cell.** The Name Box is empty here instead (above, decided with
+  the user).
+- **A press on a registered grid's header writes the column** (`Positions[PV]`), as decided. Excel,
+  clicking a Table's header cell, wrote `Positions[[#Headers],[PV]]`, because that cell is a row of the
+  Table. A grid's header is not a row, and it stands for the column, as a drag over the whole column's
+  data does in Excel (`=Positions[PV]`).
+- **Every column of a Table at once**, dragged in Excel, wrote `=Positions`. A registered grid refuses
+  several columns, as decided.
+- **After `Table[`, Excel lists `@ - This Row` first**, then the columns and `#All`, `#Data`,
+  `#Headers`, `#Totals`. ExSheet lists the columns only, as decided.
+- **F3 shows nothing in a workbook without a Name.** With one, Paste Name lists it and never a Table.
+  ExSheet has no Names, so there is nothing to build, and F3 is left to the browser, as F4 is outside
+  an edit (ADR-0051).
+- **Backspace back into a name lists again**, and both argument lists read as the table above.
+- **Seen and not asked:** Excel shows the pointed Reference's value in a tip above the edited cell
+  while it points (`20`, `{10;20;30}`). Nothing here decides it.

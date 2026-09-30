@@ -1,6 +1,6 @@
 # What to verify on Windows, ninth run
 
-Status: ready-for-human — **Part A now; Part B once tickets 34–38 are done.**
+Status: ready-for-human — **Part A done 2026-09-30** (`verification/2026-09-30-windows-excel-9/`); **Part B once tickets 34–38 and 41 are done.**
 
 For the Claude Code session on the Windows desktop of the earlier runs (Excel, Chrome, Edge, WSL2 with
 nix). Read [`verify-on-windows-8.md`](verify-on-windows-8.md) and
@@ -70,12 +70,14 @@ Results go to `verification/<date>-windows-excel-9/`: `pointing.ps1`, `pointing.
 
 ## Part B — ExSheet's Pointing Scope on Windows
 
-Only once tickets 34–38 are marked done on `claude/exsheet-pointing-scope`. On their commit, `/sheet`
+Only once tickets 34–38 and 41 are marked done on `claude/exsheet-pointing-scope`. On their commit, `/sheet`
 and `/sheets` in Chrome and Edge, both hosts, at 150%.
 
 - `=`, a click on a PV cell of the positions grid, `*2`, Enter: the text written before Enter, the
   value after it, and where DOM focus was throughout (the Sheet's editor, never the positions grid).
 - `=SUM(`, a click on the PV header, `)`, Enter.
+- `=`, a click on a PV cell, then ↓, →, ← and Shift+↓: the text after each, where the dashes are, and
+  the Name Box (empty while pointing into the grid).
 - Each refusal of ADR-0058's table (Shift+click, a drag, a column the table does not have): nothing
   written, and the reason shown.
 - The pointer over the positions grid while pointing (`cell`), and not otherwise.

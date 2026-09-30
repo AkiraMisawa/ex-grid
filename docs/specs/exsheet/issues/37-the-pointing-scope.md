@@ -34,9 +34,10 @@ What is written:
 
 The keyboard:
 
-- [ ] After a press on a registered grid, the arrow keys and Shift+arrows move nothing, and the
-      Consumer is told that pointing goes on by a press. F4 changes nothing. The Name Box names the
-      edited cell (SH-35)
+- [ ] The first press on a registered grid points (the ninth Windows run: Excel needs two clicks
+      for another workbook; this is a deliberate difference) (SH-35)
+- [ ] After a press on a registered grid, F4 changes nothing, and the Name Box is empty. The arrow
+      keys are ticket 41's (SH-35)
 
 The DemoHost:
 

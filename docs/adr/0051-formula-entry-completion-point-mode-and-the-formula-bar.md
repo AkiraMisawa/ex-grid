@@ -241,13 +241,16 @@ predicate says whether a Reference can go at the caret position, from the text e
 - **A press on a registered grid writes where Point writes**: `XLOOKUP("R-4471", Positions[Id],
   Positions[PV])` for a cell, `Positions[PV]` for a column header. A further press, on a registered
   grid or on the Sheet, replaces what this Point wrote, as a further press on the Sheet always did.
-- **After such a press, the arrow keys and Shift+arrows move nothing**, and the Consumer is told that
-  pointing goes on by a press. The ninth Windows run asks what Excel's arrows do after it points into
-  another workbook.
+- **After such a press, the arrow keys point inside that grid**: ↑ and ↓ by a row in its current
+  order, ← and → to the next column the table has, and the grid scrolls to keep the pointed cell in
+  view. Shift+arrow is refused as a range is. *(Corrected after the ninth Windows run, decided with
+  the user: this bullet first said the arrow keys move nothing until Excel was observed. Excel moves
+  inside another workbook once it points there. ADR-0058, "The keyboard".)*
 - **F4 after such a press changes nothing.** Neither `XLOOKUP(...)` nor a structured reference cycles
   (above).
-- **The Name Box names the edited cell** while Point writes from a registered grid. The pressed cell
-  has no address in the Sheet's words.
+- **The Name Box is empty** while Point writes from a registered grid. The pressed cell has no
+  address in the Sheet's words. *(Corrected after the ninth Windows run, decided with the user: this
+  bullet first said the Name Box names the edited cell. Excel's names the pointed cell.)*
 - **The keys typed right after such a press keep their order** behind the text it writes, on a circuit
   too ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md), note of 2026-09-30).
 
@@ -255,6 +258,8 @@ predicate says whether a Reference can go at the caret position, from the text e
 listed until a name's first letter is typed, so a list never takes ↓ from Point. One trigger that
 Excel was seen to have is added now: **at an argument whose values are a fixed list, the values are
 listed** (`XLOOKUP`'s `match_mode`: `0 - Exact match`, …). ↑ and ↓ choose, Tab accepts and writes the
-value, and Escape closes the list first, as above. The list after `Table[`, F3 and Backspace back
-into a name wait for the ninth Windows run. When the list after `Table[` is built, it offers column
-names only.
+value, and Escape closes the list first, as above. The ninth Windows run observed the other three
+triggers, and each is settled in ADR-0058. After `Table[` the list offers the table's column names only,
+where Excel also lists `@ - This Row`, `#All` and the rest. Backspace back into a name lists again.
+F3 is left to the browser: Excel shows nothing without a Name, its Paste Name never lists a table, and
+ExSheet has no Names.
