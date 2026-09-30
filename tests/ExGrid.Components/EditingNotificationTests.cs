@@ -457,6 +457,8 @@ public class EditingNotificationTests : GridTestContext
 
         var opening = PressAsync(cut, "9");
 
+        // An opening's key is answered once the gate has the edit (ADR-0010); the Consumer has
+        // heard before that.
         Assert.False(opening.IsCompleted);
         Assert.Equal([true], told);
         gate.SetVoidResult();
@@ -465,10 +467,36 @@ public class EditingNotificationTests : GridTestContext
         gate = Js.UnansweredGateMode();
         var ending = PressAsync(cut, "Escape");
 
-        Assert.False(ending.IsCompleted);
+        // An ending's is not held for the gate's reply at all (PushEditingStateAsync).
         Assert.Equal([true, false], told);
+        Assert.True(ending.IsCompleted);
         gate.SetVoidResult();
         await ending;
+    }
+
+    [Fact] // ADR-0050 section 6 / ADR-0010: a commit's value, its Focus move and the key's answer go out together; the gesture does not wait for the browser's replies
+    public async Task A_commit_moves_the_focus_and_answers_without_waiting_for_the_browser()
+    {
+        // Found by CI on the Server host (2026-09-30). The Consumer renders a committed value the
+        // moment it hears it, which is before the end and before anything is waited for (ADR-0050
+        // section 6). The Focus move and the Enter's answer waited for the gate's reply behind
+        // that render: for a round trip the page showed the value with the Focus still on the
+        // edited cell, and a Ctrl+C typed on seeing it was held behind the unanswered Enter,
+        // which the listener cannot replay as the browser's copy, and lost.
+        var edits = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(told: null, edits);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+        var gate = Js.UnansweredGateMode();
+
+        var enter = PressAsync(cut, "Enter");
+
+        Assert.Single(edits);
+        Assert.Equal("none", GateModesTold()[^1]);
+        Assert.EndsWith("-r1c0", cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.True(enter.IsCompleted);
+        gate.SetVoidResult();
+        await enter;
     }
 
     [Fact] // ADR-0050 section 6 / SH-29: off by default — a Consumer that does not listen edits and commits exactly as before

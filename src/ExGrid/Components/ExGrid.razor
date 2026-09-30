@@ -6502,6 +6502,21 @@
     /// end re-enabled could land before the value, which then went into the row the insertion
     /// moved there (ADR-0048), and the cell showed its old value between the two renders.</para>
     ///
+    /// <para>An edit that ends is not waited on at all: the gesture that ended it goes on at
+    /// once — the Focus move of Enter or Tab, the render — and the key or press is answered
+    /// behind them. The Consumer renders a committed value the moment it hears it, before
+    /// anything is waited for, so waiting for the browser's replies here only held the rest of
+    /// the gesture a round trip behind that render: on a circuit the page showed the value with
+    /// the Focus still on the edited cell, and a Ctrl+C typed on seeing it was held behind the
+    /// unanswered key, which the listener cannot replay as the browser's copy, and lost (CI,
+    /// Server host, 2026-09-30). The replies ordered nothing: the browser runs the gate's new
+    /// mode and the hand-back in the order they were sent, before the render and the answer
+    /// sent after them, so a key handed on after the answer meets the gate in its new mode with
+    /// the keyboard back at the root. An edit that opens or stays open is still waited on
+    /// before its gesture answers, as before: a key held behind that answer is typed into the
+    /// editor on replay, and the press into the Formula Bar is answered only once the gate has
+    /// the edit (DC-19).</para>
+    ///
     /// <para>Every path that opens, ends or changes an edit comes through here; the one that
     /// cannot at once, an edit a parameter change discarded, marks the gate, and the render
     /// that follows comes through here for it, since no Consumer handler may run inside the
@@ -6513,11 +6528,18 @@
     /// <param name="endedIn">What an ending edit ended in, raised before the end is.</param>
     private async Task PushEditingStateAsync(bool reclaimFocus = false, bool fromField = false, Func<Task>? endedIn = null)
     {
+        // Sent before anything is awaited, in this order: the gate's mode, then the hand-back.
         var gate = TellGateAsync();
         var keyboard = reclaimFocus ? ReclaimFocusAsync(fromField) : Task.CompletedTask;
+        // The committed value before the end, so that a command the Consumer runs on hearing
+        // the end comes after the value, never before it (ADR-0048).
         if (endedIn is not null)
             await endedIn();
         TellConsumerWhetherEditOpen();
+        // An ending waits for no reply (see above). Its two tasks are safe to leave: each catches
+        // the browser's failures itself, so neither can fault unobserved.
+        if (_editMode == EditMode.None)
+            return;
         await gate;
         await keyboard;
     }
@@ -6816,7 +6838,8 @@
         // answer, the hand-back landed a round trip after that render: DOM focus was on body in
         // between, where the root's listener hears nothing, and a key typed straight after a press
         // that committed was lost (ADR-0010's hold behind a press, found on the Server host at 0 ms
-        // as well as at 150).
+        // as well as at 150). Their replies are not waited for: the caller's gesture goes on at
+        // once, behind the Consumer's render of what the edit ended in (PushEditingStateAsync).
         await PushEditingStateAsync(reclaimFocus, fromField: fromBar, endedIn);
     }
 
