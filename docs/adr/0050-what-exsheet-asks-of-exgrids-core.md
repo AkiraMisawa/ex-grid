@@ -146,6 +146,14 @@ reading of it. A plain ExGrid Consumer may listen too, for its own buttons.
   change is announced after the render that applied the change, as `OnEditDiscarded` already is, so
   on a circuit the Consumer hears that end a round trip late. It errs toward refusing: for that
   render, the Consumer still believes an edit is open. It never hears an opening late.
+- *The order, settled by the full browser run the same day.* Telling the Consumer lets it
+  re-render, and on a circuit that render could reach the browser before the grid's own messages:
+  the editor was removed while it still held the keyboard, and the Formula Bar lost it. So the grid
+  sends its own messages to the browser first (the key gate's new mode, the hand-back of the
+  keyboard), then tells the Consumer, and only then waits for replies. What the edit ended in (the
+  committed Edit Intent, a Ctrl+Enter fill's paste, a discard's reason) reaches the Consumer before
+  the end does, so that a command the Consumer runs on hearing the end comes after the value, never
+  before it. Nothing is waited for in between, so the Consumer still hears without a round trip.
 - *Disposal is not announced.* A grid removed while an edit is open raises nothing, because the
   Consumer that removed it already knows. Raising into a Consumer that may itself be tearing down
   would be worse than silence.
