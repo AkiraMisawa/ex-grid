@@ -185,6 +185,16 @@ reading of it. A plain ExGrid Consumer may listen too, for its own buttons.
   committed Edit Intent, a Ctrl+Enter fill's paste, a discard's reason) reaches the Consumer before
   the end does, so that a command the Consumer runs on hearing the end comes after the value, never
   before it. Nothing is waited for in between, so the Consumer still hears without a round trip.
+- *An edit that ends waits for no reply (settled by CI the same day).* The order above first waited
+  for the browser's replies after telling the Consumer. For an edit that ended, that wait put the
+  rest of the gesture, the Focus move and the key's answer, a round trip behind the committed value
+  the Consumer had already painted. On the Server host, the Focus stayed on the edited cell, and a
+  Ctrl+C typed on seeing the value was held behind the unanswered key and lost (ED-2/ED-4 and
+  CP-6/10/14 failed intermittently in CI; 22 of 50 runs failed with a 40 ms round trip injected, and
+  none after this change). The wait ordered nothing, because the browser runs the requests in the
+  order they were sent, ahead of the render and the answer that follow them. So an edit that ends
+  waits for no reply. An edit that opens, or changes its mode and stays open, still waits for the
+  gate's reply, and DC-19 depends on that.
 - *Disposal is not announced.* A grid removed while an edit is open raises nothing, because the
   Consumer that removed it already knows. Raising into a Consumer that may itself be tearing down
   would be worse than silence.
