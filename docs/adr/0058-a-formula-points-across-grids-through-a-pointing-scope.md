@@ -191,9 +191,13 @@ there is neither.
 The first proposal also listed the table names before anything was typed: after `=`, an operator,
 `(` or `,`. It was meant for users who do not know the names. It was withdrawn. Excel lists nothing
 until a name's first letter is typed, and a list open after `=` would take ↓, which Point needs for
-`=` ↓ ↓. **Completion is aligned with Excel instead**, and then Point and the list never compete: once
-a letter is typed, the caret no longer stands where a Reference can go. A user who does not know a
-table's name meets it by pointing.
+`=` ↓ ↓. **Completion is aligned with Excel instead.** A list of names opens only once a letter is
+typed, and by then the caret no longer stands where a Reference can go, so it never takes ↓ from
+Point. A user who does not know a table's name meets it by pointing. The one list that opens before
+anything is typed is an argument's value list, below. While it is open, ↑ and ↓ choose in it, as the
+user asked of every open list and as Excel's does. Escape closes it, and ↓ then points. A press on
+the grid still points while it is open. *(Corrected 2026-09-30 while the tickets were handed out: this
+paragraph first said that the list and Point never compete, which the value list contradicts.)*
 
 | After | Excel | ExSheet |
 |---|---|---|
