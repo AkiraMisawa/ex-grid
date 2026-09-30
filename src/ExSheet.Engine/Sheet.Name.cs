@@ -47,8 +47,11 @@ public sealed partial class Sheet
     public SheetChange Rename(string name) => ApplyRename(name).Change;
 
     /// <summary>Whether <paramref name="qualifier"/>, a Reference's Sheet name, names this Sheet: no qualifier, or this Sheet's name without regard to case.</summary>
-    internal bool IsThisSheet(string? qualifier) =>
-        qualifier is null || string.Equals(qualifier, Name, StringComparison.OrdinalIgnoreCase);
+    internal bool IsThisSheet(string? qualifier) => Names(qualifier, Name);
+
+    /// <summary>Whether <paramref name="qualifier"/>, a Reference's Sheet name, names the Sheet called <paramref name="name"/>: no qualifier, or that name without regard to case.</summary>
+    internal static bool Names(string? qualifier, string name) =>
+        qualifier is null || string.Equals(qualifier, name, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Whether a Reference names this Sheet's cells.</summary>
     internal bool IsLocal(Reference reference) => IsThisSheet(reference.SheetName);

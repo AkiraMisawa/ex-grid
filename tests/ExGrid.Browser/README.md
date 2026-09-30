@@ -368,8 +368,10 @@ nobody had asked for. What that means when writing a test:
   line, and `99` still in Plums' row; the buttons following an edit opened by typing and by the
   Formula Bar and ended by a cancel and by a commit after a Reject; a Linked Table push taken while
   an edit is open (SH-29, ticket 26); the Focus
-  at XFD1048576 with the DOM no larger than at A1 (SH-2).
-- `declarations.spec.mjs` — the declarations of ADR-0050/0051 (§26) as ExSheet makes them on
+  at XFD1048576 with the DOM no larger than at A1 (SH-2); Home, End, Shift+Home and Shift+End in
+  Caret in the Cell Editor and the Formula Bar moving and extending the caret with nothing
+  scrolled and the edit kept, which on macOS the listener answers (ticket 32).
+- `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed
   at the reported caret, from the Formula Bar too (DC-17/31); Point by keys, Shift+arrows, the
@@ -377,7 +379,12 @@ nobody had asked for. What that means when writing a test:
   pointing (DC-19/31/34); DC-20 and DC-28 with 150 ms on the Server host; F4 cycling the
   Reference at the caret in a cell and in the Formula Bar under both Chromes, mid-text, over a
   selection and a selection only touching References (`+` in `=A1+B1`), while pointing, left to the browser with no edit open, and in a burst and twice
-  before the caret is placed with 150 ms on the Server host (DC-45); the fill handle
+  before the caret is placed with 150 ms on the Server host (DC-45); the Reference Outlines —
+  `=A1+B2:C3` outlined once each in two colours across the pinned boundary, `=A1+A1` once, `=` ↓ ↓
+  dashed in the first colour and solid once an operator follows, gone on Escape and on Enter
+  (DC-46); the Linked Table's columns a Formula reads outlined in the positions grid, over all
+  its rows, in the colour class the core gave them, once each whatever the Formula's casing, none
+  for an undeclared table or column, gone on Escape and on Enter (SH-31, DC-50); the fill handle
   dragged — series, References shifted, a refused pattern, the edge auto-scroll, the Selection
   after (DC-13/27); a block from the real clipboard spilling (DC-8); a copy inside the Sheet
   shifting References, and what the paste receives of the `data-ex-grid="invariant"` marker on
@@ -385,9 +392,25 @@ nobody had asked for. What that means when writing a test:
   with and without an edit open, and the positions grid, which declares nothing, leaving them
   to the browser (DC-30); grips without the menu button (DC-36); the positions grid keeping
   ExGrid's own behaviour beside the Sheet (DC-25).
+- `reference-text.spec.mjs` — the coloured text in the editor (ADR-0057) on `/sheet`, under the
+  built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`, the Sheet on the Wrapper's paper
+  with its stylesheet): a burst of typing with 150 ms on the Server host,
+  sampled every animation frame in the page, never showing transparent field text over a layer
+  that differs, and the colours back once it pauses; on WebAssembly the colours following each
+  keystroke, three References in three colours; only the surface the edit is in coloured, the
+  other plain, as in Excel: an edit opened by F2 or by a press into the Formula Bar coloured there
+  before anything is typed, and the colours following a press from the cell into the bar and back;
+  the caret and a selection drawn by the field; an IME composition through CDP drawn by the field
+  while it lasts, and the colours back when it ends (DC-47); the Mud Cell Editor still showing the
+  layer's text with the Wrapper's stylesheet taken away; the Reference Point is writing on a grey
+  ground after `=SUM(`, in the cell and in the bar, none after `=` ↓ ↓, and a `5` typed after
+  pointing following the Reference (ADR-0051); a Formula longer than
+  either surface, at both ends, the layer's line scrolled with the field, its font, padding and
+  spacing the field's, and the two drawings of the text the same picture (DC-48).
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
   Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
-  stack stay with the Sheet that has the keyboard.
+  stack stay with the Sheet that has the keyboard, and each Sheet's Linked Table columns are
+  outlined only in the grid its page wired to it (SH-31, DC-25).
 - `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
   ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
   `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or

@@ -4,8 +4,9 @@
 // when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
 // mousedown and mouseup that keep a press on the rows in its place among held keys, and hold the
 // keys after one made while an edit is open; the root taking the keyboard back only while DOM
-// focus is still its own; and that same mousedown bringing the keyboard back to an edit left
-// standing when a press returns to the rows or the headings. Anything else — text measurement,
+// focus is still its own; that same mousedown bringing the keyboard back to an edit left
+// standing when a press returns to the rows or the headings; and the editor listener keeping
+// the coloured text beneath a field honest (ADR-0057). Anything else — text measurement,
 // overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
@@ -115,6 +116,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
     const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
     const claimedWhile = { overwrite: overwriteKeys, point: pointKeys, completion: completionKeys };
+    // The keys macOS binds to a scroll in a text field, where Windows and Linux move the caret
+    // (ADR-0010's note of 2026-09-30, ticket 32): Home and End scroll the document there, PageUp
+    // and PageDown a page. Left to the browser in an editor surface, they scrolled the grid away
+    // from the open edit — the edited cell left the painted rows, the Cell Editor went, and DOM
+    // focus with it. So on Apple platforms, found by the test that makes Meta the Primary
+    // Modifier, Home and End left to an editor field are answered here, Shift with them or not:
+    // they place the caret or extend the selection as they do elsewhere. PageUp and PageDown,
+    // which move no caret in a one-line field, do nothing, on every platform (decided with the
+    // user the same day): a browser scrolls the grid with them from a field anywhere. The keys
+    // the core claims — Home and End in Overwrite and Point — stay the core's.
+    const appleCaretKeys = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
+    const pageKeys = new Set(['PageUp', 'PageDown']);
     const listShown = () => !!root && root.querySelector('.ex-completion[data-ex-list]') !== null;
 
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
@@ -131,7 +144,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // popover, so the keys after it are held until the popover holds DOM focus; 'mode' — the
     // core's, and it can change the editing mode, so the keys after it are held until it is
     // answered;
-    // 'core' — the core's, and changes no mode; 'drop' — taken and never forwarded;
+    // 'core' — the core's, and changes no mode; 'drop' — taken and never forwarded; 'caret' —
+    // Home or End on an Apple platform, taken and answered here (ticket 32);
     // null — the browser's, or a control's inside the grid. Read from a snapshot of the
     // event rather than the event itself, so a held key can be gated again, against the
     // mode its predecessor's answer left.
@@ -257,7 +271,20 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // Every key the core claims while editing commits, cancels, moves or switches
         // the mode: each is a mode change. F4 rewrites the text, and the keys after it wait
         // for the rewrite, so that each carries the text the one before it left.
-        return claimed.has(canonical) || (cycleReferences && canonical === 'F4') ? 'mode' : null;
+        if (claimed.has(canonical) || (cycleReferences && canonical === 'F4')) {
+            return 'mode';
+        }
+        // Left to an editor field, a key the browser would scroll the grid with is answered here:
+        // Home and End on an Apple platform, PageUp and PageDown on every one (ticket 32).
+        if (k.inEditor) {
+            if (metaIsPrimary && appleCaretKeys.has(canonical)) {
+                return 'caret';
+            }
+            if (pageKeys.has(canonical)) {
+                return 'drop';
+            }
+        }
+        return null;
     };
 
     // The scroll container is the grid's own, not a control inside it: it carries
@@ -378,6 +405,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Each input reports at once: Blazor's input event is on its way, and the core waits for
     // this report before it asks anything about the new text.
     const onEditorInput = (event) => {
+        heardReferenceInput(event);
         const input = event.target;
         noteSurface(input);
         if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
@@ -403,6 +431,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // animation frame, of where the caret stands when the frame comes.
     let caretFrame = 0;
     const onSelectionChange = () => {
+        if (watchingReferenceTexts) {
+            gateReferenceTexts();
+        }
         if (!reportCaret || !core || caretFrame !== 0 || focusedEditorField() === null) {
             return;
         }
@@ -415,6 +446,88 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         });
     };
     document.addEventListener('selectionchange', onSelectionChange);
+
+    // The coloured text (ADR-0057): beneath an editor surface, a layer the core renders with each
+    // Reference in its colour stands immediately before the field, and carries the text it was
+    // rendered for (data-ex-text). On a circuit that is a round trip behind the typing, and colours
+    // on text typed past would stand on the wrong characters, so the layer shows — and the field's
+    // own text turns transparent — only while the two texts are one: the listener sets one class on
+    // the field then, and the stylesheet does the rest. Only in the surface the edit is in, as Excel
+    // colours it: the field holding DOM focus, the one held keys are handed to (ADR-0051) — the
+    // other surface keeps its plain text, and a press from one into the other takes the colours
+    // with it. Compared on each input, when a layer's text changes (that one attribute, observed
+    // while an edit is open) and whenever the selection moves, which is how a field that has just
+    // taken focus, or just opened over its layer, is heard. A field holding an IME composition is
+    // ahead of anything rendered, and is never shown over; every input of a composition, its last
+    // included, says so, and the composition's end comes with no input after it, so the end is
+    // heard too, and the colours come back then rather than at the next keystroke. The layer's
+    // line scrolls with the field: the scroll-offset entry, on one more element (ADR-0021). Reads
+    // values, one attribute, which element has focus and scroll offsets; no layout.
+    let composingIn = null;
+    let watchingReferenceTexts = false;
+    const referenceTextOf = (field) => {
+        const layer = field.previousElementSibling;
+        return layer !== null && layer.classList.contains('ex-reference-text') ? layer : null;
+    };
+    const gateReferenceText = (field, layer) => {
+        field.classList.toggle('ex-reference-text-shown',
+            editing !== 'none' && field === document.activeElement && composingIn !== field
+            && layer.getAttribute('data-ex-text') === field.value);
+        layer.firstElementChild.scrollLeft = field.scrollLeft;
+    };
+    const gateReferenceTexts = () => {
+        for (const layer of root.getElementsByClassName('ex-reference-text')) {
+            const field = layer.nextElementSibling;
+            if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+                gateReferenceText(field, layer);
+            }
+        }
+    };
+    const referenceTextObserver = new MutationObserver(gateReferenceTexts);
+    const heardReferenceInput = (event) => {
+        const field = event.target;
+        const layer = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? referenceTextOf(field) : null;
+        if (layer !== null) {
+            composingIn = event.isComposing === true ? field : null;
+            gateReferenceText(field, layer);
+        }
+    };
+    const onFieldScroll = (event) => {
+        const field = event.target;
+        const layer = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? referenceTextOf(field) : null;
+        if (layer !== null) {
+            layer.firstElementChild.scrollLeft = field.scrollLeft;
+        }
+    };
+    const onCompositionEnd = (event) => {
+        const field = event.target;
+        const layer = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? referenceTextOf(field) : null;
+        if (layer !== null) {
+            composingIn = null;
+            gateReferenceText(field, layer);
+        }
+    };
+    // Only while an edit is open, which is the only time a layer holds a text; closing takes every
+    // field's class away with it.
+    const watchReferenceTexts = (on) => {
+        if (on === watchingReferenceTexts) {
+            return;
+        }
+        watchingReferenceTexts = on;
+        if (on) {
+            referenceTextObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-text'], subtree: true });
+            root.addEventListener('scroll', onFieldScroll, true);
+            root.addEventListener('compositionend', onCompositionEnd, true);
+            return;
+        }
+        referenceTextObserver.disconnect();
+        root.removeEventListener('scroll', onFieldScroll, true);
+        root.removeEventListener('compositionend', onCompositionEnd, true);
+        composingIn = null;
+        for (const field of root.querySelectorAll('.ex-reference-text-shown')) {
+            field.classList.remove('ex-reference-text-shown');
+        }
+    };
 
     // Keys that follow a mode change are held until it lands (ADR-0010). The mode is
     // C#'s, and it tells this listener after the fact: in-process on WebAssembly, a round
@@ -560,10 +673,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             input.setRangeText('', start === end ? Math.max(0, start - 1) : start, end, 'end');
         } else if (k.key === 'Delete') {
             input.setRangeText('', start, start === end ? Math.min(input.value.length, end + 1) : end, 'end');
-        } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight' || k.key === 'Home' || k.key === 'End') {
-            const at = k.key === 'Home' ? 0
-                : k.key === 'End' ? input.value.length
-                : k.key === 'ArrowLeft' ? Math.max(0, start - 1)
+        } else if (k.key === 'Home' || k.key === 'End') {
+            // As the field would have: to the start or the end, Shift extending the selection, and
+            // scrolled to show it. Setting the selection from script moves no view, so a held End
+            // replayed on a circuit left the caret at the end and the text shown from its start
+            // (ticket 32, seen in CI on the Server host).
+            placeCaretAtEnd(input, k, input.closest('.ex-editor') !== null);
+            return true;
+        } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight') {
+            const at = k.key === 'ArrowLeft' ? Math.max(0, start - 1)
                 : Math.min(input.value.length, end + 1);
             if (input.closest('.ex-editor') !== null) {
                 noteCaretMove(input);
@@ -576,6 +694,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // The field hears it as it hears typing (its @oninput).
         input.dispatchEvent(new Event('input', { bubbles: true }));
         return true;
+    };
+    // Home or End answered in an editor field on an Apple platform (ticket 32), as Windows and
+    // Linux answer them, and a held Home or End replayed on any platform: the caret to the
+    // text's start or end, or with Shift the selection extended there from its anchor; in an
+    // editor surface, the user's own move. The field is scrolled to show that end — setting
+    // the offset from script moves no view by itself, and a number past the far end is clamped
+    // to it by the browser — so nothing is read but the field's value and selection (ADR-0021).
+    const placeCaretAtEnd = (input, k, ownMove = true) => {
+        const toEnd = k.key === 'End';
+        const edge = toEnd ? input.value.length : 0;
+        if (ownMove) {
+            noteCaretMove(input);
+        }
+        if (k.shiftKey) {
+            const anchor = input.selectionDirection === 'backward' ? input.selectionEnd : input.selectionStart;
+            if (toEnd) {
+                input.setSelectionRange(anchor ?? edge, edge, 'forward');
+            } else {
+                input.setSelectionRange(edge, anchor ?? edge, 'backward');
+            }
+        } else {
+            input.setSelectionRange(edge, edge);
+        }
+        input.scrollLeft = toEnd ? Number.MAX_SAFE_INTEGER : 0;
     };
     const typeIntoEditor = (k) => {
         const input = editorInput();
@@ -750,6 +892,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 await editorSettled();
             } else if (verdict === 'core') {
                 forward(rebased);
+            } else if (verdict === 'caret') {
+                const input = editorInput();
+                if (input) {
+                    placeCaretAtEnd(input, rebased);
+                }
             } else if (verdict === null && editing !== 'none') {
                 typeIntoEditor(rebased);
             }
@@ -849,6 +996,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         if (verdict === 'select') {
             event.target.select();
+            return;
+        }
+        if (verdict === 'caret') {
+            const input = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement
+                ? event.target
+                : editorInput();
+            if (input) {
+                placeCaretAtEnd(input, k);
+            }
             return;
         }
         const answer = forward(k);
@@ -1473,6 +1629,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (opened || mode === 'none') {
                 lastSurface = opened ? ownSurface(document.activeElement) : null;
             }
+            watchReferenceTexts(mode !== 'none');
             // A new state starts a new conversation: a report equal to one sent before it is
             // news to the core now (the next edit can open on the same text and caret).
             reportedText = null;
@@ -1626,6 +1783,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             document.removeEventListener('selectionchange', onSelectionChange);
             cancelAnimationFrame(caretFrame);
             caretFrame = 0;
+            watchReferenceTexts(false);
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
             lastSurface = null;

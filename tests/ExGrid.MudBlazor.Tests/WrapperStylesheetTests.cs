@@ -35,4 +35,8 @@ public class WrapperStylesheetTests
     [Fact] // ADR-0052/0029 / DC-44: the Wrapper paints the Size Tip through its tokens alone; its box, place and size are the core's
     public void The_wrapper_writes_no_rule_against_the_size_tip()
         => Assert.DoesNotContain(".ex-size-tip", WrapperStylesheet());
+
+    [Fact] // ADR-0057/0030 / DC-46: the Reference colours tell References apart and are not a brand, so the Wrapper leaves their tokens and classes at the core's
+    public void The_wrapper_leaves_the_reference_colours_alone()
+        => Assert.DoesNotContain("ex-reference", WrapperStylesheet());
 }

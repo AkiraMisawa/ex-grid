@@ -62,6 +62,34 @@ internal static class SelectionStyles
     {
         if (range.CellCount == 1 && range.Contains(focus))
             return null;
+        if (Whole(range, columns, rowHeightPx, painted, pinnedLayer) is not { } style || Clip(range, painted) is not { } rows)
+            return null;
+
+        var leftPx = columns.OffsetPxOf(range.LeftColumn);
+        if (range.Contains(focus) && Side(CellRange(focus), columns, pinnedLayer) is not null
+            && focus.Row >= rows.Top && focus.Row < rows.Top + rows.Count)
+        {
+            var holeLeftPx = columns.OffsetPxOf(focus.Column) - leftPx;
+            var holeRightPx = columns.OffsetPxOf(focus.Column + 1) - leftPx;
+            var holeTopPx = (focus.Row - rows.Top) * rowHeightPx;
+            var holeBottomPx = holeTopPx + rowHeightPx;
+            // evenodd: the box, then the Focus's cell inside it, is the box less the cell.
+            style += FormattableString.Invariant(
+                $"; --ex-range-hole: polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, {holeLeftPx}px {holeTopPx}px, {holeRightPx}px {holeTopPx}px, {holeRightPx}px {holeBottomPx}px, {holeLeftPx}px {holeBottomPx}px, {holeLeftPx}px {holeTopPx}px)");
+        }
+        return style;
+    }
+
+    /// <summary>
+    /// A rectangle painted whole in one layer and clipped to that layer's side of the pinned
+    /// boundary, or null when the layer holds no part of it: how a selected range is painted
+    /// (<see cref="Range"/>, which adds the Focus's hole), and how a Reference Outline is
+    /// (ADR-0057), so that whatever is drawn inside the edge stops at the boundary on each side
+    /// with no seam.
+    /// </summary>
+    public static string? Whole(
+        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted, bool pinnedLayer)
+    {
         if (Side(range, columns, pinnedLayer) is null || Clip(range, painted) is not { } rows)
             return null;
 
@@ -74,17 +102,6 @@ internal static class SelectionStyles
             style += pinnedLayer
                 ? FormattableString.Invariant($"; clip-path: inset(0 {rightPx - boundaryPx}px 0 0)")
                 : FormattableString.Invariant($"; clip-path: inset(0 0 0 {boundaryPx - leftPx}px)");
-        }
-        if (range.Contains(focus) && Side(CellRange(focus), columns, pinnedLayer) is not null
-            && focus.Row >= rows.Top && focus.Row < rows.Top + rows.Count)
-        {
-            var holeLeftPx = columns.OffsetPxOf(focus.Column) - leftPx;
-            var holeRightPx = columns.OffsetPxOf(focus.Column + 1) - leftPx;
-            var holeTopPx = (focus.Row - rows.Top) * rowHeightPx;
-            var holeBottomPx = holeTopPx + rowHeightPx;
-            // evenodd: the box, then the Focus's cell inside it, is the box less the cell.
-            style += FormattableString.Invariant(
-                $"; --ex-range-hole: polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, {holeLeftPx}px {holeTopPx}px, {holeRightPx}px {holeTopPx}px, {holeRightPx}px {holeBottomPx}px, {holeLeftPx}px {holeBottomPx}px, {holeLeftPx}px {holeTopPx}px)");
         }
         return style;
     }

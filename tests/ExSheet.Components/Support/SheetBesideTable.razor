@@ -1,0 +1,48 @@
+@* A Consumer's page in small, wired as /sheet is (ADR-0057, ADR-0049): an ExSheet reading the
+   Linked Table Positions, and a grid showing that table, outlined from what the Sheet tells the
+   page. ExSheet never reaches the grid; the page passes the list on. A method is bound to the
+   callback as a page binds one, which is what LinkedColumnColours exists for: bound to a list of
+   a type in the ExSheet namespace, Razor's code would not compile here. *@
+@using System.Globalization
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Columns
+@using global::ExGrid.Components
+@using global::ExSheet
+@using global::ExSheet.Components
+
+<ExSheet @ref="Sheet" ViewportHeight="400" ViewportWidth="700" Culture="Culture" OnLinkedColumnColoursChanged="Outline" />
+<div id="positions">
+    <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="20"
+            ViewportHeight="200" ViewportWidth="330" OutlinedColumns="_outlined" />
+</div>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    /// <summary>A row of the page's positions.</summary>
+    public sealed record Position(string Id, string Book, double PV);
+
+    private static readonly Position[] Positions =
+    [
+        new("R-1", "Rates", 100),
+        new("R-2", "FX", 250),
+        new("R-3", "Credit", 7),
+    ];
+
+    // Named as the table's columns are declared.
+    private static readonly IReadOnlyList<GridColumn<Position>> PositionColumns =
+    [
+        new("Id", ColumnType.Text, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("Book", ColumnType.Text, p => p.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("PV", ColumnType.Number, p => p.PV, width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
+    ];
+
+    private IReadOnlyList<OutlinedColumn> _outlined = [];
+
+    /// <summary>The Sheet, for the test to declare the table on.</summary>
+    public ExSheet? Sheet { get; private set; }
+
+    private void Outline(LinkedColumnColours columns) =>
+        _outlined = [.. columns.Where(c => c.Column.Table == "Positions").Select(c => new OutlinedColumn(c.Column.Column, c.Colour))];
+}
