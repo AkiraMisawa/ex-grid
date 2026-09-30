@@ -331,3 +331,8 @@ has a Formula open, or while a Consumer asks for columns to be outlined.
   `--ex-reference-pointed-background` and `--ex-reference-pointed-color` paint the pointed
   Reference's ground and text. Their defaults approximate Excel's `#c6c6c6` and the Reference's
   colour darkened (2026-09-30).
+  *(Changed 2026-09-30, decided with the user after Part B of the eighth Windows run:)* the pointed
+  text's shade is one token per place in the palette, `--ex-reference-1-pointed` to
+  `--ex-reference-7-pointed`, so that each can be Excel's. The first two default to Excel's `#0401a2`
+  and `#630101`; the rest keep the approximation until observed (ADR-0057).
+  `--ex-reference-pointed-color`, which set one shade for all seven, is retired with it.

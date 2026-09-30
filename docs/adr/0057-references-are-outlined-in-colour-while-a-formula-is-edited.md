@@ -298,3 +298,37 @@ Bar showed no text at all.
   layer's text lies, if its field is narrower than the core's box. That is a mistake in the page's
   setup, and it shows in plain sight.
 
+## What Part B of the eighth Windows run settled *(2026-09-30)*
+
+Part B of `docs/specs/exsheet/verify-on-windows-8.md` typed every case of Part A into ExSheet on
+`/sheet`, under Chrome and Edge, on both hosts and behind 150 ms, and compared what it drew with
+Excel. It is recorded in `verification/2026-09-30-windows-8/reference-outlines.md`. All six
+configurations drew the same.
+
+- **What agreed**: the seven colours in order of first appearance and round again, a colour shared
+  by the same cells, `Sheet1!A1`, nothing in a string or on a function name, whole columns and rows,
+  the Linked Table's columns outlined in the positions grid in the text's colour, nothing for an
+  undeclared table or column, `+A1`, `-B2` and `=SUM(A1:`, the colours only in the surface the edit
+  is in, the grey on the pointed Reference except straight after `=`, and `=D11+D125`. Typed as fast
+  as the run's driver sends keys behind 150 ms, no frame showed coloured text over characters it did
+  not belong to (DC-47).
+- **The dashes over Point's outline are black on `/sheet`, and green in Excel.** They take the Focus
+  outline's colour, as decided. `/sheet` sets none, so it is `CanvasText`; Excel's active cell is
+  green. The rule stands.
+- **The fills differ from Excel's by a unit or two** (`#eaf0f9` against `#ebf0f9`). Excel's own two
+  runs read both values for the same fill. This is taken as rounding, and nothing changes.
+- **The pointed Reference's text is Excel's dark shade of its colour** *(decided with the user)*. The
+  shade was approximated by mixing the colour 55% toward black, which gave `#1b3a6d` and `#6a1d22`
+  where Excel draws `#0401a2` and `#630101`. Each place in the palette now has a Visual Token for its
+  pointed shade. The first two take Excel's values. The other five keep the approximation until a
+  Windows run observes them, and a Theme may set all seven. Dark mode keeps the mix toward white;
+  Excel's dark shades were not observed.
+- **Seen with no Excel reading to compare**:
+  - In the Formula Bar, ↓ after `=` does not point. Excel's bar does not either (2026-09-27, item 12).
+  - **In the Formula Bar, `Home` committed the Formula and moved the Focus.** Typing in the bar had
+    ended Point in Overwrite, where `Home` moves between cells. Excel's bar is always in Edit. That is
+    corrected in ADR-0051 (note of the same day), as a defect.
+  - A Reference whose range crosses the Pinned Columns is drawn as two elements, one in each layer,
+    as a selected range is ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). DC-46 said
+    "one element per Reference". It now says one per layer the Reference crosses, never per cell
+    *(decided with the user)*.

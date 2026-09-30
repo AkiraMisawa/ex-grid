@@ -230,3 +230,18 @@ ground, unless it follows the Formula's leading `=` directly. It is a look on AD
 layer, not a selection of the field's text. A key typed next follows the Reference, as it always did
 (`=D11+D12`, then `5`, gives `=D11+D125`).
 
+## An edit in the Formula Bar never enters Overwrite *(2026-09-30, decided with the user)*
+
+Part B of the eighth Windows run typed `=A1+B1` into the Formula Bar, then pressed `Home`. The
+Formula was committed, and the Focus moved to column A. Typing the `A` had ended Point, and Point
+ends in Overwrite (Excel's Enter mode), where `Home`, the arrows and `End` move between cells. That
+is right in the cell, and wrong in the bar: Excel's Formula Bar is always in Edit (2026-09-27, item
+12, "status Edit"). A press into the bar already opens an edit in Caret.
+
+- **While the edit is in the Formula Bar, it is in Caret or in Point, never in Overwrite.** Typing
+  that ends Point there returns to Caret. `Home`, `End`, ← and → move the caret, as they do in Caret
+  anywhere, and Enter, Tab and Escape keep their meanings.
+- **An edit that moves from the cell into the bar goes into Caret**, and one that moves back into the
+  cell keeps the mode it has. Excel's cell does not return to Enter mode once it is in Edit.
+- F2 in the bar was seen to change nothing. What Excel's F2 does there was not observed, and it is
+  left as it is.
