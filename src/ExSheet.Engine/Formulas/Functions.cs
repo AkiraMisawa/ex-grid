@@ -25,7 +25,30 @@ internal static partial class FunctionLibrary
         new("ROUND", 2, 2, "number, num_digits", "Rounds a number to a specified number of digits, half away from zero.", Round),
         new("IFERROR", 2, 2, "value, value_if_error", "Returns value_if_error if value is an Error Value, and value otherwise. #GETTING_DATA is not an error to it.", IfError),
         new("ISERROR", 1, 1, "value", "Returns TRUE if value is an Error Value. #GETTING_DATA is not an error to it.", IsError),
-        new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup),
+        new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
+        {
+            // Excel's lists, character for character: match_mode's as the Windows runs of
+            // 2026-09-27 (item 14) and 2026-09-30 (case 13) saw them, search_mode's as the
+            // second of them saw it (case 12).
+            Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
+            {
+                [4] =
+                [
+                    new("0", "0 - Exact match"),
+                    new("-1", "-1 - Exact match or next smaller item"),
+                    new("1", "1 - Exact match or next larger item"),
+                    new("2", "2 - Wildcard character match"),
+                    new("3", "3 - Regex match"),
+                ],
+                [5] =
+                [
+                    new("1", "1 - Search first-to-last"),
+                    new("-1", "-1 - Search last-to-first"),
+                    new("2", "2 - Binary search (sorted ascending order)"),
+                    new("-2", "-2 - Binary search (sorted descending order)"),
+                ],
+            },
+        },
     ];
 
     // ---- Aggregates: SUM, AVERAGE, MIN, MAX ----------------------------------------------

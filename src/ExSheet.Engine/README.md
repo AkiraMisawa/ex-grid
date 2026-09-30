@@ -110,6 +110,10 @@ them:
 | `ISERROR` | `value` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
 
+`DeclaredFunction.ValuesOf(index)` gives the values an argument takes from a fixed list, in Excel's
+order and with Excel's texts, which completion lists there: `XLOOKUP`'s `match_mode` (`0 - Exact
+match`, `-1 - Exact match or next smaller item`, …) and `search_mode` (`1 - Search first-to-last`, …).
+
 Where the engine cannot give Excel's answer, it gives an Error Value and never a different
 answer:
 
@@ -207,8 +211,9 @@ Value when it has exactly one row, and `#VALUE!` otherwise.
 ## Formula entry
 
 `FormulaEntry` answers, over a Formula's unfinished text and its caret, what an editor needs:
-completion candidates (`Sheet.Complete` adds the Sheet's Linked Tables to the functions), the
-argument hint, whether a Reference can be written at the caret (Point mode), the Reference
+completion candidates on Excel's triggers — names once a letter is typed (`Sheet.Complete` adds the
+Sheet's Linked Tables to the functions), a table's columns after `Table[`, and an argument's values
+where it takes one of a fixed list, before anything is typed — the argument hint, whether a Reference can be written at the caret (Point mode), the Reference
 text for a range, what F4 makes of the Reference at the caret, and every Reference in the text
 with the cells it names or the Linked Table column it reads, for Reference Outlines
 (`Sheet.References` reads a Sheet qualifier against the Sheet's own name).
