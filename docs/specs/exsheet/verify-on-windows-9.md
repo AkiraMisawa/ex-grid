@@ -82,6 +82,11 @@ and `/sheets` in Chrome and Edge, both hosts, at 150%.
   written, and the reason shown.
 - The completion cases of `verify-on-windows-10.md`, group 1, typed into ExSheet on `/sheet`, beside
   what Excel did there.
+- **Ask Excel too** (ADR-0058, "Readings taken while building ticket 44"), with the Table `Positions`
+  of `verify-on-windows-10.md`: `=XLOOKUP(1,A2:A4,B2:B4,,1)` with the caret moved between `,,` and
+  `1`: is a list shown, and what does Tab write? `=XLOOKUP(1,A2:A4,B2:B4,,4` and `,,A` at
+  `match_mode`: is a list shown? With the value list open, `Home`, `End` and Shift+→: what does each
+  do? Then the same in ExSheet on `/sheet`.
 - The pointer over the positions grid while pointing (`cell`), and not otherwise.
 - The positions grid narrowed until it shows its own scrollbars: the outlines and the dashes on its
   last column and its last painted row are whole, not cut by the Scrollbar Gutter.

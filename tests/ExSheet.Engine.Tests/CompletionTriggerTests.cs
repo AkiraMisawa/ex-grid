@@ -133,40 +133,49 @@ public class CompletionTriggerTests
         Assert.All(completion.Candidates, c => Assert.Null(c.Description));
     }
 
-    [Theory] // ADR-0058, SH-36: a prefix of a value lists the values it begins, and accepting one replaces the prefix
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-|", 24, 1, new[] { "-1 - Exact match or next smaller item" })]
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,-|", 26, 1, new[] { "-1 - Search last-to-first", "-2 - Binary search (sorted descending order)" })]
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,, -|)", 25, 1, new[] { "-1 - Exact match or next smaller item" })]
-    public void A_prefix_lists_the_values_it_begins(string marked, int start, int length, string[] expected)
+    [Theory] // ADR-0058 (the tenth Windows run), SH-36: the beginning of a value lists every value, the first to be chosen — Excel does not narrow a value list by prefix — and accepting one replaces what was typed
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-|", 24, 1, 4)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,-|", 26, 1, 5)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,, -|)", 25, 1, 4)]
+    public void ADR0058_the_beginning_of_a_value_lists_every_value(string marked, int start, int length, int argument)
     {
         var completion = Complete(marked)!;
 
-        Assert.Equal(expected, completion.Candidates.Select(c => c.Name));
+        Assert.Equal(argument == 4 ? MatchModes : SearchModes, completion.Candidates.Select(c => c.Name));
         Assert.Equal(start, completion.Start);
         Assert.Equal(length, completion.Length);
     }
 
-    [Theory] // ADR-0058, SH-36: with the caret before a value already there, the list replaces the whole of it
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|1)", 5)]
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-|1)", 1)]
-    public void The_list_replaces_the_whole_value(string marked, int listed)
+    [Theory] // ADR-0058, SH-36: with the caret before a value already there, or inside it, every value is listed and the list replaces the whole of it
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|1)", 1)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-|1)", 2)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|-1)", 2)]
+    public void The_list_replaces_the_whole_value(string marked, int length)
     {
         var completion = Complete(marked)!;
 
         Assert.Equal(24, completion.Start);
-        Assert.Equal(marked.Contains("-|1", StringComparison.Ordinal) ? 2 : 1, completion.Length);
-        Assert.Equal(listed, completion.Candidates.Count);
+        Assert.Equal(length, completion.Length);
+        Assert.Equal(MatchModes, completion.Candidates.Select(c => c.Name));
     }
 
-    [Theory] // ADR-0058, SH-36: a value typed whole, with the caret after it, lists nothing: there is nothing left to choose
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0|")]
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-1|")]
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,3|)")]
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,1|")]
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,-2|")]
-    public void A_value_typed_whole_lists_nothing(string marked)
+    [Theory] // ADR-0058 (the tenth Windows run, case 1), SH-36: a value typed whole, with the caret after it, lists that value alone — 0 lists 0 - Exact match — and accepting it writes it again over itself
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0|", "0 - Exact match", 24, 1)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-1|", "-1 - Exact match or next smaller item", 24, 2)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,3|)", "3 - Regex match", 24, 1)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,, 1|)", "1 - Exact match or next larger item", 25, 1)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,1|", "1 - Search first-to-last", 26, 1)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,-2|", "-2 - Binary search (sorted descending order)", 26, 2)]
+    public void ADR0058_a_value_typed_whole_lists_that_value_alone(string marked, string listed, int start, int length)
     {
-        Assert.Null(Complete(marked));
+        var completion = Complete(marked)!;
+
+        var candidate = Assert.Single(completion.Candidates);
+        Assert.Equal(listed, candidate.Name);
+        Assert.Equal(CompletionKind.ArgumentValue, candidate.Kind);
+        Assert.Equal(start, completion.Start);
+        Assert.Equal(length, completion.Length);
+        Assert.Equal(AtCaret(marked).Text.Substring(start, length), candidate.InsertText);
     }
 
     [Theory] // ADR-0058, SH-36: an argument holding anything but the beginning of a value lists nothing
