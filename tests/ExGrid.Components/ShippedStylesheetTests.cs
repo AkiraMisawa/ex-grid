@@ -201,8 +201,9 @@ public class ShippedStylesheetTests
         // ...into the surface that last held the keyboard, one of this grid's own.
         Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
         Assert.Contains("const standingField = () => surfaceField(ownSurface(lastSurface));", script.Text, StringComparison.Ordinal);
-        // Script moves DOM focus in these two places only: this, and the hand-back to the root.
-        Assert.Equal(2, Regex.Matches(script.Text, @"\.focus\(").Count);
+        // Script moves DOM focus in these three places only: this, the hand-back to the root, and
+        // the open edit's own focus, each only while the keyboard is this grid's (ADR-0021).
+        Assert.Equal(3, Regex.Matches(script.Text, @"\.focus\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -296,8 +297,35 @@ public class ShippedStylesheetTests
         // ...and so does the first surface in the markup, taken when none is known, for the field a
         // held key is typed into as much as for the keyboard's return: one helper for both.
         Assert.Matches(new Regex(@"const surfaceField = \(surface\) => \{\s*const chosen = surface\s*\?\? \(root \? \[\.\.\.root\.querySelectorAll\('\.ex-editor'\)\]\.find\(\(box\) => ownSurface\(box\) === box\) : null\);"), script.Text);
-        Assert.Contains("const editorInput = () => surfaceField(ownSurface(document.activeElement));", script.Text, StringComparison.Ordinal);
+        Assert.Contains("const editorInput = () => (focusDeclined ? standingField() : surfaceField(ownSurface(document.activeElement)));", script.Text, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"root\.querySelector\('\.ex-editor'\)"), script.Text);
+    }
+
+    [Fact] // ADR-0021 (note of 2026-09-30) / ADR-0018 section 6 / ED-28: the open edit's focus is granted only while the keyboard is this grid's, and a decline lets the held keys into the edit
+    public void The_open_edits_focus_is_granted_only_while_the_keyboard_is_this_grids()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var method = Regex.Match(script.Text, @"focusEditor: \(bar\) => \{.*?\n        \},", RegexOptions.Singleline);
+        Assert.True(method.Success, "focusEditor is not in the handle");
+        var body = method.Value;
+
+        // Found in the core's own box, a Chrome's control included, as the press back finds it: the
+        // core holds no reference to a control it did not render (ADR-0010).
+        Assert.Contains("ownSurface(b) === b", body, StringComparison.Ordinal);
+        Assert.Contains("surfaceField(box)", body, StringComparison.Ordinal);
+        // Granted only while DOM focus is inside this root or on nothing: reclaimFocus's condition.
+        Assert.Contains("!active || active === document.body || active === document.documentElement || root.contains(active)", body, StringComparison.Ordinal);
+        // Scrolled into view as Blazor's FocusAsync did: no preventScroll here.
+        Assert.Contains("field.focus();", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("preventScroll", body, StringComparison.Ordinal);
+        // Declined, the surface asked for is the edit's, where the held keys and a press back go.
+        Assert.Contains("lastSurface = box;", body, StringComparison.Ordinal);
+        Assert.Contains("focusDeclined = true", body, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+        // A decline ends the hold's wait for the editor's focus, and the held keys go into the edit
+        // the keyboard last held, never to the grid it went to (ADR-0010, same day).
+        Assert.Contains("editing === 'none' || editorFocused() || focusDeclined", script.Text, StringComparison.Ordinal);
+        Assert.Contains("focusDeclined ? standingField()", script.Text, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0037 / KB-26: a held Space engages once — the gate takes and drops a repeated plain Space

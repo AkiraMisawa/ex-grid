@@ -1831,6 +1831,10 @@
     private Action<string>? _chromeNameBoxTextChanged;
     private Action? _chromeNameBoxBlurred;
     private Func<Task>? _chromeFormulaBarFocused;
+    // The core's focus functions a Chrome's editor controls call (TakeFocus), held so the
+    // contexts built each render carry the same delegate.
+    private Func<Task>? _chromeEditorTakeFocus;
+    private Func<Task>? _chromeBarTakeFocus;
     private Action<string>? _chromeFormulaBarTextChanged;
     // Whether a Chrome paints the bar's text field, and its focus requests — the core holds
     // no reference to a control it did not render (ADR-0010/0030).
@@ -2806,36 +2810,26 @@
         // the render that paints the input, which is already on its way.
         // The Formula Bar is the editor's second surface (ADR-0051): a request made while
         // the user works there goes back to the bar, never across to the cell.
+        // Asked of the module, which grants it only while the keyboard is still this grid's
+        // (FocusSurfaceAsync, ADR-0021's note of 2026-09-30).
         if (_editorNeedsFocus && _editSurface == EditSurface.Bar)
         {
-            // A Chrome's control focuses itself on its context's request number.
+            // A Chrome's control asks on its context's request number (TakeFocus).
             if (_formulaBarIsChrome)
                 _editorNeedsFocus = false;
             else if (_formulaBarElement.Context is not null)
             {
                 _editorNeedsFocus = false;
-                try
-                {
-                    await _formulaBarElement.FocusAsync();
-                }
-                catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-                {
-                }
+                await FocusSurfaceAsync(bar: true);
             }
         }
         else if (_editorNeedsFocus && (_editorIsChrome || _editorElement.Context is not null))
         {
             _editorNeedsFocus = false;
-            try
-            {
-                // A Chrome's editor focuses its own control (ADR-0010/0030): the core's
-                // reference is the built-in input's, and there is none to focus then.
-                if (!_editorIsChrome)
-                    await _editorElement.FocusAsync();
-            }
-            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-            {
-            }
+            // A Chrome's editor asks for its own control through its context (ADR-0010/0030):
+            // the core's reference is the built-in input's, and there is none to focus then.
+            if (!_editorIsChrome)
+                await FocusSurfaceAsync(bar: false);
         }
         // After the render that carries the text the core wrote or opened the edit on, and once
         // the surface holding it has DOM focus (ADR-0051): an editor not painted yet waits for
@@ -7063,7 +7057,8 @@
             !FormulaBarEditable,
             _chromeFormulaBarFocused ??= () => _pressAnswer = FromChromeAsync(OnFormulaBarFocusAsync),
             _chromeFormulaBarTextChanged ??= text => FromChrome(() => OnFormulaBarInput(text)),
-            _formulaBarFocusRequest)
+            _formulaBarFocusRequest,
+            _chromeBarTakeFocus ??= () => InvokeAsync(() => FocusSurfaceAsync(bar: true)))
         {
             ReferenceText = BarReferenceTextForChrome,
         };
@@ -7122,10 +7117,39 @@
                 StateHasChanged();
             }),
             _editError is null ? null : MessageId,
-            _editorFocusAsked ? _editorFocusRequest : 0)
+            _editorFocusAsked ? _editorFocusRequest : 0,
+            _chromeEditorTakeFocus ??= () => InvokeAsync(() => FocusSurfaceAsync(bar: false)))
         {
             ReferenceText = CellReferenceTextForChrome,
         };
+    }
+
+    /// <summary>
+    /// The request that an editor surface take the keyboard — the Cell Editor's (<paramref name="bar"/>
+    /// false) or the Formula Bar's text — after the render that painted it: on opening, on F2,
+    /// after a Reject. Asked of the module and not of Blazor's <c>FocusAsync</c>, which takes
+    /// focus wherever it is: on a circuit the request lands a round trip after that render, and a
+    /// grid or a control of the page's the user has pressed in between would lose its keyboard to
+    /// an edit it has left. The module grants it only while DOM focus is inside this root or on
+    /// nothing, the condition <see cref="ReclaimFocusAsync(bool)"/> reads, and finds the field in
+    /// the core's own box, a Chrome's control included, so the core holds no reference to a
+    /// control it did not render (ADR-0021's note of 2026-09-30, ADR-0018 section 6, ADR-0010).
+    /// Declined, the edit is left standing, and the listener hands the keys held behind the key
+    /// that opened it to the edit. Before the handle is attached there is no listener, and
+    /// nothing is asked.
+    /// </summary>
+    /// <param name="bar">Whether the surface is the Formula Bar's text.</param>
+    private async Task FocusSurfaceAsync(bool bar)
+    {
+        if (_disposed || _scrollHandle is null)
+            return;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("focusEditor", bar);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
     }
 
     /// <summary>F2's other door (ADR-0010): a double click enters Caret on an editable
@@ -7390,11 +7414,12 @@
     /// <para>Only while DOM focus is still inside this root, or on nothing (<c>body</c>): on a
     /// circuit this lands a round trip after the gesture that asked for it, and a second grid
     /// the user has pressed in the meantime keeps its keyboard (ADR-0018). The condition is
-    /// the handle's to read, since only the browser knows where focus is now — one of the two
-    /// decisions about focus made in JavaScript (ADR-0021); the other is the press on the rows
+    /// the handle's to read, since only the browser knows where focus is now — one of the three
+    /// decisions about focus made in JavaScript (ADR-0021); the others are the press on the rows
     /// or the headings that brings the keyboard back to an edit left standing (ADR-0018,
-    /// section 6). Before the handle is attached there is no listener on the root to hand keys
-    /// to, and nothing is asked.</para>
+    /// section 6), and the open edit's own focus (<see cref="FocusSurfaceAsync"/>). Before the
+    /// handle is attached there is no listener on the root to hand keys to, and nothing is
+    /// asked.</para>
     ///
     /// <para>Nor, unless <paramref name="fromField"/> says so, while it is on a field beside the
     /// rows with focus of its own — the Formula Bar or the Name Box, built in or a Chrome's,

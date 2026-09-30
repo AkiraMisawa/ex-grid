@@ -2,15 +2,14 @@
    ex-editor box in the bar — the Cell Editor's second surface, so it is painted as the Cell
    Editor's content is, with Material's underline while it takes typing. The core owns the
    box, the keys and the one uncommitted text; this paints the control, reports what is
-   typed, and takes DOM focus for each request. The coloured text the core draws goes
-   immediately before it, as the Cell Editor's does (ADR-0057). *@
+   typed, and answers each focus request through the core's focus function. The coloured
+   text the core draws goes immediately before it, as the Cell Editor's does (ADR-0057). *@
 @Context.ReferenceText
 <input class="@(Context.ReadOnly ? "mud-ex-formula-bar-text" : "mud-ex-formula-bar-text mud-ex-formula-bar-text-editable")"
        @bind:get="_text.Shown" @bind:set="OnInput" @bind:event="oninput" readonly="@Context.ReadOnly" tabindex="-1" aria-label="@Label"
-       @onfocus="OnFocus" @ref="_input" />
+       @onfocus="OnFocus" />
 
 @code {
-    private ElementReference _input;
     private int? _focusedRequest;
     private bool _needsFocus;
 
@@ -51,13 +50,10 @@
             return;
         _needsFocus = false;
         _focusedRequest = Context.FocusRequest;
-        try
-        {
-            // Blazor's own FocusAsync — focus stays out of JavaScript (ADR-0021).
-            await _input.FocusAsync();
-        }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-        {
-        }
+        // The core's focus function, as the Cell Editor's control answers its requests: the core
+        // focuses this control only while the keyboard is still this grid's (ADR-0010, ADR-0021's
+        // note of 2026-09-30).
+        if (Context.TakeFocus is { } takeFocus)
+            await takeFocus();
     }
 }

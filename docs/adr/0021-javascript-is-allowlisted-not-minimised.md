@@ -182,9 +182,10 @@ These are the places where reaching for JS would be the easy answer, and where w
   with its own `FocusAsync` when the core asks through the fragment's context. "Focus the first
   focusable thing in the cell" was the JavaScript answer and is recorded there as rejected. The
   one change to `ex-grid.js` is inside the first entry's filter: a repeated plain Space is taken
-  and dropped, so a held Space engages once.)* *(Two decisions about focus are now made in script,
-  both in notes at the end of this ADR: the hand-back of 2026-09-27, and the press that brings the
-  keyboard back to an edit left standing, 2026-09-29.)*
+  and dropped, so a held Space engages once.)* *(Three decisions about focus are now made in script,
+  all in notes at the end of this ADR: the hand-back of 2026-09-27, the press that brings the
+  keyboard back to an edit left standing, 2026-09-29, and the editor's own focus, taken only while
+  the keyboard is still this grid's, 2026-09-30.)*
 - **Measuring the scrollbar.** The gutter is *reported*, never read — see the fourth entry above
   for why those are different things. Nothing in the grid calls `getBoundingClientRect`,
   `clientWidth` or `offsetWidth` on the path to a paint.
@@ -344,3 +345,35 @@ while an edit is open starts a hold in the same listener. The keys typed after i
 order, until the core has answered the press (`PressAnsweredAsync`, already asked for a held
 press), and are then replayed against the mode the answer leaves. No listener is added and no
 layout is read.)*
+
+*(Added 2026-09-30, decided with the user, with
+[ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6: the core's own request that
+an editor surface take the keyboard goes through the module, and is granted only while DOM focus is
+inside this root or on nothing, the condition `reclaimFocus` already reads.)* The request is the one
+made after the render that paints the Cell Editor, or the edit in the Formula Bar's text: on opening,
+on F2, and after a Reject. Blazor's `FocusAsync` takes focus wherever focus is, and on a circuit it
+runs when the browser acknowledges that render, a round trip after it.
+
+- **Found by CI**, on msedge against the Server host: ED-26's test on `/sheets`. `=` was typed on
+  the left Sheet and the right Sheet was pressed. Then the left editor's `FocusAsync` landed and took
+  the keyboard back to the left.
+- **The race was on the base before any change.** With 40 ms injected, the same steps failed 9 runs
+  in 40 on the base and 8 in 40 on the branch under test. Every failure logged the same order: the
+  press on the right, then the left editor taking focus.
+- **Only script can tell.** C# cannot know where DOM focus is without measuring. A `focusout` from
+  the other grid reaches the core too late to cancel a call already sent. Only script, at the moment
+  of focusing, can tell whether the keyboard is still this grid's.
+- **This is the third decision about focus made in script.** It reads `document.activeElement` and
+  no layout, and it adds no listener.
+- **When the request is declined, the edit is left standing**, as section 6 defines, and a press
+  on this grid's rows brings the keyboard back. Keys held behind the key that opened the edit do not
+  wait for a focus that will not come
+  ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md), note of the same day).
+- **A Chrome's editor control no longer focuses itself.** Its context hands it a function of the
+  core's, which it calls on a request it has not answered yet, once its control is painted. The core
+  finds the control inside its own box, as the press back already does, so it still holds no
+  reference to a control it did not render (ADR-0010). Leaving Chromes to focus themselves, and
+  recording the gap, was rejected: swapping Chrome would then change who gets the keyboard.
+- **Open, not decided here:** a popover's opening focus (the column menu, the filter, Find) and a
+  Template cell's own focus. Each is taken a round trip after a gesture in this grid too, so the same
+  race exists there in principle. Nothing has been seen to fail there. It is recorded, not built.

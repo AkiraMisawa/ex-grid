@@ -396,6 +396,79 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+// ED-28 (ADR-0021's note of 2026-09-30, ADR-0018 section 6): an edit that opens takes the keyboard
+// only while the keyboard is still this grid's. The Cell Editor is focused after the render that
+// paints it, a round trip later on a circuit; a press on the other Sheet in between keeps its
+// keyboard, the left edit stands with what was typed, and a press back on the left's rows brings the
+// keyboard to it. Found by CI on the Server host, in ED-26's /sheets test above: the left editor's
+// focus landed after the press on the right and took the keyboard back. The race failed 9 runs in 40
+// on the base with 40 ms injected. WebAssembly has no round trip for a press to land in.
+const inRoot = (page, index) => page.evaluate((i) => {
+    const grids = [...document.querySelectorAll('.ex-grid')].filter((g) => g.querySelector(':scope > .ex-formula-bar'));
+    return grids[i].contains(document.activeElement);
+}, index);
+
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`ADR-0021/ED-28: an edit opening on the left Sheet, and a press on the right at once, 40 ms round trip (${chrome} Chrome)`, () => {
+        test.beforeEach(async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly has no round trip: the editor is focused before any press can land');
+            await page.goto(chrome === 'builtin' ? '/sheets' : `/sheets?chrome=${chrome}`);
+            await expect(cell(sheet(page, 0), 'A1')).toHaveText('Left');
+            await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
+            if (chrome !== 'builtin') {
+                await expect(sheet(page, 0).locator('.mud-ex-formula-bar-text').first()).toBeAttached();
+            }
+        });
+
+        test('= typed on the left and the right pressed at once, thirty times: the right keeps the keyboard, and the left edit stands', async ({ page }) => {
+            const left = sheet(page, 0);
+            const right = sheet(page, 1);
+            await setRoundTrip(40);
+            for (let round = 0; round < 30; round++) {
+                await pressCell(left, 'D1');
+                // No wait between the two: the press lands before the left's editor has the keyboard.
+                await page.keyboard.type('=');
+                await pressCell(right, 'D2');
+                await expect(editor(left)).toHaveValue('=');
+                // Long past the round trip in which the left's editor would take focus: still the right's.
+                // Soft, so a run says how many of the thirty rounds lost it.
+                await page.waitForTimeout(200);
+                expect.soft(await inRoot(page, 1), `round ${round}: the right holds the keyboard`).toBe(true);
+                await expect(editor(left)).toHaveValue('=');
+
+                // The press back brings the keyboard to the edit standing there (ED-26), and points.
+                await clickCell(left, 'B1');
+                await expect(editor(left)).toHaveValue('=B1');
+                await expect(editor(left)).toBeFocused();
+                await page.keyboard.press('Escape');
+                await expect(editor(left)).toHaveCount(0);
+            }
+        });
+
+        test('=1 typed at full speed and the right pressed at once: the 1 held behind the = goes into the left edit, not the right', async ({ page }) => {
+            const left = sheet(page, 0);
+            const right = sheet(page, 1);
+            await setRoundTrip(40);
+            await pressCell(left, 'D1');
+            await page.keyboard.type('=1');
+            await pressCell(right, 'D2');
+            await expect(right).toBeFocused();
+            await expect(editor(left)).toHaveValue('=1');
+            await page.waitForTimeout(200);
+            expect(await inRoot(page, 1)).toBe(true);
+            await expect(editor(left)).toHaveValue('=1');
+            // Nothing reached the right: it opened no edit, and its cell is as it was.
+            await expect(editor(right)).toHaveCount(0);
+            await expect(cell(right, 'D2')).toHaveText('');
+
+            // The press back: no Reference can go after =1, so it commits, and the left has the keyboard.
+            await clickCell(left, 'B1');
+            await expect(cell(left, 'D1')).toHaveText('1');
+            await expect(left).toBeFocused();
+        });
+    });
+}
+
 // ED-22, widened (ADR-0010, 2026-09-29): a press on the rows while an edit is open is a mode change
 // too, and the keys typed after it are held until the core has answered it, then handed on against
 // the mode the answer leaves (ADR-0021's note of the same day). Found building this file: `99` over

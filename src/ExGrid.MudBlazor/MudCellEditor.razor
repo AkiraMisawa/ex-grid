@@ -10,13 +10,12 @@
    it while the core's listener says it may. *@
 @Context.ReferenceText
 <input class="@(Context.Error is null ? "mud-ex-editor" : "mud-ex-editor mud-ex-editor-error")"
-       @bind:get="_text.Shown" @bind:set="OnInput" @bind:event="oninput" @ref="_input"
+       @bind:get="_text.Shown" @bind:set="OnInput" @bind:event="oninput"
        aria-label="@Context.Column"
        aria-invalid="@(Context.Error is null ? null : "true")"
        aria-describedby="@Context.MessageId" />
 
 @code {
-    private ElementReference _input;
     private int _focusedRequest;
     private bool _needsFocus;
 
@@ -40,7 +39,7 @@
         _text.Told(Context.InitialText);
         // The core asks for focus on opening, on F2, and after a Reject that a
         // click-away had moved focus off the control (ADR-0034); each request is a new
-        // number, and the control focuses itself for each (ADR-0010/0030). Zero asks
+        // number, and the control answers each once it is painted (ADR-0010/0030). Zero asks
         // nothing: an edit the Formula Bar opened leaves the keyboard in the bar (ADR-0051).
         if (Context.FocusRequest != 0 && Context.FocusRequest != _focusedRequest)
             _needsFocus = true;
@@ -57,13 +56,11 @@
             return;
         _needsFocus = false;
         _focusedRequest = Context.FocusRequest;
-        try
-        {
-            // Blazor's own FocusAsync — focus stays out of JavaScript (ADR-0021).
-            await _input.FocusAsync();
-        }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-        {
-        }
+        // The core's focus function, not the control's own FocusAsync: the core finds this control
+        // in its box and focuses it only while the keyboard is still this grid's. Focused here, a
+        // round trip after the render that asked, it took the keyboard back from another grid the
+        // user had pressed in between (ADR-0010, ADR-0021's note of 2026-09-30).
+        if (Context.TakeFocus is { } takeFocus)
+            await takeFocus();
     }
 }
