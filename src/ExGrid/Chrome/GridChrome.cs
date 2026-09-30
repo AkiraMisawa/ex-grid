@@ -245,7 +245,8 @@ public sealed record CellEditorContext(
     Action Commit,
     Action Cancel,
     string? MessageId = null,
-    int FocusRequest = 0)
+    int FocusRequest = 0,
+    Func<Task>? TakeFocus = null)
 {
     /// <summary>The id of the popover carrying <see cref="Error"/> while a Reject stands
     /// (ADR-0034), for the control's <c>aria-describedby</c>; null when nothing is
@@ -260,8 +261,19 @@ public sealed record CellEditorContext(
     /// as on any later render; a request is never re-used, so a control mounted by one edit
     /// cannot mistake it for another's. The core holds no reference to a control it did not
     /// render (ADR-0010/0030), which is the rule <see cref="TemplateCellContext{TRow}.FocusRequest"/>
-    /// follows too (ADR-0037).</summary>
+    /// follows too (ADR-0037). The control answers a request by calling <see cref="TakeFocus"/>,
+    /// not by focusing itself.</summary>
     public int FocusRequest { get; init; } = FocusRequest;
+
+    /// <summary>The core's focus function, which a control calls, once it is painted, to answer
+    /// a <see cref="FocusRequest"/> it has not answered yet, instead of taking DOM focus itself
+    /// (ADR-0010, ADR-0021's note of 2026-09-30). The core finds the control inside its own box
+    /// and focuses it only while the keyboard is still this grid's: DOM focus inside the root or
+    /// on nothing. On a circuit the request lands a round trip after the render that painted
+    /// the control, and a grid or a control of the page's the user has pressed in the meantime
+    /// keeps the keyboard; the edit is left standing (ADR-0018, section 6). Null only in a
+    /// context the core did not make.</summary>
+    public Func<Task>? TakeFocus { get; init; } = TakeFocus;
 }
 
 /// <summary>
@@ -336,13 +348,19 @@ public sealed record NameBoxContext(
 /// <param name="ReadOnly">Whether the control takes typing.</param>
 /// <param name="Focused">The control took DOM focus.</param>
 /// <param name="TextChanged">The control's text, as it changes.</param>
-/// <param name="FocusRequest">Changes whenever the control is to take DOM focus.</param>
+/// <param name="FocusRequest">Changes whenever the control is to take DOM focus. The control
+/// answers a change by calling <paramref name="TakeFocus"/>, not by focusing itself.</param>
+/// <param name="TakeFocus">The core's focus function, as <see cref="CellEditorContext.TakeFocus"/>
+/// is for the cell's control: called once the control is painted, it focuses the control only
+/// while the keyboard is still this grid's (ADR-0010, ADR-0021's note of 2026-09-30). Null only
+/// in a context the core did not make.</param>
 public sealed record FormulaBarTextContext(
     string Text,
     bool ReadOnly,
     Func<Task> Focused,
     Action<string> TextChanged,
-    int FocusRequest = 0);
+    int FocusRequest = 0,
+    Func<Task>? TakeFocus = null);
 
 /// <summary>
 /// The completion seam (ADR-0051/0039/0040): the candidates the Consumer offered for the

@@ -449,6 +449,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const active = document.activeElement;
         return active instanceof Element && root.contains(active) && active.closest('.ex-editor') !== null;
     };
+    // Whether the core's request that the open edit take the keyboard was declined, because the
+    // keyboard had gone to another grid or a control of the page's before it landed (focusEditor,
+    // ADR-0021's note of 2026-09-30). The edit stands without DOM focus; the keys held behind the
+    // key that opened it are this edit's all the same, and go into it rather than wait for a focus
+    // that will not come (ADR-0010, same day). Forgotten as an edit opens or ends, and once a press
+    // back puts the keyboard in the edit.
+    let focusDeclined = false;
 
     // Whether one of this grid's popovers holds DOM focus — where the keys held behind a key
     // that opened one are handed.
@@ -523,7 +530,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // surfaces, the one holding DOM focus: the Formula Bar when the user was typing there,
     // not the cell's editor that comes first in the markup (ADR-0051). The first one only
     // when none holds it — the two-second hold has run out.
-    const editorInput = () => surfaceField(ownSurface(document.activeElement));
+    // Declined its focus, the edit is the surface that last held the keyboard here, as the press
+    // back finds it (standingField).
+    const editorInput = () => (focusDeclined ? standingField() : surfaceField(ownSurface(document.activeElement)));
     // When the hold that is standing began: two seconds from it, whatever the keys held
     // since have asked for, the rest is handed on (ADR-0010).
     let holdStartedAt = 0;
@@ -535,7 +544,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // any round trip the grid is usable over; after it the held keys are replayed
             // against whatever there is, rather than held forever.
             const disposed = !core;
-            const editorReady = disposed || editing === 'none' || editorFocused();
+            const editorReady = disposed || editing === 'none' || editorFocused() || focusDeclined;
             const popoverReady = disposed || !awaitingPopover || popoverFocused();
             if (disposed || (editorReady && popoverReady && moved()) || performance.now() - holdStartedAt > 2000) {
                 awaitingPopover = false;
@@ -1090,14 +1099,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the keyboard had never left: where the core keeps DOM focus through a press on the rows
         // (ADR-0051) it keeps it in the edit, and the hand-back after a commit finds it inside
         // this root. Handed back from C#, a round trip later, the keys typed in between would
-        // reach the grid the user had just left. This is the second decision about focus made in
-        // script (ADR-0021, added 2026-09-29), beside reclaimFocus; it reads
-        // document.activeElement and no layout. Held or not, the press keeps its place among the
-        // keys: only where the keyboard is has changed.
+        // reach the grid the user had just left. This is one of the three decisions about focus
+        // made in script (ADR-0021, added 2026-09-29), beside reclaimFocus and focusEditor; it
+        // reads document.activeElement and no layout. Held or not, the press keeps its place among
+        // the keys: only where the keyboard is has changed.
         const focusAtPress = document.activeElement;
         if (core && !replaying && editing !== 'none' && !(focusAtPress instanceof Element && root.contains(focusAtPress))
             && isOwnRowsOrHeadings(event.target)) {
             standingField()?.focus({ preventScroll: true });
+            focusDeclined = false;
         }
         // Only a press on this grid's own rows is held or holds the keys after it: one on a
         // nested grid's rows is that grid's to answer, and this core never hears it.
@@ -1472,6 +1482,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // it (standingField); the edit's end forgets it.
             if (opened || mode === 'none') {
                 lastSurface = opened ? ownSurface(document.activeElement) : null;
+                focusDeclined = false;
             }
             // A new state starts a new conversation: a report equal to one sent before it is
             // news to the core now (the next edit can open on the same text and caret).
@@ -1572,10 +1583,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus is still inside
         // this root, or on nothing. A second grid the user has pressed in the meantime keeps
         // its keyboard. The condition reads document.activeElement and no layout. It is one of
-        // the two decisions about focus made in script, both for the same reason — made from
+        // the three decisions about focus made in script, all for the same reason — made from
         // C#, a round trip late, they would take or leave the keyboard in the wrong grid; the
-        // other is the press that brings the keyboard back to an edit left standing (onPress,
-        // ADR-0018 section 6).
+        // others are the press that brings the keyboard back to an edit left standing (onPress,
+        // ADR-0018 section 6) and the open edit's own focus (focusEditor).
         //
         // Nor from a field beside the rows with focus of its own — the Formula Bar and the Name
         // Box, built in or drawn by a Chrome, all inside the band the core renders them into
@@ -1595,6 +1606,35 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 || (root.contains(active) && (fromField === true || !own)))) {
                 staleField = null;
                 root.focus({ preventScroll: true });
+            }
+        },
+        // The core's request that the open edit's surface take the keyboard: on opening, on F2,
+        // after a Reject — the Cell Editor's (bar false) or the Formula Bar's text (bar true),
+        // the built-in field or a Chrome's control inside the core's box, found as the press back
+        // finds it (surfaceField), so the core holds no reference to a control it did not render
+        // (ADR-0010). It lands a round trip after the render that painted the surface, and is
+        // granted only while DOM focus is still inside this root or on nothing, the condition
+        // reclaimFocus reads: a grid or a control the user has pressed in the meantime keeps the
+        // keyboard, and the edit is left standing there (ADR-0018 section 6). The third decision
+        // about focus made in script (ADR-0021's note of 2026-09-30); it reads
+        // document.activeElement and no layout. Declined, the keys held behind the key that
+        // opened the edit go into it (focusDeclined).
+        focusEditor: (bar) => {
+            if (!root) {
+                return;
+            }
+            const box = [...root.querySelectorAll('.ex-editor')]
+                .find((b) => ownSurface(b) === b && b.classList.contains('ex-formula-bar-text') === (bar === true));
+            const field = box ? surfaceField(box) : null;
+            if (!field) {
+                return;
+            }
+            const active = document.activeElement;
+            if (!active || active === document.body || active === document.documentElement || root.contains(active)) {
+                focusDeclined = false;
+                field.focus({ preventScroll: true });
+            } else if (editing !== 'none') {
+                focusDeclined = true;
             }
         },
         // Escape's way out of Enter/Tab cycling. Setting focus is Blazor's FocusAsync;

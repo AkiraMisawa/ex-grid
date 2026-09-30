@@ -142,6 +142,17 @@ internal sealed class GridJSInterop
             return true;
         });
         reclaimFocus.SetVoidResult();
+        // The open edit's surface taking the keyboard, asked of the handle, which grants it only
+        // while DOM focus is still inside the root or on nothing (ADR-0021's note of 2026-09-30):
+        // logged with the other focus requests, as the surface it names.
+        var focusEditor = handle.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier != "focusEditor")
+                return false;
+            focusLog.Add((bool)invocation.Arguments[0]! ? BarSurface : CellSurface);
+            return true;
+        });
+        focusEditor.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
         return new GridJSInterop(offset, blur, dispose)
@@ -155,6 +166,7 @@ internal sealed class GridJSInterop
             ClaimsTold = setClaims,
             CaretPlaced = setCaret,
             FocusReclaimed = reclaimFocus,
+            EditorFocusAsked = focusEditor,
             _focusLog = focusLog,
         };
     }
@@ -163,13 +175,26 @@ internal sealed class GridJSInterop
     /// granted by the browser only while DOM focus is still inside the root or on nothing.</summary>
     internal JSRuntimeInvocationHandler FocusReclaimed { get; private init; } = default!;
 
+    /// <summary>Every time the core asked for an open edit's surface to take the keyboard,
+    /// through the handle's conditional <c>focusEditor</c> (ADR-0021's note of 2026-09-30): its
+    /// argument says whether the surface is the Formula Bar's text.</summary>
+    internal JSRuntimeInvocationHandler EditorFocusAsked { get; private init; } = default!;
+
+    /// <summary>The Cell Editor's surface, as <see cref="Focused"/> names a request for it.</summary>
+    internal const string CellSurface = "surface:cell";
+
+    /// <summary>The Formula Bar's text, as <see cref="Focused"/> names a request for it.</summary>
+    internal const string BarSurface = "surface:bar";
+
     /// <summary>Blazor's own <c>FocusAsync</c>, as bUnit records it.</summary>
     internal const string BlazorFocus = "Blazor._internal.domWrapper.focus";
 
     private List<string?> _focusLog = [];
 
     /// <summary>Every element the core has asked the browser to focus, in the order asked: the
-    /// root, by the handle's conditional reclaim, and any other element by Blazor's.</summary>
+    /// root, by the handle's conditional reclaim; an open edit's surface, by the handle's
+    /// conditional <c>focusEditor</c>, as <see cref="CellSurface"/> or <see cref="BarSurface"/>;
+    /// and any other element by Blazor's.</summary>
     internal IReadOnlyList<string> Focused => [.. _focusLog.Select(id => id ?? RootReferenceId)];
 
     /// <summary>How many times the core has asked for DOM focus anywhere, by either route.</summary>
