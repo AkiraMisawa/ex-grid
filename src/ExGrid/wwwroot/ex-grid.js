@@ -5,15 +5,21 @@
 // mousedown and mouseup that keep a press on the rows in its place among held keys, and hold the
 // keys after one made while an edit is open; the root taking the keyboard back only while DOM
 // focus is still its own; that same mousedown bringing the keyboard back to an edit left
-// standing when a press returns to the rows or the headings; and the editor listener keeping
-// the coloured text beneath a field honest (ADR-0057). Anything else — text measurement,
-// overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
+// standing when a press returns to the rows or the headings; that same mousedown, while the grid
+// is pointed at through a Pointing Scope, dispatching one event, `ex-press-handed-on`, on the root
+// of the grid that points, and the listener for that event on each root, which gives the press
+// its place among the keys held there (ADR-0058, "On a circuit"; ADR-0021's note of 2026-09-30);
+// and the editor listener keeping the coloured text beneath a field honest (ADR-0057). Anything
+// else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
+// ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
 // the instance's own element. Every listener here is on the instance root, but one:
 // `selectionchange` fires only on the document, so that one acts only while DOM focus is in
-// an editor surface inside this instance's root, and is removed with the instance.
+// an editor surface inside this instance's root, and is removed with the instance. One instance
+// reaches another in one place only: a press handed on is told to the root its own render names,
+// by a DOM event that is the whole message, and nothing of either instance is kept by the other.
 
 /**
  * @param {HTMLElement} root the instance's root element — where keys are captured, so a
@@ -543,6 +549,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the press still to be asked about, and the answer the keys wait for while one is awaited.
     let pressToAsk = null;
     let pressAnswer = null;
+    // The answer the drain waits for first, when it is the answer to a press on another grid,
+    // handed on to this root (onPressHandedOn): a press on this grid's own rows does not pass on
+    // ahead of it, as it would behind one of its own — Blazor keeps this grid's presses in order,
+    // and that one travels through the other grid's core.
+    let handedOnAnswer = null;
     // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus only
     // because a press on the rows had the default that would have moved it suppressed: held
     // here, or passed on while an edit is open where the core keeps the keyboard in the edit
@@ -835,6 +846,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (pressAnswer === answer) {
                 pressAnswer = null;
             }
+            if (handedOnAnswer === answer) {
+                handedOnAnswer = null;
+            }
         }
         // Settled before anything else, even with nothing held yet: the answer can arrive
         // before the popover or the editor has taken DOM focus, and a key typed in that
@@ -848,6 +862,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             if (k.press) {
                 await replayPress(k);
+                continue;
+            }
+            // A press on another grid, handed on to this root: its turn has come, so its answer
+            // may be given now, and the keys after it wait for that answer (onPressHandedOn).
+            if (k.handedOn) {
+                k.handedOn.inTurn();
+                await k.handedOn.answered;
+                await editorSettled();
                 continue;
             }
             // A modifier's own keydown — the Shift pressed for a capital, or for Shift+Enter —
@@ -1232,6 +1254,96 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
     };
 
+    // A press handed on through a Pointing Scope keeps its place among the keys of the grid that
+    // points (ADR-0058, "On a circuit"; ADR-0021's note of 2026-09-30). On a circuit, the text this
+    // grid's Consumer writes for a press reaches the pointing grid's field a round trip later, and a
+    // key typed there meanwhile would reach the field first; and this grid sends its press to its
+    // own core, where it could overtake keys typed before it that the pointing grid still holds
+    // (`=1+` and a press at once gave `=XLOOKUP(...)`). So, while this grid is pointed at, the render
+    // that says so names the root of the grid that points (data-ex-pointed-from), and each primary
+    // press on the rows or the headings that goes on to Blazor — at once, or at its replay if it
+    // was held here — is told to that root by one event. The listener there (onPressHandedOn) gives
+    // the press its place among its keys: it says when the keys before it have been handed on
+    // (inTurn), and holds the keys after it until this grid's core has answered the press
+    // (answered). This core hands the press over only once it is in turn, and answers it once its
+    // Consumer has taken it — written or refused — or at once, for a press that hands nothing over
+    // (ExGrid.PressHandedOnAsync). The core is told of the press here, in the capture phase, ahead
+    // of Blazor's own dispatch of it, so the press it hears next is the one it was told of.
+    //
+    // Nothing is kept of the other grid: its root is found from this render's attribute at the
+    // press, and the event is the whole message. An event nobody takes — a root with no listener —
+    // leaves the press to go on at once. Reads an attribute; no layout.
+    let pressesHandedOn = 0;
+    const handOn = (event) => {
+        const pointing = root ? root.getAttribute('data-ex-pointed-from') : null;
+        if (!core || !pointing || event.button !== 0 || !isOwnRowsOrHeadings(event.target)) {
+            return;
+        }
+        const other = root.ownerDocument.getElementById(pointing);
+        if (!(other instanceof Element) || other === root || !other.classList.contains('ex-grid')) {
+            return;
+        }
+        const press = ++pressesHandedOn;
+        let told = false;
+        let inTurn = false;
+        let answer = null;
+        const answered = new Promise((resolve) => {
+            answer = resolve;
+        });
+        const detail = {
+            inTurn: () => {
+                if (inTurn) {
+                    return;
+                }
+                inTurn = true;
+                if (told && core) {
+                    core.invokeMethodAsync('PressInTurn', press).catch((error) => {
+                        if (core) {
+                            console.error('[ex-grid] the grid failed to hand on a press', error);
+                        }
+                    });
+                }
+            },
+            answered,
+        };
+        const taken = !other.dispatchEvent(new CustomEvent('ex-press-handed-on', { cancelable: true, detail }));
+        if (!taken) {
+            answer();
+            return;
+        }
+        told = true;
+        answer(core.invokeMethodAsync('PressHandedOnAsync', press, inTurn).catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to hand on a press', error);
+            }
+        }));
+    };
+
+    // A press on another grid, handed on to this root while this grid points at it (handOn, on
+    // that grid's listener). It takes its place among the keys held here: with nothing held and
+    // nothing being answered it is in turn at once; otherwise it waits in the queue, and is in turn
+    // when the drain reaches it, after every key typed before it. The keys typed after it are held
+    // until the other grid's core has answered it, and are then handed on against the mode that
+    // answer leaves: the hold behind a press on this grid's own rows (holdBehindPress), whose
+    // answer is the other core's because only that core knows whether it handed the press over at
+    // all. Taking the event (preventDefault) says the press has its place here.
+    const onPressHandedOn = (event) => {
+        const hand = event.detail;
+        if (!core || !hand || typeof hand.inTurn !== 'function') {
+            return;
+        }
+        event.preventDefault();
+        if (answering) {
+            held.push({ handedOn: hand });
+            return;
+        }
+        hand.inTurn();
+        pressAnswer = hand.answered;
+        handedOnAnswer = pressAnswer;
+        startHold();
+    };
+    root.addEventListener('ex-press-handed-on', onPressHandedOn);
+
     const onPress = (event) => {
         // A press into a field beside the rows gives that field a focus of its own, which a
         // late hand-back leaves alone (reclaimFocus).
@@ -1266,8 +1378,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             focusDeclined = false;
         }
         // Only a press on this grid's own rows is held or holds the keys after it: one on a
-        // nested grid's rows is that grid's to answer, and this core never hears it.
+        // nested grid's rows is that grid's to answer, and this core never hears it. A press that
+        // goes on to Blazor from here, or is replayed, is told to the grid that points, if this
+        // one is pointed at (handOn).
         if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {
+            handOn(event);
             return;
         }
         // The Formula Bar or the Name Box holding DOM focus, which a press on the rows would take
@@ -1281,7 +1396,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // held, and no key being answered. Behind a press still being answered, with no key held
         // after it, it goes on too: Blazor keeps presses in order among themselves, and the
         // second press of a double click reaches it ahead of the double click, as it always did.
-        if (held.length === 0 && (!answering || pressAnswer !== null)) {
+        // Not behind a press on another grid handed on to this root: that one reaches this core
+        // through the other grid's, and this press, which may point too, would overtake it.
+        if (held.length === 0 && (!answering || (pressAnswer !== null && pressAnswer !== handedOnAnswer))) {
+            handOn(event);
             // While an edit is open, the keys after it wait for its answer (holdBehindPress).
             // Where a press may point, the core also suppresses its default so the keyboard stays
             // in the edit (ADR-0051), and a Formula Bar the edit was typed in keeps DOM focus
@@ -1824,6 +1942,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('keydown', onKeyDown, true);
             root.removeEventListener('mousedown', onPress, true);
             root.removeEventListener('mouseup', onRelease, true);
+            root.removeEventListener('ex-press-handed-on', onPressHandedOn);
+            // A press on another grid still waiting for its turn here is let go: that grid's core
+            // hands it over rather than wait for keys this grid will never hand on.
+            for (const k of held) {
+                k.handedOn?.inTurn();
+            }
             root.removeEventListener('input', onEditorInput, true);
             document.removeEventListener('selectionchange', onSelectionChange);
             cancelAnimationFrame(caretFrame);

@@ -22,6 +22,7 @@ public sealed class GridPointedAt<TRow>
     where TRow : class
 {
     private bool _isPointedAt;
+    private string? _pointingRootId;
     private GridPointDashes<TRow>? _dashes;
     private IReadOnlyList<OutlinedColumn>? _outlinedColumns;
 
@@ -65,6 +66,29 @@ public sealed class GridPointedAt<TRow>
             if (_isPointedAt == value)
                 return;
             _isPointedAt = value;
+            Changed?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// The root of the grid that points — the grid whose edit a press handed over here writes into
+    /// — named by its <c>ExGrid.RootId</c>, or null — the default — for none. While the grid is
+    /// pointed at, its render names this root, and its script tells that root of each primary press
+    /// it hands over, so that the press keeps its place among the keys typed there (ADR-0058, "On a
+    /// circuit"; ADR-0021's note of 2026-09-30): the press is handed to <see cref="OnPress"/> only
+    /// once that grid has handed on the keys typed before it, and the keys typed after it wait there
+    /// until the task <see cref="OnPress"/> returned has completed. With none named, each press is
+    /// handed over at once, and on a circuit a key typed meanwhile can reach the pointing grid's
+    /// field before the text written for the press.
+    /// </summary>
+    public string? PointingRootId
+    {
+        get => _pointingRootId;
+        set
+        {
+            if (string.Equals(_pointingRootId, value, StringComparison.Ordinal))
+                return;
+            _pointingRootId = value;
             Changed?.Invoke();
         }
     }
@@ -115,7 +139,7 @@ public sealed class GridPointedAt<TRow>
         }
     }
 
-    /// <summary>Raised after <see cref="IsPointedAt"/>, <see cref="Dashes"/> or
-    /// <see cref="OutlinedColumns"/> changed, so the grid repaints.</summary>
+    /// <summary>Raised after <see cref="IsPointedAt"/>, <see cref="PointingRootId"/>,
+    /// <see cref="Dashes"/> or <see cref="OutlinedColumns"/> changed, so the grid repaints.</summary>
     public event Action? Changed;
 }

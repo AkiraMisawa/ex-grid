@@ -1,7 +1,7 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
-    sheet, positions, openSheet, cell, clickCell, editor, nameBox, pressCell, boxOf, expectCovers,
+    sheet, positions, openSheet, cell, clickCell, editor, bar, nameBox, pressCell, boxOf, expectCovers,
 } from './sheet-helpers.mjs';
 
 // A Pointing Scope (ADR-0058, ticket 37; SH-32, SH-35): /sheet puts its Sheet and its positions grid
@@ -34,6 +34,32 @@ async function expectPointedAt(grid, pointed = true) {
     } else {
         await expect(grid).not.toHaveClass(/\bex-pointed-at\b/);
     }
+}
+
+/**
+ * Resolves as soon as the grid wears ex-pointed-at: heard from the class itself, in the task that
+ * applies the render, rather than polled, so that a press can follow while keys typed before it
+ * are still held by the Sheet's listener (DC-54). The observer is gone once it has answered.
+ */
+async function pointedAtNow(grid) {
+    await grid.evaluate((root) => new Promise((resolve, reject) => {
+        if (root.classList.contains('ex-pointed-at')) {
+            resolve();
+            return;
+        }
+        const observer = new MutationObserver(() => {
+            if (root.classList.contains('ex-pointed-at')) {
+                observer.disconnect();
+                clearTimeout(timer);
+                resolve();
+            }
+        });
+        const timer = setTimeout(() => {
+            observer.disconnect();
+            reject(new Error('the grid was never pointed at'));
+        }, 5000);
+        observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+    }));
 }
 
 /** A column header of a grid, by its label. */
@@ -124,7 +150,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=1+');
         // The text the press lands after, as the user sees it: a press made while keys typed before
-        // it are still on their way is ADR-0058's second gap, which this spec does not exercise.
+        // it are still on their way is DC-54's, below.
         await expect(editor(grid)).toHaveValue('=1+');
         await expectPointedAt(table);
 
@@ -222,6 +248,79 @@ test.describe('/sheet', () => {
         await expect(editor(grid)).toHaveCount(0);
         await expect(cell(grid, 'F3')).toHaveText('');
     });
+
+    // The second gap of ADR-0058, "On a circuit" (DC-54; ADR-0021's note of 2026-09-30): a press on
+    // the positions grid reaches the Sheet's field a round trip later, as the text written for it. The
+    // positions grid tells the Sheet's root of the press in script, and the Sheet holds the keys typed
+    // after it until it has been answered, and hands on the keys typed before it first.
+    test('ADR-0058/DC-54: with a 150 ms round trip, =, a press on a PV cell and * at once give the lookup and the *', async ({ page }) => {
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toHaveValue('=');
+        await expect(editor(grid)).toBeFocused();
+        await expectPointedAt(table);
+        await setRoundTrip(150);
+
+        // No wait between the two.
+        await clickCell(table, 'C3');
+        await page.keyboard.type('*');
+
+        await expect(editor(grid)).toHaveValue(`${LOOKUP_4471}*`);
+        await expect(editor(grid)).toBeFocused();
+        await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
+    });
+
+    test('ADR-0058/DC-54: with a 150 ms round trip, =SUM(1,, a press, then ) and Enter at once commit the lookup inside the SUM', async ({ page }) => {
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=SUM(1,');
+        await expect(editor(grid)).toHaveValue('=SUM(1,');
+        await expectPointedAt(table);
+        await setRoundTrip(150);
+
+        // No wait between the three.
+        await clickCell(table, 'C3');
+        await page.keyboard.type(')');
+        await page.keyboard.press('Enter');
+
+        // 1 + R-4471's PV. `=SUM(1,)`, the press lost, would show 1.
+        await expect(cell(grid, 'F3')).toHaveText('319.25');
+        await expect(editor(grid)).toHaveCount(0);
+        await setRoundTrip(0);
+        await pressCell(grid, 'F3');
+        await expect(bar(grid)).toHaveValue(`=SUM(1,${LOOKUP_4471.slice(1)})`);
+    });
+
+    // Found while building ticket 37: typed at once with the press, `1+` was still held behind the `=`
+    // by the Sheet's listener, and the press, which the positions grid sends to its own core, reached
+    // the Sheet first (`=XLOOKUP(...)` in 2 runs of 4 at 0 ms). The press is made the moment the
+    // positions grid is painted pointed at, which is before the Cell Editor has taken the keyboard
+    // and the held keys have gone into it. Four rounds each, since at 0 ms the gap is a race.
+    for (const ms of [0, 150]) {
+        test(`ADR-0058/DC-54: with a ${ms} ms round trip, =1+ typed and a press at once give =1+ and the lookup, never the lookup alone`, async ({ page }) => {
+            const grid = sheet(page);
+            const table = positions(page);
+            await pressCell(grid, 'F3');
+            const target = await boxOf(cell(table, 'C3'));
+            await setRoundTrip(ms);
+            for (let round = 0; round < 4; round++) {
+                await page.keyboard.type('=1+');
+                await pointedAtNow(table);
+                await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
+
+                await expect(editor(grid), `round ${round + 1}`).toHaveValue(`=1+${LOOKUP_4471.slice(1)}`);
+                await expect(editor(grid)).toBeFocused();
+                await page.keyboard.press('Escape');
+                await expect(editor(grid)).toHaveCount(0);
+                await expect(grid).toBeFocused();
+                await expectPointedAt(table, false);
+            }
+            await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        });
+    }
 
     test('ADR-0058/SH-34: =SUM(1, and a press on a PV cell outline Id and PV in their text\'s colours, dash the cell, lay the lookup on the grey, and the dashes follow the row through a sort', async ({ page }) => {
         const grid = sheet(page);

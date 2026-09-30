@@ -3,13 +3,17 @@ using ExGrid.Columns;
 using ExGrid.Selection;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 
 namespace ExGrid.Components;
 
 // Pointed at from outside (ADR-0058): while a Consumer declares it, a press on the rows or the column
 // headers does not act. Its default is suppressed, so DOM focus stays where it was; the Selection and
 // the Focus stay put; no sort, menu, reorder, resize or Heading drag runs; and the press is handed to
-// the Consumer as what it landed on. The grid also draws the dashes and the column outlines the
+// the Consumer as what it landed on. Where the declaration names the root of the grid that points,
+// the press keeps its place among that grid's keys: it is handed over once the keys typed there
+// before it have been handed on, and that grid holds the keys typed after it until it has been
+// answered (ADR-0058, "On a circuit"). The grid also draws the dashes and the column outlines the
 // declaration asks for. What a press means is the Consumer's: the grid knows no Formula.
 public partial class ExGrid<TRow>
 {
@@ -55,6 +59,41 @@ public partial class ExGrid<TRow>
 
     /// <summary>A press handed over whose button is still down.</summary>
     private readonly record struct PointedDrag(CellPosition From, bool FromHeader);
+
+    // A press handed on keeps its place among the keys of the grid that points (ADR-0058, "On a
+    // circuit"; ADR-0021's note of 2026-09-30). The script tells that grid's root of each primary
+    // press it passes on while this grid is pointed at, and tells this core first, in the same
+    // browser task and ahead of the press itself: the press, numbered, and whether it is in turn
+    // already — nothing held before it there — and later, if not, that it now is. So the press a
+    // pointed handler hears next is the one announced last. The announced press no press has
+    // claimed yet; the presses told of and not yet in turn, by their number; and the hand-over of
+    // the last press on a pointed handler, which a drag from it is handed over behind.
+    private HandedOnPress? _pressAnnounced;
+    private readonly Dictionary<int, HandedOnPress> _pressesOutOfTurn = [];
+    private Task _pointedPressHandOver = Task.CompletedTask;
+
+    /// <summary>A press the script handed on to the grid that points: whether its turn has come
+    /// there, and whether this core has answered it.</summary>
+    private sealed class HandedOnPress(int number)
+    {
+        public int Number { get; } = number;
+
+        public TaskCompletionSource InTurn { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource Answered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    }
+
+    /// <summary>
+    /// The id of this grid's root element, unique on the page. A Consumer that points from this grid
+    /// at another one names this root in that grid's declaration
+    /// (<see cref="GridPointedAt{TRow}.PointingRootId"/>), so that a press there keeps its place
+    /// among the keys typed here (ADR-0058, "On a circuit").
+    /// </summary>
+    public string RootId => _idPrefix + "root";
+
+    /// <summary>The root the render names while the grid is pointed at (ADR-0058): the one the
+    /// script tells of each press handed over. Null otherwise, and the attribute is not written.</summary>
+    private string? PointedFrom => PointedAtNow ? PointedAt!.PointingRootId : null;
 
     /// <summary>Whether the grid is pointed at now (ADR-0058): declared so, and holding no open edit
     /// of its own, which a press goes to instead.</summary>
@@ -119,17 +158,139 @@ public partial class ExGrid<TRow>
         });
     }
 
-    private Task OnPointedRowsPress(MouseEventArgs e) => _pressAnswer = HandOverRowsPressAsync(e);
+    private Task OnPointedRowsPress(MouseEventArgs e)
+    {
+        var handedOn = ClaimHandedOnPress(e);
+        _pointedPressHandOver = HandOverRowsPressAsync(e, handedOn);
+        return _pressAnswer = AnswerHandedOnAsync(_pointedPressHandOver, handedOn);
+    }
 
-    private Task OnPointedHeaderPress(MouseEventArgs e) => _pressAnswer = HandOverHeaderPressAsync(e);
+    private Task OnPointedHeaderPress(MouseEventArgs e)
+    {
+        var handedOn = ClaimHandedOnPress(e);
+        _pointedPressHandOver = HandOverHeaderPressAsync(e, handedOn);
+        return _pressAnswer = AnswerHandedOnAsync(_pointedPressHandOver, handedOn);
+    }
+
+    /// <summary>
+    /// A press the grid's script has handed on to the root of the grid that points (ADR-0058, "On a
+    /// circuit"; ADR-0021's note of 2026-09-30), told ahead of the press itself: the next press on the
+    /// rows or the header is handed over only once it is in turn there — once that grid has handed on
+    /// the keys typed before it — and the task completes once it has been answered, which is how long
+    /// that grid holds the keys typed after it. A press is answered once the task
+    /// <see cref="GridPointedAt{TRow}.OnPress"/> returned for it has completed, or at once if it
+    /// handed nothing over (a press past the last column, say).
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="press">The script's number for the press, which <see cref="PressInTurn"/>
+    /// names.</param>
+    /// <param name="inTurn">Whether the press is in turn already: the grid that points held no keys
+    /// before it.</param>
+    /// <returns>Completes once the press has been answered.</returns>
+    [JSInvokable]
+    public Task PressHandedOnAsync(int press, bool inTurn)
+    {
+        if (_disposed)
+            return Task.CompletedTask;
+        // Told of and never heard (no press should be): answered now, so that grid's keys go on.
+        ReleaseHandedOnPress(_pressAnnounced);
+        var handedOn = new HandedOnPress(press);
+        if (inTurn)
+            handedOn.InTurn.TrySetResult();
+        else
+            _pressesOutOfTurn[press] = handedOn;
+        _pressAnnounced = handedOn;
+        return handedOn.Answered.Task;
+    }
+
+    /// <summary>
+    /// A press the grid's script handed on is in turn now (ADR-0058, "On a circuit"): the grid that
+    /// points has handed on the keys typed before it, and the press may be handed over.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="press">The number <see cref="PressHandedOnAsync"/> was told.</param>
+    [JSInvokable]
+    public void PressInTurn(int press)
+    {
+        if (_pressesOutOfTurn.Remove(press, out var handedOn))
+            handedOn.InTurn.TrySetResult();
+    }
+
+    /// <summary>The press announced last, taken by the primary press a pointed handler hears; null
+    /// when none was announced — the press is then handed over at once.</summary>
+    private HandedOnPress? ClaimHandedOnPress(MouseEventArgs e)
+    {
+        if (e.Button != 0)
+            return null;
+        var handedOn = _pressAnnounced;
+        _pressAnnounced = null;
+        return handedOn;
+    }
+
+    /// <summary>A press handed on is answered once its hand-over has run, however it ended, and once
+    /// the render it asked for has gone out.</summary>
+    private static async Task AnswerHandedOnAsync(Task handOver, HandedOnPress? handedOn)
+    {
+        try
+        {
+            await handOver;
+            // A press in turn at once is handed over inside Blazor's dispatch of it, and the render of
+            // what its Consumer wrote goes out only as that dispatch returns: answered from inside it,
+            // the answer reached the browser first, and the key held behind the press was typed into
+            // the text the write had not yet reached (`*` lost on the Server host at 150 ms). Yielding
+            // leaves the dispatch, so the answer follows the render.
+            if (handedOn is not null)
+                await Task.Yield();
+        }
+        finally
+        {
+            handedOn?.Answered.TrySetResult();
+        }
+    }
+
+    /// <summary>Answers a press handed on without waiting for its turn any longer.</summary>
+    private void ReleaseHandedOnPress(HandedOnPress? handedOn)
+    {
+        if (handedOn is null)
+            return;
+        _pressesOutOfTurn.Remove(handedOn.Number);
+        handedOn.InTurn.TrySetResult();
+        handedOn.Answered.TrySetResult();
+    }
+
+    /// <summary>As the grid is disposed: every press handed on and still waiting is let go, so the
+    /// grid that points holds no keys for it.</summary>
+    private void ReleaseHandedOnPresses()
+    {
+        ReleaseHandedOnPress(_pressAnnounced);
+        _pressAnnounced = null;
+        foreach (var handedOn in _pressesOutOfTurn.Values.ToArray())
+            handedOn.InTurn.TrySetResult();
+        _pressesOutOfTurn.Clear();
+    }
+
+    /// <summary>Waits, before a press is handed over, until it is in turn among the keys of the
+    /// grid that points; false when the grid was disposed meanwhile.</summary>
+    private async Task<bool> InTurnAsync(HandedOnPress? handedOn)
+    {
+        if (handedOn is null)
+            return true;
+        await handedOn.InTurn.Task;
+        return !_disposed;
+    }
 
     /// <summary>
     /// A press on the rows while the grid is pointed at (ADR-0058): handed over as the cell it landed
     /// on, or as more than one cell with Shift or on a Row Heading. The Selection and the Focus do not
     /// move, and no edit opens or commits. A press on a cell is followed while its button is down, so
-    /// that a drag onto another cell can be handed over too.
+    /// that a drag onto another cell can be handed over too. A press handed on to the grid that points
+    /// is handed over once it is in turn there.
     /// </summary>
-    private async Task HandOverRowsPressAsync(MouseEventArgs e)
+    private async Task HandOverRowsPressAsync(MouseEventArgs e, HandedOnPress? handedOn)
     {
         _pressHandedOver = true;
         var dragging = _dragging;
@@ -162,7 +323,8 @@ public partial class ExGrid<TRow>
             _pointedDrag = new PointedDrag(cell, FromHeader: false);
             SetDragging(true);
         }
-        await pointedAt.OnPress(press);
+        if (await InTurnAsync(handedOn))
+            await pointedAt.OnPress(press);
     }
 
     /// <summary>
@@ -170,9 +332,10 @@ public partial class ExGrid<TRow>
     /// header it landed on, as several columns with Shift, as a Header Group's rectangle, or as more
     /// than one cell on the corner where the Headings meet. Nothing is sorted, selected, grabbed or
     /// opened. A press on a column's header is followed while its button is down, so that a drag onto
-    /// another column can be handed over too.
+    /// another column can be handed over too. A press handed on to the grid that points is handed over
+    /// once it is in turn there.
     /// </summary>
-    private async Task HandOverHeaderPressAsync(MouseEventArgs e)
+    private async Task HandOverHeaderPressAsync(MouseEventArgs e, HandedOnPress? handedOn)
     {
         _pressHandedOver = true;
         var dragging = _dragging;
@@ -209,7 +372,8 @@ public partial class ExGrid<TRow>
             SetDragging(true);
             AttachHeaderDrag();
         }
-        await pointedAt.OnPress(press);
+        if (await InTurnAsync(handedOn))
+            await pointedAt.OnPress(press);
     }
 
     /// <summary>
@@ -250,13 +414,20 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>A drag handed over from a move: nothing awaits it, so a failure in the Consumer's
-    /// answer is reported through the renderer rather than left unobserved.</summary>
+    /// answer is reported through the renderer rather than left unobserved. It is handed over after
+    /// the press it began with, which may still be waiting for its turn among the keys of the grid
+    /// that points: the Consumer takes back what that press wrote.</summary>
     private async Task HandOverDragAsync(GridPointedPress<TRow> press)
     {
         if (PointedAt is not { } pointedAt)
             return;
         try
         {
+            // The press's own failure is reported on its own path.
+            await _pointedPressHandOver.ContinueWith(static _ => { }, CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            if (_disposed)
+                return;
             await pointedAt.OnPress(press);
         }
         catch (Exception ex)

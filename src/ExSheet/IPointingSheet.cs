@@ -12,6 +12,11 @@ internal interface IPointingSheet
     /// <summary>The Linked Tables the Sheet declares, keys included.</summary>
     IReadOnlyList<LinkedTable> LinkedTables { get; }
 
+    /// <summary>The id of the root of the Sheet's grid, which a registered grid names while the Sheet
+    /// points, so that a press on it keeps its place among the Sheet's keys (ADR-0058, "On a
+    /// circuit"); null before the grid is rendered.</summary>
+    string? RootId { get; }
+
     /// <summary>Writes text into the Sheet's open edit where Point writes; false when it is no longer
     /// in Point.</summary>
     Task<bool> WritePointedTextAsync(string text);

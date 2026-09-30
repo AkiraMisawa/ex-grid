@@ -60,7 +60,7 @@ public class ShippedStylesheetTests
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
-        var listeners = Regex.Matches(script.Text, @"addEventListener\(\s*'(?<event>[a-z]+)'")
+        var listeners = Regex.Matches(script.Text, @"addEventListener\(\s*'(?<event>[a-z-]+)'")
             .Select(match => match.Groups["event"].Value)
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
@@ -75,8 +75,11 @@ public class ShippedStylesheetTests
         // beneath it scrolls with it — the scroll-offset entry on one more element (ADR-0021's
         // note of ADR-0057, DC-51); and compositionend is the same editor listener hearing an IME
         // composition end, which comes with no input after it, so the coloured text can show again
-        // (ticket 29, decided with the user 2026-09-30).
-        string[] allowed = ["compositionend", "copy", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
+        // (ticket 29, decided with the user 2026-09-30); and ex-press-handed-on, the one event a grid
+        // pointed at through a Pointing Scope dispatches on the root of the grid that points, heard on
+        // that root so the press keeps its place among the keys held there (ADR-0021's note of
+        // 2026-09-30, ADR-0058, DC-54).
+        string[] allowed = ["compositionend", "copy", "ex-press-handed-on", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -256,9 +259,10 @@ public class ShippedStylesheetTests
         var body = press.Value;
 
         // The press itself passes on when there is nothing it could overtake — nothing held, and no
-        // key being answered, or only a press, which Blazor keeps in order with it (a double
-        // click's second press) — and while an edit is open it starts the hold.
-        Assert.Matches(new Regex(@"if \(held\.length === 0 && \(!answering \|\| pressAnswer !== null\)\) \{.*?if \(editing !== 'none'\) \{\s*holdBehindPress\(field !== null \? markStale\(field\) : null\);",
+        // key being answered, or only a press of this grid's own, which Blazor keeps in order with it
+        // (a double click's second press), never one handed on from a grid this one points at
+        // (ADR-0058, DC-54) — and while an edit is open it starts the hold.
+        Assert.Matches(new Regex(@"if \(held\.length === 0 && \(!answering \|\| \(pressAnswer !== null && pressAnswer !== handedOnAnswer\)\)\) \{\s*handOn\(event\);.*?if \(editing !== 'none'\) \{\s*holdBehindPress\(field !== null \? markStale\(field\) : null\);",
             RegexOptions.Singleline), body);
         // Only a press on this grid's own rows, not on a grid nested in one of its cells, is held
         // or holds the keys after it: this core never hears the nested one's press.
@@ -284,6 +288,62 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"const askAboutPress = \(\) => \{.*?core\.invokeMethodAsync\('PressAnsweredAsync'\).*?press\.resolve\(\);",
             RegexOptions.Singleline), script.Text);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+    }
+
+    [Fact] // ADR-0058 ("On a circuit") / ADR-0021 (note of 2026-09-30) / ADR-0018 section 7 / DC-54: a press handed on is told by one event to the root the render names, which holds its keys around it; nothing shared, nothing on the document or the window, nothing measured
+    public void A_press_handed_on_is_told_to_the_pointing_root_by_one_event()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var handOn = Regex.Match(script.Text, @"const handOn = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(handOn.Success, "handOn is not in the module");
+        var heard = Regex.Match(script.Text, @"const onPressHandedOn = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(heard.Success, "onPressHandedOn is not in the module");
+        var press = Regex.Match(script.Text, @"const onPress = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(press.Success, "onPress is not in the module");
+
+        // One event, dispatched in one place: on the root this grid's own render names at the press,
+        // found then and kept nowhere, for a primary press on this grid's own rows or headings.
+        Assert.Single(Regex.Matches(script.Text, @"new CustomEvent\("));
+        Assert.Contains("other.dispatchEvent(new CustomEvent('ex-press-handed-on', { cancelable: true, detail }))", handOn.Value, StringComparison.Ordinal);
+        Assert.Contains("root.getAttribute('data-ex-pointed-from')", handOn.Value, StringComparison.Ordinal);
+        Assert.Contains("root.ownerDocument.getElementById(pointing)", handOn.Value, StringComparison.Ordinal);
+        Assert.Contains("event.button !== 0 || !isOwnRowsOrHeadings(event.target)", handOn.Value, StringComparison.Ordinal);
+        Assert.Single(Regex.Matches(script.Text, @"getElementById\("));
+        // The whole message, built afresh for each press inside the pressing instance: when the
+        // press may be answered (inTurn), and the promise of its answer, which the pressing grid's
+        // own core settles (answered). The listener that hears it keeps nothing of the other grid
+        // but what it queues for that one press.
+        Assert.Matches(new Regex(@"const answered = new Promise\(\(resolve\) => \{\s*answer = resolve;\s*\}\);\s*const detail = \{\s*inTurn: \(\) => \{.*?\},\s*answered,\s*\};", RegexOptions.Singleline), handOn.Value);
+        Assert.Contains("answer(core.invokeMethodAsync('PressHandedOnAsync', press, inTurn)", handOn.Value, StringComparison.Ordinal);
+        Assert.Contains("const hand = event.detail;", heard.Value, StringComparison.Ordinal);
+        // Told as the press goes on to Blazor, and only then: where it passes on untouched, and where
+        // it leaves the listener — a heading's, or one replayed after it was held here.
+        Assert.Equal(2, Regex.Matches(press.Value, @"handOn\(event\);").Count);
+        Assert.Matches(new Regex(@"if \(!core \|\| replaying \|\| event\.button !== 0 \|\| !isOwnRows\(event\.target\)\) \{\s*handOn\(event\);\s*return;"), press.Value);
+        // This grid's core is told of it, and of its turn when it comes, from one place each.
+        Assert.Single(Regex.Matches(script.Text, @"'PressHandedOnAsync'"));
+        Assert.Single(Regex.Matches(script.Text, @"'PressInTurn'"));
+
+        // Heard by one listener on each instance's own root, removed with the instance, which lets go
+        // of a press still waiting for its turn there.
+        Assert.Matches(new Regex(@"\n    root\.addEventListener\('ex-press-handed-on', onPressHandedOn\);"), script.Text);
+        Assert.Matches(new Regex(@"root\.removeEventListener\('ex-press-handed-on', onPressHandedOn\);.*?for \(const k of held\) \{\s*k\.handedOn\?\.inTurn\(\);", RegexOptions.Singleline), script.Text);
+        // It starts the hold a press on the rows starts: in turn at once when nothing is held or being
+        // answered, its answer waited for first; otherwise in its place in the queue, behind every key
+        // typed before it, and given its turn where the drain reaches it.
+        Assert.Matches(new Regex(@"event\.preventDefault\(\);\s*if \(answering\) \{\s*held\.push\(\{ handedOn: hand \}\);\s*return;\s*\}\s*hand\.inTurn\(\);\s*pressAnswer = hand\.answered;\s*handedOnAnswer = pressAnswer;\s*startHold\(\);"), heard.Value);
+        Assert.Matches(new Regex(@"if \(k\.handedOn\) \{\s*k\.handedOn\.inTurn\(\);\s*await k\.handedOn\.answered;\s*await editorSettled\(\);"), script.Text);
+
+        // Nothing measured, nothing on the document or the window.
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), handOn.Value + heard.Value);
+        Assert.DoesNotMatch(new Regex(@"window\.addEventListener|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
+        // And no state outside an instance: the module's one top-level statement is attach, so
+        // everything above lives in one instance's closure and no instance keeps another's.
+        var topLevel = script.Text.Split('\n')
+            .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
+                && !line.StartsWith("/**", StringComparison.Ordinal))
+            .ToList();
+        Assert.Equal(["export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
