@@ -32,6 +32,8 @@ internal sealed record LiveSettings(bool On, int IntervalMs, int TradesPerTick)
 internal sealed class LiveUpdater(TradeStore store, ILogger<LiveUpdater> logger) : BackgroundService
 {
     private readonly Lock _gate = new();
+    // Held for each tick, so turning the updates off can wait for one already under way.
+    private readonly SemaphoreSlim _tick = new(1, 1);
     private LiveSettings _settings = LiveSettings.Default;
     private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -45,9 +47,23 @@ internal sealed class LiveUpdater(TradeStore store, ILogger<LiveUpdater> logger)
         }
     }
 
-    /// <summary>Sets them. The loop wakes at once, so turning them off stops the next tick, and a
-    /// new interval does not wait for the end of the old one.</summary>
-    public LiveSettings Set(LiveSettings settings)
+    /// <summary>
+    /// Sets them. The loop wakes at once, so a new interval does not wait for the end of the old
+    /// one. Turning them off returns only once a tick already under way has committed: from then
+    /// on the data holds still, so a page that turned them off can read it and trust it stays.
+    /// </summary>
+    public async Task<LiveSettings> SetAsync(LiveSettings settings, CancellationToken cancellationToken)
+    {
+        Apply(settings);
+        if (!settings.On)
+        {
+            await _tick.WaitAsync(cancellationToken);
+            _tick.Release();
+        }
+        return settings;
+    }
+
+    private void Apply(LiveSettings settings)
     {
         TaskCompletionSource changed;
         lock (_gate)
@@ -61,7 +77,6 @@ internal sealed class LiveUpdater(TradeStore store, ILogger<LiveUpdater> logger)
             logger.LogInformation("Live updates on: {Trades} trades every {Interval} ms.", settings.TradesPerTick, settings.IntervalMs);
         else
             logger.LogInformation("Live updates off.");
-        return settings;
     }
 
     /// <inheritdoc />
@@ -87,16 +102,25 @@ internal sealed class LiveUpdater(TradeStore store, ILogger<LiveUpdater> logger)
                 }
 
                 var started = Stopwatch.GetTimestamp();
+                await _tick.WaitAsync(stoppingToken);
                 try
                 {
+                    // Turned off since the settings were read, and SetAsync may be waiting for
+                    // this tick: skip it.
+                    if (!Settings.On)
+                        continue;
                     await store.ApplyLiveChangesAsync(settings.TradesPerTick, stoppingToken);
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
                     // Said, and stopped: a tick that fails once fails again, four times a second.
                     logger.LogError(e, "A live update failed, so the live updates are turned off.");
-                    Set(settings with { On = false });
+                    Apply(Settings with { On = false });
                     continue;
+                }
+                finally
+                {
+                    _tick.Release();
                 }
                 var wait = TimeSpan.FromMilliseconds(settings.IntervalMs) - Stopwatch.GetElapsedTime(started);
                 if (wait > TimeSpan.Zero)

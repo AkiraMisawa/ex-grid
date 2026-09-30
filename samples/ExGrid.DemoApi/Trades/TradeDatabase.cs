@@ -71,7 +71,8 @@ internal static class TradeDatabase
 
     /// <summary>
     /// Generates <paramref name="tradeCount"/> trades into a new file at <paramref name="path"/>,
-    /// in one transaction through one prepared statement. The same count gives the same bytes.
+    /// in one transaction through one prepared statement. The same count gives the same trades,
+    /// and under the same SQLite the same bytes: the file's header names the SQLite that wrote it.
     /// </summary>
     /// <param name="progress">Told how many trades are written, every ten thousand and at the end.</param>
     public static void Generate(string path, int tradeCount, Action<long>? progress, CancellationToken cancellationToken)
@@ -105,9 +106,10 @@ internal static class TradeDatabase
     }
 
     /// <summary>
-    /// Refuses a generated file that does not say it holds what its name promises — one copied
-    /// in by hand, or left by a generator that forgot to move <see cref="FormatVersion"/> on —
-    /// rather than serve it.
+    /// Refuses a generated file that does not say it holds what its name promises — one renamed
+    /// or copied in by hand, or not a database at all — rather than serve it. (A generator changed
+    /// without moving <see cref="FormatVersion"/> on writes a file this cannot tell apart;
+    /// <c>TradeGeneratorTests</c>' pinned fingerprint is what catches that.)
     /// </summary>
     public static void Verify(string path, int tradeCount)
     {

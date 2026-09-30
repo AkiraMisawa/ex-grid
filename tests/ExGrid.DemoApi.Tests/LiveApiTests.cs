@@ -82,4 +82,24 @@ public sealed class LiveApiTests(DemoApiServer server) : IClassFixture<DemoApiSe
         Assert.Equal(stopped, server.Store.Version);
         Assert.Equal(DemoApiServer.Trades, server.Store.TradeCount);
     }
+
+    [Fact] // ADR-0068: live updates off means the data holds still — from the moment turning them off answers
+    public async Task ADR0068_once_turning_live_updates_off_has_answered_no_tick_commits()
+    {
+        var token = TestContext.Current.CancellationToken;
+        using var client = server.Factory.CreateClient();
+        for (var cycle = 0; cycle < 8; cycle++)
+        {
+            // Large ticks at a short interval, so turning off lands on a tick under way.
+            using (var on = await client.PostAsJsonAsync("/api/live", new { on = true, intervalMs = 10, tradesPerTick = 1_000 }, token))
+                Assert.Equal(HttpStatusCode.OK, on.StatusCode);
+            await Task.Delay(30 + 7 * cycle, token);
+            using (var off = await client.PostAsJsonAsync("/api/live", new { on = false }, token))
+                Assert.Equal(HttpStatusCode.OK, off.StatusCode);
+
+            var answered = server.Store.Version;
+            await Task.Delay(60, token);
+            Assert.Equal(answered, server.Store.Version);
+        }
+    }
 }

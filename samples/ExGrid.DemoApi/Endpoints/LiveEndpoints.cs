@@ -12,12 +12,13 @@ internal static class LiveEndpoints
     /// <summary>
     /// Maps <c>GET /api/live</c>, which answers the settings (<see cref="LiveSettings"/>), and
     /// <c>POST /api/live</c>, which sets them and answers what they now are. A value out of range
-    /// is refused by name, not clamped.
+    /// is refused by name, not clamped. Once turning them off has answered, the data holds still.
     /// </summary>
     public static IEndpointRouteBuilder MapLiveEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/live", (LiveUpdater live) => live.Settings);
-        app.MapPost("/api/live", (LiveRequest request, LiveUpdater live, TradeStore store, HttpResponse response) =>
+        app.MapPost("/api/live", async (LiveRequest request, LiveUpdater live, TradeStore store, HttpResponse response,
+            CancellationToken cancellationToken) =>
         {
             if (request.On is not { } on)
                 return ApiResults.BadRequest("on is true or false.");
@@ -33,7 +34,7 @@ internal static class LiveEndpoints
                 return ApiResults.BadRequest($"tradesPerTick is from 1 to {LiveSettings.MaxTradesPerTick}.");
             if (on && store.State != TradeStoreState.Ready)
                 return ApiResults.NotReady(store, response);
-            return Results.Ok(live.Set(new LiveSettings(on, intervalMs, tradesPerTick)));
+            return Results.Ok(await live.SetAsync(new LiveSettings(on, intervalMs, tradesPerTick), cancellationToken));
         });
         return app;
     }
