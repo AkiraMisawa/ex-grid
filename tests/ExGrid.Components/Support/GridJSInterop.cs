@@ -71,6 +71,12 @@ internal sealed class GridJSInterop
     internal void RefuseAnchors()
         => _handle!.Setup<bool>("anchorScrollTop", _ => true).SetResult(false);
 
+    /// <summary>The browser answers that Meta is this platform's primary modifier — an Apple
+    /// platform, where Cmd+click adds a range (ADR-0012). Asked once at attach, so this is set
+    /// before the grid is rendered; the keys are told per key instead.</summary>
+    internal void MetaIsPrimary()
+        => _handle!.Setup<bool>("metaIsPrimary", _ => true).SetResult(true);
+
     internal static GridJSInterop Setup(BunitContext context)
     {
         var module = context.JSInterop.SetupModule(ModulePath);

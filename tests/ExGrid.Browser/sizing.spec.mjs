@@ -107,6 +107,161 @@ test('Shift+click on a header selects whole columns and does not sort (SR-2a, AD
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
+// The pointer at the middle of a header's label, clear of its menu button and its grip.
+async function headerCentre(page, name) {
+    const box = await header(page, name).boundingBox();
+    return { x: box.x + Math.min(20, box.width / 3), y: box.y + (box.height / 2) };
+}
+
+test('a press on a header released on its own column is a click, and sorts (SR-2d, SR-1, ADR-0012)', async ({ page }) => {
+    const from = await headerCentre(page, 'Notional');
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x + 6, from.y, { steps: 3 });
+    await page.mouse.up();
+
+    // The page writes a sort it is told of in lower case; only its opening status is capitalised.
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: notional descending');
+    await expect(page.locator('#selection-status')).toHaveText('Selection:');
+});
+
+test('a press that reaches another header selects whole columns, and never sorts, even released on its own (SR-2d, ADR-0012)', async ({ page }) => {
+    const from = await headerCentre(page, 'Notional');
+    const to = await headerCentre(page, 'Narrow');
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    // A press selects nothing by itself.
+    await page.mouse.move(from.x + 6, from.y, { steps: 3 });
+    await expect(page.locator('#selection-status')).toHaveText('Selection:');
+
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,3');
+    // The Focus on the first visible row, where the Viewport already is.
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /-r0c2$/);
+
+    await page.mouse.move(from.x, from.y, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,1');
+    await page.waitForTimeout(500);
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('a press on one header released on another sorts nothing: the click lands on the header all the same (SR-2d, ADR-0012)', async ({ page }) => {
+    const from = await headerCentre(page, 'Notional');
+    const to = await headerCentre(page, 'Narrow');
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,3');
+    await page.waitForTimeout(500);
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('a press on a header that reaches another column\'s cells selects whole columns (SR-2d, ADR-0012)', async ({ page }) => {
+    const from = await headerCentre(page, 'Notional');
+    const amount = await grid(page).locator("[id$='-r4c3']").boundingBox();
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(amount.x + (amount.width / 2), amount.y + (amount.height / 2), { steps: 8 });
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,2');
+    await page.mouse.up();
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,2');
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('Ctrl+click on a header adds the whole column, a second takes it out, and neither sorts (SR-2e, ADR-0012)', async ({ page }) => {
+    await clickCell(page, 2, 0);
+
+    await header(page, 'Notional').click({ modifiers: ['ControlOrMeta'], position: { x: 20, y: 12 }, force: true });
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1;0,2,120,1');
+    // The Focus on the added column's first visible row.
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /-r0c2$/);
+
+    await header(page, 'Notional').click({ modifiers: ['ControlOrMeta'], position: { x: 20, y: 12 }, force: true });
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1');
+    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /-r2c0$/);
+    await page.waitForTimeout(300);
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('Ctrl+drag across headers adds the columns crossed as one range, and does not sort (SR-2e, ADR-0012)', async ({ page }) => {
+    await clickCell(page, 2, 0);
+    const from = await headerCentre(page, 'Notional');
+    const to = await headerCentre(page, 'Narrow');
+
+    await page.mouse.move(from.x, from.y);
+    await page.keyboard.down('ControlOrMeta');
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await page.mouse.up();
+    await page.keyboard.up('ControlOrMeta');
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1;0,2,120,3');
+    await page.waitForTimeout(300);
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('Meta counts as Ctrl on a header only where Meta is Command (SR-2e, ADR-0012)', async ({ page }) => {
+    await clickCell(page, 2, 0);
+
+    await header(page, 'Notional').click({ modifiers: ['Meta'], position: { x: 20, y: 12 }, force: true });
+
+    if (process.platform === 'darwin') {
+        // Cmd+click is Ctrl+click here: the column is added and nothing sorts.
+        await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1;0,2,120,1');
+        await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+    } else {
+        // Meta is the OS's key here: the click is a plain click, and sorts.
+        await expect(page.locator('#sort-status')).toHaveText('Sorts: notional descending');
+        await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1');
+    }
+});
+
+test('a drag on a resize grip resizes and is not a Heading drag (ticket 21, ADR-0016)', async ({ page }) => {
+    await dragGrip(page, 'Note', 30);
+
+    await expect(page.locator('#width-status')).toHaveText('Widths: Note=150');
+    await expect(page.locator('#selection-status')).toHaveText('Selection:');
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
+});
+
+test('with the view at the top, a header Shift+click then Shift+→ never scrolls down (SR-2c, ADR-0052)', async ({ page }) => {
+    const scroller = grid(page).locator('.ex-scroller');
+    await clickCell(page, 0, 2);
+    await header(page, 'Narrow').click({ modifiers: ['Shift'], position: { x: 20, y: 12 }, force: true });
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,3');
+
+    await page.keyboard.press('Shift+ArrowRight');
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,4');
+    // A reveal writes after the render, and on a circuit its scroll event is a round trip behind.
+    await page.waitForTimeout(500);
+    expect(await scroller.evaluate((el) => el.scrollTop)).toBe(0);
+});
+
+test('with the view at the top, Ctrl+Space on the first row then Shift+→ never scrolls down (SR-2c, ADR-0052)', async ({ page }) => {
+    const scroller = grid(page).locator('.ex-scroller');
+    await clickCell(page, 0, 2);
+    await page.keyboard.press('Control+Space');
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,1');
+
+    await page.keyboard.press('Shift+ArrowRight');
+
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,2');
+    await page.waitForTimeout(500);
+    expect(await scroller.evaluate((el) => el.scrollTop)).toBe(0);
+
+    // Shift+↑ leaves the columns a row short of the last, and the view goes to the Extent.
+    await page.keyboard.press('Shift+ArrowUp');
+    await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,119,2');
+    await expect(grid(page).locator("[id$='-r118c3']")).toBeVisible();
+    await expect.poll(async () => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+});
+
 test('dragging the edge of one of several whole columns resizes them all (FN-12c, ADR-0016)', async ({ page }) => {
     await clickCell(page, 2, 2);
     await header(page, 'Narrow').click({ modifiers: ['Shift'], position: { x: 20, y: 12 }, force: true });

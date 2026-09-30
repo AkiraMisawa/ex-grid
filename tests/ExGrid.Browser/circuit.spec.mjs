@@ -1,4 +1,4 @@
-import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, layoutCeilingTold, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 
 // What a Blazor Server circuit can fail and a WebAssembly tab cannot (Definition of Done
@@ -698,6 +698,11 @@ test('a far reveal paints rows in every frame, and never calls the Focus it scro
     const root = grid(page);
     await expect(root.locator("[id$='-r0c0']")).toHaveText('K-000000', { timeout: 15_000 });
     await expect(root).toHaveAttribute('tabindex', '0');
+    // What is under test is a reveal through the geometry the grid knows. Before its Layout
+    // Ceiling is told the grid computes as if at scale 1, and at 150% a reveal through that
+    // aims past what the browser lays out — the untold window ADR-0053 accepts, not this test's
+    // subject. CI pressed Ctrl+End inside it on the first test of a shard, on both hosts.
+    await layoutCeilingTold(root);
     await clickCell(page, 0, 0);
     await expect(root).toHaveAttribute('aria-activedescendant', /-r0c0$/);
     // A round trip long enough that a frame between the Focus move and the scroll event

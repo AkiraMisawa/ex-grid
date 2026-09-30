@@ -436,6 +436,27 @@
     color: var(--ex-state-error-color, #b3261e);
     outline: 1px solid var(--ex-state-error-color, #b3261e);
 }
+/* The Size Tip (ADR-0052, 2026-09-29): how many rows and columns a drag across Headings covers,
+   at the Heading the Extent is on. Placed and sized by the core, inline: its width is the Cell
+   Metrics' estimate of its text, so the padding is the cell's own token and the text never
+   wraps (ADR-0027/0028). Outside the scroll container like a popover, painted inside the grid's
+   box — its outline too — and it takes no pointer, which is dragging across it (ADR-0040). Its
+   look is its own Visual Tokens (ADR-0029). */
+.ex-size-tip {
+    position: absolute;
+    z-index: 9;
+    box-sizing: border-box;
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    background: var(--ex-size-tip-background, Canvas);
+    color: var(--ex-size-tip-color, CanvasText);
+    outline: var(--ex-size-tip-outline, 1px solid color-mix(in srgb, CanvasText 45%, transparent));
+    outline-offset: -1px;
+}
 /* The column's one popover (ADR-0044): its commands, and below them its filter, set off by a
    rule. Each half is a column of the popover's column; the filter is what gives when the
    room is short, through its value list (ADR-0040). */

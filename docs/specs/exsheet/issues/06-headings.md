@@ -35,7 +35,8 @@ What remains:
 - Layer 3 for DC-3 (the band held at the left edge while scrolling sideways, under both
   Chromes and on a platform with classic scrollbars), and DC-25 (two grids, one declaring).
 - Dragging across Row Headings or column headers to select several is not built; Shift+click
-  is the route.
+  is the route. *(Superseded 2026-09-29: ADR-0050, item 1, and ADR-0012 now decide the drag and
+  Ctrl+click; tickets 21 and 22 build them.)*
 
 2026-09-27, ExSheet's wiring: `HeaderClickSelects` is on, the column headers are the letters, and
 `RowHeadings` labels each row with its 1-based number (a held static delegate). `ShowRowHeadings`

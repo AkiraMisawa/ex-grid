@@ -25,7 +25,10 @@ namespace ExGrid.Selection;
 ///
 /// <para>Mouse drag is not a distinct transition: the holder maps mousedown to
 /// <see cref="Click"/> and mousemove to <see cref="ExtendTo"/>. Do not invent a third path
-/// in the binding layer.</para>
+/// in the binding layer. A drag across Headings maps them the same way onto the whole-column
+/// and whole-row transitions: the press to <see cref="SelectColumn"/>, <see cref="ExtendToColumn"/>
+/// or <see cref="ToggleColumn"/> (and their row forms), each move to <see cref="ExtendToColumn"/>
+/// or <see cref="ExtendToRow"/> (ADR-0050, item 1).</para>
 /// </summary>
 public sealed record GridSelection
 {
@@ -200,7 +203,7 @@ public sealed record GridSelection
     /// Ctrl+click (ADR-0012 / 0052). On an unselected cell: adds a new 1×1 range holding the
     /// Focus, the range made last. On a selected cell: takes it out — the cell is subtracted
     /// from every range containing it, each rectangle giving way, in place, to its fragments
-    /// listed bottom to top as Excel lists them (<see cref="SelectionRange.Subtract"/>) — and
+    /// listed bottom to top as Excel lists them (<see cref="SelectionRange.Subtract(CellPosition)"/>) — and
     /// the Focus goes to the first remaining cell, by rows, of the range made last, wherever
     /// Enter or Tab had moved it (ADR-0052, "What the third run settled"). The only selected
     /// cell cannot be taken out: the selection is returned unchanged.
@@ -214,20 +217,120 @@ public sealed record GridSelection
             return Collapse(cell);
         RequireFits(extent);
 
-        if (!Contains(cell))
-        {
-            var appended = Append(Ranges, new SelectionRange(cell.Row, cell.Column, 1, 1));
-            var origins = new int[_origins.Length + 1];
-            _origins.CopyTo(origins, 0);
-            origins[^1] = _origins[^1] + 1;
-            return new(appended, cell, appended.Length - 1, origins);
-        }
+        return Contains(cell)
+            ? TakeOut(new SelectionRange(cell.Row, cell.Column, 1, 1))
+            : Add(new SelectionRange(cell.Row, cell.Column, 1, 1), cell);
+    }
 
+    /// <summary>
+    /// Ctrl+click on a Column Heading, or on a plain grid's column header (ADR-0050, item 1, and
+    /// ADR-0012, 2026-09-29). On a column not wholly selected: adds the whole column as a new
+    /// range, the range made last, with the Focus on <paramref name="focusRow"/> of it — the
+    /// holder passes its first visible row. On a column wholly selected, whichever ranges hold its
+    /// cells: takes it out of every range, and the Focus follows the take-out rule of
+    /// <see cref="ToggleRange"/>. A take-out that would leave nothing selected changes nothing, as
+    /// the only selected cell cannot be taken out (ADR-0052). From Empty, the column alone.
+    /// Ctrl+drag is this followed by <see cref="ExtendToColumn"/>.
+    /// </summary>
+    public GridSelection ToggleColumn(int column, GridExtent extent, int focusRow)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (column < 0 || column >= extent.ColumnCount)
+            throw new ArgumentOutOfRangeException(nameof(column), column,
+                $"Outside the grid ({extent.ColumnCount} columns).");
+        if (IsEmpty)
+            return SelectColumn(column, extent, focusRow);
+        RequireFits(extent);
+
+        var whole = new SelectionRange(0, column, extent.RowCount, 1);
+        return CoversColumn(column, extent)
+            ? TakeOut(whole)
+            : Add(whole, new CellPosition(Math.Clamp(focusRow, 0, extent.RowCount - 1), column));
+    }
+
+    /// <summary>
+    /// Ctrl+click on a Row Heading (ADR-0050, item 1, 2026-09-29): <see cref="ToggleColumn"/> on
+    /// the other axis, with the Focus on <paramref name="focusColumn"/> of an added row — the
+    /// holder passes its first visible column.
+    /// </summary>
+    public GridSelection ToggleRow(int row, GridExtent extent, int focusColumn)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (row < 0 || row >= extent.RowCount)
+            throw new ArgumentOutOfRangeException(nameof(row), row,
+                $"Outside the grid ({extent.RowCount} rows).");
+        if (IsEmpty)
+            return SelectRow(row, extent, focusColumn);
+        RequireFits(extent);
+
+        var whole = new SelectionRange(row, 0, 1, extent.ColumnCount);
+        return CoversRow(row, extent)
+            ? TakeOut(whole)
+            : Add(whole, new CellPosition(row, Math.Clamp(focusColumn, 0, extent.ColumnCount - 1)));
+    }
+
+    /// <summary>Whether every cell of <paramref name="column"/> is selected, whichever ranges hold
+    /// them — the column is wholly selected, and a Ctrl+click on its Heading takes it out
+    /// (ADR-0050, item 1).</summary>
+    public bool CoversColumn(int column, GridExtent extent)
+        => CoversLine(extent.RowCount, range => range.LeftColumn <= column && column <= range.RightColumn,
+            range => (range.TopRow, range.BottomRow));
+
+    /// <summary>Whether every cell of <paramref name="row"/> is selected, whichever ranges hold
+    /// them (ADR-0050, item 1).</summary>
+    public bool CoversRow(int row, GridExtent extent)
+        => CoversLine(extent.ColumnCount, range => range.TopRow <= row && row <= range.BottomRow,
+            range => (range.LeftColumn, range.RightColumn));
+
+    /// <summary>Whether the ranges <paramref name="crossing"/> the line cover every position of
+    /// it, <paramref name="length"/> long, between them.</summary>
+    private bool CoversLine(int length, Func<SelectionRange, bool> crossing, Func<SelectionRange, (int First, int Last)> span)
+    {
+        if (IsEmpty || length <= 0)
+            return false;
+        var spans = new List<(int First, int Last)>();
+        foreach (var range in Ranges)
+        {
+            if (crossing(range))
+                spans.Add(span(range));
+        }
+        spans.Sort();
+        var covered = 0;
+        foreach (var (first, last) in spans)
+        {
+            if (first > covered)
+                return false;
+            covered = Math.Max(covered, last + 1);
+        }
+        return covered >= length;
+    }
+
+    /// <summary>Adds <paramref name="range"/> as the range made last, holding the Focus on
+    /// <paramref name="focus"/> (ADR-0012).</summary>
+    private GridSelection Add(SelectionRange range, CellPosition focus)
+    {
+        var appended = Append(Ranges, range);
+        var origins = new int[_origins.Length + 1];
+        _origins.CopyTo(origins, 0);
+        origins[^1] = _origins[^1] + 1;
+        return new(appended, focus, appended.Length - 1, origins);
+    }
+
+    /// <summary>
+    /// Takes <paramref name="area"/> out of every range, each giving way in place to its
+    /// fragments (<see cref="SelectionRange.SubtractArea"/>), and puts the Focus on the
+    /// first remaining cell, by rows, of the range made last (ADR-0052, "What the third run
+    /// settled"). Nothing left means nothing changes: the Selection is never taken out whole.
+    /// </summary>
+    private GridSelection TakeOut(SelectionRange area)
+    {
         var remaining = new List<SelectionRange>();
         var cameFrom = new List<int>();
         for (var i = 0; i < Ranges.Count; i++)
         {
-            foreach (var piece in Ranges[i].Subtract(cell))
+            foreach (var piece in Ranges[i].SubtractArea(area))
             {
                 remaining.Add(piece);
                 cameFrom.Add(_origins[i]);

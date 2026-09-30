@@ -152,13 +152,16 @@ for (const chrome of ['builtin', 'mud']) {
 
         test('ADR-0018/ED-26: an edit left for a control on the page stands, and a press back commits it', async ({ page }) => {
             const grid = sheet(page);
-            const undo = page.locator('#sheet-undo');
+            // A control the open edit leaves enabled: the page greys out its commands that
+            // change the Sheet while an edit is open (ADR-0048, SH-29), and a Linked Table's
+            // snapshot is data arriving, not one of them (ADR-0049).
+            const control = page.locator('#sheet-revalue');
             await pressCell(grid, 'C4');
             await page.keyboard.type('99');
             await expect(editor(grid)).toHaveValue('99');
 
-            await undo.click();
-            await expect(undo).toBeFocused();
+            await control.click();
+            await expect(control).toBeFocused();
             await expect(editor(grid)).toHaveValue('99');
             await expect(cell(grid, 'C4')).toHaveText('0.2');
 

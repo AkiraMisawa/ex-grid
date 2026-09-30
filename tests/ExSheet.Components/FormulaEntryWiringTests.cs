@@ -239,6 +239,107 @@ public class FormulaEntryWiringTests : SheetTestContext
             SheetFormulaAids.HintOf(new ArgumentHint(DeclaredFunction.Find("IF")!, 3, null))!.Parts());
     }
 
+    // ---- F4 cycles the Reference at the caret (ADR-0051, 2026-09-29) ----
+
+    [Fact] // ADR-0051 / SH-28 / DC-45: =B2 and F4 four times in the cell gives $B$2, B$2, $B2 and B2, each press decided from the text it carries
+    public async Task SH28_F4_cycles_the_reference_in_the_cell()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "A1", "=B2");
+        var seen = new List<string>();
+
+        foreach (var text in new[] { "=B2", "=$B$2", "=B$2", "=$B2" })
+        {
+            await PressInEditorAsync(cut, "F4", text, text.Length);
+            seen.Add(EditorText(cut));
+        }
+
+        Assert.Equal(["=$B$2", "=B$2", "=$B2", "=B2"], seen);
+    }
+
+    [Fact] // ADR-0051 / SH-28: what F4 wrote is what Enter commits
+    public async Task SH28_what_F4_wrote_is_committed()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "A1", "=B2*2");
+
+        await PressInEditorAsync(cut, "F4", "=B2*2", 3);
+        await PressInEditorAsync(cut, "Enter", "=$B$2*2", 5);
+
+        await GoToAsync(cut, "A1");
+        Assert.Equal("=$B$2*2", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+    }
+
+    [Fact] // ADR-0051 / SH-28 / DC-45: F4 cycles in the Formula Bar, and the Cell Editor shows the same text
+    public async Task SH28_F4_cycles_the_reference_in_the_formula_bar()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "B2");
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        await TypeInBarAsync(cut, "=SUM(A1:C3)");
+
+        await PressInEditorAsync(cut, "F4", "=SUM(A1:C3)", 10, fromBar: true);
+
+        Assert.Equal("=SUM($A$1:$C$3)", cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+        Assert.Equal("=SUM($A$1:$C$3)", EditorText(cut));
+    }
+
+    [Fact] // ADR-0051 / SH-28: a selection over several References cycles each of them
+    public async Task SH28_a_selection_cycles_every_reference_it_covers()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "A1", "=B1+C1");
+
+        await PressInEditorAsync(cut, "F4", "=B1+C1", 1, selectionEnd: 6);
+
+        Assert.Equal("=$B$1+$C$1", EditorText(cut));
+    }
+
+    [Fact] // ADR-0051 / SH-28 / DC-45: a selection touching References at its ends cycles them — + selected in =A1+B1 gives =$A$1+$B$1 (observed in Excel)
+    public async Task SH28_a_selection_touching_references_cycles_them()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "C1", "=A1+B1");
+
+        await PressInEditorAsync(cut, "F4", "=A1+B1", 3, selectionEnd: 4);
+
+        Assert.Equal("=$A$1+$B$1", EditorText(cut));
+    }
+
+    [Fact] // ADR-0051 / SH-28 / DC-45: while pointing, F4 cycles the pointed Reference and pointing goes on; the next arrow writes the relative form
+    public async Task SH28_F4_while_pointing_cycles_the_pointed_reference()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "A1", "=");
+        await PressInEditorAsync(cut, "ArrowDown", "=", 1);
+
+        await PressInEditorAsync(cut, "F4", "=A2", 3);
+        Assert.Equal("=$A$2", EditorText(cut));
+        Assert.Equal("A2", NameBox(cut));
+        await PressInEditorAsync(cut, "ArrowDown", "=$A$2", 5);
+
+        Assert.Equal("=A3", EditorText(cut));
+    }
+
+    [Fact] // ADR-0051 / SH-28: a function name, a number and text that is not a Formula are left as they are
+    public async Task SH28_F4_leaves_what_is_not_a_reference()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "A1", "B2");
+
+        await PressInEditorAsync(cut, "F4", "B2", 2);
+        Assert.Equal("B2", EditorText(cut));
+        Assert.Null(SheetFormulaAids.CycleReference("=SUM(A1)", 2, 2));
+        Assert.Null(SheetFormulaAids.CycleReference("=1+2", 4, 4));
+    }
+
+    [Fact] // ADR-0051 / SH-28: the engine's cycle is handed to the grid as it is, text and selection
+    public void SH28_the_engines_cycle_is_the_grids_rewrite()
+    {
+        Assert.Equal(new global::ExGrid.Cells.EditorRewrite("=$A$1+B2", 5, 5), SheetFormulaAids.CycleReference("=A1+B2", 3, 3));
+        Assert.Equal(new global::ExGrid.Cells.EditorRewrite("=$A$1+$B$2", 1, 10), SheetFormulaAids.CycleReference("=A1+B2", 1, 6));
+    }
+
     // ---- The editor's verdict (ADR-0034) ----
 
     [Fact] // ADR-0034 / TYPED-054: signed text the engine reads as a Formula and refuses is rejected by the editor, which holds it with the engine's reason

@@ -1,4 +1,4 @@
-import { test, expect, alterPage, setRoundTrip, record } from './fixtures.mjs';
+import { test, expect, alterPage, setRoundTrip, record, watchNextKey, keySeenUntouched } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
@@ -7,7 +7,7 @@ import {
 
 // The ExGrid declarations of ADR-0050 and ADR-0051 (§26, DC-*), as ExSheet declares them on
 // /sheet, driven with real keys, the real mouse and the real clipboard: completion, Point, the
-// Formula Bar under a delayed circuit, the fill handle, a spilling paste, copy and paste inside
+// Formula Bar under a delayed circuit, F4 cycling the Reference at the caret, the fill handle, a spilling paste, copy and paste inside
 // the Sheet, undo and redo, the resize grips. The positions grid beside the Sheet declares
 // nothing, and is the "one not declaring" of DC-25. Two ExSheets on one page are on /sheets.
 
@@ -524,6 +524,218 @@ test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key l
     await expect.poll(() => caret(bar(grid))).toBe(3);
     await page.keyboard.type('2');
     await expect(bar(grid)).toHaveValue('=7*2+1');
+    await setRoundTrip(0);
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
+// ---------------------------------------------------------------------------------------------
+// F4 cycles the Reference at the caret (DC-45; ADR-0051, 2026-09-29). Where each edge case lands
+// is SH-28's, pinned in layer 1; what is asked here is that the real key reaches the grid only
+// while an edit is open, that both surfaces show the rewrite and the caret lands after it, and
+// that a burst on a circuit is decided press by press from the text each key carries.
+
+const FORMS = ['=$B$2', '=B$2', '=$B2', '=B2'];
+const selectionOf = (locator) => locator.evaluate((input) => [input.selectionStart, input.selectionEnd]);
+
+/**
+ * Records every text Blazor writes into the Sheet's Cell Editor from here on, however close
+ * together — a value set by a render fires no event, and two can land within one frame — by
+ * wrapping the one field's own value setter. The field is the test's own grid's; the wrapper is
+ * taken off as the test ends.
+ */
+async function recordEditorWrites(page) {
+    await alterPage(page, (selector) => {
+        const input = document.querySelector(selector);
+        const native = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+        const written = [];
+        Object.defineProperty(input, 'value', {
+            configurable: true,
+            get() { return native.get.call(this); },
+            set(value) { written.push(value); native.set.call(this, value); },
+        });
+        window.__editorWrites = written;
+        return () => {
+            delete input.value;
+            delete window.__editorWrites;
+        };
+    }, '.ex-grid:has(> .ex-formula-bar) .ex-viewport input.ex-editor');
+}
+
+/** The texts written since recordEditorWrites, a repeat of the one before it dropped. */
+const editorWrites = (page) => page.evaluate(() => window.__editorWrites.filter((text, i, all) => text !== all[i - 1]));
+
+for (const chrome of ['builtin', 'mud']) {
+    test(`DC-45: =B2 and four F4 presses in a cell give $B$2, B$2, $B2 and B2, the caret after each (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F2');
+        await page.keyboard.type('=B2');
+        await expect(editor(grid)).toHaveValue('=B2');
+
+        for (const form of FORMS) {
+            await page.keyboard.press('F4');
+            await expect(editor(grid)).toHaveValue(form);
+            await expect(bar(grid)).toHaveValue(form);
+            await expect.poll(() => caret(editor(grid))).toBe(form.length);
+        }
+        await expect(editor(grid)).toBeFocused();
+
+        // What F4 wrote is what Enter commits.
+        await page.keyboard.press('F4');
+        await expect(editor(grid)).toHaveValue('=$B$2');
+        await page.keyboard.press('Enter');
+        await expect(editor(grid)).toHaveCount(0);
+        await pressCell(grid, 'F2');
+        await expect(bar(grid)).toHaveValue('=$B$2');
+    });
+
+    test(`DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, and the bar keeps the keyboard (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F2');
+        await clickBarEnd(grid);
+        await typeSteadily(page, bar(grid), '=B2');
+
+        for (const form of FORMS) {
+            await page.keyboard.press('F4');
+            await expect(bar(grid)).toHaveValue(form);
+            await expect(editor(grid)).toHaveValue(form);
+            await expect.poll(() => caret(bar(grid))).toBe(form.length);
+        }
+        await expect(bar(grid)).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+}
+
+test('DC-45: with no edit open, F4 is left to the browser and opens nothing', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'D2');
+    // Prevented once the listener has seen it, so the browser does nothing with it either.
+    await watchNextKey(page, 'F4', { preventAfter: true });
+
+    await page.keyboard.press('F4');
+
+    await expect.poll(() => keySeenUntouched(page), 'F4 reached the page untaken').toBe(true);
+    await expect(editor(grid)).toHaveCount(0);
+    await expectFocusAt(grid, 'D2');
+    await expect(bar(grid)).toHaveValue('=B2*C2');
+});
+
+test('DC-45: F4 cycles the Reference the caret touches mid-text, and every Reference a selection covers or touches', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'F2');
+    await clickBarEnd(grid);
+    await typeSteadily(page, bar(grid), '=A1+B2');
+    // A press into the bar opens Caret: ← is the input's, and moves the caret to just after A1.
+    for (let i = 0; i < 3; i++) {
+        await page.keyboard.press('ArrowLeft');
+    }
+    await expect.poll(() => caret(bar(grid))).toBe(3);
+
+    await page.keyboard.press('F4');
+    await expect(bar(grid)).toHaveValue('=$A$1+B2');
+    await expect.poll(() => caret(bar(grid))).toBe(5);
+
+    // The whole text selected: both References go to the next form of the first, and the
+    // selection covers what was rewritten.
+    await page.keyboard.press('End');
+    await page.keyboard.press('Shift+Home');
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([0, 8]);
+    await page.keyboard.press('F4');
+    await expect(bar(grid)).toHaveValue('=A$1+B$2');
+    await expect(editor(grid)).toHaveValue('=A$1+B$2');
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 8]);
+
+    // Only the + selected: it touches both References, and both cycle, as Excel's F4 does
+    // (observed by the user, 2026-09-29: + selected in =A1+B1 gives =$A$1+$B$1).
+    await page.keyboard.press('Home');
+    for (let i = 0; i < 4; i++) {
+        await page.keyboard.press('ArrowRight');
+    }
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([4, 5]);
+    await page.keyboard.press('F4');
+    await expect(bar(grid)).toHaveValue('=$A1+$B2');
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 8]);
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
+test('DC-45: while pointing, F4 cycles the pointed Reference and pointing goes on; the next arrow writes the relative form', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'F2');
+    await page.keyboard.type('=');
+    await page.keyboard.press('ArrowDown');
+    await expect(editor(grid)).toHaveValue('=F3');
+    const point = grid.locator('.ex-selection .ex-point');
+
+    await page.keyboard.press('F4');
+    await expect(editor(grid)).toHaveValue('=$F$3');
+    await expectCovers(point, grid, 'F3', 'F3');
+    await expect(nameBox(grid)).toHaveValue('F3');
+    await expect.poll(() => caret(editor(grid))).toBe(5);
+
+    // The outline moves on, and writes its Reference as pointing writes it (ADR-0051's reading;
+    // whether Excel keeps the $ form is asked in the seventh Windows run).
+    await page.keyboard.press('ArrowDown');
+    await expect(editor(grid)).toHaveValue('=F4');
+    await expectCovers(point, grid, 'F4', 'F4');
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
+// On a circuit each F4 is answered a round trip later, and the keys behind it are held until it
+// is (ADR-0010), so each press carries the text the one before it left — never a text a round
+// trip old. On WebAssembly the same burst runs as the case without a round trip.
+test('DC-45: on a 150 ms circuit, four F4 presses in a burst give the four forms in order', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'F2');
+    await page.keyboard.type('=B2');
+    await expect(editor(grid)).toHaveValue('=B2');
+    await recordEditorWrites(page);
+    await setRoundTrip(150);
+
+    for (let i = 0; i < 4; i++) {
+        await page.keyboard.press('F4');
+    }
+
+    await expect.poll(async () => {
+        const writes = await editorWrites(page);
+        return writes.slice(writes.indexOf(FORMS[0]));
+    }).toEqual(FORMS);
+    await expect(editor(grid)).toHaveValue('=B2');
+    await expect.poll(() => caret(editor(grid))).toBe(3);
+    await setRoundTrip(0);
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
+// The caret after a rewrite is placed a round trip after the render that carries the text, and
+// setting the value leaves the browser's own caret at the end meanwhile. A second F4 in that gap
+// carries that caret, which is not the user's: the Reference the first one rewrote cycles again,
+// not the one at the end of the text.
+test('DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles the same Reference', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'F2');
+    await clickBarEnd(grid);
+    await typeSteadily(page, bar(grid), '=A1+B2');
+    for (let i = 0; i < 3; i++) {
+        await page.keyboard.press('ArrowLeft');
+    }
+    await expect.poll(() => caret(bar(grid))).toBe(3);
+    await setRoundTrip(150);
+
+    await page.keyboard.press('F4');
+    await page.keyboard.press('F4');
+
+    await expect(bar(grid)).toHaveValue('=A$1+B2');
+    await expect.poll(() => caret(bar(grid))).toBe(4);
+    // Long past the last placement's round trip, nothing else has changed.
+    await page.waitForTimeout(500);
+    await expect(bar(grid)).toHaveValue('=A$1+B2');
+    expect(await caret(bar(grid))).toBe(4);
     await setRoundTrip(0);
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);

@@ -374,7 +374,10 @@ nobody had asked for. What that means when writing a test:
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed
   at the reported caret, from the Formula Bar too (DC-17/31); Point by keys, Shift+arrows, the
   mouse, F2, mid-text, from the bar, a press in the bar's text keeping its caret and ending
-  pointing (DC-19/31/34); DC-20 and DC-28 with 150 ms on the Server host; the fill handle
+  pointing (DC-19/31/34); DC-20 and DC-28 with 150 ms on the Server host; F4 cycling the
+  Reference at the caret in a cell and in the Formula Bar under both Chromes, mid-text, over a
+  selection and a selection only touching References (`+` in `=A1+B1`), while pointing, left to the browser with no edit open, and in a burst and twice
+  before the caret is placed with 150 ms on the Server host (DC-45); the fill handle
   dragged — series, References shifted, a refused pattern, the edge auto-scroll, the Selection
   after (DC-13/27); a block from the real clipboard spilling (DC-8); a copy inside the Sheet
   shifting References, and what the paste receives of the `data-ex-grid="invariant"` marker on

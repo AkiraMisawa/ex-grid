@@ -71,13 +71,17 @@ public abstract class SheetTestContext : BunitContext
     /// <summary>
     /// A key as the capture listener forwards it while an edit is open: with the editor's text
     /// and caret as the browser has them (ADR-0051), from the Formula Bar when
-    /// <paramref name="fromBar"/>.
+    /// <paramref name="fromBar"/>, and with a selection to <paramref name="selectionEnd"/> when
+    /// one is given.
     /// </summary>
     internal static Task PressInEditorAsync(
-        IRenderedComponent<SheetComponent> cut, string key, string text, int caret, bool shift = false, bool fromBar = false)
+        IRenderedComponent<SheetComponent> cut, string key, string text, int caret, bool shift = false, bool fromBar = false,
+        int selectionEnd = -1)
     {
         var grid = Grid(cut);
-        return grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, false, shift, false, false, false, fromDescendant: fromBar, editorText: text, editorCaret: caret));
+        return grid.InvokeAsync(() => grid.Instance.OnKeyAsync(
+            key, false, shift, false, false, false, fromDescendant: fromBar, editorText: text, editorCaret: caret,
+            editorSelectionEnd: selectionEnd < 0 ? caret : selectionEnd));
     }
 
     /// <summary>What the Cell Editor holds, as painted.</summary>
