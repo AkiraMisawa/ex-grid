@@ -169,7 +169,7 @@ public class ShippedStylesheetTests
         var noEditReturns = gate.Value.IndexOf("return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';", StringComparison.Ordinal);
         Assert.True(noEditReturns > 0, "the gate's branch for no edit open has changed shape");
         Assert.True(gate.Value.IndexOf("'F4'", StringComparison.Ordinal) > noEditReturns);
-        Assert.Matches(new Regex(@"return claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\) \? 'mode' : null;"), gate.Value);
+        Assert.Matches(new Regex(@"if \(claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\)\) \{\s*return 'mode';\s*\}"), gate.Value);
         // Told by C# with the editing mode, per instance, off until told.
         Assert.Matches(new Regex(@"let cycleReferences = false;"), script.Text);
         Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{[^}]*cycleReferences = cyclesReferences === true;", RegexOptions.Singleline), script.Text);
@@ -226,10 +226,11 @@ public class ShippedStylesheetTests
         // The same call places the selection F4's rewrite answered (ADR-0051, 2026-09-29).
         Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*if \(movedByUser\(input\)\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
             RegexOptions.Singleline), script.Text);
-        // The user's move: a press in an editor surface's text, or a caret key left to it — only
-        // while the field still holds the text it was made in.
+        // The user's move: a press in an editor surface's text, or a caret key left to it or
+        // answered by the listener on an Apple platform (ticket 32) — only while the field still
+        // holds the text it was made in.
         Assert.Matches(new Regex(@"const movedByUser = \(input\) => caretMoved !== null && caretMoved\.input === input && caretMoved\.text === input\.value;"), script.Text);
-        Assert.Equal(3, Regex.Matches(script.Text, @"noteCaretMove\((event\.target|input)\);").Count);
+        Assert.Equal(4, Regex.Matches(script.Text, @"noteCaretMove\((event\.target|input)\);").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), script.Text);
     }
 
@@ -343,5 +344,37 @@ public class ShippedStylesheetTests
         // read off the mark the core writes on the list's box, and nothing measured.
         Assert.Matches(new Regex(@"const listShown = \(\) => !!root && root\.querySelector\('\.ex-completion\[data-ex-list\]'\) !== null;"), script.Text);
         Assert.Matches(new Regex(@"const claimed = listShown\(\) \? completionKeys : \(claimedWhile\[editing\] \?\? editingKeys\);"), script.Text);
+    }
+
+    [Fact] // ADR-0010's note of 2026-09-30 / ticket 32 / DC-24: on Apple platforms Home and End left to an editor field are answered by the listener, and PageUp and PageDown taken, so nothing scrolls the grid away from an open edit
+    public void On_apple_platforms_the_listener_answers_the_keys_macOS_scrolls_with()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        // Apple platforms, by the same test that makes Meta the Primary Modifier.
+        Assert.Matches(new Regex(@"const metaIsPrimary = /mac\|iphone\|ipad\|ipod/i\.test\(platform\);"), script);
+        // The keys macOS binds to a scroll in a text field (Playwright's macOS key-binding table:
+        // Home, End, PageUp and PageDown scroll; Shift+Home and Shift+End move the selection),
+        // and nothing else.
+        Assert.Matches(new Regex(@"const appleCaretKeys = new Set\(\['Home', 'End', 'Shift\+Home', 'Shift\+End'\]\);"), script);
+        Assert.Matches(new Regex(@"const applePageKeys = new Set\(\['PageUp', 'PageDown'\]\);"), script);
+        // Only a key the core has not claimed — Home and End in Overwrite and Point stay the
+        // core's — and only in an editor field.
+        Assert.Matches(new Regex(@"if \(claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\)\) \{\s*return 'mode';\s*\}\s*//[^\n]*\n\s*if \(metaIsPrimary && k\.inEditor\) \{\s*if \(appleCaretKeys\.has\(canonical\)\) \{\s*return 'caret';\s*\}\s*if \(applePageKeys\.has\(canonical\)\) \{\s*return 'drop';\s*\}\s*\}\s*return null;"),
+            script);
+        Assert.Single(Regex.Matches(script, @"return 'caret';"));
+        // Answered as Windows and Linux answer them: the caret to the text's start or end, or
+        // the selection extended there from its anchor; the user's own move; the field scrolled
+        // to that end by setting its offset, clamped by the browser. Nothing is read but the
+        // field's value and selection.
+        Assert.Matches(new Regex(@"const placeCaretAtEnd = \(input, k\) => \{\s*const toEnd = k\.key === 'End';\s*const edge = toEnd \? input\.value\.length : 0;\s*noteCaretMove\(input\);"), script);
+        Assert.Matches(new Regex(@"const anchor = input\.selectionDirection === 'backward' \? input\.selectionEnd : input\.selectionStart;"), script);
+        Assert.Matches(new Regex(@"input\.setSelectionRange\(anchor \?\? edge, edge, 'forward'\);"), script);
+        Assert.Matches(new Regex(@"input\.setSelectionRange\(edge, anchor \?\? edge, 'backward'\);"), script);
+        Assert.Matches(new Regex(@"input\.setSelectionRange\(edge, edge\);\s*\}\s*input\.scrollLeft = toEnd \? Number\.MAX_SAFE_INTEGER : 0;\s*\};"), script);
+        // From the keydown, and for a key held behind a mode change.
+        Assert.Matches(new Regex(@"if \(verdict === 'caret'\) \{[^}]*placeCaretAtEnd\(input, k\);", RegexOptions.Singleline), script);
+        Assert.Matches(new Regex(@"\} else if \(verdict === 'caret'\) \{\s*const input = editorInput\(\);\s*if \(input\) \{\s*placeCaretAtEnd\(input, rebased\);"), script);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 }

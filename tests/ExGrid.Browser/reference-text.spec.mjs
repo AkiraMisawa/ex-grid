@@ -495,15 +495,6 @@ const FORMULA = '=IF(AND(B2>0,C2>0),ROUND(B2*C2*(1+D2),2),"Enter both the quanti
     + 'before the amount of this line is worked out, and check the discount in the next column")'
     + '&" as of "&TEXT(B7,"yyyy-mm-dd")&", due "&TEXT(B8,"yyyy-mm-dd")';
 
-// The keys that take a text field's caret to either end of its line. On macOS, End and Home
-// scroll the document instead (scrollToEndOfDocument:, as the platform binds them and Playwright
-// sends them): there they scroll the grid to its last row, the Cell Editor's cell is no longer
-// painted, and the editor goes with it. Command+→ and Command+← are the platform's line ends, and
-// reach the field in Caret as End and Home do elsewhere (ADR-0010).
-const LINE_END = process.platform === 'darwin'
-    ? { End: 'Meta+ArrowRight', Home: 'Meta+ArrowLeft' }
-    : { End: 'End', Home: 'Home' };
-
 for (const chrome of ['builtin', 'mud']) {
     for (const surface of ['cell', 'bar']) {
         test(`DC-48: a Formula longer than the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} keeps its colours over the right characters at either end (${chrome} Chrome)`, async ({ page }) => {
@@ -511,7 +502,8 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await pressCell(grid, 'F3');
             const field = surface === 'cell' ? editor(grid) : bar(grid);
-            // Caret, where Home and End move the caret rather than the Focus (ADR-0010).
+            // Caret, where Home and End move the caret rather than the Focus (ADR-0010) — on macOS
+            // too, where the listener answers them (ticket 32).
             if (surface === 'cell') {
                 await page.keyboard.press('F2');
             } else {
@@ -534,7 +526,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(metrics.layer).toEqual(metrics.field);
 
             for (const end of ['End', 'Home']) {
-                await page.keyboard.press(LINE_END[end]);
+                await page.keyboard.press(end);
                 // The field scrolled to show its caret — past the start at the end, back to it at the
                 // start — and the layer's line with it (DC-48).
                 await expect.poll(() => field.evaluate((input, at) => {

@@ -114,6 +114,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
     const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
     const claimedWhile = { overwrite: overwriteKeys, point: pointKeys, completion: completionKeys };
+    // The keys macOS binds to a scroll in a text field, where Windows and Linux move the caret
+    // (ADR-0010's note of 2026-09-30, ticket 32): Home and End scroll the document there, PageUp
+    // and PageDown a page. Left to the browser in an editor surface, they scrolled the grid away
+    // from the open edit — the edited cell left the painted rows, the Cell Editor went, and DOM
+    // focus with it. So on Apple platforms, found by the test that makes Meta the Primary
+    // Modifier, a key of these left to an editor field is answered here: Home and End, Shift
+    // with them or not, place the caret or extend the selection as they do elsewhere; PageUp and
+    // PageDown, which move no caret in a one-line field, do nothing. The keys the core claims —
+    // Home and End in Overwrite and Point — stay the core's.
+    const appleCaretKeys = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
+    const applePageKeys = new Set(['PageUp', 'PageDown']);
     const listShown = () => !!root && root.querySelector('.ex-completion[data-ex-list]') !== null;
 
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
@@ -130,7 +141,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // popover, so the keys after it are held until the popover holds DOM focus; 'mode' — the
     // core's, and it can change the editing mode, so the keys after it are held until it is
     // answered;
-    // 'core' — the core's, and changes no mode; 'drop' — taken and never forwarded;
+    // 'core' — the core's, and changes no mode; 'drop' — taken and never forwarded; 'caret' —
+    // Home or End on an Apple platform, taken and answered here (ticket 32);
     // null — the browser's, or a control's inside the grid. Read from a snapshot of the
     // event rather than the event itself, so a held key can be gated again, against the
     // mode its predecessor's answer left.
@@ -256,7 +268,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // Every key the core claims while editing commits, cancels, moves or switches
         // the mode: each is a mode change. F4 rewrites the text, and the keys after it wait
         // for the rewrite, so that each carries the text the one before it left.
-        return claimed.has(canonical) || (cycleReferences && canonical === 'F4') ? 'mode' : null;
+        if (claimed.has(canonical) || (cycleReferences && canonical === 'F4')) {
+            return 'mode';
+        }
+        // Left to an editor field, a key macOS would scroll with is answered here (ticket 32).
+        if (metaIsPrimary && k.inEditor) {
+            if (appleCaretKeys.has(canonical)) {
+                return 'caret';
+            }
+            if (applePageKeys.has(canonical)) {
+                return 'drop';
+            }
+        }
+        return null;
     };
 
     // The scroll container is the grid's own, not a control inside it: it carries
@@ -629,6 +653,28 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         input.dispatchEvent(new Event('input', { bubbles: true }));
         return true;
     };
+    // Home or End answered in an editor field on an Apple platform (ticket 32), as Windows and
+    // Linux answer them: the caret to the text's start or end, or with Shift the selection
+    // extended there from its anchor; the user's own move. The field is scrolled to show that
+    // end — setting the offset from script moves no view by itself, and a number past the far
+    // end is clamped to it by the browser — so nothing is read but the field's value and
+    // selection (ADR-0021).
+    const placeCaretAtEnd = (input, k) => {
+        const toEnd = k.key === 'End';
+        const edge = toEnd ? input.value.length : 0;
+        noteCaretMove(input);
+        if (k.shiftKey) {
+            const anchor = input.selectionDirection === 'backward' ? input.selectionEnd : input.selectionStart;
+            if (toEnd) {
+                input.setSelectionRange(anchor ?? edge, edge, 'forward');
+            } else {
+                input.setSelectionRange(edge, anchor ?? edge, 'backward');
+            }
+        } else {
+            input.setSelectionRange(edge, edge);
+        }
+        input.scrollLeft = toEnd ? Number.MAX_SAFE_INTEGER : 0;
+    };
     const typeIntoEditor = (k) => {
         const input = editorInput();
         if (input && !k.ctrlKey && !k.metaKey) {
@@ -779,6 +825,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 await editorSettled();
             } else if (verdict === 'core') {
                 forward(rebased);
+            } else if (verdict === 'caret') {
+                const input = editorInput();
+                if (input) {
+                    placeCaretAtEnd(input, rebased);
+                }
             } else if (verdict === null && editing !== 'none') {
                 typeIntoEditor(rebased);
             }
@@ -877,6 +928,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         if (verdict === 'select') {
             event.target.select();
+            return;
+        }
+        if (verdict === 'caret') {
+            const input = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement
+                ? event.target
+                : editorInput();
+            if (input) {
+                placeCaretAtEnd(input, k);
+            }
             return;
         }
         const answer = forward(k);
