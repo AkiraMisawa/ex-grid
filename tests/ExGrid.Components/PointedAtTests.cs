@@ -186,7 +186,7 @@ public class PointedAtTests : GridTestContext
         Assert.Equal(
         [
             new GridPointedPress<TestRow>(GridPointedPressKind.ColumnHeader, Column: "Book"),
-            new GridPointedPress<TestRow>(GridPointedPressKind.SeveralColumns),
+            new GridPointedPress<TestRow>(GridPointedPressKind.SeveralColumns, Dragged: true),
         ], _presses);
         Assert.Empty(_selections);
         Assert.Empty(_sorts);
@@ -281,7 +281,7 @@ public class PointedAtTests : GridTestContext
         Assert.Equal(
         [
             new GridPointedPress<TestRow>(GridPointedPressKind.Cell, rows[2], "Book"),
-            new GridPointedPress<TestRow>(GridPointedPressKind.SeveralCells),
+            new GridPointedPress<TestRow>(GridPointedPressKind.SeveralCells, Dragged: true),
         ], _presses);
         Assert.Empty(_selections);
         Assert.Equal(scrolls, Js.ScrolledTo.Count);
@@ -433,6 +433,35 @@ public class PointedAtTests : GridTestContext
 
         await cut.InvokeAsync(() => declared.IsPointedAt = false);
         Assert.All(Handlers().Zip(pointed), pair => Assert.NotEqual(pair.Second, pair.First));
+    }
+
+    [Fact] // ADR-0058 / SH-32 / ADR-0018: a grid with an open edit of its own is not pointed at, whatever it is told; its presses go to its edit, and it is pointed at again once the edit ends
+    public async Task A_grid_with_an_open_edit_of_its_own_is_not_pointed_at()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration(pointedAt: false);
+        var cut = RenderGrid(declared, rows);
+        await PressAsync(cut, 150, 30);
+        await ReleaseAsync(cut, 150, 30);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("x", false, false, false, false, false));
+        Assert.Single(cut.FindAll(".ex-viewport .ex-editor"));
+        var selections = _selections.Count;
+
+        await cut.InvokeAsync(() => declared.IsPointedAt = true);
+        Assert.DoesNotContain("ex-pointed-at", RootClass(cut));
+        Assert.False(cut.Find(".ex-header").HasAttribute("blazor:onmousedown:preventdefault"));
+        // A press on another cell is the grid's own: it commits the edit and moves the Focus there.
+        await PressAsync(cut, 250, 70);
+        await ReleaseAsync(cut, 250, 70);
+
+        Assert.Empty(_presses);
+        Assert.Equal(new CellPosition(3, 2), _selections[^1].Focus);
+        Assert.True(_selections.Count > selections);
+        // The edit is gone, and the declaration is in force again.
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+        Assert.Contains("ex-pointed-at", RootClass(cut));
+        await PressAsync(cut, 50, 110);
+        Assert.Equal([new GridPointedPress<TestRow>(GridPointedPressKind.Cell, rows[5], "Book")], _presses);
     }
 
     [Fact] // ADR-0058 / DC-1 / DC-52: without the declaration, or with one not pointed at, nothing changes, and a press is the grid's own again

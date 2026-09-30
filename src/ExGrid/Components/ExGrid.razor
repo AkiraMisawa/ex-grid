@@ -2805,6 +2805,8 @@
         // that changed the edit without either.
         if (_jsEditingDirty || (_editMode != EditMode.None) != _consumerHeardEditOpen)
             await PushEditingStateAsync();
+        // The net under any path that changed the edit's Point without telling (ADR-0058).
+        TellConsumerPointState();
         await PushPointerReportingAsync();
         // A display-only grid must not take printable keys away from the page
         // (ADR-0010/0020), nor a grid nobody listens to take Ctrl+Z (ADR-0007) — the
@@ -6500,9 +6502,13 @@
     /// Focus instead, as Excel's does in Point — the Focus itself has not moved — and it
     /// names the edited cell again the moment the outline goes. While a selecting drag holds
     /// the button over more than one cell, the Consumer's label for the range's size, as
-    /// Excel's shows <c>4R x 3C</c> (ADR-0052).</summary>
+    /// Excel's shows <c>4R x 3C</c> (ADR-0052). While what Point wrote came from outside the
+    /// grid, nothing: the cell pressed there has no name here, and naming the edited cell would
+    /// read as pointing at it (ADR-0058).</summary>
     private string NameBoxText()
     {
+        if (PointedFromOutside)
+            return "";
         if (_editMode != EditMode.None && _pointer is { IsEmpty: false } pointer)
             return NameBoxLabel?.Invoke(pointer.Focus) ?? "";
         if (_selection.Selection.IsEmpty)
@@ -6629,6 +6635,7 @@
         if (endedIn is not null)
             await endedIn();
         TellConsumerWhetherEditOpen();
+        TellConsumerPointState();
         // An ending waits for no reply (see above). Its two tasks are safe to leave: each catches
         // the browser's failures itself, so neither can fault unobserved.
         if (_editMode == EditMode.None)

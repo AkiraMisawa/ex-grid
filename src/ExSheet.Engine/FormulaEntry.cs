@@ -360,6 +360,59 @@ public static partial class FormulaEntry
     public static string ReferenceText(CellRange range) => range.ToString();
 
     /// <summary>
+    /// What Point writes for a pressed column of a Linked Table, through a Pointing Scope
+    /// (ADR-0058): Excel's structured reference, <c>Positions[PV]</c>, written as the engine writes
+    /// one back — single brackets, with <c>'</c> before each of <c>[ ] # '</c> in the column's name.
+    /// </summary>
+    /// <param name="table">The table's name, as declared.</param>
+    /// <param name="column">The column's name, as declared.</param>
+    /// <exception cref="ArgumentException">Either name is null or empty.</exception>
+    public static string StructuredReferenceText(string table, string column)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(table);
+        ArgumentException.ThrowIfNullOrEmpty(column);
+        var text = new StringBuilder();
+        Formulas.FormulaText.WriteStructuredReference(text, table, column);
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// A Value written as a Formula writes a constant of its kind (ADR-0058): text in double quotes,
+    /// with any <c>"</c> in it doubled (<c>"R-4471"</c>); a number in the invariant form the engine
+    /// writes a number constant in (<c>1250</c>, <c>-0.5</c>); a boolean as <c>TRUE</c> or
+    /// <c>FALSE</c>. <see langword="null"/> for an Error Value: a lookup by one finds nothing, so
+    /// nothing is written for it.
+    /// </summary>
+    public static string? ConstantText(Value value) => value.Kind switch
+    {
+        ValueKind.Text => "\"" + value.Text.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"",
+        ValueKind.Number => NumberText.Written(value.Number, System.Globalization.CultureInfo.InvariantCulture, NumberText.FormulaConstantLongest),
+        ValueKind.Boolean => value.Boolean ? "TRUE" : "FALSE",
+        _ => null,
+    };
+
+    /// <summary>
+    /// What Point writes for a pressed cell of a Linked Table, through a Pointing Scope (ADR-0058):
+    /// the lookup that reads the cell by its row's key,
+    /// <c>XLOOKUP("R-4471", Positions[Id], Positions[PV])</c> — the key as a constant of its kind
+    /// (<see cref="ConstantText"/>), then the key column and the pressed column as structured
+    /// references (<see cref="StructuredReferenceText"/>). It names no position, so the Formula
+    /// reads the same row after the grid that showed it is sorted (ADR-0049, rule 2).
+    /// </summary>
+    /// <param name="table">The table's name, as declared.</param>
+    /// <param name="keyColumn">The table's key column, as declared.</param>
+    /// <param name="key">The row's key: text, a number or a boolean.</param>
+    /// <param name="column">The pressed column, as declared.</param>
+    /// <exception cref="ArgumentException">A name is null or empty, or the key is an Error Value,
+    /// which no lookup finds.</exception>
+    public static string LookupText(string table, string keyColumn, Value key, string column)
+    {
+        var constant = ConstantText(key)
+            ?? throw new ArgumentException("An Error Value is not a key a lookup finds (ADR-0058).", nameof(key));
+        return "XLOOKUP(" + constant + ", " + StructuredReferenceText(table, keyColumn) + ", " + StructuredReferenceText(table, column) + ")";
+    }
+
+    /// <summary>
     /// F4 (ADR-0051, 2026-09-29): the Reference at the caret cycled to its next form —
     /// <c>A1</c> → <c>$A$1</c> → <c>A$1</c> → <c>$A1</c> → <c>A1</c> — and the caret at the end of
     /// it. The Reference at the caret is the one the caret is inside or touching, on either side.

@@ -224,7 +224,10 @@ Sheet's Linked Tables to the functions), a table's columns after `Table[`, and a
 where it takes one of a fixed list, before anything is typed — the argument hint, whether a Reference can be written at the caret (Point mode), the Reference
 text for a range, what F4 makes of the Reference at the caret, and every Reference in the text
 with the cells it names or the Linked Table column it reads, for Reference Outlines
-(`Sheet.References` reads a Sheet qualifier against the Sheet's own name).
+(`Sheet.References` reads a Sheet qualifier against the Sheet's own name). For a Pointing Scope
+(ADR-0058) it writes what reads a Linked Table's cell by key, `LookupText` —
+`XLOOKUP("R-4471", Positions[Id], Positions[PV])` — a column's structured reference,
+`StructuredReferenceText`, and a Value as Excel writes a constant of its kind, `ConstantText`.
 
 ## More
 

@@ -112,13 +112,14 @@ public partial class ExGrid<TRow>
         _reportedText = null;
         _editCaret = caret ?? -1;
         _editText = text;
-        if (_pointer is not null || _editMode == EditMode.Point)
+        if (_pointer is not null || _pointedFromOutside || _editMode == EditMode.Point)
         {
             EndPointing();
             if (_editMode == EditMode.Point)
                 _editMode = EditMode.Overwrite;
         }
         RequestCompletion();
+        TellConsumerPointState();
     }
 
     /// <summary>
@@ -259,7 +260,7 @@ public partial class ExGrid<TRow>
         // has taken the caret into the text, so the edit is in Caret — Excel's Edit mode — and
         // the arrows move the caret from here, not the outline and not the Focus (ADR-0051's
         // third round).
-        var pointingEnded = _pointer is not null || _editMode == EditMode.Point;
+        var pointingEnded = _pointer is not null || _pointedFromOutside || _editMode == EditMode.Point;
         if (pointingEnded)
         {
             EndPointing();
@@ -267,6 +268,7 @@ public partial class ExGrid<TRow>
                 _editMode = EditMode.Caret;
             MarkGateIfMoved();
         }
+        TellConsumerPointState();
         if (CompleteEditorText is null && !pointingEnded)
             return Task.CompletedTask;
         if (CompleteEditorText is not null)
@@ -406,6 +408,7 @@ public partial class ExGrid<TRow>
         _editCaret = caret;
         PlaceCaret();
         RequestCompletion();
+        TellConsumerPointState();
     }
 
     /// <summary>What the completion box shows, or null: an answer standing for the open

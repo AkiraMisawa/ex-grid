@@ -66,6 +66,33 @@ internal static class SheetWords
         _ => "Nothing was copied.",
     };
 
+    /// <summary>What a press on a grid of a Pointing Scope that wrote nothing tells (ADR-0058).</summary>
+    internal static string PointingRefused(PointingRefusalReason reason, string table, string? column, bool tookBack) => reason switch
+    {
+        PointingRefusalReason.SeveralCells => tookBack
+            ? $"What the press wrote was taken back: the drag reached another cell. A Formula reads one row of '{table}' by its key, and a range of cells cannot be written."
+            : $"Nothing was written: more than one cell was pressed. A Formula reads one row of '{table}' by its key, and a range of cells cannot be written.",
+        PointingRefusalReason.SeveralColumns => tookBack
+            ? $"What the press wrote was taken back: the drag reached another column. A Formula names one column of '{table}' at a time."
+            : $"Nothing was written: more than one column was pressed. A Formula names one column of '{table}' at a time.",
+        PointingRefusalReason.HeaderGroup =>
+            $"Nothing was written: a Header Group stands over several columns, and a Formula names one column of '{table}' at a time.",
+        PointingRefusalReason.ColumnNotInTable =>
+            $"Nothing was written: the column '{column}' is not a column of the Linked Table '{table}'.",
+        PointingRefusalReason.NoKey =>
+            $"Nothing was written: '{table}' was declared without a key, so a Formula cannot name one of its rows. Press a column's header to read the whole column.",
+        PointingRefusalReason.BlankKey =>
+            $"Nothing was written: this row's key in '{table}' is blank, so a Formula cannot name the row.",
+        PointingRefusalReason.KeyIsAnError =>
+            $"Nothing was written: this row's key in '{table}' is an error, which a lookup never finds.",
+        PointingRefusalReason.RowNotArrived => "Nothing was written: this row has not arrived yet.",
+        PointingRefusalReason.TableNotDeclared =>
+            $"Nothing was written: this Sheet has no Linked Table '{table}' declared.",
+        PointingRefusalReason.NotPointing =>
+            "Nothing was written: the Formula no longer stood where a Reference can go when the press arrived.",
+        _ => "Nothing was written.",
+    };
+
     internal static string NothingToUndo => "There is nothing to undo.";
 
     internal static string NothingToRedo => "There is nothing to redo.";

@@ -13,5 +13,10 @@ namespace ExGrid.Cells;
 /// <see cref="GridPointedPressKind.ColumnHeader"/>, the column's name, as
 /// <see cref="GridColumn{TRow}.Name"/> names it. Null for the kinds that stand over more than one
 /// column.</param>
-public sealed record GridPointedPress<TRow>(GridPointedPressKind Kind, TRow? Row = null, string? Column = null)
+/// <param name="Dragged">Whether this is a press already handed over, dragged onto another cell or
+/// column with its button still down: the same gesture's second hand-over, as
+/// <see cref="GridPointedPressKind.SeveralCells"/> or <see cref="GridPointedPressKind.SeveralColumns"/>.
+/// False for every press as it is made, a Shift+press included, so the Consumer can tell a drag
+/// that began on a cell it acted on from a press of several cells at once.</param>
+public sealed record GridPointedPress<TRow>(GridPointedPressKind Kind, TRow? Row = null, string? Column = null, bool Dragged = false)
     where TRow : class;

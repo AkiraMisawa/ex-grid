@@ -45,6 +45,19 @@ public partial class ExGrid<TRow>
     /// </summary>
     [Parameter] public Func<string, int, int, EditorRewrite?>? CycleReference { get; set; }
 
+    /// <summary>
+    /// Tells the Consumer where the open edit stands with respect to Point (ADR-0058): in Point
+    /// while <see cref="PointAt"/> says a Reference can go at the caret or what Point wrote stands
+    /// over unchanged text, and whether that was written from outside the grid
+    /// (<see cref="WritePointedTextAsync"/>). Raised when the state changes and never when it does
+    /// not, at the change — as the key, the typing or the press that changed it is answered, before
+    /// the render that paints it — and with <see cref="PointState.None"/> when the edit ends.
+    /// Raised and not waited for. A Consumer that points from other instances on the page declares
+    /// them pointed at while this is not <see cref="PointState.None"/>. Nothing is raised where
+    /// <see cref="PointAt"/> is not declared.
+    /// </summary>
+    [Parameter] public EventCallback<PointState> OnPointStateChanged { get; set; }
+
     // The pointing outline as a Focus and an Extent of its own — a one-range selection, so the
     // arrows, Shift and a click move it by the same transitions the Selection's own use — the
     // span of the text its Reference occupies, and the text as the core last wrote it. Pointing
@@ -54,6 +67,20 @@ public partial class ExGrid<TRow>
     private int _pointLength;
     private string? _pointWritten;
     private bool _pointDragging;
+
+    // Whether what Point wrote was handed in from outside (ADR-0058): no outline stands over this
+    // grid's cells for it, the Name Box is empty and F4 changes nothing while it stands. With it,
+    // the edit as it was before that write, for the Consumer to take it back to.
+    private bool _pointedFromOutside;
+    private PointBefore? _pointBefore;
+
+    // The state the Consumer last heard (OnPointStateChanged).
+    private PointState _pointStateTold;
+
+    /// <summary>An open edit's Point as it stood before a write from outside: what taking the write
+    /// back returns it to.</summary>
+    private sealed record PointBefore(
+        string Text, int Caret, EditMode Mode, GridSelection? Pointer, int Start, int Length, string? Written, bool FromOutside);
 
     // A cell to reveal in the Focus's place: the Extent while a range is extended (ADR-0052),
     // or the pointing outline's moving end, which may be walked off screen while the Focus
@@ -76,10 +103,46 @@ public partial class ExGrid<TRow>
         }
     }
 
-    /// <summary>Whether a pointing outline stands, and the editor's text is still the text its
-    /// Reference was written into.</summary>
+    /// <summary>Whether what Point wrote stands — its outline over this grid's cells, or text
+    /// written from outside — and the editor's text is still the text it was written into.</summary>
     private bool PointingContinues
-        => _pointer is not null && string.Equals(_editText, _pointWritten, StringComparison.Ordinal);
+        => (_pointer is not null || _pointedFromOutside) && string.Equals(_editText, _pointWritten, StringComparison.Ordinal);
+
+    /// <summary>Whether what Point wrote, and still stands, was written from outside the grid
+    /// (ADR-0058).</summary>
+    private bool PointedFromOutside => _pointedFromOutside && _editMode != EditMode.None && PointingContinues;
+
+    /// <summary>Where the open edit stands with respect to Point, as <see cref="OnPointStateChanged"/>
+    /// tells it.</summary>
+    private PointState CurrentPointState()
+    {
+        if (_editMode == EditMode.None || PointAt is not { } pointAt)
+            return PointState.None;
+        if (PointingContinues)
+            return _pointedFromOutside ? PointState.WrittenFromOutside : PointState.InPoint;
+        return _editCaret >= 0 && _editCaret <= _editText.Length && pointAt(_editText, _editCaret)
+            ? PointState.InPoint
+            : PointState.None;
+    }
+
+    /// <summary>Tells the Consumer the Point state when it is not what the Consumer last heard: at
+    /// each place the edit's text, caret, mode or Point changes. Raised and not waited for, as the
+    /// edit's opening and ending are (<see cref="TellConsumerWhetherEditOpen"/>).</summary>
+    private void TellConsumerPointState()
+    {
+        if (!OnPointStateChanged.HasDelegate || _disposed)
+            return;
+        // A caret not known yet — typing whose caret report is still on its way — is waited for,
+        // never guessed at: told as out of Point, the Consumer would stop pointing and start again
+        // with every key.
+        if (_editMode != EditMode.None && PointAt is not null && !PointingContinues && _editCaret < 0)
+            return;
+        var state = CurrentPointState();
+        if (state == _pointStateTold)
+            return;
+        _pointStateTold = state;
+        _ = RaiseUnwaitedAsync(() => OnPointStateChanged.InvokeAsync(state));
+    }
 
     /// <summary>The pointed range while an outline stands over an open edit, for the
     /// overlay.</summary>
@@ -97,6 +160,8 @@ public partial class ExGrid<TRow>
         _pointer = null;
         _pointWritten = null;
         _pointDragging = false;
+        _pointedFromOutside = false;
+        _pointBefore = null;
     }
 
     /// <summary>
@@ -124,6 +189,7 @@ public partial class ExGrid<TRow>
         _editCaret = at;
         if (waited || (CompletionListOpen && at != _completionCaret))
             RequestCompletion();
+        TellConsumerPointState();
     }
 
     /// <summary>
@@ -153,6 +219,11 @@ public partial class ExGrid<TRow>
         };
         if (step is not { } move)
             return false;
+        // What a press outside the grid wrote has no cell here to move from: ADR-0058 gives the
+        // arrows a meaning inside the grid that press landed on, which this grid does not know. They
+        // are claimed, and move and write nothing; the text stands.
+        if (PointedFromOutside)
+            return true;
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
             return false;
@@ -194,9 +265,18 @@ public partial class ExGrid<TRow>
         if (CellUnder(e) is not { } cell)
             return false;
         var extent = Extent;
-        if (PointingContinues)
+        if (PointingContinues && _pointer is { } pointer)
         {
-            _pointer = e.ShiftKey ? _pointer!.ExtendTo(cell, extent) : _pointer!.Click(cell, extent);
+            _pointer = e.ShiftKey ? pointer.ExtendTo(cell, extent) : pointer.Click(cell, extent);
+        }
+        else if (PointingContinues)
+        {
+            // What a press outside the grid wrote is replaced by this cell's Reference, in the same
+            // place (ADR-0058): there is no outline here to move, so Shift reaches from the edited
+            // cell, as it does before anything is pointed.
+            _pointer = e.ShiftKey
+                ? GridSelection.Empty.Click(_editingCell, extent).ExtendTo(cell, extent)
+                : GridSelection.Empty.Click(cell, extent);
         }
         else
         {
@@ -221,7 +301,7 @@ public partial class ExGrid<TRow>
     /// it.</summary>
     private void OnPointDrag(CellPosition cell)
     {
-        if (!PointingContinues || _pointer!.Extent == cell)
+        if (!PointingContinues || _pointer is null || _pointer.Extent == cell)
         {
             _suppressRender = true;
             return;
@@ -248,6 +328,10 @@ public partial class ExGrid<TRow>
     /// its text.</exception>
     private void OnCycleReferenceKey(int start, int end, bool moved)
     {
+        // After a press outside the grid, F4 changes nothing (ADR-0058): what that press wrote is
+        // not a Reference of this grid's cells, and the Consumer's rewrite is not asked.
+        if (PointedFromOutside)
+            return;
         var text = _editText;
         var pointing = PointingContinues;
         if (pointing)
@@ -310,6 +394,7 @@ public partial class ExGrid<TRow>
             RequestCompletion();
         }
         MarkGateIfMoved();
+        TellConsumerPointState();
         _suppressRender = false;
         StateHasChanged();
     }
@@ -330,9 +415,13 @@ public partial class ExGrid<TRow>
         _editCaret = caret;
         _pointWritten = text;
         _editMode = EditMode.Point;
+        // This grid's own cell replaces whatever a press outside it wrote.
+        _pointedFromOutside = false;
+        _pointBefore = null;
         PlaceCaret();
         CloseCompletion();
         MarkGateIfMoved();
+        TellConsumerPointState();
         if (reveal)
         {
             // The outline's moving end is kept on screen as the Extent is (ADR-0052): the
@@ -341,5 +430,110 @@ public partial class ExGrid<TRow>
             _revealTarget = new ExtentReveal(_pointer.Extent, _pointer.FocusRange);
             _revealFocus = true;
         }
+    }
+
+    /// <summary>
+    /// Writes <paramref name="text"/> into the open edit as Point writes a Reference, for a press a
+    /// Consumer took outside the grid (ADR-0058) — a Pointing Scope's <c>Positions[PV]</c>, or
+    /// <c>XLOOKUP("R-4471", Positions[Id], Positions[PV])</c>. It goes where Point writes: in place of
+    /// what this Point wrote, from this grid's cells or from outside, or else at the caret where
+    /// <see cref="PointAt"/> says a Reference can go; and the caret stands after it. The edit is then
+    /// in Point, written from outside (<see cref="PointState.WrittenFromOutside"/>): no outline stands
+    /// over this grid's cells, the Name Box is empty, F4 changes nothing, and the arrows move nothing.
+    /// A further press, on this grid or outside it, replaces the text, and anything typed or a caret
+    /// moved ends Point over it, as it ends Point over a Reference. The text wears the pointed look
+    /// where one of the Consumer's References stands exactly over it (ADR-0057). The grid reads
+    /// nothing of the text: what it means is the Consumer's.
+    /// </summary>
+    /// <param name="text">What to write; never empty.</param>
+    /// <returns>Whether it was written: false, and nothing changed, when no edit is open, when
+    /// pointing is not declared, or when the edit is not in Point (<see cref="PointState.None"/>),
+    /// as when something was typed after the press was made.</returns>
+    /// <exception cref="ArgumentException">The text is null or empty.</exception>
+    public async Task<bool> WritePointedTextAsync(string text)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(text);
+        // On the renderer's own context: a press on another instance hands the text in, and it must
+        // not race this grid's render.
+        var written = false;
+        await InvokeAsync(() => written = WritePointedText(text));
+        return written;
+    }
+
+    /// <summary>
+    /// Takes back the text <see cref="WritePointedTextAsync"/> wrote last, while it still stands: the
+    /// edit returns to what it was before that write — its text, its caret, its editing state, and
+    /// what Point had written before it, which stands again. ADR-0058 asks it of a press that a drag
+    /// then carries onto another cell: a Formula that read one cell of the range the user meant would
+    /// be a plausible wrong answer.
+    /// </summary>
+    /// <returns>Whether anything was taken back: false, and nothing changed, when no edit is open or
+    /// the text written from outside no longer stands — typed on, moved away from, replaced by a
+    /// press, or already taken back.</returns>
+    public async Task<bool> TakeBackPointedTextAsync()
+    {
+        var taken = false;
+        await InvokeAsync(() => taken = TakeBackPointedText());
+        return taken;
+    }
+
+    private bool WritePointedText(string text)
+    {
+        if (_disposed || CurrentPointState() == PointState.None)
+            return false;
+        if (!PointingContinues)
+        {
+            // Nothing this Point wrote stands: the text goes in at the caret.
+            EndPointing();
+            _pointStart = _editCaret;
+            _pointLength = 0;
+        }
+        var before = new PointBefore(_editText, _editCaret, _editMode, _pointer, _pointStart, _pointLength, _pointWritten, _pointedFromOutside);
+        var (written, caret) = EditorTextRules.Replace(_editText, _pointStart, _pointLength, text);
+        _pointer = null;
+        _pointDragging = false;
+        _pointLength = text.Length;
+        _editText = written;
+        _editCaret = caret;
+        _pointWritten = written;
+        _pointedFromOutside = true;
+        _pointBefore = before;
+        _editMode = EditMode.Point;
+        PlaceCaret();
+        CloseCompletion();
+        MarkGateIfMoved();
+        TellConsumerPointState();
+        // Not a UI event of this grid's: an armed suppression would swallow this render.
+        _suppressRender = false;
+        StateHasChanged();
+        return true;
+    }
+
+    private bool TakeBackPointedText()
+    {
+        if (_disposed || !PointedFromOutside || _pointBefore is not { } before)
+            return false;
+        _editText = before.Text;
+        _editCaret = before.Caret;
+        _editMode = before.Mode;
+        _pointer = before.Pointer;
+        _pointStart = before.Start;
+        _pointLength = before.Length;
+        _pointWritten = before.Written;
+        _pointedFromOutside = before.FromOutside;
+        _pointBefore = null;
+        _pointDragging = false;
+        PlaceCaret();
+        // What Point wrote before stands again, and takes no list; text that was only waiting for a
+        // Reference is asked about again, as it was before the press.
+        if (PointingContinues)
+            CloseCompletion();
+        else
+            RequestCompletion();
+        MarkGateIfMoved();
+        TellConsumerPointState();
+        _suppressRender = false;
+        StateHasChanged();
+        return true;
     }
 }
