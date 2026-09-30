@@ -256,6 +256,17 @@ rules are now Excel's:
   do what they do without it: they point where Point can, and move the caret elsewhere, as they do in
   a list of names (ADR-0051).
 
+**Readings taken while building ticket 44** *(2026-09-30)*, where the tenth run did not look. The
+ninth run's Part B asks Excel; a reading it contradicts is corrected here.
+
+- **"Typed whole" is read on the text before the caret.** With the caret before or inside a value
+  (`,,|1)`, `,,-|1)`), every value is listed, and the one chosen replaces the whole of it.
+- **Text that begins no value lists nothing** (`4`, `A1`, `1+` at `match_mode`). Read literally, "any
+  other text lists every value" would open a list after an operator, which the table above rules out
+  and which would take ↓ from Point.
+- **`Home`, `End` and the Shift+arrows stay the editor's while any list is open**; only ← and → are
+  given to Point, where it can.
+
 ## Not in the first version, and what watches for it
 
 - **A key of several columns.** The Consumer adds a column that joins them (`ACME|5Y`), and declares
