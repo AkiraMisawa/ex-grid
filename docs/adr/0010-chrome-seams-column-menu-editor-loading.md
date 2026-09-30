@@ -92,6 +92,14 @@ public sealed record CellEditorContext(
 `string? Error` to the record, so the editor can paint `aria-invalid` while a Reject holds it
 open.)*
 
+*(Changed 2026-09-30, decided with the user, with
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of that day.)* A Chrome's
+editor control, for the Cell Editor or the Formula Bar's text, no longer takes DOM focus with its
+own `FocusAsync` when its context's `FocusRequest` changes. It calls a focus function its context
+hands it, and the core grants the focus only while the keyboard is still this grid's. The request
+number still says when; the core says whether. A Chrome that focused itself would take the keyboard
+back from another grid the user had just moved to, where the built-in editor would not.
+
 ### Two editing states
 
 Excel has two editing states, and **the same arrow key means different things in each**.
@@ -246,6 +254,13 @@ and the render that removed the editor went out first, so for that moment DOM fo
 and no root listener heard the key. The core now sends both requests, the gate's new mode and the
 hand-back, before it yields, as closing a popover already does. The gate is still told first. This
 changes the order for every way an edit ends: 0 runs of 30 lost the key afterwards, on each host.
+
+*(Added 2026-09-30, with [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of
+that day.)* The hold above lasts "until that editor holds DOM focus". The editor's focus is now
+declined when the keyboard has left this grid before the focus lands. Keys held behind the opening
+key then do not wait for a focus that will not come, and are not handed to wherever the keyboard
+went. They were typed while the keyboard was this grid's, and they go into the edit, in order, as
+they would have once it held focus.
 
 Rejected: **appending on the C# side** — C# receiving the printable keys and adding them to
 the editor's text. Keys typed after the editor has DOM focus go straight into its input,

@@ -154,6 +154,16 @@ too.
   `mousedown` note of 2026-09-27), and a held press suppresses its default, so DOM focus stays
   where it was and the keys typed next go there. It takes a key, a press elsewhere and a press back,
   all inside one round trip, and only on a circuit. It is recorded here rather than built around.
+- **An edit that opens takes the keyboard only while the keyboard is still this grid's**
+  *(decided with the user, 2026-09-30)*. The editor surface is focused after the render that paints
+  it, a round trip later on a circuit. If the user has meanwhile pressed another grid or a control
+  on the page, the edit does not take the keyboard back from there. It is left standing, as above,
+  and a press on the rows brings the keyboard to it. Keys typed before the keyboard left are still
+  this edit's, and go into it in order. [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)
+  records the condition, which is read in script, and why a Chrome's editor asks the core for its
+  focus rather than taking it.
+  - Found by CI, not by a user: ED-26's test on `/sheets` failed once on the Server host, and the
+    same race failed 9 runs in 40 on the base with 40 ms injected.
 
 ## Consequences
 
