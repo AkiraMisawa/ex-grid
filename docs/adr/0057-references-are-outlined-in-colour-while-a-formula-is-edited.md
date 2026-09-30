@@ -249,3 +249,33 @@ file.
   Formula Bar reports the grey span as its selection through UI Automation, but a keystroke does not
   replace it. So ExSheet paints the grey as a look on the layer, and never selects the field's text.
 
+## Settled while building the coloured text *(2026-09-30, decided with the user)*
+
+- **Which surface shows the colours is read from DOM focus**, in the listener, rather than from the
+  core's record of where the edit was opened. The core does not always hear a press that moves the
+  edit between the cell and the Formula Bar in time: a press into the bar can pass without a render,
+  and a press back into the cell is not heard until the next key. A Chrome's editor has no focus
+  callback either. DOM focus is what the listener already uses to send held keys to the right
+  surface (ADR-0051), and it follows every move at once.
+- **A composition's end brings the colours back.** Every `input` of an IME composition is marked as
+  composing, and none follows its `compositionend`. Without a listener for that event, the colours
+  would stay off after each committed composition until the next key, which is every Japanese word
+  typed into a string. The editor listener therefore also hears `compositionend` on the root while an
+  edit is open (ADR-0021's note).
+- **The layer drifts by a fraction of a pixel over many References, and that is accepted.** The layer
+  draws each span as its own run of text, and the browser rounds each run's width to its layout
+  unit. The field's text is one run. At the far end of a Formula the layer is about 0.1 px out with
+  ten References, 0.6 px with forty and 1.3 px with eighty (measured 2026-09-30). That is never a
+  character, and below twenty References it does not show. If long Formulas show it, the fix is to
+  draw the layer as one run and colour it with the CSS Custom Highlight API, which needs script of its
+  own and a decision.
+- **Two moments leave the colours a keystroke behind, and both are accepted.**
+  - Focus moved mid-edit to something that is not a text field (a button in a Consumer's cell) leaves
+    the previous field coloured until the next key or caret move. The colours are still over the
+    right characters.
+  - A Cell Editor recreated because its cell scrolled out of the painted rows and back starts plain
+    until the next key.
+
+  Both err towards plain text or stale placement of correct colours. Neither can put a colour on the
+  wrong characters.
+

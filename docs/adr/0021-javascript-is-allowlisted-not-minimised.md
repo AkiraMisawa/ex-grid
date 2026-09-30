@@ -307,6 +307,9 @@ On each input, and when the layer's text changes, it compares the layer's text w
 and sets or clears one class, so the coloured text shows only while it is the text in the field. It
 notices the layer's change through a `MutationObserver` on one attribute of the layer, as the
 reveal's write waits on one attribute of the root. It also keeps the layer's `scrollLeft` equal to
-the field's, which is the scroll-offset entry's API on one more element. The ground is the first:
+the field's, which is the scroll-offset entry's API on one more element. *(Extended 2026-09-30, decided
+with the user: while an edit is open it also hears `compositionend` on the root, in the capture phase,
+because no `input` follows the end of an IME composition and the colours would otherwise wait for the
+next key. It re-runs the same comparison, and nothing else.)* The ground is the first:
 Blazor cannot know that the browser's value is ahead of the value the server rendered for. Neither
 addition reads layout. They are the editor listener and the scroll offsets, not a new entry.)*

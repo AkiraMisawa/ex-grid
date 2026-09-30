@@ -193,12 +193,16 @@ public class FormulaReferencesTests
         Assert.Equal(expected, Answered(text));
     }
 
-    [Theory] // ADR-0057: a range typed as far as its colon names no cells yet — the grammar reads no Reference in A1: (the implementation's reading, not asked of Excel)
-    [InlineData("=SUM(A1:", new string[0])]
-    [InlineData("=B1+A1:", new[] { "B1 = B1" })]
-    [InlineData("=SUM(A1:B", new string[0])]
+    [Theory] // ADR-0057, cases 24-32 of the eighth Windows run: a range typed as far as its colon answers its first corner, the colon left out (case 26); an incomplete second corner likewise (a reading)
+    [InlineData("=SUM(A1:", new[] { "A1 = A1" })]
+    [InlineData("=B1+A1:", new[] { "B1 = B1", "A1 = A1" })]
+    [InlineData("=SUM(A1:B", new[] { "A1 = A1" })]
+    [InlineData("=SUM(Sheet1!A1:", new[] { "Sheet1!A1 = A1" })]
+    [InlineData("=SUM($A$1:", new[] { "$A$1 = A1" })]
     [InlineData("=SUM(A1:B2", new[] { "A1:B2 = A1:B2" })]
-    public void SH30_a_range_typed_as_far_as_its_colon_is_not_answered(string text, string[] expected)
+    [InlineData("=SUM(A:", new string[0])]
+    [InlineData("=SUM(Sheet2!A1:", new string[0])]
+    public void SH30_a_range_typed_as_far_as_its_colon_answers_its_first_corner(string text, string[] expected)
     {
         Assert.Equal(expected, Answered(text));
     }
@@ -311,18 +315,29 @@ public class FormulaReferencesTests
         Assert.Empty(Answered(text));
     }
 
-    [Theory] // ADR-0057: text that is not a Formula is answered with nothing — as F4 and Point read it, a Formula begins with =
+    [Theory] // ADR-0057: text that is not a Formula is answered with nothing; a Formula begins with =, or with + or - as Excel colours it (cases 24, 25)
     [InlineData("")]
     [InlineData("A1")]
     [InlineData("A1:B2")]
-    [InlineData("-B2")]
-    [InlineData("+A1")]
     [InlineData("'=A1")]
+    [InlineData("'+A1")]
     [InlineData(" =A1")]
     [InlineData("SUM(A1)")]
     public void SH30_text_that_is_not_a_formula_is_answered_with_nothing(string text)
     {
         Assert.Empty(FormulaEntry.References(text, Sheet.DefaultName));
+    }
+
+    [Theory] // ADR-0057, cases 24-25 of the eighth Windows run: text beginning with + or - is coloured as a Formula is, as Excel colours it and ExSheet enters it (=+A1, =-B2)
+    [InlineData("+A1", new[] { "A1 = A1" })]
+    [InlineData("-B2", new[] { "B2 = B2" })]
+    [InlineData("-B2*C3:D4", new[] { "B2 = B2", "C3:D4 = C3:D4" })]
+    [InlineData("+SUM(A1,", new[] { "A1 = A1" })]
+    [InlineData("+1", new string[0])]
+    [InlineData("-", new string[0])]
+    public void SH30_text_beginning_with_a_sign_is_answered_as_a_formula(string text, string[] expected)
+    {
+        Assert.Equal(expected, Answered(text));
     }
 
     [Fact] // ADR-0057: no text, or no Sheet name to read a qualifier against, is an argument error, not a guess

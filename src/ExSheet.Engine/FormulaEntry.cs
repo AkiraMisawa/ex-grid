@@ -315,8 +315,10 @@ public static partial class FormulaEntry
     /// for F4. The text need not parse: an unfinished Formula (<c>=SUM(A1,</c>) is answered as far
     /// as it goes, and an unclosed string, quoted Sheet name or bracket hides only what follows it.
     /// Nothing inside a string is a Reference, nor is a function name (<c>LOG10(</c>), nor one
-    /// qualified with another Sheet's name, which names no cells. Text not beginning with <c>=</c>
-    /// is answered with nothing.
+    /// qualified with another Sheet's name, which names no cells. A range typed as far as its colon
+    /// (<c>=SUM(A1:</c>) answers its first corner, the colon left out. Text beginning with <c>+</c> or
+    /// <c>-</c> is answered as a Formula is, as Excel colours it and ExSheet enters it (<c>=+A1</c>);
+    /// other text is answered with nothing (the eighth Windows run, cases 24–26).
     /// </summary>
     /// <param name="text">The text being edited.</param>
     /// <param name="sheetName">This Sheet's name: a Reference qualified with it, without regard to case, names this Sheet's cells.</param>
@@ -324,7 +326,7 @@ public static partial class FormulaEntry
     {
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(sheetName);
-        if (text.Length == 0 || text[0] != '=') return [];
+        if (text.Length == 0 || text[0] is not ('=' or '+' or '-')) return [];
 
         var references = new List<FormulaReference>();
         foreach (var token in Scan(text))
@@ -338,15 +340,41 @@ public static partial class FormulaEntry
                     references.Add(new FormulaReference(token.Start, length, null, new LinkedTableColumn(structured.Table, structured.Column)));
                 }
             }
-            else if (Formulas.Lexer.ReadReference(text, token.Start, out var read) is { } reference && read == length && Sheet.Names(reference.SheetName, sheetName))
+            else if (ReadOperandReference(text, token.Start, length) is { } read && Sheet.Names(read.Reference.SheetName, sheetName))
             {
-                var area = reference.Area;
+                var area = read.Reference.Area;
                 var cells = new CellRange(new CellAddress(area.Row1, area.Column1), new CellAddress(area.Row2, area.Column2));
-                references.Add(new FormulaReference(token.Start, length, cells, null));
+                references.Add(new FormulaReference(token.Start, read.Length, cells, null));
             }
         }
         return references;
     }
+
+    /// <summary>
+    /// The operand at <paramref name="start"/> read as a Reference over the whole of it, as F4 reads
+    /// one; or, while a range is typed as far as its colon or into its second corner (<c>A1:</c>,
+    /// <c>A1:B</c>), its first corner, which Excel colours (the eighth Windows run, case 26). The
+    /// grammar reads no Reference with a colon after it, so the corner is read from the text cut at
+    /// the colon. The colon looked for is the one after a Sheet qualifier's <c>!</c>, not one inside a
+    /// quoted Sheet name, and what follows it must be the start of a second corner and no more:
+    /// <c>A1:B2:C3</c> is not a range being typed, and answers nothing as before.
+    /// </summary>
+    private static (Formulas.Reference Reference, int Length)? ReadOperandReference(string text, int start, int length)
+    {
+        if (Formulas.Lexer.ReadReference(text, start, out var read) is { } whole && read == length) return (whole, read);
+        var bang = text.LastIndexOf('!', start + length - 1, length);
+        var from = bang >= start ? bang + 1 : start;
+        var colon = text.IndexOf(':', from, start + length - from);
+        if (colon <= start || !SecondCornerBegun().IsMatch(text.AsSpan(colon + 1, start + length - colon - 1))) return null;
+        return Formulas.Lexer.ReadReference(text[..colon], start, out var corner) is { } first && corner == colon - start
+            ? (first, corner)
+            : null;
+    }
+
+    /// <summary>What may follow the colon of a range still being typed: nothing yet, or the start of
+    /// a cell's address (<c>B</c>, <c>$B$</c>, <c>B1</c> before the grammar reads it whole).</summary>
+    [GeneratedRegex(@"^\$?[A-Za-z]{0,3}\$?[0-9]{0,7}$", RegexOptions.CultureInvariant)]
+    private static partial Regex SecondCornerBegun();
 
     private static bool IsFormula(string text, int caret)
     {

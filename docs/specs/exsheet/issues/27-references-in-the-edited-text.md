@@ -50,3 +50,9 @@ Read by the implementation, and not asked in Part A:
   its table is declared with that column, as a Reference to another Sheet is not coloured. A
   declared table still waiting for its data is kept.
 
+*(2026-09-30, after cases 24–32 of the eighth Windows run.)* Two of the readings above were wrong,
+and both are now Excel's. Text beginning with `+` or `-` is answered as a Formula is (`+A1` colours
+A1). A range typed as far as its colon, or into its second corner, answers its first corner
+(`=SUM(A1:` and `=SUM(A1:B` colour A1). `=A1:B2:C3` still answers nothing, because it is not a range
+being typed.
+
