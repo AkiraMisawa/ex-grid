@@ -12,18 +12,17 @@ namespace ExPivot.Engine;
 public sealed record PivotFieldInfo(string Name, string Caption, PivotFieldType Type);
 
 /// <summary>
-/// A Pivot Field as the Consumer declares it (ADR-0058): a named attribute of the Source
-/// Records, how it is read from one, its declared type, and optionally the format its Items
-/// are labelled with and the order its Items are declared in (Excel's custom lists). Immutable;
-/// a changed declaration is a new instance.
+/// A Pivot Field as a Pivot Source offers it (ADR-0065): its name, caption and declared type,
+/// the format its Items are labelled with, and the order its Items are declared in (Excel's
+/// custom lists) — everything but how it is read from a record, which is the source's own. A
+/// source's <see cref="PivotSource.Fields"/> are these; the Field List and the report need
+/// nothing more. Immutable; a changed declaration is a new instance.
 /// </summary>
-/// <typeparam name="TRecord">The Consumer's record type.</typeparam>
-public sealed class PivotField<TRecord>
+public class PivotField
 {
     /// <summary>Declares one Pivot Field.</summary>
     /// <param name="name">What a Pivot Layout addresses it by; unique among the fields.</param>
     /// <param name="type">The declared type (ADR-0059).</param>
-    /// <param name="value">Reads the field from a record; null is a Blank.</param>
     /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
     /// <param name="format">A .NET format string an Item's number or date is labelled with, under
     /// the report's culture; the value's own text when left out.</param>
@@ -32,13 +31,11 @@ public sealed class PivotField<TRecord>
     public PivotField(
         string name,
         PivotFieldType type,
-        Func<TRecord, object?> value,
         string? caption = null,
         string? format = null,
         IReadOnlyList<object>? itemOrder = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(name);
-        ArgumentNullException.ThrowIfNull(value);
         if (type is not (PivotFieldType.Text or PivotFieldType.Number or PivotFieldType.Date or PivotFieldType.Boolean))
             throw new ArgumentOutOfRangeException(nameof(type), type, $"Unknown PivotFieldType for Pivot Field '{name}'.");
         if (caption is not null && caption.Length == 0)
@@ -46,13 +43,12 @@ public sealed class PivotField<TRecord>
         if (format is not null && FormatProblem(type, format) is { } problem)
             throw new ArgumentException($"Pivot Field '{name}' declares the format '{format}', which {problem}.", nameof(format));
 
-        Value = value;
         Format = format;
         ItemOrder = itemOrder?.ToArray() ?? [];
         Info = new PivotFieldInfo(name, caption ?? name, type);
     }
 
-    /// <summary>The name, caption and type, without the accessor.</summary>
+    /// <summary>The name, caption and type, as the layout rules take them.</summary>
     public PivotFieldInfo Info { get; }
 
     /// <summary>What a Pivot Layout addresses the field by.</summary>
@@ -63,9 +59,6 @@ public sealed class PivotField<TRecord>
 
     /// <summary>The declared type.</summary>
     public PivotFieldType Type => Info.Type;
-
-    /// <summary>Reads the field from a record; null is a Blank.</summary>
-    public Func<TRecord, object?> Value { get; }
 
     /// <summary>The .NET format string an Item's number or date is labelled with, or null.</summary>
     public string? Format { get; }
@@ -92,4 +85,38 @@ public sealed class PivotField<TRecord>
             return "cannot format a date";
         }
     }
+}
+
+/// <summary>
+/// A Pivot Field as the Consumer declares it over records in memory (ADR-0058): a
+/// <see cref="PivotField"/> and how it is read from one record. <see cref="PivotSource.From{TRecord}"/>
+/// reads the records through these. Immutable; a changed declaration is a new instance.
+/// </summary>
+/// <typeparam name="TRecord">The Consumer's record type.</typeparam>
+public sealed class PivotField<TRecord> : PivotField
+{
+    /// <summary>Declares one Pivot Field.</summary>
+    /// <param name="name">What a Pivot Layout addresses it by; unique among the fields.</param>
+    /// <param name="type">The declared type (ADR-0059).</param>
+    /// <param name="value">Reads the field from a record; null is a Blank.</param>
+    /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
+    /// <param name="format">A .NET format string an Item's number or date is labelled with, under
+    /// the report's culture; the value's own text when left out.</param>
+    /// <param name="itemOrder">Values whose Items come first, in this order, when the field is
+    /// sorted by label — the months of a year, a scale of ratings. The other Items follow.</param>
+    public PivotField(
+        string name,
+        PivotFieldType type,
+        Func<TRecord, object?> value,
+        string? caption = null,
+        string? format = null,
+        IReadOnlyList<object>? itemOrder = null)
+        : base(name, type, caption, format, itemOrder)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        Value = value;
+    }
+
+    /// <summary>Reads the field from a record; null is a Blank.</summary>
+    public Func<TRecord, object?> Value { get; }
 }

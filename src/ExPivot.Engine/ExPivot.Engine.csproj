@@ -11,4 +11,9 @@
        wherever a report is needed, a server included, and is the reference a server-side
        answer is held to. -->
 
+  <ItemGroup>
+    <!-- Layer 1 reaches the cell index's hash, which has no public surface (ADR-0065). -->
+    <InternalsVisibleTo Include="ExPivot.Engine.Tests" />
+  </ItemGroup>
+
 </Project>

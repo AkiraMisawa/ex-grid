@@ -86,6 +86,25 @@ internal readonly struct ItemKey : IEquatable<ItemKey>
         _ => throw new InvalidOperationException("Unknown PivotItemKind."),
     };
 
+    /// <summary>
+    /// The order a source lists Items in when it knows no culture (ADR-0065): by kind — numbers,
+    /// dates, text, Booleans, <c>#NUM!</c>, <c>(blank)</c> — then numbers and dates by value,
+    /// <c>FALSE</c> before <c>TRUE</c>, and text ordinally ignoring case, which is total because
+    /// two texts equal ignoring case are one Item.
+    /// </summary>
+    public static int CompareInvariant(ItemKey x, ItemKey y)
+    {
+        if (x.Kind != y.Kind)
+            return x.Kind.CompareTo(y.Kind);
+        return x.Kind switch
+        {
+            PivotItemKind.Number => x.Number.CompareTo(y.Number),
+            PivotItemKind.Date or PivotItemKind.Boolean => x.Ticks.CompareTo(y.Ticks),
+            PivotItemKind.Text => string.Compare(x.Text, y.Text, StringComparison.OrdinalIgnoreCase),
+            _ => 0,
+        };
+    }
+
     public bool Equals(ItemKey other)
     {
         if (Kind != other.Kind)

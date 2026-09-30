@@ -15,9 +15,7 @@ internal sealed class CellReader(PivotCube cube, ValueFieldPlan[] values)
     public AggregateValue Read(AxisNode row, AxisNode column, int vf)
     {
         var plan = values[vf];
-        return cube.TryRead(row, column, plan.Source, out var accumulator)
-            ? accumulator.Read(plan.Aggregation)
-            : AggregateValue.Empty;
+        return cube.Read(row, column, plan.Source, plan.Aggregation);
     }
 
     public AggregateValue Shown(AxisNode row, AxisNode column, int vf)

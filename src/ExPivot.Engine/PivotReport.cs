@@ -132,6 +132,32 @@ public sealed class PivotReport
         return path;
     }
 
+    /// <summary>
+    /// The question for the records behind a cell — Show Details (ADR-0062/0065): the Items of the
+    /// row's path and of the column's, the Hidden Items the report was computed under, a range, and
+    /// the report's Source Version, under which the records add up to the cell. A label cell is
+    /// <paramref name="valueColumn"/> −1, and asks for every record of its row. A row that stands
+    /// for no records — a Value Field's row — asks for its Item's.
+    /// </summary>
+    /// <param name="row">A row of this report.</param>
+    /// <param name="valueColumn">A value column's index, or −1 for the row's label cell.</param>
+    /// <param name="start">The first record wanted.</param>
+    /// <param name="count">How many records are wanted.</param>
+    public PivotDetailsQuery DetailsQuery(PivotReportRow row, int valueColumn, int start = 0, int count = int.MaxValue)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if (!ReferenceEquals(row.Report, this))
+            throw new ArgumentException("The row belongs to another report.", nameof(row));
+        if (valueColumn < -1 || valueColumn >= ValueColumns.Count)
+            throw new ArgumentOutOfRangeException(nameof(valueColumn), valueColumn, "Not a value column of the report, nor −1.");
+        var rowItems = RowPath(row).Select(step => new PivotFieldItem(step.Field, step.Item)).ToArray();
+        var columnItems = valueColumn < 0
+            ? []
+            : ColumnPath(valueColumn).Select(step => new PivotFieldItem(step.Field, step.Item)).ToArray();
+        var hidden = Cube.Query.Placed.Where(field => field.HiddenItems.Count > 0).ToArray();
+        return new PivotDetailsQuery(Cube.SourceVersion, rowItems, columnItems, hidden, start, count);
+    }
+
     /// <summary>The Value Field a cell of <paramref name="row"/> in <paramref name="valueColumn"/>
     /// shows, or −1 where no Value Field is placed.</summary>
     public int ValueFieldAt(PivotReportRow row, int valueColumn)
