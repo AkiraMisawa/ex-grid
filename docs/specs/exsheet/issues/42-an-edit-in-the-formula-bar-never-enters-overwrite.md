@@ -82,3 +82,11 @@ said in the code: it errs toward Caret, and never commits.
   `tests/ExGrid.Browser/declarations.spec.mjs`, from D10, under each Chrome. Four ways into the bar:
   typed there, typed there then F2 (case `7k`), pointed from there and typed on, and begun in the
   cell then pressed into the bar.
+
+2026-09-30, after the tenth Windows run (group 4): Excel's F2 takes its Formula Bar from Edit to
+Enter, and Home, → and ↓ then enter the Formula and move. The user chose Excel's behaviour (Q47), so
+the F2 arm that kept the bar in Caret is removed: F2 in the bar does what it does in the cell. The
+layer 2 test for it became three (cases 20, 23, 24), and ED-29's case `7k` now expects the Formula
+entered into D10 and the Focus on A10. Typing in the bar, and an edit carried into it, still go into
+Caret, as Excel's bar stays in Edit (cases 14–19). The ticket keeps its file name; its title now reads
+past what the tenth run corrected.

@@ -195,8 +195,27 @@ public class FormulaBarModeTests : GridTestContext
         AssertTheEditStandsOnB1(cut, intents, selections);
     }
 
-    [Fact] // ADR-0051 (2026-09-30) / ED-29, case 7k: F2 in the bar moves only between Caret and Point — where no Reference can go it changes nothing, and Home then commits nothing
-    public async Task ED29_F2_in_the_bar_moves_only_between_caret_and_point()
+    [Fact] // ADR-0051 (2026-09-30) / ED-29, the tenth Windows run's case 20: F2 in the bar where no Reference can go is Overwrite, as Excel's bar goes to Enter, and Home then enters the Formula and moves
+    public async Task ED29_F2_in_the_bar_goes_to_overwrite_and_home_then_commits_and_moves()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var selections = new List<GridSelection>();
+        var cut = RenderGrid(intents, selections);
+        await ClickAsync(cut, 150, 10);
+        await PressIntoBarAsync(cut);
+        await TypeInBarAsync(cut, "=A1+B1");
+        Assert.Equal("caret", EditingModesTold()[^1]);
+
+        await PressAsync(cut, "F2", "=A1+B1", 6, fromBar: true);
+        Assert.Equal("overwrite", EditingModesTold()[^1]);
+        await PressAsync(cut, "Home", "=A1+B1", 6, fromBar: true);
+
+        Assert.Equal("=A1+B1", Assert.Single(intents).Value);
+        Assert.Equal(new CellPosition(0, 0), selections[^1].Focus);
+    }
+
+    [Fact] // ADR-0051 (2026-09-30) / ED-29, the tenth Windows run's case 23: F2 twice in the bar returns to Caret, and Home then moves only the caret
+    public async Task ED29_F2_twice_in_the_bar_returns_to_caret()
     {
         var intents = new List<GridEditIntent<TestRow>>();
         var selections = new List<GridSelection>();
@@ -205,20 +224,30 @@ public class FormulaBarModeTests : GridTestContext
         await PressIntoBarAsync(cut);
         await TypeInBarAsync(cut, "=A1+B1");
 
-        // No Reference can go after B1: Caret stays Caret, where Overwrite used to follow.
         await PressAsync(cut, "F2", "=A1+B1", 6, fromBar: true);
+        await PressAsync(cut, "F2", "=A1+B1", 6, fromBar: true);
+
         Assert.Equal("caret", EditingModesTold()[^1]);
         await PressAsync(cut, "Home", "=A1+B1", 6, fromBar: true);
         AssertTheEditStandsOnB1(cut, intents, selections);
         Assert.Equal("=A1+B1", BarText(cut));
+    }
 
-        // Where one can, F2 points, and F2 again returns to Caret.
-        await TypeInBarAsync(cut, "=A1+B1+");
-        await PressAsync(cut, "F2", "=A1+B1+", 7, fromBar: true);
+    [Fact] // ADR-0051 (2026-09-30) / ED-29, the tenth Windows run's case 24: F2 in the bar where a Reference can go points, and F2 again returns to Caret
+    public async Task ED29_F2_in_the_bar_where_a_reference_can_go_points()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var selections = new List<GridSelection>();
+        var cut = RenderGrid(intents, selections);
+        await ClickAsync(cut, 150, 10);
+        await PressIntoBarAsync(cut);
+        await TypeInBarAsync(cut, "=A1+");
+
+        await PressAsync(cut, "F2", "=A1+", 4, fromBar: true);
         Assert.Equal("point", EditingModesTold()[^1]);
-        await PressAsync(cut, "ArrowDown", "=A1+B1+", 7, fromBar: true);
-        Assert.Equal("=A1+B1+B2", BarText(cut));
-        await PressAsync(cut, "F2", "=A1+B1+B2", 9, fromBar: true);
+        await PressAsync(cut, "ArrowDown", "=A1+", 4, fromBar: true);
+        Assert.Equal("=A1+B2", BarText(cut));
+        await PressAsync(cut, "F2", "=A1+B2", 6, fromBar: true);
         Assert.Equal("caret", EditingModesTold()[^1]);
         Assert.Empty(cut.FindAll(".ex-selection .ex-point"));
         AssertTheEditStandsOnB1(cut, intents, selections);

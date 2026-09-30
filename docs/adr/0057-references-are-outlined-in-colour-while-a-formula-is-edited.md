@@ -330,8 +330,10 @@ configurations drew the same.
 - **Seen with no Excel reading to compare**:
   - In the Formula Bar, ↓ after `=` does not point. Excel's bar does not either (2026-09-27, item 12).
   - **In the Formula Bar, `Home` committed the Formula and moved the Focus.** F2 had taken the bar's
-    edit to Overwrite, where `Home` moves between cells. Excel's bar is always in Edit. That is
-    corrected in ADR-0051 (note of the same day), as a defect.
+    edit to Overwrite, where `Home` moves between cells. This was first taken for a defect. The tenth
+    Windows run showed that Excel's F2 takes its bar to Enter, and that `Home` then commits and moves
+    too, so it is Excel's behaviour. ADR-0051's note of the same day records it, with the two
+    defects the case led to (typing, and an edit carried into the bar, left the bar in Overwrite).
   - A Reference whose range crosses the Pinned Columns is drawn as two elements, one in each layer,
     as a selected range is ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). DC-46 said
     "one element per Reference". It now says one per layer the Reference crosses, never per cell
