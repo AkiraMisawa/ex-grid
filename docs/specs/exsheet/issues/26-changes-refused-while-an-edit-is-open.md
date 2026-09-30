@@ -65,3 +65,16 @@ the Consumer's discard, and `RefusedWhileEditingTests` (18). Layer 3: the `SH-29
 reaches the refusal on the Server host by pressing the insert button inside a 150 ms round trip;
 checked ad hoc against a private host behind `latency-proxy.mjs`, where it passed three times and
 failed with the refusal removed. The layer 2/layer 3 box stays open until the suite has run.
+
+2026-09-30, after the full layer 3 run found regressions: three were this ticket's. The note on
+`/sheet` stood above the grid and moved every row down, so item 20's fill in
+`sheet-vs-excel.spec.mjs` dragged below a 720 px window; it now stands below the grids. A
+Consumer that renders on hearing an edit change had its render sent ahead of the key gate's mode
+and the keyboard's hand-back on a circuit (DC-19, CP-6/CP-10/CP-14 on the Server host); the
+browser's messages now go out first, with nothing waited for before the Consumer hears. And the
+end was heard before the committed value was handled, which painted the old value for a round
+trip and let a command given on hearing the end run before the value, sending it into the row an
+insertion moved there; what an edit ended in (the Edit Intent, a Ctrl+Enter fill's paste intent,
+a discard) is now raised before the end. SRV-7 in the Cell Editor, DC-13 and the two
+`sheet-vs-excel` items of 2026-09-29 fail on the base too, on this machine, and are not this
+ticket's.
