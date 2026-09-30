@@ -130,7 +130,7 @@ internal static class FormulaText
     /// <c>Positions[[Rate'#]]</c> as <c>Positions[Rate'#]</c> (observed,
     /// verification/2026-09-27-windows-excel). Double brackets are still read.
     /// </summary>
-    private static void WriteStructuredReference(StringBuilder text, string table, string column)
+    internal static void WriteStructuredReference(StringBuilder text, string table, string column)
     {
         text.Append(table).Append('[');
         foreach (var c in column)

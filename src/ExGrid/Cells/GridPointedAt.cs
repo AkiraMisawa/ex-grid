@@ -38,9 +38,9 @@ public sealed class GridPointedAt<TRow>
     /// <summary>
     /// Receives each primary press the grid hands over while it is pointed at: once for the press,
     /// and once more, with <see cref="GridPointedPressKind.SeveralCells"/> or
-    /// <see cref="GridPointedPressKind.SeveralColumns"/>, if that press is then dragged onto another
-    /// cell or column. A secondary press is not handed over, and does nothing. The press has been
-    /// answered once the task completes.
+    /// <see cref="GridPointedPressKind.SeveralColumns"/> and <see cref="GridPointedPress{TRow}.Dragged"/>,
+    /// if that press is then dragged onto another cell or column. A secondary press is not handed
+    /// over, and does nothing. The press has been answered once the task completes.
     ///
     /// <para>A press is handed over when the browser dispatched it to a grid painted as pointed at.
     /// Within the round trip after <see cref="IsPointedAt"/> changes, on a Server circuit, a press
@@ -53,9 +53,9 @@ public sealed class GridPointedAt<TRow>
     /// <summary>
     /// Whether the grid is pointed at now. False — the default — leaves every press the grid's own.
     ///
-    /// <para>The grid assumes it holds no open edit of its own while this is true: a grid with an
-    /// open edit is never pointed at, and a press on it goes to its edit (ADR-0058, ADR-0018 section
-    /// 7). The Consumer that declares this keeps to that; the grid does not check it.</para>
+    /// <para>A grid with an open edit of its own is not pointed at, whatever this says: a press on
+    /// it goes to its edit (ADR-0058, ADR-0018 section 7). The grid reads its own edit, at once, so
+    /// the Consumer need not follow it; the declaration takes effect again when the edit ends.</para>
     /// </summary>
     public bool IsPointedAt
     {

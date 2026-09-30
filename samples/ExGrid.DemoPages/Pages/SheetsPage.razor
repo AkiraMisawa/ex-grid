@@ -27,30 +27,37 @@
     Both Sheets read the page's positions as the Linked Table <code>Positions</code> (ADR-0049), and
     beneath each is a grid showing them. The page passes each Sheet's word of the columns its Formula
     reads to the grid beneath that Sheet only, so <code>=SUM(Positions[PV])</code> typed into one
-    outlines the PV column under that one (ADR-0057).
+    outlines the PV column under that one (ADR-0057). Each Sheet and the grid beneath it are a Pointing
+    Scope of their own (ADR-0058): while a Formula is typed on the left, a press on the left grid writes
+    what reads the pressed cell, and a press on the right grid is an ordinary press.
 </p>
 
 <div class="demo-side-by-side">
     <div id="sheet-left">
         @OnPaper(@<ExSheet @ref="_leftSheet" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
-                           OnLinkedColumnColoursChanged="OutlineLeft" />)
+                           OnLinkedColumnColoursChanged="OutlineLeft" PointingScope="_leftScope" OnPointingRefused="RefusedLeft" />)
         <div id="sheet-left-positions">
             <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
-                    ViewportHeight="200" ViewportWidth="330" OutlinedColumns="_leftOutlined" />
+                    ViewportHeight="200" ViewportWidth="330" OutlinedColumns="_leftOutlined" PointedAt="_leftPointedAt" />
         </div>
     </div>
     <div id="sheet-right">
         @OnPaper(@<ExSheet @ref="_rightSheet" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
-                           OnLinkedColumnColoursChanged="OutlineRight" />)
+                           OnLinkedColumnColoursChanged="OutlineRight" PointingScope="_rightScope" OnPointingRefused="RefusedRight" />)
         <div id="sheet-right-positions">
             <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
-                    ViewportHeight="200" ViewportWidth="330" OutlinedColumns="_rightOutlined" />
+                    ViewportHeight="200" ViewportWidth="330" OutlinedColumns="_rightOutlined" PointedAt="_rightPointedAt" />
         </div>
     </div>
 </div>
 
 <p class="demo-status">
     <span id="sheets-status">@_status</span>
+</p>
+
+@* Why a press on a positions grid wrote nothing, as the Sheet of its Scope tells the page. *@
+<p class="demo-status">
+    <span id="sheets-pointing">@_pointingStatus</span>
 </p>
 
 @code {
@@ -102,6 +109,12 @@
     private IReadOnlyList<OutlinedColumn> _leftOutlined = [];
     private IReadOnlyList<OutlinedColumn> _rightOutlined = [];
     private string _status = "";
+    // One Pointing Scope per side (ADR-0058): a Sheet points only at the grid beneath it.
+    private readonly PointingScope _leftScope = new();
+    private readonly PointingScope _rightScope = new();
+    private GridPointedAt<Position>? _leftPointedAt;
+    private GridPointedAt<Position>? _rightPointedAt;
+    private string _pointingStatus = "";
 
     // Each Sheet names itself in A1 and holds a number and a Formula over it, so a key that
     // crossed from one to the other would show in the other's cells.
@@ -116,7 +129,12 @@
         return sheet.ToDocument();
     }
 
-    protected override void OnInitialized() => Count();
+    protected override void OnInitialized()
+    {
+        _leftPointedAt = _leftScope.RegisterGrid<Position>(Table, TableRow);
+        _rightPointedAt = _rightScope.RegisterGrid<Position>(Table, TableRow);
+        Count();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -124,9 +142,17 @@
         foreach (var sheet in new[] { _leftSheet, _rightSheet })
         {
             if (sheet is not null)
-                await sheet.PushLinkedTableAsync(Table, Positions.Select(p => (IReadOnlyList<Value?>)[Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)]));
+                await sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
         }
     }
+
+    // A position as the table's row, in the declared column order: what the page pushes, and what
+    // each Scope reads a pressed row's key from.
+    private static IReadOnlyList<Value?> TableRow(Position p) => [Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
+
+    private void RefusedLeft(PointingRefusal refusal) => _pointingStatus = "Left: " + refusal.Message;
+
+    private void RefusedRight(PointingRefusal refusal) => _pointingStatus = "Right: " + refusal.Message;
 
     private void OutlineLeft(LinkedColumnColours columns) => _leftOutlined = OutlinedOf(columns);
 

@@ -17,6 +17,10 @@
     not headers, unless the Consumer switches it on with AllowCopyWithHeaders (ADR-0048, ADR-0050
     item 13).
 *@
+@* One element around the Sheet, laid out as if it were not there (display: contents), so the
+   browser's focus events reach ExSheet: while the Sheet is in a Pointing Scope, whether DOM focus is
+   inside it decides whether it points (ADR-0058). Without a Scope nothing listens. *@
+<div class="ex-sheet" style="display: contents" @attributes="_keyboardListeners">
 <ExGrid TRow="SheetRow" @ref="_grid"
         Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
         Columns="_columns" OnColumnWidthChanged="_columnWidthChanged" HideColumnMenu="true"
@@ -30,6 +34,7 @@
         DataEdge="_dataEdge"
         ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" NameBoxSizeLabel="NameBoxSizeOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf" CycleReference="CycleReferenceAt"
+        OnPointStateChanged="_pointStateChanged"
         ReferencesIn="_references" OnReferenceKeyColoursChanged="_keyColoursChanged"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
@@ -40,6 +45,7 @@
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
+</div>
 
 @code {
     /// <summary>Excel's default row height in ExGrid's geometry, and the Grid's own default: 28 px.</summary>
@@ -127,6 +133,7 @@
         // Held in fields: a delegate's identity reaches the grid, and one made per render would
         // look like a change every time (ADR-0003).
         _dataEdge = FindEdge;
+        InitialisePointing();
         // Answered synchronously from the engine, so the list shows in the render the keystroke
         // causes (ADR-0051). It reads this Sheet's Linked Tables, so it is the instance's own.
         _contextCommands = ContextCommandsFor;
@@ -327,6 +334,7 @@
     protected override void OnParametersSet()
     {
         RefuseUnreachableRows();
+        BindPointingScope();
         if (!_initialised)
         {
             _initialised = true;

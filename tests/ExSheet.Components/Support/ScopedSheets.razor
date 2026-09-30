@@ -1,0 +1,89 @@
+@* A Consumer's page with a Pointing Scope (ADR-0058): two Sheets and a grid showing the Linked
+   Table Positions in one Scope, and beside them a grid of the same rows in no Scope. The registered
+   grid names one column otherwise than the table does (Value is the table's PV), shows a column the
+   table does not have (Note, which edits), groups Book and Value under a Header Group, and holds
+   fewer rows than it counts, so its last rows have not arrived. A position with an empty Id has a
+   blank key. *@
+@using System.Globalization
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Columns
+@using global::ExGrid.Components
+@using global::ExSheet
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+
+<ExSheet @ref="Left" ViewportHeight="300" ViewportWidth="600" Culture="Culture" PointingScope="Scope" OnPointingRefused="RefusedLeft" />
+<ExSheet @ref="Right" ViewportHeight="300" ViewportWidth="600" Culture="Culture" PointingScope="Scope" OnPointingRefused="RefusedRight" />
+<div id="positions">
+    <ExGrid TRow="Position" Window="Positions" TotalCount="Positions.Length + 20" Columns="PositionColumns" RowHeight="20"
+            ViewportHeight="200" ViewportWidth="450" HeaderGroups="Groups" PointedAt="_pointedAt" OnEdit="Edited" />
+</div>
+<div id="unregistered">
+    <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="20" ViewportHeight="200" ViewportWidth="450" />
+</div>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    /// <summary>A row of the page's positions.</summary>
+    public sealed record Position(string Id, string Book, double PV, string Note);
+
+    /// <summary>The positions both grids show: R-2 and R-"5" among them, and one without an Id.</summary>
+    public static readonly Position[] Positions =
+    [
+        new("R-1", "Rates", 100, "a"),
+        new("R-2", "FX", 250, "b"),
+        new("R-\"5\"", "Credit", 7, "c"),
+        new("", "Loose", 3, "d"),
+    ];
+
+    private static readonly ColumnWidthSpec Fixed100 = new(ColumnWidth.Fixed(100));
+
+    // Id and Book are named as the table's columns; Value is the table's PV; Note is the grid's own.
+    private static readonly IReadOnlyList<GridColumn<Position>> PositionColumns =
+    [
+        new("Id", ColumnType.Text, p => p.Id, width: Fixed100),
+        new("Book", ColumnType.Text, p => p.Book, width: Fixed100),
+        new("Value", ColumnType.Number, p => p.PV, width: Fixed100),
+        new("Note", ColumnType.Text, p => p.Note, width: Fixed100, editable: true),
+    ];
+
+    private static readonly IReadOnlyList<HeaderGroup> Groups = [new HeaderGroup("Details", ["Book", "Value"])];
+
+    /// <summary>A position as the table's row, in the declared order Id, Book, PV; an empty Id is blank.</summary>
+    public static IReadOnlyList<Value?> TableRow(Position p) =>
+        [p.Id.Length == 0 ? null : Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
+
+    private GridPointedAt<Position>? _pointedAt;
+
+    /// <summary>The Scope the Sheets and the registered grid are in.</summary>
+    public PointingScope Scope { get; } = new();
+
+    /// <summary>The Sheets, for the test to declare and push on.</summary>
+    public ExSheet? Left { get; private set; }
+
+    /// <inheritdoc cref="Left"/>
+    public ExSheet? Right { get; private set; }
+
+    /// <summary>What each Sheet told of a press that wrote nothing.</summary>
+    public List<PointingRefusal> LeftRefusals { get; } = [];
+
+    /// <inheritdoc cref="LeftRefusals"/>
+    public List<PointingRefusal> RightRefusals { get; } = [];
+
+    /// <summary>What the registered grid's own edits committed.</summary>
+    public List<GridEditIntent<Position>> Edits { get; } = [];
+
+    /// <summary>The declaration the registered grid was given.</summary>
+    public GridPointedAt<Position> PointedAt => _pointedAt!;
+
+    protected override void OnInitialized() =>
+        _pointedAt = Scope.RegisterGrid<Position>("Positions", TableRow, new Dictionary<string, string> { ["Value"] = "PV" });
+
+    private void RefusedLeft(PointingRefusal refusal) => LeftRefusals.Add(refusal);
+
+    private void RefusedRight(PointingRefusal refusal) => RightRefusals.Add(refusal);
+
+    private void Edited(GridEditIntent<Position> intent) => Edits.Add(intent);
+}

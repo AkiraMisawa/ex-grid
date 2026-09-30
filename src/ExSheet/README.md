@@ -113,6 +113,60 @@ shows the table. The list is empty when the edit ends:
 Only you can say that the grid shows the rows the Formula reads: a grid filtered to some of them
 outlines the rows it shows.
 
+### Pointing at the grids that show them
+
+While a Formula is typed, a press on a cell of the Sheet writes its address. Put the Sheet and the
+grids that show your Linked Tables in a **Pointing Scope**, and a press on one of those grids writes
+what reads the pressed cell by its row's key, or the pressed column (ADR-0058):
+
+```
+=XLOOKUP("R-4471", Positions[Id], Positions[PV])     a cell of the PV column, in the row whose Id is R-4471
+=SUM(Positions[PV])                                  the PV column's header
+```
+
+No address is written, so the Formula reads the same row after the grid is sorted. You register each
+grid with the table it shows and how one of its rows is the table's row — the same Values you push —
+and pass the declaration the Scope gives back to the grid:
+
+```razor
+@using ExGrid.Cells
+@using ExSheet
+
+<ExSheet @bind-Document="_document" PointingScope="_scope" OnPointingRefused="Refused" />
+<ExGrid TRow="Position" Window="_positions" Columns="_columns" PointedAt="_pointedAt" />
+<p>@_why</p>
+
+@code {
+    private readonly PointingScope _scope = new();
+    private GridPointedAt<Position>? _pointedAt;
+    private string _why = "";
+
+    protected override void OnInitialized() =>
+        _pointedAt = _scope.RegisterGrid<Position>("Positions", Row);
+
+    // One Value per declared column, in the declared order: what you push for the row.
+    private static IReadOnlyList<Value?> Row(Position p) =>
+        [Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
+
+    private void Refused(PointingRefusal refusal) => _why = refusal.Message;
+}
+```
+
+The key column is the one the table is declared with (`key: "Id"`), and the names written are the
+table's, never the grid's headers. A grid column named otherwise than its table column is named in a
+third argument, `new Dictionary<string, string> { ["Present value"] = "PV" }`; a grid column the
+table does not have needs nothing. The grid is pointed at only while a Sheet of the Scope holds the
+keyboard, has an edit open, and its caret stands where a Reference can go; a press on it then keeps
+neither the keyboard nor a Selection. When the keyboard leaves the Sheet, the grid is an ordinary
+grid again, and the edit stands. A grid with an edit of its own open is not pointed at.
+
+A press that stands for more than one cell or column, a Header Group, a column the table does not
+have, a table declared without a key, a blank key or a row not yet arrived writes nothing. ExSheet
+tells you why through `OnPointingRefused`; show `refusal.Message` where your page tells its user
+things. A drag that reaches another cell takes back what its press wrote. After a press on a grid,
+the Name Box is empty and F4 changes nothing. Several Sheets can share a Scope, and each points while
+it holds the keyboard; two Scopes on one page keep their Sheets and grids apart.
+
 ## Commands and the undo stack
 
 There is one undo stack per ExSheet, and a command the application gives goes onto it in its place

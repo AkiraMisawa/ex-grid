@@ -24,8 +24,9 @@ public partial class ExGrid<TRow>
     /// dashes and column outlines are drawn in the selection overlay. The grid follows the declaration's
     /// changes as it is told of them.
     ///
-    /// <para>A grid with an open edit of its own is never declared pointed at (ADR-0058, ADR-0018
-    /// section 7), and the grid assumes so. Null — the default — changes nothing (DC-1, DC-52).</para>
+    /// <para>A grid with an open edit of its own is not pointed at, whatever the declaration says
+    /// (ADR-0058, ADR-0018 section 7): a press on it goes to its edit. Null — the default — changes
+    /// nothing (DC-1, DC-52).</para>
     /// </summary>
     [Parameter] public GridPointedAt<TRow>? PointedAt { get; set; }
 
@@ -55,8 +56,9 @@ public partial class ExGrid<TRow>
     /// <summary>A press handed over whose button is still down.</summary>
     private readonly record struct PointedDrag(CellPosition From, bool FromHeader);
 
-    /// <summary>Whether the grid is pointed at now (ADR-0058).</summary>
-    private bool PointedAtNow => PointedAt is { IsPointedAt: true };
+    /// <summary>Whether the grid is pointed at now (ADR-0058): declared so, and holding no open edit
+    /// of its own, which a press goes to instead.</summary>
+    private bool PointedAtNow => PointedAt is { IsPointedAt: true } && _editMode == EditMode.None;
 
     /// <summary>What a press on the rows reaches: handed over while the grid is pointed at, answered
     /// as the grid's own otherwise.</summary>
@@ -243,7 +245,7 @@ public partial class ExGrid<TRow>
         }
         SetDragging(false);
         _ = HandOverDragAsync(new GridPointedPress<TRow>(
-            drag.FromHeader ? GridPointedPressKind.SeveralColumns : GridPointedPressKind.SeveralCells));
+            drag.FromHeader ? GridPointedPressKind.SeveralColumns : GridPointedPressKind.SeveralCells, Dragged: true));
         return true;
     }
 

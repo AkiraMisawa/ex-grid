@@ -65,12 +65,27 @@
     }
     <div id="sheet-positions">
         <ExGrid TRow="Position" Window="_positions" Columns="PositionColumns" RowHeight="28"
-                ViewportHeight="420" ViewportWidth="330" OutlinedColumns="_outlinedPositions" />
+                ViewportHeight="420" ViewportWidth="330" OutlinedColumns="_outlinedPositions" PointedAt="_positionsPointedAt" />
     </div>
 </div>
 
+@* Why a press on the positions grid wrote nothing into the Formula, as the Sheet tells the page
+   (ADR-0058). Below the grids, for the reason the paragraph below gives. *@
+<p class="demo-status">
+    <span id="sheet-pointing">@_pointingStatus</span>
+</p>
+
 @* Below the Sheet, not above it: the page's tests press cells by where the grid stands in a
    720 px window, and text above the grid moves every row down. *@
+<p>
+    The Sheet and the positions grid are in one Pointing Scope (ADR-0058). While a Formula is typed,
+    wherever a Reference can go — after <code>=</code>, an operator, <code>(</code> or <code>,</code>
+    — a press on a positions cell writes what reads it by its key,
+    <code>XLOOKUP("R-4471", Positions[Id], Positions[PV])</code>, and a press on a column's header
+    writes <code>Positions[PV]</code>. The positions grid keeps neither the keyboard nor a Selection for
+    it. A press that stands for more than one cell writes nothing, and the line above says why.
+</p>
+
 <p>
     While a cell is being edited, the commands that change the Sheet are greyed out, as Excel greys
     out its ribbon: ExSheet refuses them until the edit is committed or cancelled, so a row inserted
@@ -87,7 +102,8 @@
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
     private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
-                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions" />;
+                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions"
+                                              PointingScope="_scope" OnPointingRefused="ShowPointingRefusal" />;
 
     protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
 
@@ -122,6 +138,13 @@
 
     private ExSheet? _sheet;
     private SheetDocument? _document = Opening();
+    // The Sheet and the positions grid, pointed at while the Sheet points (ADR-0058). The grid is
+    // registered with the table it shows and how its rows are the table's rows: its columns are
+    // named as the table's are declared, so no column needs an entry.
+    private readonly PointingScope _scope = new();
+    private GridPointedAt<Position>? _positionsPointedAt;
+    // Why the last press on the positions grid wrote nothing, until the edit opens or ends.
+    private string _pointingStatus = "";
     // The columns of the table the Formula being edited reads, as the positions grid outlines
     // them (ADR-0057): the Sheet tells the page, and only the page knows which grid shows the
     // table (ADR-0049's first rule, ADR-0018).
@@ -158,6 +181,7 @@
 
     protected override void OnInitialized()
     {
+        _positionsPointedAt = _scope.RegisterGrid<Position>(Table, TableRow);
         // Held in a field: a method group would be a new delegate on every render (AGENTS.md,
         // the Blazor traps).
         _editingChanged = EventCallback.Factory.Create<bool>(this, OnEditingChanged);
@@ -198,7 +222,13 @@
     private Task PushAsync() =>
         _sheet is null
             ? Task.CompletedTask
-            : _sheet.PushLinkedTableAsync(Table, _positions.Select(p => (IReadOnlyList<Value?>)[Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)]));
+            : _sheet.PushLinkedTableAsync(Table, _positions.Select(TableRow));
+
+    // A position as the table's row, in the declared column order: what the page pushes, and what
+    // the Scope reads a pressed row's key from.
+    private static IReadOnlyList<Value?> TableRow(Position p) => [Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
+
+    private void ShowPointingRefusal(PointingRefusal refusal) => _pointingStatus = refusal.Message;
 
     public void Dispose()
     {
@@ -206,7 +236,11 @@
         _closing.Dispose();
     }
 
-    private void OnEditingChanged(bool open) => _editing = open;
+    private void OnEditingChanged(bool open)
+    {
+        _editing = open;
+        _pointingStatus = "";
+    }
 
     private Task UndoAsync() => CommandAsync(sheet => sheet.UndoAsync());
 

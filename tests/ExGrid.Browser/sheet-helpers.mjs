@@ -1,16 +1,19 @@
 import { expect } from './fixtures.mjs';
 
-// What the Sheet's specs share — sheet, declarations, sheets and edit-stands: opening /sheet,
-// finding an ExSheet's grid, a cell of it by its A1 address, and the surfaces ADR-0051 adds — the
-// Cell Editor, the Formula Bar's text and the Name Box. An ExSheet is the ExGrid that has a
-// Formula Bar; the positions grid beside it on /sheet declares nothing and has none.
+// What the Sheet's specs share — sheet, declarations, sheets, edit-stands and pointing-scope:
+// opening /sheet, finding an ExSheet's grid, a cell of it by its A1 address, and the surfaces
+// ADR-0051 adds — the Cell Editor, the Formula Bar's text and the Name Box. An ExSheet is the ExGrid
+// that has a Formula Bar; the positions grid beside it on /sheet has none.
 
 /** The index-th ExSheet on the page: the grid that paints a Formula Bar. */
 export function sheet(page, index = 0) {
     return page.locator('.ex-grid:has(> .ex-formula-bar)').nth(index);
 }
 
-/** The positions grid beside the Sheet on /sheet: an ExGrid that declares nothing (DC-25). */
+/**
+ * The positions grid beside the Sheet on /sheet: an ExGrid that declares nothing of a Sheet's (DC-25),
+ * registered in the Sheet's Pointing Scope (ADR-0058).
+ */
 export function positions(page) {
     return page.locator('#sheet-positions .ex-grid');
 }
