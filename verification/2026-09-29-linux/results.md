@@ -37,3 +37,13 @@ the test fixes for DC-13, UX-16/UX-13 and WR-6.
 |---|---|
 | WebAssembly | 391 passed, 15 skipped, 0 failed (16.8 min) |
 | Server (`EXGRID_HOSTING=server`) | 393 passed, 13 skipped, 0 failed (10.2 min) |
+
+## At `01af3aa`, with #28 (Headings) and #29 (F4) merged *(2026-09-29)*
+
+| Host | Result |
+|---|---|
+| WebAssembly | 424 passed, 15 skipped, 0 failed (17.6 min) |
+| Server (`EXGRID_HOSTING=server`) | 426 passed, 13 skipped, 0 failed (10.9 min) |
+
+PR #30's first CI run on the same commit was green on every job: Chrome, Edge and chrome-150,
+on both hosts.

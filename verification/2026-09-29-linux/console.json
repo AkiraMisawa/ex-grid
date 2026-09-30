@@ -1,7 +1,7 @@
 {
   "chromium-local": {
     "a test whose console reports an error hands no page on (ADR-0056)": {
-      "at": "2026-09-29T20:38:00.609Z",
+      "at": "2026-09-29T22:42:06.634Z",
       "errors": [
         {
           "text": "harness.spec: an error on purpose",
