@@ -118,14 +118,14 @@ public class NumberFormatTests
         Assert.Throws<FormatException>(() => NumberFormat.Parse(code));
     }
 
-    [Theory] // ADR-0047: a colour named at the start of a section is kept in the code, and not painted
+    [Theory] // ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact (what it paints: NumberFormatColourTests, ADR-0063)
     [InlineData("[Red]0", 5, "5")]
     [InlineData("[red]0", 5, "5")]
     [InlineData("0.00_);[Red](0.00)", -1.5, "(1.50)")]
     [InlineData("0.00_);[Red](0.00)", 1.5, "1.50 ")]
     [InlineData("[Blue]0;[Magenta]-0;[Green]\"zero\"", 0, "zero")]
     [InlineData("0;[Yellow]-0", -7, "-7")]
-    public void A_colour_is_kept_and_not_painted(string code, double number, string shown)
+    public void A_colour_is_kept_in_the_code(string code, double number, string shown)
     {
         Assert.True(NumberFormat.TryParse(code, out var format, out _));
         Assert.Equal(code, format.Code);

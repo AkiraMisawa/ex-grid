@@ -64,8 +64,8 @@ internal static partial class ConstantParser
     /// optional <c>-</c> before or after it, then an unsigned number with no percentage or
     /// exponent. Excel was observed to read <c>$5</c> as 5 with the format
     /// <c>$#,##0_);[Red]($#,##0)</c> (TYPED-021), and <c>-$5</c> and <c>$-5</c> as -5 with the same
-    /// format (TYPED-047, second run; TYPED-052, third run); the colour is kept and not painted
-    /// (ADR-0047). Any other currency, or another sign around the symbol, stays text until Excel's
+    /// format (TYPED-047, second run; TYPED-052, third run); a negative amount's section paints it
+    /// red (ADR-0063). Any other currency, or another sign around the symbol, stays text until Excel's
     /// reading of it is observed.
     /// </summary>
     private static bool TryParseDollars(string text, CultureInfo culture, out double number, out NumberShape shape)

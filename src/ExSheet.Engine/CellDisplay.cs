@@ -37,4 +37,13 @@ public enum HorizontalAlignment
 /// 31 December 9999 — or, from <see cref="Sheet.GetDisplay(CellAddress, double)"/>, not in the
 /// width asked, and the cell shows <c>####</c>, as Excel's does.
 /// </param>
-public readonly record struct CellDisplay(string Text, HorizontalAlignment Alignment, bool IsNumber, bool CannotShow);
+/// <param name="Colour">
+/// The colour the Number Format names for the section that showed the Value (<c>[Red]</c> and the
+/// seven others), kept where the number cannot be shown; <see langword="null"/> where that section
+/// names none, or where no section showed it — General, booleans, Error Values, text in a format
+/// with no text section, and a blank cell (ADR-0063, SH-40). <b>It takes precedence over the
+/// cell's Font colour</b>, as Excel's does (a reading until the eleventh Windows run, case 2): the
+/// text is painted in <see cref="NumberFormatColours.Rgb"/> of it, and in the Font colour only
+/// where this is <see langword="null"/>.
+/// </param>
+public readonly record struct CellDisplay(string Text, HorizontalAlignment Alignment, bool IsNumber, bool CannotShow, NumberFormatColour? Colour = null);

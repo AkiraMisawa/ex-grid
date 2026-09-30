@@ -130,8 +130,8 @@ public sealed partial class Sheet
         {
             return new CellDisplay("", Resolve(GetAlignment(address), null), false, false);
         }
-        var (text, cannotShow) = GetFormat(address).Format(value, Culture);
-        return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow);
+        var (text, cannotShow, colour) = GetFormat(address).Format(value, Culture);
+        return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow, colour);
     }
 
     private static HorizontalAlignment Resolve(HorizontalAlignment alignment, ValueKind? kind) =>

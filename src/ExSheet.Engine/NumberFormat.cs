@@ -15,11 +15,12 @@ namespace ExSheet.Engine;
 /// <c>0 # ?</c>, the decimal point, thousands separators and scaling commas, <c>%</c>, scientific
 /// <c>E+00</c> with one integer placeholder, <c>@</c>, quoted text, <c>\</c> escapes, <c>_</c>
 /// spacing, and the date and time codes <c>y m d h s</c> with <c>AM/PM</c> and <c>A/P</c>. A
-/// colour named at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, …) is accepted and kept
-/// in the code, so the format goes back to Excel intact, but it is not painted
-/// until per-cell styling has its ADR (ADR-0047, ADR-0046). A numbered colour (<c>[Color10]</c>,
-/// in any case and any section) is refused, as Excel refused it (FMT-075..077, ADR-0047 third
-/// run). A code outside the subset — conditions,
+/// colour named at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, …) is kept in the code,
+/// so the format goes back to Excel intact, and formatting a Value answers it with the text when
+/// that section shows the Value, to be painted over the Font colour
+/// (<see cref="NumberFormatColour"/>, ADR-0063). A numbered colour (<c>[Color10]</c>, in any case
+/// and any section) is refused, as Excel refused it (FMT-075..077, ADR-0047 third run). A code
+/// outside the subset — conditions,
 /// locales and elapsed time in brackets, fractions, fractional seconds, <c>*</c> fill, era codes,
 /// unquoted letters — is refused rather than shown some other way.
 /// </remarks>
@@ -105,16 +106,18 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     /// character charged one digit width (ADR-0047): a number in General is fitted to the width
     /// as Excel's General fits it, and any other number whose text is longer than the width
     /// cannot be shown (<c>####</c>, ADR-0016). Text, booleans and Error Values are never fitted.
+    /// The colour is the section's, as <see cref="Format(Value, CultureInfo)"/> answers it, and a
+    /// number that cannot be shown keeps it; General fitted to the width uses no section and has none.
     /// </summary>
-    internal (string Text, bool CannotShow) Format(Value value, CultureInfo culture, int characters)
+    internal (string Text, bool CannotShow, NumberFormatColour? Colour) Format(Value value, CultureInfo culture, int characters)
     {
         if (value.Kind != ValueKind.Number) return Format(value, culture);
         if (ShowsNumbersAsGeneral)
         {
-            return NumberText.General(value.Number, characters, culture) is { } fitted ? (fitted, false) : ("", true);
+            return NumberText.General(value.Number, characters, culture) is { } fitted ? (fitted, false, null) : ("", true, null);
         }
-        var (text, cannotShow) = Format(value, culture);
-        return cannotShow || text.Length > characters ? ("", true) : (text, false);
+        var (text, cannotShow, colour) = Format(value, culture);
+        return cannotShow || text.Length > characters ? ("", true, colour) : (text, false, colour);
     }
 
     /// <summary>
@@ -186,24 +189,29 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         }
     }
 
-    /// <summary>A Value as this format shows it under <paramref name="culture"/>; booleans and Error Values show as themselves.</summary>
-    internal (string Text, bool CannotShow) Format(Value value, CultureInfo culture)
+    /// <summary>
+    /// A Value as this format shows it under <paramref name="culture"/>, and the colour the
+    /// section that showed it names (ADR-0063, SH-40), or <see langword="null"/> where it names
+    /// none or no section showed the Value: General, booleans and Error Values, which show as
+    /// themselves, and text in a format with no text section.
+    /// </summary>
+    internal (string Text, bool CannotShow, NumberFormatColour? Colour) Format(Value value, CultureInfo culture)
     {
         if (value.Kind == ValueKind.Number && ShortDateIn(culture) is { } local) return local.Format(value, culture);
         switch (value.Kind)
         {
             case ValueKind.Boolean:
             case ValueKind.Error:
-                return (value.ToString(), false);
+                return (value.ToString(), false, null);
             case ValueKind.Text:
                 var textSection = _sections.Length == 4 ? _sections[3] : _sections.Length == 1 && _sections[0].Kind == SectionKind.Text ? _sections[0] : null;
-                return (textSection is null ? value.Text : textSection.FormatText(value.Text), false);
+                return textSection is null ? (value.Text, false, null) : (textSection.FormatText(value.Text), false, textSection.Colour);
         }
 
         var number = value.Number;
         if (ShowsNumbersAsGeneral)
         {
-            return (NumberText.General(number, culture), false);
+            return (NumberText.General(number, culture), false, null);
         }
         Section chosen;
         var automaticMinus = false;
@@ -220,7 +228,8 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
             chosen = _sections[0];
             automaticMinus = number < 0;
         }
-        return chosen.FormatNumber(Math.Abs(number), automaticMinus, culture);
+        var (text, cannotShow) = chosen.FormatNumber(Math.Abs(number), automaticMinus, culture);
+        return (text, cannotShow, chosen.Colour);
     }
 
     /// <summary>Two formats are equal when their codes are (ordinal).</summary>
@@ -358,6 +367,9 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
 
         public int Percent { get; private set; }
 
+        /// <summary>The colour named at the start of the section, or <see langword="null"/>.</summary>
+        public NumberFormatColour? Colour { get; private set; }
+
         /// <summary>Whether a date section shows a time of day.</summary>
         public bool HasTime => _parts.Any(p => p.Kind == PartKind.AmPm || (p.Kind == PartKind.DateCode && p.Code is 'h' or 's'));
 
@@ -372,7 +384,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         {
             reason = null;
             var parts = new List<Part>();
-            var coloured = false;
+            NumberFormatColour? colour = null;
             for (var i = 0; i < text.Length; i++)
             {
                 var c = text[i];
@@ -412,16 +424,16 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                             reason = "a numbered colour ([Color n]) is refused, as Excel refuses it; name one of the eight colours instead.";
                             return null;
                         }
-                        if (bracketEnd > i && IsColour(text[(i + 1)..bracketEnd]))
+                        if (bracketEnd > i && NumberFormatColours.Named(text[(i + 1)..bracketEnd]) is { } named)
                         {
-                            // A colour is kept in the code and not painted (ADR-0047). Excel reads
-                            // one at the start of a section; anywhere else it is refused.
-                            if (parts.Count > 0 || coloured)
+                            // The section's colour (ADR-0063). Excel reads one at the start of a
+                            // section; anywhere else it is refused.
+                            if (parts.Count > 0 || colour is not null)
                             {
                                 reason = "a colour is read only once, at the start of its section.";
                                 return null;
                             }
-                            coloured = true;
+                            colour = named;
                             i = bracketEnd;
                             continue;
                         }
@@ -478,13 +490,10 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                 }
                 parts.Add(new Part(PartKind.Literal, c.ToString()));
             }
-            return Classify(parts, out reason);
+            var section = Classify(parts, out reason);
+            if (section is not null) section.Colour = colour;
+            return section;
         }
-
-        private static readonly string[] ColourNames = ["Black", "Blue", "Cyan", "Green", "Magenta", "Red", "White", "Yellow"];
-
-        /// <summary>One of Excel's eight colour names, in any case.</summary>
-        private static bool IsColour(string name) => ColourNames.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase));
 
         private static Section? Classify(List<Part> parts, out string? reason)
         {

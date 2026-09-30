@@ -158,8 +158,8 @@ public sealed partial class Sheet
         {
             return new CellDisplay("", Resolve(GetAlignment(address), null), false, false);
         }
-        var (text, cannotShow) = GetFormat(address).Format(value, Culture, characters);
-        return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow);
+        var (text, cannotShow, colour) = GetFormat(address).Format(value, Culture, characters);
+        return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow, colour);
     }
 
     /// <summary>
@@ -194,7 +194,7 @@ public sealed partial class Sheet
         var format = GetFormat(address);
         if (!format.ShowsNumbersAsGeneral)
         {
-            var (text, cannotShow) = format.Format(constant, Culture);
+            var (text, cannotShow, _) = format.Format(constant, Culture);
             return cannotShow ? null : text.Length;
         }
         var widest = NumberText.GeneralLimit + 1;
