@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, expectFocusAt, pressCell, typeSteadily,
@@ -38,7 +38,7 @@ for (const chrome of ['builtin', 'mud']) {
             await openSheet(page, chrome);
         });
 
-        test('ED-26: an edit left for another grid stands, that grid\'s keys are its own, and a press back points with the keyboard in the edit', async ({ page }) => {
+        test('ADR-0018/ED-26: an edit left for another grid stands, that grid\'s keys are its own, and a press back points with the keyboard in the edit', async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'C4');
             await page.keyboard.type('=');
@@ -73,7 +73,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
         });
 
-        test('ED-26: a press back where no Reference can go commits, moves, and gives the Sheet\'s root the keyboard', async ({ page }) => {
+        test('ADR-0018/ED-26: a press back where no Reference can go commits, moves, and gives the Sheet\'s root the keyboard', async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'C4');
             await page.keyboard.type('99');
@@ -95,7 +95,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'B3');
         });
 
-        test('ED-26: an edit last typed in the Formula Bar gets the keyboard back in the bar', async ({ page }) => {
+        test('ADR-0018/ED-26: an edit last typed in the Formula Bar gets the keyboard back in the bar', async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'E4');
             await clickBarEnd(grid);
@@ -113,7 +113,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid).toBeFocused();
         });
 
-        test('ED-26: a press back that commits an edit last typed in the Formula Bar gives the root the keyboard, not the bar', async ({ page }) => {
+        test('ADR-0018/ADR-0021/ED-26: a press back that commits an edit last typed in the Formula Bar gives the root the keyboard, not the bar', async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'E4');
             await clickBarEnd(grid);
@@ -150,7 +150,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'B2')).toHaveText('7');
         });
 
-        test('ED-26: an edit left for a control on the page stands, and a press back commits it', async ({ page }) => {
+        test('ADR-0018/ED-26: an edit left for a control on the page stands, and a press back commits it', async ({ page }) => {
             const grid = sheet(page);
             const undo = page.locator('#sheet-undo');
             await pressCell(grid, 'C4');
@@ -174,7 +174,7 @@ for (const chrome of ['builtin', 'mud']) {
 // from C#, the key typed straight after the press would still reach the positions grid, and the
 // Sheet's edit would stand with nothing able to reach it (ADR-0018 section 6). On WebAssembly
 // there is no round trip, and this is the case without one.
-test('ED-26/ADR-0021: with a 150 ms round trip, the key straight after the press back is the Sheet\'s', async ({ page }) => {
+test('ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after the press back is the Sheet\'s', async ({ page }) => {
     await openSheet(page);
     const grid = sheet(page);
     await pressCell(grid, 'C4');
@@ -194,6 +194,50 @@ test('ED-26/ADR-0021: with a 150 ms round trip, the key straight after the press
     await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
 });
 
+// A press on the rows of a grid nested in the Sheet is that grid's (ADR-0018): it neither brings
+// the keyboard back to the Sheet's edit nor starts the Sheet's hold behind a press (ADR-0010), and
+// the keys typed after it reach the nested grid. A stand-in stands for the nested grid — its own
+// root, scroller and rows inside the Sheet's root, taking the keyboard as a grid does and noting
+// the keys it hears — so the Sheet's listener sees the press and the keys as it would a real one's.
+// On the Server host at 150 ms, a hold of the Sheet's would still stand as the key is typed.
+test('ADR-0010/ADR-0018/ED-22: a press on the rows of a grid nested in the Sheet starts no hold of the Sheet\'s', async ({ page }) => {
+    await openSheet(page);
+    const grid = sheet(page);
+    await pressCell(grid, 'C4');
+    await page.keyboard.type('=');
+    await expect(editor(grid)).toHaveValue('=');
+    await grid.evaluate((root) => {
+        const nested = document.createElement('div');
+        nested.className = 'ex-grid';
+        nested.id = 'edit-stands-nested';
+        nested.tabIndex = 0;
+        nested.style.cssText = 'position: absolute; right: 24px; bottom: 24px; width: 120px; height: 60px; z-index: 20; background: Canvas';
+        nested.innerHTML = '<div class="ex-scroller" style="height: 60px"><div class="ex-spacer" style="height: 60px">'
+            + '<div class="ex-viewport" style="top: 0; height: 60px"></div></div></div>';
+        nested.dataset.heard = '';
+        // A key the Sheet's listener held and handed on later arrives dispatched from script,
+        // untrusted: only the browser's own keydown counts as heard.
+        nested.addEventListener('keydown', (event) => {
+            nested.dataset.heard += event.isTrusted ? event.key : `(handed on: ${event.key})`;
+        });
+        root.append(nested);
+    });
+    const nested = page.locator('#edit-stands-nested');
+    await expect(nested.locator('.ex-viewport')).toBeVisible();
+    // A hold of the Sheet's would last until the Sheet's core had answered: on a circuit a round
+    // trip, wide enough to type into.
+    await setRoundTrip(150);
+
+    // No wait between the two.
+    await nested.locator('.ex-viewport').click();
+    await page.keyboard.type('x');
+
+    await expect(nested).toBeFocused();
+    await expect(nested).toHaveAttribute('data-heard', 'x');
+    await expect(editor(grid)).toHaveValue('=');
+    await nested.evaluate((element) => element.remove());
+});
+
 test.describe('/sheets', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/sheets');
@@ -201,7 +245,7 @@ test.describe('/sheets', () => {
         await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
     });
 
-    test('ED-26/ADR-0018: two Sheets each hold an edit, and a press back on the rows gives each its keyboard', async ({ page }) => {
+    test('ADR-0018/ED-26: two Sheets each hold an edit, and a press back on the rows gives each its keyboard', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
         await pressCell(left, 'D1');
@@ -237,7 +281,7 @@ test.describe('/sheets', () => {
         await expect(cell(left, 'E3')).toHaveText('');
     });
 
-    test('ED-26: a press back on a column heading or a Row Heading commits the edit left standing, and the root has the keyboard', async ({ page }) => {
+    test('ADR-0018/ED-26: a press back on a column heading or a Row Heading commits the edit left standing, and the root has the keyboard', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
         await pressCell(left, 'D3');
@@ -264,7 +308,7 @@ test.describe('/sheets', () => {
         await expect(left).toBeFocused();
     });
 
-    test('ED-26/ADR-0018: with a 150 ms round trip, the key straight after the press back is that Sheet\'s', async ({ page }) => {
+    test('ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after the press back is that Sheet\'s', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
         await pressCell(left, 'D1');
@@ -292,7 +336,7 @@ test.describe('/sheets', () => {
 // under the core's Chrome, and under ExGrid.MudBlazor's, whose token is 2px of the palette's
 // primary, on the Wrapper's paper. The stylesheet alone does it (`:focus-within` on the root).
 for (const chrome of ['builtin', 'mud']) {
-    test(`ED-27: an edit whose keyboard is elsewhere is outlined 1px wide, and at full width once it returns (${chrome} Chrome)`, async ({ page }) => {
+    test(`ADR-0018/ED-27: an edit whose keyboard is elsewhere is outlined 1px wide, and at full width once it returns (${chrome} Chrome)`, async ({ page }) => {
         await page.goto(chrome === 'builtin' ? '/sheets' : `/sheets?chrome=${chrome}`);
         const left = sheet(page, 0);
         const right = sheet(page, 1);
@@ -356,12 +400,12 @@ for (const chrome of ['builtin', 'mud']) {
 // in the editor through the press (ADR-0051), it went into the editor the commit was removing. On
 // the Server host at 150 ms and without injected latency; the case without one runs on both hosts.
 for (const rtt of [0, 150]) {
-    test.describe(`ED-22: keys straight after a press on the rows while an edit is open, ${rtt ? `${rtt} ms round trip` : 'no injected latency'}`, () => {
+    test.describe(`ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, ${rtt ? `${rtt} ms round trip` : 'no injected latency'}`, () => {
         test.beforeEach(() => {
             test.skip(rtt > 0 && !SERVER, 'a round trip is injected on the Server host only; the case without one runs here');
         });
 
-        test('on a plain editable grid, the key after a press that commits opens an edit on the pressed cell', async ({ page }) => {
+        test('ADR-0010/ED-22: on a plain editable grid, the key after a press that commits opens an edit on the pressed cell', async ({ page }) => {
             await page.goto('/features');
             const grid = page.locator('.ex-grid').first();
             const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
@@ -384,7 +428,7 @@ for (const rtt of [0, 150]) {
             await expect(at(2, 1)).toHaveText('7');
         });
 
-        test('on a Sheet, the key after a press that commits opens an edit on the pressed cell', async ({ page }) => {
+        test('ADR-0010/ADR-0021/ED-22: on a Sheet, the key after a press that commits opens an edit on the pressed cell', async ({ page }) => {
             await openSheet(page);
             const grid = sheet(page);
             await pressCell(grid, 'C4');
@@ -403,7 +447,7 @@ for (const rtt of [0, 150]) {
             await expectFocusAt(grid, 'B3');
         });
 
-        test('on a Sheet, the keys after a press that points are typed after the Reference it wrote', async ({ page }) => {
+        test('ADR-0010/ADR-0051/ED-22: on a Sheet, the keys after a press that points are typed after the Reference it wrote', async ({ page }) => {
             await openSheet(page);
             const grid = sheet(page);
             await pressCell(grid, 'C4');
@@ -423,7 +467,79 @@ for (const rtt of [0, 150]) {
         // What the hold must not change: the second press of a double click reaches the core ahead
         // of the double click, so a double click on another cell still commits the open edit and
         // opens the clicked cell's text in Caret (ADR-0010).
-        test('on a Sheet, a double click on another cell commits the edit and opens that cell\'s text', async ({ page }) => {
+        // Outside an edit a press on the rows and an arrow change no mode, and start no hold
+        // (ADR-0010: plain navigation is never paced to one round trip). What the grid holds never
+        // reaches the page, so the page's own listener tells: a key the grid leaves to the browser
+        // (Shift) typed straight after them arrives at once, and while an edit is open, behind a
+        // press on the rows, it does not.
+        test('ADR-0010/ED-22: outside an edit, a press on the rows and an arrow hold nothing', async ({ page }) => {
+            await page.goto('/features');
+            const grid = page.locator('.ex-grid').first();
+            const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
+            await expect(at(2, 1)).toBeVisible();
+            await alterPage(page, () => {
+                const heard = (window.__editStandsHeard = []);
+                const listener = (event) => heard.push(event.key);
+                window.addEventListener('keydown', listener);
+                return () => {
+                    window.removeEventListener('keydown', listener);
+                    delete window.__editStandsHeard;
+                };
+            });
+            const heard = () => page.evaluate(() => [...window.__editStandsHeard]);
+            await setRoundTrip(rtt);
+
+            await at(0, 0).click({ force: true });               // Book: not editable, no edit
+            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('Shift');
+
+            await expect.poll(heard).toEqual(['Shift']);
+            await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c0$/);
+
+            // What the listener would see of a hold: behind a press that commits an edit, the
+            // Shift is held, and a modifier alone is dropped when the hold is handed on. Only a
+            // round trip makes that window wide enough to type into on purpose.
+            if (rtt > 0) {
+                await page.evaluate(() => { window.__editStandsHeard.length = 0; });
+                await at(0, 1).click({ force: true });           // Trader, editable
+                await page.keyboard.type('9');
+                await expect(grid.locator('input.ex-editor')).toHaveValue('9');
+                await page.evaluate(() => { window.__editStandsHeard.length = 0; });
+                await at(2, 1).click({ force: true });
+                await page.keyboard.press('Shift');
+                await expect(page.locator('#edit-status')).toContainText('Trader=9');
+                await expect(grid).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+                expect(await heard()).toEqual([]);
+            }
+        });
+
+        // The same double click on a plain grid, whose press on the rows keeps its default: DOM
+        // focus goes to the rows, and the root, while the hold stands.
+        test('ADR-0010/ED-22: on a plain editable grid, a double click on another cell commits the edit and opens that cell\'s text', async ({ page }) => {
+            await page.goto('/features');
+            const grid = page.locator('.ex-grid').first();
+            const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
+            const field = grid.locator('input.ex-editor');
+            await expect(at(2, 1)).toBeVisible();
+            const trader = (await at(2, 1).textContent()).trim();
+            await at(0, 1).click({ force: true });                // Trader, editable
+            await expect(grid).toHaveAttribute('aria-activedescendant', /-r0c1$/);
+            await page.keyboard.type('99');
+            await expect(field).toHaveValue('99');
+            await setRoundTrip(rtt);
+
+            await at(2, 1).dblclick({ force: true });
+
+            await expect(page.locator('#edit-status')).toContainText('Trader=99');
+            await expect(field).toHaveValue(trader);
+            await expect(field).toBeFocused();
+            await expect(grid).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+            await page.keyboard.press('Escape');
+            await expect(field).toHaveCount(0);
+            await expect(at(2, 1)).toHaveText(trader);
+        });
+
+        test('ADR-0010/ED-22: on a Sheet, a double click on another cell commits the edit and opens that cell\'s text', async ({ page }) => {
             await openSheet(page);
             const grid = sheet(page);
             await pressCell(grid, 'C4');
