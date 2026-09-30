@@ -506,3 +506,128 @@ test.describe('/sheets', () => {
         await expect(page.locator('#sheets-pointing')).toHaveText('');
     });
 });
+
+// The arrow keys after a press on a registered grid (ADR-0058, "The keyboard", as the ninth Windows
+// run settled it; ticket 41; SH-35, DC-55). /pointing puts a Sheet and a grid of 40 positions in one
+// Scope. The Linked Table Positions has two columns, Id, its key, and PV; the grid shows Id (A),
+// Book (B), which is the grid's own, and PV (C), and paints nine rows at a time. R-n's PV is 10n, and
+// the PVs sum to 8200.
+test.describe('/pointing', () => {
+    const lookup = (id, column = 'PV') => `=XLOOKUP("${id}", Positions[Id], Positions[${column}])`;
+    const table = (page) => page.locator('#pointing-positions .ex-grid');
+    const refused = (page) => page.locator('#pointing-refused');
+
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/pointing');
+        // The table's snapshot has landed.
+        await expect(cell(sheet(page), 'B1')).toHaveText('8200');
+    });
+
+    /** `=` typed into the Sheet's C3, and a press on a positions cell, written. */
+    async function pointFrom(page, address, written) {
+        const grid = sheet(page);
+        await pressCell(grid, 'C3');
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toHaveValue('=');
+        await expectPointedAt(table(page));
+        await clickCell(table(page), address);
+        await expect(editor(grid)).toHaveValue(written);
+    }
+
+    test('ADR-0058/SH-35: =, a press on R-1\'s PV, ↓ gives R-2\'s lookup and moves the dashes; ↑ goes back; Enter computes it', async ({ page }) => {
+        const grid = sheet(page);
+        const positions = table(page);
+        await pointFrom(page, 'C1', lookup('R-1'));
+
+        await page.keyboard.press('ArrowDown');
+
+        await expect(editor(grid)).toHaveValue(lookup('R-2'));
+        await expectCovers(positions.locator('.ex-point-dashes'), positions, 'C2', 'C2');
+        // The keyboard stayed in the Sheet, and the positions grid kept no Selection for the key.
+        await expect(editor(grid)).toBeFocused();
+        await expect(positions.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        await expect(nameBox(grid)).toHaveValue('');
+
+        await page.keyboard.press('ArrowUp');
+        await expect(editor(grid)).toHaveValue(lookup('R-1'));
+        await expectCovers(positions.locator('.ex-point-dashes'), positions, 'C1', 'C1');
+
+        await page.keyboard.press('ArrowDown');
+        await expect(editor(grid)).toHaveValue(lookup('R-2'));
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'C3')).toHaveText('20');
+        await expect(refused(page)).toHaveText('');
+    });
+
+    test('ADR-0058/SH-35: → from an Id cell passes over Book, the grid\'s own column, to PV; at the last column nothing moves; ← comes back over it', async ({ page }) => {
+        const grid = sheet(page);
+        const positions = table(page);
+        await pointFrom(page, 'A1', lookup('R-1', 'Id'));
+
+        await page.keyboard.press('ArrowRight');
+
+        await expect(editor(grid)).toHaveValue(lookup('R-1'));
+        await expectCovers(positions.locator('.ex-point-dashes'), positions, 'C1', 'C1');
+        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('ArrowLeft');
+        await expect(editor(grid)).toHaveValue(lookup('R-1', 'Id'));
+        await expectCovers(positions.locator('.ex-point-dashes'), positions, 'A1', 'A1');
+        await expect(editor(grid)).toBeFocused();
+        await expect(refused(page)).toHaveText('');
+    });
+
+    test('ADR-0058/SH-35/DC-55: ↓ past the painted rows scrolls the positions grid to keep the pointed cell in view', async ({ page }) => {
+        const grid = sheet(page);
+        const positions = table(page);
+        const scroller = positions.locator('.ex-scroller');
+        await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBe(0);
+        // R-9, the last row in view.
+        await pointFrom(page, 'C9', lookup('R-9'));
+
+        await page.keyboard.press('ArrowDown');
+
+        await expect(editor(grid)).toHaveValue(lookup('R-10'));
+        await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+        const dashes = positions.locator('.ex-point-dashes');
+        await expectCovers(dashes, positions, 'C10', 'C10');
+        // In view: inside the scroller, under its header.
+        const view = await boxOf(scroller);
+        const header = await boxOf(positions.locator('.ex-header'));
+        const box = await boxOf(dashes);
+        expect(box.y).toBeGreaterThanOrEqual(header.y + header.height - 0.5);
+        expect(box.y + box.height).toBeLessThanOrEqual(view.y + view.height + 0.5);
+        await expect(editor(grid)).toBeFocused();
+    });
+
+    test('ADR-0058/SH-35: Shift+↓ and Ctrl+↓ write nothing, leave the text as it was, and the page says why; ↓ still points', async ({ page }) => {
+        const grid = sheet(page);
+        await pointFrom(page, 'C1', lookup('R-1'));
+
+        await page.keyboard.press('Shift+ArrowDown');
+        await expect(refused(page)).toContainText('Shift+arrow');
+        await expect(editor(grid)).toHaveValue(lookup('R-1'));
+        await page.keyboard.press('Control+ArrowDown');
+        await expect(refused(page)).toContainText('Ctrl+arrow');
+        await expect(editor(grid)).toHaveValue(lookup('R-1'));
+        await expect(editor(grid)).toBeFocused();
+
+        await page.keyboard.press('ArrowDown');
+        await expect(editor(grid)).toHaveValue(lookup('R-2'));
+    });
+
+    // The keys typed after an arrow keep their place behind it (ADR-0010's hold): the arrow is answered
+    // once the Scope has rewritten the text, and on a circuit that is a round trip after the key.
+    test('ADR-0058/SH-35: with a 150 ms round trip, ↓ and *2 typed at once give R-2\'s lookup and the *2', async ({ page }) => {
+        const grid = sheet(page);
+        await pointFrom(page, 'C1', lookup('R-1'));
+        await setRoundTrip(150);
+
+        // No wait between them.
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.type('*2');
+
+        await expect(editor(grid)).toHaveValue(`${lookup('R-2')}*2`);
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'C3')).toHaveText('40');
+    });
+});

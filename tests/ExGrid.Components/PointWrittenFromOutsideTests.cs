@@ -41,7 +41,8 @@ public class PointWrittenFromOutsideTests : GridTestContext
     private static string ReferenceText(SelectionRange range)
         => FormattableString.Invariant($"{(char)('A' + range.LeftColumn)}{range.TopRow + 1}");
 
-    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(bool point = true, List<GridEditIntent<TestRow>>? intents = null)
+    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
+        bool point = true, List<GridEditIntent<TestRow>>? intents = null, Action<ComponentParameterCollectionBuilder<ExGrid<TestRow>>>? more = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Window, TestRows.Many(50))
@@ -64,6 +65,7 @@ public class PointWrittenFromOutsideTests : GridTestContext
                 ps.Add(g => g.PointAt, PointAt)
                   .Add(g => g.ReferenceText, ReferenceText);
             }
+            more?.Invoke(ps);
         });
 
     private static Task ClickAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y, bool shift = false)
@@ -72,9 +74,9 @@ public class PointWrittenFromOutsideTests : GridTestContext
     private static Task ReleaseAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
         => cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, Buttons = 0, OffsetX = x, OffsetY = y });
 
-    private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, string? text = null, int caret = -1, bool shift = false)
+    private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, string? text = null, int caret = -1, bool shift = false, bool ctrl = false)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(
-            key, false, shift, false, false, false, editorText: text, editorCaret: caret, editorSelectionEnd: caret));
+            key, ctrl, shift, false, false, false, editorText: text, editorCaret: caret, editorSelectionEnd: caret));
 
     private static async Task TypeAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text)
     {
@@ -313,5 +315,95 @@ public class PointWrittenFromOutsideTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("=1+", 3));
 
         Assert.Equal([PointState.InPoint], _told);
+    }
+
+    /// <summary>The grid, with a Consumer that hears the arrows after a write from outside and records
+    /// them — and, given <paramref name="answer"/>, writes it for each, as a Pointing Scope rewrites
+    /// the text for the cell an arrow reached.</summary>
+    private IRenderedComponent<ExGrid<TestRow>> RenderHearingArrows(List<GridPointArrow> heard, string? answer = null, List<GridEditIntent<TestRow>>? intents = null)
+    {
+        IRenderedComponent<ExGrid<TestRow>>? cut = null;
+        cut = RenderGrid(intents: intents, more: ps => ps.Add(g => g.OnPointArrowFromOutside, async (GridPointArrow arrow) =>
+        {
+            heard.Add(arrow);
+            if (answer is not null)
+                await cut!.Instance.WritePointedTextAsync(answer);
+        }));
+        return cut;
+    }
+
+    [Fact] // ADR-0058 ("The keyboard") / SH-35 / DC-55: after a write from outside the arrows are handed to the Consumer, Shift and the Primary Modifier named, and move nothing here
+    public async Task After_a_write_from_outside_the_arrows_are_handed_to_the_consumer()
+    {
+        var heard = new List<GridPointArrow>();
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderHearingArrows(heard, intents: intents);
+        await StartFormulaAsync(cut);
+        await WriteAsync(cut, Lookup);
+        // The gate claims the Primary Modifier's arrows too, while such text stands.
+        Assert.Equal("pointed", EditingModesTold()[^1]);
+        var caret = 1 + Lookup.Length;
+
+        await PressAsync(cut, "ArrowDown", "=" + Lookup, caret);
+        await PressAsync(cut, "ArrowLeft", "=" + Lookup, caret, shift: true);
+        await PressAsync(cut, "ArrowUp", "=" + Lookup, caret, ctrl: true);
+        await PressAsync(cut, "ArrowRight", "=" + Lookup, caret, shift: true, ctrl: true);
+
+        Assert.Equal(
+            [
+                new GridPointArrow(GridDirection.Down),
+                new GridPointArrow(GridDirection.Left, Extends: true),
+                new GridPointArrow(GridDirection.Up, ToEdge: true),
+                new GridPointArrow(GridDirection.Right, Extends: true, ToEdge: true),
+            ],
+            heard);
+        Assert.Equal("=" + Lookup, EditorText(cut));
+        Assert.Empty(intents);
+        Assert.Empty(cut.FindAll(".ex-point"));
+        Assert.Equal("", NameBox(cut));
+        Assert.Equal([PointState.InPoint, PointState.WrittenFromOutside], _told);
+
+        // Home and End are not arrows: claimed, and they move and write nothing.
+        await PressAsync(cut, "Home", "=" + Lookup, caret);
+        await PressAsync(cut, "End", "=" + Lookup, caret);
+        Assert.Equal(4, heard.Count);
+        Assert.Equal("=" + Lookup, EditorText(cut));
+    }
+
+    [Fact] // ADR-0058 ("The keyboard") / SH-35: what the Consumer writes for an arrow replaces what this Point wrote, and Point from outside goes on
+    public async Task What_the_consumer_writes_for_an_arrow_replaces_what_this_point_wrote()
+    {
+        const string next = "XLOOKUP(\"R-5\", T[Id], T[PV])";
+        var heard = new List<GridPointArrow>();
+        var cut = RenderHearingArrows(heard, answer: next);
+        await StartFormulaAsync(cut);
+        await TypeAsync(cut, "=1+");
+        await WriteAsync(cut, Lookup);
+
+        await PressAsync(cut, "ArrowDown", "=1+" + Lookup, 3 + Lookup.Length);
+
+        Assert.Equal("=1+" + next, EditorText(cut));
+        Assert.Equal(PointState.WrittenFromOutside, _told[^1]);
+        Assert.Equal("pointed", EditingModesTold()[^1]);
+        // Typed on, it is the user's: the arrows point from this grid's own cells again.
+        await TypeAsync(cut, "=1+" + next + "*");
+        await PressAsync(cut, "ArrowDown", "=1+" + next + "*", 4 + next.Length);
+        Assert.Single(heard);
+        Assert.Equal("=1+" + next + "*B4", EditorText(cut));
+        Assert.Equal("point", EditingModesTold()[^1]);
+    }
+
+    [Fact] // ADR-0058 / ADR-0051: an arrow in the grid's own Point is its own, and is not handed on
+    public async Task An_arrow_in_the_grids_own_point_is_not_handed_on()
+    {
+        var heard = new List<GridPointArrow>();
+        var cut = RenderHearingArrows(heard);
+        await StartFormulaAsync(cut);
+
+        await PressAsync(cut, "ArrowDown", "=", 1);
+
+        Assert.Equal("=B4", EditorText(cut));
+        Assert.Empty(heard);
+        Assert.Equal("point", EditingModesTold()[^1]);
     }
 }

@@ -58,6 +58,20 @@ public partial class ExGrid<TRow>
     /// </summary>
     [Parameter] public EventCallback<PointState> OnPointStateChanged { get; set; }
 
+    /// <summary>
+    /// Hears the arrow keys pressed while what Point wrote in the open edit was written from outside
+    /// the grid (<see cref="PointState.WrittenFromOutside"/>; ADR-0058, "The keyboard"): ↑, ↓, ← and
+    /// →, with Shift (<see cref="GridPointArrow.Extends"/>) or the Primary Modifier
+    /// (<see cref="GridPointArrow.ToEdge"/>) or both. They move nothing here — the text stands for a
+    /// cell of another instance — and the Consumer that wrote it moves it there, writing again through
+    /// <see cref="WritePointedTextAsync"/>, or refuses. Awaited, so the keys typed after an arrow wait
+    /// for its answer, as they wait behind any key that changes the edit (ADR-0010's hold). Declared,
+    /// the key listener claims the Primary Modifier's arrows too while such text stands; null — the
+    /// default — leaves the plain and Shift arrows claimed and moving nothing, and the others to the
+    /// browser.
+    /// </summary>
+    [Parameter] public EventCallback<GridPointArrow> OnPointArrowFromOutside { get; set; }
+
     // The pointing outline as a Focus and an Extent of its own — a one-range selection, so the
     // arrows, Shift and a click move it by the same transitions the Selection's own use — the
     // span of the text its Reference occupies, and the text as the core last wrote it. Pointing
@@ -220,8 +234,9 @@ public partial class ExGrid<TRow>
         if (step is not { } move)
             return false;
         // What a press outside the grid wrote has no cell here to move from: ADR-0058 gives the
-        // arrows a meaning inside the grid that press landed on, which this grid does not know. They
-        // are claimed, and move and write nothing; the text stands.
+        // arrows a meaning inside the grid that press landed on, which this grid does not know, and
+        // the Consumer that wrote it hears them (HandOnPointArrowAsync). Home and End, and the arrows
+        // where no Consumer hears them, are claimed, and move and write nothing; the text stands.
         if (PointedFromOutside)
             return true;
         var extent = Extent;
@@ -246,6 +261,36 @@ public partial class ExGrid<TRow>
         };
         WritePointedReference();
         StateHasChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// An arrow while what Point wrote stands and was written from outside (ADR-0058, "The
+    /// keyboard"): handed to the Consumer that wrote it, and awaited. Nothing moves here.
+    /// </summary>
+    /// <returns>Whether the key was handed on.</returns>
+    private async Task<bool> HandOnPointArrowAsync(string canonical)
+    {
+        if (!OnPointArrowFromOutside.HasDelegate || !PointedFromOutside)
+            return false;
+        var key = canonical;
+        var toEdge = key.StartsWith("Control+", StringComparison.Ordinal);
+        if (toEdge)
+            key = key["Control+".Length..];
+        var extends = key.StartsWith("Shift+", StringComparison.Ordinal);
+        if (extends)
+            key = key["Shift+".Length..];
+        GridDirection? direction = key switch
+        {
+            "ArrowUp" => GridDirection.Up,
+            "ArrowDown" => GridDirection.Down,
+            "ArrowLeft" => GridDirection.Left,
+            "ArrowRight" => GridDirection.Right,
+            _ => null,
+        };
+        if (direction is not { } arrow)
+            return false;
+        await OnPointArrowFromOutside.InvokeAsync(new GridPointArrow(arrow, extends, toEdge));
         return true;
     }
 

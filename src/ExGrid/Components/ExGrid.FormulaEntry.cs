@@ -76,11 +76,14 @@ public partial class ExGrid<TRow>
     /// <summary>The key gate's set for the current state (ADR-0010): Caret leaves the arrows
     /// to the editor. While a list is open, in any state, only its ↑/↓ are claimed beside the
     /// editing keys, so ← and → move the caret. Point claims Overwrite's keys and the four
-    /// Shift+arrows, which extend the outline (ADR-0051's second round).</summary>
+    /// Shift+arrows, which extend the outline (ADR-0051's second round); and, while what Point wrote
+    /// was written from outside and a Consumer hears the arrows, the Primary Modifier's arrows too
+    /// (ADR-0058, "The keyboard").</summary>
     private string GateMode() => _editMode switch
     {
         EditMode.None => "none",
         _ when CompletionListOpen => "completion",
+        EditMode.Point when PointedFromOutside && OnPointArrowFromOutside.HasDelegate => "pointed",
         EditMode.Point => "point",
         EditMode.Overwrite => "overwrite",
         _ => "caret",

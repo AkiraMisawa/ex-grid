@@ -66,7 +66,8 @@ internal static class SheetWords
         _ => "Nothing was copied.",
     };
 
-    /// <summary>What a press on a grid of a Pointing Scope that wrote nothing tells (ADR-0058).</summary>
+    /// <summary>What a press on a grid of a Pointing Scope, or an arrow key after one, that wrote
+    /// nothing tells (ADR-0058).</summary>
     internal static string PointingRefused(PointingRefusalReason reason, string table, string? column, bool tookBack) => reason switch
     {
         PointingRefusalReason.SeveralCells => tookBack
@@ -90,8 +91,17 @@ internal static class SheetWords
             $"Nothing was written: this Sheet has no Linked Table '{table}' declared.",
         PointingRefusalReason.NotPointing =>
             "Nothing was written: the Formula no longer stood where a Reference can go when the press arrived.",
+        PointingRefusalReason.DataEdge =>
+            $"Nothing was written: Ctrl+arrow goes to the edge of the data, and the grid holds only the rows near those it shows, so where '{table}' ends is not known. Use the arrow alone.",
+        PointingRefusalReason.CellNotHeld =>
+            $"Nothing was written: the grid no longer holds the cell of '{table}' pointed at, so the arrow has no cell to move from. Press a cell to point again.",
         _ => "Nothing was written.",
     };
+
+    /// <summary>What Shift and an arrow key tell after a press on a grid of a Pointing Scope
+    /// (ADR-0058): refused as a range is.</summary>
+    internal static string PointingExtendedByKey(string table) =>
+        $"Nothing was written: Shift+arrow points at more than one cell. A Formula reads one row of '{table}' by its key, and a range of cells cannot be written.";
 
     internal static string NothingToUndo => "There is nothing to undo.";
 

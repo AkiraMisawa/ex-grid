@@ -441,7 +441,11 @@ nobody had asked for. What that means when writing a test:
   the positions grid ordinary, with the edit standing and pointing going on once a press brings it
   back; on `/sheets`, a press on the right's grid while the left Sheet points being an ordinary
   press; and, on the Server host with 150 ms, a press within the round trip after `=` being an
-  ordinary press with the edit standing.
+  ordinary press with the edit standing. On `/pointing` (ticket 41, SH-35, DC-55), the arrow keys
+  after a press: ↓ from R-1's PV writing R-2's lookup and moving the dashes, and ↑ back; → from an
+  Id cell passing over Book, the grid's own column, to PV; ↓ past the painted rows scrolling the
+  positions grid with the pointed cell in view; Shift+↓ and Ctrl+↓ writing nothing, with the page
+  saying why; and ↓ and `*2` typed at once, 150 ms injected on the Server host, keeping their order.
 
 `sheet-helpers.mjs` is what those five share: opening `/sheet` under either Chrome and waiting
 for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the
