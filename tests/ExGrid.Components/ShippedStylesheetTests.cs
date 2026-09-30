@@ -149,6 +149,44 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(css, "--ex-selection-outline"));
     }
 
+    [Fact] // ADR-0058 / ADR-0029 (note of 2026-09-30) / DC-52: pointed at, the pointer over the rows and headers is cell, and every control there lets the press through
+    public void A_grid_pointed_at_shows_the_cell_pointer_and_lets_every_press_through()
+    {
+        var (css, rules) = CoreStylesheet();
+
+        Assert.Matches(new Regex(@"\.ex-pointed-at > \.ex-scroller > \.ex-spacer > :is\(\.ex-viewport, \.ex-header\) \{\s*cursor: cell;\s*\}"), css);
+        var through = Regex.Match(css,
+            @"\.ex-pointed-at > \.ex-scroller > \.ex-spacer > :is\(\.ex-viewport, \.ex-header\) :is\((?<controls>[^)]*)\) \{\s*pointer-events: none;\s*\}");
+        Assert.True(through.Success);
+        var controls = through.Groups["controls"].Value.Split(',').Select(control => control.Trim()).Order(StringComparer.Ordinal).ToList();
+
+        // Every element the stylesheet gives a pointer of its own is among them, so a press on any
+        // reaches the rows or the header, which hand it over (ADR-0058); a control added later that
+        // takes its own pointer fails here until it is.
+        var own = rules
+            .Where(rule => Regex.IsMatch(rule.Body, @"pointer-events:\s*auto"))
+            .SelectMany(rule => rule.Selectors)
+            .Select(selector => selector.Split(' ')[^1])
+            .Distinct()
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        Assert.Equal(own, controls);
+    }
+
+    [Fact] // ADR-0058 / ADR-0029 (note of 2026-09-30) / DC-53: the dashes are drawn in the Focus outline's colour, wholly inside their box, with no token of their own
+    public void The_point_dashes_are_the_focus_outlines_dashes()
+    {
+        var (css, rules) = CoreStylesheet();
+
+        var (_, body) = Assert.Single(rules, rule => rule.Selectors.Contains(".ex-point-dashes"));
+        var outline = Regex.Match(body, @"outline:\s*(?<width>[\d.]+)px dashed var\(--ex-focus-outline, CanvasText\);");
+        Assert.True(outline.Success, body);
+        var width = double.Parse(outline.Groups["width"].Value, CultureInfo.InvariantCulture);
+        var offset = double.Parse(Regex.Match(body, @"outline-offset:\s*(?<px>-?[\d.]+)px").Groups["px"].Value, CultureInfo.InvariantCulture);
+        Assert.True(offset <= -width, body);
+        Assert.DoesNotMatch(new Regex(@"--ex-point-dashes"), css);
+    }
+
     [Fact] // ADR-0012 (2026-09-29) / ADR-0021 / MEM-4: a reveal's write is held on the root's own reveal number, observed only while held and released on dispose
     public void The_reveal_write_is_held_on_the_roots_reveal_number_only()
     {
