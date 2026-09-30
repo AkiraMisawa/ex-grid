@@ -671,10 +671,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             input.setRangeText('', start === end ? Math.max(0, start - 1) : start, end, 'end');
         } else if (k.key === 'Delete') {
             input.setRangeText('', start, start === end ? Math.min(input.value.length, end + 1) : end, 'end');
-        } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight' || k.key === 'Home' || k.key === 'End') {
-            const at = k.key === 'Home' ? 0
-                : k.key === 'End' ? input.value.length
-                : k.key === 'ArrowLeft' ? Math.max(0, start - 1)
+        } else if (k.key === 'Home' || k.key === 'End') {
+            // As the field would have: to the start or the end, Shift extending the selection, and
+            // scrolled to show it. Setting the selection from script moves no view, so a held End
+            // replayed on a circuit left the caret at the end and the text shown from its start
+            // (ticket 32, seen in CI on the Server host).
+            placeCaretAtEnd(input, k, input.closest('.ex-editor') !== null);
+            return true;
+        } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight') {
+            const at = k.key === 'ArrowLeft' ? Math.max(0, start - 1)
                 : Math.min(input.value.length, end + 1);
             if (input.closest('.ex-editor') !== null) {
                 noteCaretMove(input);
@@ -689,15 +694,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         return true;
     };
     // Home or End answered in an editor field on an Apple platform (ticket 32), as Windows and
-    // Linux answer them: the caret to the text's start or end, or with Shift the selection
-    // extended there from its anchor; the user's own move. The field is scrolled to show that
-    // end — setting the offset from script moves no view by itself, and a number past the far
-    // end is clamped to it by the browser — so nothing is read but the field's value and
-    // selection (ADR-0021).
-    const placeCaretAtEnd = (input, k) => {
+    // Linux answer them, and a held Home or End replayed on any platform: the caret to the
+    // text's start or end, or with Shift the selection extended there from its anchor; in an
+    // editor surface, the user's own move. The field is scrolled to show that end — setting
+    // the offset from script moves no view by itself, and a number past the far end is clamped
+    // to it by the browser — so nothing is read but the field's value and selection (ADR-0021).
+    const placeCaretAtEnd = (input, k, ownMove = true) => {
         const toEnd = k.key === 'End';
         const edge = toEnd ? input.value.length : 0;
-        noteCaretMove(input);
+        if (ownMove) {
+            noteCaretMove(input);
+        }
         if (k.shiftKey) {
             const anchor = input.selectionDirection === 'backward' ? input.selectionEnd : input.selectionStart;
             if (toEnd) {

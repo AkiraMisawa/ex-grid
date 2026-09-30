@@ -538,7 +538,10 @@ public class ShippedStylesheetTests
         // the selection extended there from its anchor; the user's own move; the field scrolled
         // to that end by setting its offset, clamped by the browser. Nothing is read but the
         // field's value and selection.
-        Assert.Matches(new Regex(@"const placeCaretAtEnd = \(input, k\) => \{\s*const toEnd = k\.key === 'End';\s*const edge = toEnd \? input\.value\.length : 0;\s*noteCaretMove\(input\);"), script);
+        Assert.Matches(new Regex(@"const placeCaretAtEnd = \(input, k, ownMove = true\) => \{\s*const toEnd = k\.key === 'End';\s*const edge = toEnd \? input\.value\.length : 0;\s*if \(ownMove\) \{\s*noteCaretMove\(input\);\s*\}"), script);
+        // A held Home or End replayed on any platform goes the same way, scrolled to its end: setting
+        // the selection alone moved no view (ticket 32, seen in CI on the Server host).
+        Assert.Matches(new Regex(@"\} else if \(k\.key === 'Home' \|\| k\.key === 'End'\) \{[^}]*placeCaretAtEnd\(input, k, input\.closest\('\.ex-editor'\) !== null\);\s*return true;", RegexOptions.Singleline), script);
         Assert.Matches(new Regex(@"const anchor = input\.selectionDirection === 'backward' \? input\.selectionEnd : input\.selectionStart;"), script);
         Assert.Matches(new Regex(@"input\.setSelectionRange\(anchor \?\? edge, edge, 'forward'\);"), script);
         Assert.Matches(new Regex(@"input\.setSelectionRange\(edge, anchor \?\? edge, 'backward'\);"), script);

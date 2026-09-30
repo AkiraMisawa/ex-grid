@@ -35,3 +35,8 @@ too, since there they would scroll the edit away as well. `setSelectionRange` do
 field, so the listener sets the field's `scrollLeft` with it (ADR-0021's scroll-offset entry).
 Whether Windows and Linux need the same for PageUp and PageDown is put to the user.
 
+*(2026-09-30, from CI.)* On Linux, on the Server host, End pressed straight after a press into the
+Formula Bar was held until the press was answered, and was then replayed. The replay set the caret
+at the end but moved no view, and dropped Shift. Held Home and End now replay through the same
+placement as the Apple path, on every platform.
+

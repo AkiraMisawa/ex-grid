@@ -339,5 +339,8 @@ edit open in Caret (in the Cell Editor or the Formula Bar), the listener claims 
 Shift+Home and Shift+End, and moves or extends the caret to the start or end of the text, as the
 same keys do elsewhere. Any other key that macOS binds to a scroll inside a text field is treated
 the same way. It is the allowlisted listener placing a caret, as it already does after a rewrite
-([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)); it reads no layout.
+([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)); it reads no layout. *(Found in CI
+the same day: a Home or End held behind a press on a circuit, on any platform, and replayed once the
+press was answered, set the caret without scrolling the field to it, and without Shift's extension.
+The replay now places it the same way, scrolled to that end.)*
 
