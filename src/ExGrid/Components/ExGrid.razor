@@ -363,6 +363,12 @@
                        identity objects and Placeholder keys are boxed indices, so the
                        two can never collide — and a position turning from Placeholder
                        into a row correctly reads as a fresh mount. *@
+                    @* The Change Highlight's time (ADR-0067): read once for the whole render,
+                       so every row paints its marks by the same instant, and only while the
+                       declaration is made. A row whose earliest mark ends by it renders again;
+                       the delegate and the channel each row reports its marks through are the
+                       same instances render after render. *@
+                    var highlightNow = HighlightNow();
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
                     {
                         var slice = row - _windowStart;
@@ -376,6 +382,8 @@
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
                                        CellState="CellState" CellType="CellType" CellAlign="CellAlign" PaintedText="PaintedText" RowKind="RowKind"
+                                       CellChangedAt="CellChangedAt" ChangeHighlightDuration="ChangeHighlightDuration" ChangeHighlightNow="highlightNow"
+                                       ChangeHighlightPainted="@(_highlightPainted ??= _highlightEnds.Painted)"
                                        RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
@@ -2155,6 +2163,7 @@
     protected override void OnParametersSet()
     {
         ValidatePointDeclaration();
+        ValidateChangeHighlight();
         ResolveOutlinedColumns();
         // The Source's own change notification lands in the same pipeline (ApplyState),
         // so a re-entrant one raised by the column push below would run it twice.
@@ -2766,6 +2775,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // The rows of this render have painted their Change Highlights and told the grid
+        // where each ends, so the one timer is armed for the earliest, or goes with the last
+        // (ADR-0067). A prerender runs none of this, and so keeps no timer.
+        ArmHighlightTimer();
+
         // A Template cell's focus request lives for exactly the render that handed it
         // over (ADR-0037) — cleared first, before anything below can render again — and
         // one the Focus walked away from is dropped undelivered.
@@ -8096,6 +8110,7 @@
         _edgeTimer?.Dispose();
         _announceTimer?.Dispose();
         _messageTimer?.Dispose();
+        DisposeHighlightTimer();
         if (_boundSource is not null)
         {
             _boundSource.StateChanged -= OnSourceStateChanged;
