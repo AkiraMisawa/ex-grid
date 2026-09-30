@@ -87,6 +87,11 @@ and `/sheets` in Chrome and Edge, both hosts, at 150%.
   `1`: is a list shown, and what does Tab write? `=XLOOKUP(1,A2:A4,B2:B4,,4` and `,,A` at
   `match_mode`: is a list shown? With the value list open, `Home`, `End` and Shift+→: what does each
   do? Then the same in ExSheet on `/sheet`.
+- **Ask Excel too** (ADR-0058, "Settled while building ticket 41"), with Book2 beside Book1 as in
+  Part A: `=`, a click on Book2, then a drag down the whole of `Trades[PV]`'s data (or a click on
+  column B's heading), then ↓, then →: what is written after each, and where the outline is. Then
+  `=`, a click on Book2's B3 (twice, as case 6x), then Ctrl+↓ and Ctrl+Shift+↓: the same. Then the same
+  keys in ExSheet on `/pointing`.
 - The pointer over the positions grid while pointing (`cell`), and not otherwise.
 - The positions grid narrowed until it shows its own scrollbars: the outlines and the dashes on its
   last column and its last painted row are whole, not cut by the Scrollbar Gutter.

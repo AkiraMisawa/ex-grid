@@ -362,3 +362,36 @@ the rule above is now Excel's, or the difference is decided here with the user.
   Sheet's listener, and the press, which the grid sends to the core itself, arrived first. The hold of
   "On a circuit" now keeps the keys typed before a press ahead of it as well (ADR-0021's note, widened
   the same day; DC-54; ticket 35).
+
+## Settled while building ticket 41 *(2026-10-01)*
+
+The arrow keys point inside a registered grid (above). Building them settled these:
+
+- **After a press on a column header, a plain arrow writes nothing and tells why** *(decided with the
+  user, Q48)*: the arrows move from a cell, and a header was pressed. The text and the column's dashes
+  stay, and a press on a cell makes the arrows point again. Where ↓ would go from a column, and ← and
+  → from one column to the next, is left until Excel is observed pointing at a whole column of
+  another workbook (`verify-on-windows-9.md`, Part B). Staying silent was rejected: a key that does
+  nothing and says nothing reads as broken.
+- **A row the grid no longer holds is told** *(accepted by the user)*. When the pointed row has left
+  the Window, or its column is no longer shown, an arrow writes nothing and says so.
+- **Readings, until Excel or a user says otherwise:**
+  - Ctrl+Shift+arrow is refused as Ctrl+arrow is (the edge of the data), not as a range.
+  - An arrow that reaches a row whose key is blank or an Error Value is refused as a press there is,
+    and nothing moves, so ↓ stops at that row until a press.
+  - An arrow that reaches a row not yet arrived tells so, and the grid does not scroll to it.
+  - At an edge nothing moves and nothing is told, as this ADR lists the edge apart from the
+    refusals.
+  - `Home` and `End` after a press move and write nothing, and tell nothing.
+  - ↑ and ↓ follow the grid's whole result, across pages under a page size.
+  - An arrow is a gesture of its own: a drag still held from the earlier press does not take back
+    what the arrow wrote.
+  - The arrows act only for the Sheet that pointed and holds the keyboard, while the text written
+    from outside stands. Ctrl+arrow is claimed only then; in the Sheet's own Point it stays the
+    browser's.
+- **The key listener claims Ctrl+arrow while text written from outside stands**, one more set in the
+  gate ADR-0021 allows, so that Ctrl+arrow can be refused rather than move the caret. On a circuit the
+  gate learns it one message after the press's render, and a Ctrl+arrow in that round trip moves the
+  caret and ends Point. Nothing is written, so no wrong value can follow.
+- **`/pointing`**, a DemoHost page, holds a Sheet and a 40-row positions grid with a column the table
+  does not have, which `/sheet` and `/sheets` could not add without moving data other specs read.
