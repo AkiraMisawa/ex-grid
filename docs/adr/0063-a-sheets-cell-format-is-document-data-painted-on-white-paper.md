@@ -253,6 +253,9 @@ buttons.
 when the answer comes.
 
 - Does a Number Format's colour win over the Font colour? Which RGB is each of the eight names?
+- Where no section of the Number Format shows the Value (General, text in a format without a text
+  section, a boolean, an Error Value), is there no colour? Does a `####` keep its section's colour?
+  *(Readings added 2026-10-01, from ticket 46.)*
 - Does a Fill hide the gridlines at the cell's edges?
 - When both sides of an edge are recorded, which line is drawn, and does a later operation also
   write the neighbour's side?

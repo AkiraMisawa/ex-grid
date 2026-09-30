@@ -55,6 +55,8 @@ answer.
 | 1 | A1 = -5, B1 = 5; format `[Black]0` … `[Yellow]0`, one name per row (rows 1–8). For `[White]`, fill the row black | The RGB of each of the eight names | Excel's legacy palette: `#000000`, `#0000FF`, `#00FFFF`, `#00FF00`, `#FF00FF`, `#FF0000`, `#FFFFFF`, `#FFFF00` |
 | 2 | A1 = -5, B1 = 5; format `0;[Red]-0`; Font colour blue (`Font.Color`) on both | The colour of each | A1 red (the format wins), B1 blue |
 | 3 | A1 = 5; format `[Color10]0` | The colour. For a later step; nothing is built on it now | — |
+| 3b | Format `[Red]0` on A1 = `abc`, A2 = `TRUE`, A3 = `=1/0`; and `0;[Red]@` on A4 = 5 | Is any of them red? | none: no section shows them, so no colour |
+| 3c | A1 = -123456789 in `0;[Red]-0`, column A narrowed until it shows `####` | The colour of the `#` | red: a `####` keeps its section's colour |
 
 ### Group 2 — Fills and gridlines
 
