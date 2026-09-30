@@ -230,3 +230,31 @@ ground, unless it follows the Formula's leading `=` directly. It is a look on AD
 layer, not a selection of the field's text. A key typed next follows the Reference, as it always did
 (`=D11+D12`, then `5`, gives `=D11+D125`).
 
+
+## Point reaches other grids through a Pointing Scope *(2026-09-30, decided with the user)*
+
+[ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md) carries Point past the
+Sheet's own rows. It goes as far as the grids its Consumer registered with the Sheet in a Pointing
+Scope, where those grids show Linked Tables. What Point decides at a keystroke is unchanged: the
+predicate says whether a Reference can go at the caret position, from the text each key carries.
+
+- **A press on a registered grid writes where Point writes**: `XLOOKUP("R-4471", Positions[Id],
+  Positions[PV])` for a cell, `Positions[PV]` for a column header. A further press, on a registered
+  grid or on the Sheet, replaces what this Point wrote, as a further press on the Sheet always did.
+- **After such a press, the arrow keys and Shift+arrows move nothing**, and the Consumer is told that
+  pointing goes on by a press. The ninth Windows run asks what Excel's arrows do after it points into
+  another workbook.
+- **F4 after such a press changes nothing.** Neither `XLOOKUP(...)` nor a structured reference cycles
+  (above).
+- **The Name Box names the edited cell** while Point writes from a registered grid. The pressed cell
+  has no address in the Sheet's words.
+- **The keys typed right after such a press keep their order** behind the text it writes, on a circuit
+  too ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md), note of 2026-09-30).
+
+**Completion follows Excel's triggers** (ADR-0058, "Completion, aligned with Excel"). Nothing is
+listed until a name's first letter is typed, so a list never takes ↓ from Point. One trigger that
+Excel was seen to have is added now: **at an argument whose values are a fixed list, the values are
+listed** (`XLOOKUP`'s `match_mode`: `0 - Exact match`, …). ↑ and ↓ choose, Tab accepts and writes the
+value, and Escape closes the list first, as above. The list after `Table[`, F3 and Backspace back
+into a name wait for the ninth Windows run. When the list after `Table[` is built, it offers column
+names only.
