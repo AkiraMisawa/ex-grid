@@ -293,14 +293,12 @@ for (const surface of ['cell', 'bar']) {
         await expectAt([0, end], 'start');
         await page.keyboard.press('End');
         await expectAt([end, end], 'end');
-        if (process.platform === 'darwin') {
-            // PageUp and PageDown move no caret in a one-line field; on macOS the browser would
-            // scroll a page with them, and the listener takes them instead. What they do on
-            // Windows and Linux is the browser's, and not asserted here.
-            await page.keyboard.press('PageUp');
-            await page.keyboard.press('PageDown');
-            await expectAt([end, end], 'end');
-        }
+        // PageUp and PageDown move no caret in a one-line field, and a browser would scroll the
+        // grid with them. The listener takes them while an edit is open, on every platform
+        // (decided with the user, 2026-09-30), so nothing moves.
+        await page.keyboard.press('PageUp');
+        await page.keyboard.press('PageDown');
+        await expectAt([end, end], 'end');
 
         // The edit is still the one opened: Escape cancels it where it stands.
         await page.keyboard.press('Escape');

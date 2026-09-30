@@ -121,12 +121,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // and PageDown a page. Left to the browser in an editor surface, they scrolled the grid away
     // from the open edit — the edited cell left the painted rows, the Cell Editor went, and DOM
     // focus with it. So on Apple platforms, found by the test that makes Meta the Primary
-    // Modifier, a key of these left to an editor field is answered here: Home and End, Shift
-    // with them or not, place the caret or extend the selection as they do elsewhere; PageUp and
-    // PageDown, which move no caret in a one-line field, do nothing. The keys the core claims —
-    // Home and End in Overwrite and Point — stay the core's.
+    // Modifier, Home and End left to an editor field are answered here, Shift with them or not:
+    // they place the caret or extend the selection as they do elsewhere. PageUp and PageDown,
+    // which move no caret in a one-line field, do nothing, on every platform (decided with the
+    // user the same day): a browser scrolls the grid with them from a field anywhere. The keys
+    // the core claims — Home and End in Overwrite and Point — stay the core's.
     const appleCaretKeys = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
-    const applePageKeys = new Set(['PageUp', 'PageDown']);
+    const pageKeys = new Set(['PageUp', 'PageDown']);
     const listShown = () => !!root && root.querySelector('.ex-completion[data-ex-list]') !== null;
 
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
@@ -273,12 +274,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (claimed.has(canonical) || (cycleReferences && canonical === 'F4')) {
             return 'mode';
         }
-        // Left to an editor field, a key macOS would scroll with is answered here (ticket 32).
-        if (metaIsPrimary && k.inEditor) {
-            if (appleCaretKeys.has(canonical)) {
+        // Left to an editor field, a key the browser would scroll the grid with is answered here:
+        // Home and End on an Apple platform, PageUp and PageDown on every one (ticket 32).
+        if (k.inEditor) {
+            if (metaIsPrimary && appleCaretKeys.has(canonical)) {
                 return 'caret';
             }
-            if (applePageKeys.has(canonical)) {
+            if (pageKeys.has(canonical)) {
                 return 'drop';
             }
         }

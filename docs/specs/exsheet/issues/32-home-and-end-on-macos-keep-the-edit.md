@@ -40,3 +40,6 @@ Formula Bar was held until the press was answered, and was then replayed. The re
 at the end but moved no view, and dropped Shift. Held Home and End now replay through the same
 placement as the Apple path, on every platform.
 
+*(2026-09-30, decided with the user.)* PageUp and PageDown are dropped while an edit is open on
+every platform, not only on a Mac. The layer-3 test asserts it everywhere.
+

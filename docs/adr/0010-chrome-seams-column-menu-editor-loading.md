@@ -342,5 +342,9 @@ the same way. It is the allowlisted listener placing a caret, as it already does
 ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)); it reads no layout. *(Found in CI
 the same day: a Home or End held behind a press on a circuit, on any platform, and replayed once the
 press was answered, set the caret without scrolling the field to it, and without Shift's extension.
-The replay now places it the same way, scrolled to that end.)*
+The replay now places it the same way, scrolled to that end.)* *(Decided with the user the same
+day:)* **PageUp and PageDown do nothing while an edit is open, on every platform.** They move no
+caret in a one-line field, and a browser scrolls the grid with them from the field: on macOS it
+lost the edit outright. Whether Excel commits and moves a page from an edit was not asked; if it is
+wanted, it is a decision of its own.
 

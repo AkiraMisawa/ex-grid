@@ -517,7 +517,7 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"const claimed = listShown\(\) \? completionKeys : \(claimedWhile\[editing\] \?\? editingKeys\);"), script.Text);
     }
 
-    [Fact] // ADR-0010's note of 2026-09-30 / ticket 32 / DC-24: on Apple platforms Home and End left to an editor field are answered by the listener, and PageUp and PageDown taken, so nothing scrolls the grid away from an open edit
+    [Fact] // ADR-0010's note of 2026-09-30 / ticket 32 / DC-24: on Apple platforms Home and End left to an editor field are answered by the listener, and on every platform PageUp and PageDown are taken, so nothing scrolls the grid away from an open edit
     public void On_apple_platforms_the_listener_answers_the_keys_macOS_scrolls_with()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
@@ -528,10 +528,12 @@ public class ShippedStylesheetTests
         // Home, End, PageUp and PageDown scroll; Shift+Home and Shift+End move the selection),
         // and nothing else.
         Assert.Matches(new Regex(@"const appleCaretKeys = new Set\(\['Home', 'End', 'Shift\+Home', 'Shift\+End'\]\);"), script);
-        Assert.Matches(new Regex(@"const applePageKeys = new Set\(\['PageUp', 'PageDown'\]\);"), script);
+        // PageUp and PageDown scroll the grid from an editor field on every platform, and are taken
+        // on every platform (decided with the user, 2026-09-30).
+        Assert.Matches(new Regex(@"const pageKeys = new Set\(\['PageUp', 'PageDown'\]\);"), script);
         // Only a key the core has not claimed — Home and End in Overwrite and Point stay the
         // core's — and only in an editor field.
-        Assert.Matches(new Regex(@"if \(claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\)\) \{\s*return 'mode';\s*\}\s*//[^\n]*\n\s*if \(metaIsPrimary && k\.inEditor\) \{\s*if \(appleCaretKeys\.has\(canonical\)\) \{\s*return 'caret';\s*\}\s*if \(applePageKeys\.has\(canonical\)\) \{\s*return 'drop';\s*\}\s*\}\s*return null;"),
+        Assert.Matches(new Regex(@"if \(claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\)\) \{\s*return 'mode';\s*\}\s*(?://[^\n]*\n\s*)+if \(k\.inEditor\) \{\s*if \(metaIsPrimary && appleCaretKeys\.has\(canonical\)\) \{\s*return 'caret';\s*\}\s*if \(pageKeys\.has\(canonical\)\) \{\s*return 'drop';\s*\}\s*\}\s*return null;"),
             script);
         Assert.Single(Regex.Matches(script, @"return 'caret';"));
         // Answered as Windows and Linux answer them: the caret to the text's start or end, or
