@@ -2,7 +2,7 @@ import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
-    expectCommandsGreyedOut, expectCommandsOffered,
+    expectCommandsGreyedOut, expectCommandsOffered, expectSelectionIsCell,
 } from './sheet-helpers.mjs';
 
 // ExSheet on the DemoHost's /sheet, driven with real keys and the real mouse (SH-18, ticket 18):
@@ -309,7 +309,7 @@ test('SH-5/SH-18: deleting a row rewrites the References below it, a deleted tar
     await expect(cell(grid, 'A3')).toHaveText('Plums');
     // The Selection stays where it was: the same address, now over the row that moved up.
     await expectFocusAt(grid, 'B3');
-    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'B3', 'B3');
+    await expectSelectionIsCell(grid, 'B3');
     await expect(grid).toBeFocused();
     // The total moved up a row and shrank with its range; the row below kept its own cells.
     await expect(cell(grid, 'B4')).toHaveText('32');
@@ -376,7 +376,7 @@ test('SH-5/SH-18: deleting a column makes a Reference to it #REF!, and one Ctrl+
     // Amount moved into C; its Price operand is gone.
     await expect(cell(grid, 'C1')).toHaveText('Amount');
     await expectFocusAt(grid, 'C2');
-    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'C2', 'C2');
+    await expectSelectionIsCell(grid, 'C2');
     await expect(grid).toBeFocused();
     await expect(cell(grid, 'C2')).toHaveText('#REF!');
     await expect(cell(grid, 'C5')).toHaveText('#REF!');

@@ -197,11 +197,15 @@
                                 {
                                     <div class="ex-focus-row" style="@pinnedBand"></div>
                                 }
+                                @* Each range tinted round a hole where the Focus is, and a single
+                                   range outlined as well; the Focus's own element follows, so the
+                                   stylesheet can tell it stands inside a single range (ADR-0008,
+                                   2026-09-29). *@
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Pinned(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } fill)
+                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true) is { } fill)
                                     {
-                                        <div class="ex-range" style="@fill"></div>
+                                        <div class="@RangeClass" style="@fill"></div>
                                     }
                                 }
                                 @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedFocus)
@@ -240,9 +244,9 @@
                                 }
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Scrollable(range, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } fill)
+                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false) is { } fill)
                                     {
-                                        <div class="ex-range" style="@fill"></div>
+                                        <div class="@RangeClass" style="@fill"></div>
                                     }
                                 }
                                 @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } focus)
@@ -1978,6 +1982,11 @@
     /// same arithmetic. Only read where the selection is known not to be empty — an empty
     /// one has no Focus to draw.</summary>
     private SelectionRange FocusRange => SelectionStyles.CellRange(_selection.Selection.Focus);
+
+    /// <summary>A range's classes (ADR-0008, 2026-09-29): a Selection of one range carries
+    /// one outline, around the whole range, and several ranges carry none. Interned, so a
+    /// render composes nothing for them.</summary>
+    private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
 
     /// <summary>The Focus row, every column wide — the Focus band's rectangle
     /// (ADR-0008): which row am I on, in a grid a hundred columns wide.</summary>

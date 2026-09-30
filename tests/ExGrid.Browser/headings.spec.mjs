@@ -1,5 +1,5 @@
 import { test, expect, alterPage } from './fixtures.mjs';
-import { sheet, cell, expectFocusAt, boxOf, spanOf, nameBox, pressCell } from './sheet-helpers.mjs';
+import { sheet, cell, expectFocusAt, boxOf, spanOf, nameBox, pressCell, expectSelectionIsCell } from './sheet-helpers.mjs';
 
 // The Headings as Excel's (ADR-0050 item 1, ADR-0052 and ADR-0012, all as settled on 2026-09-29),
 // on the DemoHost's /sheet: an axis a range spans end to end is not scrolled for (SR-2c), a drag
@@ -365,9 +365,10 @@ test('SR-2e/DC-42: Ctrl+click on a Column Heading adds the column, and a second 
     await expectWholeColumns(grid, 'D', 'D');
 
     await heading(grid, 'D').click({ force: true, modifiers: ['ControlOrMeta'] });
-    // D:D, the range made last, is gone: the Focus goes to the range still standing.
+    // D:D, the range made last, is gone: the Focus goes to the range still standing, which is
+    // B7 alone, and a Selection of the Focus's cell alone paints no range (ADR-0008, 2026-09-29).
     await expectFocusAt(grid, 'B7');
-    await expect(ranges).toHaveCount(1);
+    await expectSelectionIsCell(grid, 'B7');
 });
 
 test('SR-2e/DC-42: Ctrl+drag across Column Headings adds the columns crossed as one range', async ({ page }) => {

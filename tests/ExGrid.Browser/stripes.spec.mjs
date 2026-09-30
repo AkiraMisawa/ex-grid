@@ -148,8 +148,11 @@ test('a Cell State ground and the overlays paint over the stripe (UX-16)', async
     const [hovered] = await groundsOf(page, [[11, 3]]);
     expect(hovered, 'the hover band over a stripe').not.toBe(before);
 
-    // …and so do the selection and the Focus band.
-    await cell(page, 13, 3).click({ force: true });
+    // …and so does the selection. A range of two, read at the cell that is not its Focus: the
+    // Focus's own cell is left untinted (ADR-0008, 2026-09-29).
+    await cell(page, 12, 3).click({ force: true });
+    await cell(page, 13, 3).click({ force: true, modifiers: ['Shift'] });
+    await expect(page.locator('.ex-grid .ex-range')).toHaveCount(1);
     await page.mouse.move(0, 0);
     const [selected, unselected] = await groundsOf(page, [[13, 3], [11, 3]]);
     expect(selected, 'the selection over a stripe').not.toBe(unselected);
