@@ -231,12 +231,20 @@ public partial class ExGrid<TRow>
         return handedOn;
     }
 
-    /// <summary>A press handed on is answered once its hand-over has run, however it ended.</summary>
+    /// <summary>A press handed on is answered once its hand-over has run, however it ended, and once
+    /// the render it asked for has gone out.</summary>
     private static async Task AnswerHandedOnAsync(Task handOver, HandedOnPress? handedOn)
     {
         try
         {
             await handOver;
+            // A press in turn at once is handed over inside Blazor's dispatch of it, and the render of
+            // what its Consumer wrote goes out only as that dispatch returns: answered from inside it,
+            // the answer reached the browser first, and the key held behind the press was typed into
+            // the text the write had not yet reached (`*` lost on the Server host at 150 ms). Yielding
+            // leaves the dispatch, so the answer follows the render.
+            if (handedOn is not null)
+                await Task.Yield();
         }
         finally
         {
