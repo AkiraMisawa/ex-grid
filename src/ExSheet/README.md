@@ -64,7 +64,7 @@ A Formula can read the application's own data as a **Linked Table**, by key or b
 Excel's syntax (ADR-0049):
 
 ```csharp
-await sheet.DeclareLinkedTableAsync("Positions", ["Id", "Book", "PV"]);
+await sheet.DeclareLinkedTableAsync("Positions", ["Id", "Book", "PV"], key: "Id");
 await sheet.PushLinkedTableAsync("Positions", positions.Select(p =>
     (IReadOnlyList<Value?>)[Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)]));
 ```
@@ -76,8 +76,15 @@ await sheet.PushLinkedTableAsync("Positions", positions.Select(p =>
 
 Until the first snapshot arrives, a Formula reading the table shows `#GETTING_DATA`, and
 `IFERROR` does not hide it. Each push replaces the whole table, and only the Formulas reading it
-recalculate. The declaration is recorded in the Sheet Document. The rows never are, so a Consumer
-pushes again after opening a document.
+recalculate. The declaration, its key included, is recorded in the Sheet Document. The rows never
+are, so a Consumer pushes again after opening a document.
+
+The key is optional, and names one of the columns. A row is read by it, so no key may appear twice
+in a snapshot, compared as `XLOOKUP` compares (`r-4471` and `R-4471` are one key; blank keys are not
+compared). A push in which a key repeats throws `RepeatedKeyException`, naming the table, the key
+column and the key, and the table goes back to waiting: its readers show `#GETTING_DATA`, never the
+last snapshot's numbers. A table whose rows are told apart by several columns needs a column that
+joins them (`ACME|5Y`) as its key.
 
 While a Formula is edited, each Reference in it wears a colour, and the cells it names on the Sheet
 are outlined in that colour (ADR-0057). A table's column is not on the Sheet, so ExSheet tells you

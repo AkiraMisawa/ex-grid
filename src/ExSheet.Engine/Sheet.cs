@@ -56,7 +56,7 @@ public sealed partial class Sheet
         ArgumentNullException.ThrowIfNull(document);
         var sheet = new Sheet(SheetDocument.ResolveCulture(document.Culture), document.Name);
         // Declared before any Formula is computed: a reader shows #GETTING_DATA, never #NAME? (ADR-0049).
-        foreach (var table in document.LinkedTables) sheet.Declare(table.Name, table.Columns);
+        foreach (var table in document.LinkedTables) sheet.Declare(table.Name, table.Columns, table.Key);
         foreach (var style in document.Columns)
         {
             for (var column = style.First; column <= style.Last; column++) sheet._columnStyles[column] = new AxisStyle(style.Format, style.Alignment);

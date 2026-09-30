@@ -32,8 +32,9 @@
 
 <p>
     The grid on the right shows this page's positions, and the Sheet reads the same data as the
-    Linked Table <code>Positions</code> (ADR-0049): by key in B12, by column in B11. The page pushes
-    its first snapshot a moment after the Sheet opens, so those cells show <code>#GETTING_DATA</code>
+    Linked Table <code>Positions</code> (ADR-0049): by key in B12, by column in B11. Its key column is
+    <code>Id</code>, so a snapshot in which an Id repeats would be refused and its readers would wait
+    again. The page pushes its first snapshot a moment after the Sheet opens, so those cells show <code>#GETTING_DATA</code>
     until it lands; <i>Revalue</i> changes the data both show, and only the Formulas reading the
     table recalculate. Type <code>=SUM(Po</code> into a cell to see the table offered, and finish it as
     <code>=SUM(Positions[PV])</code>: while the Formula is edited, the PV column of the grid on the right
@@ -94,6 +95,8 @@
 
     private const string Table = "Positions";
     private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+    // A row is read by its Id, and no Id appears twice in a snapshot (ADR-0049, 2026-09-30).
+    private const string TableKey = "Id";
 
     // The page's own data: what the positions grid shows and what the Sheet reads, from one
     // source (ADR-0049's first rule: ExSheet never reads the grid).
@@ -148,7 +151,7 @@
             ("A13", "Count"), ("B13", $"=COUNTA({Table}[Id])"),
         ];
         // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
-        sheet.DeclareLinkedTable(Table, TableColumns);
+        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
         foreach (var (address, typed) in cells) sheet.Enter(CellAddress.Parse(address), typed);
         return sheet.ToDocument();
     }
@@ -166,7 +169,7 @@
         if (!firstRender || _sheet is null) return;
         // Declaring what the document already declares changes nothing; a page that opens a
         // document without it declares it here.
-        await _sheet.DeclareLinkedTableAsync(Table, TableColumns);
+        await _sheet.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
         try
         {
             // Long enough to see #GETTING_DATA: the data is "on its way".

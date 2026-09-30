@@ -136,4 +136,49 @@ public class LinkedTableWiringTests : SheetTestContext
 
         Assert.Contains("Positions", refused.Message);
     }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: the key is declared with the table, readable from the Sheet, recorded in the Sheet Document, and another key is another declaration
+    public async Task A_key_is_declared_recorded_and_raised()
+    {
+        var raised = new List<SheetDocument>();
+        var cut = RenderSheet(ps => ps.Add(s => s.DocumentChanged, raised.Add));
+
+        await cut.Instance.DeclareLinkedTableAsync("Positions", Columns, key: "Id");
+        await cut.Instance.DeclareLinkedTableAsync("Positions", Columns, key: "id");
+
+        Assert.Equal("Id", Assert.Single(cut.Instance.LinkedTables).Key);
+        Assert.Equal("Id", Assert.Single(Assert.Single(raised).LinkedTables).Key);
+        Assert.Contains("\"key\":\"Id\"", cut.Instance.ToDocument().ToJson(), StringComparison.Ordinal);
+
+        await cut.Instance.DeclareLinkedTableAsync("Positions", Columns);
+
+        Assert.Equal(2, raised.Count);
+        Assert.Null(Assert.Single(raised[1].LinkedTables).Key);
+        Assert.False(cut.Instance.CanUndo);
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: a repeated key refuses the push by name; every reader shows #GETTING_DATA, never the earlier snapshot's Value or IFERROR's 0
+    public async Task A_repeated_key_refuses_the_push_and_readers_wait()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Readers()));
+        await cut.Instance.DeclareLinkedTableAsync("Positions", Columns, key: "Id");
+        await cut.Instance.PushLinkedTableAsync("Positions", Positions(("R-1", "Rates", 100), ("R-2", "FX", 250)));
+        Assert.Equal("350", CellText(cut, "A1"));
+
+        var refused = await Assert.ThrowsAsync<RepeatedKeyException>(() =>
+            cut.Instance.PushLinkedTableAsync("Positions", Positions(("R-1", "Rates", 100), ("r-1", "FX", 250))));
+
+        Assert.Contains("'Positions'", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("'Id'", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("\"R-1\"", refused.Message, StringComparison.Ordinal);
+        Assert.Equal("#GETTING_DATA", CellText(cut, "A1"));
+        Assert.Equal("#GETTING_DATA", CellText(cut, "A2"));
+        Assert.Equal("#GETTING_DATA", CellText(cut, "A3"));
+        Assert.True(Assert.Single(cut.Instance.LinkedTables).IsWaiting);
+
+        await cut.Instance.PushLinkedTableAsync("Positions", Positions(("R-1", "Rates", 1), ("R-2", "FX", 2)));
+
+        Assert.Equal("3", CellText(cut, "A1"));
+        Assert.Equal("2", CellText(cut, "A3"));
+    }
 }

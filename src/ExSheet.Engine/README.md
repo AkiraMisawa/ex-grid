@@ -12,8 +12,8 @@ cell from its **Entry**:
   recalculation; a circular reference is `#CIRC!` in every cell of the cycle and every cell that
   depends on it
 
-The **Sheet Document** is the Sheet's serialisable form (version 5, which also reads versions 1
-to 4), with the formats set on its columns, rows and cells and the widths recorded on its columns. It holds Entries and never Values, so
+The **Sheet Document** is the Sheet's serialisable form (version 7, which also reads versions 1
+to 6), with the formats set on its columns, rows and cells and the widths recorded on its columns. It holds Entries and never Values, so
 anyone who wants a saved Sheet's numbers runs this engine — on a server as in the browser, with
 the same result.
 
@@ -189,18 +189,26 @@ Data the application holds reaches Formulas as a Linked Table, pushed whole and 
 structured reference and by key:
 
 ```csharp
-sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
+sheet.DeclareLinkedTable("Positions", ["Id", "PV"], key: "Id");
 sheet.Enter(CellAddress.Parse("A1"), "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])");
 // A1 is #GETTING_DATA until the first snapshot arrives.
 sheet.PushLinkedTable("Positions", [[Value.FromText("R-4471"), Value.FromNumber(250.5)]]);
 ```
 
 A snapshot replaces the last in one step and recalculates only the Formulas that read the table.
-The Sheet Document records each table's declaration — its name and column names — and never its
-rows: a Sheet opened from one already has the tables declared, and their readers show
+The Sheet Document records each table's declaration — its name, column names and key — and never
+its rows: a Sheet opened from one already has the tables declared, and their readers show
 `#GETTING_DATA` until the first snapshot is pushed. Declare your tables at start-up regardless:
-the same declaration again changes nothing, and one with other columns replaces the held one,
-dropping its rows so readers wait again. A table is never undeclared.
+the same declaration again changes nothing, and one with other columns or another key replaces
+the held one, dropping its rows so readers wait again. A table is never undeclared.
+
+The **key** is optional, and names one of the columns. Every snapshot of a keyed table is checked:
+no key may appear twice, compared as `XLOOKUP`'s exact match compares, so `r-4471` and `R-4471` are
+one key while the number 1 and the text `1` are two. A blank key is not a key. A snapshot in which a
+key repeats throws `RepeatedKeyException`, naming the table, the key column and the key. The
+previous snapshot is not kept: the table waits again, and every reader shows `#GETTING_DATA`, which
+`IFERROR` does not catch. `RepeatedKeyException.Change` says which cells changed with it. A table
+whose rows are told apart by several columns needs a column that joins them (`ACME|5Y`) as its key.
 A column the table does not have is `#REF!`; a column used where one Value is wanted gives its
 Value when it has exactly one row, and `#VALUE!` otherwise.
 
