@@ -119,3 +119,18 @@ the Server host and 22/22 on WebAssembly (the four 150 ms cases skip themselves 
 module before the hold, the committing cases fail on the Sheet at 0 and 150 ms and on `/features` at
 150 ms. The runner has not run it.
 
+**2026-09-30, second review.** The hold behind a press is scoped to this grid's own rows: a press on
+the rows of a grid nested in one of its cells neither starts this grid's hold nor is held by it, and
+never asks this core about a press it did not hear (the held-press path had the same bare check, and
+is scoped with it). Layer 3 covers it with a stand-in for a nested grid inside the Sheet: at 150 ms
+on the Server host the key typed after a press on its rows reaches it as the browser's own keydown,
+where before this fix it was held and handed on from script (red 3 of 3 against the previous
+module). Two claims of the boxes above now have tests of their own on `/features`: outside an edit a
+press on the rows and an arrow hold nothing (a page listener hears the key typed after them), and a
+double click on another cell commits the edit and opens that cell's text on a plain grid, whose
+press keeps its default, as on the Sheet, whose press does not.
+
+Known limit of the standing edit's look, not changed: while the keyboard is in a grid nested inside
+this one, this grid's root still matches `:focus-within`, so its standing edit keeps the full-width
+outline.
+
