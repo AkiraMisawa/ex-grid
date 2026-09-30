@@ -51,11 +51,47 @@ public readonly record struct PointSite(int Start, int Length);
 public sealed record ReferenceCycle(string Text, int SelectionStart, int SelectionEnd);
 
 /// <summary>
+/// A Linked Table's column, as a structured reference names it (<c>Positions[PV]</c>): the key a
+/// Reference Outline is told by (ADR-0057). Two are equal when they name the same table and the
+/// same column without regard to case, as the Sheet finds a table and its column (ADR-0049).
+/// </summary>
+/// <param name="Table">The table's name, as written.</param>
+/// <param name="Column">The column's name, as written, with its <c>'</c> escapes read.</param>
+public sealed record LinkedTableColumn(string Table, string Column)
+{
+    /// <summary>Whether <paramref name="other"/> names the same table and column, without regard to case.</summary>
+    public bool Equals(LinkedTableColumn? other) =>
+        other is not null
+        && string.Equals(Table, other.Table, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(Column, other.Column, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>A hash that ignores case, as <see cref="Equals(LinkedTableColumn)"/> does.</summary>
+    public override int GetHashCode() =>
+        HashCode.Combine(StringComparer.OrdinalIgnoreCase.GetHashCode(Table), StringComparer.OrdinalIgnoreCase.GetHashCode(Column));
+}
+
+/// <summary>
+/// A Reference in the text of a Formula being edited (ADR-0057): where it is written, and what it
+/// names — cells on this Sheet, or a Linked Table's column. Exactly one of <see cref="Cells"/> and
+/// <see cref="LinkedColumn"/> is set.
+/// </summary>
+/// <param name="Start">Where it starts in the text, whose <c>=</c> is at 0.</param>
+/// <param name="Length">How many characters it spans, its Sheet qualifier included.</param>
+/// <param name="Cells">
+/// The cells it names, held from their top-left corner however it was written (<c>B2:A1</c> names
+/// A1:B2), whole columns for <c>A:A</c> and whole rows for <c>1:1</c>; <see langword="null"/> for a
+/// structured reference.
+/// </param>
+/// <param name="LinkedColumn">The Linked Table column a structured reference reads; <see langword="null"/> for cells.</param>
+public readonly record struct FormulaReference(int Start, int Length, CellRange? Cells, LinkedTableColumn? LinkedColumn);
+
+/// <summary>
 /// Pure answers over the text of a Formula being typed and its caret, for the aids ADR-0051 asks
 /// of the Consumer: completion candidates, the argument hint, whether a Reference can go at the
 /// caret (Point mode), the Reference text for a pointed range, and what F4 makes of the Reference
-/// at the caret. Each works on unfinished text: nothing here requires the Formula to parse. Text
-/// not beginning with <c>=</c> is not a Formula, and gets no aid.
+/// at the caret; and, for ADR-0057's Reference Outlines, every Reference in the text. Each works
+/// on unfinished text: nothing here requires the Formula to parse. Text not beginning with
+/// <c>=</c> is not a Formula, and gets no aid.
 /// </summary>
 public static partial class FormulaEntry
 {
@@ -272,6 +308,74 @@ public static partial class FormulaEntry
     private static readonly (string Name, bool Column)[] PartNames =
         [("c1", true), ("r1", false), ("c2", true), ("r2", false), ("cc1", true), ("cc2", true), ("rr1", false), ("rr2", false)];
 
+    /// <summary>
+    /// Every Reference in the text of a Formula being edited, in the order written (ADR-0057): its
+    /// span, and the cells it names or, for a structured reference, the Linked Table column it
+    /// reads. A Reference is what the formula grammar reads as one over the whole of an operand, as
+    /// for F4. The text need not parse: an unfinished Formula (<c>=SUM(A1,</c>) is answered as far
+    /// as it goes, and an unclosed string, quoted Sheet name or bracket hides only what follows it.
+    /// Nothing inside a string is a Reference, nor is a function name (<c>LOG10(</c>), nor one
+    /// qualified with another Sheet's name, which names no cells. A range typed as far as its colon
+    /// (<c>=SUM(A1:</c>) answers its first corner, the colon left out. Text beginning with <c>+</c> or
+    /// <c>-</c> is answered as a Formula is, as Excel colours it and ExSheet enters it (<c>=+A1</c>);
+    /// other text is answered with nothing (the eighth Windows run, cases 24–26).
+    /// </summary>
+    /// <param name="text">The text being edited.</param>
+    /// <param name="sheetName">This Sheet's name: a Reference qualified with it, without regard to case, names this Sheet's cells.</param>
+    public static IReadOnlyList<FormulaReference> References(string text, string sheetName)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentNullException.ThrowIfNull(sheetName);
+        if (text.Length == 0 || text[0] is not ('=' or '+' or '-')) return [];
+
+        var references = new List<FormulaReference>();
+        foreach (var token in Scan(text))
+        {
+            if (token.Kind != TokenKind.Operand || token.Unterminated) continue;
+            var length = token.End - token.Start;
+            if (token.HasBrackets)
+            {
+                if (Formulas.Lexer.ReadStructuredReference(text, token.Start) is { } structured && structured.Length == length)
+                {
+                    references.Add(new FormulaReference(token.Start, length, null, new LinkedTableColumn(structured.Table, structured.Column)));
+                }
+            }
+            else if (ReadOperandReference(text, token.Start, length) is { } read && Sheet.Names(read.Reference.SheetName, sheetName))
+            {
+                var area = read.Reference.Area;
+                var cells = new CellRange(new CellAddress(area.Row1, area.Column1), new CellAddress(area.Row2, area.Column2));
+                references.Add(new FormulaReference(token.Start, read.Length, cells, null));
+            }
+        }
+        return references;
+    }
+
+    /// <summary>
+    /// The operand at <paramref name="start"/> read as a Reference over the whole of it, as F4 reads
+    /// one; or, while a range is typed as far as its colon or into its second corner (<c>A1:</c>,
+    /// <c>A1:B</c>), its first corner, which Excel colours (the eighth Windows run, case 26). The
+    /// grammar reads no Reference with a colon after it, so the corner is read from the text cut at
+    /// the colon. The colon looked for is the one after a Sheet qualifier's <c>!</c>, not one inside a
+    /// quoted Sheet name, and what follows it must be the start of a second corner and no more:
+    /// <c>A1:B2:C3</c> is not a range being typed, and answers nothing as before.
+    /// </summary>
+    private static (Formulas.Reference Reference, int Length)? ReadOperandReference(string text, int start, int length)
+    {
+        if (Formulas.Lexer.ReadReference(text, start, out var read) is { } whole && read == length) return (whole, read);
+        var bang = text.LastIndexOf('!', start + length - 1, length);
+        var from = bang >= start ? bang + 1 : start;
+        var colon = text.IndexOf(':', from, start + length - from);
+        if (colon <= start || !SecondCornerBegun().IsMatch(text.AsSpan(colon + 1, start + length - colon - 1))) return null;
+        return Formulas.Lexer.ReadReference(text[..colon], start, out var corner) is { } first && corner == colon - start
+            ? (first, corner)
+            : null;
+    }
+
+    /// <summary>What may follow the colon of a range still being typed: nothing yet, or the start of
+    /// a cell's address (<c>B</c>, <c>$B$</c>, <c>B1</c> before the grammar reads it whole).</summary>
+    [GeneratedRegex(@"^\$?[A-Za-z]{0,3}\$?[0-9]{0,7}$", RegexOptions.CultureInvariant)]
+    private static partial Regex SecondCornerBegun();
+
     private static bool IsFormula(string text, int caret)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -442,4 +546,22 @@ public sealed partial class Sheet
     /// </summary>
     public FormulaCompletion? Complete(string text, int caret) =>
         FormulaEntry.Complete(text, caret, _tables.Values.OrderBy(t => t.Order).Select(t => t.Name));
+
+    /// <summary>
+    /// The References in the Formula being edited (ADR-0057), a qualifier naming this Sheet by its
+    /// <see cref="Name"/> as it is now (<see cref="FormulaEntry.References"/>). A structured
+    /// reference is kept only when its Linked Table is declared with that column: one naming a table
+    /// or a column that is not names nothing, as a Reference to another Sheet does not. A declared
+    /// table still waiting for its data is kept.
+    /// </summary>
+    public IReadOnlyList<FormulaReference> References(string text)
+    {
+        var references = FormulaEntry.References(text, Name);
+        return references.Any(r => r.LinkedColumn is { } column && !IsDeclared(column))
+            ? [.. references.Where(r => r.LinkedColumn is not { } column || IsDeclared(column))]
+            : references;
+    }
+
+    private bool IsDeclared(LinkedTableColumn column) =>
+        _tables.TryGetValue(column.Table, out var table) && table.ColumnIndex.ContainsKey(column.Column);
 }

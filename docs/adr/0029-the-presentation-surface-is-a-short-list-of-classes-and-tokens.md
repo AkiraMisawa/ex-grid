@@ -305,3 +305,29 @@ The painted thumb is asserted from the screen in `stripes.spec.mjs`.
 - **Visual Tokens:** `--ex-size-tip-background`, `--ex-size-tip-color` and `--ex-size-tip-outline`.
   Without a theme, they fall back to the system colours `Canvas` and `CanvasText`. `ExGrid.MudBlazor`
   maps them onto the colours MudBlazor gives its tooltips.
+
+## Added by ADR-0057 *(2026-09-29, decided with the user)*
+
+Reference Outlines ([ADR-0057](./0057-references-are-outlined-in-colour-while-a-formula-is-edited.md))
+enter the list here. Each is painted only while a Consumer that declared the References function
+has a Formula open, or while a Consumer asks for columns to be outlined.
+
+- **Internal classes**, which may change without notice:
+  - `ex-reference-outline`: a Reference Outline in the selection overlay, with `ex-reference-1` to
+    `ex-reference-7` naming its colour (eight until the eighth Windows run observed Excel's seven). `ex-point` stays, now on the Reference Outline Point is
+    moving.
+  - `ex-reference-text`: the layer beneath an editor surface that draws the text with its References
+    coloured, with `ex-reference-text-line` its part that scrolls with the field, and
+    `ex-reference-text-cell` and `ex-reference-text-bar` the built-in Chrome's two placements of it.
+  - `ex-reference-text-shown`: the class on a field while its layer holds the field's value and the
+    edit is in that field, which makes the field's own text transparent. *(Named while building
+    ticket 29; this entry first gave the layer's name to the field's class too.)*
+  - `ex-reference-pointed`: the span of the Reference Point is writing, shown selected (ADR-0051,
+    2026-09-30).
+- **Visual Tokens:** `--ex-reference-1` to `--ex-reference-7`, one per place in the palette. Their
+  defaults are Excel's, as the eighth Windows run observed them (ADR-0057). Seven is the palette's
+  length and lives in C#: it is behaviour, because it decides which References share a colour. A Theme sets
+  the colours, never the length. `ExGrid.MudBlazor` leaves them at their defaults.
+  `--ex-reference-pointed-background` and `--ex-reference-pointed-color` paint the pointed
+  Reference's ground and text. Their defaults approximate Excel's `#c6c6c6` and the Reference's
+  colour darkened (2026-09-30).

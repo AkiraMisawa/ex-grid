@@ -169,7 +169,7 @@
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
                 @if (_visible is { } visible)
                 {
-                    @if (!_selection.Selection.IsEmpty || HoverRowRange is not null)
+                    @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0)
                     {
                         @* One element per range, so what selection costs to paint depends
                            on how many rectangles there are and never on how many cells
@@ -223,12 +223,33 @@
                                 {
                                     <div class="ex-fill-handle" style="@pinnedHandle"></div>
                                 }
-                                @* The pointing outline (ADR-0051): one more rectangle, over the
-                                   ranges; the Selection and the Focus beneath it do not move. *@
-                                @if (PointRange is { } pinnedPointRange && SelectionStyles.Pinned(pinnedPointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedPoint)
+                                @* Reference Outlines (ADR-0057): one rectangle per range the
+                                   Consumer's References name, in its colour, over the ranges. *@
+                                @for (var o = 0; o < Colouring.Outlines.Count; o++)
                                 {
-                                    <div class="ex-point" style="@pinnedPoint"></div>
+                                    @if (ReferenceOutline(Colouring.Outlines[o]) is { } pinnedOutline && SelectionStyles.Whole(pinnedOutline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true) is { } pinnedReference)
+                                    {
+                                        <div class="@pinnedOutline.Class" style="@pinnedReference"></div>
+                                    }
                                 }
+                            }
+                            @* The columns a Consumer asks for (ADR-0057): one rectangle per
+                               column over all its rows, cut to the painted rows as a whole-column
+                               range is. Selection or none, as a Linked Table's grid has none. *@
+                            @for (var c = 0; c < _columnOutlines.Length; c++)
+                            {
+                                @if (ColumnOutlineRange(_columnOutlines[c].Column) is { } pinnedColumnRange && SelectionStyles.Pinned(pinnedColumnRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedColumn)
+                                {
+                                    <div class="@_columnOutlines[c].Class" style="@pinnedColumn"></div>
+                                }
+                            }
+                            @* The pointing outline (ADR-0051): one more rectangle, over the
+                               ranges; the Selection and the Focus beneath it do not move.
+                               It is the Reference Outline of the range it points at, in that
+                               range's colour (ADR-0057). *@
+                            @if (!_selection.Selection.IsEmpty && PointRange is { } pinnedPointRange && SelectionStyles.Pinned(pinnedPointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedPoint)
+                            {
+                                <div class="@PointOutlineClass(pinnedPointRange)" style="@pinnedPoint"></div>
                             }
                         </div>
                         <div class="ex-selection" aria-hidden="true" @key="SelectionLayerKey">
@@ -261,10 +282,24 @@
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
                                 }
-                                @if (PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } point)
+                                @for (var o = 0; o < Colouring.Outlines.Count; o++)
                                 {
-                                    <div class="ex-point" style="@point"></div>
+                                    @if (ReferenceOutline(Colouring.Outlines[o]) is { } outline && SelectionStyles.Whole(outline.Range, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false) is { } reference)
+                                    {
+                                        <div class="@outline.Class" style="@reference"></div>
+                                    }
                                 }
+                            }
+                            @for (var c = 0; c < _columnOutlines.Length; c++)
+                            {
+                                @if (ColumnOutlineRange(_columnOutlines[c].Column) is { } columnRange && SelectionStyles.Scrollable(columnRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } column)
+                                {
+                                    <div class="@_columnOutlines[c].Class" style="@column"></div>
+                                }
+                            }
+                            @if (!_selection.Selection.IsEmpty && PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } point)
+                            {
+                                <div class="@PointOutlineClass(pointRange)" style="@point"></div>
                             }
                         </div>
                     }
@@ -293,6 +328,13 @@
                                     }
                                     else
                                     {
+                                        @* The coloured text (ADR-0057): beneath the input, in its
+                                           box, immediately before it — where the listener and the
+                                           stylesheet look for it. A Chrome places its own. *@
+                                        @if (ReferencesIn is not null)
+                                        {
+                                            <div class="ex-reference-text ex-reference-text-cell" style="@pinnedBox" data-ex-text="@_editText" aria-hidden="true"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                        }
                                         <input class="ex-editor" style="@pinnedBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
@@ -306,6 +348,10 @@
                             }
                             else
                             {
+                                @if (ReferencesIn is not null)
+                                {
+                                    <div class="ex-reference-text ex-reference-text-cell" style="@editorBox" data-ex-text="@_editText" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                }
                                 <input class="ex-editor" style="@editorBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
@@ -397,6 +443,13 @@
             }
             else
             {
+                @* The coloured text (ADR-0057), beneath the field and immediately before it. It
+                   stands whenever References are declared, empty while no edit is open, so an
+                   edit opening is a change of its text that the listener hears. *@
+                @if (ReferencesIn is not null)
+                {
+                    <div class="ex-reference-text ex-reference-text-bar" style="@ReferenceTextBarStyle()" data-ex-text="@BarReferenceText" aria-hidden="true"><div class="ex-reference-text-line">@BarReferenceSpans</div></div>
+                }
                 <input class="ex-editor ex-formula-bar-text" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarPressedAsync"
                        @ref="_formulaBarElement" />
@@ -2090,6 +2143,7 @@
     protected override void OnParametersSet()
     {
         ValidatePointDeclaration();
+        ResolveOutlinedColumns();
         // The Source's own change notification lands in the same pipeline (ApplyState),
         // so a re-entrant one raised by the column push below would run it twice.
         _applying = true;
@@ -2804,6 +2858,7 @@
         // (StageReveal): what it painted is what the Range Request below is judged on.
         await RaiseRangeIfUncoveredAsync();
         await RaiseSelectionIfChangedAsync();
+        await RaiseKeyColoursIfChangedAsync();
         if (_pendingDiscard is { } discarded)
         {
             _pendingDiscard = null;
@@ -6994,7 +7049,8 @@
             _chromeNameBoxBlurred ??= () => FromChrome(OnNameBoxBlur));
 
     /// <summary>The Formula Bar text field seam's contract (ADR-0051/0030): the Focus cell's
-    /// text, whether it takes typing, the core's handlers, and the focus requests.</summary>
+    /// text, whether it takes typing, the core's handlers, the focus requests, and the coloured
+    /// text to place beneath the control (ADR-0057).</summary>
     private FormulaBarTextContext BuildFormulaBarTextContext()
         => new(
             FormulaBarText(),
@@ -7002,7 +7058,10 @@
             _chromeFormulaBarFocused ??= () => _pressAnswer = FromChromeAsync(OnFormulaBarFocusAsync),
             _chromeFormulaBarTextChanged ??= text => FromChrome(() => OnFormulaBarInput(text)),
             _formulaBarFocusRequest,
-            _chromeBarTakeFocus ??= () => InvokeAsync(() => FocusSurfaceAsync(bar: true)));
+            _chromeBarTakeFocus ??= () => InvokeAsync(() => FocusSurfaceAsync(bar: true)))
+        {
+            ReferenceText = BarReferenceTextForChrome,
+        };
 
     /// <summary>A handler reached from a Chrome's control rather than from an event on the
     /// root: run on the renderer's context, then rendered as the root's own event would be —
@@ -7025,7 +7084,8 @@
 
     /// <summary>The editor seam's contract (ADR-0010): the core owns the box, the keys
     /// and the text's lifecycle; a substitute renders the control and reports its text
-    /// as it changes — Enter and its siblings never reach it.</summary>
+    /// as it changes — Enter and its siblings never reach it — and places the coloured text
+    /// the core renders beneath it (ADR-0057).</summary>
     private CellEditorContext BuildEditorContext()
     {
         var declared = Columns[_editingCell.Column];
@@ -7044,10 +7104,10 @@
             {
                 _editSurface = EditSurface.Cell;
                 TextTyped(text);
-                // The bar shows the same uncommitted text, and the completion box answers it
-                // (ADR-0051): a Chrome's control reports into its own component, so the root
-                // is told to paint them.
-                if (ShowFormulaBar || CompleteEditorText is not null)
+                // The bar shows the same uncommitted text, the completion box answers it
+                // (ADR-0051) and the Reference Outlines follow it (ADR-0057): a Chrome's
+                // control reports into its own component, so the root is told to paint them.
+                if (ShowFormulaBar || CompleteEditorText is not null || ReferencesIn is not null)
                     StateHasChanged();
             },
             () => _ = InvokeAsync(() => CommitAndMoveAsync(next => next)),
@@ -7058,7 +7118,10 @@
             }),
             _editError is null ? null : MessageId,
             _editorFocusAsked ? _editorFocusRequest : 0,
-            _chromeEditorTakeFocus ??= () => InvokeAsync(() => FocusSurfaceAsync(bar: false)));
+            _chromeEditorTakeFocus ??= () => InvokeAsync(() => FocusSurfaceAsync(bar: false)))
+        {
+            ReferenceText = CellReferenceTextForChrome,
+        };
     }
 
     /// <summary>

@@ -6,11 +6,12 @@ using Microsoft.JSInterop;
 namespace ExGrid.Components;
 
 /// <summary>
-/// The grid (ADR-0001). Its formula entry aids live in two parts beside the markup, as ExGrid
+/// The grid (ADR-0001). Its formula entry aids live in three parts beside the markup, as ExGrid
 /// mechanism a Consumer switches on and gives meaning to (ADR-0051): this one reports the
 /// editor's text and caret as the user types, paints the Consumer's candidates and hint as the
-/// editor's Inner Popup and works the list's keys; <c>ExGrid.Pointing.cs</c> holds Point. The
-/// grid does not know what a Formula is.
+/// editor's Inner Popup and works the list's keys; <c>ExGrid.Pointing.cs</c> holds Point, and
+/// <c>ExGrid.ReferenceOutlines.cs</c> the Reference Outlines (ADR-0057). The grid does not know
+/// what a Formula is.
 /// </summary>
 /// <typeparam name="TRow">The Consumer's row type.</typeparam>
 public partial class ExGrid<TRow>

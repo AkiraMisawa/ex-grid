@@ -3,14 +3,20 @@
 @using System.Globalization
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md),
    and because inside ExSheet.Components the name ExSheet is the component, not the namespace. *@
+@using global::ExSheet
 @using global::ExSheet.Components
 @using global::ExSheet.Engine
 @using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
 
-@* ?chrome=mud runs the Sheet with ExGrid.MudBlazor's Chrome instead of the built-in one, as
-   /features does, so the browser tests of the Formula Bar and the completion list run under
-   both Chromes (DC-17, ADR-0030; DemoChrome). *@
-<DemoChromeAssets Name="@ChromeName" />
+@* ?chrome=mud runs the Sheet with ExGrid.MudBlazor's Chrome instead of the built-in one, so the
+   browser tests of the Formula Bar, the completion list and the coloured text run under both
+   Chromes (DC-17, ADR-0030; DemoChrome). Unlike /features, which changes the Chrome alone, the
+   Sheet stands on the Wrapper's paper with its stylesheet: the Chrome's fields meet the coloured
+   text's contract (no padding, no ground, filling the core's box) only through that stylesheet,
+   and the Chrome used alone is not supported where References are coloured (ADR-0057, "The
+   Wrapper's shape is required…"; ADR-0030). *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" />
 
 <DemoNav />
 
@@ -29,7 +35,10 @@
     Linked Table <code>Positions</code> (ADR-0049): by key in B12, by column in B11. The page pushes
     its first snapshot a moment after the Sheet opens, so those cells show <code>#GETTING_DATA</code>
     until it lands; <i>Revalue</i> changes the data both show, and only the Formulas reading the
-    table recalculate. Type <code>=SUM(Po</code> into a cell to see the table offered.
+    table recalculate. Type <code>=SUM(Po</code> into a cell to see the table offered, and finish it as
+    <code>=SUM(Positions[PV])</code>: while the Formula is edited, the PV column of the grid on the right
+    is outlined in the colour its Reference wears (ADR-0057). The Sheet tells the page which columns it
+    reads; the page, which knows where the table is shown, passes them to that grid.
 </p>
 
 <div class="demo-toolbar">
@@ -45,11 +54,17 @@
 </p>
 
 <div class="demo-side-by-side">
-    <ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
-             EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" />
+    @if (DemoChrome.IsMud(ChromeName))
+    {
+        <MudExGridPaper>@Sheet</MudExGridPaper>
+    }
+    else
+    {
+        @Sheet
+    }
     <div id="sheet-positions">
         <ExGrid TRow="Position" Window="_positions" Columns="PositionColumns" RowHeight="28"
-                ViewportHeight="420" ViewportWidth="330" />
+                ViewportHeight="420" ViewportWidth="330" OutlinedColumns="_outlinedPositions" />
     </div>
 </div>
 
@@ -68,6 +83,10 @@
     public string? ChromeName { get; set; }
 
     private IGridChrome? _chrome;
+
+    // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
+    private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
+                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions" />;
 
     protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
 
@@ -100,6 +119,10 @@
 
     private ExSheet? _sheet;
     private SheetDocument? _document = Opening();
+    // The columns of the table the Formula being edited reads, as the positions grid outlines
+    // them (ADR-0057): the Sheet tells the page, and only the page knows which grid shows the
+    // table (ADR-0049's first rule, ADR-0018).
+    private IReadOnlyList<OutlinedColumn> _outlinedPositions = [];
     private string _status = "";
     // Whether an edit is open in the Sheet, as ExSheet raises it: the toolbar's commands are
     // greyed out while it is (ADR-0048).
@@ -155,6 +178,13 @@
         }
         await PushAsync();
     }
+
+    // The grid's columns are named as the table's are declared (TableColumns), so a column the
+    // Sheet names is the grid's column of the same name. Another table is not in this grid.
+    private void OutlinePositions(LinkedColumnColours columns) =>
+        _outlinedPositions = [.. columns
+            .Where(c => c.Column.Table == Table)
+            .Select(c => new OutlinedColumn(c.Column.Column, c.Colour))];
 
     private async Task RevalueAsync()
     {

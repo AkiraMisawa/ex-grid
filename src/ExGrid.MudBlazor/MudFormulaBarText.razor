@@ -2,7 +2,9 @@
    ex-editor box in the bar — the Cell Editor's second surface, so it is painted as the Cell
    Editor's content is, with Material's underline while it takes typing. The core owns the
    box, the keys and the one uncommitted text; this paints the control, reports what is
-   typed, and answers each focus request through the core's focus function. *@
+   typed, and answers each focus request through the core's focus function. The coloured
+   text the core draws goes immediately before it, as the Cell Editor's does (ADR-0057). *@
+@Context.ReferenceText
 <input class="@(Context.ReadOnly ? "mud-ex-formula-bar-text" : "mud-ex-formula-bar-text mud-ex-formula-bar-text-editable")"
        @bind:get="_text.Shown" @bind:set="OnInput" @bind:event="oninput" readonly="@Context.ReadOnly" tabindex="-1" aria-label="@Label"
        @onfocus="OnFocus" />

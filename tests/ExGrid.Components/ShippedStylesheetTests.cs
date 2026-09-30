@@ -69,9 +69,14 @@ public class ShippedStylesheetTests
         // use, reporting the caret with each input and whenever it moves: ADR-0021's notes of
         // ADR-0051's second round), copy and paste (the clipboard), and the two that report a
         // pointer coming to rest, and the capture-phase mousedown and mouseup that keep a press on
-        // the rows in its place among held keys (ADR-0021's note of 2026-09-27). Scrolling is
-        // Blazor's own @onscroll and the gutter is a ResizeObserver, so neither appears here.
-        string[] allowed = ["copy", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "selectionchange"];
+        // the rows in its place among held keys (ADR-0021's note of 2026-09-27). The grid's own
+        // scrolling is Blazor's @onscroll and the gutter is a ResizeObserver, so neither appears
+        // here; scroll is an editor field's, heard while an edit is open so the coloured text
+        // beneath it scrolls with it — the scroll-offset entry on one more element (ADR-0021's
+        // note of ADR-0057, DC-51); and compositionend is the same editor listener hearing an IME
+        // composition end, which comes with no input after it, so the coloured text can show again
+        // (ticket 29, decided with the user 2026-09-30).
+        string[] allowed = ["compositionend", "copy", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -149,8 +154,9 @@ public class ShippedStylesheetTests
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
-        // One attribute of this instance's own root, nothing wider and nothing measured.
-        Assert.Single(Regex.Matches(script.Text, @"new MutationObserver\("));
+        // One attribute of this instance's own root, nothing wider and nothing measured. The
+        // module's other observer is the coloured text's, on one attribute of a layer (DC-51).
+        Assert.Equal(2, Regex.Matches(script.Text, @"new MutationObserver\(").Count);
         Assert.Matches(new Regex(@"revealObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-reveal'\] \}\)"), script.Text);
         // Let go as soon as the write is made or replaced, and with the instance.
         Assert.Matches(new Regex(@"const dropReveal = \(\) => \{[^}]*revealObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
@@ -362,7 +368,7 @@ public class ShippedStylesheetTests
         var noEditReturns = gate.Value.IndexOf("return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';", StringComparison.Ordinal);
         Assert.True(noEditReturns > 0, "the gate's branch for no edit open has changed shape");
         Assert.True(gate.Value.IndexOf("'F4'", StringComparison.Ordinal) > noEditReturns);
-        Assert.Matches(new Regex(@"return claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\) \? 'mode' : null;"), gate.Value);
+        Assert.Matches(new Regex(@"if \(claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\)\) \{\s*return 'mode';\s*\}"), gate.Value);
         // Told by C# with the editing mode, per instance, off until told.
         Assert.Matches(new Regex(@"let cycleReferences = false;"), script.Text);
         Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{[^}]*cycleReferences = cyclesReferences === true;", RegexOptions.Singleline), script.Text);
@@ -419,11 +425,109 @@ public class ShippedStylesheetTests
         // The same call places the selection F4's rewrite answered (ADR-0051, 2026-09-29).
         Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*if \(movedByUser\(input\)\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
             RegexOptions.Singleline), script.Text);
-        // The user's move: a press in an editor surface's text, or a caret key left to it — only
-        // while the field still holds the text it was made in.
+        // The user's move: a press in an editor surface's text, or a caret key left to it or
+        // answered by the listener on an Apple platform (ticket 32) — only while the field still
+        // holds the text it was made in.
         Assert.Matches(new Regex(@"const movedByUser = \(input\) => caretMoved !== null && caretMoved\.input === input && caretMoved\.text === input\.value;"), script.Text);
-        Assert.Equal(3, Regex.Matches(script.Text, @"noteCaretMove\((event\.target|input)\);").Count);
+        Assert.Equal(4, Regex.Matches(script.Text, @"noteCaretMove\((event\.target|input)\);").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), script.Text);
+    }
+
+    [Fact] // ADR-0057 / ADR-0021 / DC-51 / DC-47: the coloured text shows only in the focused surface and while the layer's text is the field's value, one class set, nothing measured
+    public void The_listener_gates_the_coloured_text_on_its_text_and_sets_one_class()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // The comparison: the layer's one attribute against the field's value, never while no
+        // edit is open, only in the surface the edit is in — the field holding DOM focus, as Excel
+        // colours only that one — and never over a field composing. One class, set in one place
+        // and taken away only when the edit closes.
+        Assert.Matches(new Regex(@"field\.classList\.toggle\('ex-reference-text-shown',\s*editing !== 'none' && field === document\.activeElement && composingIn !== field\s*&& layer\.getAttribute\('data-ex-text'\) === field\.value\);"),
+            script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"classList\.toggle\('ex-reference-text-shown'"));
+        Assert.DoesNotMatch(new Regex(@"classList\.add\('ex-reference-text-shown'"), script.Text);
+        Assert.Matches(new Regex(@"field\.classList\.remove\('ex-reference-text-shown'\);"), script.Text);
+        // The layer is the field's own: the element immediately before it, found by the core's
+        // class — never another instance's, never measured.
+        Assert.Matches(new Regex(@"const layer = field\.previousElementSibling;\s*return layer !== null && layer\.classList\.contains\('ex-reference-text'\) \? layer : null;"),
+            script.Text);
+        Assert.Matches(new Regex(@"for \(const layer of root\.getElementsByClassName\('ex-reference-text'\)\)"), script.Text);
+
+        // On each input — from the editor listener itself, which reads the composition off the
+        // event — ...
+        Assert.Matches(new Regex(@"const onEditorInput = \(event\) => \{\s*heardReferenceInput\(event\);"), script.Text);
+        Assert.Matches(new Regex(@"composingIn = event\.isComposing === true \? field : null;"), script.Text);
+        // ...when the layer's text changes: one attribute, in this root, observed only while an
+        // edit is open and let go when it closes or the instance goes...
+        Assert.Matches(new Regex(@"referenceTextObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-text'\], subtree: true \}\);"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"referenceTextObserver\.observe\("));
+        Assert.Matches(new Regex(@"referenceTextObserver\.disconnect\(\);"), script.Text);
+        Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{(?:(?!\n        \},).)*?watchReferenceTexts\(mode !== 'none'\);", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"dispose: \(\) => \{.*?watchReferenceTexts\(false\);.*?root = null;", RegexOptions.Singleline), script.Text);
+        // ...and whenever the selection moves while it is open, as it does when DOM focus moves
+        // from one surface into the other.
+        Assert.Matches(new Regex(@"const onSelectionChange = \(\) => \{\s*if \(watchingReferenceTexts\) \{\s*gateReferenceTexts\(\);\s*\}"), script.Text);
+
+        // The layer's line scrolls with its field: the field's scroll offset read, the line's set
+        // — the scroll-offset entry — on the field's scroll, heard on this root while an edit is
+        // open, and after each comparison.
+        Assert.Equal(2, Regex.Matches(script.Text, @"layer\.firstElementChild\.scrollLeft = field\.scrollLeft;").Count);
+        Assert.Matches(new Regex(@"root\.addEventListener\('scroll', onFieldScroll, true\);"), script.Text);
+        Assert.Matches(new Regex(@"root\.removeEventListener\('scroll', onFieldScroll, true\);"), script.Text);
+
+        // An IME composition's end, which comes with no input after it: heard on this root in the
+        // capture phase while an edit is open, as the field's scroll is, and let go with it. It
+        // clears the composing mark and compares again; nothing else.
+        Assert.Matches(new Regex(@"root\.addEventListener\('scroll', onFieldScroll, true\);\s*root\.addEventListener\('compositionend', onCompositionEnd, true\);"), script.Text);
+        Assert.Matches(new Regex(@"root\.removeEventListener\('scroll', onFieldScroll, true\);\s*root\.removeEventListener\('compositionend', onCompositionEnd, true\);"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"addEventListener\('compositionend'"));
+        Assert.Matches(new Regex(@"const onCompositionEnd = \(event\) => \{\s*const field = event\.target;\s*const layer = [^;]*referenceTextOf\(field\) : null;\s*if \(layer !== null\) \{\s*composingIn = null;\s*gateReferenceText\(field, layer\);\s*\}\s*\};"),
+            script.Text);
+
+        // No layout is read anywhere in the module.
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"),
+            script.Text);
+    }
+
+    [Fact] // ADR-0057 / DC-47 / DC-48: the field's own text is transparent only beside its layer and under the listener's class; the caret and a selection stay
+    public void The_stylesheet_hides_the_fields_text_only_under_the_listeners_class()
+    {
+        var sheet = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
+
+        // Hidden unless the field right after it wears the class; paint only; every space kept.
+        var layer = Regex.Match(sheet, @"\n\.ex-reference-text \{([^}]*)\}");
+        Assert.True(layer.Success, "no .ex-reference-text rule");
+        Assert.Contains("visibility: hidden;", layer.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Contains("pointer-events: none;", layer.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Contains("white-space: pre;", layer.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"\.ex-reference-text:has\(\+ \.ex-reference-text-shown\) \{ visibility: visible; \}"), sheet);
+
+        // Transparent only under the class and beside a layer, the caret in the field's colour,
+        // and a selection drawn by the field in the selection's own colours. A word the spelling
+        // or grammar check marks, which Chrome draws again in its highlight's colour, is the
+        // field's own text as well (DC-48).
+        var transparent = Regex.Matches(sheet, @"(?m)^[^\n{]*\{[^}]*(?<![\w-])(?:-webkit-text-fill-color|color): transparent[^}]*\}")
+            .Select(match => match.Value.Split('{')[0].Trim())
+            .ToList();
+        Assert.Equal(
+            [
+                ".ex-reference-text + .ex-reference-text-shown",
+                ".ex-reference-text + .ex-reference-text-shown::spelling-error, .ex-reference-text + .ex-reference-text-shown::grammar-error",
+            ],
+            transparent);
+        // Every field turns see-through while its layer shows, a Chrome's control included, so a
+        // page that loses the Chrome's stylesheet shows the layer's text rather than nothing
+        // (ADR-0057, "The Wrapper's shape is required…"); the ground is painted beneath the layer.
+        Assert.Matches(new Regex(@"\.ex-reference-text \+ \.ex-reference-text-shown \{ -webkit-text-fill-color: transparent; caret-color: currentColor; background: transparent; \}"), sheet);
+        Assert.DoesNotMatch(new Regex(@"input\.ex-editor\.ex-reference-text-shown"), sheet);
+        Assert.Matches(new Regex(@"\.ex-editor,\s*\.ex-reference-text\.ex-reference-text-cell \{[^}]*background: var\(--ex-editor-background, Canvas\);"), sheet);
+        Assert.Matches(new Regex(@"\.ex-reference-text \+ \.ex-reference-text-shown::selection \{ color: HighlightText; -webkit-text-fill-color: HighlightText; background-color: Highlight; \}"), sheet);
+        Assert.Matches(new Regex(@"::grammar-error \{ color: transparent; \}"), sheet);
+
+        // The core's own Cell Editor and its layer share one rule for box, padding, line and
+        // colours, and the bar's field and its layer one for padding (DC-48).
+        Assert.Matches(new Regex(@"\.ex-editor,\s*\.ex-reference-text\.ex-reference-text-cell \{"), sheet);
+        Assert.Matches(new Regex(@"\.ex-name-box, \.ex-formula-bar-text, \.ex-reference-text\.ex-reference-text-bar \{ padding: 0 var\(--ex-cell-padding-x, 8px\); \}"), sheet);
     }
 
     [Fact] // ADR-0051 second round / DC-31: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys
@@ -439,5 +543,42 @@ public class ShippedStylesheetTests
         // read off the mark the core writes on the list's box, and nothing measured.
         Assert.Matches(new Regex(@"const listShown = \(\) => !!root && root\.querySelector\('\.ex-completion\[data-ex-list\]'\) !== null;"), script.Text);
         Assert.Matches(new Regex(@"const claimed = listShown\(\) \? completionKeys : \(claimedWhile\[editing\] \?\? editingKeys\);"), script.Text);
+    }
+
+    [Fact] // ADR-0010's note of 2026-09-30 / ticket 32 / DC-24: on Apple platforms Home and End left to an editor field are answered by the listener, and on every platform PageUp and PageDown are taken, so nothing scrolls the grid away from an open edit
+    public void On_apple_platforms_the_listener_answers_the_keys_macOS_scrolls_with()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        // Apple platforms, by the same test that makes Meta the Primary Modifier.
+        Assert.Matches(new Regex(@"const metaIsPrimary = /mac\|iphone\|ipad\|ipod/i\.test\(platform\);"), script);
+        // The keys macOS binds to a scroll in a text field (Playwright's macOS key-binding table:
+        // Home, End, PageUp and PageDown scroll; Shift+Home and Shift+End move the selection),
+        // and nothing else.
+        Assert.Matches(new Regex(@"const appleCaretKeys = new Set\(\['Home', 'End', 'Shift\+Home', 'Shift\+End'\]\);"), script);
+        // PageUp and PageDown scroll the grid from an editor field on every platform, and are taken
+        // on every platform (decided with the user, 2026-09-30).
+        Assert.Matches(new Regex(@"const pageKeys = new Set\(\['PageUp', 'PageDown'\]\);"), script);
+        // Only a key the core has not claimed — Home and End in Overwrite and Point stay the
+        // core's — and only in an editor field.
+        Assert.Matches(new Regex(@"if \(claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\)\) \{\s*return 'mode';\s*\}\s*(?://[^\n]*\n\s*)+if \(k\.inEditor\) \{\s*if \(metaIsPrimary && appleCaretKeys\.has\(canonical\)\) \{\s*return 'caret';\s*\}\s*if \(pageKeys\.has\(canonical\)\) \{\s*return 'drop';\s*\}\s*\}\s*return null;"),
+            script);
+        Assert.Single(Regex.Matches(script, @"return 'caret';"));
+        // Answered as Windows and Linux answer them: the caret to the text's start or end, or
+        // the selection extended there from its anchor; the user's own move; the field scrolled
+        // to that end by setting its offset, clamped by the browser. Nothing is read but the
+        // field's value and selection.
+        Assert.Matches(new Regex(@"const placeCaretAtEnd = \(input, k, ownMove = true\) => \{\s*const toEnd = k\.key === 'End';\s*const edge = toEnd \? input\.value\.length : 0;\s*if \(ownMove\) \{\s*noteCaretMove\(input\);\s*\}"), script);
+        // A held Home or End replayed on any platform goes the same way, scrolled to its end: setting
+        // the selection alone moved no view (ticket 32, seen in CI on the Server host).
+        Assert.Matches(new Regex(@"\} else if \(k\.key === 'Home' \|\| k\.key === 'End'\) \{[^}]*placeCaretAtEnd\(input, k, input\.closest\('\.ex-editor'\) !== null\);\s*return true;", RegexOptions.Singleline), script);
+        Assert.Matches(new Regex(@"const anchor = input\.selectionDirection === 'backward' \? input\.selectionEnd : input\.selectionStart;"), script);
+        Assert.Matches(new Regex(@"input\.setSelectionRange\(anchor \?\? edge, edge, 'forward'\);"), script);
+        Assert.Matches(new Regex(@"input\.setSelectionRange\(edge, anchor \?\? edge, 'backward'\);"), script);
+        Assert.Matches(new Regex(@"input\.setSelectionRange\(edge, edge\);\s*\}\s*input\.scrollLeft = toEnd \? Number\.MAX_SAFE_INTEGER : 0;\s*\};"), script);
+        // From the keydown, and for a key held behind a mode change.
+        Assert.Matches(new Regex(@"if \(verdict === 'caret'\) \{[^}]*placeCaretAtEnd\(input, k\);", RegexOptions.Singleline), script);
+        Assert.Matches(new Regex(@"\} else if \(verdict === 'caret'\) \{\s*const input = editorInput\(\);\s*if \(input\) \{\s*placeCaretAtEnd\(input, rebased\);"), script);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 }

@@ -269,10 +269,21 @@ _Avoid_: input mode / edit mode (both read as "editing" and the distinction disa
 
 **Point**:
 The editing state in which the arrow keys and the mouse **point at cells for a Formula** instead
-of committing: an outline moves over the grid and its Reference is written at the caret. It holds
-only while the Consumer says the caret stands where a Reference can go; F2 switches between it and
-Caret. The Selection and the Focus do not move ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
+of committing: a **Reference Outline** moves over the grid and its Reference is written at the
+caret. It holds only while the Consumer says the caret stands where a Reference can go; F2 switches
+between it and Caret. The Selection and the Focus do not move ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
 _Avoid_: reference mode, pick mode
+
+**Reference Outline**:
+The coloured outline drawn over the cells a **Reference** names, for each Reference in the Formula
+being edited, while the text of that Reference wears the same colour in the Cell Editor and the
+Formula Bar. It shows in every editing state while a Formula is open, not only in **Point**; the
+outline Point moves is the Reference Outline of the Reference it is writing. It is gone when the
+edit commits or is cancelled. A structured reference's outline is drawn over the **Linked Table**'s
+column by whichever grid the Consumer shows that table in, told the colour by ExSheet
+([ADR-0057](./docs/adr/0057-references-are-outlined-in-colour-while-a-formula-is-edited.md)).
+_Avoid_: range finder (Excel's name for it; nothing is found), highlight (the word is kept out of
+Selection's vocabulary), pointing outline
 
 **Formula Bar**:
 A band inside the grid's root, above the header, showing the **Name Box** and the Focus cell's

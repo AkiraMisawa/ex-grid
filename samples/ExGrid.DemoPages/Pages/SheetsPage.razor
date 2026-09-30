@@ -1,6 +1,7 @@
 @page "/sheets"
 @using System.Globalization
 @* global::, for the reasons SheetPage.razor gives. *@
+@using global::ExSheet
 @using global::ExSheet.Components
 @using global::ExSheet.Engine
 @using global::ExGrid.Chrome
@@ -22,12 +23,29 @@
     the one being typed in, and Ctrl+Z undoes only the Sheet that has the keyboard.
 </p>
 
+<p>
+    Both Sheets read the page's positions as the Linked Table <code>Positions</code> (ADR-0049), and
+    beneath each is a grid showing them. The page passes each Sheet's word of the columns its Formula
+    reads to the grid beneath that Sheet only, so <code>=SUM(Positions[PV])</code> typed into one
+    outlines the PV column under that one (ADR-0057).
+</p>
+
 <div class="demo-side-by-side">
     <div id="sheet-left">
-        @OnPaper(@<ExSheet @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520" />)
+        @OnPaper(@<ExSheet @ref="_leftSheet" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+                           OnLinkedColumnColoursChanged="OutlineLeft" />)
+        <div id="sheet-left-positions">
+            <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+                    ViewportHeight="200" ViewportWidth="330" OutlinedColumns="_leftOutlined" />
+        </div>
     </div>
     <div id="sheet-right">
-        @OnPaper(@<ExSheet @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520" />)
+        @OnPaper(@<ExSheet @ref="_rightSheet" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+                           OnLinkedColumnColoursChanged="OutlineRight" />)
+        <div id="sheet-right-positions">
+            <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+                    ViewportHeight="200" ViewportWidth="330" OutlinedColumns="_rightOutlined" />
+        </div>
     </div>
 </div>
 
@@ -51,8 +69,36 @@
 
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
 
+    private const string Table = "Positions";
+    private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+
+    // The page's own data, shown by both grids and read by both Sheets (ADR-0049).
+    private sealed record Position(string Id, string Book, double PV);
+
+    private static readonly Position[] Positions =
+    [
+        new("R-1102", "Rates", 1_250),
+        new("R-4471", "FX", 318.25),
+        new("R-5093", "Credit", 97.4),
+    ];
+
+    // Named as the table's columns are declared, so a column a Sheet names is the grid's column of
+    // the same name.
+    private static readonly IReadOnlyList<GridColumn<Position>> PositionColumns =
+    [
+        new("Id", ColumnType.Text, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("Book", ColumnType.Text, p => p.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("PV", ColumnType.Number, p => p.PV, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)),
+            format: v => ((double)v).ToString("N2", CultureInfo.InvariantCulture)),
+    ];
+
     private SheetDocument? _left = Opening("Left", 10);
     private SheetDocument? _right = Opening("Right", 20);
+    private ExSheet? _leftSheet;
+    private ExSheet? _rightSheet;
+    // What each grid outlines: what its own Sheet told, and nothing from the other (ADR-0018).
+    private IReadOnlyList<OutlinedColumn> _leftOutlined = [];
+    private IReadOnlyList<OutlinedColumn> _rightOutlined = [];
     private string _status = "";
 
     // Each Sheet names itself in A1 and holds a number and a Formula over it, so a key that
@@ -63,10 +109,29 @@
         sheet.Enter(CellAddress.Parse("A1"), name);
         sheet.Enter(CellAddress.Parse("B1"), value.ToString(CultureInfo.InvariantCulture));
         sheet.Enter(CellAddress.Parse("C1"), "=B1*2");
+        // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
+        sheet.DeclareLinkedTable(Table, TableColumns);
         return sheet.ToDocument();
     }
 
     protected override void OnInitialized() => Count();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        foreach (var sheet in new[] { _leftSheet, _rightSheet })
+        {
+            if (sheet is not null)
+                await sheet.PushLinkedTableAsync(Table, Positions.Select(p => (IReadOnlyList<Value?>)[Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)]));
+        }
+    }
+
+    private void OutlineLeft(LinkedColumnColours columns) => _leftOutlined = OutlinedOf(columns);
+
+    private void OutlineRight(LinkedColumnColours columns) => _rightOutlined = OutlinedOf(columns);
+
+    private static IReadOnlyList<OutlinedColumn> OutlinedOf(LinkedColumnColours columns) =>
+        [.. columns.Where(c => c.Column.Table == Table).Select(c => new OutlinedColumn(c.Column.Column, c.Colour))];
 
     private void Count() =>
         _status = $"Left: {_left?.Cells.Count ?? 0} cells; right: {_right?.Cells.Count ?? 0} cells.";

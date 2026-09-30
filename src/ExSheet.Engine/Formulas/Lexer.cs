@@ -261,6 +261,40 @@ internal static partial class Lexer
         return match.Success && TryReadReference(match) is not null ? match : null;
     }
 
+    /// <summary>
+    /// The Reference <see cref="MatchReference"/> finds at <paramref name="at"/>, read, and in
+    /// <paramref name="length"/> how many characters it spans; <see langword="null"/> where it finds none.
+    /// </summary>
+    public static Reference? ReadReference(string formula, int at, out int length)
+    {
+        var match = ReferencePattern().Match(formula, at);
+        var reference = match.Success ? TryReadReference(match) : null;
+        length = reference is null ? 0 : match.Length;
+        return reference;
+    }
+
+    /// <summary>
+    /// The structured reference written at <paramref name="at"/> — <c>Table[Column]</c> or
+    /// <c>Table[[Column]]</c> — as <see cref="Tokenize"/> reads one there: the table's name as
+    /// written, the column's with its <c>'</c> escapes read, and how many characters it spans.
+    /// <see langword="null"/> where it reads none, or reads a form it refuses (<c>#All</c>, <c>@</c>).
+    /// </summary>
+    public static (string Table, string Column, int Length)? ReadStructuredReference(string formula, int at)
+    {
+        var name = NamePattern().Match(formula, at);
+        var open = at + name.Length;
+        if (!name.Success || open >= formula.Length || formula[open] != '[') return null;
+        try
+        {
+            var column = ReadStructuredColumn(formula, open, out var after);
+            return (name.Value, column, after - at);
+        }
+        catch (FormulaSyntaxException)
+        {
+            return null;
+        }
+    }
+
     private static Reference? TryReadReference(Match match)
     {
         string? sheet = null;

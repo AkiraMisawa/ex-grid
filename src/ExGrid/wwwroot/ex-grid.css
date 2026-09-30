@@ -284,7 +284,6 @@
     box-sizing: border-box;
     height: 100%;
     margin: 0;
-    padding: 0 var(--ex-cell-padding-x, 8px);
     font: inherit;
     line-height: inherit;
     color: inherit;
@@ -300,6 +299,9 @@
     box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
 }
 .ex-formula-bar-text { flex: 1 1 auto; min-width: 0; }
+/* The text field's padding is the coloured text's beside it too (ADR-0057): one rule, so the
+   two cannot drift. */
+.ex-name-box, .ex-formula-bar-text, .ex-reference-text.ex-reference-text-bar { padding: 0 var(--ex-cell-padding-x, 8px); }
 /* The bar's text field wears the Cell Editor's class — it is the editor's second surface,
    and the key listener knows an editor by it (ADR-0051/0018) — but it is laid out in the
    band, not floated over a cell. */
@@ -393,6 +395,29 @@
    the Selection and the Focus stay where they are — dashed and heavier, so it reads as neither.
    Paint only, like every rectangle here. */
 .ex-point { position: absolute; outline-style: dashed; outline-color: var(--ex-focus-outline, CanvasText); }
+/* Reference Outlines (ADR-0057): the cells each Reference in an edited Formula names, in the
+   colour its text wears. The palette's length is behaviour and lives in C# (seven, as Excel's);
+   its colours are --ex-reference-1 to --ex-reference-7, which a Theme sets, never how many there
+   are (ADR-0027/0029). The defaults are Excel's, as the eighth Windows run read them, over a light
+   ground; over a dark one they are lifted a third of the way to white, which Excel was not seen
+   to do, so that each reads at 3:1 or more there too. Carried as the element's own color, which it
+   has no text to spend on. A solid line over a pale wash of the colour, as Excel's (#ebf0f9 is
+   the first's), with a 1px gap of the cell's own ground between them, as Excel's white gap.
+   The line lies inside the cells, where Excel's lies over the gridline, so that nothing drawn
+   above the overlay can cover part of it (ADR-0057, "deliberately unlike Excel"). The padding is
+   the line and the gap, and it only clips the wash. Paint only, like every rectangle here. */
+.ex-reference-outline { position: absolute; box-sizing: border-box; padding: 3px; outline: 2px solid currentColor; outline-offset: -2px; background: color-mix(in srgb, currentColor 10%, transparent) content-box; }
+/* Point's dashes over the outline of the Reference it writes: in the Focus outline's colour, as
+   Excel lays its active-cell green over the pointed Reference's own line, just inside that line
+   so both show (the eighth Windows run). */
+.ex-point.ex-point-on-reference { outline-offset: -4px; }
+.ex-reference-1 { color: var(--ex-reference-1, light-dark(#326ac7, color-mix(in srgb, #326ac7 67%, white))); }
+.ex-reference-2 { color: var(--ex-reference-2, light-dark(#c0353e, color-mix(in srgb, #c0353e 67%, white))); }
+.ex-reference-3 { color: var(--ex-reference-3, light-dark(#8157b7, color-mix(in srgb, #8157b7 67%, white))); }
+.ex-reference-4 { color: var(--ex-reference-4, light-dark(#007c20, color-mix(in srgb, #007c20 67%, white))); }
+.ex-reference-5 { color: var(--ex-reference-5, light-dark(#b03e84, color-mix(in srgb, #b03e84 67%, white))); }
+.ex-reference-6 { color: var(--ex-reference-6, light-dark(#b64900, color-mix(in srgb, #b64900 67%, white))); }
+.ex-reference-7 { color: var(--ex-reference-7, light-dark(#267392, color-mix(in srgb, #267392 67%, white))); }
 /* A row not yet painted with real data — waiting for the Consumer's Window, or
    deliberately skipped while scrolling fast. One mechanism, so one appearance
    (ADR-0004). It carries no scrollable cells at all: painting them is the cost being
@@ -538,20 +563,26 @@
 .ex-find-outcome { min-height: 1.2em; }
 /* The Cell Editor (ADR-0010): one input floated over the focused cell, never inside a
    row. Its box is the cell's exactly (ADR-0028); font and line height come from the
-   same tokens the cells read, so the text does not jump when editing starts. */
-.ex-editor {
+   same tokens the cells read, so the text does not jump when editing starts. The coloured
+   text beneath the core's own input (ADR-0057) takes the same box, padding, line and colours,
+   from the same rule, so its characters stand where the input's do; it paints the editor's
+   ground, over which the input turns see-through while it shows (below). */
+.ex-editor,
+.ex-reference-text.ex-reference-text-cell {
     position: absolute;
     z-index: 3;
     box-sizing: border-box;
     margin: 0;
     padding: 0 var(--ex-cell-padding-x, 8px);
     border: none;
-    outline: var(--ex-editor-outline, 2px solid Highlight);
-    outline-offset: -1px;
     font: inherit;
     line-height: var(--ex-row-height);
     background: var(--ex-editor-background, Canvas);
     color: var(--ex-editor-color, CanvasText);
+}
+.ex-editor {
+    outline: var(--ex-editor-outline, 2px solid Highlight);
+    outline-offset: -1px;
 }
 /* An edit whose keyboard is elsewhere is told apart (ADR-0018 section 6, ED-27): while DOM focus
    is outside the grid's root, the Cell Editor's outline is 1px wide, in the style and colour
@@ -562,6 +593,85 @@
 .ex-grid:not(:focus-within) .ex-viewport .ex-editor { outline-width: 1px; }
 /* The pinned editor's zero-size sticky anchor — the pinned selection layer's trick. */
 .ex-editor-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
+/* The coloured text (ADR-0057): beneath each editor surface, a layer the core renders with the
+   field's text and each Reference in its colour (.ex-reference-1 to -8). It stands immediately
+   before its field, in the field's box, font and line, and keeps every space the field keeps, so
+   its characters stand where the field's do; the rest is what the browser gives an input and not
+   a div. Paint only: it takes no pointer, and assistive technology reads the field. Hidden unless
+   the field after it wears ex-reference-text-shown, which the editor listener sets only in the
+   surface the edit is in — the field holding DOM focus, as Excel colours only that one — only
+   while the layer's text (data-ex-text) is the field's value, and never during an IME composition
+   (ADR-0021's note of ADR-0057): uncoloured for a moment rather than coloured on the wrong
+   characters. Its line scrolls sideways with the field, and has room to scroll as far. It is
+   painted beneath the field, caret and selection included, whether or not the field is
+   positioned: at -1 it goes under everything its stacking context lays out, and over only that
+   context's own ground — the Cell Editor's box, or the Formula Bar, made one for it here. */
+.ex-reference-text {
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: none;
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+    letter-spacing: normal;
+    word-spacing: normal;
+    text-transform: none;
+    text-indent: 0;
+    text-shadow: none;
+    text-align: start;
+    white-space: pre;
+    pointer-events: none;
+    visibility: hidden;
+}
+.ex-reference-text-line { height: 100%; overflow: hidden; }
+.ex-reference-text-line::after { content: ""; display: inline-block; width: 100%; }
+/* The Reference Point is writing, shown selected (ADR-0051/0057; the eighth Windows run, cases 19
+   to 32): on a grey ground, its text a darker shade of its colour. A look on the layer, never a
+   selection of the field's text, so a key typed next follows the Reference; and only where the
+   core marks it, which it does not for a Reference straight after the text's first character.
+   Excel's ground is #c6c6c6, and its text #0401a2 for the first colour (#326ac7) and #630101 for
+   the second (#c0353e). Approximated: the Reference's own colour mixed 55% toward black gives
+   #1c3a6d and #6a1d22, as dark as Excel's, the blue less saturated. Excel was not seen over a dark
+   ground; there the grey stands as far from the dark Canvas as #c6c6c6 does from white, and the
+   shade is mixed toward white. The shade is the text's fill, so the span's color stays its
+   Reference's, and currentColor reads it — in the default and in a Theme's
+   --ex-reference-pointed-color alike. */
+.ex-reference-text .ex-reference-pointed {
+    background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b));
+    -webkit-text-fill-color: var(--ex-reference-pointed-color, light-dark(color-mix(in srgb, currentColor 55%, black), color-mix(in srgb, currentColor 55%, white)));
+}
+/* A Chrome places the layer inside the core's box, before its control, which fills the box's
+   content (IGridChrome): the layer stands over that content, inside the padding the box has from
+   .ex-editor and .ex-formula-bar-text, with none of its own, as the control has none. The bar's
+   box is laid out in the band, so it is made the layer's containing block, and the band the
+   stacking context both bar layers are painted in; nothing moves. */
+.ex-editor > .ex-reference-text { left: var(--ex-cell-padding-x, 8px); right: var(--ex-cell-padding-x, 8px); }
+.ex-formula-bar > div.ex-editor { position: relative; }
+.ex-formula-bar { isolation: isolate; }
+.ex-reference-text:has(+ .ex-reference-text-shown) { visibility: visible; }
+/* While it shows, the field's own text is transparent: its fill, so its color — and the caret,
+   drawn in it — stay, and a Chrome's own color does not outrank it. Selected text is drawn by
+   the field, in the selection's own colours, so it stays readable. A word the browser's spelling
+   or grammar check marks is the field's own text too: Chrome paints it again through a highlight,
+   in the highlight's color, which neither inherits the field's fill nor takes one of its own, so
+   it stood over the layer's text a second time (DC-48, measured 2026-09-30). Its color is taken
+   away; its underline is not drawn in that color, and stays. Every field turns see-through while
+   its layer shows, a Chrome's control included, whose contract is to have no ground of its own
+   anyway: a page that loses the Chrome's stylesheet then shows the layer's text rather than
+   nothing (ADR-0057, "The Wrapper's shape is required…"). The ground is still painted beneath the
+   layer: by the core's own Cell Editor layer, by the core's box a Chrome's control stands in, and
+   by the Formula Bar. The adjacency is part of each rule: a field whose layer has gone shows its
+   own text whatever it still wears. */
+.ex-reference-text + .ex-reference-text-shown { -webkit-text-fill-color: transparent; caret-color: currentColor; background: transparent; }
+.ex-reference-text + .ex-reference-text-shown::selection { color: HighlightText; -webkit-text-fill-color: HighlightText; background-color: Highlight; }
+.ex-reference-text + .ex-reference-text-shown::spelling-error, .ex-reference-text + .ex-reference-text-shown::grammar-error { color: transparent; }
 /* The completion list and the argument hint (ADR-0051): the editor's Inner Popup, in a box the
    core stands beneath the editor surface, inside the grid's box — its place, its width's clamp
    and its max-height arrive inline (ADR-0027/0040), and contents taller than the room scroll.

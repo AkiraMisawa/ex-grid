@@ -5,11 +5,12 @@ import {
     expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell, expectSelectionIsCell,
 } from './sheet-helpers.mjs';
 
-// The ExGrid declarations of ADR-0050 and ADR-0051 (§26, DC-*), as ExSheet declares them on
+// The ExGrid declarations of ADR-0050, ADR-0051 and ADR-0057 (§26, DC-*), as ExSheet declares them on
 // /sheet, driven with real keys, the real mouse and the real clipboard: completion, Point, the
-// Formula Bar under a delayed circuit, F4 cycling the Reference at the caret, the fill handle, a spilling paste, copy and paste inside
-// the Sheet, undo and redo, the resize grips. The positions grid beside the Sheet declares
-// nothing, and is the "one not declaring" of DC-25. Two ExSheets on one page are on /sheets.
+// Formula Bar under a delayed circuit, F4 cycling the Reference at the caret, the Reference Outlines, the fill handle, a spilling paste, copy and paste inside
+// the Sheet, undo and redo, the resize grips. The positions grid beside the Sheet declares none
+// of them, and is the "one not declaring" of DC-25; it outlines the table's columns the page
+// passes it (SH-31). Two ExSheets on one page are on /sheets.
 
 // Tall enough that every Sheet on the page, Formula Bar to horizontal scrollbar, is inside the
 // window: a pointer below the window's edge reaches nothing, and the edge band sits there.
@@ -737,6 +738,190 @@ test('DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles 
     await expect(bar(grid)).toHaveValue('=A$1+B2');
     expect(await caret(bar(grid))).toBe(4);
     await setRoundTrip(0);
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Reference Outlines (DC-46; ADR-0057). Column A is pinned on /sheet, so an outline over A is
+// painted in the pinned layer of the overlay and one over B and beyond in the scrollable layer.
+
+/** How an outline is painted: its line's style and colour, and the ground it lays over its cells. */
+const paintOf = (locator) => locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { line: style.outlineStyle, colour: style.outlineColor, ground: style.backgroundColor };
+});
+
+test('DC-46: =A1+B2:C3 outlines A1 and B2:C3, each once and in a colour of its own; Escape removes them', async ({ page }) => {
+    const grid = sheet(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=A1+B2:C3');
+    await expect(editor(grid)).toHaveValue('=A1+B2:C3');
+
+    // One element per range, never one per cell (ADR-0008): two in all, over six cells.
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(2);
+    const a1 = grid.locator('.ex-selection-pinned .ex-reference-outline.ex-reference-1');
+    const b2c3 = grid.locator('.ex-selection .ex-reference-outline.ex-reference-2');
+    await expectCovers(a1, grid, 'A1', 'A1');
+    await expectCovers(b2c3, grid, 'B2', 'C3');
+    // Solid over a pale wash of its colour, and the two colours tell the References apart.
+    const first = await paintOf(a1);
+    const second = await paintOf(b2c3);
+    expect(first.line).toBe('solid');
+    expect(second.line).toBe('solid');
+    expect(first.colour).not.toBe(second.colour);
+    expect(first.ground).not.toBe('rgba(0, 0, 0, 0)');
+    // The Focus is still the cell being edited.
+    await expectCovers(grid.locator('.ex-selection .ex-focus'), grid, 'F2', 'F2');
+
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
+});
+
+test('DC-46: a Reference across the pinned boundary is drawn whole in each layer and clipped to its side, as a selected range is (ADR-0008)', async ({ page }) => {
+    const grid = sheet(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=A1:B2');
+    await expect(editor(grid)).toHaveValue('=A1:B2');
+
+    // Column A is pinned on /sheet: one element in each layer, each the whole of A1:B2, each cut
+    // to its own side, so the outline drawn inside the edge has no line down the boundary.
+    const pinned = grid.locator('.ex-selection-pinned .ex-reference-outline.ex-reference-1');
+    const scrollable = grid.locator('.ex-selection .ex-reference-outline.ex-reference-1');
+    await expectCovers(pinned, grid, 'A1', 'B2');
+    await expectCovers(scrollable, grid, 'A1', 'B2');
+    expect(await pinned.evaluate((element) => getComputedStyle(element).clipPath)).toMatch(/^inset\(0(px)? \d/);
+    expect(await scrollable.evaluate((element) => getComputedStyle(element).clipPath)).toMatch(/^inset\(0(px)? 0(px)? 0(px)? \d/);
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
+test('DC-46: =A1+A1 outlines A1 once per Reference, in one colour (the eighth Windows run)', async ({ page }) => {
+    const grid = sheet(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=A1+A1');
+    await expect(editor(grid)).toHaveValue('=A1+A1');
+
+    // Excel draws each Reference's outline, so the wash over A1 is laid twice.
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(2);
+    await expect(grid.locator('.ex-reference-outline.ex-reference-1')).toHaveCount(2);
+    await expectCovers(grid.locator('.ex-reference-outline.ex-reference-1').first(), grid, 'A1', 'A1');
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
+test('DC-46: =, ↓, ↓ outlines the pointed cell in the first colour under dashes in the Focus outline\'s colour, which go once an operator follows; Enter removes them all', async ({ page }) => {
+    const grid = sheet(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await expect(editor(grid)).toHaveValue('=F4');
+
+    // As Excel draws it (the eighth Windows run): F4 has its own Reference Outline, solid in the
+    // first colour over a wash, and Point's dashes lie over it in the Focus outline's colour.
+    const point = grid.locator('.ex-selection .ex-point');
+    await expect(point).toHaveClass(/\bex-point-on-reference\b/);
+    await expectCovers(point, grid, 'F4', 'F4');
+    const f4 = grid.locator('.ex-selection .ex-reference-outline.ex-reference-1');
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(1);
+    await expectCovers(f4, grid, 'F4', 'F4');
+    const pointed = await paintOf(point);
+    const outlined = await paintOf(f4);
+    const focus = await paintOf(grid.locator('.ex-selection .ex-focus'));
+    expect(pointed.line).toBe('dashed');
+    expect(pointed.colour).toBe(focus.colour);
+    expect(outlined.line).toBe('solid');
+    expect(outlined.colour).not.toBe(focus.colour);
+    expect(outlined.ground).not.toBe('rgba(0, 0, 0, 0)');
+
+    // An operator ends pointing: the dashes go, F4 keeps its outline in the same colour, and the
+    // next ↓ points afresh from the edited cell, in the second colour.
+    await page.keyboard.type('+');
+    await expect(point).toHaveCount(0);
+    await expectCovers(f4, grid, 'F4', 'F4');
+    expect((await paintOf(f4)).colour).toBe(outlined.colour);
+    await page.keyboard.press('ArrowDown');
+    await expect(editor(grid)).toHaveValue('=F4+F3');
+    await expectCovers(point, grid, 'F3', 'F3');
+    await expectCovers(grid.locator('.ex-selection .ex-reference-outline.ex-reference-2'), grid, 'F3', 'F3');
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(2);
+
+    await page.keyboard.press('Enter');
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
+    await expect(grid.locator('.ex-point')).toHaveCount(0);
+});
+
+// ---------------------------------------------------------------------------------------------
+// A Linked Table's columns, outlined in the grid that shows them (SH-31, DC-50; ADR-0057). The
+// Sheet tells the page which of the table's columns the Formula being edited reads, and in which
+// colour; the page passes that to the positions grid beside it, which outlines each column over
+// all its rows. The positions grid holds no Selection and no edit for it, and its five rows are
+// all painted.
+
+const positionsGrid = (page) => page.locator('#sheet-positions .ex-grid');
+
+test('SH-31/DC-50: =A1+SUM(Positions[PV]) outlines the positions grid\'s PV column in the colour Positions[PV] was given; Escape removes it', async ({ page }) => {
+    const grid = sheet(page);
+    const positions = positionsGrid(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=A1+SUM(Positions[PV])');
+    await expect(editor(grid)).toHaveValue('=A1+SUM(Positions[PV])');
+
+    // A1 comes first and takes the first colour, on the Sheet. Positions[PV] takes the second, and
+    // its outline is in the positions grid, over the PV column's body, first row to last: never
+    // on the Sheet, which does not show the table.
+    const pv = positions.locator('.ex-reference-outline');
+    await expect(pv).toHaveCount(1);
+    await expect(pv).toHaveClass(/\bex-reference-2\b/);
+    await expectCovers(pv, positions, 'C1', 'C5');
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(1);
+    await expect(grid.locator('.ex-reference-outline')).toHaveClass(/\bex-reference-1\b/);
+    // Painted as a Reference Outline is — solid, over a wash — and in a colour of its own.
+    const column = await paintOf(pv);
+    const a1 = await paintOf(grid.locator('.ex-reference-outline'));
+    expect(column.line).toBe('solid');
+    expect(column.ground).not.toBe('rgba(0, 0, 0, 0)');
+    expect(column.colour).not.toBe(a1.colour);
+    // The positions grid was not selected or edited for it.
+    await expect(positions.locator('.ex-range, .ex-focus, .ex-editor')).toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(positions.locator('.ex-reference-outline')).toHaveCount(0);
+    await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
+});
+
+test('SH-31/DC-50: each column read is outlined once in its colour, whatever the Formula\'s casing; Enter removes them all', async ({ page }) => {
+    const grid = sheet(page);
+    const positions = positionsGrid(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=XLOOKUP("R-4471", positions[id], Positions[PV])+SUM(POSITIONS[pv])');
+    await expect(editor(grid)).toHaveValue('=XLOOKUP("R-4471", positions[id], Positions[PV])+SUM(POSITIONS[pv])');
+
+    // Id first, PV second; PV read twice is outlined once. Book is not read.
+    await expect(positions.locator('.ex-reference-outline')).toHaveCount(2);
+    await expectCovers(positions.locator('.ex-reference-outline.ex-reference-1'), positions, 'A1', 'A5');
+    await expectCovers(positions.locator('.ex-reference-outline.ex-reference-2'), positions, 'C1', 'C5');
+
+    await page.keyboard.press('Enter');
+    await expect(editor(grid)).toHaveCount(0);
+    // 318.25 + 1189.4: the Formula reads the table the grid shows.
+    await expect(cell(grid, 'F2')).toHaveText('1507.65');
+    await expect(positions.locator('.ex-reference-outline')).toHaveCount(0);
+});
+
+test('SH-31: a table or column not declared outlines nothing in the positions grid', async ({ page }) => {
+    const grid = sheet(page);
+    const positions = positionsGrid(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=B2+SUM(Nope[PV])+SUM(Positions[Nope])');
+    await expect(editor(grid)).toHaveValue('=B2+SUM(Nope[PV])+SUM(Positions[Nope])');
+    // B2 is outlined on the Sheet, in the first colour, and the two that name nothing take none.
+    await expect(grid.locator('.ex-reference-outline.ex-reference-1')).toHaveCount(1);
+    await expect(positions.locator('.ex-reference-outline')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
 });

@@ -96,3 +96,12 @@ arrive.
   Excel refuses such a Formula on entry. ExSheet shows `#NAME?` (no such table) or `#REF!` (no
   such column) instead, because a Linked Table can be declared after the Sheet Document is opened.
   Refusing on entry would make a saved document impossible to reopen before its tables arrive.
+
+## Outlined by whoever shows the table *(2026-09-29, decided with the user)*
+
+While a Formula that reads a Linked Table is edited, **ExSheet tells its Consumer which of the
+table's columns the Formula reads, and in which colour**, so that the grid showing the table can
+outline them as Excel outlines a Table's column
+([ADR-0057](./0057-references-are-outlined-in-colour-while-a-formula-is-edited.md)). Rule 1 holds:
+ExSheet reaches no other instance. The Consumer passes the notification on, because only it knows
+which grid shows the table, and whether that grid shows all of the rows the Formula reads.

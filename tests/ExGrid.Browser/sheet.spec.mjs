@@ -218,6 +218,96 @@ test('SH-18/DC-11: the Name Box pressed with an edit open commits it, then navig
     await expect(cell(grid, 'F3')).toHaveText('1');
 });
 
+// Home and End in Caret move the caret, in the Cell Editor and in the Formula Bar (ADR-0010). On
+// macOS the browser binds them to scrolling the document instead, and PageUp and PageDown to
+// scrolling a page: the grid scrolled away from the open edit, the edited cell left the painted
+// rows, and the Cell Editor went, DOM focus with it (ticket 32). There the listener answers them.
+// On Windows and Linux the browser does it, and this test holds as it stands.
+const LONG_TEXT = 'The quantity and the price are both entered before the amount of this line is worked out, '
+    + 'and the discount in the next column is checked against the terms agreed for this book';
+
+/** Where the edit is: the field's selection and scroll, and whether the grid or the page moved. */
+const whereTheEditIs = (field) => field.evaluate((input) => {
+    const scroller = input.closest('.ex-grid').querySelector(':scope > .ex-scroller');
+    return {
+        focused: document.activeElement === input,
+        selection: [input.selectionStart, input.selectionEnd],
+        scrolled: input.scrollLeft,
+        grid: [scroller.scrollTop, scroller.scrollLeft],
+        page: document.scrollingElement.scrollTop,
+    };
+});
+
+for (const surface of ['cell', 'bar']) {
+    test(`ticket 32/ADR-0010: in Caret in the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'}, Home and End move the caret, with Shift extend the selection, and nothing scrolls the grid away`, async ({ page }) => {
+        const grid = sheet(page);
+        // A long text far down the Sheet, where the grid has room to scroll either way.
+        await goTo(grid, 'F200');
+        await page.keyboard.press('F2');
+        await expect(editor(grid)).toBeFocused();
+        await page.keyboard.insertText(LONG_TEXT);
+        await expect(editor(grid)).toHaveValue(LONG_TEXT);
+        await page.keyboard.press('Enter');
+        await expect(editor(grid)).toHaveCount(0);
+        await goTo(grid, 'F200');
+        let field;
+        if (surface === 'cell') {
+            await page.keyboard.press('F2');
+            field = editor(grid);
+        } else {
+            await clickBarEnd(grid);
+            field = bar(grid);
+        }
+        await expect(field).toBeFocused();
+        await expect(field).toHaveValue(LONG_TEXT);
+        // The edit is open before the first key. The bar shows the Focus cell's text before any
+        // edit, so the value alone does not say so. On a circuit the edit a press into the bar
+        // opens lands a round trip later, and writing the field then puts the caret at the end and
+        // the view back at the start. End pressed before that measured the write, not the key
+        // (seen in CI on the Server host, Linux, where the browser moves the caret itself).
+        await expect(grid).toHaveClass(/ex-editing/);
+        // F2 leaves the caret at the end; a press into the bar's text, where the press was.
+        const end = LONG_TEXT.length;
+        const { grid: gridAt, page: pageAt } = await whereTheEditIs(field);
+
+        const expectAt = async (selection, scrolled) => {
+            await expect.poll(async () => {
+                const now = await whereTheEditIs(field);
+                return {
+                    focused: now.focused,
+                    selection: now.selection,
+                    scrolled: scrolled === 'start' ? now.scrolled === 0 : now.scrolled > 0,
+                    grid: now.grid,
+                    page: now.page,
+                };
+            }).toEqual({ focused: true, selection, scrolled: true, grid: gridAt, page: pageAt });
+            await expect(grid).toHaveClass(/ex-editing/);
+        };
+        await page.keyboard.press('End');
+        await expectAt([end, end], 'end');
+        await page.keyboard.press('Home');
+        await expectAt([0, 0], 'start');
+        await page.keyboard.press('Shift+End');
+        await expectAt([0, end], 'end');
+        await page.keyboard.press('End');
+        await page.keyboard.press('Shift+Home');
+        await expectAt([0, end], 'start');
+        await page.keyboard.press('End');
+        await expectAt([end, end], 'end');
+        // PageUp and PageDown move no caret in a one-line field, and a browser would scroll the
+        // grid with them. The listener takes them while an edit is open, on every platform
+        // (decided with the user, 2026-09-30), so nothing moves.
+        await page.keyboard.press('PageUp');
+        await page.keyboard.press('PageDown');
+        await expectAt([end, end], 'end');
+
+        // The edit is still the one opened: Escape cancels it where it stands.
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expectFocusAt(grid, 'F200');
+    });
+}
+
 test('SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commits and cancels once', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'E3');
