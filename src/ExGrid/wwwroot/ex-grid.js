@@ -9,6 +9,8 @@
 // is pointed at through a Pointing Scope, dispatching one event, `ex-press-handed-on`, on the root
 // of the grid that points, and the listener for that event on each root, which gives the press
 // its place among the keys held there (ADR-0058, "On a circuit"; ADR-0021's note of 2026-09-30);
+// that same mousedown and mouseup, and the keydown, selecting the Name Box's text for the press
+// that gives it the keyboard (ADR-0051, ticket 78);
 // and the editor listener keeping the coloured text beneath a field honest (ADR-0057). Anything
 // else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
 // ADR.
@@ -433,6 +435,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // this report before it asks anything about the new text.
     const onEditorInput = (event) => {
         heardReferenceInput(event);
+        // Text put into the Name Box without a key — pasted from a menu, dropped — is the user's,
+        // and the first key after it types on (nameBoxSelected).
+        if (event.target === nameBoxSelected) {
+            nameBoxSelected = null;
+        }
         const input = event.target;
         noteSurface(input);
         if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
@@ -587,6 +594,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         staleField = field;
         return ++staleMarks;
     };
+
+    // This grid's Name Box (ADR-0051): the built-in input, or a Chrome's control inside the core's
+    // box — never one of a grid nested in a cell — while it takes typing.
+    const ownNameBox = (element) => (element instanceof HTMLInputElement && root !== null
+        && element.closest('.ex-name-box')?.closest('.ex-grid') === root && !element.readOnly && !element.disabled
+        ? element : null);
+    // A press that gives the Name Box the keyboard selects its whole text, as Excel's does, so what
+    // is typed replaces the address shown (ADR-0051, decided with the user 2026-10-01; ticket 78).
+    // The press keeps its default, which gives the field the keyboard and puts the caret where it
+    // landed; its release selects the text, and takes the release's default, which would put the
+    // caret back there. No focus is moved from here. A press into the Name Box while it holds the
+    // keyboard is the field's own: it places the caret, and a drag selects.
+    let nameBoxPressed = null;
+    // The Name Box so selected, until the first key, input or press after it. A render that renames
+    // it meanwhile — the commit the press made, the pointed cell giving way to the Focus, or a render
+    // a round trip behind the press on a circuit — writes the new name over the selection, and the
+    // browser leaves the caret after it: the first key selects the whole of it again (onKeyDown).
+    let nameBoxSelected = null;
 
     // Whether the editor holds DOM focus. Until it does, a key typed with editing on lands
     // on the root, where no editing mode claims a printable key — it would be lost.
@@ -982,6 +1007,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         // A key typed in an editor surface: that surface holds the keyboard.
         noteSurface(event.target);
+        // The first key after a press selected the Name Box's text replaces the whole name, whatever
+        // a render has written over that selection since (nameBoxSelected) — an IME's first
+        // composing key too, so it is done before those are let through.
+        if (nameBoxSelected !== null) {
+            if (event.target === nameBoxSelected) {
+                nameBoxSelected.select();
+            }
+            nameBoxSelected = null;
+        }
         // Mid-composition an IME owns Enter, Escape and the arrows — they choose and
         // commit a candidate. Taking them there breaks typing in any language that needs
         // one, and the grid would move under a half-finished word.
@@ -1399,6 +1433,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (event.target instanceof Element && event.target.closest('.ex-formula-bar') !== null) {
             staleField = null;
         }
+        // A press that gives the Name Box the keyboard has its text selected at its release
+        // (nameBoxPressed).
+        const nameBox = event.button === 0 && !replaying ? ownNameBox(event.target) : null;
+        nameBoxPressed = nameBox !== document.activeElement ? nameBox : null;
+        nameBoxSelected = null;
         // A press into an editor surface puts the keyboard there.
         noteSurface(event.target);
         // A press in an editor surface's text puts the caret where it lands: the user's move.
@@ -1491,6 +1530,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // (holdBehindPress).
         if (!replaying) {
             askAboutPress();
+        }
+        // The press gave the Name Box the keyboard: its whole text is selected now, and stays so
+        // (nameBoxPressed).
+        const nameBox = nameBoxPressed;
+        nameBoxPressed = null;
+        if (nameBox !== null && event.button === 0 && !replaying && document.activeElement === nameBox) {
+            event.preventDefault();
+            nameBox.select();
+            nameBoxSelected = nameBox;
         }
         if (!core || replaying || !held.some((k) => k.press === 'mousedown')) {
             return;
@@ -2025,6 +2073,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('paste', onPaste);
             lastSurface = null;
             staleField = null;
+            nameBoxPressed = null;
+            nameBoxSelected = null;
             // A press still to be asked about has no core left to answer it: the keys held behind
             // it are let go with the rest.
             pressToAsk?.resolve();
