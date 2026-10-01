@@ -1,5 +1,7 @@
 using System.Globalization;
 using Bunit;
+using ExGrid.Keys;
+using ExGrid.Selection;
 using ExSheet.Components.Tests.Support;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components.Web;
@@ -28,6 +30,40 @@ public class FormatKeyTests : SheetTestContext
         cut.Instance.CellFormatAt(CellAddress.Parse(address));
 
     private static string Notice(IRenderedComponent<ExSheet> cut) => cut.Find(".ex-sheet-notice").TextContent;
+
+    private static readonly GridExtent SheetExtent = new(Sheet.RowCount, Sheet.ColumnCount);
+
+    private static CellPosition At(string address)
+    {
+        var at = CellAddress.Parse(address);
+        return new CellPosition(at.Row, at.Column);
+    }
+
+    /// <summary>The Selection the grid holds after a press on <paramref name="focus"/> and a Shift+press on <paramref name="extent"/>.</summary>
+    private static GridSelection Selected(string focus, string? extent = null)
+    {
+        var selection = GridSelection.Empty.Click(At(focus), SheetExtent);
+        return extent is null ? selection : selection.ExtendTo(At(extent), SheetExtent);
+    }
+
+    /// <summary>
+    /// A declared key as the grid raises it, carrying <paramref name="selection"/> as the grid holds
+    /// it at the key — raised straight to ExSheet, so that ExSheet has not been told that Selection:
+    /// the order a circuit gives when the key reaches the core before the acknowledgement of the
+    /// render after which the grid raises SelectionChanged.
+    /// </summary>
+    private static Task RaiseKeyAsync(IRenderedComponent<ExSheet> cut, string key, GridSelection selection, bool editOpen = false)
+    {
+        var grid = Grid(cut);
+        return grid.InvokeAsync(() => grid.Instance.OnDeclaredKey.InvokeAsync(new GridDeclaredKeyPress(key, editOpen, selection, 0)));
+    }
+
+    /// <summary>The selection notification the grid raises after its render, arriving late.</summary>
+    private static Task NotifyAsync(IRenderedComponent<ExSheet> cut, GridSelection selection)
+    {
+        var grid = Grid(cut);
+        return grid.InvokeAsync(() => grid.Instance.SelectionChanged.InvokeAsync(selection));
+    }
 
     private static bool FontPart(CellFont font, string part) => part switch
     {
@@ -164,6 +200,63 @@ public class FormatKeyTests : SheetTestContext
         await PressAsync(cut, "b", ctrl: true);
 
         Assert.False(cut.Instance.CanUndo);
+    }
+
+    [Fact] // ADR-0050 item 14 / ADR-0063, SH-42 (case 17): a key acts on the Selection the grid held at the key, though ExSheet has not heard it yet — on a circuit SelectionChanged lands after the next key
+    public async Task A_key_formats_the_selection_it_carries_before_exsheet_hears_it()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderSheet(ps => ps
+            .Add(s => s.Document, DocumentIn("en-US", ("A1", "abc"), ("A2", "def")))
+            .Add(s => s.SelectionChanged, selections.Add));
+        await GoToAsync(cut, "A2");
+        var told = selections.Count;
+
+        // Shift+ArrowUp from A2 reached the grid; its notification has not reached ExSheet.
+        await RaiseKeyAsync(cut, "Control+b", Selected("A2", "A1"));
+
+        // Focus A2 (plain) over A1:A2: both bold, as one step — not A2 alone.
+        Assert.True(FormatAt(cut, "A1").Font.Bold);
+        Assert.True(FormatAt(cut, "A2").Font.Bold);
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.False(FormatAt(cut, "A1").Font.Bold);
+        Assert.False(FormatAt(cut, "A2").Font.Bold);
+        Assert.False(cut.Instance.CanUndo);
+        // ExSheet relays what the grid raises, and raises nothing of its own for the key.
+        Assert.Equal(told, selections.Count);
+    }
+
+    [Fact] // ADR-0050 item 14 / ADR-0063, SH-45: Ctrl+1 opens Format Cells over the Selection it carries, and the late notification naming that Selection leaves it open
+    public async Task Ctrl_1_opens_format_cells_over_the_selection_it_carries()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-US", ("A1", "abc"), ("A2", "def"))));
+        await GoToAsync(cut, "A2");
+        var selection = Selected("A2", "A1");
+
+        await RaiseKeyAsync(cut, "Control+1", selection);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".ex-format-cells")));
+        await NotifyAsync(cut, selection);
+
+        Assert.Single(cut.FindAll(".ex-format-cells"));
+        await cut.FindAll(".ex-format-cells-tab").Single(t => t.TextContent == "Font").ClickAsync(new MouseEventArgs());
+        await cut.FindAll(".ex-format-cells-font-styles label").Single(l => l.TextContent.Trim() == "Bold")
+            .QuerySelector("input")!.ChangeAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "on" });
+        await cut.Find("form.ex-format-cells").SubmitAsync();
+        Assert.True(FormatAt(cut, "A1").Font.Bold);
+        Assert.True(FormatAt(cut, "A2").Font.Bold);
+    }
+
+    [Fact] // ADR-0063 / SH-45: a notification naming another Selection still ends Format Cells, as a Selection moved under it does
+    public async Task A_notification_naming_another_selection_still_ends_format_cells()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "B2");
+        await RaiseKeyAsync(cut, "Control+1", Selected("B2"));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".ex-format-cells")));
+
+        await NotifyAsync(cut, Selected("C3"));
+
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-format-cells")));
     }
 
     // ---- The Number Formats (cases 18 to 20) ----
@@ -331,7 +424,7 @@ public class FormatKeyTests : SheetTestContext
 
         // The grid raises the key as though its edit had ended, as it does in the render after a
         // parameter change discarded the edit, before ExSheet has heard the end.
-        await grid.InvokeAsync(() => grid.Instance.OnDeclaredKey.InvokeAsync(new global::ExGrid.Keys.GridDeclaredKeyPress("Control+b", false)));
+        await RaiseKeyAsync(cut, "Control+b", Selected("A1"));
 
         Assert.Single(refusals);
         Assert.False(FormatAt(cut, "A1").Font.Bold);

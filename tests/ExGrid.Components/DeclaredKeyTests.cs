@@ -99,7 +99,7 @@ public class DeclaredKeyTests : GridTestContext
         await PressAsync(cut, "b", ctrl: true);
         await PressAsync(cut, "B", ctrl: true); // CapsLock
 
-        Assert.Equal([new GridDeclaredKeyPress("Control+b", false), new GridDeclaredKeyPress("Control+B", false)], raised);
+        Assert.Equal([("Control+b", false), ("Control+B", false)], raised.Select(r => (r.Key, r.EditOpen)));
         Assert.Equal(told, selections.Count);
         Assert.Empty(cut.FindAll(".ex-editor"));
         Assert.Equal(counts, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToList());
@@ -128,7 +128,7 @@ public class DeclaredKeyTests : GridTestContext
         await PressAsync(cut, "b", meta: true, metaIsPrimary: true);
         await PressAsync(cut, "b", meta: true, metaIsPrimary: false);
 
-        Assert.Equal([new GridDeclaredKeyPress("Control+b", false)], raised);
+        Assert.Equal([("Control+b", false)], raised.Select(r => (r.Key, r.EditOpen)));
     }
 
     [Fact] // ADR-0050 item 14 / DC-57: while an edit is open, a declared key is raised with the edit open, and the edit stays as it was
@@ -142,7 +142,7 @@ public class DeclaredKeyTests : GridTestContext
 
         await PressInEditorAsync(cut, "b", "Row 000000 x", ctrl: true);
 
-        Assert.Equal([new GridDeclaredKeyPress("Control+b", true)], raised);
+        Assert.Equal([("Control+b", true)], raised.Select(r => (r.Key, r.EditOpen)));
         Assert.Equal("Row 000000 x", cut.Find(".ex-editor").GetAttribute("value"));
         // Still open: Escape cancels it, and the cell keeps its value.
         await PressInEditorAsync(cut, "Escape", "Row 000000 x");
@@ -160,8 +160,63 @@ public class DeclaredKeyTests : GridTestContext
 
         await PressInEditorAsync(cut, "b", "q", ctrl: true);
 
-        Assert.Equal([new GridDeclaredKeyPress("Control+b", true)], raised);
+        Assert.Equal([("Control+b", true)], raised.Select(r => (r.Key, r.EditOpen)));
         Assert.Equal("q", cut.Find(".ex-editor").GetAttribute("value"));
+    }
+
+    [Fact] // ADR-0050 item 14 / ADR-0011: a declared key carries the Selection as the grid holds it at the key, and the version it is written in
+    public async Task A_declared_key_carries_the_selection_at_the_key()
+    {
+        var raised = new List<GridDeclaredKeyPress>();
+        var selections = new List<GridSelection>();
+        var cut = RenderGrid(Bold, raised, selections);
+        await ClickCellAsync(cut, 50, 30);
+        await PressAsync(cut, "ArrowDown", shift: true);
+
+        await PressAsync(cut, "b", ctrl: true);
+
+        var press = Assert.Single(raised);
+        Assert.Equal(selections[^1], press.Selection);
+        Assert.Equal(new SelectionRange(1, 0, 2, 1), Assert.Single(press.Selection.Ranges));
+        Assert.Equal(new CellPosition(1, 0), press.Selection.Focus);
+        Assert.Equal(0, press.RowSequenceVersion);
+    }
+
+    [Fact] // ADR-0050 item 14: the Selection a key carries is the grid's at the key, though SelectionChanged for the move before it has not landed yet — as on a circuit, where it is raised a round trip later
+    public async Task A_declared_key_carries_a_selection_the_consumer_has_not_heard_yet()
+    {
+        var raised = new List<GridDeclaredKeyPress>();
+        var selections = new List<GridSelection>();
+        var answer = new TaskCompletionSource();
+        // A Window of twenty rows in a result of a thousand: Ctrl+Shift+End reveals the last row,
+        // the grid asks for it, and until the Consumer has answered, the after-render path that
+        // raises SelectionChanged waits behind the Range Request — the order a circuit gives when
+        // the next key reaches the core before the render's acknowledgement.
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.TotalCount, 1000)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.DeclaredKeys, Bold)
+            .Add(g => g.OnDeclaredKey, raised.Add)
+            .Add(g => g.SelectionChanged, selections.Add)
+            .Add(g => g.OnRangeNeeded, (Func<RowRange, Task>)(_ => answer.Task)));
+        await ClickCellAsync(cut, 50, 30);
+        var heard = selections.Count;
+
+        await PressAsync(cut, "ArrowDown", ctrl: true, shift: true);
+        await PressAsync(cut, "b", ctrl: true);
+
+        Assert.Equal(heard, selections.Count);
+        var press = Assert.Single(raised);
+        Assert.Equal(new SelectionRange(1, 0, 999, 1), Assert.Single(press.Selection.Ranges));
+        Assert.Equal(new CellPosition(1, 0), press.Selection.Focus);
+
+        // Answered, the notification lands, naming the Selection the key already carried.
+        await cut.InvokeAsync(answer.SetResult);
+        Assert.Equal(press.Selection, selections[^1]);
     }
 
     [Fact] // ADR-0050 item 14 / ADR-0010 / DC-57: a declaration naming a key the core answers itself is refused by name

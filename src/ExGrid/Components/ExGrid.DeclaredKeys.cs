@@ -24,11 +24,14 @@ public partial class ExGrid<TRow>
     [Parameter] public IReadOnlyCollection<string>? DeclaredKeys { get; set; }
 
     /// <summary>
-    /// A declared key, pressed (ADR-0050, item 14): the key as it was declared and whether an
-    /// edit was open. Raised and not interpreted — the grid moves nothing, opens nothing and
-    /// leaves an open edit as it was, its text and caret included; while one is open, the
-    /// Consumer decides what the key does. Required with <see cref="DeclaredKeys"/>: a key
-    /// claimed for nobody would be a key taken from the page for nothing.
+    /// A declared key, pressed (ADR-0050, item 14): the key as it was declared, whether an edit
+    /// was open, and the Selection as the grid holds it at the key, with the Row Sequence Version
+    /// it is written in. A key that acts on the Selection acts on that one: the
+    /// <see cref="SelectionChanged"/> for a move made just before the key can arrive after it on a
+    /// circuit. Raised and not interpreted — the grid moves nothing, opens nothing and leaves an
+    /// open edit as it was, its text and caret included; while one is open, the Consumer decides
+    /// what the key does. Required with <see cref="DeclaredKeys"/>: a key claimed for nobody would
+    /// be a key taken from the page for nothing.
     /// </summary>
     [Parameter] public EventCallback<GridDeclaredKeyPress> OnDeclaredKey { get; set; }
 
@@ -76,7 +79,7 @@ public partial class ExGrid<TRow>
     {
         if (!_declared.Contains(canonical))
             return false;
-        await OnDeclaredKey.InvokeAsync(new GridDeclaredKeyPress(canonical, editOpen));
+        await OnDeclaredKey.InvokeAsync(new GridDeclaredKeyPress(canonical, editOpen, _selection.Selection, _sequenceVersion));
         return true;
     }
 }

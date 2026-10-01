@@ -106,3 +106,35 @@ eleventh Windows run settled" sums it up.
   It covers the toggles, the toggle over a range, the Ctrl+Shift characters, and Ctrl+U with an
   edit open. Edge and the Server host are left to CI.
 
+
+*(2026-10-01, a fix found on the Server host.)* `format-keys.spec.mjs`, "the toggle follows the
+Focus cell over a range", failed every time on the Server host. Ctrl+B pressed straight after
+Shift+ArrowUp bolded the Focus cell alone.
+
+- **The cause.** The grid raises `SelectionChanged` from after the render that shows a move. On a
+  circuit, that is a round trip later, so the next key reached ExSheet first. `OnFormatKeyAsync`
+  read the Selection ExSheet had last heard, and formatted fewer cells than were selected,
+  saying nothing. Ctrl+1 opened Format Cells over that same stale Selection.
+- **The fix.**
+  - `GridDeclaredKeyPress` carries the Selection as the grid holds it at the key, and the Row
+    Sequence Version it is written in: `GridDeclaredKeyPress(string Key, bool EditOpen,
+    GridSelection Selection, int RowSequenceVersion)`.
+  - ExSheet adopts that Selection before it formats or opens Format Cells.
+  - The late `SelectionChanged` then names the Selection ExSheet already holds. ExSheet ends
+    Format Cells only for a Selection that moved: the same notification would otherwise close the
+    Format Cells Ctrl+1 had just opened.
+- **Layer 2.**
+  - In the core, a Range Request the Consumer has not answered holds the selection notification
+    back, as a circuit does. Ctrl+B then carries the extended Selection before the Consumer has
+    heard it.
+  - In ExSheet, a key carries a Selection ExSheet has not heard. Ctrl+B formats it, Ctrl+1 opens
+    over it, and the late notification leaves Format Cells open. Both tests fail without the fix.
+- **Layer 3.** `format-keys.spec.mjs` and `format-cells.spec.mjs` on Chrome, headless: 14 of 14 on
+  each host.
+- **Still read from the last Selection heard.** The same race reaches these, and none has a
+  one-line fix:
+  - A Consumer's own commands (`SetCellFormatAsync` and its shorthands, `OpenFormatCellsAsync`)
+    act on the Selection ExSheet last heard. A button pressed within a round trip of a keyboard
+    move would act on the earlier one.
+  - The Context Menu's "Format Cells…". Its context carries the ranges but not the Focus.
+  - Grouping the columns of a whole-column resize into one undo step.

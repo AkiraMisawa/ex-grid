@@ -181,10 +181,14 @@
         // No receiver: a selection change re-renders the grid, not this component.
         _selectionChanged = new EventCallback<GridSelection>(null, (Func<GridSelection, Task>)(selection =>
         {
+            // A formatting key adopts the Selection it carries before this notification lands
+            // on a circuit (OnFormatKeyAsync), so the notification can name the Selection already
+            // held: that is no move.
+            var moved = !selection.Equals(_selection);
             _selection = selection;
             // Format Cells shows the Selection it opened over and sets what OK names on the
             // Selection: a Selection moved under it, by the Name Box or a Consumer, ends it.
-            if (_formatCells is not null) _ = InvokeAsync(EndFormatCellsAsync);
+            if (moved && _formatCells is not null) _ = InvokeAsync(EndFormatCellsAsync);
             // A selection change is the user's own action, and clears the notice — except the
             // move that completes the commit gesture whose refusal the notice reports.
             if (_noticeOutlivesCommitMove) _noticeOutlivesCommitMove = false;
@@ -525,11 +529,16 @@
     /// is refused as the others are: Excel opens a Font-only Format Cells there, for rich text
     /// ExSheet does not have (ADR-0063, case 21). ExSheet hears an edit end a render late when a
     /// parameter change discarded it (ADR-0050 section 6), so its own word counts as well as the
-    /// grid's.
+    /// grid's. The key acts on the Selection the grid held at the key, which it carries: the grid
+    /// raises a move after the render that shows it, a round trip later on a circuit, and a key
+    /// pressed straight after Shift+arrow arrives first. Formatted from the Selection last heard,
+    /// fewer cells than are selected would change, with nothing to say so.
     /// </summary>
     private async Task OnFormatKeyAsync(GridDeclaredKeyPress press)
     {
         if (SheetFormatKeys.KindOf(press.Key) is not { } kind) return;
+        // Rows are places, so the Selection is written in version 0 (ADR-0046).
+        if (press.RowSequenceVersion == 0) _selection = press.Selection;
         if (press.EditOpen || IsEditing)
         {
             var refusal = new SheetRefusal(SheetRefusalReason.EditIsOpen, SheetWords.FormatKeyWhileEditing);
