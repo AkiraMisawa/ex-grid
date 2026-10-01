@@ -82,16 +82,17 @@ public class SheetAppearanceTests : SheetTestContext
         Assert.Contains($"ex-font-{hex}", Classes(cut, "A1"));
     }
 
-    [Fact] // ADR-0071, SH-40 (case 3b): where no section shows the Value, there is no colour
+    [Fact] // ADR-0071, ADR-0047, SH-40 (case 3b): where no section shows the Value, there is no colour, and 5 in 0;[Red]@ is shown by an uncoloured section
     public void No_section_that_shows_the_value_means_no_colour()
     {
-        // Case 3b's fourth cell, 5 in 0;[Red]@, is left out: the engine refuses that code, which
-        // Excel takes.
-        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(
-            sheet => Format(sheet, "A1:A3", new CellFormatChange { NumberFormat = NumberFormat.Parse("[Red]0") }),
-            ("A1", "abc"), ("A2", "TRUE"), ("A3", "=1/0"))));
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(sheet =>
+        {
+            Format(sheet, "A1:A3", new CellFormatChange { NumberFormat = NumberFormat.Parse("[Red]0") });
+            Format(sheet, "A4", new CellFormatChange { NumberFormat = NumberFormat.Parse("0;[Red]@") });
+        }, ("A1", "abc"), ("A2", "TRUE"), ("A3", "=1/0"), ("A4", "5"))));
 
-        foreach (var address in new[] { "A1", "A2", "A3" }) Assert.DoesNotContain("ex-font-", Classes(cut, address));
+        Assert.Equal("5", CellText(cut, "A4"));
+        foreach (var address in new[] { "A1", "A2", "A3", "A4" }) Assert.DoesNotContain("ex-font-", Classes(cut, address));
     }
 
     [Fact] // ADR-0071, SH-40 (case 3c): a #### keeps its section's colour

@@ -52,6 +52,48 @@ public class NumberFormatColourTests
         Assert.Equal(colour, display.Colour);
     }
 
+    [Fact] // ADR-0047, ADR-0071, SH-40 (the eleventh Windows run, case 3b): Excel took 0;[Red]@, and showed 5 in it as 5, in black
+    public void A_number_in_a_format_ended_by_a_coloured_text_section_has_no_colour()
+    {
+        var display = Show(Value.FromNumber(5), "0;[Red]@");
+
+        Assert.Equal("5", display.Text);
+        Assert.Null(display.Colour);
+    }
+
+    [Theory] // ADR-0047, ADR-0071 reading beside case 3b: @ ends the format, so every number is the first section's, with a minus sign, and text is the last section's
+    [InlineData("0;[Red]@", -5, "-5", null)]
+    [InlineData("0;[Red]@", 0, "0", null)]
+    [InlineData("[Blue]0;[Red]@", -5, "-5", NumberFormatColour.Blue)]
+    [InlineData("0.0;[Magenta]-0.0;[Red]@", -5, "-5.0", NumberFormatColour.Magenta)]
+    [InlineData("0.0;[Magenta]-0.0;[Red]@", 0, "0.0", null)]   // three sections, the last for text: zero is the first's
+    public void A_number_beside_an_ending_text_section_takes_the_number_sections(string code, double number, string text, NumberFormatColour? colour)
+    {
+        var display = Show(Value.FromNumber(number), code);
+
+        Assert.Equal(text, display.Text);
+        Assert.Equal(colour, display.Colour);
+    }
+
+    [Theory] // ADR-0047, ADR-0071 reading beside case 3b: text in a format that @ ends is shown by that section, in its colour
+    [InlineData("0;[Red]@", "abc", "abc", NumberFormatColour.Red)]
+    [InlineData("0;-0;[Green]\"note: \"@", "abc", "note: abc", NumberFormatColour.Green)]
+    [InlineData("[Blue]0;@", "abc", "abc", null)]
+    public void Text_in_a_format_ended_by_a_text_section_takes_its_colour(string code, string entered, string text, NumberFormatColour? colour)
+    {
+        var display = Show(Value.FromText(entered), code);
+
+        Assert.Equal(text, display.Text);
+        Assert.Equal(colour, display.Colour);
+    }
+
+    [Fact] // ADR-0047, ADR-0071 (case 3b): booleans and Error Values still show as themselves in 0;[Red]@, as TRUE and #DIV/0! did in [Red]0
+    public void Booleans_and_Error_Values_have_no_colour_beside_an_ending_text_section()
+    {
+        Assert.Null(Show(Value.FromBoolean(true), "0;[Red]@").Colour);
+        Assert.Null(Show(Value.FromError(ErrorValue.Div0), "0;[Red]@").Colour);
+    }
+
     [Fact] // ADR-0071 reading, SH-40: text in a format with no text section uses no section, so no section's colour
     public void Text_without_a_text_section_has_no_colour()
     {

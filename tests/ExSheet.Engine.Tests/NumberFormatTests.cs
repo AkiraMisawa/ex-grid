@@ -111,6 +111,9 @@ public class NumberFormatTests
     [InlineData("\"open")]
     [InlineData("##0.0E+0")]
     [InlineData("0@")]
+    [InlineData("@;0")]       // @ ends a format; no run has seen it elsewhere
+    [InlineData("0;@;0")]
+    [InlineData("0;0;@;0")]
     public void An_unsupported_code_is_refused(string code)
     {
         Assert.False(NumberFormat.TryParse(code, out _, out var reason));
@@ -130,6 +133,17 @@ public class NumberFormatTests
         Assert.True(NumberFormat.TryParse(code, out var format, out _));
         Assert.Equal(code, format.Code);
         Assert.Equal(shown, Show(number, code).Text);
+    }
+
+    [Theory] // ADR-0047, ADR-0071 (the eleventh Windows run, case 3b): Excel took 0;[Red]@ and kept it as written; @ may end a format of two or three sections
+    [InlineData("0;[Red]@")]
+    [InlineData("0;@")]
+    [InlineData("0;-0;[Red]@")]
+    public void A_text_section_may_end_a_shorter_format(string code)
+    {
+        Assert.True(NumberFormat.TryParse(code, out var format, out _));
+        Assert.Equal(code, format.Code);
+        Assert.False(format.IsGeneral);
     }
 
     [Fact] // ADR-0047 (TYPED-021): $5 typed is 5 with Excel's currency format, colour included
