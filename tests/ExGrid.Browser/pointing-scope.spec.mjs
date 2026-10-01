@@ -512,9 +512,21 @@ test.describe('/sheets', () => {
 // Scope. The Linked Table Positions has two columns, Id, its key, and PV; the grid shows Id (A),
 // Book (B), which is the grid's own, and PV (C), and paints nine rows at a time. R-n's PV is 10n, and
 // the PVs sum to 8200.
+const lookup = (id, column = 'PV') => `=XLOOKUP("${id}", Positions[Id], Positions[${column}])`;
+const table = (page) => page.locator('#pointing-positions .ex-grid');
+
+/** `=` typed into the Sheet's C3, and a press on a positions cell, written. */
+async function pointFrom(page, address, written) {
+    const grid = sheet(page);
+    await pressCell(grid, 'C3');
+    await page.keyboard.type('=');
+    await expect(editor(grid)).toHaveValue('=');
+    await expectPointedAt(table(page));
+    await clickCell(table(page), address);
+    await expect(editor(grid)).toHaveValue(written);
+}
+
 test.describe('/pointing', () => {
-    const lookup = (id, column = 'PV') => `=XLOOKUP("${id}", Positions[Id], Positions[${column}])`;
-    const table = (page) => page.locator('#pointing-positions .ex-grid');
     const refused = (page) => page.locator('#pointing-refused');
 
     test.beforeEach(async ({ page }) => {
@@ -522,17 +534,6 @@ test.describe('/pointing', () => {
         // The table's snapshot has landed.
         await expect(cell(sheet(page), 'B1')).toHaveText('8200');
     });
-
-    /** `=` typed into the Sheet's C3, and a press on a positions cell, written. */
-    async function pointFrom(page, address, written) {
-        const grid = sheet(page);
-        await pressCell(grid, 'C3');
-        await page.keyboard.type('=');
-        await expect(editor(grid)).toHaveValue('=');
-        await expectPointedAt(table(page));
-        await clickCell(table(page), address);
-        await expect(editor(grid)).toHaveValue(written);
-    }
 
     test('ADR-0058/SH-35: =, a press on R-1\'s PV, ↓ gives R-2\'s lookup and moves the dashes; ↑ goes back; Enter computes it', async ({ page }) => {
         const grid = sheet(page);
@@ -650,5 +651,96 @@ test.describe('/pointing', () => {
         await expect(editor(grid)).toHaveValue(`${lookup('R-2')}*2`);
         await page.keyboard.press('Enter');
         await expect(cell(grid, 'C3')).toHaveText('40');
+    });
+});
+
+// The positions grid with its own scrollbars (DC-53; ticket 57). Part B of the ninth Windows run
+// could not set this up: /pointing's grid is wider than its columns, so it has no horizontal
+// scrollbar, and its last column ends 18 px short of the vertical one. ?narrow lays the grid out
+// narrower than its columns. Scrolled to its last row and its last column, R-40's PV lies against
+// both gutters, and what the Scope draws over it stops where they begin.
+test.describe('/pointing?narrow', () => {
+    // A rectangle flush with a gutter may round the wrong way by a hair; a gutter is 12 px.
+    const SLACK_PX = 1;
+
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/pointing?narrow');
+        await expect(page.locator('#pointing-narrow')).toBeVisible();
+        await expect(cell(sheet(page), 'B1')).toHaveText('8200');
+    });
+
+    /**
+     * The scroller's client area — what its scrollbars leave readable, the browser's own answer —
+     * and the strips they take, in the coordinates boundingBox gives, read at one instant.
+     */
+    const clientAreaOf = (scroller) => scroller.evaluate((element) => {
+        const outer = element.getBoundingClientRect();
+        return {
+            left: outer.left + element.clientLeft,
+            top: outer.top + element.clientTop,
+            right: outer.left + element.clientLeft + element.clientWidth,
+            bottom: outer.top + element.clientTop + element.clientHeight,
+            gutterWidth: element.offsetWidth - element.clientWidth,
+            gutterHeight: element.offsetHeight - element.clientHeight,
+            overflows: element.scrollWidth > element.clientWidth && element.scrollHeight > element.clientHeight,
+        };
+    });
+
+    test('ADR-0058/DC-53: scrolled to R-40\'s PV, =, a press on it: the dashes and both column outlines lie inside the client area, not under either gutter', async ({ page }, testInfo) => {
+        const positions = table(page);
+        const scroller = positions.locator('.ex-scroller');
+
+        const before = await clientAreaOf(scroller);
+        testInfo.annotations.push({ type: 'gutter', description: `${before.gutterWidth}x${before.gutterHeight} on ${process.platform}` });
+        // Both of its own scrollbars: the columns overflow the box as the rows do.
+        expect(before.overflows, 'the grid overflows on both axes').toBe(true);
+        // Headless Chrome on macOS keeps overlay bars whatever the CSS asks (README.md; both strips
+        // measured 0 there on 2026-10-01), so there the sides below are held to no gutter at all.
+        // Where the bars occupy layout, as on CI's Linux, a 0 would leave them proving nothing.
+        if (process.platform !== 'darwin') {
+            expect(before.gutterWidth, 'the vertical scrollbar occupies layout').toBeGreaterThan(0);
+            expect(before.gutterHeight, 'the horizontal scrollbar occupies layout').toBeGreaterThan(0);
+        }
+        // Until the grid is scrolled right, PV runs under the vertical gutter.
+        const pvUnscrolled = await boxOf(cell(positions, 'C1'));
+        expect(pvUnscrolled.x + pvUnscrolled.width, 'PV ends past the client area').toBeGreaterThan(before.right + SLACK_PX);
+
+        // To the last row and the last column.
+        await scroller.evaluate((element) => {
+            element.scrollTop = element.scrollHeight;
+            element.scrollLeft = element.scrollWidth;
+        });
+        await expect(cell(positions, 'C40')).toBeVisible();
+        await pointFrom(page, 'C40', lookup('R-40'));
+
+        const dashes = positions.locator('.ex-point-dashes');
+        const outlines = positions.locator('.ex-reference-outline');
+        await expectCovers(dashes, positions, 'C40', 'C40');
+        await expect(outlines).toHaveCount(2);
+        const client = await clientAreaOf(scroller);
+        // The case this is about: R-40's PV lies against both gutters, its right side the client
+        // area's right edge and its bottom the client area's bottom edge.
+        const r40 = await boxOf(cell(positions, 'C40'));
+        expect(Math.abs(r40.x + r40.width - client.right), 'PV ends at the vertical gutter').toBeLessThanOrEqual(SLACK_PX);
+        expect(Math.abs(r40.y + r40.height - client.bottom), 'R-40 ends at the horizontal gutter').toBeLessThanOrEqual(SLACK_PX);
+
+        // The dashes, whole inside the client area, under the header.
+        const header = await boxOf(positions.locator('.ex-header'));
+        const dashed = await boxOf(dashes);
+        expect(dashed.x).toBeGreaterThanOrEqual(client.left - SLACK_PX);
+        expect(dashed.y).toBeGreaterThanOrEqual(header.y + header.height - SLACK_PX);
+        expect(dashed.x + dashed.width, 'the dashes run under the vertical gutter').toBeLessThanOrEqual(client.right + SLACK_PX);
+        expect(dashed.y + dashed.height, 'the dashes run under the horizontal gutter').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+
+        // Id's outline and PV's, each to R-40's bottom and no further. Their tops run up under the
+        // header, and Id's left side is scrolled out past the client area's left edge: those edges
+        // are the Viewport's, not a gutter.
+        for (let i = 0; i < 2; i++) {
+            const outline = await boxOf(outlines.nth(i));
+            expect(Math.abs(outline.y + outline.height - (r40.y + r40.height)), `outline ${i + 1} ends at R-40`).toBeLessThanOrEqual(SLACK_PX);
+            expect(outline.x + outline.width, `outline ${i + 1} runs under the vertical gutter`).toBeLessThanOrEqual(client.right + SLACK_PX);
+            expect(outline.y + outline.height, `outline ${i + 1} runs under the horizontal gutter`).toBeLessThanOrEqual(client.bottom + SLACK_PX);
+        }
+        await expect(editor(sheet(page))).toBeFocused();
     });
 });

@@ -17,12 +17,21 @@
     column the table has, and the grid scrolls to keep the pointed cell in view.
 </p>
 
+@if (Narrow is not null)
+{
+    <p id="pointing-narrow">
+        Narrow: the positions grid is laid out narrower than its columns, so it shows both of its own
+        scrollbars, and PV runs under the vertical one until the grid is scrolled right. What the Scope
+        draws in it stops where the scrollbars begin (ADR-0013, ADR-0058).
+    </p>
+}
+
 <div class="demo-side-by-side">
     <ExSheet @ref="_sheet" @bind-Document="_document" Culture="Culture" ViewportHeight="360" ViewportWidth="560"
              PointingScope="_scope" OnPointingRefused="ShowRefusal" EditingChanged="_editingChanged" />
     <div id="pointing-positions">
         <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
-                ViewportHeight="280" ViewportWidth="330" PointedAt="_positionsPointedAt" />
+                ViewportHeight="280" ViewportWidth="PositionsWidth" PointedAt="_positionsPointedAt" />
     </div>
 </div>
 
@@ -63,6 +72,17 @@
         new("PV", ColumnType.Number, p => p.PV, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)),
             format: v => ((double)v).ToString("N2", CultureInfo.InvariantCulture)),
     ];
+
+    /// <summary><c>?narrow</c> lays the positions grid out narrower than its columns, so it shows both
+    /// of its own scrollbars: the view the ninth Windows run could not set up (ticket 57).</summary>
+    [SupplyParameterFromQuery(Name = "narrow")]
+    public string? Narrow { get; set; }
+
+    // The columns are 300 px together. At 330 the grid shows only its vertical scrollbar, and PV ends
+    // 18 px short of it (the ninth Windows run, Part B). At 260 the columns overflow too, and once the
+    // grid is scrolled right Id still shows, so both of the lookup's column outlines can be seen
+    // beside the gutters. Through the grid's parameter, never the stylesheet (ADR-0013).
+    private ViewportSize PositionsWidth => Narrow is null ? 330 : 260;
 
     private ExSheet? _sheet;
     private SheetDocument? _document = Opening();
