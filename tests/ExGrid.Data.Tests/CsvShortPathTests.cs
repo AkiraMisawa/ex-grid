@@ -76,6 +76,27 @@ public class CsvShortPathTests
         }
     }
 
+    [Fact] // ADR-0063: a date column reads every value alike, whether it repeats or the column holds too many to remember
+    public void Dates_read_alike_whether_they_repeat_or_not()
+    {
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        var text = new System.Text.StringBuilder("When\n");
+        var expected = new List<object?>();
+        var start = new DateTime(2026, 1, 2);
+        for (var i = 0; i < 150_000; i++)
+        {
+            // Trade dates repeating, then times that rarely do: past where the column stops remembering.
+            var when = i < 50_000 ? start.AddDays(i % 270) : start.AddSeconds(i * 7L);
+            var written = i < 50_000 ? when.ToString("yyyy-MM-dd", culture) : when.ToString("yyyy-MM-dd HH:mm:ss", culture);
+            text.Append(i % 10 == 0 ? $" {written} " : written).Append('\n');
+            expected.Add(when);
+        }
+
+        var snapshot = Read(new CsvSchema([new("When", SnapshotKind.Date)]), text.ToString());
+
+        Assert.Equal(expected, Values(snapshot, "When"));
+    }
+
     [Fact] // ADR-0063: declared spellings of any case, ASCII or not, are matched ignoring case
     public void Declared_spellings_are_matched_ignoring_case()
     {
