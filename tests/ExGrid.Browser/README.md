@@ -468,7 +468,9 @@ nobody had asked for. What that means when writing a test:
   ground after `=SUM(`, in the cell and in the bar, none after `=` ↓ ↓, and a `5` typed after
   pointing following the Reference (ADR-0051); a Formula longer than
   either surface, at both ends, the layer's line scrolled with the field, its font, padding and
-  spacing the field's, and the two drawings of the text the same picture (DC-48).
+  spacing the field's, and the two drawings of the text the same picture (DC-48); and the same
+  comparison, at its own threshold, finding a layer drawn half a pixel out either way, in another
+  font, or with other letter spacing.
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
   Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
   stack stay with the Sheet that has the keyboard, and each Sheet's Linked Table columns are

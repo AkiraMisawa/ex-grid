@@ -557,24 +557,42 @@ const FORMULA = '=IF(AND(B2>0,C2>0),ROUND(B2*C2*(1+D2),2),"Enter both the quanti
     + 'before the amount of this line is worked out, and check the discount in the next column")'
     + '&" as of "&TEXT(B7,"yyyy-mm-dd")&", due "&TEXT(B8,"yyyy-mm-dd")';
 
+/** Opens an edit of FORMULA on F3 in one surface, in Caret, and lays the drawing ways over the page. */
+async function editFormula(page, chrome, surface) {
+    await underChrome(page, chrome);
+    const grid = sheet(page);
+    await pressCell(grid, 'F3');
+    const field = surface === 'cell' ? editor(grid) : bar(grid);
+    // Caret, where Home and End move the caret rather than the Focus (ADR-0010) — on macOS
+    // too, where the listener answers them (ticket 32).
+    if (surface === 'cell') {
+        await page.keyboard.press('F2');
+    } else {
+        await clickBarEnd(grid);
+    }
+    await expect(field).toBeFocused();
+    await page.keyboard.insertText(FORMULA);
+    await expectColoured(field, FORMULA);
+    await overlayDrawingWays(page);
+    return { grid, field };
+}
+
+/** Moves the caret to an end, and waits until the field — and the layer's line with it — has
+ * scrolled to show it: past the start at the end, back to it at the start (DC-48). */
+async function caretTo(page, field, end) {
+    await page.keyboard.press(end);
+    await expect.poll(() => field.evaluate((input, at) => {
+        const line = input.previousElementSibling.firstElementChild;
+        const scrolled = at === 'End' ? input.scrollLeft > 0 : input.scrollLeft === 0;
+        return scrolled && line.scrollLeft === input.scrollLeft ? 'with the field' : `field ${input.scrollLeft}, layer ${line.scrollLeft}`;
+    }, end)).toBe('with the field');
+    await expectColoured(field, FORMULA);
+}
+
 for (const chrome of ['builtin', 'mud']) {
     for (const surface of ['cell', 'bar']) {
         test(`DC-48: a Formula longer than the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} keeps its colours over the right characters at either end (${chrome} Chrome)`, async ({ page }) => {
-            await underChrome(page, chrome);
-            const grid = sheet(page);
-            await pressCell(grid, 'F3');
-            const field = surface === 'cell' ? editor(grid) : bar(grid);
-            // Caret, where Home and End move the caret rather than the Focus (ADR-0010) — on macOS
-            // too, where the listener answers them (ticket 32).
-            if (surface === 'cell') {
-                await page.keyboard.press('F2');
-            } else {
-                await clickBarEnd(grid);
-            }
-            await expect(field).toBeFocused();
-            await page.keyboard.insertText(FORMULA);
-            await expectColoured(field, FORMULA);
-            await overlayDrawingWays(page);
+            const { grid, field } = await editFormula(page, chrome, surface);
 
             // The same font, size, padding and letter spacing (DC-48).
             const metrics = await field.evaluate((input) => {
@@ -588,19 +606,54 @@ for (const chrome of ['builtin', 'mud']) {
             expect(metrics.layer).toEqual(metrics.field);
 
             for (const end of ['End', 'Home']) {
-                await page.keyboard.press(end);
-                // The field scrolled to show its caret — past the start at the end, back to it at the
-                // start — and the layer's line with it (DC-48).
-                await expect.poll(() => field.evaluate((input, at) => {
-                    const line = input.previousElementSibling.firstElementChild;
-                    const scrolled = at === 'End' ? input.scrollLeft > 0 : input.scrollLeft === 0;
-                    return scrolled && line.scrollLeft === input.scrollLeft ? 'with the field' : `field ${input.scrollLeft}, layer ${line.scrollLeft}`;
-                }, end)).toBe('with the field');
-                await expectColoured(field, FORMULA);
+                await caretTo(page, field, end);
                 const { own, layer } = await drawnBothWays(page, field);
                 const apart = await pixelsApart(page, own, layer);
                 test.info().annotations.push({ type: `DC-48 ${end}`, description: JSON.stringify(apart) });
                 expect(apart.apart, `pixels the layer's text puts somewhere the field's is not, at ${end}`).toBe(0);
+            }
+
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+        });
+    }
+}
+
+// The comparison above finds a layer that stands where the field does not. Each misplacement here is
+// a rule over the line of a layer whose field the test marks, drawn only while the layer draws the
+// field (`data-drawn="layer"`), at End: half a pixel either way, another font, other letter spacing.
+// Each is on the line, which the computed-style check above does not read, so only the pixels can
+// tell. Were a rule not to apply, nothing would be found apart, and the test would fail. The threshold
+// is DC-48's own, with no allowance: the layer is one run, as the field is (ADR-0057, note of
+// 2026-10-01), and stands exactly where the field does.
+const MISPLACED = {
+    'half a pixel right': 'position: relative; left: 0.5px;',
+    'half a pixel left': 'position: relative; left: -0.5px;',
+    'in Georgia': 'font-family: Georgia, "Times New Roman", serif;',
+    'with 0.5px letter spacing': 'letter-spacing: 0.5px;',
+};
+
+for (const chrome of ['builtin', 'mud']) {
+    for (const surface of ['cell', 'bar']) {
+        test(`DC-48: the comparison finds a layer half a pixel out, in another font or with other letter spacing, in the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} (${chrome} Chrome)`, async ({ page }) => {
+            const { grid, field } = await editFormula(page, chrome, surface);
+            await alterPage(page, (misplaced) => {
+                const style = document.createElement('style');
+                style.textContent = Object.entries(misplaced)
+                    .map(([name, rule]) => `.ex-reference-text:has(+ [data-drawn="layer"][data-misplaced="${name}"]) .ex-reference-text-line { ${rule} }`)
+                    .join('\n');
+                document.head.append(style);
+                return () => style.remove();
+            }, MISPLACED);
+            await caretTo(page, field, 'End');
+
+            for (const misplacement of Object.keys(MISPLACED)) {
+                await field.evaluate((input, name) => input.setAttribute('data-misplaced', name), misplacement);
+                const { own, layer } = await drawnBothWays(page, field);
+                await field.evaluate((input) => input.removeAttribute('data-misplaced'));
+                const apart = await pixelsApart(page, own, layer);
+                test.info().annotations.push({ type: `DC-48 ${misplacement}`, description: JSON.stringify(apart) });
+                expect(apart.apart, `pixels found apart with the layer ${misplacement}`).toBeGreaterThan(0);
             }
 
             await page.keyboard.press('Escape');

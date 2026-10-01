@@ -283,3 +283,31 @@ The probes of past Windows runs read the layer's spans:
 - the `pointing-scope-probe.mjs` of runs 9 and 13.
 
 They are records, and are left as they are. A run that uses them again needs `stretchesOf`'s reading.
+
+2026-10-01, agent cf-86, a follow-up.
+
+**The comparison still catches a real misalignment.** The injection tests from the dropped tolerance
+commit, `3a2de51`, are kept, adapted to the one-run layer. There is no allowance: DC-48's own
+comparison at its threshold of 96.
+
+- `reference-text.spec.mjs` › "DC-48: the comparison finds a layer half a pixel out, in another font or
+  with other letter spacing". There is one test per Chrome and surface, at End.
+- Each misplacement is a rule over the layer's line, applied only while the layer draws the field:
+  - the line half a pixel right;
+  - the line half a pixel left;
+  - Georgia;
+  - 0.5 px of letter spacing.
+- The computed-style check reads the layer, not the line, so only the pixels can find these.
+- A rule that failed to apply would find nothing apart, and the test would fail.
+
+Pixels apart at End (over 96), on WebAssembly and on Server alike:
+
+| | half right | half left | Georgia | letter spacing |
+|---|---|---|---|---|
+| Built-in, Cell Editor | 179 | 162 | 330 | 366 |
+| Built-in, Formula Bar | 1208 | 1165 | 2715 | 2600 |
+| Wrapper, Cell Editor | 178 | 209 | 394 | 345 |
+| Wrapper, Formula Bar | 84 | 77 | 2065 | 2036 |
+
+The layer as drawn, in the same run: the table of the comment above, with nothing apart anywhere.
+
