@@ -217,7 +217,9 @@ nobody had asked for. What that means when writing a test:
 - `features.spec.mjs` — the interaction surface on `/features`, with real keys and the
   real clipboard: the editor's two states (ED-2/3/4), both clipboard formats and the
   refusals (CP-1/3/4/5/6/10/14, PST-1), the keys the grid must not take (KB-15), one
-  tab stop (A11Y-4, KB-12), instance independence (DOM-4), header-click sorting
+  tab stop, its Keyboard Field's on a grid that edits, with the ring drawn from the root's
+  mark and no column's ▾ reached by Tab (A11Y-4, KB-12, ADR-0080), instance independence
+  (DOM-4), header-click sorting
   (SR-1). And on `/cells`, entering a cell by key (ADR-0037): Space
   into a cell with several actions, the arrows choosing and Space firing once, Enter
   never firing (KB-20/21/22); Space putting the caret in a Template's own field and
@@ -246,13 +248,13 @@ nobody had asked for. What that means when writing a test:
   and Enter in its value field applying what OK applies (KB-31 — under the Wrapper that
   is its own panel, a `MudSelect` operator whose list is an Inner Popup and a
   `MudNumericField`); every close handing the
-  keyboard back to the root (KB-32); the roles and names (A11Y-19); the scroll container
+  keyboard back to the grid (KB-32); the roles and names (A11Y-19); the scroll container
   not clipping (UX-11); and the Context Menu (CTX-1..4). Under the Wrapper alone, its
   panel's Inner Popups (FN-21): drawn outside the root and disturbing neither grid, a
   pointer-down elsewhere closing the list or the calendar and the panel while keeping its
   meaning — and under `ModalOverlay` (`/features?chrome=mud&modal=1`) only the popup —
-  Escape closing the popup first and the panel next, and focus back on the root after a
-  choice and Apply. Under both Chromes, a menu taller than its grid stays inside the
+  Escape closing the popup first and the panel next, and the keyboard back on the grid after
+  a choice and Apply. Under both Chromes, a menu taller than its grid stays inside the
   grid's box and scrolls (UX-11, ADR-0040), and a grid that goes while the keys after
   Alt+↓ are still waiting for its popover leaves nothing running to throw from a later
   frame (ADR-0010, CON-2).
@@ -418,7 +420,7 @@ nobody had asked for. What that means when writing a test:
   leaves for a page button first and the grid is an ordinary grid when it is pressed — and the other
   grid's keys its own; a press back on the rows
   pointing with the keyboard back in the Cell Editor or the Formula Bar, or committing and
-  giving the root the keyboard; a press back on a column heading or a Row Heading; a committing
+  giving the grid the keyboard; a press back on a column heading or a Row Heading; a committing
   press on the rows taking the keyboard out of the bar the edit was typed in; and, with 150 ms
   on the Server host, the key straight after the press back reaching the Sheet. And ED-22 widened
   (ADR-0010, 2026-09-29), without latency and at 150 ms on the Server host: the keys typed straight
@@ -469,6 +471,16 @@ nobody had asked for. What that means when writing a test:
 `sheet-helpers.mjs` is what those five share: opening `/sheet` under either Chrome and waiting
 for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the
 editor surfaces under either Chrome, the Name Box, and painted-box comparisons.
+
+`keyboard.mjs` says where a grid's keyboard is (ADR-0080). A grid that edits holds the keyboard,
+with no edit open, in its Keyboard Field, which is also its one tab stop and carries
+`aria-activedescendant`; a display-only grid holds it on its root. So "the root holds DOM focus"
+is asserted as `expectKeyboardOn(grid)` — its own field, or its root where it has none, never the
+root of a grid that has a field — and never as `expect(grid).toBeFocused()`, which on a grid that
+edits is false whenever the keyboard is the grid's; the Focus is read with `expectActiveDescendant` or `activeDescendant`, from whichever
+element carries it; and "the grid is interactive" is `expectTabStopTaken`. A grid's root is still
+asserted directly where the root is the point: a display-only grid's tab stop (A11Y-17), a
+Prerendered root's attributes (A11Y-20).
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error
