@@ -203,6 +203,84 @@ public class ConsumerPopoverTests : GridTestContext
         Assert.Equal(0, probe.Context.FocusLastRequest);
     }
 
+    [Fact] // ADR-0039 / ADR-0050 item 16, 2026-10-01: opening it tells the key gate that the keyboard is going to it
+    public async Task Opening_it_tells_the_key_gate_the_keyboard_is_going_to_it()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+
+        await OpenAsync(cut, new Probe());
+
+        Assert.Equal(["popover"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+    }
+
+    // A grid whose Context Menu carries one command of the Consumer's, which opens a frame of its
+    // own when asked to: the keyboard is handed to it as a Consumer's dialog would take it.
+    private IRenderedComponent<ExGrid<TestRow>> RenderGridWithFrameCommand(bool handsToFrame, Action<bool>? sawMenu = null)
+    {
+        IRenderedComponent<ExGrid<TestRow>>? cut = null;
+        cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, (IReadOnlyList<GridColumn<TestRow>>)
+            [
+                new("Book", ColumnType.Text, r => r.Book, width: Fixed100, editable: true),
+                new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100),
+            ])
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, ViewportSize.Stretch)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ContextCommands, _ =>
+            [
+                new GridCommand("consumer.frame", true, async () =>
+                {
+                    if (handsToFrame)
+                        await cut!.Instance.HandKeyboardToFrameAsync();
+                    sawMenu?.Invoke(cut!.FindAll("[role=menu]").Count == 1);
+                }),
+            ]));
+        return cut;
+    }
+
+    [Fact] // ADR-0050 item 16 / ADR-0039, 2026-10-01: a command that hands the keyboard to a frame of the Consumer's own tells the key gate while its menu still stands
+    public async Task A_command_that_hands_the_keyboard_to_a_frame_tells_the_key_gate_first()
+    {
+        var menuStoodWhenTold = false;
+        var cut = RenderGridWithFrameCommand(handsToFrame: true, stood => menuStoodWhenTold = stood);
+        await Report(cut, 300);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "F10", shift: true);
+        var reclaims = Js.FocusReclaimed.Invocations.Count;
+
+        await cut.FindAll("[role=menu] button[role=menuitem]").Single(b => b.TextContent == "consumer.frame").ClickAsync(new MouseEventArgs());
+
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        // The key gate was told while the menu still stood: on a circuit the call reaches the
+        // browser ahead of the render that removes it, so the keys held behind the command wait
+        // for the frame rather than for the root.
+        Assert.True(menuStoodWhenTold);
+        Assert.Equal(["frame"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+        // The menu's hand-back to the root still follows: the keys typed until the frame takes the
+        // keyboard land there, where the gate holds them for the frame.
+        Assert.True(Js.FocusReclaimed.Invocations.Count > reclaims);
+    }
+
+    [Fact] // ADR-0039 / ADR-0044: a command that opens nothing still hands the keyboard back to the root
+    public async Task A_command_that_opens_nothing_hands_the_keyboard_back_to_the_root()
+    {
+        var cut = RenderGridWithFrameCommand(handsToFrame: false);
+        await Report(cut, 300);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "F10", shift: true);
+        var reclaims = Js.FocusReclaimed.Invocations.Count;
+
+        await cut.FindAll("[role=menu] button[role=menuitem]").Single(b => b.TextContent == "consumer.frame").ClickAsync(new MouseEventArgs());
+
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Empty(Js.HandedOff.Invocations);
+        Assert.True(Js.FocusReclaimed.Invocations.Count > reclaims);
+    }
+
     [Fact] // ADR-0050 item 16 / DC-60 / ADR-0039: Escape from inside closes it, and the root takes the keyboard
     public async Task Escape_closes_it_and_the_root_takes_the_keyboard()
     {

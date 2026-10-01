@@ -40,7 +40,7 @@ public abstract class MudSheetTestContext : BunitContext
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "blur", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose" })
+        foreach (var name in new[] { "setScrollOffset", "blur", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handOff", "dispose" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
@@ -48,6 +48,9 @@ public abstract class MudSheetTestContext : BunitContext
 
     /// <summary>How many times the grid has been asked to take the keyboard back (ADR-0021's note of 2026-09-30).</summary>
     protected int ReclaimCount => _handle.Invocations["reclaimFocus"].Count;
+
+    /// <summary>Where the grid told its key gate the keyboard is going, in order (ADR-0050 item 16, 2026-10-01).</summary>
+    protected IReadOnlyList<string> HandOffs => [.. _handle.Invocations["handOff"].Select(i => (string)i.Arguments[0]!)];
 
     /// <summary>A Sheet of en-US whose cells are typed as given.</summary>
     protected static SheetDocument DocumentOf(params (string Address, string Typed)[] cells) => DocumentOf(null, cells);

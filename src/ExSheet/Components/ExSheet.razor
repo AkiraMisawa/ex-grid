@@ -651,6 +651,10 @@
         {
             // The frame is the Chrome's (ADR-0071): a built-in one standing from an earlier opening goes.
             if (_formatCells is not null && _formatCellsFrame is null) await grid.ClosePopoverAsync();
+            // The keyboard is the frame's from here, however Format Cells was opened — the menu's
+            // command, Ctrl+1 or the Consumer's own call: the keys typed until the frame takes it
+            // are held for it, never the grid's (ADR-0050 item 16, 2026-10-01).
+            await grid.HandKeyboardToFrameAsync();
             _formatCells = context;
             _formatCellsFrame = frame;
             StateHasChanged();

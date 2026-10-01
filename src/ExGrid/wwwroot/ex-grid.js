@@ -279,6 +279,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (findKeys.has(canonical)) {
                 return canFind ? 'popover' : 'core';
             }
+            // A declared key is the Consumer's to answer, and may open a popover or a frame of
+            // the Consumer's own (Format Cells' Ctrl+1): the keys after it wait for its answer,
+            // and then for wherever the answer said the keyboard is going (handOff; ADR-0050
+            // item 16, 2026-10-01).
+            if (declared.has(canonical)) {
+                return 'mode';
+            }
             // Space and Backspace open an editor (ADR-0010/0035): a mode change.
             return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';
         }
@@ -622,6 +629,32 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     let awaitingPopover = false;
 
+    // Where the core has said the keyboard is going (handOff; ADR-0039 and ADR-0050 item 16,
+    // 2026-10-01): 'popover' — a Consumer's popover the core opened, whose contents take the
+    // keyboard on their count — or 'frame' — a frame of the Consumer's own, outside this root
+    // (HandKeyboardToFrameAsync). Until it has arrived, the keys typed on the root or the menu
+    // are held, and then handed to what took it; if it never arrives within the hold's fallback
+    // they are dropped, never gated against the grid: a digit there would open an edit behind
+    // the frame. Set by C# ahead of the key's answer and of the render that closes the menu the
+    // command ran from. Meanwhile the root keeps the keyboard where it can (the hand-back after a
+    // command), so the keys are heard here: one typed on nothing reaches no grid at all.
+    let handOff = null;
+    // The hand-off the drain is delivering: 'frame' once DOM focus has left the root for the
+    // frame, and whether the keyboard never arrived, so the held keys are dropped.
+    let deliveringOutside = false;
+    let handOffMissed = false;
+    // Outside this root and not on nothing: where a frame of the Consumer's own has the keyboard.
+    const outsideControl = () => {
+        const active = document.activeElement;
+        return active instanceof Element && active !== document.body && active !== document.documentElement
+            && !(root && root.contains(active)) ? active : null;
+    };
+    // Another grid has the keyboard: the user moved there before it reached what this one handed it
+    // to, and the keys held here are not that grid's (ADR-0018).
+    const inOtherGrid = () => outsideControl()?.closest('.ex-grid') != null;
+    const handedOver = () => handOff === null
+        || (handOff === 'popover' ? popoverFocused() : outsideControl() !== null && !inOtherGrid());
+
     // The keyboard handed on inside a popover, or out of it (ADR-0044): Tab, Shift+Tab or E on
     // a command moves it into the filter below, E on the value list to the search box, and a
     // sentinel either side of the filter hands it back to the commands; a command run — Enter
@@ -703,9 +736,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const disposed = !core;
             const editorReady = disposed || editing === 'none' || editorFocused() || focusDeclined;
             const popoverReady = disposed || !awaitingPopover || popoverFocused();
-            if (disposed || (editorReady && popoverReady && moved()) || performance.now() - holdStartedAt > 2000) {
+            const handOffReady = disposed || handedOver() || (handOff !== null && inOtherGrid());
+            if (disposed || (editorReady && popoverReady && handOffReady && moved()) || performance.now() - holdStartedAt > 2000) {
                 awaitingPopover = false;
                 awaitingMove = null;
+                if (handOff !== null) {
+                    handOffMissed = !disposed && !handedOver();
+                    deliveringOutside = handOff === 'frame' && !handOffMissed;
+                    handOff = null;
+                }
                 resolve();
             } else {
                 requestAnimationFrame(look);
@@ -835,6 +874,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // dropped: the typing stops short rather than going on in a field it was not meant for
     // ("Alpha", Tab, Space, Enter would otherwise search for "Alpha " and apply it).
     const caretKeys = new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter']);
+    // The keys a tab of ARIA's tabs pattern answers itself.
+    const tabKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
     // The keys that move the caret in a field without changing its text.
     const caretMoveKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
     const reproducible = (target, k) => {
@@ -844,7 +885,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (isTextField(target)) {
             return !k.ctrlKey && !k.metaKey && !k.altKey && (k.key.length === 1 || caretKeys.has(k.key));
         }
+        // A frame of the Consumer's own took the keyboard (HandKeyboardToFrameAsync): what a key
+        // means there is its handlers' to say, and every key but Tab — the browser's alone to
+        // act on — is handed to it.
+        if (root && !root.contains(target)) {
+            return k.key !== 'Tab';
+        }
         const role = target.getAttribute('role');
+        // A tab of ARIA's tabs pattern answers its arrows, Home and End with its own handlers.
+        if (role === 'tab' && tabKeys.has(k.key) && !k.ctrlKey && !k.metaKey && !k.altKey) {
+            return true;
+        }
         return k.key.length === 1 && k.key !== ' ' && !k.ctrlKey && !k.metaKey && !k.altKey
             && target.tagName !== 'SELECT' && role !== 'combobox' && role !== 'listbox';
     };
@@ -908,6 +959,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // gap must still be held, not gated against the root.
         await editorSettled();
         while (held.length > 0 && core) {
+            // The keyboard never reached what the core handed it to: the keys are dropped, not
+            // gated against the grid (handOff).
+            if (handOffMissed) {
+                held.length = 0;
+                break;
+            }
             const k = held.shift();
             if (k.barPress) {
                 await answerBarPress();
@@ -932,7 +989,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (modifierKeys.has(k.key)) {
                 continue;
             }
-            const target = focusedControl();
+            const target = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
             // Find's key held behind a popover is the grid's there too (ADR-0055), and is not
             // replayed into the popover — a menu would take it as a keydown of its own, and a
             // text field cannot reproduce a Ctrl chord at all, which would drop it and every
@@ -986,6 +1043,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         }
         answering = false;
+        handOffMissed = false;
+        deliveringOutside = false;
     };
 
     const onKeyDown = (event) => {
@@ -1027,7 +1086,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const sentinel = !replaying && !answering && onSentinel(event.target);
         // A hold behind a move or a close is over the moment DOM focus has followed, though
         // its check runs a frame later: a key typed in between is the new holder's already.
-        const holdOver = answering && awaitingMove !== null && held.length === 0 && moved();
+        const holdOver = answering && awaitingMove !== null && held.length === 0 && moved() && handedOver();
         if (!replaying && !holdOver && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused()))) {
             event.preventDefault();
             event.stopPropagation();
@@ -1438,6 +1497,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && isOwnRowsOrHeadings(event.target)) {
             standingField()?.focus({ preventScroll: true });
             focusDeclined = false;
+        }
+        // A press on one of the menu's items runs its command and closes the menu, as Enter on it
+        // does (handsOver): a change of who holds the keyboard, and the keys typed after it wait
+        // until the keyboard has followed — to the root, or to what the command opened (handOff;
+        // ADR-0039, 2026-10-01).
+        if (core && !replaying && event.button === 0 && event.target instanceof Element) {
+            const item = event.target.closest('[role=menuitem]');
+            const menu = item ? popoverOf(item) : null;
+            if (item && menu && !item.matches(':disabled, [aria-disabled=true]')) {
+                awaitingMove = { from: item, closes: menu };
+                if (answering) {
+                    holdStartedAt = performance.now();
+                } else {
+                    startHold();
+                }
+            }
         }
         // Only a press on this grid's own rows is held or holds the keys after it: one on a
         // nested grid's rows is that grid's to answer, and this core never hears it. A press that
@@ -1864,6 +1939,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 input.setSelectionRange(caret, end);
                 reportedText = text;
                 reportedCaret = caret;
+            }
+        },
+        // Where the keyboard is going (handOff above): to a Consumer's popover the core has
+        // opened, or to a frame of the Consumer's own outside this root. Told before the key's
+        // answer and before the render that closes the menu a command ran from, so the hold
+        // already standing waits for it; with none standing, one starts, for the keys typed on
+        // the root until the keyboard arrives. No focus is moved and no layout is read: what
+        // holds DOM focus is read, as the hold always has.
+        handOff: (to) => {
+            if (!core || (to !== 'popover' && to !== 'frame')) {
+                return;
+            }
+            handOff = to;
+            handOffMissed = false;
+            if (answering) {
+                holdStartedAt = performance.now();
+            } else {
+                startHold();
             }
         },
         // A popover's contents reported a popup of their own opening or closing

@@ -49,6 +49,18 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.False(Sheet(page).CanUndo);
     }
 
+    [Fact] // ADR-0050 item 16 / ADR-0039, 2026-10-01: the dialog is handed the keyboard through the grid, so that keys typed as it opens are its, never the grid's
+    public async Task The_dialog_is_handed_the_keyboard_through_the_grid()
+    {
+        var page = RenderPage();
+        await GoToAsync(page, "B2");
+
+        await PressAsync(page, "1", ctrl: true);
+
+        page.WaitForAssertion(() => Assert.True(IsOpen(page)));
+        Assert.Equal(["frame"], HandOffs);
+    }
+
     [Fact] // ADR-0071 / SH-45: the dialog is modal and closes on Escape, on its backdrop and by its ×, each a Cancel
     public async Task The_dialog_closes_as_a_cancel_by_mudblazors_own_means()
     {
