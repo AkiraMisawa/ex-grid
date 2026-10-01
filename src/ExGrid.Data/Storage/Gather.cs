@@ -137,7 +137,7 @@ internal static class Gather
 
 /// <summary>
 /// Indexes a new base's Record Keys, a chunk of rows at a time so a load can yield between slices,
-/// refusing a Blank key and a key carried twice by name (ADR-0063).
+/// refusing a Blank key and a key carried twice by name (ADR-0064).
 /// </summary>
 internal sealed class KeyIndexer
 {

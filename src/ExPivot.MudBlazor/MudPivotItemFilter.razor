@@ -1,11 +1,11 @@
 @using System.Globalization
-@* Filter… under MudBlazor (ADR-0060/0061): a MudTextField that narrows the list, (Select All) as a
+@* Filter… under MudBlazor (ADR-0061/0062): a MudTextField that narrows the list, (Select All) as a
    tri-state MudCheckBox with Excel's mixed state, a MudCheckBox per Item, and Cancel / OK. The ticks
    are ExPivot's draft: this draws them and calls back, and OK stays disabled, with ExPivot's reason
    beside it, while every Item is unticked. The search takes DOM focus for each request. A first
    listing on its way is a MudProgressLinear; while a new Source Version's Items are on their way,
    the earlier version's stay listed, the list marked busy and no progress drawn — a live report
-   brings a new version several times a second (ADR-0065 refined). *@
+   brings a new version several times a second (ADR-0066 refined). *@
 <div class="mud-ex-pivot-panel mud-ex-pivot-item-filter">
     <MudTextField @ref="_search" T="string" Value="Context.Search" ValueChanged="Context.SearchChanged" Immediate="true"
                   Label="@Context.Word("search-items")" Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -14,7 +14,7 @@
     <div class="mud-ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption" aria-busy="@(Context.IsLoading || Context.IsUpdating ? "true" : null)">
         @if (Context.Unavailable is { } unavailable)
         {
-            @* The source can no longer list the Items under the report's Source Version (ADR-0065). *@
+            @* The source can no longer list the Items under the report's Source Version (ADR-0066). *@
             <MudText Typo="Typo.body2" Color="Color.Error" Class="mud-ex-pivot-unavailable" role="alert">@unavailable</MudText>
         }
         else if (Context.IsLoading)
@@ -61,7 +61,7 @@
     private MudTextField<string>? _search;
     private int _acted;
 
-    /// <summary>The Items, the draft and the exits (ADR-0060).</summary>
+    /// <summary>The Items, the draft and the exits (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotItemFilterContext Context { get; set; } = default!;
 
     /// <summary>The Chrome this panel belongs to.</summary>

@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// What the engine holds of a Pivot Source's answer to one question (ADR-0059/0065): the tree of
+/// What the engine holds of a Pivot Source's answer to one question (ADR-0060/0066): the tree of
 /// row Items and the tree of column Items its leaves form, and every cell where they cross — each
 /// leaf as the source answered it, and every subtotal and grand total merged from the leaves'
 /// parts, never from the totals below it. It lays nothing out. Collapse, order, the form, the
@@ -84,7 +84,7 @@ public sealed class PivotCube
     internal PartColumns ValuesOf(int source) => _values[source];
 
     /// <summary>
-    /// The cube of an answer (ADR-0065). Refuses by name an answer to another question — other row
+    /// The cube of an answer (ADR-0066). Refuses by name an answer to another question — other row
     /// or column fields, other fields in Values, fewer parts than asked, more leaves than allowed —
     /// and an answer with two leaves for one cell.
     /// </summary>
@@ -112,11 +112,11 @@ public sealed class PivotCube
         Func<string, IReadOnlyList<ItemKey>>? allItems = null)
     {
         if (answer.Mismatch(query) is { } mismatch)
-            throw new InvalidOperationException($"The answer does not answer the question: {mismatch} (ADR-0065).");
+            throw new InvalidOperationException($"The answer does not answer the question: {mismatch} (ADR-0066).");
         foreach (var field in query.Placed.Select(f => f.Field).Concat(query.Values.Select(v => v.Field)))
         {
             if (!meta.ContainsKey(field))
-                throw new InvalidOperationException($"The question names '{field}', and no Pivot Field of that name is declared (ADR-0059).");
+                throw new InvalidOperationException($"The question names '{field}', and no Pivot Field of that name is declared (ADR-0060).");
         }
 
         var leafCount = answer.LeafCount;
@@ -145,12 +145,12 @@ public sealed class PivotCube
             for (var leaf = from; leaf < to; leaf++)
             {
                 if (!cells.TryAdd(CellKey.Of(rowLeaves[leaf].Id, columnLeaves[leaf].Id), leaf))
-                    throw new InvalidOperationException($"The answer has two leaves for one cell (leaf {leaf}); a source answers each combination of Items once (ADR-0065).");
+                    throw new InvalidOperationException($"The answer has two leaves for one cell (leaf {leaf}); a source answers each combination of Items once (ADR-0066).");
                 included += answer.Records[leaf];
             }
         }, weight: 2).ConfigureAwait(false);
 
-        // Every total from its leaves (ADR-0059): each leaf is merged into every cell whose row
+        // Every total from its leaves (ADR-0060): each leaf is merged into every cell whose row
         // and column are its own or their ancestors. An ancestor's cell is never a leaf's, so
         // nothing is counted twice, and the parts combine exactly. With no field in Values there
         // is nothing to read at a cell, and no total is made.
@@ -188,7 +188,7 @@ public sealed class PivotCube
             }, weight: Math.Max(1, pairs * (1 + values.Length))).ConfigureAwait(false);
         }
 
-        // One form for each exact value (ADR-0063): a source may write a Decimal at any scale — a
+        // One form for each exact value (ADR-0064): a source may write a Decimal at any scale — a
         // database's money comes back as 75.60 — and decimal addition keeps the larger scale, so
         // 0.25 + 0.25 is 0.50. The report, and the raw form a copy carries, is then the same
         // whichever source answered (PV-22).
@@ -237,12 +237,12 @@ public sealed class PivotCube
 
     /// <summary>
     /// Whether <paramref name="layout"/> can be laid out from this cube without asking again
-    /// (ADR-0059/0065): the same row and column fields in the same order, the same report filter
+    /// (ADR-0060/0066): the same row and column fields in the same order, the same report filter
     /// fields that hide Items, the same Hidden Items on each, and every Value Field reading a field
     /// in Values here whose parts its Aggregation reads — Sum and Average read one part, so a
     /// change between them asks nothing; Max reads another, so a change from Sum to Max asks
     /// again. A field in Filters that hides nothing changes no leaf, so placing it, or moving it
-    /// while it hides nothing, needs no new answer (ADR-0065, refined). Everything else in a
+    /// while it hides nothing, needs no new answer (ADR-0066, refined). Everything else in a
     /// layout only lays the cube out.
     /// </summary>
     public bool Holds(PivotLayout layout)
@@ -350,7 +350,7 @@ internal sealed class ItemRef
     public PivotItemKey PublicKey { get; }
 
     /// <summary>Whether <see cref="OrderKey"/> has been computed: a field's Order Key is called once
-    /// per Item (ADR-0059).</summary>
+    /// per Item (ADR-0060).</summary>
     public bool HasOrderKey { get; private set; }
 
     /// <summary>What the field's Order Key gave the Item, or null for no key.</summary>
@@ -398,10 +398,10 @@ internal sealed class FieldMeta
 
     public IReadOnlyDictionary<ItemKey, int> DeclaredOrder { get; }
 
-    /// <summary>The part of a Date column the field is, or null (ADR-0059).</summary>
+    /// <summary>The part of a Date column the field is, or null (ADR-0060).</summary>
     public PivotDatePart? DatePart { get; }
 
-    /// <summary>The field's Order Key, or null (ADR-0059).</summary>
+    /// <summary>The field's Order Key, or null (ADR-0060).</summary>
     public Func<object, IComparable?>? OrderKey { get; }
 
     /// <summary>The metadata of every declared field, by name, refusing a name declared twice.</summary>

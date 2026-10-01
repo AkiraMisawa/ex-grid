@@ -4,7 +4,7 @@ namespace ExGrid.DemoApi;
 
 /// <summary>
 /// What the live updates are set to (<c>GET</c> and <c>POST /api/live</c>). They are off until a
-/// page turns them on, so a page that reads the data sees it hold still (ADR-0068).
+/// page turns them on, so a page that reads the data sees it hold still (ADR-0069).
 /// </summary>
 /// <param name="On">Whether the server is changing trades.</param>
 /// <param name="IntervalMs">How often a tick starts, in milliseconds.</param>
@@ -25,7 +25,7 @@ internal sealed record LiveSettings(bool On, int IntervalMs, int TradesPerTick)
 }
 
 /// <summary>
-/// The live updates (ADR-0066, ADR-0068): while on, a tick of
+/// The live updates (ADR-0067, ADR-0069): while on, a tick of
 /// <see cref="TradeStore.ApplyLiveChangesAsync"/> every <see cref="LiveSettings.IntervalMs"/>,
 /// which <see cref="TradesHubBroadcaster"/> then says on the hub.
 /// </summary>

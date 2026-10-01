@@ -9,8 +9,8 @@ using static ExGrid.Data.Tests.Fixtures;
 namespace ExGrid.Data.Tests;
 
 /// <summary>
-/// A Snapshot read from a <see cref="DbDataReader"/> (ADR-0063, DA-10): each column by its own type,
-/// <see cref="DBNull"/> a Blank, a type outside ADR-0063's list refused by name unless the Consumer
+/// A Snapshot read from a <see cref="DbDataReader"/> (ADR-0064, DA-10): each column by its own type,
+/// <see cref="DBNull"/> a Blank, a type outside ADR-0064's list refused by name unless the Consumer
 /// declares how to read it; columns chosen, renamed and captioned. The tests read through
 /// <see cref="DataTableReader"/>, the framework's own <see cref="DbDataReader"/>, so they need no
 /// database.
@@ -74,7 +74,7 @@ public class DataReaderTests
         return table;
     }
 
-    [Fact] // ADR-0063: each column is read by its own type, into the kind ADR-0063 gives it
+    [Fact] // ADR-0064: each column is read by its own type, into the kind ADR-0064 gives it
     public async Task Each_column_is_read_by_its_own_type()
     {
         var snapshot = await Build(new SnapshotDataReaderBuilder(), EveryType());
@@ -98,7 +98,7 @@ public class DataReaderTests
             first);
     }
 
-    [Fact] // ADR-0063: a date is the clock it shows: a DateTime's Kind ignored, a DateTimeOffset's offset dropped, a DateOnly's midnight
+    [Fact] // ADR-0064: a date is the clock it shows: a DateTime's Kind ignored, a DateTimeOffset's offset dropped, a DateOnly's midnight
     public async Task A_date_is_the_clock_it_shows()
     {
         var snapshot = await Build(new SnapshotDataReaderBuilder(), EveryType());
@@ -109,7 +109,7 @@ public class DataReaderTests
         Assert.Equal(new DateTime(2026, 9, 30).Ticks, ((DateTime)Values(snapshot, "DateOnly")[0]!).Ticks);
     }
 
-    [Fact] // ADR-0063: DBNull is a Blank in every kind
+    [Fact] // ADR-0064: DBNull is a Blank in every kind
     public async Task Dbnull_is_a_blank_in_every_kind()
     {
         var snapshot = await Build(new SnapshotDataReaderBuilder(), EveryType());
@@ -121,7 +121,7 @@ public class DataReaderTests
         }
     }
 
-    [Fact] // ADR-0063: a column of a type outside ADR-0063's list is refused by name, before a row is read, with every such column named
+    [Fact] // ADR-0064: a column of a type outside ADR-0064's list is refused by name, before a row is read, with every such column named
     public async Task A_column_of_another_type_is_refused_by_name()
     {
         var table = Table(("Id", typeof(long)), ("Book", typeof(Guid)), ("Blob", typeof(byte[])), ("Held", typeof(TimeSpan)));
@@ -137,7 +137,7 @@ public class DataReaderTests
             (await Refusal(new SnapshotDataReaderBuilder().Column("Id").Column("Held"), table)).Message);
     }
 
-    [Fact] // ADR-0063: a column of another type is read once the Consumer declares its kind and how to read it
+    [Fact] // ADR-0064: a column of another type is read once the Consumer declares its kind and how to read it
     public async Task A_column_of_another_type_is_read_as_declared()
     {
         var book = Guid.Parse("0f8fad5b-d9cb-469f-a165-70867728950e");
@@ -158,7 +158,7 @@ public class DataReaderTests
         Assert.Equal([1.5, null], Values(snapshot, "HeldHours"));
     }
 
-    [Fact] // ADR-0063: a declared conversion reads a column otherwise than by its own type, into every kind, and a null it returns is a Blank
+    [Fact] // ADR-0064: a declared conversion reads a column otherwise than by its own type, into every kind, and a null it returns is a Blank
     public async Task A_declared_conversion_reads_into_every_kind()
     {
         var table = Table(("Code", typeof(string)));
@@ -181,7 +181,7 @@ public class DataReaderTests
         Assert.Equal([false, true], Values(snapshot, "IsX"));
     }
 
-    [Fact] // ADR-0063: columns can be chosen, renamed and captioned, and are held in the order declared
+    [Fact] // ADR-0064: columns can be chosen, renamed and captioned, and are held in the order declared
     public async Task Columns_are_chosen_renamed_and_captioned()
     {
         var snapshot = await Build(
@@ -196,7 +196,7 @@ public class DataReaderTests
         Assert.Equal([1.5m, null], Values(snapshot, "Notional"));
     }
 
-    [Fact] // ADR-0063: a declared column missing from the reader is refused by name, before a row is read
+    [Fact] // ADR-0064: a declared column missing from the reader is refused by name, before a row is read
     public async Task A_declared_column_missing_from_the_reader_is_refused_by_name()
     {
         var table = Table(("trade_id", typeof(long)), ("desk", typeof(string)));
@@ -210,7 +210,7 @@ public class DataReaderTests
             (await Refusal(new SnapshotDataReaderBuilder().Column("TradeId", name: "Id"), table)).Message);
     }
 
-    [Fact] // ADR-0063: a reader whose columns cannot all be told apart by name is refused by name, unless the columns read are declared
+    [Fact] // ADR-0064: a reader whose columns cannot all be told apart by name is refused by name, unless the columns read are declared
     public async Task Columns_that_cannot_be_told_apart_are_refused()
     {
         var table = Table(("A", typeof(long)), ("B", typeof(long)), ("C", typeof(string)));
@@ -227,7 +227,7 @@ public class DataReaderTests
             (await Refusal(new SnapshotDataReaderBuilder().Column("Id"), table, twice)).Message);
     }
 
-    [Fact] // ADR-0063: a value the driver cannot give fails the whole load, naming the row and the column
+    [Fact] // ADR-0064: a value the driver cannot give fails the whole load, naming the row and the column
     public async Task A_value_the_driver_cannot_give_fails_the_load_by_row_and_column()
     {
         var table = Table(("Id", typeof(long)), ("Notional", typeof(decimal)));
@@ -242,7 +242,7 @@ public class DataReaderTests
         Assert.IsType<OverflowException>(refusal.InnerException);
     }
 
-    [Fact] // ADR-0063: a Record Key is declared over a Text or an Integer column, and a key carried twice is refused, naming the key and the rows
+    [Fact] // ADR-0064: a Record Key is declared over a Text or an Integer column, and a key carried twice is refused, naming the key and the rows
     public async Task A_record_key_keys_the_snapshot_and_refuses_a_key_carried_twice()
     {
         var table = Table(("Id", typeof(int)), ("Desk", typeof(string)));
@@ -259,7 +259,7 @@ public class DataReaderTests
         Assert.Equal(7L, refusal.Key);
     }
 
-    [Fact] // ADR-0063: a Blank Record Key is refused, naming the row
+    [Fact] // ADR-0064: a Blank Record Key is refused, naming the row
     public async Task A_blank_record_key_is_refused()
     {
         var table = Table(("Id", typeof(string)));
@@ -272,7 +272,7 @@ public class DataReaderTests
         Assert.Equal("Id", refusal.Column);
     }
 
-    [Fact] // ADR-0063: a Record Key the reader gives as another kind than Text or Integer is refused by name
+    [Fact] // ADR-0064: a Record Key the reader gives as another kind than Text or Integer is refused by name
     public async Task A_record_key_of_another_kind_is_refused()
     {
         var table = Table(("Id", typeof(decimal)));
@@ -289,7 +289,7 @@ public class DataReaderTests
         Assert.Throws<ArgumentException>(() => new SnapshotDataReaderBuilder().Column("Id").Key("Other"));
     }
 
-    [Fact] // ADR-0063: an unsigned integer beyond a 64-bit Integer is refused by row and column rather than wrapped
+    [Fact] // ADR-0064: an unsigned integer beyond a 64-bit Integer is refused by row and column rather than wrapped
     public async Task An_unsigned_integer_beyond_64_bits_is_refused()
     {
         var table = Table(("Big", typeof(ulong)));
@@ -301,7 +301,7 @@ public class DataReaderTests
         Assert.Equal("Row 2, column 'Big': the value 18446744073709551615 is outside the range of a 64-bit Integer.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a value that cannot be read fails the whole load, naming the row and the column
+    [Fact] // ADR-0064: a value that cannot be read fails the whole load, naming the row and the column
     public async Task A_value_that_cannot_be_read_fails_the_load_by_row_and_column()
     {
         var table = Table(("Code", typeof(string)));
@@ -316,7 +316,7 @@ public class DataReaderTests
         Assert.IsType<FormatException>(refusal.InnerException);
     }
 
-    [Fact] // ADR-0063: a build works in slices, yields between them and reports the rows read
+    [Fact] // ADR-0064: a build works in slices, yields between them and reports the rows read
     public async Task A_build_yields_between_slices_and_reports_rows()
     {
         var table = Table(("Id", typeof(long)), ("Desk", typeof(string)));
@@ -344,7 +344,7 @@ public class DataReaderTests
         Assert.Equal(new SnapshotProgress(10_000, 10_000), reports[^1]);
     }
 
-    [Fact] // ADR-0063: a cancelled build throws, and yields nothing
+    [Fact] // ADR-0064: a cancelled build throws, and yields nothing
     public async Task A_cancelled_build_throws_and_yields_nothing()
     {
         var table = Table(("Id", typeof(long)));
@@ -371,7 +371,7 @@ public class DataReaderTests
         Assert.Equal(3, yields);
     }
 
-    [Fact] // ADR-0063: a build asked for with a cancelled token reads nothing
+    [Fact] // ADR-0064: a build asked for with a cancelled token reads nothing
     public async Task A_build_cancelled_before_it_starts_reads_nothing()
     {
         var table = Table(("Id", typeof(long)));
@@ -386,7 +386,7 @@ public class DataReaderTests
         Assert.Equal(1L, reader.GetInt64(0));
     }
 
-    [Fact] // ADR-0063: the reader's current result set is read, from where it stands; it is neither moved on nor closed
+    [Fact] // ADR-0064: the reader's current result set is read, from where it stands; it is neither moved on nor closed
     public async Task The_current_result_set_is_read_and_the_reader_left_open()
     {
         var first = Table(("Id", typeof(long)));
@@ -405,7 +405,7 @@ public class DataReaderTests
         Assert.Equal(["FX"], Values(await new SnapshotDataReaderBuilder().BuildAsync(reader, null, TestContext.Current.CancellationToken), "Desk"));
     }
 
-    [Fact] // ADR-0063: the same records read from a DbDataReader and built from objects hold the same values
+    [Fact] // ADR-0064: the same records read from a DbDataReader and built from objects hold the same values
     public async Task A_reader_holds_what_the_same_records_hold_as_objects()
     {
         var records = Trades(3_000);
@@ -421,7 +421,7 @@ public class DataReaderTests
         Assert.Equal(((TextColumn)fromObjects["Desk"]).Dictionary, ((TextColumn)fromReader["Desk"]).Dictionary);
     }
 
-    [Fact] // ADR-0063: a declaration is checked as it is made: a name is unique, and a field is named
+    [Fact] // ADR-0064: a declaration is checked as it is made: a name is unique, and a field is named
     public void A_declaration_is_checked_as_it_is_made()
     {
         Assert.Throws<ArgumentException>(() => new SnapshotDataReaderBuilder().Column("A").Column("B", name: "A"));

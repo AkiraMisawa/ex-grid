@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace ExGrid.DemoApi;
 
 /// <summary>
-/// The server's Pivot Source (ADR-0065, ADR-0068): the three questions ExPivot asks — the Leaf
+/// The server's Pivot Source (ADR-0066, ADR-0069): the three questions ExPivot asks — the Leaf
 /// Aggregates, a field's Items and the records behind a cell — answered by SQL written by hand over
 /// the trades (<see cref="TradePivotSql"/>). <c>/api/pivot</c> serves it as <c>PivotJson</c>, and a
 /// page reaches it through <c>PivotSource.Fetch</c>.
@@ -14,7 +14,7 @@ namespace ExGrid.DemoApi;
 /// <item><b>Items and records are asked under a version.</b> One that is not the read's is refused
 /// with <see cref="PivotSourceRefusalKind.SourceVersionNotHeld"/>: the data has moved on, and records
 /// read now would not add up to the cell. The server keeps no older state, only the counter it
-/// compares with (ADR-0065).</item>
+/// compares with (ADR-0066).</item>
 /// <item><b>It refuses what <c>PivotSource.Fetch</c> refuses</b>, in the same words: a field it does
 /// not have, a part only an Aggregation it does not offer reads, and more leaves than the question
 /// allows — the last as soon as the reading passes the cap.</item>
@@ -57,7 +57,7 @@ internal sealed class TradePivotSource(TradeStore store) : PivotSource
 
     /// <summary>
     /// A field's Items over all the data — not narrowed by any Hidden Item — that match the search,
-    /// at most as many as asked, with how many match (ADR-0065). The distinct stored values are read
+    /// at most as many as asked, with how many match (ADR-0066). The distinct stored values are read
     /// in SQL; .NET folds them into Items, searches each Item's invariant text ignoring case and
     /// orders them in the source's invariant order, as <c>PivotSource.From</c> does, so a page cut
     /// short holds the same Items.
@@ -89,7 +89,7 @@ internal sealed class TradePivotSource(TradeStore store) : PivotSource
     }
 
     /// <summary>
-    /// One page of the records behind a cell (ADR-0062/0065): those carrying every Item of the
+    /// One page of the records behind a cell (ADR-0063/0066): those carrying every Item of the
     /// cell's paths and no Hidden Item, in <c>TradeId</c> order — the data's order — as
     /// <c>LIMIT</c> and <c>OFFSET</c>, with how many there are, all read at the version asked.
     /// </summary>

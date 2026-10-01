@@ -9,7 +9,7 @@ namespace ExGrid.Data.Tests;
 
 /// <summary>
 /// A CSV is read in UTF-8, with or without its byte-order mark, and in Shift-JIS when its Schema
-/// declares it (ADR-0063, DA-8). Only the opt-in encoding refers to the code pages, so an application
+/// declares it (ADR-0064, DA-8). Only the opt-in encoding refers to the code pages, so an application
 /// that never asks for Shift-JIS never loads them — and, trimmed for a browser, never downloads them.
 /// </summary>
 public class CsvEncodingTests
@@ -33,7 +33,7 @@ public class CsvEncodingTests
     /// </summary>
     private const string JapaneseFile = "取引先,金額,確定\r\n東京表,\"1,234.5\",はい\r\nソ能ｱ,-5,いいえ\r\n\"大阪, 本店\r\n2階\",なし,なし\r\n";
 
-    [Fact] // ADR-0063: UTF-8 is read with or without its byte-order mark, alike
+    [Fact] // ADR-0064: UTF-8 is read with or without its byte-order mark, alike
     public void Utf8_is_read_with_or_without_its_byte_order_mark()
     {
         var schema = CsvTests.Mixed();
@@ -46,7 +46,7 @@ public class CsvEncodingTests
         Assert.Equal(["AMER", "APAC", "EMEA", null, "AMER"], Values(with, "Region"));
     }
 
-    [Fact] // ADR-0063: Shift-JIS is read when the Schema declares it: headers, text, numbers, Booleans and blank texts
+    [Fact] // ADR-0064: Shift-JIS is read when the Schema declares it: headers, text, numbers, Booleans and blank texts
     public void Shift_jis_is_read_when_the_schema_declares_it()
     {
         var snapshot = Read(Japanese, Cp932.GetBytes(JapaneseFile));
@@ -57,7 +57,7 @@ public class CsvEncodingTests
         Assert.Equal([true, false, null], Values(snapshot, "確定"));
     }
 
-    [Fact] // ADR-0063: a Shift-JIS record cut across any read boundary, a character's two bytes included, reads as the whole file does
+    [Fact] // ADR-0064: a Shift-JIS record cut across any read boundary, a character's two bytes included, reads as the whole file does
     public void A_shift_jis_record_cut_across_any_read_boundary_reads_alike()
     {
         var bytes = Cp932.GetBytes(JapaneseFile);
@@ -68,7 +68,7 @@ public class CsvEncodingTests
         Assert.Equal(whole, Dump(Read(Japanese, bytes, chunk: 1)));
     }
 
-    [Fact] // ADR-0063: a file that begins with UTF-8's byte-order mark is read as UTF-8, whatever the Schema declares
+    [Fact] // ADR-0064: a file that begins with UTF-8's byte-order mark is read as UTF-8, whatever the Schema declares
     public void A_utf8_byte_order_mark_wins_over_a_declared_encoding()
     {
         var snapshot = Read(Japanese, Utf8(JapaneseFile, bom: true));
@@ -76,7 +76,7 @@ public class CsvEncodingTests
         Assert.Equal(["東京表", "ソ能ｱ", "大阪, 本店\r\n2階"], Values(snapshot, "取引先"));
     }
 
-    [Fact] // ADR-0063: Shift-JIS read where UTF-8 is declared is refused, naming the row and the column, rather than garbled
+    [Fact] // ADR-0064: Shift-JIS read where UTF-8 is declared is refused, naming the row and the column, rather than garbled
     public void Shift_jis_read_as_utf8_is_refused()
     {
         var schema = new CsvSchema([new("Name", SnapshotKind.Text), new("Qty", SnapshotKind.Integer)]);
@@ -86,7 +86,7 @@ public class CsvEncodingTests
         Assert.Equal("Row 2, column 'Name': the text is not valid UTF-8 (line 3).", refusal.Message);
     }
 
-    [Fact] // ADR-0063: bytes that are not Shift-JIS are refused by row and column when Shift-JIS is declared
+    [Fact] // ADR-0064: bytes that are not Shift-JIS are refused by row and column when Shift-JIS is declared
     public void Invalid_shift_jis_is_refused()
     {
         var schema = new CsvSchema([new("Name", SnapshotKind.Text), new("Qty", SnapshotKind.Integer)]) { Encoding = CsvEncoding.ShiftJis };
@@ -99,7 +99,7 @@ public class CsvEncodingTests
         Assert.Same(CsvEncoding.ShiftJis, CsvEncoding.ShiftJis);
     }
 
-    [Fact] // ADR-0063 (DA-8): only the opt-in encoding refers to the code pages, so an application that never asks for them never loads them
+    [Fact] // ADR-0064 (DA-8): only the opt-in encoding refers to the code pages, so an application that never asks for them never loads them
     public void Only_the_opt_in_encoding_refers_to_the_code_pages()
     {
         var referrers = AssemblyInspection.Referrers(typeof(CsvEncoding).Assembly.Location, "System.Text.Encoding.CodePages");
@@ -111,7 +111,7 @@ public class CsvEncodingTests
         Assert.True(getter.MethodImplementationFlags.HasFlag(MethodImplAttributes.NoInlining));
     }
 
-    [Fact] // ADR-0063 (DA-8): the package is trimmable, so a browser application that never asks for Shift-JIS publishes without the code pages
+    [Fact] // ADR-0064 (DA-8): the package is trimmable, so a browser application that never asks for Shift-JIS publishes without the code pages
     public void The_package_is_trimmable_so_a_browser_never_downloads_the_code_pages()
     {
         // Blazor trims an assembly member by member only when it is marked trimmable; otherwise it

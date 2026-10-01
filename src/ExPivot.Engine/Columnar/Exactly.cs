@@ -1,7 +1,7 @@
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The arithmetic of a Snapshot's exact numbers (ADR-0059/0063): a Decimal segment holds each value
+/// The arithmetic of a Snapshot's exact numbers (ADR-0060/0064): a Decimal segment holds each value
 /// as a 64-bit integer at the segment's scale, or as a <see cref="decimal"/>; an Integer column at
 /// scale 0. These turn such an integer into the <see cref="decimal"/> it stands for and into the
 /// <see cref="double"/> a <c>decimal</c> of that value converts to — the same <c>double</c>, bit for
@@ -49,7 +49,7 @@ internal static class Exactly
     }
 
     /// <summary>The value with its trailing zeros gone, so that one value has one form — <c>1.5</c>,
-    /// never <c>1.50</c> — whatever segments its parts came from (ADR-0063). Zero is <c>0</c>, never
+    /// never <c>1.50</c> — whatever segments its parts came from (ADR-0064). Zero is <c>0</c>, never
     /// <c>0.00</c> nor the negative zero a subtraction of two equal negative numbers leaves.</summary>
     public static decimal Canonical(decimal value)
     {
@@ -79,7 +79,7 @@ internal static class Exactly
     // ---- Exact sums as 128-bit integers ---------------------------------------------------------
     //
     // A leaf's exact sum is an integer at a power of ten: integer arithmetic is exact, so the
-    // order its numbers are added and taken away in cannot change it (ADR-0066), where a decimal
+    // order its numbers are added and taken away in cannot change it (ADR-0067), where a decimal
     // rounds a step that needs more than 96 bits. A sum past 128 bits — beyond 10^38 at its scale —
     // is Excel's double from then on.
 

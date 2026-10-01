@@ -1,6 +1,6 @@
 namespace ExPivot.Engine;
 
-/// <summary>The counts every field in Values carries at a cell (ADR-0065).</summary>
+/// <summary>The counts every field in Values carries at a cell (ADR-0066).</summary>
 internal struct CountsPart
 {
     /// <summary>Values that are not Blank — Excel's <c>COUNTA</c>.</summary>
@@ -47,10 +47,10 @@ internal struct VariancePart
 
 /// <summary>
 /// One field in Values, held column by column over a set of cells — a question's leaves, or every
-/// cell of a cube (ADR-0065). Only the parts asked for have columns, and only they are
-/// accumulated (ADR-0059, "Changed when decided"). Every part combines exactly: counts and exact
+/// cell of a cube (ADR-0066). Only the parts asked for have columns, and only they are
+/// accumulated (ADR-0060, "Changed when decided"). Every part combines exactly: counts and exact
 /// sums add, extremes compare, products multiply and running variances merge, so a total merged
-/// from its leaves is the total of its records (ADR-0059: never a total of totals).
+/// from its leaves is the total of its records (ADR-0060: never a total of totals).
 /// </summary>
 internal sealed class PartColumns
 {
@@ -151,7 +151,7 @@ internal sealed class PartColumns
 
     /// <summary>
     /// Writes each exact sum and exact extreme of the first <paramref name="count"/> cells without
-    /// trailing zeros (ADR-0063: a Decimal is a value, not the scale it was written with). A sum
+    /// trailing zeros (ADR-0064: a Decimal is a value, not the scale it was written with). A sum
     /// folded from segments at different scales then reads alike however it was made, and a
     /// batch folded in leaves it as a fresh aggregation would.
     /// </summary>
@@ -324,7 +324,7 @@ internal sealed class PartColumns
         }
         catch (OverflowException)
         {
-            // Money stays exact until it cannot: then double, Excel's own arithmetic (ADR-0059).
+            // Money stays exact until it cannot: then double, Excel's own arithmetic (ADR-0060).
             ToDouble(ref sum);
             Neumaier(ref sum, (double)value);
         }
@@ -591,7 +591,7 @@ internal sealed class PartColumns
         return (Parts & needed) == needed;
     }
 
-    /// <summary>An Aggregation's answer at a cell, by the table in ADR-0059.</summary>
+    /// <summary>An Aggregation's answer at a cell, by the table in ADR-0060.</summary>
     public AggregateValue Read(int cell, PivotAggregation aggregation)
     {
         var counts = Counts[cell];
@@ -602,7 +602,7 @@ internal sealed class PartColumns
         if (aggregation == PivotAggregation.CountNumbers)
             return AggregateValue.Of((decimal)counts.Numbers);
         if (!Answers(aggregation))
-            throw new InvalidOperationException($"{aggregation} reads a part this field was not aggregated with ({Parts}); ask again with its parts (ADR-0065).");
+            throw new InvalidOperationException($"{aggregation} reads a part this field was not aggregated with ({Parts}); ask again with its parts (ADR-0066).");
 
         var noNumber = counts.Numbers == 0;
         switch (aggregation)
@@ -669,7 +669,7 @@ internal sealed class PartColumns
 }
 
 /// <summary>An Aggregation's answer before it is shown: nothing, a number (exact in
-/// <c>decimal</c> where it could be) or an error value (ADR-0059).</summary>
+/// <c>decimal</c> where it could be) or an error value (ADR-0060).</summary>
 internal readonly struct AggregateValue
 {
     private AggregateValue(bool isEmpty, double number, decimal? exact, string? error)

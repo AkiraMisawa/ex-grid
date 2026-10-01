@@ -1,10 +1,10 @@
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The type a Consumer declares for a Pivot Field (ADR-0059). It decides the defaults only —
+/// The type a Consumer declares for a Pivot Field (ADR-0060). It decides the defaults only —
 /// where a ticked field goes, which Aggregation a new Value Field takes, and how an Item is
 /// labelled. The kind of each Item comes from the data: over a Snapshot, from its column's kind
-/// (ADR-0063); read through an untyped accessor, from each value, so a field whose values are not
+/// (ADR-0064); read through an untyped accessor, from each value, so a field whose values are not
 /// all of the declared type is still pivoted as its values are.
 /// </summary>
 public enum PivotFieldType
@@ -22,7 +22,7 @@ public enum PivotFieldType
     Boolean,
 }
 
-/// <summary>The four places a Pivot Field stands, in Excel's words (ADR-0060).</summary>
+/// <summary>The four places a Pivot Field stands, in Excel's words (ADR-0061).</summary>
 public enum PivotArea
 {
     /// <summary>The report filter: its fields filter the report and show above it.</summary>
@@ -38,7 +38,7 @@ public enum PivotArea
     Values,
 }
 
-/// <summary>Where Σ Values stands, when there are two or more Value Fields (ADR-0059).</summary>
+/// <summary>Where Σ Values stands, when there are two or more Value Fields (ADR-0060).</summary>
 public enum PivotAxis
 {
     /// <summary>Innermost in Columns — Excel's default.</summary>
@@ -49,7 +49,7 @@ public enum PivotAxis
 }
 
 /// <summary>How a Value Field summarises the records at a cell — Excel's "Summarize Values By"
-/// (ADR-0059).</summary>
+/// (ADR-0060).</summary>
 public enum PivotAggregation
 {
     /// <summary>The sum of the numbers; <c>0</c> where there are values but none is a number.</summary>
@@ -86,7 +86,7 @@ public enum PivotAggregation
     Varp,
 }
 
-/// <summary>How a Value Field's values are shown, after aggregation (ADR-0059). The first
+/// <summary>How a Value Field's values are shown, after aggregation (ADR-0060). The first
 /// version holds the three percentages of a total.</summary>
 public enum PivotShowValuesAs
 {
@@ -103,7 +103,7 @@ public enum PivotShowValuesAs
     PercentOfRowTotal,
 }
 
-/// <summary>How a Pivot Report sets out its row labels — Excel's "Report Layout" (ADR-0059).</summary>
+/// <summary>How a Pivot Report sets out its row labels — Excel's "Report Layout" (ADR-0060).</summary>
 public enum PivotReportForm
 {
     /// <summary>One indented label column, a group row per outer Item. Excel's default.</summary>
@@ -116,7 +116,7 @@ public enum PivotReportForm
     Tabular,
 }
 
-/// <summary>Ascending or descending, for an Item order (ADR-0059).</summary>
+/// <summary>Ascending or descending, for an Item order (ADR-0060).</summary>
 public enum PivotSortDirection
 {
     /// <summary>A to Z, smallest to largest; <c>(blank)</c> last.</summary>
@@ -127,7 +127,7 @@ public enum PivotSortDirection
 }
 
 /// <summary>
-/// The kind of an Item, which comes from its value (ADR-0059). The declaration order is the
+/// The kind of an Item, which comes from its value (ADR-0060). The declaration order is the
 /// ascending order across kinds: numbers, dates, text, Booleans, the error Item, then
 /// <c>(blank)</c>.
 /// </summary>
@@ -152,7 +152,7 @@ public enum PivotItemKind
     Blank,
 }
 
-/// <summary>What a row of a Pivot Report stands for (ADR-0058/0059). The component paints it
+/// <summary>What a row of a Pivot Report stands for (ADR-0059/0060). The component paints it
 /// as ExGrid's Row Kind: an Item row as Detail, a group row as Group, the others as Total.</summary>
 public enum PivotRowRole
 {
@@ -170,7 +170,7 @@ public enum PivotRowRole
     GrandTotal,
 }
 
-/// <summary>What a value column of a Pivot Report stands for (ADR-0059).</summary>
+/// <summary>What a value column of a Pivot Report stands for (ADR-0060).</summary>
 public enum PivotColumnRole
 {
     /// <summary>An Item of the innermost column field, a collapsed Item, or the one column of a

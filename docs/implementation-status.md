@@ -720,24 +720,24 @@ package's start and ADR-0039, 2026-09-24.)*
 ## ExPivot and the family's data (2026-10-01)
 
 *(Built on `claude/expivot-mudblazor-wrapper-j25225`. Decided with the user in the ExPivot
-grilling, Q1 to Q63: [ADR-0058](adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)
-to [ADR-0068](adr/0068-the-demo-pages-call-a-demo-api-server-both-hosts-share.md). §29 and §30 of the
-Definition of Done judge ExPivot and the data packages, and never gate ExGrid. §26's DC-52 to DC-55
+grilling, Q1 to Q63: [ADR-0059](adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)
+to [ADR-0069](adr/0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md). §29 and §30 of the
+Definition of Done judge ExPivot and the data packages, and never gate ExGrid. §26's DC-59 to DC-62
 are the core changes, and those do gate it.)*
 
 **What exists.**
 
-- **`ExGrid.Data`, the Snapshot** (ADR-0063):
+- **`ExGrid.Data`, the Snapshot** (ADR-0064):
   - six kinds, with a Blank in each; text as a dictionary in first-appearance order; Decimal as
     scaled 64-bit integers per segment;
   - built from objects through typed accessors, from a CSV under a declared Schema or a suggested
     one the user confirms, from a `DbDataReader`, and from columns;
   - loaded in slices, with progress and cancellation;
   - Change Batches by a Record Key, which share every segment they do not touch.
-- **`ExGrid.Data.Arrow`** (ADR-0064): Arrow's IPC stream and file read into a Snapshot, and a
+- **`ExGrid.Data.Arrow`** (ADR-0065): Arrow's IPC stream and file read into a Snapshot, and a
   Snapshot written as an uncompressed stream. Codecs are used only when handed in. Its type table
   covers what `pyarrow`, Polars and DuckDB write.
-- **`ExPivot.Engine` over the Snapshot** (ADR-0059, ADR-0065, ADR-0066):
+- **`ExPivot.Engine` over the Snapshot** (ADR-0060, ADR-0066, ADR-0067):
   - Leaf Aggregates, with exact sums held as 128-bit integers;
   - the Pivot Source: `PivotSource.From`, `PivotSource.Fetch`, `PivotJson` and Source Versions;
   - the Order Key and the date parts;
@@ -750,8 +750,8 @@ are the core changes, and those do gate it.)*
   - live gathering, the Change Highlight and the Stale Report.
 - **`ExPivot.MudBlazor`** draws every surface, including the toolbar, the Details tabs (in
   `MudTabs`) and the dialog's content.
-- **ExGrid's Change Highlight** (ADR-0067, DC-53 to DC-55).
-- **The demo API server, `samples/ExGrid.DemoApi`** (ADR-0068): SQLite holding money as integer
+- **ExGrid's Change Highlight** (ADR-0068, DC-60 to DC-62).
+- **The demo API server, `samples/ExGrid.DemoApi`** (ADR-0069): SQLite holding money as integer
   cents, the trades as Arrow, a Pivot Source answered in SQL, and live changes said over SignalR.
 - **The six pages:** `/pivot`, `/pivot-csv`, `/pivot-db`, `/pivot-live`, `/pivot-risk` and
   `/grid-live`. Each shows the code it runs, read from its own source.
@@ -782,19 +782,19 @@ DA-17). Over a million trades in a published WebAssembly build:
 
 **Since then, decided with the user and built** (2026-10-01):
 
-- **The cap stays 200,000, and the work after an answer is sliced** (ADR-0065, PV-40, ticket 22).
+- **The cap stays 200,000, and the work after an answer is sliced** (ADR-0066, PV-40, ticket 22).
   Near the cap the longest task fell from 1.65 s to 137 ms, and the answer took 2.79 s rather
   than 2.59, measured back to back (`verification/2026-10-01-linux-measure-sliced`). What remains
   over 50 ms is the browser runtime's full collections, about 70 ms inside a slice, and the turn
   that puts the report on screen.
 - **A Consumer gives a grid the keyboard back, and hears an Escape that leaves it**
-  ([ADR-0069](adr/0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md), DC-57,
+  ([ADR-0070](adr/0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md), DC-57,
   DC-58, PV-39, ticket 21). Show Details' dialog closes on Escape, and the report takes the
   keyboard back however it closes. Building it found that a held Escape peeled a layer per
   repeat, cancelling a half-typed formula under its closing list. A held Escape is now one
   press in every grid (ADR-0012, KB-44).
 - **The CSV read is faster** (ExGrid.Data's ticket 07, `verification/2026-10-01-linux-measure-csv`;
-  ADR-0063, refined). A million rows read in 4.0 s in a published WebAssembly build, from 12.9 s,
+  ADR-0064, refined). A million rows read in 4.0 s in a published WebAssembly build, from 12.9 s,
   and in 491 ms on CoreCLR, from 692, both on the same machine. Every rule of the read and every
   refusal is unchanged. The work found and fixed a crash: a Blank early in a numeric, date or
   Boolean column that later outgrew its first room. Slices now yield with `Task.Yield()` in a

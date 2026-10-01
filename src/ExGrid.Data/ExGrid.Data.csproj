@@ -13,7 +13,7 @@
     <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
-  <!-- No package and no project references, deliberately (ADR-0063, DA-1): every bundled source
+  <!-- No package and no project references, deliberately (ADR-0064, DA-1): every bundled source
        of the family can read a Snapshot, a server with no UI included. -->
 
   <ItemGroup>

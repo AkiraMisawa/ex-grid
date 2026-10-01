@@ -4,7 +4,7 @@ using System.Text;
 namespace ExGrid.Data.Csv;
 
 /// <summary>
-/// Suggests a Schema from a file's first rows (ADR-0063, Q33). It reads only the sample, proposes a
+/// Suggests a Schema from a file's first rows (ADR-0064, Q33). It reads only the sample, proposes a
 /// kind and a reading for each column under which the whole sample reads, and marks every column
 /// whose reading is not clear — the account number <c>00123</c>, a comma that could be the decimal
 /// point, a date that could be the first of February or the second of January — rather than settle

@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExGrid.Data;
 
 /// <summary>
-/// A Schema suggested for a file nobody has described, from its first rows (ADR-0063, Q33), with every
+/// A Schema suggested for a file nobody has described, from its first rows (ADR-0064, Q33), with every
 /// column whose reading is not clear marked, for the user to confirm. It is a proposal: nothing reads
 /// the file under it until <see cref="Schema"/> — or a Schema changed from it — is handed to
 /// <see cref="CsvSchema.ReadAsync(Stream, SnapshotLoadOptions?, CancellationToken)"/>.
@@ -66,7 +66,7 @@ public sealed class CsvColumnSuggestion
 /// <param name="Note">The doubt in a sentence, naming what was seen and what was suggested.</param>
 public sealed record CsvMark(CsvDoubt Doubt, string Note);
 
-/// <summary>Why a suggested reading is not clear (ADR-0063, Q33).</summary>
+/// <summary>Why a suggested reading is not clear (ADR-0064, Q33).</summary>
 public enum CsvDoubt
 {
     /// <summary>The column is empty in every sampled row, so nothing says what it holds; it is suggested

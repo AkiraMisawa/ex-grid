@@ -5,9 +5,9 @@ namespace ExGrid.DemoPages;
 
 /// <summary>
 /// A booked trade as the /pivot page pivots it. Immutable: ExPivot holds a snapshot and a new list
-/// is a refresh (ADR-0058). None of it is any real Consumer's: the books and desks are invented and
+/// is a refresh (ADR-0059). None of it is any real Consumer's: the books and desks are invented and
 /// the numbers are a seeded sequence. Its month is not a property: the Pivot Fields declare it as a
-/// part of the trade date (ADR-0059).
+/// part of the trade date (ADR-0060).
 /// </summary>
 public sealed record DemoPivotTrade(
     string Id,

@@ -11,7 +11,7 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// The Change Highlight as it reaches the DOM (ADR-0067, DC-53/DC-54): the Consumer says when a
+/// The Change Highlight as it reaches the DOM (ADR-0068, DC-60/DC-61): the Consumer says when a
 /// cell's shown value changed, the grid paints <c>ex-changed</c> on that value cell while the
 /// change is less than the duration ago, and takes the class away itself on one timer —
 /// rendering again only the rows whose marks ended. The fake clock is handed in as the grid's
@@ -70,7 +70,7 @@ public class ChangeHighlightTests : GridTestContext
     private static Dictionary<string, int> RenderCounts(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.FindComponents<ExGridRow<TestRow>>().ToDictionary(row => row.Instance.Row.Book, row => row.RenderCount);
 
-    [Fact] // ADR-0067 / DC-53: exactly the value cells whose change is less than the duration ago wear ex-changed
+    [Fact] // ADR-0068 / DC-60: exactly the value cells whose change is less than the duration ago wear ex-changed
     public void Exactly_the_cells_whose_change_is_within_the_duration_are_marked()
     {
         var now = Clock.GetUtcNow();
@@ -91,7 +91,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Equal("-7", amount.TextContent);
     }
 
-    [Fact] // ADR-0067 / DC-53: the grid takes the mark away itself once the duration has passed, in one step
+    [Fact] // ADR-0068 / DC-60: the grid takes the mark away itself once the duration has passed, in one step
     public void The_mark_goes_when_the_duration_has_passed()
     {
         var now = Clock.GetUtcNow();
@@ -104,7 +104,7 @@ public class ChangeHighlightTests : GridTestContext
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-changed")));
     }
 
-    [Fact] // ADR-0067 / DC-53: asked of value cells only — an Action, Template or Mark cell paints no value that could change
+    [Fact] // ADR-0068 / DC-60: asked of value cells only — an Action, Template or Mark cell paints no value that could change
     public void Only_value_cells_are_asked_and_marked()
     {
         var now = Clock.GetUtcNow();
@@ -138,7 +138,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-changed .ex-mark, .ex-changed .ex-action, .ex-changed .bar"));
     }
 
-    [Fact] // ADR-0067 / DC-53: a Pinned Column's value cell is a value cell like any other
+    [Fact] // ADR-0068 / DC-60: a Pinned Column's value cell is a value cell like any other
     public void A_pinned_value_cell_carries_the_mark()
     {
         var now = Clock.GetUtcNow();
@@ -150,7 +150,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Equal("Beta", cell.TextContent);
     }
 
-    [Fact] // ADR-0067 / DC-53: when a mark ends, only the rows whose marks ended render — no other row does
+    [Fact] // ADR-0068 / DC-60: when a mark ends, only the rows whose marks ended render — no other row does
     public void When_a_mark_ends_only_the_rows_whose_marks_ended_render()
     {
         var now = Clock.GetUtcNow();
@@ -177,7 +177,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Equal(new Dictionary<string, int> { ["Alpha"] = 2, ["Beta"] = 3, ["Gamma"] = 1 }, RenderCounts(cut));
     }
 
-    [Fact] // ADR-0067 / ADR-0003: the time handed down with every render renders no row whose mark still stands, or that has none
+    [Fact] // ADR-0068 / ADR-0003: the time handed down with every render renders no row whose mark still stands, or that has none
     public void Time_passing_renders_no_row_whose_mark_has_not_ended()
     {
         var now = Clock.GetUtcNow();
@@ -195,7 +195,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.All(cut.FindComponents<ExGridRow<TestRow>>(), row => Assert.Equal(1, row.RenderCount));
     }
 
-    [Fact] // ADR-0067 / ADR-0006: a new delegate is the change signal — the painted rows ask again
+    [Fact] // ADR-0068 / ADR-0006: a new delegate is the change signal — the painted rows ask again
     public void A_new_delegate_makes_the_painted_rows_ask_again()
     {
         var now = Clock.GetUtcNow();
@@ -206,7 +206,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Equal([("Gamma", "Amount")], MarkedCells(cut));
     }
 
-    [Fact] // ADR-0067 / ADR-0006: rewriting what an unchanged delegate answers changes no mark and renders no row
+    [Fact] // ADR-0068 / ADR-0006: rewriting what an unchanged delegate answers changes no mark and renders no row
     public void Rewriting_what_an_unchanged_delegate_answers_changes_no_mark()
     {
         var now = Clock.GetUtcNow();
@@ -224,7 +224,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.All(cut.FindComponents<ExGridRow<TestRow>>(), row => Assert.Equal(1, row.RenderCount));
     }
 
-    [Fact] // ADR-0067 / ADR-0003: a row repainted for a reason of its own — a new instance — asks again under an unchanged delegate
+    [Fact] // ADR-0068 / ADR-0003: a row repainted for a reason of its own — a new instance — asks again under an unchanged delegate
     public void A_replaced_row_asks_again_under_an_unchanged_delegate()
     {
         var now = Clock.GetUtcNow();
@@ -245,7 +245,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.All(cut.FindComponents<ExGridRow<TestRow>>(), row => Assert.Equal(1, row.RenderCount));
     }
 
-    [Fact] // ADR-0067 / DC-53 / DC-1: without the declaration nothing is asked, no clock is read, no class is painted and no timer exists
+    [Fact] // ADR-0068 / DC-60 / DC-1: without the declaration nothing is asked, no clock is read, no class is painted and no timer exists
     public void Without_the_declaration_nothing_is_read_painted_or_timed()
     {
         var clock = new CountingTimeProvider(Clock);
@@ -262,7 +262,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.All(cut.FindComponents<ExGridRow<TestRow>>(), row => Assert.Equal(1, row.RenderCount));
     }
 
-    [Fact] // ADR-0067 / DC-1: taking the declaration away takes every mark away, asks nothing more and lets the timer go
+    [Fact] // ADR-0068 / DC-1: taking the declaration away takes every mark away, asks nothing more and lets the timer go
     public void Taking_the_declaration_away_asks_nothing_more_and_keeps_no_timer()
     {
         var now = Clock.GetUtcNow();
@@ -283,7 +283,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Single(clock.Timers);
     }
 
-    [Fact] // ADR-0067 / DC-53: one timer at a time, re-armed for each next end, and none once no mark is painted
+    [Fact] // ADR-0068 / DC-60: one timer at a time, re-armed for each next end, and none once no mark is painted
     public void One_timer_is_rearmed_for_each_next_end_and_goes_with_the_last_mark()
     {
         var now = Clock.GetUtcNow();
@@ -321,7 +321,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Single(clock.Timers, t => t.Disposals == 0);
     }
 
-    [Fact] // ADR-0067 / MEM-3: the timer is disposed with the grid, once
+    [Fact] // ADR-0068 / MEM-3: the timer is disposed with the grid, once
     public async Task The_timer_is_disposed_with_the_grid()
     {
         var now = Clock.GetUtcNow();
@@ -334,7 +334,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Equal(1, Assert.Single(clock.Timers).Disposals);
     }
 
-    [Fact] // ADR-0067 / DC-53: ChangeHighlightDuration is the Consumer's to set
+    [Fact] // ADR-0068 / DC-60: ChangeHighlightDuration is the Consumer's to set
     public void The_duration_is_the_consumers()
     {
         var now = Clock.GetUtcNow();
@@ -348,7 +348,7 @@ public class ChangeHighlightTests : GridTestContext
         cut.WaitForAssertion(() => Assert.Empty(MarkedCells(cut)));
     }
 
-    [Fact] // ADR-0067: a new duration is a change of what the painted rows show, so they ask again
+    [Fact] // ADR-0068: a new duration is a change of what the painted rows show, so they ask again
     public void A_new_duration_repaints_the_marks()
     {
         var now = Clock.GetUtcNow();
@@ -361,7 +361,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Empty(MarkedCells(cut));
     }
 
-    [Fact] // ADR-0067: a change time still to come — a server's clock ahead of the grid's — is marked until it and the duration have passed
+    [Fact] // ADR-0068: a change time still to come — a server's clock ahead of the grid's — is marked until it and the duration have passed
     public void A_change_time_in_the_future_is_marked_until_it_and_the_duration_have_passed()
     {
         var now = Clock.GetUtcNow();
@@ -375,7 +375,7 @@ public class ChangeHighlightTests : GridTestContext
         cut.WaitForAssertion(() => Assert.Empty(MarkedCells(cut)));
     }
 
-    [Fact] // ADR-0067: a change time far ahead is waited for in steps a timer accepts, and a step that ends no mark renders no row
+    [Fact] // ADR-0068: a change time far ahead is waited for in steps a timer accepts, and a step that ends no mark renders no row
     public void A_far_future_change_is_waited_for_in_steps_that_render_nothing()
     {
         var now = Clock.GetUtcNow();
@@ -392,7 +392,7 @@ public class ChangeHighlightTests : GridTestContext
         cut.WaitForAssertion(() => Assert.Empty(MarkedCells(cut)));
     }
 
-    [Fact] // ADR-0067: a mark cannot last a negative time — refused by name
+    [Fact] // ADR-0068: a mark cannot last a negative time — refused by name
     public void A_negative_duration_is_refused()
     {
         var refusal = Assert.Throws<ArgumentOutOfRangeException>(() => RenderGrid(
@@ -401,7 +401,7 @@ public class ChangeHighlightTests : GridTestContext
         Assert.Equal("ChangeHighlightDuration", refusal.ParamName);
     }
 
-    [Fact] // ADR-0067: the grid reads the time from the Clock a test hands in, and its timer runs on it
+    [Fact] // ADR-0068: the grid reads the time from the Clock a test hands in, and its timer runs on it
     public void The_marks_follow_the_clock_handed_in()
     {
         var own = new FakeTimeProvider(Clock.GetUtcNow());
@@ -415,7 +415,7 @@ public class ChangeHighlightTests : GridTestContext
         cut.WaitForAssertion(() => Assert.Empty(MarkedCells(cut)));
     }
 
-    [Fact] // ADR-0067: with no Clock handed in, the marks run on the grid's own clock — the TimeProvider the host registered
+    [Fact] // ADR-0068: with no Clock handed in, the marks run on the grid's own clock — the TimeProvider the host registered
     public void Without_a_clock_the_marks_run_on_the_grids_own()
     {
         var now = Clock.GetUtcNow();
@@ -430,7 +430,7 @@ public class ChangeHighlightTests : GridTestContext
         cut.WaitForAssertion(() => Assert.Empty(MarkedCells(cut)));
     }
 
-    [Fact] // ADR-0067 / DC-54: a mark is keyed by row and column — across scrolls it stays on its cell, leaves with its row and comes back with it
+    [Fact] // ADR-0068 / DC-61: a mark is keyed by row and column — across scrolls it stays on its cell, leaves with its row and comes back with it
     public async Task A_mark_stays_on_its_row_across_scrolls()
     {
         const double RowHeightPx = 20;
@@ -467,7 +467,7 @@ public class ChangeHighlightTests : GridTestContext
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-changed")));
     }
 
-    [Fact] // ADR-0067 / ADR-0033 / DC-55: a mark is seen, not announced — the live region says nothing as marks come and go
+    [Fact] // ADR-0068 / ADR-0033 / DC-62: a mark is seen, not announced — the live region says nothing as marks come and go
     public void No_live_region_announces_a_mark()
     {
         var now = Clock.GetUtcNow();

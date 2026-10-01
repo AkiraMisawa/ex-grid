@@ -8,7 +8,7 @@ using Xunit;
 
 namespace ExPivot.Components.Tests;
 
-/// <summary>The report drawn by one ExGrid, as that grid's Consumer (ADR-0058).</summary>
+/// <summary>The report drawn by one ExGrid, as that grid's Consumer (ADR-0059).</summary>
 public class PivotRenderingTests : PivotTestContext
 {
     private static readonly PivotLayout RegionProduct = new()
@@ -17,7 +17,7 @@ public class PivotRenderingTests : PivotTestContext
         Values = [Sum("Amount")],
     };
 
-    [Fact] // ADR-0058: an empty layout asks for fields, and no grid is drawn
+    [Fact] // ADR-0059: an empty layout asks for fields, and no grid is drawn
     public void An_empty_layout_asks_for_fields()
     {
         var cut = RenderPivot();
@@ -26,7 +26,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal("To build a report, choose fields from the PivotTable Fields list.", cut.Find(".ex-pivot-empty").TextContent);
     }
 
-    [Fact] // ADR-0058: one ExGrid, the whole report as its Window, the label column pinned
+    [Fact] // ADR-0059: one ExGrid, the whole report as its Window, the label column pinned
     public void The_report_is_one_grid_with_its_labels_pinned()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -39,7 +39,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal(["East | 180", "North | 10", "West | 90", "(blank) | 5", "Grand Total | 285"], RowTexts(cut));
     }
 
-    [Fact] // ADR-0058/0024: group rows paint as Group, totals as Total, items as Detail
+    [Fact] // ADR-0059/0024: group rows paint as Group, totals as Total, items as Detail
     public void Roles_paint_as_row_kinds()
     {
         var cut = RenderPivot(RegionProduct with { SubtotalsAtTop = false });
@@ -52,7 +52,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal(RowKind.Total, kinds(Grid(cut).Instance.Window[^1]));
     }
 
-    [Fact] // ADR-0058: the Compact form's indent is written inline, and an outer Item carries its button
+    [Fact] // ADR-0059: the Compact form's indent is written inline, and an outer Item carries its button
     public void Labels_are_indented_and_outer_items_have_a_button()
     {
         var cut = RenderPivot(RegionProduct);
@@ -68,7 +68,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.StartsWith("padding-left: 14px", child.GetAttribute("style"));
     }
 
-    [Fact] // ADR-0058: the button collapses the Item, the layout says so, and the grid's rows follow
+    [Fact] // ADR-0059: the button collapses the Item, the layout says so, and the grid's rows follow
     public async Task The_button_collapses_the_item()
     {
         PivotLayout? told = null;
@@ -85,7 +85,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal("false", cut.FindAll(".ex-pivot-toggle")[0].GetAttribute("aria-expanded"));
     }
 
-    [Fact] // ADR-0058/0032: the column Items are Header Groups over the value columns
+    [Fact] // ADR-0059/0032: the column Items are Header Groups over the value columns
     public void Column_items_are_header_groups()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Online"), P("Product")], Values = [Sum("Amount")] });
@@ -96,7 +96,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Contains("FALSE Total", HeaderTexts(cut));
     }
 
-    [Fact] // ADR-0058/0059: a value paints its engine text; its raw form for a copy is the number
+    [Fact] // ADR-0059/0060: a value paints its engine text; its raw form for a copy is the number
     public void Values_paint_their_text_and_copy_their_number()
     {
         var records = new[] { new Sale("East", "Apples", 1234.5m, 1, true) };
@@ -111,7 +111,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal("1234.5", value.ToString(null, System.Globalization.CultureInfo.InvariantCulture));
     }
 
-    [Fact] // ADR-0058: the report is not editable — no column declares it
+    [Fact] // ADR-0059: the report is not editable — no column declares it
     public void No_column_is_editable()
     {
         var cut = RenderPivot(RegionProduct);
@@ -123,7 +123,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.False(Grid(cut).Instance.OnFilterChanged.HasDelegate);
     }
 
-    [Fact] // ADR-0058/0011: a refresh that changes only values keeps the row sequence, and so the Selection
+    [Fact] // ADR-0059/0011: a refresh that changes only values keeps the row sequence, and so the Selection
     public void A_refresh_of_values_keeps_the_row_sequence()
     {
         var cut = RenderPivot(RegionProduct);
@@ -137,7 +137,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.NotEqual(version, Grid(cut).Instance.RowSequenceVersion);
     }
 
-    [Fact] // ADR-0058/0065: a new source is a refresh, and asks again; the same source handed back asks nothing
+    [Fact] // ADR-0059/0066: a new source is a refresh, and asks again; the same source handed back asks nothing
     public void A_new_source_is_a_refresh()
     {
         var first = new OnDemandSource(Bundled()) { AnswersAtOnce = true };
@@ -165,7 +165,7 @@ public class PivotRenderingTests : PivotTestContext
             new("Pnl", PivotFieldType.Number, p => p.Pnl),
         });
 
-    [Fact] // ADR-0058/0065: a new source and a new layout handed in together are taken together — the source is checked against the layout it comes with
+    [Fact] // ADR-0059/0066: a new source and a new layout handed in together are taken together — the source is checked against the layout it comes with
     public void A_new_source_and_a_new_layout_handed_in_together_are_taken_together()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -177,7 +177,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal(["Credit | 2", "Rates | 5", "Grand Total | 7"], RowTexts(cut));
     }
 
-    [Fact] // ADR-0058: a new source that lacks a field the layout on screen places, handed in without a layout of its own, is refused by name
+    [Fact] // ADR-0059: a new source that lacks a field the layout on screen places, handed in without a layout of its own, is refused by name
     public void A_new_source_the_layout_on_screen_does_not_fit_is_refused()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -187,7 +187,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Contains("'Region'", refusal.Message);
     }
 
-    [Fact] // ADR-0058: a layout naming a field the source does not offer is refused by name
+    [Fact] // ADR-0059: a layout naming a field the source does not offer is refused by name
     public void A_layout_naming_an_undeclared_field_is_refused()
     {
         var refusal = Assert.Throws<InvalidOperationException>(() => RenderPivot(new PivotLayout { Rows = [P("Desk")] }));
@@ -195,7 +195,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Contains("'Desk'", refusal.Message);
     }
 
-    [Fact] // ADR-0058/0003: a Field List interaction does not reach the grid's rows
+    [Fact] // ADR-0059/0003: a Field List interaction does not reach the grid's rows
     public async Task Field_list_interactions_do_not_render_the_grid()
     {
         var cut = RenderPivot(RegionProduct);
@@ -209,7 +209,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal(grid, Grid(cut).RenderCount);
     }
 
-    [Fact] // ADR-0058/0016: a width the user dragged is kept across a refresh
+    [Fact] // ADR-0059/0016: a width the user dragged is kept across a refresh
     public async Task A_dragged_width_is_kept()
     {
         var cut = RenderPivot(RegionProduct);
@@ -222,7 +222,7 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal(150, column.Width.Width.FixedPx);
     }
 
-    [Fact] // ADR-0058: a label column is wide enough for its labels, indent and button
+    [Fact] // ADR-0059: a label column is wide enough for its labels, indent and button
     public void The_label_column_is_sized_from_its_labels()
     {
         var cut = RenderPivot(RegionProduct);

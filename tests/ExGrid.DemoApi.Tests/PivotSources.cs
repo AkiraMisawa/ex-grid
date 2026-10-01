@@ -8,7 +8,7 @@ using Xunit;
 namespace ExGrid.DemoApi.Tests;
 
 /// <summary>
-/// The two sources PV-22 holds to each other (ADR-0065), over the same trades at the same Source
+/// The two sources PV-22 holds to each other (ADR-0066), over the same trades at the same Source
 /// Version: the server's SQL source as a page reaches it — <c>PivotSource.Fetch</c> over HTTP, every
 /// question and answer a <c>PivotJson</c> document, with the fields and features
 /// <c>GET /api/pivot/fields</c> answers — and the reference, <c>PivotSource.From</c> over the trades
@@ -131,7 +131,7 @@ internal sealed class PivotSources
     /// <summary>
     /// The same answer: the same refusal, or the same fields with the same parts, the same Items
     /// spelled the same, and every leaf's records and parts equal to the last bit. A source's own
-    /// order of leaves and Items is not part of the answer (ADR-0065), so leaves are matched by their
+    /// order of leaves and Items is not part of the answer (ADR-0066), so leaves are matched by their
     /// Items.
     /// </summary>
     public static void SameAnswer(PivotAnswer expected, PivotAnswer actual)

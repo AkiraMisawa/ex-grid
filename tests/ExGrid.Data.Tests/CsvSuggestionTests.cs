@@ -8,7 +8,7 @@ using static ExGrid.Data.Tests.Fixtures;
 namespace ExGrid.Data.Tests;
 
 /// <summary>
-/// A Schema suggested from a file's first rows (ADR-0063, Q33, DA-9): each column's kind and reading,
+/// A Schema suggested from a file's first rows (ADR-0064, Q33, DA-9): each column's kind and reading,
 /// with every column whose kind is not clear marked, for the user to confirm. Nothing applies it: a
 /// file is read under a suggestion only once it, or a Schema changed from it, is handed back.
 /// </summary>
@@ -25,7 +25,7 @@ public class CsvSuggestionTests
 
     private static CsvDoubt[] Doubts(CsvColumnSuggestion column) => [.. column.Marks.Select(m => m.Doubt)];
 
-    [Fact] // ADR-0063: a suggestion proposes each column's kind and reading, and marks nothing that is clear
+    [Fact] // ADR-0064: a suggestion proposes each column's kind and reading, and marks nothing that is clear
     public void A_suggestion_proposes_each_columns_kind_and_reading()
     {
         var suggestion = Suggest("Desk,Qty,Notional,Rate,When,Live\nFX,5,1234.5,1.5e-3,2026-09-30,TRUE\nRates,-7,0.25,2E10,2026-10-01,false\n");
@@ -44,7 +44,7 @@ public class CsvSuggestionTests
         Assert.Equal(["FX", "Rates"], Column(suggestion, "Desk").Examples);
     }
 
-    [Fact] // ADR-0063 (Q33): digits with a leading zero are suggested as Text and marked as a possible identifier, never read as numbers
+    [Fact] // ADR-0064 (Q33): digits with a leading zero are suggested as Text and marked as a possible identifier, never read as numbers
     public void Leading_zeros_are_suggested_as_text_and_marked()
     {
         var suggestion = Suggest("Account,Qty\n00123,1\n4567,2\n");
@@ -61,7 +61,7 @@ public class CsvSuggestionTests
         Assert.Equal(["00123", "4567"], Values(Read(suggestion.Schema, "Account,Qty\n00123,1\n4567,2\n"), "Account"));
     }
 
-    [Fact] // ADR-0063 (Q33): dates written in more than one format are marked, and every format is suggested
+    [Fact] // ADR-0064 (Q33): dates written in more than one format are marked, and every format is suggested
     public void Mixed_date_formats_are_marked()
     {
         var suggestion = Suggest("When\n2026-09-30\n30.09.2026\n2026-10-01\n");
@@ -75,7 +75,7 @@ public class CsvSuggestionTests
             Values(Read(suggestion.Schema, "When\n2026-09-30\n30.09.2026\n2026-10-01\n"), "When"));
     }
 
-    [Fact] // ADR-0063 (Q33): a date whose day and month could be either way round is marked, and the user's culture decides the suggestion
+    [Fact] // ADR-0064 (Q33): a date whose day and month could be either way round is marked, and the user's culture decides the suggestion
     public void A_date_that_could_be_day_or_month_first_is_marked()
     {
         const string File = "When\n01/02/2026\n03/04/2026\n";
@@ -91,7 +91,7 @@ public class CsvSuggestionTests
         Assert.Empty(Column(Suggest("When\n01/02/2026\n25/04/2026\n"), "When").Marks);
     }
 
-    [Fact] // ADR-0063 (Q33): numbers written with both a comma and a full stop are marked, with the reading suggested
+    [Fact] // ADR-0064 (Q33): numbers written with both a comma and a full stop are marked, with the reading suggested
     public void Numbers_with_both_separators_are_marked()
     {
         var notional = Column(Suggest("Notional\n\"1,234.5\"\n12.75\n"), "Notional");
@@ -107,7 +107,7 @@ public class CsvSuggestionTests
         Assert.Equal([CsvDoubt.BothSeparators], Doubts(german));
     }
 
-    [Fact] // ADR-0063 (Q33): a comma that could be the decimal point or the thousands separator is marked
+    [Fact] // ADR-0064 (Q33): a comma that could be the decimal point or the thousands separator is marked
     public void A_separator_that_could_be_either_is_marked()
     {
         var english = Column(Suggest("Amount\n\"1,234\"\n\"5,678\"\n"), "Amount");
@@ -119,7 +119,7 @@ public class CsvSuggestionTests
         Assert.Equal((SnapshotKind.Decimal, ","), (german.Column.Kind, german.Column.DecimalPoint));
     }
 
-    [Fact] // ADR-0063 (Q33): a column empty in every sampled row is marked, and suggested as Text
+    [Fact] // ADR-0064 (Q33): a column empty in every sampled row is marked, and suggested as Text
     public void An_empty_column_is_marked()
     {
         var note = Column(Suggest("Desk,Note\nFX,\nRates,\"\"\n"), "Note");
@@ -128,7 +128,7 @@ public class CsvSuggestionTests
         Assert.Equal([CsvDoubt.Empty], Doubts(note));
     }
 
-    [Fact] // ADR-0063 (Q33): texts such as NULL among numbers are suggested as Blanks, and marked
+    [Fact] // ADR-0064 (Q33): texts such as NULL among numbers are suggested as Blanks, and marked
     public void Blank_words_among_numbers_are_suggested_as_blanks_and_marked()
     {
         var suggestion = Suggest("Qty,When\n5,2026-09-30\nNULL,-\n7,2026-10-01\n");
@@ -141,7 +141,7 @@ public class CsvSuggestionTests
         Assert.Equal([5L, null, 7L], Values(Read(suggestion.Schema, "Qty,When\n5,2026-09-30\nNULL,-\n7,2026-10-01\n"), "Qty"));
     }
 
-    [Fact] // ADR-0063 (Q33): Booleans are never guessed: 0 and 1, and yes and no, are marked as possible Booleans, and suggested as what they are written as
+    [Fact] // ADR-0064 (Q33): Booleans are never guessed: 0 and 1, and yes and no, are marked as possible Booleans, and suggested as what they are written as
     public void Possible_booleans_are_marked_not_guessed()
     {
         var suggestion = Suggest("Flag,Answer\n0,yes\n1,no\n1,Yes\n");
@@ -156,7 +156,7 @@ public class CsvSuggestionTests
         Assert.Empty(Column(Suggest("Count\n1\n1\n"), "Count").Marks);
     }
 
-    [Fact] // ADR-0063 (Q33): numbers with more digits than a Decimal holds are suggested as Text, and marked
+    [Fact] // ADR-0064 (Q33): numbers with more digits than a Decimal holds are suggested as Text, and marked
     public void Numbers_too_long_for_a_decimal_are_text_and_marked()
     {
         var card = Column(Suggest("Card\n123456789012345678901234567890\n1\n"), "Card");
@@ -165,7 +165,7 @@ public class CsvSuggestionTests
         Assert.Equal([CsvDoubt.TooLong], Doubts(card));
     }
 
-    [Fact] // ADR-0063 (Q33): a column of numbers with a few texts among them is suggested as Text, and marked
+    [Fact] // ADR-0064 (Q33): a column of numbers with a few texts among them is suggested as Text, and marked
     public void A_column_of_mixed_kinds_is_text_and_marked()
     {
         var text = new StringBuilder("Qty\n");
@@ -179,7 +179,7 @@ public class CsvSuggestionTests
         Assert.Contains("'n/a?' (row 7)", qty.Marks[0].Note, StringComparison.Ordinal);
     }
 
-    [Theory] // ADR-0063: the separator is told from the sample: the one that splits every record alike
+    [Theory] // ADR-0064: the separator is told from the sample: the one that splits every record alike
     [InlineData("A,B\n1,2\n3,4\n", CsvSeparator.Comma)]
     [InlineData("A\tB\n1,5\t2,5\n3\t4\n", CsvSeparator.Tab)]
     [InlineData("A;B\n1,5;2,5\n3;4\n", CsvSeparator.Semicolon)]
@@ -192,7 +192,7 @@ public class CsvSuggestionTests
         Assert.DoesNotContain(suggestion.Marks, m => m.Doubt == CsvDoubt.Separator);
     }
 
-    [Fact] // ADR-0063: a separator that cannot be told for sure is marked
+    [Fact] // ADR-0064: a separator that cannot be told for sure is marked
     public void A_separator_that_cannot_be_told_is_marked()
     {
         var suggestion = Suggest("A,B;C\n1,2;3\n4,5;6\n");
@@ -201,7 +201,7 @@ public class CsvSuggestionTests
         Assert.True(suggestion.IsUnclear);
     }
 
-    [Fact] // ADR-0063: without a header row, the columns are named by position, and the first record is data
+    [Fact] // ADR-0064: without a header row, the columns are named by position, and the first record is data
     public void A_file_without_a_header_row_is_told_and_its_columns_named()
     {
         var suggestion = Suggest("1,2026-09-30,1.5\n2,2026-10-01,2.5\n");
@@ -213,7 +213,7 @@ public class CsvSuggestionTests
         Assert.Equal([1L, 2L], Values(Read(suggestion.Schema, "1,2026-09-30,1.5\n2,2026-10-01,2.5\n"), "Column1"));
     }
 
-    [Fact] // ADR-0063: a file of text alone cannot say whether its first record is a header, and is marked
+    [Fact] // ADR-0064: a file of text alone cannot say whether its first record is a header, and is marked
     public void A_header_row_that_cannot_be_told_is_marked()
     {
         var suggestion = Suggest("Desk,Book\nFX,B1\nRates,B2\n");
@@ -222,7 +222,7 @@ public class CsvSuggestionTests
         Assert.Contains(suggestion.Marks, m => m.Doubt == CsvDoubt.Header);
     }
 
-    [Fact] // ADR-0063: what the caller knows of the file is taken as given, not told from the sample
+    [Fact] // ADR-0064: what the caller knows of the file is taken as given, not told from the sample
     public void What_the_caller_knows_is_taken_as_given()
     {
         var suggestion = Suggest("Desk,Book\nFX,B1\n", new() { HasHeader = false, Separator = CsvSeparator.Semicolon });
@@ -233,7 +233,7 @@ public class CsvSuggestionTests
         Assert.Empty(suggestion.Marks);
     }
 
-    [Fact] // ADR-0063: a header that is empty or stands twice is matched by its position, under a name of its own, and marked
+    [Fact] // ADR-0064: a header that is empty or stands twice is matched by its position, under a name of its own, and marked
     public void An_empty_or_repeated_header_is_matched_by_position_and_marked()
     {
         var suggestion = Suggest("Amount,,Amount\n1,2,3\n");
@@ -244,7 +244,7 @@ public class CsvSuggestionTests
         Assert.Equal([3L], Values(Read(suggestion.Schema, "Amount,,Amount\n1,2,3\n"), "Column3"));
     }
 
-    [Fact] // ADR-0063: records with more or fewer fields than the header are marked, since reading under the Schema refuses them
+    [Fact] // ADR-0064: records with more or fewer fields than the header are marked, since reading under the Schema refuses them
     public void Records_of_another_length_are_marked()
     {
         var suggestion = Suggest("A,B\n1,2\n3\n4,5\n");
@@ -253,7 +253,7 @@ public class CsvSuggestionTests
         Assert.Contains("Row 2 has other than the 2 fields", mark.Note, StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0063 (Q33): the suggestion is made from the first rows only, 1,000 by default, and reads the stream no further than it needs
+    [Fact] // ADR-0064 (Q33): the suggestion is made from the first rows only, 1,000 by default, and reads the stream no further than it needs
     public async Task A_suggestion_reads_only_its_first_rows()
     {
         var text = new StringBuilder("Id,Desk\n");
@@ -270,7 +270,7 @@ public class CsvSuggestionTests
         Assert.True(stream.Position < bytes.Length / 4, $"The suggestion read {stream.Position:N0} of {bytes.Length:N0} bytes.");
     }
 
-    [Fact] // ADR-0063 (Q33, DA-9): a suggestion applies nothing: the file is read under it only when it, or a Schema changed from it, is handed back, and that read is as strict as any
+    [Fact] // ADR-0064 (Q33, DA-9): a suggestion applies nothing: the file is read under it only when it, or a Schema changed from it, is handed back, and that read is as strict as any
     public void A_suggestion_applies_nothing_until_it_is_handed_back()
     {
         var text = new StringBuilder("Id,Desk,Qty\n");
@@ -297,7 +297,7 @@ public class CsvSuggestionTests
         Assert.Equal("Id", snapshot.RecordKey?.Name);
     }
 
-    [Fact] // ADR-0063: a Shift-JIS file is suggested from when its encoding is given, and the suggestion carries it
+    [Fact] // ADR-0064: a Shift-JIS file is suggested from when its encoding is given, and the suggestion carries it
     public void A_shift_jis_file_is_suggested_in_its_declared_encoding()
     {
         var cp932 = CodePagesEncodingProvider.Instance.GetEncoding(932)!;
@@ -312,13 +312,13 @@ public class CsvSuggestionTests
         Assert.Contains("is not valid UTF-8", Assert.Throws<SnapshotException>(() => Suggest(bytes)).Message, StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0063: a file with nothing in it has nothing to suggest from, and is refused
+    [Fact] // ADR-0064: a file with nothing in it has nothing to suggest from, and is refused
     public void An_empty_file_is_refused()
     {
         Assert.Equal("The file is empty, so no Schema can be suggested.", Assert.Throws<SnapshotException>(() => Suggest("")).Message);
     }
 
-    [Fact] // ADR-0063: a suggestion asked for with a cancelled token reads nothing
+    [Fact] // ADR-0064: a suggestion asked for with a cancelled token reads nothing
     public async Task A_cancelled_suggestion_reads_nothing()
     {
         using var cancel = new CancellationTokenSource();

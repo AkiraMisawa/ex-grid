@@ -2,7 +2,7 @@ import { test, expect } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import fs from 'node:fs';
 
-// ExPivot over a CSV on /pivot-csv (ADR-0063, ADR-0068), under ExPivot's own markup and under
+// ExPivot over a CSV on /pivot-csv (ADR-0064, ADR-0069), under ExPivot's own markup and under
 // ExPivot.MudBlazor's Chrome: a file the user chooses — through Blazor's InputFile, given here a
 // file the test writes — or one the page writes in memory, read into a Snapshot under a Schema and
 // pivoted. What only a browser can say: that the trade export reads back under the declared Schema
@@ -82,7 +82,7 @@ async function reportShown(page, chrome) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`ADR-0063: /pivot's trades written as the trade export read back under the declared Schema to the very report /pivot paints (${chrome})`, async ({ page }) => {
+        test(`ADR-0064: /pivot's trades written as the trade export read back under the declared Schema to the very report /pivot paints (${chrome})`, async ({ page }) => {
             await page.goto(`/pivot?chrome=${chrome}`);
             await expect(rows(page).first()).toBeVisible({ timeout: 30_000 });
             // Every row of the report is painted, so the two are compared whole.
@@ -106,7 +106,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await progress.getAttribute('value')).toBe(await progress.getAttribute('max'));
         });
 
-        test(`ADR-0063: a file with a malformed row is refused whole, by its row and column, and nothing is pivoted (${chrome})`, async ({ page }, testInfo) => {
+        test(`ADR-0064: a file with a malformed row is refused whole, by its row and column, and nothing is pivoted (${chrome})`, async ({ page }, testInfo) => {
             const file = testInfo.outputPath('trades-malformed.csv');
             writeExport(file, 5, new Map([[3, '12.5']]));
             await open(page, chrome);
@@ -128,7 +128,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(pivot(page)).toHaveCount(0);
         });
 
-        test(`ADR-0063: a large file paints its progress while it is read, and Cancel stops it with nothing read (${chrome})`, async ({ page }, testInfo) => {
+        test(`ADR-0064: a large file paints its progress while it is read, and Cancel stops it with nothing read (${chrome})`, async ({ page }, testInfo) => {
             test.setTimeout(120_000);
             const file = testInfo.outputPath('trades-large.csv');
             writeExport(file, 1_000_000);
@@ -157,7 +157,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#csv-file')).toBeEnabled();
         });
 
-        test(`ADR-0063: an unknown file's suggested Schema is shown with what is not clear, and the file is read under it only once confirmed (${chrome})`, async ({ page }, testInfo) => {
+        test(`ADR-0064: an unknown file's suggested Schema is shown with what is not clear, and the file is read under it only once confirmed (${chrome})`, async ({ page }, testInfo) => {
             // A spreadsheet set to German: semicolons, day-first dates, a decimal comma.
             const file = testInfo.outputPath('desk-export.csv');
             fs.writeFileSync(file, `${[
@@ -209,7 +209,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(rows(page).filter({ hasText: '00123' })).toHaveCount(1);
         });
 
-        test(`ADR-0063: the page's two samples, one under the declared Schema and one under a suggested one, read the same trades to the same total (${chrome})`, async ({ page }) => {
+        test(`ADR-0064: the page's two samples, one under the declared Schema and one under a suggested one, read the same trades to the same total (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             await page.locator('#csv-sample').click();
             await expect(status(page)).toHaveText(/^trades-2000\.csv: 2,000 rows read/);
@@ -235,7 +235,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(suggested).toBe(declared);
         });
 
-        test(`ADR-0068: the code the page shows is the code it runs (${chrome})`, async ({ page }) => {
+        test(`ADR-0069: the code the page shows is the code it runs (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const shown = (file, region) => page.locator(`.demo-code code[data-file="${file}"][data-region="${region}"]`).textContent();
 

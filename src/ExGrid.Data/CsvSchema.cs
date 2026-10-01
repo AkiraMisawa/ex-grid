@@ -3,7 +3,7 @@ using ExGrid.Data.Csv;
 namespace ExGrid.Data;
 
 /// <summary>
-/// How a delimited text file is read into a Snapshot (ADR-0063, the second way in): each column's
+/// How a delimited text file is read into a Snapshot (ADR-0064, the second way in): each column's
 /// header, kind and reading, and the file's encoding, separator and header row. It is declared,
 /// never guessed — guessing is what reads the account number <c>00123</c> as the number 123. A
 /// Schema suggested from a file's first rows (<see cref="SuggestAsync(Stream, CsvSuggestionOptions?, CancellationToken)"/>)
@@ -77,7 +77,7 @@ public sealed record CsvSchema(IReadOnlyList<CsvColumn> Columns)
     }
 
     /// <summary>
-    /// Suggests a Schema for a file nobody has described, from its first rows (ADR-0063, Q33): each
+    /// Suggests a Schema for a file nobody has described, from its first rows (ADR-0064, Q33): each
     /// column's kind and reading, with every column whose kind is not clear marked, for the user to
     /// confirm. Nothing applies it: the file is read under it only when it — or a Schema changed from
     /// it — is handed to <see cref="ReadAsync(Stream, SnapshotLoadOptions?, CancellationToken)"/>.

@@ -1,4 +1,4 @@
-@* A menu under MudBlazor (ADR-0060/0061): a placed field's, or the toolbar's Layout menu —
+@* A menu under MudBlazor (ADR-0061/0062): a placed field's, or the toolbar's Layout menu —
    exactly ExPivot's commands, in its order, each with its Enabled state, as text MudButtons with
    role="menuitem" and a Material icon. A choice among others is a menuitemradio, the current one
    marked as a checked radio button, and a group of them stands under its heading. The frame around them is
@@ -22,7 +22,7 @@
 </div>
 
 @code {
-    /// <summary>The commands and the request to take the keyboard (ADR-0060).</summary>
+    /// <summary>The commands and the request to take the keyboard (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotMenuContext Context { get; set; } = default!;
 
     /// <summary>Where the icons come from.</summary>

@@ -10,8 +10,8 @@ public sealed class ApiTests(DemoApiServer server) : IClassFixture<DemoApiServer
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    [Fact] // ADR-0068: what the server holds, which version, and whether it is changing
-    public async Task ADR0068_status_answers_the_trades_the_version_and_the_live_settings()
+    [Fact] // ADR-0069: what the server holds, which version, and whether it is changing
+    public async Task ADR0069_status_answers_the_trades_the_version_and_the_live_settings()
     {
         using var client = server.Factory.CreateClient();
         using var response = await client.GetAsync("/api/status", Token);
@@ -28,8 +28,8 @@ public sealed class ApiTests(DemoApiServer server) : IClassFixture<DemoApiServer
         Assert.Equal(20, live.GetProperty("tradesPerTick").GetInt32());
     }
 
-    [Fact] // ADR-0068: live updates are off until a page turns them on, so the data holds still
-    public async Task ADR0068_live_updates_are_off_until_a_page_turns_them_on()
+    [Fact] // ADR-0069: live updates are off until a page turns them on, so the data holds still
+    public async Task ADR0069_live_updates_are_off_until_a_page_turns_them_on()
     {
         using var client = server.Factory.CreateClient();
         var live = await client.GetFromJsonAsync<JsonElement>("/api/live", Token);
@@ -41,8 +41,8 @@ public sealed class ApiTests(DemoApiServer server) : IClassFixture<DemoApiServer
         Assert.Equal(0, TestData.Counter(before!));
     }
 
-    [Fact] // ADR-0068: a page of the trades as stored, money exact to the cent, a Blank as null
-    public async Task ADR0068_trades_come_a_page_at_a_time_in_TradeId_order_with_the_total_and_the_version()
+    [Fact] // ADR-0069: a page of the trades as stored, money exact to the cent, a Blank as null
+    public async Task ADR0069_trades_come_a_page_at_a_time_in_TradeId_order_with_the_total_and_the_version()
     {
         using var client = server.Factory.CreateClient();
         var page = await client.GetFromJsonAsync<JsonElement>("/api/trades?start=0&count=10", Token);
@@ -74,11 +74,11 @@ public sealed class ApiTests(DemoApiServer server) : IClassFixture<DemoApiServer
         Assert.Equal(3, last.GetProperty("trades").GetArrayLength());
     }
 
-    [Theory] // ADR-0068 and principle 1: a question out of range is refused by name, not cut short
+    [Theory] // ADR-0069 and principle 1: a question out of range is refused by name, not cut short
     [InlineData("/api/trades?count=1001", "count is from 1 to 1000.")]
     [InlineData("/api/trades?count=0", "count is from 1 to 1000.")]
     [InlineData("/api/trades?start=-1", "start is 0 or more.")]
-    public async Task ADR0068_a_page_out_of_range_is_refused_by_name(string url, string detail)
+    public async Task ADR0069_a_page_out_of_range_is_refused_by_name(string url, string detail)
     {
         using var client = server.Factory.CreateClient();
         using var response = await client.GetAsync(url, Token);
@@ -87,13 +87,13 @@ public sealed class ApiTests(DemoApiServer server) : IClassFixture<DemoApiServer
         Assert.Equal(detail, problem.GetProperty("detail").GetString());
     }
 
-    [Theory] // ADR-0068: a malformed question is the caller's mistake: a 400, never the server's failure
+    [Theory] // ADR-0069: a malformed question is the caller's mistake: a 400, never the server's failure
     [InlineData("GET", "/api/trades?count=abc", null)]
     [InlineData("POST", "/api/live", "{\"on\":\"yes\"}")]
     [InlineData("POST", "/api/live", "{\"intervalMs\":100}")]
     [InlineData("POST", "/api/live", "{\"on\":true,\"intervalMs\":5}")]
     [InlineData("POST", "/api/live", "{\"on\":true,\"tradesPerTick\":1001}")]
-    public async Task ADR0068_a_malformed_question_is_answered_400(string method, string url, string? body)
+    public async Task ADR0069_a_malformed_question_is_answered_400(string method, string url, string? body)
     {
         using var client = server.Factory.CreateClient();
         using var request = new HttpRequestMessage(new HttpMethod(method), url);
@@ -110,8 +110,8 @@ public sealed class NotReadyTests(DemoApiServerNotReady server) : IClassFixture<
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    [Fact] // ADR-0068: until the data is ready, status says so with a 503 — what layer 3's start-up wait polls
-    public async Task ADR0068_status_is_503_until_the_trades_are_ready()
+    [Fact] // ADR-0069: until the data is ready, status says so with a 503 — what layer 3's start-up wait polls
+    public async Task ADR0069_status_is_503_until_the_trades_are_ready()
     {
         using var client = server.Factory.CreateClient();
         using var response = await client.GetAsync("/api/status", Token);
@@ -124,8 +124,8 @@ public sealed class NotReadyTests(DemoApiServerNotReady server) : IClassFixture<
         Assert.Equal(JsonValueKind.Null, status.GetProperty("trades").ValueKind);
     }
 
-    [Fact] // ADR-0068 and principle 1: a page asking before the data is ready is told to wait, never handed no trades
-    public async Task ADR0068_trades_and_live_updates_wait_for_the_data()
+    [Fact] // ADR-0069 and principle 1: a page asking before the data is ready is told to wait, never handed no trades
+    public async Task ADR0069_trades_and_live_updates_wait_for_the_data()
     {
         using var client = server.Factory.CreateClient();
         using var trades = await client.GetAsync("/api/trades", Token);
@@ -139,8 +139,8 @@ public sealed class NotReadyTests(DemoApiServerNotReady server) : IClassFixture<
         Assert.Equal(HttpStatusCode.OK, off.StatusCode);
     }
 
-    [Fact] // ADR-0065/0068 and principle 1: the Arrow stream, the Pivot Source, by-id and reset wait for the data too
-    public async Task ADR0068_the_stream_the_pivot_source_by_id_and_reset_wait_for_the_data()
+    [Fact] // ADR-0066/0069 and principle 1: the Arrow stream, the Pivot Source, by-id and reset wait for the data too
+    public async Task ADR0069_the_stream_the_pivot_source_by_id_and_reset_wait_for_the_data()
     {
         using var client = server.Factory.CreateClient();
         var question = ExPivot.Engine.PivotJson.Write(new ExPivot.Engine.PivotQuery());

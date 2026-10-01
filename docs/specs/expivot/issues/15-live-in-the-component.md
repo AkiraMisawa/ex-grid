@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** the component's side of ADR-0066.
+**What to build:** the component's side of ADR-0067.
 
 - **Redrawing:** changes are gathered and redrawn every 250 ms by default. The Consumer may set the
   interval, and 0 redraws on every change.

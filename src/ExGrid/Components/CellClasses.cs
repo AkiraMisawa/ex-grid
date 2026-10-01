@@ -33,9 +33,9 @@ public static class CellClasses
     /// re-derivation of it; <see cref="CellState.Normal"/>, <see cref="CellAlign.Auto"/>,
     /// <see cref="CellTone.None"/> and an unchanged cell add nothing at all — an ordinary
     /// cell is painted exactly as it was before any of the vocabularies existed
-    /// (ADR-0006/0016/0067). <paramref name="changed"/> is the Change Highlight's
+    /// (ADR-0006/0016/0068). <paramref name="changed"/> is the Change Highlight's
     /// <c>ex-changed</c>: the Consumer said the cell's shown value changed less than the
-    /// highlight's duration ago (ADR-0067).
+    /// highlight's duration ago (ADR-0068).
     /// </summary>
     public static string For(bool numeric, bool pinned, CellState state, CellAlign align = CellAlign.Auto, CellTone tone = CellTone.None, bool changed = false)
         => Composed[IndexOf(changed, tone, state, align) * Variants + (numeric ? 2 : 0) + (pinned ? 1 : 0)];

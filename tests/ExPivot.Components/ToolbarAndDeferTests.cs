@@ -11,7 +11,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// Defer Layout Update at the pane's foot, and the toolbar above the report (ADR-0060): the report
+/// Defer Layout Update at the pane's foot, and the toolbar above the report (ADR-0061): the report
 /// filter band on its left; Layout ▾, Refresh and the Field List's toggle on its right.
 /// </summary>
 public class ToolbarAndDeferTests : PivotTestContext
@@ -26,7 +26,7 @@ public class ToolbarAndDeferTests : PivotTestContext
 
     // ---- PV-28: Defer Layout Update -----------------------------------------------------------
 
-    [Fact] // ADR-0060 (PV-28): while Defer Layout Update is ticked, the pane's changes build a pending layout, and the report and the source are left alone
+    [Fact] // ADR-0061 (PV-28): while Defer Layout Update is ticked, the pane's changes build a pending layout, and the report and the source are left alone
     public async Task Deferred_changes_build_a_pending_layout()
     {
         var told = new List<PivotLayout>();
@@ -49,7 +49,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.False(cut.Find(".ex-pivot-update").HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0060 (PV-28): Update applies the pending layout in one change — one question, one LayoutChanged — and Defer stays ticked
+    [Fact] // ADR-0061 (PV-28): Update applies the pending layout in one change — one question, one LayoutChanged — and Defer stays ticked
     public async Task Update_applies_the_pending_layout_in_one_change()
     {
         var told = new List<PivotLayout>();
@@ -70,7 +70,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.True(cut.Find(".ex-pivot-update").HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0060 (PV-28): unticking Defer Layout Update applies the pending layout, as Excel does
+    [Fact] // ADR-0061 (PV-28): unticking Defer Layout Update applies the pending layout, as Excel does
     public async Task Unticking_applies_the_pending_layout()
     {
         var told = new List<PivotLayout>();
@@ -88,7 +88,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.False(cut.Find(".ex-pivot-defer input").HasAttribute("checked"));
     }
 
-    [Fact] // ADR-0060 (PV-28): LayoutChanged is raised only for the layout the report shows — a gesture on the report while deferring is shown, and reaches the pending layout too
+    [Fact] // ADR-0061 (PV-28): LayoutChanged is raised only for the layout the report shows — a gesture on the report while deferring is shown, and reaches the pending layout too
     public async Task A_report_gesture_while_deferring_is_applied_and_kept()
     {
         var told = new List<PivotLayout>();
@@ -111,7 +111,7 @@ public class ToolbarAndDeferTests : PivotTestContext
 
     // ---- PV-30: the toolbar ---------------------------------------------------------------------
 
-    [Fact] // ADR-0060 (PV-30): the toolbar holds the band on its left, and Layout ▾ then the Field List's toggle on its right — no Refresh for a source that cannot be refreshed
+    [Fact] // ADR-0061 (PV-30): the toolbar holds the band on its left, and Layout ▾ then the Field List's toggle on its right — no Refresh for a source that cannot be refreshed
     public void The_toolbar_holds_its_controls_in_order()
     {
         var cut = RenderPivot(RegionProduct with { Filters = [P("Online")] });
@@ -127,7 +127,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-refresh-button"));
     }
 
-    [Fact] // ADR-0065 (PV-30): Refresh stands between Layout ▾ and the toggle when the source can be refreshed; it refreshes the source and asks again
+    [Fact] // ADR-0066 (PV-30): Refresh stands between Layout ▾ and the toggle when the source can be refreshed; it refreshes the source and asks again
     public async Task Refresh_refreshes_the_source_and_asks_again()
     {
         var source = new OnDemandSource(Bundled(), new PivotSourceFeatures(Enum.GetValues<PivotAggregation>(), canRefresh: true)) { AnswersAtOnce = true };
@@ -155,7 +155,7 @@ public class ToolbarAndDeferTests : PivotTestContext
             RefreshFails = refreshFails,
         };
 
-    [Fact] // ADR-0066 refined (PV-37, PV-30): a failed Refresh is a Stale Report — the report stays on the version shown, and the notice says the source could not answer, as of when, with Retry; nothing is said on the toolbar, and nothing is thrown
+    [Fact] // ADR-0067 refined (PV-37, PV-30): a failed Refresh is a Stale Report — the report stays on the version shown, and the notice says the source could not answer, as of when, with Retry; nothing is said on the toolbar, and nothing is thrown
     public async Task A_failed_refresh_is_a_stale_report()
     {
         var source = Refreshable(new InvalidOperationException("The server cannot be reached."));
@@ -180,7 +180,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.IsType<InvalidOperationException>(cut.Instance.LastError);
     }
 
-    [Fact] // ADR-0066 refined (PV-37): Retry after a failed Refresh refreshes again — what failed was the refresh — and the notice goes when the answer is laid out
+    [Fact] // ADR-0067 refined (PV-37): Retry after a failed Refresh refreshes again — what failed was the refresh — and the notice goes when the answer is laid out
     public async Task Retry_after_a_failed_refresh_refreshes_again()
     {
         var source = Refreshable(new InvalidOperationException("The server cannot be reached."));
@@ -206,7 +206,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Null(cut.Instance.LastError);
     }
 
-    [Fact] // ADR-0066 refined (PV-37): a Refresh that succeeds but whose answer fails is a Stale Report too, and its Retry asks the report again without refreshing
+    [Fact] // ADR-0067 refined (PV-37): a Refresh that succeeds but whose answer fails is a Stale Report too, and its Retry asks the report again without refreshing
     public async Task A_refresh_whose_answer_fails_is_a_stale_report_retried_by_asking_again()
     {
         var source = Refreshable();
@@ -228,7 +228,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.False(cut.Instance.IsStale);
     }
 
-    [Fact] // ADR-0066 refined (PV-37): before the first report there is nothing to be stale, so a failed Refresh is said on the toolbar
+    [Fact] // ADR-0067 refined (PV-37): before the first report there is nothing to be stale, so a failed Refresh is said on the toolbar
     public async Task A_failed_refresh_before_the_first_report_is_said_on_the_toolbar()
     {
         var source = Refreshable(new InvalidOperationException("The server cannot be reached."));
@@ -243,7 +243,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-stale-notice"));
     }
 
-    [Fact] // ADR-0060 (PV-30): the Layout menu offers Excel's Design tab choices under its headings, the current choice marked and a choice that would change nothing disabled
+    [Fact] // ADR-0061 (PV-30): the Layout menu offers Excel's Design tab choices under its headings, the current choice marked and a choice that would change nothing disabled
     public async Task The_layout_menu_offers_excels_choices()
     {
         var cut = RenderPivot(RegionProduct);
@@ -272,7 +272,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Equal("true", cut.Find(".ex-pivot-layout-button").GetAttribute("aria-expanded"));
     }
 
-    [Fact] // ADR-0060 (PV-30): a Layout menu choice lays the report out again, closes the menu, and gives the keyboard back to Layout ▾
+    [Fact] // ADR-0061 (PV-30): a Layout menu choice lays the report out again, closes the menu, and gives the keyboard back to Layout ▾
     public async Task A_layout_choice_changes_the_report()
     {
         var cut = RenderPivot(RegionProduct);
@@ -297,7 +297,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Equal("East | Pears | 50", RowTexts(cut)[1]);
     }
 
-    [Theory] // ADR-0060 (PV-30): Escape and the backdrop close the Layout menu, and change nothing
+    [Theory] // ADR-0061 (PV-30): Escape and the backdrop close the Layout menu, and change nothing
     [InlineData("escape")]
     [InlineData("backdrop")]
     public async Task Escape_and_the_backdrop_close_the_layout_menu(string how)
@@ -315,7 +315,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Empty(told);
     }
 
-    [Fact] // ADR-0060 (PV-30): the Field List's toggle shows and hides the pane, and a Consumer binds it with @bind-ShowFieldList
+    [Fact] // ADR-0061 (PV-30): the Field List's toggle shows and hides the pane, and a Consumer binds it with @bind-ShowFieldList
     public async Task The_field_list_toggle_binds()
     {
         var page = RenderPage<BoundToggle>();
@@ -335,7 +335,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-field-list"));
     }
 
-    [Fact] // ADR-0060: a pane hidden by the user stays hidden while the Consumer keeps passing the value it always passed
+    [Fact] // ADR-0061: a pane hidden by the user stays hidden while the Consumer keeps passing the value it always passed
     public async Task An_unbound_pane_keeps_the_users_choice()
     {
         var cut = RenderPivot(RegionProduct);
@@ -348,7 +348,7 @@ public class ToolbarAndDeferTests : PivotTestContext
 
     // ---- PV-12: the report filter band, on the toolbar's left -------------------------------------
 
-    [Fact] // ADR-0060 (PV-12): the band's Filter… opens under the toolbar, over the report, with a backdrop; OK filters the report and the keyboard goes back to its button
+    [Fact] // ADR-0061 (PV-12): the band's Filter… opens under the toolbar, over the report, with a backdrop; OK filters the report and the keyboard goes back to its button
     public async Task The_bands_filter_opens_under_the_toolbar()
     {
         var cut = RenderPivot(new PivotLayout { Filters = [P("Region")], Rows = [P("Product")], Values = [Sum("Amount")] });

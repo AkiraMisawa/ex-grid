@@ -8,11 +8,11 @@ for speed in general — the grid, the sheet and the pivot".)*
 A **Snapshot** is an immutable copy of the Consumer's tabular data at one version, held column by
 column. It lives in a package of its own, **`ExGrid.Data`**, which has no dependency, so that any
 of the family's bundled sources can read one. ExPivot's bundled Pivot Source is the first
-([ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
 
 ```
 the Consumer's data ──► Snapshot   (ExGrid.Data: from objects, a CSV, a DbDataReader, or columns;
-                          │         from Arrow through ExGrid.Data.Arrow, ADR-0064)
+                          │         from Arrow through ExGrid.Data.Arrow, ADR-0065)
                           │  a Change Batch makes the next one; nothing is rewritten
                           ▼
                      the bundled sources read it   (ExPivot's first; ExGrid's and ExSheet's by ADRs of their own)
@@ -51,7 +51,7 @@ Table read by `SUM(Positions[PV])`
 - **Text is held as a dictionary.** Every distinct value appears once, in the order it first
   appears, and each row holds a code into the dictionary. Values are kept exactly as written, so
   two spellings are two entries. A reader that tells text apart ignoring case, as a pivot's Items
-  do ([ADR-0059](./0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)),
+  do ([ADR-0060](./0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)),
   folds the dictionary, not the rows.
 - **Decimal is held exactly.** When every value fits in 64 bits after scaling by one power of ten,
   it is held as those scaled integers. A sum is then an integer addition, which was measured 3–5
@@ -67,7 +67,7 @@ Table read by `SUM(Positions[PV])`
 - **Integer is held as a 64-bit integer.**
 - **Date is held as a clock value.** A `DateTime` is its ticks, with its `Kind` ignored. A
   `DateOnly` is its midnight. A `DateTimeOffset` is the clock it shows, with its offset dropped.
-  This is the rule ADR-0059 gave a pivot's Items, and it is now the data's own.
+  This is the rule ADR-0060 gave a pivot's Items, and it is now the data's own.
 - **Boolean is held as true or false.**
 - **Its records, when it was built from the Consumer's objects.** The objects themselves are kept,
   by reference and in order, so a reader can hand back the object behind a row, as Show Details
@@ -127,7 +127,7 @@ The four ways in:
    A column of any other type is refused by name, unless the Consumer declares how to read it.
 4. **Columns directly**, for data the Consumer has read itself, such as Parquet or a message
    stream. Apache Arrow comes in through `ExGrid.Data.Arrow`, which is built on this way in
-   ([ADR-0064](./0064-a-snapshot-travels-as-apache-arrow.md)).
+   ([ADR-0065](./0065-a-snapshot-travels-as-apache-arrow.md)).
 
 **The Order Key and a declared Item order belong to the Pivot Field, not to the Snapshot.** Q31
 listed them with the CSV Schema. The Snapshot has since moved into the family's package, and
@@ -157,7 +157,7 @@ they hold for every reader.**
 - **A Snapshot without a Record Key takes only batches that add.** Otherwise it is replaced whole.
 - **A reader can fold a batch into what it already computed, rather than start again.** It is
   handed what the batch removed and what it added. ExPivot does this
-  ([ADR-0066](./0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+  ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
 
 ## Refined while building the ways in
 
@@ -205,7 +205,7 @@ they hold for every reader.**
 - **A slice yields with `Task.Yield()` in a browser too**, not with a delay of 1 ms. The delay was
   chosen so that the page could paint, and was never measured against the yield. Measured, the
   yield paints a frame a slice at 0.4–0.6 ms, against the delay's two frames at 4.3–4.4 ms, which
-  is about 0.4 s of a million-row read. ExPivot's slices yield the same way (ADR-0065).
+  is about 0.4 s of a million-row read. ExPivot's slices yield the same way (ADR-0066).
 - **A crash this found is fixed.** A column of numbers, dates or Booleans with a Blank in its first
   256 rows, followed by enough rows to grow its array, failed with an
   `ArgumentOutOfRangeException` rather than loading.
@@ -234,7 +234,7 @@ they hold for every reader.**
 - **`System.Data.DataTable`** — rejected. It holds rows of boxed values, mutable in place, with no
   dictionary for text. It has every cost measured above, and none of the immutability the rest of
   the design leans on.
-- **Apache Arrow's buffers as the Snapshot itself** — rejected in ADR-0064. Arrow's dictionaries
+- **Apache Arrow's buffers as the Snapshot itself** — rejected in ADR-0065. Arrow's dictionaries
   come in whatever order and case their producer wrote them, and its decimals take 16 bytes each.
 - **Guessing kinds in a CSV** — rejected (Q22), because it turns `00123` into 123.
 
@@ -243,8 +243,8 @@ they hold for every reader.**
 - **Every rule above is a layer-1 test** in `tests/ExGrid.Data.Tests`, named with this ADR. §30 of
   the Definition of Done states the rules as criteria.
 - **`ExPivot.Engine` now references `ExGrid.Data`**, which references nothing
-  ([ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md), revised).
-- **Part of ADR-0059's rules for reading a value now belongs to the Snapshot**: what a number is,
-  a date's clock value, and a Blank. They are stated once, here, and ADR-0059 points to them.
+  ([ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md), revised).
+- **Part of ADR-0060's rules for reading a value now belongs to the Snapshot**: what a number is,
+  a date's clock value, and a Blank. They are stated once, here, and ADR-0060 points to them.
 - **A Consumer holds a Snapshot as it holds any immutable value**: in a field, replaced by the next
   one, never rewritten.

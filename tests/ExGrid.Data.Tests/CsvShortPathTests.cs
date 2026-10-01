@@ -8,11 +8,11 @@ namespace ExGrid.Data.Tests;
 /// <summary>
 /// The CSV reader reads the common cases by short paths over the field's bytes (ticket 07): a
 /// Boolean's ASCII spellings, a date in a fixed layout. Each must read what the full reading reads,
-/// and refuse what it refuses (ADR-0063).
+/// and refuse what it refuses (ADR-0064).
 /// </summary>
 public class CsvShortPathTests
 {
-    [Fact] // ADR-0063: a Boolean's spellings are matched ignoring case exactly as .NET's ordinal comparison does, whatever bytes the field holds
+    [Fact] // ADR-0064: a Boolean's spellings are matched ignoring case exactly as .NET's ordinal comparison does, whatever bytes the field holds
     public void Boolean_spellings_match_as_an_ordinal_comparison_ignoring_case_does()
     {
         string[] fields = ["TRUE", "true", "tRuE", "FALSE", "false", "FaLsE", "FALſE", "ＴＲＵＥ", "TRUÉ", "truE ", "  false", "T", "TRUEX", "ı", "FALSE\t", "FALSE ", "Ｆalse", "tRUE"];
@@ -31,7 +31,7 @@ public class CsvShortPathTests
         }
     }
 
-    [Theory] // ADR-0063: a date read from its bytes under a compiled format is what .NET's TryParseExact reads, valid or not
+    [Theory] // ADR-0064: a date read from its bytes under a compiled format is what .NET's TryParseExact reads, valid or not
     [InlineData("yyyy-MM-dd")]
     [InlineData("dd.MM.yyyy HH:mm:ss")]
     [InlineData("yyyyMMdd")]
@@ -76,7 +76,7 @@ public class CsvShortPathTests
         }
     }
 
-    [Fact] // ADR-0063: a date column reads every value alike, whether it repeats or the column holds too many to remember
+    [Fact] // ADR-0064: a date column reads every value alike, whether it repeats or the column holds too many to remember
     public void Dates_read_alike_whether_they_repeat_or_not()
     {
         var culture = System.Globalization.CultureInfo.InvariantCulture;
@@ -97,7 +97,7 @@ public class CsvShortPathTests
         Assert.Equal(expected, Values(snapshot, "When"));
     }
 
-    [Fact] // ADR-0063: declared spellings of any case, ASCII or not, are matched ignoring case
+    [Fact] // ADR-0064: declared spellings of any case, ASCII or not, are matched ignoring case
     public void Declared_spellings_are_matched_ignoring_case()
     {
         var ascii = new CsvSchema([new("B", SnapshotKind.Boolean) { TrueText = ["Yes", "y"], FalseText = ["No", "n"] }]);

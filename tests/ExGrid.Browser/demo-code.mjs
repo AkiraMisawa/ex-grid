@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { expect } from './fixtures.mjs';
 
 // What a demo page shows under "The code" is read from its own source by DemoCode.cs, from the
-// source files ExGrid.DemoPages.csproj embeds (ADR-0068: each page states its use case and the API
+// source files ExGrid.DemoPages.csproj embeds (ADR-0069: each page states its use case and the API
 // it uses, in code an application developer can copy). These read the same regions from the
 // repository, so a test can say that what a page shows is what it runs.
 

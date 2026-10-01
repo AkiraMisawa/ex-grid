@@ -2,7 +2,7 @@ import { test, expect, scrollRowToTop } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
-// /pivot-db (ADR-0064/0065/0068), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
+// /pivot-db (ADR-0065/0066/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // the demo API server's SQLite trades two ways, side by side. "Database → Snapshot" reads the
 // trades over Arrow into a Snapshot the page pivots in its own process; "database → server Pivot
 // Source" asks the server each question through PivotSource.Fetch, and the server answers in SQL.
@@ -70,7 +70,7 @@ async function asked(page, kind) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`PV-20/ADR-0068: the database read over Arrow and asked through PivotSource.Fetch shows the same numbers (${chrome})`, async ({ page }) => {
+        test(`PV-20/ADR-0069: the database read over Arrow and asked through PivotSource.Fetch shows the same numbers (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const status = await api('/api/status');
             // The whole database, read into the page's own Snapshot at the server's version.
@@ -79,7 +79,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectSameReports(page);
             expect(await asked(page, 'aggregate')).toBeGreaterThanOrEqual(1);
             // A server's source can be refreshed; the bundled source is refreshed by a new source
-            // instead, and shows no Refresh (ADR-0065).
+            // instead, and shows no Refresh (ADR-0066).
             await expect(toolbarButton(page, 'server', 'Refresh')).toBeVisible();
             await expect(toolbarButton(page, 'snapshot', 'Refresh')).toHaveCount(0);
             // The server's data holds still while live updates are off: a Refresh asks again and
@@ -90,7 +90,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectSameReports(page);
         });
 
-        test(`PV-20/ADR-0068: a layout changed on one, shown on the other, gives the same numbers there too (${chrome})`, async ({ page }) => {
+        test(`PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             await expectSameReports(page);
             const before = await painted(page, 'snapshot');
@@ -105,7 +105,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(section(page, 'server').getByRole('checkbox', { name: 'Month', exact: true })).toBeChecked();
         });
 
-        test(`PV-20/ADR-0065: Show Details pages the server's records as the Details tab scrolls (${chrome})`, async ({ page }) => {
+        test(`PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (${chrome})`, async ({ page }) => {
             test.setTimeout(90_000);
             await open(page, chrome);
             await expectSameReports(page);
@@ -138,10 +138,10 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('ADR-0068/0064: the code the page shows is the code it runs, the Arrow request read whole', async ({ page }) => {
+test('ADR-0069/0065: the code the page shows is the code it runs, the Arrow request read whole', async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
-    // The browser's HttpClient turns response streaming off for the Arrow request (ADR-0064).
+    // The browser's HttpClient turns response streaming off for the Arrow request (ADR-0065).
     expect(code['PivotDbPage.razor#snapshot']).toContain('request.SetBrowserResponseStreamingEnabled(false);');
     expect(code['PivotDbPage.razor#snapshot']).toContain('SnapshotArrow.ReadAsync(');
     expect(code['PivotDbPage.razor#snapshot']).toContain('PivotSource.From(snapshot, fields)');

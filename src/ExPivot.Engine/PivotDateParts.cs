@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// A part of a Date column that a Pivot Field can be declared as (ADR-0059, "Date parts"): the
+/// A part of a Date column that a Pivot Field can be declared as (ADR-0060, "Date parts"): the
 /// common case of Excel's automatic date grouping, declared in one line rather than inferred.
 /// A part's Items are numbers — 2026, 3, 9 — so a Hidden Item is written <c>Number:9</c> under any
 /// culture; they are labelled as Excel labels them, in the report's words (<see cref="PivotDateWords"/>),
@@ -22,7 +22,7 @@ public enum PivotDatePart
 }
 
 /// <summary>
-/// The words a date part's Items are painted with, by id, with their English (ADR-0059). They are
+/// The words a date part's Items are painted with, by id, with their English (ADR-0060). They are
 /// resolved as <see cref="PivotWords"/>' are: through the Consumer's <see cref="PivotOptions.Label"/>,
 /// then the English, then the id itself. A word with <c>{0}</c> is a template, filled with the
 /// part's number. <see cref="PivotWords.Japanese"/> has the Japanese edition's: <c>{0}年</c>,

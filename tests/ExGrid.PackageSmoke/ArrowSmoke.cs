@@ -6,7 +6,7 @@ namespace PackageSmoke;
 
 /// <summary>
 /// ExGrid.Data.Arrow's README examples, compiled against the packed package as a browser application
-/// takes it (ADR-0042, ADR-0064). Not run here: <see cref="ArrowRoundTrip"/> runs a stream through the
+/// takes it (ADR-0042, ADR-0065). Not run here: <see cref="ArrowRoundTrip"/> runs a stream through the
 /// packed packages, and what a read and a write do is their own suite's.
 /// </summary>
 internal static class ArrowSmoke

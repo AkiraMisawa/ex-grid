@@ -6,12 +6,12 @@ using static ExGrid.Data.Tests.Fixtures;
 namespace ExGrid.Data.Tests;
 
 /// <summary>What applying a Change Batch hands a reader, and what it does to the next version
-/// (ADR-0063, ADR-0066).</summary>
+/// (ADR-0064, ADR-0067).</summary>
 public class ChangeBatchTests
 {
     private static readonly SnapshotTuning Small = new(SegmentShift: 2);
 
-    [Fact] // ADR-0063: each batch applied moves the version on by one
+    [Fact] // ADR-0064: each batch applied moves the version on by one
     public void Each_batch_moves_the_version_on()
     {
         var builder = Trades(Small);
@@ -24,7 +24,7 @@ public class ChangeBatchTests
         Assert.Equal(Values(second, "Id"), Values(third, "Id"));
     }
 
-    [Fact] // ADR-0066: a reader folds a batch in — the sum over After is the sum over Before, less Removed, plus Added
+    [Fact] // ADR-0067: a reader folds a batch in — the sum over After is the sum over Before, less Removed, plus Added
     public void Folding_removed_and_added_gives_the_sum_over_after()
     {
         var builder = Trades(Small);
@@ -44,7 +44,7 @@ public class ChangeBatchTests
             => rows.Sum(r => (decimal?)snapshot.ValueAt(r, snapshot["Notional"]) ?? 0m);
     }
 
-    [Fact] // ADR-0063: Removed are rows Before holds and After does not; Added are rows After holds and Before did not
+    [Fact] // ADR-0064: Removed are rows Before holds and After does not; Added are rows After holds and Before did not
     public void Removed_and_added_are_rows_that_left_and_came()
     {
         var builder = Trades(Small);
@@ -64,7 +64,7 @@ public class ChangeBatchTests
         Assert.Same(records[4], change.Before.RecordAt(change.Removed[0]));
     }
 
-    [Fact] // ADR-0063: a batch adds its records in segments of their own, and every segment before is shared
+    [Fact] // ADR-0064: a batch adds its records in segments of their own, and every segment before is shared
     public void A_batch_adds_slices_and_shares_the_rest()
     {
         var builder = Trades(Small);
@@ -79,7 +79,7 @@ public class ChangeBatchTests
         Assert.Equal(Enumerable.Range(0, 49).Select(i => (object)(long)i), Values(change.After, "Id"));
     }
 
-    [Fact] // ADR-0063: once the slices batches made pile up, their rows are merged, and the base is shared as it is
+    [Fact] // ADR-0064: once the slices batches made pile up, their rows are merged, and the base is shared as it is
     public void Slices_that_pile_up_are_merged_and_the_base_is_kept()
     {
         var builder = Trades(new SnapshotTuning(SegmentShift: 2, MaxBatchSegments: 2));
@@ -114,7 +114,7 @@ public class ChangeBatchTests
         Assert.Equal(15, next.After.RowCount);
     }
 
-    [Fact] // ADR-0063: once the rows batches made grow large beside the rest, every row is copied, in order, into a new base; codes are kept, and the change says so
+    [Fact] // ADR-0064: once the rows batches made grow large beside the rest, every row is copied, in order, into a new base; codes are kept, and the change says so
     public void A_compaction_keeps_order_and_codes_and_says_so()
     {
         var builder = Trades(new SnapshotTuning(SegmentShift: 2));
@@ -147,7 +147,7 @@ public class ChangeBatchTests
         Assert.Equal(14, next.After.RowCount);
     }
 
-    [Fact] // ADR-0063: two versions made from one Snapshot each keep the text they brought, and the one before keeps its own
+    [Fact] // ADR-0064: two versions made from one Snapshot each keep the text they brought, and the one before keeps its own
     public void Two_versions_made_from_one_keep_their_own_text()
     {
         var builder = Trades(Small);
@@ -170,7 +170,7 @@ public class ChangeBatchTests
         Assert.Equal(count + 1, code);
     }
 
-    [Fact] // ADR-0063: a batch may come from any way in, and its text is taken under the Snapshot's own codes
+    [Fact] // ADR-0064: a batch may come from any way in, and its text is taken under the Snapshot's own codes
     public void A_batch_built_from_columns_meets_the_snapshots_codes()
     {
         var columns = new SnapshotColumnsBuilder { Tuning = Small };

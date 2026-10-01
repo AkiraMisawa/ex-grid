@@ -27,11 +27,11 @@ internal sealed class SqlParameters
 }
 
 /// <summary>
-/// The SQL the server's Pivot Source asks of SQLite, written by hand for <c>trades</c> (ADR-0065,
-/// ADR-0068). Every field's SQL is the server's own (<see cref="TradePivotField.Sql"/>), never a
+/// The SQL the server's Pivot Source asks of SQLite, written by hand for <c>trades</c> (ADR-0066,
+/// ADR-0069). Every field's SQL is the server's own (<see cref="TradePivotField.Sql"/>), never a
 /// question's text: a question names fields, and only a declared field's name finds one.
 /// <para>
-/// <b>Text is compared as a pivot tells Items apart: ignoring case</b> (ADR-0059), so a Hidden Item
+/// <b>Text is compared as a pivot tells Items apart: ignoring case</b> (ADR-0060), so a Hidden Item
 /// <c>usd</c> hides <c>USD</c>. The engine compares with <see cref="StringComparison.OrdinalIgnoreCase"/>,
 /// which folds every letter that has a case; SQLite's <c>NOCASE</c> folds the 26 ASCII letters only.
 /// No other character is equal to an ASCII one ignoring case, so the two agree whenever the Item's
@@ -44,14 +44,14 @@ internal sealed class SqlParameters
 /// <b>Groups are the stored values</b>, compared as stored (<c>GROUP BY Region</c>): measured at a
 /// million trades, grouping three text fields <c>COLLATE NOCASE</c> took 2.0 s and as stored 1.4 s.
 /// The groups are then folded into Items by the engine's own comparison (<see cref="PivotItemKey"/>
-/// equality), and their parts merge exactly — counts and sums add, extremes compare (ADR-0065) —
+/// equality), and their parts merge exactly — counts and sums add, extremes compare (ADR-0066) —
 /// so two spellings of one Item are one leaf, whatever the text.
 /// </para>
 /// </summary>
 internal static class TradePivotSql
 {
     /// <summary>
-    /// The aggregate for <paramref name="query"/> (ADR-0065): one <c>GROUP BY</c> over the row and
+    /// The aggregate for <paramref name="query"/> (ADR-0066): one <c>GROUP BY</c> over the row and
     /// column fields, the Hidden Items as <c>WHERE</c>, <c>count(*)</c> for the records, and for
     /// each field in Values its count and the parts asked for. For P&amp;L by region and desk,
     /// across products, with a Blank and <c>usd</c> hidden among the currencies:
@@ -62,7 +62,7 @@ internal static class TradePivotSql
     /// GROUP BY Region, Desk, Product
     /// </code>
     /// A field that holds no numbers answers its count alone: its sum and extremes are 0, as the
-    /// engine's are for text, dates and Booleans (ADR-0059). Money is summed as integer cents,
+    /// engine's are for text, dates and Booleans (ADR-0060). Money is summed as integer cents,
     /// exactly; <c>AVG</c> is never asked, since it answers in floating point, and ExPivot computes
     /// an Average from the sum and the count.
     /// <para>
@@ -100,12 +100,12 @@ internal static class TradePivotSql
         return (sql.ToString(), parameters);
     }
 
-    /// <summary>A field's Items over all the data (ADR-0065): its distinct stored values, which are
+    /// <summary>A field's Items over all the data (ADR-0066): its distinct stored values, which are
     /// folded into Items, searched and ordered in .NET (<see cref="TradePivotSource"/>).</summary>
     public static string Items(TradePivotField field) => $"SELECT DISTINCT {field.Sql} FROM trades";
 
     /// <summary>
-    /// The <c>WHERE</c> of the records behind a cell (ADR-0062/0065): each Item of the cell's row
+    /// The <c>WHERE</c> of the records behind a cell (ADR-0063/0066): each Item of the cell's row
     /// and column paths, and no Hidden Item of any placed field. Empty for the grand total of a
     /// layout that hides nothing.
     /// </summary>

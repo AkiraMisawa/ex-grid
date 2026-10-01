@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using ExGrid.DemoApi;
 
-// The demo API server (ADR-0068): the trades in a SQLite file the server generates and owns, served
+// The demo API server (ADR-0069): the trades in a SQLite file the server generates and owns, served
 // as an Arrow stream (database → Snapshot) and as a Pivot Source answered by SQL (database → server
 // Pivot Source); a SignalR hub that says when they change; and CORS for the demo hosts' pages. The
 // pages find it at their own port plus 3000; it listens wherever --urls says (8299 in

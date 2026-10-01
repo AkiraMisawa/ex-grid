@@ -5,15 +5,15 @@ namespace ExGrid.DemoApi.Tests;
 
 public sealed class TradeDatabaseTests
 {
-    [Fact] // ADR-0068: the file is named by the trade count and a format version
-    public void ADR0068_the_file_is_named_by_the_format_version_and_the_count()
+    [Fact] // ADR-0069: the file is named by the trade count and a format version
+    public void ADR0069_the_file_is_named_by_the_format_version_and_the_count()
     {
         Assert.Equal("trades-v1-20000.sqlite", TradeDatabase.FileName(20_000));
         Assert.Equal("trades-v1-1000000.sqlite", TradeDatabase.FileName(1_000_000));
     }
 
-    [Fact] // ADR-0068: a fixed seed — the same count gives byte-identical data
-    public void ADR0068_the_same_count_generates_the_same_bytes()
+    [Fact] // ADR-0069: a fixed seed — the same count gives byte-identical data
+    public void ADR0069_the_same_count_generates_the_same_bytes()
     {
         using var one = new TempDirectory();
         using var two = new TempDirectory();
@@ -27,8 +27,8 @@ public sealed class TradeDatabaseTests
         Assert.Equal(TestData.Fingerprint(5_000), TestData.Fingerprint(connection));
     }
 
-    [Fact] // ADR-0068: the same count gives the same aggregates, and they are the generator's
-    public void ADR0068_the_same_count_gives_the_same_checksum_of_aggregates()
+    [Fact] // ADR-0069: the same count gives the same aggregates, and they are the generator's
+    public void ADR0069_the_same_count_gives_the_same_checksum_of_aggregates()
     {
         using var one = new TempDirectory();
         using var two = new TempDirectory();
@@ -47,8 +47,8 @@ public sealed class TradeDatabaseTests
         Assert.Equal(expected, Aggregates(second));
     }
 
-    [Fact] // ADR-0068: money is stored as integer cents, so the database's own SUM is exact
-    public void ADR0068_SUM_of_the_stored_cents_is_the_exact_sum_of_the_generated_amounts()
+    [Fact] // ADR-0069: money is stored as integer cents, so the database's own SUM is exact
+    public void ADR0069_SUM_of_the_stored_cents_is_the_exact_sum_of_the_generated_amounts()
     {
         using var directory = new TempDirectory();
         var path = directory.File(TradeDatabase.FileName(20_000));
@@ -75,8 +75,8 @@ public sealed class TradeDatabaseTests
         Assert.Equal(20, groups);
     }
 
-    [Fact] // ADR-0063/0068: a Blank is kept apart from every value, the empty string included
-    public void ADR0068_a_Blank_currency_is_stored_as_NULL()
+    [Fact] // ADR-0064/0069: a Blank is kept apart from every value, the empty string included
+    public void ADR0069_a_Blank_currency_is_stored_as_NULL()
     {
         using var directory = new TempDirectory();
         var path = directory.File(TradeDatabase.FileName(3_000));
@@ -88,8 +88,8 @@ public sealed class TradeDatabaseTests
         Assert.Equal(1L, Scalar(connection, "SELECT count(*) FROM trades WHERE TradeId = 'T10000007' AND Currency IS NULL"));
     }
 
-    [Fact] // ADR-0068: generation shows its progress as it goes
-    public void ADR0068_generation_reports_its_progress_up_to_the_whole_count()
+    [Fact] // ADR-0069: generation shows its progress as it goes
+    public void ADR0069_generation_reports_its_progress_up_to_the_whole_count()
     {
         using var directory = new TempDirectory();
         var seen = new List<long>();
@@ -97,8 +97,8 @@ public sealed class TradeDatabaseTests
         Assert.Equal([10_000, 20_000, 25_000], seen);
     }
 
-    [Fact] // ADR-0068: the version 0 state is the generated data
-    public void ADR0068_the_generated_file_holds_version_0_and_what_generated_it()
+    [Fact] // ADR-0069: the version 0 state is the generated data
+    public void ADR0069_the_generated_file_holds_version_0_and_what_generated_it()
     {
         using var directory = new TempDirectory();
         var path = directory.File(TradeDatabase.FileName(1_500));
@@ -110,8 +110,8 @@ public sealed class TradeDatabaseTests
         TradeDatabase.Verify(path, 1_500);
     }
 
-    [Fact] // ADR-0068 and principle 1: a file that does not hold what its name promises is refused, not served
-    public void ADR0068_a_file_that_does_not_hold_what_its_name_promises_is_refused()
+    [Fact] // ADR-0069 and principle 1: a file that does not hold what its name promises is refused, not served
+    public void ADR0069_a_file_that_does_not_hold_what_its_name_promises_is_refused()
     {
         using var directory = new TempDirectory();
         var path = directory.File(TradeDatabase.FileName(200));
@@ -126,8 +126,8 @@ public sealed class TradeDatabaseTests
         Assert.Contains("is not a generated trades database", notDatabase.Message);
     }
 
-    [Fact] // ADR-0068: a generation that is stopped is stopped
-    public void ADR0068_generation_stops_when_cancelled()
+    [Fact] // ADR-0069: a generation that is stopped is stopped
+    public void ADR0069_generation_stops_when_cancelled()
     {
         using var directory = new TempDirectory();
         using var cancellation = new CancellationTokenSource();

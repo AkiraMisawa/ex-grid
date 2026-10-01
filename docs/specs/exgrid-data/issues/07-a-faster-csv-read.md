@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** reading a CSV under a Schema faster, keeping every rule of ADR-0063. Nothing is
+**What to build:** reading a CSV under a Schema faster, keeping every rule of ADR-0064. Nothing is
 guessed, and a value that cannot be read is refused by its row and column. PV-21 asks for a million
 rows in 4 s in a published WebAssembly build. It measured 14.6 s, with 955 ms on CoreCLR against
 about 0.4 s (`verification/2026-10-01-linux-measure`). The time goes on reading, not on getting the

@@ -1,4 +1,4 @@
-@* The built-in Field Settings… (ADR-0060): a row or column field's subtotals and order, as
+@* The built-in Field Settings… (ADR-0061): a row or column field's subtotals and order, as
    ExPivot's draft until OK. *@
 <div class="ex-pivot-panel ex-pivot-field-settings">
     <div class="ex-pivot-panel-title">@Context.FieldCaption</div>
@@ -33,7 +33,7 @@
     private ElementReference _first;
     private int _acted;
 
-    /// <summary>The draft and the exits (ADR-0060).</summary>
+    /// <summary>The draft and the exits (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotFieldSettingsContext Context { get; set; } = default!;
 
     /// <inheritdoc />

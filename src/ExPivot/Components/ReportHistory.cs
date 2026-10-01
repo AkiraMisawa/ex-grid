@@ -6,7 +6,7 @@ namespace ExPivot.Components;
 
 /// <summary>
 /// The reports of the recent data versions under one layout, newest first: what ExPivot answers
-/// the report grid's <c>CellChangedAt</c> from (ADR-0066/0067). Immutable — a data version makes a
+/// the report grid's <c>CellChangedAt</c> from (ADR-0067/0068). Immutable — a data version makes a
 /// new history, and with it a new delegate, whose identity is the grid's change signal; a history
 /// the grid still holds keeps answering as it did. Only data extends it: a new layout, a sort, a
 /// collapse, a form, Show Values As, a format or new words start a new one, which marks nothing.
@@ -70,7 +70,7 @@ internal sealed class ReportHistory
 
     /// <summary>
     /// When the shown value of the cell at (<paramref name="row"/>, <paramref name="column"/>) last
-    /// changed with the data, or null (ADR-0067): asked by the grid for each painted value cell.
+    /// changed with the data, or null (ADR-0068): asked by the grid for each painted value cell.
     /// </summary>
     private DateTimeOffset? ChangedAt(PivotReportRow row, GridColumn<PivotReportRow> column)
     {

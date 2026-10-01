@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Components;
 namespace ExPivot.Components;
 
 // The Field List half: the pane, a placed field's menu and the three panels, and the Items they
-// list (ADR-0060/0065). ExPivot holds every piece of state and applies every rule; the Chrome draws
+// list (ADR-0061/0066). ExPivot holds every piece of state and applies every rule; the Chrome draws
 // what it is handed, or the built-in views do.
 public partial class ExPivot
 {
@@ -34,7 +34,7 @@ public partial class ExPivot
         LayoutMenu,
     }
 
-    /// <summary>The one menu or panel open in this ExPivot, with its draft (ADR-0060).</summary>
+    /// <summary>The one menu or panel open in this ExPivot, with its draft (ADR-0061).</summary>
     private sealed class OpenSurface
     {
         public required Surface Kind { get; init; }
@@ -102,10 +102,10 @@ public partial class ExPivot
         public bool Pending => Page is null && Problem is null;
     }
 
-    // Items over all the data depend only on the data (ADR-0059): one listing per field, asked for
+    // Items over all the data depend only on the data (ADR-0060): one listing per field, asked for
     // under the Source Version the report was computed from. When the report moves to a new
     // version of the same source, each field's newest listing stays in view until the new
-    // version's lands (ADR-0065 refined): Hidden Items are keys, which name the same Items under
+    // version's lands (ADR-0066 refined): Hidden Items are keys, which name the same Items under
     // any version, so ticking and applying against them is safe, and a live report does not blank
     // the band and Filter… for a round trip after every redraw. A new source lists from nothing.
     private readonly Dictionary<string, ItemsLoad> _itemLoads = new(StringComparer.Ordinal);
@@ -119,11 +119,11 @@ public partial class ExPivot
     private PivotFieldInfo InfoOf(string field)
         => FieldOf(field)?.Info ?? throw new InvalidOperationException($"No Pivot Field named '{field}' is offered by the source.");
 
-    // ---- Items, from the source (ADR-0065) ----------------------------------------------------
+    // ---- Items, from the source (ADR-0066) ----------------------------------------------------
 
     /// <summary>A field's Items as they stand for the report on screen: listed under its Source
     /// Version, or why they cannot be; while those are on their way, or not asked for yet, the
-    /// newest an earlier version of the same source listed (ADR-0065 refined); and nothing — a
+    /// newest an earlier version of the same source listed (ADR-0066 refined); and nothing — a
     /// first listing on its way — while there is neither, or no report.</summary>
     private ItemsView ItemsOf(string field)
     {
@@ -139,7 +139,7 @@ public partial class ExPivot
     /// Brings the listings to the report's Source Version. Under a new version of the same source,
     /// each field's Items listed so far become its earlier listing, which stays in view until the
     /// new version's land — unless the source could not list them, when nothing was in view to
-    /// keep (ADR-0065 refined). Under a new source, nothing listed before is kept.
+    /// keep (ADR-0066 refined). Under a new source, nothing listed before is kept.
     /// </summary>
     private void FollowReportVersion()
     {
@@ -202,7 +202,7 @@ public partial class ExPivot
                 // The report's version's Items replace whatever an earlier one listed.
                 _earlierItems.Remove(field);
                 // A search already typed into this field's open Filter…, beyond the Items listed,
-                // is the source's to answer, under the report's version (ADR-0065 refined).
+                // is the source's to answer, under the report's version (ADR-0066 refined).
                 if (_open is { Kind: Surface.ItemFilter } open && open.Field == field && open.ItemSearch.Length > 0
                     && page.Total > page.Items.Count)
                     SearchItems(open, open.ItemSearch);
@@ -264,7 +264,7 @@ public partial class ExPivot
     }
 
     /// <summary>Why a listing cannot be shown, in words: "The data has changed — refresh." when
-    /// the source can no longer answer under the report's Source Version (ADR-0065).</summary>
+    /// the source can no longer answer under the report's Source Version (ADR-0066).</summary>
     private string ProblemText(SourceProblem problem)
         => problem.Refusal is { } refusal
             ? RefusalOf(refusal)
@@ -283,7 +283,7 @@ public partial class ExPivot
         if (_open is not { } open)
             return;
         _open = null;
-        // The keyboard goes back to what opened it (ADR-0060).
+        // The keyboard goes back to what opened it (ADR-0061).
         if (open.Entry is { } entry)
             _entryFocus[entry] = ++_focusSequence;
         else if (open.BandField is { } field)
@@ -413,7 +413,7 @@ public partial class ExPivot
         return sorts;
     }
 
-    /// <summary>The Value Fields' captions of a layout, by the engine's rule (ADR-0059): what the
+    /// <summary>The Value Fields' captions of a layout, by the engine's rule (ADR-0060): what the
     /// pane calls each one, whichever layout it shows.</summary>
     private IReadOnlyList<string> CaptionsOf(PivotLayout layout)
     {
@@ -525,7 +525,7 @@ public partial class ExPivot
         StateHasChanged();
     }
 
-    // ---- Drag and drop (ADR-0060): Blazor's own events, what is dragged held here -----------
+    // ---- Drag and drop (ADR-0061): Blazor's own events, what is dragged held here -----------
 
     /// <summary>Whether a drop of what is dragged on <paramref name="area"/> would change anything:
     /// Σ Values goes only to Rows and Columns.</summary>
@@ -588,7 +588,7 @@ public partial class ExPivot
     private static string FieldOf(PivotLayout layout, PivotEntry entry)
         => entry.Area == PivotArea.Values ? layout.Values[entry.Index].Field : layout.PlacementsIn(entry.Area)[entry.Index].Field;
 
-    // ---- A placed field's menu (ADR-0060) ---------------------------------------------------
+    // ---- A placed field's menu (ADR-0061) ---------------------------------------------------
 
     private IReadOnlyList<PivotCommand> MenuFor(PivotEntry entry)
     {
@@ -636,7 +636,7 @@ public partial class ExPivot
             Add(PivotCommandIds.SortDescending, placement.Sort != PivotSort.Descending,
                 () => PaneApplyAsync(PivotLayoutEdits.SetSort(layout, field, PivotSort.Descending)));
             Add(PivotCommandIds.FilterItems, true, () => OpenPanelAsync(entry, Surface.ItemFilter));
-            // The innermost field has nothing under its Items to collapse (ADR-0059).
+            // The innermost field has nothing under its Items to collapse (ADR-0060).
             var outer = entry.Index < count - 1;
             Add(PivotCommandIds.ExpandField, outer && (placement.Collapsed || placement.ToggledItems.Count > 0),
                 () => PaneApplyAsync(PivotLayoutEdits.SetFieldCollapsed(layout, field, false)));
@@ -727,7 +727,7 @@ public partial class ExPivot
             surface.InnerPopup = open;
     }
 
-    // Filter… (ADR-0060/0065): the field's Items as the source lists them under the report's
+    // Filter… (ADR-0061/0066): the field's Items as the source lists them under the report's
     // Source Version, ordered as the field is; the draft of ticks; a search that narrows the
     // painted labels among the Items held, and asks the source only when the field has more Items
     // than are listed; and OK.
@@ -776,7 +776,7 @@ public partial class ExPivot
         var ticked = listed.Count(i => i.Ticked);
         bool? all = ticked == listed.Length ? true : ticked == 0 ? false : null;
         // The Items in view, an earlier version's while the report's are on their way: Hidden Items
-        // are keys, so OK applies against them safely (ADR-0065 refined).
+        // are keys, so OK applies against them safely (ADR-0066 refined).
         var held = items.Page?.Items ?? [];
         var canApply = !loading && unavailable is null
             && (!allHeld || held.Count == 0 || held.Any(key => !open.Hidden.Contains(key)));
@@ -852,7 +852,7 @@ public partial class ExPivot
     private Task ApplyItemFilterAsync(OpenSurface open, IReadOnlyList<PivotItemKey> held, bool allHeld)
     {
         // With more Items than Filter… holds, that every one is unticked cannot be told, and
-        // nothing is refused for it: the rule needs every Item (ADR-0059).
+        // nothing is refused for it: the rule needs every Item (ADR-0060).
         IReadOnlyCollection<PivotItemKey> items = allHeld ? held.ToArray() : [];
         var hidden = open.Hidden.ToArray();
         var field = open.Field;
@@ -918,7 +918,7 @@ public partial class ExPivot
             aggregation =>
             {
                 // An Aggregation the source does not answer is offered disabled, and choosing it
-                // anyway changes nothing: it is never asked for (ADR-0065).
+                // anyway changes nothing: it is never asked for (ADR-0066).
                 if (!features.Offers(aggregation))
                     return;
                 // A caption the user has not written follows the Aggregation, as Excel's Custom
@@ -991,7 +991,7 @@ public partial class ExPivot
     }
 
     /// <summary>A number shown in the draft's format — or the reason it cannot be — so a format is
-    /// seen before it is applied (ADR-0060).</summary>
+    /// seen before it is applied (ADR-0061).</summary>
     private string Sample(string format, bool percent)
     {
         var trimmed = format.Trim();

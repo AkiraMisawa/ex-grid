@@ -1,4 +1,4 @@
-@* The built-in Field List (ADR-0060): Excel's "PivotTable Fields" in plain markup, styled by
+@* The built-in Field List (ADR-0061): Excel's "PivotTable Fields" in plain markup, styled by
    ExPivot's Visual Tokens. It draws what the context hands it and calls back; what a tick, a
    drop or a command means is ExPivot's. Every Area and the list of fields prevent dragover's
    default, so a drop is never lost to a render still on its way; a drop that changes nothing is
@@ -66,7 +66,7 @@
             </div>
         }
     </div>
-    @* Excel's Defer Layout Update at the pane's foot (ADR-0060): while it is ticked, the pane's
+    @* Excel's Defer Layout Update at the pane's foot (ADR-0061): while it is ticked, the pane's
        changes build a pending layout, and Update applies it in one change. *@
     <div class="ex-pivot-defer">
         <label class="ex-pivot-defer-label">
@@ -78,7 +78,7 @@
 </div>
 
 @code {
-    /// <summary>What to draw and whom to call back (ADR-0060).</summary>
+    /// <summary>What to draw and whom to call back (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotFieldListContext Context { get; set; } = default!;
 
     private static string AreaClass(PivotAreaView area)

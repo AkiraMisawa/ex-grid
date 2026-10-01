@@ -5,15 +5,15 @@ using Microsoft.AspNetCore.Components;
 
 namespace ExPivot.Components;
 
-// The asking half (ADR-0065): what the report is computed from, the question in flight, the answer
+// The asking half (ADR-0066): what the report is computed from, the question in flight, the answer
 // held, and the layouts — the one the report shows, the one it is on its way to, and Defer Layout
-// Update's pending one (ADR-0060). Every question says what it is for (Question), which decides
-// what its refusal, its failure and its answer mean (ADR-0066).
+// Update's pending one (ADR-0061). Every question says what it is for (Question), which decides
+// what its refusal, its failure and its answer mean (ADR-0067).
 public partial class ExPivot
 {
     /// <summary>
     /// How ExPivot shares the thread while it makes an answer's cube and lays out its report
-    /// (ADR-0065, PV-40): in slices of about 30 ms, yielding between them, so that a browser keeps
+    /// (ADR-0066, PV-40): in slices of about 30 ms, yielding between them, so that a browser keeps
     /// painting, the report on screen stays as it was — under the loading indication — until the
     /// new one is complete, and a newer gesture supersedes the work. A quick layout yields nothing.
     /// Null, the default, is <see cref="PivotSlicing.Default"/>; a test hands in its own to count
@@ -24,7 +24,7 @@ public partial class ExPivot
     private PivotSource? _source;
 
     // The answer held, and the source that gave it: what a change that needs no new question is
-    // laid out from (ADR-0059/0065). And the source the report on screen came from, whose Source
+    // laid out from (ADR-0060/0066). And the source the report on screen came from, whose Source
     // Version a field's Items and a cell's records are asked under: the answer held can be newer
     // than the report, when the caps refused its layout.
     private PivotCube? _cube;
@@ -33,13 +33,13 @@ public partial class ExPivot
 
     // When the answer held arrived, and when the answer the report on screen was laid out from did:
     // the time a Stale Report says it shows the data as of, and the change time of the cells a
-    // data version marks (ADR-0066/0067).
+    // data version marks (ADR-0067/0068).
     private DateTimeOffset _cubeAt;
     private DateTimeOffset _shownAt;
 
     // The layout the report shows; the one it is on its way to — what the Field List shows, and
     // what a question in flight was asked for; and, while Defer Layout Update is ticked, the
-    // pending one the pane builds (ADR-0060). _layout differs from _shown only while a question is
+    // pending one the pane builds (ADR-0061). _layout differs from _shown only while a question is
     // out, or after the source failed.
     private PivotLayout _shown = PivotLayout.Empty;
     private PivotLayout _layout = PivotLayout.Empty;
@@ -51,7 +51,7 @@ public partial class ExPivot
 
     // A further change cancels the question in flight, and an answer to a superseded question is
     // discarded, always: the generation is what makes that correct, the cancellation is a courtesy
-    // to the source (ADR-0025's rule, which ADR-0065 gives the pivot).
+    // to the source (ADR-0025's rule, which ADR-0066 gives the pivot).
     private int _generation;
     private CancellationTokenSource? _asking;
     private bool _loading;
@@ -62,7 +62,7 @@ public partial class ExPivot
     private Exception? _lastError;
 
     /// <summary>What a question is asked for, which decides what its answer, its refusal and its
-    /// failure mean (ADR-0065/0066).</summary>
+    /// failure mean (ADR-0066/0067).</summary>
     private enum Question
     {
         /// <summary>For a layout: the user's gesture, the Consumer's layout or caps, or the first
@@ -84,7 +84,7 @@ public partial class ExPivot
     private PivotLayout PaneLayout => _pending ?? _layout;
 
     /// <summary>
-    /// Excel's Refresh (ADR-0065/0066): the source is told to refresh, and the report is asked for
+    /// Excel's Refresh (ADR-0066/0067): the source is told to refresh, and the report is asked for
     /// again — the whole answer, whether or not the answer held would lay it out — as when the
     /// source says its data moved on, but at once and under the loading indication. The report
     /// stays as it was until the answer lands, and the cells whose painted values changed are
@@ -92,7 +92,7 @@ public partial class ExPivot
     /// it is refreshed by handing ExPivot a new source, or a Change Batch. A Refresh that fails —
     /// the source cannot refresh, or its answer cannot be shown — leaves a Stale Report: the report
     /// stays on the version shown, and the notice under the toolbar says the source could not
-    /// answer, as of when, with Retry, which refreshes again (ADR-0066). The failure is kept
+    /// answer, as of when, with Retry, which refreshes again (ADR-0067). The failure is kept
     /// (<see cref="LastError"/>). Before the first report there is nothing to be stale, and the
     /// toolbar says it instead.
     /// </summary>
@@ -151,12 +151,12 @@ public partial class ExPivot
 
     /// <summary>
     /// Asks again for the layout the report is on, or on its way to, whatever the answer held — a
-    /// Stale Report's Retry (ADR-0066). The report stays as it was, under the loading indication,
+    /// Stale Report's Retry (ADR-0067). The report stays as it was, under the loading indication,
     /// until the answer lands; one it still cannot show leaves the report stale.
     /// </summary>
     internal Task AskAgainAsync() => PursueAsync(raise: _raisePending, force: true, Question.Data);
 
-    /// <summary>A layout the user's gesture produced, for the report (ADR-0060): applied at once
+    /// <summary>A layout the user's gesture produced, for the report (ADR-0061): applied at once
     /// when the answer held lays it out, asked of the source otherwise. A question for newer data
     /// in flight gives way to it: a user's layout always wins over a refresh.</summary>
     private Task ApplyAsync(PivotLayout layout)
@@ -172,7 +172,7 @@ public partial class ExPivot
         return PursueAsync(raise: true);
     }
 
-    /// <summary>A change the pane made (ADR-0060): while Defer Layout Update is ticked it builds
+    /// <summary>A change the pane made (ADR-0061): while Defer Layout Update is ticked it builds
     /// the pending layout, and the report and the source are left alone.</summary>
     private Task PaneApplyAsync(PivotLayout layout)
     {
@@ -215,7 +215,7 @@ public partial class ExPivot
         return Task.CompletedTask;
     }
 
-    // ---- Defer Layout Update (ADR-0060) -------------------------------------------------------
+    // ---- Defer Layout Update (ADR-0061) -------------------------------------------------------
 
     private Task SetDeferAsync(bool defer)
     {
@@ -238,13 +238,13 @@ public partial class ExPivot
     // ---- Asking ----------------------------------------------------------------------------
 
     /// <summary>
-    /// Brings the report to <see cref="_layout"/> (ADR-0065). A layout the answer held lays out is
+    /// Brings the report to <see cref="_layout"/> (ADR-0066). A layout the answer held lays out is
     /// laid out at once, and nothing is asked. Otherwise the question goes to the source and this
     /// returns: the Field List already shows the new layout, and the report stays as it was until
     /// the answer lands — under the grid's loading indication, unless the question is a live one.
     /// A question still in flight is cancelled, and its answer will be discarded; one that carried
     /// changes of data and is followed by no question of its own leaves them gathered, to be asked
-    /// for again (ADR-0066). An Aggregation the source does not answer is refused here, by name,
+    /// for again (ADR-0067). An Aggregation the source does not answer is refused here, by name,
     /// and never asked for.
     /// </summary>
     /// <param name="raise">Whether the layout, once shown, is raised through LayoutChanged — a
@@ -278,7 +278,7 @@ public partial class ExPivot
         }
         if (!force && _cube is { } cube && ReferenceEquals(_cubeSource, source) && cube.Holds(layout))
         {
-            // A change that needs no new question asks none (ADR-0059/0065). It is laid out from the
+            // A change that needs no new question asks none (ADR-0060/0066). It is laid out from the
             // answer held at once, in the gesture's own turn, when the layout is quick, as it nearly
             // always is; one that grows long is laid out in slices, and is the work in flight
             // meanwhile — under the loading indication, superseded by a further change, and waited
@@ -564,8 +564,8 @@ public partial class ExPivot
 
     /// <summary>
     /// Shows a report laid out — unless it would pass a cap on its rows or columns, which refuses it
-    /// by name and leaves the report on the layout before (ADR-0065), or, for newer data under the
-    /// layout on screen, leaves the report stale (ADR-0066). A user's layout, once shown, is raised.
+    /// by name and leaves the report on the layout before (ADR-0066), or, for newer data under the
+    /// layout on screen, leaves the report stale (ADR-0067). A user's layout, once shown, is raised.
     /// </summary>
     /// <param name="built">The report laid out, and what was measured of it.</param>
     /// <param name="cube">The answer the report is laid out from.</param>
@@ -595,7 +595,7 @@ public partial class ExPivot
             return;
         }
         _reportSource = source;
-        // Only data marks a cell (ADR-0066): an answer that has just arrived for newer data.
+        // Only data marks a cell (ADR-0067): an answer that has just arrived for newer data.
         Show(built, layout, _cubeAt, data: fresh && kind != Question.Layout);
         if (fresh)
             _lastError = null;
@@ -623,7 +623,7 @@ public partial class ExPivot
     /// only values moved (ADR-0011). The Change Highlight's history gains a version when the report
     /// is newer data under the layout and words on screen, and starts again otherwise — a new
     /// layout, a sort, a collapse, a form, new words — so that only data marks a cell
-    /// (ADR-0066/0067); the grid is handed a new delegate for each history that can mark.
+    /// (ADR-0067/0068); the grid is handed a new delegate for each history that can mark.
     /// </summary>
     /// <param name="built">The report, laid out, and what was measured of it: its rows compared
     /// with the report on screen, which is compared again only when another was put up meanwhile,
@@ -759,7 +759,7 @@ public partial class ExPivot
             => size >= LargeStep && slicing.TimeProvider.GetElapsedTime(_start) * 2 >= slicing.Budget ? YieldAsync() : Task.CompletedTask;
     }
 
-    /// <summary>The cap a report breaks, or null (ADR-0065): Excel's rows and columns unless the
+    /// <summary>The cap a report breaks, or null (ADR-0066): Excel's rows and columns unless the
     /// Consumer set others — with the word that refuses a layout for it and the word that says
     /// newer data broke it, the one used asked for only when it is used.</summary>
     private (string RefusalWord, string StaleWord, long Cap)? CapBrokenBy(PivotReport report)
@@ -774,7 +774,7 @@ public partial class ExPivot
     private string Count(long count) => count.ToString("N0", _culture);
 
     /// <summary>A refusal said where the user sees it, and the Pivot Layout back to the one the
-    /// report shows (ADR-0065): nothing is raised for the refused layout. The pending layout, while
+    /// report shows (ADR-0066): nothing is raised for the refused layout. The pending layout, while
     /// Defer Layout Update is ticked, is the user's work in the pane, and stays.</summary>
     private void Refuse(string sentence)
     {
@@ -792,9 +792,9 @@ public partial class ExPivot
 
     /// <summary>
     /// A question failed. For newer data under the layout on screen, the report is left stale
-    /// (ADR-0066). A failed question for a layout is not stale data: the toolbar says it, and the
+    /// (ADR-0067). A failed question for a layout is not stale data: the toolbar says it, and the
     /// layout goes back to the one the report shows, as a refused one does, so the pane shows what
-    /// the report was laid out under (ADR-0066 refined); nothing is raised for it. Before the first
+    /// the report was laid out under (ADR-0067 refined); nothing is raised for it. Before the first
     /// report there is none to go back to, and the pane keeps the layout, so the next change asks
     /// for it again. The pending layout, while Defer Layout Update is ticked, is the user's work in
     /// the pane, and stays.
@@ -815,7 +815,7 @@ public partial class ExPivot
     }
 
     /// <summary>
-    /// A Refresh the source could not carry out (ADR-0066 refined): the newest data cannot be
+    /// A Refresh the source could not carry out (ADR-0067 refined): the newest data cannot be
     /// shown, so the report stays on the version shown as a Stale Report, whose notice says the
     /// source could not answer, as of when, and whose Retry refreshes again — what failed was the
     /// refresh, and asking the source that did not refresh would show its old data as the newest.
@@ -832,7 +832,7 @@ public partial class ExPivot
     }
 
     /// <summary>
-    /// Whether an answer that cannot be shown leaves a Stale Report (ADR-0066): it was asked for
+    /// Whether an answer that cannot be shown leaves a Stale Report (ADR-0067): it was asked for
     /// newer data, under the layout the report on screen has. A layout that cannot be shown is not
     /// a Stale Report — it is refused, and the layout goes back — and neither is a first report.
     /// </summary>
@@ -854,7 +854,7 @@ public partial class ExPivot
     };
 
     /// <summary>The first Aggregation of <paramref name="layout"/>'s Value Fields that the source
-    /// does not answer, or null: ExPivot never asks a source for one (ADR-0065).</summary>
+    /// does not answer, or null: ExPivot never asks a source for one (ADR-0066).</summary>
     private static PivotAggregation? NotOffered(PivotSource source, PivotLayout layout)
     {
         foreach (var value in layout.Values)
@@ -865,7 +865,7 @@ public partial class ExPivot
         return null;
     }
 
-    /// <summary>Refuses by name a layout that places a field the source does not offer (ADR-0059).</summary>
+    /// <summary>Refuses by name a layout that places a field the source does not offer (ADR-0060).</summary>
     private static void CheckFields(PivotSource source, PivotLayout layout)
     {
         var offered = source.Fields.Select(f => f.Name).ToHashSet(StringComparer.Ordinal);
@@ -875,7 +875,7 @@ public partial class ExPivot
                      .Concat(layout.Values.Select(v => ("Values", v.Field))))
         {
             if (!offered.Contains(field))
-                throw new InvalidOperationException($"The layout places '{field}' in {area}, and the source offers no Pivot Field of that name (ADR-0059).");
+                throw new InvalidOperationException($"The layout places '{field}' in {area}, and the source offers no Pivot Field of that name (ADR-0060).");
         }
     }
 }

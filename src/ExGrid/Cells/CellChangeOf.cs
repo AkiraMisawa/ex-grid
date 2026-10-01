@@ -2,7 +2,7 @@ namespace ExGrid.Cells;
 
 /// <summary>
 /// How the grid asks when a cell's shown value last changed, for the Change Highlight
-/// (ADR-0067): by (row, column), as <see cref="CellStateOf{TRow}"/> asks for Cell State
+/// (ADR-0068): by (row, column), as <see cref="CellStateOf{TRow}"/> asks for Cell State
 /// (ADR-0006). The answer is the time the value the cell shows last changed, or null for a
 /// cell nobody said changed. The grid never compares values itself: it holds none between
 /// Windows, and Row Identity is a reference (ADR-0003). The Consumer answers from what it

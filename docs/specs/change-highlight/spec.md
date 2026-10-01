@@ -2,9 +2,9 @@
 
 Status: ready-for-agent
 
-Decided by [ADR-0067](../../adr/0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md),
-in the ExPivot grilling of 2026-09-30. Exit criteria: `docs/definition-of-done.md` §26, DC-53 to
-DC-55. This spec synthesises those decisions; where it and they disagree, they win.
+Decided by [ADR-0068](../../adr/0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md),
+in the ExPivot grilling of 2026-09-30. Exit criteria: `docs/definition-of-done.md` §26, DC-60 to
+DC-62. This spec synthesises those decisions; where it and they disagree, they win.
 
 ## Problem Statement
 

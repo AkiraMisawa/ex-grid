@@ -6,7 +6,7 @@ is underway** (pure-logic core, first component layer, and the demo host exist).
 The products are **ExGrid** (display-oriented, the one that is specified), **ExSheet**
 (edit-oriented, being specified: a general-purpose sheet drawn by ExGrid as that grid's Consumer,
 [ADR-0046](docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)) and **ExPivot** (Excel's PivotTable drawn by ExGrid the same way, with a
-MudBlazor Wrapper; [ADR-0058](docs/adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md) to ADR-0068, decided with the user,
+MudBlazor Wrapper; [ADR-0059](docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md) to ADR-0069, decided with the user,
 which also put the family's immutable data, the **Snapshot**, into a package of its own, `ExGrid.Data`). `Ex` is a prefix that names the claim — Excel-like operability — in the
 same position where `ag-grid` puts `ag` = "AGnostic". All live in one repository and ship as
 separate packages ([ADR-0019](docs/adr/0019-one-repository-many-packages.md)).

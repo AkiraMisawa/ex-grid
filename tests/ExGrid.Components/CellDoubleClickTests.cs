@@ -10,7 +10,7 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// A double click where no edit opens is heard by the Consumer (ADR-0062, DC-52): once, with
+/// A double click where no edit opens is heard by the Consumer (ADR-0063, DC-59): once, with
 /// the cell's position, after the click has placed the Focus there. Where an edit opens, the
 /// edit is the double click's meaning; a control inside an Action, Template or Mark cell stops
 /// it. 20px rows; Book is editable, Amount is not.
@@ -49,7 +49,7 @@ public class CellDoubleClickTests : GridTestContext
     private static Task DoubleClickAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
         => cut.Find(".ex-viewport").DoubleClickAsync(new MouseEventArgs { Button = 0, OffsetX = x, OffsetY = y });
 
-    [Fact] // ADR-0062 / DC-52: a double click on a cell that is not Editable is heard once, with its position
+    [Fact] // ADR-0063 / DC-59: a double click on a cell that is not Editable is heard once, with its position
     public async Task A_double_click_where_no_edit_opens_is_heard()
     {
         var heard = new List<CellPosition>();
@@ -61,7 +61,7 @@ public class CellDoubleClickTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-editor"));
     }
 
-    [Fact] // ADR-0062 / DC-52: a double click on the empty part of a Template cell names that cell
+    [Fact] // ADR-0063 / DC-59: a double click on the empty part of a Template cell names that cell
     public async Task A_double_click_beside_a_templates_control_names_the_template_cell()
     {
         var heard = new List<CellPosition>();
@@ -72,7 +72,7 @@ public class CellDoubleClickTests : GridTestContext
         Assert.Equal([new CellPosition(0, 2)], heard);
     }
 
-    [Fact] // ADR-0062 / ADR-0010: where an edit opens, the edit is the double click's meaning, and nothing is heard
+    [Fact] // ADR-0063 / ADR-0010: where an edit opens, the edit is the double click's meaning, and nothing is heard
     public async Task A_double_click_on_an_editable_cell_opens_the_editor_and_is_not_heard()
     {
         var heard = new List<CellPosition>();
@@ -84,7 +84,7 @@ public class CellDoubleClickTests : GridTestContext
         Assert.Single(cut.FindAll(".ex-editor"));
     }
 
-    [Fact] // ADR-0062: while an edit is open the double click is the editor's
+    [Fact] // ADR-0063: while an edit is open the double click is the editor's
     public async Task A_double_click_while_editing_is_not_heard()
     {
         var heard = new List<CellPosition>();
@@ -96,7 +96,7 @@ public class CellDoubleClickTests : GridTestContext
         Assert.Empty(heard);
     }
 
-    [Fact] // ADR-0062 / DC-1: without a listener a double click on a cell that is not Editable does nothing
+    [Fact] // ADR-0063 / DC-1: without a listener a double click on a cell that is not Editable does nothing
     public async Task Without_a_listener_nothing_changes()
     {
         var cut = RenderGrid(null, listen: false);
@@ -106,7 +106,7 @@ public class CellDoubleClickTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-editor"));
     }
 
-    [Fact] // ADR-0062 / ADR-0020: a double click on a control inside a Template or Action cell stops at the cell
+    [Fact] // ADR-0063 / ADR-0020: a double click on a control inside a Template or Action cell stops at the cell
     public async Task A_double_click_on_a_cells_control_stops_at_the_cell()
     {
         var heard = new List<CellPosition>();

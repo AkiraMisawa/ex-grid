@@ -13,8 +13,8 @@ namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
 /// Where the keyboard goes when Show Details' dialog or a details tab goes away, and what Escape does
-/// inside their grids (ADR-0069, PV-39), under <c>MudPivotChrome</c>: as under ExPivot's own markup,
-/// because swapping the Chrome changes no behaviour (ADR-0060). The dialog's grid — dressed by the
+/// inside their grids (ADR-0070, PV-39), under <c>MudPivotChrome</c>: as under ExPivot's own markup,
+/// because swapping the Chrome changes no behaviour (ADR-0061). The dialog's grid — dressed by the
 /// grid Wrapper — closes the dialog on the Escape it has nothing left to dismiss; however the dialog
 /// closes, the report's grid takes the keyboard back; the last details tab closed leaves it with the
 /// report's grid; a tab closed while selected hands it to the tab MudTabs shows next; and Escape in a
@@ -64,7 +64,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         return seen;
     }
 
-    [Fact] // ADR-0069/0061 (PV-39): under MudBlazor, the dialog's grid declares OnLeave, the dialog closes on the Escape that grid has nothing left to dismiss, and the report's grid takes the keyboard back
+    [Fact] // ADR-0070/0062 (PV-39): under MudBlazor, the dialog's grid declares OnLeave, the dialog closes on the Escape that grid has nothing left to dismiss, and the report's grid takes the keyboard back
     public async Task The_dialog_closes_on_an_escape_its_grid_has_nothing_left_to_dismiss()
     {
         var report = ReportGridHandle();
@@ -84,7 +84,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 
-    [Theory] // ADR-0069/0061 (PV-9, PV-39): however the dialog closes under MudBlazor — its grid's Escape, an Escape on its Close, Close, the backdrop — the report's grid takes the keyboard back, once, after the render that took the dialog away
+    [Theory] // ADR-0070/0062 (PV-9, PV-39): however the dialog closes under MudBlazor — its grid's Escape, an Escape on its Close, Close, the backdrop — the report's grid takes the keyboard back, once, after the render that took the dialog away
     [InlineData("grid")]
     [InlineData("escape")]
     [InlineData("close")]
@@ -118,7 +118,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.Equal([true], seen);
     }
 
-    [Fact] // ADR-0069/0061 (PV-39): under MudBlazor, Escape in a details tab's grid closes nothing — a tab is a sheet of its own
+    [Fact] // ADR-0070/0062 (PV-39): under MudBlazor, Escape in a details tab's grid closes nothing — a tab is a sheet of its own
     public async Task Escape_in_a_details_tabs_grid_closes_nothing()
     {
         ReportGridHandle();
@@ -135,7 +135,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.Equal(blurs + 1, Blurs());
     }
 
-    [Fact] // ADR-0069/0061 (PV-39): under MudBlazor, the last details tab closed takes MudTabs away, and the report's grid takes the keyboard back once its records no longer cover it
+    [Fact] // ADR-0070/0062 (PV-39): under MudBlazor, the last details tab closed takes MudTabs away, and the report's grid takes the keyboard back once its records no longer cover it
     public async Task Closing_the_last_details_tab_gives_the_report_the_keyboard_back()
     {
         var report = ReportGridHandle();
@@ -152,7 +152,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.Equal(focusCalls, FocusCalls());
     }
 
-    [Fact] // ADR-0069/0061 (PV-39): under MudBlazor, a details tab closed while selected hands the keyboard to the details tab MudTabs shows next; the report's grid, covered, is not asked
+    [Fact] // ADR-0070/0062 (PV-39): under MudBlazor, a details tab closed while selected hands the keyboard to the details tab MudTabs shows next; the report's grid, covered, is not asked
     public async Task Closing_the_selected_tab_hands_the_keyboard_to_the_details_tab_selected_next()
     {
         var report = ReportGridHandle();

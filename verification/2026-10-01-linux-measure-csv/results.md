@@ -1,7 +1,7 @@
 # DA-17's CSV row, and PV-21's CSV target, measured again *(2026-10-01, ticket 07)*
 
 Observational: recorded, never gated (Definition of Done §1). ExGrid.Data's ticket 07 made the CSV
-reader faster, keeping every rule of ADR-0063, and asks for DA-17's CSV row to be measured again on
+reader faster, keeping every rule of ADR-0064, and asks for DA-17's CSV row to be measured again on
 CoreCLR and in a published WebAssembly build, beside the first measurement
 (`verification/2026-10-01-linux-measure`). This is that record. The profile, and each change with
 its before and after, are in the ticket's Comments; the numbers behind them are here, in

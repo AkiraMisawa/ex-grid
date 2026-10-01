@@ -8,8 +8,8 @@ public sealed partial class TradeGeneratorTests
     // What format version 1 generates: the first 20,000 trades, as TestData.Line writes them.
     private const string FormatVersion1Fingerprint = "70504fdcd0b8e4e0312163864898a9709d50b106a6b7435c10743b1eb6ea9e81";
 
-    [Fact] // ADR-0068: a changed generator moves the format version on, so a stale file is never reused
-    public void ADR0068_what_the_format_version_generates_is_pinned()
+    [Fact] // ADR-0069: a changed generator moves the format version on, so a stale file is never reused
+    public void ADR0069_what_the_format_version_generates_is_pinned()
     {
         var fingerprint = TestData.Fingerprint(20_000);
         Assert.True(TradeDatabase.FormatVersion == 1 && fingerprint == FormatVersion1Fingerprint,
@@ -17,8 +17,8 @@ public sealed partial class TradeGeneratorTests
             + "server reuses a file the old generator wrote, and pin the new version's fingerprint here.");
     }
 
-    [Fact] // ADR-0068: the same count gives the same data, because trade n is a function of n alone
-    public void ADR0068_trade_n_is_the_same_whatever_is_generated_before_it()
+    [Fact] // ADR-0069: the same count gives the same data, because trade n is a function of n alone
+    public void ADR0069_trade_n_is_the_same_whatever_is_generated_before_it()
     {
         var forwards = Enumerable.Range(0, 2_000).Select(n => TradeGenerator.Generate(n)).ToArray();
         var backwards = Enumerable.Range(0, 2_000).Reverse().Select(n => TradeGenerator.Generate(n)).Reverse().ToArray();
@@ -26,8 +26,8 @@ public sealed partial class TradeGeneratorTests
         Assert.Equal(forwards[1_234], TradeGenerator.Generate(1_234));
     }
 
-    [Fact] // ADR-0068: a Blank currency, a text with a comma and one with a double quote, where documented
-    public void ADR0068_the_special_values_are_where_their_documentation_puts_them()
+    [Fact] // ADR-0069: a Blank currency, a text with a comma and one with a double quote, where documented
+    public void ADR0069_the_special_values_are_where_their_documentation_puts_them()
     {
         Assert.Contains(',', TradeGenerator.CommaBook);
         Assert.Contains('"', TradeGenerator.QuoteBook);
@@ -46,8 +46,8 @@ public sealed partial class TradeGeneratorTests
         Assert.All(trades.Where(t => t.Book == TradeGenerator.QuoteBook), t => Assert.Equal(("EMEA", "Rates"), (t.Region, t.Desk)));
     }
 
-    [Fact] // ADR-0068: DemoPivotData's vocabulary, with more books, drawn as it draws its figures
-    public void ADR0068_every_trade_is_one_DemoPivotData_could_have_made_with_more_books()
+    [Fact] // ADR-0069: DemoPivotData's vocabulary, with more books, drawn as it draws its figures
+    public void ADR0069_every_trade_is_one_DemoPivotData_could_have_made_with_more_books()
     {
         string[] regions = ["Americas", "EMEA", "APAC"];
         string[] products = ["Swap", "Bond", "Option", "Future", "Spot"];
@@ -96,8 +96,8 @@ public sealed partial class TradeGeneratorTests
         Assert.InRange(trades.Count(t => t.Confirmed), 17_500, 18_500);
     }
 
-    [Fact] // ADR-0068: the Record Keys' text order is their numeric order, for every count the server takes
-    public void ADR0068_the_Record_Keys_sort_as_text_in_the_order_they_were_made()
+    [Fact] // ADR-0069: the Record Keys' text order is their numeric order, for every count the server takes
+    public void ADR0069_the_Record_Keys_sort_as_text_in_the_order_they_were_made()
     {
         long[] numbers = [0, 1, 9, 10, 99_999, 999_999, 1_000_000, 9_999_999, DemoApiOptions.MaxTradeCount - 1L, 89_999_999];
         for (var i = 1; i < numbers.Length; i++)

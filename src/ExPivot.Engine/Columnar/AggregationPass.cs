@@ -3,14 +3,14 @@ using ExGrid.Data;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// One question's pass over a Snapshot (ADR-0059/0065): every held row's Items in the placed
+/// One question's pass over a Snapshot (ADR-0060/0066): every held row's Items in the placed
 /// fields, the rows a Hidden Item leaves out, the leaf of each included row, and the parts asked
 /// for, accumulated at each leaf. It reads the Snapshot's slices column by column, a chunk of rows
 /// at a time: each field's Items for the chunk, then the leaves, then each field in Values.
 /// <para>
 /// When it is kept (<c>keepRows</c>), it remembers each stored row's leaf, and is what the bundled
 /// source holds of its answer: a Change Batch is folded into it (<see cref="Fold"/>) rather than
-/// read again from a million records (ADR-0066). The rows of each leaf are then chained in slice
+/// read again from a million records (ADR-0067). The rows of each leaf are then chained in slice
 /// order, the first time a leaf has to be recomputed, so that a recompute reads that leaf's rows
 /// and no others.
 /// </para>
@@ -36,7 +36,7 @@ internal sealed class AggregationPass
     private long _sliceStart;
     private long _sliceEnd;
 
-    // The rows kept (ADR-0066), numbered across the slices in slice order: each slice's first
+    // The rows kept (ADR-0067), numbered across the slices in slice order: each slice's first
     // row's number, and each stored row's leaf — −1 for a row no leaf holds: left out by a Hidden
     // Item, or no longer held. A row's leaf never changes while it is held, since its values
     // never do; a removed row's number is never handed out again.
@@ -119,14 +119,14 @@ internal sealed class AggregationPass
     }
 
     /// <summary>
-    /// The Leaf Aggregates (ADR-0065): the leaves that have records, in the order they were made;
+    /// The Leaf Aggregates (ADR-0066): the leaves that have records, in the order they were made;
     /// each axis field's Items that some leaf carries, a text Item spelled by its first spelling
     /// among the records present; and each field in Values, finished.
     /// </summary>
     public PivotAnswer Answer(string sourceVersion) => Slicer.Run(AnswerAsync(sourceVersion, Slicer.Unsliced));
 
     /// <summary>
-    /// <see cref="Answer"/> assembled in slices (ADR-0065, PV-40): each step over the leaves, the
+    /// <see cref="Answer"/> assembled in slices (ADR-0066, PV-40): each step over the leaves, the
     /// Items or the finished parts a piece at a time, yielding whenever the slice is spent. It only
     /// reads the pass, which nothing may change meanwhile: a pass held for live data defers the
     /// batches applied while it is assembled (<see cref="Defer"/>).
@@ -196,7 +196,7 @@ internal sealed class AggregationPass
         return new PivotAnswer(sourceVersion, axes[.._query.Rows.Count], axes[_query.Rows.Count..], leafCount, counts, values);
     }
 
-    // ---- Assembled while batches arrive (ADR-0066) ------------------------------------------------
+    // ---- Assembled while batches arrive (ADR-0067) ------------------------------------------------
 
     // The batches applied while an answer was being assembled from the pass, in order: folded in
     // once no assembly reads it, so that no answer is half a batch.
@@ -327,7 +327,7 @@ internal sealed class AggregationPass
                 excluded[i] = Exactly.IsSet(removed, at + i) ? (byte)1 : (byte)0;
         }
         // Every axis field's Items are taken for every row, left out or not: Items are over all
-        // the data, and so is a text Item's first spelling (ADR-0059).
+        // the data, and so is a text Item's first spelling (ADR-0060).
         for (var level = 0; level < _axis.Length; level++)
         {
             var space = _axis[level];
@@ -362,11 +362,11 @@ internal sealed class AggregationPass
         return rows;
     }
 
-    // ---- Folding a Change Batch in (ADR-0066) ----------------------------------------------------
+    // ---- Folding a Change Batch in (ADR-0067) ----------------------------------------------------
 
     /// <summary>
     /// Brings the pass from <see cref="SnapshotChange.Before"/> to <see cref="SnapshotChange.After"/>
-    /// without reading the rows the batch did not touch (ADR-0066). False when it cannot — the
+    /// without reading the rows the batch did not touch (ADR-0067). False when it cannot — the
     /// batch compacted the Snapshot, so rows moved, or the answer would now pass the cap on leaves
     /// — and the pass is then dropped and the question asked afresh.
     /// <list type="number">

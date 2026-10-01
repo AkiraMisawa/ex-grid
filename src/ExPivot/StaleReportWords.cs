@@ -1,7 +1,7 @@
 namespace ExPivot;
 
 /// <summary>
-/// The ids of the words the Stale Report's notice paints (ADR-0066). Their English and their
+/// The ids of the words the Stale Report's notice paints (ADR-0067). Their English and their
 /// Japanese are <c>PivotWords</c>'s, as every other word ExPivot paints. A word with <c>{0}</c>
 /// (and <c>{1}</c>) is a template.
 /// </summary>

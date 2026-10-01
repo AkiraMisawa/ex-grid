@@ -6,12 +6,12 @@ using static ExGrid.Data.Tests.Fixtures;
 
 namespace ExGrid.Data.Tests;
 
-/// <summary>A CSV read under a Schema (ADR-0063, DA-7): RFC 4180's quoting, the header matched per
+/// <summary>A CSV read under a Schema (ADR-0064, DA-7): RFC 4180's quoting, the header matched per
 /// declared column, the separator and the readings as declared, an empty field a Blank in every kind,
 /// and nothing guessed.</summary>
 public class CsvTests
 {
-    [Fact] // ADR-0063: a quoted separator is part of the field
+    [Fact] // ADR-0064: a quoted separator is part of the field
     public void A_quoted_separator_is_part_of_the_field()
     {
         var snapshot = Read(Texts("A", "B"), "A,B\r\n\"x,y\",z\r\n");
@@ -20,7 +20,7 @@ public class CsvTests
         Assert.Equal(["z"], Values(snapshot, "B"));
     }
 
-    [Fact] // ADR-0063: a doubled quote inside quotes is one quote
+    [Fact] // ADR-0064: a doubled quote inside quotes is one quote
     public void A_doubled_quote_is_one_quote()
     {
         var snapshot = Read(Texts("A", "B"), "A,B\n\"say \"\"hi\"\"\",\"\"\"\"\n");
@@ -29,7 +29,7 @@ public class CsvTests
         Assert.Equal(["\""], Values(snapshot, "B"));
     }
 
-    [Fact] // ADR-0063: a line break inside quotes is part of the field, kept as written
+    [Fact] // ADR-0064: a line break inside quotes is part of the field, kept as written
     public void A_line_break_inside_quotes_is_kept_as_written()
     {
         var snapshot = Read(Texts("A", "B"), "A,B\r\n\"one\r\ntwo\",\"three\nfour\"\r\n\"five\rsix\",x\r\n");
@@ -38,7 +38,7 @@ public class CsvTests
         Assert.Equal(["three\nfour", "x"], Values(snapshot, "B"));
     }
 
-    [Fact] // ADR-0063: a record ends at CR LF, at LF and at CR, and the last needs no line end
+    [Fact] // ADR-0064: a record ends at CR LF, at LF and at CR, and the last needs no line end
     public void A_record_ends_at_any_line_end()
     {
         var snapshot = Read(Texts("A"), "A\r\n1\n2\r3\r\n4");
@@ -46,7 +46,7 @@ public class CsvTests
         Assert.Equal(["1", "2", "3", "4"], Values(snapshot, "A"));
     }
 
-    [Fact] // ADR-0063: a file of a header alone is a Snapshot of the declared columns and no rows
+    [Fact] // ADR-0064: a file of a header alone is a Snapshot of the declared columns and no rows
     public void A_header_alone_is_a_snapshot_of_no_rows()
     {
         var schema = new CsvSchema([new("Desk", SnapshotKind.Text), new("Qty", SnapshotKind.Integer)]);
@@ -58,7 +58,7 @@ public class CsvTests
         Assert.Equal(0, Read(schema, "Desk,Qty").RowCount);
     }
 
-    [Fact] // ADR-0063: a trailing separator makes one more field, which is empty
+    [Fact] // ADR-0064: a trailing separator makes one more field, which is empty
     public void A_trailing_separator_makes_an_empty_field()
     {
         var snapshot = Read(Texts("A", "B"), "A,B\nx,\n,\n");
@@ -67,7 +67,7 @@ public class CsvTests
         Assert.Equal([null, null], Values(snapshot, "B"));
     }
 
-    [Fact] // ADR-0063: a record cut across any read boundary reads as the whole file does
+    [Fact] // ADR-0064: a record cut across any read boundary reads as the whole file does
     public void A_record_cut_across_any_read_boundary_reads_alike()
     {
         var schema = Mixed();
@@ -82,7 +82,7 @@ public class CsvTests
             Assert.Equal(whole, Dump(Read(schema, bytes, chunk: chunk)));
     }
 
-    [Fact] // ADR-0063: the header is matched per declared column, in whatever order the file has them
+    [Fact] // ADR-0064: the header is matched per declared column, in whatever order the file has them
     public void The_header_is_matched_per_declared_column()
     {
         var schema = new CsvSchema([new("Desk", SnapshotKind.Text), new("Qty", SnapshotKind.Integer)]);
@@ -94,7 +94,7 @@ public class CsvTests
         Assert.Equal([5L, 7L], Values(snapshot, "Qty"));
     }
 
-    [Fact] // ADR-0063: a column matches the header it declares, under a name and a caption of its own
+    [Fact] // ADR-0064: a column matches the header it declares, under a name and a caption of its own
     public void A_column_matches_its_declared_header_under_its_own_name()
     {
         var schema = new CsvSchema([new("Notional", SnapshotKind.Decimal) { Header = "Amount (USD)", Caption = "Notional, USD" }]);
@@ -106,7 +106,7 @@ public class CsvTests
         Assert.Equal([12.5m], Values(snapshot, "Notional"));
     }
 
-    [Fact] // ADR-0063: the header is matched exactly; case and spaces are not set aside
+    [Fact] // ADR-0064: the header is matched exactly; case and spaces are not set aside
     public void The_header_is_matched_exactly()
     {
         var refusal = Refusal(Texts("Desk"), "desk\nFX\n");
@@ -114,7 +114,7 @@ public class CsvTests
         Assert.Equal("Column 'Desk': it is missing from the header; the header has 'desk'.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a declared column missing from the header is refused by name, before any record is read
+    [Fact] // ADR-0064: a declared column missing from the header is refused by name, before any record is read
     public void A_declared_column_missing_from_the_header_is_refused_by_name()
     {
         var schema = new CsvSchema([new("Desk", SnapshotKind.Text), new("Notional", SnapshotKind.Decimal)]);
@@ -126,7 +126,7 @@ public class CsvTests
         Assert.Equal("Column 'Notional': it is missing from the header.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: every declared column missing from the header is named
+    [Fact] // ADR-0064: every declared column missing from the header is named
     public void Every_missing_column_is_named()
     {
         var refusal = Refusal(Texts("A", "B", "C", "D"), "B\nx\n");
@@ -135,7 +135,7 @@ public class CsvTests
         Assert.Equal("Column 'A': it is missing from the header, and so are 'C' and 'D'.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a column the Schema does not declare is skipped, whatever it holds
+    [Fact] // ADR-0064: a column the Schema does not declare is skipped, whatever it holds
     public void An_undeclared_column_is_skipped()
     {
         var schema = new CsvSchema([new("Qty", SnapshotKind.Integer)]);
@@ -147,7 +147,7 @@ public class CsvTests
         Assert.Equal([1L, 2L], Values(snapshot, "Qty"));
     }
 
-    [Theory] // ADR-0063: the separator is as declared: a comma, a tab or a semicolon
+    [Theory] // ADR-0064: the separator is as declared: a comma, a tab or a semicolon
     [InlineData(CsvSeparator.Comma, ",")]
     [InlineData(CsvSeparator.Tab, "\t")]
     [InlineData(CsvSeparator.Semicolon, ";")]
@@ -162,7 +162,7 @@ public class CsvTests
         Assert.Equal(["z"], Values(snapshot, "B"));
     }
 
-    [Fact] // ADR-0063: without a header row, columns are fields by their place, or by the position they declare
+    [Fact] // ADR-0064: without a header row, columns are fields by their place, or by the position they declare
     public void Without_a_header_columns_are_matched_by_position()
     {
         var schema = new CsvSchema([new("Desk", SnapshotKind.Text), new("Qty", SnapshotKind.Integer) { Position = 3 }]) { HasHeader = false };
@@ -173,7 +173,7 @@ public class CsvTests
         Assert.Equal([5L, 7L], Values(snapshot, "Qty"));
     }
 
-    [Fact] // ADR-0063: with a header row, a declared position is matched instead of the header
+    [Fact] // ADR-0064: with a header row, a declared position is matched instead of the header
     public void A_declared_position_wins_over_the_header()
     {
         var schema = new CsvSchema([new("Second", SnapshotKind.Text) { Position = 1 }]);
@@ -183,7 +183,7 @@ public class CsvTests
         Assert.Equal(["2"], Values(snapshot, "Second"));
     }
 
-    [Fact] // ADR-0063: the decimal point is as declared
+    [Fact] // ADR-0064: the decimal point is as declared
     public void The_decimal_point_is_as_declared()
     {
         var schema = new CsvSchema([new("V", SnapshotKind.Decimal) { DecimalPoint = "," }]) { Separator = CsvSeparator.Semicolon };
@@ -193,7 +193,7 @@ public class CsvTests
         Assert.Equal([12.5m, -0.25m, 3m], Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: the thousands separator is as declared, and read only between groups of three digits
+    [Fact] // ADR-0064: the thousands separator is as declared, and read only between groups of three digits
     public void The_thousands_separator_is_as_declared_and_grouped()
     {
         var schema = new CsvSchema([new("V", SnapshotKind.Decimal) { DecimalPoint = ",", ThousandsSeparator = "." }]) { Separator = CsvSeparator.Semicolon };
@@ -205,7 +205,7 @@ public class CsvTests
         Assert.Equal("Row 1, column 'V': '1.234,5.6' is not a number (line 2).", Refusal(schema, "V\n1.234,5.6\n").Message);
     }
 
-    [Fact] // ADR-0063: with no thousands separator declared, a comma in a number is refused rather than dropped
+    [Fact] // ADR-0064: with no thousands separator declared, a comma in a number is refused rather than dropped
     public void Without_a_thousands_separator_a_comma_is_refused()
     {
         var schema = new CsvSchema([new("V", SnapshotKind.Decimal)]);
@@ -213,7 +213,7 @@ public class CsvTests
         Assert.Equal("Row 1, column 'V': '1,234' is not a number (line 2).", Refusal(schema, "V\n\"1,234\"\n").Message);
     }
 
-    [Fact] // ADR-0063: a culture gives the decimal point, the thousands separator, its group sizes and its signs
+    [Fact] // ADR-0064: a culture gives the decimal point, the thousands separator, its group sizes and its signs
     public void The_culture_gives_the_reading()
     {
         var german = new CsvSchema([new("V", SnapshotKind.Decimal) { Culture = CultureInfo.GetCultureInfo("de-DE") }]) { Separator = CsvSeparator.Semicolon };
@@ -229,7 +229,7 @@ public class CsvTests
         Assert.Equal(1, Refusal(indian, "V\n\"1,234,567\"\n").Row);
     }
 
-    [Fact] // ADR-0063: a declared separator wins over the culture's
+    [Fact] // ADR-0064: a declared separator wins over the culture's
     public void A_declared_separator_wins_over_the_culture()
     {
         var schema = new CsvSchema([new("V", SnapshotKind.Decimal) { Culture = CultureInfo.GetCultureInfo("de-DE"), ThousandsSeparator = "" }]) { Separator = CsvSeparator.Semicolon };
@@ -238,7 +238,7 @@ public class CsvTests
         Assert.Equal(1, Refusal(schema, "V\n1.234,5\n").Row);
     }
 
-    [Fact] // ADR-0063: the date format is as declared
+    [Fact] // ADR-0064: the date format is as declared
     public void The_date_format_is_as_declared()
     {
         var schema = new CsvSchema([new("When", SnapshotKind.Date) { DateFormats = ["dd.MM.yyyy HH:mm"] }]);
@@ -249,7 +249,7 @@ public class CsvTests
         Assert.Equal(1, Refusal(schema, "When\n2026-09-30 14:05\n").Row);
     }
 
-    [Fact] // ADR-0063: several date formats are tried in order
+    [Fact] // ADR-0064: several date formats are tried in order
     public void Several_date_formats_are_tried_in_order()
     {
         var schema = new CsvSchema([new("When", SnapshotKind.Date) { DateFormats = ["yyyy-MM-dd", "yyyy/M/d", "d MMMM yyyy"] }]);
@@ -259,7 +259,7 @@ public class CsvTests
         Assert.Equal([new DateTime(2026, 9, 30), new DateTime(2026, 9, 3), new DateTime(2026, 10, 7)], Values(snapshot, "When"));
     }
 
-    [Fact] // ADR-0063: a Date column that declares no format reads ISO 8601, with or without a time
+    [Fact] // ADR-0064: a Date column that declares no format reads ISO 8601, with or without a time
     public void A_date_column_reads_iso_8601_by_default()
     {
         var schema = new CsvSchema([new("When", SnapshotKind.Date)]);
@@ -273,7 +273,7 @@ public class CsvTests
             Refusal(schema, "When\n30/09/2026\n").Message);
     }
 
-    [Fact] // ADR-0063: a date with an offset is held as the clock it shows, with its offset dropped
+    [Fact] // ADR-0064: a date with an offset is held as the clock it shows, with its offset dropped
     public void A_date_with_an_offset_is_held_as_its_clock()
     {
         var schema = new CsvSchema([new("When", SnapshotKind.Date) { DateFormats = ["yyyy-MM-ddTHH:mm:sszzz", "yyyy-MM-ddTHH:mm:ssK"] }]);
@@ -283,7 +283,7 @@ public class CsvTests
         Assert.Equal([new DateTime(2026, 9, 30, 10, 0, 0), new DateTime(2026, 9, 30, 10, 0, 0), new DateTime(2026, 9, 30, 10, 0, 0)], Values(snapshot, "When"));
     }
 
-    [Fact] // ADR-0063: a date read from a format's own culture uses its names and separators
+    [Fact] // ADR-0064: a date read from a format's own culture uses its names and separators
     public void A_date_is_read_in_its_culture()
     {
         var schema = new CsvSchema([new("When", SnapshotKind.Date) { DateFormats = ["d. MMMM yyyy", "dd/MM/yyyy"], Culture = CultureInfo.GetCultureInfo("de-DE") }]);
@@ -294,7 +294,7 @@ public class CsvTests
         Assert.Equal([new DateTime(2026, 9, 30), new DateTime(2026, 10, 1)], Values(snapshot, "When"));
     }
 
-    [Fact] // ADR-0063: a date is read in its culture's calendar: a Thai 2569 is 2026, and so is a Persian 1405
+    [Fact] // ADR-0064: a date is read in its culture's calendar: a Thai 2569 is 2026, and so is a Persian 1405
     public void A_date_is_read_in_its_cultures_calendar()
     {
         var thai = new CsvSchema([new("When", SnapshotKind.Date) { DateFormats = ["yyyy-MM-dd"], Culture = CultureInfo.GetCultureInfo("th-TH") }]);
@@ -304,7 +304,7 @@ public class CsvTests
         Assert.Equal([new PersianCalendar().ToDateTime(1405, 6, 31, 0, 0, 0, 0)], Values(Read(persian, "When\n1405-06-31\n"), "When"));
     }
 
-    [Fact] // ADR-0063: a time without a date is read on the first day, never on the day it is read
+    [Fact] // ADR-0064: a time without a date is read on the first day, never on the day it is read
     public void A_time_without_a_date_is_read_on_the_first_day()
     {
         var schema = new CsvSchema([new("At", SnapshotKind.Date) { DateFormats = ["HH:mm"] }]);
@@ -312,7 +312,7 @@ public class CsvTests
         Assert.Equal([new DateTime(1, 1, 1, 14, 5, 0)], Values(Read(schema, "At\n14:05\n"), "At"));
     }
 
-    [Fact] // ADR-0063 (Q55): an empty field is a Blank in every kind, quoted or not, as Excel reads it
+    [Fact] // ADR-0064 (Q55): an empty field is a Blank in every kind, quoted or not, as Excel reads it
     public void An_empty_field_is_a_blank_in_every_kind()
     {
         var schema = new CsvSchema(
@@ -332,7 +332,7 @@ public class CsvTests
         Assert.Empty(((TextColumn)snapshot["T"]).Dictionary);
     }
 
-    [Fact] // ADR-0063: each declared blank text is a Blank in every kind, quoted or not, and only it
+    [Fact] // ADR-0064: each declared blank text is a Blank in every kind, quoted or not, and only it
     public void Each_declared_blank_text_is_a_blank_in_every_kind()
     {
         string[] blanks = ["NULL", "-"];
@@ -352,7 +352,7 @@ public class CsvTests
         Assert.Equal("Row 1, column 'M': 'null' is not a number (line 2).", Refusal(schema, "T,M,D,I,W,B\nx,null,1,1,2026-09-30,TRUE\n").Message);
     }
 
-    [Fact] // ADR-0063: a column's own blank texts replace the Schema's, and an empty list declares none
+    [Fact] // ADR-0064: a column's own blank texts replace the Schema's, and an empty list declares none
     public void A_columns_own_blank_texts_replace_the_schemas()
     {
         var schema = new CsvSchema([new("Note", SnapshotKind.Text) { BlankText = [] }, new("Qty", SnapshotKind.Integer) { BlankText = ["n/a"] }])
@@ -366,7 +366,7 @@ public class CsvTests
         Assert.Equal([null], Values(snapshot, "Qty"));
     }
 
-    [Fact] // ADR-0063: nothing is guessed: digits read as Text stay exactly as written, leading zeros included
+    [Fact] // ADR-0064: nothing is guessed: digits read as Text stay exactly as written, leading zeros included
     public void Nothing_is_guessed()
     {
         var schema = new CsvSchema([new("Account", SnapshotKind.Text), new("Qty", SnapshotKind.Integer), new("Code", SnapshotKind.Text)]);
@@ -379,7 +379,7 @@ public class CsvTests
         Assert.Equal(["00123", "123"], ((TextColumn)snapshot["Account"]).Dictionary);
     }
 
-    [Fact] // ADR-0063: text is kept exactly, spaces and case included; other kinds set the spaces around a value aside
+    [Fact] // ADR-0064: text is kept exactly, spaces and case included; other kinds set the spaces around a value aside
     public void Text_is_exact_and_other_kinds_set_spaces_aside()
     {
         var schema = new CsvSchema([new("T", SnapshotKind.Text), new("V", SnapshotKind.Decimal), new("W", SnapshotKind.Date), new("B", SnapshotKind.Boolean)]);
@@ -394,7 +394,7 @@ public class CsvTests
         Assert.Equal("Row 1, column 'V': '  ' is not a number (line 2).", Refusal(schema, "T,V,W,B\nx,  ,2026-09-30,TRUE\n").Message);
     }
 
-    [Fact] // ADR-0063: text read from a CSV takes a dictionary in the order values first appear, as from objects
+    [Fact] // ADR-0064: text read from a CSV takes a dictionary in the order values first appear, as from objects
     public void Text_takes_a_dictionary_in_order_of_first_appearance()
     {
         var snapshot = Read(Texts("V"), "V\nb\na\n\"b\"\nc\na\n");
@@ -403,7 +403,7 @@ public class CsvTests
         Assert.Equal([0, 1, 0, 2, 1], Codes(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: a Decimal is read exactly, and 1.5 and 1.50 read back alike
+    [Fact] // ADR-0064: a Decimal is read exactly, and 1.5 and 1.50 read back alike
     public void A_decimal_is_read_exactly()
     {
         var schema = new CsvSchema([new("V", SnapshotKind.Decimal)]);
@@ -416,7 +416,7 @@ public class CsvTests
         Assert.Equal("1.5", ((decimal)Values(snapshot, "V")[1]!).ToString(CultureInfo.InvariantCulture));
     }
 
-    [Fact] // ADR-0063: a Double is read as .NET reads one, exponent and non-finite values included
+    [Fact] // ADR-0064: a Double is read as .NET reads one, exponent and non-finite values included
     public void A_double_is_read_as_dotnet_reads_one()
     {
         var schema = new CsvSchema([new("V", SnapshotKind.Double)]);
@@ -426,7 +426,7 @@ public class CsvTests
         Assert.Equal([0.1, 0.0015, -2e10, double.NaN, double.PositiveInfinity, double.NegativeInfinity], Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: an Integer is a 64-bit integer, to its limits
+    [Fact] // ADR-0064: an Integer is a 64-bit integer, to its limits
     public void An_integer_is_64_bit()
     {
         var schema = new CsvSchema([new("V", SnapshotKind.Integer)]);
@@ -436,7 +436,7 @@ public class CsvTests
         Assert.Equal([long.MaxValue, long.MinValue, 5L, 0L], Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: a Boolean is read by its declared spellings, ignoring case; TRUE and FALSE by default
+    [Fact] // ADR-0064: a Boolean is read by its declared spellings, ignoring case; TRUE and FALSE by default
     public void A_boolean_is_read_by_its_declared_spellings()
     {
         var excel = new CsvSchema([new("V", SnapshotKind.Boolean)]);
@@ -448,7 +448,7 @@ public class CsvTests
         Assert.Equal(1, Refusal(declared, "V\nTRUE\n").Row);
     }
 
-    [Fact] // ADR-0063: a Record Key declared in the Schema keys the Snapshot
+    [Fact] // ADR-0064: a Record Key declared in the Schema keys the Snapshot
     public void A_record_key_keys_the_snapshot()
     {
         var schema = new CsvSchema([new("Id", SnapshotKind.Integer), new("Desk", SnapshotKind.Text)]) { RecordKey = "Id" };
@@ -460,7 +460,7 @@ public class CsvTests
         Assert.Equal(["Rates"], Values(next, "Desk"));
     }
 
-    [Fact] // ADR-0063: the same records read from a CSV and built from objects hold the same values
+    [Fact] // ADR-0064: the same records read from a CSV and built from objects hold the same values
     public void A_csv_holds_what_the_same_records_hold_as_objects()
     {
         var records = Trades(3_000);

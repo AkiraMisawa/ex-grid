@@ -16,7 +16,7 @@
 
 @* ?chrome=mud stands both pivots on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's
    Chrome, as /pivot does; absent or builtin is ExPivot's own markup. The browser tests run the
-   page under both (ADR-0060: swapping the Chrome changes no behaviour). *@
+   page under both (ADR-0061: swapping the Chrome changes no behaviour). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true">
     <Head>
         <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
@@ -33,7 +33,7 @@
 
 <p>
     <strong>The use case:</strong> the trades live in a database on a server, and the page pivots
-    them. The demo API server owns a SQLite file of trades (ADR-0068), and the two pivots below read
+    them. The demo API server owns a SQLite file of trades (ADR-0069), and the two pivots below read
     the same file two ways, side by side:
 </p>
 <ul>
@@ -42,7 +42,7 @@
         <code>DbDataReader</code> into a Snapshot and sends it as an Arrow stream
         (<code>GET /api/trades.arrows</code>). The page reads the stream into a Snapshot of its own
         with <code>ExGrid.Data.Arrow</code>, and <code>PivotSource.From(snapshot, fields)</code>
-        answers every question here, in this process (ADR-0063, ADR-0064). One transfer, and every
+        answers every question here, in this process (ADR-0064, ADR-0065). One transfer, and every
         gesture after it is local.
     </li>
     <li>
@@ -51,7 +51,7 @@
         (<code>POST /api/pivot/aggregate</code>, <code>/items</code> and <code>/details</code>), and
         the server answers it with SQL written by hand: a <code>GROUP BY</code> for the Leaf
         Aggregates, the Hidden Items as <code>WHERE</code>, and the records behind a cell as
-        <code>LIMIT</code>/<code>OFFSET</code> pages of at most 10,000 (ADR-0065). Only the answers
+        <code>LIMIT</code>/<code>OFFSET</code> pages of at most 10,000 (ADR-0066). Only the answers
         cross the wire.
     </li>
 </ul>
@@ -159,7 +159,7 @@
     }
 
     #region The code: snapshot
-    // Database → Snapshot (ADR-0063/0064). The server reads its trades through a DbDataReader into
+    // Database → Snapshot (ADR-0064/0065). The server reads its trades through a DbDataReader into
     // a Snapshot and writes it as an Arrow stream; the page reads the stream into a Snapshot of its
     // own, and the bundled source answers every question from it, in this process.
     private async Task<(SnapshotPivotSource Source, string Version)> ReadSnapshotAsync(
@@ -167,7 +167,7 @@
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "api/trades.arrows");
         // In a browser, HttpClient streams a response by default, which costs about 2 s for these
-        // payloads; taken whole, 0.3 s (ADR-0064). On the Server host the request goes out through
+        // payloads; taken whole, 0.3 s (ADR-0065). On the Server host the request goes out through
         // SocketsHttpHandler, which ignores the option.
         request.SetBrowserResponseStreamingEnabled(false);
         using var response = await Api.Http.SendAsync(request, token);
@@ -186,7 +186,7 @@
         {
             var started = Stopwatch.GetTimestamp();
             var (source, version) = await ReadSnapshotAsync(fields, token);
-            // A new source is new data: ExPivot asks it again, and marks what changed (ADR-0066).
+            // A new source is new data: ExPivot asks it again, and marks what changed (ADR-0067).
             _snapshotSource = source;
             _snapshotStatus = $"Read {source.Snapshot.RowCount.ToString("N0", Culture)} trades at version {version} "
                 + $"in {Stopwatch.GetElapsedTime(started).TotalMilliseconds.ToString("N0", Culture)} ms.";

@@ -11,7 +11,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
-/// The words of Excel's Japanese edition on the surfaces MudPivotChrome draws (ADR-0059/0061,
+/// The words of Excel's Japanese edition on the surfaces MudPivotChrome draws (ADR-0060/0062,
 /// PV-33): the toolbar and its Layout menu, Show Details' tabs and the dialog speak ExPivot's words
 /// by id, so one <c>Label</c> words them all. Over Japanese data, a Latin letter left on them is an
 /// English word left.
@@ -68,7 +68,7 @@ public class MudPivotJapaneseWordsTests : MudPivotTestContext
         }
     }
 
-    [Fact] // ADR-0059/0061 (PV-33): under MudBlazor, the toolbar, the Layout menu, Show Details' tabs and the dialog speak Excel's Japanese words, with no English word left
+    [Fact] // ADR-0060/0062 (PV-33): under MudBlazor, the toolbar, the Layout menu, Show Details' tabs and the dialog speak Excel's Japanese words, with no English word left
     public async Task The_new_surfaces_speak_the_japanese_words()
     {
         var seen = new List<string>();

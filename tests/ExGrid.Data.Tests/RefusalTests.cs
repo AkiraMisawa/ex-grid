@@ -5,10 +5,10 @@ using static ExGrid.Data.Tests.Fixtures;
 namespace ExGrid.Data.Tests;
 
 /// <summary>A load that meets a value it cannot read fails whole, naming the row and the column
-/// (ADR-0063, DA-6).</summary>
+/// (ADR-0064, DA-6).</summary>
 public class RefusalTests
 {
-    [Fact] // ADR-0063: a value of the wrong kind fails the whole build, naming the row and the column
+    [Fact] // ADR-0064: a value of the wrong kind fails the whole build, naming the row and the column
     public void A_value_of_the_wrong_kind_fails_the_build_naming_row_and_column()
     {
         var builder = new SnapshotBuilder<Cell<object?>>().Column("Notional", SnapshotKind.Decimal, c => c.Value);
@@ -22,7 +22,7 @@ public class RefusalTests
         Assert.Equal("Row 3, column 'Notional': the value 'abc' (String) is not of the column's kind, Decimal.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: an accessor that throws fails the whole build, naming the row and the column
+    [Fact] // ADR-0064: an accessor that throws fails the whole build, naming the row and the column
     public void An_accessor_that_throws_fails_the_build_naming_row_and_column()
     {
         var failure = new InvalidOperationException("no price today");
@@ -38,7 +38,7 @@ public class RefusalTests
         Assert.Equal("Row 6, column 'Price': reading the value threw InvalidOperationException: no price today", refusal.Message);
     }
 
-    [Fact] // ADR-0063: the row is numbered from one, with its thousands separated, as a person reads it
+    [Fact] // ADR-0064: the row is numbered from one, with its thousands separated, as a person reads it
     public void The_row_is_named_as_a_person_reads_it()
     {
         var builder = new SnapshotBuilder<Cell<object?>>().Column("Notional", SnapshotKind.Decimal, c => c.Value);
@@ -50,7 +50,7 @@ public class RefusalTests
         Assert.StartsWith("Row 12,345, column 'Notional': ", refusal.Message);
     }
 
-    [Fact] // ADR-0063: an asynchronous build refuses the same way, and yields no Snapshot
+    [Fact] // ADR-0064: an asynchronous build refuses the same way, and yields no Snapshot
     public async Task An_asynchronous_build_refuses_the_same_way()
     {
         var builder = new SnapshotBuilder<Cell<object?>>().Column("When", SnapshotKind.Date, c => c.Value);
@@ -67,7 +67,7 @@ public class RefusalTests
         Assert.Equal("When", refusal.Column);
     }
 
-    [Fact] // ADR-0063: a Double column refuses a decimal rather than round it, and an Integer column a double
+    [Fact] // ADR-0064: a Double column refuses a decimal rather than round it, and an Integer column a double
     public void An_inexact_conversion_is_refused()
     {
         var doubles = new SnapshotBuilder<Cell<object?>>().Column("V", SnapshotKind.Double, c => c.Value);
@@ -80,7 +80,7 @@ public class RefusalTests
         Assert.Equal(1, Assert.Throws<SnapshotException>(() => decimals.Build([new("1")])).Row);
     }
 
-    [Theory] // ADR-0063: a string handed to an untyped column of any kind but Text fails the build, naming the row and the column
+    [Theory] // ADR-0064: a string handed to an untyped column of any kind but Text fails the build, naming the row and the column
     [InlineData(SnapshotKind.Decimal)]
     [InlineData(SnapshotKind.Double)]
     [InlineData(SnapshotKind.Integer)]
@@ -97,7 +97,7 @@ public class RefusalTests
         Assert.Equal($"Row 2, column 'V': the value '1' (String) is not of the column's kind, {kind}.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: an integer beyond a long's range is refused by name
+    [Fact] // ADR-0064: an integer beyond a long's range is refused by name
     public void An_integer_beyond_a_long_is_refused()
     {
         var integers = new SnapshotBuilder<Cell<object?>>().Column("V", SnapshotKind.Integer, c => c.Value);
@@ -107,7 +107,7 @@ public class RefusalTests
         Assert.Equal("Row 2, column 'V': the value 18446744073709551615 is outside the range of a 64-bit Integer.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: every reader words a refusal the same way
+    [Fact] // ADR-0064: every reader words a refusal the same way
     public void A_refusal_is_worded_the_same_way_for_every_reader()
     {
         Assert.Equal("Row 12,345, column 'Notional': 'abc' is not a number.", new SnapshotException(12_345, "Notional", "'abc' is not a number.").Message);

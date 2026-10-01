@@ -1,7 +1,7 @@
 namespace ExGrid.Data;
 
 /// <summary>
-/// The character that separates the fields of a CSV's record, as its Schema declares it (ADR-0063).
+/// The character that separates the fields of a CSV's record, as its Schema declares it (ADR-0064).
 /// Only these three are read: the separators Excel writes, in every locale it writes them.
 /// </summary>
 public enum CsvSeparator

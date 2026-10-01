@@ -6,9 +6,9 @@ using Apache.Arrow.Ipc;
 namespace ExGrid.Data.Arrow;
 
 /// <summary>
-/// One read of an Arrow IPC stream or file into a Snapshot (ADR-0064), through a
+/// One read of an Arrow IPC stream or file into a Snapshot (ADR-0065), through a
 /// <see cref="SnapshotColumnsBuilder"/>: the schema declares the columns — every type checked against
-/// ADR-0064's table before a row is read — and each record batch is appended in chunks, with a
+/// ADR-0065's table before a row is read — and each record batch is appended in chunks, with a
 /// checkpoint after each, so a browser keeps painting and a cancellation is seen.
 /// </summary>
 internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompressionCodecFactory? codecs, CancellationToken cancellationToken)
@@ -144,7 +144,7 @@ internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompres
         return await builder.BuildAsync().ConfigureAwait(false);
     }
 
-    /// <summary>Declares a column for each field, by ADR-0064's table, with the captions, the version
+    /// <summary>Declares a column for each field, by ADR-0065's table, with the captions, the version
     /// and the Record Key the metadata carries.</summary>
     private static ColumnReader[] Declare(Schema schema, SnapshotColumnsBuilder builder)
     {

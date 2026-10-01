@@ -6,7 +6,7 @@ The measurement showed that choosing Arrow gives nothing up.)*
 
 A Snapshot built on a server sometimes has to reach a browser application, which then aggregates
 it — for example, a Snapshot read from a database
-([ADR-0063](./0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)).
+([ADR-0064](./0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)).
 
 - **It travels as an Apache Arrow IPC stream.**
 - **The stream is written and read by an optional package, `ExGrid.Data.Arrow`.** The package
@@ -127,7 +127,7 @@ their tests, all kept by us for ever and readable by nothing outside the family.
     still refused.
   - `decimal32` and `decimal64` are Decimal.
   - `time32` and `time64` are a Date on the first day, as a database's `TimeOnly` is
-    (ADR-0063).
+    (ADR-0064).
 - **A value that cannot be held exactly is refused, never rounded.** This covers a decimal with
   more than the 28 places `decimal` holds, and a nanosecond timestamp that is not a whole number
   of 100 ns ticks.
@@ -147,7 +147,7 @@ their tests, all kept by us for ever and readable by nothing outside the family.
   b) — rejected on the numbers above: it costs the same, and it would be a format we carry alone.
 - **JSON records** — rejected. They were 60 times slower in the browser, which grew to 1.6 GB of
   memory reading them. JSON stays where messages are small: a Pivot Source's questions and answers
-  ([ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+  ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
 - **Arrow's buffers as the Snapshot's own memory, read without a copy** (Q51, option d) — rejected.
   Skipping the copy saves 0.1–0.3 s per million rows. In exchange, the Snapshot's rules — one
   dictionary entry per value, in the order it first appears — would be handed to whatever each
@@ -157,9 +157,9 @@ their tests, all kept by us for ever and readable by nothing outside the family.
 
 - **`ExGrid.Data.Arrow` references `ExGrid.Data` exactly and `Apache.Arrow` within a stated
   range.** Nothing in the family references it except the demo and its tests. It ships beside
-  `ExGrid.Data` (ADR-0063).
+  `ExGrid.Data` (ADR-0064).
 - **Its tests** round-trip every kind with a Blank in each, read streams written the way other
   producers write them, and pin every refusal. §30 of the Definition of Done states them.
 - **The demo's API server serves its database as an Arrow stream**, and the `/pivot-db` page reads
   it on both hosts
-  ([ADR-0068](./0068-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)).
+  ([ADR-0069](./0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)).

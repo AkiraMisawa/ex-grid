@@ -2,12 +2,12 @@ import { test, expect, scrollRowToTop } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
-// /grid-live (ADR-0067/0068): ExGrid alone over the demo API server's trades. The page pushes a
+// /grid-live (ADR-0068/0069): ExGrid alone over the demo API server's trades. The page pushes a
 // Window of GET /api/trades, hears the hub's "these trades changed", reads them again and answers
 // CellChangedAt from when each cell's value moved. What only a browser can say: that a mark is
-// keyed by row and column and stays on its cell across a scroll (DC-54); that it paints without a
+// keyed by row and column and stays on its cell across a scroll (DC-61); that it paints without a
 // transition or an animation, under the core's stylesheet and under the Wrapper's, that forced
-// colours restate it, and that the grid's live region does not announce it (DC-55); and that the
+// colours restate it, and that the grid's live region does not announce it (DC-62); and that the
 // page reads its Window from the server and turns the live updates off as it goes (PV-20).
 //
 // The API server lives for the whole run and other spec files share it: each test starts from
@@ -37,7 +37,7 @@ const post = (path, body) => api(path, {
 });
 
 test.afterEach(async () => {
-    // Whatever the test left, the data holds still for the next file (ADR-0068).
+    // Whatever the test left, the data holds still for the next file (ADR-0069).
     await post('/api/live', { on: false });
 });
 
@@ -116,7 +116,7 @@ async function scrollTo(page, row) {
     await expect(grid(page).locator('.ex-viewport .ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
 }
 
-test('DC-54/ADR-0067: a mark stays on its cell across a scroll, and never moves with an element to another row', async ({ page }) => {
+test('DC-61/ADR-0068: a mark stays on its cell across a scroll, and never moves with an element to another row', async ({ page }) => {
     test.setTimeout(150_000);
     await open(page, 'builtin');
     // Marks that outlast the test, so that what is compared is where they are, not when they end.
@@ -153,7 +153,7 @@ test('DC-54/ADR-0067: a mark stays on its cell across a scroll, and never moves 
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`DC-55/ADR-0067: marks paint without animating, forced colours restate them, and the live region says nothing (${chrome})`, async ({ page }) => {
+    test(`DC-62/ADR-0068: marks paint without animating, forced colours restate them, and the live region says nothing (${chrome})`, async ({ page }) => {
         test.setTimeout(150_000);
         await open(page, chrome);
         await page.locator('#grid-live-highlight').selectOption('60000');
@@ -200,12 +200,12 @@ for (const chrome of ['builtin', 'mud']) {
         expect(paint.marked, JSON.stringify(paint)).toMatch(/^linear-gradient\(/);
         expect(paint.unmarked, JSON.stringify(paint)).toBe('none');
         if (chrome === 'mud') {
-            // The Wrapper maps the token onto its palette: the warning colour at 25% (ADR-0067).
+            // The Wrapper maps the token onto its palette: the warning colour at 25% (ADR-0068).
             expect(paint.token, JSON.stringify(paint)).toMatch(/0\.25\)$/);
             expect(paint.marked, JSON.stringify(paint)).toContain(', 0.25)');
         } else {
             // The core's default: a 40% tint of the system colour Mark, never opaque, so the value
-            // reads through it (ADR-0067).
+            // reads through it (ADR-0068).
             expect(paint.token).toBe('');
             expect(paint.marked, JSON.stringify(paint)).toMatch(/[/,] 0\.4\)/);
         }
@@ -237,7 +237,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('PV-20/ADR-0068: the Window is read from the server as the grid scrolls, and leaving turns the live updates off', async ({ page }) => {
+test('PV-20/ADR-0069: the Window is read from the server as the grid scrolls, and leaving turns the live updates off', async ({ page }) => {
     test.setTimeout(120_000);
     await open(page, 'builtin');
     const status = await api('/api/status');
@@ -260,7 +260,7 @@ test('PV-20/ADR-0068: the Window is read from the server as the grid scrolls, an
     await expect.poll(async () => (await api('/api/live')).on, { timeout: 15_000 }).toBe(false);
 });
 
-test('ADR-0068/0067: the code the page shows is the code it runs: the hub\'s notice read again, and CellChangedAt answered', async ({ page }) => {
+test('ADR-0069/0068: the code the page shows is the code it runs: the hub\'s notice read again, and CellChangedAt answered', async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
     expect(code['GridLivePage.razor#notices']).toContain('hub.On<string, string[]>("TradesChanged"');

@@ -8,11 +8,11 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// The work after a question's pass, sliced as the pass is (ADR-0065, settled 2026-10-01; PV-40):
+/// The work after a question's pass, sliced as the pass is (ADR-0066, settled 2026-10-01; PV-40):
 /// the bundled source assembling its answer, the cube made from an answer, and the report laid out
 /// from a cube each yield the thread whenever a slice is spent, stop at a yield when cancelled, and
 /// give exactly what the synchronous forms give. A batch applied while the answer held is assembled
-/// waits for it, so no answer is half a batch (ADR-0066).
+/// waits for it, so no answer is half a batch (ADR-0067).
 /// </summary>
 public class SlicedWorkTests
 {
@@ -95,7 +95,7 @@ public class SlicedWorkTests
         return answers;
     }
 
-    [Fact] // ADR-0065 (PV-40): the cube made in slices is the cube made at once, cell for cell and part for part
+    [Fact] // ADR-0066 (PV-40): the cube made in slices is the cube made at once, cell for cell and part for part
     public async Task The_sliced_cube_is_the_cube()
     {
         foreach (var (name, query, answer, fields) in await Answers())
@@ -111,7 +111,7 @@ public class SlicedWorkTests
         }
     }
 
-    [Fact] // ADR-0065 (PV-40): an answer the sliced cube refuses is refused by name, as the synchronous one refuses it
+    [Fact] // ADR-0066 (PV-40): an answer the sliced cube refuses is refused by name, as the synchronous one refuses it
     public async Task The_sliced_cube_refuses_what_the_cube_refuses()
     {
         var sales = PivotSource.From(Sales, Fields);
@@ -172,7 +172,7 @@ public class SlicedWorkTests
         yield return new PivotLayout();
     }
 
-    [Fact] // ADR-0059/0065 (PV-40): the report laid out in slices is the report laid out at once, in every form
+    [Fact] // ADR-0060/0066 (PV-40): the report laid out in slices is the report laid out at once, in every form
     public async Task The_sliced_report_is_the_report()
     {
         var sales = PivotSource.From(Sales, Fields);
@@ -205,7 +205,7 @@ public class SlicedWorkTests
         }
     }
 
-    [Fact] // ADR-0059 (PV-31/PV-40): Items ordered by an Order Key, and one that throws, lay out in slices as at once
+    [Fact] // ADR-0060 (PV-31/PV-40): Items ordered by an Order Key, and one that throws, lay out in slices as at once
     public async Task Order_keys_are_read_as_at_once()
     {
         var calls = 0;
@@ -236,7 +236,7 @@ public class SlicedWorkTests
         Assert.Equal(message, sliceMessage);
     }
 
-    [Fact] // ADR-0059/0065 (PV-40): a node with thousands of children is ordered in slices, by label, by key and by value, as at once
+    [Fact] // ADR-0060/0066 (PV-40): a node with thousands of children is ordered in slices, by label, by key and by value, as at once
     public async Task Many_siblings_are_ordered_in_slices_as_at_once()
     {
         // Every trade's own notional and P&L: a few thousand Items under the root, text, numbers
@@ -260,7 +260,7 @@ public class SlicedWorkTests
         }
     }
 
-    [Fact] // ADR-0058/0011 (PV-40): rows compared in slices compare as at once
+    [Fact] // ADR-0059/0011 (PV-40): rows compared in slices compare as at once
     public async Task Rows_compared_in_slices_compare_as_at_once()
     {
         var layout = new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] };
@@ -285,7 +285,7 @@ public class SlicedWorkTests
 
     // ---- They yield, as the pass does ---------------------------------------------------------
 
-    [Fact] // ADR-0065 (PV-40): a large answer's cube and report yield whenever a slice is spent; a small one never reads the clock
+    [Fact] // ADR-0066 (PV-40): a large answer's cube and report yield whenever a slice is spent; a small one never reads the clock
     public async Task A_large_answer_is_made_and_laid_out_in_slices()
     {
         var (query, answer, source) = Large();
@@ -329,7 +329,7 @@ public class SlicedWorkTests
         Assert.Equal(2, clock.Reads);
     }
 
-    [Fact] // ADR-0065 (PV-40): a slice of the work after a pass ends when its budget is spent, by the clock it is given
+    [Fact] // ADR-0066 (PV-40): a slice of the work after a pass ends when its budget is spent, by the clock it is given
     public async Task A_slice_ends_when_its_budget_is_spent()
     {
         var (query, answer, source) = Large();
@@ -369,7 +369,7 @@ public class SlicedWorkTests
         }
     }
 
-    [Fact] // ADR-0065 (PV-40): cancelled, the work after a pass stops at the next yield and does nothing more
+    [Fact] // ADR-0066 (PV-40): cancelled, the work after a pass stops at the next yield and does nothing more
     public async Task Cancelled_work_stops_at_the_next_yield()
     {
         var (query, answer, source) = Large();
@@ -411,7 +411,7 @@ public class SlicedWorkTests
         }
     }
 
-    [Fact] // ADR-0065 (PV-40): work asked for under a token already cancelled does nothing
+    [Fact] // ADR-0066 (PV-40): work asked for under a token already cancelled does nothing
     public async Task Work_cancelled_before_it_starts_does_nothing()
     {
         var (query, answer, source) = Large();
@@ -424,7 +424,7 @@ public class SlicedWorkTests
 
     // ---- The bundled source assembles its answer in slices --------------------------------------
 
-    [Fact] // ADR-0065 (PV-40): after its last slice of rows, the bundled source assembles a large answer in slices too, and it is the answer
+    [Fact] // ADR-0066 (PV-40): after its last slice of rows, the bundled source assembles a large answer in slices too, and it is the answer
     public async Task The_bundled_source_assembles_its_answer_in_slices()
     {
         var query = PivotQuery.For(LargeLayout, int.MaxValue);
@@ -475,7 +475,7 @@ public class SlicedWorkTests
         }
     }
 
-    [Fact] // ADR-0065 (PV-40): a question cancelled while its answer is assembled stops at the next yield
+    [Fact] // ADR-0066 (PV-40): a question cancelled while its answer is assembled stops at the next yield
     public async Task A_question_cancelled_while_its_answer_is_assembled_stops_there()
     {
         var query = PivotQuery.For(LargeLayout, int.MaxValue);
@@ -513,7 +513,7 @@ public class SlicedWorkTests
         SameAnswer(await PivotSource.From(TradeSnapshot.Value, TradeFields.Fields, Never).AggregateAsync(query, Ct), answer, sameVersion: false);
     }
 
-    [Fact] // ADR-0066 (PV-34/PV-40): the answer held is assembled in slices, and a batch applied meanwhile waits for it — no answer is half a batch
+    [Fact] // ADR-0067 (PV-34/PV-40): the answer held is assembled in slices, and a batch applied meanwhile waits for it — no answer is half a batch
     public async Task A_batch_applied_while_the_held_answer_is_assembled_waits_for_it()
     {
         var trades = Trades.Value;

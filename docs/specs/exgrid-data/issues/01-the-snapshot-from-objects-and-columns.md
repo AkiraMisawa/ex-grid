@@ -23,7 +23,7 @@ the row and the column. Storage is in segments, so that ticket 04 can share them
 **Blocked by:** None
 
 - [x] DA-2: no public member mutates a Snapshot
-- [x] DA-3: each kind holds its values as ADR-0063 says, with a Blank apart from `""` and 0
+- [x] DA-3: each kind holds its values as ADR-0064 says, with a Blank apart from `""` and 0
 - [x] DA-4: typed accessors box nothing, and the objects are kept by reference, in order
 - [x] DA-5: cancellation, progress and slices
 - [x] DA-6: an unreadable value fails the build, naming the row and the column
@@ -46,7 +46,7 @@ Built, 2026-10-01, with ticket 04.
   `DateTime?`, `DateOnly?` and `DateTimeOffset?` for Date) and `Column(name, kind, Func<T, object?>)`.
   The untyped accessor takes exact conversions only — any integer type for Decimal and Integer, a
   `float` for Double, the three date types for Date; `null` and `DBNull` are Blanks. Under Text,
-  any value that is not a string is its invariant text (ADR-0059, as the orchestrator decided:
+  any value that is not a string is its invariant text (ADR-0060, as the orchestrator decided:
   an enum by its name, a `Guid` in its D form). Anything else fails the build by row and column.
   A records list that changes its count while an asynchronous build runs is refused.
 - **From columns**, `SnapshotColumnsBuilder`: a `ColumnBuilder` per column, appended a value or a

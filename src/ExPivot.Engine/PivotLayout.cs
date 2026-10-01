@@ -1,7 +1,7 @@
 namespace ExPivot.Engine;
 
 /// <summary>
-/// An Item order (ADR-0059): by label, ascending or descending, or by a Value Field's value at
+/// An Item order (ADR-0060): by label, ascending or descending, or by a Value Field's value at
 /// each Item's total. <c>(blank)</c> is last either way.
 /// </summary>
 /// <param name="Direction">Ascending or descending.</param>
@@ -17,7 +17,7 @@ public sealed record PivotSort(PivotSortDirection Direction = PivotSortDirection
 }
 
 /// <summary>
-/// A Pivot Field standing in Filters, Rows or Columns, with its settings (ADR-0059/0060): its
+/// A Pivot Field standing in Filters, Rows or Columns, with its settings (ADR-0060/0061): its
 /// Item order, its Hidden Items, whether it has subtotals, and which Items are collapsed. The
 /// settings travel with the field when it moves between those Areas.
 /// </summary>
@@ -45,7 +45,7 @@ public sealed record PivotFieldPlacement
     }
 
     /// <summary>The Items the user unticked: every record carrying one is left out of the report,
-    /// totals included (ADR-0059).</summary>
+    /// totals included (ADR-0060).</summary>
     public IReadOnlyList<PivotItemKey> HiddenItems
     {
         get => _hiddenItems;
@@ -73,7 +73,7 @@ public sealed record PivotFieldPlacement
 }
 
 /// <summary>
-/// A Pivot Field standing in Values (ADR-0059): its Aggregation, its own caption when it has
+/// A Pivot Field standing in Values (ADR-0060): its Aggregation, its own caption when it has
 /// one, how its values are shown, and the number format they are shown in.
 /// </summary>
 public sealed record PivotValueField
@@ -107,7 +107,7 @@ public sealed record PivotValueField
 
 /// <summary>
 /// Which Pivot Fields stand in which Areas, in what order, with each one's settings, and the
-/// report's form and totals (ADR-0058). It is ExPivot's View State: it holds no value, it is
+/// report's form and totals (ADR-0059). It is ExPivot's View State: it holds no value, it is
 /// serialisable (<see cref="PivotLayoutJson"/>), and the Consumer persists it. Immutable; every
 /// change is a new instance, which is also the change signal.
 /// </summary>
@@ -150,7 +150,7 @@ public sealed record PivotLayout
     }
 
     /// <summary>Where Σ Values stands when there are two or more Value Fields: innermost in
-    /// Columns (the default, as Excel's) or in Rows (ADR-0059).</summary>
+    /// Columns (the default, as Excel's) or in Rows (ADR-0060).</summary>
     public PivotAxis ValuesAxis { get; init; } = PivotAxis.Columns;
 
     /// <summary>How the row labels are set out.</summary>
@@ -210,7 +210,7 @@ public sealed record PivotLayout
     /// <summary>
     /// This layout without every field not in <paramref name="fieldNames"/> — for a Saved View
     /// written when the Consumer declared a field it no longer does. ExPivot refuses a layout
-    /// naming an undeclared field by name rather than dropping it quietly (ADR-0059); a Consumer
+    /// naming an undeclared field by name rather than dropping it quietly (ADR-0060); a Consumer
     /// that expects old views calls this first, knowingly.
     /// </summary>
     public PivotLayout KeepingOnly(IEnumerable<string> fieldNames)

@@ -6,7 +6,7 @@ using static ExGrid.Data.Tests.CsvFixtures;
 namespace ExGrid.Data.Tests;
 
 /// <summary>A CSV load takes a CancellationToken, reports its progress in rows and bytes, and yields
-/// between slices (ADR-0063, DA-5).</summary>
+/// between slices (ADR-0064, DA-5).</summary>
 public class CsvLoadTests
 {
     private static readonly CsvSchema Schema = new([new("Id", SnapshotKind.Integer), new("Desk", SnapshotKind.Text)]) { RecordKey = "Id" };
@@ -19,7 +19,7 @@ public class CsvLoadTests
         return Encoding.UTF8.GetBytes(text.ToString());
     }
 
-    [Fact] // ADR-0063: a CSV load works in slices, yields between them and reports rows and bytes, with the total the stream knows
+    [Fact] // ADR-0064: a CSV load works in slices, yields between them and reports rows and bytes, with the total the stream knows
     public async Task A_load_yields_between_slices_and_reports_rows_and_bytes()
     {
         var bytes = File(20_000);
@@ -50,7 +50,7 @@ public class CsvLoadTests
         Assert.Equal(new SnapshotProgress(20_000, 20_000), reports[^1]);
     }
 
-    [Fact] // ADR-0063: a stream that does not know its length reports the bytes read, and no total
+    [Fact] // ADR-0064: a stream that does not know its length reports the bytes read, and no total
     public async Task A_stream_of_unknown_length_reports_no_total()
     {
         var bytes = File(5_000);
@@ -63,7 +63,7 @@ public class CsvLoadTests
         Assert.Contains(reports, p => p.Bytes is > 0 && p.TotalBytes is null);
     }
 
-    [Fact] // ADR-0063: a cancelled load throws, and yields nothing
+    [Fact] // ADR-0064: a cancelled load throws, and yields nothing
     public async Task A_cancelled_load_throws_and_yields_nothing()
     {
         using var cancel = new CancellationTokenSource();
@@ -86,7 +86,7 @@ public class CsvLoadTests
         Assert.Equal(3, yields);
     }
 
-    [Fact] // ADR-0063: a load asked for with a cancelled token reads nothing
+    [Fact] // ADR-0064: a load asked for with a cancelled token reads nothing
     public async Task A_load_cancelled_before_it_starts_reads_nothing()
     {
         using var cancel = new CancellationTokenSource();
@@ -98,7 +98,7 @@ public class CsvLoadTests
         Assert.Equal(0, stream.Reads);
     }
 
-    [Fact] // ADR-0063: the stream is read from where it stands, and left open
+    [Fact] // ADR-0064: the stream is read from where it stands, and left open
     public async Task The_stream_is_read_from_where_it_stands_and_left_open()
     {
         var stream = new MemoryStream([.. "junk"u8, .. File(3)]) { Position = 4 };
@@ -109,7 +109,7 @@ public class CsvLoadTests
         Assert.True(stream.CanRead);
     }
 
-    [Fact] // ADR-0063: a file is read by its path as its stream is
+    [Fact] // ADR-0064: a file is read by its path as its stream is
     public async Task A_file_is_read_by_its_path()
     {
         var path = Path.Combine(Path.GetTempPath(), $"exgrid-data-{Guid.NewGuid():N}.csv");

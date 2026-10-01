@@ -4,7 +4,7 @@ namespace ExGrid.DemoApi;
 
 /// <summary>
 /// What the server is started with: how many trades it generates, and the directory their
-/// database lives in (ADR-0068). Both come from the environment, which the configuration
+/// database lives in (ADR-0069). Both come from the environment, which the configuration
 /// carries, so a test hands in its own.
 /// </summary>
 /// <param name="TradeCount">How many trades are generated at first start.</param>
@@ -12,7 +12,7 @@ namespace ExGrid.DemoApi;
 /// never inside the repository.</param>
 internal sealed record DemoApiOptions(int TradeCount, string DataDirectory)
 {
-    /// <summary>A million, because a million-row CSV is normal (ADR-0068, Q2 and Q49).</summary>
+    /// <summary>A million, because a million-row CSV is normal (ADR-0069, Q2 and Q49).</summary>
     public const int DefaultTradeCount = 1_000_000;
 
     /// <summary>The most trades the server will generate. Five million is the ADR's example of

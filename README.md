@@ -13,15 +13,15 @@ Three products share this repository and ship as separate packages
 - **ExSheet** — edit-oriented. Being specified: decided in ADR-0046 to ADR-0051, specified in
   `docs/specs/exsheet/`.
 - **ExPivot** — Excel's PivotTable, drawn by ExGrid, with a MudBlazor Wrapper
-  (`ExPivot.MudBlazor`). Decided in ADR-0058 to ADR-0069, specified in `docs/specs/expivot/`.
+  (`ExPivot.MudBlazor`). Decided in ADR-0059 to ADR-0070, specified in `docs/specs/expivot/`.
   See it on the demo host's pages, one per use case, each showing the code it runs: `/pivot`
   (add `?chrome=mud` for MudBlazor), `/pivot-csv`, `/pivot-db`, `/pivot-live` and `/pivot-risk`;
   and ExGrid alone over live data on `/grid-live`.
 
 The family's immutable data, the **Snapshot**, is a package of its own, `ExGrid.Data`, with
 `ExGrid.Data.Arrow` beside it to carry a Snapshot as Apache Arrow
-([ADR-0063](docs/adr/0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md),
-[ADR-0064](docs/adr/0064-a-snapshot-travels-as-apache-arrow.md)); specified in
+([ADR-0064](docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md),
+[ADR-0065](docs/adr/0065-a-snapshot-travels-as-apache-arrow.md)); specified in
 `docs/specs/exgrid-data/`.
 
 ExSheet, ExPivot and the data packages are built alongside ExGrid and are not part of its
@@ -100,7 +100,7 @@ nix develop -c dotnet run --project samples/ExGrid.DemoHost.Server
 
 The pages that read a database call the demo API server, which each page finds at its own
 port plus 3000: <http://localhost:8299> beside the WebAssembly host, 8298 beside the Server
-host ([ADR-0068](docs/adr/0068-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)).
+host ([ADR-0069](docs/adr/0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)).
 Its first start generates a million trades into a SQLite file outside the repository;
 `EXGRID_DEMO_TRADES` asks for another count:
 

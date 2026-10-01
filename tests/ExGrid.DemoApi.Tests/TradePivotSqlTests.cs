@@ -5,7 +5,7 @@ using Xunit;
 namespace ExGrid.DemoApi.Tests;
 
 /// <summary>
-/// The conditions the server's Pivot Source writes (ADR-0065, ADR-0068), run against a small
+/// The conditions the server's Pivot Source writes (ADR-0066, ADR-0069), run against a small
 /// table in memory that holds what the generated trades never do — spellings of one Item in other
 /// cases, letters outside ASCII — so that each rule is seen to match the engine's, not only to agree
 /// with it on the demo's data.
@@ -61,8 +61,8 @@ public sealed class TradePivotSqlTests : IDisposable
         return Where(TradePivotSql.Carrying(Field(field), item, parameters), parameters);
     }
 
-    [Fact] // ADR-0059/0065: hiding a currency keeps every Blank — NOT IN alone would drop them, and the totals would be quietly short
-    public void ADR0065_hiding_an_Item_keeps_the_Blanks_and_hiding_the_Blank_drops_only_them()
+    [Fact] // ADR-0060/0066: hiding a currency keeps every Blank — NOT IN alone would drop them, and the totals would be quietly short
+    public void ADR0066_hiding_an_Item_keeps_the_Blanks_and_hiding_the_Blank_drops_only_them()
     {
         Assert.Equal(["T3", "T4", "T5"], Keeping("Currency", PivotItemKey.Text("usd")));
         Assert.Equal(["T1", "T2", "T4"], Keeping("Currency", PivotItemKey.Blank));
@@ -73,8 +73,8 @@ public sealed class TradePivotSqlTests : IDisposable
         Assert.Equal(["T4"], Where("Currency COLLATE NOCASE NOT IN ('usd')", new SqlParameters()));
     }
 
-    [Fact] // ADR-0059: text is told apart ignoring case, as the engine tells it — every letter, not only ASCII's
-    public void ADR0059_text_is_compared_as_the_engine_compares_it_ignoring_case()
+    [Fact] // ADR-0060: text is told apart ignoring case, as the engine tells it — every letter, not only ASCII's
+    public void ADR0060_text_is_compared_as_the_engine_compares_it_ignoring_case()
     {
         // An ASCII Item: NOCASE, which is the engine's comparison for it.
         Assert.Equal(["T1", "T2"], Carrying("Region", PivotItemKey.Text("Emea")));
@@ -96,8 +96,8 @@ public sealed class TradePivotSqlTests : IDisposable
         }
     }
 
-    [Fact] // ADR-0059: an Item no stored value of the field can be matches no trade, and hiding it hides nothing
-    public void ADR0059_an_Item_no_stored_value_can_be_matches_nothing()
+    [Fact] // ADR-0060: an Item no stored value of the field can be matches no trade, and hiding it hides nothing
+    public void ADR0060_an_Item_no_stored_value_can_be_matches_nothing()
     {
         Assert.Empty(Carrying("Quantity", PivotItemKey.Text("12")));
         Assert.Empty(Carrying("Notional", PivotItemKey.Number(0.001)));
@@ -108,8 +108,8 @@ public sealed class TradePivotSqlTests : IDisposable
         Assert.Equal("0", TradePivotSql.Carrying(Field("Quantity"), PivotItemKey.Text("12"), new SqlParameters()));
     }
 
-    [Fact] // ADR-0059: numbers, dates and Booleans are matched by the value the engine reads
-    public void ADR0059_numbers_dates_and_Booleans_are_matched_by_value()
+    [Fact] // ADR-0060: numbers, dates and Booleans are matched by the value the engine reads
+    public void ADR0060_numbers_dates_and_Booleans_are_matched_by_value()
     {
         Assert.Equal(["T1", "T3", "T5"], Carrying("Quantity", PivotItemKey.Number(12)));
         Assert.Equal(["T1"], Carrying("Notional", PivotItemKey.Number(10_000)));
@@ -124,7 +124,7 @@ public sealed class TradePivotSqlTests : IDisposable
         Assert.Equal(["T2", "T4"], Keeping("Quantity", PivotItemKey.Number(12)));
     }
 
-    [Theory] // ADR-0059: an amount of whole cents is the number Item (double)decimal reads, and nothing else is
+    [Theory] // ADR-0060: an amount of whole cents is the number Item (double)decimal reads, and nothing else is
     [InlineData(1_234.56, 123_456L)]
     [InlineData(-0.01, -1L)]
     [InlineData(10_000, 1_000_000L)]
@@ -135,15 +135,15 @@ public sealed class TradePivotSqlTests : IDisposable
     [InlineData(1e-320, null)]
     [InlineData(9e13, null)]
     [InlineData(double.NaN, null)]
-    public void ADR0059_a_number_Item_is_the_cents_whose_amount_it_is(double number, long? cents)
+    public void ADR0060_a_number_Item_is_the_cents_whose_amount_it_is(double number, long? cents)
     {
         Assert.Equal(cents, TradeValues.CentsOf(number));
         if (cents is { } whole)
             Assert.Equal(number, (double)Cents.ToDecimal(whole));
     }
 
-    [Fact] // ADR-0068: the trades' text is ASCII, each Item spelled one way — where NOCASE and grouping by the stored value are the engine's
-    public void ADR0068_the_generated_text_is_ASCII_with_one_spelling_per_Item()
+    [Fact] // ADR-0069: the trades' text is ASCII, each Item spelled one way — where NOCASE and grouping by the stored value are the engine's
+    public void ADR0069_the_generated_text_is_ASCII_with_one_spelling_per_Item()
     {
         var trades = Enumerable.Range(0, 20_000).Select(n => TradeGenerator.Generate(n)).ToArray();
         foreach (var values in new Func<GeneratedTrade, string?>[] { t => t.TradeId, t => t.Region, t => t.Desk, t => t.Book, t => t.Product, t => t.Currency })

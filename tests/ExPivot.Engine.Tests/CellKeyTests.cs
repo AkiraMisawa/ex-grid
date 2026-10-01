@@ -4,13 +4,13 @@ using static ExPivot.Engine.Tests.Pivot;
 
 namespace ExPivot.Engine.Tests;
 
-/// <summary>The cell index hashes its (row, column) keys mixed (ADR-0065, ticket 09). Packed into
+/// <summary>The cell index hashes its (row, column) keys mixed (ADR-0066, ticket 09). Packed into
 /// one <c>long</c>, a key's own hash is <c>row ^ column</c>: a cube of thousands of row nodes by
 /// 270 dates then has a few hundred hash codes for its cells, every lookup walks a chain, and a
 /// million records took 23 s where a mixing hash took 3.3 s.</summary>
 public class CellKeyTests
 {
-    [Fact] // ADR-0065: 300 row nodes by 270 dates and their total — each cell its own hash, where row ^ column gave fewer than 512
+    [Fact] // ADR-0066: 300 row nodes by 270 dates and their total — each cell its own hash, where row ^ column gave fewer than 512
     public void The_cell_index_hashes_a_wide_layout_apart()
     {
         var keys = (from row in Enumerable.Range(0, 300) from column in Enumerable.Range(0, 271) select CellKey.Of(row, column)).ToArray();
@@ -26,7 +26,7 @@ public class CellKeyTests
         Assert.True(Occupied(packed, keys.Length) < 0.01, $"{Occupied(packed, keys.Length):P0} of the buckets used");
     }
 
-    [Fact] // ADR-0065: a cube the engine built over 270 dates in Columns and 13 row Items hashes its cells apart
+    [Fact] // ADR-0066: a cube the engine built over 270 dates in Columns and 13 row Items hashes its cells apart
     public void A_cube_of_270_dates_hashes_its_cells_apart()
     {
         var start = new DateTime(2026, 1, 2);

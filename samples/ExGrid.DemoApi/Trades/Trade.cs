@@ -35,7 +35,7 @@ internal sealed record Trade(
         Confirmed: reader.GetInt64(10) != 0);
 }
 
-/// <summary>Money as the database stores it: a whole number of cents (ADR-0068).</summary>
+/// <summary>Money as the database stores it: a whole number of cents (ADR-0069).</summary>
 internal static class Cents
 {
     /// <summary>The amount, exactly, with two decimal places: 123456 cents is 1234.56. Never

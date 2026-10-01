@@ -10,7 +10,7 @@ namespace ExGrid.Data.Arrow.Tests;
 /// </summary>
 public class ProducerTests
 {
-    [Fact] // ADR-0064: pyarrow's delta dictionaries — each batch's dictionary extending the one before, out of order, amer beside AMER, a null entry, a null index — are read under the Snapshot's rules
+    [Fact] // ADR-0065: pyarrow's delta dictionaries — each batch's dictionary extending the one before, out of order, amer beside AMER, a null entry, a null index — are read under the Snapshot's rules
     public async Task Pyarrows_delta_dictionaries_are_read_under_the_snapshots_rules()
     {
         var snapshot = await ReadEveryWayAsync(Produced("pyarrow-deltas.arrows"));
@@ -20,7 +20,7 @@ public class ProducerTests
         Assert.Equal(Shown(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L), Values(snapshot, "n"));
     }
 
-    [Fact] // ADR-0064: a dictionary pyarrow replaced between record batches is read by the batches after it
+    [Fact] // ADR-0065: a dictionary pyarrow replaced between record batches is read by the batches after it
     public async Task Pyarrows_replaced_dictionary_is_read_by_the_batches_after_it()
     {
         var snapshot = await ReadEveryWayAsync(Produced("pyarrow-replaced.arrows"));
@@ -29,7 +29,7 @@ public class ProducerTests
         Assert.Equal(["b", "a", "c"], Dictionary(snapshot, "region"));
     }
 
-    [Fact] // ADR-0064: pyarrow's dictionaries with indices of every integer width, over utf8 and large_utf8, are Text
+    [Fact] // ADR-0065: pyarrow's dictionaries with indices of every integer width, over utf8 and large_utf8, are Text
     public async Task Pyarrows_indices_of_every_width_are_read()
     {
         var snapshot = await ReadEveryWayAsync(Produced("pyarrow-indices.arrows"));
@@ -42,7 +42,7 @@ public class ProducerTests
         }
     }
 
-    [Fact] // ADR-0064: pyarrow's Arrow file with ZSTD buffers is refused without a codec, naming ZSTD, and read with one
+    [Fact] // ADR-0065: pyarrow's Arrow file with ZSTD buffers is refused without a codec, naming ZSTD, and read with one
     public async Task Pyarrows_zstd_file_needs_the_codec()
     {
         var file = Produced("pyarrow-zstd.arrow");
@@ -55,7 +55,7 @@ public class ProducerTests
         Assert.Equal(Shown(1.5m, -2.25m, null, 1_000_000.01m), Values(snapshot, "pnl"));
     }
 
-    [Fact] // ADR-0064: Polars' stream for older readers — large_utf8, a Categorical over large_utf8 with uint32 indices, its numbers, dates, decimals and booleans, a timestamp in UTC — is read whole
+    [Fact] // ADR-0065: Polars' stream for older readers — large_utf8, a Categorical over large_utf8 with uint32 indices, its numbers, dates, decimals and booleans, a timestamp in UTC — is read whole
     public async Task Polars_stream_for_older_readers_is_read()
     {
         var snapshot = await ReadEveryWayAsync(Produced("polars-oldest.arrows"));
@@ -73,7 +73,7 @@ public class ProducerTests
         Assert.Equal(SnapshotKind.Date, snapshot["utc"].Kind);
     }
 
-    [Fact] // ADR-0064: Polars' default stream, its text as utf8_view, is read as Text — the same values Polars writes for older readers as large_utf8
+    [Fact] // ADR-0065: Polars' default stream, its text as utf8_view, is read as Text — the same values Polars writes for older readers as large_utf8
     public async Task Polars_default_stream_is_read_with_its_utf8_view()
     {
         var snapshot = await ReadEveryWayAsync(Produced("polars-default.arrows"));
@@ -85,7 +85,7 @@ public class ProducerTests
         Assert.Equal(Values(oldest, "region"), Values(snapshot, "region"));
     }
 
-    [Fact] // ADR-0064: DuckDB's stream — an ENUM as a dictionary with uint8 indices, decimals, a TIMESTAMPTZ in Etc/UTC, every TIMESTAMP unit, a HUGEINT and a UBIGINT within range — is read whole
+    [Fact] // ADR-0065: DuckDB's stream — an ENUM as a dictionary with uint8 indices, decimals, a TIMESTAMPTZ in Etc/UTC, every TIMESTAMP unit, a HUGEINT and a UBIGINT within range — is read whole
     public async Task Duckdbs_stream_is_read()
     {
         var snapshot = await ReadEveryWayAsync(Produced("duckdb.arrows"));

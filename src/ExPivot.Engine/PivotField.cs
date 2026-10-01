@@ -2,17 +2,17 @@ namespace ExPivot.Engine;
 
 /// <summary>
 /// What the Field List and the layout rules need of a Pivot Field, without its accessor:
-/// its name, its caption, its declared type (ADR-0060). A Pivot Layout names fields by
+/// its name, its caption, its declared type (ADR-0061). A Pivot Layout names fields by
 /// <see cref="Name"/>; the Field List and the report show <see cref="Caption"/>.
 /// </summary>
 /// <param name="Name">What the field is addressed by in a Pivot Layout. Unique among the
 /// declared fields.</param>
 /// <param name="Caption">What the Field List and the report call it.</param>
-/// <param name="Type">The declared type, which decides the defaults (ADR-0059).</param>
+/// <param name="Type">The declared type, which decides the defaults (ADR-0060).</param>
 public sealed record PivotFieldInfo(string Name, string Caption, PivotFieldType Type);
 
 /// <summary>
-/// A Pivot Field as a Pivot Source offers it (ADR-0065): its name, caption and declared type,
+/// A Pivot Field as a Pivot Source offers it (ADR-0066): its name, caption and declared type,
 /// the format its Items are labelled with, the order its Items are declared in (Excel's custom
 /// lists) and its Order Key — everything but how it is read from a record, which is the source's
 /// own. A source's <see cref="PivotSource.Fields"/> are these; the Field List and the report need
@@ -30,7 +30,7 @@ public class PivotField
     private readonly PivotDatePart? _datePart;
     /// <summary>Declares one Pivot Field.</summary>
     /// <param name="name">What a Pivot Layout addresses it by; unique among the fields.</param>
-    /// <param name="type">The declared type (ADR-0059).</param>
+    /// <param name="type">The declared type (ADR-0060).</param>
     /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
     /// <param name="format">A .NET format string an Item's number or date is labelled with, under
     /// the report's culture; the value's own text when left out.</param>
@@ -88,7 +88,7 @@ public class PivotField
     }
 
     /// <summary>
-    /// The part of a Date column the field is — its year, quarter or month (ADR-0059) — or null for
+    /// The part of a Date column the field is — its year, quarter or month (ADR-0060) — or null for
     /// the column's own values. Its Items are the part's numbers, labelled as Excel labels them in
     /// the report's words and ordered by the calendar; the part of a Blank is a Blank. A date part
     /// is declared <see cref="PivotFieldType.Date"/>, so a ticked one goes to Rows.
@@ -108,7 +108,7 @@ public class PivotField
     }
 
     /// <summary>
-    /// The field's Order Key (ADR-0059): a function from an Item's value — the text of a text Item
+    /// The field's Order Key (ADR-0060): a function from an Item's value — the text of a text Item
     /// (its first spelling), the <see cref="double"/> of a number, the <see cref="DateTime"/> of a
     /// date, the <see cref="bool"/> of a Boolean — to what the Items are ordered by, ascending, ties
     /// falling back to the label. It is called once per Item, where the report is laid out, so a
@@ -126,7 +126,7 @@ public class PivotField
     public Func<object, IComparable?>? OrderKey { get; init; }
 
     /// <summary>
-    /// Declares a field as a part of a Date column (ADR-0059): its year, quarter or month, labelled
+    /// Declares a field as a part of a Date column (ADR-0060): its year, quarter or month, labelled
     /// <c>2026</c>, <c>Qtr3</c>, <c>Sep</c> in the report's words and ordered by the calendar.
     /// </summary>
     /// <param name="name">What a Pivot Layout addresses it by; unique among the fields.</param>
@@ -166,7 +166,7 @@ public class PivotField
 }
 
 /// <summary>
-/// A Pivot Field as the Consumer declares it over records in memory (ADR-0058): a
+/// A Pivot Field as the Consumer declares it over records in memory (ADR-0059): a
 /// <see cref="PivotField"/> and how it is read from one record. <see cref="PivotSource.From{TRecord}(IReadOnlyList{TRecord}, IReadOnlyList{PivotField{TRecord}}, PivotSlicing?)"/>
 /// reads the records through these. Immutable; a changed declaration is a new instance.
 /// </summary>
@@ -175,7 +175,7 @@ public sealed class PivotField<TRecord> : PivotField
 {
     /// <summary>Declares one Pivot Field.</summary>
     /// <param name="name">What a Pivot Layout addresses it by; unique among the fields.</param>
-    /// <param name="type">The declared type (ADR-0059).</param>
+    /// <param name="type">The declared type (ADR-0060).</param>
     /// <param name="value">Reads the field from a record; null is a Blank.</param>
     /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
     /// <param name="format">A .NET format string an Item's number or date is labelled with, under

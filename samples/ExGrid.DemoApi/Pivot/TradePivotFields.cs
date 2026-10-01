@@ -6,7 +6,7 @@ namespace ExGrid.DemoApi;
 
 /// <summary>
 /// How a field's stored value reads as an Item and as a record's value, and how an Item is
-/// written back into SQL to be compared with the stored values (ADR-0059, ADR-0065).
+/// written back into SQL to be compared with the stored values (ADR-0060, ADR-0066).
 /// </summary>
 internal enum TradeValueKind
 {
@@ -40,10 +40,10 @@ internal sealed record TradePivotField(PivotField Field, string Sql, TradeValueK
     public string Name => Field.Name;
 
     /// <summary>Whether every value of the field is a number, which Sum, Min and Max read. A text,
-    /// date or Boolean value is counted and is never a number (ADR-0059).</summary>
+    /// date or Boolean value is counted and is never a number (ADR-0060).</summary>
     public bool IsNumber => Kind is TradeValueKind.Cents or TradeValueKind.Integer;
 
-    /// <summary>The Item a stored value belongs to (ADR-0059): read from column
+    /// <summary>The Item a stored value belongs to (ADR-0060): read from column
     /// <paramref name="ordinal"/> of <paramref name="reader"/>, which selected <see cref="Sql"/>.</summary>
     public PivotItemKey ItemAt(SqliteDataReader reader, int ordinal)
     {
@@ -81,7 +81,7 @@ internal sealed record TradePivotField(PivotField Field, string Sql, TradeValueK
     /// The stored value that is <paramref name="item"/>, for a <c>WHERE</c> to compare with: false
     /// when no stored value of this field can be that Item — a text Item of a number field, a
     /// date with a time of day, a number that is no whole cent — so a condition on it matches no
-    /// record, as the engine's does (ADR-0059). A Blank is <see langword="null"/>: <c>IS NULL</c>.
+    /// record, as the engine's does (ADR-0060). A Blank is <see langword="null"/>: <c>IS NULL</c>.
     /// </summary>
     public bool TryStored(PivotItemKey item, out object? stored)
     {
@@ -122,7 +122,7 @@ internal sealed record TradePivotField(PivotField Field, string Sql, TradeValueK
 }
 
 /// <summary>
-/// The trades as the server's Pivot Source offers them (ADR-0065, ADR-0068): the fields the pages
+/// The trades as the server's Pivot Source offers them (ADR-0066, ADR-0069): the fields the pages
 /// declare — the names, captions, types and formats of <c>DemoPivotData</c>'s, and the Record Key —
 /// and the Aggregations SQLite answers exactly.
 /// </summary>
@@ -152,7 +152,7 @@ internal static class TradePivotFields
     public static readonly IReadOnlyList<PivotField> Fields = All.Select(f => f.Field).ToArray();
 
     /// <summary>
-    /// What the source answers (ADR-0065). SQLite's <c>COUNT</c>, <c>SUM</c> over integer cents,
+    /// What the source answers (ADR-0066). SQLite's <c>COUNT</c>, <c>SUM</c> over integer cents,
     /// <c>MIN</c> and <c>MAX</c> are exact, so Count, Count Numbers, Sum, Min and Max are offered,
     /// and Average, which ExPivot computes from the sum and the count. Product and the four
     /// variances are not: SQLite has no aggregate for either, and the engine's are doubles

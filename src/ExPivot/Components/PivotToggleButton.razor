@@ -1,5 +1,5 @@
 @* The expand / collapse button of an outer Item, in the one label cell Space asked to enter
-   (ADR-0037/0058): the same markup ExPivot paints in every other such cell, and it takes DOM
+   (ADR-0037/0059): the same markup ExPivot paints in every other such cell, and it takes DOM
    focus itself, once per request — the core never reaches into markup it did not render. *@
 <button @ref="_button" type="button" class="@ClassFor(Collapsed)" tabindex="-1"
         aria-expanded="@(Collapsed ? "false" : "true")" aria-label="@Name"

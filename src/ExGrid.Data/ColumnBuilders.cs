@@ -106,7 +106,7 @@ public abstract class ColumnBuilder
 
 /// <summary>
 /// Appends Text: exactly as given, told apart ordinally, into a dictionary in the order each value
-/// first appears (ADR-0063). <see langword="null"/> is a Blank; the empty string is a value.
+/// first appears (ADR-0064). <see langword="null"/> is a Blank; the empty string is a value.
 /// </summary>
 public sealed class TextColumnBuilder : ColumnBuilder
 {
@@ -235,7 +235,7 @@ public sealed class TextColumnBuilder : ColumnBuilder
 }
 
 /// <summary>
-/// Appends Decimal values, held exactly (ADR-0063). The values are held, not the scale each was
+/// Appends Decimal values, held exactly (ADR-0064). The values are held, not the scale each was
 /// written with: <c>1.5</c> and <c>1.50</c> are stored alike.
 /// </summary>
 public sealed class DecimalColumnBuilder : ColumnBuilder
@@ -403,7 +403,7 @@ public sealed class IntegerColumnBuilder : ColumnBuilder
 }
 
 /// <summary>
-/// Appends Date values, each held as the clock value it shows (ADR-0063): a <see cref="DateTime"/>'s
+/// Appends Date values, each held as the clock value it shows (ADR-0064): a <see cref="DateTime"/>'s
 /// ticks with its <see cref="DateTime.Kind"/> ignored, a <see cref="DateOnly"/>'s midnight, a
 /// <see cref="DateTimeOffset"/>'s clock with its offset dropped.
 /// </summary>

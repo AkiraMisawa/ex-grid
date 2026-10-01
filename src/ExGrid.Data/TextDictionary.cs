@@ -5,7 +5,7 @@ namespace ExGrid.Data;
 
 /// <summary>
 /// A Text column's dictionary as one version sees it: every distinct value once, exactly as written,
-/// at its code (ADR-0063). Values are told apart ordinally, so two spellings are two entries; a
+/// at its code (ADR-0064). Values are told apart ordinally, so two spellings are two entries; a
 /// reader that tells text apart ignoring case folds the dictionary, not the rows.
 /// <para>
 /// Codes read from a later version may lie past <see cref="Count"/>; read them through that

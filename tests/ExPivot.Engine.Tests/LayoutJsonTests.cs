@@ -4,8 +4,8 @@ using static ExPivot.Engine.Tests.Pivot;
 
 namespace ExPivot.Engine.Tests;
 
-/// <summary>The Pivot Layout's saved form (ADR-0058: View State is serialisable) and the engine's
-/// package boundary (ADR-0058/0059).</summary>
+/// <summary>The Pivot Layout's saved form (ADR-0059: View State is serialisable) and the engine's
+/// package boundary (ADR-0059/0060).</summary>
 public class LayoutJsonTests
 {
     private static readonly PivotLayout Full = new()
@@ -37,7 +37,7 @@ public class LayoutJsonTests
         RepeatItemLabels = true,
     };
 
-    [Fact] // ADR-0058: a layout written and read back is the same layout, and lays out the same report
+    [Fact] // ADR-0059: a layout written and read back is the same layout, and lays out the same report
     public void A_layout_round_trips()
     {
         var json = PivotLayoutJson.Write(Full);
@@ -51,7 +51,7 @@ public class LayoutJsonTests
         Assert.Equal(Lines(Report(Full)), Lines(Report(read)));
     }
 
-    [Fact] // ADR-0058: the defaults are written sparingly and read back as defaults
+    [Fact] // ADR-0059: the defaults are written sparingly and read back as defaults
     public void The_default_layout_round_trips()
     {
         var layout = new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] };
@@ -64,14 +64,14 @@ public class LayoutJsonTests
         Assert.Equal(PivotLayoutJson.Write(read), json);
     }
 
-    [Fact] // ADR-0058: a document of another version is refused, never half-read
+    [Fact] // ADR-0059: a document of another version is refused, never half-read
     public void Another_version_is_refused()
     {
         Assert.Throws<NotSupportedException>(() => PivotLayoutJson.Read("""{"version":2}"""));
         Assert.Throws<FormatException>(() => PivotLayoutJson.Read("""{"form":"compact"}"""));
     }
 
-    [Theory] // ADR-0058: a name the reader does not know is refused by name
+    [Theory] // ADR-0059: a name the reader does not know is refused by name
     [InlineData("""{"version":1,"form":"pivot"}""")]
     [InlineData("""{"version":1,"valuesAxis":"filters"}""")]
     [InlineData("""{"version":1,"values":[{"field":"Amount","aggregation":"median"}]}""")]
@@ -85,7 +85,7 @@ public class LayoutJsonTests
     public void An_unknown_name_or_shape_is_refused(string json)
         => Assert.ThrowsAny<Exception>(() => PivotLayoutJson.Read(json));
 
-    [Fact] // ADR-0058/0063 (PV-1): the engine references the base class library and ExGrid.Data, and nothing else
+    [Fact] // ADR-0059/0064 (PV-1): the engine references the base class library and ExGrid.Data, and nothing else
     public void The_engine_references_only_the_base_class_library_and_the_data_package()
     {
         var referenced = typeof(PivotEngine).Assembly.GetReferencedAssemblies().Select(a => a.Name!).ToArray();

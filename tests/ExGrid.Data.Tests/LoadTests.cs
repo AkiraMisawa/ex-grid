@@ -5,10 +5,10 @@ using static ExGrid.Data.Tests.Fixtures;
 namespace ExGrid.Data.Tests;
 
 /// <summary>Every builder takes a CancellationToken, reports progress and yields between slices
-/// (ADR-0063, DA-5).</summary>
+/// (ADR-0064, DA-5).</summary>
 public class LoadTests
 {
-    [Fact] // ADR-0063: a build from objects works in slices, yields between them and reports its progress
+    [Fact] // ADR-0064: a build from objects works in slices, yields between them and reports its progress
     public async Task A_build_yields_between_slices_and_reports_its_progress()
     {
         var yields = 0;
@@ -34,7 +34,7 @@ public class LoadTests
         Assert.Equal(reports.Select(p => p.Rows).Order(), reports.Select(p => p.Rows));
     }
 
-    [Fact] // ADR-0063: a slice works until its budget is spent, so a generous budget yields seldom
+    [Fact] // ADR-0064: a slice works until its budget is spent, so a generous budget yields seldom
     public async Task A_slice_works_until_its_budget_is_spent()
     {
         var yields = 0;
@@ -53,7 +53,7 @@ public class LoadTests
         Assert.Equal(0, yields);
     }
 
-    [Fact] // ADR-0063: without a Yield of its own, a build yields as the platform does, and finishes
+    [Fact] // ADR-0064: without a Yield of its own, a build yields as the platform does, and finishes
     public async Task The_default_yield_lets_the_build_finish()
     {
         var records = Trades(5_000);
@@ -63,7 +63,7 @@ public class LoadTests
         AssertHolds(records, snapshot);
     }
 
-    [Fact] // ADR-0063: a cancelled build throws, and yields nothing
+    [Fact] // ADR-0064: a cancelled build throws, and yields nothing
     public async Task A_cancelled_build_throws_and_yields_nothing()
     {
         using var cancel = new CancellationTokenSource();
@@ -86,7 +86,7 @@ public class LoadTests
         Assert.Equal(3, yields);
     }
 
-    [Fact] // ADR-0063: a build asked for with a cancelled token does not start
+    [Fact] // ADR-0064: a build asked for with a cancelled token does not start
     public async Task A_build_cancelled_before_it_starts_does_not_start()
     {
         using var cancel = new CancellationTokenSource();
@@ -99,7 +99,7 @@ public class LoadTests
         Assert.Empty(reports);
     }
 
-    [Fact] // ADR-0063: a reader's checkpoints yield when the slice is spent, reporting its rows and bytes
+    [Fact] // ADR-0064: a reader's checkpoints yield when the slice is spent, reporting its rows and bytes
     public async Task A_readers_checkpoints_yield_and_report_rows_and_bytes()
     {
         var yields = 0;
@@ -139,7 +139,7 @@ public class LoadTests
         Assert.Equal(100, snapshot.RowCount);
     }
 
-    [Fact] // ADR-0063: a reader's load, cancelled, throws at its next checkpoint and builds nothing
+    [Fact] // ADR-0064: a reader's load, cancelled, throws at its next checkpoint and builds nothing
     public async Task A_cancelled_reader_load_throws_at_its_next_checkpoint()
     {
         using var cancel = new CancellationTokenSource();
@@ -154,7 +154,7 @@ public class LoadTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await builder.BuildAsync());
     }
 
-    [Fact] // ADR-0063: the Record Keys of a reader's load are indexed in slices too
+    [Fact] // ADR-0064: the Record Keys of a reader's load are indexed in slices too
     public async Task A_readers_keys_are_indexed_in_slices()
     {
         var yields = 0;

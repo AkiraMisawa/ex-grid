@@ -7,13 +7,13 @@ using Xunit;
 
 namespace ExGrid.DemoApi.Tests;
 
-/// <summary>"Database → Snapshot" (ADR-0063, ADR-0064, ADR-0068): the trades as an Arrow stream.</summary>
+/// <summary>"Database → Snapshot" (ADR-0064, ADR-0065, ADR-0069): the trades as an Arrow stream.</summary>
 public sealed class TradeArrowTests(DemoApiServer server) : IClassFixture<DemoApiServer>
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    [Fact] // ADR-0064/0068: the stream reads back as the Snapshot the DbDataReader way builds from the same trades, with the Source Version beside it
-    public async Task ADR0064_the_Arrow_stream_reads_back_as_the_trades_Snapshot_and_names_its_version()
+    [Fact] // ADR-0065/0069: the stream reads back as the Snapshot the DbDataReader way builds from the same trades, with the Source Version beside it
+    public async Task ADR0065_the_Arrow_stream_reads_back_as_the_trades_Snapshot_and_names_its_version()
     {
         using var client = server.Factory.CreateClient();
         using var response = await client.GetAsync("/api/trades.arrows", Token);
@@ -27,8 +27,8 @@ public sealed class TradeArrowTests(DemoApiServer server) : IClassFixture<DemoAp
         SameSnapshot(built.Snapshot, read);
     }
 
-    [Fact] // ADR-0063/0064: each column has its kind — cents an exact Decimal, the ISO text a Date, 0 and 1 a Boolean — and TradeId is the Record Key
-    public async Task ADR0063_each_column_is_read_as_its_kind_exactly()
+    [Fact] // ADR-0064/0065: each column has its kind — cents an exact Decimal, the ISO text a Date, 0 and 1 a Boolean — and TradeId is the Record Key
+    public async Task ADR0064_each_column_is_read_as_its_kind_exactly()
     {
         using var client = server.Factory.CreateClient();
         var snapshot = await SnapshotArrow.ReadAsync(await client.GetByteArrayAsync("/api/trades.arrows", Token), cancellationToken: Token);
@@ -62,8 +62,8 @@ public sealed class TradeArrowTests(DemoApiServer server) : IClassFixture<DemoAp
         Assert.Equal(0.01m, Cents.ToDecimal(1));
     }
 
-    [Fact] // ADR-0064/0068: HTTP compresses the stream, gzip or Brotli as the browser accepts, and it decompresses to the same bytes
-    public async Task ADR0064_the_stream_is_compressed_by_HTTP_with_gzip_or_Brotli()
+    [Fact] // ADR-0065/0069: HTTP compresses the stream, gzip or Brotli as the browser accepts, and it decompresses to the same bytes
+    public async Task ADR0065_the_stream_is_compressed_by_HTTP_with_gzip_or_Brotli()
     {
         using var client = server.Factory.CreateClient();
         var identity = await client.GetByteArrayAsync("/api/trades.arrows", Token);
@@ -95,8 +95,8 @@ public sealed class TradeArrowTests(DemoApiServer server) : IClassFixture<DemoAp
         Assert.Equal("br", Assert.Single(answered.Content.Headers.ContentEncoding));
     }
 
-    [Fact] // ADR-0064/0068: the bytes are kept per Source Version, and a live tick makes a new version, new bytes and a new Snapshot
-    public async Task ADR0064_the_stream_is_built_once_per_version_and_a_live_tick_builds_the_next()
+    [Fact] // ADR-0065/0069: the bytes are kept per Source Version, and a live tick makes a new version, new bytes and a new Snapshot
+    public async Task ADR0065_the_stream_is_built_once_per_version_and_a_live_tick_builds_the_next()
     {
         using var client = server.Factory.CreateClient();
         var arrow = server.Factory.Services.GetRequiredService<TradeArrow>();
@@ -140,8 +140,8 @@ public sealed class TradeArrowTests(DemoApiServer server) : IClassFixture<DemoAp
         }
     }
 
-    [Fact] // ADR-0068: a page on another port reads the version header: CORS exposes it by name
-    public async Task ADR0068_a_page_on_another_port_may_read_the_version_header()
+    [Fact] // ADR-0069: a page on another port reads the version header: CORS exposes it by name
+    public async Task ADR0069_a_page_on_another_port_may_read_the_version_header()
     {
         using var client = server.Factory.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/trades.arrows");

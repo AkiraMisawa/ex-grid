@@ -78,7 +78,7 @@ The source and the layout are the same as for a plain ExPivot. See the ExPivot R
 ## More
 
 The decisions are recorded in the repository's ADRs:
-[ADR-0060](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/adr/0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)
+[ADR-0061](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)
 covers the Field List and the Chrome seam, and
-[ADR-0061](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/adr/0061-expivot-mudblazor-is-a-chrome-and-a-stylesheet.md)
+[ADR-0062](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/adr/0062-expivot-mudblazor-is-a-chrome-and-a-stylesheet.md)
 covers this Wrapper.

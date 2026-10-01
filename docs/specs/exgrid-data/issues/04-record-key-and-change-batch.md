@@ -13,7 +13,7 @@ Status: done
   - A dictionary only grows, so a code means the same text in every version.
 - **A Snapshot without a key** takes only batches that add.
 - **What a reader can fold in:** it is handed what a batch removed and what it added, so that it can
-  update what it computed rather than start again (ADR-0066).
+  update what it computed rather than start again (ADR-0067).
 
 **Blocked by:** 01
 

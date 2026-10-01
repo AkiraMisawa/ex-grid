@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// How an Item is painted (ADR-0059): text as it is, a number by the field's format or at most
+/// How an Item is painted (ADR-0060): text as it is, a number by the field's format or at most
 /// 15 significant digits, a date by the field's format or the culture's short date (with the
 /// time when there is one), a Boolean as <c>TRUE</c> / <c>FALSE</c>, a Blank as <c>(blank)</c>.
 /// Each Item is labelled once per report, however many branches it stands in.
@@ -51,7 +51,7 @@ internal sealed class ItemLabels(PivotOptions options)
 }
 
 /// <summary>
-/// The label order of a field's Items (ADR-0059): the declared Items first, in their declared
+/// The label order of a field's Items (ADR-0060): the declared Items first, in their declared
 /// order; then, when the field has an Order Key, the Items it keys, by key, ties by label, and
 /// after them the Items it gives no key; then numbers, dates, text, Booleans, <c>#NUM!</c>, each in
 /// its own order — text by the culture's comparison ignoring case, ties broken ordinally so the
@@ -74,7 +74,7 @@ internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo c
     /// Computes the Order Key of each of <paramref name="items"/> that has none yet — once per Item —
     /// and holds the keys to one type. A key function that throws is refused, naming the field and
     /// the value: an order that quietly fell back to the labels would be the plausible wrong answer
-    /// (ADR-0059).
+    /// (ADR-0060).
     /// </summary>
     /// <exception cref="InvalidOperationException">The Order Key failed on an Item, or gave two
     /// Items keys of two types.</exception>
@@ -179,7 +179,7 @@ internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo c
 }
 
 /// <summary>
-/// The .NET format strings a Value Field or an Item may be shown in (ADR-0059/0060). A format is
+/// The .NET format strings a Value Field or an Item may be shown in (ADR-0060/0061). A format is
 /// refused when it cannot format a number, is longer than <see cref="MaxLength"/> characters,
 /// or asks a standard format for more than <see cref="MaxPrecision"/> digits: <c>N999999999</c>
 /// is a valid .NET format that writes a billion zeros, and no report asked for that.

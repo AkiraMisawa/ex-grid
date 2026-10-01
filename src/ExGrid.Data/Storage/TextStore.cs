@@ -5,7 +5,7 @@ namespace ExGrid.Data.Storage;
 
 /// <summary>
 /// A text column's dictionary while a build fills it: every distinct value once, in the order it
-/// first appears, told apart ordinally (ADR-0063). Used by one thread, then handed to a
+/// first appears, told apart ordinally (ADR-0064). Used by one thread, then handed to a
 /// <see cref="TextStore"/>.
 /// </summary>
 internal sealed class TextInterner
@@ -152,7 +152,7 @@ internal sealed class FixedCodes
 
 /// <summary>
 /// A text column's dictionary, shared by every version of a Snapshot's lineage. It only grows
-/// (ADR-0063): a version sees the first <c>count</c> entries it was made with, and a code means the
+/// (ADR-0064): a version sees the first <c>count</c> entries it was made with, and a code means the
 /// same text in every version. Entries below any version's count are never written again, so they
 /// are read without a lock.
 /// <para>

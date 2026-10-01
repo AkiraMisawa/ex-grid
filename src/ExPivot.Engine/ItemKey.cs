@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// An Item's identity while the engine sorts records into Items (ADR-0059): its kind, and a
+/// An Item's identity while the engine sorts records into Items (ADR-0060): its kind, and a
 /// number, a clock value or a text, compared as Items are told apart — text ignoring case.
 /// A struct, so that sorting a million records allocates nothing for the numbers and dates.
 /// </summary>
@@ -41,7 +41,7 @@ internal readonly struct ItemKey : IEquatable<ItemKey>
 
     public static ItemKey OfBoolean(bool value) => new(PivotItemKind.Boolean, 0, value ? 1 : 0, null);
 
-    /// <summary>The Item a value belongs to (ADR-0059).</summary>
+    /// <summary>The Item a value belongs to (ADR-0060).</summary>
     public static ItemKey Of(object? value) => value switch
     {
         null => Blank,
@@ -87,7 +87,7 @@ internal readonly struct ItemKey : IEquatable<ItemKey>
     };
 
     /// <summary>
-    /// The order a source lists Items in when it knows no culture (ADR-0065): by kind — numbers,
+    /// The order a source lists Items in when it knows no culture (ADR-0066): by kind — numbers,
     /// dates, text, Booleans, <c>#NUM!</c>, <c>(blank)</c> — then numbers and dates by value,
     /// <c>FALSE</c> before <c>TRUE</c>, and text ordinally ignoring case, which is total because
     /// two texts equal ignoring case are one Item.

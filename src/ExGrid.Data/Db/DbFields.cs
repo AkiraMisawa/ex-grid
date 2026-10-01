@@ -55,7 +55,7 @@ internal sealed class DbField<TColumn, TValue>(
 }
 
 /// <summary>
-/// The types a reader's column is read by on its own (ADR-0063): <see cref="decimal"/> as Decimal;
+/// The types a reader's column is read by on its own (ADR-0064): <see cref="decimal"/> as Decimal;
 /// <see cref="double"/> and <see cref="float"/> as Double; the integer types as Integer, an unsigned
 /// one within a long's range; <see cref="DateTime"/>, <see cref="DateOnly"/>,
 /// <see cref="DateTimeOffset"/> and <see cref="TimeOnly"/> as Date, each as the clock it shows;

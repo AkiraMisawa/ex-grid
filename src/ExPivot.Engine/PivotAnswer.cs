@@ -1,7 +1,7 @@
 namespace ExPivot.Engine;
 
 /// <summary>
-/// What a Pivot Source answers a <see cref="PivotQuery"/> with: the Leaf Aggregates (ADR-0065), or
+/// What a Pivot Source answers a <see cref="PivotQuery"/> with: the Leaf Aggregates (ADR-0066), or
 /// a refusal. An answer carries its Source Version; each row and column field's Items; and the
 /// leaves — one for every combination of the row and column fields' Items that has records once
 /// the Hidden Items are left out — each with one Item per row field and per column field, its
@@ -45,7 +45,7 @@ public sealed class PivotAnswer
         Records = [];
     }
 
-    /// <summary>The source's refusal to answer (ADR-0065): too many leaves, an unknown field, or
+    /// <summary>The source's refusal to answer (ADR-0066): too many leaves, an unknown field, or
     /// an Aggregation it does not offer.</summary>
     public static PivotAnswer Refused(PivotSourceRefusal refusal)
     {
@@ -117,7 +117,7 @@ public sealed class PivotAnswer
         => new($"The source refused to answer: {Refusal!.Message}");
 }
 
-/// <summary>One row or column field of an answer (ADR-0065): its Items and each leaf's Item.</summary>
+/// <summary>One row or column field of an answer (ADR-0066): its Items and each leaf's Item.</summary>
 public sealed class PivotAnswerAxis
 {
     private readonly PivotItemKey[] _items;
@@ -148,7 +148,7 @@ public sealed class PivotAnswerAxis
     public string Field { get; }
 
     /// <summary>The field's Items among the leaves. A text Item's key is its first spelling, which
-    /// labels it (ADR-0059).</summary>
+    /// labels it (ADR-0060).</summary>
     public IReadOnlyList<PivotItemKey> Items => _items;
 
     internal PivotItemKey[] ItemArray => _items;
@@ -163,7 +163,7 @@ public sealed class PivotAnswerAxis
 }
 
 /// <summary>
-/// One field in Values of an answer (ADR-0065): the parts it carries, at every leaf. The counts
+/// One field in Values of an answer (ADR-0066): the parts it carries, at every leaf. The counts
 /// are always there; a part that was not asked for is refused by name rather than read as zero.
 /// </summary>
 public sealed class PivotAnswerValues
@@ -228,12 +228,12 @@ public sealed class PivotAnswerValues
     private int At(int leaf) => PivotAnswerAxis.Check(leaf, _leafCount);
 
     private InvalidOperationException NotCarried(PivotParts part)
-        => new($"The answer carries no {part} part for '{Field}'; the question did not ask for it (ADR-0065).");
+        => new($"The answer carries no {part} part for '{Field}'; the question did not ask for it (ADR-0066).");
 }
 
 /// <summary>
 /// Builds a <see cref="PivotAnswer"/> leaf by leaf — for a Consumer's server that computes the
-/// Leaf Aggregates itself, from SQL's <c>GROUP BY</c> for instance (ADR-0065). A leaf is added
+/// Leaf Aggregates itself, from SQL's <c>GROUP BY</c> for instance (ADR-0066). A leaf is added
 /// with its Items and its record count, then each field in Values is given its counts and the
 /// parts the question asked for. Such a server is held to <see cref="PivotSource.From(ExGrid.Data.Snapshot, IReadOnlyList{PivotField}?, PivotSlicing?)"/>'s
 /// answers by tests that ask both the same questions.
@@ -277,7 +277,7 @@ public sealed class PivotAnswerBuilder
     /// <summary>
     /// Adds a leaf and returns its index. Refuses a leaf of no records, one whose Items are not one
     /// per row field then one per column field, and a second leaf for the same Items — text Items
-    /// being told apart ignoring case (ADR-0059). A text Item's first spelling is the one that
+    /// being told apart ignoring case (ADR-0060). A text Item's first spelling is the one that
     /// labels it.
     /// </summary>
     /// <param name="items">One Item per row field, outermost first, then one per column field.</param>
@@ -363,7 +363,7 @@ public sealed class PivotAnswerBuilder
         => (Columns(leaf, value).Variances ?? throw NotAsked(value, PivotParts.Variance))[leaf] = new VariancePart { Mean = mean, M2 = m2 };
 
     /// <summary>The answer; or, when more leaves were added than the question allows, the refusal
-    /// a source gives for them (ADR-0065). A builder builds once.</summary>
+    /// a source gives for them (ADR-0066). A builder builds once.</summary>
     public PivotAnswer Build()
     {
         if (_built)
@@ -399,7 +399,7 @@ public sealed class PivotAnswerBuilder
     }
 
     private InvalidOperationException NotAsked(int value, PivotParts part)
-        => new($"The question did not ask for the {part} part of '{_query.Values[value].Field}' (ADR-0065).");
+        => new($"The question did not ask for the {part} part of '{_query.Values[value].Field}' (ADR-0066).");
 
     private readonly struct LeafKey(int[] indexes) : IEquatable<LeafKey>
     {

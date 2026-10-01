@@ -11,7 +11,7 @@ using static ExGrid.Data.Arrow.Tests.Fixtures;
 namespace ExGrid.Data.Arrow.Tests;
 
 /// <summary>
-/// Every refusal of a read, by name (DA-14): a type outside ADR-0064's table names its column and
+/// Every refusal of a read, by name (DA-14): a type outside ADR-0065's table names its column and
 /// the type; a value a kind cannot hold names its row and its column; bytes that are not a whole
 /// Arrow stream or file say so. A refused read yields no Snapshot.
 /// </summary>
@@ -26,7 +26,7 @@ public class RefusalTests
         "dictionary<values=int64, indices=int32>",
     ];
 
-    [Theory] // ADR-0064: a type outside the table — lists, structs, maps, binary, durations, intervals and the rest — is refused, naming the column and the type
+    [Theory] // ADR-0065: a type outside the table — lists, structs, maps, binary, durations, intervals and the rest — is refused, naming the column and the type
     [MemberData(nameof(Outside))]
     public async Task A_type_outside_the_table_is_refused_by_name(string type)
     {
@@ -41,7 +41,7 @@ public class RefusalTests
 
     public static TheoryData<string> OtherZones => ["Asia/Tokyo", "+09:00", "Europe/London", "America/New_York", "-05:00", "Etc/GMT+5"];
 
-    [Theory] // ADR-0064: a timestamp in a time zone other than UTC — one that is UTC's clock only in winter, or an offset of its own under Etc/ — is refused, naming the column and the zone
+    [Theory] // ADR-0065: a timestamp in a time zone other than UTC — one that is UTC's clock only in winter, or an offset of its own under Etc/ — is refused, naming the column and the zone
     [MemberData(nameof(OtherZones))]
     public async Task A_timestamp_in_another_zone_is_refused(string zone)
     {
@@ -58,7 +58,7 @@ public class RefusalTests
 
     // ---- values a kind cannot hold, by row and column -----------------------------------------
 
-    [Fact] // ADR-0064: a decimal128 beyond decimal's range is refused, naming its row and column — the row counted across record batches
+    [Fact] // ADR-0065: a decimal128 beyond decimal's range is refused, naming its row and column — the row counted across record batches
     public async Task A_decimal128_beyond_decimals_range_is_refused_by_row_and_column()
     {
         var type = new Decimal128Type(38, 0);
@@ -74,7 +74,7 @@ public class RefusalTests
         Assert.Equal("Row 5, column 'Notional': the decimal128(38, 0) value -79228162514264337593543950336 lies beyond the range of a decimal.", refusal.Message);
     }
 
-    [Fact] // ADR-0064: a decimal with more significant places than a decimal's 28 is refused, not rounded
+    [Fact] // ADR-0065: a decimal with more significant places than a decimal's 28 is refused, not rounded
     public async Task A_decimal_with_more_than_28_places_is_refused_not_rounded()
     {
         var payload = Stream(Batch(("Rate", Decimals(new Decimal128Type(38, 30), Words(Int128.Parse("1500000000000000000000000000000")), Words(1)))));
@@ -84,7 +84,7 @@ public class RefusalTests
         Assert.Equal("Row 2, column 'Rate': the decimal128(38, 30) value 0.000000000000000000000000000001 has more decimal places than the 28 a decimal holds.", refusal.Message);
     }
 
-    [Fact] // ADR-0064: a decimal256 beyond decimal's range is refused by row and column
+    [Fact] // ADR-0065: a decimal256 beyond decimal's range is refused by row and column
     public async Task A_decimal256_beyond_decimals_range_is_refused()
     {
         var huge = System.Numerics.BigInteger.Pow(10, 40);
@@ -105,7 +105,7 @@ public class RefusalTests
         { "decimal64(18, 29)", "the decimal64(18, 29) value -0.00000000000000000000000000123 has more decimal places than the 28 a decimal holds." },
     };
 
-    [Theory] // ADR-0064: a decimal32 or decimal64 beyond decimal's range, or with more places than its 28, is refused by row and column, not rounded
+    [Theory] // ADR-0065: a decimal32 or decimal64 beyond decimal's range, or with more places than its 28, is refused by row and column, not rounded
     [MemberData(nameof(NarrowDecimalsNoDecimalHolds))]
     public async Task A_decimal32_or_decimal64_no_decimal_holds_is_refused_by_row_and_column(string type, string reason)
     {
@@ -124,7 +124,7 @@ public class RefusalTests
         Assert.Equal($"Row 3, column 'Notional': {reason}", refusal.Message);
     }
 
-    [Fact] // ADR-0064: a uint64 above long's range is refused by row and column
+    [Fact] // ADR-0065: a uint64 above long's range is refused by row and column
     public async Task A_uint64_beyond_longs_range_is_refused()
     {
         var payload = Stream(Batch(("Count", Raw<ulong>(UInt64Type.Default, 1UL, null, (ulong)long.MaxValue + 1))));
@@ -142,7 +142,7 @@ public class RefusalTests
         { "timestamp[us, tz=UTC]", "the timestamp[us, tz=UTC] value 253402300800000000 (microseconds since 1970-01-01) lies outside the range of a date, 0001-01-01 to 9999-12-31." },
     };
 
-    [Theory] // ADR-0064: a date outside a date's range is refused by row and column, not moved
+    [Theory] // ADR-0065: a date outside a date's range is refused by row and column, not moved
     [MemberData(nameof(DatesOutOfRange))]
     public async Task A_date_outside_a_dates_range_is_refused(string type, string reason)
     {
@@ -159,7 +159,7 @@ public class RefusalTests
         Assert.Equal($"Row 2, column 'When': {reason}", refusal.Message);
     }
 
-    [Fact] // ADR-0064: a nanosecond timestamp finer than a date's 100 nanoseconds is refused, not truncated
+    [Fact] // ADR-0065: a nanosecond timestamp finer than a date's 100 nanoseconds is refused, not truncated
     public async Task A_timestamp_finer_than_100_nanoseconds_is_refused()
     {
         var payload = Stream(Batch(("When", Raw<long>(new TimestampType(TimeUnit.Nanosecond, (string?)null), 100L, 150L))));
@@ -177,7 +177,7 @@ public class RefusalTests
         { "time64[ns]", "the time64[ns] value -100 (nanoseconds since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999." },
     };
 
-    [Theory] // ADR-0064: a time outside a day — a whole day, a leap second, or before midnight — is refused by row and column, not moved to another day
+    [Theory] // ADR-0065: a time outside a day — a whole day, a leap second, or before midnight — is refused by row and column, not moved to another day
     [MemberData(nameof(TimesOutsideADay))]
     public async Task A_time_outside_a_day_is_refused_by_row_and_column(string type, string reason)
     {
@@ -196,7 +196,7 @@ public class RefusalTests
         Assert.Equal($"Row 3, column 'At': {reason}", refusal.Message);
     }
 
-    [Fact] // ADR-0064: a time64[ns] finer than a date's 100 nanoseconds is refused, not truncated
+    [Fact] // ADR-0065: a time64[ns] finer than a date's 100 nanoseconds is refused, not truncated
     public async Task A_time_finer_than_100_nanoseconds_is_refused()
     {
         var payload = Stream(Batch(("At", new Time64Array.Builder(new Time64Type(TimeUnit.Nanosecond)).Append(100L).Append(45_015_000_000_150L).Build())));
@@ -206,7 +206,7 @@ public class RefusalTests
         Assert.Equal("Row 2, column 'At': the time64[ns] value 45015000000150 is finer than the 100 nanoseconds a date holds.", refusal.Message);
     }
 
-    [Theory] // ADR-0064: a dictionary index outside its dictionary — past its end, or negative — is refused by row and column
+    [Theory] // ADR-0065: a dictionary index outside its dictionary — past its end, or negative — is refused by row and column
     [InlineData(3)]
     [InlineData(-1)]
     public async Task A_dictionary_index_outside_its_dictionary_is_refused(int index)
@@ -218,7 +218,7 @@ public class RefusalTests
         Assert.Equal($"Row 3, column 'Region': the dictionary index {index} lies outside the dictionary's 3 entries.", refusal.Message);
     }
 
-    [Fact] // ADR-0064: utf8 that is not valid UTF-8 is refused by row and column
+    [Fact] // ADR-0065: utf8 that is not valid UTF-8 is refused by row and column
     public async Task Utf8_that_is_not_utf8_is_refused()
     {
         var payload = Stream(Batch(("Name", Utf8Bytes([.. "fine"u8], [0xC3, 0x28]))));
@@ -228,7 +228,7 @@ public class RefusalTests
         Assert.Equal("Row 2, column 'Name': the text is not valid UTF-8.", refusal.Message);
     }
 
-    [Fact] // ADR-0064: a dictionary entry that is not valid UTF-8 is refused by the first row that uses it
+    [Fact] // ADR-0065: a dictionary entry that is not valid UTF-8 is refused by the first row that uses it
     public async Task A_dictionary_entry_that_is_not_utf8_is_refused()
     {
         var entries = Utf8Bytes([.. "fine"u8], [0xFF]);
@@ -248,7 +248,7 @@ public class RefusalTests
         { "of a negative length", "the Arrow stream is malformed: the value's view points outside its data." },
     };
 
-    [Theory] // ADR-0064: utf8_view that is not valid UTF-8, or whose view points outside its data, is refused by row and column
+    [Theory] // ADR-0065: utf8_view that is not valid UTF-8, or whose view points outside its data, is refused by row and column
     [MemberData(nameof(ViewsThatAreNotText))]
     public async Task A_utf8_view_that_is_not_text_is_refused_by_row_and_column(string what, string reason)
     {
@@ -267,7 +267,7 @@ public class RefusalTests
         Assert.Equal($"Row 3, column 'Name': {reason}", refusal.Message);
     }
 
-    [Fact] // ADR-0064: a dictionary of utf8_view whose entry's view points outside its data is refused by the first row that uses the entry
+    [Fact] // ADR-0065: a dictionary of utf8_view whose entry's view points outside its data is refused by the first row that uses the entry
     public async Task A_dictionary_entry_whose_view_points_outside_its_data_is_refused()
     {
         byte[][] buffers = [[.. "a text longer than a view"u8]];
@@ -281,7 +281,7 @@ public class RefusalTests
 
     // ---- the schema and its metadata -----------------------------------------------------------
 
-    [Fact] // ADR-0063: two columns of one name are refused, naming it, as a Snapshot's names are unique
+    [Fact] // ADR-0064: two columns of one name are refused, naming it, as a Snapshot's names are unique
     public async Task Two_columns_of_one_name_are_refused()
     {
         var schema = new Schema([new Field("A", Int64Type.Default, true), new Field("A", StringType.Default, true)], null);
@@ -292,7 +292,7 @@ public class RefusalTests
         Assert.Equal("Column 'A': the Arrow stream has two columns of this name, and a column's name is unique within a Snapshot.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a column without a name is refused, as every column of a Snapshot is named
+    [Fact] // ADR-0064: a column without a name is refused, as every column of a Snapshot is named
     public async Task A_column_without_a_name_is_refused()
     {
         var schema = new Schema([new Field("A", Int64Type.Default, true), new Field("", Int64Type.Default, true)], null);
@@ -303,7 +303,7 @@ public class RefusalTests
         Assert.Equal("The Arrow stream's column 2 has no name; every column of a Snapshot is named.", refusal.Message);
     }
 
-    [Theory] // ADR-0064: a version in the metadata that is not a whole number, 0 or more, is refused
+    [Theory] // ADR-0065: a version in the metadata that is not a whole number, 0 or more, is refused
     [InlineData("abc")]
     [InlineData("-1")]
     [InlineData("1.5")]
@@ -316,7 +316,7 @@ public class RefusalTests
         Assert.Equal($"The Arrow stream's exgrid.version metadata '{version}' is not a version: a version is a whole number, 0 or more.", refusal.Message);
     }
 
-    [Fact] // ADR-0064: a Record Key the metadata names and the stream does not hold is refused, naming it
+    [Fact] // ADR-0065: a Record Key the metadata names and the stream does not hold is refused, naming it
     public async Task A_record_key_the_stream_does_not_hold_is_refused()
     {
         var payload = Stream(Batch([new(SnapshotArrowMetadata.RecordKey, "Id")], ("N", Raw<long>(Int64Type.Default, 1L))));
@@ -326,7 +326,7 @@ public class RefusalTests
         Assert.Equal("The Arrow stream names 'Id' its Record Key (exgrid.recordKey), and holds no column of that name.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a Record Key that is neither Text nor Integer is refused, naming its column
+    [Fact] // ADR-0064: a Record Key that is neither Text nor Integer is refused, naming its column
     public async Task A_record_key_of_another_kind_is_refused()
     {
         var payload = Stream(Batch([new(SnapshotArrowMetadata.RecordKey, "Price")], ("Price", Raw<double>(DoubleType.Default, 1.5))));
@@ -336,7 +336,7 @@ public class RefusalTests
         Assert.Equal("Column 'Price': the Arrow stream names it the Record Key, and a Record Key is a Text or an Integer column; this one is Double.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a Blank Record Key is refused, naming its row and the key's column
+    [Fact] // ADR-0064: a Blank Record Key is refused, naming its row and the key's column
     public async Task A_blank_record_key_is_refused()
     {
         var payload = Stream(Batch([new(SnapshotArrowMetadata.RecordKey, "Id")], ("Id", Raw<long>(Int64Type.Default, 7L, null))));
@@ -346,7 +346,7 @@ public class RefusalTests
         Assert.Equal("Row 2, column 'Id': the Record Key is Blank.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a Record Key carried twice is refused, naming the key
+    [Fact] // ADR-0064: a Record Key carried twice is refused, naming the key
     public async Task A_record_key_carried_twice_is_refused()
     {
         var payload = Stream(
@@ -363,7 +363,7 @@ public class RefusalTests
 
     public static TheoryData<string> NotArrow => ["Region,Pnl\nEMEA,1.5\n", "[{\"Region\":\"EMEA\"}]", "<!DOCTYPE html><html></html>", "PAR1\0\0\0\0PAR1", "\u0010\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"];
 
-    [Theory] // ADR-0064: bytes that are not Arrow — a CSV, JSON, an error page, Parquet, zeros — are refused as not Arrow
+    [Theory] // ADR-0065: bytes that are not Arrow — a CSV, JSON, an error page, Parquet, zeros — are refused as not Arrow
     [MemberData(nameof(NotArrow))]
     public async Task Bytes_that_are_not_arrow_are_refused(string text)
     {
@@ -372,7 +372,7 @@ public class RefusalTests
         Assert.Equal("The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.", refusal.Message);
     }
 
-    [Fact] // ADR-0064: a stream that begins with a record batch rather than its schema is refused as not Arrow
+    [Fact] // ADR-0065: a stream that begins with a record batch rather than its schema is refused as not Arrow
     public async Task A_stream_that_begins_without_its_schema_is_refused()
     {
         var whole = Stream(Batch(("N", Raw<long>(Int64Type.Default, 1L))));
@@ -383,7 +383,7 @@ public class RefusalTests
         Assert.Equal("The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.", refusal.Message);
     }
 
-    [Fact] // ADR-0064: an Arrow stream compressed with gzip, as an HTTP response is before it is undone, is refused, saying so
+    [Fact] // ADR-0065: an Arrow stream compressed with gzip, as an HTTP response is before it is undone, is refused, saying so
     public async Task A_gzipped_stream_is_refused_saying_so()
     {
         var whole = Stream(Batch(("N", Raw<long>(Int64Type.Default, 1L))));
@@ -398,7 +398,7 @@ public class RefusalTests
             refusal.Message);
     }
 
-    [Fact] // ADR-0064: no bytes at all, or an end-of-stream marker alone, is an empty stream, refused
+    [Fact] // ADR-0065: no bytes at all, or an end-of-stream marker alone, is an empty stream, refused
     public async Task An_empty_stream_is_refused()
     {
         var none = await RefusalAsync([]);
@@ -408,7 +408,7 @@ public class RefusalTests
         Assert.Equal(none.Message, markerAlone.Message);
     }
 
-    [Fact] // ADR-0064: bytes that end inside their first message are refused as not Arrow or cut short
+    [Fact] // ADR-0065: bytes that end inside their first message are refused as not Arrow or cut short
     public async Task Bytes_that_end_inside_their_first_message_are_refused()
     {
         var whole = Stream(Batch(("N", Raw<long>(Int64Type.Default, 1L))));
@@ -420,7 +420,7 @@ public class RefusalTests
 
     public static TheoryData<string> Cuts => ["before the end-of-stream marker", "inside the end-of-stream marker", "inside a record batch's body", "inside a record batch's metadata", "between two record batches"];
 
-    [Theory] // ADR-0063: a stream cut short — even between two record batches, where it would read as whole — is refused, never read as fewer rows
+    [Theory] // ADR-0064: a stream cut short — even between two record batches, where it would read as whole — is refused, never read as fewer rows
     [MemberData(nameof(Cuts))]
     public async Task A_stream_cut_short_is_refused(string where)
     {
@@ -441,7 +441,7 @@ public class RefusalTests
         Assert.Equal("The Arrow stream ends before its end-of-stream marker, so it may have been cut short; a stream is read only whole.", refusal.Message);
     }
 
-    [Theory] // ADR-0063: an Arrow file cut short, its footer gone, is refused
+    [Theory] // ADR-0064: an Arrow file cut short, its footer gone, is refused
     [InlineData(10)]
     [InlineData(8)]
     public async Task A_file_cut_short_is_refused(int kept)
@@ -453,7 +453,7 @@ public class RefusalTests
         Assert.Equal("The Arrow file ends without its footer, so it may have been cut short; a file is read only whole.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: rows with no column are refused, as a Snapshot holds rows only in its columns and would read them as none
+    [Fact] // ADR-0064: rows with no column are refused, as a Snapshot holds rows only in its columns and would read them as none
     public async Task Rows_without_a_column_are_refused()
     {
         var payload = Stream(new RecordBatch(new Schema([], null), [], 3));
@@ -463,7 +463,7 @@ public class RefusalTests
         Assert.Equal("The Arrow stream holds 3 rows and no column, and a Snapshot holds rows only in its columns.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a refused read throws, and yields no Snapshot
+    [Fact] // ADR-0064: a refused read throws, and yields no Snapshot
     public async Task A_refused_read_yields_no_snapshot()
     {
         var payload = Stream(Batch(("Count", Raw<ulong>(UInt64Type.Default, ulong.MaxValue))));

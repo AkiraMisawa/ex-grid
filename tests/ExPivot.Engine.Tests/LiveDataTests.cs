@@ -7,7 +7,7 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// Live data in the bundled source (ADR-0066, PV-34): a Change Batch makes the next Snapshot, and
+/// Live data in the bundled source (ADR-0067, PV-34): a Change Batch makes the next Snapshot, and
 /// the answer the source holds is brought up to date from what the batch removed and added — the
 /// exact parts by subtraction and addition, every other part recomputed for the leaves it touched
 /// — so that after any sequence of batches every leaf equals a fresh aggregation of the Snapshot
@@ -45,7 +45,7 @@ public class LiveDataTests
         new(rows: [F("Risk")], filters: [F("Book", PivotItemKey.Text("ny-2"))], values: [V("Amount", PivotParts.Sum | PivotParts.Extremes)]),
     ];
 
-    [Theory] // ADR-0066 (PV-34): after any sequence of batches, every leaf equals a fresh aggregation of the Snapshot they made, to the last bit
+    [Theory] // ADR-0067 (PV-34): after any sequence of batches, every leaf equals a fresh aggregation of the Snapshot they made, to the last bit
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
@@ -89,7 +89,7 @@ public class LiveDataTests
         Assert.True(world.Removed > 100 && world.Changed > 100 && world.Added > 100);
     }
 
-    [Fact] // ADR-0066: an Item that first appears in a batch brings its leaves; one whose last record leaves takes them away
+    [Fact] // ADR-0067: an Item that first appears in a batch brings its leaves; one whose last record leaves takes them away
     public async Task An_item_that_appears_or_leaves_in_a_batch()
     {
         var fields = Declarations();
@@ -109,7 +109,7 @@ public class LiveDataTests
         SameKeys([PivotItemKey.Text("East"), PivotItemKey.Text("North")], left.Rows[0].Items);
     }
 
-    [Fact] // ADR-0059/0066: a text Item is labelled by the first spelling among the records still present; when they leave, the next spelling labels it
+    [Fact] // ADR-0060/0067: a text Item is labelled by the first spelling among the records still present; when they leave, the next spelling labels it
     public async Task A_spelling_leaves_with_its_last_record()
     {
         var fields = Declarations();
@@ -133,7 +133,7 @@ public class LiveDataTests
         Assert.Equal(12m, Sums(fourth)["East"]);
     }
 
-    [Fact] // ADR-0066: Changed is raised after the source moved on, with the new Source Version, which names the source and the Snapshot's version
+    [Fact] // ADR-0067: Changed is raised after the source moved on, with the new Source Version, which names the source and the Snapshot's version
     public async Task A_batch_raises_changed_with_the_new_version()
     {
         var fields = Declarations();
@@ -156,7 +156,7 @@ public class LiveDataTests
         Assert.NotEqual(before, (await other.AggregateAsync(new PivotQuery(), Ct)).SourceVersion);
     }
 
-    [Fact] // ADR-0063/0066: a refused batch changes nothing — not the Snapshot, not the held answer, and no notice
+    [Fact] // ADR-0064/0067: a refused batch changes nothing — not the Snapshot, not the held answer, and no notice
     public async Task A_refused_batch_changes_nothing()
     {
         var fields = Declarations();
@@ -175,7 +175,7 @@ public class LiveDataTests
         SameAnswer(answer, await source.AggregateAsync(query, Ct));
     }
 
-    [Fact] // ADR-0065/0066 (PV-23): Items and records are answered under the versions of the last answers, and an older one is refused
+    [Fact] // ADR-0066/0067 (PV-23): Items and records are answered under the versions of the last answers, and an older one is refused
     public async Task Items_and_details_answer_under_the_versions_of_the_last_answers()
     {
         var fields = Declarations();
@@ -209,7 +209,7 @@ public class LiveDataTests
         Assert.False((await source.ItemsAsync(new PivotItemsQuery("Desk", source.SourceVersion), Ct)).IsRefused);
     }
 
-    [Fact] // ADR-0066: a batch that compacts the Snapshot moves its rows; the source then answers afresh, as a fresh aggregation does
+    [Fact] // ADR-0067: a batch that compacts the Snapshot moves its rows; the source then answers afresh, as a fresh aggregation does
     public async Task A_compacting_batch_is_answered_afresh()
     {
         var fields = Declarations();
@@ -239,7 +239,7 @@ public class LiveDataTests
         }
     }
 
-    [Fact] // ADR-0066: a source over a Snapshot without a Record Key takes batches that add, and folds them
+    [Fact] // ADR-0067: a source over a Snapshot without a Record Key takes batches that add, and folds them
     public async Task A_snapshot_without_a_key_folds_batches_that_add()
     {
         var columns = new SnapshotBuilder<Trade>().Text("Desk", t => t.Desk).Decimal("Amount", t => t.Amount).Double("Risk", t => t.Risk);
@@ -258,7 +258,7 @@ public class LiveDataTests
         Assert.Throws<SnapshotException>(() => source.Apply(columns.Batch(removedKeys: ["East"])));
     }
 
-    [Fact] // ADR-0066: a part that cannot be subtracted is recomputed from the records of the leaves the batch touched, and no others
+    [Fact] // ADR-0067: a part that cannot be subtracted is recomputed from the records of the leaves the batch touched, and no others
     public async Task Only_the_touched_leaves_records_are_read_again()
     {
         var fields = Declarations();
@@ -281,7 +281,7 @@ public class LiveDataTests
         Assert.Equal(60 * 9, many);
     }
 
-    [Fact] // ADR-0066: a batch that would pass MaxLeaves drops the held answer, and the question is refused as a fresh one would be
+    [Fact] // ADR-0067: a batch that would pass MaxLeaves drops the held answer, and the question is refused as a fresh one would be
     public async Task A_batch_that_passes_the_cap_is_asked_afresh()
     {
         var fields = Declarations();
@@ -298,7 +298,7 @@ public class LiveDataTests
         Assert.Equal(["East", "West"], Sums(answered).Keys);
     }
 
-    [Fact] // ADR-0059/0066: an exact sum is an integer, the same in any order; one no decimal holds is Excel's double, never a decimal rounded quietly
+    [Fact] // ADR-0060/0067: an exact sum is an integer, the same in any order; one no decimal holds is Excel's double, never a decimal rounded quietly
     public async Task An_exact_sum_is_the_same_in_any_order_and_never_rounded_quietly()
     {
         var fields = Declarations();

@@ -2,15 +2,19 @@
 
 Status: ready-for-agent
 
-Decided by [ADR-0058](../../adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md) to
-[ADR-0068](../../adr/0068-the-demo-pages-call-a-demo-api-server-both-hosts-share.md), with the user,
-in the grilling of 2026-09-30. ADR-0058 to ADR-0062 were proposed when the first build was made; the
-grilling decided them, kept each change and its reason in the text, and added ADR-0063 to ADR-0068.
+Decided by [ADR-0059](../../adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md) to
+[ADR-0069](../../adr/0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md), with the user,
+in the grilling of 2026-09-30. ADR-0059 to ADR-0063 were proposed when the first build was made; the
+grilling decided them, kept each change and its reason in the text, and added ADR-0064 to ADR-0069.
+
+These ADRs were numbered 0058 to 0069 until 2026-10-01. ExSheet's Pointing Scope reached the shared
+branch first and kept ADR-0058 (#38), so ExPivot's moved up by one, and its criteria DC-52 to DC-55
+became DC-59 to DC-62. Commit messages written before then use the old numbers.
 
 - The vocabulary is `CONTEXT.md`'s "Pivots" section, with the family's Snapshot, Change Batch,
   Record Key, Schema and Change Highlight.
 - The exit criteria are in `docs/definition-of-done.md`: §29 for ExPivot, §30 for the data packages,
-  and DC-52 to DC-55 in §26 for the core.
+  and DC-59 to DC-62 in §26 for the core.
 
 This spec synthesises those decisions; where it and they disagree, they win. The Snapshot has a spec
 of its own (`docs/specs/exgrid-data`), and so does the Change Highlight
@@ -35,11 +39,11 @@ keyboard, selection, clipboard and look differ from the ExGrid beside it.
 
 ## Solution
 
-**ExPivot: Excel's PivotTable, drawn by one ExGrid as that grid's Consumer** (ADR-0058).
+**ExPivot: Excel's PivotTable, drawn by one ExGrid as that grid's Consumer** (ADR-0059).
 
-- **The data comes through a Pivot Source** (ADR-0065).
+- **The data comes through a Pivot Source** (ADR-0066).
   - The bundled source holds a **Snapshot**
-    ([ADR-0063](../../adr/0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)). A
+    ([ADR-0064](../../adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)). A
     Snapshot is built from the application's objects, a CSV, a database query or an Arrow stream,
     and aggregated in the browser or in the host's process.
   - A server's source answers the same questions with the **Leaf Aggregates**, from its own Snapshot
@@ -50,7 +54,7 @@ keyboard, selection, clipboard and look differ from the ExGrid beside it.
 - **The toolbar above the report** holds the report filter band, the Layout menu (Excel's Design
   tab), Refresh, and the pane's toggle.
 - **The user reads the report with ExGrid's Selection, keyboard and clipboard.**
-- **The numbers are Excel's** (ADR-0059).
+- **The numbers are Excel's** (ADR-0060).
   - Money is summed exactly.
   - A total comes from its records.
   - A number that does not fit is `####`.
@@ -61,14 +65,14 @@ keyboard, selection, clipboard and look differ from the ExGrid beside it.
   refused by name.
 - **Live data is folded in.** Changes are gathered and redrawn four times a second, and the values
   that changed are marked with a Change Highlight
-  ([ADR-0066](../../adr/0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md),
-  [ADR-0067](../../adr/0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)).
+  ([ADR-0067](../../adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md),
+  [ADR-0068](../../adr/0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)).
   When the newest data cannot be shown, the report says so, with the time of the version on screen.
 - **The Pivot Layout is View State.** The application stores it, as JSON if it likes, and hands it
   back.
 - **Show Details** opens the records behind a value in a tab at the report's foot, in a dialog, or
   hands them to the application.
-- **`ExPivot.MudBlazor`** dresses all of it in MudBlazor (ADR-0061).
+- **`ExPivot.MudBlazor`** dresses all of it in MudBlazor (ADR-0062).
 
 ## User Stories
 
@@ -145,7 +149,7 @@ keyboard, selection, clipboard and look differ from the ExGrid beside it.
 
 All of these are recorded in the ADRs; they are summarised here.
 
-- **Packages** (ADR-0058, ADR-0063, ADR-0064):
+- **Packages** (ADR-0059, ADR-0064, ADR-0065):
   - `ExGrid.Data`, with no dependency;
   - `ExGrid.Data.Arrow` (→ `ExGrid.Data`, → `Apache.Arrow`), optional;
   - `ExPivot.Engine` (→ `ExGrid.Data`);
@@ -153,7 +157,7 @@ All of these are recorded in the ADRs; they are summarised here.
   - `ExPivot.MudBlazor` (→ ExPivot, → ExGrid.MudBlazor, → MudBlazor).
 
   None of them is in the ExGrid release; the package check packs them into a feed of their own.
-- **The Pivot Source** (ADR-0065).
+- **The Pivot Source** (ADR-0066).
   - The source offers `Fields` and `Features`, and answers `AggregateAsync`, `ItemsAsync`,
     `DetailsAsync` and `RefreshAsync`, and raises `Changed`.
   - `PivotSource.From(snapshot)` is the reference, and `PivotSource.From(records, fields)` is the
@@ -162,32 +166,32 @@ All of these are recorded in the ADRs; they are summarised here.
   - `PivotJson` versions every message.
   - The Source Version pins Items and Details, `MaxLeaves` caps an answer, and the features name the
     Aggregations a source offers.
-- **The engine** (ADR-0059).
+- **The engine** (ADR-0060).
   - It aggregates a Snapshot's columns and accumulates only the parts that are asked for; Integer and
     Decimal are summed exactly.
   - It keeps the Items' rules, and the Order Key and the date parts.
   - It lays out the Compact, Outline and Tabular forms; subtotals and grand totals; collapse;
     Σ Values; and Show Values As, from the held answer.
   - It computes cells lazily, and applies the caps.
-- **Live data** (ADR-0066).
+- **Live data** (ADR-0067).
   - The bundled source folds a Change Batch into its answer, and every leaf equals a fresh
     aggregation.
   - The component gathers changes and redraws every 250 ms, keeps the Selection when only values
     change, marks the values that changed, and shows a Stale Report when it must.
-- **The Field List and the toolbar** (ADR-0060).
+- **The Field List and the toolbar** (ADR-0061).
   - The rules are pure functions (`PivotLayoutEdits`).
   - Drag and drop uses Blazor's own events, with every target preventing `dragover`'s default.
   - Menus and panels open under their entry, at the pane's width.
   - Defer Layout Update sits at the pane's foot.
   - The toolbar holds the report filter band, Layout ▾, Refresh, and the pane's toggle.
   - `IPivotChrome` has one member per surface.
-- **Show Details** (ADR-0058) goes to a tab at the foot, a dialog, or the Consumer. The records are
+- **Show Details** (ADR-0059) goes to a tab at the foot, a dialog, or the Consumer. The records are
   paged from the source under the report's Source Version.
-- **The Wrapper** (ADR-0061): `MudPivotChrome` and `mud-ex-pivot.css`, on `ExGrid.MudBlazor`'s
+- **The Wrapper** (ADR-0062): `MudPivotChrome` and `mud-ex-pivot.css`, on `ExGrid.MudBlazor`'s
   `MudExGridPaper`. The ± button stays plain markup.
-- **The core's changes** (ADR-0062, ADR-0067): `OnCellDoubleClick`, and the Change Highlight's
+- **The core's changes** (ADR-0063, ADR-0068): `OnCellDoubleClick`, and the Change Highlight's
   `CellChangedAt`.
-- **The demo** (ADR-0068): six pages on both hosts, and a demo API server with SQLite and SignalR.
+- **The demo** (ADR-0069): six pages on both hosts, and a demo API server with SQLite and SignalR.
 
 ## Testing Decisions
 
@@ -208,7 +212,7 @@ All of these are recorded in the ADRs; they are summarised here.
 
 ## Out of Scope
 
-ADR-0058's "Later" column:
+ADR-0059's "Later" column:
 
 - Σ Values at any position but the innermost;
 - collapsing one column Item;

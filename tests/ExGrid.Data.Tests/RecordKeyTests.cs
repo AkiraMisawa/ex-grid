@@ -5,12 +5,12 @@ using static ExGrid.Data.Tests.Fixtures;
 
 namespace ExGrid.Data.Tests;
 
-/// <summary>The Record Key and the Change Batch (ADR-0063, DA-11): every clause a named test.</summary>
+/// <summary>The Record Key and the Change Batch (ADR-0064, DA-11): every clause a named test.</summary>
 public class RecordKeyTests
 {
     private static readonly SnapshotTuning Small = new(SegmentShift: 2);
 
-    [Fact] // ADR-0063: only a Text or an Integer column can be the Record Key
+    [Fact] // ADR-0064: only a Text or an Integer column can be the Record Key
     public void Only_a_text_or_an_integer_column_can_be_the_key()
     {
         var builder = new SnapshotBuilder<Trade>().Integer("Id", t => t.Id).Text("Desk", t => t.Desk).Double("Price", t => t.Price);
@@ -23,7 +23,7 @@ public class RecordKeyTests
         Assert.Equal("Desk", builder.Key("Desk").Build([Make(0)]).RecordKey?.Name);
     }
 
-    [Fact] // ADR-0063: two records under one key are refused, naming the key
+    [Fact] // ADR-0064: two records under one key are refused, naming the key
     public void Two_records_under_one_key_are_refused_naming_the_key()
     {
         var text = new SnapshotBuilder<Trade>().Text("Ref", t => $"T-{t.Id % 4}").Key("Ref");
@@ -39,7 +39,7 @@ public class RecordKeyTests
         Assert.Equal("Row 4, column 'Id': the Record Key 0 is already carried by row 1.", byInteger.Message);
     }
 
-    [Fact] // ADR-0063: a Blank key is refused, naming its row
+    [Fact] // ADR-0064: a Blank key is refused, naming its row
     public void A_blank_key_is_refused()
     {
         var builder = new SnapshotBuilder<Trade>().Text("Desk", t => t.Desk).Key("Desk");
@@ -49,7 +49,7 @@ public class RecordKeyTests
         Assert.Equal("Row 4, column 'Desk': the Record Key is Blank.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a batch that changes a key the Snapshot does not hold is refused whole, by name, and nothing of it is applied
+    [Fact] // ADR-0064: a batch that changes a key the Snapshot does not hold is refused whole, by name, and nothing of it is applied
     public void A_batch_changing_a_missing_key_is_refused_whole()
     {
         var builder = Trades(Small);
@@ -66,7 +66,7 @@ public class RecordKeyTests
         Assert.False(((TextColumn)snapshot["Desk"]).Dictionary.TryGetCode("NEW", out _));
     }
 
-    [Fact] // ADR-0063: a batch that removes a key the Snapshot does not hold is refused whole, by name
+    [Fact] // ADR-0064: a batch that removes a key the Snapshot does not hold is refused whole, by name
     public void A_batch_removing_a_missing_key_is_refused_whole()
     {
         var builder = Trades(Small);
@@ -80,7 +80,7 @@ public class RecordKeyTests
         Assert.Equal(before, Dump(snapshot));
     }
 
-    [Fact] // ADR-0063: a batch that adds a key the Snapshot already holds is refused whole, by name
+    [Fact] // ADR-0064: a batch that adds a key the Snapshot already holds is refused whole, by name
     public void A_batch_adding_a_held_key_is_refused_whole()
     {
         var builder = Trades(Small);
@@ -94,7 +94,7 @@ public class RecordKeyTests
         Assert.Equal(before, Dump(snapshot));
     }
 
-    [Fact] // ADR-0063: a key removed earlier is not held, so a later batch that changes it is refused
+    [Fact] // ADR-0064: a key removed earlier is not held, so a later batch that changes it is refused
     public void A_key_removed_earlier_is_not_held()
     {
         var builder = Trades(Small);
@@ -105,7 +105,7 @@ public class RecordKeyTests
         Assert.Equal(10, removed.Apply(builder.Batch(added: [Make(3)])).After.RowCount);
     }
 
-    [Fact] // ADR-0063: a batch names each key once in each role, and never both changes and removes one
+    [Fact] // ADR-0064: a batch names each key once in each role, and never both changes and removes one
     public void A_batch_names_each_key_once()
     {
         var builder = Trades(Small);
@@ -118,7 +118,7 @@ public class RecordKeyTests
         Assert.Contains("adds the key 2, which the Snapshot already holds", Assert.Throws<SnapshotException>(() => snapshot.Apply(builder.Batch(added: [Make(2)], changed: [Make(2)]))).Message);
     }
 
-    [Fact] // ADR-0063: a batch's key is never Blank; a changed or added record without one is refused, naming its row
+    [Fact] // ADR-0064: a batch's key is never Blank; a changed or added record without one is refused, naming its row
     public void A_blank_key_in_a_batch_is_refused()
     {
         var snapshot = Trades(Small).Build(Trades(4));
@@ -132,7 +132,7 @@ public class RecordKeyTests
         Assert.Equal("Row 2, column 'Id': the Record Key of this changed record is Blank.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a removed key is of the Record Key's kind
+    [Fact] // ADR-0064: a removed key is of the Record Key's kind
     public void A_removed_key_of_the_other_kind_is_refused()
     {
         var builder = Trades(Small);
@@ -146,7 +146,7 @@ public class RecordKeyTests
         Assert.Throws<ArgumentException>(() => ChangeBatch.Of(removedKeys: [null!]));
     }
 
-    [Fact] // ADR-0063: any integer type names an Integer key
+    [Fact] // ADR-0064: any integer type names an Integer key
     public void Any_integer_type_names_an_integer_key()
     {
         var builder = Trades(Small);
@@ -157,7 +157,7 @@ public class RecordKeyTests
         Assert.Equal([0L, 6L, 7L, 8L, 9L], Values(change.After, "Id"));
     }
 
-    [Fact] // ADR-0063: a changed record keeps its place in the order, and an added record goes at the end
+    [Fact] // ADR-0064: a changed record keeps its place in the order, and an added record goes at the end
     public void A_changed_record_keeps_its_place_and_an_added_one_goes_at_the_end()
     {
         var builder = Trades(Small);
@@ -176,7 +176,7 @@ public class RecordKeyTests
         AssertHolds(records, change.Before);
     }
 
-    [Fact] // ADR-0063: a key removed and added in one batch is a new record, which goes at the end
+    [Fact] // ADR-0064: a key removed and added in one batch is a new record, which goes at the end
     public void A_key_removed_and_added_in_one_batch_goes_at_the_end()
     {
         var builder = Trades(Small);
@@ -189,7 +189,7 @@ public class RecordKeyTests
         AssertHolds([records[0], records[2], records[3], records[4], records[5], again], change.After);
     }
 
-    [Fact] // ADR-0063: a dictionary only grows: a code means the same text in every version, and text no record carries stays
+    [Fact] // ADR-0064: a dictionary only grows: a code means the same text in every version, and text no record carries stays
     public void A_dictionary_only_grows()
     {
         var builder = new SnapshotBuilder<Trade>().Integer("Id", t => t.Id).Text("Desk", t => t.Desk).Key("Id");
@@ -206,7 +206,7 @@ public class RecordKeyTests
         Assert.Equal([2, 1, 3], Codes(second.After, "Desk"));
     }
 
-    [Fact] // ADR-0063: a Snapshot without a Record Key takes only batches that add
+    [Fact] // ADR-0064: a Snapshot without a Record Key takes only batches that add
     public void A_snapshot_without_a_key_takes_only_batches_that_add()
     {
         var builder = UnkeyedTrades(Small);
@@ -222,7 +222,7 @@ public class RecordKeyTests
         Assert.Equal([0L, 1L, 2L, 1L, 7L], Values(change.After, "Id"));
     }
 
-    [Fact] // ADR-0063: a batch's records have the Snapshot's columns, matched by name and kind
+    [Fact] // ADR-0064: a batch's records have the Snapshot's columns, matched by name and kind
     public void A_batch_with_other_columns_is_refused_naming_the_column()
     {
         var snapshot = Trades(Small).Build(Trades(4));
@@ -239,7 +239,7 @@ public class RecordKeyTests
         Assert.Equal(5, snapshot.Apply(ChangeBatch.Of(added: sameColumns)).After.RowCount);
     }
 
-    [Fact] // ADR-0063: a Snapshot that keeps its records takes a batch whose records are kept, of the same type
+    [Fact] // ADR-0064: a Snapshot that keeps its records takes a batch whose records are kept, of the same type
     public void A_snapshot_that_keeps_records_takes_a_batch_that_keeps_them()
     {
         var snapshot = Trades(Small).Build(Trades(4));

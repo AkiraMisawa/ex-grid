@@ -13,9 +13,9 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
-/// ExPivot under MudBlazor (ADR-0061): the pane, the menus, the panels and the report filter band
+/// ExPivot under MudBlazor (ADR-0062): the pane, the menus, the panels and the report filter band
 /// drawn with MudBlazor's controls, inside ExPivot's frames, making the same layouts the built-in
-/// markup makes (ADR-0060) — and the report's grid dressed by the grid Wrapper, in ExPivot's words.
+/// markup makes (ADR-0061) — and the report's grid dressed by the grid Wrapper, in ExPivot's words.
 /// </summary>
 public class MudPivotChromeTests : MudPivotTestContext
 {
@@ -25,7 +25,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Values = [Sum("Amount")],
     };
 
-    [Fact] // ADR-0061: the pane is MudBlazor's controls — a search field, a checkbox per field, the four Areas, Defer Layout Update at the foot — in ExPivot's region
+    [Fact] // ADR-0062: the pane is MudBlazor's controls — a search field, a checkbox per field, the four Areas, Defer Layout Update at the foot — in ExPivot's region
     public void The_pane_is_drawn_with_MudBlazor_controls()
     {
         var cut = RenderPivot();
@@ -40,7 +40,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Equal("Update", cut.Find(".mud-ex-pivot-defer .mud-ex-pivot-update").TextContent.Trim());
     }
 
-    [Fact] // ADR-0060/0061: a tick through MudBlazor's checkbox places the field where Excel does
+    [Fact] // ADR-0061/0062: a tick through MudBlazor's checkbox places the field where Excel does
     public async Task Ticking_places_fields()
     {
         var cut = RenderPivot();
@@ -54,7 +54,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.True(cut.FindComponents<MudCheckBox<bool>>().Single(c => c.Instance.Label == "Region").Instance.GetState(x => x.Value));
     }
 
-    [Fact] // ADR-0060/0061: a field dragged from the list onto an Area stands there, the indicator on the Area meanwhile
+    [Fact] // ADR-0061/0062: a field dragged from the list onto an Area stands there, the indicator on the Area meanwhile
     public async Task Dragging_a_field_onto_an_area()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -69,7 +69,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.DoesNotContain("mud-ex-pivot-drop-target", Area(cut, "Columns").ClassName);
     }
 
-    [Fact] // ADR-0060/0061: an entry dropped before another reorders; one dropped on the list of fields is removed
+    [Fact] // ADR-0061/0062: an entry dropped before another reorders; one dropped on the list of fields is removed
     public async Task Dragging_an_entry_reorders_and_removes()
     {
         var cut = RenderPivot(RegionProduct);
@@ -84,7 +84,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Equal(["Region"], Entries(cut, "Rows"));
     }
 
-    [Fact] // ADR-0060/0061: an entry's menu is MudButtons inside ExPivot's frame — ExPivot's commands, order and states, each with its icon
+    [Fact] // ADR-0061/0062: an entry's menu is MudButtons inside ExPivot's frame — ExPivot's commands, order and states, each with its icon
     public async Task An_entrys_menu_is_ExPivots_commands_as_MudButtons()
     {
         var cut = RenderPivot(RegionProduct);
@@ -109,7 +109,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Equal("true", EntryButton(cut, "Rows", "Region").GetAttribute("aria-expanded"));
     }
 
-    [Fact] // ADR-0060/0061: a command from the Mud menu makes the layout the built-in's makes, and closes the menu
+    [Fact] // ADR-0061/0062: a command from the Mud menu makes the layout the built-in's makes, and closes the menu
     public async Task A_command_moves_the_field()
     {
         var cut = RenderPivot(new PivotLayout
@@ -126,7 +126,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0039/0060: the menu's first enabled command takes DOM focus, scrolled into view; closed, the entry takes it back
+    [Fact] // ADR-0039/0061: the menu's first enabled command takes DOM focus, scrolled into view; closed, the entry takes it back
     public async Task The_keyboard_goes_to_the_menu_and_back()
     {
         var cut = RenderPivot(RegionProduct);
@@ -142,7 +142,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Equal((ElementIdOf(entry.Instance), false), LastFocus());
     }
 
-    [Fact] // ADR-0060/0061: Filter… under MudBlazor — every Item, (Select All) tri-state; unticking one and OK hides it
+    [Fact] // ADR-0061/0062: Filter… under MudBlazor — every Item, (Select All) tri-state; unticking one and OK hides it
     public async Task Filter_hides_an_item()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -161,7 +161,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0059/0060: unticking every Item disables OK and says why, in ExPivot's words
+    [Fact] // ADR-0060/0061: unticking every Item disables OK and says why, in ExPivot's words
     public async Task Filter_refuses_to_hide_every_item()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -175,7 +175,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Equal("alert", cut.Find(".mud-ex-pivot-refusal").GetAttribute("role"));
     }
 
-    [Fact] // ADR-0060: Cancel drops the draft, under MudBlazor too
+    [Fact] // ADR-0061: Cancel drops the draft, under MudBlazor too
     public async Task Cancel_drops_the_draft()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -189,7 +189,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0060/0061: Field Settings… — the order from a MudSelect, the subtotals from a MudRadioGroup
+    [Fact] // ADR-0061/0062: Field Settings… — the order from a MudSelect, the subtotals from a MudRadioGroup
     public async Task Field_settings_apply_subtotals_and_order()
     {
         var cut = RenderPivot(RegionProduct with { SubtotalsAtTop = false });
@@ -208,7 +208,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Equal("−East |", RowTexts(cut)[0]);
     }
 
-    [Fact] // ADR-0060/0061: Value Field Settings… — the caption follows the Aggregation chosen in a MudSelect until the user writes one
+    [Fact] // ADR-0061/0062: Value Field Settings… — the caption follows the Aggregation chosen in a MudSelect until the user writes one
     public async Task Value_field_settings_change_the_aggregation()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -228,7 +228,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Equal(["Row Labels", "Average of Amount"], HeaderTexts(cut));
     }
 
-    [Fact] // ADR-0059/0060: a taken caption is refused, the sentence shown under MudBlazor, and the panel stays
+    [Fact] // ADR-0060/0061: a taken caption is refused, the sentence shown under MudBlazor, and the panel stays
     public async Task Value_field_settings_refuse_a_taken_caption()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount"), Sum("Quantity")] });
@@ -243,7 +243,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Null(cut.Instance.CurrentLayout.Values[1].Caption);
     }
 
-    [Fact] // ADR-0039/0061: while a MudSelect's list is open, Escape is the list's; closed, Escape closes the panel
+    [Fact] // ADR-0039/0062: while a MudSelect's list is open, Escape is the list's; closed, Escape closes the panel
     public async Task An_open_select_keeps_escape_for_itself()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -260,7 +260,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0060/0061: the report filter band — an outlined MudButton showing (All), then the one Item, in the primary colour once filtered
+    [Fact] // ADR-0061/0062: the report filter band — an outlined MudButton showing (All), then the one Item, in the primary colour once filtered
     public async Task The_report_filter_band()
     {
         var cut = RenderPivot(new PivotLayout { Filters = [P("Region")], Values = [Sum("Amount")] });
@@ -280,7 +280,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-backdrop"));
     }
 
-    [Fact] // ADR-0060/0061: the report grid is dressed by MudGridChrome, which words ExPivot's commands in ExPivot's words, never their ids
+    [Fact] // ADR-0061/0062: the report grid is dressed by MudGridChrome, which words ExPivot's commands in ExPivot's words, never their ids
     public void The_grid_menu_speaks_ExPivots_words()
     {
         var cut = RenderPivot(RegionProduct, showDetails: EventCallback.Factory.Create<PivotDetails>(this, () => { }));
@@ -297,7 +297,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Null(chrome.Label!("copy"));
     }
 
-    [Fact] // ADR-0060: the Consumer's Label written on ExPivot reaches the grid Wrapper's menu too — one Label words the whole pivot
+    [Fact] // ADR-0061: the Consumer's Label written on ExPivot reaches the grid Wrapper's menu too — one Label words the whole pivot
     public void The_consumers_words_reach_the_grid_menu()
     {
         Func<string, string?> label = id => id switch
@@ -315,7 +315,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Equal("PivotTable-Felder", cut.Find(".mud-ex-pivot-pane-title").TextContent.Trim());
     }
 
-    [Fact] // ADR-0003/0060: the grid's Chrome is asked once and held — a new one per render would re-render the grid every time
+    [Fact] // ADR-0003/0061: the grid's Chrome is asked once and held — a new one per render would re-render the grid every time
     public async Task The_grid_chrome_is_held_across_renders()
     {
         var cut = RenderPivot(RegionProduct);
@@ -327,7 +327,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Same(before, Grid(cut).Instance.Chrome);
     }
 
-    [Fact] // ADR-0061/0003: the ± button in a label cell stays ExPivot's plain markup — no MudBlazor component in a painted row
+    [Fact] // ADR-0062/0003: the ± button in a label cell stays ExPivot's plain markup — no MudBlazor component in a painted row
     public void The_toggle_stays_plain_markup()
     {
         var cut = RenderPivot(RegionProduct);
@@ -339,7 +339,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".ex-viewport .mud-icon-root"));
     }
 
-    [Fact] // ADR-0060: swapping the Chrome changes no behaviour — the same gestures make the same layout under both
+    [Fact] // ADR-0061: swapping the Chrome changes no behaviour — the same gestures make the same layout under both
     public async Task The_same_gestures_make_the_same_layout_under_either_chrome()
     {
         var mud = RenderPivot();

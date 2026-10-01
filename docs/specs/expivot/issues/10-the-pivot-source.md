@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** `PivotSource` (ADR-0065).
+**What to build:** `PivotSource` (ADR-0066).
 
 - **Its members:** `Fields`, `Features`, `AggregateAsync`, `ItemsAsync`, `DetailsAsync`,
   `RefreshAsync` and `Changed`.
@@ -34,7 +34,7 @@ Status: done
 laid out from Leaf Aggregates, with the cell index's hash fixed (8.0 s → 1.2 s for 270 dates in
 Columns at a million records). PV-16, PV-22, PV-23, PV-27 and PV-29's engine side pass. What
 remains for this ticket is `From(snapshot)`, which ticket 09 brings, and leaving Filters fields
-that hide nothing out of a question (ADR-0065, refined).
+that hide nothing out of a question (ADR-0066, refined).
 
 2026-10-01: `PivotSource.From(snapshot, fields?)` built (`SnapshotPivotSource`). With no fields,
 one per column, captioned as the column is and typed by its kind; declared fields name their

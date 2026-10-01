@@ -7,14 +7,14 @@ using static ExGrid.Data.Arrow.Tests.Fixtures;
 namespace ExGrid.Data.Arrow.Tests;
 
 /// <summary>
-/// A read paces itself as every way into a Snapshot does (ADR-0063, DA-5): it reports its progress,
+/// A read paces itself as every way into a Snapshot does (ADR-0064, DA-5): it reports its progress,
 /// yields between slices, and stops when cancelled, yielding nothing.
 /// </summary>
 public class LoadTests
 {
     private const int BatchRows = 10_000;
 
-    [Theory] // ADR-0063: a read reports its rows as it goes — and its bytes, against the total when it is known — and the whole at the end
+    [Theory] // ADR-0064: a read reports its rows as it goes — and its bytes, against the total when it is known — and the whole at the end
     [InlineData("Memory")]
     [InlineData("Seekable")]
     [InlineData("Trickle")]
@@ -42,7 +42,7 @@ public class LoadTests
         Assert.Equal(source == Source.Trickle ? null : payload.Length, reading[0].TotalBytes);
     }
 
-    [Fact] // ADR-0063: a read yields between its slices, so a browser keeps painting
+    [Fact] // ADR-0064: a read yields between its slices, so a browser keeps painting
     public async Task A_read_yields_between_slices()
     {
         var yields = 0;
@@ -53,7 +53,7 @@ public class LoadTests
         Assert.True(yields >= 6, $"{yields} yields");
     }
 
-    [Theory] // ADR-0063: a read cancelled while it runs throws, and yields no Snapshot
+    [Theory] // ADR-0064: a read cancelled while it runs throws, and yields no Snapshot
     [InlineData("Memory")]
     [InlineData("Trickle")]
     public async Task A_read_cancelled_while_it_runs_yields_nothing(string from)
@@ -74,7 +74,7 @@ public class LoadTests
         Assert.Null(read);
     }
 
-    [Fact] // ADR-0063: a read cancelled before it starts reads nothing
+    [Fact] // ADR-0064: a read cancelled before it starts reads nothing
     public async Task A_read_cancelled_before_it_starts_reads_nothing()
     {
         using var stream = new MemoryStream(Payload());
@@ -86,7 +86,7 @@ public class LoadTests
         Assert.Equal(0, stream.Position);
     }
 
-    [Fact] // ADR-0064: a read from the Consumer's stream leaves it open, read to the end-of-stream marker and no further
+    [Fact] // ADR-0065: a read from the Consumer's stream leaves it open, read to the end-of-stream marker and no further
     public async Task A_read_leaves_the_stream_open_after_the_end_of_stream_marker()
     {
         var payload = Payload();

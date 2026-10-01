@@ -1,4 +1,4 @@
-@* The PivotTable Fields pane under MudBlazor (ADR-0060/0061): Excel's pane in MudBlazor's controls
+@* The PivotTable Fields pane under MudBlazor (ADR-0061/0062): Excel's pane in MudBlazor's controls
    — a MudTextField to search, a MudCheckBox per field, the four Areas with a MudButton per entry —
    drawing what ExPivot hands it and calling back. What a tick, a drop or a command means is
    ExPivot's.
@@ -74,7 +74,7 @@
             </div>
         }
     </div>
-    @* Excel's Defer Layout Update at the pane's foot (ADR-0060/0061): a MudCheckBox with a
+    @* Excel's Defer Layout Update at the pane's foot (ADR-0061/0062): a MudCheckBox with a
        MudButton beside it. While it is ticked the pane's changes build ExPivot's pending layout,
        and Update applies it in one change. *@
     <div class="mud-ex-pivot-defer">
@@ -87,7 +87,7 @@
 </div>
 
 @code {
-    /// <summary>What to draw and whom to call back (ADR-0060).</summary>
+    /// <summary>What to draw and whom to call back (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotFieldListContext Context { get; set; } = default!;
 
     /// <summary>The Chrome this pane belongs to.</summary>

@@ -3,7 +3,7 @@ using System.Numerics;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The leaves of one question (ADR-0065): one per combination of the row and column fields'
+/// The leaves of one question (ADR-0066): one per combination of the row and column fields'
 /// Items that has an included record, each with its Items and its record count.
 /// <para>
 /// A row's Items are packed into one 64-bit key, a field of bits per level wide enough for the
@@ -64,7 +64,7 @@ internal sealed class LeafIndex
     /// Finds or makes the leaf of each row of a chunk whose Items per level are in
     /// <paramref name="items"/>; a row <paramref name="excluded"/> marks gets −1. Answers how many
     /// rows were consumed: all of them, or — when a new leaf would pass the question's cap — the
-    /// rows before the one that would make it, with <paramref name="refused"/> set (ADR-0065: the
+    /// rows before the one that would make it, with <paramref name="refused"/> set (ADR-0066: the
     /// question is refused as soon as the cap is passed).
     /// </summary>
     public int Assign(int[][] items, ReadOnlySpan<byte> excluded, Span<int> leaves, out bool refused)

@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Description>A Snapshot of ExGrid.Data as Apache Arrow: read from Arrow's IPC stream or file format (Feather 2), as pyarrow, DuckDB and Polars write them, and written as an uncompressed IPC stream with the Snapshot's captions, Record Key and version. Ships at the same version as ExGrid.Data and depends on exactly that version.</Description>
     <PackageTags>snapshot;columnar;arrow;apache-arrow;ipc;feather;pivot;excel</PackageTags>
-    <!-- Trimmable, as ExGrid.Data is (ADR-0063): a browser application that only reads Snapshots
+    <!-- Trimmable, as ExGrid.Data is (ADR-0064): a browser application that only reads Snapshots
          publishes without the writer, and one that only writes without the reader. Untrimmable, the
          package would be kept whole under Blazor's default partial trimming. It also turns the trim
          analysers on, so the build says when code stops being trim-safe. -->
@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Apache.Arrow's major version moved four times a year in 2024 and 2025 (ADR-0064). The
+    <!-- Apache.Arrow's major version moved four times a year in 2024 and 2025 (ADR-0065). The
          format is stable, but the library's API is not promised to be: this package reads and
          writes through ArrowStreamReader, ArrowFileReader, ArrowStreamWriter, ArrayData and the
          ICompressionCodecFactory a Consumer hands in. So it states the range it was built and
@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The one direction there is (ADR-0063/0064): this package references ExGrid.Data, and
+    <!-- The one direction there is (ADR-0064/0065): this package references ExGrid.Data, and
          nothing in ExGrid.Data knows it exists. -->
     <ProjectReference Include="..\ExGrid.Data\ExGrid.Data.csproj" />
   </ItemGroup>
@@ -34,7 +34,7 @@
     <InternalsVisibleTo Include="ExGrid.Data.Arrow.Tests" />
   </ItemGroup>
 
-  <!-- ExGrid.Data.Arrow depends on exactly the ExGrid.Data version it was built with (ADR-0064,
+  <!-- ExGrid.Data.Arrow depends on exactly the ExGrid.Data version it was built with (ADR-0065,
        DA-1): it reads and writes that version's Snapshot. NuGet offers no range on a
        ProjectReference, so the version pack computed is made exact here, as the Wrappers do;
        the package check reads it back from the .nuspec. -->

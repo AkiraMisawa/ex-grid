@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** the three destinations of Show Details (ADR-0058).
+**What to build:** the three destinations of Show Details (ADR-0059).
 
 - **A tab at the report's foot, by default.** It is closable, titled by the cell, not part of the
   layout, and holds an ExGrid of the Pivot Fields fetched in pages from `DetailsAsync` under the

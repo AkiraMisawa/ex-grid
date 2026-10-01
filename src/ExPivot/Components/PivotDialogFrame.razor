@@ -1,9 +1,9 @@
-@* ExPivot's frame around Show Details' dialog (ADR-0058): a modal dialog named by the cell, over a
+@* ExPivot's frame around Show Details' dialog (ADR-0059): a modal dialog named by the cell, over a
    backdrop, whose content is the Chrome's. Escape closes it from anywhere the keyboard is inside it
    that hears the key — the content's own controls, or the frame itself. An Escape pressed in the
    records' grid never reaches the frame: the grid's capture-phase listener keeps every one, peels
    the grid's own layers with them, and raises its OnLeave for the one it has nothing left to
-   dismiss, which closes the dialog too (ADR-0069). *@
+   dismiss, which closes the dialog too (ADR-0070). *@
 <div class="ex-pivot-dialog" role="dialog" aria-modal="true" aria-label="@Label" tabindex="-1" @onkeydown="OnKeyDownAsync">
     @ChildContent
 </div>

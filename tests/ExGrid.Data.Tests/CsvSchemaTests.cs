@@ -5,7 +5,7 @@ using static ExGrid.Data.Tests.CsvFixtures;
 
 namespace ExGrid.Data.Tests;
 
-/// <summary>A Schema is the Consumer's declaration (ADR-0063): one that contradicts itself is refused
+/// <summary>A Schema is the Consumer's declaration (ADR-0064): one that contradicts itself is refused
 /// before a byte is read, as the Consumer's mistake rather than the file's; one that is whole is a
 /// value, changed with <c>with</c> and compared by what it declares.</summary>
 public class CsvSchemaTests
@@ -35,7 +35,7 @@ public class CsvSchemaTests
         { "which a Snapshot does not hold", new CsvSchema([new("A", (SnapshotKind)42)]) },
     };
 
-    [Theory] // ADR-0063: a Schema that contradicts itself is refused before a byte is read
+    [Theory] // ADR-0064: a Schema that contradicts itself is refused before a byte is read
     [MemberData(nameof(Contradictions))]
     public async Task A_schema_that_contradicts_itself_is_refused_before_reading(string message, CsvSchema schema)
     {
@@ -47,7 +47,7 @@ public class CsvSchemaTests
         Assert.Equal(0, stream.Reads);
     }
 
-    [Fact] // ADR-0063: a Schema is a value: changed with `with`, and equal to another that declares the same
+    [Fact] // ADR-0064: a Schema is a value: changed with `with`, and equal to another that declares the same
     public void A_schema_is_a_value()
     {
         var schema = new CsvSchema([new("A", SnapshotKind.Date) { DateFormats = ["yyyy-MM-dd"] }, new("B", SnapshotKind.Text)]) { BlankText = ["-"] };

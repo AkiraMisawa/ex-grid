@@ -5,7 +5,7 @@ namespace PackageSmoke;
 
 /// <summary>
 /// A Snapshot written to an Arrow stream and read back through the packed ExGrid.Data.Arrow and
-/// ExGrid.Data, as a Consumer's server and browser do (ADR-0064, DA-16): every kind, a Blank in each,
+/// ExGrid.Data, as a Consumer's server and browser do (ADR-0065, DA-16): every kind, a Blank in each,
 /// a caption, the Record Key and a version moved on by a Change Batch. check.sh runs it through
 /// <c>RoundTrip/</c> and fails when what is read back differs; the Blazor application beside it
 /// compiles it as a browser takes the packages.

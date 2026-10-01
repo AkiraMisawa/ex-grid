@@ -3,12 +3,12 @@ using Apache.Arrow.Ipc;
 namespace ExGrid.Data.Arrow;
 
 /// <summary>
-/// A Snapshot as Apache Arrow (ADR-0064): read from Arrow's IPC stream or file format — which
+/// A Snapshot as Apache Arrow (ADR-0065): read from Arrow's IPC stream or file format — which
 /// pyarrow, DuckDB and Polars write — and written as an uncompressed IPC stream, which they read.
 /// <para>
 /// A read converts into the Snapshot's own layout, one column at a time from Arrow's buffers: another
 /// producer's dictionary is taken under the Snapshot's rules (in the order values first appear, one
-/// entry per exact text, a null entry or a null index a Blank), and a type outside ADR-0064's table is
+/// entry per exact text, a null entry or a null index a Blank), and a type outside ADR-0065's table is
 /// refused by name. A read either yields a Snapshot or refuses whole with a
 /// <see cref="SnapshotException"/>, naming the column, and the row when a value is the problem; it
 /// never yields a Snapshot with a row left out.
@@ -45,7 +45,7 @@ public static class SnapshotArrow
     /// </param>
     /// <param name="cancellationToken">Cancels the read; a cancelled read yields nothing.</param>
     /// <exception cref="SnapshotException">The stream cannot be read whole into a Snapshot: a type outside
-    /// ADR-0064's table, a value a kind cannot hold, a compressed stream without its codec, a stream
+    /// ADR-0065's table, a value a kind cannot hold, a compressed stream without its codec, a stream
     /// cut short, or one that is not Arrow at all.</exception>
     /// <exception cref="OperationCanceledException">The read was cancelled.</exception>
     public static ValueTask<Snapshot> ReadAsync(
@@ -81,7 +81,7 @@ public static class SnapshotArrow
     /// Writes <paramref name="snapshot"/> to <paramref name="stream"/> as an uncompressed Arrow IPC
     /// stream: its rows in the Snapshot's order (<see cref="Snapshot.Rows"/>), in record batches of
     /// 65,536 rows, each written to the stream before the next is made. HTTP's own compression does
-    /// the rest (ADR-0064). The stream is left open.
+    /// the rest (ADR-0065). The stream is left open.
     /// </summary>
     /// <param name="snapshot">The Snapshot to write.</param>
     /// <param name="stream">Where to write it, from its current position.</param>
@@ -108,7 +108,7 @@ public static class SnapshotArrow
 }
 
 /// <summary>
-/// The metadata keys under which a Snapshot's own facts travel in an Arrow schema (ADR-0064). Another
+/// The metadata keys under which a Snapshot's own facts travel in an Arrow schema (ADR-0065). Another
 /// producer may write them too, and a read honours them whoever wrote them.
 /// </summary>
 public static class SnapshotArrowMetadata

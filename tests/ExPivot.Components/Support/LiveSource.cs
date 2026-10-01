@@ -3,7 +3,7 @@ using ExPivot.Engine;
 namespace ExPivot.Components.Tests.Support;
 
 /// <summary>
-/// A Pivot Source whose data moves on when the test says (ADR-0066): <see cref="Publish"/> makes
+/// A Pivot Source whose data moves on when the test says (ADR-0067): <see cref="Publish"/> makes
 /// the given sales its data — a new Source Version — and raises <c>Changed</c>, as the bundled
 /// source does when it folds a Change Batch in, or a server's source when the Consumer says its
 /// data moved on. Its answers are the reference's — the bundled source over the data current when

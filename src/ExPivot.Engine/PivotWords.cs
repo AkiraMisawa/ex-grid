@@ -3,14 +3,14 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The words ExPivot paints, by id, with their English (ADR-0059). A Consumer replaces any of
+/// The words ExPivot paints, by id, with their English (ADR-0060). A Consumer replaces any of
 /// them through a function from id to text, returning null to keep the English. A word with
 /// <c>{0}</c> (and <c>{1}</c>) is a template: the id says what goes in it.
 ///
 /// <para>The words of Excel's Japanese edition are bundled: <see cref="Japanese"/> is such a
 /// function, chosen in one line (<c>Label="PivotWords.Japanese"</c>). They never follow the
 /// culture on their own, because a screen whose language changed unasked is the surprise the
-/// family avoids (ADR-0059).</para>
+/// family avoids (ADR-0060).</para>
 /// </summary>
 public static class PivotWords
 {
@@ -76,7 +76,7 @@ public static class PivotWords
     public static IReadOnlyCollection<string> Ids => English.Keys;
 
     /// <summary>
-    /// The words of Excel's Japanese edition (ADR-0059): <c>行ラベル</c>, <c>総計</c>,
+    /// The words of Excel's Japanese edition (ADR-0060): <c>行ラベル</c>, <c>総計</c>,
     /// <c>合計 / 金額</c>, <c>(空白)</c>, <c>ピボットテーブルのフィールド</c> and every other word
     /// ExPivot paints, with the ExGrid commands of the report's Context Menu, which ExGrid words
     /// only in English, and a date part's Items (<see cref="PivotDateWords"/>): <c>2026年</c>,
@@ -162,7 +162,7 @@ public static class PivotWords
         ["show-percent-of-column-total"] = "% of Column Total",
         ["show-percent-of-row-total"] = "% of Row Total",
 
-        // The Field List and its panels (ADR-0060).
+        // The Field List and its panels (ADR-0061).
         ["field-list"] = "PivotTable Fields",
         ["choose-fields"] = "Choose fields to add to report:",
         ["drag-fields"] = "Drag fields between areas below:",
@@ -218,7 +218,7 @@ public static class PivotWords
         ["report-filters"] = "Report filters",
         ["filter-of"] = "Filter {0}",
 
-        // The report's Context Menu and its label cells (ADR-0058/0062).
+        // The report's Context Menu and its label cells (ADR-0059/0063).
         ["expand"] = "Expand",
         ["collapse"] = "Collapse",
         ["expand-item"] = "Expand {0}",
@@ -230,7 +230,7 @@ public static class PivotWords
         ["show-field-list"] = "Show Field List",
         ["hide-field-list"] = "Hide Field List",
 
-        // The toolbar above the report and its Layout menu, Excel's Design tab (ADR-0060).
+        // The toolbar above the report and its Layout menu, Excel's Design tab (ADR-0061).
         ["layout-menu"] = "Layout",
         ["grand-totals"] = "Grand Totals",
         ["report-layout"] = "Report Layout",
@@ -249,7 +249,7 @@ public static class PivotWords
         ["refresh"] = "Refresh",
         ["field-list-toggle"] = "Field List",
 
-        // Asking the Pivot Source, Defer Layout Update and the caps (ADR-0060/0065).
+        // Asking the Pivot Source, Defer Layout Update and the caps (ADR-0061/0066).
         ["loading"] = "Loading…",
         ["defer-layout-update"] = "Defer Layout Update",
         ["update"] = "Update",
@@ -261,14 +261,14 @@ public static class PivotWords
         ["source-refused"] = "The source refused to answer: {0}",
         ["data-changed"] = "The data has changed — refresh.",
 
-        // Show Details: the tabs at the report's foot and the dialog (ADR-0058).
+        // Show Details: the tabs at the report's foot and the dialog (ADR-0059).
         ["details-title"] = "Details: {0}",
         ["report-tab"] = "PivotTable",
         ["sheets"] = "Sheets",
         ["close-tab"] = "Close {0}",
         ["close"] = "Close",
 
-        // The Stale Report's notice (ADR-0066): {0} the time of the version shown, {1} what
+        // The Stale Report's notice (ADR-0067): {0} the time of the version shown, {1} what
         // happened; each reason's {0} its cap or the source's own sentence.
         ["stale-report"] = "Showing the data as of {0}: {1}",
         ["stale-too-many-cells"] = "the newest data needs more than {0} cells.",
@@ -279,7 +279,7 @@ public static class PivotWords
         ["retry"] = "Retry",
     };
 
-    // The words of Excel's Japanese edition (ADR-0059), for every id above, and for the ExGrid
+    // The words of Excel's Japanese edition (ADR-0060), for every id above, and for the ExGrid
     // commands in the report's Context Menu (copy, copy-with-headers), which ExGrid words only
     // in English. Where Excel shows the words, they are Excel's; where ExPivot paints something
     // Excel has no counterpart for (a refusal, a tab's close button), they are written in the

@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// What a Pivot Source can do (ADR-0065): the Aggregations it answers — Value Field Settings…
+/// What a Pivot Source can do (ADR-0066): the Aggregations it answers — Value Field Settings…
 /// offers the others disabled, with the reason, and ExPivot never asks a source for one — and
 /// whether it can be asked again for newer data (Excel's Refresh).
 /// </summary>
@@ -29,7 +29,7 @@ public sealed class PivotSourceFeatures
     }
 
     /// <summary>Every Aggregation, and no Refresh — the bundled source's features: it is refreshed
-    /// by handing ExPivot a new source (ADR-0065).</summary>
+    /// by handing ExPivot a new source (ADR-0066).</summary>
     public static PivotSourceFeatures All { get; } = new(Enum.GetValues<PivotAggregation>());
 
     /// <summary>The Aggregations the source answers, in the enum's order.</summary>
@@ -52,14 +52,14 @@ public sealed class PivotSourceFeatures
 }
 
 /// <summary>
-/// A Pivot Source's notice that its data moved on (ADR-0065/0066): ExPivot asks again for the
+/// A Pivot Source's notice that its data moved on (ADR-0066/0067): ExPivot asks again for the
 /// whole answer. Serialisable (<see cref="PivotJson"/>), so a server's push can carry it.
 /// </summary>
 /// <param name="SourceVersion">The data's new Source Version, or null when the source does not
 /// know it yet — the next answer carries it.</param>
 public sealed record PivotSourceChanged(string? SourceVersion = null);
 
-/// <summary>Why a Pivot Source refused a question (ADR-0065).</summary>
+/// <summary>Why a Pivot Source refused a question (ADR-0066).</summary>
 public enum PivotSourceRefusalKind
 {
     /// <summary>The answer would need more leaves than the question allows: "this layout needs
@@ -80,7 +80,7 @@ public enum PivotSourceRefusalKind
 }
 
 /// <summary>
-/// A Pivot Source's refusal to answer (ADR-0065): its kind, a sentence a person can read, and the
+/// A Pivot Source's refusal to answer (ADR-0066): its kind, a sentence a person can read, and the
 /// field or the cap it concerns. A refusal is an answer, not a failure: the report stays on the
 /// layout it had and says why (principle 5 puts the cap on what cannot be executed).
 /// </summary>
@@ -105,7 +105,7 @@ public sealed record PivotSourceRefusal(PivotSourceRefusalKind Kind, string Mess
     public long? Limit { get; init; }
 
     /// <summary>"This layout needs more than 200,000 cells." — the refusal of a question whose
-    /// answer would pass <paramref name="maxLeaves"/> (ADR-0065).</summary>
+    /// answer would pass <paramref name="maxLeaves"/> (ADR-0066).</summary>
     public static PivotSourceRefusal TooManyLeaves(int maxLeaves)
         => new(PivotSourceRefusalKind.TooManyLeaves,
             $"This layout needs more than {maxLeaves.ToString("N0", CultureInfo.InvariantCulture)} cells.")
@@ -135,7 +135,7 @@ public sealed record PivotSourceRefusal(PivotSourceRefusalKind Kind, string Mess
 
 /// <summary>
 /// How the bundled source shares the thread while it reads the records and assembles its answer,
-/// and how ExPivot shares it while it makes an answer's cube and lays out its report (ADR-0065,
+/// and how ExPivot shares it while it makes an answer's cube and lays out its report (ADR-0066,
 /// PV-27/PV-40): the work runs in slices of about <see cref="Budget"/> and yields between them, so
 /// a browser keeps painting, and cancelled work stops at the next slice. Every setting can be
 /// replaced — a test makes the slices deterministic with a zero budget and a yield of its own.

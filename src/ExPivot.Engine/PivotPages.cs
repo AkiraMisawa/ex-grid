@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// What a Pivot Source answers a <see cref="PivotItemsQuery"/> with (ADR-0065): the field's Items
+/// What a Pivot Source answers a <see cref="PivotItemsQuery"/> with (ADR-0066): the field's Items
 /// over all the data — not narrowed by other fields' Hidden Items — that match the search, at most
 /// as many as asked, with how many match; or a refusal. The Items stand in the source's invariant
 /// order — numbers, dates, text, Booleans, <c>#NUM!</c>, then <c>(blank)</c>; numbers and dates by
@@ -35,7 +35,7 @@ public sealed class PivotItemPage
         _items = [];
     }
 
-    /// <summary>The source's refusal (ADR-0065): an unknown field, or a Source Version it can no
+    /// <summary>The source's refusal (ADR-0066): an unknown field, or a Source Version it can no
     /// longer answer under.</summary>
     public static PivotItemPage Refused(PivotSourceRefusal refusal)
     {
@@ -65,7 +65,7 @@ public sealed class PivotItemPage
 }
 
 /// <summary>
-/// What a Pivot Source answers a <see cref="PivotDetailsQuery"/> with (ADR-0062/0065): one page of
+/// What a Pivot Source answers a <see cref="PivotDetailsQuery"/> with (ADR-0063/0066): one page of
 /// the records behind the cell, in the data's order, with how many there are; or a refusal. Each
 /// record carries its values in the order of <see cref="Fields"/>. Immutable, and serialisable
 /// but for the Consumer's own record objects, which never leave the process.
@@ -113,7 +113,7 @@ public sealed class PivotDetailPage
         _records = [];
     }
 
-    /// <summary>The source's refusal (ADR-0065): an unknown field, or a Source Version it can no
+    /// <summary>The source's refusal (ADR-0066): an unknown field, or a Source Version it can no
     /// longer answer under — the records would no longer add up to the cell.</summary>
     public static PivotDetailPage Refused(PivotSourceRefusal refusal)
     {
@@ -151,13 +151,13 @@ public sealed class PivotDetailPage
 }
 
 /// <summary>
-/// One record behind a cell (ADR-0062/0065): its values, one per field of its page, and — from a
+/// One record behind a cell (ADR-0063/0066): its values, one per field of its page, and — from a
 /// source in the process — the Consumer's own record object, which is never serialised.
 ///
 /// <para>A value is null for a Blank, or one of six types: <c>string</c> for text, <c>decimal</c>
 /// for an integral or <c>decimal</c> number, <c>double</c> for a <c>double</c> or <c>float</c>
 /// one, <c>DateTime</c> for a date by its clock value, and <c>bool</c>. Any other value is text,
-/// by its invariant text (ADR-0059). A value is normally of its field's declared type; one that is
+/// by its invariant text (ADR-0060). A value is normally of its field's declared type; one that is
 /// not keeps its own.</para>
 /// </summary>
 public sealed class PivotDetailRecord
@@ -186,7 +186,7 @@ public sealed class PivotDetailRecord
     /// <summary>
     /// A value as a detail record carries it: null, <c>string</c>, <c>decimal</c> (for every
     /// integral type too), <c>double</c> (for <c>float</c> too), <c>DateTime</c> by its clock value
-    /// with its <c>Kind</c> dropped (for <c>DateOnly</c> and <c>DateTimeOffset</c> too, as ADR-0059
+    /// with its <c>Kind</c> dropped (for <c>DateOnly</c> and <c>DateTimeOffset</c> too, as ADR-0060
     /// reads a date), or <c>bool</c>; anything else by its invariant text.
     /// </summary>
     public static object? Normalize(object? value) => value switch

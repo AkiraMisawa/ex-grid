@@ -11,7 +11,7 @@ namespace ExGrid.Data.Tests;
 /// <summary>
 /// A number written the common way is read by a short path (ticket 07). It must read exactly what the
 /// full reading reads, and leave everything else to it, so nothing a column reads or refuses changes
-/// (ADR-0063).
+/// (ADR-0064).
 /// </summary>
 public class NumberTextTests
 {
@@ -28,7 +28,7 @@ public class NumberTextTests
         "123456789.123456789", "12345678.123456789", "--1", "+-1", "1-", "1.2.3", "1,234.5,6", "000000000000000000001",
     ];
 
-    [Theory] // ADR-0063: what the short path reads, the full reading reads alike; what it leaves, the full reading decides
+    [Theory] // ADR-0064: what the short path reads, the full reading reads alike; what it leaves, the full reading decides
     [MemberData(nameof(Shapes))]
     public void The_short_path_reads_what_the_full_reading_reads(string text)
     {
@@ -48,7 +48,7 @@ public class NumberTextTests
         }
     }
 
-    [Fact] // ADR-0063: the short path is taken only where its reading is the common one
+    [Fact] // ADR-0064: the short path is taken only where its reading is the common one
     public void The_short_path_is_taken_only_for_the_common_reading()
     {
         Assert.False(new NumberReading(new CsvColumn("V", SnapshotKind.Decimal) { Culture = CultureInfo.GetCultureInfo("sv-SE") }, CsvEncoding.Utf8).Short);
@@ -56,7 +56,7 @@ public class NumberTextTests
         Assert.False(new NumberReading(new CsvColumn("V", SnapshotKind.Decimal) { DecimalPoint = "<>" }, CsvEncoding.Utf8).Short);
     }
 
-    [Fact] // ADR-0063: random numbers of every shape read alike through the short path and the full reading, and as a CSV
+    [Fact] // ADR-0064: random numbers of every shape read alike through the short path and the full reading, and as a CSV
     public void Random_numbers_read_alike()
     {
         var random = new Random(20261001);

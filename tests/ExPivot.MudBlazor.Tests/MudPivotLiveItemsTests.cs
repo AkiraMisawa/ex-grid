@@ -9,7 +9,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
-/// A field's Items under live data, under MudBlazor (ADR-0065 refined, ADR-0061): while a new
+/// A field's Items under live data, under MudBlazor (ADR-0066 refined, ADR-0062): while a new
 /// Source Version's Items are on their way, the earlier version's stay in view — the report filter
 /// band's summary, and Filter…'s list with OK enabled — marked busy, with no progress drawn, until
 /// the new version's replace them; a first listing still shows its progress (PV-9, PV-23).
@@ -65,7 +65,7 @@ public class MudPivotLiveItemsTests : MudPivotTestContext
     private static string[] Listed(IRenderedComponent<PivotComponent> cut)
         => cut.FindAll(".mud-ex-pivot-item-filter .mud-checkbox").Select(c => c.TextContent.Trim()).ToArray();
 
-    [Fact] // ADR-0065 refined, ADR-0061 (PV-9, PV-23): a first listing shows its progress; a new version's Items on their way leave the earlier ones listed — busy, no progress drawn, OK enabled — until they land
+    [Fact] // ADR-0066 refined, ADR-0062 (PV-9, PV-23): a first listing shows its progress; a new version's Items on their way leave the earlier ones listed — busy, no progress drawn, OK enabled — until they land
     public async Task Filter_keeps_the_earlier_items_listed_while_the_new_ones_are_on_their_way()
     {
         var server = new Server();

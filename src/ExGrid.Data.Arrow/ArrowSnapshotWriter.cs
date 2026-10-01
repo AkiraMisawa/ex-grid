@@ -5,7 +5,7 @@ using Apache.Arrow.Ipc;
 namespace ExGrid.Data.Arrow;
 
 /// <summary>
-/// One write of a Snapshot as an uncompressed Arrow IPC stream (ADR-0064). Every column's Arrow type
+/// One write of a Snapshot as an uncompressed Arrow IPC stream (ADR-0065). Every column's Arrow type
 /// is settled, and every value checked to be writable in it, before the first byte is written, so a
 /// refused write writes nothing. Then each record batch is made straight into Arrow's buffers from the
 /// slices' spans — never through Arrow's per-value builders, which were measured 10–40 times slower —

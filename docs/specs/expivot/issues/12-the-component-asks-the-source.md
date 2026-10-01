@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** `ExPivot` takes a `Source` instead of records (ADR-0058, ADR-0065).
+**What to build:** `ExPivot` takes a `Source` instead of records (ADR-0059, ADR-0066).
 
 - **While a question is out:** the Field List shows the new layout; the report stays as it was,
   under `IsLoading`; a further change cancels the question; and an answer to a superseded question

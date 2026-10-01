@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// A Pivot Report (ADR-0058/0059): the rows, the label columns, the value columns and the
+/// A Pivot Report (ADR-0059/0060): the rows, the label columns, the value columns and the
 /// Header Group spans over them, laid out from a <see cref="PivotCube"/> under a
 /// <see cref="PivotLayout"/>. Immutable. A value cell is computed when it is first read
 /// (<see cref="PivotReportRow.ValueAt"/>), so a report of many rows costs its rows, not its
@@ -78,7 +78,7 @@ public sealed class PivotReport
     /// <summary>The rows, top to bottom.</summary>
     public IReadOnlyList<PivotReportRow> Rows { get; }
 
-    /// <summary>The Value Fields' captions, in the layout's order, each unique (ADR-0059).</summary>
+    /// <summary>The Value Fields' captions, in the layout's order, each unique (ADR-0060).</summary>
     public IReadOnlyList<string> ValueCaptions { get; }
 
     /// <summary>
@@ -95,7 +95,7 @@ public sealed class PivotReport
     }
 
     /// <summary>
-    /// <see cref="HasSameRowsAs"/> in slices (ADR-0065, PV-40): the rows compared a piece at a time,
+    /// <see cref="HasSameRowsAs"/> in slices (ADR-0066, PV-40): the rows compared a piece at a time,
     /// the thread yielded whenever a slice of <see cref="PivotSlicing.Budget"/> is spent — a refresh
     /// of a large report compares every row. Cancelled, it throws at the next yield. A small report
     /// is compared without reading the clock, and the task is complete when it returns.
@@ -167,7 +167,7 @@ public sealed class PivotReport
     }
 
     /// <summary>
-    /// The question for the records behind a cell — Show Details (ADR-0062/0065): the Items of the
+    /// The question for the records behind a cell — Show Details (ADR-0063/0066): the Items of the
     /// row's path and of the column's, the Hidden Items the report was computed under, a range, and
     /// the report's Source Version, under which the records add up to the cell. A label cell is
     /// <paramref name="valueColumn"/> −1, and asks for every record of its row. A row that stands
@@ -220,7 +220,7 @@ public sealed class PivotReport
     }
 
     /// <summary>A Value Field's value at a row's total across the columns, as shown — what an
-    /// order by that Value Field compares (ADR-0059). Null for an empty or error value.</summary>
+    /// order by that Value Field compares (ADR-0060). Null for an empty or error value.</summary>
     internal double? TotalOf(PivotReportRow row, int vf)
     {
         var value = _reader.Shown(row.Node, Cube.ColumnRoot, vf);
@@ -234,7 +234,7 @@ internal sealed record ValueFieldPlan(
     int Source, PivotAggregation Aggregation, string Caption, PivotShowValuesAs ShowValuesAs, string? NumberFormat);
 
 /// <summary>
-/// One row of a Pivot Report (ADR-0059): what it stands for, its labels — one per label column —
+/// One row of a Pivot Report (ADR-0060): what it stands for, its labels — one per label column —
 /// and its value cells, computed when first read. The report is the row's owner; the row's
 /// identity is the grid's change signal (ADR-0003), and a new report is new rows.
 /// </summary>
@@ -289,7 +289,7 @@ public sealed class PivotReportRow
     }
 }
 
-/// <summary>One label cell of a row (ADR-0059).</summary>
+/// <summary>One label cell of a row (ADR-0060).</summary>
 /// <param name="Text">The label; null for an empty cell.</param>
 /// <param name="Indent">How many levels the Compact form indents it.</param>
 /// <param name="Toggle">The expand / collapse button beside it, for an outer Item.</param>
@@ -299,7 +299,7 @@ public sealed record PivotRowLabel(string? Text, int Indent = 0, PivotToggle? To
     public static PivotRowLabel None { get; } = new((string?)null);
 }
 
-/// <summary>The expand / collapse button of an outer Item (ADR-0058): which field's Item it
+/// <summary>The expand / collapse button of an outer Item (ADR-0059): which field's Item it
 /// toggles, how it is labelled, and whether it is collapsed now.</summary>
 /// <param name="Field">The row field's name.</param>
 /// <param name="Item">The Item, as a layout writes it.</param>
@@ -307,14 +307,14 @@ public sealed record PivotRowLabel(string? Text, int Indent = 0, PivotToggle? To
 /// <param name="IsCollapsed">Whether it is collapsed.</param>
 public sealed record PivotToggle(string Field, PivotItemKey Item, string ItemLabel, bool IsCollapsed);
 
-/// <summary>A label column (ADR-0059).</summary>
+/// <summary>A label column (ADR-0060).</summary>
 /// <param name="Name">Unique among the report's columns, value columns included.</param>
 /// <param name="Header">What its header says.</param>
 /// <param name="Field">The row field whose Items it shows, or null for the Compact form's one
 /// column and the Value Fields' captions.</param>
 public sealed record PivotLabelColumn(string Name, string Header, string? Field);
 
-/// <summary>A value column (ADR-0059): what it stands for and its leaf header.</summary>
+/// <summary>A value column (ADR-0060): what it stands for and its leaf header.</summary>
 public sealed class PivotReportColumn
 {
     internal PivotReportColumn(string name, string header, PivotColumnRole role, int valueField, AxisNode node)
@@ -342,7 +342,7 @@ public sealed class PivotReportColumn
     internal AxisNode Node { get; }
 }
 
-/// <summary>A rectangle above the value columns' headers (ADR-0032/0059).</summary>
+/// <summary>A rectangle above the value columns' headers (ADR-0032/0060).</summary>
 /// <param name="Label">Its caption: a column Item, <c>&lt;item&gt; Total</c> or <c>Grand Total</c>.</param>
 /// <param name="FirstColumn">The first value column it covers, by index in
 /// <see cref="PivotReport.ValueColumns"/>.</param>

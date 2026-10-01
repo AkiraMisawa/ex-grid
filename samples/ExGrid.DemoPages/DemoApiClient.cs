@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace ExGrid.DemoPages;
 
 /// <summary>
-/// The demo API server as the pages reach it (ADR-0068): its address, and an
+/// The demo API server as the pages reach it (ADR-0069): its address, and an
 /// <see cref="HttpClient"/> for it. The server is a process of its own, which the pages on both
 /// hosts call over HTTP with the same code. It is found at the page's own port plus 3000 — 8299
 /// beside the WebAssembly host's 5299 — unless the host names it, so two checkouts on two ports
@@ -52,7 +52,7 @@ public sealed class DemoApiClient : IDisposable
     /// <see cref="HttpClient.BaseAddress"/> the server's.</summary>
     public HttpClient Http { get; }
 
-    /// <summary>The server's SignalR hub, which says when the trades change (ADR-0066/0067).</summary>
+    /// <summary>The server's SignalR hub, which says when the trades change (ADR-0067/0068).</summary>
     public Uri Hub => new(Address, HubPath);
 
     /// <summary>What a page shows when a request to the server fails: where the server was looked
@@ -69,7 +69,7 @@ public sealed class DemoApiClient : IDisposable
                 + "got); reload the page once they are."
             : $"The demo API server did not answer at {Address} ({error.Message}). It is started with "
                 + $"\"dotnet run --project samples/ExGrid.DemoApi --urls {Address.GetLeftPart(UriPartial.Authority)}\" "
-                + "beside the host, as layer 3 does (ADR-0068).";
+                + "beside the host, as layer 3 does (ADR-0069).";
     }
 
     /// <inheritdoc />

@@ -11,7 +11,7 @@ namespace ExPivot.Components.Tests;
 
 /// <summary>
 /// Where the keyboard goes when Show Details' dialog or a details tab goes away, and what Escape
-/// does inside their grids (ADR-0069, PV-39), under ExPivot's own markup. The dialog's grid declares
+/// does inside their grids (ADR-0070, PV-39), under ExPivot's own markup. The dialog's grid declares
 /// <c>OnLeave</c>, and the dialog closes on the Escape that grid has nothing left to dismiss. However
 /// the dialog closes, the report's grid takes the keyboard back, through ExGrid's
 /// <c>ReturnKeyboardAsync</c>, once the render that took the dialog away has landed. A details tab
@@ -73,7 +73,7 @@ public class KeyboardBackTests : PivotTestContext
 
     // ---- The dialog -----------------------------------------------------------------------------
 
-    [Fact] // ADR-0069 (PV-39): Show Details' dialog declares OnLeave on its grid, closes on the Escape that grid has nothing left to dismiss, and the report's grid takes the keyboard back
+    [Fact] // ADR-0070 (PV-39): Show Details' dialog declares OnLeave on its grid, closes on the Escape that grid has nothing left to dismiss, and the report's grid takes the keyboard back
     public async Task The_dialog_closes_on_an_escape_its_grid_has_nothing_left_to_dismiss()
     {
         var report = ReportGridHandle();
@@ -95,7 +95,7 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 
-    [Theory] // ADR-0069 (PV-39): however the dialog closes — its grid's Escape, an Escape on its frame, Close, the backdrop — the report's grid takes the keyboard back, once, after the render that took the dialog away
+    [Theory] // ADR-0070 (PV-39): however the dialog closes — its grid's Escape, an Escape on its frame, Close, the backdrop — the report's grid takes the keyboard back, once, after the render that took the dialog away
     [InlineData("grid")]
     [InlineData("frame")]
     [InlineData("close")]
@@ -129,7 +129,7 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Equal([true], seen);
     }
 
-    [Fact] // ADR-0069/0012 (PV-39): the dialog's grid peels its own layers first — the Escape that closes its Context Menu leaves the dialog standing, and the next one closes it
+    [Fact] // ADR-0070/0012 (PV-39): the dialog's grid peels its own layers first — the Escape that closes its Context Menu leaves the dialog standing, and the next one closes it
     public async Task An_escape_that_closes_the_records_menu_leaves_the_dialog_standing()
     {
         var report = ReportGridHandle();
@@ -159,7 +159,7 @@ public class KeyboardBackTests : PivotTestContext
 
     // ---- The tabs -------------------------------------------------------------------------------
 
-    [Fact] // ADR-0069 (PV-39): Escape in a details tab's grid closes nothing — a tab is a sheet of its own — and the grid lets go of the keyboard as any grid does
+    [Fact] // ADR-0070 (PV-39): Escape in a details tab's grid closes nothing — a tab is a sheet of its own — and the grid lets go of the keyboard as any grid does
     public async Task Escape_in_a_details_tabs_grid_closes_nothing()
     {
         var cut = RenderPivot(ByRegionAndProduct);
@@ -175,7 +175,7 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Equal(blurs + 1, Blurs());
     }
 
-    [Fact] // ADR-0069 (PV-39): closing the last details tab, the selected one, selects the report's tab, and the report's grid takes the keyboard back once its records no longer cover it — no tab is left to hold it
+    [Fact] // ADR-0070 (PV-39): closing the last details tab, the selected one, selects the report's tab, and the report's grid takes the keyboard back once its records no longer cover it — no tab is left to hold it
     public async Task Closing_the_last_details_tab_gives_the_report_the_keyboard_back()
     {
         var report = ReportGridHandle();
@@ -192,7 +192,7 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Equal(focusCalls, FocusCalls());
     }
 
-    [Fact] // ADR-0069 (PV-39): the last details tab closed while the report's tab is selected leaves the keyboard nowhere else either: the report's grid takes it back
+    [Fact] // ADR-0070 (PV-39): the last details tab closed while the report's tab is selected leaves the keyboard nowhere else either: the report's grid takes it back
     public async Task Closing_the_last_details_tab_behind_the_report_gives_the_report_the_keyboard_back()
     {
         var report = ReportGridHandle();
@@ -207,7 +207,7 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 
-    [Fact] // ADR-0069 (PV-39): a details tab closed while the report's tab is selected hands the keyboard to the tab selected then — the report's, which is its grid — and not to the report tab's button
+    [Fact] // ADR-0070 (PV-39): a details tab closed while the report's tab is selected hands the keyboard to the tab selected then — the report's, which is its grid — and not to the report tab's button
     public async Task Closing_a_tab_while_the_reports_tab_is_selected_gives_the_report_the_keyboard()
     {
         var report = ReportGridHandle();
@@ -226,7 +226,7 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Equal(focusCalls, FocusCalls());
     }
 
-    [Fact] // ADR-0069/0058 (PV-39): a details tab closed while selected hands the keyboard to the details tab selected next, on its button; the report's grid, covered, is not asked
+    [Fact] // ADR-0070/0059 (PV-39): a details tab closed while selected hands the keyboard to the details tab selected next, on its button; the report's grid, covered, is not asked
     public async Task Closing_the_selected_tab_hands_the_keyboard_to_the_details_tab_selected_next()
     {
         var report = ReportGridHandle();

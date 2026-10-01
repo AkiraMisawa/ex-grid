@@ -11,7 +11,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// ExPivot asks a Pivot Source, and asking never blocks (ADR-0065): the Field List shows a new layout
+/// ExPivot asks a Pivot Source, and asking never blocks (ADR-0066): the Field List shows a new layout
 /// at once, the report stays as it was under the grid's loading indication, a further change cancels
 /// the question in flight, an answer to a superseded question is never painted, a change the answer
 /// held lays out asks nothing, a layout over a cap is refused by name, and an Aggregation the source
@@ -50,7 +50,7 @@ public class AskingTests : PivotTestContext
 
     // ---- PV-25: asking never blocks -------------------------------------------------------------
 
-    [Fact] // ADR-0065 (PV-25): the first question is out and nothing blocks — the pane shows the layout, the report says it is on its way
+    [Fact] // ADR-0066 (PV-25): the first question is out and nothing blocks — the pane shows the layout, the report says it is on its way
     public void The_first_question_does_not_block()
     {
         var source = Holding();
@@ -64,7 +64,7 @@ public class AskingTests : PivotTestContext
         Assert.Empty(cut.FindComponents<ExGrid<PivotReportRow>>());
     }
 
-    [Fact] // ADR-0065 (PV-25): while a question is out the Field List shows the new layout, and the report stays as it was under the grid's IsLoading
+    [Fact] // ADR-0066 (PV-25): while a question is out the Field List shows the new layout, and the report stays as it was under the grid's IsLoading
     public async Task While_a_question_is_out_the_report_stays_as_it_was()
     {
         var told = new List<PivotLayout>();
@@ -92,7 +92,7 @@ public class AskingTests : PivotTestContext
         Assert.Same(cut.Instance.CurrentLayout, told[0]);
     }
 
-    [Fact] // ADR-0065/0025 (PV-25): a further change cancels the question in flight and asks the next
+    [Fact] // ADR-0066/0025 (PV-25): a further change cancels the question in flight and asks the next
     public async Task A_further_change_cancels_the_question_in_flight()
     {
         var (cut, source) = await AnsweredAsync(RegionAmount);
@@ -111,7 +111,7 @@ public class AskingTests : PivotTestContext
         Assert.Equal("−East | 180 | 18", RowTexts(cut)[0]);
     }
 
-    [Fact] // ADR-0065/0025 (PV-25): an answer to a superseded question is never painted, even when the source answers it anyway, late
+    [Fact] // ADR-0066/0025 (PV-25): an answer to a superseded question is never painted, even when the source answers it anyway, late
     public async Task An_answer_to_a_superseded_question_is_never_painted()
     {
         var told = new List<PivotLayout>();
@@ -148,7 +148,7 @@ public class AskingTests : PivotTestContext
         Assert.All(told, layout => Assert.Equal(2, layout.Values.Count));
     }
 
-    [Fact] // ADR-0065/0025, ADR-0066 refined (PV-25): a failed question for the user's layout leaves the report as it was and says so on the toolbar — not a Stale Report — and the layout goes back
+    [Fact] // ADR-0066/0025, ADR-0067 refined (PV-25): a failed question for the user's layout leaves the report as it was and says so on the toolbar — not a Stale Report — and the layout goes back
     public async Task A_failure_leaves_the_report_as_it_was_and_says_so()
     {
         var told = new List<PivotLayout>();
@@ -181,7 +181,7 @@ public class AskingTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-refusal-notice"));
     }
 
-    [Fact] // ADR-0066 refined (PV-25): before the first report there is no layout to go back to — a failed first question is said on the toolbar, and the pane keeps the layout
+    [Fact] // ADR-0067 refined (PV-25): before the first report there is no layout to go back to — a failed first question is said on the toolbar, and the pane keeps the layout
     public async Task A_failed_first_question_keeps_the_layout()
     {
         var source = Holding();
@@ -199,7 +199,7 @@ public class AskingTests : PivotTestContext
 
     // ---- PV-26: a change that needs no new question asks none ------------------------------------
 
-    [Fact] // ADR-0059/0065 (PV-26): collapse, order, the form, subtotals, grand totals, Show Values As, captions and formats ask nothing
+    [Fact] // ADR-0060/0066 (PV-26): collapse, order, the form, subtotals, grand totals, Show Values As, captions and formats ask nothing
     public async Task A_change_the_held_answer_lays_out_asks_nothing()
     {
         var (cut, source) = await AnsweredAsync(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });
@@ -230,7 +230,7 @@ public class AskingTests : PivotTestContext
         Assert.False(cut.Instance.IsLoading);
     }
 
-    [Fact] // ADR-0059/0065 (PV-26): an Aggregation change asks again only for parts the held answer lacks
+    [Fact] // ADR-0060/0066 (PV-26): an Aggregation change asks again only for parts the held answer lacks
     public async Task An_aggregation_change_asks_only_for_missing_parts()
     {
         var (cut, source) = await AnsweredAsync(RegionAmount);
@@ -258,7 +258,7 @@ public class AskingTests : PivotTestContext
         await cut.Find(".ex-pivot-ok").ClickAsync(new MouseEventArgs());
     }
 
-    [Fact] // ADR-0065 refined (PV-26): a Filters field that hides nothing does not travel — placing it asks nothing; hiding one of its Items does
+    [Fact] // ADR-0066 refined (PV-26): a Filters field that hides nothing does not travel — placing it asks nothing; hiding one of its Items does
     public async Task A_filters_field_that_hides_nothing_asks_nothing()
     {
         var (cut, source) = await AnsweredAsync(RegionAmount);
@@ -284,7 +284,7 @@ public class AskingTests : PivotTestContext
 
     // ---- PV-29: caps ---------------------------------------------------------------------------------
 
-    [Fact] // ADR-0065 (PV-29): a question carries the leaves' cap, which the Consumer may change
+    [Fact] // ADR-0066 (PV-29): a question carries the leaves' cap, which the Consumer may change
     public async Task A_question_carries_the_leaf_cap()
     {
         var (_, source) = await AnsweredAsync(RegionAmount, ps => ps.Add(p => p.Caps, new PivotCaps { MaxLeaves = 1234 }));
@@ -295,7 +295,7 @@ public class AskingTests : PivotTestContext
         Assert.Equal(16_384, PivotCaps.Default.MaxColumns);
     }
 
-    [Fact] // ADR-0065 (PV-29): a layout whose source refuses it for its leaves is refused by name, and the layout goes back to the one before
+    [Fact] // ADR-0066 (PV-29): a layout whose source refuses it for its leaves is refused by name, and the layout goes back to the one before
     public async Task A_layout_over_the_leaf_cap_is_refused_by_name()
     {
         var told = new List<PivotLayout>();
@@ -312,7 +312,7 @@ public class AskingTests : PivotTestContext
         Assert.Empty(told);
     }
 
-    [Fact] // ADR-0065 (PV-29): a layout whose report would pass the rows' cap is refused by name, whether or not it needed a question
+    [Fact] // ADR-0066 (PV-29): a layout whose report would pass the rows' cap is refused by name, whether or not it needed a question
     public async Task A_layout_over_the_row_cap_is_refused_by_name()
     {
         var source = new OnDemandSource(Bundled()) { AnswersAtOnce = true };
@@ -330,7 +330,7 @@ public class AskingTests : PivotTestContext
         Assert.True(cut.Instance.CurrentLayout.Rows[0].Collapsed);
     }
 
-    [Fact] // ADR-0065 (PV-29): a layout whose report would pass the columns' cap is refused by name
+    [Fact] // ADR-0066 (PV-29): a layout whose report would pass the columns' cap is refused by name
     public async Task A_layout_over_the_column_cap_is_refused_by_name()
     {
         var cut = RenderPivot(RegionAmount, ps => ps.Add(p => p.Caps, new PivotCaps { MaxColumns = 4 }));
@@ -343,7 +343,7 @@ public class AskingTests : PivotTestContext
         Assert.Equal(["Row Labels", "Sum of Amount"], HeaderTexts(cut));
     }
 
-    [Fact] // ADR-0065 (PV-29): the next change clears the refusal
+    [Fact] // ADR-0066 (PV-29): the next change clears the refusal
     public async Task The_next_change_clears_the_refusal()
     {
         var cut = RenderPivot(new PivotLayout { Values = [Sum("Amount")] }, ps => ps.Add(p => p.Caps, new PivotCaps { MaxLeaves = 3 }));
@@ -362,7 +362,7 @@ public class AskingTests : PivotTestContext
         [PivotAggregation.Sum, PivotAggregation.Count, PivotAggregation.Average, PivotAggregation.Max, PivotAggregation.Min,
          PivotAggregation.CountNumbers]);
 
-    [Fact] // ADR-0065 (PV-24): Value Field Settings… offers the Aggregations the source does not answer disabled, with the reason
+    [Fact] // ADR-0066 (PV-24): Value Field Settings… offers the Aggregations the source does not answer disabled, with the reason
     public async Task An_aggregation_the_source_does_not_answer_is_offered_disabled_with_the_reason()
     {
         var (cut, _) = await AnsweredAsync(RegionAmount, source: Holding(SqlLike));
@@ -377,7 +377,7 @@ public class AskingTests : PivotTestContext
         Assert.Contains("The source does not answer Varp.", cut.FindAll(".ex-pivot-not-offered").Select(n => n.TextContent));
     }
 
-    [Fact] // ADR-0065 (PV-24): an Aggregation the source does not answer is never chosen, and never asked for
+    [Fact] // ADR-0066 (PV-24): an Aggregation the source does not answer is never chosen, and never asked for
     public async Task An_aggregation_the_source_does_not_answer_is_never_asked_for()
     {
         var (cut, source) = await AnsweredAsync(RegionAmount, source: Holding(SqlLike));
@@ -391,7 +391,7 @@ public class AskingTests : PivotTestContext
         Assert.Equal(PivotAggregation.Sum, cut.Instance.CurrentLayout.Values[0].Aggregation);
     }
 
-    [Fact] // ADR-0065 (PV-24): a layout the Consumer hands in with an Aggregation the source does not answer is refused by name, and nothing is asked
+    [Fact] // ADR-0066 (PV-24): a layout the Consumer hands in with an Aggregation the source does not answer is refused by name, and nothing is asked
     public void A_layout_with_an_aggregation_not_offered_is_refused_by_name()
     {
         var source = Holding(SqlLike);
@@ -404,7 +404,7 @@ public class AskingTests : PivotTestContext
 
     // ---- PV-15: the grid renders only when the report does ------------------------------------
 
-    [Fact] // ADR-0003/0060 (PV-15): a change that is only the pane's — under Defer Layout Update — and the toolbar's menu render no grid row and not the grid
+    [Fact] // ADR-0003/0061 (PV-15): a change that is only the pane's — under Defer Layout Update — and the toolbar's menu render no grid row and not the grid
     public async Task The_pane_and_the_toolbar_do_not_render_the_grid()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });

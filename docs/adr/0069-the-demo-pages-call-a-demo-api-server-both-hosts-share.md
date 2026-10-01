@@ -8,7 +8,7 @@ it: "an application in WebAssembly that fetches its data from a server is surely
 that what ExGrid was built for?". It is: it is what `GridSource.Fetch` exists for. The
 recommendation was withdrawn.)*
 
-The decisions in ADR-0063 to ADR-0067 all involve a server: a database read into a Snapshot, a Pivot
+The decisions in ADR-0064 to ADR-0068 all involve a server: a database read into a Snapshot, a Pivot
 Source answered by SQL, data that changes on the server, and a server that says what changed. The
 demo has no server. The WebAssembly DemoHost is a development server for static files, and the
 Server host renders pages but offers no API. The user asked for an example of each case in the
@@ -58,9 +58,9 @@ more than a Snapshot.
 
 | Endpoint | For | Shows |
 |---|---|---|
-| The trades as an Arrow stream | `/pivot-db`, "database → Snapshot" | a `DbDataReader` read into a Snapshot, written as Arrow ([ADR-0064](./0064-a-snapshot-travels-as-apache-arrow.md)) |
-| Aggregate, Items, Details | `/pivot-db`, "database → server Pivot Source" | `PivotJson` questions answered by SQL written by hand. The Hidden Items become `WHERE`, the Source Version is a change counter, and the Details are `LIMIT`/`OFFSET` pages. Its features leave out the Aggregations SQLite cannot answer exactly ([ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)) |
-| Live on and off, and a SignalR hub | `/pivot-live`, `/grid-live` | the server changing trades and moving the Source Version on, and the hub saying so: the version for a pivot, and the changed trades for a grid ([ADR-0066](./0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md), [ADR-0067](./0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)) |
+| The trades as an Arrow stream | `/pivot-db`, "database → Snapshot" | a `DbDataReader` read into a Snapshot, written as Arrow ([ADR-0065](./0065-a-snapshot-travels-as-apache-arrow.md)) |
+| Aggregate, Items, Details | `/pivot-db`, "database → server Pivot Source" | `PivotJson` questions answered by SQL written by hand. The Hidden Items become `WHERE`, the Source Version is a change counter, and the Details are `LIMIT`/`OFFSET` pages. Its features leave out the Aggregations SQLite cannot answer exactly ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)) |
+| Live on and off, and a SignalR hub | `/pivot-live`, `/grid-live` | the server changing trades and moving the Source Version on, and the hub saying so: the version for a pivot, and the changed trades for a grid ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md), [ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)) |
 
 - **Live updates are off until a page turns them on**, so a page that reads the data sees it hold
   still.

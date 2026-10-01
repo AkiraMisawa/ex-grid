@@ -4,7 +4,7 @@ namespace ExGrid.Data.Storage;
 
 /// <summary>
 /// A column declared over the Consumer's records: how to read its value from a record, and into
-/// which writer. A typed accessor returns the value unboxed (ADR-0063, DA-4); a chunk of records is
+/// which writer. A typed accessor returns the value unboxed (ADR-0064, DA-4); a chunk of records is
 /// read column by column, so each loop makes one kind of call.
 /// </summary>
 internal abstract class ObjectColumn<T>(string name, string? caption, SnapshotKind kind)
@@ -199,7 +199,7 @@ internal sealed class BooleanObjectColumn<T>(string name, string? caption, Func<
 
 /// <summary>
 /// A column known only at run time, read as <see cref="object"/> under a declared kind. A Text column
-/// takes any value, a non-string by its invariant text (ADR-0059). The other kinds take a value only
+/// takes any value, a non-string by its invariant text (ADR-0060). The other kinds take a value only
 /// when it is of that kind, or converts to it exactly: any integer for Decimal and Integer, a
 /// <see cref="float"/> for Double, and all three date types for Date. <see langword="null"/> and
 /// <see cref="DBNull"/> are Blanks. Anything else fails the load, naming the row and the column.
@@ -237,7 +237,7 @@ internal sealed class UntypedObjectColumn<T>(string name, string? caption, Snaps
         switch (Kind)
         {
             case SnapshotKind.Text:
-                // Any other value is Text by its text (ADR-0059): the invariant text, since a Snapshot
+                // Any other value is Text by its text (ADR-0060): the invariant text, since a Snapshot
                 // is read apart from any report's culture — an enum by its name, a Guid in its D form.
                 ((TextColumnWriter)writer).Add(read as string ?? Convert.ToString(read, CultureInfo.InvariantCulture));
                 return true;
@@ -325,7 +325,7 @@ internal static class Integers
     }
 }
 
-/// <summary>A date as the clock value it shows, in ticks (ADR-0063).</summary>
+/// <summary>A date as the clock value it shows, in ticks (ADR-0064).</summary>
 internal static class Clock
 {
     public static long Ticks(DateTime value) => value.Ticks;

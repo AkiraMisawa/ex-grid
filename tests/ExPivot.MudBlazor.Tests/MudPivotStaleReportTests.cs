@@ -9,7 +9,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
-/// The Stale Report's notice under MudBlazor (ADR-0061/0066): a warning <c>MudAlert</c> inside
+/// The Stale Report's notice under MudBlazor (ADR-0062/0067): a warning <c>MudAlert</c> inside
 /// ExPivot's live region under the toolbar, with a Retry <c>MudButton</c> — saying what the
 /// built-in markup says, and asking what it asks (PV-9, PV-37).
 /// </summary>
@@ -88,7 +88,7 @@ public class MudPivotStaleReportTests : MudPivotTestContext
         return server;
     }
 
-    [Fact] // ADR-0061/0066 (PV-37): the notice is a warning MudAlert in ExPivot's live region, with a Retry MudButton that asks again; it goes when the answer is laid out
+    [Fact] // ADR-0062/0067 (PV-37): the notice is a warning MudAlert in ExPivot's live region, with a Retry MudButton that asks again; it goes when the answer is laid out
     public async Task The_notice_is_a_mud_alert_with_retry()
     {
         var server = new Server();
@@ -119,7 +119,7 @@ public class MudPivotStaleReportTests : MudPivotTestContext
         Assert.Equal("East | 181", RowTexts(cut)[0]);
     }
 
-    [Fact] // ADR-0060/0061 (PV-9, PV-37): the same change says the same thing, and Retry asks the same question, under the built-in markup and MudPivotChrome
+    [Fact] // ADR-0061/0062 (PV-9, PV-37): the same change says the same thing, and Retry asks the same question, under the built-in markup and MudPivotChrome
     public async Task The_notice_says_what_the_built_in_says()
     {
         var mudServer = new Server();
@@ -146,7 +146,7 @@ public class MudPivotStaleReportTests : MudPivotTestContext
         Assert.False(plain.Instance.IsStale);
     }
 
-    [Fact] // ADR-0066 refined, ADR-0061 (PV-9, PV-37): a failed Refresh is a Stale Report under MudBlazor too — the warning MudAlert says the source could not answer, nothing is said on the toolbar, and Retry refreshes again, as under the built-in markup
+    [Fact] // ADR-0067 refined, ADR-0062 (PV-9, PV-37): a failed Refresh is a Stale Report under MudBlazor too — the warning MudAlert says the source could not answer, nothing is said on the toolbar, and Retry refreshes again, as under the built-in markup
     public async Task A_failed_refresh_is_a_stale_report_under_mudblazor()
     {
         var mudSource = new RefreshingSource { RefreshFails = new InvalidOperationException("The server cannot be reached.") };

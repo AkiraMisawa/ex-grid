@@ -190,7 +190,7 @@ internal sealed class TextColumnWriter(TextInterner? interner) : ColumnWriter
 }
 
 /// <summary>
-/// Decimal values, held exactly (ADR-0063). While every value fits a long at one power of ten, the
+/// Decimal values, held exactly (ADR-0064). While every value fits a long at one power of ten, the
 /// segment holds scaled longs at the largest number of decimal places among its values; the first
 /// value that does not fit turns the segment to <see cref="decimal"/>. Trailing zeros are never
 /// places, so <c>1.5</c> and <c>1.50</c> are stored, and read back, alike.

@@ -1,4 +1,4 @@
-@* The built-in Stale Report's notice (ADR-0066), inside ExPivot's live region under the toolbar:
+@* The built-in Stale Report's notice (ADR-0067), inside ExPivot's live region under the toolbar:
    the sentence — what happened, and the time of the data shown — and Retry, which asks the source
    again. The region is ExPivot's, so this adds no role of its own. *@
 <div class="ex-pivot-stale-notice">
@@ -8,6 +8,6 @@
 </div>
 
 @code {
-    /// <summary>What to say and whom to call back (ADR-0066).</summary>
+    /// <summary>What to say and whom to call back (ADR-0067).</summary>
     [Parameter, EditorRequired] public PivotStaleReportContext Context { get; set; } = default!;
 }

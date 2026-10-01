@@ -2,7 +2,7 @@
 
 Status: ready-for-human
 
-ExPivot's first version answers as Excel's PivotTable is documented to answer (ADR-0059/0060). None
+ExPivot's first version answers as Excel's PivotTable is documented to answer (ADR-0060/0061). None
 of it has yet been run beside Excel. Each line below is a **reading**: what ExPivot does now, which
 the implementation and its tests pin. A run on a Windows machine with Excel settles each one — as
 ExSheet's `verify-on-windows.md` runs settled its readings — and a reading the run contradicts
@@ -16,7 +16,7 @@ object model has the gesture's meaning (`PivotTable.AddFields`, `PivotField.Orie
 builds the same records in a worksheet, the same layout in both, and compares the report cell by
 cell.
 
-## The report (ADR-0059)
+## The report (ADR-0060)
 
 1. **Item order.** Ascending: numbers, then dates, then text (compared under the culture, ignoring
    case), then FALSE and TRUE, then errors; `(blank)` last. Descending reverses the whole order —
@@ -56,7 +56,7 @@ cell.
     across the other axis, as shown; an Item whose value is empty or an error comes last, ties go
     in ascending label order, and `(blank)` is ordered by its value like any other Item.
 
-## The Field List (ADR-0060)
+## The Field List (ADR-0061)
 
 19. **Ticking a field** puts a number field at the end of Values as a Sum and anything else at the
     end of Rows. *Excel decides by the data — a column with any text or blank is counted — where
@@ -81,7 +81,7 @@ cell.
     innermost field's label ExPivot does nothing, where Excel asks which field to show the detail
     by — an Excel command the first version leaves out.
 
-## Added by the grilling (ADR-0059, ADR-0060)
+## Added by the grilling (ADR-0060, ADR-0061)
 
 26. **Date parts** are labelled `2026`, `Qtr3` and `Sep` in the English edition and `2026年`,
     `第3四半期` and `9月` in the Japanese one, and ordered by the calendar.

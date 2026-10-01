@@ -1,4 +1,4 @@
-/* ExPivot.MudBlazor — the Wrapper's stylesheet (ADR-0061). It does two things and nothing else.
+/* ExPivot.MudBlazor — the Wrapper's stylesheet (ADR-0062). It does two things and nothing else.
    It maps ExPivot's Visual Tokens onto the variables MudThemeProvider emits, under the grid
    Wrapper's paper, .mud-ex-grid, as mud-ex-grid.css maps the grid's — so it outranks ExPivot's
    defaults whatever order the stylesheets loaded in, and a dark/light switch or a palette edit
@@ -18,7 +18,7 @@
     --ex-pivot-pane-color: var(--mud-palette-text-primary);
     --ex-pivot-area-background: var(--mud-palette-background-gray);
     --ex-pivot-empty-background: var(--mud-palette-surface);
-    /* A menu or a panel is ExPivot's frame (ADR-0060), painted as MudBlazor paints a popover. */
+    /* A menu or a panel is ExPivot's frame (ADR-0061), painted as MudBlazor paints a popover. */
     --ex-pivot-popup-background: var(--mud-palette-surface);
     --ex-pivot-popup-color: var(--mud-palette-text-primary);
     --ex-pivot-popup-shadow: var(--mud-elevation-8);
@@ -27,12 +27,12 @@
     --ex-pivot-entry-background: var(--mud-palette-surface);
     --ex-pivot-entry-color: var(--mud-palette-text-primary);
     --ex-pivot-entry-border-color: var(--mud-palette-lines-inputs);
-    /* The ± button in a label cell stays ExPivot's plain markup (ADR-0061): a component there
+    /* The ± button in a label cell stays ExPivot's plain markup (ADR-0062): a component there
        would be one in every painted row. Only its colours are the palette's. */
     --ex-pivot-toggle-color: var(--mud-palette-text-secondary);
     --ex-pivot-toggle-background: transparent;
     --ex-pivot-toggle-border-color: var(--mud-palette-lines-inputs);
-    /* Show Details (ADR-0058): a tab's records over the report, and the dialog's frame and
+    /* Show Details (ADR-0059): a tab's records over the report, and the dialog's frame and
        backdrop — ExPivot's, painted as MudBlazor paints a MudDialog: the surface, no edge, the
        theme's corners and the dialog's elevation. The tabs and the dialog's content are this
        Wrapper's own MudBlazor controls; the tabs' tokens still reach ExPivot's markup when a
@@ -44,7 +44,7 @@
     --ex-pivot-dialog-border-color: transparent;
     --ex-pivot-dialog-radius: var(--mud-default-borderradius);
     --ex-pivot-dialog-shadow: var(--mud-elevation-24);
-    /* The Stale Report's notice (ADR-0066), as ExPivot's markup draws it when a Consumer keeps
+    /* The Stale Report's notice (ADR-0067), as ExPivot's markup draws it when a Consumer keeps
        the built-in notice under the paper; MudPivotChrome draws it as a MudAlert instead. */
     --ex-pivot-stale-color: var(--mud-palette-text-primary);
     --ex-pivot-stale-background: var(--mud-palette-surface);
@@ -54,7 +54,7 @@
     --ex-pivot-font-size: var(--mud-typography-body2-size, 0.875rem);
 }
 
-/* The pane (ADR-0060): MudBlazor's controls in a column as tall as the Field List, the Areas
+/* The pane (ADR-0061): MudBlazor's controls in a column as tall as the Field List, the Areas
    always in view at its foot and the list of fields taking what is left, scrolling on its own —
    as Excel's pane does, so a field is dragged to an Area without either scrolling away. */
 .mud-ex-pivot-pane {
@@ -68,7 +68,7 @@
 .mud-ex-pivot-pane > * { flex: none; }
 .mud-ex-pivot-pane .mud-ex-pivot-pane-caption { color: var(--mud-palette-text-secondary); }
 
-/* Defer Layout Update and Update at the pane's foot (ADR-0060). */
+/* Defer Layout Update and Update at the pane's foot (ADR-0061). */
 .mud-ex-pivot-defer {
     display: flex;
     align-items: center;
@@ -200,7 +200,7 @@
     flex-shrink: 0;
 }
 
-/* The Stale Report's notice under the toolbar (ADR-0066): a MudAlert whose sentence and Retry
+/* The Stale Report's notice under the toolbar (ADR-0067): a MudAlert whose sentence and Retry
    share a line while they fit, Retry wrapping under the sentence when they do not. */
 .mud-ex-pivot-stale-notice { margin: 0 0 8px; }
 .mud-ex-pivot-stale-content {
@@ -212,7 +212,7 @@
 .mud-ex-pivot-stale-message { flex: 1 1 auto; min-width: 0; }
 .mud-ex-pivot-retry { flex: none; text-transform: none; }
 
-/* The toolbar above the report (ADR-0060): the report filter band on its left; Layout ▾, Refresh
+/* The toolbar above the report (ADR-0061): the report filter band on its left; Layout ▾, Refresh
    and the Field List's toggle on its right, keeping the case of Excel's words. Layout ▾'s wrapper
    is positioned, so ExPivot's menu frame opens under it, over the report. */
 .mud-ex-pivot-toolbar {
@@ -241,7 +241,7 @@
 .mud-ex-pivot-refusal-notice { margin: 0 0 8px; }
 
 /* The report filter band, on the toolbar's left: the wrapper around each button is positioned, so
-   ExPivot's Filter… frame opens under it (ADR-0060). */
+   ExPivot's Filter… frame opens under it (ADR-0061). */
 .mud-ex-pivot-filters {
     display: flex;
     flex-wrap: wrap;
@@ -259,7 +259,7 @@
 }
 .mud-ex-pivot-filter-anchor .mud-ex-pivot-filter-button { flex: 1 1 auto; min-width: 0; }
 
-/* Show Details' tabs at the report's foot (ADR-0058): MudTabs placed at the bottom, under a rule,
+/* Show Details' tabs at the report's foot (ADR-0059): MudTabs placed at the bottom, under a rule,
    where Excel's sheet tabs are. A tab keeps the case of its cell's Items, takes the width of its
    title — cut with an ellipsis past a sheet tab's width — and has its close button beside it. The
    selected one stands out as a sheet tab does. MudTabs' own panels stay empty: ExPivot places the
@@ -282,7 +282,7 @@
 }
 .mud-ex-pivot-tab-wrapper .mud-ex-pivot-tab-close { margin-inline-end: 4px; }
 
-/* Show Details' dialog content, inside ExPivot's frame (ADR-0058): laid out as a MudDialog's — the
+/* Show Details' dialog content, inside ExPivot's frame (ADR-0059): laid out as a MudDialog's — the
    title, the records taking what is left, and the actions at the end. */
 .mud-ex-pivot-dialog-content {
     display: flex;

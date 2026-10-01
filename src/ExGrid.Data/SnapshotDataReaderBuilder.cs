@@ -5,7 +5,7 @@ using ExGrid.Data.Db;
 namespace ExGrid.Data;
 
 /// <summary>
-/// Builds a Snapshot from a <see cref="DbDataReader"/> (ADR-0063's third way in): ADO.NET's reader,
+/// Builds a Snapshot from a <see cref="DbDataReader"/> (ADR-0064's third way in): ADO.NET's reader,
 /// which every .NET database driver provides and which Entity Framework Core runs on. The reader
 /// already knows each column's type, so nothing is guessed: a <see cref="decimal"/> is Decimal; a
 /// <see cref="double"/> or a <see cref="float"/> is Double; an integer is Integer, an unsigned one

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The one direction there is (ADR-0058): ExPivot references its engine and ExGrid, and
+    <!-- The one direction there is (ADR-0059): ExPivot references its engine and ExGrid, and
          nothing references ExPivot but its Wrapper, the demo pages and its tests. -->
     <ProjectReference Include="..\ExPivot.Engine\ExPivot.Engine.csproj" />
     <ProjectReference Include="..\ExGrid\ExGrid.csproj" />

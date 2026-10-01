@@ -481,7 +481,7 @@ test('PV-21: 1,000 changes folded into a million trades on /pivot-live', async (
 
     const runs = [];
     for (let run = 0; run < 12; run++) {
-        // Quiet for longer than the redraw interval, so that the batch is asked for at once (ADR-0066).
+        // Quiet for longer than the redraw interval, so that the batch is asked for at once (ADR-0067).
         await page.waitForTimeout(1_500);
         await page.evaluate(({ status, report }) => {
             const p = window.__pv21;

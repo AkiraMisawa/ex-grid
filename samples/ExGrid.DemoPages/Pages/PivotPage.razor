@@ -11,11 +11,11 @@
 @using global::ExGrid.MudBlazor
 
 @* ?chrome=mud stands the pivot on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's Chrome
-   with both Wrappers' stylesheets (ADR-0061); absent or builtin is ExPivot's own markup. The
+   with both Wrappers' stylesheets (ADR-0062); absent or builtin is ExPivot's own markup. The
    browser tests run the page under both, because swapping the Chrome must change no behaviour
-   (ADR-0060). ?details=dialog opens Show Details in a dialog, and ?details=page hands the records to
+   (ADR-0061). ?details=dialog opens Show Details in a dialog, and ?details=page hands the records to
    this page, which lists them under the pivot; absent, they open in a tab at the report's foot
-   (ADR-0058). ?words=ja speaks Excel's Japanese edition's words (ADR-0059). *@
+   (ADR-0059). ?words=ja speaks Excel's Japanese edition's words (ADR-0060). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Dark="_dark">
     <Head>
         <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
@@ -32,11 +32,11 @@
 
 <p>
     <strong>The use case:</strong> records the application already holds in memory, pivoted as
-    Excel's PivotTable pivots them (ADR-0058). Here, 2,000 invented trades. Each field is declared
+    Excel's PivotTable pivots them (ADR-0059). Here, 2,000 invented trades. Each field is declared
     once with <code>PivotFields.Of&lt;DemoPivotTrade&gt;()</code>, a typed accessor that boxes no
     value, and Month is not a property of the trade: it is declared as the month of the trade date,
-    labelled Jan to Dec and ordered by the calendar (ADR-0059). <code>PivotSource.From</code> reads
-    the trades once into a Snapshot and answers every question from it (ADR-0063, ADR-0065).
+    labelled Jan to Dec and ordered by the calendar (ADR-0060). <code>PivotSource.From</code> reads
+    the trades once into a Snapshot and answers every question from it (ADR-0064, ADR-0066).
 </p>
 
 <p><code>?trades=1000000</code> pivots a million of the trades instead of 2,000, or any other count.</p>
@@ -44,11 +44,11 @@
 <p>
     Tick fields in the PivotTable Fields pane, or drag them between Filters, Columns, Rows and
     Values; each placed field has Excel's menu, with Filter…, Field Settings… and Value Field
-    Settings…, and Defer Layout Update holds the pane's changes until Update (ADR-0060). The toolbar
+    Settings…, and Defer Layout Update holds the pane's changes until Update (ADR-0061). The toolbar
     above the report holds the report filter band, Excel's Layout menu and the pane's toggle. The
     report is one ExGrid: select, copy, and press the <code>−</code> and <code>+</code> buttons to
     collapse and expand. Double-click a value, or use the Context Menu's Show Details, to see the
-    trades behind it (ADR-0062).
+    trades behind it (ADR-0063).
 </p>
 
 <div class="demo-toolbar">
@@ -159,7 +159,7 @@ else
     private static CultureInfo Culture => CultureInfo.GetCultureInfo("en-US");
 
     #region The code: pivot
-    // The bundled Pivot Source over the trades: the reference, answered in this process (ADR-0065).
+    // The bundled Pivot Source over the trades: the reference, answered in this process (ADR-0066).
     // The trades are read into its Snapshot once, as the page starts, on the page's own thread.
     private PivotSource _source = default!;
     private PivotLayout _layout = DemoPivotData.FirstLayout();
@@ -179,7 +179,7 @@ else
                                                OnShowDetails="_showDetails" DetailsView="DetailsView" Label="Words"
                                                Culture="Culture" ViewportHeight="460" />;
 
-    // Excel's Japanese edition's words, chosen in one line; null keeps the English (ADR-0059).
+    // Excel's Japanese edition's words, chosen in one line; null keeps the English (ADR-0060).
     private Func<string, string?>? Words => _japanese ? PivotWords.Japanese : null;
     #endregion
 
@@ -209,7 +209,7 @@ else
 
     private void Revalue()
     {
-        // New data is a new source: ExPivot asks it again (ADR-0058/0065).
+        // New data is a new source: ExPivot asks it again (ADR-0059/0066).
         _revaluation *= 1.01m;
         _source = PivotSource.From(DemoPivotData.Trades(_revaluation, TradeCount), DemoPivotData.Fields);
         Describe();

@@ -3,12 +3,12 @@
 *(Decided with the user, 2026-10-01 — Q64 and Q65, raised by building ExPivot's Show Details
 dialog. Both are opt-in Consumer capabilities, shaped like the ones
 [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md) and
-[ADR-0062](./0062-what-expivot-asks-of-exgrids-core.md) gave ExSheet and ExPivot: a Consumer that
+[ADR-0063](./0063-what-expivot-asks-of-exgrids-core.md) gave ExSheet and ExPivot: a Consumer that
 uses neither sees nothing change.)*
 
 ExPivot's Show Details can open a dialog, with an ExGrid of the records in it, over the report — also
 an ExGrid
-([ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)). Building it found
+([ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)). Building it found
 two gaps in what a Consumer can do with a grid's keyboard.
 
 - **Closing the dialog leaves the keyboard nowhere.** The control that had DOM focus goes with the

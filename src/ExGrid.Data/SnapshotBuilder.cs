@@ -3,7 +3,7 @@ using ExGrid.Data.Storage;
 namespace ExGrid.Data;
 
 /// <summary>
-/// Builds a Snapshot from the Consumer's records, through an accessor per column (ADR-0063). A typed
+/// Builds a Snapshot from the Consumer's records, through an accessor per column (ADR-0064). A typed
 /// accessor reads a value without boxing it; an untyped one, returning <see cref="object"/> under a
 /// declared kind, remains for columns known only at run time. The records are kept, by reference and
 /// in order, behind the rows.
@@ -66,7 +66,7 @@ public sealed class SnapshotBuilder<T>
     /// <summary>
     /// Declares a column known only at run time, whose accessor returns <see cref="object"/> under a
     /// declared kind. A Text column takes any value: a value that is not a string is Text by its
-    /// invariant text (ADR-0059) — an enum by its name, a <see cref="Guid"/> in its D form, a number
+    /// invariant text (ADR-0060) — an enum by its name, a <see cref="Guid"/> in its D form, a number
     /// or a date as the invariant culture writes it. The other kinds take a value of the kind, or one
     /// that converts to it exactly — any integer type for Decimal and Integer, a <see cref="float"/>
     /// for Double, and <see cref="DateTime"/>, <see cref="DateOnly"/> and <see cref="DateTimeOffset"/>

@@ -7,10 +7,10 @@ using Xunit;
 
 namespace ExPivot.Components.Tests;
 
-/// <summary>The Field List through its built-in markup (ADR-0060): ticking, dragging, the menus.</summary>
+/// <summary>The Field List through its built-in markup (ADR-0061): ticking, dragging, the menus.</summary>
 public class FieldListTests : PivotTestContext
 {
-    [Fact] // ADR-0060: every declared field, with a checkbox, and the four Areas in Excel's order
+    [Fact] // ADR-0061: every declared field, with a checkbox, and the four Areas in Excel's order
     public void The_pane_lists_the_fields_and_the_areas()
     {
         var cut = RenderPivot();
@@ -22,7 +22,7 @@ public class FieldListTests : PivotTestContext
         Assert.Equal("region", cut.Find(".ex-pivot-field-list").GetAttribute("role"));
     }
 
-    [Fact] // ADR-0060: ticking places a field where Excel does, and the layout is raised
+    [Fact] // ADR-0061: ticking places a field where Excel does, and the layout is raised
     public async Task Ticking_places_fields_and_raises_the_layout()
     {
         var told = new List<PivotLayout>();
@@ -39,7 +39,7 @@ public class FieldListTests : PivotTestContext
         Assert.False(FieldItem(cut, "Product").QuerySelector("input")!.HasAttribute("checked"));
     }
 
-    [Fact] // ADR-0060: unticking removes the field from every Area
+    [Fact] // ADR-0061: unticking removes the field from every Area
     public async Task Unticking_removes_the_field()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount"), new("Region", PivotAggregation.Count)] });
@@ -50,7 +50,7 @@ public class FieldListTests : PivotTestContext
         Assert.Equal(["Sum of Amount"], AreaEntries(cut, "Values"));
     }
 
-    [Fact] // ADR-0060: the search narrows the list of fields
+    [Fact] // ADR-0061: the search narrows the list of fields
     public async Task The_search_narrows_the_fields()
     {
         var cut = RenderPivot();
@@ -60,7 +60,7 @@ public class FieldListTests : PivotTestContext
         Assert.Equal(["Quantity"], cut.FindAll(".ex-pivot-field-caption").Select(e => e.TextContent));
     }
 
-    [Fact] // ADR-0060: a field dragged from the list and dropped on an Area stands there
+    [Fact] // ADR-0061: a field dragged from the list and dropped on an Area stands there
     public async Task Dragging_a_field_onto_an_area()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -75,7 +75,7 @@ public class FieldListTests : PivotTestContext
         Assert.DoesNotContain("ex-pivot-drop-target", AreaElement(cut, "Columns").ClassName);
     }
 
-    [Fact] // ADR-0060: an entry dropped before another in its Area is a reorder
+    [Fact] // ADR-0061: an entry dropped before another in its Area is a reorder
     public async Task Dropping_an_entry_before_another_reorders()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });
@@ -87,7 +87,7 @@ public class FieldListTests : PivotTestContext
         Assert.Equal(["Product", "Region"], AreaEntries(cut, "Rows"));
     }
 
-    [Fact] // ADR-0060: an entry dragged back to the list of fields is removed
+    [Fact] // ADR-0061: an entry dragged back to the list of fields is removed
     public async Task Dropping_an_entry_on_the_list_removes_it()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -99,7 +99,7 @@ public class FieldListTests : PivotTestContext
         Assert.Empty(AreaEntries(cut, "Rows"));
     }
 
-    [Fact] // ADR-0060: a drag that ends without a drop changes nothing
+    [Fact] // ADR-0061: a drag that ends without a drop changes nothing
     public async Task A_drag_that_ends_changes_nothing()
     {
         var told = new List<PivotLayout>();
@@ -112,7 +112,7 @@ public class FieldListTests : PivotTestContext
         Assert.Empty(told);
     }
 
-    [Fact] // ADR-0060: Σ Values appears with a second Value Field and moves between Rows and Columns only
+    [Fact] // ADR-0061: Σ Values appears with a second Value Field and moves between Rows and Columns only
     public async Task Values_pseudo_field_moves_between_rows_and_columns()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount"), Sum("Quantity")] });
@@ -127,7 +127,7 @@ public class FieldListTests : PivotTestContext
         Assert.Empty(AreaEntries(cut, "Columns"));
     }
 
-    [Fact] // ADR-0060: Excel's menu on a row field, a command that would change nothing disabled
+    [Fact] // ADR-0061: Excel's menu on a row field, a command that would change nothing disabled
     public async Task A_row_fields_menu()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });
@@ -147,7 +147,7 @@ public class FieldListTests : PivotTestContext
         Assert.Equal("menu", cut.Find(".ex-pivot-popup").GetAttribute("role"));
     }
 
-    [Fact] // ADR-0060: Move to Column Labels moves the field with its settings
+    [Fact] // ADR-0061: Move to Column Labels moves the field with its settings
     public async Task Moving_a_field_with_its_menu()
     {
         var cut = RenderPivot(new PivotLayout
@@ -164,7 +164,7 @@ public class FieldListTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0060: Escape closes the menu and changes nothing
+    [Fact] // ADR-0061: Escape closes the menu and changes nothing
     public async Task Escape_closes_the_menu()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")] });
@@ -175,7 +175,7 @@ public class FieldListTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0060: one menu or panel at a time; opening another closes the first
+    [Fact] // ADR-0061: one menu or panel at a time; opening another closes the first
     public async Task One_menu_at_a_time()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Online")] });
@@ -187,7 +187,7 @@ public class FieldListTests : PivotTestContext
         Assert.NotNull(AreaElement(cut, "Columns").QuerySelector(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0060: Hide Field List from the Context Menu, and back
+    [Fact] // ADR-0061: Hide Field List from the Context Menu, and back
     public async Task The_field_list_can_be_hidden_and_shown()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -201,7 +201,7 @@ public class FieldListTests : PivotTestContext
         Assert.Single(cut.FindAll(".ex-pivot-field-list"));
     }
 
-    [Fact] // ADR-0060: ShowFieldList="false" leaves the pane out
+    [Fact] // ADR-0061: ShowFieldList="false" leaves the pane out
     public void The_field_list_can_be_left_out()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")] }, ps => ps.Add(p => p.ShowFieldList, false));

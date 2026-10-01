@@ -7,18 +7,18 @@ using Xunit;
 namespace ExGrid.Data.Arrow.Tests;
 
 /// <summary>
-/// Measures writing and reading a million trades (ADR-0064). Never gated (AGENTS.md): it runs only
+/// Measures writing and reading a million trades (ADR-0065). Never gated (AGENTS.md): it runs only
 /// when asked for, in Release, and prints what it measured —
 /// <c>dotnet test tests/ExGrid.Data.Arrow.Tests -c Release -- --explicit only</c>.
 /// </summary>
 public class MeasureTests
 {
-    /// <summary>A trade as the demo's API server holds one (ADR-0068): a unique id, five more text
+    /// <summary>A trade as the demo's API server holds one (ADR-0069): a unique id, five more text
     /// columns, a date, two money columns, an integer and a flag.</summary>
     private sealed record Trade(string TradeId, string Region, string Desk, string Book, string Product, string? Currency,
         DateOnly TradeDate, decimal Notional, decimal Pnl, int Quantity, bool Confirmed);
 
-    [Fact(Explicit = true)] // ADR-0064: a million trades written and read on CoreCLR, and the payload's size — measured, never gated
+    [Fact(Explicit = true)] // ADR-0065: a million trades written and read on CoreCLR, and the payload's size — measured, never gated
     public async Task Measure_a_million_trades()
     {
         var output = TestContext.Current.TestOutputHelper!;
@@ -28,8 +28,8 @@ public class MeasureTests
 
         // The demo's shape: every column of the API's trades, keyed by the unique TradeId.
         output.WriteLine(await Measure("the demo's trades, keyed by TradeId", await Build(trades, withId: true, token), token));
-        // ADR-0064's measured shape: six text columns of few values, two money columns, a date and an integer.
-        output.WriteLine(await Measure("ADR-0064's shape, without the unique id", await Build(trades, withId: false, token), token));
+        // ADR-0065's measured shape: six text columns of few values, two money columns, a date and an integer.
+        output.WriteLine(await Measure("ADR-0065's shape, without the unique id", await Build(trades, withId: false, token), token));
     }
 
     private static async Task<string> Measure(string shape, Snapshot snapshot, CancellationToken token)

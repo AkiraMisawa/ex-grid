@@ -7,10 +7,10 @@ using static ExGrid.Data.Tests.Fixtures;
 
 namespace ExGrid.Data.Tests;
 
-/// <summary>The next Snapshot shares every part a batch did not touch (ADR-0063, DA-12).</summary>
+/// <summary>The next Snapshot shares every part a batch did not touch (ADR-0064, DA-12).</summary>
 public class SharingTests
 {
-    [Fact] // ADR-0063: the next Snapshot shares every segment the batch did not touch — the very same memory
+    [Fact] // ADR-0064: the next Snapshot shares every segment the batch did not touch — the very same memory
     public void The_next_snapshot_shares_the_segments_before_it()
     {
         var builder = Trades(new SnapshotTuning(SegmentShift: 4));
@@ -32,7 +32,7 @@ public class SharingTests
         Assert.Equal(snapshot.SliceCount + 1, after.SliceCount);
     }
 
-    [Fact] // ADR-0063: a column read from one version reads the same column in the next
+    [Fact] // ADR-0064: a column read from one version reads the same column in the next
     public void A_column_of_one_version_reads_the_next()
     {
         var builder = Trades(new SnapshotTuning(SegmentShift: 4));
@@ -45,7 +45,7 @@ public class SharingTests
         Assert.Equal(60.0, after.ValueAt(after.Rows[^1], price));
     }
 
-    [Fact] // ADR-0063: the rows a version leaves out belong to that version, not to the segment it shares
+    [Fact] // ADR-0064: the rows a version leaves out belong to that version, not to the segment it shares
     public void The_rows_left_out_belong_to_the_version()
     {
         var builder = Trades(new SnapshotTuning(SegmentShift: 4));
@@ -63,7 +63,7 @@ public class SharingTests
         Assert.Throws<ArgumentException>(() => after.RecordAt(new SnapshotRow(1, 4)));
     }
 
-    [Fact] // ADR-0063: applying 1,000 changes to 1,000,000 records allocates in proportion to the changes, not the records
+    [Fact] // ADR-0064: applying 1,000 changes to 1,000,000 records allocates in proportion to the changes, not the records
     public void A_thousand_changes_to_a_million_records_allocate_for_the_changes()
     {
         Measure(10_000);

@@ -3,7 +3,7 @@
 Status: done
 
 **What to build:** `ExPivot.Engine`, with no dependency: Pivot Fields, the Pivot Layout, the cube
-and the report, as ADR-0059 describes; the Field List's rules as `PivotLayoutEdits`; the layout's
+and the report, as ADR-0060 describes; the Field List's rules as `PivotLayoutEdits`; the layout's
 JSON as `PivotLayoutJson`.
 
 **Blocked by:** 01

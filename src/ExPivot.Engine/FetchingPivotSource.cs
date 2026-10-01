@@ -2,12 +2,12 @@ namespace ExPivot.Engine;
 
 /// <summary>
 /// <c>PivotSource.Fetch</c>: a Pivot Source a server answers, through three delegates carrying the
-/// Consumer's transport (ADR-0065). ExPivot never opens a connection; authentication, retries and
+/// Consumer's transport (ADR-0066). ExPivot never opens a connection; authentication, retries and
 /// the transport itself are the Consumer's.
 ///
 /// <para>The Consumer tells it when the server's data moved on — through SignalR, polling or a
 /// message bus — with <see cref="NotifyChanged"/>, and ExPivot asks again for the whole answer
-/// (ADR-0066). Refresh does the same.</para>
+/// (ADR-0067). Refresh does the same.</para>
 /// </summary>
 public sealed class FetchingPivotSource : PivotSource
 {
@@ -47,7 +47,7 @@ public sealed class FetchingPivotSource : PivotSource
             return PivotAnswer.Refused(refusal);
         var answer = await _aggregate(query, cancellationToken) ?? throw new InvalidOperationException("The source's aggregate delegate answered null.");
         if (!answer.IsRefused && answer.Mismatch(query) is { } mismatch)
-            throw new InvalidOperationException($"The server answered another question than the one asked: {mismatch} (ADR-0065).");
+            throw new InvalidOperationException($"The server answered another question than the one asked: {mismatch} (ADR-0066).");
         return answer;
     }
 
@@ -59,7 +59,7 @@ public sealed class FetchingPivotSource : PivotSource
             return PivotItemPage.Refused(refusal);
         var page = await _items(query, cancellationToken) ?? throw new InvalidOperationException("The source's items delegate answered null.");
         if (!page.IsRefused && page.Items.Count > query.Max)
-            throw new InvalidOperationException($"The server answered {page.Items.Count} Items, and {query.Max} were asked for (ADR-0065).");
+            throw new InvalidOperationException($"The server answered {page.Items.Count} Items, and {query.Max} were asked for (ADR-0066).");
         return page;
     }
 
@@ -74,14 +74,14 @@ public sealed class FetchingPivotSource : PivotSource
         if (page.IsRefused)
             return page;
         if (!page.Fields.Select(f => (f.Name, f.Type)).SequenceEqual(_fields.Select(f => (f.Name, f.Type))))
-            throw new InvalidOperationException($"The server's records carry the fields [{string.Join(", ", page.Fields.Select(f => f.Name))}], and the source declares [{string.Join(", ", _fields.Select(f => f.Name))}] (ADR-0065).");
+            throw new InvalidOperationException($"The server's records carry the fields [{string.Join(", ", page.Fields.Select(f => f.Name))}], and the source declares [{string.Join(", ", _fields.Select(f => f.Name))}] (ADR-0066).");
         if (page.Records.Count > query.Count || page.Start != query.Start)
-            throw new InvalidOperationException($"The server answered {page.Records.Count} records from {page.Start}, and {query.Count} from {query.Start} were asked for (ADR-0065).");
+            throw new InvalidOperationException($"The server answered {page.Records.Count} records from {page.Start}, and {query.Count} from {query.Start} were asked for (ADR-0066).");
         return page;
     }
 
     /// <summary>Excel's Refresh: raises <see cref="PivotSource.Changed"/>, and ExPivot asks again
-    /// for the whole answer (ADR-0065).</summary>
+    /// for the whole answer (ADR-0066).</summary>
     public override ValueTask RefreshAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -89,7 +89,7 @@ public sealed class FetchingPivotSource : PivotSource
         return ValueTask.CompletedTask;
     }
 
-    /// <summary>Tells the source that the server's data moved on (ADR-0066), however the Consumer
+    /// <summary>Tells the source that the server's data moved on (ADR-0067), however the Consumer
     /// learned it: <see cref="PivotSource.Changed"/> is raised, and ExPivot asks again for the
     /// whole answer.</summary>
     /// <param name="sourceVersion">The data's new Source Version, when the Consumer knows it.</param>

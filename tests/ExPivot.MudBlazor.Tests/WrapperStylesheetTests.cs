@@ -5,7 +5,7 @@ using Xunit;
 namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
-/// What the Wrapper's stylesheet says (ADR-0061, held to ADR-0029/0030 as the grid Wrapper's is):
+/// What the Wrapper's stylesheet says (ADR-0062, held to ADR-0029/0030 as the grid Wrapper's is):
 /// it maps every one of ExPivot's Visual Tokens onto MudBlazor's palette under the paper, sets no
 /// Geometry Token, and writes no rule against a class of ExPivot's or ExGrid's own.
 /// </summary>
@@ -35,7 +35,7 @@ public class WrapperStylesheetTests
         return tokens;
     }
 
-    [Fact] // ADR-0061/0030: every Visual Token ExPivot reads is mapped onto the palette, so a dark/light switch recolours the pivot
+    [Fact] // ADR-0062/0030: every Visual Token ExPivot reads is mapped onto the palette, so a dark/light switch recolours the pivot
     public void Every_visual_token_is_mapped_onto_the_palette()
     {
         var mapped = PaperTokens();
@@ -48,13 +48,13 @@ public class WrapperStylesheetTests
         Assert.Empty(off);
     }
 
-    [Theory] // ADR-0027/0061: the Field List's width and a level's indent are written inline from C#; the Wrapper sets neither
+    [Theory] // ADR-0027/0062: the Field List's width and a level's indent are written inline from C#; the Wrapper sets neither
     [InlineData("--ex-pivot-field-list-width")]
     [InlineData("--ex-pivot-indent")]
     public void The_wrapper_sets_no_geometry_token(string token)
         => Assert.DoesNotContain(token, WithoutComments(Wrapper()));
 
-    [Fact] // ADR-0030/0061: no rule against a class of ExPivot's or ExGrid's own — its own classes, the paper and MudBlazor's
+    [Fact] // ADR-0030/0062: no rule against a class of ExPivot's or ExGrid's own — its own classes, the paper and MudBlazor's
     public void The_wrapper_writes_no_rule_against_a_core_class()
     {
         var selectors = Regex.Matches(WithoutComments(Wrapper()), @"([^{}]+)\{").Select(m => m.Groups[1].Value.Trim()).ToArray();
@@ -68,7 +68,7 @@ public class WrapperStylesheetTests
             $"'.{c}' is neither the paper, this package's own, nor MudBlazor's"));
     }
 
-    [Fact] // ADR-0030/0061: every rule of the Wrapper's own elements is scoped to its own class, so it holds with or without the paper
+    [Fact] // ADR-0030/0062: every rule of the Wrapper's own elements is scoped to its own class, so it holds with or without the paper
     public void Each_rule_is_scoped_to_the_paper_or_an_own_class()
     {
         var selectors = Regex.Matches(WithoutComments(Wrapper()), @"([^{}]+)\{")

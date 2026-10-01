@@ -3,7 +3,7 @@ using ExGrid.Data;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// Starts typed field declarations (ADR-0063/0065, Q53) — the standard way to hand ExPivot records:
+/// Starts typed field declarations (ADR-0064/0066, Q53) — the standard way to hand ExPivot records:
 /// <code>
 /// var fields = PivotFields.Of&lt;Trade&gt;()
 ///     .Text("Region", t =&gt; t.Region)
@@ -20,7 +20,7 @@ public static class PivotFields
 }
 
 /// <summary>
-/// Typed field declarations (ADR-0063/0065, Q53): each field is declared once, with a typed
+/// Typed field declarations (ADR-0064/0066, Q53): each field is declared once, with a typed
 /// accessor and its pivot settings, and makes both a Snapshot column — read without boxing a value
 /// — and the Pivot Field over it. <see cref="PivotSource.From{TRecord}(IReadOnlyList{TRecord}, PivotFields{TRecord}, PivotSlicing?)"/>
 /// builds the Snapshot and answers from it.
@@ -28,11 +28,11 @@ public static class PivotFields
 /// <item>A Number takes <c>decimal?</c> — an exact Decimal column, money summed exactly —
 /// <c>double?</c> (a Double column), or <c>long?</c> and <c>int?</c> (an Integer column).</item>
 /// <item>A Date takes <c>DateTime?</c>, <c>DateOnly?</c> or <c>DateTimeOffset?</c>, held as the
-/// clock value it shows (ADR-0063); <see cref="Year"/>, <see cref="Quarter"/> and
-/// <see cref="Month"/> declare a part of one (ADR-0059).</item>
+/// clock value it shows (ADR-0064); <see cref="Year"/>, <see cref="Quarter"/> and
+/// <see cref="Month"/> declare a part of one (ADR-0060).</item>
 /// <item>null is a Blank in every kind; the empty string is a value.</item>
 /// <item><see cref="Key(string)"/> names the Record Key, so the source takes Change Batches that
-/// change and remove records (<see cref="Batch"/>, ADR-0066).</item>
+/// change and remove records (<see cref="Batch"/>, ADR-0067).</item>
 /// </list>
 /// A declaration is reused: every build and every batch reads the records through the same columns.
 /// </summary>
@@ -71,7 +71,7 @@ public sealed class PivotFields<T>
         return Add(SnapshotKind.Text, field);
     }
 
-    /// <summary>Declares a number field held exactly — a Decimal column, summed exactly (ADR-0059).</summary>
+    /// <summary>Declares a number field held exactly — a Decimal column, summed exactly (ADR-0060).</summary>
     /// <param name="name">What a Pivot Layout addresses the field by, and the column's name.</param>
     /// <param name="value">Reads the number.</param>
     /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
@@ -134,7 +134,7 @@ public sealed class PivotFields<T>
     }
 
     /// <summary>Declares a date field. A <see cref="DateTime"/> is held as its ticks, with its
-    /// <see cref="DateTime.Kind"/> ignored (ADR-0063).</summary>
+    /// <see cref="DateTime.Kind"/> ignored (ADR-0064).</summary>
     /// <param name="name">What a Pivot Layout addresses the field by, and the column's name.</param>
     /// <param name="value">Reads the date.</param>
     /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
@@ -162,7 +162,7 @@ public sealed class PivotFields<T>
     }
 
     /// <summary>Declares a date field. A <see cref="DateTimeOffset"/> is held as the clock it shows,
-    /// with its offset dropped: a Consumer that means instants passes UTC (ADR-0059).</summary>
+    /// with its offset dropped: a Consumer that means instants passes UTC (ADR-0060).</summary>
     /// <param name="name">What a Pivot Layout addresses the field by, and the column's name.</param>
     /// <param name="value">Reads the date.</param>
     /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
@@ -187,21 +187,21 @@ public sealed class PivotFields<T>
         return Add(SnapshotKind.Boolean, field);
     }
 
-    /// <summary>Declares a field that is the year of a date field declared before it (ADR-0059):
+    /// <summary>Declares a field that is the year of a date field declared before it (ADR-0060):
     /// <c>2026</c>, ordered by the calendar.</summary>
     /// <param name="name">What a Pivot Layout addresses the field by.</param>
     /// <param name="of">The date field it is a part of.</param>
     /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
     public PivotFields<T> Year(string name, string of, string? caption = null) => AddPart(name, of, PivotDatePart.Year, caption);
 
-    /// <summary>Declares a field that is the quarter of a date field declared before it (ADR-0059):
+    /// <summary>Declares a field that is the quarter of a date field declared before it (ADR-0060):
     /// <c>Qtr3</c> in the report's words, ordered by the calendar.</summary>
     /// <param name="name">What a Pivot Layout addresses the field by.</param>
     /// <param name="of">The date field it is a part of.</param>
     /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
     public PivotFields<T> Quarter(string name, string of, string? caption = null) => AddPart(name, of, PivotDatePart.Quarter, caption);
 
-    /// <summary>Declares a field that is the month of a date field declared before it (ADR-0059):
+    /// <summary>Declares a field that is the month of a date field declared before it (ADR-0060):
     /// <c>Sep</c> in the report's words, ordered by the calendar, January first.</summary>
     /// <param name="name">What a Pivot Layout addresses the field by.</param>
     /// <param name="of">The date field it is a part of.</param>
@@ -209,7 +209,7 @@ public sealed class PivotFields<T>
     public PivotFields<T> Month(string name, string of, string? caption = null) => AddPart(name, of, PivotDatePart.Month, caption);
 
     /// <summary>
-    /// Names the Record Key (ADR-0063): a declared Text or Integer field whose value tells each record
+    /// Names the Record Key (ADR-0064): a declared Text or Integer field whose value tells each record
     /// from every other. A build then refuses a Blank key and a key carried twice, naming it, and
     /// the source takes Change Batches that change and remove records by it.
     /// </summary>
@@ -221,7 +221,7 @@ public sealed class PivotFields<T>
     }
 
     /// <summary>Declares a Text Record Key that is not offered as a field — a trade's id — and names
-    /// it the Record Key (ADR-0063).</summary>
+    /// it the Record Key (ADR-0064).</summary>
     /// <param name="name">The column's name.</param>
     /// <param name="value">Reads the key.</param>
     public PivotFields<T> Key(string name, Func<T, string?> value)
@@ -233,7 +233,7 @@ public sealed class PivotFields<T>
     }
 
     /// <summary>Declares an Integer Record Key that is not offered as a field, and names it the Record
-    /// Key (ADR-0063).</summary>
+    /// Key (ADR-0064).</summary>
     /// <param name="name">The column's name.</param>
     /// <param name="value">Reads the key.</param>
     public PivotFields<T> Key(string name, Func<T, long?> value)
@@ -246,7 +246,7 @@ public sealed class PivotFields<T>
 
     /// <summary>Builds the Snapshot of <paramref name="records"/> on the calling thread.</summary>
     /// <exception cref="SnapshotException">A value could not be read, or a Record Key is Blank or
-    /// carried twice: the build fails whole, naming the row and the column (ADR-0063).</exception>
+    /// carried twice: the build fails whole, naming the row and the column (ADR-0064).</exception>
     public Snapshot Build(IReadOnlyList<T> records) => Columns.Build(records);
 
     /// <summary>Builds the Snapshot of <paramref name="records"/> in slices, yielding between them and
@@ -256,7 +256,7 @@ public sealed class PivotFields<T>
     public ValueTask<Snapshot> BuildAsync(IReadOnlyList<T> records, SnapshotLoadOptions? options = null, CancellationToken cancellationToken = default)
         => Columns.BuildAsync(records, options, cancellationToken);
 
-    /// <summary>A Change Batch read through these declarations (ADR-0063/0066): the records added,
+    /// <summary>A Change Batch read through these declarations (ADR-0064/0067): the records added,
     /// the records changed (found by their Record Key) and the keys removed — a <see cref="string"/>
     /// for a Text key, an integer for an Integer one.</summary>
     public ChangeBatch Batch(IEnumerable<T>? added = null, IEnumerable<T>? changed = null, IEnumerable<object>? removedKeys = null)

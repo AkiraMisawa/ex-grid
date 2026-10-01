@@ -7,7 +7,7 @@
     <PackageTags>pivot;pivottable;excel;aggregation;report</PackageTags>
   </PropertyGroup>
 
-  <!-- One reference, to the family's data package, and no package (ADR-0058/0063, PV-1): the
+  <!-- One reference, to the family's data package, and no package (ADR-0059/0064, PV-1): the
        engine reads Snapshots, and runs wherever a report is needed, a server included. -->
   <ItemGroup>
     <ProjectReference Include="..\ExGrid.Data\ExGrid.Data.csproj" />
@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <!-- Layer 1 reaches the cell index's hash and the slices' row counter, which have no public
-         surface (ADR-0065). -->
+         surface (ADR-0066). -->
     <InternalsVisibleTo Include="ExPivot.Engine.Tests" />
   </ItemGroup>
 

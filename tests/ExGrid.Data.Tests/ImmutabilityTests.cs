@@ -7,10 +7,10 @@ using static ExGrid.Data.Tests.Fixtures;
 
 namespace ExGrid.Data.Tests;
 
-/// <summary>A Snapshot is immutable (ADR-0063, DA-2).</summary>
+/// <summary>A Snapshot is immutable (ADR-0064, DA-2).</summary>
 public class ImmutabilityTests
 {
-    [Fact] // ADR-0063: no public member changes a Snapshot — no setter, no field, and collections that are read-only
+    [Fact] // ADR-0064: no public member changes a Snapshot — no setter, no field, and collections that are read-only
     public void No_public_member_changes_a_snapshot()
     {
         Type[] types =
@@ -41,7 +41,7 @@ public class ImmutabilityTests
         Assert.True(((ICollection<object>)ChangeBatch.Of(removedKeys: [1L]).RemovedKeys).IsReadOnly);
     }
 
-    [Fact] // ADR-0063: after batches, the Snapshot before them reads exactly as before — every row, value, code, record and slice
+    [Fact] // ADR-0064: after batches, the Snapshot before them reads exactly as before — every row, value, code, record and slice
     public void The_snapshot_before_a_batch_reads_exactly_as_before()
     {
         var builder = Trades(new SnapshotTuning(SegmentShift: 3));

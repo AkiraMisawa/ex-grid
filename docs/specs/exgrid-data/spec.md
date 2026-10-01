@@ -2,8 +2,8 @@
 
 Status: ready-for-agent
 
-Decided by [ADR-0063](../../adr/0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)
-and [ADR-0064](../../adr/0064-a-snapshot-travels-as-apache-arrow.md), in the ExPivot grilling of
+Decided by [ADR-0064](../../adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)
+and [ADR-0065](../../adr/0065-a-snapshot-travels-as-apache-arrow.md), in the ExPivot grilling of
 2026-09-30. Exit criteria: `docs/definition-of-done.md` §30, DA-1 to DA-17. This spec synthesises
 those decisions; where it and they disagree, they win.
 
@@ -54,7 +54,7 @@ the family that walks every row pays the same cost, and would pay it again for e
 
 ## Implementation Decisions
 
-All of these are recorded in ADR-0063 and ADR-0064; they are summarised here.
+All of these are recorded in ADR-0064 and ADR-0065; they are summarised here.
 
 - **The kinds are Text, Decimal, Double, Integer, Date and Boolean**, and a Blank is possible in each
   of them.
@@ -73,7 +73,7 @@ All of these are recorded in ADR-0063 and ADR-0064; they are summarised here.
 - **The `DbDataReader` builder reads each column by its own type.** A column of another type is
   refused unless the Consumer declares how to read it.
 - **Arrow is read from the IPC stream and file formats, and written as an uncompressed stream.**
-  - Types map as ADR-0064's table says.
+  - Types map as ADR-0065's table says.
   - Other producers' dictionaries are remapped to the Snapshot's rules.
   - Captions, the Record Key and the version travel in the schema's metadata.
   - A compressed stream is read only with a codec the Consumer hands in.
@@ -90,6 +90,6 @@ All of these are recorded in ADR-0063 and ADR-0064; they are summarised here.
 
 - Parquet.
 - Adoption by ExGrid's `GridSource.From`, and by ExSheet's Linked Tables. Each needs an ADR of its
-  own (ADR-0063).
-- Finding the difference between two whole Snapshots by key (ADR-0066, deferred).
-- A time zone database for Arrow timestamps in zones other than UTC (refused, ADR-0064).
+  own (ADR-0064).
+- Finding the difference between two whole Snapshots by key (ADR-0067, deferred).
+- A time zone database for Arrow timestamps in zones other than UTC (refused, ADR-0065).

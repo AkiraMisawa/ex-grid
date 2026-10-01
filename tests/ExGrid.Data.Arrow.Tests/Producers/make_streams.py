@@ -1,4 +1,4 @@
-"""Writes the Arrow streams other producers write, which ProducerTests reads (ADR-0064).
+"""Writes the Arrow streams other producers write, which ProducerTests reads (ADR-0065).
 
 The streams are kept in the repository as they came, so the tests need no Python. This script is
 only for making them again:

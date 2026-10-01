@@ -1,7 +1,7 @@
 namespace ExGrid.Data;
 
 /// <summary>
-/// How a load paces itself (ADR-0063): it works in slices sized by time, yields between them so
+/// How a load paces itself (ADR-0064): it works in slices sized by time, yields between them so
 /// that a browser keeps painting while a million rows load, and reports its progress after each.
 /// </summary>
 public sealed class SnapshotLoadOptions

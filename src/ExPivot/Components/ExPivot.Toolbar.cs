@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace ExPivot.Components;
 
-// The toolbar above the report (ADR-0060): the report filter band on its left; Layout ▾, Refresh
+// The toolbar above the report (ADR-0061): the report filter band on its left; Layout ▾, Refresh
 // and the Field List's toggle on its right. Its popups open under it, over the report, with a
 // backdrop that closes them.
 public partial class ExPivot
@@ -47,7 +47,7 @@ public partial class ExPivot
         var layoutMenu = new PivotToolbarMenuView(
             PivotCommandIds.LayoutMenu, Word(PivotCommandIds.LayoutMenu), layoutOpen, ToggleLayoutMenu,
             layoutOpen ? PopupFragment(_open!) : null, _layoutMenuFocus);
-        // Refresh is offered only by a source that can be asked again (ADR-0065).
+        // Refresh is offered only by a source that can be asked again (ADR-0066).
         var refresh = Source.Features.CanRefresh
             ? new PivotCommand(PivotCommandIds.Refresh, Word(PivotCommandIds.Refresh), true, RefreshAsync)
             : null;
@@ -66,7 +66,7 @@ public partial class ExPivot
         Open(new OpenSurface { Kind = Surface.LayoutMenu, FocusRequest = ++_focusSequence });
     }
 
-    /// <summary>The Layout menu's commands (ADR-0060): Excel's Design tab choices, the current one
+    /// <summary>The Layout menu's commands (ADR-0061): Excel's Design tab choices, the current one
     /// of each group marked, and one that would change nothing disabled. A choice is the report's:
     /// it reaches a pending layout too.</summary>
     private IReadOnlyList<PivotCommand> LayoutMenuCommands()
@@ -89,7 +89,7 @@ public partial class ExPivot
         return commands;
     }
 
-    // ---- The report filter band, on the toolbar's left (ADR-0060) -------------------------------
+    // ---- The report filter band, on the toolbar's left (ADR-0061) -------------------------------
 
     private RenderFragment ReportFilters() => builder =>
     {
@@ -115,7 +115,7 @@ public partial class ExPivot
     /// nothing, the one Item shown, or <c>(Multiple Items)</c> — read from the field's Items, asked
     /// of the source; "Loading…" until a first listing arrives, rather than a guess, and why when
     /// they cannot be listed. While a new Source Version's Items are on their way, the summary is
-    /// read from the Items in view, the earlier version's (ADR-0065 refined).</summary>
+    /// read from the Items in view, the earlier version's (ADR-0066 refined).</summary>
     private string BandSummary(PivotFieldPlacement placement)
     {
         if (placement.HiddenItems.Count == 0)

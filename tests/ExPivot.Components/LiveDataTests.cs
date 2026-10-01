@@ -12,7 +12,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// Live data in the component (ADR-0066): ExPivot listens to its source's <c>Changed</c> and asks
+/// Live data in the component (ADR-0067): ExPivot listens to its source's <c>Changed</c> and asks
 /// again for the whole answer — the bundled source's and a server's alike — gathering the changes
 /// and redrawing at most once per interval, from the newest version, never half a batch. A change
 /// of values keeps the Row Sequence Version, the Selection and an open menu or panel; an Item that
@@ -37,7 +37,7 @@ public class LiveDataTests : PivotTestContext
 
     // ---- PV-35: gathered, and redrawn at most every 250 ms --------------------------------------
 
-    [Fact] // ADR-0066 (PV-35): changes are gathered and the report redrawn at most every 250 ms, from the newest version
+    [Fact] // ADR-0067 (PV-35): changes are gathered and the report redrawn at most every 250 ms, from the newest version
     public async Task Changes_are_gathered_and_redrawn_at_most_every_250_ms()
     {
         var source = new LiveSource();
@@ -67,7 +67,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(3, source.Questions.Count);
     }
 
-    [Fact] // ADR-0066 (PV-35): the Consumer sets the interval, and 0 redraws on every change
+    [Fact] // ADR-0067 (PV-35): the Consumer sets the interval, and 0 redraws on every change
     public async Task A_zero_interval_redraws_on_every_change()
     {
         var source = new LiveSource();
@@ -82,7 +82,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(4, source.Questions.Count);
     }
 
-    [Fact] // ADR-0066 (PV-35): the Consumer's interval is honoured
+    [Fact] // ADR-0067 (PV-35): the Consumer's interval is honoured
     public async Task The_consumers_interval_is_honoured()
     {
         var source = new LiveSource();
@@ -98,7 +98,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(3, source.Questions.Count);
     }
 
-    [Fact] // ADR-0066 (PV-35): a negative interval is refused by name
+    [Fact] // ADR-0067 (PV-35): a negative interval is refused by name
     public void A_negative_interval_is_refused()
     {
         var refusal = Assert.Throws<ArgumentOutOfRangeException>(
@@ -107,7 +107,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(nameof(PivotComponent.RedrawInterval), refusal.ParamName);
     }
 
-    [Fact] // ADR-0066/0065 (PV-35): a question for newer data in flight is not cancelled by further changes; they are asked for, from the newest, once it lands
+    [Fact] // ADR-0067/0066 (PV-35): a question for newer data in flight is not cancelled by further changes; they are asked for, from the newest, once it lands
     public async Task Changes_during_a_question_are_asked_for_after_it_lands()
     {
         var source = new LiveSource();
@@ -135,7 +135,7 @@ public class LiveDataTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal("East | 183", RowTexts(cut)[0]));
     }
 
-    [Fact] // ADR-0066 (PV-35): never half a batch — every cell of a redraw comes from one answer
+    [Fact] // ADR-0067 (PV-35): never half a batch — every cell of a redraw comes from one answer
     public async Task A_redraw_is_one_answer()
     {
         var source = new LiveSource();
@@ -151,7 +151,7 @@ public class LiveDataTests : PivotTestContext
 
     // ---- PV-35: what a change of values keeps, and what an Item appearing drops ------------------
 
-    [Fact] // ADR-0066/0011 (PV-35, PV-13): a change of values alone keeps the Row Sequence Version, and so the Selection
+    [Fact] // ADR-0067/0011 (PV-35, PV-13): a change of values alone keeps the Row Sequence Version, and so the Selection
     public async Task A_change_of_values_keeps_the_selection()
     {
         var selections = new List<GridSelection>();
@@ -169,7 +169,7 @@ public class LiveDataTests : PivotTestContext
         Assert.NotEmpty(cut.FindAll(".ex-selection .ex-range"));
     }
 
-    [Theory] // ADR-0066/0011 (PV-35): an Item that appears or leaves changes the rows, and the Selection is dropped
+    [Theory] // ADR-0067/0011 (PV-35): an Item that appears or leaves changes the rows, and the Selection is dropped
     [InlineData("appears")]
     [InlineData("leaves")]
     public async Task An_item_that_appears_or_leaves_drops_the_selection(string how)
@@ -188,7 +188,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-selection .ex-range"));
     }
 
-    [Fact] // ADR-0066 (PV-35): an open panel stays open across a change of values, its draft kept
+    [Fact] // ADR-0067 (PV-35): an open panel stays open across a change of values, its draft kept
     public async Task An_open_panel_stays_open_across_a_change_of_values()
     {
         var source = new LiveSource();
@@ -207,7 +207,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(["Row Labels", "Takings"], HeaderTexts(cut));
     }
 
-    [Fact] // ADR-0066 (PV-35): an open menu stays open across a change of values — a placed field's and the Layout menu
+    [Fact] // ADR-0067 (PV-35): an open menu stays open across a change of values — a placed field's and the Layout menu
     public async Task An_open_menu_stays_open_across_a_change_of_values()
     {
         var source = new LiveSource();
@@ -229,7 +229,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal("true", cut.Find(".ex-pivot-layout-button").GetAttribute("aria-expanded"));
     }
 
-    [Fact] // ADR-0066/0065 (PV-35, PV-23): an open Filter… stays open when an Item appears, and lists it under the new version
+    [Fact] // ADR-0067/0066 (PV-35, PV-23): an open Filter… stays open when an Item appears, and lists it under the new version
     public async Task An_open_filter_lists_an_item_that_appears()
     {
         var source = new LiveSource();
@@ -245,7 +245,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Single(cut.FindAll(".ex-pivot-popup"));
     }
 
-    // ---- ADR-0065 refined: the Items in view while a new version's are on their way -------------
+    // ---- ADR-0066 refined: the Items in view while a new version's are on their way -------------
 
     private static readonly PivotLayout WestHidden = new()
     {
@@ -271,7 +271,7 @@ public class LiveDataTests : PivotTestContext
         return (cut, source);
     }
 
-    [Fact] // ADR-0065 refined (PV-23, PV-35): a new Source Version keeps the band's summary in view while its Items are on their way, and asks for them under the new version
+    [Fact] // ADR-0066 refined (PV-23, PV-35): a new Source Version keeps the band's summary in view while its Items are on their way, and asks for them under the new version
     public async Task A_new_version_keeps_the_bands_summary_while_its_items_are_on_their_way()
     {
         var (cut, source) = await ListedAsync(WestHidden);
@@ -290,7 +290,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal("(Multiple Items)", BandSummary(cut));
     }
 
-    [Fact] // ADR-0065 refined (PV-23): Filter… lists the earlier version's Items while the new version's are on their way — marked busy, not blanked, OK enabled — and the new version's replace them when they land
+    [Fact] // ADR-0066 refined (PV-23): Filter… lists the earlier version's Items while the new version's are on their way — marked busy, not blanked, OK enabled — and the new version's replace them when they land
     public async Task Filter_lists_the_earlier_versions_items_while_the_new_ones_are_on_their_way()
     {
         var (cut, source) = await ListedAsync(WestHidden);
@@ -313,7 +313,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Null(cut.Find(".ex-pivot-item-list").GetAttribute("aria-busy"));
     }
 
-    [Fact] // ADR-0065 refined (PV-23): ticking and applying against the earlier version's Items is safe — Hidden Items are keys, which name the same Items under any version
+    [Fact] // ADR-0066 refined (PV-23): ticking and applying against the earlier version's Items is safe — Hidden Items are keys, which name the same Items under any version
     public async Task Applying_against_the_earlier_versions_items_hides_them_by_key()
     {
         var (cut, source) = await ListedAsync(WestHidden);
@@ -337,7 +337,7 @@ public class LiveDataTests : PivotTestContext
 
     private static readonly Sale Delta = South with { Region = "Delta" };
 
-    [Fact] // ADR-0065 refined (PV-23): Items listed under a version the report has since moved past, landing late, stay in view when they are the newest listed
+    [Fact] // ADR-0066 refined (PV-23): Items listed under a version the report has since moved past, landing late, stay in view when they are the newest listed
     public async Task A_late_listing_that_is_the_newest_stays_in_view()
     {
         var (cut, source) = await ListedAsync(WestHidden);
@@ -360,7 +360,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Null(cut.Find(".ex-pivot-item-list").GetAttribute("aria-busy"));
     }
 
-    [Fact] // ADR-0065 refined (PV-23): a listing older than the Items in view, landing late, never takes their place
+    [Fact] // ADR-0066 refined (PV-23): a listing older than the Items in view, landing late, never takes their place
     public async Task A_late_listing_older_than_the_one_in_view_is_set_aside()
     {
         var (cut, source) = await ListedAsync(WestHidden);
@@ -386,7 +386,7 @@ public class LiveDataTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "Central", "Delta", "East", "North", "South", "West", "(blank)"], ListedItems(cut)));
     }
 
-    [Fact] // ADR-0065 refined (PV-23): a new source lists from nothing — its first listing shows loading
+    [Fact] // ADR-0066 refined (PV-23): a new source lists from nothing — its first listing shows loading
     public async Task A_new_source_lists_its_items_from_nothing()
     {
         var (cut, _) = await ListedAsync(WestHidden);
@@ -401,7 +401,7 @@ public class LiveDataTests : PivotTestContext
 
     // ---- A change of data, and a question already out ------------------------------------------
 
-    [Fact] // ADR-0066/0065: a change of data does not cancel the user's layout question; it is asked for once that lands, and only it marks cells
+    [Fact] // ADR-0067/0066: a change of data does not cancel the user's layout question; it is asked for once that lands, and only it marks cells
     public async Task A_change_does_not_cancel_a_users_layout_question()
     {
         var told = new List<PivotLayout>();
@@ -432,7 +432,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(["181", "286"], ChangeHighlightTests.MarkedTexts(cut));
     }
 
-    [Fact] // ADR-0066/0065: a user's layout change wins over a question for newer data — it is cancelled, its late answer never painted, and the user's question brings the change
+    [Fact] // ADR-0067/0066: a user's layout change wins over a question for newer data — it is cancelled, its late answer never painted, and the user's question brings the change
     public async Task A_users_layout_change_supersedes_a_question_for_newer_data()
     {
         var told = new List<PivotLayout>();
@@ -459,7 +459,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(3, source.Questions.Count);
     }
 
-    [Fact] // ADR-0066/0059: a gesture laid out from the answer held supersedes a question for newer data, and the change is asked for again
+    [Fact] // ADR-0067/0060: a gesture laid out from the answer held supersedes a question for newer data, and the change is asked for again
     public async Task A_gesture_from_the_held_answer_gathers_the_change_again()
     {
         var source = new LiveSource();
@@ -478,7 +478,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(["181", "286"], ChangeHighlightTests.MarkedTexts(cut));
     }
 
-    [Fact] // ADR-0066: a source handed over is no longer listened to, and nothing is heard after dispose
+    [Fact] // ADR-0067: a source handed over is no longer listened to, and nothing is heard after dispose
     public async Task Nothing_is_heard_from_a_source_replaced_or_after_dispose()
     {
         var first = new LiveSource();
@@ -498,7 +498,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Single(second.Questions);
     }
 
-    [Fact] // ADR-0066: a notice raised on another thread is marshalled to the renderer's
+    [Fact] // ADR-0067: a notice raised on another thread is marshalled to the renderer's
     public async Task A_notice_from_another_thread_is_marshalled()
     {
         var source = new LiveSource();
@@ -509,7 +509,7 @@ public class LiveDataTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal("East | 181", RowTexts(cut)[0]));
     }
 
-    [Fact] // ADR-0065/0066: a change under a layout whose Aggregation the source no longer answers is refused by name, once, and nothing is asked
+    [Fact] // ADR-0066/0067: a change under a layout whose Aggregation the source no longer answers is refused by name, once, and nothing is asked
     public async Task A_change_the_source_can_no_longer_answer_is_refused_once()
     {
         var source = new LiveSource();
@@ -549,7 +549,7 @@ public class LiveDataTests : PivotTestContext
         }
     }
 
-    [Fact] // ADR-0065/0066 (PV-38): when the Consumer says a server's data changed, ExPivot asks again for the whole answer
+    [Fact] // ADR-0066/0067 (PV-38): when the Consumer says a server's data changed, ExPivot asks again for the whole answer
     public async Task A_servers_notice_asks_again_for_the_whole_answer()
     {
         var server = new Server();
@@ -566,7 +566,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(["181", "131", "286"], ChangeHighlightTests.MarkedTexts(cut));
     }
 
-    [Fact] // ADR-0065/0066 (PV-38): Refresh asks a server's source again for the whole answer — once, though the source says its data moved on
+    [Fact] // ADR-0066/0067 (PV-38): Refresh asks a server's source again for the whole answer — once, though the source says its data moved on
     public async Task Refresh_asks_a_servers_source_again_once()
     {
         var server = new Server();
@@ -592,7 +592,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(3, server.Asked.Count);
     }
 
-    [Theory] // ADR-0066 (PV-38): Refresh is a person's request — asked at once, whatever the interval, under the loading indication, and once
+    [Theory] // ADR-0067 (PV-38): Refresh is a person's request — asked at once, whatever the interval, under the loading indication, and once
     [InlineData(false)]
     [InlineData(true)]
     public async Task Refresh_is_asked_at_once(bool withinTheInterval)
@@ -616,7 +616,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(asked + 1, source.Questions.Count);
     }
 
-    [Fact] // ADR-0060/0065: a Refresh that supersedes the user's layout question asks for that layout, and still raises it once shown
+    [Fact] // ADR-0061/0066: a Refresh that supersedes the user's layout question asks for that layout, and still raises it once shown
     public async Task A_refresh_over_a_users_question_still_raises_the_layout()
     {
         var told = new List<PivotLayout>();
@@ -637,7 +637,7 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(["Amount", "Quantity"], raised.Values.Select(v => v.Field));
     }
 
-    [Fact] // ADR-0065/0066 (PV-38): a notice naming the Source Version already on screen asks nothing; one naming another asks
+    [Fact] // ADR-0066/0067 (PV-38): a notice naming the Source Version already on screen asks nothing; one naming another asks
     public async Task A_notice_of_the_version_on_screen_asks_nothing()
     {
         var server = new Server();
@@ -655,7 +655,7 @@ public class LiveDataTests : PivotTestContext
 
     // ---- PV-15: what a change of data renders --------------------------------------------------
 
-    [Fact] // ADR-0003/0066 (PV-15): a change of data the grid cannot be shown renders no grid row and not the grid; the pane's interactions still render none
+    [Fact] // ADR-0003/0067 (PV-15): a change of data the grid cannot be shown renders no grid row and not the grid; the pane's interactions still render none
     public async Task A_stale_change_renders_no_grid_row()
     {
         var source = new LiveSource();

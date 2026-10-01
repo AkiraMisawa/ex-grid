@@ -5,7 +5,7 @@ using Xunit;
 namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
-/// ADR-0061/0021: the Wrapper adds no script — no <c>.js</c> of its own and no interop call of its
+/// ADR-0062/0021: the Wrapper adds no script — no <c>.js</c> of its own and no interop call of its
 /// own. What MudBlazor's controls run for themselves is MudBlazor's, loaded by the Consumer's
 /// choice of it; focus goes through Blazor's own <c>FocusAsync</c>.
 /// </summary>
@@ -29,11 +29,11 @@ public class WrapperScriptTests
         return files;
     }
 
-    [Fact] // ADR-0061/0021: no .js file in the Wrapper's source
+    [Fact] // ADR-0062/0021: no .js file in the Wrapper's source
     public void The_Wrapper_source_holds_no_script_file()
         => Assert.DoesNotContain(SourceFiles(), file => Path.GetExtension(file) is ".js" or ".mjs" or ".cjs");
 
-    [Fact] // ADR-0061/0021: no interop type named in the Wrapper's source
+    [Fact] // ADR-0062/0021: no interop type named in the Wrapper's source
     public void The_Wrapper_source_names_no_interop_type()
     {
         var offenders = SourceFiles()

@@ -228,7 +228,7 @@
    is what the reader is here for. box-shadow paints inside the cell's own box, so it
    costs no extra element and cannot shift the row's flow. */
 .ex-cell.ex-state-modified { box-shadow: var(--ex-state-modified-mark, inset -6px 6px 0 -3px rgba(106, 68, 166, 0.9)); }
-/* The Change Highlight (ADR-0067): the Consumer said the cell's shown value changed less than
+/* The Change Highlight (ADR-0068): the Consumer said the cell's shown value changed less than
    ChangeHighlightDuration ago. One colour, whichever way the value moved: by default a 40%
    tint of the system colour Mark over the cell's own ground (ADR-0029). Mark itself stays pure
    yellow on a dark page while the text turns light, which leaves the value unreadable
@@ -815,7 +815,7 @@
    system colours, because the browser discards the background images and tints above.
    No state may rely on a discarded layer alone, and no two may collapse together. */
 @media (forced-colors: active) {
-    /* The Change Highlight (ADR-0067): its ground is an image, which forced colours discard, so
+    /* The Change Highlight (ADR-0068): its ground is an image, which forced colours discard, so
        it is restated as an outline. That is painted and not laid out, as the states' outlines
        are, and dashed, which no state's is. Declared before the states: on a cell that carries a
        state as well, the state's own restatement is the one kept, because a state must never be

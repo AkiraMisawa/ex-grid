@@ -1,12 +1,12 @@
 # The pivot engine answers as Excel's PivotTable does, and is the reference implementation
 
-*(Proposed 2026-09-30 with [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md),
+*(Proposed 2026-09-30 with [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md),
 and decided with the user the same day. The grilling held the rule this ADR is built on (Q1): both
 the numbers and the gestures are Excel's, and ExPivot departs from Excel only where an ADR says how
 and why. What the grilling changed is marked **Changed when decided**, each with its reason:*
 
 - *values are read from a Snapshot's typed columns
-  ([ADR-0063](./0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md));*
+  ([ADR-0064](./0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md));*
 - *the Order Key;*
 - *the date parts;*
 - *only the parts that are asked for are accumulated;*
@@ -19,7 +19,7 @@ the engine follows.)*
 
 `ExPivot.Engine` computes a Pivot Report under a Pivot Layout. It works from the Leaf Aggregates a
 Pivot Source answers with
-([ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)), and
+([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)), and
 it computes those Leaf Aggregates from a Snapshot for the bundled source. It has no UI and depends
 only on `ExGrid.Data`, so a server computes the same report the screen shows.
 
@@ -38,7 +38,7 @@ taken over all the data, not only over the records that the other fields' filter
 
 *Changed when decided.* The proposal read each value through a delegate and took each Item's kind
 from the value itself. **Values now come from a Snapshot column, so an Item's kind is its column's
-kind** (ADR-0063). The Snapshot also now defines what a number, a date's clock value and a Blank
+kind** (ADR-0064). The Snapshot also now defines what a number, a date's clock value and a Blank
 are. The Item rules that follow from those definitions are:
 
 - **Text is compared ignoring case.** Excel puts `East` and `EAST` in one Item. The Item's label is
@@ -46,13 +46,13 @@ are. The Item rules that follow from those definitions are:
   spelling to arrive among the records still present wins. Spaces are significant. *(Reading.)*
 - **A number is its value.** An Integer 1, a Decimal 1.0 and a Double 1 are one Item. A non-finite
   Double is not a number Excel could hold, so its Item is `#NUM!`.
-- **A date is its clock value** (ADR-0063). Two offsets of one instant are two Items, so a Consumer
+- **A date is its clock value** (ADR-0064). Two offsets of one instant are two Items, so a Consumer
   that means instants passes UTC.
 - **A Boolean is `TRUE` or `FALSE`**, as Excel labels it.
 - **A Blank is the Item `(blank)`.**
   - Read from objects, a Blank is an accessor that returned null, and **an empty string is a
     value**: an Item with an empty label, as ADR-0023 has it for filters.
-  - Read from a CSV, an empty field is a Blank in every kind (ADR-0063, Q55).
+  - Read from a CSV, an empty field is a Blank in every kind (ADR-0064, Q55).
 - **A value of any other type is Text, by its invariant text**, when an untyped accessor declares
   the column Text. An enum is its name. *(Refined 2026-10-01: the proposal said the
   culture-formatted text. A Snapshot holds the text, and it is read independently of any
@@ -127,7 +127,7 @@ quarter or its month.**
 
 This is the common case of Excel's automatic date grouping, declared rather than inferred. Excel's
 Group… command, which groups numbers into ranges and dates from within the report, is later
-(ADR-0058's table).
+(ADR-0059's table).
 
 ## Hidden Items
 
@@ -144,11 +144,11 @@ Group… command, which groups numbers into ranges and dates from within the rep
 A value is aggregated over the records where a row position and a column position cross. **A total
 — a subtotal or a grand total — is computed from all its records, never from the totals below it.**
 The grand total of an Average is therefore the average of the records, as in Excel. The Leaf
-Aggregates keep this rule, because their parts combine exactly (ADR-0065).
+Aggregates keep this rule, because their parts combine exactly (ADR-0066).
 
 A **number** is a value in a Decimal, Double or Integer column. Text that looks like a number is
 text, because Excel does not sum numbers stored as text. A Boolean or a date is not a number here.
-*(Excel sums date serials. Max of a date field is later: ADR-0058's table.)*
+*(Excel sums date serials. Max of a date field is later: ADR-0059's table.)*
 
 | Aggregation | Over the numbers | Records, but no number | Some value, none numeric |
 |---|---|---|---|
@@ -166,7 +166,7 @@ text, because Excel does not sum numbers stored as text. A Boolean or a date is 
 - **No record at all is an empty cell**, for every Aggregation, Count included, as Excel leaves it.
 - **Money stays exact.** An Integer or Decimal column is summed, averaged and compared exactly.
   - Its sum is a 64-bit integer at the column's scale, or a `decimal` where the column needs one
-    (ADR-0063).
+    (ADR-0064).
   - It falls back to `double`, Excel's own arithmetic, only when the exact sum overflows.
   - A Double column is summed in `double`.
   - Product and the four variance Aggregations are computed in `double`.
@@ -217,7 +217,7 @@ A divisor is the aggregate over the records its total covers, whether or not tha
   "grand totals for rows". The layout names what is painted: `GrandTotalRow`, `GrandTotalColumn`.)*
   Excel's four choices — off for both, on for both, rows only, columns only — are the two switches'
   four settings, and the Layout menu offers them under Excel's names
-  ([ADR-0060](./0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+  ([ADR-0061](./0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
 - **Collapse is held per Item of a field**, as Excel's `ShowDetail` is.
   - Each field has a field-wide default, which Expand / Collapse Entire Field sets.
   - Collapsing `East` collapses it wherever it appears.
@@ -237,7 +237,7 @@ Columns, where Excel puts it, or in Rows.
 
 - **In the first version, Σ Values is always the innermost level of its Area.** Excel lets it stand
   anywhere. At an outer position, a subtotal splits into one per Value Field above the fields it
-  totals, which needs rules of its own. Those rules wait (ADR-0058's table).
+  totals, which needs rules of its own. Those rules wait (ADR-0059's table).
 - **In Columns**, every column position splits into one column per Value Field, headed by its
   caption. A subtotal's columns and the grand total's columns stand under a rectangle labelled
   `<item> Total` or `Grand Total`.
@@ -297,7 +297,7 @@ report of many rows costs its rows, not its rows × its columns.
   need more than a `decimal`'s 96 bits — and past 128 bits it stays a `double`. A `decimal`
   rounded quietly is never the answer. How a source writes a Decimal is not part of the report
   either: `75.60` and `75.6` are one value, and every exact value is painted and copied as `75.6`
-  ([ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+  ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
 - **The Order Key never keys `(blank)` or `#NUM!`.** They keep their places, last, as they do
   under every order. An Item the key leaves null still comes after the keyed ones.
 - **Keys of two types are refused**, naming the field, an Item of each type and the two types. An
@@ -320,6 +320,6 @@ report of many rows costs its rows, not its rows × its columns.
 - **The reference implementation is the engine behind `PivotSource.From`, not the component.** Show
   Details, the Item lists of Filter…, and every Field List rule are the engine's functions. A server
   and the screen therefore cannot disagree about them.
-- **Anything Excel does that ExPivot does not is listed in ADR-0058's table and never approximated.**
+- **Anything Excel does that ExPivot does not is listed in ADR-0059's table and never approximated.**
   That includes Σ Values at an outer position, collapsing one column Item, ranges of numbers, and
   Max of dates.

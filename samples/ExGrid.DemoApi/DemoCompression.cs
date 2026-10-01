@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.ResponseCompression;
 namespace ExGrid.DemoApi;
 
 /// <summary>
-/// HTTP's own compression, which ADR-0064 leaves an Arrow stream to: the stream is written
+/// HTTP's own compression, which ADR-0065 leaves an Arrow stream to: the stream is written
 /// uncompressed, and the server compresses it as it goes out — and the JSON answers too — at the
-/// fastest level, since a body is compressed again for every request. ADR-0064 measured gzip at
+/// fastest level, since a body is compressed again for every request. ADR-0065 measured gzip at
 /// level 6 at 1.5 s for a million trades and Brotli at level 11 at minutes; the fastest levels
 /// were measured here, and both are offered, Brotli first. A browser undoes either natively.
 /// </summary>

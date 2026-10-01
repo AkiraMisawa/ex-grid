@@ -11,7 +11,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// The Stale Report (ADR-0066, PV-37): when the newest data cannot be shown — it breaks a cap, or
+/// The Stale Report (ADR-0067, PV-37): when the newest data cannot be shown — it breaks a cap, or
 /// the source refuses or fails — the report stays on the last version it could compute, and a
 /// notice under the toolbar says what happened and as of when, with Retry, which asks again. The
 /// notice goes when an answer is laid out. A refused layout the user asked for is not a Stale
@@ -39,7 +39,7 @@ public class StaleReportTests : PivotTestContext
 
     private static string Notice(IRenderedComponent<PivotComponent> cut) => cut.Find(".ex-pivot-stale .ex-pivot-stale-message").TextContent;
 
-    [Fact] // ADR-0066/0065 (PV-37): newer data over the leaves' cap leaves the report as it was, and the notice says so, as of the time of the data shown, with Retry
+    [Fact] // ADR-0067/0066 (PV-37): newer data over the leaves' cap leaves the report as it was, and the notice says so, as of the time of the data shown, with Retry
     public async Task Newer_data_over_the_leaf_cap_leaves_a_stale_report()
     {
         var source = new LiveSource();
@@ -67,7 +67,7 @@ public class StaleReportTests : PivotTestContext
         Assert.Empty(told);
     }
 
-    [Fact] // ADR-0066 (PV-37): newer data over the rows' cap leaves a stale report; a layout that fits lays the newest answer out, and the notice goes
+    [Fact] // ADR-0067 (PV-37): newer data over the rows' cap leaves a stale report; a layout that fits lays the newest answer out, and the notice goes
     public async Task Newer_data_over_the_row_cap_leaves_a_stale_report_until_a_layout_fits()
     {
         var source = new LiveSource();
@@ -90,7 +90,7 @@ public class StaleReportTests : PivotTestContext
         Assert.False(cut.Instance.IsStale);
     }
 
-    [Fact] // ADR-0066/0025 (PV-37): a source that fails leaves the report as it was, stale, saying so; the failure is kept
+    [Fact] // ADR-0067/0025 (PV-37): a source that fails leaves the report as it was, stale, saying so; the failure is kept
     public async Task A_failing_source_leaves_a_stale_report()
     {
         var source = new LiveSource();
@@ -108,7 +108,7 @@ public class StaleReportTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-refusal-notice"));
     }
 
-    [Fact] // ADR-0066 (PV-37): a source that refuses newer data leaves a stale report saying why
+    [Fact] // ADR-0067 (PV-37): a source that refuses newer data leaves a stale report saying why
     public async Task A_refusing_source_leaves_a_stale_report()
     {
         var source = new LiveSource();
@@ -122,7 +122,7 @@ public class StaleReportTests : PivotTestContext
         Assert.Equal($"Showing the data as of {TimeOf(shownAt)}: the source refused to answer: The data is being reloaded.", Notice(cut));
     }
 
-    [Fact] // ADR-0066 (PV-37): Retry asks again — under the loading indication, not twice at once — and the notice goes when the answer is laid out, which marks what changed
+    [Fact] // ADR-0067 (PV-37): Retry asks again — under the loading indication, not twice at once — and the notice goes when the answer is laid out, which marks what changed
     public async Task Retry_asks_again_and_the_notice_goes_on_success()
     {
         var source = new LiveSource();
@@ -151,7 +151,7 @@ public class StaleReportTests : PivotTestContext
         Assert.Equal(["181", "286"], ChangeHighlightTests.MarkedTexts(cut));
     }
 
-    [Fact] // ADR-0066 (PV-37): a Retry that fails again leaves the report stale, as of the same time
+    [Fact] // ADR-0067 (PV-37): a Retry that fails again leaves the report stale, as of the same time
     public async Task A_failed_retry_stays_stale()
     {
         var source = new LiveSource();
@@ -169,7 +169,7 @@ public class StaleReportTests : PivotTestContext
         Assert.Equal("East | 180", RowTexts(cut)[0]);
     }
 
-    [Fact] // ADR-0066 (PV-37): the next change of data that can be shown takes the notice away
+    [Fact] // ADR-0067 (PV-37): the next change of data that can be shown takes the notice away
     public async Task The_next_change_that_can_be_shown_takes_the_notice_away()
     {
         var source = new LiveSource();
@@ -187,7 +187,7 @@ public class StaleReportTests : PivotTestContext
         Assert.Equal("East | 182", RowTexts(cut)[0]);
     }
 
-    [Fact] // ADR-0066 (PV-37): a gesture laid out from the answer held brings no newer data, so the report stays stale, as of the same time
+    [Fact] // ADR-0067 (PV-37): a gesture laid out from the answer held brings no newer data, so the report stays stale, as of the same time
     public async Task A_gesture_from_the_held_answer_leaves_the_report_stale()
     {
         var source = new LiveSource();
@@ -206,7 +206,7 @@ public class StaleReportTests : PivotTestContext
         Assert.Equal($"Showing the data as of {TimeOf(shownAt)}: the source could not answer: The server is unreachable.", Notice(cut));
     }
 
-    [Fact] // ADR-0066 (PV-37): the as-of time carries its date when the data shown is not today's
+    [Fact] // ADR-0067 (PV-37): the as-of time carries its date when the data shown is not today's
     public async Task The_time_carries_its_date_when_not_today()
     {
         var source = new LiveSource();
@@ -221,7 +221,7 @@ public class StaleReportTests : PivotTestContext
         Assert.StartsWith($"Showing the data as of {asOf}: ", Notice(cut));
     }
 
-    [Fact] // ADR-0065/0066 (PV-37, PV-29): a layout the user asked for and a cap refused is not a Stale Report — the layout goes back, and the toolbar says so
+    [Fact] // ADR-0066/0067 (PV-37, PV-29): a layout the user asked for and a cap refused is not a Stale Report — the layout goes back, and the toolbar says so
     public async Task A_refused_layout_is_not_a_stale_report()
     {
         var source = new LiveSource();
@@ -237,7 +237,7 @@ public class StaleReportTests : PivotTestContext
         Assert.False(cut.Instance.IsStale);
     }
 
-    [Fact] // ADR-0066/0060 (PV-37): a refusal of the user's layout and a Stale Report stand in one place, each saying its own thing, and a change of data leaves the refusal standing
+    [Fact] // ADR-0067/0061 (PV-37): a refusal of the user's layout and a Stale Report stand in one place, each saying its own thing, and a change of data leaves the refusal standing
     public async Task A_refusal_and_a_stale_report_stand_together()
     {
         var source = new LiveSource();
@@ -255,7 +255,7 @@ public class StaleReportTests : PivotTestContext
         Assert.True(Array.IndexOf(order, "ex-pivot-stale") < Array.IndexOf(order, "ex-pivot-sheet"));
     }
 
-    [Fact] // ADR-0060/0066 (PV-9, PV-37): the notice is the Chrome's to draw, inside ExPivot's live region — handed the sentence, the reason, the time and Retry — and its Retry asks as the built-in's does
+    [Fact] // ADR-0061/0067 (PV-9, PV-37): the notice is the Chrome's to draw, inside ExPivot's live region — handed the sentence, the reason, the time and Retry — and its Retry asks as the built-in's does
     public async Task The_notice_through_a_substituted_chrome()
     {
         var chrome = new StaleChrome();
@@ -287,7 +287,7 @@ public class StaleReportTests : PivotTestContext
         Assert.Equal("East | 181", RowTexts(cut)[0]);
     }
 
-    [Fact] // ADR-0059/0066 (PV-37): the notice's words are ExPivot's, by id, which the Consumer's Label replaces
+    [Fact] // ADR-0060/0067 (PV-37): the notice's words are ExPivot's, by id, which the Consumer's Label replaces
     public async Task The_notices_words_are_replaced_by_id()
     {
         var source = new LiveSource();

@@ -11,7 +11,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.Components.Tests;
 
-/// <summary>The report's Context Menu, its double click and Show Details (ADR-0058/0062), the
+/// <summary>The report's Context Menu, its double click and Show Details (ADR-0059/0063), the
 /// layout's binding, a substituted Chrome, and two pivots on one page.</summary>
 public class ReportCommandTests : PivotTestContext
 {
@@ -23,7 +23,7 @@ public class ReportCommandTests : PivotTestContext
 
     private static IEnumerable<string> Ids(IReadOnlyList<ExGrid.Chrome.GridCommand> commands) => commands.Select(c => c.Id);
 
-    [Fact] // ADR-0058: on a value cell — collapse its group, sort by it, Show Details, the Value Field's settings
+    [Fact] // ADR-0059: on a value cell — collapse its group, sort by it, Show Details, the Value Field's settings
     public void Context_commands_on_a_value_cell()
     {
         var cut = RenderPivot(RegionProduct, ps => ps.Add(p => p.OnShowDetails, (PivotDetails _) => { }));
@@ -43,7 +43,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal("Show Details", Grid(cut).Instance.CommandLabel!(PivotCommandIds.ShowDetails));
     }
 
-    [Fact] // ADR-0058: Collapse on an innermost row collapses the group it is in, and the Focus stays on it
+    [Fact] // ADR-0059: Collapse on an innermost row collapses the group it is in, and the Focus stays on it
     public async Task Collapse_from_the_context_menu()
     {
         var cut = RenderPivot(RegionProduct);
@@ -55,7 +55,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.True(cut.Instance.CurrentLayout.Rows[0].IsCollapsed(PivotItemKey.Text("East")));
     }
 
-    [Fact] // ADR-0058: Sort Z to A on a label cell orders that field's Items
+    [Fact] // ADR-0059: Sort Z to A on a label cell orders that field's Items
     public async Task Sort_from_a_label_cell()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -66,7 +66,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal(["West | 90", "North | 10", "East | 180", "(blank) | 5", "Grand Total | 285"], RowTexts(cut));
     }
 
-    [Fact] // ADR-0062/0058: a double click on a value cell hands the Consumer that listens the records behind it, paged from the source
+    [Fact] // ADR-0063/0059: a double click on a value cell hands the Consumer that listens the records behind it, paged from the source
     public async Task A_double_click_on_a_value_shows_its_details()
     {
         PivotDetails? shown = null;
@@ -86,7 +86,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, shown.SourceVersion);
     }
 
-    [Fact] // ADR-0062: an empty cell has no records to show, and a double click there shows nothing
+    [Fact] // ADR-0063: an empty cell has no records to show, and a double click there shows nothing
     public async Task A_double_click_on_an_empty_cell_shows_nothing()
     {
         var shown = 0;
@@ -98,7 +98,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal(0, shown);
     }
 
-    [Fact] // ADR-0062: a double click on an outer Item's label expands or collapses it
+    [Fact] // ADR-0063: a double click on an outer Item's label expands or collapses it
     public async Task A_double_click_on_an_outer_label_toggles_it()
     {
         var cut = RenderPivot(RegionProduct);
@@ -108,7 +108,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal("+East | 180", RowTexts(cut)[0]);
     }
 
-    [Fact] // ADR-0058: a layout the Consumer hands in replaces the one on screen; one it binds back does not reset
+    [Fact] // ADR-0059: a layout the Consumer hands in replaces the one on screen; one it binds back does not reset
     public async Task The_layout_binds_both_ways()
     {
         var page = RenderPage<BoundPage>();
@@ -123,7 +123,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal(["Product"], AreaEntries(cut, "Columns"));
     }
 
-    [Fact] // ADR-0060: a substituted Chrome is handed the same rules — its calls make the same layouts
+    [Fact] // ADR-0061: a substituted Chrome is handed the same rules — its calls make the same layouts
     public async Task A_substituted_chrome_applies_the_same_rules()
     {
         var chrome = new RecordingChrome();
@@ -144,7 +144,7 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal(["Region", "Product"], cut.Instance.CurrentLayout.Rows.Select(p => p.Field));
     }
 
-    [Fact] // ADR-0018/0060: two pivots on one page share nothing — a menu open in one is not open in the other
+    [Fact] // ADR-0018/0061: two pivots on one page share nothing — a menu open in one is not open in the other
     public async Task Two_pivots_are_independent()
     {
         var page = RenderPage<TwoPivots>();
@@ -169,7 +169,7 @@ public class ReportCommandTests : PivotTestContext
         RenderFragment? IPivotChrome.FieldList(PivotFieldListContext context)
         {
             FieldList = context;
-            // A Chrome places each entry's open menu or panel under the entry (ADR-0060); the
+            // A Chrome places each entry's open menu or panel under the entry (ADR-0061); the
             // stub places them after its own markup.
             return builder =>
             {
@@ -191,7 +191,7 @@ public class ReportCommandTests : PivotTestContext
     /// <summary>A Consumer's page binding the layout both ways.</summary>
     private sealed class BoundPage : ComponentBase
     {
-        // Held in a field: a new source is a refresh (ADR-0065).
+        // Held in a field: a new source is a refresh (ADR-0066).
         private readonly PivotSource _source = Bundled();
 
         public PivotLayout Layout { get; private set; } = new() { Rows = [P("Region")], Values = [Sum("Amount")] };

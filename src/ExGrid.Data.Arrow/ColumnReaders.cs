@@ -24,13 +24,13 @@ internal sealed class ReadScratch
 
 /// <summary>
 /// Reads one Arrow column into one Snapshot column, a chunk of rows at a time, from Arrow's buffers —
-/// never through Arrow's per-value accessors, which were measured 10–40 times slower (ADR-0064).
+/// never through Arrow's per-value accessors, which were measured 10–40 times slower (ADR-0065).
 /// A value the column's kind cannot hold fails the load, naming its row and the column.
 /// </summary>
 internal abstract class ColumnReader(ColumnBuilder column)
 {
     /// <summary>UTC's names, any case: the IANA names of UTC, each also under <c>Etc/</c>, and the
-    /// offsets and designator that say UTC (ADR-0064).</summary>
+    /// offsets and designator that say UTC (ADR-0065).</summary>
     private static readonly string[] UtcZones =
     [
         "UTC", "Etc/UTC", "GMT", "Etc/GMT", "UCT", "Etc/UCT", "Universal", "Etc/Universal", "Zulu", "Etc/Zulu",
@@ -45,7 +45,7 @@ internal abstract class ColumnReader(ColumnBuilder column)
     public SnapshotKind Kind => column.Kind;
 
     /// <summary>
-    /// Declares the Snapshot column <paramref name="field"/> maps to, by ADR-0064's table, and returns
+    /// Declares the Snapshot column <paramref name="field"/> maps to, by ADR-0065's table, and returns
     /// what reads it.
     /// </summary>
     /// <exception cref="SnapshotException">The field's type is outside the table, or is a timestamp in a
@@ -282,7 +282,7 @@ internal sealed class Utf8ViewReader(TextColumnBuilder text) : ColumnReader(text
 /// <summary>
 /// A dictionary of <c>utf8</c>, <c>large_utf8</c> or <c>utf8_view</c>, with indices of any integer type,
 /// taken under the Snapshot's rules whatever order, case or nulls the producer's dictionary has
-/// (ADR-0063/0064): the Snapshot's dictionary is in the order values first appear in the rows, one
+/// (ADR-0064/0065): the Snapshot's dictionary is in the order values first appear in the rows, one
 /// entry per exact text, and a null index or a null entry is a Blank.
 /// <para>
 /// Each chunk's indices are first turned into codes into a small list of the entries the chunk uses,
@@ -460,7 +460,7 @@ internal sealed class DictionaryReader(TextColumnBuilder text, ArrowTypeId index
 
 /// <summary>
 /// <c>decimal32</c>, <c>decimal64</c>, <c>decimal128</c> and <c>decimal256</c> — a value
-/// <paramref name="width"/> bytes wide — held exactly (ADR-0063). A chunk whose values all fit a
+/// <paramref name="width"/> bytes wide — held exactly (ADR-0064). A chunk whose values all fit a
 /// 64-bit integer — every <c>decimal32</c> and <c>decimal64</c> does; of the wider ones, those whose
 /// high words are only the low word's sign — at a scale a decimal holds goes in as scaled integers in
 /// one bulk append; otherwise each value is made a <see cref="decimal"/> exactly, or refused by row
@@ -741,7 +741,7 @@ internal static class DateUnits
 
 /// <summary>
 /// <c>date32</c>, <c>date64</c>, and a <c>timestamp</c> without a time zone or in UTC, as the clock
-/// value written (ADR-0064). A value outside a date's range, or a nanosecond timestamp finer than the
+/// value written (ADR-0065). A value outside a date's range, or a nanosecond timestamp finer than the
 /// 100 nanoseconds a date holds, is refused by row and column rather than moved.
 /// </summary>
 internal sealed class DateReader(DateColumnBuilder date, DateUnit unit, string typeName) : ColumnReader(date)
@@ -797,7 +797,7 @@ internal sealed class DateReader(DateColumnBuilder date, DateUnit unit, string t
 
 /// <summary>
 /// <c>time32</c> and <c>time64</c>, a time of day, as the clock time on the first day a date holds,
-/// 0001-01-01 — as a database's <see cref="TimeOnly"/> is read (ADR-0063/0064). Each is read by its
+/// 0001-01-01 — as a database's <see cref="TimeOnly"/> is read (ADR-0064/0065). Each is read by its
 /// own width (<paramref name="wide"/> for <c>time64</c>) and unit. A value outside a day, or a
 /// nanosecond value finer than the 100 nanoseconds a date holds, is refused by row and column rather
 /// than moved.

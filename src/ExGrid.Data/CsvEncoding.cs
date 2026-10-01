@@ -4,7 +4,7 @@ using System.Text;
 namespace ExGrid.Data;
 
 /// <summary>
-/// The encoding a CSV is read in, as its Schema declares it (ADR-0063). It is the encoding of a file
+/// The encoding a CSV is read in, as its Schema declares it (ADR-0064). It is the encoding of a file
 /// that does not begin with a byte-order mark: a file that begins with UTF-8's mark is read as UTF-8
 /// whatever is declared, since the mark is the file's own declaration and no file in another encoding
 /// begins with it.

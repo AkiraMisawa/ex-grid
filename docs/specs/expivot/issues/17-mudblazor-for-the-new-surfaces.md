@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** `MudPivotChrome` for the surfaces the grilling added (ADR-0061).
+**What to build:** `MudPivotChrome` for the surfaces the grilling added (ADR-0062).
 
 - **The toolbar and the Layout menu.**
 - **Defer Layout Update:** a `MudCheckBox` and a `MudButton`.
@@ -58,9 +58,9 @@ Three things MudTabs does not allow, and how they are met:
 
 Also built here, from "Refined while building it": a failed Refresh is a Stale Report whose Retry
 refreshes again, and a failed layout question goes back to the report's layout, said on the
-toolbar (ADR-0066); while a new Source Version's Items are on their way, the band and Filter…
+toolbar (ADR-0067); while a new Source Version's Items are on their way, the band and Filter…
 keep the earlier version's in view, OK enabled, the list marked busy
-(`PivotItemFilterContext.IsUpdating`) (ADR-0065).
+(`PivotItemFilterContext.IsUpdating`) (ADR-0066).
 
 Found in a browser while dressing the tabs, under either Chrome: the report grid's sticky header
 painted over a details tab's records, so they read under the report's column headings. While a

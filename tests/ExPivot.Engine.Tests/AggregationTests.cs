@@ -5,7 +5,7 @@ using static ExPivot.Engine.Tests.Pivot;
 
 namespace ExPivot.Engine.Tests;
 
-/// <summary>What each Aggregation answers (ADR-0059, "Aggregation"): the table, exact money, and
+/// <summary>What each Aggregation answers (ADR-0060, "Aggregation"): the table, exact money, and
 /// totals from records.</summary>
 public class AggregationTests
 {
@@ -27,7 +27,7 @@ public class AggregationTests
 
     private static string? Text(PivotAggregation aggregation, params object?[] values) => Aggregate(aggregation, values)?.Text;
 
-    [Theory] // ADR-0059: the table, over numbers
+    [Theory] // ADR-0060: the table, over numbers
     [InlineData(PivotAggregation.Sum, "20")]
     [InlineData(PivotAggregation.Count, "4")]
     [InlineData(PivotAggregation.Average, "5")]
@@ -42,7 +42,7 @@ public class AggregationTests
     public void Each_aggregation_over_numbers(PivotAggregation aggregation, string expected)
         => Assert.Equal(expected, Text(aggregation, 2, 4, 6, 8));
 
-    [Theory] // ADR-0059 (a reading): values, but none a number
+    [Theory] // ADR-0060 (a reading): values, but none a number
     [InlineData(PivotAggregation.Sum, "0")]
     [InlineData(PivotAggregation.Count, "2")]
     [InlineData(PivotAggregation.Average, "#DIV/0!")]
@@ -57,7 +57,7 @@ public class AggregationTests
     public void Values_none_of_them_a_number(PivotAggregation aggregation, string expected)
         => Assert.Equal(expected, Text(aggregation, "a", true));
 
-    [Theory] // ADR-0059 (a reading): records whose every value is Blank are an empty cell
+    [Theory] // ADR-0060 (a reading): records whose every value is Blank are an empty cell
     [InlineData(PivotAggregation.Sum)]
     [InlineData(PivotAggregation.Count)]
     [InlineData(PivotAggregation.Average)]
@@ -66,7 +66,7 @@ public class AggregationTests
     public void Only_blanks_are_an_empty_cell(PivotAggregation aggregation)
         => Assert.Null(Aggregate(aggregation, null, null));
 
-    [Fact] // ADR-0059: text, a Boolean and a date are counted, and are never a number
+    [Fact] // ADR-0060: text, a Boolean and a date are counted, and are never a number
     public void Non_numbers_are_counted_and_not_summed()
     {
         object?[] values = [5, "7", true, new DateTime(2026, 1, 1), null];
@@ -77,7 +77,7 @@ public class AggregationTests
         Assert.Equal("5", Text(PivotAggregation.Average, values));
     }
 
-    [Fact] // ADR-0059: StdDev and Var take two numbers; the population forms take one
+    [Fact] // ADR-0060: StdDev and Var take two numbers; the population forms take one
     public void The_sample_forms_take_two_numbers()
     {
         Assert.Equal("#DIV/0!", Text(PivotAggregation.StdDev, 4));
@@ -86,7 +86,7 @@ public class AggregationTests
         Assert.Equal("0", Text(PivotAggregation.Varp, 4));
     }
 
-    [Fact] // ADR-0059: money stays exact — decimals sum in decimal
+    [Fact] // ADR-0060: money stays exact — decimals sum in decimal
     public void Decimals_sum_exactly()
     {
         var sum = Aggregate(PivotAggregation.Sum, 0.1m, 0.2m)!;
@@ -96,7 +96,7 @@ public class AggregationTests
         Assert.Equal("0.3", sum.ToString(null, CultureInfo.InvariantCulture));
     }
 
-    [Fact] // ADR-0059: a double among the numbers makes the whole Aggregation double, Excel's arithmetic
+    [Fact] // ADR-0060: a double among the numbers makes the whole Aggregation double, Excel's arithmetic
     public void A_double_makes_the_aggregation_double()
     {
         var sum = Aggregate(PivotAggregation.Sum, 0.1, 0.2)!;
@@ -107,7 +107,7 @@ public class AggregationTests
         Assert.Null(Aggregate(PivotAggregation.Sum, 1m, 2.5)!.Exact);
     }
 
-    [Fact] // ADR-0059: integral types are exact too, and an average of them is a decimal division
+    [Fact] // ADR-0060: integral types are exact too, and an average of them is a decimal division
     public void Integral_values_are_exact()
     {
         Assert.Equal(6m, Aggregate(PivotAggregation.Sum, 1, 2L, (short)3)!.Exact);
@@ -115,7 +115,7 @@ public class AggregationTests
         Assert.Equal(3m, Aggregate(PivotAggregation.Max, 1, 3m, 2)!.Exact);
     }
 
-    [Fact] // ADR-0059: a decimal sum that overflows falls back to double rather than failing
+    [Fact] // ADR-0060: a decimal sum that overflows falls back to double rather than failing
     public void A_decimal_overflow_falls_back_to_double()
     {
         var sum = Aggregate(PivotAggregation.Sum, decimal.MaxValue, decimal.MaxValue)!;
@@ -124,7 +124,7 @@ public class AggregationTests
         Assert.Equal(2 * (double)decimal.MaxValue, sum.Number);
     }
 
-    [Fact] // ADR-0059: a non-finite number in the data is #NUM!, never a number
+    [Fact] // ADR-0060: a non-finite number in the data is #NUM!, never a number
     public void A_non_finite_value_is_num()
     {
         Assert.Equal("#NUM!", Text(PivotAggregation.Sum, 1, double.NaN));
@@ -133,11 +133,11 @@ public class AggregationTests
         Assert.True(Aggregate(PivotAggregation.Sum, double.NaN)!.IsError);
     }
 
-    [Fact] // ADR-0059: an overflow in double is #NUM!
+    [Fact] // ADR-0060: an overflow in double is #NUM!
     public void A_double_overflow_is_num()
         => Assert.Equal("#NUM!", Text(PivotAggregation.Product, double.MaxValue, 10.0));
 
-    [Fact] // ADR-0059: a total is aggregated from its records, never from the totals below it
+    [Fact] // ADR-0060: a total is aggregated from its records, never from the totals below it
     public void An_average_total_is_the_average_of_the_records()
     {
         Obs[] observations = [new("A", 1), new("A", 2), new("A", 3), new("B", 10)];
@@ -148,7 +148,7 @@ public class AggregationTests
         Assert.Equal(["i A || 2", "i B || 10", "t Grand Total || 4"], Lines(report));
     }
 
-    [Fact] // ADR-0059: where no record carries both a row and a column, the cell is empty — Count too
+    [Fact] // ADR-0060: where no record carries both a row and a column, the cell is empty — Count too
     public void A_cell_with_no_record_is_empty_for_every_aggregation()
     {
         var layout = new PivotLayout
@@ -170,7 +170,7 @@ public class AggregationTests
         ], Lines(report));
     }
 
-    [Fact] // ADR-0059: a Value Field's number format, under the report's culture
+    [Fact] // ADR-0060: a Value Field's number format, under the report's culture
     public void A_number_format_formats_the_values()
     {
         var layout = new PivotLayout
@@ -184,7 +184,7 @@ public class AggregationTests
         Assert.Equal("1.234,50", Cell(Report(layout, thousand, new PivotOptions { Culture = CultureInfo.GetCultureInfo("de-DE") }), 0, 0));
     }
 
-    [Theory] // ADR-0059/0060: a format that cannot be used, or would run away, is refused
+    [Theory] // ADR-0060/0061: a format that cannot be used, or would run away, is refused
     [InlineData("N999999999")]
     [InlineData("N31")]
     [InlineData("Q")]
@@ -196,7 +196,7 @@ public class AggregationTests
             Report(new PivotLayout { Values = [Sum("Amount") with { NumberFormat = format }] }));
     }
 
-    [Theory] // ADR-0059: formats that can be used
+    [Theory] // ADR-0060: formats that can be used
     [InlineData("N2")]
     [InlineData("N30")]
     [InlineData("#,##0.00")]
@@ -205,7 +205,7 @@ public class AggregationTests
     public void A_usable_number_format_is_accepted(string format)
         => Assert.Null(PivotNumberFormat.Check(format));
 
-    [Fact] // ADR-0059: several Value Fields of one field are each read from one accumulation
+    [Fact] // ADR-0060: several Value Fields of one field are each read from one accumulation
     public void Several_aggregations_of_one_field()
     {
         var layout = new PivotLayout

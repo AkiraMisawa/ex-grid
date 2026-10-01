@@ -8,8 +8,8 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// The bundled source over a Snapshot (ADR-0063/0065): its fields from the columns or declared by
-/// column name, Items from each column's kind (ADR-0059, PV-3), every Aggregation read from typed
+/// The bundled source over a Snapshot (ADR-0064/0066): its fields from the columns or declared by
+/// column name, Items from each column's kind (ADR-0060, PV-3), every Aggregation read from typed
 /// columns with money summed exactly across slices of different scales (PV-4), and the same
 /// answers as the records' source over the same data (PV-22).
 /// </summary>
@@ -39,7 +39,7 @@ public class SnapshotSourceTests
     private static string[] Labels(PivotReport report)
         => report.Rows.Where(r => r.Role != PivotRowRole.GrandTotal).Select(r => r.Labels[0].Text!).ToArray();
 
-    [Fact] // ADR-0065: with no fields declared, one field per column, captioned as the column is and typed by its kind
+    [Fact] // ADR-0066: with no fields declared, one field per column, captioned as the column is and typed by its kind
     public void Fields_default_from_the_columns()
     {
         var source = PivotSource.From(Rows());
@@ -52,7 +52,7 @@ public class SnapshotSourceTests
         Assert.All(source.Fields, f => Assert.Null(f.Column));
     }
 
-    [Fact] // ADR-0065: declared fields name their columns, by their own name or another's; settings of their own are kept
+    [Fact] // ADR-0066: declared fields name their columns, by their own name or another's; settings of their own are kept
     public async Task Declared_fields_name_their_columns()
     {
         PivotField[] fields =
@@ -69,7 +69,7 @@ public class SnapshotSourceTests
         Assert.Equal("Sum of Money", Headers(report)[1]);
     }
 
-    [Fact] // ADR-0065: a field naming a column the Snapshot does not have is refused by name, and so is a date part of another kind
+    [Fact] // ADR-0066: a field naming a column the Snapshot does not have is refused by name, and so is a date part of another kind
     public void An_unknown_column_is_refused_by_name()
     {
         var snapshot = Rows();
@@ -87,7 +87,7 @@ public class SnapshotSourceTests
         Assert.Contains("'Money'", twice.Message);
     }
 
-    [Fact] // ADR-0059/0063 (PV-3): text Items ignore case and are labelled by the first spelling; a Blank in every kind is (blank)
+    [Fact] // ADR-0060/0064 (PV-3): text Items ignore case and are labelled by the first spelling; a Blank in every kind is (blank)
     public async Task Text_items_ignore_case_and_blanks_are_blank_in_every_kind()
     {
         var source = PivotSource.From(Rows(
@@ -105,7 +105,7 @@ public class SnapshotSourceTests
         Assert.Equal(["i  || 4", "i east || 3", "i (blank) ||", "t Grand Total || 7"], Lines(text));
     }
 
-    [Fact] // ADR-0059/0063 (PV-3): a number is its value — in every slice, whatever scale it holds it at, and as a Hidden Item's key
+    [Fact] // ADR-0060/0064 (PV-3): a number is its value — in every slice, whatever scale it holds it at, and as a Hidden Item's key
     public async Task A_number_is_its_value_in_every_slice()
     {
         var fields = PivotFields.Of<Row>().Number("Money", r => r.Money).Number("Measure", r => r.Measure).Number("Count", r => r.Count).Key("Text", r => r.Text);
@@ -126,7 +126,7 @@ public class SnapshotSourceTests
         Assert.Contains(PivotItemKey.For(1.0), answer.Rows[0].Items);
     }
 
-    [Fact] // ADR-0059/0063 (PV-3): a non-finite Double is #NUM!, after the Booleans and before (blank)
+    [Fact] // ADR-0060/0064 (PV-3): a non-finite Double is #NUM!, after the Booleans and before (blank)
     public async Task A_non_finite_double_is_the_error_item()
     {
         var source = PivotSource.From(Rows(
@@ -142,7 +142,7 @@ public class SnapshotSourceTests
         Assert.Equal("#NUM!", Cell(await ReportOf(source, new PivotLayout { Values = [Sum("Measure")] }), 0, 0));
     }
 
-    [Fact] // ADR-0059/0063 (PV-3): a date is its clock value: the Kind of a DateTime is ignored, and a time of day is another Item
+    [Fact] // ADR-0060/0064 (PV-3): a date is its clock value: the Kind of a DateTime is ignored, and a time of day is another Item
     public async Task A_date_is_its_clock_value()
     {
         var source = PivotSource.From(Rows(
@@ -156,7 +156,7 @@ public class SnapshotSourceTests
         Assert.Equal("3", Cell(report, 0, 0));
     }
 
-    [Fact] // ADR-0059/0065 (PV-3): a source lists Items in its own order; the report puts (blank) last in either direction
+    [Fact] // ADR-0060/0066 (PV-3): a source lists Items in its own order; the report puts (blank) last in either direction
     public async Task A_text_field_keeps_blank_last_either_way()
     {
         var source = PivotSource.From([1, 2, 3, 4, 5, 6], PivotFields.Of<int>().Text("Kind", i => i switch
@@ -172,7 +172,7 @@ public class SnapshotSourceTests
         Assert.Equal(["b", "A", "(blank)"], Labels(report));
     }
 
-    [Fact] // ADR-0059/0063 (PV-4): Integer and Decimal are summed exactly across slices held at different scales, and as decimals where 64 bits cannot hold them
+    [Fact] // ADR-0060/0064 (PV-4): Integer and Decimal are summed exactly across slices held at different scales, and as decimals where 64 bits cannot hold them
     public async Task Money_is_summed_exactly_across_slices_of_different_scales()
     {
         var fields = PivotFields.Of<Row>().Text("Text", r => r.Text).Number("Money", r => r.Money).Number("Count", r => r.Count).Key("Text");
@@ -206,7 +206,7 @@ public class SnapshotSourceTests
         Assert.Equal(PivotNumber.Exact(0.3m), tenths.Values[0].SumAt(0));
     }
 
-    [Fact] // ADR-0059/0065 (PV-4): over typed columns, every Aggregation at every cell, subtotal and grand total is the Aggregation of its own records
+    [Fact] // ADR-0060/0066 (PV-4): over typed columns, every Aggregation at every cell, subtotal and grand total is the Aggregation of its own records
     public async Task Every_aggregation_over_typed_columns_is_the_aggregation_of_its_records()
     {
         var fields = PivotFields.Of<Row>()
@@ -277,7 +277,7 @@ public class SnapshotSourceTests
         Assert.True(cells > 33 * 9, $"{cells} cells checked");
     }
 
-    // ADR-0059's table over one cell's values of one typed column — decimals and longs exact,
+    // ADR-0060's table over one cell's values of one typed column — decimals and longs exact,
     // doubles not — and the cell's record count: null for an empty cell, a string for an error.
     private static object? Expected(object?[] values, int records, PivotAggregation aggregation)
     {
@@ -306,11 +306,11 @@ public class SnapshotSourceTests
             PivotAggregation.StdDevp => Math.Sqrt(m2 / n),
             _ => throw new ArgumentOutOfRangeException(nameof(aggregation)),
         };
-        // An overflow in double is #NUM! (ADR-0059).
+        // An overflow in double is #NUM! (ADR-0060).
         return result is double d && !double.IsFinite(d) ? "#NUM!" : result;
     }
 
-    [Fact] // ADR-0059 (PV-4): an exact sum that leaves decimal's range falls back to double, Excel's arithmetic, rather than failing
+    [Fact] // ADR-0060 (PV-4): an exact sum that leaves decimal's range falls back to double, Excel's arithmetic, rather than failing
     public async Task An_exact_sum_past_decimals_range_is_a_double()
     {
         var source = PivotSource.From(Rows(new("a", decimal.MaxValue, null, null, null, null), new("b", decimal.MaxValue, null, null, null, null)));
@@ -320,7 +320,7 @@ public class SnapshotSourceTests
         Assert.Equal(PivotNumber.Double(2 * (double)decimal.MaxValue), answer.Values[0].SumAt(0));
     }
 
-    [Theory] // ADR-0059 (PV-4): Text, Date and Boolean in Values are counted and never summed — Sum is 0, as the table says
+    [Theory] // ADR-0060 (PV-4): Text, Date and Boolean in Values are counted and never summed — Sum is 0, as the table says
     [InlineData("Text")]
     [InlineData("When")]
     [InlineData("Flag")]
@@ -340,7 +340,7 @@ public class SnapshotSourceTests
         Assert.Equal(["t  || 0 | 2 | #DIV/0! | 0 | 0 | 0 | 0 | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0!"], Lines(report));
     }
 
-    [Fact] // ADR-0059/0065 (PV-4): only the parts asked for are accumulated, from typed columns
+    [Fact] // ADR-0060/0066 (PV-4): only the parts asked for are accumulated, from typed columns
     public async Task Only_the_parts_asked_for_are_accumulated()
     {
         var source = PivotSource.From(Rows(new Row("a", 1m, 2, 3, null, null)));
@@ -353,7 +353,7 @@ public class SnapshotSourceTests
         Assert.Throws<InvalidOperationException>(() => answer.Values[2].SumAt(0));
     }
 
-    [Fact] // ADR-0063/0065 (PV-4): a question over typed columns boxes no value — what it allocates does not grow with the rows
+    [Fact] // ADR-0064/0066 (PV-4): a question over typed columns boxes no value — what it allocates does not grow with the rows
     public async Task A_question_over_columns_boxes_nothing()
     {
         static Row Make(int i) => new("R" + (i % 4).ToString(CultureInfo.InvariantCulture), i / 100m, i * 0.5, i, new DateTime(2026, 1, 1).AddDays(i % 7), i % 2 == 0);
@@ -380,7 +380,7 @@ public class SnapshotSourceTests
         Assert.True(grown < 64 * 1024, $"a hundred thousand more rows allocated {grown:N0} bytes more");
     }
 
-    [Fact] // ADR-0065 (PV-22): the typed declarations and the untyped accessors answer alike over the same records
+    [Fact] // ADR-0066 (PV-22): the typed declarations and the untyped accessors answer alike over the same records
     public async Task Typed_and_untyped_declarations_answer_alike()
     {
         var typed = PivotFields.Of<Sale>()
@@ -404,7 +404,7 @@ public class SnapshotSourceTests
         }
     }
 
-    [Fact] // ADR-0065 (PV-22): a source answering through Fetch from the same Snapshot gives the same Leaf Aggregates, Items and Details, after batches too
+    [Fact] // ADR-0066 (PV-22): a source answering through Fetch from the same Snapshot gives the same Leaf Aggregates, Items and Details, after batches too
     public async Task Fetch_over_a_snapshot_answers_as_from_does()
     {
         var fields = LiveDataTests.Declarations();
@@ -454,7 +454,7 @@ public class SnapshotSourceTests
         }
     }
 
-    [Fact] // ADR-0062/0065: the records behind a cell carry each field's value by its kind, and the Consumer's own object
+    [Fact] // ADR-0063/0066: the records behind a cell carry each field's value by its kind, and the Consumer's own object
     public async Task The_records_behind_a_cell_carry_their_values_and_objects()
     {
         Row[] rows = [new("a", 1.50m, 0.5, 3, new DateTime(2026, 1, 2), true), new("b", null, null, null, null, null)];
@@ -469,7 +469,7 @@ public class SnapshotSourceTests
         Assert.Equal(["Text", "Money", "Measure", "Count", "When", "Flag"], page.Fields.Select(f => f.Name));
     }
 
-    [Fact] // ADR-0065 (PV-27): over a Snapshot, a question works in slices and stops at the next slice when cancelled
+    [Fact] // ADR-0066 (PV-27): over a Snapshot, a question works in slices and stops at the next slice when cancelled
     public async Task A_snapshot_question_works_in_slices_and_stops_when_cancelled()
     {
         var snapshot = Rows([.. Enumerable.Range(0, 10).Select(i => new Row("R" + (i % 3).ToString(CultureInfo.InvariantCulture), i, null, null, null, null))]);

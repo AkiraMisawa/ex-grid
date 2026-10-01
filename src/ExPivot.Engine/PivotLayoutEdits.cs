@@ -1,6 +1,6 @@
 namespace ExPivot.Engine;
 
-/// <summary>A placed entry of an Area, as the Field List shows it (ADR-0060): a field in
+/// <summary>A placed entry of an Area, as the Field List shows it (ADR-0061): a field in
 /// Filters, Rows or Columns, a Value Field, or Σ Values, which stands last in its Area.</summary>
 /// <param name="Area">The Area it stands in.</param>
 /// <param name="Index">Its index in that Area's list; −1 for Σ Values.</param>
@@ -14,7 +14,7 @@ public readonly record struct PivotEntry(PivotArea Area, int Index)
     public bool IsValuesPseudoField => Index == -1;
 }
 
-/// <summary>Why the Field List refused an edit (ADR-0059/0060).</summary>
+/// <summary>Why the Field List refused an edit (ADR-0060/0061).</summary>
 public enum PivotRefusal
 {
     /// <summary>The edit would hide every Item of a field.</summary>
@@ -51,7 +51,7 @@ public sealed record PivotEditResult(PivotLayout Layout, PivotRefusal? Refusal =
 }
 
 /// <summary>
-/// One choice of the Layout menu on the report's toolbar (ADR-0060): Excel's Design tab settings,
+/// One choice of the Layout menu on the report's toolbar (ADR-0061): Excel's Design tab settings,
 /// under Excel's names, in Excel's order — Subtotals, Grand Totals, then Report Layout. Excel's
 /// Blank Rows is left out: the engine has no blank row.
 /// </summary>
@@ -73,11 +73,11 @@ public enum PivotLayoutChoice
     GrandTotalsOn,
 
     /// <summary>Grand Totals: On for Rows Only — Excel's grand totals for rows, which is the
-    /// <c>Grand Total</c> column at the right (<see cref="PivotLayout.GrandTotalColumn"/>, ADR-0059).</summary>
+    /// <c>Grand Total</c> column at the right (<see cref="PivotLayout.GrandTotalColumn"/>, ADR-0060).</summary>
     GrandTotalsOnRowsOnly,
 
     /// <summary>Grand Totals: On for Columns Only — Excel's grand totals for columns, which is the
-    /// <c>Grand Total</c> row at the bottom (<see cref="PivotLayout.GrandTotalRow"/>, ADR-0059).</summary>
+    /// <c>Grand Total</c> row at the bottom (<see cref="PivotLayout.GrandTotalRow"/>, ADR-0060).</summary>
     GrandTotalsOnColumnsOnly,
 
     /// <summary>Report Layout: Show in Compact Form.</summary>
@@ -97,7 +97,7 @@ public enum PivotLayoutChoice
 }
 
 /// <summary>
-/// What each Field List gesture means (ADR-0060), as pure functions from a layout to the next.
+/// What each Field List gesture means (ADR-0061), as pure functions from a layout to the next.
 /// The component, a substituted Chrome and a server apply the same rules: a field stands at most
 /// once across Filters, Rows and Columns and its settings travel with it; it may stand in Values
 /// any number of times; Σ Values moves between Rows and Columns only and always stands last;
@@ -107,14 +107,14 @@ public enum PivotLayoutChoice
 public static class PivotLayoutEdits
 {
     /// <summary>The Aggregation a new Value Field of a field takes: Sum for a field declared
-    /// Number, Count for any other (ADR-0059).</summary>
+    /// Number, Count for any other (ADR-0060).</summary>
     public static PivotAggregation DefaultAggregation(PivotFieldInfo field)
     {
         ArgumentNullException.ThrowIfNull(field);
         return field.Type == PivotFieldType.Number ? PivotAggregation.Sum : PivotAggregation.Count;
     }
 
-    /// <summary>Ticking a field (ADR-0060): one standing nowhere goes to the end of Values when it
+    /// <summary>Ticking a field (ADR-0061): one standing nowhere goes to the end of Values when it
     /// is declared Number, and to the end of Rows otherwise. A field already standing somewhere
     /// is left where it is.</summary>
     public static PivotLayout Tick(PivotLayout layout, PivotFieldInfo field)
@@ -129,7 +129,7 @@ public static class PivotLayoutEdits
     }
 
     /// <summary>Unticking a field: it leaves every Area it stands in, each of its Value Fields
-    /// included (ADR-0060).</summary>
+    /// included (ADR-0061).</summary>
     public static PivotLayout Untick(PivotLayout layout, string field)
     {
         ArgumentNullException.ThrowIfNull(layout);
@@ -149,7 +149,7 @@ public static class PivotLayoutEdits
     }
 
     /// <summary>A field dropped from the list of fields on an Area at <paramref name="index"/>
-    /// (ADR-0060): in Values it is a new Value Field, whatever else it stands in; in Filters,
+    /// (ADR-0061): in Values it is a new Value Field, whatever else it stands in; in Filters,
     /// Rows or Columns it is placed there, moving out of whichever of them it stood in, with its
     /// settings.</summary>
     public static PivotLayout Place(PivotLayout layout, PivotFieldInfo field, PivotArea area, int index)
@@ -165,7 +165,7 @@ public static class PivotLayoutEdits
     }
 
     /// <summary>
-    /// A placed entry dropped on an Area at <paramref name="index"/> (ADR-0060). Within its own
+    /// A placed entry dropped on an Area at <paramref name="index"/> (ADR-0061). Within its own
     /// Area it is a reorder. A field moving between Filters, Rows and Columns keeps its settings;
     /// one moving to Values leaves its Area and becomes a Value Field; a Value Field moving to
     /// another Area leaves Values and its field is placed there. Σ Values moves between Rows and
@@ -233,7 +233,7 @@ public static class PivotLayoutEdits
     }
 
     /// <summary>Removing an entry — Remove Field, or dragging it back to the list of fields
-    /// (ADR-0060). Σ Values cannot be removed: it leaves when fewer than two Value Fields
+    /// (ADR-0061). Σ Values cannot be removed: it leaves when fewer than two Value Fields
     /// remain.</summary>
     public static PivotLayout Remove(PivotLayout layout, PivotEntry entry)
     {
@@ -252,7 +252,7 @@ public static class PivotLayoutEdits
     }
 
     /// <summary>
-    /// A field's Hidden Items, as Filter… applies them (ADR-0059/0060): refused when they would
+    /// A field's Hidden Items, as Filter… applies them (ADR-0060/0061): refused when they would
     /// hide every one of <paramref name="items"/> — the field's Items in the snapshot — because a
     /// report of nothing reads as "no data". A key hidden that no Item carries is kept: it hides
     /// the Item if a later snapshot brings it.
@@ -284,7 +284,7 @@ public static class PivotLayoutEdits
     public static PivotLayout SetSubtotals(PivotLayout layout, string field, bool subtotals)
         => Update(layout, field, p => p.Subtotals == subtotals ? p : p with { Subtotals = subtotals });
 
-    /// <summary>One Item collapsed or expanded, wherever it appears (ADR-0059).</summary>
+    /// <summary>One Item collapsed or expanded, wherever it appears (ADR-0060).</summary>
     public static PivotLayout SetCollapsed(PivotLayout layout, string field, PivotItemKey item, bool collapsed)
     {
         ArgumentNullException.ThrowIfNull(item);
@@ -306,7 +306,7 @@ public static class PivotLayoutEdits
             : p with { Collapsed = collapsed, ToggledItems = [] });
 
     /// <summary>
-    /// A Value Field's settings, as Value Field Settings… applies them (ADR-0059/0060): refused
+    /// A Value Field's settings, as Value Field Settings… applies them (ADR-0060/0061): refused
     /// when its own caption is empty, or is another Value Field's caption or a Pivot Field's,
     /// or when its number format cannot be used.
     /// </summary>
@@ -334,10 +334,10 @@ public static class PivotLayoutEdits
         return new PivotEditResult(layout with { Values = values });
     }
 
-    // ---- The Layout menu (ADR-0060) -----------------------------------------------------------
+    // ---- The Layout menu (ADR-0061) -----------------------------------------------------------
 
     /// <summary>
-    /// A Layout menu choice applied (ADR-0060), as Excel's Design tab applies it. The Subtotals
+    /// A Layout menu choice applied (ADR-0061), as Excel's Design tab applies it. The Subtotals
     /// choices set every field in Rows and Columns — Automatic, or None — and, for the two that
     /// show them, where they stand; the Grand Totals choices set the two switches; the Report
     /// Layout choices set the form, or whether the Outline and Tabular forms repeat their outer
@@ -367,7 +367,7 @@ public static class PivotLayoutEdits
 
     /// <summary>
     /// Whether <paramref name="choice"/> is what the report shows now — the Layout menu marks it
-    /// (ADR-0060). Read from what is painted: in the Tabular form, which puts every subtotal at the
+    /// (ADR-0061). Read from what is painted: in the Tabular form, which puts every subtotal at the
     /// bottom, Show at Bottom is the current Subtotals choice whatever the layout's setting; in the
     /// Compact form, which has no outer label columns, neither label choice is. With no field in
     /// Rows or Columns there is nothing to subtotal and no Subtotals choice is current, and with
@@ -397,7 +397,7 @@ public static class PivotLayoutEdits
     }
 
     /// <summary>
-    /// Whether <paramref name="choice"/> would change what the report shows (ADR-0060): the Layout
+    /// Whether <paramref name="choice"/> would change what the report shows (ADR-0061): the Layout
     /// menu disables one that would not, as it disables any command that would change nothing. The
     /// current choice never would. Nor would a Subtotals choice with no field in Rows or Columns,
     /// Show at Top in the Tabular form, which puts every subtotal at the bottom whatever is
@@ -424,7 +424,7 @@ public static class PivotLayoutEdits
     private static PivotFieldPlacement[] AxisFields(PivotLayout layout) => [.. layout.Rows, .. layout.Columns];
 
     // Where subtotals are painted: at the top only outside the Tabular form, which puts them at
-    // the bottom whatever the setting (ADR-0059).
+    // the bottom whatever the setting (ADR-0060).
     private static bool SubtotalsShownAtTop(PivotLayout layout) => layout.SubtotalsAtTop && layout.Form != PivotReportForm.Tabular;
 
     private static PivotLayout WithSubtotals(PivotLayout layout, bool subtotals)

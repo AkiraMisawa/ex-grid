@@ -1,7 +1,7 @@
 namespace ExGrid.Data;
 
 /// <summary>
-/// The kind a Snapshot column is declared with (ADR-0063). Every value of the column is of this
+/// The kind a Snapshot column is declared with (ADR-0064). Every value of the column is of this
 /// kind, or a Blank.
 /// </summary>
 public enum SnapshotKind

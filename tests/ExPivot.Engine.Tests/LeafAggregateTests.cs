@@ -4,7 +4,7 @@ using static ExPivot.Engine.Tests.Pivot;
 
 namespace ExPivot.Engine.Tests;
 
-/// <summary>The report from Leaf Aggregates (ADR-0059/0065): every total merged from the leaves'
+/// <summary>The report from Leaf Aggregates (ADR-0060/0066): every total merged from the leaves'
 /// parts is the Aggregation of its own records, only the parts asked for travel, and a held answer
 /// is laid out again unless an Aggregation needs a part it lacks.</summary>
 public class LeafAggregateTests
@@ -47,7 +47,7 @@ public class LeafAggregateTests
 
     private static readonly Dictionary<string, Func<Obs, object?>> Read = ObsFields.ToDictionary(f => f.Name, f => f.Value);
 
-    [Theory] // ADR-0059/0065 (PV-4): every cell, subtotal and grand total from the leaves is the Aggregation of its own records
+    [Theory] // ADR-0060/0066 (PV-4): every cell, subtotal and grand total from the leaves is the Aggregation of its own records
     [InlineData(PivotReportForm.Compact, true)]
     [InlineData(PivotReportForm.Outline, false)]
     [InlineData(PivotReportForm.Tabular, true)]
@@ -97,7 +97,7 @@ public class LeafAggregateTests
         Assert.True(cells > 11 * 30, $"{cells} cells checked");
     }
 
-    // The table of ADR-0059, over a cell's records, computed from them directly: null for an empty
+    // The table of ADR-0060, over a cell's records, computed from them directly: null for an empty
     // cell, a string for an error value, a decimal for an exact answer, a double otherwise.
     private static object? Oracle(IReadOnlyList<object?> values, PivotAggregation aggregation)
     {
@@ -124,7 +124,7 @@ public class LeafAggregateTests
             }
             catch (OverflowException)
             {
-                // Exact until it cannot be: then double (ADR-0059).
+                // Exact until it cannot be: then double (ADR-0060).
             }
         }
         var n = doubles.Length;
@@ -146,7 +146,7 @@ public class LeafAggregateTests
         return result is double d2 && !double.IsFinite(d2) ? "#NUM!" : result;
     }
 
-    [Fact] // ADR-0059/0065: only the parts asked for are accumulated and travel; a part not asked for is refused, not read as zero
+    [Fact] // ADR-0060/0066: only the parts asked for are accumulated and travel; a part not asked for is refused, not read as zero
     public async Task Only_the_parts_asked_for_travel()
     {
         var source = PivotSource.From(Sales, Fields);
@@ -170,7 +170,7 @@ public class LeafAggregateTests
         Assert.Equal([new PivotQueryValue("Amount", PivotParts.Sum | PivotParts.Extremes), new PivotQueryValue("Quantity")], PivotQuery.For(layout).Values);
     }
 
-    [Theory] // ADR-0065: each Aggregation reads the parts the table names
+    [Theory] // ADR-0066: each Aggregation reads the parts the table names
     [InlineData(PivotAggregation.Sum, PivotParts.Sum)]
     [InlineData(PivotAggregation.Average, PivotParts.Sum)]
     [InlineData(PivotAggregation.Max, PivotParts.Extremes)]
@@ -185,7 +185,7 @@ public class LeafAggregateTests
     public void Each_aggregation_reads_its_parts(PivotAggregation aggregation, PivotParts parts)
         => Assert.Equal(parts, PivotQuery.PartsOf(aggregation));
 
-    [Fact] // ADR-0059/0065 (PV-26's engine side): a held answer is laid out again unless an Aggregation needs a part it lacks
+    [Fact] // ADR-0060/0066 (PV-26's engine side): a held answer is laid out again unless an Aggregation needs a part it lacks
     public void A_held_answer_asks_again_only_for_missing_parts()
     {
         var layout = new PivotLayout { Rows = [P("Region")], Columns = [P("Online")], Values = [Sum("Amount")] };
@@ -216,7 +216,7 @@ public class LeafAggregateTests
         Assert.Equal(Lines(Report(With(PivotAggregation.Average))), Lines(PivotEngine.Report(sum, With(PivotAggregation.Average), EnUs)));
     }
 
-    [Fact] // ADR-0065: an answer carrying more parts than asked holds more Aggregations
+    [Fact] // ADR-0066: an answer carrying more parts than asked holds more Aggregations
     public async Task An_answer_with_more_parts_holds_more()
     {
         var layout = new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] };
@@ -231,7 +231,7 @@ public class LeafAggregateTests
             Lines(PivotEngine.Report(cube, layout with { Values = [Value("Amount", PivotAggregation.Max)] }, EnUs)));
     }
 
-    [Fact] // ADR-0065: a server computing the Leaf Aggregates itself — SQL's GROUP BY — lays out the bundled source's report
+    [Fact] // ADR-0066: a server computing the Leaf Aggregates itself — SQL's GROUP BY — lays out the bundled source's report
     public void A_server_building_its_own_leaves_lays_out_the_same_report()
     {
         var layout = new PivotLayout
@@ -262,7 +262,7 @@ public class LeafAggregateTests
         Assert.Throws<InvalidOperationException>(() => builder.Build());
     }
 
-    [Fact] // ADR-0065: a builder refuses what an answer cannot hold, and a cube an answer with two leaves for one cell
+    [Fact] // ADR-0066: a builder refuses what an answer cannot hold, and a cube an answer with two leaves for one cell
     public void What_an_answer_cannot_hold_is_refused()
     {
         var query = new PivotQuery(rows: [new("Region")], values: [new("Amount", PivotParts.Sum)], maxLeaves: 1);
@@ -285,7 +285,7 @@ public class LeafAggregateTests
             () => PivotEngine.Cube(new PivotQuery(rows: [new("Region")]), twice, Fields)).Message);
     }
 
-    [Fact] // ADR-0063/0065, PV-22: a Decimal is its value, not the scale a source wrote it at — the raw form a copy carries is one, whichever source answered
+    [Fact] // ADR-0064/0066, PV-22: a Decimal is its value, not the scale a source wrote it at — the raw form a copy carries is one, whichever source answered
     public void A_sources_scale_is_not_part_of_the_report()
     {
         var layout = new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount"), Value("Amount", PivotAggregation.Max)] };

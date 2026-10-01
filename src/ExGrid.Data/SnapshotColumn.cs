@@ -4,7 +4,7 @@ namespace ExGrid.Data;
 
 /// <summary>
 /// A column of a Snapshot: its name, unique within the Snapshot, its caption and its kind
-/// (ADR-0063). A column read from one version may be handed to the slices of any other version of
+/// (ADR-0064). A column read from one version may be handed to the slices of any other version of
 /// the same Snapshot — the ones a Change Batch made from it, or it from — and means the same column
 /// there; handed to another Snapshot's, it is refused.
 /// </summary>
@@ -33,7 +33,7 @@ public abstract class SnapshotColumn
 
 /// <summary>
 /// A Text column. Each row holds a code into <see cref="Dictionary"/>, which holds every distinct
-/// value once, exactly as written; a Blank is the code -1 (ADR-0063).
+/// value once, exactly as written; a Blank is the code -1 (ADR-0064).
 /// </summary>
 public sealed class TextColumn : SnapshotColumn
 {
@@ -84,7 +84,7 @@ public sealed class IntegerColumn : SnapshotColumn
 /// <summary>
 /// A Date column, holding each value as the clock value it shows, in ticks: a <see cref="DateTime"/>'s
 /// ticks with its <see cref="DateTime.Kind"/> ignored, a <see cref="DateOnly"/>'s midnight, a
-/// <see cref="DateTimeOffset"/>'s clock with its offset dropped (ADR-0063).
+/// <see cref="DateTimeOffset"/>'s clock with its offset dropped (ADR-0064).
 /// </summary>
 public sealed class DateColumn : SnapshotColumn
 {

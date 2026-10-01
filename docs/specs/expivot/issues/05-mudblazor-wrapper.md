@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** `ExPivot.MudBlazor` (ADR-0061): `MudPivotChrome`, drawing the pane, the menus, the
+**What to build:** `ExPivot.MudBlazor` (ADR-0062): `MudPivotChrome`, drawing the pane, the menus, the
 panels and the band with MudBlazor's controls and dressing the report grid with `MudGridChrome` in
 ExPivot's words, and `mud-ex-pivot.css`, on `MudExGridPaper`.
 

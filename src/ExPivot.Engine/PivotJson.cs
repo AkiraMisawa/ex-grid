@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// Every Pivot Source question and answer as JSON (ADR-0065), so it crosses to a server unchanged:
+/// Every Pivot Source question and answer as JSON (ADR-0066), so it crosses to a server unchanged:
 /// <see cref="PivotQuery"/> and <see cref="PivotAnswer"/>, <see cref="PivotItemsQuery"/> and
 /// <see cref="PivotItemPage"/>, <see cref="PivotDetailsQuery"/> and <see cref="PivotDetailPage"/>,
 /// and <see cref="PivotSourceChanged"/>. Each document names its format's <c>version</c> and its
@@ -242,7 +242,7 @@ public static class PivotJson
         json.WriteEndArray();
     }
 
-    // An Item as a Pivot Layout writes it (ADR-0059): its kind and its invariant text.
+    // An Item as a Pivot Layout writes it (ADR-0060): its kind and its invariant text.
     private static void WriteKey(Utf8JsonWriter json, PivotItemKey key)
     {
         json.WriteStartObject();
@@ -598,7 +598,7 @@ public static class PivotJson
             foreach (var item in items)
             {
                 if (!distinct.Add(item))
-                    throw new FormatException($"'{field}' lists the Item {item} twice; text Items are told apart ignoring case (ADR-0059).");
+                    throw new FormatException($"'{field}' lists the Item {item} twice; text Items are told apart ignoring case (ADR-0060).");
             }
             var itemOfLeaf = Column(axis, "leaves", leaves, element => IntValue(element, "leaves"));
             return new PivotAnswerAxis(field, items, itemOfLeaf, leaves);

@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExGrid.Data;
 
 /// <summary>
-/// A load or a Change Batch refused (ADR-0063). A load that meets a value it cannot read fails
+/// A load or a Change Batch refused (ADR-0064). A load that meets a value it cannot read fails
 /// whole, naming the row and the column, and yields no Snapshot; a batch that names a key wrongly
 /// is refused whole, naming the key, and nothing of it is applied.
 /// </summary>

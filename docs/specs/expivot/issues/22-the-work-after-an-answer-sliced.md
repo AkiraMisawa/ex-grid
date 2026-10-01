@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** what ADR-0065 settled on 2026-10-01. Near the 200,000-leaf cap, the work after a
+**What to build:** what ADR-0066 settled on 2026-10-01. Near the 200,000-leaf cap, the work after a
 question's pass held a browser for 1.9 s in one task (`verification/2026-10-01-linux-measure`):
 
 - the bundled source assembling its answer;
@@ -11,7 +11,7 @@ question's pass held a browser for 1.9 s in one task (`verification/2026-10-01-l
 
 Each yields to the browser at least every 30 ms, as the pass does. A gesture made meanwhile
 supersedes the question, and the report on screen stays until the new one is complete. Nothing is
-shown half-built (ADR-0066's "never half a batch").
+shown half-built (ADR-0067's "never half a batch").
 
 **Blocked by:** None
 
@@ -33,7 +33,7 @@ shown half-built (ADR-0066's "never half a batch").
   - `PivotSlicing.YieldAsync` is public, for work that goes on after a sliced piece has yielded.
 - **The bundled source** assembles its answer in the pass's slices, and so it does the answer held
   for live data. A Change Batch applied while an answer is assembled from the answer held waits
-  until it is made, and is folded in then: no answer is half a batch (ADR-0066).
+  until it is made, and is folded in then: no answer is half a batch (ADR-0067).
 - **`PivotEngine.CubeAsync` and `ReportAsync`, and `PivotReport.HasSameRowsAsAsync`**, run the very
   steps of `Cube`, `Report` and `HasSameRowsAs`, which run them unsliced, so the two forms give the
   same result by construction.

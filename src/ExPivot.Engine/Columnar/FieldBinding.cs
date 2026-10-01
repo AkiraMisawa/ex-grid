@@ -2,7 +2,7 @@ using ExGrid.Data;
 
 namespace ExPivot.Engine;
 
-/// <summary>How a bound column's values are read (ADR-0059/0063).</summary>
+/// <summary>How a bound column's values are read (ADR-0060/0064).</summary>
 internal enum ValueRole : byte
 {
     /// <summary>A Text column: codes into its dictionary, folded ignoring case into Items.</summary>
@@ -41,7 +41,7 @@ internal readonly struct BoundColumn(SnapshotColumn column, ValueRole role)
 /// column a date part is a part of — or, for a field read through an untyped accessor, one column
 /// per kind of value the accessor returned, a row's value standing in exactly one of them (or in
 /// none, for a Blank). The second is how a field "whose values are not all of the declared type is
-/// still pivoted as its values are" (ADR-0059): each value keeps its own kind.
+/// still pivoted as its values are" (ADR-0060): each value keeps its own kind.
 /// </summary>
 internal sealed class FieldBinding
 {
@@ -88,7 +88,7 @@ internal sealed class FieldBinding
     /// <summary>
     /// The fields of a Snapshot: <paramref name="fields"/> each bound to the column it names — its
     /// <see cref="PivotField.Column"/>, or its own name — or, with none declared, one field per
-    /// column, captioned as the column is and typed by its kind (ADR-0065). An unknown column is
+    /// column, captioned as the column is and typed by its kind (ADR-0066). An unknown column is
     /// refused by name, and so is a date part of a column that is not a Date column.
     /// </summary>
     public static (PivotField[] Fields, Dictionary<string, FieldBinding> Bindings) Of(Snapshot snapshot, IReadOnlyList<PivotField>? fields)

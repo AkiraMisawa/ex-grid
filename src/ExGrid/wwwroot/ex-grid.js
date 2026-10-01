@@ -316,7 +316,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29).
     // Whether the key is a held key's repeat goes with it too: auto-repeat is visible only here,
     // and by the time a key reaches .NET a repeat looks like a press. The core raises a
-    // Consumer's OnLeave once per press, however long Escape is held (ADR-0069). A field of the
+    // Consumer's OnLeave once per press, however long Escape is held (ADR-0070). A field of the
     // event the listener already reads; no listener is added and no layout is read.
     const forward = (k) => {
         const input = editing !== 'none' ? editorInput() : null;

@@ -3,7 +3,7 @@ using Apache.Arrow.Ipc;
 namespace ExGrid.Data.Arrow;
 
 /// <summary>
-/// What Arrow's reader is handed when the Consumer handed in no codecs (ADR-0064). Arrow asks a
+/// What Arrow's reader is handed when the Consumer handed in no codecs (ADR-0065). Arrow asks a
 /// factory for a codec only when a message's buffers are compressed, naming the codec; this one
 /// answers with the refusal, so the refusal names the codec the stream needs. A stream that is not
 /// compressed never asks.

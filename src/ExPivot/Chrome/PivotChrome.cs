@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components;
 namespace ExPivot.Chrome;
 
 /// <summary>
-/// ExPivot's Chrome (ADR-0060): what draws the Field List, the toolbar above the report with its
+/// ExPivot's Chrome (ADR-0061): what draws the Field List, the toolbar above the report with its
 /// report filter band, a menu — a placed field's, and the Layout menu — the three panels, Show
 /// Details' tabs and dialog, and the Stale Report's notice. Each member returns the content to
 /// draw, or null for ExPivot's built-in plain markup. It renders and calls back; the rules, the
@@ -14,7 +14,7 @@ namespace ExPivot.Chrome;
 public interface IPivotChrome
 {
     /// <summary>
-    /// The report grid's Chrome, so that one Chrome dresses both (ADR-0060); a <c>Chrome</c>
+    /// The report grid's Chrome, so that one Chrome dresses both (ADR-0061); a <c>Chrome</c>
     /// written on ExPivot beats it. Null for ExGrid's built-in. ExPivot asks once per Pivot
     /// Chrome and holds the answer, so a new instance per call is right here.
     /// </summary>
@@ -31,7 +31,7 @@ public interface IPivotChrome
     /// <summary>The report filter band, on the toolbar's left: one entry per field in Filters.</summary>
     RenderFragment? ReportFilters(PivotReportFiltersContext context) => null;
 
-    /// <summary>The toolbar above the report (ADR-0060): the report filter band on its left — the
+    /// <summary>The toolbar above the report (ADR-0061): the report filter band on its left — the
     /// context hands it over, drawn by <see cref="ReportFilters"/> — and on its right, in this
     /// order, Layout ▾, Refresh when the source can be refreshed, and the Field List's toggle.</summary>
     RenderFragment? Toolbar(PivotToolbarContext context) => null;
@@ -50,16 +50,16 @@ public interface IPivotChrome
     /// inside ExPivot's frame.</summary>
     RenderFragment? ValueFieldSettings(PivotValueFieldSettingsContext context) => null;
 
-    /// <summary>The tabs at the report's foot (ADR-0058): the report's own, then one per Show
+    /// <summary>The tabs at the report's foot (ADR-0059): the report's own, then one per Show
     /// Details, each closable. The selected tab's records are ExPivot's to place, over the report.</summary>
     RenderFragment? DetailsTabs(PivotDetailsTabsContext context) => null;
 
     /// <summary>The content of Show Details' dialog, inside ExPivot's frame — which is a dialog
-    /// named by the cell, takes the keyboard and closes on Escape (ADR-0058).</summary>
+    /// named by the cell, takes the keyboard and closes on Escape (ADR-0059).</summary>
     RenderFragment? DetailsDialog(PivotDetailsDialogContext context) => null;
 
     /// <summary>
-    /// The Stale Report's notice (ADR-0066), under the toolbar, inside ExPivot's frame — a polite
+    /// The Stale Report's notice (ADR-0067), under the toolbar, inside ExPivot's frame — a polite
     /// live region, so the notice is announced without interrupting the reader; the content adds
     /// no live region of its own. Asked only while the report is stale: the newest data could not
     /// be shown, the report stays on the last version it could compute, and the notice says what
@@ -70,7 +70,7 @@ public interface IPivotChrome
 }
 
 /// <summary>
-/// The Stale Report's notice (ADR-0066): the newest data cannot be shown — the new answer broke a
+/// The Stale Report's notice (ADR-0067): the newest data cannot be shown — the new answer broke a
 /// cap, or the source refused or failed — so the report stays on the last version it could
 /// compute, and says what happened and as of when. Retry asks the source again; the notice goes
 /// when an answer is laid out. Its words are ExPivot's, by id: <c>stale-report</c> frames the
@@ -95,7 +95,7 @@ public sealed record PivotStaleReportContext(
     PivotCommand Retry,
     Func<string, string> Word);
 
-/// <summary>What is being dragged in the Field List (ADR-0060): a declared field from the list
+/// <summary>What is being dragged in the Field List (ADR-0061): a declared field from the list
 /// of fields, or a placed entry of an Area.</summary>
 public sealed record PivotDragSubject
 {
@@ -123,7 +123,7 @@ public sealed record PivotDragSubject
 }
 
 /// <summary>
-/// Everything a Field List substitute needs (ADR-0060). The Chrome paints the fields and the
+/// Everything a Field List substitute needs (ADR-0061). The Chrome paints the fields and the
 /// Areas and calls back; ExPivot decides what each gesture means. Drag and drop is Blazor's own
 /// events: a draggable element calls <see cref="StartDrag"/> on <c>dragstart</c> and
 /// <see cref="EndDrag"/> on <c>dragend</c>; a drop target prevents <c>dragover</c>'s default
@@ -163,7 +163,7 @@ public sealed record PivotFieldListContext(
     Action EndDrag,
     Func<string, string> Word)
 {
-    /// <summary>Whether Excel's Defer Layout Update is ticked, at the pane's foot (ADR-0060): the
+    /// <summary>Whether Excel's Defer Layout Update is ticked, at the pane's foot (ADR-0061): the
     /// pane's changes then build a pending layout, which the fields and Areas above show, and the
     /// report and the source are left alone until Update.</summary>
     public bool DeferLayoutUpdate { get; init; }
@@ -180,7 +180,7 @@ public sealed record PivotFieldListContext(
     public Func<Task> Update { get; init; } = static () => Task.CompletedTask;
 }
 
-/// <summary>A declared field in the Field List (ADR-0060).</summary>
+/// <summary>A declared field in the Field List (ADR-0061).</summary>
 /// <param name="Name">The field's name.</param>
 /// <param name="Caption">What it is called.</param>
 /// <param name="Type">Its declared type.</param>
@@ -190,7 +190,7 @@ public sealed record PivotFieldListContext(
 public sealed record PivotFieldEntry(
     string Name, string Caption, PivotFieldType Type, bool IsPlaced, bool IsFiltered, Func<Task> Toggle);
 
-/// <summary>One Area in the Field List (ADR-0060).</summary>
+/// <summary>One Area in the Field List (ADR-0061).</summary>
 /// <param name="Area">Which Area.</param>
 /// <param name="Title">Its name: Filters, Columns, Rows, Values.</param>
 /// <param name="Entries">What stands in it, Σ Values last where it stands.</param>
@@ -199,7 +199,7 @@ public sealed record PivotFieldEntry(
 public sealed record PivotAreaView(
     PivotArea Area, string Title, IReadOnlyList<PivotAreaEntryView> Entries, bool AcceptsDrop, int? DropIndex);
 
-/// <summary>A placed entry of an Area (ADR-0060).</summary>
+/// <summary>A placed entry of an Area (ADR-0061).</summary>
 /// <param name="Entry">Which entry it is.</param>
 /// <param name="Caption">What it is called: the field's caption, a Value Field's caption, Σ Values.</param>
 /// <param name="IsFiltered">Whether its field hides Items now.</param>
@@ -207,7 +207,7 @@ public sealed record PivotAreaView(
 /// <param name="OpenMenu">Opens its menu; closes it when it is open.</param>
 /// <param name="Popup">The open menu or panel, in ExPivot's frame, which the Chrome places
 /// directly under the entry, with no positioned element of its own around them: the frame takes
-/// the pane's width from the Field List (ADR-0060). Null while none is open.</param>
+/// the pane's width from the Field List (ADR-0061). Null while none is open.</param>
 /// <param name="FocusRequest">Changes when the entry's button should take DOM focus — after its
 /// menu or panel closed.</param>
 public sealed record PivotAreaEntryView(
@@ -223,7 +223,7 @@ public sealed record PivotAreaEntryView(
     public bool IsValuesPseudoField => Entry.IsValuesPseudoField;
 }
 
-/// <summary>One command of a menu ExPivot decides (ADR-0060): what it is called — in ExPivot's
+/// <summary>One command of a menu ExPivot decides (ADR-0061): what it is called — in ExPivot's
 /// words, which the Consumer may replace — whether it is available, and what it does.</summary>
 /// <param name="Id">Stable, for an icon (<see cref="PivotCommandIds"/>).</param>
 /// <param name="Label">What it is called.</param>
@@ -232,7 +232,7 @@ public sealed record PivotAreaEntryView(
 public sealed record PivotCommand(string Id, string Label, bool Enabled, Func<Task> Invoke)
 {
     /// <summary>For a choice among others — the Layout menu's — whether it is the current one,
-    /// which the menu marks (ADR-0060); null for a command that is not a choice.</summary>
+    /// which the menu marks (ADR-0061); null for a command that is not a choice.</summary>
     public bool? Checked { get; init; }
 
     /// <summary>The heading of the group of commands this one starts — the Layout menu's
@@ -240,7 +240,7 @@ public sealed record PivotCommand(string Id, string Label, bool Enabled, Func<Ta
     public string? GroupHeading { get; init; }
 }
 
-/// <summary>A menu (ADR-0060): a placed field's, or the toolbar's Layout menu.</summary>
+/// <summary>A menu (ADR-0061): a placed field's, or the toolbar's Layout menu.</summary>
 /// <param name="Title">The menu's accessible name.</param>
 /// <param name="Commands">Excel's commands, in its order.</param>
 /// <param name="Close">Closes the menu without running anything.</param>
@@ -254,7 +254,7 @@ public sealed record PivotMenuContext(string Title, IReadOnlyList<PivotCommand> 
 public sealed record PivotChoice<T>(T Value, string Label)
 {
     /// <summary>Whether it may be chosen. An Aggregation the Pivot Source does not answer is
-    /// offered, and not available (ADR-0065).</summary>
+    /// offered, and not available (ADR-0066).</summary>
     public bool Enabled { get; init; } = true;
 
     /// <summary>Why it may not be chosen, in words — "The source does not answer Product." — or
@@ -269,7 +269,7 @@ public sealed record PivotChoice<T>(T Value, string Label)
 public sealed record PivotItemChoice(PivotItemKey Key, string Label, bool Ticked);
 
 /// <summary>
-/// Filter… (ADR-0060): a field's Items, every one, in its order, each ticked while shown. The
+/// Filter… (ADR-0061): a field's Items, every one, in its order, each ticked while shown. The
 /// ticks are a draft ExPivot holds; OK applies them, Cancel and Escape drop them.
 /// </summary>
 /// <param name="FieldCaption">The field's caption.</param>
@@ -307,12 +307,12 @@ public sealed record PivotItemFilterContext(
     Func<string, string> Word)
 {
     /// <summary>Whether the field's Items are still on their way from the Pivot Source, which
-    /// lists them under the report's Source Version (ADR-0065): a first listing, with nothing yet
+    /// lists them under the report's Source Version (ADR-0066): a first listing, with nothing yet
     /// to list. OK cannot be pressed meanwhile.</summary>
     public bool IsLoading { get; init; }
 
     /// <summary>Whether the Items listed are an earlier Source Version's, kept in view while the
-    /// report's version's are on their way (ADR-0065 refined). They are listed, ticked and applied
+    /// report's version's are on their way (ADR-0066 refined). They are listed, ticked and applied
     /// as any are — Hidden Items are keys, which name the same Items under any version — and the
     /// report's version's replace them when they land. A Chrome may mark the list as updating; it
     /// does not blank it, and does not dim it: a live report brings a new version several times a
@@ -321,11 +321,11 @@ public sealed record PivotItemFilterContext(
 
     /// <summary>Why the Items cannot be listed, in words, or null: "The data has changed —
     /// refresh." when the source can no longer answer under the report's Source Version, rather
-    /// than Items that are not the report's (ADR-0065). OK cannot be pressed meanwhile.</summary>
+    /// than Items that are not the report's (ADR-0066). OK cannot be pressed meanwhile.</summary>
     public string? Unavailable { get; init; }
 }
 
-/// <summary>Field Settings… of a row or column field (ADR-0060): its subtotals and its order,
+/// <summary>Field Settings… of a row or column field (ADR-0061): its subtotals and its order,
 /// as a draft until OK.</summary>
 /// <param name="FieldCaption">The field's caption.</param>
 /// <param name="Subtotals">Automatic (true) or None, in the draft.</param>
@@ -352,7 +352,7 @@ public sealed record PivotFieldSettingsContext(
     Action<bool> InnerPopupChanged,
     Func<string, string> Word);
 
-/// <summary>Value Field Settings… (ADR-0060): the caption, the Aggregation, Show Values As and
+/// <summary>Value Field Settings… (ADR-0061): the caption, the Aggregation, Show Values As and
 /// the number format, as a draft until OK, which a taken caption or an unusable format refuses.</summary>
 /// <param name="FieldCaption">The Pivot Field's caption — the Source Name.</param>
 /// <param name="Caption">The draft's caption, as shown in its field.</param>
@@ -392,14 +392,14 @@ public sealed record PivotValueFieldSettingsContext(
     Action<bool> InnerPopupChanged,
     Func<string, string> Word);
 
-/// <summary>The report filter band (ADR-0060): each field in Filters, as Excel shows its page
+/// <summary>The report filter band (ADR-0061): each field in Filters, as Excel shows its page
 /// fields above the report.</summary>
 /// <param name="Title">The band's accessible name.</param>
 /// <param name="Filters">One entry per field in Filters, in order.</param>
 /// <param name="Word">ExPivot's words, by id.</param>
 public sealed record PivotReportFiltersContext(string Title, IReadOnlyList<PivotReportFilterView> Filters, Func<string, string> Word);
 
-/// <summary>One report filter (ADR-0060).</summary>
+/// <summary>One report filter (ADR-0061).</summary>
 /// <param name="Field">The field's name.</param>
 /// <param name="Caption">Its caption.</param>
 /// <param name="Summary">What it shows: <c>(All)</c>, the one Item shown, or <c>(Multiple Items)</c>.</param>
@@ -420,7 +420,7 @@ public sealed record PivotReportFilterView(
     int FocusRequest);
 
 /// <summary>
-/// The toolbar above the report (ADR-0060). On its left stands the report filter band, which it is
+/// The toolbar above the report (ADR-0061). On its left stands the report filter band, which it is
 /// handed drawn; on its right, in this order, Layout ▾, Refresh when the source can be refreshed,
 /// and the Field List's toggle. Its popups — the band's Filter… and the Layout menu — open under it,
 /// over the report, in ExPivot's frame, with a backdrop that closes them; the Chrome places each
@@ -430,7 +430,7 @@ public sealed record PivotReportFilterView(
 /// or ExPivot's markup; null while no field stands in Filters.</param>
 /// <param name="LayoutMenu">Layout ▾, which opens Excel's Design tab choices.</param>
 /// <param name="Refresh">Refresh: asks the source again. Null when the source cannot be
-/// refreshed, and then there is no button (ADR-0065).</param>
+/// refreshed, and then there is no button (ADR-0066).</param>
 /// <param name="FieldList">The Field List's toggle: <see cref="PivotCommand.Checked"/> says
 /// whether the pane is shown, and invoking it shows or hides it.</param>
 /// <param name="Refusal">What the report could not do with the last change, in words — a layout
@@ -447,7 +447,7 @@ public sealed record PivotToolbarContext(
     string? Refusal,
     Func<string, string> Word);
 
-/// <summary>A toolbar button that opens a menu under the toolbar (ADR-0060): Layout ▾.</summary>
+/// <summary>A toolbar button that opens a menu under the toolbar (ADR-0061): Layout ▾.</summary>
 /// <param name="Id">Stable, for an icon (<see cref="PivotCommandIds.LayoutMenu"/>).</param>
 /// <param name="Label">What it is called: "Layout".</param>
 /// <param name="IsOpen">Whether its menu is open.</param>
@@ -459,7 +459,7 @@ public sealed record PivotToolbarContext(
 public sealed record PivotToolbarMenuView(string Id, string Label, bool IsOpen, Action Open, RenderFragment? Popup, int FocusRequest);
 
 /// <summary>
-/// The tabs at the report's foot, where Excel's sheet tabs are (ADR-0058): the report's own tab,
+/// The tabs at the report's foot, where Excel's sheet tabs are (ADR-0059): the report's own tab,
 /// then one per Show Details, each titled by its cell and closable. Selecting a details tab shows
 /// its records over the report, and the report's tab brings the report back. The tabs are not part
 /// of the Pivot Layout.
@@ -487,12 +487,12 @@ public sealed record PivotDetailsTab(string Id, string Title, bool IsSelected, A
     /// <summary>Changes when the tab's button should take DOM focus: a tab Show Details has just
     /// opened — the report under it is covered, and keeps no keyboard — and the details tab selected
     /// when the one holding the keyboard closed. The report's tab is not asked then: the report's
-    /// grid takes the keyboard back itself (ADR-0069). Zero asks nothing.</summary>
+    /// grid takes the keyboard back itself (ADR-0070). Zero asks nothing.</summary>
     public int FocusRequest { get; init; }
 }
 
 /// <summary>
-/// Show Details' dialog content (ADR-0058), inside ExPivot's frame: the cell's title, the records'
+/// Show Details' dialog content (ADR-0059), inside ExPivot's frame: the cell's title, the records'
 /// grid — ExPivot's, an ExGrid of the source's fields paged under the report's Source Version — and
 /// a Close button.
 /// </summary>

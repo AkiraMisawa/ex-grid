@@ -7,7 +7,7 @@ using Apache.Arrow.Types;
 namespace ExGrid.Data.Arrow;
 
 /// <summary>
-/// Writes one Snapshot column as one Arrow column (ADR-0064): its Arrow type settled, and every value
+/// Writes one Snapshot column as one Arrow column (ADR-0065): its Arrow type settled, and every value
 /// checked to fit it, when the writer is made; then a record batch at a time, into buffers the writer
 /// owns and reuses. A Blank is a null slot, and its slot holds 0.
 /// </summary>
@@ -335,7 +335,7 @@ internal sealed class IntegerWriter(Snapshot snapshot, IntegerColumn column, int
 /// <summary>
 /// Date as <c>date32</c> when every value the version holds is a midnight, and otherwise as a
 /// <c>timestamp</c> without a time zone in the coarsest unit that holds every value exactly: seconds,
-/// milliseconds, microseconds, or nanoseconds (ADR-0064). Nanoseconds reach only from 1677 to 2262,
+/// milliseconds, microseconds, or nanoseconds (ADR-0065). Nanoseconds reach only from 1677 to 2262,
 /// so a column that needs them and holds a date outside those years is refused by row and column.
 /// </summary>
 internal sealed class DateWriter : ColumnWriter

@@ -1,9 +1,9 @@
 # ExPivot asks a Pivot Source, and a server answers with the Leaf Aggregates
 
 *(Decided with the user, 2026-09-30, in the ExPivot grilling — Q2, Q12 to Q15, Q21, Q23 to Q25,
-Q28, Q36, Q40, Q50 and Q57. It replaces [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)'s
+Q28, Q36, Q40, Q50 and Q57. It replaces [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)'s
 "aggregation runs in ExPivot, in process, over the snapshot", and settles the pivot query that
-ADR-0058 reserved. The user started it: "a million-row CSV is normal; I want a model where a server
+ADR-0059 reserved. The user started it: "a million-row CSV is normal; I want a model where a server
 aggregates and filters — isn't that what ExGrid was designed for?")*
 
 ExGrid does not fetch. The Consumer pushes, and a server that answers for it is held to
@@ -45,7 +45,7 @@ Three shapes were weighed (Q12):
 **The parts combine exactly.** A subtotal's sum is the sum of its leaves' sums, its count is the sum
 of their counts, and its variance is their running variances merged. **A total is therefore still
 computed from its records, never from the totals below it**
-([ADR-0059](./0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)): an
+([ADR-0060](./0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)): an
 Average's grand total is the grand sum over the grand count, not an average of averages.
 
 A report a person reads has far fewer leaves than the data has records. The measured report over a
@@ -83,7 +83,7 @@ PivotDetailsQuery = a cell's Items, the Hidden Items, a range, under a Source Ve
   ([ADR-0002](./0002-filters-are-a-serializable-model-not-linq-expressions.md)). Each has a JSON
   form, `PivotJson`, that carries its own version, so it crosses to a server unchanged. A document
   of a version the reader does not know is refused.
-- **`PivotSource.From(snapshot)` answers from a Snapshot**, using `ExPivot.Engine` (ADR-0059). It is
+- **`PivotSource.From(snapshot)` answers from a Snapshot**, using `ExPivot.Engine` (ADR-0060). It is
   the reference.
   - **A server that holds a Snapshot answers with this same source**, so its answers are the
     reference's by construction.
@@ -120,7 +120,7 @@ exact Product or variance (Q24).
 - **A source declares the Aggregations it answers.**
 - **Value Field Settings… offers the others disabled, with the reason**, as it disables any command
   that would change nothing
-  ([ADR-0060](./0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+  ([ADR-0061](./0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
 - **A source is never obliged to approximate an Aggregation.**
 
 ## Asking never blocks, and a stale answer is never painted
@@ -205,7 +205,7 @@ A source that can be asked again, such as a server's, says so in its features (Q
 - **The report's toolbar then offers Refresh**, and the Consumer can refresh from code as well.
 - **The bundled source shows no button.** It is refreshed by handing ExPivot a new source, or a
   Change Batch
-  ([ADR-0066](./0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+  ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
 
 ## Not in the first version
 
@@ -224,7 +224,7 @@ A source that can be asked again, such as a server's, says so in its features (Q
   text, ignoring case.** A source knows neither the report's culture nor its formats, so it cannot
   order or search painted labels. Filter… orders the Items itself, as it orders any field's, and
   narrows the painted labels among the Items it holds. It asks the source with the typed search
-  only when a field has more Items than it lists (10,000, ADR-0060).
+  only when a field has more Items than it lists (10,000, ADR-0061).
 - **A field in Filters that hides nothing does not travel in a question.** It changes no leaf, so
   placing it, or moving it while it hides nothing, asks no new question. Only the row fields, the
   column fields and the Filters fields with Hidden Items are part of what the answer was computed
@@ -247,7 +247,7 @@ A source that can be asked again, such as a server's, says so in its features (Q
 - **A Decimal's scale is not part of an answer.** A database's money column comes back as
   `75.60`, the bundled source sums to `75.6`, and decimal addition makes `0.25 + 0.25` into
   `0.50`. ExPivot writes every exact sum and extreme of the report without trailing zeros
-  ([ADR-0063](./0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)), so a
+  ([ADR-0064](./0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)), so a
   report, and the raw form a copy of it carries, is the same whichever source answered.
 - **While a new version's Items are on their way, the previous version's stay in view.** With a
   server's source, every redraw of live data brings a new Source Version. Re-listing would make
@@ -263,7 +263,7 @@ A source that can be asked again, such as a server's, says so in its features (Q
   bundled source runs.
 - **Layer 1 holds the bundled source to the engine's rules, and the demo's SQL source to the bundled
   source**, question for question, over the same data (§29).
-- **ADR-0058's "reserved" row becomes part of the first version**, and its "Who owns what" is
+- **ADR-0059's "reserved" row becomes part of the first version**, and its "Who owns what" is
   rewritten.
 - **The component gains state for asking**: a loading indication, a question to cancel, and an
   answer to discard. ExGrid's `IsLoading` paints the indication

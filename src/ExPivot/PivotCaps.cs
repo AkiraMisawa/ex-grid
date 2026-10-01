@@ -3,7 +3,7 @@ using ExPivot.Engine;
 namespace ExPivot;
 
 /// <summary>
-/// The caps a Pivot Layout is held to (ADR-0065): a report's cost grows with its cells, not its
+/// The caps a Pivot Layout is held to (ADR-0066): a report's cost grows with its cells, not its
 /// records, and principle 5 puts the cap on what cannot be executed. A layout that breaks one is
 /// refused by name — "This layout needs more than 200,000 cells." — and the report stays on the
 /// layout it had before. Each cap has a default, and the Consumer may change it, because the right
@@ -25,7 +25,7 @@ public sealed record PivotCaps
     public static PivotCaps Default { get; } = new();
 
     /// <summary>The most leaves a question allows (<see cref="PivotQuery.MaxLeaves"/>): a source
-    /// that would need more refuses. 200,000 by default — provisional, as ADR-0065 records.</summary>
+    /// that would need more refuses. 200,000 by default — provisional, as ADR-0066 records.</summary>
     public int MaxLeaves
     {
         get => _maxLeaves;
@@ -49,7 +49,7 @@ public sealed record PivotCaps
 }
 
 /// <summary>Where Show Details puts the records behind a cell when the Consumer does not take them
-/// itself through <c>OnShowDetails</c> (ADR-0058).</summary>
+/// itself through <c>OnShowDetails</c> (ADR-0059).</summary>
 public enum PivotDetailsView
 {
     /// <summary>A tab at the report's foot, where Excel's sheet tabs are — the default.</summary>

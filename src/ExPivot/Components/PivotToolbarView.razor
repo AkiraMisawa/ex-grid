@@ -1,4 +1,4 @@
-@* The built-in toolbar above the report (ADR-0060): the report filter band on its left, and on its
+@* The built-in toolbar above the report (ADR-0061): the report filter band on its left, and on its
    right, in this order, Layout ▾, Refresh when the source can be refreshed, and the Field List's
    toggle. Layout ▾'s wrapper is positioned, so the menu opens under it, over the report, at its
    right edge. Under the toolbar, what the report could not do with the last change is said. *@
@@ -30,6 +30,6 @@
 }
 
 @code {
-    /// <summary>What to draw and whom to call back (ADR-0060).</summary>
+    /// <summary>What to draw and whom to call back (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotToolbarContext Context { get; set; } = default!;
 }

@@ -19,7 +19,7 @@ const port = Number(new URL(BASE_URL).port);
 export const HOST_PORT = SERVER ? port + 1000 : port;
 // Where the tests set the proxy's round trip (latency-proxy.mjs).
 export const LATENCY_CONTROL_URL = `http://localhost:${port + 2000}`;
-// The demo API server the pages call (ADR-0068). A page finds it at its own port plus 3000,
+// The demo API server the pages call (ADR-0069). A page finds it at its own port plus 3000,
 // and the port a page has is the one the browser sees — on Server the proxy's, not the
 // host's — so this is BASE_URL's port plus 3000 under either host: 8299 beside the
 // WebAssembly host, 8298 beside the Server host. Two checkouts on two ports therefore never

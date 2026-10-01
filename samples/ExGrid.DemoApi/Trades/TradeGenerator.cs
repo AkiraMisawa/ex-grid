@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExGrid.DemoApi;
 
 /// <summary>
-/// One trade as the database stores it (ADR-0068): money in integer cents, so the database's
+/// One trade as the database stores it (ADR-0069): money in integer cents, so the database's
 /// own <c>SUM</c> is exact, and a Blank currency as null.
 /// </summary>
 internal readonly record struct GeneratedTrade(
@@ -20,7 +20,7 @@ internal readonly record struct GeneratedTrade(
     bool Confirmed);
 
 /// <summary>
-/// The demo's trades, generated from a fixed seed (ADR-0068). The vocabulary is
+/// The demo's trades, generated from a fixed seed (ADR-0069). The vocabulary is
 /// <c>DemoPivotData</c>'s — its regions, desks, products and currencies, and its books among
 /// more of the same pattern — and the P&amp;L is drawn the way it draws it, spread wide enough
 /// for a million trades.

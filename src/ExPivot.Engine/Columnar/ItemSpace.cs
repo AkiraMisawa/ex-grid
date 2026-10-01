@@ -3,7 +3,7 @@ using ExGrid.Data;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// One field's Items over a Snapshot (ADR-0059), and how each row maps to one:
+/// One field's Items over a Snapshot (ADR-0060), and how each row maps to one:
 /// <list type="bullet">
 /// <item>Text is told apart ignoring case. The column's dictionary is folded, not its rows: every
 /// code of one Item maps to that Item's index, and the Item is labelled by the first spelling to
@@ -125,7 +125,7 @@ internal sealed class ItemSpace
     }
 
     /// <summary>The public key of an Item: a text Item spelled as the first of its codes some held
-    /// row carries (ADR-0059), or as its first code when none does.</summary>
+    /// row carries (ADR-0060), or as its first code when none does.</summary>
     public PivotItemKey PublicKeyOf(int item)
     {
         var first = _firstCode[item];
@@ -169,7 +169,7 @@ internal sealed class ItemSpace
         }
     }
 
-    /// <summary>Counts out a row that is no longer held (ADR-0066): the code it carried, so that a
+    /// <summary>Counts out a row that is no longer held (ADR-0067): the code it carried, so that a
     /// text Item's spelling can leave with the last record that wrote it so.</summary>
     public void Unmap(in SnapshotSlice slice, int offset)
     {

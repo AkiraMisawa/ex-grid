@@ -57,7 +57,7 @@
     --ex-state-modified-mark: var(--mud-palette-info);
     --ex-state-stale-color: var(--mud-palette-text-secondary);
     --ex-state-missing-background: var(--mud-palette-background-gray);
-    /* The Change Highlight (ADR-0067): one colour, whichever way the value moved. The palette's
+    /* The Change Highlight (ADR-0068): one colour, whichever way the value moved. The palette's
        warning, a highlighter's amber, which is none of the colours above: not the selection's
        primary, the Modified mark's info, or the tones' success and error. Translucent, so the
        value reads through it. At 0.25, over MudBlazor's default surfaces, the default text keeps

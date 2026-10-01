@@ -10,7 +10,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// The report's Change Highlight (ADR-0066/0067): ExPivot answers the grid's <c>CellChangedAt</c>
+/// The report's Change Highlight (ADR-0067/0068): ExPivot answers the grid's <c>CellChangedAt</c>
 /// by comparing the painted text of each value cell with the same cell — the same row Items, column
 /// Items and Value Field — in the reports of the recent data versions. Only data marks a cell; every
 /// cell of a row that appears is marked; a change the number format hides is not. The delegate is new
@@ -42,7 +42,7 @@ public class ChangeHighlightTests : PivotTestContext
 
     // ---- What marks a cell ------------------------------------------------------------------
 
-    [Fact] // ADR-0066/0067 (PV-36): a value cell whose painted text changed with the data is marked, at the time its answer arrived; the others are not
+    [Fact] // ADR-0067/0068 (PV-36): a value cell whose painted text changed with the data is marked, at the time its answer arrived; the others are not
     public async Task A_value_whose_painted_text_changed_is_marked()
     {
         var source = new LiveSource();
@@ -66,7 +66,7 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.Equal(TimeSpan.FromSeconds(1), Grid(cut).Instance.ChangeHighlightDuration);
     }
 
-    [Fact] // ADR-0066 (PV-36): the comparison is of the painted text — a change the number format hides is not marked
+    [Fact] // ADR-0067 (PV-36): the comparison is of the painted text — a change the number format hides is not marked
     public async Task A_change_the_format_hides_is_not_marked()
     {
         var source = new LiveSource();
@@ -85,7 +85,7 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.Equal(["181", "286"], MarkedTexts(cut));
     }
 
-    [Fact] // ADR-0066 (PV-36): every cell of a row that appears is marked, its empty cells too; a row that leaves simply goes
+    [Fact] // ADR-0067 (PV-36): every cell of a row that appears is marked, its empty cells too; a row that leaves simply goes
     public async Task Every_cell_of_a_row_that_appears_is_marked()
     {
         var source = new LiveSource();
@@ -108,7 +108,7 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.Equal(["120", "155", "275"], MarkedTexts(cut));
     }
 
-    [Fact] // ADR-0066 (PV-36): a column that appears is marked as a row that appears is — its cells had no counterpart before
+    [Fact] // ADR-0067 (PV-36): a column that appears is marked as a row that appears is — its cells had no counterpart before
     public async Task Every_cell_of_a_column_that_appears_is_marked()
     {
         var source = new LiveSource();
@@ -122,7 +122,7 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.Equal([null, null, null, at, null], Enumerable.Range(1, 5).Select(c => ChangedAt(cut, 1, c)));
     }
 
-    [Fact] // ADR-0066/0011 (PV-36): rows a sort by value reorders with the data are compared by what they stand for, not where they stand — only changed text is marked
+    [Fact] // ADR-0067/0011 (PV-36): rows a sort by value reorders with the data are compared by what they stand for, not where they stand — only changed text is marked
     public async Task Rows_reordered_by_the_data_are_compared_by_what_they_stand_for()
     {
         var source = new LiveSource();
@@ -139,7 +139,7 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.Equal(["220", "415"], MarkedTexts(cut));
     }
 
-    [Fact] // ADR-0067 (PV-36): a mark lasts from the version that changed the cell, while later versions change other cells
+    [Fact] // ADR-0068 (PV-36): a mark lasts from the version that changed the cell, while later versions change other cells
     public async Task A_mark_lasts_from_the_version_that_changed_the_cell()
     {
         var source = new LiveSource();
@@ -165,7 +165,7 @@ public class ChangeHighlightTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Empty(MarkedTexts(cut)));
     }
 
-    [Fact] // ADR-0067 (PV-36): the duration is the Consumer's — the mark is taken away once it has passed
+    [Fact] // ADR-0068 (PV-36): the duration is the Consumer's — the mark is taken away once it has passed
     public async Task The_duration_is_honoured()
     {
         var source = new LiveSource();
@@ -181,7 +181,7 @@ public class ChangeHighlightTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Empty(MarkedTexts(cut)));
     }
 
-    [Fact] // ADR-0067 (PV-36): a zero duration marks nothing, and hands the grid nothing to ask; a negative one is refused
+    [Fact] // ADR-0068 (PV-36): a zero duration marks nothing, and hands the grid nothing to ask; a negative one is refused
     public async Task A_zero_duration_marks_nothing()
     {
         var source = new LiveSource();
@@ -199,7 +199,7 @@ public class ChangeHighlightTests : PivotTestContext
 
     // ---- Only data marks a cell -------------------------------------------------------------
 
-    [Theory] // ADR-0066 (PV-36): a new layout, a sort, a collapse, a form, Show Values As or a format marks nothing — the history starts again
+    [Theory] // ADR-0067 (PV-36): a new layout, a sort, a collapse, a form, Show Values As or a format marks nothing — the history starts again
     [InlineData("layout")]
     [InlineData("sort")]
     [InlineData("collapse")]
@@ -245,7 +245,7 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.Empty(MarkedTexts(cut));
     }
 
-    [Fact] // ADR-0066 (PV-36): a layout change marks nothing even when a change of data arrives in the same redraw
+    [Fact] // ADR-0067 (PV-36): a layout change marks nothing even when a change of data arrives in the same redraw
     public async Task A_layout_change_with_new_data_in_the_same_redraw_marks_nothing()
     {
         var source = new LiveSource();
@@ -265,7 +265,7 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.Equal(3, source.Questions.Count);
     }
 
-    [Fact] // ADR-0066/0065 (PV-36): new caps ask again for the layout on screen, and mark nothing, though the answer brings data the source never announced
+    [Fact] // ADR-0067/0066 (PV-36): new caps ask again for the layout on screen, and mark nothing, though the answer brings data the source never announced
     public async Task New_caps_mark_nothing()
     {
         var source = new LiveSource();
@@ -282,7 +282,7 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.Empty(MarkedTexts(cut));
     }
 
-    [Fact] // ADR-0066/0058 (PV-36): a new source is a refresh, and marks what changed; new words or a new culture mark nothing
+    [Fact] // ADR-0067/0059 (PV-36): a new source is a refresh, and marks what changed; new words or a new culture mark nothing
     public async Task A_new_source_marks_and_new_words_do_not()
     {
         var cut = RenderPivot(RegionAmount);
@@ -297,7 +297,7 @@ public class ChangeHighlightTests : PivotTestContext
 
     // ---- The delegate: new for each data version, the same otherwise --------------------------
 
-    [Fact] // ADR-0067 (PV-36): the grid is handed a new delegate for each data version, and the same one across everything else
+    [Fact] // ADR-0068 (PV-36): the grid is handed a new delegate for each data version, and the same one across everything else
     public async Task A_new_delegate_for_each_data_version()
     {
         var source = new LiveSource();

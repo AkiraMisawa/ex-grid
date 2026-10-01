@@ -6,7 +6,7 @@ using Xunit;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// The leaf index of a pass over a Snapshot (ADR-0065, ticket 09). A row's Items are packed into
+/// The leaf index of a pass over a Snapshot (ADR-0066, ticket 09). A row's Items are packed into
 /// one key: up to 20 bits it indexes an array, past that it is hashed through a mixing hash, past 62
 /// bits a trie of (node, Item) keys takes over. The first engine keyed a leaf as
 /// <c>(row &lt;&lt; 32) | column</c>, whose own hash is <c>row ^ column</c>: a layout of 270 dates
@@ -51,7 +51,7 @@ public class LeafIndexTests
 
     private static string Iso(DateTime date) => PivotItemKey.Date(date).Value!;
 
-    [Fact] // ADR-0065 (ticket 09): 270 dates by 12 books are 3,240 leaves, found by indexing, never by a hash that would collide
+    [Fact] // ADR-0066 (ticket 09): 270 dates by 12 books are 3,240 leaves, found by indexing, never by a hash that would collide
     public void Two_hundred_seventy_dates_by_twelve_books_are_found_directly()
     {
         var start = new DateTime(2026, 1, 2);
@@ -68,7 +68,7 @@ public class LeafIndexTests
         SameAsGrouping(cells, answer, c => c.A + "|" + Iso(c.Date));
     }
 
-    [Fact] // ADR-0065 (ticket 09): (node, Item) keys of a 12-by-270 layout spread over the table, where lo ^ hi gives a few hundred hash codes
+    [Fact] // ADR-0066 (ticket 09): (node, Item) keys of a 12-by-270 layout spread over the table, where lo ^ hi gives a few hundred hash codes
     public void Packed_keys_are_hashed_apart()
     {
         var keys = (from node in Enumerable.Range(0, 12) from item in Enumerable.Range(0, 270) select CellKey.Of(node, item)).ToArray();
@@ -85,7 +85,7 @@ public class LeafIndexTests
         Assert.True(packed <= 512, $"lo ^ hi gave {packed} home slots");
     }
 
-    [Fact] // ADR-0065 (ticket 09): past 20 bits the leaves are hashed, and are the records' groups
+    [Fact] // ADR-0066 (ticket 09): past 20 bits the leaves are hashed, and are the records' groups
     public void A_wider_layout_is_hashed_and_right()
     {
         var random = new Random(9);
@@ -102,7 +102,7 @@ public class LeafIndexTests
         SameAsGrouping(cells, answer, c => c.A + "|" + c.B + "|" + Iso(c.Date));
     }
 
-    [Fact] // ADR-0065 (ticket 09): past 62 bits a trie of (node, Item) keys finds the leaves, and they are the records' groups
+    [Fact] // ADR-0066 (ticket 09): past 62 bits a trie of (node, Item) keys finds the leaves, and they are the records' groups
     public void A_layout_past_62_bits_is_found_through_a_trie()
     {
         var random = new Random(7);

@@ -1,4 +1,4 @@
-@* The built-in content of Show Details' dialog (ADR-0058), inside ExPivot's frame: the cell's
+@* The built-in content of Show Details' dialog (ADR-0059), inside ExPivot's frame: the cell's
    title, its records, and Close, which takes the keyboard when the dialog opens. *@
 <div class="ex-pivot-dialog-content">
     <div class="ex-pivot-dialog-title">@Context.Title</div>
@@ -9,6 +9,6 @@
 </div>
 
 @code {
-    /// <summary>The title, the records and the way out (ADR-0058).</summary>
+    /// <summary>The title, the records and the way out (ADR-0059).</summary>
     [Parameter, EditorRequired] public PivotDetailsDialogContext Context { get; set; } = default!;
 }

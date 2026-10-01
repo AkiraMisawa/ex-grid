@@ -11,8 +11,8 @@ namespace ExGrid.DemoApi.Tests;
 /// <summary>The live updates, turned on and off over the API and heard on the hub as a page hears them.</summary>
 public sealed class LiveApiTests(DemoApiServer server) : IClassFixture<DemoApiServer>
 {
-    [Fact] // ADR-0066/0067/0068: the server changes trades, moves the Source Version on, and the hub says both
-    public async Task ADR0066_live_updates_move_the_version_on_and_the_hub_says_every_change()
+    [Fact] // ADR-0067/0068/0069: the server changes trades, moves the Source Version on, and the hub says both
+    public async Task ADR0067_live_updates_move_the_version_on_and_the_hub_says_every_change()
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(30));
@@ -83,8 +83,8 @@ public sealed class LiveApiTests(DemoApiServer server) : IClassFixture<DemoApiSe
         Assert.Equal(DemoApiServer.Trades, server.Store.TradeCount);
     }
 
-    [Fact] // ADR-0068: live updates off means the data holds still — from the moment turning them off answers
-    public async Task ADR0068_once_turning_live_updates_off_has_answered_no_tick_commits()
+    [Fact] // ADR-0069: live updates off means the data holds still — from the moment turning them off answers
+    public async Task ADR0069_once_turning_live_updates_off_has_answered_no_tick_commits()
     {
         var token = TestContext.Current.CancellationToken;
         using var client = server.Factory.CreateClient();

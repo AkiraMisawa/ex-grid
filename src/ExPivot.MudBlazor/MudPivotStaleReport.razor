@@ -1,4 +1,4 @@
-@* The Stale Report's notice under MudBlazor (ADR-0061/0066): a warning MudAlert saying what
+@* The Stale Report's notice under MudBlazor (ADR-0062/0067): a warning MudAlert saying what
    happened and the time of the data shown, with a Retry MudButton that asks the source again. It
    stands inside ExPivot's live region under the toolbar; MudAlert adds no role of its own, so the
    notice is announced once, politely. *@
@@ -12,7 +12,7 @@
 </MudAlert>
 
 @code {
-    /// <summary>What to say and whom to call back (ADR-0066).</summary>
+    /// <summary>What to say and whom to call back (ADR-0067).</summary>
     [Parameter, EditorRequired] public PivotStaleReportContext Context { get; set; } = default!;
 
     /// <summary>The Chrome this notice belongs to.</summary>

@@ -8,7 +8,7 @@ namespace ExPivot.Components.Tests.Support;
 /// <see cref="Question.Fail"/> or <see cref="Question.Refuse"/>, and the answer is the reference's —
 /// the bundled source over the same records — so a test reads the report the screen would show.
 /// It counts every question, and the Items and records asked for, and can refuse a Source Version
-/// as a server whose data moved on does (ADR-0065).
+/// as a server whose data moved on does (ADR-0066).
 /// </summary>
 internal sealed class OnDemandSource(PivotSource reference, PivotSourceFeatures? features = null) : PivotSource
 {

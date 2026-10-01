@@ -10,8 +10,8 @@ public sealed class TradeStoreTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    [Fact] // ADR-0068: generated at first start and reused after; each run serves a copy of its own
-    public async Task ADR0068_the_first_start_generates_and_a_later_start_reuses_the_file_untouched()
+    [Fact] // ADR-0069: generated at first start and reused after; each run serves a copy of its own
+    public async Task ADR0069_the_first_start_generates_and_a_later_start_reuses_the_file_untouched()
     {
         using var directory = new TempDirectory();
         var generated = directory.File(TradeDatabase.FileName(2_000));
@@ -44,8 +44,8 @@ public sealed class TradeStoreTests
         Assert.Empty(Directory.EnumerateFileSystemEntries(Path.Combine(directory.Path, "runs")));
     }
 
-    [Fact] // ADR-0065: every answer carries the Source Version of the data it came from
-    public async Task ADR0065_a_read_sees_one_state_and_its_version_while_a_live_change_commits()
+    [Fact] // ADR-0066: every answer carries the Source Version of the data it came from
+    public async Task ADR0066_a_read_sees_one_state_and_its_version_while_a_live_change_commits()
     {
         using var directory = new TempDirectory();
         await using var store = await TestData.ReadyStore(directory.Path, 3_000);
@@ -72,8 +72,8 @@ public sealed class TradeStoreTests
         Assert.Equal(3_000, nowTrades.Count);
     }
 
-    [Fact] // ADR-0066: a tick commits with the change counter, and names exactly the trades it touched
-    public async Task ADR0066_a_live_tick_moves_the_version_on_by_one_and_names_what_it_touched()
+    [Fact] // ADR-0067: a tick commits with the change counter, and names exactly the trades it touched
+    public async Task ADR0067_a_live_tick_moves_the_version_on_by_one_and_names_what_it_touched()
     {
         using var directory = new TempDirectory();
         await using var store = await TestData.ReadyStore(directory.Path, 3_000);
@@ -112,8 +112,8 @@ public sealed class TradeStoreTests
         Assert.Equal(3_000, recorded.Item2);
     }
 
-    [Fact] // ADR-0066: now and then a trade is cancelled and another booked: the one generation would make next
-    public async Task ADR0066_a_booking_adds_the_next_generated_trade_and_cancels_another()
+    [Fact] // ADR-0067: now and then a trade is cancelled and another booked: the one generation would make next
+    public async Task ADR0067_a_booking_adds_the_next_generated_trade_and_cancels_another()
     {
         using var directory = new TempDirectory();
         await using var store = await TestData.ReadyStore(directory.Path, 1_000);
@@ -139,8 +139,8 @@ public sealed class TradeStoreTests
         Assert.DoesNotContain(cancelled, after.Keys);
     }
 
-    [Fact] // ADR-0068: tick n's numbers come from n, so the same ticks from the same state make the same trades
-    public async Task ADR0068_the_same_ticks_from_the_generated_trades_make_the_same_trades()
+    [Fact] // ADR-0069: tick n's numbers come from n, so the same ticks from the same state make the same trades
+    public async Task ADR0069_the_same_ticks_from_the_generated_trades_make_the_same_trades()
     {
         using var one = new TempDirectory();
         using var two = new TempDirectory();
@@ -160,8 +160,8 @@ public sealed class TradeStoreTests
         Assert.NotEqual(TestData.Fingerprint(2_000), TestData.Fingerprint(firstCopy));
     }
 
-    [Fact] // ADR-0066: every committed change is told, in the order committed
-    public async Task ADR0066_every_committed_change_is_told_in_the_order_committed()
+    [Fact] // ADR-0067: every committed change is told, in the order committed
+    public async Task ADR0067_every_committed_change_is_told_in_the_order_committed()
     {
         using var directory = new TempDirectory();
         await using var store = await TestData.ReadyStore(directory.Path, 500);
@@ -177,8 +177,8 @@ public sealed class TradeStoreTests
         Assert.Equal([1L, 2L, 3L], told.Select(c => TestData.Counter(c.Version)));
     }
 
-    [Fact] // ADR-0068: a page of trades in TradeId order, with the total, fewer at the end
-    public async Task ADR0068_a_page_is_in_TradeId_order_with_the_total_and_fewer_at_the_end()
+    [Fact] // ADR-0069: a page of trades in TradeId order, with the total, fewer at the end
+    public async Task ADR0069_a_page_is_in_TradeId_order_with_the_total_and_fewer_at_the_end()
     {
         using var directory = new TempDirectory();
         await using var store = await TestData.ReadyStore(directory.Path, 1_050);
@@ -198,8 +198,8 @@ public sealed class TradeStoreTests
         Assert.Empty((await store.ReadPageAsync(5_000, 100, Token)).Trades);
     }
 
-    [Fact] // ADR-0068: what a server that has stopped left behind is removed; a running server's is not
-    public async Task ADR0068_what_a_stopped_server_left_behind_is_removed_and_a_running_ones_is_kept()
+    [Fact] // ADR-0069: what a server that has stopped left behind is removed; a running server's is not
+    public async Task ADR0069_what_a_stopped_server_left_behind_is_removed_and_a_running_ones_is_kept()
     {
         using var directory = new TempDirectory();
         var runs = Directory.CreateDirectory(Path.Combine(directory.Path, "runs")).FullName;
@@ -222,8 +222,8 @@ public sealed class TradeStoreTests
         Assert.True(File.Exists(kept));
     }
 
-    [Fact] // ADR-0068: the data directory is never the repository's, unless EXGRID_DEMO_DATA says so
-    public void ADR0068_the_count_and_the_directory_come_from_the_environment_and_a_bad_count_is_refused()
+    [Fact] // ADR-0069: the data directory is never the repository's, unless EXGRID_DEMO_DATA says so
+    public void ADR0069_the_count_and_the_directory_come_from_the_environment_and_a_bad_count_is_refused()
     {
         var defaults = DemoApiOptions.From(new ConfigurationBuilder().Build());
         Assert.Equal(1_000_000, defaults.TradeCount);
@@ -244,8 +244,8 @@ public sealed class TradeStoreTests
             .AddInMemoryCollection(values.Select(v => new KeyValuePair<string, string?>(v.Key, v.Value)))
             .Build();
 
-    [Fact] // ADR-0068 refined: every other change of a tick falls on the first trades, which a blotter opens on, so it sees changes at any trade count
-    public async Task ADR0068_half_of_a_ticks_changes_fall_on_the_busy_trades()
+    [Fact] // ADR-0069 refined: every other change of a tick falls on the first trades, which a blotter opens on, so it sees changes at any trade count
+    public async Task ADR0069_half_of_a_ticks_changes_fall_on_the_busy_trades()
     {
         using var directory = new TempDirectory();
         await using var store = await TestData.ReadyStore(directory.Path, 3_000);

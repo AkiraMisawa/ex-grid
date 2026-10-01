@@ -13,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="xunit.v3" Version="2.0.3" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
-    <!-- The codecs a Consumer hands in to read another producer's compressed stream (ADR-0064):
+    <!-- The codecs a Consumer hands in to read another producer's compressed stream (ADR-0065):
          the tests write compressed streams with them, and read them back with and without. -->
     <PackageReference Include="Apache.Arrow.Compression" Version="23.0.0" />
   </ItemGroup>

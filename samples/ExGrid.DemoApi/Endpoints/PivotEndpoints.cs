@@ -15,7 +15,7 @@ internal sealed record PivotFeaturesResponse(IReadOnlyList<PivotAggregation> Agg
 internal sealed record PivotFieldsResponse(IReadOnlyList<PivotFieldResponse> Fields, PivotFeaturesResponse Features);
 
 /// <summary>
-/// The server as a Pivot Source (ADR-0065, ADR-0068): <see cref="TradePivotSource"/>'s three
+/// The server as a Pivot Source (ADR-0066, ADR-0069): <see cref="TradePivotSource"/>'s three
 /// questions over HTTP, each a <c>PivotJson</c> document both ways, so a page's
 /// <c>PivotSource.Fetch</c> delegates are a <c>POST</c> each:
 /// <code>

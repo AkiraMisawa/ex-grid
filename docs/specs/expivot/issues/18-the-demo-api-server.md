@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** `samples/ExGrid.DemoApi` (ADR-0068).
+**What to build:** `samples/ExGrid.DemoApi` (ADR-0069).
 
 - **The server itself:** an ASP.NET Core minimal API with SQLite (`Microsoft.Data.Sqlite`) and
   SignalR, allowing the hosts' origins (CORS).

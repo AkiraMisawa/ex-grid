@@ -1,7 +1,7 @@
 namespace ExGrid.Components;
 
 /// <summary>
-/// The earliest end among the Change Highlights each painted row shows (ADR-0067). A row
+/// The earliest end among the Change Highlights each painted row shows (ADR-0068). A row
 /// tells it what it painted after every render in which that moved, and tells it nothing
 /// once it leaves the DOM; the grid keeps one timer, for the earliest end of them all. The
 /// rows are the ones that ask the Consumer — once per painted value cell of a row that

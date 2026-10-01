@@ -6,12 +6,12 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>Every Pivot Source question and answer round-trips through <see cref="PivotJson"/>,
-/// and a document of a version the reader does not know is refused (ADR-0065, PV-16).</summary>
+/// and a document of a version the reader does not know is refused (ADR-0066, PV-16).</summary>
 public class PivotJsonTests
 {
     private static readonly PivotSource Server = PivotSource.From(Deals, DealFields);
 
-    [Fact] // ADR-0065: a question round-trips, Hidden Items of every kind and first spellings kept
+    [Fact] // ADR-0066: a question round-trips, Hidden Items of every kind and first spellings kept
     public void A_query_round_trips()
     {
         var query = new PivotQuery(
@@ -30,7 +30,7 @@ public class PivotJsonTests
         Assert.Equal(12_345, read.MaxLeaves);
     }
 
-    [Fact] // ADR-0065: the Leaf Aggregates round-trip — every part, exact decimals, non-finite doubles
+    [Fact] // ADR-0066: the Leaf Aggregates round-trip — every part, exact decimals, non-finite doubles
     public async Task An_answer_round_trips_to_the_last_bit()
     {
         foreach (var query in Questions)
@@ -44,7 +44,7 @@ public class PivotJsonTests
         }
     }
 
-    [Fact] // ADR-0065/0059: an exact sum crosses as its digits, a double as its shortest text, and a non-finite one by name
+    [Fact] // ADR-0066/0060: an exact sum crosses as its digits, a double as its shortest text, and a non-finite one by name
     public void Numbers_cross_exactly()
     {
         var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount")]);
@@ -82,7 +82,7 @@ public class PivotJsonTests
         Assert.Contains("\"NaN\"", json);
     }
 
-    [Fact] // ADR-0065: the leaves travel column by column — an array per level and per part, never an object per leaf
+    [Fact] // ADR-0066: the leaves travel column by column — an array per level and per part, never an object per leaf
     public async Task The_leaves_travel_column_by_column()
     {
         var records = Enumerable.Range(0, 900).Select(i => new Deal("D" + (i % 30), "B" + (i / 30), null, i, i * 0.5, i % 2 == 0, null)).ToArray();
@@ -100,7 +100,7 @@ public class PivotJsonTests
         Assert.Equal(1 + 2 + 60 + 2, json.Count(c => c == '{'));
     }
 
-    [Theory] // ADR-0065: every refusal round-trips, with its kind, its sentence, its field and its cap
+    [Theory] // ADR-0066: every refusal round-trips, with its kind, its sentence, its field and its cap
     [MemberData(nameof(Refusals))]
     public void A_refusal_round_trips(PivotSourceRefusal refusal)
     {
@@ -117,7 +117,7 @@ public class PivotJsonTests
         PivotSourceRefusal.SourceVersionNotHeld("41"),
     ];
 
-    [Fact] // ADR-0065: a question for Items and its page round-trip
+    [Fact] // ADR-0066: a question for Items and its page round-trip
     public async Task Items_round_trip()
     {
         var version = (await Server.AggregateAsync(new PivotQuery(), Ct)).SourceVersion;
@@ -137,7 +137,7 @@ public class PivotJsonTests
         }
     }
 
-    [Fact] // ADR-0065: a question for the records behind a cell and its page round-trip, each value by its field's type
+    [Fact] // ADR-0066: a question for the records behind a cell and its page round-trip, each value by its field's type
     public async Task Details_round_trip()
     {
         var version = (await Server.AggregateAsync(new PivotQuery(), Ct)).SourceVersion;
@@ -166,14 +166,14 @@ public class PivotJsonTests
         Assert.Contains("\"NaN\"", json);
     }
 
-    [Fact] // ADR-0065/0066: a source's notice that its data moved on round-trips, with or without its version
+    [Fact] // ADR-0066/0067: a source's notice that its data moved on round-trips, with or without its version
     public void A_change_round_trips()
     {
         Assert.Equal(new PivotSourceChanged("42"), PivotJson.ReadSourceChanged(PivotJson.Write(new PivotSourceChanged("42"))));
         Assert.Equal(new PivotSourceChanged(), PivotJson.ReadSourceChanged(PivotJson.Write(new PivotSourceChanged())));
     }
 
-    [Fact] // ADR-0065: a document of a version the reader does not know is refused, whatever it is
+    [Fact] // ADR-0066: a document of a version the reader does not know is refused, whatever it is
     public async Task An_unknown_version_is_refused()
     {
         var answer = await Server.AggregateAsync(Questions[0], Ct);
@@ -196,7 +196,7 @@ public class PivotJsonTests
         }
     }
 
-    [Fact] // ADR-0065: a document of another type, or one that cannot be, is refused by name rather than half-read
+    [Fact] // ADR-0066: a document of another type, or one that cannot be, is refused by name rather than half-read
     public async Task A_document_that_cannot_be_is_refused()
     {
         var answer = await Server.AggregateAsync(Questions[0], Ct);

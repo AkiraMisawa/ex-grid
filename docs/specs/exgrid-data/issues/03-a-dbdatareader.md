@@ -40,7 +40,7 @@ Built, 2026-10-01.
 - **By type**: `decimal` Decimal; `double`, `float` Double; `long`, `int`, `short`, `byte`, `sbyte`,
   `ushort`, `uint` Integer, and `ulong` within a long's range (beyond it, refused by row and column);
   `DateTime` (its `Kind` ignored), `DateOnly` (its midnight), `DateTimeOffset` (its clock, the offset
-  dropped) and `TimeOnly` (on the first day, as a CSV's time-only format reads) Date — ADR-0063 says
+  dropped) and `TimeOnly` (on the first day, as a CSV's time-only format reads) Date — ADR-0064 says
   "a date or a time is Date", and `TimeOnly` is a time of day; `TimeSpan` is refused as the brief
   says, since it is as often a duration (`interval`) as a time; `bool` Boolean; `string`, `char`
   Text; `DBNull` a Blank in every kind.

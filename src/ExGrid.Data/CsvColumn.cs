@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExGrid.Data;
 
 /// <summary>
-/// One column of a CSV's Schema (ADR-0063): which field of the file it is, the Snapshot column it
+/// One column of a CSV's Schema (ADR-0064): which field of the file it is, the Snapshot column it
 /// becomes, and how its text is read. Nothing is guessed: a value its kind cannot read under the
 /// declared reading fails the load, naming the row and the column, so the account number
 /// <c>00123</c> read as Text stays <c>00123</c>.
@@ -82,7 +82,7 @@ public sealed record CsvColumn(string Name, SnapshotKind Kind)
     /// The exact formats a Date column reads, tried in order, in .NET's custom format strings
     /// (<c>yyyy-MM-dd</c>, <c>dd.MM.yyyy HH:mm</c>); <see cref="IsoDateFormats"/> when
     /// <see langword="null"/>. A value with an offset (<c>zzz</c>, <c>K</c>) is held as the clock it
-    /// shows, with its offset dropped (ADR-0063), and so is one marked UTC (<c>Z</c>, <c>GMT</c>),
+    /// shows, with its offset dropped (ADR-0064), and so is one marked UTC (<c>Z</c>, <c>GMT</c>),
     /// wherever it is read. A format without a date reads a time on the first day; one that would take
     /// part of a date from the day it is read — a month or a day without a year, an offset without a
     /// date — is refused.

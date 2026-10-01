@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** the words of Excel's Japanese edition, bundled (ADR-0059).
+**What to build:** the words of Excel's Japanese edition, bundled (ADR-0060).
 
 - They cover every id ExPivot paints, and the ExGrid commands in the report's Context Menu.
 - The Consumer chooses them in one line.

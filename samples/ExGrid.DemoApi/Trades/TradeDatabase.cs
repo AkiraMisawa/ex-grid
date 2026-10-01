@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace ExGrid.DemoApi;
 
 /// <summary>
-/// The generated database (ADR-0068): its schema, the name of its file, and how it is generated.
+/// The generated database (ADR-0069): its schema, the name of its file, and how it is generated.
 /// It is generated once per trade count and <see cref="FormatVersion"/>, and never written after:
 /// each start of the server works on a copy of it (<see cref="TradeStore"/>).
 /// </summary>
@@ -42,7 +42,7 @@ internal static class TradeDatabase
         ) STRICT, WITHOUT ROWID;
 
         -- One row per committed state of the trades. Version is the change counter the Source
-        -- Version is made from (ADR-0065); Trades is how many trades that state holds; TradeIds is
+        -- Version is made from (ADR-0066); Trades is how many trades that state holds; TradeIds is
         -- a JSON array of the Record Keys the change touched. Version 0 is the generated data.
         CREATE TABLE changes (
             Version  INTEGER NOT NULL PRIMARY KEY,
@@ -63,7 +63,7 @@ internal static class TradeDatabase
 
     /// <summary>
     /// The collation that compares text as a pivot tells Items apart: ordinally, ignoring case,
-    /// every letter that has one (<see cref="StringComparison.OrdinalIgnoreCase"/>, ADR-0059).
+    /// every letter that has one (<see cref="StringComparison.OrdinalIgnoreCase"/>, ADR-0060).
     /// SQLite's own <c>NOCASE</c> folds the ASCII letters only. Every read registers it
     /// (<see cref="AddItemCollation"/>); SQLite calls back into .NET for each comparison, so it is
     /// used only where <c>NOCASE</c> would not be the engine's comparison (<see cref="TradePivotSql"/>).

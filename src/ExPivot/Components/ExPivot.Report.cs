@@ -15,14 +15,14 @@ using Microsoft.AspNetCore.Components.Web;
 namespace ExPivot.Components;
 
 /// <summary>
-/// Excel's PivotTable, drawn by ExGrid as that grid's Consumer (ADR-0058): the toolbar above the
+/// Excel's PivotTable, drawn by ExGrid as that grid's Consumer (ADR-0059): the toolbar above the
 /// report, one ExGrid over the Pivot Report, Show Details' tabs at its foot, and the Field List
-/// beside it (ADR-0060). ExPivot holds the Pivot Layout, asks its Pivot Source for the Leaf
-/// Aggregates and lays the report out with ExPivot.Engine (ADR-0065); ExGrid paints, selects,
+/// beside it (ADR-0061). ExPivot holds the Pivot Layout, asks its Pivot Source for the Leaf
+/// Aggregates and lays the report out with ExPivot.Engine (ADR-0066); ExGrid paints, selects,
 /// navigates, copies and reports.
 /// </summary>
 // This part is the report half: the one ExGrid, its columns, its label cells, its Context Menu
-// and its double click (ADR-0058/0062).
+// and its double click (ADR-0059/0063).
 public partial class ExPivot
 {
     /// <summary>The widest a label column is sized to by its labels; a wider label is cut with an
@@ -31,7 +31,7 @@ public partial class ExPivot
 
     private const double MinLabelWidthPx = 60;
 
-    // Row Kind from the row's role (ADR-0024/0058); one instance for every ExPivot.
+    // Row Kind from the row's role (ADR-0024/0059); one instance for every ExPivot.
     private static readonly Func<PivotReportRow, RowKind> RowKindOf = static row => row.Role switch
     {
         PivotRowRole.Item => RowKind.Detail,
@@ -39,11 +39,11 @@ public partial class ExPivot
         _ => RowKind.Total,
     };
 
-    // An error value is centred, as Excel centres it (ADR-0059); everything else follows the kind.
+    // An error value is centred, as Excel centres it (ADR-0060); everything else follows the kind.
     private static readonly Func<PivotReportRow, GridColumn<PivotReportRow>, CellAlign> AlignOf =
         static (row, column) => column.Value(row) is PivotValue { IsError: true } ? CellAlign.Center : CellAlign.Auto;
 
-    // A value cell paints the text the engine formatted; its raw form is the number (ADR-0005/0059).
+    // A value cell paints the text the engine formatted; its raw form is the number (ADR-0005/0060).
     private static readonly Func<object, string> TextOfValue = static value => ((PivotValue)value).Text;
 
     private readonly Dictionary<string, double> _userWidths = new(StringComparer.Ordinal);
@@ -289,7 +289,7 @@ public partial class ExPivot
         return widths;
     }
 
-    /// <summary>A label column's width, from its labels (ADR-0058): each label's text as the grid
+    /// <summary>A label column's width, from its labels (ADR-0059): each label's text as the grid
     /// estimates it, plus its indent and its button — over rows [<paramref name="from"/>,
     /// <paramref name="to"/>), widening <paramref name="widths"/>.</summary>
     private static void MeasureLabels(PivotReport report, GridMetrics metrics, int from, int to, double[] widths)
@@ -360,10 +360,10 @@ public partial class ExPivot
         => PivotWords.Fill(Word(toggle.IsCollapsed ? "expand-item" : "collapse-item"), toggle.ItemLabel);
 
     /// <summary>
-    /// One label cell (ADR-0058): the indent, the expand / collapse button of an outer Item, and the
+    /// One label cell (ADR-0059): the indent, the expand / collapse button of an outer Item, and the
     /// label. The button is plain markup with <c>ex-interactive</c> and <c>tabindex="-1"</c>; only in
     /// the one cell Space asks to enter is it a component, which takes DOM focus itself (ADR-0037).
-    /// A double click on it stops there: its offsets are the button's (ADR-0062).
+    /// A double click on it stops there: its offsets are the button's (ADR-0063).
     /// </summary>
     private void RenderLabel(RenderTreeBuilder builder, TemplateCellContext<PivotReportRow> context, int column)
     {
@@ -428,7 +428,7 @@ public partial class ExPivot
         builder.AddComponentParameter(14, nameof(ExGrid<PivotReportRow>.ViewportWidth), ViewportWidth);
         builder.AddComponentParameter(15, nameof(ExGrid<PivotReportRow>.OnCellDoubleClick), _doubleClick);
         // While a question is out, the report stays as it was under the grid's own indication
-        // (ADR-0010/0065).
+        // (ADR-0010/0066).
         builder.AddComponentParameter(16, nameof(ExGrid<PivotReportRow>.IsLoading), _loading);
         if (RowHeight is { } rowHeight)
             builder.AddComponentParameter(17, nameof(ExGrid<PivotReportRow>.RowHeight), rowHeight);
@@ -440,7 +440,7 @@ public partial class ExPivot
             builder.AddComponentParameter(20, nameof(ExGrid<PivotReportRow>.Chrome), chrome);
         if (SelectionChanged.HasDelegate)
             builder.AddComponentParameter(21, nameof(ExGrid<PivotReportRow>.SelectionChanged), SelectionChanged);
-        // The Change Highlight (ADR-0066/0067): ExPivot says when a cell's painted value changed
+        // The Change Highlight (ADR-0067/0068): ExPivot says when a cell's painted value changed
         // with the data, through a delegate that is new for each data version and null while
         // nothing can be marked; the grid marks the cell for the duration, on ExPivot's clock.
         builder.AddComponentParameter(22, nameof(ExGrid<PivotReportRow>.CellChangedAt), _cellChangedAt);
@@ -487,7 +487,7 @@ public partial class ExPivot
         await Task.CompletedTask;
     }
 
-    // ---- The double click and Show Details (ADR-0062) ------------------------------------------
+    // ---- The double click and Show Details (ADR-0063) ------------------------------------------
 
     private async Task OnCellDoubleClickAsync(CellPosition cell)
     {
@@ -520,7 +520,7 @@ public partial class ExPivot
         return null;
     }
 
-    /// <summary>An Item's label, by the engine's rule for its field (ADR-0059).</summary>
+    /// <summary>An Item's label, by the engine's rule for its field (ADR-0060).</summary>
     private string LabelOf(PivotReport report, string field, PivotItemKey item)
     {
         if (FieldOf(field) is not { } declared)
@@ -529,7 +529,7 @@ public partial class ExPivot
         return PivotEngine.ItemsOf(page, report.Layout, declared, _options)[0].Label;
     }
 
-    // ---- The Context Menu (ADR-0036/0058) --------------------------------------------------------
+    // ---- The Context Menu (ADR-0036/0059) --------------------------------------------------------
 
     private string? CommandLabelFor(string id)
     {
@@ -587,7 +587,7 @@ public partial class ExPivot
                     () => ReportEditAsync(l => PivotLayoutEdits.SetSort(l, field, largest))));
             }
             // Show Details is always offered: the tab, the dialog or the Consumer takes the
-            // records (ADR-0058). An empty cell has none to show.
+            // records (ADR-0059). An empty cell has none to show.
             commands.Add(new GridCommand(PivotCommandIds.ShowDetails, row.ValueAt(valueColumn) is not null,
                 () => ShowDetailsAsync(row, valueColumn)));
             if (vf >= 0)
@@ -620,7 +620,7 @@ public partial class ExPivot
     }
 
     /// <summary>Shows or hides the Field List — the toolbar's toggle, or the Context Menu — and
-    /// tells a Consumer that binds it (ADR-0060). The user's choice holds until the Consumer's
+    /// tells a Consumer that binds it (ADR-0061). The user's choice holds until the Consumer's
     /// <see cref="ShowFieldList"/> itself changes: a Consumer that binds it hands the choice back,
     /// and one that does not keeps passing the value it always passed.</summary>
     private async Task SetFieldListShownAsync(bool shown)

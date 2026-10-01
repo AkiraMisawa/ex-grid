@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** `ExPivot.Engine` rebuilt to aggregate a Snapshot's columns (ADR-0059, ADR-0063).
+**What to build:** `ExPivot.Engine` rebuilt to aggregate a Snapshot's columns (ADR-0060, ADR-0064).
 
 - **Only the parts the Value Fields ask for are accumulated.**
 - **Integer and Decimal sums are exact**: scaled 64-bit integers, with `decimal` where needed and
@@ -17,7 +17,7 @@ Status: done
 - **Pivot Fields are declared over Snapshot columns**, and a typed declaration builds both the
   column and the field.
 
-Everything ADR-0059 already pinned stays pinned.
+Everything ADR-0060 already pinned stays pinned.
 
 **Blocked by:** exgrid-data 01
 

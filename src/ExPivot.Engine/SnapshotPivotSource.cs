@@ -5,11 +5,11 @@ namespace ExPivot.Engine;
 
 /// <summary>
 /// The bundled Pivot Source over a Snapshot (<see cref="PivotSource.From(Snapshot, IReadOnlyList{PivotField}?, PivotSlicing?)"/>),
-/// and the reference implementation (ADR-0065): it answers every question from the Snapshot's
-/// columns by the engine's rules (ADR-0059), in slices, and a server that holds a Snapshot answers
+/// and the reference implementation (ADR-0066): it answers every question from the Snapshot's
+/// columns by the engine's rules (ADR-0060), in slices, and a server that holds a Snapshot answers
 /// with this same source.
 /// <para>
-/// <b>Live data</b> (ADR-0066): <see cref="Apply"/> takes a Change Batch. The Snapshot makes the
+/// <b>Live data</b> (ADR-0067): <see cref="Apply"/> takes a Change Batch. The Snapshot makes the
 /// next one, the answer the source holds for its current question is brought up to date from what
 /// the batch removed and added rather than read again — the exact parts by subtraction and
 /// addition, every other part recomputed for the leaves the batch touched — and
@@ -22,7 +22,7 @@ namespace ExPivot.Engine;
 /// </para>
 /// <para>
 /// <b>Source Version</b>: this source's own name and the Snapshot's version, so a new source is a
-/// new version (ADR-0065). It answers a field's Items and a cell's records under its current
+/// new version (ADR-0066). It answers a field's Items and a cell's records under its current
 /// version and under the versions of its last <see cref="AnswersHeld"/> answers — a Snapshot is
 /// immutable, so their records still add up — and refuses an older one
 /// (<see cref="PivotSourceRefusalKind.SourceVersionNotHeld"/>): holding every version would hold
@@ -87,17 +87,17 @@ public sealed class SnapshotPivotSource : PivotSource
     public override IReadOnlyList<PivotField> Fields => _fields;
 
     /// <summary>Every Aggregation, and no Refresh: the bundled source is refreshed by a Change Batch
-    /// or by a new source (ADR-0065).</summary>
+    /// or by a new source (ADR-0066).</summary>
     public override PivotSourceFeatures Features => PivotSourceFeatures.All;
 
     /// <summary>
-    /// Answers with the Leaf Aggregates of the current Snapshot (ADR-0065), read in slices — or, for
+    /// Answers with the Leaf Aggregates of the current Snapshot (ADR-0066), read in slices — or, for
     /// the question it answered last, from the answer it holds and has folded every batch into
     /// since. Refuses, as soon as it is passed, an answer of more leaves than
     /// <see cref="PivotQuery.MaxLeaves"/>. The answer is assembled in slices too, after the last
     /// slice of rows (PV-40), and a cancelled question throws at the next slice. A batch applied
     /// while the answer held is being assembled is folded in once it is made: no answer is half a
-    /// batch (ADR-0066).
+    /// batch (ADR-0067).
     /// </summary>
     public override async ValueTask<PivotAnswer> AggregateAsync(PivotQuery query, CancellationToken cancellationToken = default)
     {
@@ -143,7 +143,7 @@ public sealed class SnapshotPivotSource : PivotSource
 
     // An answer assembled from the pass held for the current question, in slices (PV-40). Nothing
     // changes the pass meanwhile: a batch applied now waits (Apply), and is folded in once no
-    // assembly reads the pass (ADR-0066).
+    // assembly reads the pass (ADR-0067).
     private async ValueTask<PivotAnswer> AssembleHeldAsync(AggregationPass held, Snapshot snapshot, Slicer slicer)
     {
         PivotAnswer? answer = null;
@@ -212,7 +212,7 @@ public sealed class SnapshotPivotSource : PivotSource
     }
 
     /// <summary>Nothing to refresh: the bundled source shows no Refresh, and is moved on by a Change
-    /// Batch (<see cref="Apply"/>) or replaced by a new source (ADR-0065).</summary>
+    /// Batch (<see cref="Apply"/>) or replaced by a new source (ADR-0066).</summary>
     public override ValueTask RefreshAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -220,7 +220,7 @@ public sealed class SnapshotPivotSource : PivotSource
     }
 
     /// <summary>
-    /// Applies a Change Batch (ADR-0066): the Snapshot makes the next one, whole or not at all; the
+    /// Applies a Change Batch (ADR-0067): the Snapshot makes the next one, whole or not at all; the
     /// answer held for the current question is brought up to date from what the batch removed and
     /// added; and <see cref="PivotSource.Changed"/> is raised with the new Source Version, after the
     /// source has moved on.
@@ -240,7 +240,7 @@ public sealed class SnapshotPivotSource : PivotSource
             if (_held is { } held)
             {
                 // An answer being assembled from the pass reads it in slices: the batch waits until
-                // it is made, so that the answer is the version before the batch, whole (ADR-0066).
+                // it is made, so that the answer is the version before the batch, whole (ADR-0067).
                 if (held.Assembling > 0)
                     held.Defer(change);
                 else if (!held.FoldDeferred() || !held.Fold(change))

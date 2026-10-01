@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The one direction there is (ADR-0061): the Wrapper references ExPivot and the grid's
+    <!-- The one direction there is (ADR-0062): the Wrapper references ExPivot and the grid's
          Wrapper; nothing in either knows this package exists. -->
     <ProjectReference Include="..\ExPivot\ExPivot.csproj" />
     <ProjectReference Include="..\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />

@@ -6,7 +6,7 @@ namespace ExGrid.Data;
 
 /// <summary>
 /// An immutable copy of the Consumer's tabular data at one version, held column by column
-/// (ADR-0063). It is data, not a query engine: it does not sort, filter, group or aggregate — the
+/// (ADR-0064). It is data, not a query engine: it does not sort, filter, group or aggregate — the
 /// sources that read it do, each to its own semantics.
 /// <para>
 /// It is read slice by slice (<see cref="Slice(int)"/>), each slice a storage segment whose columns
@@ -190,7 +190,7 @@ public sealed class Snapshot
     }
 
     /// <summary>
-    /// Makes the next Snapshot from a Change Batch (ADR-0063), whole or not at all. The batch is
+    /// Makes the next Snapshot from a Change Batch (ADR-0064), whole or not at all. The batch is
     /// refused, naming the key, when it changes or removes a key this version does not hold, adds one
     /// it does, names a key twice, or carries a Blank key; a Snapshot without a Record Key takes only
     /// a batch that adds. Nothing of a refused batch is applied, and this Snapshot is never changed.

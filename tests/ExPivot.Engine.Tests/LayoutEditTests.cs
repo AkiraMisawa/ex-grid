@@ -4,7 +4,7 @@ using static ExPivot.Engine.Tests.Pivot;
 
 namespace ExPivot.Engine.Tests;
 
-/// <summary>What each Field List gesture means (ADR-0060), as the engine's pure rules.</summary>
+/// <summary>What each Field List gesture means (ADR-0061), as the engine's pure rules.</summary>
 public class LayoutEditTests
 {
     private static string Describe(PivotLayout layout)
@@ -18,7 +18,7 @@ public class LayoutEditTests
             + $"V[{string.Join(",", layout.Values.Select(v => v.Aggregation + ":" + v.Field))}]";
     }
 
-    [Fact] // ADR-0060: ticking places a Number field in Values with Sum, any other at the end of Rows
+    [Fact] // ADR-0061: ticking places a Number field in Values with Sum, any other at the end of Rows
     public void Ticking_places_where_excel_places()
     {
         var layout = PivotLayoutEdits.Tick(PivotLayout.Empty, Info("Region"));
@@ -30,7 +30,7 @@ public class LayoutEditTests
         Assert.Same(layout, PivotLayoutEdits.Tick(layout, Info("Region")));
     }
 
-    [Fact] // ADR-0060: unticking removes the field from every Area, each Value Field of it too
+    [Fact] // ADR-0061: unticking removes the field from every Area, each Value Field of it too
     public void Unticking_removes_the_field_everywhere()
     {
         var layout = new PivotLayout
@@ -48,7 +48,7 @@ public class LayoutEditTests
         Assert.Same(untick, PivotLayoutEdits.Untick(untick, "Region"));
     }
 
-    [Fact] // ADR-0059/0060: removing the Value Field an order is by falls back to the label, same direction
+    [Fact] // ADR-0060/0061: removing the Value Field an order is by falls back to the label, same direction
     public void Removing_the_value_field_an_order_is_by()
     {
         var layout = new PivotLayout
@@ -62,7 +62,7 @@ public class LayoutEditTests
         Assert.Equal(PivotSort.Descending, removed.Rows[0].Sort);
     }
 
-    [Fact] // ADR-0060: a field dropped from the list on an Area, at a position
+    [Fact] // ADR-0061: a field dropped from the list on an Area, at a position
     public void Placing_from_the_list()
     {
         var layout = new PivotLayout { Rows = [P("Region"), P("Product")] };
@@ -72,7 +72,7 @@ public class LayoutEditTests
         Assert.Equal("F[] C[] R[Region,Product,Date] V[]", Describe(PivotLayoutEdits.Place(layout, Info("Date"), PivotArea.Rows, 99)));
     }
 
-    [Fact] // ADR-0060: a field standing in Rows dropped from the list on Columns moves there, with its settings
+    [Fact] // ADR-0061: a field standing in Rows dropped from the list on Columns moves there, with its settings
     public void A_field_moves_between_areas_with_its_settings()
     {
         var hidden = P("Region") with { HiddenItems = [PivotItemKey.Text("West")], Sort = PivotSort.Descending, Subtotals = false };
@@ -84,7 +84,7 @@ public class LayoutEditTests
         Assert.Same(hidden, moved.Columns[0]);
     }
 
-    [Fact] // ADR-0060: a field dropped on Values from the list is a new Value Field, even a second one
+    [Fact] // ADR-0061: a field dropped on Values from the list is a new Value Field, even a second one
     public void Dropping_on_values_adds_a_value_field()
     {
         var layout = new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] };
@@ -96,7 +96,7 @@ public class LayoutEditTests
         Assert.Equal("F[] C[Σ] R[Region] V[Count:Region,Sum:Amount,Sum:Amount]", Describe(region));
     }
 
-    [Fact] // ADR-0060: an entry reordered within its Area, by its menu's Move Up, Down, Beginning and End
+    [Fact] // ADR-0061: an entry reordered within its Area, by its menu's Move Up, Down, Beginning and End
     public void Reordering_within_an_area()
     {
         var layout = new PivotLayout { Rows = [P("Region"), P("Product"), P("Date")] };
@@ -110,7 +110,7 @@ public class LayoutEditTests
         Assert.Same(layout, Move(1, 2));
     }
 
-    [Fact] // ADR-0060: an entry moved to Values leaves its Area and becomes a Value Field
+    [Fact] // ADR-0061: an entry moved to Values leaves its Area and becomes a Value Field
     public void A_field_moved_to_values()
     {
         var layout = new PivotLayout { Rows = [P("Region"), P("Amount")], Values = [Sum("Quantity")] };
@@ -120,7 +120,7 @@ public class LayoutEditTests
         Assert.Equal("F[] C[Σ] R[Region] V[Sum:Amount,Sum:Quantity]", Describe(moved));
     }
 
-    [Fact] // ADR-0060: a Value Field moved to another Area leaves Values, and its field is placed there
+    [Fact] // ADR-0061: a Value Field moved to another Area leaves Values, and its field is placed there
     public void A_value_field_moved_to_an_area()
     {
         var layout = new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount"), Value("Product", PivotAggregation.Count)] };
@@ -130,7 +130,7 @@ public class LayoutEditTests
         Assert.Equal("F[] C[] R[Product,Region] V[Sum:Amount]", Describe(moved));
     }
 
-    [Fact] // ADR-0059/0060: Value Fields reordered, and an order by one follows it
+    [Fact] // ADR-0060/0061: Value Fields reordered, and an order by one follows it
     public void Reordering_value_fields_keeps_orders_on_their_field()
     {
         var layout = new PivotLayout
@@ -145,7 +145,7 @@ public class LayoutEditTests
         Assert.Equal(2, moved.Rows[0].Sort.ByValue);
     }
 
-    [Fact] // ADR-0060: Σ Values moves between Rows and Columns only, and cannot be removed
+    [Fact] // ADR-0061: Σ Values moves between Rows and Columns only, and cannot be removed
     public void Values_pseudo_field_moves_between_rows_and_columns_only()
     {
         var layout = new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount"), Sum("Quantity")] };
@@ -160,7 +160,7 @@ public class LayoutEditTests
         Assert.True(sigma.IsValuesPseudoField);
     }
 
-    [Fact] // ADR-0060: Remove Field
+    [Fact] // ADR-0061: Remove Field
     public void Removing_an_entry()
     {
         var layout = new PivotLayout { Filters = [P("Online")], Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] };
@@ -170,7 +170,7 @@ public class LayoutEditTests
         Assert.Throws<ArgumentOutOfRangeException>(() => PivotLayoutEdits.Remove(layout, new PivotEntry(PivotArea.Rows, 2)));
     }
 
-    [Fact] // ADR-0059/0060: Filter… may hide every Item but one, never every one
+    [Fact] // ADR-0060/0061: Filter… may hide every Item but one, never every one
     public void Hiding_every_item_is_refused()
     {
         var layout = new PivotLayout { Rows = [P("Region")] };
@@ -187,7 +187,7 @@ public class LayoutEditTests
         Assert.Equal("Select at least one item.", PivotWords.EnglishFor(every.RefusalWord!));
     }
 
-    [Fact] // ADR-0059: collapsing one Item, and Expand / Collapse Entire Field
+    [Fact] // ADR-0060: collapsing one Item, and Expand / Collapse Entire Field
     public void Collapsing_items_and_fields()
     {
         var layout = new PivotLayout { Rows = [P("Region"), P("Product")] };
@@ -207,7 +207,7 @@ public class LayoutEditTests
         Assert.Equal(layout.Rows[0].ToggledItems, PivotLayoutEdits.SetCollapsed(collapsed, "Region", east, false).Rows[0].ToggledItems);
     }
 
-    [Fact] // ADR-0059/0060: Value Field Settings… refuses a taken or empty caption and an unusable format
+    [Fact] // ADR-0060/0061: Value Field Settings… refuses a taken or empty caption and an unusable format
     public void Value_field_settings_refusals()
     {
         var layout = new PivotLayout { Values = [Sum("Amount"), Sum("Quantity")] };
@@ -224,7 +224,7 @@ public class LayoutEditTests
         Assert.False(PivotLayoutEdits.SetValueField(renamed.Layout, 1, renamed.Layout.Values[1], Infos).IsRefused);
     }
 
-    [Fact] // ADR-0060: sorting and subtotals on a placed field; an unplaced one is refused
+    [Fact] // ADR-0061: sorting and subtotals on a placed field; an unplaced one is refused
     public void Sort_and_subtotals()
     {
         var layout = new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] };

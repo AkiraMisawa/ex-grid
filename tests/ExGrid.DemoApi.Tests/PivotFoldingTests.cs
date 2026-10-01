@@ -7,16 +7,16 @@ namespace ExGrid.DemoApi.Tests;
 
 /// <summary>
 /// The server's Pivot Source over trades whose text the generator never writes — one Item stored in
-/// two spellings, ASCII and not — held to <c>PivotSource.From</c> over the same trades (ADR-0059,
-/// ADR-0065): the <c>GROUP BY</c>'s groups are folded into one leaf, and a Hidden Item or a cell's
+/// two spellings, ASCII and not — held to <c>PivotSource.From</c> over the same trades (ADR-0060,
+/// ADR-0066): the <c>GROUP BY</c>'s groups are folded into one leaf, and a Hidden Item or a cell's
 /// Item finds every spelling.
 /// </summary>
 public sealed class PivotFoldingTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    [Fact] // ADR-0059/0065: two spellings of one Item are one leaf, one Item and one cell's records, as the engine reads them
-    public async Task ADR0059_two_spellings_of_one_Item_are_one_leaf_as_in_the_engine()
+    [Fact] // ADR-0060/0066: two spellings of one Item are one leaf, one Item and one cell's records, as the engine reads them
+    public async Task ADR0060_two_spellings_of_one_Item_are_one_leaf_as_in_the_engine()
     {
         using var directory = new TempDirectory();
         await using var store = await TestData.ReadyStore(directory.Path, 2_000);

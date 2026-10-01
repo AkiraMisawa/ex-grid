@@ -23,7 +23,7 @@ internal static class TradeEndpoints
     /// <para>
     /// And <c>GET /api/trades/by-id?ids=T10000001,T10000002</c>: the named trades as they are now,
     /// for <c>/grid-live</c> to read again the trades the hub's <c>TradesChanged</c> names
-    /// (ADR-0067) — <see cref="TradesById"/>, whose <c>missing</c> keys are trades removed. The
+    /// (ADR-0068) — <see cref="TradesById"/>, whose <c>missing</c> keys are trades removed. The
     /// keys come comma-separated, or as <c>ids</c> repeated. A long list goes in the body of
     /// <c>POST /api/trades/by-id</c> instead (<see cref="TradeIdsRequest"/>), since a URL of a
     /// thousand keys passes what a server reads of a request line.

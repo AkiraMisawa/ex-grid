@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** Excel's "PivotTable Fields" pane (ADR-0060): the fields with their checkboxes and
+**What to build:** Excel's "PivotTable Fields" pane (ADR-0061): the fields with their checkboxes and
 search, the four Areas, drag and drop on Blazor's own events, each entry's menu, Filter…, Field
 Settings…, Value Field Settings…, the report filter band, and the `IPivotChrome` seam.
 
@@ -17,5 +17,5 @@ Settings…, Value Field Settings…, the report filter band, and the `IPivotChr
 ## Comments
 
 2026-09-30: seen in a browser, a panel opened in the flow was only half the pane wide and pushed
-the Areas out of view; ADR-0060 was revised (before it was decided) to open it at its static
+the Areas out of view; ADR-0061 was revised (before it was decided) to open it at its static
 position, as wide as the pane.

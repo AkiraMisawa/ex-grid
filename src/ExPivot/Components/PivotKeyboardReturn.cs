@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 namespace ExPivot.Components;
 
 /// <summary>
-/// Gives the report's grid the keyboard back once what held it over the report has gone (ADR-0069):
+/// Gives the report's grid the keyboard back once what held it over the report has gone (ADR-0070):
 /// Show Details' dialog, however it closed, or a details tab whose closing left the report's tab
 /// selected. It renders nothing. For each request number it has not acted on, it asks through
 /// <see cref="Return"/> after the render that carries the request — the render that took the dialog

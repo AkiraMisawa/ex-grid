@@ -132,7 +132,7 @@ What the rows say:
 |---|---|---|
 | **Built from objects** | 426 ms: 12 columns keyed by a unique text Id (`Build`; `BuildAsync` in 30 ms slices takes 445 ms); 372 ms unkeyed. The engine's 13 declared columns: 242 ms keyed by a `long`, 180 ms unkeyed | 3,803 ms: /pivot's declarations, 11 columns keyed by the text Id, in one synchronous `PivotSource.From` |
 | **Read from a CSV** | 955 ms from memory (89.7 MiB, 12 columns, keyed by Id); 952 ms from a file in the page cache | 14.6 s through `InputFile` (the same 89.7 MiB). 100,000 rows from memory: 1.7 s |
-| **Read from Arrow** | 475 ms from memory and 511 ms from a stream (11 columns keyed by TradeId, 75.7 MiB). ADR-0064's shape without the unique id: 77 ms | 3,693 ms (3,495–3,769), from the response's last byte to the Snapshot (12 columns keyed by TradeId, 81.3 MB). The page's own figure, with the request (435 ms), is 4,070 ms. The first read at load took 4,128 ms |
+| **Read from Arrow** | 475 ms from memory and 511 ms from a stream (11 columns keyed by TradeId, 75.7 MiB). ADR-0065's shape without the unique id: 77 ms | 3,693 ms (3,495–3,769), from the response's last byte to the Snapshot (12 columns keyed by TradeId, 81.3 MB). The page's own figure, with the request (435 ms), is 4,070 ms. The first read at load took 4,128 ms |
 
 The browser takes 8–15 times CoreCLR's time: 8.9× for objects, 15× for the CSV, and 7.8× for Arrow.
 On CoreCLR, the unique text column is most of what Arrow costs: without it, the stream is read in
@@ -164,7 +164,7 @@ each of the last four on a fresh load. It found 1,352, 2,828, 3,002 and 625 ms, 
 2,106, 2,160 and 151 ms; it is in `metrics.json`. On CoreCLR, a question of 199,511 leaves takes
 140–164 ms, and making its cube takes 119 ms more.
 
-What these numbers suggest. The decision is the user's, and it belongs in ADR-0065:
+What these numbers suggest. The decision is the user's, and it belongs in ADR-0066:
 
 - **A question costs more with every leaf.** On this machine it costs about 0.25 s at 1,350 leaves,
   0.36 s at 13,500, 0.65 s at 26,982, 1.2 s at 66,150, and 2.5–2.7 s from 134,646 to 197,151. The
@@ -185,7 +185,7 @@ What these numbers suggest. The decision is the user's, and it belongs in ADR-00
   - a lower default in the browser;
   - slicing ExPivot's work after the answer as the pass is sliced, so that a large question is slow
     but never freezes the page;
-  - a default per host. ADR-0065 already says that "the right cap depends on the device, and on where
+  - a default per host. ADR-0066 already says that "the right cap depends on the device, and on where
     the aggregation runs".
 
 ## What could not be measured as asked, and the nearest thing measured

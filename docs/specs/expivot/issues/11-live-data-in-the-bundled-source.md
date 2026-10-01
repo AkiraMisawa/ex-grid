@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** `PivotSource.From(snapshot)` takes a Change Batch (ADR-0066). It makes the next
+**What to build:** `PivotSource.From(snapshot)` takes a Change Batch (ADR-0067). It makes the next
 Snapshot, and folds the batch into the answer it holds for the current question.
 
 - **Exact parts are updated by subtraction and addition.**

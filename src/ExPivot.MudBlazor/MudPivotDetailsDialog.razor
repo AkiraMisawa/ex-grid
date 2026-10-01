@@ -1,4 +1,4 @@
-@* The content of Show Details' dialog under MudBlazor (ADR-0058/0061), inside ExPivot's own frame —
+@* The content of Show Details' dialog under MudBlazor (ADR-0059/0062), inside ExPivot's own frame —
    never a MudDialog: where the dialog stands, its name, that it is modal and that Escape closes it
    are ExPivot's. Inside it, laid out as a MudDialog's: the cell's title as its heading, the
    records' grid ExPivot hands over, and Close as a MudButton in the actions, which takes the
@@ -13,7 +13,7 @@
 </div>
 
 @code {
-    /// <summary>The title, the records and the way out (ADR-0058).</summary>
+    /// <summary>The title, the records and the way out (ADR-0059).</summary>
     [Parameter, EditorRequired] public PivotDetailsDialogContext Context { get; set; } = default!;
 
     /// <summary>The Chrome this dialog's content belongs to.</summary>

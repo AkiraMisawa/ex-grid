@@ -1,7 +1,7 @@
-@* The built-in Value Field Settings… (ADR-0060): the caption, the Aggregation, Show Values As
+@* The built-in Value Field Settings… (ADR-0061): the caption, the Aggregation, Show Values As
    and the number format with a sample, as ExPivot's draft until OK — which a taken caption or an
    unusable format refuses, the sentence shown here. An Aggregation the Pivot Source does not
-   answer is offered disabled, with the reason (ADR-0065). *@
+   answer is offered disabled, with the reason (ADR-0066). *@
 <div class="ex-pivot-panel ex-pivot-value-settings">
     <div class="ex-pivot-panel-title">@Context.Word("value-field-settings")</div>
     <div class="ex-pivot-row ex-pivot-source">@Context.FieldCaption</div>
@@ -21,7 +21,7 @@
         </select>
     </label>
     @* An Aggregation the source does not answer is offered disabled, and the reason is said
-       (ADR-0065). *@
+       (ADR-0066). *@
     @foreach (var reason in Context.Aggregations.Where(c => !c.Enabled && c.Reason is not null).Select(c => c.Reason))
     {
         <div class="ex-pivot-note ex-pivot-not-offered">@reason</div>
@@ -56,7 +56,7 @@
     private ElementReference _first;
     private int _acted;
 
-    /// <summary>The draft and the exits (ADR-0060).</summary>
+    /// <summary>The draft and the exits (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotValueFieldSettingsContext Context { get; set; } = default!;
 
     /// <inheritdoc />

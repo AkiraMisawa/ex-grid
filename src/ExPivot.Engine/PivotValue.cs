@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// One value cell of a Pivot Report (ADR-0059): a number or an error value, with the text it is
+/// One value cell of a Pivot Report (ADR-0060): a number or an error value, with the text it is
 /// shown as under its Value Field's number format and the report's culture. An empty cell is
 /// null, never a value.
 ///
@@ -29,7 +29,7 @@ public sealed class PivotValue : IFormattable
     public double Number { get; }
 
     /// <summary>The exact <c>decimal</c>, where the Aggregation was computed in it — the sum of
-    /// money, never rounded through <c>double</c> (ADR-0059).</summary>
+    /// money, never rounded through <c>double</c> (ADR-0060).</summary>
     public decimal? Exact { get; }
 
     /// <summary>The error value — <c>#DIV/0!</c>, <c>#NUM!</c> — or null for a number.</summary>

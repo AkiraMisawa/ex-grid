@@ -7,7 +7,7 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// Typed field declarations (ADR-0063/0065, Q53): each field declared once, with a typed accessor
+/// Typed field declarations (ADR-0064/0066, Q53): each field declared once, with a typed accessor
 /// and its pivot settings, makes both a Snapshot column — read without boxing — and the Pivot Field
 /// over it. They are the standard way to hand ExPivot records.
 /// </summary>
@@ -37,7 +37,7 @@ public class PivotFieldsTests
         .Boolean("Confirmed", t => t.Confirmed)
         .Month("Month", of: "Traded");
 
-    [Fact] // ADR-0063/0065 (Q53): one declaration makes the Pivot Field and the Snapshot column it reads
+    [Fact] // ADR-0064/0066 (Q53): one declaration makes the Pivot Field and the Snapshot column it reads
     public void One_declaration_makes_the_field_and_its_column()
     {
         var fields = Declarations();
@@ -63,7 +63,7 @@ public class PivotFieldsTests
         Assert.True(snapshot.KeepsRecords);
     }
 
-    [Fact] // ADR-0059/0063 (Q53): a Number takes decimal (exact), double, long or int, and its column is of that kind; a date is its clock
+    [Fact] // ADR-0060/0064 (Q53): a Number takes decimal (exact), double, long or int, and its column is of that kind; a date is its clock
     public async Task A_number_and_a_date_are_held_by_their_accessors_type()
     {
         var source = PivotSource.From(Trades, Declarations());
@@ -73,14 +73,14 @@ public class PivotFieldsTests
         Assert.Equal(PivotNumber.Double(200.75), answer.Values[1].SumAt(0));
         Assert.Equal(PivotNumber.Exact(10m), answer.Values[2].SumAt(0));
         Assert.Equal(PivotNumber.Exact(3m), answer.Values[3].SumAt(0));
-        // A DateTimeOffset is the clock it shows, its offset dropped (ADR-0063).
+        // A DateTimeOffset is the clock it shows, its offset dropped (ADR-0064).
         var booked = await source.AggregateAsync(new PivotQuery(rows: [F("Booked")]), Ct);
         SameKeys([PivotItemKey.Date(new DateTime(2026, 9, 30, 9, 0, 0)), PivotItemKey.Blank], booked.Rows[0].Items);
         var settles = await source.AggregateAsync(new PivotQuery(rows: [F("Settles")]), Ct);
         SameKeys([PivotItemKey.Date(new DateTime(2026, 10, 2)), PivotItemKey.Blank, PivotItemKey.Date(new DateTime(2026, 10, 5))], settles.Rows[0].Items);
     }
 
-    [Fact] // ADR-0065 (Q53): the declarations' settings reach the report — captions, formats, the declared order, the date part
+    [Fact] // ADR-0066 (Q53): the declarations' settings reach the report — captions, formats, the declared order, the date part
     public async Task The_declarations_settings_reach_the_report()
     {
         var source = PivotSource.From(Trades, Declarations());
@@ -95,7 +95,7 @@ public class PivotFieldsTests
         Assert.Equal("i East || 10.25 | 99.5 |  |  |  |  | 10.25 | 99.5", Lines(report)[1]);
     }
 
-    [Fact] // ADR-0063: a name is a field's and its column's, unique among both; a part needs a Date field; a key a Text or Integer one
+    [Fact] // ADR-0064: a name is a field's and its column's, unique among both; a part needs a Date field; a key a Text or Integer one
     public void What_a_declaration_refuses()
     {
         Assert.Throws<ArgumentException>(() => PivotFields.Of<Trade>().Text("Region", t => t.Region).Number("Region", t => t.Pnl));
@@ -112,7 +112,7 @@ public class PivotFieldsTests
         Assert.Equal(["Region"], fields.Fields.Select(f => f.Name));
     }
 
-    [Fact] // ADR-0063 (DA-6): a value that cannot be read fails the build whole, naming the row and the column
+    [Fact] // ADR-0064 (DA-6): a value that cannot be read fails the build whole, naming the row and the column
     public void A_value_that_cannot_be_read_fails_the_build_by_name()
     {
         var fields = PivotFields.Of<Trade>().Text("Region", t => t.Id == "T2" ? throw new InvalidOperationException("no region") : t.Region);
@@ -123,7 +123,7 @@ public class PivotFieldsTests
         Assert.Equal("Region", refusal.Column);
     }
 
-    [Fact] // ADR-0063/0065 (PV-27): the records are read in slices, yielding between them and reporting progress; a cancelled read builds nothing
+    [Fact] // ADR-0064/0066 (PV-27): the records are read in slices, yielding between them and reporting progress; a cancelled read builds nothing
     public async Task The_records_are_read_in_slices()
     {
         var many = Enumerable.Range(0, 5_000).Select(i => Trades[i % 3] with { Id = "T" + i }).ToArray();
@@ -146,7 +146,7 @@ public class PivotFieldsTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => PivotSource.FromAsync(many, Declarations(), cancelling, cancellationToken: cancellation.Token).AsTask());
     }
 
-    [Fact] // ADR-0063/0066: the declarations read a Change Batch through the same columns, and the source takes it
+    [Fact] // ADR-0064/0067: the declarations read a Change Batch through the same columns, and the source takes it
     public async Task A_batch_is_read_through_the_declarations()
     {
         var fields = Declarations();
@@ -193,7 +193,7 @@ public class PivotFieldsTests
         }
     }
 
-    [Fact] // ADR-0059/0063/0065: the README's declarations — the standard way — declare, order and answer as it says
+    [Fact] // ADR-0060/0064/0066: the README's declarations — the standard way — declare, order and answer as it says
     public async Task The_readmes_declarations_answer_as_it_says()
     {
         var fields = PivotFields.Of<ReadmeTrade>()

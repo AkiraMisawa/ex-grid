@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The Pivot Layout's serialised form (ADR-0058): versioned JSON a Consumer stores as View State
+/// The Pivot Layout's serialised form (ADR-0059): versioned JSON a Consumer stores as View State
 /// and reads back as the same layout. Written and read by hand, member by member, so that
 /// nothing depends on reflection a trimmed WebAssembly build may have removed, and a document of
 /// a version this reader does not know is refused rather than half-read.

@@ -163,7 +163,7 @@ public class RenderAllocationTests : GridTestContext
     public void Re_rendering_striped_rows_allocates_nothing_per_cell()
         => AssertNothingPerCell(TextColumns, stripes: true);
 
-    [Fact] // PF-3 / ADR-0067 / ADR-0027 P5: a Change Highlight is asked without allocating and painted as one interned class
+    [Fact] // PF-3 / ADR-0068 / ADR-0027 P5: a Change Highlight is asked without allocating and painted as one interned class
     public void Re_rendering_marked_cells_allocates_nothing_per_cell()
     {
         // Every cell changed at the instant the grid's clock stands still at, so every value

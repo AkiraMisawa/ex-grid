@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Cors.Infrastructure;
 namespace ExGrid.DemoApi;
 
 /// <summary>
-/// Which pages may call the server from a browser (ADR-0068): any page this machine serves —
+/// Which pages may call the server from a browser (ADR-0069): any page this machine serves —
 /// <c>http</c> or <c>https</c>, on <c>localhost</c>, <c>127.0.0.1</c> or <c>[::1]</c>, at any port —
 /// because the demo hosts run on whatever ports a checkout or a test run gives them. Each allowed
 /// origin is answered with itself, never with <c>*</c>.

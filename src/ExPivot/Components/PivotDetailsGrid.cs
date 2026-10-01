@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 namespace ExPivot.Components;
 
 /// <summary>
-/// A details sheet's records (ADR-0058): an ExGrid over the sheet's fetching source — as tall and
+/// A details sheet's records (ADR-0059): an ExGrid over the sheet's fetching source — as tall and
 /// as wide as the box it stands in — or, once the source refused or failed, the sentence that says
 /// why, in place of records that would not add up. Like the report's grid, it renders only when
 /// what it reads changed (ADR-0003's rule, written by hand: a parameter of a reference type is
@@ -43,7 +43,7 @@ internal sealed class PivotDetailsGrid : ComponentBase
     /// <summary>The Cell Metrics, or null for a Wrapper's, or the Density's.</summary>
     [Parameter] public CellTextMetrics? CellMetrics { get; set; }
 
-    /// <summary>The grid's <c>OnLeave</c> (ADR-0069): the dialog's way out, raised by an Escape the
+    /// <summary>The grid's <c>OnLeave</c> (ADR-0070): the dialog's way out, raised by an Escape the
     /// grid has nothing left to dismiss. A tab's grid declares none: Escape does not close a sheet.
     /// Held in a field by ExPivot, so it is the same callback on every render.</summary>
     [Parameter] public EventCallback OnLeave { get; set; }
@@ -72,7 +72,7 @@ internal sealed class PivotDetailsGrid : ComponentBase
         builder.AddComponentParameter(7, nameof(ExGrid<PivotDetailRecord>.ViewportHeight), ViewportSize.Stretch);
         builder.AddComponentParameter(8, nameof(ExGrid<PivotDetailRecord>.ViewportWidth), ViewportSize.Stretch);
         // The records are in the data's order and none is left out: the header click selects, and
-        // there is no column menu to sort or filter them by (ADR-0058).
+        // there is no column menu to sort or filter them by (ADR-0059).
         builder.AddComponentParameter(9, nameof(ExGrid<PivotDetailRecord>.HeaderClickSelects), true);
         builder.AddComponentParameter(10, nameof(ExGrid<PivotDetailRecord>.HideColumnMenu), true);
         builder.AddComponentParameter(11, nameof(ExGrid<PivotDetailRecord>.CellType), PivotDetailsSheet.CellTypeOf);

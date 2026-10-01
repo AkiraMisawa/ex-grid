@@ -1,4 +1,4 @@
-@* The built-in report filter band (ADR-0060): each field in Filters with what it shows — (All),
+@* The built-in report filter band (ADR-0061): each field in Filters with what it shows — (All),
    the one Item shown, or (Multiple Items) — as Excel shows its page fields above the report. The
    button's wrapper is positioned, so Filter… opens under it, over the report. *@
 <div class="ex-pivot-filters" role="group" aria-label="@Context.Title">
@@ -21,6 +21,6 @@
 </div>
 
 @code {
-    /// <summary>The report filters and whom to call back (ADR-0060).</summary>
+    /// <summary>The report filters and whom to call back (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotReportFiltersContext Context { get; set; } = default!;
 }

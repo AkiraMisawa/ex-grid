@@ -20,7 +20,7 @@ Excel's PivotTable lays them out.
 - **Live data**: a Change Batch moves the Snapshot on, and the answer held for the current question
   is brought up to date from what the batch removed and added.
 
-The engine's behaviour is the specification of ExPivot's semantics (ADR-0059 in the repository):
+The engine's behaviour is the specification of ExPivot's semantics (ADR-0060 in the repository):
 a server that answers a pivot itself is held to it.
 
 > **This is a prerelease (`0.x`).** ExPivot is built alongside ExGrid and is not part of its
@@ -159,7 +159,7 @@ on the calling thread.
 
 ## Asking a Pivot Source
 
-A report is computed from the **Leaf Aggregates** a **Pivot Source** answers with (ADR-0065): for
+A report is computed from the **Leaf Aggregates** a **Pivot Source** answers with (ADR-0066): for
 every combination of the row and column fields' Items that has records, the parts each Value
 Field's Aggregation is computed from — counts, an exact or `double` sum, the extremes, the product,
 the running variance, and only the parts that are asked for. Every subtotal and grand total is
@@ -179,7 +179,7 @@ merged from the leaves' parts, which combine exactly.
 
 ## Live data
 
-A source over a Snapshot with a Record Key takes Change Batches (ADR-0066):
+A source over a Snapshot with a Record Key takes Change Batches (ADR-0067):
 
 ```csharp
 source.Changed += change => …;   // ask again: the source has moved on to change.SourceVersion

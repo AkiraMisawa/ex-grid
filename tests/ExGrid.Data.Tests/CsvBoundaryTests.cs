@@ -10,14 +10,14 @@ namespace ExGrid.Data.Tests;
 /// The CSV reader finds separators, line ends and quotes sixteen bytes at a time, and reads the file
 /// through a buffer (ticket 07). Neither may change what is read or refused: a field reads alike
 /// wherever a block or a buffer cuts it, and a refusal names the same row, column and line
-/// (ADR-0063).
+/// (ADR-0064).
 /// </summary>
 public class CsvBoundaryTests
 {
     /// <summary>Buffer sizes around the block's sixteen bytes and its multiples, and some that are not.</summary>
     private static readonly int[] BufferSizes = [4, 5, 7, 15, 16, 17, 31, 32, 33, 47, 64, 100, 257, 1024, 4096];
 
-    [Fact] // ADR-0063: fields of every length, quoted or not, read exactly wherever a block or a buffer cuts them
+    [Fact] // ADR-0064: fields of every length, quoted or not, read exactly wherever a block or a buffer cuts them
     public void Fields_of_every_length_read_alike_wherever_the_bytes_are_cut()
     {
         var (text, expected) = RandomFile(new Random(20261001), columns: 4, rows: 400);
@@ -31,7 +31,7 @@ public class CsvBoundaryTests
         AssertValues(expected, Read(schema, bytes));
     }
 
-    [Fact] // ADR-0063: many short fields in one block of sixteen bytes read alike, and a quote among them is refused in its column
+    [Fact] // ADR-0064: many short fields in one block of sixteen bytes read alike, and a quote among them is refused in its column
     public void Short_fields_in_one_block_read_alike_and_a_quote_among_them_is_refused()
     {
         var names = Enumerable.Range(0, 20).Select(c => $"C{c}").ToArray();
@@ -60,7 +60,7 @@ public class CsvBoundaryTests
         }
     }
 
-    [Fact] // ADR-0063: a field far longer than a block or the buffer is read whole
+    [Fact] // ADR-0064: a field far longer than a block or the buffer is read whole
     public void A_very_long_field_is_read_whole()
     {
         var plain = string.Concat(Enumerable.Range(0, 20_000).Select(i => (char)('a' + (i % 26))));
@@ -78,7 +78,7 @@ public class CsvBoundaryTests
         }
     }
 
-    [Theory] // ADR-0063: the line a refusal names counts the line breaks inside quotes, CR LF as one, wherever a block cuts them
+    [Theory] // ADR-0064: the line a refusal names counts the line breaks inside quotes, CR LF as one, wherever a block cuts them
     [InlineData("\r\n")]
     [InlineData("\n")]
     [InlineData("\r")]
@@ -97,7 +97,7 @@ public class CsvBoundaryTests
         }
     }
 
-    [Fact] // ADR-0063: a CR that ends a quoted field's content is a line break of its own, and the LF after the quote ends the record
+    [Fact] // ADR-0064: a CR that ends a quoted field's content is a line break of its own, and the LF after the quote ends the record
     public void A_cr_before_the_closing_quote_is_a_break_of_its_own()
     {
         var schema = new CsvSchema([new("A", SnapshotKind.Text), new("B", SnapshotKind.Integer)]);
@@ -110,7 +110,7 @@ public class CsvBoundaryTests
         }
     }
 
-    [Fact] // ADR-0063: a quote inside an unquoted field is refused wherever it stands in it
+    [Fact] // ADR-0064: a quote inside an unquoted field is refused wherever it stands in it
     public void A_quote_inside_an_unquoted_field_is_refused_wherever_it_stands()
     {
         for (var offset = 1; offset < 40; offset++)
@@ -125,7 +125,7 @@ public class CsvBoundaryTests
         }
     }
 
-    [Fact] // ADR-0063: what follows a closing quote is checked wherever the quote falls
+    [Fact] // ADR-0064: what follows a closing quote is checked wherever the quote falls
     public void Text_after_a_closing_quote_is_refused_wherever_the_quote_falls()
     {
         for (var length = 0; length < 40; length++)
@@ -140,7 +140,7 @@ public class CsvBoundaryTests
         }
     }
 
-    [Fact] // ADR-0063: a quote left open is refused however long the field runs
+    [Fact] // ADR-0064: a quote left open is refused however long the field runs
     public void A_quote_left_open_is_refused_however_long_the_field_runs()
     {
         for (var length = 0; length < 40; length++)

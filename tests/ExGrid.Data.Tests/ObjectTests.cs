@@ -6,10 +6,10 @@ using static ExGrid.Data.Tests.Fixtures;
 
 namespace ExGrid.Data.Tests;
 
-/// <summary>A Snapshot built from the Consumer's objects (ADR-0063, DA-4).</summary>
+/// <summary>A Snapshot built from the Consumer's objects (ADR-0064, DA-4).</summary>
 public class ObjectTests
 {
-    [Fact] // ADR-0063: built from objects, a Snapshot keeps the objects themselves, by reference and in order
+    [Fact] // ADR-0064: built from objects, a Snapshot keeps the objects themselves, by reference and in order
     public void Records_are_kept_by_reference_in_order()
     {
         var records = Trades(1_000);
@@ -21,7 +21,7 @@ public class ObjectTests
         AssertHolds(records, snapshot);
     }
 
-    [Fact] // ADR-0063: the records may come as an array, a list, or any read-only list, and read the same
+    [Fact] // ADR-0064: the records may come as an array, a list, or any read-only list, and read the same
     public void Records_read_the_same_whatever_list_holds_them()
     {
         var records = Trades(3_000);
@@ -32,7 +32,7 @@ public class ObjectTests
         AssertHolds(records, builder.Build(new ReadOnlyCollection<Trade>(records)));
     }
 
-    [Fact] // ADR-0063: an array of a derived type is read as it is
+    [Fact] // ADR-0064: an array of a derived type is read as it is
     public void An_array_of_a_derived_type_is_read()
     {
         IReadOnlyList<object> records = new[] { "a", "b" };
@@ -43,7 +43,7 @@ public class ObjectTests
         Assert.Same(records[1], snapshot.RecordAt(snapshot.Rows[1]));
     }
 
-    [Fact] // ADR-0063: records of a value type are kept as they are, and handed back boxed
+    [Fact] // ADR-0064: records of a value type are kept as they are, and handed back boxed
     public void Records_of_a_value_type_are_kept()
     {
         var snapshot = new SnapshotBuilder<(int Id, string Name)>()
@@ -54,7 +54,7 @@ public class ObjectTests
         Assert.Equal((2, "two"), snapshot.RecordAt(snapshot.Rows[1]));
     }
 
-    [Fact] // ADR-0063: typed accessors box no value — a build allocates little beyond the columns' own arrays
+    [Fact] // ADR-0064: typed accessors box no value — a build allocates little beyond the columns' own arrays
     public void Typed_accessors_box_no_value()
     {
         const int count = 100_000;
@@ -97,7 +97,7 @@ public class ObjectTests
         Assert.True(boxed > held + (held / 4), $"The boxing build allocated {boxed:N0} bytes.");
     }
 
-    [Fact] // ADR-0063: the declaration is reused, and every build is a Snapshot of its own
+    [Fact] // ADR-0064: the declaration is reused, and every build is a Snapshot of its own
     public void Each_build_is_a_snapshot_of_its_own()
     {
         var builder = Trades();
@@ -111,7 +111,7 @@ public class ObjectTests
         Assert.Contains("'Id'", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a column's name is unique within the Snapshot
+    [Fact] // ADR-0064: a column's name is unique within the Snapshot
     public void A_name_is_declared_once()
     {
         var builder = new SnapshotBuilder<Trade>().Integer("Id", t => t.Id);
@@ -121,7 +121,7 @@ public class ObjectTests
         Assert.Throws<ArgumentException>(() => builder.Text("", t => t.Desk));
     }
 
-    [Fact] // ADR-0063: no records, no rows — and still the declared columns
+    [Fact] // ADR-0064: no records, no rows — and still the declared columns
     public void An_empty_build_has_its_columns_and_no_rows()
     {
         var snapshot = Trades().Build([]);

@@ -6,10 +6,10 @@ using static ExGrid.Data.Tests.Fixtures;
 namespace ExGrid.Data.Tests;
 
 /// <summary>A Snapshot is immutable, so it is read from several threads at once — the indexes it makes
-/// on first read included — and batches may be applied to one version from several threads (ADR-0063).</summary>
+/// on first read included — and batches may be applied to one version from several threads (ADR-0064).</summary>
 public class ConcurrencyTests
 {
-    [Fact] // ADR-0063: a Snapshot is read from several threads at once, the index it makes on first read included
+    [Fact] // ADR-0064: a Snapshot is read from several threads at once, the index it makes on first read included
     public async Task A_snapshot_is_read_from_several_threads_at_once()
     {
         var records = Trades(5_000);
@@ -22,7 +22,7 @@ public class ConcurrencyTests
         Assert.All(reads, read => Assert.Equal(expected, read));
     }
 
-    [Fact] // ADR-0063: batches applied to one Snapshot from several threads each make their own next version
+    [Fact] // ADR-0064: batches applied to one Snapshot from several threads each make their own next version
     public async Task Batches_applied_at_once_each_make_their_own_version()
     {
         var builder = Trades(new SnapshotTuning(SegmentShift: 4));

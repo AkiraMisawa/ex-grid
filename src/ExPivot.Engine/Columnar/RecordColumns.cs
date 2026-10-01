@@ -5,8 +5,8 @@ namespace ExPivot.Engine;
 
 /// <summary>
 /// The Snapshot behind <c>PivotSource.From(records, fields)</c>: the records read once through the
-/// fields' untyped accessors, boxing allowed there for compatibility (ADR-0065). Each value keeps
-/// its own kind (ADR-0059: a field "whose values are not all of the declared type is still pivoted
+/// fields' untyped accessors, boxing allowed there for compatibility (ADR-0066). Each value keeps
+/// its own kind (ADR-0060: a field "whose values are not all of the declared type is still pivoted
 /// as its values are"), so a field is held as one column per kind its accessor returned — text,
 /// an exact number (every integral type and <c>decimal</c>), a <c>double</c> (and <c>float</c>), a
 /// date (<c>DateTime</c>, <c>DateOnly</c>, <c>DateTimeOffset</c>), a Boolean — with each row's
@@ -42,7 +42,7 @@ internal sealed class RecordColumns<TRecord>
     }
 
     /// <summary>Builds the Snapshot in slices, yielding between them as the source shares the thread
-    /// (ADR-0063/0065).</summary>
+    /// (ADR-0064/0066).</summary>
     public static async Task<(Snapshot Snapshot, Dictionary<string, FieldBinding> Bindings)> BuildAsync(
         IReadOnlyList<TRecord> records, PivotField<TRecord>[] fields, PivotSlicing slicing)
     {
@@ -222,7 +222,7 @@ internal sealed class RecordColumns<TRecord>
                     ((BooleanColumnBuilder)builder).Append(flag);
                     return;
                 default:
-                    // Any other type is text, by its invariant text (ADR-0059): an enum by its name.
+                    // Any other type is text, by its invariant text (ADR-0060): an enum by its name.
                     ((TextColumnBuilder)builder).Append(Convert.ToString(value, CultureInfo.InvariantCulture) ?? "");
                     return;
             }

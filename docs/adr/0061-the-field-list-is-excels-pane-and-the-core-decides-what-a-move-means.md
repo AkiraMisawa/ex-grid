@@ -1,6 +1,6 @@
 # The Field List is Excel's pane, and ExPivot decides what every move in it means
 
-*(Proposed 2026-09-30 with [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md),
+*(Proposed 2026-09-30 with [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md),
 and decided with the user the same day. The grilling kept the pane and its rules as built. It added
 three things, each marked **Changed when decided** below:*
 
@@ -21,7 +21,7 @@ ExPivot's own UI, not ExGrid's, and it stands beside the report, on the right by
 
 The rules are the engine's functions (`PivotLayoutEdits`), so the component, a substituted Chrome
 and a server all apply the same ones
-([ADR-0059](./0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+([ADR-0060](./0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
 
 - **Ticking a field** that stands nowhere places it where Excel does. A field declared Number goes
   to Values, with its default Aggregation. Any other field goes to the end of Rows.
@@ -42,10 +42,10 @@ and a server all apply the same ones
 - **Σ Values** appears in Columns when a second Value Field is placed, and leaves when fewer than two
   remain.
   - It moves between Rows and Columns only.
-  - In the first version, it always stands innermost in its Area (ADR-0059), so a drop anywhere in
+  - In the first version, it always stands innermost in its Area (ADR-0060), so a drop anywhere in
     the other Area moves it there, last.
 - **Some edits are refused**: hiding every Item of a field, and giving a Value Field a caption that
-  another already carries (ADR-0059).
+  another already carries (ADR-0060).
 
 **Each placed entry has a menu, Excel's.**
 
@@ -54,7 +54,7 @@ and a server all apply the same ones
 - It offers Remove Field, and Field Settings… or Value Field Settings….
 - **A field in Rows or Columns also carries the commands Excel puts on its dropdown in the report**:
   Sort A to Z, Sort Z to A, Filter…, and Expand and Collapse Entire Field. The report's headers here
-  carry no dropdown (ADR-0058).
+  carry no dropdown (ADR-0059).
 - A field in Filters carries Filter….
 - **A command that would change nothing is disabled.** It is never offered and then ignored.
 
@@ -66,7 +66,7 @@ The panels:
   - The number format is a .NET format string. It is shown on a sample before it is applied, and one
     that cannot format is refused.
   - **An Aggregation the Pivot Source does not answer is offered disabled, with the reason**
-    ([ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+    ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
 - **Filter…** lists all of the field's Items, in the field's order, each ticked while it is shown,
   with (Select All) and a search that narrows the list.
   - The search only narrows what is listed. Applying keeps every tick as it stands. *(Excel's search
@@ -74,10 +74,10 @@ The panels:
     rule is later.)*
   - At most 10,000 Items are listed at once, and beyond that the search narrows them. Painting a
     million checkboxes is not something to execute: principle 5 puts the cap on what cannot be.
-  - The Items come from the source, under the report's Source Version (ADR-0065).
+  - The Items come from the source, under the report's Source Version (ADR-0066).
 
 **Every change is a new Pivot Layout**, applied at once and raised through `LayoutChanged`
-(ADR-0058). A panel's edits are a draft the core holds until OK; Cancel and Escape discard it.
+(ADR-0059). A panel's edits are a draft the core holds until OK; Cancel and Escape discard it.
 
 **Defer Layout Update.** *Changed when decided* (Q14). The proposal left it for later, "measured
 first". The measurement came: over a million records, one layout change took the first engine 7 to
@@ -111,12 +111,12 @@ above the report instead.**
     - The menu works as a placed entry's menu does: the current choice is marked, and a choice that
       would change nothing is disabled. Report Layout's label choices, for example, are disabled in
       the Compact form, which has no outer label columns to repeat into.
-  - **Refresh**, when the source can be asked again (ADR-0065).
+  - **Refresh**, when the source can be asked again (ADR-0066).
   - **The Field List's toggle.** The pane's visibility is a parameter the Consumer can bind
     (`@bind-ShowFieldList`), so the Consumer can remember it. The Context Menu still offers
     Show / Hide Field List, as Excel's does.
 - **Under the toolbar**, when there is one, is the Stale Report's notice
-  ([ADR-0066](./0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)),
+  ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)),
   with Retry.
 
 ## Drag and drop without new JavaScript

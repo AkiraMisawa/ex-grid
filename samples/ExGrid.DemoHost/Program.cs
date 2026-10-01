@@ -17,7 +17,7 @@ builder.Services.AddMudServices();
 // matters.
 builder.Services.AddSingleton<global::ExGrid.DemoPages.SharedTradeStore>();
 builder.Services.AddSingleton<global::ExGrid.DemoPages.InspectorTradeStore>();
-// The demo API server the database and live pages call (ADR-0068): at this page's port plus
+// The demo API server the database and live pages call (ADR-0069): at this page's port plus
 // 3000 unless DemoApi:Address names it. The browser's own fetch carries the requests, and undoes
 // HTTP's compression natively.
 builder.Services.AddDemoApi(builder.Configuration[DemoApiClient.AddressKey]);

@@ -10,7 +10,7 @@
 @using global::ExPivot.MudBlazor
 
 @* ?chrome=mud stands the pivot on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's Chrome,
-   as /pivot does (ADR-0061). *@
+   as /pivot does (ADR-0062). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true">
     <Head>
         <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
@@ -37,7 +37,7 @@
     custom list: a tenor the list leaves out would stand after every tenor in it. So the Tenor field
     declares an <strong>Order Key</strong>: a
     function from an Item to what the Items are ordered by, here months to maturity, called once per
-    Item (ADR-0059). The engine parses no tenor; the key is the application's. The options desk's
+    Item (ADR-0060). The engine parses no tenor; the key is the application's. The options desk's
     system writes eighteen months as <code>1Y6M</code> and the others as <code>18M</code>: both are
     18 months, and they stand side by side as two Items, because a key orders Items and never
     merges them.

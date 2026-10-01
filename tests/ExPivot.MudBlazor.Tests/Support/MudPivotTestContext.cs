@@ -25,7 +25,7 @@ public sealed record Sale(string? Region, string Product, decimal Amount, int Qu
 /// MudBlazor's services, the popover provider every MudBlazor page has, and a loose JavaScript
 /// seam: the grid's module import answers null in loose mode, which the core treats as "no browser
 /// yet" and paints without — enough for what these tests read, which is markup, layouts and the
-/// focus calls Blazor itself makes. The pivot stands in the grid Wrapper's paper, as ADR-0061 has
+/// focus calls Blazor itself makes. The pivot stands in the grid Wrapper's paper, as ADR-0062 has
 /// a Consumer write it.
 /// </summary>
 public abstract class MudPivotTestContext : BunitContext
@@ -215,7 +215,7 @@ public abstract class MudPivotTestContext : BunitContext
     /// Lets every grid rendered from here on attach to the browser, as it does on a page — its
     /// module imported and its listener's handle answered, loosely — and keeps the report grid's
     /// handle apart from the details grids': what the report's own grid asks of the browser, the
-    /// keyboard back on its root among it (ADR-0069). Without this, the import answers nothing in
+    /// keyboard back on its root among it (ADR-0070). Without this, the import answers nothing in
     /// loose mode and no grid attaches, so none could be asked for the keyboard. Called before the
     /// pivot is rendered.
     /// </summary>
@@ -228,7 +228,7 @@ public abstract class MudPivotTestContext : BunitContext
     }
 
     /// <summary>How many times the report grid behind <paramref name="handle"/> has asked for the
-    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0069).</summary>
+    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0070).</summary>
     internal static int KeyboardReturns(BunitJSModuleInterop handle)
         => handle.Invocations.Count(invocation => invocation.Identifier == "reclaimFocus");
 }

@@ -6,7 +6,7 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// Date parts (ADR-0059, Q3; PV-32): a field declared as the year, quarter or month of a Date
+/// Date parts (ADR-0060, Q3; PV-32): a field declared as the year, quarter or month of a Date
 /// column, in one line. Each part is labelled as Excel labels it, in the report's words — <c>2026</c>,
 /// <c>Qtr3</c>, <c>Sep</c> — and ordered by the calendar, never alphabetically; the part of a Blank is
 /// a Blank.
@@ -38,15 +38,15 @@ public class DatePartTests
 
     private static PivotLayout By(params PivotFieldPlacement[] rows) => new() { Rows = rows, Values = [Sum("Amount")] };
 
-    [Fact] // ADR-0059 (PV-32): a year is labelled by its number, ordered by the calendar; the part of a Blank is a Blank
+    [Fact] // ADR-0060 (PV-32): a year is labelled by its number, ordered by the calendar; the part of a Blank is a Blank
     public async Task Years_are_labelled_and_ordered_by_the_calendar()
         => Assert.Equal(["i 2025 || 68", "i 2026 || 43", "i (blank) || 16", "t Grand Total || 127"], await Lines(By(P("Year"))));
 
-    [Fact] // ADR-0059 (PV-32): a quarter is Qtr1 to Qtr4, by the calendar
+    [Fact] // ADR-0060 (PV-32): a quarter is Qtr1 to Qtr4, by the calendar
     public async Task Quarters_are_labelled_as_excel_labels_them()
         => Assert.Equal(["i Qtr1 || 2", "i Qtr2 || 4", "i Qtr3 || 97", "i Qtr4 || 8", "i (blank) || 16", "t Grand Total || 127"], await Lines(By(P("Quarter"))));
 
-    [Fact] // ADR-0059 (PV-32): a month is Jan to Dec, by the calendar and never alphabetically; descending reverses it with (blank) last
+    [Fact] // ADR-0060 (PV-32): a month is Jan to Dec, by the calendar and never alphabetically; descending reverses it with (blank) last
     public async Task Months_are_ordered_by_the_calendar_never_alphabetically()
     {
         Assert.Equal(
@@ -57,7 +57,7 @@ public class DatePartTests
             await Lines(By(P("Month") with { Sort = PivotSort.Descending })));
     }
 
-    [Fact] // ADR-0059 (PV-32): the parts nest as Excel's grouping does, and a part reads the date's clock, ignoring its time of day
+    [Fact] // ADR-0060 (PV-32): the parts nest as Excel's grouping does, and a part reads the date's clock, ignoring its time of day
     public async Task The_parts_nest_by_year_quarter_and_month()
     {
         var lines = await Lines(By(P("Year"), P("Quarter"), P("Month")));
@@ -72,7 +72,7 @@ public class DatePartTests
         ], lines);
     }
 
-    [Fact] // ADR-0059 (PV-32): the parts are painted in the report's words, which the Consumer replaces by id
+    [Fact] // ADR-0060 (PV-32): the parts are painted in the report's words, which the Consumer replaces by id
     public async Task The_parts_are_painted_in_the_reports_words()
     {
         var japanese = new PivotOptions
@@ -92,7 +92,7 @@ public class DatePartTests
         Assert.Equal(["i Jan || 2", "i Apr || 4", "i Aug || 32", "i 9月 || 65"], (await Lines(By(P("Month")), japanese))[..4]);
     }
 
-    [Fact] // ADR-0059 (PV-32, PV-33): the bundled Japanese words a date part as the Japanese edition's date grouping does
+    [Fact] // ADR-0060 (PV-32, PV-33): the bundled Japanese words a date part as the Japanese edition's date grouping does
     public async Task The_bundled_japanese_words_the_parts()
     {
         var japanese = new PivotOptions { Culture = EnUs.Culture, Label = PivotWords.Japanese };
@@ -103,7 +103,7 @@ public class DatePartTests
         Assert.All(PivotDateWords.Ids, id => Assert.NotNull(PivotWords.JapaneseFor(id)));
     }
 
-    [Fact] // ADR-0059 (PV-32): the word ids, each with its English
+    [Fact] // ADR-0060 (PV-32): the word ids, each with its English
     public void The_words_have_ids_with_their_english()
     {
         Assert.Equal(
@@ -115,7 +115,7 @@ public class DatePartTests
         Assert.Throws<ArgumentOutOfRangeException>(() => PivotDateWords.Month(13));
     }
 
-    [Fact] // ADR-0059 (PV-32): a part's Item is its number, so a Hidden Item reads the same in any culture
+    [Fact] // ADR-0060 (PV-32): a part's Item is its number, so a Hidden Item reads the same in any culture
     public async Task A_parts_hidden_item_is_its_number()
     {
         var lines = await Lines(By(P("Month") with { HiddenItems = [PivotItemKey.Number(9), PivotItemKey.Blank] }));
@@ -125,7 +125,7 @@ public class DatePartTests
         SameKeys([PivotItemKey.Number(3), PivotItemKey.Number(1), PivotItemKey.Number(2), PivotItemKey.Number(4), PivotItemKey.Blank], answer.Rows[0].Items);
     }
 
-    [Fact] // ADR-0059/0065 (PV-32): a part is a field like any other — its own caption, a Date field's defaults, counted in Values, and the records behind it
+    [Fact] // ADR-0060/0066 (PV-32): a part is a field like any other — its own caption, a Date field's defaults, counted in Values, and the records behind it
     public async Task A_part_is_a_field_like_any_other()
     {
         var fields = Fields();
@@ -145,7 +145,7 @@ public class DatePartTests
         Assert.Equal<object?>(9m, details.Records[0].Values[3]);
     }
 
-    [Fact] // ADR-0059 (PV-32): a part over the records' own accessors answers as the declared one does
+    [Fact] // ADR-0060 (PV-32): a part over the records' own accessors answers as the declared one does
     public async Task A_part_over_untyped_accessors_answers_alike()
     {
         PivotField<Trade>[] untyped =
@@ -164,7 +164,7 @@ public class DatePartTests
         Assert.Contains("'Month'", refused.Message);
     }
 
-    [Fact] // ADR-0059 (PV-32): a part is declared from a Date field, and only a Date field
+    [Fact] // ADR-0060 (PV-32): a part is declared from a Date field, and only a Date field
     public void A_part_is_of_a_date_field()
     {
         Assert.Throws<ArgumentException>(() => PivotFields.Of<Trade>().Number("Amount", t => t.Amount).Month("Month", of: "Amount"));

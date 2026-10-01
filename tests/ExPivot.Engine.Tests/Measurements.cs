@@ -9,14 +9,14 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// What the engine costs over a million records (PV-21, ADR-0063/0065/0066), measured and never
+/// What the engine costs over a million records (PV-21, ADR-0064/0066/0067), measured and never
 /// gated: a measurement swings with the machine (AGENTS.md). These run only when asked for, in a
 /// Release build:
 /// <code>
 /// dotnet build tests/ExPivot.Engine.Tests -c Release
 /// dotnet tests/ExPivot.Engine.Tests/bin/Release/net10.0/ExPivot.Engine.Tests.dll -explicit only -showLiveOutput
 /// </code>
-/// The records are the demo's trades, shaped as the grilling's prototype measured them (ADR-0063's
+/// The records are the demo's trades, shaped as the grilling's prototype measured them (ADR-0064's
 /// table): three regions, four desks, 62 books and four products make 2,976 leaves under the main
 /// layout, three row fields, one column field and two money Sums.
 /// </summary>
@@ -124,7 +124,7 @@ public class Measurements
         return answer.Result;
     }
 
-    [Fact(Explicit = true)] // PV-21 / ADR-0063: building the Snapshot of a million records from typed declarations
+    [Fact(Explicit = true)] // PV-21 / ADR-0064: building the Snapshot of a million records from typed declarations
     public void Building_the_snapshot_from_typed_declarations()
     {
         var trades = Trades.Value;
@@ -137,7 +137,7 @@ public class Measurements
         }
     }
 
-    [Fact(Explicit = true)] // PV-21 / ADR-0063/0065: a question over a million records, by layout
+    [Fact(Explicit = true)] // PV-21 / ADR-0064/0066: a question over a million records, by layout
     public void Asking_a_million_records()
     {
         var trades = Trades.Value;
@@ -181,7 +181,7 @@ public class Measurements
         Report("main, first question over untyped accessors (builds too)", first);
     }
 
-    [Fact(Explicit = true)] // PV-21 / ADR-0059/0065: a collapse, a sort and a change of form laid out from the answer held, asking nothing
+    [Fact(Explicit = true)] // PV-21 / ADR-0060/0066: a collapse, a sort and a change of form laid out from the answer held, asking nothing
     public void Laying_out_the_answer_held()
     {
         var fields = Fields();
@@ -228,7 +228,7 @@ public class Measurements
         Values = [new PivotValueField("Notional"), new PivotValueField("Pnl")],
     };
 
-    [Fact(Explicit = true)] // PV-21 / ADR-0066: 1,000 changes to a million records, folded into the held answer
+    [Fact(Explicit = true)] // PV-21 / ADR-0067: 1,000 changes to a million records, folded into the held answer
     public void Folding_a_thousand_changes_into_a_million_records()
     {
         var trades = Trades.Value;

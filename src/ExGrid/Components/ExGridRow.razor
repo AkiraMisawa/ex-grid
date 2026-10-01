@@ -50,7 +50,7 @@
                with offsets measured from a button, which would move the selection to
                whichever cell that arithmetic happened to name.
 
-               dblclick stops here too (ADR-0062): its offsets are the control's as well, and
+               dblclick stops here too (ADR-0063): its offsets are the control's as well, and
                carried on they would name another cell for OnCellDoubleClick — or open the
                editor of an Editable cell nobody double-clicked.
 
@@ -192,26 +192,26 @@
     [Parameter] public PaintedTextOf<TRow>? PaintedText { get; set; }
 
     /// <summary>
-    /// When a cell's shown value last changed, for the Change Highlight (ADR-0067), or null
+    /// When a cell's shown value last changed, for the Change Highlight (ADR-0068), or null
     /// for none. Asked once per painted value cell; its identity is the change signal,
     /// exactly as it is for <see cref="CellState"/> (ADR-0003/0006).
     /// </summary>
     [Parameter] public CellChangeOf<TRow>? CellChangedAt { get; set; }
 
     /// <summary>How long a Change Highlight lasts after the change time
-    /// (ADR-0067). A value, compared by content while the declaration is made.</summary>
+    /// (ADR-0068). A value, compared by content while the declaration is made.</summary>
     [Parameter] public TimeSpan ChangeHighlightDuration { get; set; }
 
     /// <summary>
     /// The grid's time for this render, read once by the grid for every row, and
-    /// <c>default</c> while nothing is declared (ADR-0067). It is not itself a reason to
+    /// <c>default</c> while nothing is declared (ADR-0068). It is not itself a reason to
     /// render: a row renders for it only once its earliest mark has ended by it, so a row
     /// whose marks still stand — or that has none — skips.
     /// </summary>
     [Parameter] public DateTimeOffset ChangeHighlightNow { get; set; }
 
     /// <summary>Where this row reports the earliest end among the marks it painted, and null
-    /// once it paints none or leaves (ADR-0067). Held by the grid for its whole life; a
+    /// once it paints none or leaves (ADR-0068). Held by the grid for its whole life; a
     /// channel, not something the row paints from, so it is no reason to render.</summary>
     [Parameter] public Action<object, DateTimeOffset?>? ChangeHighlightPainted { get; set; }
 
@@ -295,7 +295,7 @@
         // two additions here are values, so they compare by content: scrolling sideways
         // genuinely changes what a row paints, and no memoisation should hide that.
         // Time passing is a reason only for a row whose earliest Change Highlight has
-        // ended by the grid's time for this render (ADR-0067); every other row skips it.
+        // ended by the grid's time for this render (ADR-0068); every other row skips it.
         if (ReferenceEquals(_renderedRow, Row)
             && ReferenceEquals(_renderedColumns, Columns)
             && ReferenceEquals(_renderedStyles, Styles)
@@ -540,7 +540,7 @@
     /// mid-fling would be the landmark lying about itself (ADR-0004).</summary>
     private Cells.CellState StateOf(GridColumn<TRow> column) => CellState?.Invoke(Row, column) ?? default;
 
-    // The Change Highlight (ADR-0067): the earliest end among the marks this row painted in
+    // The Change Highlight (ADR-0068): the earliest end among the marks this row painted in
     // its last render, or null while it painted none, and the same end being gathered while a
     // render is under way. Kept so that ShouldRender can tell a mark that has ended without
     // asking the Consumer again, and told to the grid, whose one timer waits for the earliest
@@ -549,15 +549,15 @@
     private DateTimeOffset? _paintingHighlightEnd;
 
     /// <summary>Whether a mark this row painted has ended by the grid's time for this render:
-    /// the one reason the passing of time gives a row to render (ADR-0067).</summary>
+    /// the one reason the passing of time gives a row to render (ADR-0068).</summary>
     private bool HighlightEnded() => _highlightEnd is { } end && ChangeHighlightNow >= end;
 
     /// <summary>
     /// Whether a value cell wears the Change Highlight now: one question to the Consumer per
     /// painted value cell, including the Pinned Columns of a Placeholder row, which paint their
-    /// real values, and none without the declaration (ADR-0067, DC-1). A mark this cell shows
+    /// real values, and none without the declaration (ADR-0068, DC-1). A mark this cell shows
     /// joins the row's earliest end. Keyed by the row and the column this render paints, never
-    /// by the element: a recycled element asks again for the row it now paints (DC-54).
+    /// by the element: a recycled element asks again for the row it now paints (DC-61).
     /// </summary>
     private bool Changed(GridColumn<TRow> column)
     {
@@ -584,7 +584,7 @@
     }
 
     /// <summary>A row leaving the DOM takes its marks with it, so the grid's timer no longer
-    /// waits for them (ADR-0067).</summary>
+    /// waits for them (ADR-0068).</summary>
     public void Dispose()
     {
         if (_highlightEnd is null)

@@ -1,7 +1,7 @@
 namespace ExGrid.Data.Storage;
 
 /// <summary>
-/// Exact decimal arithmetic for the Decimal kind (ADR-0063): a value's parts, its decimal places once
+/// Exact decimal arithmetic for the Decimal kind (ADR-0064): a value's parts, its decimal places once
 /// trailing zeros are gone, and the canonical <see cref="decimal"/> a value reads back as, so that
 /// <c>1.5</c> and <c>1.50</c> read back alike.
 /// </summary>

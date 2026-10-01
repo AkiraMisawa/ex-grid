@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** the toolbar above the report (ADR-0060).
+**What to build:** the toolbar above the report (ADR-0061).
 
 - **On the left:** the report filter band, moved into the toolbar.
 - **On the right, in this order:**

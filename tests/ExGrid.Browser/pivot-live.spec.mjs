@@ -2,7 +2,7 @@ import { test, expect } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
-// /pivot-live (ADR-0066/0067/0068), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
+// /pivot-live (ADR-0067/0068/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // live data both ways. In the page's own process, a timer the page owns folds Change Batches into
 // the bundled source; on the demo API server, live updates keep changing the trades, and the hub's
 // notices reach the server's source through NotifyChanged. What only a browser can say: that the
@@ -34,7 +34,7 @@ const post = (path, body) => api(path, {
 });
 
 test.afterEach(async () => {
-    // Whatever the test left, the data holds still for the next file (ADR-0068).
+    // Whatever the test left, the data holds still for the next file (ADR-0069).
     await post('/api/live', { on: false });
 });
 
@@ -60,7 +60,7 @@ async function batches(page) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`PV-36/ADR-0066: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (${chrome})`, async ({ page }) => {
+        test(`PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (${chrome})`, async ({ page }) => {
             test.setTimeout(90_000);
             await open(page, chrome);
             // The page's timer applies a batch four times a second, and ExPivot redraws from the
@@ -79,7 +79,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await batches(page)).toBeLessThanOrEqual(paused + 1);
 
             // A collapse lays the report out again from the answer held: no data changed, so no
-            // value is marked (ADR-0066), however long after.
+            // value is marked (ADR-0067), however long after.
             const toggle = report(page, 'local').locator('.ex-pivot-toggle').first();
             await expect(toggle).toHaveAttribute('aria-expanded', 'true');
             await toggle.click();
@@ -93,7 +93,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => marked(page, 'local').count(), { timeout: 15_000 }).toBeGreaterThan(0);
         });
 
-        test(`PV-36/ADR-0066: the server's changing data marks the values it changed, and the page turns its live updates off (${chrome})`, async ({ page }) => {
+        test(`PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (${chrome})`, async ({ page }) => {
             test.setTimeout(90_000);
             await open(page, chrome);
             expect((await api('/api/live')).on).toBe(true);
@@ -117,7 +117,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('ADR-0068/0066: the code the page shows is the code it runs: a Change Batch by Record Key, and a notice passed on', async ({ page }) => {
+test('ADR-0069/0067: the code the page shows is the code it runs: a Change Batch by Record Key, and a notice passed on', async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
     expect(code['DemoPivotData.cs#fields']).toContain('.Key("Id", t => t.Id)');

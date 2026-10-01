@@ -53,7 +53,7 @@ apart across Windows, and the grid has none: Row Identity is a reference
 - **The delegate is asked of value cells only**, as a per-cell kind is. An Action, Template or Mark
   cell paints no value that could change.
 - **ExPivot answers the delegate by comparing the text it paints**
-  ([ADR-0066](./0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+  ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
 - **A plain Consumer answers from its own knowledge.** For example, a server's notice that trade
   T100123's P&L changed is enough, and this is where a server does the telling (Q59b's follow-up).
   The `/grid-live` demo shows it.
@@ -112,7 +112,7 @@ the delegate with.
 
 ## Consequences
 
-- **§26 of the Definition of Done gains DC-53 to DC-55**, which gate ExGrid as every declaration
+- **§26 of the Definition of Done gains DC-60 to DC-62**, which gate ExGrid as every declaration
   there does.
 - **Without the declaration nothing changes**: no timer, no class and no call.
 - **The cost is that of Cell State**: one delegate call per painted value cell of a row that renders,

@@ -40,7 +40,7 @@ public class WrapperStylesheetTests
     public void The_wrapper_leaves_the_reference_colours_alone()
         => Assert.DoesNotContain("ex-reference", WrapperStylesheet());
 
-    [Fact] // ADR-0067 / ADR-0030: the Wrapper maps the Change Highlight's token onto its palette, under its paper
+    [Fact] // ADR-0068 / ADR-0030: the Wrapper maps the Change Highlight's token onto its palette, under its paper
     public void The_change_highlight_token_is_mapped_onto_the_palette()
     {
         var root = Regex.Match(WrapperStylesheet(), @"\.mud-ex-grid\s*\{([^}]*)\}");
@@ -51,11 +51,11 @@ public class WrapperStylesheetTests
             root.Groups[1].Value);
     }
 
-    [Fact] // ADR-0067 / ADR-0029/0030: the Wrapper paints the mark through its token alone, and writes no rule against the class
+    [Fact] // ADR-0068 / ADR-0029/0030: the Wrapper paints the mark through its token alone, and writes no rule against the class
     public void The_wrapper_writes_no_rule_against_the_change_highlight()
         => Assert.DoesNotContain("ex-changed", WrapperStylesheet());
 
-    [Fact] // ADR-0067 / ADR-0027 P8 / UX-6 / DC-55: with the Wrapper's stylesheet loaded a mark still never animates — it transitions and animates nothing
+    [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-62: with the Wrapper's stylesheet loaded a mark still never animates — it transitions and animates nothing
     public void The_wrapper_transitions_and_animates_nothing()
     {
         var css = Regex.Replace(WrapperStylesheet(), @"/\*.*?\*/", "", RegexOptions.Singleline);

@@ -54,7 +54,7 @@ const hostServers = SERVER
         },
     ];
 
-// The demo API server (ADR-0068), beside either host: the pages on both call it over HTTP,
+// The demo API server (ADR-0069), beside either host: the pages on both call it over HTTP,
 // at their own port plus 3000 (hosting.mjs). Its first start for a count generates the
 // trades into a file outside the repository, which every later start reuses; the run asks
 // for 20,000, about a second's work, unless EXGRID_DEMO_TRADES asks for another count.

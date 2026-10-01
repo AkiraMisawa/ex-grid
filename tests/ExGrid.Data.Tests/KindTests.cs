@@ -5,10 +5,10 @@ using static ExGrid.Data.Tests.Fixtures;
 
 namespace ExGrid.Data.Tests;
 
-/// <summary>How each kind holds its values, and a Blank in every kind (ADR-0063, DA-3).</summary>
+/// <summary>How each kind holds its values, and a Blank in every kind (ADR-0064, DA-3).</summary>
 public class KindTests
 {
-    [Fact] // ADR-0063: text is held exactly and told apart ordinally — two spellings are two entries
+    [Fact] // ADR-0064: text is held exactly and told apart ordinally — two spellings are two entries
     public void Text_is_exact_and_two_spellings_are_two_entries()
     {
         var snapshot = Column<string?>(b => b.Text("V", c => c.Value), "amer", "AMER", "amer", "Amer ", "ｱ", "ア");
@@ -19,7 +19,7 @@ public class KindTests
         Assert.Equal(["amer", "AMER", "amer", "Amer ", "ｱ", "ア"], Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: the dictionary holds every distinct value once, in the order it first appears
+    [Fact] // ADR-0064: the dictionary holds every distinct value once, in the order it first appears
     public void The_dictionary_is_in_order_of_first_appearance()
     {
         var snapshot = Column<string?>(b => b.Text("V", c => c.Value), "b", "a", "c", "a", "b", "d");
@@ -33,7 +33,7 @@ public class KindTests
         Assert.False(dictionary.TryGetCode("B", out _));
     }
 
-    [Fact] // ADR-0063: a Blank text is kept apart from the empty string, which is a value
+    [Fact] // ADR-0064: a Blank text is kept apart from the empty string, which is a value
     public void A_blank_text_is_not_the_empty_string()
     {
         var snapshot = Column<string?>(b => b.Text("V", c => c.Value), null, "", null);
@@ -47,7 +47,7 @@ public class KindTests
         Assert.Equal([0b101UL], snapshot.Slice(0).Blanks(column).ToArray());
     }
 
-    [Fact] // ADR-0063: a Blank is possible in every kind, and differs from zero and from false
+    [Fact] // ADR-0064: a Blank is possible in every kind, and differs from zero and from false
     public void A_blank_is_possible_in_every_kind_and_differs_from_zero()
     {
         AssertBlankThenZero(Column<decimal?>(b => b.Decimal("V", c => c.Value), null, 0m), 0m);
@@ -68,7 +68,7 @@ public class KindTests
         }
     }
 
-    [Fact] // ADR-0063: a column with no Blank hands out no Blanks
+    [Fact] // ADR-0064: a column with no Blank hands out no Blanks
     public void A_column_without_blanks_hands_out_an_empty_bit_set()
     {
         var snapshot = Column<long?>(b => b.Integer("V", c => c.Value), 1, 2, 3);
@@ -76,7 +76,7 @@ public class KindTests
         Assert.True(snapshot.Slice(0).Blanks(snapshot["V"]).IsEmpty);
     }
 
-    [Fact] // ADR-0063: Decimal is held exactly, whatever its size or its places
+    [Fact] // ADR-0064: Decimal is held exactly, whatever its size or its places
     public void Decimal_is_exact()
     {
         decimal[] values = [0.1m, 0.2m, 79228162514264337593543950335m, -0.0000000000000000000000000001m, 123456789.123456789m];
@@ -88,7 +88,7 @@ public class KindTests
         Assert.Equal(values, numbers.Exact.ToArray());
     }
 
-    [Fact] // ADR-0063: a Decimal holds values, not the scale each was written with — 1.5 and 1.50 read back alike
+    [Fact] // ADR-0064: a Decimal holds values, not the scale each was written with — 1.5 and 1.50 read back alike
     public void Decimal_one_point_five_and_one_point_fifty_read_back_alike()
     {
         var snapshot = Column<decimal?>(b => b.Decimal("V", c => c.Value), 1.5m, 1.50m, 1.500m, 2.00m, 0.00m);
@@ -100,7 +100,7 @@ public class KindTests
         Assert.Equal([15L, 15L, 15L, 20L, 0L], numbers.Scaled.ToArray());
     }
 
-    [Fact] // ADR-0063: when every value fits at one power of ten, Decimal is held as scaled 64-bit integers
+    [Fact] // ADR-0064: when every value fits at one power of ten, Decimal is held as scaled 64-bit integers
     public void Decimal_that_fits_is_held_as_scaled_integers()
     {
         var snapshot = Column<decimal?>(b => b.Decimal("V", c => c.Value), 12.34m, 5m, -0.5m, null, 92233720368547758.07m);
@@ -113,7 +113,7 @@ public class KindTests
         Assert.Equal(92233720368547758.07m, numbers[4]);
     }
 
-    [Fact] // ADR-0063: a value that does not fit a long at the scale turns the slice to decimal, still exact
+    [Fact] // ADR-0064: a value that does not fit a long at the scale turns the slice to decimal, still exact
     public void Decimal_that_does_not_fit_is_held_as_decimal()
     {
         var snapshot = Column<decimal?>(b => b.Decimal("V", c => c.Value), 0.5m, 92233720368547758.08m, null);
@@ -124,7 +124,7 @@ public class KindTests
         Assert.Equal([0.5m, 92233720368547758.08m, null], Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: each slice holds its Decimals at its own scale
+    [Fact] // ADR-0064: each slice holds its Decimals at its own scale
     public void Each_slice_has_its_own_decimal_scale()
     {
         var snapshot = new SnapshotBuilder<Cell<decimal?>> { Tuning = new SnapshotTuning(SegmentShift: 1) }
@@ -139,7 +139,7 @@ public class KindTests
         Assert.Equal([1.5m, 2m, 3.125m, 4m, 1e20m, 1m], Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: Double keeps NaN, the infinities and negative zero exactly as they came
+    [Fact] // ADR-0064: Double keeps NaN, the infinities and negative zero exactly as they came
     public void Double_keeps_non_finite_values()
     {
         double[] values = [double.NaN, double.PositiveInfinity, double.NegativeInfinity, -0.0, double.Epsilon, BitConverter.Int64BitsToDouble(0x7FF8_0000_0000_0001)];
@@ -150,7 +150,7 @@ public class KindTests
         Assert.All(Values(snapshot, "V"), v => Assert.IsType<double>(v));
     }
 
-    [Fact] // ADR-0063: Integer is held as a 64-bit integer
+    [Fact] // ADR-0064: Integer is held as a 64-bit integer
     public void Integer_is_64_bit()
     {
         var snapshot = Column<long?>(b => b.Integer("V", c => c.Value), long.MinValue, long.MaxValue, 0, -1);
@@ -159,7 +159,7 @@ public class KindTests
         Assert.Equal([long.MinValue, long.MaxValue, 0L, -1L], Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: an int accessor is an Integer column too, widened without a box
+    [Fact] // ADR-0064: an int accessor is an Integer column too, widened without a box
     public void An_int_accessor_makes_an_integer_column()
     {
         var snapshot = Column<int?>(b => b.Integer("V", c => c.Value), int.MinValue, null, int.MaxValue);
@@ -168,7 +168,7 @@ public class KindTests
         Assert.Equal([(long)int.MinValue, null, (long)int.MaxValue], Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: a DateTime is held as its ticks, with its Kind ignored
+    [Fact] // ADR-0064: a DateTime is held as its ticks, with its Kind ignored
     public void Date_from_a_DateTime_is_its_ticks_with_its_kind_ignored()
     {
         var clock = new DateTime(2026, 9, 30, 10, 15, 0);
@@ -185,7 +185,7 @@ public class KindTests
         });
     }
 
-    [Fact] // ADR-0063: a DateOnly is held as its midnight
+    [Fact] // ADR-0064: a DateOnly is held as its midnight
     public void Date_from_a_DateOnly_is_its_midnight()
     {
         var snapshot = Column<DateOnly?>(b => b.Date("V", c => c.Value), new DateOnly(2026, 9, 30), DateOnly.MinValue, DateOnly.MaxValue);
@@ -196,7 +196,7 @@ public class KindTests
         Assert.False(((DateColumn)snapshot["V"]).HasTime);
     }
 
-    [Fact] // ADR-0063: a DateTimeOffset is held as the clock it shows, with its offset dropped
+    [Fact] // ADR-0064: a DateTimeOffset is held as the clock it shows, with its offset dropped
     public void Date_from_a_DateTimeOffset_is_its_clock_with_the_offset_dropped()
     {
         var tokyo = new DateTimeOffset(2026, 9, 30, 9, 0, 0, TimeSpan.FromHours(9));
@@ -207,7 +207,7 @@ public class KindTests
         Assert.Equal([nine, nine], snapshot.Slice(0).Ticks((DateColumn)snapshot["V"]).ToArray());
     }
 
-    [Fact] // ADR-0063: a Date column says whether it holds any time that is not a midnight
+    [Fact] // ADR-0064: a Date column says whether it holds any time that is not a midnight
     public void A_date_column_says_whether_it_holds_times()
     {
         var dates = Column<DateTime?>(b => b.Date("V", c => c.Value), new DateTime(2026, 1, 1), null);
@@ -217,7 +217,7 @@ public class KindTests
         Assert.True(((DateColumn)times["V"]).HasTime);
     }
 
-    [Fact] // ADR-0063: Boolean is held as true or false
+    [Fact] // ADR-0064: Boolean is held as true or false
     public void Boolean_is_true_or_false()
     {
         var snapshot = Column<bool?>(b => b.Boolean("V", c => c.Value), true, false, null);
@@ -226,7 +226,7 @@ public class KindTests
         Assert.Equal([true, false, null], Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: an untyped accessor under a declared kind takes values of that kind, and exact conversions
+    [Fact] // ADR-0064: an untyped accessor under a declared kind takes values of that kind, and exact conversions
     public void An_untyped_accessor_takes_its_kind_and_exact_conversions()
     {
         var snapshot = new SnapshotBuilder<Cell<object?>>()
@@ -246,7 +246,7 @@ public class KindTests
         Assert.Equal([true, null, null], Values(snapshot, "Boolean"));
     }
 
-    [Fact] // ADR-0063/0059: an untyped Text column takes any other value as its invariant text — an enum by its name, a Guid in its D form
+    [Fact] // ADR-0064/0060: an untyped Text column takes any other value as its invariant text — an enum by its name, a Guid in its D form
     public void An_untyped_text_column_takes_any_value_by_its_invariant_text()
     {
         var guid = new Guid("0f8fad5b-d9cb-469f-a165-70867728950e");
@@ -269,7 +269,7 @@ public class KindTests
             Values(snapshot, "V"));
     }
 
-    [Fact] // ADR-0063: a column's caption is the data's own, and the name unless one is declared
+    [Fact] // ADR-0064: a column's caption is the data's own, and the name unless one is declared
     public void Captions_default_to_names()
     {
         var snapshot = new SnapshotBuilder<Cell<long?>>()

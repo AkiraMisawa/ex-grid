@@ -15,7 +15,7 @@ public class CompressionTests
 {
     public static TheoryData<string> Codecs => ["LZ4 frame (LZ4_FRAME)", "ZSTD"];
 
-    [Theory] // ADR-0064: a compressed stream without a codec is refused, naming the codec it needs
+    [Theory] // ADR-0065: a compressed stream without a codec is refused, naming the codec it needs
     [MemberData(nameof(Codecs))]
     public async Task A_compressed_stream_without_a_codec_is_refused_naming_the_codec(string codec)
     {
@@ -28,7 +28,7 @@ public class CompressionTests
         Assert.Null(refusal.Column);
     }
 
-    [Theory] // ADR-0064: a compressed stream with the codec is read, every batch and its shared dictionary, as the same stream uncompressed is
+    [Theory] // ADR-0065: a compressed stream with the codec is read, every batch and its shared dictionary, as the same stream uncompressed is
     [MemberData(nameof(Codecs))]
     public async Task A_compressed_stream_with_the_codec_is_read(string codec)
     {
@@ -45,7 +45,7 @@ public class CompressionTests
         Assert.Equal(["AMER", "amer", "emea"], Dictionary(compressed, "Region"));
     }
 
-    [Theory] // ADR-0064: a compressed Arrow file is read with the codec, and refused without it, naming the codec
+    [Theory] // ADR-0065: a compressed Arrow file is read with the codec, and refused without it, naming the codec
     [MemberData(nameof(Codecs))]
     public async Task A_compressed_file_needs_its_codec(string codec)
     {
@@ -58,7 +58,7 @@ public class CompressionTests
         AssertSame(await ReadEveryWayAsync(Stream(Parts())), snapshot);
     }
 
-    [Fact] // ADR-0064: an uncompressed stream never asks for a codec, so a read without one needs none
+    [Fact] // ADR-0065: an uncompressed stream never asks for a codec, so a read without one needs none
     public async Task An_uncompressed_stream_needs_no_codec()
     {
         var snapshot = await ReadEveryWayAsync(Stream(Parts()));

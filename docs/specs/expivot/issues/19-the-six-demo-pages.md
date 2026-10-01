@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** the six pages ADR-0068 lists.
+**What to build:** the six pages ADR-0069 lists.
 
 - `/pivot`, updated;
 - `/pivot-csv`;
@@ -18,8 +18,8 @@ hosts and, where it has a pivot, under both Chromes. The pages are added to the 
 **Blocked by:** 13, 14, 15, 16, 17, 18, change-highlight 01
 
 - [x] PV-20, in layer 3
-- [x] change-highlight 02 (DC-54, DC-55) on `/grid-live`
-- [x] The browser's `HttpClient` turns response streaming off for the Arrow request (ADR-0064)
+- [x] change-highlight 02 (DC-61, DC-62) on `/grid-live`
+- [x] The browser's `HttpClient` turns response streaming off for the Arrow request (ADR-0065)
 
 ## Comments
 
@@ -43,7 +43,7 @@ Every page shows its code read from its own source (`DemoCode`), so what a page 
 runs, and layer 3 checks each against the source. Building the pages found that a new `Source`
 and a new `Layout` handed to `ExPivot` in one render were refused (fixed in the component), and
 that live changes spread over a million trades almost never reached `/grid-live`'s rows (every
-other change now falls on the first 500 trades; ADR-0068).
+other change now falls on the first 500 trades; ADR-0069).
 
 Layer 3, on Linux under xvfb with the container's Chromium (no Chrome or Edge installed; the Edge
 project is CI's), each page under both Chromes: `pivot`, `pivot-csv`, `pivot-risk`, `pivot-db`,

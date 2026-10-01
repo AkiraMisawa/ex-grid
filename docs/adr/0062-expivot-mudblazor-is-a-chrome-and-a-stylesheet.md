@@ -1,6 +1,6 @@
 # ExPivot.MudBlazor is a Chrome and a stylesheet, around the grid Wrapper it reuses
 
-*(Proposed 2026-09-30 with [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md).
+*(Proposed 2026-09-30 with [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md).
 The user had asked for "a Wrapper for a MudBlazor-like design". The proposal was brought in line with
 what was built the same day: the list of controls, and where the words come from.*
 
@@ -25,7 +25,7 @@ structure or state.
 ```
 
 *(Sample updated 2026-10-01: ExPivot takes a Pivot Source instead of records and fields,
-[ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md).)*
+[ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md).)*
 
 - **The outer element is `ExGrid.MudBlazor`'s `MudExGridPaper`, unchanged.** The report is an
   ExGrid, and the paper already does for it everything ADR-0030 says a Wrapper does for a grid: the
@@ -33,7 +33,7 @@ structure or state.
   presentation defaults that carry Roboto's glyph widths with the font. ExPivot reads the same
   cascaded value to size its label column, so the font on screen and the widths in the arithmetic
   still leave one hand. A second paper would be a second copy of that obligation.
-- **`MudPivotChrome`** is the `IPivotChrome` ([ADR-0060](./0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md))
+- **`MudPivotChrome`** is the `IPivotChrome` ([ADR-0061](./0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md))
   that draws the Field List, the toolbar with its report filter band, the menus and the panels.
   - It uses MudBlazor's controls: `MudCheckBox`, `MudTextField`, `MudSelect`, `MudRadioGroup`,
     `MudButton`, `MudText` and Material icons.
@@ -52,7 +52,7 @@ structure or state.
   - They are scoped under `.mud-ex-grid`, as the grid Wrapper's rules are, so load order cannot
     matter.
   - The Change Highlight is the grid's token
-    ([ADR-0067](./0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)),
+    ([ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)),
     so `ExGrid.MudBlazor`'s stylesheet maps it, for every grid, not only a pivot's.
 
 **Nothing is forwarded.** There is no `MudExPivot` re-declaring ExPivot's parameters; ADR-0030
@@ -74,7 +74,7 @@ reasons.
   MudBlazor application already has. Escape closes the list first and the panel next.
 - **The words are ExPivot's.** MudBlazor has none for a pivot, so the pane, the menus and the
   panels speak ExPivot's words by id, and the report grid's `MudGridChrome` is handed ExPivot's
-  words for its pivot commands ([ADR-0060](./0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)):
+  words for its pivot commands ([ADR-0061](./0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)):
   one `Label` on ExPivot words the whole pivot, while the grid's own commands keep MudBlazor's
   words where it has them.
 - **The `±` button in a label cell is the core's plain markup**, restyled by tokens. A

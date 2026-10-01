@@ -1,11 +1,11 @@
 @using System.Globalization
-@* The built-in Filter… (ADR-0060): the field's Items, each ticked while shown, (Select All), a
+@* The built-in Filter… (ADR-0061): the field's Items, each ticked while shown, (Select All), a
    search that narrows the list, and OK / Cancel. The ticks are ExPivot's draft. The Items come from
-   the Pivot Source under the report's Source Version (ADR-0065): while a first listing is on its
+   the Pivot Source under the report's Source Version (ADR-0066): while a first listing is on its
    way the panel says so, and when the source can no longer list them under it, the panel says the
    data has changed instead of listing Items that are not the report's. While a new version's Items
    are on their way, the earlier version's stay listed, the list marked busy and nothing dimmed
-   (ADR-0065 refined). *@
+   (ADR-0066 refined). *@
 <div class="ex-pivot-panel ex-pivot-item-filter">
     <input @ref="_search" type="search" class="ex-pivot-search" placeholder="@Context.Word("search-items")"
            aria-label="@Context.Word("search-items")"
@@ -59,7 +59,7 @@
     private ElementReference _search;
     private int _acted;
 
-    /// <summary>The Items, the draft and the exits (ADR-0060).</summary>
+    /// <summary>The Items, the draft and the exits (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotItemFilterContext Context { get; set; } = default!;
 
     /// <inheritdoc />

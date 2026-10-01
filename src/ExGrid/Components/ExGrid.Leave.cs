@@ -2,13 +2,13 @@ using Microsoft.AspNetCore.Components;
 
 namespace ExGrid.Components;
 
-// What a Consumer does with the grid's keyboard (ADR-0069). It gives the keyboard back to the root
+// What a Consumer does with the grid's keyboard (ADR-0070). It gives the keyboard back to the root
 // when something of its own that held it over the grid goes away — a dialog, a panel, a tab — and
 // it may hear the Escape that leaves the grid, in place of the grid releasing DOM focus.
 public partial class ExGrid<TRow>
 {
     /// <summary>
-    /// A Consumer declaration (ADR-0069): raised by an Escape pressed on the root with nothing left
+    /// A Consumer declaration (ADR-0070): raised by an Escape pressed on the root with nothing left
     /// to dismiss, <b>instead of</b> releasing the grid's DOM focus. The grid keeps the keyboard,
     /// and the Consumer decides what leaving means — closing its dialog, for one — and where the
     /// keyboard goes next. Released first, the keyboard would land on the page's <c>body</c> before
@@ -27,7 +27,7 @@ public partial class ExGrid<TRow>
     [Parameter] public EventCallback OnLeave { get; set; }
 
     /// <summary>
-    /// Gives the grid's root the keyboard back (ADR-0069): what the grid does when one of its own
+    /// Gives the grid's root the keyboard back (ADR-0070): what the grid does when one of its own
     /// popovers closes, offered to the Consumer. Call it when something of the Consumer's own that
     /// held the keyboard over the grid goes away — a dialog, a panel, a tab — so that the user's
     /// next key reaches the grid rather than the page.
@@ -52,7 +52,7 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>
-    /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0069): the
+    /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0070): the
     /// grid's way out of Enter/Tab cycling. Declared, the Consumer hears it in place of the grid
     /// releasing DOM focus; undeclared, the focus is released as before. Once per press: a held
     /// Escape's repeats never reach here (<see cref="OnKeyAsync"/>).

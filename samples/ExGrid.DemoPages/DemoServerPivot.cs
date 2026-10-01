@@ -7,7 +7,7 @@ using global::ExPivot.Engine;
 namespace ExGrid.DemoPages;
 
 /// <summary>
-/// The demo API server's Pivot Source (ADR-0065, ADR-0068), as <c>/pivot-db</c> and
+/// The demo API server's Pivot Source (ADR-0066, ADR-0069), as <c>/pivot-db</c> and
 /// <c>/pivot-live</c> reach it: the fields it offers, from <c>GET /api/pivot/fields</c>, and
 /// <c>PivotSource.Fetch</c> over <c>POST /api/pivot/aggregate</c>, <c>/items</c> and
 /// <c>/details</c>, each question and each answer a <c>PivotJson</c> document. The server answers
@@ -17,7 +17,7 @@ public static class DemoServerPivot
 {
     #region The code: fields
     // GET /api/pivot/fields: what the server's Pivot Source offers — its fields, with their
-    // captions and formats, and the Aggregations SQLite answers exactly (ADR-0065).
+    // captions and formats, and the Aggregations SQLite answers exactly (ADR-0066).
     public static async Task<(PivotField[] Fields, PivotSourceFeatures Features)> DeclaredAsync(
         HttpClient http, CancellationToken token)
     {
@@ -40,7 +40,7 @@ public static class DemoServerPivot
     #region The code: fetch
     // ExPivot asks the source, and PivotSource.Fetch hands each question to these delegates. Every
     // question and every answer is a PivotJson document, so each delegate is one POST, and the
-    // server answers it with SQL written by hand (ADR-0065). ExPivot never opens a connection: the
+    // server answers it with SQL written by hand (ADR-0066). ExPivot never opens a connection: the
     // transport, its authentication and its retries are the application's.
     public static FetchingPivotSource Fetch(
         HttpClient http, IReadOnlyList<PivotField> fields, PivotSourceFeatures features, Action<string>? asked = null)
@@ -54,7 +54,7 @@ public static class DemoServerPivot
             return await response.Content.ReadAsStringAsync(token);
         }
 
-        // The server answers at most 10,000 records a page (ADR-0068), so a longer question is
+        // The server answers at most 10,000 records a page (ADR-0069), so a longer question is
         // asked a page at a time, every page under the report's Source Version: if the data moves
         // on between two pages, the server refuses, and ExPivot says the data has changed rather
         // than show records that do not add up. ExPivot's own Details tab asks for no more than

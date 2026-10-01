@@ -10,7 +10,7 @@ namespace ExGrid.DemoApi.Tests;
 
 /// <summary>
 /// PV-22: the demo's SQL source answers as <c>PivotSource.From</c> does over the same trades
-/// (ADR-0065, ADR-0068) — the Leaf Aggregates, a field's Items and the records behind a cell,
+/// (ADR-0066, ADR-0069) — the Leaf Aggregates, a field's Items and the records behind a cell,
 /// question for question, through <c>PivotJson</c> both ways — and refuses what it refuses, in the
 /// same words.
 /// </summary>
@@ -80,9 +80,9 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         { "an Item with a letter outside ASCII, which no trade has", new(rows: [F("Region", T("Émea"))], values: [V("Pnl", PivotParts.Sum)]) },
     };
 
-    [Theory] // ADR-0065, PV-22: the SQL source's Leaf Aggregates are PivotSource.From's, question for question
+    [Theory] // ADR-0066, PV-22: the SQL source's Leaf Aggregates are PivotSource.From's, question for question
     [MemberData(nameof(Questions))]
-    public async Task ADR0065_PV22_the_SQL_source_answers_as_PivotSource_From(string layout, PivotQuery query)
+    public async Task ADR0066_PV22_the_SQL_source_answers_as_PivotSource_From(string layout, PivotQuery query)
     {
         using var client = server.Factory.CreateClient();
         var sources = await PivotSources.Over(server, client);
@@ -94,8 +94,8 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         SameAnswer(await sources.ReferenceAnswer(query), answer);
     }
 
-    [Fact] // ADR-0065, PV-22: a layout's report computed from the SQL source's parts is the reference's, every offered Aggregation
-    public async Task ADR0065_PV22_every_offered_Aggregation_lays_out_the_same_report()
+    [Fact] // ADR-0066, PV-22: a layout's report computed from the SQL source's parts is the reference's, every offered Aggregation
+    public async Task ADR0066_PV22_every_offered_Aggregation_lays_out_the_same_report()
     {
         using var client = server.Factory.CreateClient();
         var sources = await PivotSources.Over(server, client);
@@ -126,8 +126,8 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         Assert.Contains(Cells(sql), cell => cell.Contains("#DIV/0!", StringComparison.Ordinal)); // the Average of text
     }
 
-    [Fact] // ADR-0062/0065, PV-22: the records behind a report's cells, a page at a time, are the reference's, and add up to the cell
-    public async Task ADR0065_PV22_the_records_behind_a_cell_are_the_reference_records_and_add_up_to_it()
+    [Fact] // ADR-0063/0066, PV-22: the records behind a report's cells, a page at a time, are the reference's, and add up to the cell
+    public async Task ADR0066_PV22_the_records_behind_a_cell_are_the_reference_records_and_add_up_to_it()
     {
         using var client = server.Factory.CreateClient();
         var sources = await PivotSources.Over(server, client);
@@ -180,9 +180,9 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         { "a trade by its Record Key", [new("TradeId", T("t10000007"))], [], 0, 10 },
     };
 
-    [Theory] // ADR-0065, PV-22: any question for records is answered as the reference answers it
+    [Theory] // ADR-0066, PV-22: any question for records is answered as the reference answers it
     [MemberData(nameof(DetailQuestions))]
-    public async Task ADR0065_PV22_details_are_the_reference_details(string question, PivotFieldItem[] path, PivotQueryField[] hidden, int start, int count)
+    public async Task ADR0066_PV22_details_are_the_reference_details(string question, PivotFieldItem[] path, PivotQueryField[] hidden, int start, int count)
     {
         using var client = server.Factory.CreateClient();
         var sources = await PivotSources.Over(server, client);
@@ -219,9 +219,9 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         { "TradeId", "no such trade", 10 },
     };
 
-    [Theory] // ADR-0065, PV-22: a field's Items over all the data, searched ignoring case, in the source's invariant order
+    [Theory] // ADR-0066, PV-22: a field's Items over all the data, searched ignoring case, in the source's invariant order
     [MemberData(nameof(ItemQuestions))]
-    public async Task ADR0065_PV22_Items_are_the_reference_Items(string field, string? search, int max)
+    public async Task ADR0066_PV22_Items_are_the_reference_Items(string field, string? search, int max)
     {
         using var client = server.Factory.CreateClient();
         var sources = await PivotSources.Over(server, client);
@@ -234,8 +234,8 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         SameItems(await sources.ReferenceItems(query), page);
     }
 
-    [Fact] // ADR-0065, PV-22: Items are over all the data: no Hidden Item of a report narrows them
-    public async Task ADR0065_Items_are_over_all_the_data_with_the_Blank_last_and_the_total()
+    [Fact] // ADR-0066, PV-22: Items are over all the data: no Hidden Item of a report narrows them
+    public async Task ADR0066_Items_are_over_all_the_data_with_the_Blank_last_and_the_total()
     {
         using var client = server.Factory.CreateClient();
         var sources = await PivotSources.Over(server, client);
@@ -249,8 +249,8 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         Assert.Equal(server.TradeCount, trades.Total);
     }
 
-    [Fact] // ADR-0065, PV-22: more leaves than the question allows are refused, as the reference refuses them
-    public async Task ADR0065_PV22_more_leaves_than_MaxLeaves_are_refused_by_name()
+    [Fact] // ADR-0066, PV-22: more leaves than the question allows are refused, as the reference refuses them
+    public async Task ADR0066_PV22_more_leaves_than_MaxLeaves_are_refused_by_name()
     {
         using var client = server.Factory.CreateClient();
         var sources = await PivotSources.Over(server, client);
@@ -271,8 +271,8 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         Assert.Equal(12, atCap.LeafCount);
     }
 
-    [Fact] // ADR-0065, PV-22: an unknown field and a part no offered Aggregation reads are refused as PivotSource.Fetch refuses them
-    public async Task ADR0065_PV22_an_unknown_field_and_an_unoffered_part_are_refused_in_the_same_words()
+    [Fact] // ADR-0066, PV-22: an unknown field and a part no offered Aggregation reads are refused as PivotSource.Fetch refuses them
+    public async Task ADR0066_PV22_an_unknown_field_and_an_unoffered_part_are_refused_in_the_same_words()
     {
         using var client = server.Factory.CreateClient();
         var sources = await PivotSources.Over(server, client);
@@ -318,8 +318,8 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
             PivotJson.ReadItemPage(await Post(client, "/api/pivot/items", PivotJson.Write(new PivotItemsQuery("Nope", sources.Version)), null, Token)));
     }
 
-    [Fact] // ADR-0068: the features leave out what SQLite cannot answer exactly, and the fields are the pages'
-    public async Task ADR0068_the_fields_are_the_pages_and_the_features_leave_out_Product_and_the_variances()
+    [Fact] // ADR-0069: the features leave out what SQLite cannot answer exactly, and the fields are the pages'
+    public async Task ADR0069_the_fields_are_the_pages_and_the_features_leave_out_Product_and_the_variances()
     {
         using var client = server.Factory.CreateClient();
         var (fields, features) = await PivotSources.Fields(client);
@@ -339,8 +339,8 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         Assert.Equal(PivotFieldType.Boolean, fields.Single(f => f.Name == "Confirmed").Type);
     }
 
-    [Fact] // ADR-0065, PV-23: a live tick moves the version on; Items and records asked under the old one are refused, and the new answers are the new data's
-    public async Task ADR0065_PV23_after_a_live_tick_the_old_version_is_refused_and_the_answers_follow_the_data()
+    [Fact] // ADR-0066, PV-23: a live tick moves the version on; Items and records asked under the old one are refused, and the new answers are the new data's
+    public async Task ADR0066_PV23_after_a_live_tick_the_old_version_is_refused_and_the_answers_follow_the_data()
     {
         using var client = server.Factory.CreateClient();
         var before = await PivotSources.Over(server, client);
@@ -371,7 +371,7 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         }
     }
 
-    [Theory] // ADR-0065/0068: a document that cannot be read is the caller's mistake: a 400 naming it, never a refusal or a 500
+    [Theory] // ADR-0066/0069: a document that cannot be read is the caller's mistake: a 400 naming it, never a refusal or a 500
     [InlineData("/api/pivot/aggregate", "not json", "is JSON")]
     [InlineData("/api/pivot/aggregate", "{\"version\":2,\"type\":\"query\"}", "version 2 cannot be read")]
     [InlineData("/api/pivot/aggregate", "{\"version\":1,\"type\":\"itemsQuery\",\"field\":\"Region\",\"sourceVersion\":\"x\",\"max\":5}", "not a 'query'")]
@@ -379,7 +379,7 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
     [InlineData("/api/pivot/items", "{\"version\":1,\"type\":\"itemsQuery\",\"field\":\"Region\"}", "'sourceVersion' is a string")]
     [InlineData("/api/pivot/details", "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"x\",\"start\":-1,\"count\":5}", "cannot be")]
     [InlineData("/api/pivot/details", "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"x\",\"start\":0,\"count\":10001}", "at most 10,000 records")]
-    public async Task ADR0068_a_document_that_cannot_be_read_is_answered_400(string path, string document, string detail)
+    public async Task ADR0069_a_document_that_cannot_be_read_is_answered_400(string path, string document, string detail)
     {
         using var client = server.Factory.CreateClient();
         using var content = new StringContent(document, System.Text.Encoding.UTF8, "application/json");

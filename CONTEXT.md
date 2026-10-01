@@ -30,7 +30,7 @@ Excel's PivotTable inside the application. The Consumer pushes **Source Records*
 their **Pivot Fields**; the user places Pivot Fields into **Areas** through the **Field List**, and
 ExPivot computes the **Pivot Report**. It is drawn by ExGrid, as that grid's **Consumer**: ExPivot
 holds the **Pivot Layout** and aggregates, ExGrid paints and reports. **Proposed**, not yet decided
-([ADR-0058](./docs/adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: pivot grid, OLAP grid, cube (the cube is how the engine keeps what it aggregated, not the
 product), and **Pivot Report**, which names what ExPivot computes, not the product
 
@@ -168,7 +168,7 @@ pivot cache (Excel's word, for a pivot's alone)
 How a delimited text file is read into a Snapshot: each column's header, kind and format and the
 strings that count as a Blank, and the file's encoding and separator. It is declared, never
 guessed; one suggested from a file's first rows is used only once the user has confirmed it
-([ADR-0063](./docs/adr/0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)).
+([ADR-0064](./docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)).
 _Avoid_: import settings, mapping, dialect, type inference (there is none)
 
 **Change Batch**:
@@ -692,7 +692,7 @@ _Avoid_: file, workbook, Snapshot (that is the Consumer's tabular data), save da
 One record of the data a pivot aggregates. The bundled Pivot Source holds it in a Snapshot and
 never writes to it, and a new Snapshot or a Change Batch is a refresh, as in Excel; behind a
 server's Pivot Source it stays on the server
-([ADR-0058](./docs/adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: row (a row is the report's), item (that is a field's distinct value), fact, entity
 
 **Pivot Source**:
@@ -714,21 +714,21 @@ What a Pivot Source answers a report with: for each combination of the row and c
 Items that has records, the parts each Value Field's Aggregation is computed from — counts, sums,
 extremes. ExPivot computes every cell, subtotal and grand total from them; a source never answers
 with the report itself
-([ADR-0065](./docs/adr/0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+([ADR-0066](./docs/adr/0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
 _Avoid_: cube (the engine's own word for what it holds), summary, pre-aggregate, rollup
 
 **Pivot Field**:
 A named attribute of the Source Records the user can place in an Area: its caption, how it is read
 from a record, and its declared type, which decides where a ticked field goes and which
 Aggregation it takes by default. The same Pivot Field may stand in Rows and, as a Value Field, in
-Values ([ADR-0060](./docs/adr/0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+Values ([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
 _Avoid_: field alone (ExGrid avoids it for a Column), column (that is the grid's), dimension and
 measure (a Pivot Field is either, by the Area it stands in)
 
 **Area**:
 One of the four places a Pivot Field stands — **Filters**, **Columns**, **Rows**, **Values** —
 Excel's names. A field stands at most once across Filters, Rows and Columns
-([ADR-0060](./docs/adr/0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
 _Avoid_: zone, well, shelf, drop box
 
 **Pivot Layout**:
@@ -736,21 +736,21 @@ Which Pivot Fields stand in which Areas and in what order, with each one's setti
 order, subtotals, collapsed Items, a Value Field's Aggregation — and the report's form and totals.
 It is ExPivot's **View State**: serialisable, persisted by the Consumer, a **Saved View** when
 named. Nothing in it is a value
-([ADR-0058](./docs/adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: configuration, definition, pivot settings, and layout alone (that is also the browser's)
 
 **Item**:
 One distinct value of a Pivot Field in Rows, Columns or Filters — a row label, a column label, a
 choice in a filter. Text Items are told apart ignoring case; a Blank is the Item `(blank)`. A
 **collapsed** Item hides the Items under it and shows their totals
-([ADR-0059](./docs/adr/0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
 _Avoid_: member (OLAP's), label (the text an Item is painted with), category
 
 **Hidden Item**:
 An Item the user unticked in its field's filter. Every record carrying it is left out of the
 report, totals included. The layout holds what is hidden, not what is shown, so an Item that first
 appears later is shown
-([ADR-0059](./docs/adr/0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
 _Avoid_: filtered item, excluded value, and Filter (that is ExGrid's model of conditions)
 
 **Order Key**:
@@ -763,27 +763,27 @@ _Avoid_: comparer, custom sort, custom list (that is a field's declared Item ord
 A Pivot Field placed in Values, with its **Aggregation**, its caption (`Sum of Amount`), its number
 format and how its values are shown (**Show Values As**: % of Grand Total and the rest). One Pivot
 Field may be several Value Fields
-([ADR-0059](./docs/adr/0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
 _Avoid_: data field (Excel's older name), measure, metric
 
 **Aggregation**:
 How a Value Field summarises the records at a cell — Sum, Count, Average, Max, Min, Product, Count
 Numbers, StdDev, StdDevp, Var, Varp; Excel's "Summarize Values By". A total is aggregated from its
 records, never from the totals below it
-([ADR-0059](./docs/adr/0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
 _Avoid_: function (that is a Formula's), rollup, reduce
 
 **Σ Values**:
 The pseudo-field that says where the Value Fields' captions stand when there are two or more — in
 Columns, where Excel puts it, or in Rows. In the first version it is always innermost
-([ADR-0059](./docs/adr/0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
 _Avoid_: data field, measures dimension
 
 **Pivot Report**:
 What ExPivot computes and ExGrid paints: rows for Items, **group rows**, **subtotals** and the
 **grand total**, label columns, and value columns under the column Items' Header Groups. It is
 computed and read-only
-([ADR-0058](./docs/adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: pivot table (the whole product on screen), result (ExGrid's word for rows after a
 filter), view
 
@@ -791,33 +791,33 @@ filter), view
 A Pivot Report left on the last version of the data it could be computed from, because the newest
 cannot be shown — the layout would break a cap, or the source failed — and saying so: what
 happened, and as of when
-([ADR-0066](./docs/adr/0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+([ADR-0067](./docs/adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
 _Avoid_: cached report, outdated, frozen (it is not stopped; it is waiting for an answer)
 
 **Defer Layout Update**:
 Excel's switch at the foot of the Field List: while it is on, the pane's changes build a pending
 Pivot Layout that the report does not follow until Update
-([ADR-0060](./docs/adr/0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
 _Avoid_: manual mode, batch edit, draft layout (a draft is a panel's, until OK)
 
 **Report Form**:
 How a Pivot Report sets out its row labels — **Compact** (one indented label column, Excel's
 default), **Outline** or **Tabular** (a label column per row field). Excel's "Report Layout"
-([ADR-0059](./docs/adr/0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
 _Avoid_: layout (that is the Pivot Layout), view, mode
 
 **Field List**:
 The pane where the user builds the report: every Pivot Field with a checkbox and a search, and the
 four Areas, with drag and drop and each placed field's menu — Excel's "PivotTable Fields". ExPivot
 decides what each gesture means; its Chrome draws it
-([ADR-0060](./docs/adr/0060-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
 _Avoid_: field chooser, designer, pivot panel
 
 **Show Details**:
 The Source Records behind one cell of the report — Excel's drill-down, from a double click on a
 value or the Context Menu — which ExPivot shows in a tab beside the report or in a dialog, or hands
 to the Consumer to show, as the Consumer chooses
-([ADR-0062](./docs/adr/0062-what-expivot-asks-of-exgrids-core.md)).
+([ADR-0063](./docs/adr/0063-what-expivot-asks-of-exgrids-core.md)).
 _Avoid_: drill-through, drill-down (Excel's older name), underlying data
 
 ## Flagged ambiguities

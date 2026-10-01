@@ -3,7 +3,7 @@ namespace ExGrid.DemoApi;
 /// <summary>
 /// Steele, Lea and Flood's SplitMix64: a few lines, written out here rather than taken from
 /// <see cref="Random"/>, whose seeded sequence the runtime does not promise to keep. The data
-/// has to be the same for the same count on every machine and every runtime (ADR-0068), and a
+/// has to be the same for the same count on every machine and every runtime (ADR-0069), and a
 /// generator this small cannot drift.
 /// </summary>
 internal struct SplitMix64

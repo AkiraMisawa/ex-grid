@@ -5,7 +5,7 @@
 # ExPivot.Engine, ExPivot and ExPivot.MudBlazor, into another, with ExGrid.Data and
 # ExGrid.Data.Arrow, which ship beside ExPivot: .feed holds exactly what the release publishes,
 # and neither product, nor the family's data packages, is part of that release yet (ADR-0046,
-# ADR-0058, ADR-0063, ADR-0064). A Snapshot is written to an Arrow stream and read back through
+# ADR-0059, ADR-0064, ADR-0065). A Snapshot is written to an Arrow stream and read back through
 # the packed data packages, and the check fails if it comes back different (DA-16).
 #
 #   tests/ExGrid.PackageSmoke/check.sh [version]
@@ -72,15 +72,15 @@ sheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExShee
 [ "$sheetdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid\" version=\"[$version]\"" "<dependency id=\"ExSheet.Engine\" version=\"[$version]\"" | sort)" ] \
   || fail "ExSheet's dependencies are not exactly ExGrid $version and ExSheet.Engine $version: $sheetdeps"
 
-# The family's data package depends on nothing at all, not even on the grid (ADR-0063, DA-1).
+# The family's data package depends on nothing at all, not even on the grid (ADR-0064, DA-1).
 if grep -q '<dependency ' <<<"$(nuspec ExGrid.Data)"; then fail "ExGrid.Data declares a dependency"; fi
 # Its Arrow package depends on exactly the ExGrid.Data it was built with, and on Apache.Arrow
-# within the major version it was built and tested with, and on nothing else (ADR-0064, DA-1).
+# within the major version it was built and tested with, and on nothing else (ADR-0065, DA-1).
 arrowdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid.Data.Arrow)" | sort)
 [ "$arrowdeps" = "$(printf '%s\n' "<dependency id=\"Apache.Arrow\" version=\"[23.0.0, 24.0.0)\"" "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" | sort)" ] \
   || fail "ExGrid.Data.Arrow's dependencies are not exactly ExGrid.Data $version and Apache.Arrow [23.0.0, 24.0.0): $arrowdeps"
 # ExPivot's engine depends on exactly the ExGrid.Data it was built with, and on nothing else: it
-# aggregates a Snapshot (ADR-0063, PV-1).
+# aggregates a Snapshot (ADR-0064, PV-1).
 enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.Engine)" | sort)
 [ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
   || fail "ExPivot.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
@@ -93,13 +93,13 @@ pivotdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivo
 [ "$pivotdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid\" version=\"[$version]\"" "<dependency id=\"ExPivot.Engine\" version=\"[$version]\"" | sort)" ] \
   || fail "ExPivot's dependencies are not exactly ExGrid $version and ExPivot.Engine $version: $pivotdeps"
 # Its Wrapper depends on exactly ExPivot and the grid's Wrapper it was built with, and on MudBlazor
-# from the floor the grid's Wrapper takes (ADR-0061).
+# from the floor the grid's Wrapper takes (ADR-0062).
 muddeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.MudBlazor)" | sort)
 [ "$muddeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExPivot\" version=\"[$version]\"" "<dependency id=\"MudBlazor\" version=\"9.0.0\"" | sort)" ] \
   || fail "ExPivot.MudBlazor's dependencies are not exactly ExPivot and ExGrid.MudBlazor $version and MudBlazor 9.0.0: $muddeps"
 
 # The release publishes .feed as it is, so nothing of ExSheet or ExPivot may be in it (ADR-0046,
-# ADR-0058).
+# ADR-0059).
 if ls "$feed" | grep -qi '^exsheet'; then fail "the release feed $feed holds an ExSheet package"; fi
 if ls "$feed" | grep -qi '^expivot'; then fail "the release feed $feed holds an ExPivot package"; fi
 if ls "$feed" | grep -qi '^exgrid\.data'; then fail "the release feed $feed holds an ExGrid.Data package"; fi
@@ -127,7 +127,7 @@ grep -qF '"./_content/ExGrid/ex-grid.js"' "$root/src/ExGrid/Components/ExGrid.ra
 
 echo "== a Snapshot through an Arrow stream and back, through the packed packages"
 # RoundTrip runs what the application above compiled for a browser: it writes a Snapshot of every
-# kind, with Blanks, captions, a Record Key and a version, and reads it back (ADR-0064, DA-16).
+# kind, with Blanks, captions, a Record Key and a version, and reads it back (ADR-0065, DA-16).
 dotnet build "$here/RoundTrip" -c Release --nologo \
   -p:ExGridVersion="$version" -p:RestorePackagesPath="$cache"
 for id in exgrid.data exgrid.data.arrow; do

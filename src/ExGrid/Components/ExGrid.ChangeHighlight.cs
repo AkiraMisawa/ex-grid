@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace ExGrid.Components;
 
-// The Change Highlight (ADR-0067): the Consumer says when a cell's shown value last changed,
+// The Change Highlight (ADR-0068): the Consumer says when a cell's shown value last changed,
 // and the grid marks the cell with a class for a short time, then takes the class away in one
 // step. Nothing animates, because rows are recycled (ADR-0027 P8). The rows ask, cell by cell,
 // as they ask for Cell State (ADR-0006), and each tells the grid the earliest end among the
@@ -13,7 +13,7 @@ namespace ExGrid.Components;
 public partial class ExGrid<TRow>
 {
     /// <summary>
-    /// A Consumer declaration, the Change Highlight (ADR-0067): when a cell's shown value last
+    /// A Consumer declaration, the Change Highlight (ADR-0068): when a cell's shown value last
     /// changed, asked by (row, column) as <see cref="CellState"/> is. A value cell is painted
     /// with the class <c>ex-changed</c> while the grid's time (<see cref="Clock"/>) is before
     /// the answer plus <see cref="ChangeHighlightDuration"/>, and the class is taken away in one
@@ -33,7 +33,7 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// How long a Change Highlight lasts after the change time <see cref="CellChangedAt"/>
-    /// answers (ADR-0067): one second by default. A cell is marked while the grid's time is
+    /// answers (ADR-0068): one second by default. A cell is marked while the grid's time is
     /// before the change time plus this. Zero marks only a change time still to come, and a
     /// negative duration is refused. The mark's colour is the Visual Token
     /// <c>--ex-change-highlight-background</c>, never a parameter (ADR-0027).
@@ -42,7 +42,7 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// The clock the Change Highlight reads the time from, and whose timer takes the marks away
-    /// (ADR-0067); a test hands in its own. Null, the default, is the grid's own clock: the
+    /// (ADR-0068); a test hands in its own. Null, the default, is the grid's own clock: the
     /// <see cref="TimeProvider"/> the host registered as a service, and
     /// <see cref="TimeProvider.System"/> where it registered none. Read only while
     /// <see cref="CellChangedAt"/> is declared.
@@ -54,7 +54,7 @@ public partial class ExGrid<TRow>
     private readonly ChangeHighlightEnds _highlightEnds = new();
     private Action<object, DateTimeOffset?>? _highlightPainted;
 
-    // The one timer (ADR-0067), the clock that made it, and the end it is armed for: null
+    // The one timer (ADR-0068), the clock that made it, and the end it is armed for: null
     // while it is not armed, which a one-shot timer stops being as it fires. The timer exists
     // only while a mark is painted.
     private ITimer? _highlightTimer;
@@ -80,13 +80,13 @@ public partial class ExGrid<TRow>
     /// clock.</summary>
     private DateTimeOffset HighlightNow() => CellChangedAt is null ? default : HighlightClock.GetUtcNow();
 
-    /// <summary>Refuses a duration a mark could not last (ADR-0067).</summary>
+    /// <summary>Refuses a duration a mark could not last (ADR-0068).</summary>
     private void ValidateChangeHighlight()
     {
         if (ChangeHighlightDuration < TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(ChangeHighlightDuration), ChangeHighlightDuration,
-                "A Change Highlight cannot last a negative time: it would end before the change it marks (ADR-0067).");
+                "A Change Highlight cannot last a negative time: it would end before the change it marks (ADR-0068).");
         }
     }
 
@@ -94,7 +94,7 @@ public partial class ExGrid<TRow>
     /// Arms the one timer for the earliest end among the marks painted now. Called after every
     /// render of the root, which is every render in which a row can paint or drop a mark: a
     /// row renders only when the root hands it something new. With no mark painted, no timer
-    /// exists (ADR-0067, DC-53).
+    /// exists (ADR-0068, DC-60).
     /// </summary>
     private void ArmHighlightTimer()
     {

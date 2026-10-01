@@ -4,19 +4,19 @@ using Xunit;
 namespace ExGrid.DemoApi.Tests;
 
 /// <summary>
-/// CORS as a browser asks it (ADR-0068): the demo hosts' pages run on other ports of this
+/// CORS as a browser asks it (ADR-0069): the demo hosts' pages run on other ports of this
 /// machine, so every call they make is cross-origin, and the browser asks first.
 /// </summary>
 public sealed class CorsTests(DemoApiServer server) : IClassFixture<DemoApiServer>
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    [Theory] // ADR-0068: a page on another port of this machine may call the API, without credentials
+    [Theory] // ADR-0069: a page on another port of this machine may call the API, without credentials
     [InlineData("http://localhost:5299")]
     [InlineData("http://127.0.0.1:5298")]
     [InlineData("http://[::1]:6298")]
     [InlineData("https://localhost:7001")]
-    public async Task ADR0068_the_API_answers_a_page_on_another_port_of_this_machine(string origin)
+    public async Task ADR0069_the_API_answers_a_page_on_another_port_of_this_machine(string origin)
     {
         using var client = server.Factory.CreateClient();
         using var preflight = new HttpRequestMessage(HttpMethod.Options, "/api/live");
@@ -39,8 +39,8 @@ public sealed class CorsTests(DemoApiServer server) : IClassFixture<DemoApiServe
         Assert.Null(Header(answered, "Access-Control-Allow-Credentials"));
     }
 
-    [Fact] // ADR-0068: SignalR's negotiate, sent with credentials by the browser client, is allowed from another port
-    public async Task ADR0068_the_hub_negotiates_with_a_page_on_another_port_with_credentials()
+    [Fact] // ADR-0069: SignalR's negotiate, sent with credentials by the browser client, is allowed from another port
+    public async Task ADR0069_the_hub_negotiates_with_a_page_on_another_port_with_credentials()
     {
         const string origin = "http://localhost:5299";
         using var client = server.Factory.CreateClient();
@@ -66,12 +66,12 @@ public sealed class CorsTests(DemoApiServer server) : IClassFixture<DemoApiServe
         Assert.Contains("connectionToken", await negotiated.Content.ReadAsStringAsync(Token));
     }
 
-    [Theory] // ADR-0068: only this machine's pages: any other origin gets no leave to read the answer
+    [Theory] // ADR-0069: only this machine's pages: any other origin gets no leave to read the answer
     [InlineData("http://example.com")]
     [InlineData("http://localhost.example.com:5299")]
     [InlineData("http://192.168.1.20:5299")]
     [InlineData("null")]
-    public async Task ADR0068_a_page_elsewhere_is_not_allowed(string origin)
+    public async Task ADR0069_a_page_elsewhere_is_not_allowed(string origin)
     {
         using var client = server.Factory.CreateClient();
         foreach (var (path, method) in new[] { ("/api/status", "GET"), ("/hubs/trades/negotiate?negotiateVersion=1", "POST") })

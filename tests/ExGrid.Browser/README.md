@@ -81,7 +81,7 @@ both hosts; a test that has no meaning on WebAssembly is skipped there by name.
 ## The demo API server
 
 Beside either host, the run also starts `samples/ExGrid.DemoApi`, the server the database and
-live pages call (ADR-0068), where the pages look for it: BASE_URL's port plus 3000 (8299, or
+live pages call (ADR-0069), where the pages look for it: BASE_URL's port plus 3000 (8299, or
 8298 beside the Server host's proxy; `API_URL` in `hosting.mjs`). It is asked for 20,000 trades
 unless `EXGRID_DEMO_TRADES` says otherwise; the first start for a count generates them in about
 a second into a file outside the repository (`exgrid-demo-api` in the temporary directory, or
@@ -443,7 +443,7 @@ nobody had asked for. What that means when writing a test:
   opening a tab at the report's foot, titled by the cell and holding the trades behind it, with
   the keyboard on the tab, a second tab beside it, and closing them; a dialog when the page asks
   for one (`?details=dialog`), taking the keyboard, inert behind it and closed by Escape; and the
-  page taking the trades itself (`?details=page`) with neither opening (PV-14, DC-52); the
+  page taking the trades itself (`?details=page`) with neither opening (PV-14, DC-59); the
   keyboard into a field's menu and back to its entry, a menu dropping down under its entry as
   wide as the pane, and a command moving the field (PV-11); the toolbar above the report — the
   report filter band on its left, Layout and the pane's toggle on its right, no Refresh for the
@@ -454,9 +454,9 @@ nobody had asked for. What that means when writing a test:
   the page; Defer Layout Update holding the report until Update (PV-28); the words switch
   speaking Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade
   date, moved to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in
-  the Japanese words (ADR-0059); and the code the page shows under "The code" equal to the
+  the Japanese words (ADR-0060); and the code the page shows under "The code" equal to the
   regions of its source it is read from (PV-20). Where the keyboard goes when the dialog or a tab
-  goes (PV-39, DC-58, ADR-0069): Escape in the dialog's grid closing the grid's Context Menu
+  goes (PV-39, DC-58, ADR-0070): Escape in the dialog's grid closing the grid's Context Menu
   first, then the dialog; however the dialog closes — that Escape, Escape on Close, Close, the
   backdrop — the report's grid holding the keyboard again, its arrows moving its Focus; Escape in a
   details tab's grid closing nothing; the selected tab closed handing the keyboard to the tab
@@ -470,7 +470,7 @@ nobody had asked for. What that means when writing a test:
   same tests are the case without a round trip. Not asserted: a held Escape. Layer 2 holds its
   repeats to one `OnLeave` per press, and what the repeats do to the report once the dialog has
   closed waits on a decision (ticket 21 of docs/specs/expivot).
-- `pivot-csv.spec.mjs` — ExPivot over a CSV on `/pivot-csv` (ADR-0063, PV-20), **run once per
+- `pivot-csv.spec.mjs` — ExPivot over a CSV on `/pivot-csv` (ADR-0064, PV-20), **run once per
   Chrome**: the trade export the page writes in memory from `/pivot`'s trades, read back under
   the declared Schema to the very report `/pivot` paints, cell for cell; a file chosen through
   Blazor's `InputFile` (`setInputFiles` with a file the test writes) with a malformed row,
@@ -483,7 +483,7 @@ nobody had asked for. What that means when writing a test:
   desk, the account numbers keeping their zeros; the page's two samples, one under the declared
   Schema and one under a suggested Schema, reading the same trades to the same total — a second
   file read while a report stands; and the code shown under "The code" equal to its source.
-- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0064/0065/0068), **run once per Chrome**, against the
+- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069), **run once per Chrome**, against the
   demo API server from either host: its trades read over Arrow into a Snapshot the page pivots in
   its own process, at the version `/api/status` names, and asked of the server through
   `PivotSource.Fetch`, which answers in SQL, show the same numbers painted row for row — and
@@ -491,14 +491,14 @@ nobody had asked for. What that means when writing a test:
   server's source alone, and asks again; Show Details opens the same records behind a cell in
   both, and the server's come a page at a time as the Details tab scrolls to its end (PV-20);
   and the code the page shows equal to its source, the Arrow request taking its response whole
-  (ADR-0064).
-- `pivot-live.spec.mjs` — `/pivot-live` (ADR-0066/0067/0068), **run once per Chrome**: Change
+  (ADR-0065).
+- `pivot-live.spec.mjs` — `/pivot-live` (ADR-0067/0068/0069), **run once per Chrome**: Change
   Batches the page folds into the bundled source on its own timer mark the values they changed;
   paused, the marks go after their second, and a collapse marks nothing however long after
   (PV-36). The server's live updates, which the page turns on, mark the server report's values
   through the hub's notices; the page's button turns them off and on, and leaving the page turns
   them off (PV-20); and the code the page shows equal to its source.
-- `pivot-risk.spec.mjs` — the rate-delta report on `/pivot-risk` (ADR-0059, PV-20), **run once
+- `pivot-risk.spec.mjs` — the rate-delta report on `/pivot-risk` (ADR-0060, PV-20), **run once
   per Chrome**, in a window wide enough for every tenor column beside the pane, since the report
   grid paints only the columns in view: the tenors painted in the Order Key's order, `ON`, `TN`,
   `1W` … `30Y`, with `18M` and `1Y6M` two Items side by side, each carrying its own desks'
@@ -507,14 +507,14 @@ nobody had asked for. What that means when writing a test:
   across each row, down each desk and down the Grand Total row — and the report's own the page's
   sum of the positions; and the code the page shows, the README's `Tenors.Months` among it,
   equal to its source.
-- `grid-live.spec.mjs` — `/grid-live` (ADR-0067/0068), ExGrid alone over the server's trades, its
+- `grid-live.spec.mjs` — `/grid-live` (ADR-0068/0069), ExGrid alone over the server's trades, its
   marks set to last a minute so that where they are is what is compared. A mark is keyed by row
   and column: across a three-row scroll every trade still painted keeps exactly its marked cells,
   and after a scroll far away and back, which reads the Window again into new instances and new
-  elements, the same cells are marked again (DC-54). With marks painting and going, nothing under
+  elements, the same cells are marked again (DC-61). With marks painting and going, nothing under
   the Viewport transitions or animates, under the core's stylesheet and under the Wrapper's
   (`?chrome=mud`), whose warning tint the mark takes; the grid's live region is not touched; and
-  forced colours restate the mark as a dashed outline (DC-55). The Window is read from the server
+  forced colours restate the mark as a dashed outline (DC-62). The Window is read from the server
   as the grid scrolls, and leaving turns the live updates off (PV-20); and the code the page
   shows is equal to its source.
 

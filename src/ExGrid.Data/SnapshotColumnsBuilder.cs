@@ -4,7 +4,7 @@ using ExGrid.Data.Storage;
 namespace ExGrid.Data;
 
 /// <summary>
-/// Builds a Snapshot from columns (ADR-0063's fourth way in): for data a reader has read itself — a
+/// Builds a Snapshot from columns (ADR-0064's fourth way in): for data a reader has read itself — a
 /// CSV, a <c>DbDataReader</c>, an Arrow stream, Parquet, a message stream. Each declared column is
 /// appended to on its own, a value at a time or a whole span at a time; a row is complete when every
 /// column has reached it.

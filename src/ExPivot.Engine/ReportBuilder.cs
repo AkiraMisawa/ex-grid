@@ -5,7 +5,7 @@ namespace ExPivot.Engine;
 
 /// <summary>
 /// Reads a Value Field's value where a row node and a column node cross, as aggregated and as
-/// shown (ADR-0059). Shared by the report's cells and by an order by value, so the order and
+/// shown (ADR-0060). Shared by the report's cells and by an order by value, so the order and
 /// the cells cannot disagree.
 /// </summary>
 internal sealed class CellReader(PivotCube cube, ValueFieldPlan[] values)
@@ -38,7 +38,7 @@ internal sealed class CellReader(PivotCube cube, ValueFieldPlan[] values)
 }
 
 /// <summary>
-/// Lays a cube out under a layout (ADR-0059): the value columns and their Header Group spans
+/// Lays a cube out under a layout (ADR-0060): the value columns and their Header Group spans
 /// from the column tree, the rows from the row tree in the layout's form, each in its Items'
 /// order, with subtotals, grand totals, collapsed Items and Σ Values where the layout puts them.
 /// <para>
@@ -465,7 +465,7 @@ internal sealed class ReportBuilder
         return at;
     }
 
-    // The Compact and Outline forms: a group row heads each outer Item's block (ADR-0059). An
+    // The Compact and Outline forms: a group row heads each outer Item's block (ADR-0060). An
     // innermost or collapsed Item is its rows, and its children are not walked; an outer one is
     // its group row, then its children, then — when they stand at the bottom — its subtotals.
     private int EnterGrouped(AxisNode node, List<PivotReportRow> rows)
@@ -582,7 +582,7 @@ internal sealed class ReportBuilder
     }
 
     // The Tabular form: no group rows — an outer Item's label stands on the first row of its
-    // block, and its subtotal at the bottom (ADR-0059).
+    // block, and its subtotal at the bottom (ADR-0060).
     private int EnterTabular(AxisNode node, List<PivotReportRow> rows)
     {
         if (node.Item is null)
@@ -650,7 +650,7 @@ internal sealed class ReportBuilder
     // ---- Order ---------------------------------------------------------------------------
 
     /// <summary>
-    /// The children of <paramref name="node"/> in their order (ADR-0059), to be made a step at a
+    /// The children of <paramref name="node"/> in their order (ADR-0060), to be made a step at a
     /// time. By a Value Field's value at each Item's total across the other axis, as shown; blank
     /// and error values last, ties by label ascending — the Order Key does not touch a sort by
     /// value. Otherwise by label, under the field's declared order and Order Key.
@@ -805,7 +805,7 @@ internal sealed class ReportBuilder
 }
 
 /// <summary>
-/// The Value Fields' captions (ADR-0059): a caption of its own, or
+/// The Value Fields' captions (ADR-0060): a caption of its own, or
 /// <c>&lt;Aggregation&gt; of &lt;field caption&gt;</c>; a default a second Value Field would
 /// repeat takes a number, as Excel's <c>Sum of Amount2</c>.
 /// </summary>
@@ -834,11 +834,11 @@ public static class ValueCaptions
             if (values[i].Caption is not { } own)
                 continue;
             if (own.Length == 0)
-                throw new InvalidOperationException($"The Value Field of '{values[i].Field}' has an empty caption (ADR-0059).");
+                throw new InvalidOperationException($"The Value Field of '{values[i].Field}' has an empty caption (ADR-0060).");
             if (!taken.Add(own))
-                throw new InvalidOperationException($"Two Value Fields are captioned '{own}' (ADR-0059).");
+                throw new InvalidOperationException($"Two Value Fields are captioned '{own}' (ADR-0060).");
             if (fieldCaptions.Contains(own))
-                throw new InvalidOperationException($"The Value Field of '{values[i].Field}' is captioned '{own}', which is a Pivot Field's caption (ADR-0059).");
+                throw new InvalidOperationException($"The Value Field of '{values[i].Field}' is captioned '{own}', which is a Pivot Field's caption (ADR-0060).");
             captions[i] = own;
         }
         for (var i = 0; i < values.Count; i++)

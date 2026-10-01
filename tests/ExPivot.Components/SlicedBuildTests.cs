@@ -9,7 +9,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// The work after a question's pass, sliced (ADR-0065, settled 2026-10-01; PV-40): ExPivot makes a
+/// The work after a question's pass, sliced (ADR-0066, settled 2026-10-01; PV-40): ExPivot makes a
 /// large answer's cube and lays out its report in slices, yielding the thread between them. A
 /// gesture made meanwhile supersedes the question, the report on screen stays — under the loading
 /// indication — until the new one is complete, and nothing half made is ever shown. A layout of the
@@ -139,7 +139,7 @@ public class SlicedBuildTests : PivotTestContext
 
     // ---- A large answer, made in slices ----------------------------------------------------------
 
-    [Fact] // ADR-0065 (PV-40): a large answer's cube and report are made in slices; the report on screen stays as it was, under IsLoading, until the new one is complete
+    [Fact] // ADR-0066 (PV-40): a large answer's cube and report are made in slices; the report on screen stays as it was, under IsLoading, until the new one is complete
     public async Task A_large_answer_is_made_in_slices_and_shown_whole()
     {
         var yields = new HeldYields();
@@ -181,7 +181,7 @@ public class SlicedBuildTests : PivotTestContext
         Assert.Same(report.Layout, told[0]);
     }
 
-    [Fact] // ADR-0065/0025 (PV-40): a gesture made while the answer's report is built supersedes the question; the half-built report is never shown
+    [Fact] // ADR-0066/0025 (PV-40): a gesture made while the answer's report is built supersedes the question; the half-built report is never shown
     public async Task A_gesture_during_the_build_supersedes_the_question()
     {
         var yields = new HeldYields();
@@ -217,7 +217,7 @@ public class SlicedBuildTests : PivotTestContext
         Assert.Same(report.Layout, told[0]);
     }
 
-    [Fact] // ADR-0065 (PV-26/PV-40): a gesture the answer held lays out, made while a question's report is built, supersedes it at once
+    [Fact] // ADR-0066 (PV-26/PV-40): a gesture the answer held lays out, made while a question's report is built, supersedes it at once
     public async Task A_gesture_from_the_answer_held_supersedes_the_build()
     {
         var yields = new HeldYields();
@@ -242,7 +242,7 @@ public class SlicedBuildTests : PivotTestContext
 
     // ---- A layout of the answer held -----------------------------------------------------------
 
-    [Fact] // ADR-0065 (PV-40): a layout of the answer held that grows long is laid out in slices, under the indication, and a further gesture supersedes it
+    [Fact] // ADR-0066 (PV-40): a layout of the answer held that grows long is laid out in slices, under the indication, and a further gesture supersedes it
     public async Task A_long_layout_of_the_answer_held_is_sliced_and_superseded()
     {
         var yields = new HeldYields();
@@ -289,7 +289,7 @@ public class SlicedBuildTests : PivotTestContext
         Assert.Equal(2, told.Count);
     }
 
-    [Fact] // ADR-0065 (PV-26/PV-40): a quick layout of the answer held yields nothing, and is shown in the gesture's own turn
+    [Fact] // ADR-0066 (PV-26/PV-40): a quick layout of the answer held yields nothing, and is shown in the gesture's own turn
     public async Task A_quick_layout_yields_nothing()
     {
         var yields = 0;
@@ -323,7 +323,7 @@ public class SlicedBuildTests : PivotTestContext
 
     // ---- What else meets a build ------------------------------------------------------------------
 
-    [Fact] // ADR-0066 (PV-35/PV-40): a batch applied while a report is built waits for it — never half a batch — and is asked for once it is shown
+    [Fact] // ADR-0067 (PV-35/PV-40): a batch applied while a report is built waits for it — never half a batch — and is asked for once it is shown
     public async Task A_batch_during_the_build_waits_for_it()
     {
         var fields = PivotFields.Of<Trade>()
@@ -358,7 +358,7 @@ public class SlicedBuildTests : PivotTestContext
         Assert.Equal(["Product", "Region"], cut.Instance.Report.Layout.Rows.Select(p => p.Field));
     }
 
-    [Fact] // ADR-0059/0066 (PV-33/PV-40): new words while a report is built: the report shown is in the new words
+    [Fact] // ADR-0060/0067 (PV-33/PV-40): new words while a report is built: the report shown is in the new words
     public async Task New_words_during_the_build_reach_the_report_shown()
     {
         var yields = new HeldYields();

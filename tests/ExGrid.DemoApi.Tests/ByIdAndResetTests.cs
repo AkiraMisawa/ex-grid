@@ -9,13 +9,13 @@ using Xunit;
 
 namespace ExGrid.DemoApi.Tests;
 
-/// <summary><c>/api/trades/by-id</c>: the trades the hub names, read again (ADR-0067, ADR-0068).</summary>
+/// <summary><c>/api/trades/by-id</c>: the trades the hub names, read again (ADR-0068, ADR-0069).</summary>
 public sealed class TradesByIdTests(DemoApiServer server) : IClassFixture<DemoApiServer>
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    [Fact] // ADR-0067/0068: the named trades as they are now, in TradeId order, with the keys no trade has, at one version
-    public async Task ADR0068_by_id_answers_the_named_trades_and_the_missing_keys_at_one_version()
+    [Fact] // ADR-0068/0069: the named trades as they are now, in TradeId order, with the keys no trade has, at one version
+    public async Task ADR0069_by_id_answers_the_named_trades_and_the_missing_keys_at_one_version()
     {
         using var client = server.Factory.CreateClient();
         var answer = await client.GetFromJsonAsync<JsonElement>("/api/trades/by-id?ids=T10000007,T10000002,T99999999,T10000002", Token);
@@ -41,8 +41,8 @@ public sealed class TradesByIdTests(DemoApiServer server) : IClassFixture<DemoAp
             body.GetProperty("missing").EnumerateArray().Select(id => id.GetString()));
     }
 
-    [Fact] // ADR-0067: a trade a tick cancelled is missing, and the one it booked is found
-    public async Task ADR0067_a_cancelled_trade_is_missing_and_a_booked_one_found()
+    [Fact] // ADR-0068: a trade a tick cancelled is missing, and the one it booked is found
+    public async Task ADR0068_a_cancelled_trade_is_missing_and_a_booked_one_found()
     {
         using var client = server.Factory.CreateClient();
         try
@@ -68,10 +68,10 @@ public sealed class TradesByIdTests(DemoApiServer server) : IClassFixture<DemoAp
         }
     }
 
-    [Theory] // ADR-0068 and principle 1: a question naming no trade, or more than one answer holds, is refused by name, not cut short
+    [Theory] // ADR-0069 and principle 1: a question naming no trade, or more than one answer holds, is refused by name, not cut short
     [InlineData("/api/trades/by-id", "ids names the trades to read")]
     [InlineData("/api/trades/by-id?ids=,", "ids names the trades to read")]
-    public async Task ADR0068_by_id_without_ids_is_refused_by_name(string url, string detail)
+    public async Task ADR0069_by_id_without_ids_is_refused_by_name(string url, string detail)
     {
         using var client = server.Factory.CreateClient();
         using var response = await client.GetAsync(url, Token);
@@ -79,8 +79,8 @@ public sealed class TradesByIdTests(DemoApiServer server) : IClassFixture<DemoAp
         Assert.StartsWith(detail, (await response.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("detail").GetString());
     }
 
-    [Fact] // ADR-0068 and principle 1: more keys than one answer holds are refused, never answered in part
-    public async Task ADR0068_more_ids_than_an_answer_holds_are_refused()
+    [Fact] // ADR-0069 and principle 1: more keys than one answer holds are refused, never answered in part
+    public async Task ADR0069_more_ids_than_an_answer_holds_are_refused()
     {
         using var client = server.Factory.CreateClient();
         var ids = Enumerable.Range(0, TradeEndpoints.MaxIds + 1).Select(n => TradeGenerator.TradeId(n)).ToArray();
@@ -91,13 +91,13 @@ public sealed class TradesByIdTests(DemoApiServer server) : IClassFixture<DemoAp
     }
 }
 
-/// <summary><c>POST /api/reset</c>: the data as a start serves it, under a new version (ADR-0068).</summary>
+/// <summary><c>POST /api/reset</c>: the data as a start serves it, under a new version (ADR-0069).</summary>
 public sealed class ResetTests(DemoApiServer server) : IClassFixture<DemoApiServer>
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    [Fact] // ADR-0068: a reset puts back exactly what the live updates moved, booked and cancelled, in one change that moves the version on
-    public async Task ADR0068_a_reset_puts_back_the_generated_trades_and_names_what_it_changed()
+    [Fact] // ADR-0069: a reset puts back exactly what the live updates moved, booked and cancelled, in one change that moves the version on
+    public async Task ADR0069_a_reset_puts_back_the_generated_trades_and_names_what_it_changed()
     {
         using var directory = new TempDirectory();
         await using var store = await TestData.ReadyStore(directory.Path, 1_000);
@@ -147,8 +147,8 @@ public sealed class ResetTests(DemoApiServer server) : IClassFixture<DemoApiServ
         Assert.Equal(TestData.Counter(again.Version) + 1, TestData.Counter(next.Version));
     }
 
-    [Fact] // ADR-0068: POST /api/reset turns live updates off, puts the trades back, and the hub says the change as a page hears it
-    public async Task ADR0068_POST_reset_turns_live_updates_off_and_the_hub_says_the_change()
+    [Fact] // ADR-0069: POST /api/reset turns live updates off, puts the trades back, and the hub says the change as a page hears it
+    public async Task ADR0069_POST_reset_turns_live_updates_off_and_the_hub_says_the_change()
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Token);
         timeout.CancelAfter(TimeSpan.FromSeconds(30));

@@ -45,7 +45,7 @@ internal sealed record TradePage(string Version, long Total, long Start, IReadOn
 internal sealed record TradesById(string Version, IReadOnlyList<Trade> Trades, IReadOnlyList<string> Missing);
 
 /// <summary>
-/// One read of the trades at one Source Version (ADR-0065). Every command it makes runs in one
+/// One read of the trades at one Source Version (ADR-0066). Every command it makes runs in one
 /// read transaction, so each of them sees the trades as they were when the read began, whatever
 /// the live updates commit meanwhile, and <see cref="Version"/> is that state's.
 /// <para>
@@ -74,7 +74,7 @@ internal sealed class TradeRead(SqliteConnection connection, SqliteTransaction t
 }
 
 /// <summary>
-/// The trades the server owns (ADR-0068), and the one place that reads or changes them.
+/// The trades the server owns (ADR-0069), and the one place that reads or changes them.
 /// <list type="bullet">
 /// <item>At first start for a count, it generates the trades into a file named by that count
 /// (<see cref="TradeDatabase"/>), and reuses the file at every later start.</item>
@@ -90,7 +90,7 @@ internal sealed class TradeRead(SqliteConnection connection, SqliteTransaction t
 /// The Source Version is this run's name and the change counter, <c>3f2a9c1e-17</c>. The counter
 /// alone would name two different states after a restart, since every run starts again from the
 /// generated trades at 0; with the run's name, an answer computed before a restart is refused
-/// after it rather than taken for current (ADR-0065).
+/// after it rather than taken for current (ADR-0066).
 /// </para>
 /// </summary>
 internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeStore> logger) : IAsyncDisposable
@@ -104,7 +104,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
 
     /// <summary>How many of the first trades take every other change of a tick: the busy ones a
     /// blotter opens on. Spread over a million trades, a tick's changes would almost never reach
-    /// the rows on screen, and /grid-live would look still (ADR-0068).</summary>
+    /// the rows on screen, and /grid-live would look still (ADR-0069).</summary>
     public const int HotTrades = 500;
 
     // The live updates' numbers: tick n's come from this seed and n, so the same ticks from the
@@ -240,7 +240,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
 
     /// <summary>
     /// The named trades as they are now, read at one Source Version: what a grid reads again for
-    /// the trades the hub named (ADR-0067). A Record Key no trade has is a trade removed. Keys are
+    /// the trades the hub named (ADR-0068). A Record Key no trade has is a trade removed. Keys are
     /// matched exactly, as a Record Key is; one named twice is read once.
     /// </summary>
     public Task<TradesById> ReadByIdAsync(IReadOnlyCollection<string> tradeIds, CancellationToken cancellationToken) =>
@@ -347,7 +347,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
 
     /// <summary>
     /// One tick of the live updates, in one transaction with the change counter, so no read ever
-    /// sees half of it (ADR-0066):
+    /// sees half of it (ADR-0067):
     /// <list type="bullet">
     /// <item><paramref name="tradesPerTick"/> trades have their P&amp;L moved, and one in four its
     /// notional amended too;</item>

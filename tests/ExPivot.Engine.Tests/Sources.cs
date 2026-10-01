@@ -11,7 +11,7 @@ internal sealed record Deal(string? Desk, string? Book, DateTime? Date, object? 
 internal enum Rating { Low, High }
 
 /// <summary>The data, the questions and the comparisons the Pivot Source tests share
-/// (ADR-0065).</summary>
+/// (ADR-0066).</summary>
 internal static class Sources
 {
     //  Desk     Book    Date              Amount                  Risk      Live   Tag
@@ -73,7 +73,7 @@ internal static class Sources
     ];
 
     /// <summary>A Fetch source whose transport is JSON both ways, into <paramref name="server"/>
-    /// (ADR-0065): every question and every answer crosses as a document.</summary>
+    /// (ADR-0066): every question and every answer crosses as a document.</summary>
     public static FetchingPivotSource OverJson(PivotSource server, IReadOnlyList<PivotField>? fields = null)
         => PivotSource.Fetch(
             fields ?? server.Fields,

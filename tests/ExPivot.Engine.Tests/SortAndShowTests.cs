@@ -4,13 +4,13 @@ using static ExPivot.Engine.Tests.Pivot;
 
 namespace ExPivot.Engine.Tests;
 
-/// <summary>Ordering by a Value Field, Show Values As, and the Value Fields' captions (ADR-0059).</summary>
+/// <summary>Ordering by a Value Field, Show Values As, and the Value Fields' captions (ADR-0060).</summary>
 public class SortAndShowTests
 {
     private static string[] RowLabels(PivotReport report)
         => report.Rows.Where(r => r.Role != PivotRowRole.GrandTotal).Select(r => r.Labels[0].Text!).ToArray();
 
-    [Fact] // ADR-0059: by a Value Field, descending — largest first
+    [Fact] // ADR-0060: by a Value Field, descending — largest first
     public void Sort_by_value_descending()
     {
         var layout = new PivotLayout
@@ -22,7 +22,7 @@ public class SortAndShowTests
         Assert.Equal(["East", "West", "North", "(blank)"], RowLabels(Report(layout)));
     }
 
-    [Fact] // ADR-0059: by a Value Field, ascending — smallest first; the (blank) Item is an Item like any other
+    [Fact] // ADR-0060: by a Value Field, ascending — smallest first; the (blank) Item is an Item like any other
     public void Sort_by_value_ascending()
     {
         var layout = new PivotLayout
@@ -34,7 +34,7 @@ public class SortAndShowTests
         Assert.Equal(["(blank)", "North", "West", "East"], RowLabels(Report(layout)));
     }
 
-    [Fact] // ADR-0059: an Item with no value sorts last, and ties fall back to the label
+    [Fact] // ADR-0060: an Item with no value sorts last, and ties fall back to the label
     public void Blank_values_last_and_ties_by_label()
     {
         var layout = new PivotLayout
@@ -60,7 +60,7 @@ public class SortAndShowTests
         Assert.Equal(["North", "West", "East", "(blank)"], RowLabels(Report(countOfRegion)));
     }
 
-    [Fact] // ADR-0059: a column field ordered by a Value Field at its column totals
+    [Fact] // ADR-0060: a column field ordered by a Value Field at its column totals
     public void Column_field_sorted_by_value()
     {
         var layout = new PivotLayout
@@ -72,7 +72,7 @@ public class SortAndShowTests
         Assert.Equal(["Apples", "Pears", "Plums", "Grand Total"], Headers(Report(layout)));
     }
 
-    [Fact] // ADR-0059: % of Grand Total, formatted 0.00% by default
+    [Fact] // ADR-0060: % of Grand Total, formatted 0.00% by default
     public void Percent_of_grand_total()
     {
         var layout = new PivotLayout
@@ -91,7 +91,7 @@ public class SortAndShowTests
         ], Lines(Report(layout)));
     }
 
-    [Fact] // ADR-0059: % of Column Total and % of Row Total
+    [Fact] // ADR-0060: % of Column Total and % of Row Total
     public void Percent_of_column_and_row_total()
     {
         var byColumn = new PivotLayout
@@ -106,7 +106,7 @@ public class SortAndShowTests
         Assert.Equal("i East || 28% | 72% | 100%", Lines(Report(byRow))[0]);
     }
 
-    [Fact] // ADR-0059: a zero divisor is #DIV/0!; an empty cell stays empty
+    [Fact] // ADR-0060: a zero divisor is #DIV/0!; an empty cell stays empty
     public void A_zero_total_is_div0()
     {
         var zeros = Sales.Select(s => s with { Amount = 0 }).ToArray();
@@ -120,7 +120,7 @@ public class SortAndShowTests
         Assert.Equal("i North || #DIV/0! |  | #DIV/0!", Lines(Report(layout, zeros))[1]);
     }
 
-    [Fact] // ADR-0059: Excel's default captions, and a number where one would repeat
+    [Fact] // ADR-0060: Excel's default captions, and a number where one would repeat
     public void Default_captions()
     {
         var report = Report(new PivotLayout
@@ -131,7 +131,7 @@ public class SortAndShowTests
         Assert.Equal(["Sum of Amount", "Sum of Amount2", "Count Numbers of Amount", "Count of Region"], report.ValueCaptions);
     }
 
-    [Fact] // ADR-0059: a caption of its own; one a default would repeat pushes the default to a number
+    [Fact] // ADR-0060: a caption of its own; one a default would repeat pushes the default to a number
     public void A_caption_of_its_own()
     {
         var report = Report(new PivotLayout
@@ -142,7 +142,7 @@ public class SortAndShowTests
         Assert.Equal(["Sum of Amount2", "Sum of Amount"], report.ValueCaptions);
     }
 
-    [Theory] // ADR-0059: a caption of its own that another Value Field or a Pivot Field has is refused
+    [Theory] // ADR-0060: a caption of its own that another Value Field or a Pivot Field has is refused
     [InlineData("Region")]
     [InlineData("amount")]
     public void A_taken_caption_is_refused(string caption)
@@ -154,7 +154,7 @@ public class SortAndShowTests
         }));
     }
 
-    [Fact] // ADR-0059: the words are the Consumer's to replace
+    [Fact] // ADR-0060: the words are the Consumer's to replace
     public void Words_are_replaceable()
     {
         var options = EnUs with

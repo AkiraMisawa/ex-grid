@@ -1,4 +1,4 @@
-@* The built-in tabs at the report's foot (ADR-0058), where Excel's sheet tabs are: the report's
+@* The built-in tabs at the report's foot (ADR-0059), where Excel's sheet tabs are: the report's
    own, then one per Show Details, titled by its cell, each with a close button. A tab's button
    takes DOM focus when ExPivot asks: when Show Details has just opened it, and when the tab
    holding the keyboard closed. *@
@@ -11,7 +11,7 @@
 </div>
 
 @code {
-    /// <summary>The tabs and whom to call back (ADR-0058).</summary>
+    /// <summary>The tabs and whom to call back (ADR-0059).</summary>
     [Parameter, EditorRequired] public PivotDetailsTabsContext Context { get; set; } = default!;
 
     private RenderFragment Tab(PivotDetailsTab tab) => @<div @key="tab.Id" class="@(tab.IsSelected ? "ex-pivot-tab ex-pivot-tab-selected" : "ex-pivot-tab")">

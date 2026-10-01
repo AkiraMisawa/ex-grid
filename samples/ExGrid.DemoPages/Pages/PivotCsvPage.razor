@@ -14,7 +14,7 @@
 @using global::ExPivot.MudBlazor
 
 @* ?chrome=mud stands the pivot on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's Chrome,
-   as /pivot does (ADR-0061). The page's own controls are plain HTML under either. *@
+   as /pivot does (ADR-0062). The page's own controls are plain HTML under either. *@
 <DemoChromeAssets Name="@ChromeName" Paper="true">
     <Head>
         <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
@@ -33,7 +33,7 @@
     <strong>The use case:</strong> a file the user brings, pivoted in the page. A CSV is read
     straight into a Snapshot's columns under a Schema, which says what each column is and how to
     read it; nothing is guessed, because a guess reads the account number <code>004417</code> as
-    the number 4,417 (ADR-0063). A file the application knows is read under the Schema it declares.
+    the number 4,417 (ADR-0064). A file the application knows is read under the Schema it declares.
     A file nobody has described gets a Schema suggested from its first rows, with every column
     whose reading is not clear marked, and is read under it only once the user confirms it.
 </p>

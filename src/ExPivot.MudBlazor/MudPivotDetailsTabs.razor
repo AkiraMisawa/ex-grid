@@ -1,4 +1,4 @@
-@* Show Details' tabs under MudBlazor (ADR-0058/0061): MudTabs placed at the bottom, at the report's
+@* Show Details' tabs under MudBlazor (ADR-0059/0062): MudTabs placed at the bottom, at the report's
    foot as Q26 put them — the "PivotTable" tab first, then one per Show Details, titled by its cell,
    each closable with a close MudIconButton named in ExPivot's words. The records of the selected
    tab are ExPivot's, placed over the report; MudTabs' own panels stay empty, and hidden.
@@ -35,7 +35,7 @@
     private string? _rendered;
     private int _acted;
 
-    /// <summary>The tabs and whom to call back (ADR-0058).</summary>
+    /// <summary>The tabs and whom to call back (ADR-0059).</summary>
     [Parameter, EditorRequired] public PivotDetailsTabsContext Context { get; set; } = default!;
 
     /// <summary>The Chrome these tabs belong to.</summary>

@@ -10,7 +10,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// The new surfaces through a substituted Chrome (ADR-0060, PV-9): the toolbar, the Layout menu,
+/// The new surfaces through a substituted Chrome (ADR-0061, PV-9): the toolbar, the Layout menu,
 /// Defer Layout Update, and Show Details' tabs and dialog are handed to the Chrome as contexts, and
 /// its calls back make the layouts the built-in markup makes — swapping the Chrome changes no
 /// behaviour.
@@ -24,7 +24,7 @@ public class SubstitutedChromeTests : PivotTestContext
         Values = [Sum("Amount")],
     };
 
-    [Fact] // ADR-0060 (PV-9/PV-30): the toolbar is the Chrome's to draw — handed the band drawn, Layout ▾, no Refresh, and the toggle
+    [Fact] // ADR-0061 (PV-9/PV-30): the toolbar is the Chrome's to draw — handed the band drawn, Layout ▾, no Refresh, and the toggle
     public void The_toolbar_is_handed_to_the_chrome()
     {
         var chrome = new StubChrome();
@@ -44,7 +44,7 @@ public class SubstitutedChromeTests : PivotTestContext
         Assert.Null(toolbar.Refusal);
     }
 
-    [Fact] // ADR-0060 (PV-9/PV-30): the Layout menu reaches the Chrome's menu surface, grouped and marked, and a choice makes the built-in's layout
+    [Fact] // ADR-0061 (PV-9/PV-30): the Layout menu reaches the Chrome's menu surface, grouped and marked, and a choice makes the built-in's layout
     public async Task The_layout_menu_through_the_chrome()
     {
         var chrome = new StubChrome();
@@ -70,7 +70,7 @@ public class SubstitutedChromeTests : PivotTestContext
         Assert.NotEqual(0, chrome.Toolbar.LayoutMenu.FocusRequest);
     }
 
-    [Fact] // ADR-0060 (PV-9/PV-28): Defer Layout Update through the Chrome's pane makes the built-in's layout
+    [Fact] // ADR-0061 (PV-9/PV-28): Defer Layout Update through the Chrome's pane makes the built-in's layout
     public async Task Defer_through_the_chrome()
     {
         var told = new List<PivotLayout>();
@@ -94,7 +94,7 @@ public class SubstitutedChromeTests : PivotTestContext
         Assert.False(chrome.FieldList!.CanUpdate);
     }
 
-    [Fact] // ADR-0058 (PV-9/PV-14): the details tabs are the Chrome's to draw — the report's tab first, a closable tab per Show Details
+    [Fact] // ADR-0059 (PV-9/PV-14): the details tabs are the Chrome's to draw — the report's tab first, a closable tab per Show Details
     public async Task The_details_tabs_through_the_chrome()
     {
         var chrome = new StubChrome();
@@ -119,7 +119,7 @@ public class SubstitutedChromeTests : PivotTestContext
         Assert.Empty(cut.FindAll(".stub-tabs"));
     }
 
-    [Fact] // ADR-0058 (PV-9/PV-14): the dialog's content is the Chrome's, inside ExPivot's frame, handed the title, the records and Close
+    [Fact] // ADR-0059 (PV-9/PV-14): the dialog's content is the Chrome's, inside ExPivot's frame, handed the title, the records and Close
     public async Task The_details_dialog_through_the_chrome()
     {
         var chrome = new StubChrome();

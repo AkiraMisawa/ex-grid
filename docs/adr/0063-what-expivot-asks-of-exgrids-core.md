@@ -1,12 +1,12 @@
 # What ExPivot asks of ExGrid's core — a double click where no edit opens
 
-*(Proposed 2026-09-30 with [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md).
+*(Proposed 2026-09-30 with [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md).
 It is shaped as [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md) shaped ExSheet's requests of
 the core: opt-in, and right for any Consumer.*
 
 *Decided with the user the same day, as proposed (Q9). The grilling added one more request of the
 core, the Change Highlight
-([ADR-0067](./0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)), so
+([ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)), so
 this is no longer the only core change ExPivot's first version makes.)*
 
 In Excel a double click on a PivotTable does the two things its users reach for most: on a value
@@ -14,7 +14,7 @@ it shows the records behind it (Show Details), and on an outer row label it expa
 the Item. In ExGrid a double click means one thing, **F2's other door**: it opens the Cell Editor in
 Caret on an Editable cell ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)). On any
 other cell it does nothing, and nothing tells the Consumer it happened. A report's cells are never
-Editable (ADR-0058), so on a pivot the double click is free, and the Consumer is the only one who
+Editable (ADR-0059), so on a pivot the double click is free, and the Consumer is the only one who
 knows what it means.
 
 ## The notification
@@ -42,13 +42,13 @@ knows what it means.
 
 ## Consequences
 
-- **A criterion in §26, DC-52**, gates ExGrid like every other declaration there (Definition of
+- **A criterion in §26, DC-59**, gates ExGrid like every other declaration there (Definition of
   Done §2).
 - **ExPivot listens**: Show Details on a value cell, and expand or collapse on the label of an
   outer Item.
 - **A plain ExGrid Consumer may listen too**, for its own detail view of a row.
 
 *(Added 2026-10-01.)* **Building Show Details' dialog asked for two more**, decided with the user in
-[ADR-0069](./0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md): a Consumer
+[ADR-0070](./0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md): a Consumer
 gives a grid the keyboard back (`ReturnKeyboardAsync()`), and hears an Escape that leaves it
-(`OnLeave`). They are §26's DC-57 and DC-58, and gate ExGrid as DC-52 does.
+(`OnLeave`). They are §26's DC-57 and DC-58, and gate ExGrid as DC-59 does.

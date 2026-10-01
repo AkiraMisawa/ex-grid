@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace ExPivot.Components;
 
-// Show Details (ADR-0058/0062): the records behind a value cell go to the Consumer when it listens
+// Show Details (ADR-0059/0063): the records behind a value cell go to the Consumer when it listens
 // to OnShowDetails, and otherwise to a tab at the report's foot or a dialog — each an ExGrid of the
 // source's fields, paged under the report's Source Version.
 public partial class ExPivot
@@ -22,14 +22,14 @@ public partial class ExPivot
     // asked.
     private (PivotDetailsSheet? Sheet, int Request) _tabFocus;
 
-    // The request for the report's grid to take the keyboard back (ADR-0069), made when the dialog
+    // The request for the report's grid to take the keyboard back (ADR-0070), made when the dialog
     // closes, however it closes, and when a details tab closes with the report's tab selected after
     // it; zero while none was made. Acted on after the render that carries it (PivotKeyboardReturn).
     private int _keyboardBack;
     private Func<Task>? _returnKeyboard;
 
     /// <summary>
-    /// The records behind a value cell (ADR-0058/0062): an empty cell has none. They are asked of the
+    /// The records behind a value cell (ADR-0059/0063): an empty cell has none. They are asked of the
     /// source the report came from, under its Source Version, so they add up to the cell. The
     /// Consumer takes them when it listens; otherwise they open in a tab at the report's foot, or in
     /// a dialog when the Consumer asked for one.
@@ -91,7 +91,7 @@ public partial class ExPivot
         if (ReferenceEquals(_selectedSheet, sheet))
             _selectedSheet = _sheets.Count == 0 ? null : _sheets[Math.Min(at, _sheets.Count - 1)];
         // The close button that held the keyboard is gone: the selected tab takes it. The report's
-        // tab is its grid, which takes the keyboard back (ADR-0069) — there may be no tab left to
+        // tab is its grid, which takes the keyboard back (ADR-0070) — there may be no tab left to
         // hold it, the last one having closed.
         if (_selectedSheet is null)
         {
@@ -113,12 +113,12 @@ public partial class ExPivot
         dialog.Dispose();
         // However it closed — its grid's Escape, an Escape on its frame, Close, the backdrop — the
         // control that held the keyboard went with it, and the report's grid takes it back
-        // (ADR-0069).
+        // (ADR-0070).
         _keyboardBack = ++_focusSequence;
         StateHasChanged();
     }
 
-    /// <summary>Asks the report's grid for the keyboard back (ADR-0069), when there is a grid: an
+    /// <summary>Asks the report's grid for the keyboard back (ADR-0070), when there is a grid: an
     /// empty report has none, and a grid that has gone does nothing.</summary>
     private Task ReturnKeyboardToReportAsync() => _grid?.ReturnKeyboardAsync() ?? Task.CompletedTask;
 
@@ -162,7 +162,7 @@ public partial class ExPivot
 
     /// <summary>A details sheet's records: an ExGrid of the source's fields, paged from the source,
     /// or the sentence that says why they cannot be shown. <paramref name="leave"/> is the dialog's
-    /// way out, raised by an Escape its grid has nothing left to dismiss (ADR-0069); a tab's grid has
+    /// way out, raised by an Escape its grid has nothing left to dismiss (ADR-0070); a tab's grid has
     /// none.</summary>
     private RenderFragment Records(PivotDetailsSheet sheet, EventCallback leave = default) => builder =>
     {
@@ -184,7 +184,7 @@ public partial class ExPivot
     private RenderFragment DialogContent(PivotDetailsSheet sheet) => builder =>
     {
         // The dialog's grid hears the Escape it has nothing left to dismiss, and the dialog closes
-        // on it: the grid's capture-phase listener keeps every Escape from the frame (ADR-0069).
+        // on it: the grid's capture-phase listener keeps every Escape from the frame (ADR-0070).
         var context = new PivotDetailsDialogContext(sheet.Details.Title, Records(sheet, _closeDialog), CloseDialog, _dialogFocus, Word);
         if (PivotChrome?.DetailsDialog(context) is { } custom)
         {

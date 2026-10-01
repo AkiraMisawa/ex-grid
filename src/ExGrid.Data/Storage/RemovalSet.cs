@@ -1,7 +1,7 @@
 namespace ExGrid.Data.Storage;
 
 /// <summary>
-/// The rows of one segment that a version does not hold (ADR-0063): they were removed, or replaced
+/// The rows of one segment that a version does not hold (ADR-0064): they were removed, or replaced
 /// by a changed record's new version. It belongs to the version, never to the shared segment, and a
 /// batch copies only the sets of the segments it touches.
 /// <para>

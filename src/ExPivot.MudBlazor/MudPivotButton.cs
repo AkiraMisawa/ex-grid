@@ -4,11 +4,11 @@ using Microsoft.JSInterop;
 namespace ExPivot.MudBlazor;
 
 /// <summary>
-/// A <c>MudButton</c> that takes DOM focus when ExPivot asks (ADR-0060): once for each request
+/// A <c>MudButton</c> that takes DOM focus when ExPivot asks (ADR-0061): once for each request
 /// number it has not acted on, as the built-in views' buttons do. The Field List hands the
 /// keyboard back to an entry this way when its menu or panel closes, and a menu's first enabled
 /// command takes it when the menu opens — through Blazor's own <c>FocusAsync</c> on the button's
-/// element, so this package brings no JavaScript of its own (ADR-0021/0061).
+/// element, so this package brings no JavaScript of its own (ADR-0021/0062).
 /// </summary>
 public sealed class MudPivotButton : global::MudBlazor.MudButton
 {

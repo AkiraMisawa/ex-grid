@@ -11,8 +11,8 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// Show Details — to a tab at the report's foot, a dialog, or the Consumer (ADR-0058/0062) — and the
-/// Source Version a field's Items and a cell's records are asked under (ADR-0065).
+/// Show Details — to a tab at the report's foot, a dialog, or the Consumer (ADR-0059/0063) — and the
+/// Source Version a field's Items and a cell's records are asked under (ADR-0066).
 /// </summary>
 public class DetailsAndVersionTests : PivotTestContext
 {
@@ -32,7 +32,7 @@ public class DetailsAndVersionTests : PivotTestContext
 
     // ---- PV-14: a tab at the report's foot, by default ------------------------------------------
 
-    [Fact] // ADR-0058 (PV-14): Show Details opens a tab at the report's foot, titled by the cell, holding an ExGrid of the source's fields
+    [Fact] // ADR-0059 (PV-14): Show Details opens a tab at the report's foot, titled by the cell, holding an ExGrid of the source's fields
     public async Task Show_details_opens_a_tab_at_the_reports_foot()
     {
         var told = new List<PivotLayout>();
@@ -60,7 +60,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Empty(told);
     }
 
-    [Fact] // ADR-0058/0025 (PV-14): the tab's records are fetched in pages from the source, under the report's Source Version
+    [Fact] // ADR-0059/0025 (PV-14): the tab's records are fetched in pages from the source, under the report's Source Version
     public async Task The_tabs_records_are_paged_under_the_reports_version()
     {
         var source = new OnDemandSource(Bundled()) { AnswersAtOnce = true };
@@ -77,7 +77,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Equal([new PivotFieldItem("Product", PivotItemKey.Text("Apples"))], query.ColumnItems);
     }
 
-    [Fact] // ADR-0058 (PV-14): a tab is closable, and the report's tab brings the report back; several tabs stand side by side
+    [Fact] // ADR-0059 (PV-14): a tab is closable, and the report's tab brings the report back; several tabs stand side by side
     public async Task Tabs_are_closable()
     {
         var cut = RenderPivot(ByRegionAndProduct);
@@ -103,7 +103,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Single(cut.FindComponents<ExGrid<PivotReportRow>>());
     }
 
-    [Fact] // ADR-0058 (PV-14): while a details tab is selected its records cover the report, which stays with its state and is marked covered — left unpainted, so its own header cannot stand over the records' — until the report's tab brings it back
+    [Fact] // ADR-0059 (PV-14): while a details tab is selected its records cover the report, which stays with its state and is marked covered — left unpainted, so its own header cannot stand over the records' — until the report's tab brings it back
     public async Task The_records_cover_the_report()
     {
         var cut = RenderPivot(ByRegionAndProduct);
@@ -122,7 +122,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Same(grid, Grid(cut).Instance);
     }
 
-    [Fact] // ADR-0058 (PV-14): a tab Show Details opens takes the keyboard, which the report it covers keeps no longer; closing a tab gives it to the tab selected next
+    [Fact] // ADR-0059 (PV-14): a tab Show Details opens takes the keyboard, which the report it covers keeps no longer; closing a tab gives it to the tab selected next
     public async Task The_keyboard_follows_the_tabs()
     {
         var cut = RenderPivot(ByRegionAndProduct);
@@ -153,7 +153,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-tabs"));
     }
 
-    [Fact] // ADR-0058 (PV-14): the grand total's records, every one, under the title of the grand total
+    [Fact] // ADR-0059 (PV-14): the grand total's records, every one, under the title of the grand total
     public async Task The_grand_totals_details()
     {
         var cut = RenderPivot(ByRegionAndProduct);
@@ -164,7 +164,7 @@ public class DetailsAndVersionTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal(7, DetailRows(cut, ".ex-pivot-details-panel").Length));
     }
 
-    [Fact] // ADR-0062 (PV-14): an empty cell shows nothing — no tab opens
+    [Fact] // ADR-0063 (PV-14): an empty cell shows nothing — no tab opens
     public async Task An_empty_cell_opens_no_tab()
     {
         var cut = RenderPivot(ByRegionAndProduct);
@@ -174,7 +174,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-tabs"));
     }
 
-    [Fact] // ADR-0058/0065 (PV-14, PV-23): a tab whose Source Version the source can no longer answer under says the data has changed
+    [Fact] // ADR-0059/0066 (PV-14, PV-23): a tab whose Source Version the source can no longer answer under says the data has changed
     public async Task A_tab_whose_version_is_refused_says_the_data_has_changed()
     {
         var source = new OnDemandSource(Bundled()) { AnswersAtOnce = true, RefusesVersions = true };
@@ -187,7 +187,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-details-panel .ex-grid"));
     }
 
-    [Fact] // ADR-0058/0065 (PV-14): the bundled source's tab keeps its version across a refresh, and so still adds up
+    [Fact] // ADR-0059/0066 (PV-14): the bundled source's tab keeps its version across a refresh, and so still adds up
     public async Task A_bundled_tab_survives_a_refresh()
     {
         var cut = RenderPivot(ByRegionAndProduct);
@@ -202,7 +202,7 @@ public class DetailsAndVersionTests : PivotTestContext
 
     // ---- PV-14: a dialog, when the Consumer asks for one -------------------------------------------
 
-    [Fact] // ADR-0058 (PV-14): with DetailsView Dialog, Show Details opens ExPivot's dialog, named by the cell, with the same grid inside, and takes the keyboard
+    [Fact] // ADR-0059 (PV-14): with DetailsView Dialog, Show Details opens ExPivot's dialog, named by the cell, with the same grid inside, and takes the keyboard
     public async Task Show_details_opens_a_dialog_when_asked()
     {
         var cut = RenderPivot(ByRegionAndProduct, ps => ps.Add(p => p.DetailsView, PivotDetailsView.Dialog));
@@ -221,7 +221,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.True(JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus") > focusCalls);
     }
 
-    [Fact] // ADR-0058 (PV-14): the dialog is modal — what it covers, the report and the Field List, takes neither the keyboard nor the pointer while it stands
+    [Fact] // ADR-0059 (PV-14): the dialog is modal — what it covers, the report and the Field List, takes neither the keyboard nor the pointer while it stands
     public async Task What_the_dialog_covers_is_inert()
     {
         var cut = RenderPivot(ByRegionAndProduct, ps => ps.Add(p => p.DetailsView, PivotDetailsView.Dialog));
@@ -239,7 +239,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.False(cut.Find(".ex-pivot-field-list").HasAttribute("inert"));
     }
 
-    [Theory] // ADR-0058 (PV-14): Escape, Close and the backdrop close the dialog
+    [Theory] // ADR-0059 (PV-14): Escape, Close and the backdrop close the dialog
     [InlineData("escape")]
     [InlineData("close")]
     [InlineData("backdrop")]
@@ -267,7 +267,7 @@ public class DetailsAndVersionTests : PivotTestContext
 
     // ---- PV-14: the Consumer -----------------------------------------------------------------
 
-    [Fact] // ADR-0058 (PV-14): when the Consumer listens to OnShowDetails it takes the records, and neither the tab nor the dialog opens
+    [Fact] // ADR-0059 (PV-14): when the Consumer listens to OnShowDetails it takes the records, and neither the tab nor the dialog opens
     public async Task A_consumer_that_listens_takes_the_records()
     {
         PivotDetails? taken = null;
@@ -290,7 +290,7 @@ public class DetailsAndVersionTests : PivotTestContext
 
     // ---- PV-23: the Source Version, the component's side -----------------------------------------
 
-    [Fact] // ADR-0065 (PV-23): Filter… lists the Items the source gives under the report's Source Version
+    [Fact] // ADR-0066 (PV-23): Filter… lists the Items the source gives under the report's Source Version
     public async Task Filter_lists_items_under_the_reports_version()
     {
         var source = new OnDemandSource(Bundled()) { AnswersAtOnce = true };
@@ -306,7 +306,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Equal(["(Select All)", "East", "North", "West", "(blank)"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim()));
     }
 
-    [Fact] // ADR-0065 (PV-23): a source that can no longer answer under the report's version refuses, and Filter… says the data has changed instead of listing
+    [Fact] // ADR-0066 (PV-23): a source that can no longer answer under the report's version refuses, and Filter… says the data has changed instead of listing
     public async Task Filter_says_the_data_has_changed_when_the_version_is_refused()
     {
         var source = new OnDemandSource(Bundled()) { AnswersAtOnce = true, RefusesVersions = true };
@@ -320,7 +320,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.True(cut.Find(".ex-pivot-ok").HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0065 (PV-23): while the Items are on their way Filter… says so, and lists them when they land
+    [Fact] // ADR-0066 (PV-23): while the Items are on their way Filter… says so, and lists them when they land
     public async Task Filter_waits_for_its_items()
     {
         var source = new OnDemandSource(Bundled()) { AnswersAtOnce = true, HoldsItems = true };
@@ -336,7 +336,7 @@ public class DetailsAndVersionTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "East", "West"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
     }
 
-    [Fact] // ADR-0065 refined (PV-23): the search narrows the painted labels among the Items held, and asks the source nothing while every Item is held
+    [Fact] // ADR-0066 refined (PV-23): the search narrows the painted labels among the Items held, and asks the source nothing while every Item is held
     public async Task The_search_narrows_the_items_held()
     {
         var source = new OnDemandSource(Bundled()) { AnswersAtOnce = true };
@@ -350,7 +350,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Single(source.ItemQueries);
     }
 
-    [Fact] // ADR-0065 refined (PV-23): with more Items than Filter… lists, the typed search is asked of the source, under the report's version
+    [Fact] // ADR-0066 refined (PV-23): with more Items than Filter… lists, the typed search is asked of the source, under the report's version
     public async Task The_search_asks_the_source_beyond_the_list()
     {
         var many = Enumerable.Range(0, PivotComponent.ItemListCap + 1)
@@ -370,7 +370,7 @@ public class DetailsAndVersionTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "R10000"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
     }
 
-    [Fact] // ADR-0065 (PV-23): an open Filter… lists again under the new report's Source Version when a refresh brings one, and stays open
+    [Fact] // ADR-0066 (PV-23): an open Filter… lists again under the new report's Source Version when a refresh brings one, and stays open
     public async Task An_open_filter_lists_the_new_versions_items()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -387,7 +387,7 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Single(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0065 refined (PV-23): a search typed while Filter… waits for its Items is asked of the source once they land, when there are more Items than are listed
+    [Fact] // ADR-0066 refined (PV-23): a search typed while Filter… waits for its Items is asked of the source once they land, when there are more Items than are listed
     public async Task A_search_typed_before_the_items_land_is_asked_when_they_do()
     {
         var many = Enumerable.Range(0, PivotComponent.ItemListCap + 1)
@@ -412,7 +412,7 @@ public class DetailsAndVersionTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "R10000"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
     }
 
-    [Fact] // ADR-0065 (PV-23): the report filter band says the data has changed when the source refuses the version its summary needs
+    [Fact] // ADR-0066 (PV-23): the report filter band says the data has changed when the source refuses the version its summary needs
     public void The_band_says_the_data_has_changed()
     {
         var source = new OnDemandSource(Bundled()) { AnswersAtOnce = true, RefusesVersions = true };

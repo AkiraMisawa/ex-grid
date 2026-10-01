@@ -15,7 +15,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
-/// What the Pivot Source contract and the toolbar added, under MudBlazor (ADR-0060/0061/0065):
+/// What the Pivot Source contract and the toolbar added, under MudBlazor (ADR-0061/0062/0066):
 /// Defer Layout Update at the Mud pane's foot, the toolbar above the report drawn with MudBlazor's
 /// controls in ExPivot's order and roles — the Mud band, Layout ▾ opening the Mud menu in ExPivot's
 /// frame, Refresh, the pane's pressed toggle, a refusal as an error alert — making the layouts the
@@ -29,7 +29,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
     private static Task DeferAsync(IRenderedComponent<PivotComponent> cut, bool defer)
         => cut.Find(".mud-ex-pivot-defer input[type=checkbox]").ChangeAsync(new ChangeEventArgs { Value = defer });
 
-    [Fact] // ADR-0060/0061 (PV-28): Defer Layout Update under MudBlazor — the pane shows the pending layout, the report waits for Update
+    [Fact] // ADR-0061/0062 (PV-28): Defer Layout Update under MudBlazor — the pane shows the pending layout, the report waits for Update
     public async Task Defer_holds_the_report_until_update()
     {
         var cut = RenderPivot(RegionAmount);
@@ -51,7 +51,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.True(cut.FindComponents<MudCheckBox<bool>>().Single(c => c.Instance.Label == "Defer Layout Update").Instance.GetState(x => x.Value));
     }
 
-    [Fact] // ADR-0060/0061 (PV-28): the same deferred gestures make the same layout under either Chrome
+    [Fact] // ADR-0061/0062 (PV-28): the same deferred gestures make the same layout under either Chrome
     public async Task Defer_makes_the_built_ins_layout()
     {
         var mud = RenderPivot(RegionAmount);
@@ -82,7 +82,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         => cut.FindAll(".mud-ex-pivot-toolbar-end > .mud-ex-pivot-toolbar-anchor > button, .mud-ex-pivot-toolbar-end > button")
             .Select(b => b.TextContent.Trim()).ToArray();
 
-    [Fact] // ADR-0060/0061 (PV-30): the Layout menu is the Mud menu — the groups headed, each choice a radio, the current ones checked, a no-op disabled
+    [Fact] // ADR-0061/0062 (PV-30): the Layout menu is the Mud menu — the groups headed, each choice a radio, the current ones checked, a no-op disabled
     public async Task The_layout_menu_is_the_mud_menu()
     {
         var cut = RenderPivot(RegionAmount with { Rows = [P("Region"), P("Product")] });
@@ -103,7 +103,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal(["Show all Subtotals at Top of Group", "On for Rows and Columns", "Show in Compact Form"],
             items.Where(i => i.GetAttribute("aria-checked") == "true").Select(i => i.TextContent.Trim()));
         // The Compact form has no outer label columns to repeat into, so both label choices would
-        // change nothing (ADR-0060).
+        // change nothing (ADR-0061).
         Assert.Equal(
             ["Show all Subtotals at Top of Group", "On for Rows and Columns", "Show in Compact Form", "Repeat All Item Labels", "Do Not Repeat Item Labels"],
             items.Where(i => i.HasAttribute("disabled")).Select(i => i.TextContent.Trim()));
@@ -119,7 +119,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal("false", cut.Find(".mud-ex-pivot-layout-button").GetAttribute("aria-expanded"));
     }
 
-    [Fact] // ADR-0039/0060 (PV-11): the Layout menu's first enabled choice takes DOM focus under MudBlazor; Escape closes it, and the keyboard goes back to Layout ▾
+    [Fact] // ADR-0039/0061 (PV-11): the Layout menu's first enabled choice takes DOM focus under MudBlazor; Escape closes it, and the keyboard goes back to Layout ▾
     public async Task The_layout_menu_takes_the_keyboard()
     {
         var cut = RenderPivot(RegionAmount);
@@ -138,7 +138,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal((ElementIdOf(layout.Instance), false), LastFocus());
     }
 
-    [Fact] // ADR-0060/0061 (PV-30): the toolbar is MudBlazor's controls in ExPivot's order and roles — the Mud band on its left, then Layout ▾ and the pane's toggle, and no Refresh for a source that cannot be refreshed
+    [Fact] // ADR-0061/0062 (PV-30): the toolbar is MudBlazor's controls in ExPivot's order and roles — the Mud band on its left, then Layout ▾ and the pane's toggle, and no Refresh for a source that cannot be refreshed
     public void The_toolbar_is_drawn_with_mudblazor_controls()
     {
         var cut = RenderPivot(RegionAmount with { Filters = [P("Online")] });
@@ -159,7 +159,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".mud-ex-pivot-refresh-button"));
     }
 
-    [Fact] // ADR-0060/0061 (PV-30): the toggle shows whether the pane is shown — pressed, in the primary colour — and hides and shows the Mud pane
+    [Fact] // ADR-0061/0062 (PV-30): the toggle shows whether the pane is shown — pressed, in the primary colour — and hides and shows the Mud pane
     public async Task The_toggle_hides_and_shows_the_pane()
     {
         var cut = RenderPivot(RegionAmount);
@@ -179,7 +179,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal("true", cut.Find(".mud-ex-pivot-field-list-toggle").GetAttribute("aria-pressed"));
     }
 
-    [Fact] // ADR-0065/0061 (PV-30): Refresh is a MudButton between Layout ▾ and the toggle when the source can be refreshed; it refreshes the source and asks again
+    [Fact] // ADR-0066/0062 (PV-30): Refresh is a MudButton between Layout ▾ and the toggle when the source can be refreshed; it refreshes the source and asks again
     public async Task Refresh_is_a_mud_button_between_layout_and_the_toggle()
     {
         var source = new LimitedSource(PivotSource.From(Sales, Fields), new PivotSourceFeatures(Enum.GetValues<PivotAggregation>(), canRefresh: true));
@@ -195,7 +195,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal(asked + 1, source.Questions);
     }
 
-    [Fact] // ADR-0065/0061 (PV-29, PV-24): what the report could not do with the last change is an error MudAlert under the toolbar, an alert as the built-in notice is
+    [Fact] // ADR-0066/0062 (PV-29, PV-24): what the report could not do with the last change is an error MudAlert under the toolbar, an alert as the built-in notice is
     public void A_refusal_is_an_error_mud_alert()
     {
         var source = new LimitedSource(PivotSource.From(Sales, Fields), new PivotSourceFeatures([PivotAggregation.Sum, PivotAggregation.Count]));
@@ -211,7 +211,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal(0, source.Questions);
     }
 
-    [Fact] // ADR-0060/0061 (PV-9, PV-30, PV-12): the toolbar's gestures — a Layout choice, the band's Filter… and the toggle — make the built-in markup's layout under MudBlazor
+    [Fact] // ADR-0061/0062 (PV-9, PV-30, PV-12): the toolbar's gestures — a Layout choice, the band's Filter… and the toggle — make the built-in markup's layout under MudBlazor
     public async Task The_toolbar_makes_the_built_ins_layout()
     {
         var start = RegionAmount with { Filters = [P("Online")], Rows = [P("Region"), P("Product")] };
@@ -242,7 +242,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Empty(plain.FindAll(".ex-pivot-field-list"));
     }
 
-    [Fact] // ADR-0061/0065 (PV-24): an Aggregation the source does not answer is offered disabled in the Mud panel, with the reason, and never asked for
+    [Fact] // ADR-0062/0066 (PV-24): an Aggregation the source does not answer is offered disabled in the Mud panel, with the reason, and never asked for
     public async Task Value_field_settings_offer_unanswered_aggregations_disabled()
     {
         var source = new LimitedSource(PivotSource.From(Sales, Fields), new PivotSourceFeatures([PivotAggregation.Sum, PivotAggregation.Count]));

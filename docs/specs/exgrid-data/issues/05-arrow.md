@@ -9,7 +9,7 @@ Status: done
 - **Reading:** Arrow's IPC stream and file formats, read into a Snapshot.
   - Work from the buffers, never the per-value accessors, which were measured 10–40 times slower.
   - Remap another producer's dictionary to the Snapshot's rules.
-  - Map types by ADR-0064's table, and refuse anything outside it by name.
+  - Map types by ADR-0065's table, and refuse anything outside it by name.
   - Refuse a compressed stream, naming its codec, unless the Consumer passes a codec factory.
 - **Writing:** an uncompressed IPC stream.
   - Text as a dictionary of `utf8`, Decimal as `decimal128` at the column's scale, Double as
@@ -44,7 +44,7 @@ Built, 2026-10-01.
   `AppendCodes`, each entry decoded once per dictionary version, whatever its index width; a
   replaced dictionary and pyarrow's delta dictionaries are read by the batches after them. A
   decimal chunk whose values fit 64 bits goes in through `AppendScaled`; others are made exact or
-  refused. Refused by name: every type outside ADR-0064's table (`utf8_view` with what to write
+  refused. Refused by name: every type outside ADR-0065's table (`utf8_view` with what to write
   instead), a timestamp in a zone other than `UTC`, `Etc/UTC`, `+00:00` or `Z` (any case); by row
   and column: a decimal beyond `decimal`'s range or with more than 28 significant places, a
   `uint64` above `long`, a date outside 0001–9999, a nanosecond timestamp finer than 100 ns, a
@@ -74,11 +74,11 @@ Built, 2026-10-01.
 - **Measured** (4 vCPUs, .NET 10.0.12, CoreCLR, never gated): a million of the demo API's trades,
   keyed by a unique `TradeId` — 75.7 MiB raw, 17.7 MiB with gzip; written in 139 ms, read in
   388 ms from memory and 373 ms from a stream. Of the read, about 220 ms is the million distinct
-  ids, decoded and interned, and 85 ms the Record Key's index. ADR-0064's own shape (six text
+  ids, decoded and interned, and 85 ms the Record Key's index. ADR-0065's own shape (six text
   columns of few values, two money columns, a date, an integer): 61.2 MiB raw, 10.7 MiB with gzip,
   written in 58 ms, read in 70 ms.
 
-Refined, 2026-10-01: the reader takes what ADR-0064's "Refined while building it" added to the type
+Refined, 2026-10-01: the reader takes what ADR-0065's "Refined while building it" added to the type
 table.
 
 - **Read now:**

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- The demo API server's tests (ADR-0068). Mirrors tests/ExPivot.Engine.Tests: net10.0
+    <!-- The demo API server's tests (ADR-0069). Mirrors tests/ExPivot.Engine.Tests: net10.0
          (ADR-0022), xunit v3 on Microsoft.Testing.Platform, and no native apphost
          (tests/Directory.Build.targets has the account). The server runs in process, on
          ASP.NET Core's test server, and its hub is heard through SignalR's own client. -->
@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The one project that references the demo server (ADR-0019, ADR-0068). -->
+    <!-- The one project that references the demo server (ADR-0019, ADR-0069). -->
     <ProjectReference Include="..\..\samples\ExGrid.DemoApi\ExGrid.DemoApi.csproj" />
   </ItemGroup>
 

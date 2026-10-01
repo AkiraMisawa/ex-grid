@@ -3,7 +3,7 @@ using ExPivot.Engine;
 namespace ExPivot;
 
 /// <summary>
-/// The ids of ExPivot's commands (ADR-0058/0060): those of a placed field's menu and those it
+/// The ids of ExPivot's commands (ADR-0059/0061): those of a placed field's menu and those it
 /// appends to the report's Context Menu. Each id is also the id of its word in
 /// <see cref="PivotWords"/>, so a Consumer replaces a command's name through ExPivot's
 /// <c>Label</c> function. A Chrome keys an icon on them.
@@ -64,7 +64,7 @@ public static class PivotCommandIds
     /// <summary>Collapse the Item the row stands for.</summary>
     public const string Collapse = "collapse";
 
-    /// <summary>Show the records behind the cell (ADR-0062).</summary>
+    /// <summary>Show the records behind the cell (ADR-0063).</summary>
     public const string ShowDetails = "show-details";
 
     /// <summary>Order the row field's Items by the cell's Value Field, smallest first.</summary>
@@ -93,20 +93,20 @@ public static class PivotCommandIds
     /// <summary>Hide the Field List.</summary>
     public const string HideFieldList = "hide-field-list";
 
-    /// <summary>The toolbar's Layout ▾ button, which opens the Layout menu (ADR-0060).</summary>
+    /// <summary>The toolbar's Layout ▾ button, which opens the Layout menu (ADR-0061).</summary>
     public const string LayoutMenu = "layout-menu";
 
-    /// <summary>The toolbar's Refresh: Excel's, offered when the source can be refreshed (ADR-0065).</summary>
+    /// <summary>The toolbar's Refresh: Excel's, offered when the source can be refreshed (ADR-0066).</summary>
     public const string Refresh = "refresh";
 
-    /// <summary>The Stale Report's Retry: asks the source again for the report (ADR-0066).</summary>
+    /// <summary>The Stale Report's Retry: asks the source again for the report (ADR-0067).</summary>
     public const string Retry = "retry";
 
-    /// <summary>The toolbar's toggle that shows and hides the Field List (ADR-0060).</summary>
+    /// <summary>The toolbar's toggle that shows and hides the Field List (ADR-0061).</summary>
     public const string FieldListToggle = "field-list-toggle";
 
     /// <summary>The id of a Layout menu choice's command, which is also the id of its word:
-    /// <c>form-outline</c> is "Show in Outline Form" (ADR-0060).</summary>
+    /// <c>form-outline</c> is "Show in Outline Form" (ADR-0061).</summary>
     public static string LayoutChoice(PivotLayoutChoice choice) => choice switch
     {
         PivotLayoutChoice.DoNotShowSubtotals => "subtotals-do-not-show",

@@ -1,7 +1,7 @@
 namespace ExGrid.Cells;
 
 /// <summary>
-/// The Change Highlight's one rule (ADR-0067): a cell is marked while the current time is
+/// The Change Highlight's one rule (ADR-0068): a cell is marked while the current time is
 /// before the time its shown value changed plus the duration. The grid asks the Consumer for
 /// the change time (<see cref="CellChangeOf{TRow}"/>) and its clock for the current time; this
 /// answers whether the mark shows and when it ends, which is all the grid needs to paint the
@@ -10,7 +10,7 @@ namespace ExGrid.Cells;
 public static class ChangeHighlightRules
 {
     /// <summary>How long a mark lasts unless the Consumer says otherwise: one second
-    /// (ADR-0067).</summary>
+    /// (ADR-0068).</summary>
     public static TimeSpan DefaultDuration { get; } = TimeSpan.FromSeconds(1);
 
     /// <summary>

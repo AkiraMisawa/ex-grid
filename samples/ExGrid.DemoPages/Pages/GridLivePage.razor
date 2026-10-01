@@ -11,7 +11,7 @@
 
 @* ?chrome=mud stands the grid on ExGrid.MudBlazor's paper under its Chrome and its stylesheet,
    as /mud does; absent or builtin is the core's own. The Change Highlight is checked under both
-   (DC-55: the core's stylesheet and a Wrapper's). *@
+   (DC-62: the core's stylesheet and a Wrapper's). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" />
 
 <DemoNav />
@@ -27,7 +27,7 @@
     puts the new rows in its Window, and answers the grid's <code>CellChangedAt</code> with when each
     cell's value moved. The grid marks those cells for <code>ChangeHighlightDuration</code> and takes
     the marks away itself: keyed by row and column, never by the element, so a mark stays on its
-    trade as you scroll; one colour, without animating, and never announced (ADR-0067).
+    trade as you scroll; one colour, without animating, and never announced (ADR-0068).
 </p>
 <p>
     A trade cancelled moves every row after it up one, so the page then reads its Window again and
@@ -254,7 +254,7 @@ else
 
     #region The code: notices
     // When each cell's shown value last changed, by trade and column: what the page knows, which
-    // the grid asks for by (row, column) as it paints a value cell (ADR-0067). The delegate is held
+    // the grid asks for by (row, column) as it paints a value cell (ADR-0068). The delegate is held
     // in a field and never replaced: a row whose trade changed arrives as a new instance, so it
     // paints again and asks again, and no other row has anything new to say.
     private readonly Dictionary<(string TradeId, string Column), DateTimeOffset> _changedAt = new();
@@ -274,7 +274,7 @@ else
         // Not cancelled by the page's going: a connection cut off while it opens is an error in the
         // browser's console. DisposeAsync waits for it instead.
         await (_hubStarting = hub.StartAsync());
-        // Live updates are off until a page turns them on (ADR-0068), and this one turns them off
+        // Live updates are off until a page turns them on (ADR-0069), and this one turns them off
         // as it goes.
         await SetLiveAsync(true, token);
     }
@@ -534,7 +534,7 @@ else
 
     #region The code: leaving
     // The server's live updates go off when the page goes: the data then holds still for whoever
-    // reads it next (ADR-0068).
+    // reads it next (ADR-0069).
     public async ValueTask DisposeAsync()
     {
         _leaving.Cancel();

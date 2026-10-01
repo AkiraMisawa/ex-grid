@@ -1,7 +1,7 @@
 namespace ExPivot.Engine;
 
 /// <summary>
-/// What ExPivot asks a Pivot Source to aggregate (ADR-0065): the row fields and the column
+/// What ExPivot asks a Pivot Source to aggregate (ADR-0066): the row fields and the column
 /// fields, in order; the report filter's fields; the Hidden Items of every placed field; for
 /// each field in Values, the parts asked for; and the most leaves the answer may have. A
 /// serialisable value (<see cref="PivotJson"/>), so it crosses to a server unchanged
@@ -9,7 +9,7 @@ namespace ExPivot.Engine;
 /// </summary>
 public sealed class PivotQuery : IEquatable<PivotQuery>
 {
-    /// <summary>The default cap on leaves (ADR-0065). Provisional: the Definition of Done's
+    /// <summary>The default cap on leaves (ADR-0066). Provisional: the Definition of Done's
     /// observational targets record the measurement that settles it.</summary>
     public const int DefaultMaxLeaves = 200_000;
 
@@ -23,7 +23,7 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
     /// <param name="filters">The report filter's fields, each with its Hidden Items.</param>
     /// <param name="values">Each field in Values once, with the parts its Value Fields read.</param>
     /// <param name="maxLeaves">The most leaves the answer may have; a source that would need more
-    /// refuses (ADR-0065).</param>
+    /// refuses (ADR-0066).</param>
     public PivotQuery(
         IReadOnlyList<PivotQueryField>? rows = null,
         IReadOnlyList<PivotQueryField>? columns = null,
@@ -42,13 +42,13 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
         foreach (var field in Rows.Concat(Columns).Concat(Filters))
         {
             if (!placed.Add(field.Field))
-                throw new ArgumentException($"The question places '{field.Field}' twice among Filters, Rows and Columns; a field stands in one of them at most (ADR-0060).");
+                throw new ArgumentException($"The question places '{field.Field}' twice among Filters, Rows and Columns; a field stands in one of them at most (ADR-0061).");
         }
         var asked = new HashSet<string>(StringComparer.Ordinal);
         foreach (var value in Values)
         {
             if (!asked.Add(value.Field))
-                throw new ArgumentException($"The question asks for '{value.Field}' twice in Values; ask once, with the parts of every Value Field of it (ADR-0065).");
+                throw new ArgumentException($"The question asks for '{value.Field}' twice in Values; ask once, with the parts of every Value Field of it (ADR-0066).");
         }
     }
 
@@ -72,12 +72,12 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
     public IEnumerable<PivotQueryField> Placed => Rows.Concat(Columns).Concat(Filters);
 
     /// <summary>
-    /// The question a Pivot Layout asks (ADR-0065): its rows and columns with their Hidden Items,
+    /// The question a Pivot Layout asks (ADR-0066): its rows and columns with their Hidden Items,
     /// the report filter fields that hide Items, with those Items, and each field in Values once,
     /// with the parts of all of its Value Fields' Aggregations (<see cref="PartsOf"/>). Everything
     /// else in a layout only lays the answer out. A field in Filters that hides nothing changes no
     /// leaf, so it does not travel: placing it, or moving it while it hides nothing, asks nothing
-    /// new (ADR-0065, refined while building it).
+    /// new (ADR-0066, refined while building it).
     /// </summary>
     public static PivotQuery For(PivotLayout layout, int maxLeaves = DefaultMaxLeaves)
     {
@@ -103,7 +103,7 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
     }
 
     /// <summary>
-    /// The parts an Aggregation reads besides the counts (ADR-0065): Sum and Average the sum;
+    /// The parts an Aggregation reads besides the counts (ADR-0066): Sum and Average the sum;
     /// Max and Min the extremes; Product the product; StdDev, StdDevp, Var and Varp the running
     /// variance; Count and Count Numbers nothing more.
     /// </summary>
@@ -173,8 +173,8 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
 }
 
 /// <summary>
-/// A placed field as a question carries it (ADR-0065): its name and its Hidden Items, written as
-/// keys (ADR-0059). Equal when the names are and the Hidden Items are the same set.
+/// A placed field as a question carries it (ADR-0066): its name and its Hidden Items, written as
+/// keys (ADR-0060). Equal when the names are and the Hidden Items are the same set.
 /// </summary>
 public sealed class PivotQueryField : IEquatable<PivotQueryField>
 {
@@ -214,7 +214,7 @@ public sealed class PivotQueryField : IEquatable<PivotQueryField>
             || one.ToHashSet().SetEquals(other);
 }
 
-/// <summary>A field in Values as a question carries it (ADR-0065): its name and the parts asked
+/// <summary>A field in Values as a question carries it (ADR-0066): its name and the parts asked
 /// for; the counts always travel.</summary>
 public sealed record PivotQueryValue
 {
@@ -242,9 +242,9 @@ public sealed record PivotQueryValue
     public override string ToString() => $"{Field}: {Parts}";
 }
 
-/// <summary>One Item of one field: a step of a cell's path (ADR-0065).</summary>
+/// <summary>One Item of one field: a step of a cell's path (ADR-0066).</summary>
 /// <param name="Field">The Pivot Field's name.</param>
-/// <param name="Item">The Item, written as a key (ADR-0059).</param>
+/// <param name="Item">The Item, written as a key (ADR-0060).</param>
 public sealed record PivotFieldItem(string Field, PivotItemKey Item)
 {
     /// <summary>The Pivot Field's name.</summary>
@@ -258,7 +258,7 @@ public sealed record PivotFieldItem(string Field, PivotItemKey Item)
 }
 
 /// <summary>
-/// What ExPivot asks a Pivot Source for a field's Items (ADR-0065): the field's Items over all the
+/// What ExPivot asks a Pivot Source for a field's Items (ADR-0066): the field's Items over all the
 /// data — not narrowed by other fields' Hidden Items — as Filter… and the report filter band list
 /// them, under the Source Version the report was computed from. Immutable and serialisable.
 /// </summary>
@@ -300,7 +300,7 @@ public sealed record PivotItemsQuery
 }
 
 /// <summary>
-/// What ExPivot asks a Pivot Source for the records behind one cell — Show Details (ADR-0062/0065):
+/// What ExPivot asks a Pivot Source for the records behind one cell — Show Details (ADR-0063/0066):
 /// the Items along the cell's row path and column path, each shorter than the fields for a
 /// subtotal and empty for a grand total; the Hidden Items of every placed field; a range of the
 /// records, in the data's order; and the Source Version the report was computed from. Immutable

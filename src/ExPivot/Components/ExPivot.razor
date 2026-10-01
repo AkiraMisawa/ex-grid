@@ -5,11 +5,11 @@
 
 @*
     ExPivot holds the Pivot Layout and asks its Pivot Source; ExGrid paints, selects, navigates,
-    copies and reports (ADR-0058/0065). This component renders the toolbar above the report — the
-    report filter band, Layout ▾, Refresh and the Field List's toggle (ADR-0060) — the Stale
-    Report's notice under it (ADR-0066), exactly one ExGrid over the Pivot Report — its rows the
+    copies and reports (ADR-0059/0066). This component renders the toolbar above the report — the
+    report filter band, Layout ▾, Refresh and the Field List's toggle (ADR-0061) — the Stale
+    Report's notice under it (ADR-0067), exactly one ExGrid over the Pivot Report — its rows the
     Window, its label columns pinned Template Columns, its value columns under Header Groups, the
-    cells the data changed marked (ADR-0067) — Show Details' tabs at its foot, and the Field List
+    cells the data changed marked (ADR-0068) — Show Details' tabs at its foot, and the Field List
     beside it.
 
     What is deliberately not wired on the grid: sorting, filtering, editing, paste and fill. Item
@@ -19,17 +19,17 @@
 *@
 <div class="ex-pivot" style="@RootStyle">
     @* While Show Details' dialog stands, what it covers takes neither the keyboard nor the pointer:
-       the dialog is modal (ADR-0058). *@
+       the dialog is modal (ADR-0059). *@
     <div class="ex-pivot-report" inert="@(_dialog is not null)">
         @Toolbar()
-        @* The Stale Report's notice, under the toolbar (ADR-0060/0066): a polite live region that
+        @* The Stale Report's notice, under the toolbar (ADR-0061/0067): a polite live region that
            is always present, so a notice that appears in it is announced, without interrupting
            the reader as the toolbar's refusal of their own change does. Empty, it takes no room. *@
         <div class="ex-pivot-stale" role="status">@StaleNotice()</div>
         @* While a details tab is selected its records cover the report, which stays laid out, with
            its state, and is not painted: its own header would otherwise paint over the records'
            (ExGrid's layers are its own), and a report nobody sees takes no keyboard and is not
-           read out (ADR-0058). *@
+           read out (ADR-0059). *@
         <div class="@(_selectedSheet is null ? "ex-pivot-sheet" : "ex-pivot-sheet ex-pivot-sheet-covered")" style="@SheetStyle">
             @if (_report is null || _report.IsEmpty)
             {
@@ -67,7 +67,7 @@
         <PivotDialogFrame Label="@dialog.Details.Title" OnEscape="_closeDialog">@DialogContent(dialog)</PivotDialogFrame>
     }
     @* The report's grid takes the keyboard back once the dialog, or the last details tab, has gone
-       (ADR-0069): asked after the render that removes it, when the report can take focus again. *@
+       (ADR-0070): asked after the render that removes it, when the report can take focus again. *@
     @KeyboardReturn()
 </div>
 
@@ -85,7 +85,7 @@
     private bool _disposed;
 
     /// <summary>
-    /// What the report is computed from (ADR-0065): <c>PivotSource.From</c> over the Consumer's
+    /// What the report is computed from (ADR-0066): <c>PivotSource.From</c> over the Consumer's
     /// records — the reference, answered in the process — or a server's, through
     /// <c>PivotSource.Fetch</c>. Its fields are what the Field List offers. ExPivot asks it without
     /// ever blocking: a slow answer leaves the report as it was under a loading indication, and a
@@ -93,7 +93,7 @@
     ///
     /// <para>ExPivot listens to the source's <c>Changed</c> — a Change Batch the bundled source
     /// folded in, a server's notice through <c>NotifyChanged</c>, Refresh — and asks again for the
-    /// whole answer (ADR-0066). The changes are gathered, and the report redrawn at most once per
+    /// whole answer (ADR-0067). The changes are gathered, and the report redrawn at most once per
     /// <see cref="RedrawInterval"/>; a cell whose painted value changed is marked for
     /// <see cref="ChangeHighlightDuration"/>; and when the newest data cannot be shown, the report
     /// stays on the last version it could compute and says so under the toolbar, with Retry.</para>
@@ -101,7 +101,7 @@
     [Parameter, EditorRequired] public PivotSource Source { get; set; } = default!;
 
     /// <summary>
-    /// How often, at most, the report is redrawn for changes of data (ADR-0066): 250 ms by default.
+    /// How often, at most, the report is redrawn for changes of data (ADR-0067): 250 ms by default.
     /// The source's <c>Changed</c> notices are gathered, and the report is asked again, from the
     /// newest version, no sooner than this after the last change reached the screen — a value that
     /// changes forty times a second cannot be read; one that changes four times a second still
@@ -111,12 +111,12 @@
     [Parameter] public TimeSpan RedrawInterval { get; set; } = DefaultRedrawInterval;
 
     /// <summary>The interval <see cref="RedrawInterval"/> takes unless the Consumer sets one: 250 ms
-    /// (ADR-0066).</summary>
+    /// (ADR-0067).</summary>
     public static TimeSpan DefaultRedrawInterval { get; } = TimeSpan.FromMilliseconds(250);
 
     /// <summary>
     /// How long a Change Highlight lasts on a value cell whose painted text changed with the data
-    /// (ADR-0066/0067): one second by default. Only data marks a cell — a change the source
+    /// (ADR-0067/0068): one second by default. Only data marks a cell — a change the source
     /// announced, Refresh, Retry, a new source — and every cell of a row that appears; a new layout,
     /// a sort, a collapse, a form or Show Values As marks nothing, and neither does a change the
     /// number format hides. Zero marks nothing; a negative duration is refused. The mark's colour is
@@ -136,7 +136,7 @@
     [Parameter] public TimeProvider? Clock { get; set; }
 
     /// <summary>
-    /// The Pivot Layout — which fields stand where, with their settings (ADR-0058). It is View
+    /// The Pivot Layout — which fields stand where, with their settings (ADR-0059). It is View
     /// State: the Consumer persists it and may bind it with <c>@bind-Layout</c>. A layout handed
     /// in replaces the one on screen; one this ExPivot raised through <see cref="LayoutChanged"/>
     /// and handed back is the one already on screen. Null starts from nothing and keeps the
@@ -147,7 +147,7 @@
 
     /// <summary>Raised with the layout the report shows, after every change the user makes: at once
     /// when the answer held already lays it out, and once the source has answered otherwise
-    /// (ADR-0060/0065). Never for a pending layout, for one a further change superseded, or for one
+    /// (ADR-0061/0066). Never for a pending layout, for one a further change superseded, or for one
     /// a cap refused.</summary>
     [Parameter] public EventCallback<PivotLayout> LayoutChanged { get; set; }
 
@@ -157,12 +157,12 @@
 
     /// <summary>The Consumer's word for an id of <see cref="PivotWords"/>, <see cref="PivotCommandIds"/>
     /// or the report grid's Context Menu, or null to keep the English. <see cref="PivotWords.Japanese"/>
-    /// gives Excel's Japanese edition's words in one line (ADR-0059). Hold it in a field: it is read
+    /// gives Excel's Japanese edition's words in one line (ADR-0060). Hold it in a field: it is read
     /// on every render.</summary>
     [Parameter] public Func<string, string?>? Label { get; set; }
 
     /// <summary>What draws the Field List, the toolbar, the menus, the panels and Show Details'
-    /// tabs and dialog (ADR-0060); null for ExPivot's built-in markup. It may also supply the
+    /// tabs and dialog (ADR-0061); null for ExPivot's built-in markup. It may also supply the
     /// report grid's Chrome.</summary>
     [Parameter] public IPivotChrome? PivotChrome { get; set; }
 
@@ -175,7 +175,7 @@
     /// Context Menu's Show and Hide Field List change it and raise <see cref="ShowFieldListChanged"/>.</summary>
     [Parameter] public bool ShowFieldList { get; set; } = true;
 
-    /// <summary>Raised when the user shows or hides the Field List (ADR-0060).</summary>
+    /// <summary>Raised when the user shows or hides the Field List (ADR-0061).</summary>
     [Parameter] public EventCallback<bool> ShowFieldListChanged { get; set; }
 
     /// <summary>The Field List's width in pixels, emitted inline (ADR-0027).</summary>
@@ -197,18 +197,18 @@
     /// <summary>The report's Cell Metrics, or null for a Wrapper's, or the Density's (ADR-0016/0030).</summary>
     [Parameter] public CellTextMetrics? CellMetrics { get; set; }
 
-    /// <summary>The caps a layout is held to (ADR-0065): the leaves a question allows, and the
+    /// <summary>The caps a layout is held to (ADR-0066): the leaves a question allows, and the
     /// report's rows and columns. A layout that breaks one is refused by name, and the report stays
     /// on the layout before.</summary>
     [Parameter] public PivotCaps Caps { get; set; } = PivotCaps.Default;
 
     /// <summary>Where Show Details puts the records behind a cell when nobody listens to
-    /// <see cref="OnShowDetails"/>: a tab at the report's foot (the default) or a dialog (ADR-0058).</summary>
+    /// <see cref="OnShowDetails"/>: a tab at the report's foot (the default) or a dialog (ADR-0059).</summary>
     [Parameter] public PivotDetailsView DetailsView { get; set; } = PivotDetailsView.Tab;
 
-    /// <summary>Show Details — a double click on a value, or the Context Menu (ADR-0062) — handed to
+    /// <summary>Show Details — a double click on a value, or the Context Menu (ADR-0063) — handed to
     /// the Consumer, who shows the records where its application shows records. While it listens,
-    /// neither the tab nor the dialog opens (ADR-0058).</summary>
+    /// neither the tab nor the dialog opens (ADR-0059).</summary>
     [Parameter] public EventCallback<PivotDetails> OnShowDetails { get; set; }
 
     /// <summary>The report grid's Selection, as ExGrid raises it (ADR-0011).</summary>
@@ -228,17 +228,17 @@
     /// <summary>Whether a question the report waits on is out to the source — a layout's, Refresh's,
     /// Retry's or a new source's — or its answer's report is being made, in slices, as is a layout
     /// of the answer held that grows long: the report stays as it was meanwhile, under the grid's
-    /// loading indication (ADR-0065, PV-40). A question asked because the source said its data
+    /// loading indication (ADR-0066, PV-40). A question asked because the source said its data
     /// moved on is asked quietly, under no indication: the report on screen is the newest there is
     /// until the answer lands, and a live report dimmed four times a second would flicker
-    /// (ADR-0066).</summary>
+    /// (ADR-0067).</summary>
     public bool IsLoading => _loading;
 
     /// <summary>The source's last failure, kept until it next answers (ADR-0025's "a failure is
     /// never silent"); the toolbar, or the Stale Report's notice, says it where the user sees it.</summary>
     public Exception? LastError => _lastError;
 
-    /// <summary>Whether the report is a Stale Report (ADR-0066): the newest data could not be
+    /// <summary>Whether the report is a Stale Report (ADR-0067): the newest data could not be
     /// shown — it broke a cap, the source refused or failed, or a Refresh failed — so the report
     /// stays on the last version it could compute, and the notice under the toolbar says what
     /// happened and as of when, with Retry.</summary>
@@ -254,16 +254,16 @@
         if (FieldListWidth is not (> 0 and < 10_000) || !double.IsFinite(FieldListWidth))
             throw new ArgumentOutOfRangeException(nameof(FieldListWidth), FieldListWidth, "A width in pixels, above zero.");
         if (Source is null)
-            throw new InvalidOperationException("ExPivot needs a Source: PivotSource.From over the records, or a server's through PivotSource.Fetch (ADR-0065).");
+            throw new InvalidOperationException("ExPivot needs a Source: PivotSource.From over the records, or a server's through PivotSource.Fetch (ADR-0066).");
         ArgumentNullException.ThrowIfNull(Caps);
         if (!Enum.IsDefined(DetailsView))
             throw new ArgumentOutOfRangeException(nameof(DetailsView), DetailsView, "Unknown PivotDetailsView.");
         if (RedrawInterval < TimeSpan.Zero)
-            throw new ArgumentOutOfRangeException(nameof(RedrawInterval), RedrawInterval, "A redraw cannot come before the change it shows (ADR-0066).");
+            throw new ArgumentOutOfRangeException(nameof(RedrawInterval), RedrawInterval, "A redraw cannot come before the change it shows (ADR-0067).");
         if (ChangeHighlightDuration < TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(ChangeHighlightDuration), ChangeHighlightDuration,
-                "A Change Highlight cannot last a negative time: it would end before the change it marks (ADR-0067).");
+                "A Change Highlight cannot last a negative time: it would end before the change it marks (ADR-0068).");
         }
         UseClock(Clock ?? Services.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System);
 
@@ -279,7 +279,7 @@
         if (!ReferenceEquals(Source, _source))
         {
             // A new source is a refresh: nothing it says can come from the answer held, and the
-            // one before it is no longer listened to (ADR-0065/0066). It is held to the layout it
+            // one before it is no longer listened to (ADR-0066/0067). It is held to the layout it
             // will be asked under: the one it came with, when data of another shape and its layout
             // arrive together, and otherwise the one on screen.
             CheckFields(Source, consumerLayout ?? _layout);
@@ -335,7 +335,7 @@
         if (pursue)
         {
             // A new source alone is a refresh of the data, which its answer marks and a refusal of
-            // leaves the report stale (ADR-0066); with a new layout or new caps, it is the layout's.
+            // leaves the report stale (ADR-0067); with a new layout or new caps, it is the layout's.
             // A user's layout still on its way is raised once shown, whoever asked for it last.
             var kind = refresh && !layoutMoved && !capsMoved ? Question.Data : Question.Layout;
             await PursueAsync(raise: !layoutMoved && _raisePending, force: force, kind);

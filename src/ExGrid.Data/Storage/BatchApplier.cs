@@ -1,7 +1,7 @@
 namespace ExGrid.Data.Storage;
 
 /// <summary>
-/// Applies a Change Batch (ADR-0063): every check first, so a refused batch leaves nothing behind;
+/// Applies a Change Batch (ADR-0064): every check first, so a refused batch leaves nothing behind;
 /// then the next version, which shares every segment of the one before, adds one segment (or a few)
 /// holding the changed and added records, and masks the rows it no longer holds in removal sets of
 /// its own.

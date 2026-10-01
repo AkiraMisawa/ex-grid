@@ -3,11 +3,11 @@ using ExGrid.Data.Arrow;
 namespace ExGrid.DemoApi;
 
 /// <summary>
-/// <c>GET /api/trades.arrows</c>: the trades as an Arrow IPC stream (ADR-0064), for
+/// <c>GET /api/trades.arrows</c>: the trades as an Arrow IPC stream (ADR-0065), for
 /// <c>/pivot-db</c>'s "database → Snapshot". A page reads it whole and into a Snapshot:
 /// <code>
 /// using var request = new HttpRequestMessage(HttpMethod.Get, "api/trades.arrows");
-/// request.SetBrowserResponseStreamingEnabled(false);   // in a browser: 0.3 s rather than 2 s (ADR-0064)
+/// request.SetBrowserResponseStreamingEnabled(false);   // in a browser: 0.3 s rather than 2 s (ADR-0065)
 /// using var response = await http.SendAsync(request, token);
 /// var version = response.Headers.GetValues("ExGrid-Source-Version").Single();
 /// var snapshot = await SnapshotArrow.ReadAsync(await response.Content.ReadAsByteArrayAsync(token), cancellationToken: token);

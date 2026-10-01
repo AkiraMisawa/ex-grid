@@ -5,7 +5,7 @@ using static ExPivot.Engine.Tests.Sources;
 
 namespace ExPivot.Engine.Tests;
 
-/// <summary>The Pivot Source (ADR-0065): the bundled source is the reference, a server answering
+/// <summary>The Pivot Source (ADR-0066): the bundled source is the reference, a server answering
 /// through <c>Fetch</c> is held to it question for question, answers carry their Source Version,
 /// the bundled source works in slices, and a layout too large to read is refused by name.</summary>
 public class PivotSourceTests
@@ -38,7 +38,7 @@ public class PivotSourceTests
         PivotLayout.Empty,
     ];
 
-    [Fact] // ADR-0065 (PV-22): a Fetch whose transport is JSON answers as From does — Leaf Aggregates, reports, Items and Details
+    [Fact] // ADR-0066 (PV-22): a Fetch whose transport is JSON answers as From does — Leaf Aggregates, reports, Items and Details
     public async Task Fetch_over_json_answers_as_from_does()
     {
         var reference = PivotSource.From(Deals, DealFields);
@@ -85,7 +85,7 @@ public class PivotSourceTests
         }
     }
 
-    [Fact] // ADR-0065 (PV-22): the same refusals, whichever side refuses
+    [Fact] // ADR-0066 (PV-22): the same refusals, whichever side refuses
     public async Task Fetch_over_json_refuses_as_from_does()
     {
         var reference = PivotSource.From(Deals, DealFields);
@@ -115,7 +115,7 @@ public class PivotSourceTests
         }
     }
 
-    [Fact] // ADR-0065 (PV-23): Items and records are asked for under the answer's Source Version, and add up to it
+    [Fact] // ADR-0066 (PV-23): Items and records are asked for under the answer's Source Version, and add up to it
     public async Task Items_and_records_are_asked_for_under_the_answers_version()
     {
         var source = PivotSource.From(Deals, DealFields);
@@ -136,7 +136,7 @@ public class PivotSourceTests
         }
     }
 
-    [Fact] // ADR-0065 (PV-23): a source that can no longer answer under a version refuses, rather than answer from newer data
+    [Fact] // ADR-0066 (PV-23): a source that can no longer answer under a version refuses, rather than answer from newer data
     public async Task A_version_the_source_no_longer_holds_is_refused()
     {
         var answer = await PivotSource.From(Deals, DealFields).AggregateAsync(new PivotQuery(rows: [F("Desk")]), Ct);
@@ -157,7 +157,7 @@ public class PivotSourceTests
         Assert.NotEqual(answer.SourceVersion, (await refreshed.AggregateAsync(new PivotQuery(), Ct)).SourceVersion);
     }
 
-    [Fact] // ADR-0059/0065: a field's Items over all the data — not narrowed by Hidden Items — first spelling, invariant order, search and cap
+    [Fact] // ADR-0060/0066: a field's Items over all the data — not narrowed by Hidden Items — first spelling, invariant order, search and cap
     public async Task A_fields_items_are_over_all_the_data()
     {
         var source = PivotSource.From(Deals, DealFields);
@@ -181,7 +181,7 @@ public class PivotSourceTests
         ], tags.Items);
     }
 
-    [Fact] // ADR-0065 (PV-27): the bundled source works in slices and yields between them — for every question
+    [Fact] // ADR-0066 (PV-27): the bundled source works in slices and yields between them — for every question
     public async Task The_bundled_source_yields_between_slices()
     {
         var yields = 0;
@@ -202,7 +202,7 @@ public class PivotSourceTests
         Assert.Equal(4, yields);
     }
 
-    [Fact] // ADR-0065 (PV-27): a slice ends when its time is spent, by the clock the source is given
+    [Fact] // ADR-0066 (PV-27): a slice ends when its time is spent, by the clock the source is given
     public async Task A_slice_ends_when_its_budget_is_spent()
     {
         var yields = 0;
@@ -220,10 +220,10 @@ public class PivotSourceTests
         Assert.Equal(2, yields);
     }
 
-    // Rewritten with ADR-0063/0065 when the engine moved onto the Snapshot: the records are read
+    // Rewritten with ADR-0064/0066 when the engine moved onto the Snapshot: the records are read
     // once, into a Snapshot, and a question reads the Snapshot's rows, so it is the rows a question
     // reads that are counted — through the slicing's own counter — where the accessor's calls were.
-    [Fact] // ADR-0065 (PV-27): a cancelled question stops at the next slice, and reads nothing more
+    [Fact] // ADR-0066 (PV-27): a cancelled question stops at the next slice, and reads nothing more
     public async Task A_cancelled_question_stops_at_the_next_slice()
     {
         foreach (var ask in new Func<PivotSource, string, CancellationToken, Task>[]
@@ -261,7 +261,7 @@ public class PivotSourceTests
         }
     }
 
-    [Fact] // ADR-0065 (PV-27): a question cancelled before it starts reads nothing
+    [Fact] // ADR-0066 (PV-27): a question cancelled before it starts reads nothing
     public async Task A_question_cancelled_before_it_starts_reads_nothing()
     {
         var read = 0;
@@ -273,10 +273,10 @@ public class PivotSourceTests
         Assert.Equal(0, read);
     }
 
-    [Fact] // ADR-0065 (PV-29): an answer that would pass MaxLeaves is refused with the bound, as soon as it is passed
+    [Fact] // ADR-0066 (PV-29): an answer that would pass MaxLeaves is refused with the bound, as soon as it is passed
     public async Task Too_many_leaves_are_refused_as_soon_as_the_bound_is_passed()
     {
-        // The rows the question reads from the Snapshot are counted (rewritten with ADR-0063, as above).
+        // The rows the question reads from the Snapshot are counted (rewritten with ADR-0064, as above).
         long read = 0;
         var source = PivotSource.From(Deals, DealFields, new PivotSlicing { RowsRead = rows => read += rows });
         var query = new PivotQuery(rows: [F("Desk"), F("Book")], maxLeaves: 3);
@@ -299,7 +299,7 @@ public class PivotSourceTests
         Assert.Equal(200_000, PivotQuery.DefaultMaxLeaves);
     }
 
-    [Fact] // ADR-0065: a field the source does not have is refused by name, in any Area and in any question
+    [Fact] // ADR-0066: a field the source does not have is refused by name, in any Area and in any question
     public async Task An_unknown_field_is_refused_by_name()
     {
         var source = PivotSource.From(Deals, DealFields);
@@ -321,7 +321,7 @@ public class PivotSourceTests
             new PivotDetailsQuery(version, hiddenItems: [F("Region", PivotItemKey.Blank)]), Ct)).Refusal!.Kind);
     }
 
-    [Fact] // ADR-0065 (PV-24's engine side): a source declares what it answers, and a part no offered Aggregation reads is refused without asking
+    [Fact] // ADR-0066 (PV-24's engine side): a source declares what it answers, and a part no offered Aggregation reads is refused without asking
     public async Task A_part_no_offered_aggregation_reads_is_refused_without_asking()
     {
         var reference = PivotSource.From(Deals, DealFields);
@@ -354,7 +354,7 @@ public class PivotSourceTests
         Assert.True(sql.Features.CanRefresh);
     }
 
-    [Fact] // ADR-0065: an answer to another question than the one asked is refused by name, never laid out
+    [Fact] // ADR-0066: an answer to another question than the one asked is refused by name, never laid out
     public async Task An_answer_to_another_question_is_refused()
     {
         var reference = PivotSource.From(Deals, DealFields);
@@ -371,7 +371,7 @@ public class PivotSourceTests
         Assert.Throws<InvalidOperationException>(() => PivotEngine.Cube(query, PivotAnswer.Refused(PivotSourceRefusal.TooManyLeaves(1)), DealFields));
     }
 
-    [Fact] // ADR-0065/0066: a server's source says its data moved on, and Refresh asks again; the bundled source is refreshed by a new one
+    [Fact] // ADR-0066/0067: a server's source says its data moved on, and Refresh asks again; the bundled source is refreshed by a new one
     public async Task A_servers_source_says_when_its_data_moved_on()
     {
         var reference = PivotSource.From(Deals, DealFields);
@@ -389,7 +389,7 @@ public class PivotSourceTests
         Assert.Empty(bundled);
     }
 
-    [Fact] // ADR-0065: the bundled source captures no caller's context — a question a UI thread blocks on still completes, slices and all
+    [Fact] // ADR-0066: the bundled source captures no caller's context — a question a UI thread blocks on still completes, slices and all
     public void A_question_completes_though_its_callers_context_is_blocked()
     {
         var slicing = new PivotSlicing { Budget = TimeSpan.Zero, RecordsPerCheck = 2 };

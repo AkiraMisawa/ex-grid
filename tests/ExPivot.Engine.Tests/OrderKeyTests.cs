@@ -6,7 +6,7 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// The Order Key (ADR-0059, Q19/Q20/Q27; PV-31): a function from an Item's value to a key, called
+/// The Order Key (ADR-0060, Q19/Q20/Q27; PV-31): a function from an Item's value to a key, called
 /// once per Item. Items are ordered by key, ties by label; an Item with no key comes after the keyed
 /// ones; descending reverses the whole order with (blank) still last; a function that throws is
 /// refused by name; two values with one key stay two Items; it orders the Item lists, and never a
@@ -62,7 +62,7 @@ public class OrderKeyTests
         return [.. report.Rows.Where(r => r.Role != PivotRowRole.GrandTotal).Select(r => r.Labels[0].Text!)];
     }
 
-    [Fact] // ADR-0059 (PV-31): Items are ordered by their key, ascending, ties by label; an Item with no key comes after the keyed ones, in label order
+    [Fact] // ADR-0060 (PV-31): Items are ordered by their key, ascending, ties by label; an Item with no key comes after the keyed ones, in label order
     public async Task Items_are_ordered_by_key_and_unkeyed_items_come_after()
     {
         var order = await Order(PivotSource.From(Deltas, Fields()));
@@ -73,7 +73,7 @@ public class OrderKeyTests
         Assert.Null(Tenor("Other"));
     }
 
-    [Fact] // ADR-0059 (PV-31): descending reverses the whole order, and (blank) stays last
+    [Fact] // ADR-0060 (PV-31): descending reverses the whole order, and (blank) stays last
     public async Task Descending_reverses_the_whole_order_with_blank_last()
     {
         var order = await Order(PivotSource.From(Deltas, Fields()), PivotSort.Descending);
@@ -81,7 +81,7 @@ public class OrderKeyTests
         Assert.Equal(["Other", "Bucket", "30Y", "2Y", "1Y6M", "18M", "1Y", "3M", "1M", "1W", "TN", "ON", "(blank)"], order);
     }
 
-    [Fact] // ADR-0059 (PV-31): two values with one key stay two Items, side by side, each with its own records
+    [Fact] // ADR-0060 (PV-31): two values with one key stay two Items, side by side, each with its own records
     public async Task Two_values_with_one_key_stay_two_items()
     {
         var source = PivotSource.From([new Delta("18M", 1m), new Delta("1Y6M", 2m), new Delta("18m", 4m)], Fields());
@@ -91,7 +91,7 @@ public class OrderKeyTests
         Assert.Equal(["i 18M || 5", "i 1Y6M || 2", "t Grand Total || 7"], Lines(report));
     }
 
-    [Fact] // ADR-0059 (PV-31): a key function that throws is refused, naming the field and the value — never a quiet fall-back to the labels
+    [Fact] // ADR-0060 (PV-31): a key function that throws is refused, naming the field and the value — never a quiet fall-back to the labels
     public async Task A_key_function_that_throws_is_refused_by_name()
     {
         var source = PivotSource.From([new Delta("1Y", 1m), new Delta("7Y", 2m)], Fields(tenor => tenor == "7Y" ? throw new FormatException("no 7Y bucket") : Tenor(tenor)));
@@ -102,7 +102,7 @@ public class OrderKeyTests
         Assert.IsType<FormatException>(refusal.InnerException);
     }
 
-    [Fact] // ADR-0059 (PV-31): the key is called once per Item, however many records and branches the Item has
+    [Fact] // ADR-0060 (PV-31): the key is called once per Item, however many records and branches the Item has
     public async Task The_key_is_called_once_per_item()
     {
         var calls = new List<string>();
@@ -124,7 +124,7 @@ public class OrderKeyTests
         Assert.Equal(12, calls.Distinct().Count());
     }
 
-    [Fact] // ADR-0059/0060 (PV-31): the key orders the Item lists of Filter… and of the report filter band
+    [Fact] // ADR-0060/0061 (PV-31): the key orders the Item lists of Filter… and of the report filter band
     public async Task The_key_orders_the_item_lists()
     {
         var fields = Fields();
@@ -147,7 +147,7 @@ public class OrderKeyTests
         Assert.Equal(listed.Select(i => i.Label), PivotEngine.ItemsOf(cube, layout, "Tenor", EnUs).Select(i => i.Label));
     }
 
-    [Fact] // ADR-0059 (PV-31): a sort by a Value Field does not read the key — ties fall back to the label
+    [Fact] // ADR-0060 (PV-31): a sort by a Value Field does not read the key — ties fall back to the label
     public async Task A_sort_by_value_does_not_read_the_key()
     {
         var calls = 0;
@@ -162,7 +162,7 @@ public class OrderKeyTests
         Assert.Equal(0, calls);
     }
 
-    [Fact] // ADR-0059 (PV-31): a declared Item order still comes first, and the key orders the rest
+    [Fact] // ADR-0060 (PV-31): a declared Item order still comes first, and the key orders the rest
     public async Task A_declared_item_order_comes_first()
     {
         var order = await Order(PivotSource.From(Deltas, Fields(itemOrder: ["2Y", "1w"])));
@@ -170,7 +170,7 @@ public class OrderKeyTests
         Assert.Equal(["2Y", "1W", "ON", "TN", "1M", "3M", "1Y", "18M", "1Y6M", "30Y", "Bucket", "Other", "(blank)"], order);
     }
 
-    [Fact] // ADR-0059 (PV-31): a number's key is given the number; a field's keys are of one type, or the field is refused by name
+    [Fact] // ADR-0060 (PV-31): a number's key is given the number; a field's keys are of one type, or the field is refused by name
     public async Task A_numbers_key_is_given_the_number_and_keys_are_of_one_type()
     {
         var strikes = PivotFields.Of<decimal>().Number("Strike", d => d, orderKey: d => Math.Abs(d)).Number("Amount", d => 1m);

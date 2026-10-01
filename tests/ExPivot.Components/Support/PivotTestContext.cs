@@ -50,7 +50,7 @@ public abstract class PivotTestContext : BunitContext
 
     /// <summary>The handle of every report grid attached from here on, kept apart from the details
     /// grids' handles: what the report's own grid asks of the browser — the keyboard back on its
-    /// root among it (ADR-0069). Called before the pivot is rendered.</summary>
+    /// root among it (ADR-0070). Called before the pivot is rendered.</summary>
     internal BunitJSModuleInterop ReportGridHandle()
     {
         var handle = _module.SetupModule("attach",
@@ -60,7 +60,7 @@ public abstract class PivotTestContext : BunitContext
     }
 
     /// <summary>How many times the report grid behind <paramref name="handle"/> has asked for the
-    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0069).</summary>
+    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0070).</summary>
     internal static int KeyboardReturns(BunitJSModuleInterop handle)
         => handle.Invocations.Count(invocation => invocation.Identifier == "reclaimFocus");
 

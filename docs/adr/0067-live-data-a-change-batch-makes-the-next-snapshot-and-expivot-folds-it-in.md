@@ -2,7 +2,7 @@
 
 *(Decided with the user, 2026-09-30, in the ExPivot grilling — Q41 to Q45, Q56 to Q58, Q60 and Q61.
 The user brought it into the first version: "we will need it soon, and it is not only ExPivot's".
-The Snapshot's side is in [ADR-0063](./0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md);
+The Snapshot's side is in [ADR-0064](./0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md);
 this ADR is what a pivot does with it.)*
 
 Data that changes while it is being read is the ordinary case for this family. A blotter or a risk
@@ -44,7 +44,7 @@ learns it: SignalR, polling, or a message bus (Q57).
 
 - **ExPivot asks again for the whole answer.** The Leaf Aggregates are the size of the report, not
   of the data
-  ([ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+  ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
 - **A server that sends only the leaves that changed comes later**, and only if a measurement shows
   that the whole answer is too slow.
 
@@ -58,12 +58,12 @@ learns it: SignalR, polling, or a message bus (Q57).
 - **A change of values alone keeps the Selection** (Q45).
   - The Row Sequence Version moves only when the report's rows change: their keys, or their order
     ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md),
-    [ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+    [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
   - A menu or a panel that is open stays open.
   - An Item that appears or leaves changes the rows, so the Selection is dropped, as ADR-0011
     requires.
 - **A cell whose shown value changed is marked** with a Change Highlight
-  ([ADR-0067](./0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)),
+  ([ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)),
   under these rules (Q60):
   - **Only the data marks a cell**: a Change Batch, a server's change, or Refresh. A new layout, a
     sort or a collapse changes every cell at once and marks none.
@@ -72,7 +72,7 @@ learns it: SignalR, polling, or a message bus (Q57).
     so a mark never appears on a value that looks the same.
 - **When the newest data cannot be shown, the report says so, and stays on the last version it could
   compute** (Q61). This is a **Stale Report**.
-  - It arises when new data would make the layout break a cap (ADR-0065), or when the server fails
+  - It arises when new data would make the layout break a cap (ADR-0066), or when the server fails
     or refuses.
   - The report stays on screen. Above it, ExPivot states what happened and the time of the version
     shown, and offers Retry.
@@ -85,12 +85,12 @@ learns it: SignalR, polling, or a message bus (Q57).
 *(2026-10-01, when the bundled source's side was built.)*
 
 - **A batch that compacts the Snapshot is not folded.** A compaction moves rows
-  (ADR-0063), so the answer held for the current question is dropped and the next question is
+  (ADR-0064), so the answer held for the current question is dropped and the next question is
   answered afresh. So is a batch whose new Items would pass `MaxLeaves`: the fresh question is
   refused, naming the bound, and ExPivot shows a Stale Report. Either way no report is computed
   from half a batch.
 - **Subtraction is used only where no sum can round.** A leaf whose exact sum has passed 128 bits
-  ([ADR-0059](./0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)) is
+  ([ADR-0060](./0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)) is
   a `double`, and is recomputed from its records whenever a batch touches it.
 
 *(2026-10-01, when the component's side was built.)*
@@ -139,6 +139,6 @@ learns it: SignalR, polling, or a message bus (Q57).
   a Stale Report. Each of these is a §29 criterion.
 - **`/pivot-live` shows both ways**: a Change Batch fed to the bundled source, and a server's
   source whose data the demo's API server keeps changing
-  ([ADR-0068](./0068-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)).
-- **ExGrid and ExSheet take live data up in ADRs of their own** (ADR-0063). A plain ExGrid can
-  already show a live Window and mark its changes (ADR-0067, `/grid-live`).
+  ([ADR-0069](./0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)).
+- **ExGrid and ExSheet take live data up in ADRs of their own** (ADR-0064). A plain ExGrid can
+  already show a live Window and mark its changes (ADR-0068, `/grid-live`).

@@ -15,7 +15,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// The words of Excel's Japanese edition (ADR-0059, PV-33): chosen in one line, they replace every
+/// The words of Excel's Japanese edition (ADR-0060, PV-33): chosen in one line, they replace every
 /// word ExPivot paints — the pane, the toolbar, the menus, the panels, the report, Show Details —
 /// and the ExGrid commands in the report's Context Menu. Over data whose captions and Items are
 /// Japanese too, a Latin letter left anywhere is an English word left.
@@ -127,7 +127,7 @@ public class JapaneseWordsTests : PivotTestContext
         }
     }
 
-    [Fact] // ADR-0059 (PV-33): with the Japanese words chosen, no English word is left on any surface of the pivot
+    [Fact] // ADR-0060 (PV-33): with the Japanese words chosen, no English word is left on any surface of the pivot
     public async Task No_english_word_is_left()
     {
         var cut = RenderJapanese(PivotWords.Japanese);
@@ -146,7 +146,7 @@ public class JapaneseWordsTests : PivotTestContext
         Assert.Contains(seen, text => text.StartsWith("詳細: ", StringComparison.Ordinal));
     }
 
-    [Fact] // ADR-0059 (PV-33): every id ExPivot asks a word for on every surface, and every id of the report's Context Menu, has a word of the Japanese edition
+    [Fact] // ADR-0060 (PV-33): every id ExPivot asks a word for on every surface, and every id of the report's Context Menu, has a word of the Japanese edition
     public async Task Every_id_the_pivot_uses_has_a_japanese_word()
     {
         var asked = new HashSet<string>(StringComparer.Ordinal);
@@ -186,7 +186,7 @@ public class JapaneseWordsTests : PivotTestContext
             "details-title", "report-tab", "sheets", "close-tab", "close", "refused-too-many-columns", "subtotals-at-top"]), asked);
     }
 
-    [Fact] // ADR-0059 (PV-33): the words never follow the culture on their own — a Japanese culture without the Label keeps the English
+    [Fact] // ADR-0060 (PV-33): the words never follow the culture on their own — a Japanese culture without the Label keeps the English
     public void The_culture_alone_changes_no_word()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });

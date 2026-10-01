@@ -4,7 +4,7 @@ using static ExPivot.Engine.Tests.Pivot;
 
 namespace ExPivot.Engine.Tests;
 
-/// <summary>How the rows are laid out (ADR-0059, "The report's shape"): the three forms,
+/// <summary>How the rows are laid out (ADR-0060, "The report's shape"): the three forms,
 /// subtotals, grand totals, collapse and Σ Values in rows.</summary>
 public class RowFormTests
 {
@@ -15,7 +15,7 @@ public class RowFormTests
         Form = form,
     };
 
-    [Fact] // ADR-0059: the Compact form — one indented column, a group row carrying its subtotal at the top
+    [Fact] // ADR-0060: the Compact form — one indented column, a group row carrying its subtotal at the top
     public void Compact_form_with_subtotals_at_the_top()
     {
         var report = Report(RegionProduct());
@@ -37,7 +37,7 @@ public class RowFormTests
         ], Lines(report));
     }
 
-    [Fact] // ADR-0059: subtotals at the bottom are rows of their own, "<item> Total"
+    [Fact] // ADR-0060: subtotals at the bottom are rows of their own, "<item> Total"
     public void Compact_form_with_subtotals_at_the_bottom()
     {
         var report = Report(RegionProduct() with { SubtotalsAtTop = false });
@@ -62,7 +62,7 @@ public class RowFormTests
         ], Lines(report));
     }
 
-    [Fact] // ADR-0059: a field's subtotals switched off leave its group rows empty
+    [Fact] // ADR-0060: a field's subtotals switched off leave its group rows empty
     public void Subtotals_switched_off()
     {
         var layout = RegionProduct() with { Rows = [P("Region") with { Subtotals = false }, P("Product")] };
@@ -70,11 +70,11 @@ public class RowFormTests
         Assert.Equal(["g [-]East ||", "i   Apples || 130", "i   Pears || 50"], Lines(Report(layout))[..3]);
     }
 
-    [Fact] // ADR-0059: the grand total row can be switched off
+    [Fact] // ADR-0060: the grand total row can be switched off
     public void Grand_total_row_off()
         => Assert.DoesNotContain(Lines(Report(RegionProduct() with { GrandTotalRow = false })), line => line.StartsWith('t'));
 
-    [Fact] // ADR-0059: the Outline form — a column per field, group rows, labels in their own field's column
+    [Fact] // ADR-0060: the Outline form — a column per field, group rows, labels in their own field's column
     public void Outline_form()
     {
         var report = Report(RegionProduct(PivotReportForm.Outline));
@@ -91,7 +91,7 @@ public class RowFormTests
         Assert.Equal("t Grand Total |  || 285", Lines(report)[^1]);
     }
 
-    [Fact] // ADR-0059: the Tabular form — no group rows; the outer label on its block's first row; subtotals at the bottom
+    [Fact] // ADR-0060: the Tabular form — no group rows; the outer label on its block's first row; subtotals at the bottom
     public void Tabular_form()
     {
         var report = Report(RegionProduct(PivotReportForm.Tabular));
@@ -113,12 +113,12 @@ public class RowFormTests
         ], Lines(report));
     }
 
-    [Fact] // ADR-0059: the Tabular form puts subtotals at the bottom whatever the setting
+    [Fact] // ADR-0060: the Tabular form puts subtotals at the bottom whatever the setting
     public void Tabular_ignores_subtotals_at_the_top()
         => Assert.Equal(Lines(Report(RegionProduct(PivotReportForm.Tabular))),
             Lines(Report(RegionProduct(PivotReportForm.Tabular) with { SubtotalsAtTop = true })));
 
-    [Fact] // ADR-0059: Repeat Item Labels fills the outer columns of every row
+    [Fact] // ADR-0060: Repeat Item Labels fills the outer columns of every row
     public void Repeat_item_labels()
     {
         var report = Report(RegionProduct(PivotReportForm.Tabular) with { RepeatItemLabels = true });
@@ -128,7 +128,7 @@ public class RowFormTests
         Assert.Equal(["g [-]East |  || 180", "i East | Apples || 130"], Lines(outline)[..2]);
     }
 
-    [Fact] // ADR-0059: a collapsed Item's row carries its totals, and the Items under it are gone
+    [Fact] // ADR-0060: a collapsed Item's row carries its totals, and the Items under it are gone
     public void A_collapsed_item_shows_its_totals()
     {
         var layout = RegionProduct() with
@@ -139,7 +139,7 @@ public class RowFormTests
         Assert.Equal(["g [+]East || 180", "g [-]North || 10", "i   Pears || 10"], Lines(Report(layout))[..3]);
     }
 
-    [Fact] // ADR-0059: collapsed whatever the subtotal setting, in every form
+    [Fact] // ADR-0060: collapsed whatever the subtotal setting, in every form
     public void A_collapsed_item_shows_its_totals_in_every_form()
     {
         var collapsed = P("Region") with { Collapsed = true, Subtotals = false };
@@ -149,7 +149,7 @@ public class RowFormTests
         Assert.Equal("g [+]East |  || 180", Lines(Report(RegionProduct(PivotReportForm.Tabular) with { Rows = [collapsed, P("Product")] }))[0]);
     }
 
-    [Fact] // ADR-0059: Collapse Entire Field, with one Item expanded again
+    [Fact] // ADR-0060: Collapse Entire Field, with one Item expanded again
     public void Collapse_entire_field_with_an_exception()
     {
         var layout = RegionProduct() with
@@ -169,7 +169,7 @@ public class RowFormTests
         ], Lines(Report(layout)));
     }
 
-    [Fact] // ADR-0059: the innermost field cannot be collapsed and has no button
+    [Fact] // ADR-0060: the innermost field cannot be collapsed and has no button
     public void The_innermost_field_has_no_button()
     {
         var layout = RegionProduct() with { Rows = [P("Region"), P("Product") with { Collapsed = true }] };
@@ -178,7 +178,7 @@ public class RowFormTests
         Assert.Null(Report(layout).Rows[1].Labels[0].Toggle);
     }
 
-    [Fact] // ADR-0059: a button names its field and Item, for the edit it makes
+    [Fact] // ADR-0060: a button names its field and Item, for the edit it makes
     public void A_button_names_its_field_and_item()
     {
         var toggle = Report(RegionProduct()).Rows[0].Labels[0].Toggle!;
@@ -186,7 +186,7 @@ public class RowFormTests
         Assert.Equal(new PivotToggle("Region", PivotItemKey.Text("East"), "East", IsCollapsed: false), toggle);
     }
 
-    [Fact] // ADR-0059: Σ Values in Rows — one row per Value Field under each Item; totals per Value Field
+    [Fact] // ADR-0060: Σ Values in Rows — one row per Value Field under each Item; totals per Value Field
     public void Values_in_rows()
     {
         var layout = new PivotLayout
@@ -217,7 +217,7 @@ public class RowFormTests
         ], Lines(report));
     }
 
-    [Fact] // ADR-0059: Σ Values in Rows under an outer field: subtotals at the bottom, per Value Field
+    [Fact] // ADR-0060: Σ Values in Rows under an outer field: subtotals at the bottom, per Value Field
     public void Values_in_rows_with_an_outer_field()
     {
         var layout = new PivotLayout
@@ -242,7 +242,7 @@ public class RowFormTests
         ], lines[..9]);
     }
 
-    [Fact] // ADR-0059: Σ Values in Rows in the Tabular form — a Values column
+    [Fact] // ADR-0060: Σ Values in Rows in the Tabular form — a Values column
     public void Values_in_rows_tabular()
     {
         var layout = new PivotLayout
@@ -263,7 +263,7 @@ public class RowFormTests
         Assert.Equal(["t Grand Total | Sum of Amount || 285", "t Grand Total | Sum of Quantity || 29"], Lines(report)[^2..]);
     }
 
-    [Fact] // ADR-0059: no row field — no label column and one row of totals
+    [Fact] // ADR-0060: no row field — no label column and one row of totals
     public void No_row_field_is_one_row_of_totals()
     {
         var report = Report(new PivotLayout { Columns = [P("Online")], Values = [Sum("Amount")] });
@@ -273,7 +273,7 @@ public class RowFormTests
         Assert.Equal(["t  || 130 | 155 | 285"], Lines(report));
     }
 
-    [Fact] // ADR-0059: no Value Field — the Items, and no totals
+    [Fact] // ADR-0060: no Value Field — the Items, and no totals
     public void Rows_without_values()
     {
         var report = Report(new PivotLayout { Rows = [P("Region"), P("Product")] });
@@ -283,7 +283,7 @@ public class RowFormTests
         Assert.DoesNotContain(Lines(report), line => line.StartsWith('t') || line.StartsWith('s'));
     }
 
-    [Fact] // ADR-0059: no field at all is the empty report, which asks for fields
+    [Fact] // ADR-0060: no field at all is the empty report, which asks for fields
     public void An_empty_layout_is_the_empty_report()
     {
         var report = Report(PivotLayout.Empty);
@@ -294,7 +294,7 @@ public class RowFormTests
         Assert.Empty(report.ValueColumns);
     }
 
-    [Fact] // ADR-0059: a report filter field alone is still the empty report
+    [Fact] // ADR-0060: a report filter field alone is still the empty report
     public void Filters_alone_are_the_empty_report()
         => Assert.True(Report(new PivotLayout { Filters = [P("Region")] }).IsEmpty);
 }

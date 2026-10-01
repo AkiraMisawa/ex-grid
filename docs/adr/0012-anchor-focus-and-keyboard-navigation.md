@@ -215,7 +215,7 @@ Escape. MudBlazor keeps focus on its control, inside the popover, so the content
 the popup, and while it is open the gate leaves a descendant's Escape to it.)*)*
 
 *(Refined 2026-10-01, building
-[ADR-0069](./0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md).)* **A held Escape is
+[ADR-0070](./0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md).)* **A held Escape is
 one press.** The press peels its one layer, and the browser's repeats of it dismiss nothing more. A
 held key's repeats used to peel a layer each: holding Escape closed a Formula Entry's list and then
 cancelled the edit under it, losing what was typed, and closing ExPivot's details dialog with

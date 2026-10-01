@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// An Item as a Pivot Layout writes it (ADR-0059): its kind and its invariant text — a number
+/// An Item as a Pivot Layout writes it (ADR-0060): its kind and its invariant text — a number
 /// in its shortest round-trip form (<c>1234.5</c>), a date as ISO (<c>2026-09-30T00:00:00</c>),
 /// a Boolean as <c>TRUE</c> / <c>FALSE</c>, text as it is. A saved layout therefore names the
 /// same Items under any culture. Two keys of text are equal ignoring case, as the Items they
@@ -90,7 +90,7 @@ public sealed record PivotItemKey
 
     /// <summary>
     /// The key of the Item a value belongs to, as the engine sorts values into Items
-    /// (ADR-0059): null is <see cref="Blank"/>; a string is text; a number of any .NET numeric
+    /// (ADR-0060): null is <see cref="Blank"/>; a string is text; a number of any .NET numeric
     /// type is a number, and a non-finite one is <see cref="Error"/>; <c>DateTime</c>,
     /// <c>DateOnly</c> and <c>DateTimeOffset</c> are dates by their clock value; a Boolean is
     /// itself; anything else is text, by its invariant text.
@@ -98,7 +98,7 @@ public sealed record PivotItemKey
     public static PivotItemKey For(object? value) => ItemKey.Of(value).ToPublic();
 
     /// <summary>Equal when the kinds are equal and the texts are — ignoring case for text, as
-    /// Items are told apart (ADR-0059).</summary>
+    /// Items are told apart (ADR-0060).</summary>
     public bool Equals(PivotItemKey? other)
         => other is not null && Kind == other.Kind
             && (Kind == PivotItemKind.Text

@@ -11,11 +11,11 @@ namespace ExGrid.Data.Tests;
 /// In UTF-8, a CSV's Text column tells its values apart by their bytes, and the dictionary's codes by
 /// text are made when first asked for (ticket 07). The dictionary must still hold every distinct value
 /// once, in order of first appearance, and answer a lookup by text — from a Change Batch or a reader,
-/// from any thread — as if it had been made during the load (ADR-0063).
+/// from any thread — as if it had been made during the load (ADR-0064).
 /// </summary>
 public class CsvTextTests
 {
-    [Fact] // ADR-0063: a Text column of many distinct values takes each once, in order of first appearance, however many there are
+    [Fact] // ADR-0064: a Text column of many distinct values takes each once, in order of first appearance, however many there are
     public void Many_distinct_texts_take_codes_in_order_of_first_appearance()
     {
         // 100,000 distinct values, then each again in another order: far past where a cache that only
@@ -41,7 +41,7 @@ public class CsvTextTests
         Assert.False(dictionary.TryGetCode("v100000", out _));
     }
 
-    [Fact] // ADR-0063: a Change Batch applied to a Snapshot read from a CSV finds its keys and its texts by their text
+    [Fact] // ADR-0064: a Change Batch applied to a Snapshot read from a CSV finds its keys and its texts by their text
     public void A_change_batch_finds_the_texts_of_a_snapshot_read_from_a_csv()
     {
         var schema = new CsvSchema([new("Id", SnapshotKind.Text), new("Desk", SnapshotKind.Text), new("Qty", SnapshotKind.Integer)]) { RecordKey = "Id" };
@@ -71,7 +71,7 @@ public class CsvTextTests
         Assert.Equal("T7", Assert.Throws<SnapshotException>(() => snapshot.Apply(ChangeBatch.Of(added: Read(batchSchema, "Id,Desk,Qty\nT7,FX,1\n")))).Key);
     }
 
-    [Fact] // ADR-0063: a Snapshot read from a CSV answers lookups by text from several threads at once
+    [Fact] // ADR-0064: a Snapshot read from a CSV answers lookups by text from several threads at once
     public void A_dictionary_read_from_a_csv_is_looked_up_from_several_threads_at_once()
     {
         const int distinct = 20_000;
@@ -94,7 +94,7 @@ public class CsvTextTests
         Assert.Equal(0, wrong);
     }
 
-    [Fact] // ADR-0063: texts appended unindexed are found by an interner that is then asked to look one up
+    [Fact] // ADR-0064: texts appended unindexed are found by an interner that is then asked to look one up
     public void An_interner_indexes_what_was_appended_unindexed_before_it_looks_up()
     {
         var interner = new TextInterner();

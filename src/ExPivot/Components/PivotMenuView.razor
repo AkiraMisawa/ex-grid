@@ -1,4 +1,4 @@
-@* The built-in menu (ADR-0060): a placed field's commands, or the Layout menu's choices, in
+@* The built-in menu (ADR-0061): a placed field's commands, or the Layout menu's choices, in
    ExPivot's order, each with its Enabled state. A choice among others is a menuitemradio, its mark
    shown, and a group of them stands under its heading. The first enabled command takes DOM focus
    when the menu opens. *@
@@ -20,7 +20,7 @@
 </div>
 
 @code {
-    /// <summary>The commands and the request to take the keyboard (ADR-0060).</summary>
+    /// <summary>The commands and the request to take the keyboard (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotMenuContext Context { get; set; } = default!;
 
     private sealed record Group(string? Heading, int From, int To);

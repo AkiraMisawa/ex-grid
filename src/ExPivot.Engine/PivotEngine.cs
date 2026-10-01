@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The pivot engine (ADR-0059/0065). A Pivot Source answers a question with the Leaf Aggregates;
+/// The pivot engine (ADR-0060/0066). A Pivot Source answers a question with the Leaf Aggregates;
 /// <see cref="Cube"/> builds from them the row and column trees and every total; and
 /// <see cref="Report"/> lays a cube out into a <see cref="PivotReport"/>. Pure, with no UI: a
 /// server computes the same report the screen shows, and a server-side answer is held to the
@@ -51,9 +51,9 @@ public static class PivotEngine
     }
 
     /// <summary>
-    /// The cube of a Pivot Source's answer (ADR-0065): the row and column trees its leaves form,
+    /// The cube of a Pivot Source's answer (ADR-0066): the row and column trees its leaves form,
     /// and every subtotal and grand total merged from the leaves' parts — each total from its
-    /// records, never from the totals below it (ADR-0059). Refuses by name an answer to another
+    /// records, never from the totals below it (ADR-0060). Refuses by name an answer to another
     /// question than <paramref name="query"/>, a refusal, and a field neither declared in
     /// <paramref name="fields"/> nor named by the question.
     /// </summary>
@@ -69,7 +69,7 @@ public static class PivotEngine
     }
 
     /// <summary>
-    /// <see cref="Cube"/> in slices (ADR-0065, PV-40): the same cube, made a piece at a time, the
+    /// <see cref="Cube"/> in slices (ADR-0066, PV-40): the same cube, made a piece at a time, the
     /// thread yielded whenever a slice of <see cref="PivotSlicing.Budget"/> is spent — so a browser
     /// keeps painting while the cube of a large answer is made. Cancelled, it throws at the next
     /// yield. A small answer is made without reading the clock, and the task is complete when it
@@ -95,7 +95,7 @@ public static class PivotEngine
     }
 
     /// <summary>
-    /// Lays a cube out under <paramref name="layout"/> (ADR-0059): the rows, the label columns,
+    /// Lays a cube out under <paramref name="layout"/> (ADR-0060): the rows, the label columns,
     /// the value columns and their Header Group spans. Cheap — nothing is asked of the source —
     /// and what a collapse, a sort, a form or a Value Field's Aggregation changing costs. Refuses a
     /// layout the cube does not hold (<see cref="PivotCube.Holds"/>).
@@ -113,13 +113,13 @@ public static class PivotEngine
             throw new InvalidOperationException(
                 "The cube was aggregated under other placed fields, Hidden Items or Value Fields than this layout " +
                 "has, or without the parts one of its Aggregations reads; ask again (PivotEngine.Aggregate, or the " +
-                "source with PivotQuery.For) before laying it out (ADR-0059/0065).");
+                "source with PivotQuery.For) before laying it out (ADR-0060/0066).");
         }
         return new ReportBuilder(cube, layout, options ?? PivotOptions.Default);
     }
 
     /// <summary>
-    /// <see cref="Report"/> in slices (ADR-0065, PV-40): the same report, laid out a piece at a
+    /// <see cref="Report"/> in slices (ADR-0066, PV-40): the same report, laid out a piece at a
     /// time — the value columns and their spans, then the rows, each axis walked in its Items'
     /// order — the thread yielded whenever a slice of <see cref="PivotSlicing.Budget"/> is spent, so
     /// a layout that grows long never holds a browser. Cancelled, it throws at the next yield. A
@@ -145,7 +145,7 @@ public static class PivotEngine
     /// <summary>Whether <paramref name="cube"/> was aggregated from exactly these records and
     /// field declarations and holds <paramref name="layout"/>, so that a new report needs no pass
     /// over the records. The records and the fields are compared by instance: a new list is a
-    /// refresh (ADR-0058).</summary>
+    /// refresh (ADR-0059).</summary>
     public static bool CanReuse<TRecord>(
         PivotCube? cube, IReadOnlyList<TRecord> records, IReadOnlyList<PivotField<TRecord>> fields, PivotLayout layout)
         => cube is not null && ReferenceEquals(cube.RecordsIdentity, records)
@@ -153,7 +153,7 @@ public static class PivotEngine
 
     /// <summary>
     /// Every Item of a placed field over all the records, in the field's order — what Filter…
-    /// lists (ADR-0060) — each with its label and whether it is hidden now. For a cube built by
+    /// lists (ADR-0061) — each with its label and whether it is hidden now. For a cube built by
     /// <see cref="Aggregate{TRecord}"/>; a cube built from a source's answer asks the source
     /// (<see cref="PivotSource.ItemsAsync"/>) and lays the page out with
     /// <see cref="ItemsOf(PivotItemPage, PivotLayout, PivotField, PivotOptions?)"/>.
@@ -165,21 +165,21 @@ public static class PivotEngine
         ArgumentNullException.ThrowIfNull(layout);
         ArgumentNullException.ThrowIfNull(field);
         // The layout's placement, not the question's: a field in Filters that hides nothing is
-        // placed, and is not in the question (ADR-0065, refined).
+        // placed, and is not in the question (ADR-0066, refined).
         if (layout.PlacementOf(field) is null && !cube.Query.Places(field))
             throw new ArgumentException($"'{field}' stands in none of Filters, Rows and Columns of the layout.", nameof(field));
         if (cube.AllItems is not { } allItems)
         {
             throw new InvalidOperationException(
                 "This cube was built from a Pivot Source's answer, which carries only the Items its leaves have; ask the " +
-                "source for the field's Items (PivotSource.ItemsAsync) under the cube's Source Version (ADR-0065).");
+                "source for the field's Items (PivotSource.ItemsAsync) under the cube's Source Version (ADR-0066).");
         }
         return ItemInfos(allItems(field).Select(key => ItemRef.Of(key)), cube.Meta[field], layout, field, options);
     }
 
     /// <summary>
     /// A page of a field's Items (<see cref="PivotSource.ItemsAsync"/>) as Filter… and the report
-    /// filter band list them (ADR-0060): in the field's order under <paramref name="layout"/> —
+    /// filter band list them (ADR-0061): in the field's order under <paramref name="layout"/> —
     /// its declared Items first, then by kind and label under the report's culture, descending when
     /// the field is — each with its label and whether the layout hides it now.
     /// </summary>
@@ -210,7 +210,7 @@ public static class PivotEngine
     }
 
     /// <summary>
-    /// The Source Records behind one cell of a report — Show Details (ADR-0062) — in their order
+    /// The Source Records behind one cell of a report — Show Details (ADR-0063) — in their order
     /// in the snapshot: those no Hidden Item leaves out, carrying the row's Items and the
     /// column's. A label cell is <paramref name="valueColumn"/> −1, and is every record of its
     /// row. A row that stands for no records — a Value Field's row — is its Item's. The question is
@@ -244,11 +244,11 @@ public static class PivotEngine
             {
                 ArgumentNullException.ThrowIfNull(placement, nameof(layout));
                 if (!declared.ContainsKey(placement.Field))
-                    throw new InvalidOperationException($"The layout places '{placement.Field}' in {area}, and no Pivot Field of that name is declared (ADR-0059).");
+                    throw new InvalidOperationException($"The layout places '{placement.Field}' in {area}, and no Pivot Field of that name is declared (ADR-0060).");
                 if (!standing.Add(placement.Field))
-                    throw new InvalidOperationException($"The layout places '{placement.Field}' twice among Filters, Rows and Columns; a field stands in one of them at most (ADR-0060).");
+                    throw new InvalidOperationException($"The layout places '{placement.Field}' twice among Filters, Rows and Columns; a field stands in one of them at most (ADR-0061).");
                 if (placement.Sort.ByValue is { } byValue && (byValue < 0 || byValue >= layout.Values.Count))
-                    throw new InvalidOperationException($"'{placement.Field}' is ordered by Value Field {byValue}, and the layout has {layout.Values.Count} (ADR-0059).");
+                    throw new InvalidOperationException($"'{placement.Field}' is ordered by Value Field {byValue}, and the layout has {layout.Values.Count} (ADR-0060).");
                 if (!Enum.IsDefined(placement.Sort.Direction))
                     throw new InvalidOperationException($"'{placement.Field}' has an unknown sort direction ({placement.Sort.Direction}).");
             }
@@ -257,13 +257,13 @@ public static class PivotEngine
         {
             ArgumentNullException.ThrowIfNull(value, nameof(layout));
             if (!declared.ContainsKey(value.Field))
-                throw new InvalidOperationException($"The layout places '{value.Field}' in Values, and no Pivot Field of that name is declared (ADR-0059).");
+                throw new InvalidOperationException($"The layout places '{value.Field}' in Values, and no Pivot Field of that name is declared (ADR-0060).");
             if (!Enum.IsDefined(value.Aggregation))
                 throw new InvalidOperationException($"The Value Field of '{value.Field}' has an unknown Aggregation ({value.Aggregation}).");
             if (!Enum.IsDefined(value.ShowValuesAs))
                 throw new InvalidOperationException($"The Value Field of '{value.Field}' has an unknown Show Values As ({value.ShowValuesAs}).");
             if (value.NumberFormat is { } format && PivotNumberFormat.Check(format) is { } problem)
-                throw new InvalidOperationException($"The Value Field of '{value.Field}' has the number format '{format}', which {problem} (ADR-0059).");
+                throw new InvalidOperationException($"The Value Field of '{value.Field}' has the number format '{format}', which {problem} (ADR-0060).");
         }
         if (!Enum.IsDefined(layout.ValuesAxis))
             throw new InvalidOperationException($"Unknown ValuesAxis ({layout.ValuesAxis}).");
@@ -273,7 +273,7 @@ public static class PivotEngine
 }
 
 /// <summary>What a report is laid out in: the culture its labels and values are written in and
-/// its text is ordered by, and the Consumer's words (ADR-0059).</summary>
+/// its text is ordered by, and the Consumer's words (ADR-0060).</summary>
 public sealed record PivotOptions
 {
     /// <summary>The invariant culture's report, in English.</summary>
@@ -289,7 +289,7 @@ public sealed record PivotOptions
     internal string Word(string id) => PivotWords.Resolve(id, Label);
 }
 
-/// <summary>One Item as Filter… lists it (ADR-0060).</summary>
+/// <summary>One Item as Filter… lists it (ADR-0061).</summary>
 /// <param name="Key">The Item's key, as a layout writes it.</param>
 /// <param name="Label">What it is painted as.</param>
 /// <param name="IsHidden">Whether the layout hides it now.</param>

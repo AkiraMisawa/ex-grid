@@ -4,10 +4,10 @@ using static ExPivot.Engine.Tests.Pivot;
 
 namespace ExPivot.Engine.Tests;
 
-/// <summary>How the value columns and the rectangles over them are laid out (ADR-0059/0032).</summary>
+/// <summary>How the value columns and the rectangles over them are laid out (ADR-0060/0032).</summary>
 public class ColumnTests
 {
-    [Fact] // ADR-0059: one column per Item of the column field, and the grand total column
+    [Fact] // ADR-0060: one column per Item of the column field, and the grand total column
     public void One_column_field()
     {
         var report = Report(new PivotLayout { Rows = [P("Region")], Columns = [P("Product")], Values = [Sum("Amount")] });
@@ -28,7 +28,7 @@ public class ColumnTests
             report.ValueColumns.Select(c => c.Role));
     }
 
-    [Fact] // ADR-0059/0032: an outer column Item is a rectangle over its Items; its subtotal follows outside it
+    [Fact] // ADR-0060/0032: an outer column Item is a rectangle over its Items; its subtotal follows outside it
     public void Two_column_fields_with_subtotals()
     {
         var report = Report(new PivotLayout { Rows = [P("Region")], Columns = [P("Online"), P("Product")], Values = [Sum("Amount")] });
@@ -41,7 +41,7 @@ public class ColumnTests
         Assert.Equal("t Grand Total || 70 | 60 | 130 | 130 | 25 | 155 | 285", Lines(report)[^1]);
     }
 
-    [Fact] // ADR-0059: a column field's subtotals switched off, and the grand total column off
+    [Fact] // ADR-0060: a column field's subtotals switched off, and the grand total column off
     public void Column_subtotals_and_grand_total_off()
     {
         var layout = new PivotLayout
@@ -54,7 +54,7 @@ public class ColumnTests
         Assert.Equal(["Apples", "Pears", "Apples", "Plums"], Headers(Report(layout)));
     }
 
-    [Fact] // ADR-0059: a collapsed column Item is one column, its header standing tall under its parent
+    [Fact] // ADR-0060: a collapsed column Item is one column, its header standing tall under its parent
     public void A_collapsed_column_item_is_one_column()
     {
         var layout = new PivotLayout
@@ -69,7 +69,7 @@ public class ColumnTests
         Assert.Equal("t  || 130 | 130 | 25 | 155 | 285", Lines(report)[0]);
     }
 
-    [Fact] // ADR-0059: Σ Values in Columns — each column splits per Value Field under its Item's rectangle
+    [Fact] // ADR-0060: Σ Values in Columns — each column splits per Value Field under its Item's rectangle
     public void Values_in_columns()
     {
         var layout = new PivotLayout
@@ -93,7 +93,7 @@ public class ColumnTests
         Assert.Equal([0, 1, 0, 1, 0, 1], report.ValueColumns.Select(c => c.ValueField));
     }
 
-    [Fact] // ADR-0059: Σ Values in Columns under two fields — subtotals as "<item> Total" over the captions
+    [Fact] // ADR-0060: Σ Values in Columns under two fields — subtotals as "<item> Total" over the captions
     public void Values_in_columns_under_two_fields()
     {
         var layout = new PivotLayout
@@ -118,7 +118,7 @@ public class ColumnTests
         ], Spans(report));
     }
 
-    [Fact] // ADR-0059: no column field — one column per Value Field, headed by its caption
+    [Fact] // ADR-0060: no column field — one column per Value Field, headed by its caption
     public void No_column_field()
     {
         var report = Report(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount"), Value("Amount", PivotAggregation.Count)] });
@@ -127,7 +127,7 @@ public class ColumnTests
         Assert.Equal("i East || 180 | 3", Lines(report)[0]);
     }
 
-    [Fact] // ADR-0059: column names are unique and stable for the same column across reports
+    [Fact] // ADR-0060: column names are unique and stable for the same column across reports
     public void Column_names_are_unique_and_stable()
     {
         var layout = new PivotLayout { Columns = [P("Online"), P("Product")], Values = [Sum("Amount"), Sum("Quantity")] };
@@ -139,7 +139,7 @@ public class ColumnTests
         Assert.All(first, name => Assert.StartsWith("v:", name));
     }
 
-    [Fact] // ADR-0059: the label columns and the value columns never share a name
+    [Fact] // ADR-0060: the label columns and the value columns never share a name
     public void Label_and_value_column_names_differ()
     {
         var report = Report(new PivotLayout

@@ -32,7 +32,7 @@
 <p>
     <strong>The use case:</strong> a risk screen whose trades change while it is read — amended,
     booked and cancelled several times a second. The data changes in one of two places, and what
-    reaches the screen is the same either way (ADR-0066):
+    reaches the screen is the same either way (ADR-0067):
 </p>
 <ul>
     <li>
@@ -55,7 +55,7 @@
 <p>
     ExPivot gathers the changes and redraws at most every 250 ms, from the newest data
     (<code>RedrawInterval</code>), and marks each value whose painted text changed for a second
-    (<code>ChangeHighlightDuration</code>, ADR-0067). A new layout, a sort or a collapse marks
+    (<code>ChangeHighlightDuration</code>, ADR-0068). A new layout, a sort or a collapse marks
     nothing, and the Selection stays while only values change. The page's changes stop, and the
     server's live updates go off, when you leave the page.
 </p>
@@ -170,7 +170,7 @@
 
     #region The code: batch
     // /pivot's trades in a Snapshot, read through its typed declarations (DemoPivotData.Fields),
-    // whose Record Key is the trade's id: a Change Batch changes a trade by its key (ADR-0063/0066).
+    // whose Record Key is the trade's id: a Change Batch changes a trade by its key (ADR-0064/0067).
     private DemoPivotTrade[] _trades = [];
     private SnapshotPivotSource _local = default!;
     private PeriodicTimer? _ticks;
@@ -183,7 +183,7 @@
 
     // Four times a second, a few trades amended and handed to the source as one Change Batch: the
     // source makes the next Snapshot, brings the answer it holds up to date from what the batch
-    // removed and added, and raises Changed, which ExPivot listens to (ADR-0066).
+    // removed and added, and raises Changed, which ExPivot listens to (ADR-0067).
     private async Task AmendAsync(PeriodicTimer ticks)
     {
         // A disposed timer ends the loop: the page owns it, and disposes it as it goes.
@@ -229,7 +229,7 @@
         var server = _server = DemoServerPivot.Fetch(Api.Http, fields, features);
         StateHasChanged();
         // The hub says each Source Version the data moves on to; the page passes it on, and ExPivot
-        // asks the server again for the whole answer (ADR-0066). Neither ExPivot nor ExGrid learns
+        // asks the server again for the whole answer (ADR-0067). Neither ExPivot nor ExGrid learns
         // how the notice arrived: polling GET /api/status would do as well.
         var hub = _hub = new HubConnectionBuilder().WithUrl(Api.Hub).WithAutomaticReconnect().Build();
         hub.On<string>("VersionChanged", version =>
@@ -240,7 +240,7 @@
         // Not cancelled by the page's going: a connection cut off while it opens is an error in the
         // browser's console. DisposeAsync waits for it instead.
         await (_hubStarting = hub.StartAsync());
-        // Live updates are off until a page turns them on (ADR-0068), and this one turns them off
+        // Live updates are off until a page turns them on (ADR-0069), and this one turns them off
         // as it goes.
         await SetLiveAsync(true, token);
     }
@@ -259,7 +259,7 @@
     #region The code: pivots
     // ExPivot listens to its source's Changed, gathers the changes and redraws at most every
     // RedrawInterval from the newest data, and marks each value whose painted text changed for
-    // ChangeHighlightDuration (ADR-0066/0067). Both are the defaults, written out.
+    // ChangeHighlightDuration (ADR-0067/0068). Both are the defaults, written out.
     private RenderFragment LocalPivot => @<ExPivot Source="_local" @bind-Layout="_localLayout"
                                                     RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
                                                     PivotChrome="_pivotChrome" Chrome="_gridChrome"
@@ -347,7 +347,7 @@
 
     #region The code: leaving
     // The page's changes stop, and the server's live updates go off, when the page goes: the data
-    // then holds still for whoever reads it next (ADR-0068).
+    // then holds still for whoever reads it next (ADR-0069).
     public async ValueTask DisposeAsync()
     {
         _leaving.Cancel();

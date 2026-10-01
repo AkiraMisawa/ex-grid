@@ -1,7 +1,7 @@
 namespace ExGrid.Data.Storage;
 
 /// <summary>
-/// The Consumer's records behind one segment's rows, kept by reference and in order (ADR-0063). The
+/// The Consumer's records behind one segment's rows, kept by reference and in order (ADR-0064). The
 /// records are held in an array of their own type, so keeping them boxes nothing.
 /// </summary>
 internal abstract class RecordStore

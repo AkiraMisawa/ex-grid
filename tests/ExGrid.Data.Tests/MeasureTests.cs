@@ -8,7 +8,7 @@ using Xunit;
 namespace ExGrid.Data.Tests;
 
 /// <summary>
-/// DA-17 on CoreCLR: a million records built from objects and read from a CSV (ADR-0063), measured
+/// DA-17 on CoreCLR: a million records built from objects and read from a CSV (ADR-0064), measured
 /// and never gated — a measurement swings with the machine (AGENTS.md). Read from Arrow is
 /// <c>ExGrid.Data.Arrow.Tests</c>' <c>MeasureTests</c>. These run only when asked for, in a Release
 /// build, and write what they measured to the test output:
@@ -32,7 +32,7 @@ public class MeasureTests
 
     private static readonly Lazy<Trade[]> Trades = new(() => Make(Million));
 
-    [Fact(Explicit = true)] // DA-17 / ADR-0063: a million records built from objects through typed accessors, at once and in slices
+    [Fact(Explicit = true)] // DA-17 / ADR-0064: a million records built from objects through typed accessors, at once and in slices
     public async Task DA17_a_million_records_built_from_objects()
     {
         var output = TestContext.Current.TestOutputHelper!;
@@ -51,7 +51,7 @@ public class MeasureTests
         Assert.Equal(Million, (await Declared(keyed: true).BuildAsync(trades, cancellationToken: token)).RowCount);
     }
 
-    [Fact(Explicit = true)] // DA-17 / ADR-0063: a million rows of the trade export read from a CSV under its declared Schema
+    [Fact(Explicit = true)] // DA-17 / ADR-0064: a million rows of the trade export read from a CSV under its declared Schema
     public async Task DA17_a_million_rows_read_from_a_CSV()
     {
         var output = TestContext.Current.TestOutputHelper!;

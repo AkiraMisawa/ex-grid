@@ -1,4 +1,4 @@
-@* Field Settings… under MudBlazor (ADR-0060/0061): a row or column field's order as a MudSelect and
+@* Field Settings… under MudBlazor (ADR-0061/0062): a row or column field's order as a MudSelect and
    its subtotals as a MudRadioGroup, as ExPivot's draft until OK. The select's list is an Inner
    Popup (ADR-0039), reported through the context so that Escape closes the list before the panel.
    The select comes first, and takes DOM focus for each request: a MudRadio has no FocusAsync. *@
@@ -28,7 +28,7 @@
     private MudSelect<int>? _sort;
     private int _acted;
 
-    /// <summary>The draft and the exits (ADR-0060).</summary>
+    /// <summary>The draft and the exits (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotFieldSettingsContext Context { get; set; } = default!;
 
     /// <summary>The Chrome this panel belongs to.</summary>

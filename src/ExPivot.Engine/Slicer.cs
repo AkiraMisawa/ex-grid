@@ -1,7 +1,7 @@
 namespace ExPivot.Engine;
 
 /// <summary>
-/// One piece of sliced work's share of the thread (ADR-0065, PV-27/PV-40). A slice begins when the
+/// One piece of sliced work's share of the thread (ADR-0066, PV-27/PV-40). A slice begins when the
 /// work begins and after every yield, and ends once it has run for
 /// <see cref="PivotSlicing.Budget"/>; the thread is then yielded, and cancelled work throws there.
 /// <list type="bullet">

@@ -11,7 +11,7 @@ namespace ExGrid.Data.Arrow.Tests;
 /// <summary>Writing gives an uncompressed IPC stream, each kind its Arrow type, a Blank a null slot (DA-15).</summary>
 public class WriteTests
 {
-    [Fact] // ADR-0064: the stream is uncompressed, and each kind has the Arrow type ADR-0064 gives it
+    [Fact] // ADR-0065: the stream is uncompressed, and each kind has the Arrow type ADR-0065 gives it
     public async Task The_stream_is_uncompressed_and_each_kind_has_its_arrow_type()
     {
         var snapshot = Deals().Build(Make(300));
@@ -38,7 +38,7 @@ public class WriteTests
         Assert.Equal(300, rows);
     }
 
-    [Fact] // ADR-0064: what is written reads back through Apache.Arrow's own accessors as the Snapshot's values, a Blank a null slot
+    [Fact] // ADR-0065: what is written reads back through Apache.Arrow's own accessors as the Snapshot's values, a Blank a null slot
     public async Task Arrows_own_accessors_read_the_snapshots_values()
     {
         var deals = Make(200);
@@ -67,7 +67,7 @@ public class WriteTests
         Assert.Equal(200, row);
     }
 
-    [Fact] // ADR-0064: a Blank is a null slot in every kind; a Text Blank is a null index
+    [Fact] // ADR-0065: a Blank is a null slot in every kind; a Text Blank is a null index
     public async Task A_blank_is_a_null_slot()
     {
         var snapshot = Deals().Build([new Deal(1, null, null, null, null, null, null, null), One(2)]);
@@ -86,7 +86,7 @@ public class WriteTests
         Assert.Equal(0, batch.Column("Id").NullCount);
     }
 
-    [Fact] // ADR-0064: the captions, the Record Key and the version travel in the metadata, under the documented keys
+    [Fact] // ADR-0065: the captions, the Record Key and the version travel in the metadata, under the documented keys
     public async Task The_metadata_carries_the_captions_the_key_and_the_version()
     {
         var builder = Deals();
@@ -107,7 +107,7 @@ public class WriteTests
         Assert.False(schema.GetFieldByName("Notional").HasMetadata);
     }
 
-    [Fact] // ADR-0064: a Snapshot without a Record Key writes none
+    [Fact] // ADR-0065: a Snapshot without a Record Key writes none
     public async Task A_snapshot_without_a_key_writes_none()
     {
         var snapshot = new SnapshotBuilder<Deal>().Integer("Id", d => d.Id).Build(Make(3));
@@ -127,7 +127,7 @@ public class WriteTests
         { "timestamp[ns]", ["2026-01-01T12:00:00.0000001", "1970-01-01", "2262-04-11"] },
     };
 
-    [Theory] // ADR-0064: Date is date32 when every value is a midnight, else a timestamp without a zone in the coarsest unit that holds every value exactly
+    [Theory] // ADR-0065: Date is date32 when every value is a midnight, else a timestamp without a zone in the coarsest unit that holds every value exactly
     [MemberData(nameof(DateUnits))]
     public async Task A_date_takes_the_coarsest_unit_that_holds_every_value(string type, string[] values)
     {
@@ -143,7 +143,7 @@ public class WriteTests
         AssertSame(snapshot, await ReadAsync(payload));
     }
 
-    [Fact] // ADR-0064: a Date column of Blanks alone is date32
+    [Fact] // ADR-0065: a Date column of Blanks alone is date32
     public async Task A_date_column_of_blanks_is_date32()
     {
         var snapshot = new SnapshotBuilder<DateTime?>().Date("When", d => d).Build([null, null]);
@@ -153,7 +153,7 @@ public class WriteTests
         Assert.IsType<Date32Type>(reader.Schema.GetFieldByName("When").DataType);
     }
 
-    [Fact] // ADR-0064: a date no unit holds exactly — it needs nanoseconds, and lies outside their reach — is refused by row and column, and nothing is written
+    [Fact] // ADR-0065: a date no unit holds exactly — it needs nanoseconds, and lies outside their reach — is refused by row and column, and nothing is written
     public async Task A_date_no_unit_holds_is_refused()
     {
         DateTime?[] dates = [new DateTime(2026, 1, 1).AddTicks(1), null, new DateTime(2300, 1, 1)];
@@ -168,7 +168,7 @@ public class WriteTests
         Assert.Equal(0, stream.Length);
     }
 
-    [Fact] // ADR-0064: Decimal is decimal128(38, scale) at the largest scale, and a value that would pass 38 digits there is refused by row and column, and nothing is written
+    [Fact] // ADR-0065: Decimal is decimal128(38, scale) at the largest scale, and a value that would pass 38 digits there is refused by row and column, and nothing is written
     public async Task A_decimal_past_38_digits_at_the_columns_scale_is_refused()
     {
         var builder = new SnapshotBuilder<(long Id, decimal? Value)>().Integer("Id", v => v.Id).Decimal("Value", v => v.Value).Key("Id");
@@ -184,7 +184,7 @@ public class WriteTests
         Assert.Equal(0, stream.Length);
     }
 
-    [Fact] // ADR-0064: the extreme decimals that fit 38 digits at the column's scale are written exactly
+    [Fact] // ADR-0065: the extreme decimals that fit 38 digits at the column's scale are written exactly
     public async Task Decimals_up_to_38_digits_are_written_exactly()
     {
         var builder = new SnapshotBuilder<(long Id, decimal? Value)>().Integer("Id", v => v.Id).Decimal("Value", v => v.Value).Key("Id");
@@ -198,7 +198,7 @@ public class WriteTests
         AssertSame(snapshot, await ReadAsync(payload));
     }
 
-    [Fact] // ADR-0064: text that is not valid Unicode cannot be UTF-8, and is refused by row and column
+    [Fact] // ADR-0065: text that is not valid Unicode cannot be UTF-8, and is refused by row and column
     public async Task Text_that_is_not_unicode_is_refused()
     {
         var snapshot = new SnapshotBuilder<string?>().Text("Name", v => v).Build(["fine", null, "lone \uD800 surrogate"]);
@@ -210,7 +210,7 @@ public class WriteTests
         Assert.Equal(0, stream.Length);
     }
 
-    [Fact] // ADR-0064: an entry no row holds any more is no value, so one UTF-8 cannot carry is written with U+FFFD rather than refusing the Snapshot
+    [Fact] // ADR-0065: an entry no row holds any more is no value, so one UTF-8 cannot carry is written with U+FFFD rather than refusing the Snapshot
     public async Task A_dictionary_entry_no_row_holds_is_written_even_when_not_unicode()
     {
         var builder = new SnapshotBuilder<(long Id, string Name)>().Integer("Id", v => v.Id).Text("Name", v => v.Name).Key("Id");
@@ -225,7 +225,7 @@ public class WriteTests
         Assert.Equal(["fine", "lone � surrogate", "mended"], Enumerable.Range(0, entries.Length).Select(i => entries.GetString(i)));
     }
 
-    [Fact] // ADR-0064: Text is written as the Snapshot's own dictionary, its codes the indices — after Change Batches, entries no row holds included
+    [Fact] // ADR-0065: Text is written as the Snapshot's own dictionary, its codes the indices — after Change Batches, entries no row holds included
     public async Task Text_is_written_as_the_snapshots_own_dictionary()
     {
         var builder = new SnapshotBuilder<(long Id, string Desk)>().Integer("Id", v => v.Id).Text("Desk", v => v.Desk).Key("Id");
@@ -240,7 +240,7 @@ public class WriteTests
         Assert.Equal([0, 3], ((Int32Array)desk.Indices).Values.ToArray());
     }
 
-    [Fact] // ADR-0064: rows go out in record batches of 65,536, the last holding the rest
+    [Fact] // ADR-0065: rows go out in record batches of 65,536, the last holding the rest
     public async Task Rows_go_out_in_record_batches_of_65536()
     {
         var snapshot = new SnapshotBuilder<int>().Integer("N", n => n).Build([.. Enumerable.Range(0, 150_000)]);
@@ -255,7 +255,7 @@ public class WriteTests
         Assert.Equal([65_536, 65_536, 18_928], lengths);
     }
 
-    [Fact] // ADR-0064: the write writes asynchronously, as a server's response body requires, and leaves the stream open
+    [Fact] // ADR-0065: the write writes asynchronously, as a server's response body requires, and leaves the stream open
     public async Task The_write_is_asynchronous_and_leaves_the_stream_open()
     {
         var snapshot = Deals().Build(Make(1_000));
@@ -267,7 +267,7 @@ public class WriteTests
         AssertSame(snapshot, await ReadAsync(stream.ToArray()));
     }
 
-    [Fact] // ADR-0064: a cancelled write throws, between record batches
+    [Fact] // ADR-0065: a cancelled write throws, between record batches
     public async Task A_cancelled_write_throws()
     {
         var snapshot = Deals().Build(Make(10));

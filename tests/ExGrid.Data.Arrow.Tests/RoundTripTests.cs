@@ -7,7 +7,7 @@ namespace ExGrid.Data.Arrow.Tests;
 /// <summary>A Snapshot written and read back through ExGrid.Data.Arrow is the Snapshot it was (DA-13).</summary>
 public class RoundTripTests
 {
-    [Fact] // ADR-0064: a Snapshot round-trips whole, column by column and Blank by Blank, with its captions, Record Key and version
+    [Fact] // ADR-0065: a Snapshot round-trips whole, column by column and Blank by Blank, with its captions, Record Key and version
     public async Task Every_kind_round_trips_with_its_blanks_captions_key_and_version()
     {
         var deals = Make(500);
@@ -31,7 +31,7 @@ public class RoundTripTests
         Assert.False(Blanks(read, "Quantity")[499]);
     }
 
-    [Fact] // ADR-0064: a fresh Snapshot round-trips with its dictionary in the same order, codes and all
+    [Fact] // ADR-0065: a fresh Snapshot round-trips with its dictionary in the same order, codes and all
     public async Task A_fresh_snapshot_keeps_its_dictionary_and_codes()
     {
         var snapshot = Deals().Build(Make(64));
@@ -44,7 +44,7 @@ public class RoundTripTests
         Assert.Equal(snapshot.Slice(0).Codes(desk).ToArray(), read.Slice(0).Codes(readDesk).ToArray());
     }
 
-    [Fact] // ADR-0064: a Snapshot after Change Batches writes the rows it holds, in its order, at its version
+    [Fact] // ADR-0065: a Snapshot after Change Batches writes the rows it holds, in its order, at its version
     public async Task A_snapshot_after_change_batches_writes_what_it_holds()
     {
         var deals = Make(2_000);
@@ -68,7 +68,7 @@ public class RoundTripTests
         Assert.Equal(texts, Dictionary(read, "Desk").Select(t => $"'{t}'"));
     }
 
-    [Fact] // ADR-0064: rows split over several record batches, and batches that split the runs a batch left, read back in order
+    [Fact] // ADR-0065: rows split over several record batches, and batches that split the runs a batch left, read back in order
     public async Task Several_record_batches_round_trip()
     {
         var deals = Make(1_000);
@@ -80,7 +80,7 @@ public class RoundTripTests
             AssertSame(snapshot, await ReadAsync(await WriteAsync(snapshot, batchRows)), sameDictionaries: false);
     }
 
-    [Fact] // ADR-0064: a Snapshot of no rows round-trips its columns, captions, key and version
+    [Fact] // ADR-0065: a Snapshot of no rows round-trips its columns, captions, key and version
     public async Task An_empty_snapshot_round_trips()
     {
         var builder = Deals();
@@ -95,7 +95,7 @@ public class RoundTripTests
         Assert.Empty(Dictionary(read, "Desk"));
     }
 
-    [Fact] // ADR-0064: Decimal slices held at different scales, and as decimals, are written at the largest scale and read back exact
+    [Fact] // ADR-0065: Decimal slices held at different scales, and as decimals, are written at the largest scale and read back exact
     public async Task Decimals_held_at_different_scales_round_trip_exactly()
     {
         var builder = Deals();
@@ -114,7 +114,7 @@ public class RoundTripTests
         Assert.Equal("decimal128(38, 6)", ArrowTypeNames.Of(arrow.Schema.GetFieldByName("Notional").DataType));
     }
 
-    [Fact] // ADR-0064: a double keeps its bits — NaN, both infinities, negative zero, the smallest subnormal
+    [Fact] // ADR-0065: a double keeps its bits — NaN, both infinities, negative zero, the smallest subnormal
     public async Task Doubles_keep_their_bits()
     {
         double?[] values = [double.NaN, double.PositiveInfinity, double.NegativeInfinity, -0.0, 0.0, double.Epsilon, double.MaxValue, null, BitConverter.Int64BitsToDouble(0x7FF8_0000_0000_0123)];
@@ -126,7 +126,7 @@ public class RoundTripTests
         Assert.Equal(BitConverter.DoubleToInt64Bits(-0.0).ToString(System.Globalization.CultureInfo.InvariantCulture) + "d", Values(read, "Value")[3]);
     }
 
-    [Fact] // ADR-0064: text round-trips exactly — two spellings two values, the empty string a value and not a Blank
+    [Fact] // ADR-0065: text round-trips exactly — two spellings two values, the empty string a value and not a Blank
     public async Task Text_round_trips_exactly()
     {
         string?[] values = ["amer", "AMER", "", null, " ", "Zürich", "東京", "🚀", new string('x', 70_000), "amer", "\0", "a\r\nb"];
@@ -139,7 +139,7 @@ public class RoundTripTests
         Assert.Equal([false, false, false, true, false, false, false, false, false, false, false, false], Blanks(read, "Value"));
     }
 
-    [Fact] // ADR-0064: the extreme integers and dates round-trip
+    [Fact] // ADR-0065: the extreme integers and dates round-trip
     public async Task Extreme_integers_and_dates_round_trip()
     {
         (long? Number, DateTime? When)[] values =

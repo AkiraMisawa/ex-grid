@@ -1,6 +1,6 @@
 # PV-40, observed: the work after an answer, sliced *(2026-10-01, the pages at `6ce3255`)*
 
-Observational: recorded, never gated (Definition of Done §1). ADR-0065 settled the cap on leaves
+Observational: recorded, never gated (Definition of Done §1). ADR-0066 settled the cap on leaves
 at 200,000, on the condition that the work after a question's pass is sliced as the pass is. PV-40
 asks for that, and for the longest task near the cap to be observed again. The first record,
 `verification/2026-10-01-linux-measure`, found 1.9 s of one task after the source's last slice.

@@ -4,9 +4,9 @@ namespace ExPivot.Engine;
 
 /// <summary>
 /// <c>PivotSource.From(records, fields)</c>: the bundled source over records in memory read through
-/// untyped accessors, and the reference implementation (ADR-0065). The records are read once, on
+/// untyped accessors, and the reference implementation (ADR-0066). The records are read once, on
 /// the first question and in slices, into a Snapshot (<see cref="RecordColumns{TRecord}"/>), and
-/// every question is answered from it by the engine's rules (ADR-0059), as
+/// every question is answered from it by the engine's rules (ADR-0060), as
 /// <see cref="SnapshotPivotSource"/> answers. The records behind a cell carry the values the
 /// accessors read, and the records themselves.
 ///
@@ -128,7 +128,7 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
     }
 
     /// <summary>Nothing to refresh: the records are one state of the data, and a new list is a
-    /// new source (ADR-0065).</summary>
+    /// new source (ADR-0066).</summary>
     public override ValueTask RefreshAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

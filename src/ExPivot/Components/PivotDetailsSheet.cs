@@ -5,14 +5,14 @@ using ExPivot.Engine;
 namespace ExPivot.Components;
 
 /// <summary>Why something asked of a Pivot Source cannot be shown: the source refused — the data
-/// changed under the report's Source Version, for one — or it failed (ADR-0065/0025).</summary>
+/// changed under the report's Source Version, for one — or it failed (ADR-0066/0025).</summary>
 internal sealed record SourceProblem(PivotSourceRefusal? Refusal, Exception? Error);
 
 /// <summary>
 /// One Show Details opened by ExPivot itself — a tab at the report's foot, or the dialog
-/// (ADR-0058): the cell's records as an ExGrid of the source's fields, fetched in pages through
+/// (ADR-0059): the cell's records as an ExGrid of the source's fields, fetched in pages through
 /// <c>GridSource.Fetch</c> over the source's <c>DetailsAsync</c>, under the Source Version the
-/// report was computed from (ADR-0025/0065). It keeps that version for as long as it stands, so a
+/// report was computed from (ADR-0025/0066). It keeps that version for as long as it stands, so a
 /// bundled source's records always add up; a server that can no longer answer under it refuses, and
 /// the sheet says the data has changed rather than show records that do not add up. It owns its
 /// fetching source and releases it when it closes.
@@ -53,9 +53,9 @@ internal sealed class PivotDetailsSheet : IDisposable
     {
         // The records behind a cell are in the data's order, and none is left out: the details
         // grid offers no sort and no filter, and a question carrying one is not answered quietly
-        // in another order (ADR-0058).
+        // in another order (ADR-0059).
         if (query.Sorts.Count > 0 || query.Filter is not null)
-            throw new NotSupportedException("The records behind a cell are shown in the data's order, unfiltered (ADR-0058).");
+            throw new NotSupportedException("The records behind a cell are shown in the data's order, unfiltered (ADR-0059).");
         var page = await Details.DetailsAsync(query.Range.Start, query.Range.Count, cancellationToken);
         if (page.IsRefused)
             throw new RefusedException(page.Refusal!);
@@ -79,7 +79,7 @@ internal sealed class PivotDetailsSheet : IDisposable
 
     /// <summary>A record's value in its field's column: text as it is, a number or a date in the
     /// field's format under the report's culture — at most 15 significant digits, or the culture's
-    /// short date, as an Item is labelled (ADR-0059) — a Boolean as <c>TRUE</c> or <c>FALSE</c>.</summary>
+    /// short date, as an Item is labelled (ADR-0060) — a Boolean as <c>TRUE</c> or <c>FALSE</c>.</summary>
     private static GridColumn<PivotDetailRecord> ColumnOf(PivotField field, int index, CultureInfo culture)
     {
         var type = field.Type switch
@@ -117,7 +117,7 @@ internal sealed class PivotDetailsSheet : IDisposable
     }
 
     /// <summary>What a record's value is, cell by cell: a value not of its field's declared type
-    /// keeps its own (ADR-0059), and is painted and aligned as what it is.</summary>
+    /// keeps its own (ADR-0060), and is painted and aligned as what it is.</summary>
     internal static readonly Func<PivotDetailRecord, GridColumn<PivotDetailRecord>, ColumnType> CellTypeOf =
         static (record, column) => column.Value(record) switch
         {

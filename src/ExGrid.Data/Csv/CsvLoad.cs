@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExGrid.Data.Csv;
 
 /// <summary>
-/// Reads a stream under a Schema into a <see cref="SnapshotColumnsBuilder"/> (ADR-0063): the bytes
+/// Reads a stream under a Schema into a <see cref="SnapshotColumnsBuilder"/> (ADR-0064): the bytes
 /// are read into a buffer, cut into records, and each declared field read straight into its column.
 /// The load works in batches of records, checking in with the builder between them, which reports
 /// progress and yields once a slice has spent its budget.

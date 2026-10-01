@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace ExGrid.Data.Storage;
 
 /// <summary>
-/// Paces a load in slices sized by time (ADR-0063): a slice works until its budget is spent, then
+/// Paces a load in slices sized by time (ADR-0064): a slice works until its budget is spent, then
 /// the load reports its progress and yields, so a browser — which has one thread — keeps painting
 /// while a million rows load. Cancellation is looked at between slices.
 /// </summary>

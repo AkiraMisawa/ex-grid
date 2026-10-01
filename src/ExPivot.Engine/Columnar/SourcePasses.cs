@@ -2,7 +2,7 @@ using ExGrid.Data;
 
 namespace ExPivot.Engine;
 
-/// <summary>A field's Items over all the data a Snapshot holds (ADR-0059/0065): every held row's
+/// <summary>A field's Items over all the data a Snapshot holds (ADR-0060/0066): every held row's
 /// Item, not narrowed by any Hidden Item, a text Item spelled by its first spelling among the
 /// records present.</summary>
 internal sealed class ItemsPass
@@ -74,7 +74,7 @@ internal sealed class ItemsPass
         return keys;
     }
 
-    /// <summary>A page of the Items (ADR-0065): those whose invariant text holds the search, ignoring
+    /// <summary>A page of the Items (ADR-0066): those whose invariant text holds the search, ignoring
     /// case, in the source's invariant order, at most as many as asked, with how many there are.</summary>
     public PivotItemPage Page(PivotItemsQuery query, string sourceVersion)
     {
@@ -87,7 +87,7 @@ internal sealed class ItemsPass
     }
 }
 
-/// <summary>The rows behind a cell (ADR-0062/0065): those carrying every Item of the cell's paths
+/// <summary>The rows behind a cell (ADR-0063/0066): those carrying every Item of the cell's paths
 /// and no Hidden Item of any placed field, in the Snapshot's order.</summary>
 internal sealed class DetailsPass
 {
@@ -155,7 +155,7 @@ internal sealed class DetailsPass
 /// <summary>One row's value of one field, read from a Snapshot's slices.</summary>
 internal static class RowValues
 {
-    /// <summary>The Item a row's value belongs to (ADR-0059), as <see cref="ItemSpace"/> maps it.</summary>
+    /// <summary>The Item a row's value belongs to (ADR-0060), as <see cref="ItemSpace"/> maps it.</summary>
     public static ItemKey KeyAt(FieldBinding binding, Snapshot snapshot, in SnapshotSlice slice, int offset)
     {
         foreach (var bound in binding.Columns)

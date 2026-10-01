@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 
-// ExPivot on /pivot-risk (ADR-0059, ADR-0068), under ExPivot's own markup and under
+// ExPivot on /pivot-risk (ADR-0060, ADR-0069), under ExPivot's own markup and under
 // ExPivot.MudBlazor's Chrome: a rate-delta report with desks and curves in Rows and tenors in
 // Columns. What only a browser can say: that the tenors are painted in the order the page's Order
 // Key gives them, ON to 30Y, with 18M and 1Y6M two Items side by side; that the Filter… list of the
@@ -67,7 +67,7 @@ const total = (values) => (values.every((v) => v === null) ? null : values.reduc
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`ADR-0059: the tenors stand in the Order Key's order, ON to 30Y, with 18M and 1Y6M two Items side by side (${chrome})`, async ({ page }) => {
+        test(`ADR-0060: the tenors stand in the Order Key's order, ON to 30Y, with 18M and 1Y6M two Items side by side (${chrome})`, async ({ page }) => {
             await open(page, chrome);
 
             // Every column painted, in the key's order.
@@ -83,7 +83,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(at('Rates Flow').values[m18 + 1]).toBeNull();
         });
 
-        test(`ADR-0059: the tenor's Filter… lists its Items in the Order Key's order (${chrome})`, async ({ page }) => {
+        test(`ADR-0060: the tenor's Filter… lists its Items in the Order Key's order (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             await entry(page, 'Tenor').click();
 
@@ -105,7 +105,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(items).toHaveCount(0);
         });
 
-        test(`ADR-0059: without the Order Key the tenors fall back to the order of their labels (${chrome})`, async ({ page }) => {
+        test(`ADR-0060: without the Order Key the tenors fall back to the order of their labels (${chrome})`, async ({ page }) => {
             await open(page, chrome);
 
             await page.locator('#risk-order-key').uncheck();
@@ -120,7 +120,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => paintedHeaders(page)).toEqual(['Row Labels', ...TENORS, 'Grand Total']);
         });
 
-        test(`ADR-0059: every total painted is the sum of what it totals, and the report's is the page's own sum of the positions (${chrome})`, async ({ page }) => {
+        test(`ADR-0060: every total painted is the sum of what it totals, and the report's is the page's own sum of the positions (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             // Every column painted, so every value is read.
             await expect.poll(() => paintedHeaders(page)).toHaveLength(TENORS.length + 2);
@@ -155,7 +155,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(grand.values.at(-1)).toBe(Number(net[1].replace(/,/g, '')));
         });
 
-        test(`ADR-0068: the code the page shows is the code it runs, the README's Order Key among it (${chrome})`, async ({ page }) => {
+        test(`ADR-0069: the code the page shows is the code it runs, the README's Order Key among it (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const shown = (file, region) => page.locator(`.demo-code code[data-file="${file}"][data-region="${region}"]`).textContent();
 

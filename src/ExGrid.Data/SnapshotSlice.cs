@@ -70,7 +70,7 @@ public readonly struct SnapshotSlice
 }
 
 /// <summary>
-/// A Decimal column's values in one slice, held exactly (ADR-0063). When <see cref="Scale"/> is 0 or
+/// A Decimal column's values in one slice, held exactly (ADR-0064). When <see cref="Scale"/> is 0 or
 /// more, <see cref="Scaled"/> holds each value × 10^<see cref="Scale"/>, so a sum is an integer
 /// addition; when it is -1, some value did not fit a long at one power of ten, and
 /// <see cref="Exact"/> holds the values. Each slice has its own scale: the largest number of decimal

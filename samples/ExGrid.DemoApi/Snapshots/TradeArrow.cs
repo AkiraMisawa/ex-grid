@@ -7,11 +7,11 @@ namespace ExGrid.DemoApi;
 /// <summary>The trades as an Arrow IPC stream, read at one Source Version.</summary>
 /// <param name="Version">The Source Version of the read the stream was written from.</param>
 /// <param name="Trades">How many trades it holds.</param>
-/// <param name="Bytes">The stream, uncompressed (ADR-0064).</param>
+/// <param name="Bytes">The stream, uncompressed (ADR-0065).</param>
 internal sealed record TradeArrowStream(string Version, long Trades, byte[] Bytes);
 
 /// <summary>
-/// "Database → Snapshot" (ADR-0063, ADR-0064, ADR-0068): the trades read through a
+/// "Database → Snapshot" (ADR-0064, ADR-0065, ADR-0069): the trades read through a
 /// <c>DbDataReader</c> into a Snapshot, under one read transaction, and written as Arrow's IPC
 /// stream for a page to read into its own Snapshot. The bytes are kept for their Source Version,
 /// so every page asking at one version is served the same bytes, built once; a live tick makes a
@@ -39,7 +39,7 @@ internal sealed class TradeArrow(TradeStore store, ILogger<TradeArrow> logger)
     public int Builds => Volatile.Read(ref _builds);
 
     /// <summary>
-    /// The columns, each of its kind (ADR-0063). SQLite hands back what it stores, and the reader
+    /// The columns, each of its kind (ADR-0064). SQLite hands back what it stores, and the reader
     /// says so: the date is text, money is integer cents and the flag is 0 or 1, which a Snapshot
     /// would take as Text and Integer. Each is therefore declared with the conversion that reads it:
     /// cents as an exact decimal, never through a double; ISO text as a date; 0 and 1 as false and

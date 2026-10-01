@@ -5,7 +5,7 @@ namespace ExGrid.Data;
 
 /// <summary>
 /// The records added, the records changed and the Record Keys removed since a Snapshot, applied as
-/// one to make the next Snapshot (<see cref="Snapshot.Apply"/>, ADR-0063). The records added and the
+/// one to make the next Snapshot (<see cref="Snapshot.Apply"/>, ADR-0064). The records added and the
 /// records changed are small Snapshots with the Snapshot's columns, so any way in — objects, columns,
 /// and the readers built on columns — can make one. A changed record is found by its Record Key.
 /// </summary>
@@ -75,7 +75,7 @@ public sealed class ChangeBatch
 
 /// <summary>
 /// What <see cref="Snapshot.Apply"/> made, and what a reader needs to fold the batch into what it
-/// computed rather than start again (ADR-0066): subtract what <see cref="Removed"/> held in
+/// computed rather than start again (ADR-0067): subtract what <see cref="Removed"/> held in
 /// <see cref="Before"/>, add what <see cref="Added"/> holds in <see cref="After"/>.
 /// </summary>
 public sealed class SnapshotChange

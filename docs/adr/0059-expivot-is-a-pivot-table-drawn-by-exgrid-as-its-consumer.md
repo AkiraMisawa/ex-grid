@@ -9,10 +9,10 @@ starting point. The shape held: a Consumer of ExGrid, Excel's rules, three packa
 marked **Changed when decided** below, each with its reason:*
 
 - *where the aggregation runs — a Pivot Source, which a server may answer
-  ([ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md));*
+  ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md));*
 - *what the records are held in — a Snapshot
-  ([ADR-0063](./0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md));*
-- *live data ([ADR-0066](./0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md));*
+  ([ADR-0064](./0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md));*
+- *live data ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md));*
 - *where Show Details goes;*
 - *what the first version holds.)*
 
@@ -49,14 +49,14 @@ is stronger here:
   link back to the data. ExPivot reads the data the application already has, under the
   application's own rules.
 - **It reads live data.** A Change Batch, or a server saying its data moved on, is Excel's Refresh
-  done without anyone asking for it, and the cells that changed are marked (ADR-0066).
+  done without anyone asking for it, and the cells that changed are marked (ADR-0067).
 - **Its report obeys the display rules this family was built on.**
   - A number that does not fit is `####`
     ([ADR-0016](./0016-column-width-and-overflow.md)).
   - A copy is refused rather than truncated
     ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)).
   - A total is computed from the records, never from rounded subtotals
-    ([ADR-0059](./0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+    ([ADR-0060](./0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
 
 ## Why ExGrid's Consumer, and not a feature of ExGrid
 
@@ -76,9 +76,9 @@ written once and packaged.**
 The three shapes ADR-0019 weighed for ExSheet apply unchanged, and the answer is the same:
 
 - **A Consumer of ExGrid — chosen.** ExPivot needs two opt-in declarations from the core: a double
-  click where no edit opens ([ADR-0062](./0062-what-expivot-asks-of-exgrids-core.md)), and the
+  click where no edit opens ([ADR-0063](./0063-what-expivot-asks-of-exgrids-core.md)), and the
   Change Highlight
-  ([ADR-0067](./0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)).
+  ([ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md)).
   ExGrid already has everything else it needs: Row Kind, Header Groups, Pinned Columns, Template
   Columns, column virtualisation, the Context Menu, copy, and the loading seam.
 - **Grouping in ExGrid's core — rejected.** It would make the grid hold and execute. ADR-0001 gave
@@ -95,11 +95,11 @@ The three shapes ADR-0019 weighed for ExSheet apply unchanged, and the answer is
 | The report's rows | The whole report is the **Window**, with `TotalCount` left null ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)) |
 | An item row, a group row, a subtotal or grand total row | **Row Kind** Detail, Group or Total ([ADR-0024](./0024-row-kind-is-a-declared-role-not-a-hierarchy.md)) |
 | The row labels: one column in the Compact form, one per row field otherwise | **Pinned** **Template Columns**, carrying the label, its indent, and the expand / collapse button ([ADR-0020](./0020-action-and-template-columns.md)) |
-| A value column | A Number column whose values carry their own display text (ADR-0059) |
+| A value column | A Number column whose values carry their own display text (ADR-0060) |
 | The column Items above the value columns | **Header Groups**, one tier per outer column level ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)) |
 | The report's sequence of rows | The **Row Sequence Version**, bumped only when the sequence of row keys changes, so a data refresh that changes values keeps the Selection ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) |
 | A question out to the Pivot Source | The grid's **loading seam**, `IsLoading` ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) |
-| A value that changed with the data | **`CellChangedAt`**, the Change Highlight (ADR-0067) |
+| A value that changed with the data | **`CellChangedAt`**, the Change Highlight (ADR-0068) |
 | Excel's pivot context menu | Commands appended to the **Context Menu** ([ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md)) |
 
 **The expand / collapse button is a Template Column's, not an Action Column's.** ADR-0024 left the
@@ -131,7 +131,7 @@ and takes DOM focus when the core's `FocusRequest` asks
   from the report's own headers. That needs two things the core does not have: a Consumer's commands
   in a column header's menu, and a menu on a Header Group. It would also move ExGrid's release
   criteria. The same commands are on each placed field's menu in the Field List, and in the Context
-  Menu; the toolbar's toggle brings the Field List back whenever it is hidden (ADR-0060). The
+  Menu; the toolbar's toggle brings the Field List back whenever it is hidden (ADR-0061). The
   dropdown waits for an ADR on ExGrid's header menus.
 
 **Copy is ExGrid's, unchanged.** A value cell's `text/plain` is its display text, and its
@@ -145,8 +145,8 @@ aggregate it in process, with a Consumer-answered "pivot query" reserved for rec
 hold. The user asked for the server model at once: "a million-row CSV is normal" (Q2). The measured
 cost of the in-process pass (6.8 s per aggregation in the browser) confirmed the request.
 
-- **The data is the Consumer's, behind a Pivot Source** (ADR-0065).
-  - **The bundled source holds a Snapshot** (ADR-0063): an immutable copy of the Consumer's records,
+- **The data is the Consumer's, behind a Pivot Source** (ADR-0066).
+  - **The bundled source holds a Snapshot** (ADR-0064): an immutable copy of the Consumer's records,
     or of a CSV, a database query, or an Arrow stream. A new Snapshot, or a Change Batch, is a
     refresh.
   - **A server's source keeps the data on the server** and answers with the Leaf Aggregates.
@@ -178,7 +178,7 @@ destinations:
     million records opens without freezing.
   - The tab keeps the Source Version it was opened under. The bundled source's tab therefore always
     adds up. A server's tab says "the data has changed" once its source can no longer answer under
-    that version (ADR-0065).
+    that version (ADR-0066).
 - **A dialog**, when the Consumer asks for one, with the same grid in it.
 - **The Consumer.** When it listens to `OnShowDetails`, it takes the records to show where it shows
   records, and neither the tab nor the dialog opens.
@@ -190,15 +190,15 @@ money-column headings. A report nobody sees also takes no keyboard and is not re
 
 ## Packages
 
-*Changed when decided:* `ExGrid.Data` joined, under the engine (ADR-0063).
+*Changed when decided:* `ExGrid.Data` joined, under the engine (ADR-0064).
 
 ```
-ExGrid.Data        no dependency: the Snapshot, its builders, the Change Batch (the family's, ADR-0063)
-ExGrid.Data.Arrow  → ExGrid.Data, → Apache.Arrow: a Snapshot as Arrow (optional, ADR-0064)
+ExGrid.Data        no dependency: the Snapshot, its builders, the Change Batch (the family's, ADR-0064)
+ExGrid.Data.Arrow  → ExGrid.Data, → Apache.Arrow: a Snapshot as Arrow (optional, ADR-0065)
 ExPivot.Engine     → ExGrid.Data: the Pivot Layout, the Pivot Source, the aggregation, the report;
                      a server can run it
 ExPivot            the component: → ExPivot.Engine, → ExGrid
-ExPivot.MudBlazor  the Wrapper: → ExPivot, → ExGrid.MudBlazor, → MudBlazor (ADR-0061)
+ExPivot.MudBlazor  the Wrapper: → ExPivot, → ExGrid.MudBlazor, → MudBlazor (ADR-0062)
 ```
 
 **The references point one way**, as ADR-0019 requires.
@@ -211,7 +211,7 @@ ExPivot.MudBlazor  the Wrapper: → ExPivot, → ExGrid.MudBlazor, → MudBlazor
 - The package check packs ExPivot into a feed of its own, together with `ExGrid.Data` and
   `ExGrid.Data.Arrow`.
 - ExPivot's criteria (§29) and the data packages' criteria (§30) judge them, and never gate ExGrid.
-- What ExPivot asks of the core (ADR-0062, ADR-0067) is ExGrid code, and gates ExGrid like every
+- What ExPivot asks of the core (ADR-0063, ADR-0068) is ExGrid code, and gates ExGrid like every
   other declaration (§26).
 
 ## What the first version holds
@@ -226,21 +226,21 @@ measurements, and the Japanese words with Q6.
 | Four Areas, drag and drop, the field menus, ticking a field | ✓ | | |
 | Sum, Count, Average, Max, Min, Product, Count Numbers, StdDev, StdDevp, Var, Varp | ✓ | | |
 | Compact, Outline and Tabular forms; subtotals at the top or bottom, or off; grand totals | ✓ | | |
-| The **Layout menu** that sets them, and the **toolbar** above the report (ADR-0060) | ✓ | | |
+| The **Layout menu** that sets them, and the **toolbar** above the report (ADR-0061) | ✓ | | |
 | Expand and collapse row Items, and whole fields on either axis | ✓ | | |
 | Hidden Items (the item filter), on every Area | ✓ | | |
-| Sort by label, ascending or descending, by a Value Field, and by an **Order Key** (ADR-0059) | ✓ | | |
+| Sort by label, ascending or descending, by a Value Field, and by an **Order Key** (ADR-0060) | ✓ | | |
 | Show Values As: % of Grand Total, % of Column Total, % of Row Total | ✓ | | |
 | Show Details, into a **tab**, a **dialog** or the Consumer | ✓ | | |
 | Several Value Fields, and **Σ Values** in Rows or Columns | ✓ | | |
-| **A Pivot Source answered by a server** (ADR-0065) | ✓ | | |
-| **Live data**: Change Batches, and a server that says its data moved on (ADR-0066) | ✓ | | |
-| **Change Highlight** on values that changed with the data (ADR-0067) | ✓ | | |
-| **Defer Layout Update**, and asking without blocking (ADR-0065) | ✓ | | |
-| **Caps** on the leaves, the rows and the columns (ADR-0065) | ✓ | | |
-| **Date parts**: year, quarter and month declared as fields in one line, in calendar order (ADR-0059) | ✓ | | |
-| **The words of Excel's Japanese edition**, chosen by the Consumer (ADR-0059) | ✓ | | |
-| Σ Values at any position but the innermost | | ✓ | its subtotal rules differ, ADR-0059 |
+| **A Pivot Source answered by a server** (ADR-0066) | ✓ | | |
+| **Live data**: Change Batches, and a server that says its data moved on (ADR-0067) | ✓ | | |
+| **Change Highlight** on values that changed with the data (ADR-0068) | ✓ | | |
+| **Defer Layout Update**, and asking without blocking (ADR-0066) | ✓ | | |
+| **Caps** on the leaves, the rows and the columns (ADR-0066) | ✓ | | |
+| **Date parts**: year, quarter and month declared as fields in one line, in calendar order (ADR-0060) | ✓ | | |
+| **The words of Excel's Japanese edition**, chosen by the Consumer (ADR-0060) | ✓ | | |
+| Σ Values at any position but the innermost | | ✓ | its subtotal rules differ, ADR-0060 |
 | Collapsing one column Item | | ✓ | the ± would sit in a header cell, which ExGrid draws |
 | Excel's Group… command: ranges of numbers, and dates grouped from the report | | ✓ | the date parts serve the common case |
 | Label filters, value filters, Top 10 | | ✓ | |
@@ -248,7 +248,7 @@ measurements, and the Japanese words with Q6.
 | Calculated fields and calculated items | | ✓ | a formula language, which ExSheet owns |
 | A Field List placed outside the component | | ✓ | |
 | A dropdown on the report's headers ("Row Labels ▾") | | ✓ | ExGrid's header menus first (above) |
-| A source that writes its own SQL | | ✓ | one dialect per database, ADR-0065 |
+| A source that writes its own SQL | | ✓ | one dialect per database, ADR-0066 |
 | Editing values in the report (writeback) | | ✗ | a report is computed; Excel refuses it too |
 
 ## Consequences

@@ -8,7 +8,7 @@ using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.Components.Tests;
 
-/// <summary>Filter…, Field Settings…, Value Field Settings… and the report filter band (ADR-0060):
+/// <summary>Filter…, Field Settings…, Value Field Settings… and the report filter band (ADR-0061):
 /// drafts held by ExPivot until OK, refusals said in the panel.</summary>
 public class PanelTests : PivotTestContext
 {
@@ -19,7 +19,7 @@ public class PanelTests : PivotTestContext
         => cut.FindAll(".ex-pivot-item").Single(i => i.TextContent.Trim() == label).QuerySelector("input")!
             .ChangeAsync(new ChangeEventArgs { Value = tick });
 
-    [Fact] // ADR-0060: Filter… lists every Item; unticking one and OK hides it
+    [Fact] // ADR-0061: Filter… lists every Item; unticking one and OK hides it
     public async Task Filter_hides_an_item()
     {
         PivotLayout? told = null;
@@ -38,7 +38,7 @@ public class PanelTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0059/0060: unticking every Item disables OK and says why
+    [Fact] // ADR-0060/0061: unticking every Item disables OK and says why
     public async Task Filter_refuses_to_hide_every_item()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -53,7 +53,7 @@ public class PanelTests : PivotTestContext
         Assert.False(cut.Find(".ex-pivot-ok").HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0060: the search narrows the list; (Select All) acts on what it leaves
+    [Fact] // ADR-0061: the search narrows the list; (Select All) acts on what it leaves
     public async Task Filter_search_narrows_the_items()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -68,7 +68,7 @@ public class PanelTests : PivotTestContext
         Assert.Equal(["North | 10", "(blank) | 5", "Grand Total | 15"], RowTexts(cut));
     }
 
-    [Fact] // ADR-0060: Cancel drops the draft
+    [Fact] // ADR-0061: Cancel drops the draft
     public async Task Cancel_drops_the_draft()
     {
         var told = new List<PivotLayout>();
@@ -83,7 +83,7 @@ public class PanelTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0060: Field Settings… sets subtotals and the order
+    [Fact] // ADR-0061: Field Settings… sets subtotals and the order
     public async Task Field_settings_apply_subtotals_and_order()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")], SubtotalsAtTop = false });
@@ -101,7 +101,7 @@ public class PanelTests : PivotTestContext
         Assert.DoesNotContain(RowTexts(cut), text => text.Contains("Total", StringComparison.Ordinal) && !text.StartsWith("Grand", StringComparison.Ordinal));
     }
 
-    [Fact] // ADR-0060: Value Field Settings… — the caption follows the Aggregation until the user writes one
+    [Fact] // ADR-0061: Value Field Settings… — the caption follows the Aggregation until the user writes one
     public async Task Value_field_settings_change_the_aggregation()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
@@ -122,7 +122,7 @@ public class PanelTests : PivotTestContext
         Assert.Equal("East | 60.0", RowTexts(cut)[0]);
     }
 
-    [Fact] // ADR-0059/0060: a caption another field has is refused, and the panel says so and stays
+    [Fact] // ADR-0060/0061: a caption another field has is refused, and the panel says so and stays
     public async Task Value_field_settings_refuse_a_taken_caption()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount"), Sum("Quantity")] });
@@ -137,7 +137,7 @@ public class PanelTests : PivotTestContext
         Assert.Null(cut.Instance.CurrentLayout.Values[1].Caption);
     }
 
-    [Fact] // ADR-0060: an unusable number format shows in the sample and is refused
+    [Fact] // ADR-0061: an unusable number format shows in the sample and is refused
     public async Task Value_field_settings_refuse_a_runaway_format()
     {
         var cut = RenderPivot(new PivotLayout { Values = [Sum("Amount")] });
@@ -152,7 +152,7 @@ public class PanelTests : PivotTestContext
         Assert.Null(cut.Instance.CurrentLayout.Values[0].NumberFormat);
     }
 
-    [Fact] // ADR-0060: the report filter band shows (All), then the one Item, then (Multiple Items)
+    [Fact] // ADR-0061: the report filter band shows (All), then the one Item, then (Multiple Items)
     public async Task The_report_filter_band()
     {
         var cut = RenderPivot(new PivotLayout { Filters = [P("Region")], Values = [Sum("Amount")] });
@@ -174,7 +174,7 @@ public class PanelTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-backdrop"));
     }
 
-    [Fact] // ADR-0060: a press on the backdrop closes the band's Filter…
+    [Fact] // ADR-0061: a press on the backdrop closes the band's Filter…
     public async Task The_backdrop_closes_the_bands_filter()
     {
         var cut = RenderPivot(new PivotLayout { Filters = [P("Region")], Values = [Sum("Amount")] });

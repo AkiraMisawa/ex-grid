@@ -4,20 +4,20 @@ namespace ExPivot.Engine;
 
 /// <summary>
 /// One field in Values, accumulated over a Snapshot's slices into the parts asked for, at each
-/// leaf (ADR-0059/0065: only the parts asked for are accumulated; counts always).
+/// leaf (ADR-0060/0066: only the parts asked for are accumulated; counts always).
 /// <list type="bullet">
 /// <item><b>Integer and Decimal</b> are summed exactly with no <c>decimal</c> arithmetic per row. A
-/// slice holds its values as 64-bit integers at a scale of its own (ADR-0063); each leaf sums a
+/// slice holds its values as 64-bit integers at a scale of its own (ADR-0064); each leaf sums a
 /// <b>run</b> of them in 64 bits, across slices of one scale, and a run is folded into the leaf's
 /// exact sum — a 128-bit integer at a power of ten — when the scale changes, when 64 bits would
 /// not hold it, and at the pass's end. Integer arithmetic is exact, so the order the numbers are
-/// added and taken away in cannot change a sum (ADR-0066), and the finished sum is a
+/// added and taken away in cannot change a sum (ADR-0067), and the finished sum is a
 /// <c>decimal</c> without trailing zeros. A slice that holds <c>decimal</c>s, because a value did
 /// not fit 64 bits at one scale, is summed per row into the same 128 bits. Past 128 bits, the sum
 /// is Excel's <c>double</c> from then on; one no decimal holds is a <c>double</c> when finished.
 /// The extremes are kept a run at a time likewise.</item>
 /// <item><b>Double</b> is summed per row with Neumaier's compensation, as the first engine did.</item>
-/// <item><b>Text, Date and Boolean</b> are counted and are never a number: Sum is 0, as ADR-0059's
+/// <item><b>Text, Date and Boolean</b> are counted and are never a number: Sum is 0, as ADR-0060's
 /// table says.</item>
 /// <item>A field read through an untyped accessor whose values are of several kinds is folded per
 /// row in the data's order, each value by its own kind.</item>
@@ -81,7 +81,7 @@ internal sealed class ValueAccumulator
     public PartColumns Columns { get; }
 
     /// <summary>
-    /// Whether a removed record's value can be taken out of a leaf by subtraction (ADR-0066): a
+    /// Whether a removed record's value can be taken out of a leaf by subtraction (ADR-0067): a
     /// field of one column whose parts are exact — the counts, and the sum of an Integer or Decimal
     /// column. Every other part is recomputed from the leaf's records.
     /// </summary>
@@ -240,7 +240,7 @@ internal sealed class ValueAccumulator
     }
 
     /// <summary>
-    /// Takes a removed record's value out of its leaf by subtraction (ADR-0066) when
+    /// Takes a removed record's value out of its leaf by subtraction (ADR-0067) when
     /// <see cref="Subtracts"/>: false, and nothing changed, when it cannot be — the leaf is then
     /// recomputed. <paramref name="slice"/> is the slice of the Snapshot the record was removed
     /// from. Called with every run folded (<see cref="Flush()"/>).
@@ -324,7 +324,7 @@ internal sealed class ValueAccumulator
             _wideScale[leaf] = (byte)sumScale;
             return;
         }
-        // Money stays exact until it cannot: then double, Excel's own arithmetic (ADR-0059).
+        // Money stays exact until it cannot: then double, Excel's own arithmetic (ADR-0060).
         Columns.ToInexactSum(leaf, Exactly.ToDouble(_wide[leaf], _wideScale[leaf]));
         Columns.AddInexactSum(leaf, Exactly.ToDouble(value, scale));
     }

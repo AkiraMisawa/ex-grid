@@ -50,12 +50,12 @@ default.)*
 
 *(Refined 2026-09-30, when ExPivot's grilling added a family-wide data layer and a server to the
 demo. **`src/` gains `ExGrid.Data`**, the Snapshot, with no dependency
-([ADR-0063](./0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)). It also gains
+([ADR-0064](./0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)). It also gains
 **`ExGrid.Data.Arrow`**, the Snapshot as Arrow, over the Apache Foundation's package
-([ADR-0064](./0064-a-snapshot-travels-as-apache-arrow.md)). Beside them are ExPivot's three packages
-([ADR-0058](./0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+([ADR-0065](./0065-a-snapshot-travels-as-apache-arrow.md)). Beside them are ExPivot's three packages
+([ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
 **`samples/` gains `ExGrid.DemoApi`**, a Consumer's server that both hosts' pages call over HTTP
-([ADR-0068](./0068-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)). The reference rule
+([ADR-0069](./0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)). The reference rule
 holds for all of them. The data packages reference no product. ExPivot references the data packages
 and ExGrid, and nothing references ExPivot except its Wrapper. The demo server is referenced by
 nothing, and it references the packages as any application would.)*

@@ -14,7 +14,7 @@ namespace ExGrid.Data.Arrow.Tests;
 /// </summary>
 public class ReadTests
 {
-    [Fact] // ADR-0064: utf8 is Text, exactly as written; a null is a Blank and the empty string a value
+    [Fact] // ADR-0065: utf8 is Text, exactly as written; a null is a Blank and the empty string a value
     public async Task Utf8_is_text()
     {
         var payload = Stream(Batch(("Region", Utf8("amer", "AMER", null, "", "amer", "Zürich"))));
@@ -26,7 +26,7 @@ public class ReadTests
         Assert.Equal(["amer", "AMER", "", "Zürich"], Dictionary(snapshot, "Region"));
     }
 
-    [Fact] // ADR-0064: large_utf8 is Text
+    [Fact] // ADR-0065: large_utf8 is Text
     public async Task Large_utf8_is_text()
     {
         var payload = Stream(Batch(("Region", LargeUtf8("b", null, "a", "b"))));
@@ -37,7 +37,7 @@ public class ReadTests
         Assert.Equal(["b", "a"], Dictionary(snapshot, "Region"));
     }
 
-    [Fact] // ADR-0064: utf8_view is Text exactly as written — twelve bytes or fewer held in the view, longer text in a data buffer; a null is a Blank and the empty string a value
+    [Fact] // ADR-0065: utf8_view is Text exactly as written — twelve bytes or fewer held in the view, longer text in a data buffer; a null is a Blank and the empty string a value
     public async Task Utf8_view_is_text()
     {
         string?[] values = ["amer", "AMER", null, "", "twelve bytes", "thirteen byte", "Zürich 東京 🚀, at length", "amer", "thirteen byte"];
@@ -50,7 +50,7 @@ public class ReadTests
         Assert.Equal(["amer", "AMER", "", "twelve bytes", "thirteen byte", "Zürich 東京 🚀, at length"], Dictionary(snapshot, "Region"));
     }
 
-    [Fact] // ADR-0064: utf8_view's longer text is read from the data buffer its view names, wherever in it the text starts — as Polars spreads its text over several buffers
+    [Fact] // ADR-0065: utf8_view's longer text is read from the data buffer its view names, wherever in it the text starts — as Polars spreads its text over several buffers
     public async Task Utf8_view_text_is_read_from_the_data_buffer_its_view_names()
     {
         byte[][] buffers = [[.. "Emerging Markets Rates"u8], [.. "--Global Credit Trading--"u8]];
@@ -68,7 +68,7 @@ public class ReadTests
         Assert.Equal(["Global Credit Trading", "FX", "Emerging Markets Rates", "Markets Rates"], Dictionary(snapshot, "Desk"));
     }
 
-    [Fact] // ADR-0064: a dictionary of utf8_view — as Polars writes a Categorical by default — is Text under the Snapshot's rules: out of order, amer beside AMER, a null entry, null indices, an entry longer than its view
+    [Fact] // ADR-0065: a dictionary of utf8_view — as Polars writes a Categorical by default — is Text under the Snapshot's rules: out of order, amer beside AMER, a null entry, null indices, an entry longer than its view
     public async Task A_dictionary_of_utf8_view_is_text()
     {
         var entries = Utf8View("emea", "AMER", null, "amer", "Asia Pacific, excluding Japan", "unused");
@@ -81,7 +81,7 @@ public class ReadTests
         Assert.Equal(["amer", "AMER", "emea", "Asia Pacific, excluding Japan"], Dictionary(snapshot, "Region"));
     }
 
-    [Fact] // ADR-0064: another producer's dictionary — out of order, amer beside AMER, a null entry, null indices, an entry no row uses — is taken under the Snapshot's rules
+    [Fact] // ADR-0065: another producer's dictionary — out of order, amer beside AMER, a null entry, null indices, an entry no row uses — is taken under the Snapshot's rules
     public async Task Another_producers_dictionary_is_taken_under_the_snapshots_rules()
     {
         var region = Dictionary(["emea", "AMER", null, "amer", "APAC", "unused"], [3, 1, null, 0, 2, 4, 1, 3]);
@@ -97,7 +97,7 @@ public class ReadTests
         Assert.Equal([0, 1, -1, 2, -1, 3, 1, 0], snapshot.Slice(0).Codes(column).ToArray());
     }
 
-    [Fact] // ADR-0064: a dictionary of large_utf8 is Text
+    [Fact] // ADR-0065: a dictionary of large_utf8 is Text
     public async Task A_dictionary_of_large_utf8_is_text()
     {
         var payload = Stream(Batch(("Region", Dictionary(["x", "y"], [1, null, 0], large: true))));
@@ -109,7 +109,7 @@ public class ReadTests
 
     public static TheoryData<string> IndexTypes => ["int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"];
 
-    [Theory] // ADR-0064: a dictionary's indices may be any integer type
+    [Theory] // ADR-0065: a dictionary's indices may be any integer type
     [MemberData(nameof(IndexTypes))]
     public async Task A_dictionarys_indices_may_be_any_integer(string name)
     {
@@ -134,7 +134,7 @@ public class ReadTests
         Assert.Equal(["x", "z", "y"], Dictionary(snapshot, "Region"));
     }
 
-    [Fact] // ADR-0064: several record batches are read in order, a dictionary shared by them taken once
+    [Fact] // ADR-0065: several record batches are read in order, a dictionary shared by them taken once
     public async Task Several_record_batches_are_read_in_order()
     {
         var entries = new string?[] { "c", "b", "a" };
@@ -148,7 +148,7 @@ public class ReadTests
         Assert.Equal(["c", "b", "a"], Dictionary(snapshot, "Region"));
     }
 
-    [Fact] // ADR-0064: a dictionary replaced between record batches is read by the batches that follow it
+    [Fact] // ADR-0065: a dictionary replaced between record batches is read by the batches that follow it
     public async Task A_dictionary_replaced_between_record_batches_is_read_by_the_batches_after_it()
     {
         // Apache.Arrow's writer sends one dictionary; a second stream's dictionary and batch are
@@ -165,7 +165,7 @@ public class ReadTests
         Assert.Equal(["b", "a", "c"], Dictionary(snapshot, "Region"));
     }
 
-    [Fact] // ADR-0064: decimal128 is Decimal, exact: as scaled integers where they fit, as decimals where they do not
+    [Fact] // ADR-0065: decimal128 is Decimal, exact: as scaled integers where they fit, as decimals where they do not
     public async Task Decimal128_is_decimal()
     {
         var type = new Decimal128Type(38, 4);
@@ -179,7 +179,7 @@ public class ReadTests
         Assert.Equal(-1, snapshot.Slice(0).Decimals((DecimalColumn)snapshot["Large"]).Scale);
     }
 
-    [Fact] // ADR-0064: decimal256 within decimal's range is Decimal
+    [Fact] // ADR-0065: decimal256 within decimal's range is Decimal
     public async Task Decimal256_within_range_is_decimal()
     {
         // 10^40 at 40 places is 1; trailing zeros past 28 places are no places at all.
@@ -195,7 +195,7 @@ public class ReadTests
         Assert.Equal(Shown(1m, 0m), Values(await ReadEveryWayAsync(tens), "Tens"));
     }
 
-    [Fact] // ADR-0064: decimal32 and decimal64 are Decimal, exact, with Blanks — to the last digit of their precision
+    [Fact] // ADR-0065: decimal32 and decimal64 are Decimal, exact, with Blanks — to the last digit of their precision
     public async Task Decimal32_and_decimal64_are_decimal()
     {
         var payload = Stream(Batch(
@@ -216,7 +216,7 @@ public class ReadTests
         Assert.Equal(4, snapshot.Slice(0).Decimals((DecimalColumn)snapshot["D64"]).Scale);
     }
 
-    [Fact] // ADR-0064: a decimal32's or decimal64's negative scale multiplies, and a scale past 28 whose places are trailing zeros is read exactly
+    [Fact] // ADR-0065: a decimal32's or decimal64's negative scale multiplies, and a scale past 28 whose places are trailing zeros is read exactly
     public async Task A_decimal32_or_decimal64_at_a_scale_outside_0_to_28_is_read_exactly()
     {
         var payload = Stream(Batch(
@@ -229,7 +229,7 @@ public class ReadTests
         Assert.Equal(Shown(0.000_000_000_000_000_0015m, null, -0.000_000_000_000_25m, 0m), Values(snapshot, "Tiny"));
     }
 
-    [Fact] // ADR-0064: a decimal's negative scale multiplies, and places past 28 that are trailing zeros are dropped
+    [Fact] // ADR-0065: a decimal's negative scale multiplies, and places past 28 that are trailing zeros are dropped
     public async Task A_negative_scale_multiplies_and_trailing_places_are_dropped()
     {
         var payload = Stream(
@@ -243,7 +243,7 @@ public class ReadTests
         Assert.Equal(Shown(1.5m, -0.025m), Values(snapshot, "Fine"));
     }
 
-    [Fact] // ADR-0064: float64 is Double as it came, non-finite values kept; float32 is widened exactly
+    [Fact] // ADR-0065: float64 is Double as it came, non-finite values kept; float32 is widened exactly
     public async Task Floats_are_double()
     {
         var payload = Stream(Batch(
@@ -257,7 +257,7 @@ public class ReadTests
         Assert.Equal(SnapshotKind.Double, snapshot["F32"].Kind);
     }
 
-    [Fact] // ADR-0064: int8 to int64, uint8 to uint32, and uint64 within long's range are Integer
+    [Fact] // ADR-0065: int8 to int64, uint8 to uint32, and uint64 within long's range are Integer
     public async Task Integers_of_every_width_are_integer()
     {
         var payload = Stream(Batch(
@@ -283,7 +283,7 @@ public class ReadTests
         Assert.Equal(Shown(0L, long.MaxValue, null), Values(snapshot, "U64"));
     }
 
-    [Fact] // ADR-0064: date32, date64 and a timestamp without a time zone are Date, as the clock value written
+    [Fact] // ADR-0065: date32, date64 and a timestamp without a time zone are Date, as the clock value written
     public async Task Dates_and_naive_timestamps_are_the_clock_value_written()
     {
         var noon = new DateTime(2026, 9, 30, 12, 0, 0);
@@ -307,7 +307,7 @@ public class ReadTests
         Assert.Equal(Shown(noon.AddTicks(1), DateTime.UnixEpoch.AddTicks((long.MinValue + 8) / 100), DateTime.UnixEpoch.AddTicks((long.MaxValue - 7) / 100), null), Values(snapshot, "Ns"));
     }
 
-    [Fact] // ADR-0064: time32 and time64 are Date on the first day — the clock time on 0001-01-01, as a database's TimeOnly is read — with Blanks, from midnight to the day's last instant
+    [Fact] // ADR-0065: time32 and time64 are Date on the first day — the clock time on 0001-01-01, as a database's TimeOnly is read — with Blanks, from midnight to the day's last instant
     public async Task Times_are_a_date_on_the_first_day()
     {
         var time = new TimeOnly(12, 30, 15);
@@ -333,7 +333,7 @@ public class ReadTests
         "+00:00", "-00:00", "Z", "utc", "gmt", "etc/zulu", "UNIVERSAL",
     ];
 
-    [Theory] // ADR-0064: a timestamp in UTC — under any of its IANA names, each also under Etc/, as +00:00, -00:00 or Z, in any case — is Date, as the UTC clock value
+    [Theory] // ADR-0065: a timestamp in UTC — under any of its IANA names, each also under Etc/, as +00:00, -00:00 or Z, in any case — is Date, as the UTC clock value
     [MemberData(nameof(UtcZones))]
     public async Task A_timestamp_in_utc_is_the_utc_clock_value(string zone)
     {
@@ -345,7 +345,7 @@ public class ReadTests
         Assert.Equal(Shown(instant, null), Values(snapshot, "When"));
     }
 
-    [Fact] // ADR-0064: bool is Boolean, across a byte and with a null
+    [Fact] // ADR-0065: bool is Boolean, across a byte and with a null
     public async Task Bool_is_boolean()
     {
         var flags = new BooleanArray.Builder();
@@ -361,7 +361,7 @@ public class ReadTests
         Assert.Equal(Enumerable.Range(0, 20).Select(i => i == 9 ? "∅" : Show(i % 3 == 0)), Values(snapshot, "Live"));
     }
 
-    [Fact] // ADR-0064: Arrow's file format is read, from memory, from a stream that seeks, from one that does not, and from one that starts further on
+    [Fact] // ADR-0065: Arrow's file format is read, from memory, from a stream that seeks, from one that does not, and from one that starts further on
     public async Task The_file_format_is_read()
     {
         var entries = new string?[] { "Rates", "FX" };
@@ -381,7 +381,7 @@ public class ReadTests
         AssertSame(snapshot, fromFurther);
     }
 
-    [Fact] // ADR-0064: the captions, Record Key and version another producer writes under ExGrid.Data.Arrow's keys are honoured
+    [Fact] // ADR-0065: the captions, Record Key and version another producer writes under ExGrid.Data.Arrow's keys are honoured
     public async Task Metadata_another_producer_wrote_is_honoured()
     {
         var id = new Field("Id", Int64Type.Default, nullable: false);
@@ -401,7 +401,7 @@ public class ReadTests
         Assert.Equal(Shown("FX", "Rates"), Values(after, "Desk"));
     }
 
-    [Fact] // ADR-0064: a stream without metadata reads with each column's name its caption, version 0 and no Record Key
+    [Fact] // ADR-0065: a stream without metadata reads with each column's name its caption, version 0 and no Record Key
     public async Task A_stream_without_metadata_takes_the_defaults()
     {
         var snapshot = await ReadEveryWayAsync(Stream(Batch(("Desk", Utf8("FX")))));
@@ -412,7 +412,7 @@ public class ReadTests
         Assert.False(snapshot.KeepsRecords);
     }
 
-    [Fact] // ADR-0064: a stream with a schema and no record batch is a Snapshot of no rows
+    [Fact] // ADR-0065: a stream with a schema and no record batch is a Snapshot of no rows
     public async Task A_stream_of_no_batches_is_a_snapshot_of_no_rows()
     {
         var schema = new Schema([new Field("Desk", StringType.Default, nullable: true)], null);
@@ -429,7 +429,7 @@ public class ReadTests
         Assert.Equal(SnapshotKind.Text, snapshot["Desk"].Kind);
     }
 
-    [Fact] // ADR-0064: a stream written in the legacy framing, without continuation markers, is read
+    [Fact] // ADR-0065: a stream written in the legacy framing, without continuation markers, is read
     public async Task The_legacy_framing_is_read()
     {
         var payload = Stream(new IpcOptions { WriteLegacyIpcFormat = true }, Batch(("N", Raw<long>(Int64Type.Default, 1L, null, 3L))));

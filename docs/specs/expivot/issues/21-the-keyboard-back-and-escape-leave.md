@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** [ADR-0069](../../../adr/0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md),
+**What to build:** [ADR-0070](../../../adr/0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md),
 in ExGrid's core and in ExPivot's use of it.
 
 - **ExGrid:** `ReturnKeyboardAsync()`, the hand-back the grid already makes for its own popovers,
@@ -56,14 +56,14 @@ arrows moving its Focus; Escape in a tab's grid closing nothing; the selected ta
 the keyboard on, and the last one back to the report. Under ExPivot's markup, DC-57's two browser
 conditions with 150 ms injected on Server: a page control focused meanwhile keeps the keyboard, and
 so does the other pivot's report on `/pivot-db`. Run on Linux under xvfb with the container's
-Chromium (no Chrome or Edge installed; Edge is CI's): `--grep ADR-0069` 8 of 8 on both hosts, and
+Chromium (no Chrome or Edge installed; Edge is CI's): `--grep ADR-0070` 8 of 8 on both hosts, and
 the whole of `pivot.spec.mjs` 46 of 46 on both hosts, the console clean.
 
 Two things were found that need a decision, and are not built:
 
 - **"The tab selected next" for a details tab is its button, not its records grid.** The records
   grid of the tab selected next is mounted by the render that selects it, so it is not attached
-  when the closing render lands, and `ReturnKeyboardAsync` does nothing before attach (ADR-0069).
+  when the closing render lands, and `ReturnKeyboardAsync` does nothing before attach (ADR-0070).
   Giving that grid the keyboard needs either the grid to take a request made before attach, or the
   details grids to stay mounted while their tabs are not selected.
 - **A held Escape that closes the dialog leaves the keyboard nowhere.** Its repeats reach the
@@ -75,5 +75,5 @@ Two things were found that need a decision, and are not built:
 
 2026-10-01, at the merge: the held-Escape case the build found was decided with ADR-0012's
 refinement — a held Escape is one press in every grid (KB-44) — and `pivot.spec.mjs` holds Escape
-in the dialog's grid to show the report keeps the keyboard. The ADR-0069 tests pass on both hosts
+in the dialog's grid to show the report keeps the keyboard. The ADR-0070 tests pass on both hosts
 (10 each), with a clean console.

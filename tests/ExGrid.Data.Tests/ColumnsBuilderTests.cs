@@ -6,10 +6,10 @@ using static ExGrid.Data.Tests.Fixtures;
 namespace ExGrid.Data.Tests;
 
 /// <summary>A Snapshot built from columns — the way in the CSV, database and Arrow readers are built on
-/// (ADR-0063).</summary>
+/// (ADR-0064).</summary>
 public class ColumnsBuilderTests
 {
-    [Fact] // ADR-0063: built from columns a value at a time, a Snapshot holds what the same records built from objects hold
+    [Fact] // ADR-0064: built from columns a value at a time, a Snapshot holds what the same records built from objects hold
     public void Columns_appended_a_value_at_a_time_hold_what_objects_hold()
     {
         var records = Trades(500);
@@ -47,7 +47,7 @@ public class ColumnsBuilderTests
         Assert.Equal(((TextColumn)fromObjects["Desk"]).Dictionary, ((TextColumn)fromColumns["Desk"]).Dictionary);
     }
 
-    [Fact] // ADR-0063: whole spans append at once, across slices, with their Blanks given as a bit set
+    [Fact] // ADR-0064: whole spans append at once, across slices, with their Blanks given as a bit set
     public void Spans_append_across_slices_with_their_blanks()
     {
         var builder = new SnapshotColumnsBuilder { Tuning = new SnapshotTuning(SegmentShift: 3) };
@@ -72,7 +72,7 @@ public class ColumnsBuilderTests
         Assert.Equal(0L, snapshot.Slice(2).Integers((IntegerColumn)snapshot["Quantity"])[6]);
     }
 
-    [Fact] // ADR-0063: text given as codes into another producer's dictionary is taken under the Snapshot's rules
+    [Fact] // ADR-0064: text given as codes into another producer's dictionary is taken under the Snapshot's rules
     public void Codes_into_another_producers_dictionary_are_taken_under_the_snapshots_rules()
     {
         var builder = new SnapshotColumnsBuilder();
@@ -89,7 +89,7 @@ public class ColumnsBuilderTests
         Assert.Equal(["AMER", "a", "a", null, null, "amer", "z", "AMER"], Values(snapshot, "Region"));
     }
 
-    [Fact] // ADR-0063: codes into a producer's dictionary meet the text already held, whichever way it came
+    [Fact] // ADR-0064: codes into a producer's dictionary meet the text already held, whichever way it came
     public void Codes_meet_text_appended_another_way()
     {
         var builder = new SnapshotColumnsBuilder { Tuning = new SnapshotTuning(SegmentShift: 1) };
@@ -105,7 +105,7 @@ public class ColumnsBuilderTests
         Assert.Equal([0, 1, 0, 0, 1, 2], Codes(snapshot, "Region"));
     }
 
-    [Fact] // ADR-0063: a code outside the producer's dictionary fails the load, naming the row and the column
+    [Fact] // ADR-0064: a code outside the producer's dictionary fails the load, naming the row and the column
     public void A_code_outside_the_dictionary_is_refused()
     {
         var builder = new SnapshotColumnsBuilder();
@@ -120,7 +120,7 @@ public class ColumnsBuilderTests
         Assert.Contains("refused", Assert.Throws<InvalidOperationException>(() => builder.Build()).Message);
     }
 
-    [Fact] // ADR-0063: text given as UTF-8 is read exactly, and bytes that are not UTF-8 fail the load
+    [Fact] // ADR-0064: text given as UTF-8 is read exactly, and bytes that are not UTF-8 fail the load
     public void Utf8_text_is_read_exactly_and_invalid_bytes_are_refused()
     {
         var builder = new SnapshotColumnsBuilder();
@@ -137,7 +137,7 @@ public class ColumnsBuilderTests
         Assert.Throws<InvalidOperationException>(() => city.Append("x"));
     }
 
-    [Fact] // ADR-0063: a Decimal given scaled by a power of ten is held exactly
+    [Fact] // ADR-0064: a Decimal given scaled by a power of ten is held exactly
     public void Scaled_decimals_are_held_exactly()
     {
         var builder = new SnapshotColumnsBuilder();
@@ -152,7 +152,7 @@ public class ColumnsBuilderTests
         Assert.Equal([123.45m, -0.05m, null, -92233720368547758.08m, 1.5m, 2.25m, null, 7m, null], Values(snapshot, "Notional"));
     }
 
-    [Fact] // ADR-0063: dates given as ticks are clock values, and ticks outside a date's range are refused
+    [Fact] // ADR-0064: dates given as ticks are clock values, and ticks outside a date's range are refused
     public void Ticks_are_clock_values_and_ticks_outside_the_range_are_refused()
     {
         var builder = new SnapshotColumnsBuilder();
@@ -168,7 +168,7 @@ public class ColumnsBuilderTests
         Assert.Equal("When", refusal.Column);
     }
 
-    [Fact] // ADR-0063: the version a Snapshot carries is the reader's to restore, and 0 otherwise
+    [Fact] // ADR-0064: the version a Snapshot carries is the reader's to restore, and 0 otherwise
     public void A_reader_restores_the_version()
     {
         var restored = new SnapshotColumnsBuilder { Version = 42 };
@@ -180,7 +180,7 @@ public class ColumnsBuilderTests
         Assert.Equal(0, fresh.Build().Version);
     }
 
-    [Fact] // ADR-0063: every column holds the same number of rows when the Snapshot is built
+    [Fact] // ADR-0064: every column holds the same number of rows when the Snapshot is built
     public void Columns_of_different_lengths_are_not_built()
     {
         var builder = new SnapshotColumnsBuilder();
@@ -193,7 +193,7 @@ public class ColumnsBuilderTests
         Assert.Equal(1, builder.RowCount);
     }
 
-    [Fact] // ADR-0063: a builder builds once
+    [Fact] // ADR-0064: a builder builds once
     public void A_builder_builds_once()
     {
         var builder = new SnapshotColumnsBuilder();
@@ -205,7 +205,7 @@ public class ColumnsBuilderTests
         Assert.Throws<InvalidOperationException>(() => id.Append(2));
     }
 
-    [Fact] // ADR-0063: a slice's values and Blanks append back as they are, so a Snapshot copies column by column
+    [Fact] // ADR-0064: a slice's values and Blanks append back as they are, so a Snapshot copies column by column
     public void A_slices_values_and_blanks_append_back_as_they_are()
     {
         var source = Trades(new SnapshotTuning(SegmentShift: 5)).Build(Trades(100));
@@ -229,7 +229,7 @@ public class ColumnsBuilderTests
             Assert.Equal(Values(source, name), Values(copy, name));
     }
 
-    [Fact] // ADR-0063: the Record Key of a reader's load refuses a key carried twice, naming it
+    [Fact] // ADR-0064: the Record Key of a reader's load refuses a key carried twice, naming it
     public void A_readers_record_key_refuses_a_key_carried_twice()
     {
         var builder = new SnapshotColumnsBuilder();
@@ -244,7 +244,7 @@ public class ColumnsBuilderTests
         Assert.Equal("Row 4, column 'Ref': the Record Key 'T-2' is already carried by row 2.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a reader's bulk Blanks hold one bit for each value
+    [Fact] // ADR-0064: a reader's bulk Blanks hold one bit for each value
     public void Bulk_blanks_hold_a_bit_for_each_value()
     {
         var builder = new SnapshotColumnsBuilder();

@@ -10,11 +10,11 @@ namespace ExGrid.Data.Tests;
 /// <summary>
 /// Random Change Batches against a plain list of records that follows the rules by hand: whatever
 /// the sequence, the Snapshot holds what the list holds, in its order, and each change folds
-/// exactly (ADR-0063, ADR-0066).
+/// exactly (ADR-0064, ADR-0067).
 /// </summary>
 public class ModelTests
 {
-    [Theory] // ADR-0063: after any sequence of batches, a Snapshot holds what the batches say, in order, and folds exactly
+    [Theory] // ADR-0064: after any sequence of batches, a Snapshot holds what the batches say, in order, and folds exactly
     [InlineData(20260930)]
     [InlineData(7)]
     [InlineData(1234567)]

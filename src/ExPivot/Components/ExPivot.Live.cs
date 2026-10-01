@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace ExPivot.Components;
 
-// The live half (ADR-0066/0067): the source's Changed listened to, its changes gathered on the
+// The live half (ADR-0067/0068): the source's Changed listened to, its changes gathered on the
 // clock and asked for at most once per RedrawInterval, the Change Highlight's history of reports,
 // and the Stale Report's notice when the newest data cannot be shown.
 //
@@ -44,13 +44,13 @@ public partial class ExPivot
     private TimeProvider? _redrawTimerClock;
     private DateTimeOffset? _redrawDue;
 
-    // The Change Highlight (ADR-0067): the reports of the recent data versions under the layout on
+    // The Change Highlight (ADR-0068): the reports of the recent data versions under the layout on
     // screen, and the delegate the grid is handed — a new one for each history that can mark, null
     // while none can.
     private ReportHistory? _history;
     private CellChangeOf<PivotReportRow>? _cellChangedAt;
 
-    // The Stale Report (ADR-0066): what happened, while the newest data cannot be shown; the
+    // The Stale Report (ADR-0067): what happened, while the newest data cannot be shown; the
     // answer held whose layout a cap refused, which the notice goes with once a layout that fits
     // lays it out; and whether what failed was a Refresh, which Retry then asks for again.
     private string? _stale;
@@ -77,7 +77,7 @@ public partial class ExPivot
         }
     }
 
-    // ---- Listening (ADR-0066) ---------------------------------------------------------------
+    // ---- Listening (ADR-0067) ---------------------------------------------------------------
 
     /// <summary>Listens to <paramref name="source"/>'s <c>Changed</c>, and no longer to the one
     /// before it: a source handed over is a refresh, whose question answers whatever was gathered.</summary>
@@ -140,7 +140,7 @@ public partial class ExPivot
         return ScheduleRedrawAsync();
     }
 
-    // ---- Gathering on the clock (ADR-0066) ----------------------------------------------------
+    // ---- Gathering on the clock (ADR-0067) ----------------------------------------------------
 
     /// <summary>
     /// Asks for the changes gathered, from the newest version, no sooner than
@@ -164,7 +164,7 @@ public partial class ExPivot
     }
 
     /// <summary>The whole answer, asked again for the layout the report is on, or on its way to
-    /// (ADR-0066: the Leaf Aggregates are the size of the report, not of the data).</summary>
+    /// (ADR-0067: the Leaf Aggregates are the size of the report, not of the data).</summary>
     private Task AskForChangesAsync() => PursueAsync(raise: _raisePending, force: true, Question.Live);
 
     private void ArmRedraw(DateTimeOffset due, TimeSpan wait)
@@ -239,7 +239,7 @@ public partial class ExPivot
         return ScheduleRedrawAsync();
     }
 
-    // ---- The Stale Report (ADR-0066) ----------------------------------------------------------
+    // ---- The Stale Report (ADR-0067) ----------------------------------------------------------
 
     /// <summary>The newest data cannot be shown: the report stays on the last version it could
     /// compute, and says what happened and as of when.</summary>

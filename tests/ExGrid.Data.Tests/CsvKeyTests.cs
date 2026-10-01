@@ -9,11 +9,11 @@ namespace ExGrid.Data.Tests;
 /// <summary>
 /// A Record Key is indexed a chunk of rows at a time, and a Text key by its code, a slot per code
 /// (ticket 07). A Blank key and a key carried twice are still refused at the first row a row-by-row
-/// index meets, by name, and every key is still found (ADR-0063).
+/// index meets, by name, and every key is still found (ADR-0064).
 /// </summary>
 public class CsvKeyTests
 {
-    [Theory] // ADR-0063: a Record Key carried twice is refused by name wherever it falls, naming both rows
+    [Theory] // ADR-0064: a Record Key carried twice is refused by name wherever it falls, naming both rows
     [InlineData(SnapshotKind.Text)]
     [InlineData(SnapshotKind.Integer)]
     public void A_key_carried_twice_is_refused_wherever_it_falls(SnapshotKind kind)
@@ -32,7 +32,7 @@ public class CsvKeyTests
         }
     }
 
-    [Theory] // ADR-0063: of a Blank key and a key carried twice, the one in the earlier row is refused
+    [Theory] // ADR-0064: of a Blank key and a key carried twice, the one in the earlier row is refused
     [InlineData(SnapshotKind.Text)]
     [InlineData(SnapshotKind.Integer)]
     public void A_blank_key_and_a_key_carried_twice_are_refused_in_row_order(SnapshotKind kind)
@@ -53,7 +53,7 @@ public class CsvKeyTests
         }
     }
 
-    [Theory] // ADR-0063: built from columns, a Blank key and a key carried twice are refused at whichever row comes first
+    [Theory] // ADR-0064: built from columns, a Blank key and a key carried twice are refused at whichever row comes first
     [InlineData(SnapshotKind.Text, 10, 5)]
     [InlineData(SnapshotKind.Text, 5, 10)]
     [InlineData(SnapshotKind.Integer, 10, 5)]
@@ -85,7 +85,7 @@ public class CsvKeyTests
         Assert.Equal(blankAt < twiceAt ? "Row " + blankAt.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) + ", column 'Id': the Record Key is Blank." : $"Row {twiceAt:N0}, column 'Id': the Record Key {(kind == SnapshotKind.Text ? "'K4'" : "4")} is already carried by row 4.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: a Text key's index by code finds every row, and no code it was not given
+    [Fact] // ADR-0064: a Text key's index by code finds every row, and no code it was not given
     public void A_text_keys_index_by_code_finds_every_row()
     {
         var segments = new[] { new Segment(4, [new TextData([2, 0, 3, 1], null)], null, 0, null, null) };
@@ -104,7 +104,7 @@ public class CsvKeyTests
         Assert.Equal(4, indexer.Index.Count);
     }
 
-    [Fact] // ADR-0063: a dictionary far larger than the rows keyed by it is indexed by hashing, as before
+    [Fact] // ADR-0064: a dictionary far larger than the rows keyed by it is indexed by hashing, as before
     public void A_dictionary_far_larger_than_its_rows_is_indexed_by_hashing()
     {
         var source = KeySource.Of(new TextData([1_000_000, 7], null));

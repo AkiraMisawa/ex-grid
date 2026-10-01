@@ -2,7 +2,7 @@ using Microsoft.JSInterop;
 
 namespace ExPivot.MudBlazor;
 
-/// <summary>Takes DOM focus for ExPivot's requests (ADR-0060): once for each request number not yet
+/// <summary>Takes DOM focus for ExPivot's requests (ADR-0061): once for each request number not yet
 /// acted on, as the built-in views do, through the control's own <c>FocusAsync</c>.</summary>
 internal static class MudPivotFocus
 {

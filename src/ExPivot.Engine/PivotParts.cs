@@ -3,10 +3,10 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The parts of a Leaf Aggregate a question asks for, for one field in Values (ADR-0065). The
+/// The parts of a Leaf Aggregate a question asks for, for one field in Values (ADR-0066). The
 /// counts always travel: the records at the leaf, the values that are not Blank, the numbers,
 /// and whether any number was non-finite. The others travel only when asked, because only the
-/// parts asked for are accumulated (ADR-0059, "Changed when decided").
+/// parts asked for are accumulated (ADR-0060, "Changed when decided").
 /// <see cref="PivotQuery.PartsOf"/> says which parts an Aggregation reads.
 /// </summary>
 [Flags]
@@ -33,7 +33,7 @@ public enum PivotParts
 }
 
 /// <summary>
-/// A number a part carries (ADR-0059/0065): exact, as a <c>decimal</c>, while every number it
+/// A number a part carries (ADR-0060/0066): exact, as a <c>decimal</c>, while every number it
 /// was made of was an integral or <c>decimal</c> value and the sum did not overflow; a
 /// <c>double</c> — Excel's own arithmetic — otherwise. A sum or an extreme is one of these at
 /// every leaf.
