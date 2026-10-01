@@ -46,9 +46,11 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
             return PivotAnswer.Refused(refusal);
         var (snapshot, bindings) = await DataAsync(cancellationToken).ConfigureAwait(false);
         var pass = new AggregationPass(snapshot, bindings, query, keepRows: false, _slicing.RowsRead);
-        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken).ConfigureAwait(false);
-        pass.Complete();
-        return pass.Answer(SourceVersion);
+        // The answer is assembled in the slices the pass goes on in (PV-40).
+        var slicer = Slicer.Of(_slicing, cancellationToken);
+        await slicer.PassAsync(pass.RowCount, pass.Step).ConfigureAwait(false);
+        await pass.CompleteAsync(slicer).ConfigureAwait(false);
+        return await pass.AnswerAsync(SourceVersion, slicer).ConfigureAwait(false);
     }
 
     /// <summary>The same answer, in one pass on the calling thread — for the engine's own
@@ -74,7 +76,7 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
             return PivotItemPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(query.SourceVersion));
         var (snapshot, bindings) = await DataAsync(cancellationToken).ConfigureAwait(false);
         var pass = new ItemsPass(snapshot, bindings[query.Field], _slicing.RowsRead);
-        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken).ConfigureAwait(false);
+        await Slicer.Of(_slicing, cancellationToken).PassAsync(pass.RowCount, pass.Step).ConfigureAwait(false);
         return pass.Page(query, SourceVersion);
     }
 
@@ -98,7 +100,7 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
             return PivotDetailPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(query.SourceVersion));
         var (snapshot, bindings) = await DataAsync(cancellationToken).ConfigureAwait(false);
         var pass = new DetailsPass(snapshot, bindings, query, _slicing.RowsRead);
-        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken).ConfigureAwait(false);
+        await Slicer.Of(_slicing, cancellationToken).PassAsync(pass.RowCount, pass.Step).ConfigureAwait(false);
         var records = new PivotDetailRecord[pass.Matches.Count];
         var values = new object?[_fields.Length];
         for (var i = 0; i < records.Length; i++)

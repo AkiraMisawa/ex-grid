@@ -66,6 +66,9 @@
         <div class="ex-pivot-dialog-backdrop" @onclick="CloseDialog" aria-hidden="true"></div>
         <PivotDialogFrame Label="@dialog.Details.Title" OnEscape="_closeDialog">@DialogContent(dialog)</PivotDialogFrame>
     }
+    @* The report's grid takes the keyboard back once the dialog, or the last details tab, has gone
+       (ADR-0069): asked after the render that removes it, when the report can take focus again. *@
+    @KeyboardReturn()
 </div>
 
 @code {
@@ -223,10 +226,12 @@
     public PivotReport? Report => _report;
 
     /// <summary>Whether a question the report waits on is out to the source — a layout's, Refresh's,
-    /// Retry's or a new source's: the report stays as it was meanwhile, under the grid's loading
-    /// indication (ADR-0065). A question asked because the source said its data moved on is asked
-    /// quietly, under no indication: the report on screen is the newest there is until the answer
-    /// lands, and a live report dimmed four times a second would flicker (ADR-0066).</summary>
+    /// Retry's or a new source's — or its answer's report is being made, in slices, as is a layout
+    /// of the answer held that grows long: the report stays as it was meanwhile, under the grid's
+    /// loading indication (ADR-0065, PV-40). A question asked because the source said its data
+    /// moved on is asked quietly, under no indication: the report on screen is the newest there is
+    /// until the answer lands, and a live report dimmed four times a second would flicker
+    /// (ADR-0066).</summary>
     public bool IsLoading => _loading;
 
     /// <summary>The source's last failure, kept until it next answers (ADR-0025's "a failure is
@@ -359,6 +364,8 @@
         _generation++;
         _asking?.Cancel();
         _asking = null;
+        _relabelling?.Cancel();
+        _relabelling = null;
         foreach (var sheet in _sheets)
             sheet.Dispose();
         _sheets.Clear();

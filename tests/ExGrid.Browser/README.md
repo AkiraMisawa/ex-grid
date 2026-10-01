@@ -455,11 +455,21 @@ nobody had asked for. What that means when writing a test:
   speaking Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade
   date, moved to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in
   the Japanese words (ADR-0059); and the code the page shows under "The code" equal to the
-  regions of its source it is read from (PV-20). Under MudBlazor alone, a MudSelect's list
-  in Value Field Settings… taking Escape before its panel (PV-11), and the palette reaching the
-  pane, the entries and the `−` button in both schemes (PV-18). Not asserted: where the keyboard
-  goes when the dialog closes, nor Escape pressed inside the dialog's own grid — both wait on a
-  decision about ExGrid's core (ticket 14 of docs/specs/expivot).
+  regions of its source it is read from (PV-20). Where the keyboard goes when the dialog or a tab
+  goes (PV-39, DC-57, ADR-0069): Escape in the dialog's grid closing the grid's Context Menu
+  first, then the dialog; however the dialog closes — that Escape, Escape on Close, Close, the
+  backdrop — the report's grid holding the keyboard again, its arrows moving its Focus; Escape in a
+  details tab's grid closing nothing; the selected tab closed handing the keyboard to the tab
+  selected next, and the last one back to the report, on the cell it left. Under MudBlazor alone, a
+  MudSelect's list in Value Field Settings… taking Escape before its panel (PV-11), and the palette
+  reaching the pane, the entries and the `−` button in both schemes (PV-18). Under ExPivot's own
+  markup alone, ExGrid's `ReturnKeyboardAsync` keeping to its conditions (DC-56): a control of the
+  page focused while the report's request is on its way keeps the keyboard, and so does a second
+  grid pressed meanwhile — the other pivot's report on `/pivot-db`. On the Server host the request
+  lands two round trips after the Escape or the close, with 150 ms injected; on WebAssembly the
+  same tests are the case without a round trip. Not asserted: a held Escape. Layer 2 holds its
+  repeats to one `OnLeave` per press, and what the repeats do to the report once the dialog has
+  closed waits on a decision (ticket 21 of docs/specs/expivot).
 - `pivot-csv.spec.mjs` — ExPivot over a CSV on `/pivot-csv` (ADR-0063, PV-20), **run once per
   Chrome**: the trade export the page writes in memory from `/pivot`'s trades, read back under
   the declared Schema to the very report `/pivot` paints, cell for cell; a file chosen through

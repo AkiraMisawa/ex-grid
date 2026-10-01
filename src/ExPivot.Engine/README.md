@@ -141,6 +141,19 @@ A layout that changes only how the result is laid out — collapsing an Item, so
 totals, a format, or an Aggregation whose parts the cube holds (Sum and Average share one) — is laid
 out from the same cube (`PivotCube.Holds`), with no new question.
 
+In a browser, the cube of a large answer and its report take seconds, so they are made in slices:
+
+```csharp
+var cube = await PivotEngine.CubeAsync(query, answer, source.Fields, slicing: null, ct);
+var report = await PivotEngine.ReportAsync(cube, layout, options, slicing: null, ct);
+```
+
+- **The same cube and the same report** as `Cube` and `Report`, made a piece at a time. The thread
+  is yielded whenever a slice of `PivotSlicing.Budget` (30 ms) is spent, so the page keeps painting.
+- **Cancelled, they stop at the next yield.**
+- **A small answer never reads the clock**, and its task is complete when it returns.
+- `PivotReport.HasSameRowsAsAsync` compares the rows of two reports the same way.
+
 Over records in memory, `PivotEngine.Compute(records, fields, layout)` does all of it in one step,
 on the calling thread.
 
@@ -153,7 +166,8 @@ the running variance, and only the parts that are asked for. Every subtotal and 
 merged from the leaves' parts, which combine exactly.
 
 - **`PivotSource.From`** is the reference: it answers from a Snapshot's columns, in slices that
-  yield between them, so a browser keeps painting; a cancelled question stops at the next slice.
+  yield between them — the pass over the records, and the answer assembled after it — so a browser
+  keeps painting; a cancelled question stops at the next slice.
 - **`PivotSource.Fetch(fields, features, aggregate, items, details)`** carries the Consumer's own
   transport to a server, which answers the same questions — from the same engine over a Snapshot,
   or from SQL, building its answer with `PivotAnswerBuilder` — and is held to `From`'s answers.
@@ -181,6 +195,8 @@ var answer = await source.AggregateAsync(query, ct);   // brought up to date, no
   and go with their Items. Every leaf equals a fresh aggregation of the new Snapshot, to the last
   bit.
 - A batch that compacts the Snapshot moves its rows; the next question is then answered afresh.
+- A batch applied while an answer is being assembled from the answer held waits until that answer
+  is made, and is folded in then: no answer is half a batch.
 - **The source answers a field's Items and a cell's records under its current version and the
   versions of its last four answers** (`SnapshotPivotSource.AnswersHeld`), and refuses an older one:
   holding every version would hold every Snapshot a live feed ever made.

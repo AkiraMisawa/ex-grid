@@ -182,7 +182,11 @@ These are the places where reaching for JS would be the easy answer, and where w
   with its own `FocusAsync` when the core asks through the fragment's context. "Focus the first
   focusable thing in the cell" was the JavaScript answer and is recorded there as rejected. The
   one change to `ex-grid.js` is inside the first entry's filter: a repeated plain Space is taken
-  and dropped, so a held Space engages once.)* *(Three decisions about focus are now made in script,
+  and dropped, so a held Space engages once.)* *(Added 2026-10-01 by
+  [ADR-0069](./0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md): the first entry
+  also passes on whether a forwarded key is a repeat. That is `event.repeat`, a field of the event
+  the listener already reads, and it adds no listener and reads no layout. Only the browser knows
+  a repeat from a press, and the core answers a held Escape once (ADR-0012, refined the same day).)* *(Three decisions about focus are now made in script,
   all in notes at the end of this ADR: the hand-back of 2026-09-27, the press that brings the
   keyboard back to an edit left standing, 2026-09-29, and the editor's own focus, taken only while
   the keyboard is still this grid's, 2026-09-30.)*

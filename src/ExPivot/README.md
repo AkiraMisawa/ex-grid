@@ -74,6 +74,10 @@ Link both stylesheets in your host page:
   the cell and pages its records under the report's Source Version.
 - **Caps** (`PivotCaps`) refuse, by name, a layout whose report is too large to read: 200,000
   leaves and Excel's 1,048,576 rows and 16,384 columns by default.
+- **A large report never holds the page.** The answer, its cube and the report's layout are built
+  in slices of about 30 ms (`Slicing`, `PivotSlicing.Default` when left out), under the loading
+  indication, with the report on screen kept until the new one is complete; a newer gesture
+  supersedes the work.
 - **Live data.** ExPivot listens to the source's `Changed` — a server's source raises it when you
   call `NotifyChanged`, however you learn of the change (SignalR, polling, a message bus) — and
   asks again for the whole answer. Changes are gathered and the report is redrawn at most every

@@ -107,10 +107,14 @@ internal sealed class AggregationPass
     }
 
     /// <summary>Ends the pass: every open run of exact numbers is folded.</summary>
-    public void Complete()
+    public void Complete() => Slicer.Run(CompleteAsync(Slicer.Unsliced));
+
+    /// <summary>Ends the pass in slices (PV-40): every leaf's open run of exact numbers folded, a
+    /// piece of leaves at a time.</summary>
+    public async ValueTask CompleteAsync(Slicer slicer)
     {
         foreach (var values in _values)
-            values.Flush();
+            await slicer.ForAsync(values.RunLeaves, values.Flush, weight: 2).ConfigureAwait(false);
         _slice = -1;
     }
 
@@ -119,48 +123,110 @@ internal sealed class AggregationPass
     /// each axis field's Items that some leaf carries, a text Item spelled by its first spelling
     /// among the records present; and each field in Values, finished.
     /// </summary>
-    public PivotAnswer Answer(string sourceVersion)
+    public PivotAnswer Answer(string sourceVersion) => Slicer.Run(AnswerAsync(sourceVersion, Slicer.Unsliced));
+
+    /// <summary>
+    /// <see cref="Answer"/> assembled in slices (ADR-0065, PV-40): each step over the leaves, the
+    /// Items or the finished parts a piece at a time, yielding whenever the slice is spent. It only
+    /// reads the pass, which nothing may change meanwhile: a pass held for live data defers the
+    /// batches applied while it is assembled (<see cref="Defer"/>).
+    /// </summary>
+    public async ValueTask<PivotAnswer> AnswerAsync(string sourceVersion, Slicer slicer)
     {
         if (Refusal is not null)
             return PivotAnswer.Refused(Refusal);
         var records = _leaves.Records;
-        var order = new List<int>(_leaves.Count);
-        for (var leaf = 0; leaf < _leaves.Count; leaf++)
+        var made = _leaves.Count;
+        // The leaves that have records, in the order they were made.
+        var order = new int[made];
+        var leafCount = 0;
+        await slicer.ForAsync(made, (from, to) =>
         {
-            if (records[leaf] > 0)
-                order.Add(leaf);
-        }
-        var leafCount = order.Count;
+            for (var leaf = from; leaf < to; leaf++)
+            {
+                if (records[leaf] > 0)
+                    order[leafCount++] = leaf;
+            }
+        }).ConfigureAwait(false);
         var axes = new PivotAnswerAxis[_axis.Length];
         for (var level = 0; level < _axis.Length; level++)
         {
             var space = _axis[level];
             var itemOfLeaf = _leaves.ItemOfLeaf[level];
+            // The Items some leaf carries, renumbered in the order they were met, each spelled.
             var renumbered = new int[space.Count];
-            foreach (var leaf in order)
-                renumbered[itemOfLeaf[leaf]] = 1;
-            var keys = new List<PivotItemKey>();
-            for (var item = 0; item < renumbered.Length; item++)
+            await slicer.ForAsync(leafCount, (from, to) =>
             {
-                if (renumbered[item] == 0)
-                    continue;
-                renumbered[item] = keys.Count;
-                keys.Add(space.PublicKeyOf(item));
-            }
+                for (var n = from; n < to; n++)
+                    renumbered[itemOfLeaf[order[n]]] = 1;
+            }).ConfigureAwait(false);
+            var keys = new List<PivotItemKey>();
+            await slicer.ForAsync(renumbered.Length, (from, to) =>
+            {
+                for (var item = from; item < to; item++)
+                {
+                    if (renumbered[item] == 0)
+                        continue;
+                    renumbered[item] = keys.Count;
+                    keys.Add(space.PublicKeyOf(item));
+                }
+            }, weight: 2).ConfigureAwait(false);
             var leaves = new int[leafCount];
-            for (var n = 0; n < leafCount; n++)
-                leaves[n] = renumbered[itemOfLeaf[order[n]]];
+            await slicer.ForAsync(leafCount, (from, to) =>
+            {
+                for (var n = from; n < to; n++)
+                    leaves[n] = renumbered[itemOfLeaf[order[n]]];
+            }).ConfigureAwait(false);
             var field = level < _query.Rows.Count ? _query.Rows[level].Field : _query.Columns[level - _query.Rows.Count].Field;
-            axes[level] = new PivotAnswerAxis(field, [.. keys], leaves, leafCount);
+            // Every leaf names one of the Items just listed, by construction.
+            axes[level] = PivotAnswerAxis.Made(field, [.. keys], leaves);
         }
         var counts = new long[leafCount];
-        for (var n = 0; n < leafCount; n++)
-            counts[n] = records[order[n]];
-        var orderSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(order);
+        await slicer.ForAsync(leafCount, (from, to) =>
+        {
+            for (var n = from; n < to; n++)
+                counts[n] = records[order[n]];
+        }).ConfigureAwait(false);
         var values = new PivotAnswerValues[_values.Length];
         for (var v = 0; v < _values.Length; v++)
-            values[v] = new PivotAnswerValues(_values[v].Field, _values[v].Finished(orderSpan), leafCount);
+        {
+            var finished = await _values[v].FinishedAsync(order, leafCount, slicer).ConfigureAwait(false);
+            values[v] = new PivotAnswerValues(_values[v].Field, finished, leafCount);
+        }
         return new PivotAnswer(sourceVersion, axes[.._query.Rows.Count], axes[_query.Rows.Count..], leafCount, counts, values);
+    }
+
+    // ---- Assembled while batches arrive (ADR-0066) ------------------------------------------------
+
+    // The batches applied while an answer was being assembled from the pass, in order: folded in
+    // once no assembly reads it, so that no answer is half a batch.
+    private List<SnapshotChange>? _deferred;
+
+    /// <summary>How many answers are being assembled from the pass now, in slices. While any is,
+    /// a Change Batch waits (<see cref="Defer"/>) rather than folds; the source counts them under
+    /// its lock.</summary>
+    public int Assembling { get; set; }
+
+    /// <summary>Whether batches wait to be folded in.</summary>
+    public bool HasDeferred => _deferred is { Count: > 0 };
+
+    /// <summary>Keeps a batch applied while an answer is assembled from the pass, to fold in once
+    /// none is.</summary>
+    public void Defer(SnapshotChange change) => (_deferred ??= []).Add(change);
+
+    /// <summary>Folds in the batches that waited, in order (<see cref="Fold"/>). False when one
+    /// cannot be, and the pass is then dropped; true when none waited.</summary>
+    public bool FoldDeferred()
+    {
+        if (_deferred is not { } deferred)
+            return true;
+        _deferred = null;
+        foreach (var change in deferred)
+        {
+            if (!Fold(change))
+                return false;
+        }
+        return true;
     }
 
     // ---- Reading -------------------------------------------------------------------------------

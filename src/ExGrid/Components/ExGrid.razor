@@ -5681,6 +5681,11 @@
     /// hear each other's keys (ADR-0018). The listener has already prevented the default:
     /// what is left is to say what the key meant.
     ///
+    /// <para>The message says whether the key is a held key's repeat (<c>event.repeat</c>),
+    /// which only the listener can see: by the time a key reaches .NET, a repeat looks like a
+    /// press. It is read where one press must mean one thing, however long the key is held:
+    /// the Escape that raises <see cref="OnLeave"/> (ADR-0069).</para>
+    ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
@@ -5688,9 +5693,15 @@
     public async Task OnKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
         bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
-        int editorSelectionEnd = -1, bool editorCaretMoved = false)
+        int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false)
     {
         if (_disposed)
+            return;
+        // A held Escape is one press (ADR-0012, refined with ADR-0069): the press peels its one
+        // layer, and the repeats dismiss nothing more. Otherwise a held key closed a Formula
+        // Entry's list and then cancelled the edit under it, or closed a dialog and then released
+        // the keyboard of the grid it had just been handed back to.
+        if (repeat && key == "Escape")
             return;
         // While editing, the keys the gate forwarded are the editor's contract
         // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite. The key
@@ -5829,14 +5840,14 @@
                 // The Interactive layer, between the popover and the grid (ADR-0037,
                 // ADR-0012's layering): Escape leaves the cell, the Focus stays where it
                 // is, and the grid keeps the keyboard. Only with nothing engaged is it
-                // the way out.
+                // the way out — or, where the Consumer listens, its OnLeave (ADR-0069).
                 if (EndInteractive())
                 {
                     _suppressRender = false;
                     StateHasChanged();
                     return;
                 }
-                await LeaveAsync();
+                await LeaveOrRaiseAsync();
                 return;
             case GridKeyKind.Engage:
                 // With no Focus, Space is a first key like any other: it only places the

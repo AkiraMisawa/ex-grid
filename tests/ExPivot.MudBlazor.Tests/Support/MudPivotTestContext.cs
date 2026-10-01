@@ -210,4 +210,25 @@ public abstract class MudPivotTestContext : BunitContext
         var call = JSInterop.Invocations.LastOrDefault(i => i.Identifier == Focus);
         return call.Identifier is null ? null : (((ElementReference)call.Arguments[0]!).Id, call.Arguments[1] is true);
     }
+
+    /// <summary>
+    /// Lets every grid rendered from here on attach to the browser, as it does on a page — its
+    /// module imported and its listener's handle answered, loosely — and keeps the report grid's
+    /// handle apart from the details grids': what the report's own grid asks of the browser, the
+    /// keyboard back on its root among it (ADR-0069). Without this, the import answers nothing in
+    /// loose mode and no grid attaches, so none could be asked for the keyboard. Called before the
+    /// pivot is rendered.
+    /// </summary>
+    internal BunitJSModuleInterop ReportGridHandle()
+    {
+        var module = JSInterop.SetupModule("./_content/ExGrid/ex-grid.js");
+        module.SetupModule("attach", _ => true);
+        return module.SetupModule("attach",
+            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotReportRow>>);
+    }
+
+    /// <summary>How many times the report grid behind <paramref name="handle"/> has asked for the
+    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0069).</summary>
+    internal static int KeyboardReturns(BunitJSModuleInterop handle)
+        => handle.Invocations.Count(invocation => invocation.Identifier == "reclaimFocus");
 }

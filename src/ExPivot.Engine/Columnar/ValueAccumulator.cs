@@ -76,7 +76,7 @@ internal sealed class ValueAccumulator
     public PivotParts Parts { get; }
 
     /// <summary>The parts at each leaf, as accumulated so far: not finished, so that more rows can
-    /// be folded in (<see cref="Finished"/> makes the answer's copy). An exact sum is kept apart,
+    /// be folded in (<see cref="FinishedAsync"/> makes the answer's copy). An exact sum is kept apart,
     /// as an integer, until it is finished.</summary>
     public PartColumns Columns { get; }
 
@@ -146,11 +146,19 @@ internal sealed class ValueAccumulator
 
     /// <summary>Folds every open run into its leaf: when the scale changes, and at the end of a pass.
     /// Runs span every slice of one scale, so this is rare, and it looks at every leaf.</summary>
-    public void Flush()
+    public void Flush() => Flush(0, RunLeaves);
+
+    /// <summary>The leaves that can hold an open run: every leaf of an exact column's, and none of
+    /// another's.</summary>
+    public int RunLeaves => _exact ? _leafCount : 0;
+
+    /// <summary>Folds the open runs of leaves [<paramref name="from"/>, <paramref name="to"/>) — the
+    /// end of a pass in slices (PV-40).</summary>
+    public void Flush(int from, int to)
     {
         if (!_exact)
             return;
-        for (var leaf = 0; leaf < _leafCount; leaf++)
+        for (var leaf = from; leaf < to; leaf++)
         {
             if (_runs[leaf].Count != 0)
                 Flush(leaf);
@@ -272,27 +280,31 @@ internal sealed class ValueAccumulator
         }
     }
 
-    /// <summary>The finished parts of the leaves <paramref name="order"/> names, in that order: an
-    /// exact sum as a <c>decimal</c> without trailing zeros (a <c>double</c> where no decimal holds
-    /// it), a <c>double</c> sum with its compensation taken in. The accumulation itself is left as
-    /// it was, to fold more rows into.</summary>
-    public PartColumns Finished(ReadOnlySpan<int> order)
+    /// <summary>The finished parts of the first <paramref name="count"/> leaves <paramref name="order"/>
+    /// names, in that order: an exact sum as a <c>decimal</c> without trailing zeros (a
+    /// <c>double</c> where no decimal holds it), a <c>double</c> sum with its compensation taken in
+    /// — made a piece of leaves at a time (PV-40). The accumulation itself is only read, and is
+    /// left as it was, to fold more rows into.</summary>
+    public async ValueTask<PartColumns> FinishedAsync(int[] order, int count, Slicer slicer)
     {
-        var finished = new PartColumns(Parts, Math.Max(16, order.Length));
-        for (var n = 0; n < order.Length; n++)
+        var finished = new PartColumns(Parts, Math.Max(16, count));
+        await slicer.ForAsync(count, (from, to) =>
         {
-            var leaf = order[n];
-            finished.CopyCell(n, Columns, leaf);
-            if (_exact && _sum && !Columns.IsInexactSum(leaf))
+            for (var n = from; n < to; n++)
             {
-                if (Exactly.TryToDecimal(_wide[leaf], _wideScale[leaf], out var exact))
-                    finished.Sums![n] = new SumPart { Exact = exact };
-                else
-                    finished.ToInexactSum(n, Exactly.ToDouble(_wide[leaf], _wideScale[leaf]));
+                var leaf = order[n];
+                finished.CopyCell(n, Columns, leaf);
+                if (_exact && _sum && !Columns.IsInexactSum(leaf))
+                {
+                    if (Exactly.TryToDecimal(_wide[leaf], _wideScale[leaf], out var exact))
+                        finished.Sums![n] = new SumPart { Exact = exact };
+                    else
+                        finished.ToInexactSum(n, Exactly.ToDouble(_wide[leaf], _wideScale[leaf]));
+                }
             }
-        }
-        finished.Finish(order.Length);
-        finished.Canonicalize(order.Length);
+        }, weight: 2).ConfigureAwait(false);
+        await slicer.ForAsync(count, finished.Finish).ConfigureAwait(false);
+        await slicer.ForAsync(count, finished.Canonicalize).ConfigureAwait(false);
         return finished;
     }
 
