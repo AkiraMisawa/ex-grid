@@ -94,7 +94,10 @@ needs, for widening a column at its default width or one widened by entry, as Ex
 without scientific notation (decimals are rounded instead), the scientific form of twelve or more
 digits, or the whole text of a date or another formatted number. It is `null` for text, a
 Formula and anything else that never widens a column. Which of these rules Microsoft documents,
-and which are still to be observed in Excel, the case corpus says per case.
+and which are still to be observed in Excel, the case corpus says per case. It is read under the
+cell's Number Format as it is now, so a component asks it again after setting a Number Format, for
+each cell of `Sheet.EntryAddressesIn(range)`: Excel's formatting keys widen a column as an entry
+does (ADR-0063).
 
 ## Functions
 

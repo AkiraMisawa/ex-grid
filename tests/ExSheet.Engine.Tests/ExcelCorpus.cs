@@ -191,7 +191,7 @@ internal static class ExcelCorpus
         c.GetProperty("expect") is var expect && (expect.TryGetProperty("widens", out _) || expect.TryGetProperty("widthAtMost", out _) || expect.TryGetProperty("widthAtLeast", out _));
 
     /// <summary>
-    /// The component's widening on entry (<c>ExSheet.razor</c>, <c>WidenOnEntry</c>): a column
+    /// The component's widening on entry (<c>SheetWidening.Of</c>, called from <c>ExSheet.razor</c>): a column
     /// whose width the user did not set that is narrower than what the entry needs
     /// (<see cref="Sheet.GetWidthOnEntry"/>) is widened to it, and the width is recorded as widened
     /// by entry: marked custom, as Excel's file marks it (CW-018), and widened again by a longer

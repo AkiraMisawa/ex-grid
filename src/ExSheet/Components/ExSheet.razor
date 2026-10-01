@@ -476,6 +476,13 @@
     /// <exception cref="ArgumentException">The change sets no part of a Cell Format.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The change's alignment is not one.</exception>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    /// <remarks>
+    /// A Number Format widens each column whose numbers it no longer fits, in the same operation,
+    /// as Excel's formatting keys do (ADR-0063, case 17): a column the user has not sized, to hold
+    /// the widest of them, recorded as a width an entry widened (SH-26). A column the user sized
+    /// never widens (case 18). Format Cells' OK does the same. <see cref="DoAsync"/> does an edit
+    /// exactly as it is written, and widens nothing.
+    /// </remarks>
     public Task<bool> SetCellFormatAsync(CellFormatChange change)
     {
         ArgumentNullException.ThrowIfNull(change);
@@ -825,7 +832,7 @@
         try
         {
             var address = new CellAddress(intent.Row.Index, column);
-            await PerformAsync(SheetEdit.Enter(address, intent.Value), widenFor: address);
+            await PerformAsync(SheetEdit.Enter(address, intent.Value), widenOver: [new CellRange(address)]);
         }
         catch (FormulaSyntaxException error)
         {
@@ -1240,25 +1247,28 @@
     /// range goes to the engine as a range, so whole columns and whole rows are recorded as one
     /// entry each (ADR-0047, SH-21), any other range sets its cells, and Borders are set relative
     /// to each range; nothing is capped (principle 5). A part the change does not name is left as
-    /// it is.
+    /// it is. A Number Format widens the columns whose numbers it no longer fits, in the same
+    /// step (ADR-0063, case 17).
     /// </summary>
     private async Task<bool> FormatSelectionAsync(CellFormatChange change)
     {
         var ranges = _selection.Ranges;
         if (ranges.Count == 0) return false;
-        await PerformAsync(SheetEdit.SetCellFormat(ranges.Select(SheetFormulaAids.RangeOf).ToList(), change));
+        var cells = ranges.Select(SheetFormulaAids.RangeOf).ToList();
+        await PerformAsync(SheetEdit.SetCellFormat(cells, change), widenOver: change.NumberFormat is null ? null : cells);
         return true;
     }
 
-    private async Task PerformAsync(SheetEdit edit, CellAddress? widenFor = null)
+    private async Task PerformAsync(SheetEdit edit, IReadOnlyList<CellRange>? widenOver = null)
     {
         var step = CurrentSheet.Do(edit);
-        // The entry and the width it widens its column to are one operation: one undo puts back
-        // both (ADR-0048).
-        if (widenFor is { } address && WidenOnEntry(address) is { } widened)
+        // The operation and the widths it widens its columns to are one operation: one undo puts
+        // back both (ADR-0048; ADR-0063, case 17).
+        if (widenOver is not null && Widen(widenOver) is { Count: > 0 } widened)
         {
-            _history.Record([step, widened]);
-            await ChangedAsync([step.Change, widened.Change]);
+            SheetStep[] steps = [step, .. widened];
+            _history.Record(steps);
+            await ChangedAsync([.. steps.Select(s => s.Change)]);
             return;
         }
         _history.Record(step);
@@ -1293,44 +1303,18 @@
     }
 
     /// <summary>
-    /// A number or date the user typed into a column that does not fit widens the column, as
-    /// Excel's does (ADR-0047, second round; SH-20), and so does a typed Formula whose result is a
-    /// number, as Excel was observed to widen it (WD-007). The engine says how many characters the
-    /// entry needs; the width in pixels is what the grid's own estimate charges for the text the
-    /// cell shows at that many characters, in the Cell Metrics the grid resolves, so the widened
-    /// column holds it and the grid does not hash it (ADR-0016). The width is recorded in the Sheet
-    /// like any other (ADR-0046), as a step of the entry's own operation; the step, or null where
-    /// the column is not widened.
+    /// The columns a number widens, as Excel's do (<see cref="SheetWidening"/>): a number or date
+    /// the user typed into a column that does not fit (ADR-0047, second round; SH-20), a typed
+    /// Formula whose result is a number, as Excel was observed to widen it (WD-007), and the
+    /// numbers a Number Format no longer fits (ADR-0063, case 17), in a column the user has not
+    /// sized (SH-26; case 18). Each width is recorded in the Sheet like any other (ADR-0046), as a
+    /// step of the operation's own; none where no column is widened.
     /// </summary>
-    /// <remarks>
-    /// A recorded width is one of three kinds (ADR-0046, 2026-09-28; SH-26). A column at the
-    /// default width, or one an earlier entry widened, is widened again by a longer entry (CW-028),
-    /// and the width it records is again the entry's kind; nothing narrows it. A width the user
-    /// set — a drag, a size to fit, a command — is never widened by an entry, so an entry never
-    /// turns it back into the entry's kind. Only the typed entry widens: not a paste, a fill or a
-    /// recalculated Formula.
-    /// </remarks>
-    private SheetStep? WidenOnEntry(CellAddress address)
+    private List<SheetStep> Widen(IReadOnlyList<CellRange> cells)
     {
         var sheet = CurrentSheet;
-        if (sheet.GetColumnWidth(address.Column) is { } recorded && IsSetByUser(recorded)) return null;
-        if (sheet.GetWidthOnEntry(address) is not { } characters) return null;
-        var metrics = CellMetrics;
-        var shown = sheet.GetDisplay(address, characters);
-        var needed = Math.Ceiling(Math.Max(
-            SheetColumns.PxOf(characters, metrics),
-            metrics.EstimatePx(shown.Text)));
-        if (needed <= _columns.WidthPxOf(address.Column)) return null;
-        if (SheetColumns.CharactersOfColumn(needed, metrics) is not { } width) return null;
-        return sheet.Do(WidenedByEntry(address.Column, width));
+        return [.. SheetWidening.Of(sheet, cells, _columns, CellMetrics).Select(widened => sheet.Do(WidenedByEntry(widened.Column, widened.Characters)))];
     }
-
-    /// <summary>
-    /// Whether a recorded width is the user's (ADR-0046, 2026-09-28; SH-26), which an entry never
-    /// widens. The engine records the user's width as custom and the entry's as automatic, which a
-    /// longer entry widens.
-    /// </summary>
-    private static bool IsSetByUser(SheetColumnWidth width) => width.IsSetByUser;
 
     /// <summary>The edit that records a width an entry widened a column to: the entry's kind, which a longer entry widens again (SH-26).</summary>
     private static SheetEdit WidenedByEntry(int column, double characters) =>

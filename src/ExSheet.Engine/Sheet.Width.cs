@@ -181,7 +181,10 @@ public sealed partial class Sheet
     /// when the column is at its default width or one widened by entry, never one the user set,
     /// and narrower than the answer, recording the width as widened by entry
     /// (<see cref="SetAutomaticColumnWidth"/>; ADR-0046, 2026-09-28; CW-018, CW-028). How Excel
-    /// chooses the new width is observed by the case corpus; this rule is uncertain there.
+    /// chooses the new width is observed by the case corpus; this rule is uncertain there. It
+    /// calls it too after a Number Format is set, for every number the format was set on
+    /// (<see cref="EntryAddressesIn"/>), since the answer is read under the cell's Number Format
+    /// as it is now: a formatting key widens a column as an entry does (ADR-0063, case 17).
     /// </summary>
     public int? GetWidthOnEntry(CellAddress address)
     {
@@ -205,6 +208,17 @@ public sealed partial class Sheet
         }
         return null;
     }
+
+    /// <summary>
+    /// The cells in <paramref name="range"/> that hold an Entry, in no particular order: the cells
+    /// whose numbers a Number Format set on the range may widen a column for
+    /// (<see cref="GetWidthOnEntry"/>; ADR-0063, case 17). It walks the range or the Sheet's
+    /// cells, whichever are fewer, so a whole column costs what the Sheet holds rather than a
+    /// million rows, and no range is capped (ADR-0046).
+    /// </summary>
+    public IEnumerable<CellAddress> EntryAddressesIn(CellRange range) =>
+        CellsIn(new Area(range.First.Row, range.First.Column, range.Last.Row, range.Last.Column))
+            .Where(address => _cells[address].Entry is not null);
 
     private static int Characters(double width)
     {

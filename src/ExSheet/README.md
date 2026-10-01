@@ -60,7 +60,9 @@ Selection's contents and keeps its formats, as one undo step. Ctrl+F finds text 
 every row of the Sheet. Excel's formatting keys format the Selection, each as one undo step: Ctrl+B,
 Ctrl+I, Ctrl+U and Ctrl+5 (and Ctrl+2 to Ctrl+4) toggle bold, italic, underline and strikethrough in
 the direction the Focus cell gives them, and Ctrl+Shift with `~ ! @ # $ % ^` applies the Number
-Format Excel applies under the Sheet's culture, `&` an outline and `_` no borders.
+Format Excel applies under the Sheet's culture, `&` an outline and `_` no borders. The date, the
+time and the currency are Excel's built-ins, shown in the culture's own form: `05-Jan-26`, `09:05`
+and `£5.00` under en-GB, `5-Jan-26`, `9:05 AM` and `$5.00` under en-US.
 
 ## Linked Tables
 
@@ -174,9 +176,11 @@ the same parts. Such a Chrome calls the context's `ReturnKeyboard` once its fram
 
 Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
 column, and a number typed into a column that it widens, are steps on the undo stack like any
-other, and raise `DocumentChanged`; an opened document brings its widths with it. A width an entry
-widened the column to stays automatic, and a longer entry widens the column again; a width the
-user set — a drag or a size to fit — is custom, and entries no longer widen that column.
+other, and raise `DocumentChanged`; an opened document brings its widths with it. A Number Format
+set on the Selection — a formatting key, Format Cells' OK, `SetCellFormatAsync` — widens a column
+whose numbers it no longer fits in the same way, in its own undo step. A width an entry or a Number
+Format widened the column to stays automatic, and a longer number widens the column again; a width
+the user set — a drag or a size to fit — is custom, and nothing widens that column.
 
 ## More
 

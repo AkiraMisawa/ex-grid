@@ -76,8 +76,13 @@ internal static class SheetFormatKeys
     /// ones Excel applied under en-GB, en-US and ja-JP alike, but for two: the time is 12-hour
     /// where the culture's own time is (<c>h:mm AM/PM</c> under en-US, <c>h:mm</c> under en-GB and
     /// ja-JP), and the currency is Excel's built-in, shown in the culture's own currency
-    /// (<see cref="NumberFormat.BuiltInCurrency"/>). The outline is thin and Automatic on each
-    /// range's four edges; no borders clears every edge of each range.
+    /// (<see cref="NumberFormat.BuiltInCurrency"/>). The date and the time are Excel's built-ins
+    /// 15 and 20 (or the AM/PM one), recorded in their codes and shown in the culture's own form,
+    /// as Excel shows them (the twelfth run, case 19): <c>05-Jan-26</c> and <c>09:05</c> under
+    /// en-GB, <c>5-Jan-26</c> and <c>9:05 AM</c> under en-US, <c>05-1-26</c> and <c>9:05</c> under
+    /// ja-JP. A Number Format widens the columns it no longer fits, as every Number Format set on
+    /// the Selection does (case 17). The outline is thin and Automatic on each range's four edges;
+    /// no borders clears every edge of each range.
     /// </summary>
     /// <param name="kind">The key.</param>
     /// <param name="focus">The Focus cell's Cell Format, as it shows.</param>

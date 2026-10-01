@@ -113,6 +113,77 @@ public class CultureTests
         Assert.Contains("5", sheet.GetDisplay(a1).Text, StringComparison.Ordinal);
     }
 
+    [Theory] // ADR-0063 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled
+    [InlineData("en-GB", "d-mmm-yy", "05-Jan-26")]
+    [InlineData("en-US", "d-mmm-yy", "5-Jan-26")]
+    [InlineData("ja-JP", "d-mmm-yy", "05-1-26")]   // the month as a number, as Excel showed it there
+    [InlineData("en-GB", "h:mm", "09:05")]
+    [InlineData("en-US", "h:mm", "9:05")]
+    [InlineData("ja-JP", "h:mm", "9:05")]
+    [InlineData("en-US", "h:mm AM/PM", "9:05 AM")]
+    public void The_built_in_date_and_time_show_in_the_sheets_culture(string culture, string code, string shown)
+    {
+        var sheet = In(culture);
+        var a1 = CellAddress.Parse("A1");
+        // 5 January 2026 at 09:05: the date reads the day, the times the time of day.
+        sheet.Enter(a1, "=" + (Serial(2026, 1, 5) + 545.0 / 1440).ToString(CultureInfo.InvariantCulture));
+
+        sheet.SetNumberFormat(a1, NumberFormat.Parse(code));
+
+        Assert.Equal(shown, sheet.GetDisplay(a1).Text);
+        // Recorded as the built-in, not as the form it shows in.
+        Assert.Equal(code, sheet.GetNumberFormat(a1).Code);
+        Assert.Contains($"\"{JsonEncoded(code)}\"", sheet.ToDocument().ToJson(), StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0063 case 19: the built-ins open under another culture in that culture's form, as Excel's do
+    public void The_built_in_date_and_time_follow_the_culture_a_document_is_opened_in()
+    {
+        var sheet = In("en-US");
+        sheet.Enter(CellAddress.Parse("A1"), "=" + Serial(2026, 1, 5).ToString(CultureInfo.InvariantCulture));
+        sheet.Enter(CellAddress.Parse("A2"), "=" + (545.0 / 1440).ToString(CultureInfo.InvariantCulture));
+        sheet.SetNumberFormat(CellAddress.Parse("A1"), NumberFormat.Parse("d-mmm-yy"));
+        sheet.SetNumberFormat(CellAddress.Parse("A2"), NumberFormat.Parse("h:mm"));
+        var json = sheet.ToDocument().ToJson();
+
+        var british = Sheet.Open(SheetDocument.FromJson(json.Replace("\"culture\":\"en-US\"", "\"culture\":\"en-GB\"", StringComparison.Ordinal)));
+
+        Assert.Equal("en-GB", british.Culture.Name);
+        Assert.Equal("5-Jan-26", sheet.GetDisplay(CellAddress.Parse("A1")).Text);
+        Assert.Equal("05-Jan-26", british.GetDisplay(CellAddress.Parse("A1")).Text);
+        Assert.Equal("09:05", british.GetDisplay(CellAddress.Parse("A2")).Text);
+    }
+
+    [Theory] // ADR-0063 case 19, ADR-0047: a date typed with a month name and a year records built-in 15, so it too shows in the culture's form
+    [InlineData("en-GB", "05-Jan-26")]
+    [InlineData("en-US", "5-Jan-26")]
+    public void A_date_typed_with_a_month_name_shows_built_in_15_in_the_cultures_form(string culture, string shown)
+    {
+        var sheet = In(culture);
+        var a1 = CellAddress.Parse("A1");
+
+        sheet.Enter(a1, "5-Jan-2026");
+
+        Assert.Equal("d-mmm-yy", sheet.GetNumberFormat(a1).Code);
+        Assert.Equal(shown, sheet.GetDisplay(a1).Text);
+    }
+
+    [Theory] // ADR-0063 case 17, ADR-0047: the width a number needs is read in the culture's form of its built-in, so a key widens its column to the text it shows
+    [InlineData("en-GB", "d-mmm-yy", 9)]   // 05-Jan-26
+    [InlineData("en-US", "d-mmm-yy", 8)]   // 5-Jan-26
+    [InlineData("en-GB", "h:mm", 5)]       // 09:05
+    [InlineData("ja-JP", "h:mm", 4)]       // 9:05
+    public void The_width_a_built_in_needs_is_its_text_in_the_culture(string culture, string code, int characters)
+    {
+        var sheet = In(culture);
+        var a1 = CellAddress.Parse("A1");
+        sheet.Enter(a1, "=" + (Serial(2026, 1, 5) + 545.0 / 1440).ToString(CultureInfo.InvariantCulture));
+
+        sheet.SetNumberFormat(a1, NumberFormat.Parse(code));
+
+        Assert.Equal(characters, sheet.GetWidthOnEntry(a1));
+    }
+
     private static string JsonEncoded(string text) => System.Text.Json.JsonSerializer.Serialize(text)[1..^1];
 
     [Fact] // ADR-0048: a percentage typed reopens in the Cell Editor as a percentage (its Value is in ExcelCases/typed-constants.json)
