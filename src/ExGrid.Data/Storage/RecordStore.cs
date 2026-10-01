@@ -29,6 +29,8 @@ internal abstract class RecordGather
 {
     public abstract void Add(RecordStore source, int offset);
 
+    public abstract void AddRange(RecordStore source, int offset, int length);
+
     public abstract RecordStore Seal();
 }
 
@@ -38,6 +40,12 @@ internal sealed class RecordGather<T>(int length) : RecordGather
     private int count;
 
     public override void Add(RecordStore source, int offset) => items[count++] = ((RecordStore<T>)source).Items[offset];
+
+    public override void AddRange(RecordStore source, int offset, int length)
+    {
+        Array.Copy(((RecordStore<T>)source).Items, offset, items, count, length);
+        count += length;
+    }
 
     public override RecordStore Seal() => new RecordStore<T>(count == items.Length ? items : items.AsSpan(0, count).ToArray());
 }

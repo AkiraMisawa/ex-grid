@@ -104,11 +104,12 @@ public sealed class SnapshotChange
     public IReadOnlyList<SnapshotRow> Added { get; }
 
     /// <summary>
-    /// Whether <see cref="After"/> was compacted: its rows were copied, in order, into new slices, so
-    /// every row it kept from <see cref="Before"/> is at a new address. Values, codes and order are as
-    /// they would have been; a reader that keeps rows by their <see cref="SnapshotRow"/> starts again
-    /// from <see cref="After"/>. A Snapshot compacts once the rows batches added, or the slices they
-    /// made, grow large beside the rest.
+    /// Whether a compaction moved rows. <see cref="After"/> holds what it would have held, with the same
+    /// values, codes and order, but rows it kept from <see cref="Before"/> may be at new addresses:
+    /// once the slices batches made pile up, the rows in them are merged into fewer slices; once the
+    /// rows batches made grow large beside the rest, or most stored rows are no longer held, every row
+    /// is copied into new slices. A reader that keeps rows by their <see cref="SnapshotRow"/> starts
+    /// again from <see cref="After"/>; one that keeps only what it computed folds the change as ever.
     /// </summary>
     public bool Compacted { get; }
 }

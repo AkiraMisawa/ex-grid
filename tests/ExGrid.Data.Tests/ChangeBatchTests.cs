@@ -79,8 +79,8 @@ public class ChangeBatchTests
         Assert.Equal(Enumerable.Range(0, 49).Select(i => (object)(long)i), Values(change.After, "Id"));
     }
 
-    [Fact] // ADR-0063: a compaction copies the rows in order and keeps every code; the change says so
-    public void A_compaction_keeps_order_and_codes_and_says_so()
+    [Fact] // ADR-0063: once the slices batches made pile up, their rows are merged, and the base is shared as it is
+    public void Slices_that_pile_up_are_merged_and_the_base_is_kept()
     {
         var builder = Trades(new SnapshotTuning(SegmentShift: 2, MaxBatchSegments: 2));
         var records = Trades(16).ToList();
@@ -97,17 +97,54 @@ public class ChangeBatchTests
         }
 
         Assert.Equal([false, false, true], changes.Select(c => c.Compacted));
-        var compacted = changes[2];
+        var merged = changes[2];
+        AssertHolds(records, merged.After);
+        Assert.Equal(5, merged.After.SliceCount);
+        Assert.Equal(3, merged.After.Slice(4).Length);
+        Assert.True(merged.After.Slice(4).Removed.IsEmpty);
+        // The base is kept as it is: its slices still leave out the old versions of the changed records.
+        Assert.Equal([[1UL], [2UL], [4UL], []], Enumerable.Range(0, 4).Select(s => merged.After.Slice(s).Removed.ToArray()));
+        var id = (IntegerColumn)merged.After["Id"];
+        Assert.Equal(changes[0].Before.Slice(3).Integers(id).ToArray(), merged.After.Slice(3).Integers(id).ToArray());
+        Assert.Equal([new SnapshotRow(4, 2)], merged.Added);
+        Assert.Same(records[10], merged.After.RecordAt(merged.Added[0]));
+        Assert.Equal(((TextColumn)merged.Before["Desk"]).Dictionary.Append("Desk 2"), ((TextColumn)merged.After["Desk"]).Dictionary);
+        // The merged slice's Record Keys are indexed: the next batch finds them.
+        var next = merged.After.Apply(builder.Batch(changed: [records[5] with { Live = null }], removedKeys: [0L]));
+        Assert.Equal(15, next.After.RowCount);
+    }
+
+    [Fact] // ADR-0063: once the rows batches made grow large beside the rest, every row is copied, in order, into a new base; codes are kept, and the change says so
+    public void A_compaction_keeps_order_and_codes_and_says_so()
+    {
+        var builder = Trades(new SnapshotTuning(SegmentShift: 2));
+        var records = Trades(16).ToList();
+        var snapshot = builder.Build([.. records]);
+
+        var first = snapshot.Apply(builder.Batch(changed: [records[1] with { Desk = "One" }, records[2] with { Desk = "Two" }]));
+        records[1] = (Trade)first.After.RecordAt(first.Added[0])!;
+        records[2] = (Trade)first.After.RecordAt(first.Added[1])!;
+        var amended = new[] { records[6] with { Desk = "Six" }, records[9] with { Price = 0 }, records[14] with { Live = true } };
+        var sixteen = Make(16);
+        var compacted = first.After.Apply(builder.Batch(changed: amended, added: [sixteen], removedKeys: [3L]));
+        records[6] = amended[0];
+        records[9] = amended[1];
+        records[14] = amended[2];
+        records.RemoveAt(3);
+        records.Add(sixteen);
+
+        Assert.False(first.Compacted);
+        Assert.True(compacted.Compacted);
         AssertHolds(records, compacted.After);
         Assert.Equal(4, compacted.After.SliceCount);
         Assert.All(Enumerable.Range(0, 4), s => Assert.True(compacted.After.Slice(s).Removed.IsEmpty));
-        Assert.Equal(((TextColumn)compacted.Before["Desk"]).Dictionary.Append("Desk 2"), ((TextColumn)compacted.After["Desk"]).Dictionary);
+        Assert.Equal(((TextColumn)compacted.Before["Desk"]).Dictionary.Append("Six"), ((TextColumn)compacted.After["Desk"]).Dictionary);
         Assert.Equal(compacted.Before.Version + 1, compacted.After.Version);
-        Assert.Equal([new SnapshotRow(2, 2)], compacted.Added);
-        Assert.Same(records[10], compacted.After.RecordAt(compacted.Added[0]));
+        Assert.Equal([new SnapshotRow(1, 1), new SnapshotRow(2, 0), new SnapshotRow(3, 1), new SnapshotRow(3, 3)], compacted.Added);
+        Assert.Equal([records[5], records[8], records[13], records[15]], compacted.Added.Select(r => compacted.After.RecordAt(r)));
         // Its Record Keys are indexed anew: the next batch finds them.
-        var next = compacted.After.Apply(builder.Batch(changed: [records[15] with { Live = null }], removedKeys: [0L]));
-        Assert.Equal(15, next.After.RowCount);
+        var next = compacted.After.Apply(builder.Batch(changed: [records[14] with { Live = null }], removedKeys: [0L, 16L]));
+        Assert.Equal(14, next.After.RowCount);
     }
 
     [Fact] // ADR-0063: two versions made from one Snapshot each keep the text they brought, and the one before keeps its own

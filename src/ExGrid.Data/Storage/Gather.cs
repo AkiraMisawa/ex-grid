@@ -21,130 +21,48 @@ internal sealed class SourceMap(Snapshot snapshot, int[] ordinals, int[]?[] rema
         => new(snapshot, Enumerable.Range(0, snapshot.Shape.Columns.Length).ToArray(), new int[]?[snapshot.Shape.Columns.Length]);
 }
 
-/// <summary>Copies rows of Snapshots into one new segment, column by column.</summary>
+/// <summary>
+/// Copies rows of Snapshots into one new segment, column by column. Rows that lie one after another
+/// in one source segment are copied as a run, in bulk, which is most of what a compaction copies.
+/// </summary>
 internal static class Gather
 {
     public static Segment Build(Shape shape, ReadOnlySpan<SourceRow> rows, SourceMap[] sources, int firstPosition, int[]? positions, bool indexKeys)
     {
         var length = rows.Length;
+        var runs = Runs(rows);
         var data = new ColumnData[shape.Columns.Length];
-        Span<int> bits = stackalloc int[4];
         for (var c = 0; c < data.Length; c++)
         {
-            switch (shape.Columns[c].Kind)
+            var writer = Writers.Create(shape.Columns[c].Kind, null);
+            writer.Begin(length, length);
+            foreach (var run in runs)
             {
-                case SnapshotKind.Text:
-                {
-                    var writer = new TextColumnWriter(null);
-                    writer.Begin(length, length);
-                    foreach (var row in rows)
-                    {
-                        var (source, column) = Source(sources, row, c);
-                        var code = ((TextData)column).Codes[row.Offset];
-                        writer.AddCode(code < 0 || source.Remaps[c] is not { } remap ? code : remap[code]);
-                    }
-                    data[c] = writer.Seal();
-                    break;
-                }
-                case SnapshotKind.Decimal:
-                {
-                    var writer = new DecimalColumnWriter();
-                    writer.Begin(length, length);
-                    foreach (var row in rows)
-                    {
-                        var column = (DecimalData)Source(sources, row, c).Column;
-                        if (column.IsBlank(row.Offset))
-                            writer.AddBlank();
-                        else if (column.Scaled is { } scaled)
-                            writer.AddScaled(scaled[row.Offset], column.Scale);
-                        else
-                            writer.Add(column.Exact![row.Offset], bits);
-                    }
-                    data[c] = writer.Seal();
-                    break;
-                }
-                case SnapshotKind.Double:
-                {
-                    var writer = new DoubleColumnWriter();
-                    writer.Begin(length, length);
-                    foreach (var row in rows)
-                    {
-                        var column = (DoubleData)Source(sources, row, c).Column;
-                        if (column.IsBlank(row.Offset))
-                            writer.AddBlank();
-                        else
-                            writer.Add(column.Values[row.Offset]);
-                    }
-                    data[c] = writer.Seal();
-                    break;
-                }
-                case SnapshotKind.Integer:
-                {
-                    var writer = new IntegerColumnWriter();
-                    writer.Begin(length, length);
-                    foreach (var row in rows)
-                    {
-                        var column = (IntegerData)Source(sources, row, c).Column;
-                        if (column.IsBlank(row.Offset))
-                            writer.AddBlank();
-                        else
-                            writer.Add(column.Values[row.Offset]);
-                    }
-                    data[c] = writer.Seal();
-                    break;
-                }
-                case SnapshotKind.Date:
-                {
-                    var writer = new DateColumnWriter();
-                    writer.Begin(length, length);
-                    foreach (var row in rows)
-                    {
-                        var column = (DateData)Source(sources, row, c).Column;
-                        if (column.IsBlank(row.Offset))
-                            writer.AddBlank();
-                        else
-                            writer.Add(column.Ticks[row.Offset]);
-                    }
-                    data[c] = writer.Seal();
-                    break;
-                }
-                case SnapshotKind.Boolean:
-                {
-                    var writer = new BooleanColumnWriter();
-                    writer.Begin(length, length);
-                    foreach (var row in rows)
-                    {
-                        var column = (BooleanData)Source(sources, row, c).Column;
-                        if (column.IsBlank(row.Offset))
-                            writer.AddBlank();
-                        else
-                            writer.Add(column.Values[row.Offset]);
-                    }
-                    data[c] = writer.Seal();
-                    break;
-                }
+                var source = sources[run.Source];
+                var column = source.Snapshot.Segments[run.Slice].Columns[source.Ordinals[c]];
+                Copy(column, run.Offset, run.Length, source.Remaps[c], writer);
             }
+            data[c] = writer.Seal();
         }
 
         RecordStore? records = null;
         if (shape.RecordType is not null && length > 0)
         {
-            var first = rows[0];
+            var first = runs[0];
             var gather = sources[first.Source].Snapshot.Segments[first.Slice].Records!.Gather(length);
-            foreach (var row in rows)
-                gather.Add(sources[row.Source].Snapshot.Segments[row.Slice].Records!, row.Offset);
+            foreach (var run in runs)
+                gather.AddRange(sources[run.Source].Snapshot.Segments[run.Slice].Records!, run.Offset, run.Length);
             records = gather.Seal();
         }
 
         KeyIndex? keys = null;
         if (indexKeys && shape.KeyOrdinal >= 0)
         {
-            var keyData = data[shape.KeyOrdinal];
-            var source = KeySource.Of(keyData);
-            keys = new KeyIndex(source, length);
+            var keySource = KeySource.Of(data[shape.KeyOrdinal]);
+            keys = new KeyIndex(keySource, length);
             for (var o = 0; o < length; o++)
             {
-                if (!keys.TryAdd(o, source.KeyOf(o), out _))
+                if (!keys.TryAdd(o, keySource.KeyOf(o), out _))
                     throw new InvalidOperationException("A batch carried one key twice past its checks.");
             }
         }
@@ -152,10 +70,68 @@ internal static class Gather
         return new Segment(length, data, records, firstPosition, positions, keys);
     }
 
-    private static (SourceMap Map, ColumnData Column) Source(SourceMap[] sources, SourceRow row, int ordinal)
+    /// <summary>Appends <paramref name="length"/> rows of <paramref name="source"/> from
+    /// <paramref name="offset"/>, its Blanks included; a Text column's codes through
+    /// <paramref name="remap"/> when it has one.</summary>
+    private static void Copy(ColumnData source, int offset, int length, int[]? remap, ColumnWriter writer)
     {
-        var map = sources[row.Source];
-        return (map, map.Snapshot.Segments[row.Slice].Columns[map.Ordinals[ordinal]]);
+        var first = writer.Count;
+        switch (source)
+        {
+            case TextData text when remap is null:
+                ((TextColumnWriter)writer).AddCodes(text.Codes.AsSpan(offset, length), text.Blanks is not null);
+                return;
+            case TextData text:
+                var codes = (TextColumnWriter)writer;
+                foreach (var code in text.Codes.AsSpan(offset, length))
+                    codes.AddCode(code < 0 ? -1 : remap[code]);
+                return;
+            case DecimalData { Scaled: { } scaled } number:
+                ((DecimalColumnWriter)writer).AddScaledRange(scaled.AsSpan(offset, length), number.Scale);
+                break;
+            case DecimalData number:
+                var decimals = (DecimalColumnWriter)writer;
+                Span<int> bits = stackalloc int[4];
+                foreach (var value in number.Exact.AsSpan(offset, length))
+                    decimals.Add(value, bits);
+                break;
+            case DoubleData number:
+                ((DoubleColumnWriter)writer).AddRange(number.Values.AsSpan(offset, length));
+                break;
+            case IntegerData number:
+                ((IntegerColumnWriter)writer).AddRange(number.Values.AsSpan(offset, length));
+                break;
+            case DateData date:
+                ((DateColumnWriter)writer).AddRange(date.Ticks.AsSpan(offset, length), date.HasTime);
+                break;
+            case BooleanData flag:
+                ((BooleanColumnWriter)writer).AddRange(flag.Values.AsSpan(offset, length));
+                break;
+        }
+        if (source.Blanks is { } blanks)
+            writer.MarkBlanks(first, length, blanks, offset);
+    }
+
+    /// <summary>The rows as runs: each a stretch of consecutive offsets in one source segment.</summary>
+    private static List<(int Source, int Slice, int Offset, int Length)> Runs(ReadOnlySpan<SourceRow> rows)
+    {
+        var runs = new List<(int, int, int, int)>();
+        var i = 0;
+        while (i < rows.Length)
+        {
+            var start = rows[i];
+            var length = 1;
+            while (i + length < rows.Length
+                && rows[i + length].Source == start.Source
+                && rows[i + length].Slice == start.Slice
+                && rows[i + length].Offset == start.Offset + length)
+            {
+                length++;
+            }
+            runs.Add((start.Source, start.Slice, start.Offset, length));
+            i += length;
+        }
+        return runs;
     }
 }
 

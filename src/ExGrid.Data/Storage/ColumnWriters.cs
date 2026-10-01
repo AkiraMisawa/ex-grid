@@ -131,6 +131,15 @@ internal sealed class TextColumnWriter(TextInterner? interner) : ColumnWriter
         codes[count++] = code;
     }
 
+    /// <summary>Appends a run of codes the lineage's dictionary already holds; -1 is a Blank.</summary>
+    public void AddCodes(ReadOnlySpan<int> source, bool mayHoldBlanks)
+    {
+        Ensure(ref codes, source.Length);
+        source.CopyTo(codes.AsSpan(count));
+        count += source.Length;
+        anyBlank |= mayHoldBlanks;
+    }
+
     /// <summary>Room for <paramref name="more"/> codes, to be written through <see cref="Tail"/>.</summary>
     public Span<int> Tail(int more)
     {
@@ -158,11 +167,10 @@ internal sealed class TextColumnWriter(TextInterner? interner) : ColumnWriter
         ulong[]? bits = null;
         if (anyBlank)
         {
-            bits = new ulong[Bits.Words(count)];
             for (var i = 0; i < sealedCodes.Length; i++)
             {
                 if (sealedCodes[i] < 0)
-                    Bits.Set(bits, i);
+                    Bits.Set(bits ??= new ulong[Bits.Words(count)], i);
             }
         }
         return new TextData(sealedCodes, bits);
@@ -192,8 +200,53 @@ internal sealed class DecimalColumnWriter : ColumnWriter
     private long[] scaled = [];
     private decimal[]? exact;
     private int scale;
+    private bool mayShrink;
 
     public override int Capacity => exact?.Length ?? scaled.Length;
+
+    /// <summary>
+    /// Appends a run of values held at <paramref name="valueScale"/>, as another segment holds them,
+    /// with no look at each value's places: the scale is brought down to its least once the segment
+    /// is sealed.
+    /// </summary>
+    public void AddScaledRange(ReadOnlySpan<long> values, int valueScale)
+    {
+        if (exact is null)
+        {
+            Ensure(ref scaled, values.Length);
+            if (valueScale <= scale || TryRescale(valueScale))
+            {
+                var up = scale - valueScale;
+                var done = 0;
+                if (up == 0)
+                {
+                    values.CopyTo(scaled.AsSpan(count));
+                    done = values.Length;
+                }
+                else if (up <= DecimalMath.MaxLongScale)
+                {
+                    var max = DecimalMath.MaxBeforeScaling[up];
+                    var factor = DecimalMath.Pow10[up];
+                    for (; done < values.Length; done++)
+                    {
+                        var value = values[done];
+                        if (value > max || value < -max)
+                            break;
+                        scaled[count + done] = value * factor;
+                    }
+                }
+                count += done;
+                mayShrink = true;
+                if (done == values.Length)
+                    return;
+                values = values[done..];
+            }
+            GoExact();
+        }
+        Ensure(ref exact!, values.Length);
+        foreach (var value in values)
+            exact[count++] = DecimalMath.FromScaled(value, valueScale);
+    }
 
     /// <summary>Appends a value; <paramref name="bits"/> is four ints of the caller's scratch space.</summary>
     public void Add(decimal value, Span<int> bits)
@@ -243,9 +296,11 @@ internal sealed class DecimalColumnWriter : ColumnWriter
     public override ColumnData Seal()
     {
         var bits = Bits.Trim(blanks, count);
-        return exact is null
-            ? DecimalData.FromScaled(Trim(scaled, count), scale, bits)
-            : DecimalData.FromExact(Trim(exact, count), bits);
+        if (exact is not null)
+            return DecimalData.FromExact(Trim(exact, count), bits);
+        if (mayShrink)
+            Shrink();
+        return DecimalData.FromScaled(Trim(scaled, count), scale, bits);
     }
 
     protected override void Reset(int capacity)
@@ -253,6 +308,41 @@ internal sealed class DecimalColumnWriter : ColumnWriter
         scaled = new long[capacity];
         exact = null;
         scale = 0;
+        mayShrink = false;
+    }
+
+    /// <summary>Brings the scale down to the largest number of places among the values, trailing
+    /// zeros not counted, as a value at a time would have left it.</summary>
+    private void Shrink()
+    {
+        var values = scaled.AsSpan(0, count);
+        var places = 0;
+        foreach (var value in values)
+        {
+            if (value == 0)
+                continue;
+            var p = scale;
+            var rest = value;
+            while (p > places && rest % 10 == 0)
+            {
+                rest /= 10;
+                p--;
+            }
+            if (p > places)
+            {
+                places = p;
+                if (places == scale)
+                    return;
+            }
+        }
+        while (scale > places)
+        {
+            var step = Math.Min(DecimalMath.MaxLongScale, scale - places);
+            var divisor = DecimalMath.Pow10[step];
+            for (var i = 0; i < values.Length; i++)
+                values[i] /= divisor;
+            scale -= step;
+        }
     }
 
     protected override void ClearSlot(int index)
@@ -413,6 +503,16 @@ internal sealed class DateColumnWriter : ColumnWriter
         if (value % TimeSpan.TicksPerDay != 0)
             hasTime = true;
         ticks[count++] = value;
+    }
+
+    /// <summary>Appends a run of another segment's ticks; whether one is not a midnight is settled
+    /// when the segment is sealed.</summary>
+    public void AddRange(ReadOnlySpan<long> source, bool mayHoldTime)
+    {
+        Ensure(ref ticks, source.Length);
+        source.CopyTo(ticks.AsSpan(count));
+        count += source.Length;
+        hasTime |= mayHoldTime;
     }
 
     public override void AddBlank()

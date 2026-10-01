@@ -26,6 +26,7 @@ public class ModelTests
         var nextId = 37L;
         var snapshot = builder.Build([.. model]);
         AssertHolds(model, snapshot);
+        var merges = 0;
         var compactions = 0;
         var refusals = 0;
 
@@ -59,14 +60,17 @@ public class ModelTests
             AssertHolds(model, change.After);
             AssertFolds(change);
             AssertCodesKept(change);
-            if (change.Compacted)
+            if (!change.Compacted)
+                AssertShared(change);
+            else if (change.After.BaseSegmentCount == change.After.SliceCount)
                 compactions++;
             else
-                AssertShared(change);
+                merges++;
             snapshot = change.After;
         }
 
-        Assert.True(compactions > 0, "No batch compacted.");
+        Assert.True(merges > 0, "No batch merged the slices batches made.");
+        Assert.True(compactions > 0, "No batch compacted the whole Snapshot.");
         Assert.True(refusals > 0, "No batch was refused.");
     }
 

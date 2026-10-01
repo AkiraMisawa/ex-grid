@@ -191,16 +191,15 @@ internal static class BatchApplier
             before.NextPosition + addedCount,
             before.Version + 1);
 
-        if (Compaction.Needed(after))
+        // The rows this batch brought are what After holds in the slices it added — unless a
+        // compaction moves them, and then they are wherever it put them.
+        var compaction = Compaction.Needed(after);
+        if (compaction != Compaction.Kind.None)
         {
-            var order = after.BuildOrder();
-            var compacted = Compaction.Compact(after, order);
             var addresses = new List<SnapshotRow>(total);
-            for (var i = 0; i < after.RowCount; i++)
-            {
-                if (order[i].Slice >= before.Segments.Length)
-                    addresses.Add(new SnapshotRow(i >> tuning.SegmentShift, i & tuning.SegmentMask));
-            }
+            var compacted = compaction == Compaction.Kind.Whole
+                ? Compaction.Whole(after, before.Segments.Length, addresses)
+                : Compaction.Batches(after, before.Segments.Length, addresses);
             return new SnapshotChange(before, compacted, [.. leaving], [.. addresses], compacted: true);
         }
 
@@ -341,13 +340,26 @@ internal static class BatchApplier
 }
 
 /// <summary>
-/// Compaction: once the rows batches added, or the segments they made, grow large beside the base —
-/// or most stored rows are no longer held — a version is copied, in order, into a new base. Codes and
-/// order are unchanged; only addresses move.
+/// Compaction, which copies rows into new segments, in order, keeping every code and every value;
+/// only addresses move. Two kinds, by what has grown:
+/// <list type="bullet">
+/// <item>When the segments batches made pile up, their rows — only those still held — are merged
+/// into as few segments as hold them. The base is shared as it is, so this costs what the batches
+/// brought, not the records.</item>
+/// <item>When the rows batches made grow large beside the base, or most stored rows are no longer
+/// held, the whole version is copied into a new base.</item>
+/// </list>
 /// </summary>
 internal static class Compaction
 {
-    public static bool Needed(Snapshot version)
+    public enum Kind
+    {
+        None,
+        Batches,
+        Whole,
+    }
+
+    public static Kind Needed(Snapshot version)
     {
         var tuning = version.Shape.Tuning;
         long baseRows = 0;
@@ -361,16 +373,24 @@ internal static class Compaction
         }
         var stored = baseRows + batchRows;
         var dead = stored - version.RowCount;
-        return version.Segments.Length - version.BaseSegmentCount > tuning.MaxBatchSegments
-            || batchRows > Math.Max(baseRows / tuning.BatchRowsDivisor, tuning.SegmentLength)
-            || dead > Math.Max(stored / 2, tuning.SegmentLength);
+        if (batchRows > Math.Max(baseRows / tuning.BatchRowsDivisor, tuning.SegmentLength)
+            || dead > Math.Max(stored / 2, tuning.SegmentLength))
+        {
+            return Kind.Whole;
+        }
+        return version.Segments.Length - version.BaseSegmentCount > tuning.MaxBatchSegments ? Kind.Batches : Kind.None;
     }
 
-    /// <summary>A new base holding <paramref name="version"/>'s rows in <paramref name="order"/>.</summary>
-    public static Snapshot Compact(Snapshot version, SnapshotRow[] order)
+    /// <summary>
+    /// A new base holding every row <paramref name="version"/> holds, in order. The new addresses of
+    /// the rows held in slices from <paramref name="firstNew"/> on are added to
+    /// <paramref name="moved"/>.
+    /// </summary>
+    public static Snapshot Whole(Snapshot version, int firstNew, List<SnapshotRow> moved)
     {
         var shape = version.Shape;
         var tuning = shape.Tuning;
+        var order = version.BuildOrder();
         SourceMap[] source = [SourceMap.Identity(version)];
         var segments = new List<Segment>();
         var rows = new SourceRow[Math.Min(tuning.SegmentLength, version.RowCount)];
@@ -378,7 +398,12 @@ internal static class Compaction
         {
             var length = Math.Min(tuning.SegmentLength, version.RowCount - start);
             for (var i = 0; i < length; i++)
-                rows[i] = new SourceRow(0, order[start + i].Slice, order[start + i].Offset);
+            {
+                var row = order[start + i];
+                rows[i] = new SourceRow(0, row.Slice, row.Offset);
+                if (row.Slice >= firstNew)
+                    moved.Add(new SnapshotRow(segments.Count, i));
+            }
             segments.Add(Gather.Build(shape, rows.AsSpan(0, length), source, start, null, indexKeys: false));
         }
         KeyIndex? keys = null;
@@ -390,5 +415,61 @@ internal static class Compaction
         }
         var (stores, counts) = version.TextState();
         return Writers.Base(shape, segments, stores, counts, keys, version.RowCount, version.Version);
+    }
+
+    /// <summary>
+    /// The same version with the rows its batch segments still hold merged, by position, into as few
+    /// segments as hold them, each with its key index; the base segments, their removal sets and the
+    /// base's key index are shared as they are. The new addresses of the rows held in slices from
+    /// <paramref name="firstNew"/> on are added to <paramref name="moved"/>.
+    /// </summary>
+    public static Snapshot Batches(Snapshot version, int firstNew, List<SnapshotRow> moved)
+    {
+        var shape = version.Shape;
+        var tuning = shape.Tuning;
+        var held = new List<(int Position, int Slice, int Offset)>();
+        for (var s = version.BaseSegmentCount; s < version.Segments.Length; s++)
+        {
+            var segment = version.Segments[s];
+            var skip = version.Removals[s]?.Bitmap();
+            for (var o = 0; o < segment.Length; o++)
+            {
+                if (skip is null || !Bits.Get(skip, o))
+                    held.Add((segment.PositionOf(o), s, o));
+            }
+        }
+        held.Sort(static (a, b) => a.Position.CompareTo(b.Position));
+
+        SourceMap[] source = [SourceMap.Identity(version)];
+        var segments = new List<Segment>(version.Segments.Take(version.BaseSegmentCount));
+        for (var start = 0; start < held.Count; start += tuning.SegmentLength)
+        {
+            var length = Math.Min(tuning.SegmentLength, held.Count - start);
+            var rows = new SourceRow[length];
+            var positions = new int[length];
+            for (var i = 0; i < length; i++)
+            {
+                var (position, slice, offset) = held[start + i];
+                rows[i] = new SourceRow(0, slice, offset);
+                positions[i] = position;
+                if (slice >= firstNew)
+                    moved.Add(new SnapshotRow(segments.Count, i));
+            }
+            segments.Add(Gather.Build(shape, rows, source, 0, positions, indexKeys: true));
+        }
+        var removals = new RemovalSet?[segments.Count];
+        Array.Copy(version.Removals, removals, version.BaseSegmentCount);
+        var (stores, counts) = version.TextState();
+        return new Snapshot(
+            shape,
+            [.. segments],
+            removals,
+            version.BaseSegmentCount,
+            version.BaseKeys,
+            stores,
+            counts,
+            version.RowCount,
+            version.NextPosition,
+            version.Version);
     }
 }
