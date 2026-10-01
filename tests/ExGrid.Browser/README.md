@@ -380,7 +380,7 @@ nobody had asked for. What that means when writing a test:
   page's status line, and the edit committing as typed (SH-43). A Font is not painted yet, so the
   page's line under the Sheet reads the Focus cell's Cell Format back.
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0063, SH-45, DC-60;
-  tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
+  ticket 52) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
   one undo step; Escape and a refused Custom code each setting nothing; a Custom code typed at full
   speed arriving whole, Enter as OK; Tab and Shift+Tab wrapping inside; cells that differ showing an
