@@ -80,29 +80,31 @@ public class BoldWidthTests
         Assert.Equal(7, replaced.BoldNarrowWidthPx);
     }
 
-    [Theory] // ADR-0050 item 15 / §21.7a: the defaults are the widest measured at weight 700 on any platform
-    [InlineData(GridDensity.Compact, 14.35, 9.742, 6.398)]
-    [InlineData(GridDensity.Standard, 14.35, 9.742, 6.398)]
-    [InlineData(GridDensity.Comfortable, 14.35, 9.742, 6.398)]
-    [InlineData(GridDensity.Excel, 12.3, 8.351, 5.484)]
+    [Theory] // ADR-0050 item 15 / §21.7a; ticket 83: the defaults are the widest measured at weight 700 on any platform
+    [InlineData(GridDensity.Compact, 14.36, 9.75, 6.41, 15.46)]
+    [InlineData(GridDensity.Standard, 14.36, 9.75, 6.41, 15.46)]
+    [InlineData(GridDensity.Comfortable, 14.36, 9.75, 6.41, 15.46)]
+    [InlineData(GridDensity.Excel, 12.44, 8.36, 5.49, 13.26)]
     public void The_default_bold_widths_cover_the_widest_platform_measured(
-        GridDensity density, double wide, double digit, double narrow)
+        GridDensity density, double wide, double digit, double narrow, double other)
     {
         var metrics = GridMetrics.Resolve(density).CellMetrics;
 
         Assert.Equal(wide, metrics.BoldWideWidthPx);
         Assert.Equal(digit, metrics.BoldDigitWidthPx);
         Assert.Equal(narrow, metrics.BoldNarrowWidthPx);
+        Assert.Equal(other, metrics.BoldOtherWidthPx);
     }
 
-    [Fact] // §21.7a, measured 2026-10-01: system-ui on macOS paints a bold % at 14.35px and a bold digit at 9.25px
+    [Fact] // §21.7a, measured 2026-10-01 (ticket 83, tests/GlyphWidths): system-ui on macOS paints a bold % at 14.359px
     public void The_default_bold_widths_cover_system_ui_on_macos_and_dejavu_sans_bold()
     {
         var metrics = GridMetrics.Resolve(GridDensity.Compact).CellMetrics;
 
-        Assert.True(metrics.BoldWideWidthPx >= 14.35);      // `%`, system-ui on macOS
-        Assert.True(metrics.BoldDigitWidthPx >= 9.742);     // a digit, DejaVu Sans Bold
-        Assert.True(metrics.BoldNarrowWidthPx >= 6.398);    // `(`, DejaVu Sans Bold
+        Assert.True(metrics.BoldWideWidthPx >= 14.359);     // `%`, system-ui on macOS
+        Assert.True(metrics.BoldDigitWidthPx >= 9.75);      // a digit alone, DejaVu Sans Bold
+        Assert.True(metrics.BoldNarrowWidthPx >= 6.406);    // `(`, DejaVu Sans Bold
+        Assert.True(metrics.BoldOtherWidthPx >= 15.453);    // `W` and `₩`, DejaVu Sans Bold
         Assert.True(metrics.Bold.TextWidthPx("123,456,789,012.50") >= 157.66);
     }
 

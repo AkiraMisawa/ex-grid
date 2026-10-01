@@ -3,8 +3,8 @@ using ExGrid.Columns;
 namespace ExGrid;
 
 /// <summary>
-/// What a Wrapper hands down to every grid inside it (ADR-0030): the three glyph
-/// widths of the font its Theme sets — stated at the size they were measured — and,
+/// What a Wrapper hands down to every grid inside it (ADR-0030): the glyph widths of
+/// the font its Theme sets, per class (ADR-0016) — stated at the size they were measured — and,
 /// optionally, the Density its own density word maps onto. Cascaded, never passed:
 /// the metrics-bearing obligation of ADR-0027 says whoever sets <c>--ex-font-family</c>
 /// owes new Cell Metrics, and a Wrapper sets the font on an element <em>outside</em>
@@ -28,7 +28,9 @@ public sealed record GridPresentationDefaults
     /// Stripes the Wrapper's own words map onto — null leaves each to the grid. Widths the
     /// Cell Metrics would refuse are refused here, where they were written. Without bold
     /// widths, a bold cell is charged the Cell Metrics' allowance over these
-    /// (<see cref="CellTextMetrics.BoldWidthAllowance"/>).</summary>
+    /// (<see cref="CellTextMetrics.BoldWidthAllowance"/>); without other widths, a glyph of
+    /// the other class is charged its allowance over the digit
+    /// (<see cref="CellTextMetrics.OtherWidthAllowance"/>).</summary>
     public GridPresentationDefaults(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fontSizePx,
         GridDensity? density = null, bool? highlightHoverRow = null, bool? stripeRows = null)
@@ -41,10 +43,30 @@ public sealed record GridPresentationDefaults
     /// <summary>The three glyph widths of the Theme's font, and the same three measured at the
     /// bold weight (ADR-0050, item 15), all at <paramref name="fontSizePx"/> — supplying them is
     /// the Wrapper's metrics-bearing obligation, as the regular widths are (ADR-0030) — and
-    /// optionally the Density, hover band and Row Stripes, as the other form takes them.</summary>
+    /// optionally the Density, hover band and Row Stripes, as the other form takes them. A glyph
+    /// of the other class is charged its allowance over the digit
+    /// (<see cref="CellTextMetrics.OtherWidthAllowance"/>).</summary>
     public GridPresentationDefaults(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fontSizePx,
         double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx,
+        GridDensity? density = null, bool? highlightHoverRow = null, bool? stripeRows = null)
+        : this(wideWidthPx, digitWidthPx, narrowWidthPx, fontSizePx,
+            boldWideWidthPx, boldDigitWidthPx, boldNarrowWidthPx,
+            digitWidthPx * CellTextMetrics.OtherWidthAllowance, boldDigitWidthPx * CellTextMetrics.OtherWidthAllowance,
+            density, highlightHoverRow, stripeRows)
+    {
+    }
+
+    /// <summary>Every class the estimate charges, measured in the Theme's font at
+    /// <paramref name="fontSizePx"/> (ADR-0016; ticket 83): the three glyph widths and the
+    /// same three at the bold weight, as the other form takes them, and the other class —
+    /// the widest glyph outside the measured classes the formats emit, letters included —
+    /// at the regular and the bold weight. Optionally the Density, hover band and Row
+    /// Stripes, as the other forms take them.</summary>
+    public GridPresentationDefaults(
+        double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fontSizePx,
+        double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx,
+        double otherWidthPx, double boldOtherWidthPx,
         GridDensity? density = null, bool? highlightHoverRow = null, bool? stripeRows = null)
     {
         if (!double.IsFinite(fontSizePx) || fontSizePx <= 0)
@@ -55,7 +77,7 @@ public sealed record GridPresentationDefaults
         // The same rules the metrics themselves enforce, checked at construction so a
         // bad measurement fails where it was written rather than in a grid far away.
         _ = new CellTextMetrics(wideWidthPx, digitWidthPx, narrowWidthPx, 2 * digitWidthPx, 0,
-            boldWideWidthPx, boldDigitWidthPx, boldNarrowWidthPx);
+            boldWideWidthPx, boldDigitWidthPx, boldNarrowWidthPx, otherWidthPx, boldOtherWidthPx);
 
         WideWidthPx = wideWidthPx;
         DigitWidthPx = digitWidthPx;
@@ -63,6 +85,8 @@ public sealed record GridPresentationDefaults
         BoldWideWidthPx = boldWideWidthPx;
         BoldDigitWidthPx = boldDigitWidthPx;
         BoldNarrowWidthPx = boldNarrowWidthPx;
+        OtherWidthPx = otherWidthPx;
+        BoldOtherWidthPx = boldOtherWidthPx;
         FontSizePx = fontSizePx;
         Density = density;
         HighlightHoverRow = highlightHoverRow;
@@ -87,7 +111,14 @@ public sealed record GridPresentationDefaults
     /// <summary>The widest separator at the bold weight.</summary>
     public double BoldNarrowWidthPx { get; }
 
-    /// <summary>The font size the three widths are true at.</summary>
+    /// <summary>The other class: the widest glyph outside the measured classes (ADR-0016;
+    /// ticket 83).</summary>
+    public double OtherWidthPx { get; }
+
+    /// <summary>The other class at the bold weight.</summary>
+    public double BoldOtherWidthPx { get; }
+
+    /// <summary>The font size the widths are true at.</summary>
     public double FontSizePx { get; }
 
     /// <summary>The preset a Wrapper's density word maps onto, or null to leave the
@@ -124,6 +155,7 @@ public sealed record GridPresentationDefaults
         return new CellTextMetrics(
             WideWidthPx * scale, DigitWidthPx * scale, NarrowWidthPx * scale,
             Math.Max(fontSizePx, DigitWidthPx * scale), cellHorizontalPaddingPx,
-            BoldWideWidthPx * scale, BoldDigitWidthPx * scale, BoldNarrowWidthPx * scale);
+            BoldWideWidthPx * scale, BoldDigitWidthPx * scale, BoldNarrowWidthPx * scale,
+            OtherWidthPx * scale, BoldOtherWidthPx * scale);
     }
 }

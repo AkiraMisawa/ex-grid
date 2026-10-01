@@ -23,4 +23,9 @@
     <ProjectReference Include="..\..\src\ExSheet\ExSheet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The glyph-width corpus (ADR-0016, ticket 83), checked against what the built-in formats paint. -->
+    <None Include="..\GlyphWidths\corpus.json" Link="GlyphWidths\corpus.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

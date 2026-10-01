@@ -56,7 +56,7 @@ public class GripsWithoutMenuTests : GridTestContext
 
         await cut.FindAll(".ex-resize-grip")[1].DoubleClickAsync(new MouseEventArgs { Button = 0 });
 
-        var expected = Metrics.CellMetrics.EstimatePx(rows[40].Book + "/01");
+        var expected = Metrics.CellMetrics.For(ColumnType.Text).EstimatePx(rows[40].Book + "/01");
         Assert.Equal([new ColumnWidthChange(TestRows.ColumnName(1), expected)], changes);
     }
 

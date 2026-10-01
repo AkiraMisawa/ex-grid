@@ -87,8 +87,8 @@
         BorderStyle.MediumDashed, BorderStyle.MediumDashDot, BorderStyle.MediumDashDotDot, BorderStyle.SlantedDashDot,
     ];
 
-    // Roboto's Standard widths: "1234567890" needs 80 + 16 = 96px at the regular digit (8.0) and
-    // 83.3 + 16 = 99.3px at the bold one (8.33).
+    // Roboto's Standard widths: "1234567890" needs 83 + 16 = 99px at the regular digit (8.3) and
+    // 83.4 + 16 = 99.4px at the bold one (8.34).
     private static readonly AppearanceRow[] BoldRows =
     [
         new() { Index = 0, Label = "Regular", Number = 1234567890m },
@@ -105,7 +105,7 @@
     private static readonly CellAppearanceOf<AppearanceRow> BoldOf = (row, _) =>
         row.Index == 1 ? new CellAppearance { Bold = true } : default;
 
-    // The Excel preset's widths: "1234567" needs 7 × 8.351 + 8 = 66.457px, so 67 fits it.
+    // The Excel preset's widths: "1234567" needs 7 × 8.36 + 8 = 66.52px, so 67 fits it.
     private static readonly AppearanceRow[] ItalicRows =
     [
         new() { Index = 0, Text = "fjfjfj", Number = 1234567m },
