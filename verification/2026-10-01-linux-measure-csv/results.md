@@ -68,7 +68,7 @@ What these say:
   likely sit a little over 4 s.
 - **CoreCLR's read is 1.4 times faster from memory and 1.7 times from a file**, and misses its tenth.
   Of what is left, the profile gives about 100 ms to the column of a million distinct Ids (making a
-  million strings, and telling them apart), about 75 ms to finding the fields, and 5-45 ms to each
+  million strings, and telling them apart), about 75 ms to finding the fields, and 15-45 ms to each
   other column.
 - **The page's yields between slices are now a fair part of what is left in the browser**: 4.4 ms
   each, after each 30 ms slice. See *A proposal*, below.
