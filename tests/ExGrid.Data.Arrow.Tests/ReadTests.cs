@@ -329,6 +329,7 @@ public class ReadTests
     public static TheoryData<string> UtcZones =>
     [
         "UTC", "Etc/UTC", "GMT", "Etc/GMT", "UCT", "Etc/UCT", "Universal", "Etc/Universal", "Zulu", "Etc/Zulu",
+        "Greenwich", "Etc/Greenwich", "GMT0", "Etc/GMT0", "GMT+0", "Etc/GMT+0", "GMT-0", "Etc/GMT-0",
         "+00:00", "-00:00", "Z", "utc", "gmt", "etc/zulu", "UNIVERSAL",
     ];
 

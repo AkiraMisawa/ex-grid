@@ -122,8 +122,9 @@ their tests, all kept by us for ever and readable by nothing outside the family.
   things other tools write by default or in common use, and refusing them would have defeated the
   reason Arrow was chosen:
   - `utf8_view`, and a dictionary of it, is Text. It is what Polars writes by default.
-  - The IANA names of UTC — `GMT`, `UCT`, `Universal`, `Zulu`, each also under `Etc/`, and
-    `-00:00` — are UTC. Any other zone is still refused.
+  - Every IANA name of the zero-offset zone — `GMT`, `UCT`, `Universal`, `Zulu`, `Greenwich`,
+    `GMT0`, `GMT+0`, `GMT-0`, each also under `Etc/` — and `-00:00` are UTC. Any other zone is
+    still refused.
   - `decimal32` and `decimal64` are Decimal.
   - `time32` and `time64` are a Date on the first day, as a database's `TimeOnly` is
     (ADR-0063).

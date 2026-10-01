@@ -101,7 +101,7 @@ Snapshot snapshot = await SnapshotArrow.ReadAsync(payload, codecs: new Compressi
 | `float64`, `float32` | Double, as it came, non-finite values included |
 | `int8` to `int64`, `uint8` to `uint32`, `uint64` up to `long.MaxValue` | Integer |
 | `date32`, `date64`, `timestamp` without a time zone | Date, as the clock value written |
-| `timestamp` in UTC — `UTC`, `GMT`, `UCT`, `Universal` or `Zulu`, each also under `Etc/`, or `+00:00`, `-00:00` or `Z`, in any case | Date, as the UTC clock value |
+| `timestamp` in UTC — `UTC`, `GMT`, `UCT`, `Universal`, `Zulu`, `Greenwich`, `GMT0`, `GMT+0` or `GMT-0`, each also under `Etc/`, or `+00:00`, `-00:00` or `Z`, in any case | Date, as the UTC clock value |
 | `time32`, `time64` | Date, the clock time on the first day, 0001-01-01, as a database's `TimeOnly` is read |
 | `bool` | Boolean |
 | a null slot in any of these | a Blank |
