@@ -9,7 +9,7 @@ namespace ExPivot.Engine.Tests;
 /// and a document of a version the reader does not know is refused (ADR-0065, PV-16).</summary>
 public class PivotJsonTests
 {
-    private static readonly PivotSource Server = PivotSource.From(Deals, Fields);
+    private static readonly PivotSource Server = PivotSource.From(Deals, DealFields);
 
     [Fact] // ADR-0065: a question round-trips, Hidden Items of every kind and first spellings kept
     public void A_query_round_trips()
@@ -86,7 +86,7 @@ public class PivotJsonTests
     public async Task The_leaves_travel_column_by_column()
     {
         var records = Enumerable.Range(0, 900).Select(i => new Deal("D" + (i % 30), "B" + (i / 30), null, i, i * 0.5, i % 2 == 0, null)).ToArray();
-        var server = PivotSource.From(records, Fields);
+        var server = PivotSource.From(records, DealFields);
         var answer = await server.AggregateAsync(new PivotQuery(rows: [F("Desk"), F("Book")], values: [V("Amount"), V("Risk")]), Ct);
 
         var json = PivotJson.Write(answer);

@@ -37,7 +37,7 @@ internal static class Sources
         new("Rates", "NY-2", new DateTime(2026, 2, 3), 0.1, 3.0, true, new DateOnly(2026, 1, 1)),
     ];
 
-    public static readonly PivotField<Deal>[] Fields =
+    public static readonly PivotField<Deal>[] DealFields =
     [
         new("Desk", PivotFieldType.Text, d => d.Desk),
         new("Book", PivotFieldType.Text, d => d.Book, caption: "Trading book"),
@@ -85,12 +85,13 @@ internal static class Sources
     /// <summary>Two answers are the same answer: the same refusal, or the same Source Version, the
     /// same Items with the same first spellings, and every leaf's Items, records and parts equal to
     /// the last bit.</summary>
-    public static void SameAnswer(PivotAnswer expected, PivotAnswer actual)
+    public static void SameAnswer(PivotAnswer expected, PivotAnswer actual, bool sameVersion = true)
     {
         Assert.Equal(expected.Refusal, actual.Refusal);
         if (expected.IsRefused)
             return;
-        Assert.Equal(expected.SourceVersion, actual.SourceVersion);
+        if (sameVersion)
+            Assert.Equal(expected.SourceVersion, actual.SourceVersion);
         Assert.Equal(expected.LeafCount, actual.LeafCount);
         SameAxes(expected.Rows, actual.Rows, expected.LeafCount);
         SameAxes(expected.Columns, actual.Columns, expected.LeafCount);
