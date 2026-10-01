@@ -567,6 +567,27 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal(BorderLine.None, FormatAt(cut, "B2").Borders.Top);
     }
 
+    // ---- A code typed under Custom (the fourteenth Windows run, case 11) ----
+
+    [Theory] // ADR-0071 / SH-45, case 14-11: under ja-JP, dd-mmm-yy typed under Custom is built-in 15 and shows 05-1-26, and d-mmm-yy is a code of its own and shows 5-1-26
+    [InlineData("dd-mmm-yy", "05-1-26", true)]
+    [InlineData("d-mmm-yy", "5-1-26", false)]
+    public async Task A_typed_code_is_a_built_in_only_where_it_spells_it_case_14_11(string typed, string shown, bool builtIn)
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("ja-JP"));
+        sheet.Enter(CellAddress.Parse("A1"), "=46027");
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+        await OpenAsync(cut, "A1");
+        await ChooseAsync(cut, ".ex-format-cells-categories", "Custom");
+
+        await cut.Find(".ex-format-cells-code").InputAsync(new ChangeEventArgs { Value = typed });
+        await OkAsync(cut);
+
+        cut.WaitForAssertion(() => Assert.False(IsOpen(cut)));
+        Assert.Equal(shown, CellText(cut, "A1"));
+        Assert.Equal(builtIn, FormatAt(cut, "A1").NumberFormat.Code == "d-mmm-yy");
+    }
+
     // ---- A range's outer edges show as drawn (the fourteenth Windows run, case 13) ----
 
     private static void ThickBottomOnA1(Sheet sheet) => Format(sheet, "A1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });

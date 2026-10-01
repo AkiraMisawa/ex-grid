@@ -308,6 +308,25 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal("#,##0.0000", FormatAt(page, "B2").NumberFormat.Code);
     }
 
+    [Theory] // ADR-0071 / SH-45, case 14-11: under this Chrome too, dd-mmm-yy typed under ja-JP is built-in 15 and shows 05-1-26, and d-mmm-yy is a code of its own and shows 5-1-26
+    [InlineData("dd-mmm-yy", "05-1-26", true)]
+    [InlineData("d-mmm-yy", "5-1-26", false)]
+    public async Task A_typed_code_is_a_built_in_only_where_it_spells_it_case_14_11(string typed, string shown, bool builtIn)
+    {
+        var sheet = new global::ExSheet.Engine.Sheet(System.Globalization.CultureInfo.GetCultureInfo("ja-JP"));
+        sheet.Enter(CellAddress.Parse("A1"), "=46027");
+        var page = RenderPage(sheet.ToDocument());
+        await OpenAsync(page, "A1");
+        await ChooseAsync(page, "Custom");
+
+        await page.Find(".mud-ex-sheet-format-cells-code input").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = typed });
+        await OkAsync(page);
+
+        page.WaitForAssertion(() => Assert.False(IsOpen(page)));
+        Assert.Equal(builtIn, FormatAt(page, "A1").NumberFormat.Code == "d-mmm-yy");
+        Assert.Equal(shown, global::ExSheet.Engine.Sheet.Open(Sheet(page).ToDocument()).GetDisplay(CellAddress.Parse("A1")).Text);
+    }
+
     // Opens a dropdown and presses the item the list shows as text.
     private static async Task PickAsync<T>(Bunit.IRenderedComponent<Bunit.Rendering.ContainerFragment> page, string item)
     {

@@ -277,8 +277,10 @@ A recorded colour is the user's choice, so a Paper you darken can make some of t
 
 Format Cells sets a Cell Format as Excel's dialog does (ADR-0071): five tabs — Number, Alignment,
 Font, Border and Fill — in Excel's order, opened on the Focus cell's Cell Format, with what differs
-across the selection shown as Excel shows it. OK sets only the parts the user touched, as one undo
-step; Cancel and Escape set nothing. It opens from the Context Menu's "Format Cells…" and from your
+across the selection shown as Excel shows it. A code typed under Custom is read as the Sheet's
+culture spells codes: under ja-JP `dd-mmm-yy` is the date key's built-in and shows `05-1-26`, while
+`d-mmm-yy` is a code of its own and shows `5-1-26`, as in Excel. OK sets only the parts the user
+touched, as one undo step; Cancel and Escape set nothing. It opens from the Context Menu's "Format Cells…" and from your
 own button, and is refused while an edit is open:
 
 ```razor

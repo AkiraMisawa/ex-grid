@@ -98,11 +98,16 @@ public sealed class FormatCellsDraft
     {
         NumberFormatCategory.Date => NumberFormatCodes.DateTypes,
         NumberFormatCategory.Time => NumberFormatCodes.TimeTypes,
-        NumberFormatCategory.Custom => _openingNumber.Category == NumberFormatCategory.Custom && !NumberFormatCodes.CustomTypes.Contains(_openingNumber.Type)
-            ? [_openingNumber.Type, .. NumberFormatCodes.CustomTypes]
-            : NumberFormatCodes.CustomTypes,
+        NumberFormatCategory.Custom => _openingNumber.Category == NumberFormatCategory.Custom && !CustomTypes.Contains(_openingNumber.Type)
+            ? [_openingNumber.Type, .. CustomTypes]
+            : CustomTypes,
         _ => [],
     };
+
+    /// <summary>The codes Custom lists, as the Sheet's culture spells them.</summary>
+    private IReadOnlyList<string> CustomTypes => _customTypes ??= NumberFormatCodes.CustomTypesIn(_culture);
+
+    private IReadOnlyList<string>? _customTypes;
 
     /// <summary>The Sheet culture's currency symbol, which Currency writes.</summary>
     public string CurrencySymbol => NumberFormat.CurrencySymbolOf(_culture);
@@ -111,7 +116,11 @@ public sealed class FormatCellsDraft
     public bool TakesDecimalPlaces => Category is NumberFormatCategory.Number or NumberFormatCategory.Currency
         or NumberFormatCategory.Percentage or NumberFormatCategory.Scientific;
 
-    /// <summary>The code the Number tab shows now, as it would be set.</summary>
+    /// <summary>
+    /// The code the Number tab shows now. Under Custom it is the code as typed, which is read as the
+    /// Sheet's culture spells codes (<see cref="NumberFormat.TryParseLocal"/>): a built-in only where
+    /// it spells that built-in's code under the culture (the fourteenth Windows run, case 11).
+    /// </summary>
     public string NumberFormatCode => Category switch
     {
         NumberFormatCategory.General => NumberFormat.General.Code,
@@ -124,7 +133,7 @@ public sealed class FormatCellsDraft
     };
 
     /// <summary>Why the Number tab's code cannot be set, or <see langword="null"/> when it can.</summary>
-    public string? NumberFormatRefusal => Read(NumberFormatCode, out var reason) is null ? reason : null;
+    public string? NumberFormatRefusal => ReadNumberFormat(out var reason) is null ? reason : null;
 
     /// <summary>Chooses a category, with its options as they opened when it is the one the Focus cell's code is, and the category's defaults otherwise.</summary>
     /// <exception cref="ArgumentException">The category is shown disabled, with the reason.</exception>
@@ -138,8 +147,11 @@ public sealed class FormatCellsDraft
             RestoreNumber(_openingNumber);
             return;
         }
-        // Custom starts from the code shown, as Excel's does.
-        var shown = NumberFormatCode;
+        // Custom starts from the code shown, as Excel's does, spelled as the Custom box reads it; a
+        // code already in the box is spelled so.
+        var shown = Category != NumberFormatCategory.Custom && NumberFormat.TryParse(NumberFormatCode, out var shownFormat, out _)
+            ? shownFormat.LocalCode(_culture)
+            : NumberFormatCode;
         Category = category;
         DecimalPlaces = NumberFormatCodes.DefaultPlaces(category, _culture);
         ThousandsSeparator = false;
@@ -413,7 +425,7 @@ public sealed class FormatCellsDraft
             };
             return new CellFormatChange
             {
-                NumberFormat = _numberTouched ? Read(NumberFormatCode, out _) : null,
+                NumberFormat = _numberTouched ? ReadNumberFormat(out _) : null,
                 Alignment = _alignmentTouched ? Alignment : null,
                 Bold = bold,
                 Italic = italic,
@@ -428,15 +440,22 @@ public sealed class FormatCellsDraft
 
     private BorderLine? TouchedEdge(BorderEdge edge) => _edgesTouched[(int)edge] ? _edges[(int)edge] : null;
 
-    /// <summary>A code as the engine reads it, or null with the reason, refused by name.</summary>
-    private static NumberFormat? Read(string code, out string? reason)
+    /// <summary>
+    /// The Number tab's code as the engine reads it — a Custom code as the Sheet's culture spells
+    /// codes, any other as written — or null with the reason, refused by name.
+    /// </summary>
+    private NumberFormat? ReadNumberFormat(out string? reason)
     {
+        var code = NumberFormatCode;
         if (code.Trim().Length == 0)
         {
             reason = "Type a number format code under Custom.";
             return null;
         }
-        if (NumberFormat.TryParse(code, out var format, out var why))
+        var read = Category == NumberFormatCategory.Custom
+            ? NumberFormat.TryParseLocal(code, _culture, out var format, out var why)
+            : NumberFormat.TryParse(code, out format, out why);
+        if (read)
         {
             reason = null;
             return format;

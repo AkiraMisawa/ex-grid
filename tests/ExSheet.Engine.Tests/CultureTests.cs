@@ -116,7 +116,7 @@ public class CultureTests
     [Theory] // ADR-0071 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled
     [InlineData("en-GB", "d-mmm-yy", "05-Jan-26")]
     [InlineData("en-US", "d-mmm-yy", "5-Jan-26")]
-    [InlineData("ja-JP", "d-mmm-yy", "05-1-26")]   // the month as a number, as Excel showed it there
+    [InlineData("ja-JP", "d-mmm-yy", "05-1-26")]   // mmm is the month's number there (the fourteenth run, case 10)
     [InlineData("en-GB", "h:mm", "09:05")]
     [InlineData("en-US", "h:mm", "9:05")]
     [InlineData("ja-JP", "h:mm", "9:05")]
@@ -307,5 +307,131 @@ public class CultureTests
 
         Assert.Equal("Sep", NumberFormat.AbbreviatedMonthNamesOf(culture)[8]);
         Assert.Equal("Jan", NumberFormat.AbbreviatedMonthNamesOf(culture)[0]);
+    }
+
+    // ---- mmm under ja-JP, and a code typed into Format Cells (the fourteenth Windows run, cases 10 and 11) ----
+
+    /// <summary>5 January 2026, as the run's cells held it.</summary>
+    private static Sheet FifthOfJanuaryIn(string culture)
+    {
+        var sheet = In(culture);
+        sheet.Enter(CellAddress.Parse("A1"), "=" + Serial(2026, 1, 5).ToString(CultureInfo.InvariantCulture));
+        return sheet;
+    }
+
+    private static string Shown(Sheet sheet, NumberFormat format)
+    {
+        var a1 = CellAddress.Parse("A1");
+        sheet.SetNumberFormat(a1, format);
+        return sheet.GetDisplay(a1).Text;
+    }
+
+    [Theory] // ADR-0071, case 14-10: under ja-JP mmm is the month as a number with no leading zero in every code, and mmmm is 1月 — Windows' month names, which Excel shows
+    [InlineData("dd-mmm-yy", "05-1-26")]
+    [InlineData("d-mmm-yy", "05-1-26")]      // built-in 15, set in the invariant codes, shows in ja-JP's form
+    [InlineData("mmm d, yyyy", "1 5, 2026")]
+    [InlineData("mmmm", "1月")]
+    [InlineData("yyyy/mmm/dd", "2026/1/05")]
+    public void Under_ja_jp_mmm_is_the_month_as_a_number_case_14_10(string code, string shown)
+    {
+        Assert.Equal(shown, Shown(FifthOfJanuaryIn("ja-JP"), NumberFormat.Parse(code)));
+    }
+
+    [Theory] // ADR-0071, case 14-10: en-GB and en-US keep their month names
+    [InlineData("en-GB", "d-mmm-yy", "05-Jan-26")]
+    [InlineData("en-US", "d-mmm-yy", "5-Jan-26")]
+    [InlineData("en-GB", "mmm d, yyyy", "Jan 5, 2026")]
+    [InlineData("en-US", "mmmm", "January")]
+    public void En_gb_and_en_us_keep_their_month_names_case_14_10(string culture, string code, string shown)
+    {
+        Assert.Equal(shown, Shown(FifthOfJanuaryIn(culture), NumberFormat.Parse(code)));
+    }
+
+    [Fact] // ADR-0071, case 14-10: a Japanese month abbreviates as Windows writes it, the number alone, whatever ICU data the machine holds
+    public void A_japanese_month_abbreviates_as_its_number_on_every_platform()
+    {
+        var icu = (CultureInfo)CultureInfo.GetCultureInfo("ja-JP").Clone();
+        icu.DateTimeFormat.AbbreviatedMonthNames = [.. Enumerable.Range(1, 12).Select(m => $"{m}月"), ""];
+        var windows = (CultureInfo)CultureInfo.GetCultureInfo("ja-JP").Clone();
+        windows.DateTimeFormat.AbbreviatedMonthNames = [.. Enumerable.Range(1, 12).Select(m => $"{m}"), ""];
+
+        Assert.Equal("1", NumberFormat.AbbreviatedMonthNamesOf(icu)[0]);
+        Assert.Equal("12", NumberFormat.AbbreviatedMonthNamesOf(icu)[11]);
+        Assert.Equal("1", NumberFormat.AbbreviatedMonthNamesOf(windows)[0]);
+        Assert.Equal("1", NumberFormat.AbbreviatedMonthNamesOf(CultureInfo.GetCultureInfo("ja-JP"))[0]);
+        Assert.Equal("Jan", NumberFormat.AbbreviatedMonthNamesOf(CultureInfo.GetCultureInfo("en-GB"))[0]);
+    }
+
+    [Theory] // ADR-0071, case 14-11: a code typed into Format Cells is a built-in only when it spells that built-in's code under the Sheet's culture — under ja-JP dd-mmm-yy is built-in 15 and shows 05-1-26, and d-mmm-yy is a code of its own and shows 5-1-26
+    [InlineData("ja-JP", "dd-mmm-yy", "d-mmm-yy", "05-1-26")]
+    [InlineData("ja-JP", "d-mmm-yy", null, "5-1-26")]
+    [InlineData("ja-JP", "DD-MMM-YY", "d-mmm-yy", "05-1-26")]
+    [InlineData("en-US", "d-mmm-yy", "d-mmm-yy", "5-Jan-26")]
+    [InlineData("en-GB", "dd-mmm-yy", "d-mmm-yy", "05-Jan-26")]
+    [InlineData("en-GB", "d-mmm-yy", null, "5-Jan-26")]
+    public void A_typed_code_is_a_built_in_only_where_it_spells_it_case_14_11(string culture, string typed, string? builtIn, string shown)
+    {
+        Assert.True(NumberFormat.TryParseLocal(typed, CultureInfo.GetCultureInfo(culture), out var format, out _));
+
+        if (builtIn is not null) Assert.Equal(builtIn, format.Code);
+        else Assert.NotEqual("d-mmm-yy", format.Code, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(shown, Shown(FifthOfJanuaryIn(culture), format));
+    }
+
+    [Theory] // ADR-0071, case 14-11: the same rule holds for every built-in ExSheet shows in the culture's own form — each local spelling is the built-in, and its invariant code, where the culture spells it otherwise, is a code of its own shown as it is spelled
+    [InlineData("en-GB", "dd/mm/yyyy", "m/d/yyyy", "05/01/2026", "1/5/2026")]
+    [InlineData("ja-JP", "yyyy/mm/dd", "m/d/yyyy", "2026/01/05", "1/5/2026")]
+    [InlineData("en-GB", "dd/mm/yyyy h:mm", "m/d/yyyy h:mm", "05/01/2026 9:05", "1/5/2026 9:05")]
+    [InlineData("en-GB", "dd-mmm", "d-mmm", "05-Jan", "5-Jan")]
+    [InlineData("en-GB", "hh:mm", "h:mm", "09:05", "9:05")]
+    [InlineData("en-GB", "£#,##0.00;[Red]-£#,##0.00", "$#,##0.00_);[Red]($#,##0.00)", "£46,027.38", "$46,027.38 ")]
+    [InlineData("ja-JP", "¥#,##0;[Red]-¥#,##0", "$#,##0_);[Red]($#,##0)", "¥46,027", "$46,027 ")]
+    public void Every_localised_built_in_follows_the_rule_case_14_11(string culture, string local, string invariant, string asBuiltIn, string asOwn)
+    {
+        var info = CultureInfo.GetCultureInfo(culture);
+
+        Assert.True(NumberFormat.TryParseLocal(local, info, out var builtIn, out _));
+        Assert.True(NumberFormat.TryParseLocal(invariant, info, out var own, out _));
+
+        Assert.Equal(invariant, builtIn.Code);
+        Assert.Equal(local, builtIn.LocalCode(info));
+        Assert.NotEqual(invariant, own.Code);
+        Assert.Equal(invariant, own.LocalCode(info));
+        // 5 January 2026 at 09:05, or 46,027.38 for a currency.
+        var sheet = In(culture);
+        sheet.Enter(CellAddress.Parse("A1"), "=" + (Serial(2026, 1, 5) + 545.0 / 1440).ToString(CultureInfo.InvariantCulture));
+        Assert.Equal(asBuiltIn, Shown(sheet, builtIn));
+        Assert.Equal(asOwn, Shown(sheet, own));
+        // Each reads back as itself from the way the culture spells it.
+        Assert.True(NumberFormat.TryParseLocal(builtIn.LocalCode(info), info, out var again, out _));
+        Assert.Equal(builtIn, again);
+        Assert.True(NumberFormat.TryParseLocal(own.LocalCode(info), info, out again, out _));
+        Assert.Equal(own, again);
+    }
+
+    [Fact] // ADR-0071, case 14-11 / ADR-0048: a code of its own that spells a built-in is kept apart from it in the Sheet Document, and shows as spelled when reopened
+    public void A_code_of_its_own_survives_the_sheet_document_case_14_11()
+    {
+        var sheet = FifthOfJanuaryIn("ja-JP");
+        Assert.True(NumberFormat.TryParseLocal("d-mmm-yy", sheet.Culture, out var own, out _));
+        sheet.SetNumberFormat(CellAddress.Parse("A1"), own);
+
+        var reopened = Sheet.Open(SheetDocument.FromJson(sheet.ToDocument().ToJson()));
+
+        Assert.Equal(own, reopened.GetNumberFormat(CellAddress.Parse("A1")));
+        Assert.Equal("5-1-26", reopened.GetDisplay(CellAddress.Parse("A1")).Text);
+    }
+
+    [Fact] // ADR-0071, case 14-11: a code that spells no built-in is read as it is written, and a code ExSheet does not read is refused by name
+    public void Any_other_typed_code_is_read_as_written()
+    {
+        var japanese = CultureInfo.GetCultureInfo("ja-JP");
+
+        Assert.True(NumberFormat.TryParseLocal("#,##0.00", japanese, out var format, out _));
+        Assert.Equal("#,##0.00", format.Code);
+        Assert.True(NumberFormat.TryParseLocal("General", japanese, out format, out _));
+        Assert.True(format.IsGeneral);
+        Assert.False(NumberFormat.TryParseLocal("[<0]0", japanese, out _, out var reason));
+        Assert.NotNull(reason);
     }
 }

@@ -100,7 +100,8 @@ internal static class NumberFormatCodes
 
     /// <summary>
     /// The category, and its options, that writes <paramref name="format"/>'s code exactly; Custom
-    /// with the code as it is when none does.
+    /// when none does, with the code as the culture spells it (<see cref="NumberFormat.LocalCode"/>),
+    /// which the Custom box reads back as the same format (the fourteenth Windows run, case 11).
     /// </summary>
     public static Recognised Recognise(NumberFormat format, CultureInfo culture)
     {
@@ -125,6 +126,14 @@ internal static class NumberFormatCodes
             return new(NumberFormatCategory.Date, 2, false, 0, date);
         if (TimeTypes.FirstOrDefault(type => string.Equals(type, code, StringComparison.OrdinalIgnoreCase)) is { } time)
             return new(NumberFormatCategory.Time, 2, false, 0, time);
-        return new(NumberFormatCategory.Custom, 2, false, 0, code);
+        return new(NumberFormatCategory.Custom, 2, false, 0, format.LocalCode(culture));
     }
+
+    /// <summary>
+    /// The codes Custom lists to start from, as the culture spells them (<see cref="NumberFormat.LocalCode"/>),
+    /// each once: under en-GB the built-in short date is listed as <c>dd/mm/yyyy</c>, so that the
+    /// one picked from the list is the built-in, as one typed is.
+    /// </summary>
+    public static IReadOnlyList<string> CustomTypesIn(CultureInfo culture) =>
+        [.. CustomTypes.Select(code => NumberFormat.Parse(code).LocalCode(culture)).Distinct(StringComparer.OrdinalIgnoreCase)];
 }

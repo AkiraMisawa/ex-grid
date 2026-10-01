@@ -259,4 +259,100 @@ public class FormatCellsDraftTests
         Assert.Equal(CellBorders.None, sheet.GetBorders(CellAddress.Parse("A1")));
         Assert.Equal(CellBorders.None, sheet.GetBorders(CellAddress.Parse("A2")));
     }
+
+    // ---- A code typed under Custom (the fourteenth Windows run, case 11) ----
+
+    private static FormatCellsDraft OpenIn(string culture, NumberFormat? format)
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo(culture));
+        if (format is not null) sheet.SetNumberFormat(CellAddress.Parse("A1"), format);
+        return FormatCellsDraft.Open(sheet, CellAddress.Parse("A1"), [CellRange.Parse("A1")]);
+    }
+
+    private static NumberFormat? Typed(string culture, string code)
+    {
+        var draft = OpenIn(culture, null);
+        draft.SelectCategory(NumberFormatCategory.Custom);
+        draft.SetType(code);
+        return draft.Change.NumberFormat;
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-11: under ja-JP, dd-mmm-yy typed under Custom is built-in 15, and d-mmm-yy is a code of its own
+    public void A_typed_code_is_a_built_in_only_where_it_spells_it_case_14_11()
+    {
+        Assert.Equal("d-mmm-yy", Typed("ja-JP", "dd-mmm-yy")!.Code);
+        var own = Typed("ja-JP", "d-mmm-yy")!;
+        Assert.NotEqual("d-mmm-yy", own.Code);
+        Assert.Equal("d-mmm-yy", own.LocalCode(CultureInfo.GetCultureInfo("ja-JP")));
+        // Under en-US the built-in spells d-mmm-yy, so typed there it is the built-in.
+        Assert.Equal("d-mmm-yy", Typed("en-US", "d-mmm-yy")!.Code);
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-11: a code of its own opens under Custom spelled as it was typed, and OK without a change keeps it
+    public void A_code_of_its_own_opens_as_it_was_typed_case_14_11()
+    {
+        var draft = OpenIn("ja-JP", Typed("ja-JP", "d-mmm-yy"));
+
+        Assert.Equal(NumberFormatCategory.Custom, draft.Category);
+        Assert.Equal("d-mmm-yy", draft.TypeCode);
+        Assert.True(draft.Change.IsEmpty);
+        draft.SelectCategory(NumberFormatCategory.Custom);
+        Assert.Equal(Typed("ja-JP", "d-mmm-yy"), draft.Change.NumberFormat);
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-11: Custom starts from the built-in shown as the culture spells it, so OK keeps the built-in
+    public void Custom_starts_from_a_built_in_as_the_culture_spells_it_case_14_11()
+    {
+        var draft = OpenIn("ja-JP", NumberFormat.Parse("d-mmm-yy"));
+        Assert.Equal(NumberFormatCategory.Date, draft.Category);
+
+        draft.SelectCategory(NumberFormatCategory.Custom);
+
+        Assert.Equal("dd-mmm-yy", draft.TypeCode);
+        Assert.Equal("d-mmm-yy", draft.Change.NumberFormat!.Code);
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-11: a code typed under Custom stays as typed when Custom is chosen again
+    public void A_typed_code_stays_as_typed_when_custom_is_chosen_again_case_14_11()
+    {
+        var draft = OpenIn("ja-JP", null);
+        draft.SelectCategory(NumberFormatCategory.Custom);
+        draft.SetType("d-mmm-yy");
+
+        draft.SelectCategory(NumberFormatCategory.Custom);
+
+        Assert.Equal("d-mmm-yy", draft.TypeCode);
+        Assert.Equal(Typed("ja-JP", "d-mmm-yy"), draft.Change.NumberFormat);
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-11: the currency key's built-in under en-GB opens under Custom in en-GB's spelling, and set again it stays the built-in
+    public void A_built_in_opening_under_custom_is_spelled_as_the_culture_spells_it_case_14_11()
+    {
+        var enGb = CultureInfo.GetCultureInfo("en-GB");
+        var draft = OpenIn("en-GB", NumberFormat.BuiltInCurrency(enGb));
+
+        Assert.Equal(NumberFormatCategory.Custom, draft.Category);
+        Assert.Equal("£#,##0.00;[Red]-£#,##0.00", draft.TypeCode);
+        draft.SelectCategory(NumberFormatCategory.Custom);
+        Assert.Equal(NumberFormat.BuiltInCurrency(enGb), draft.Change.NumberFormat);
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-11: Custom lists the codes as the culture spells them, so the built-in short date is listed in en-GB's spelling, once
+    public void Custom_lists_codes_as_the_culture_spells_them_case_14_11()
+    {
+        var draft = OpenIn("en-GB", null);
+        draft.SelectCategory(NumberFormatCategory.Custom);
+
+        Assert.Contains("dd/mm/yyyy", draft.Types);
+        Assert.Contains("dd-mmm-yy", draft.Types);
+        Assert.Contains("hh:mm", draft.Types);
+        Assert.DoesNotContain("m/d/yyyy", draft.Types);
+        Assert.Equal(draft.Types.Count, draft.Types.Distinct().Count());
+        draft.SetType("dd/mm/yyyy");
+        Assert.Equal("m/d/yyyy", draft.Change.NumberFormat!.Code);
+        // Under en-US the list is spelled as it always was.
+        var enUs = OpenIn("en-US", null);
+        enUs.SelectCategory(NumberFormatCategory.Custom);
+        Assert.Equal(NumberFormatCodes.CustomTypes, enUs.Types);
+    }
 }
