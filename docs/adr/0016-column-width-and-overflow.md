@@ -427,6 +427,28 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
     what principle 1 forbids.
   - So the estimate gains a class for those glyphs, or charges them at a width that covers them.
     Ticket 83 measures and builds it. It errs towards `####`, never towards a cut number.
+  - *(2026-10-01, ticket 83, built.)* **Letters and currency signs are charged their own measured
+    widths.** Each face's `GlyphWidthTable` holds every letter and currency sign it draws, regular and
+    bold, measured at every weight painted.
+    - The core's table has 438 glyphs: those DejaVu draws, each at the wider of DejaVu and macOS
+      system-ui, measured at 14px and at 12px. Roboto's has 415.
+    - **Glyphs no table holds** fall to a fifth class, **other**, charged at the widest such glyph
+      (15.46px in the core, 12.44 in Roboto). That covers glyphs a face lacks, unforeseen glyphs,
+      and a Consumer's font that supplies no table.
+    - **Only Number and Date values use the table and the other class** (`For(ColumnType)`). Text,
+      headers and labels spill or clip as before, and are charged as before.
+    - **The corpus.** All 3,015 strings, in three faces, at four weights and two sizes, paint within
+      their estimate. The corpus and the tool are in `tests/GlyphWidths`.
+    - **Why a table rather than the other class alone.** Charging every letter at the widest glyph
+      also never cut, but it brought `####` 17px early for a date such as `Sep 30, 2026`. The table
+      lies closer to the painted width than the estimate before ticket 83 did: a median of 4.36px
+      over, against 5.41. That is the user's criterion, as close to Excel as possible.
+    - **The core's widths gained a margin** (digit 9.742 → 9.75), since a lone `0` painted 0.008px
+      past the old average. The Excel preset is measured at 12px, not scaled, because SF is
+      optically sized.
+    - **Public shape:** `GlyphWidthTable`; `CellTextMetrics.GlyphWidths`, `WithGlyphWidths`,
+      `OtherWidthPx` / `BoldOtherWidthPx` and `For(ColumnType)`; `GridPresentationDefaults`'
+      optional glyph widths; `MudExGridPresentation.RobotoGlyphWidths`.
 - **Alignment is a closed enum, not a stylesheet hook** *(added with the tiered-header design)*.
   `CellAlign { Auto, Left, Center, Right }` on the column (`Align`, and `HeaderAlign` for its
   header cell): `Auto` derives from the type — Number/Date right, Text/Boolean left, exactly
