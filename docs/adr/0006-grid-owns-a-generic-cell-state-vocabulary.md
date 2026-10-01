@@ -109,6 +109,14 @@ the culture; the grid takes no view on separators.
   separators.
 - Since this is the one text the grid shows, it is also what copy's `text/plain`, the value list,
   the Auto width and the editor's opening text use.
+- *(Ticket 94, as built.)* **The Formula Bar's full value of an unformatted date follows the same
+  form** (ticket 95). It showed the current culture's spelling, which on the Server host is the
+  server's, and the same day/month confusion this note removes. ExSheet supplies its own text, so
+  it is not affected.
+- **A filter operand reopens in a text that reads back to the same value.** Ticket 94 found and
+  fixed this for dates: under en-GB, a date operand reopened as `05/01/2026` and OK read it as 1 May.
+  Numbers have the same fault under a comma-decimal culture: `1234.5` reopens as `1234,5`, which
+  reads back as 12345. Ticket 96 fixes it.
 
 **Value-derived decoration** is a second delegate on the column, the **tone rule**
 `Func<object, CellTone>`, answering a closed enum — `None / Positive / Negative` — that is
