@@ -27,6 +27,12 @@ internal sealed class ByteTextCache(bool keepAll = false)
     private long lookups;
     private long hits;
 
+    // Where the last miss of TryGet ended — the slot its bytes would take, their key and hash — for
+    // the Add that follows it, so the bytes are hashed and probed once (ticket 07). -1 when spent.
+    private int missSlot = -1;
+    private ulong missKey;
+    private uint missHash;
+
     /// <summary>Whether the cache still keeps codes.</summary>
     public bool Enabled { get; private set; } = true;
 
@@ -41,6 +47,9 @@ internal sealed class ByteTextCache(bool keepAll = false)
             var e = table[i] - 1;
             if (e < 0)
             {
+                missSlot = i;
+                missKey = key;
+                missHash = hash;
                 code = -1;
                 return false;
             }
@@ -56,7 +65,7 @@ internal sealed class ByteTextCache(bool keepAll = false)
     }
 
     /// <summary>Keeps <paramref name="code"/> for <paramref name="bytes"/>, which <see cref="TryGet"/>
-    /// has just missed.</summary>
+    /// has just missed: the slot and the hash that miss found are taken as they are.</summary>
     public void Add(ReadOnlySpan<byte> bytes, int code)
     {
         if (!keepAll && count >= GiveUpAt && hits * 2 < lookups)
@@ -64,7 +73,19 @@ internal sealed class ByteTextCache(bool keepAll = false)
             GiveUp();
             return;
         }
-        var key = Key(bytes, out var hash);
+        var slot = missSlot;
+        missSlot = -1;
+        ulong key;
+        uint hash;
+        if (slot >= 0)
+        {
+            key = missKey;
+            hash = missHash;
+        }
+        else
+        {
+            key = Key(bytes, out hash);
+        }
         var offset = 0;
         if (bytes.Length > 8)
         {
@@ -83,11 +104,14 @@ internal sealed class ByteTextCache(bool keepAll = false)
             Rehash();
             return;
         }
-        var mask = table.Length - 1;
-        var i = (int)(hash & (uint)mask);
-        while (table[i] != 0)
-            i = (i + 1) & mask;
-        table[i] = count;
+        if (slot < 0)
+        {
+            var mask = table.Length - 1;
+            slot = (int)(hash & (uint)mask);
+            while (table[slot] != 0)
+                slot = (slot + 1) & mask;
+        }
+        table[slot] = count;
     }
 
     private void GiveUp()
