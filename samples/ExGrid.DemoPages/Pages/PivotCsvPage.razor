@@ -262,7 +262,8 @@
 
     private void Cancel() => _reading?.Cancel();
 
-    private RenderFragment Pivot(PivotSource source) => @<ExPivot Source="source" @bind-Layout="_layout"
+    // Keyed by its source: another file is another report, which opens with the layout read with it.
+    private RenderFragment Pivot(PivotSource source) => @<ExPivot @key="source" Source="source" @bind-Layout="_layout"
                                                                    PivotChrome="_pivotChrome" Chrome="_gridChrome"
                                                                    Culture="Culture" ViewportHeight="420" />;
     #endregion
