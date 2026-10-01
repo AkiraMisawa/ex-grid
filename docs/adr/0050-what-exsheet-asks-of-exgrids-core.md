@@ -317,6 +317,13 @@ Excel's formatting keys: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+2 to Ctrl+5; Ctrl+Shift
 - **The key table keeps its arbitration** ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)).
   A declared key never takes a key the core already answers for itself. A declaration naming one is
   refused by name.
+- **A declared key is raised with the Selection as the grid holds it at the key, and the Row
+  Sequence Version it is written in.** `SelectionChanged` is raised after the render that shows a
+  move, which on a circuit is a round trip later. So a key pressed straight after a move can reach
+  the Consumer before the move does. *(Found on the Server host by `format-keys.spec.mjs`, on
+  2026-10-01: Ctrl+B straight after Shift+Up formatted the Focus cell alone. The version is carried
+  for the reason every positional notification carries one,
+  [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md).)*
 
 **15. A per-cell appearance.** A Consumer can supply a cell's Font (a colour, bold, italic,
 underline and strikethrough), its Fill, and its four Border sides.
