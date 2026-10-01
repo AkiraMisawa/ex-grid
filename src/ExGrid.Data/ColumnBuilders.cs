@@ -151,6 +151,23 @@ public sealed class TextColumnBuilder : ColumnBuilder
         Texts.Add(chars.AsSpan(0, length));
     }
 
+    /// <summary>Appends a value and returns its code in the dictionary, for a reader that remembers
+    /// the codes of the bytes it has decoded.</summary>
+    internal int AppendText(ReadOnlySpan<char> value)
+    {
+        Room(1);
+        var code = Interner.Intern(value);
+        Texts.AddCode(code);
+        return code;
+    }
+
+    /// <summary>Appends a code <see cref="AppendText"/> returned.</summary>
+    internal void AppendCode(int code)
+    {
+        Room(1);
+        Texts.AddCode(code);
+    }
+
     /// <summary>
     /// Appends values given as codes into another producer's <paramref name="dictionary"/>, as Arrow
     /// and Parquet hold text. They are taken under the Snapshot's rules, whatever the producer's were:
@@ -264,6 +281,14 @@ public sealed class DecimalColumnBuilder : ColumnBuilder
             else
                 Numbers.AddScaled(values[i], scale);
         }
+    }
+
+    /// <summary>Appends <paramref name="value"/> × 10^-<paramref name="scale"/>, a scale the caller has
+    /// checked lies within 0 to 28.</summary>
+    internal void AppendScaled(long value, int scale)
+    {
+        Room(1);
+        Numbers.AddScaled(value, scale);
     }
 }
 

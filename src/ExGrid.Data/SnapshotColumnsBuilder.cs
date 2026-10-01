@@ -146,6 +146,9 @@ public sealed class SnapshotColumnsBuilder
         return finish.Snapshot();
     }
 
+    /// <summary>Reports <paramref name="state"/> at once, as a reader does when its last row is read.</summary>
+    internal void Report(SnapshotProgress state) => pacer.Report(state);
+
     internal void CheckOpen()
     {
         if (refused)
