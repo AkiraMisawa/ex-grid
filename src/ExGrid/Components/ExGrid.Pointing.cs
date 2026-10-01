@@ -502,7 +502,11 @@ public partial class ExGrid<TRow>
         // On the renderer's own context: a press on another instance hands the text in, and it must
         // not race this grid's render.
         var written = false;
-        await InvokeAsync(() => written = WritePointedText(text));
+        await InvokeAsync(async () =>
+        {
+            written = WritePointedText(text);
+            await TellGateOfWriteAsync();
+        });
         return written;
     }
 
@@ -519,9 +523,25 @@ public partial class ExGrid<TRow>
     public async Task<bool> TakeBackPointedTextAsync()
     {
         var taken = false;
-        await InvokeAsync(() => taken = TakeBackPointedText());
+        await InvokeAsync(async () =>
+        {
+            taken = TakeBackPointedText();
+            await TellGateOfWriteAsync();
+        });
         return taken;
     }
+
+    /// <summary>
+    /// Tells the key gate the mode a write from outside, or its taking back, leaves, before either
+    /// returns (ADR-0058, "On a circuit"; DC-54). The press on another grid that asked for it is
+    /// answered once it returns, and the keys held behind that press are handed on against the mode
+    /// the answer leaves. Left to the render's after-render, the tell would follow the answer: on a
+    /// circuit the after-render runs once the browser has acknowledged the render, a round trip
+    /// later, and a Shift+↓ held behind the press met the gate in Overwrite, unclaimed, and was
+    /// dropped (found on CI, the Server host, 2026-10-01). Sent after the render that write asked
+    /// for, as <see cref="PushEditingStateAsync"/> sends it, and waited on.
+    /// </summary>
+    private Task TellGateOfWriteAsync() => _jsEditingDirty ? TellGateAsync() : Task.CompletedTask;
 
     private bool WritePointedText(string text)
     {
