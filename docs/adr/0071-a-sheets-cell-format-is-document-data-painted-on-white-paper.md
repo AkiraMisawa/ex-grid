@@ -636,11 +636,11 @@ then decides (ADR-0047's rule).
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
 - **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done.
-- **Tickets** 44 to 58 and 81 to 96, in `docs/specs/exsheet/issues/`:
+- **Tickets** 44 to 58 and 81 to 97, in `docs/specs/exsheet/issues/`:
   - ticket 55 was added by the eleventh run;
   - 56 by ticket 51's Server fix;
   - 57 and 58 by the twelfth run;
-  - 81 and 82 by ticket 47, 83 by ticket 82, 84 and 85 by ticket 81, 86 to 90 by ticket 48, 91 by ticket 83, 92 by ticket 88, 93 by PR #42's CI, 94 by the user (ADR-0006's note of 2026-10-01), and 95 and 96 by ticket 94.
+  - 81 and 82 by ticket 47, 83 by ticket 82, 84 and 85 by ticket 81, 86 to 90 by ticket 48, 91 by ticket 83, 92 by ticket 88, 93 by PR #42's CI, 94 by the user (ADR-0006's note of 2026-10-01), 95 and 96 by ticket 94, and 97 by ticket 96.
 
   59 to 75 are `claude/exsheet-start-8cx3v1`'s, and 76 to 80 are Pointing Scope's line
   (`docs/agents/numbering.md`).

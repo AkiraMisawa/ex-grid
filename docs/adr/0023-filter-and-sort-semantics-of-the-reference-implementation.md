@@ -135,3 +135,21 @@ reference implementation cannot evaluate it and does not pretend to.
   the sequence actually differs — a no-op change does not clear selection. Distinguishing
   replaced-instance-same-identity rows needs Row Identity, which `From` does not yet accept;
   that lands with its update surface and extends this ADR.
+
+## A filter operand is read in one way, or refused *(2026-10-01, tickets 94, 96 and 97)*
+
+The condition form reopened an operand in the culture's text and read it back invariant first. A
+value could therefore come back as another one, with nothing said: under en-GB, 5 January returned
+as 1 May; under de-DE, 1234.5 returned as 12345. That is principle 1's quiet wrongness.
+- **Reopening:** an operand reopens in a text that reads back as itself. Dates use ticket 94's ISO
+  forms. Numbers use the culture's own ungrouped text (`OperandText`).
+- **Reading a typed number:** `FilterPanelChoices.ReadOperand` reads it in the culture the form
+  shows numbers in, checking grouping against how that culture writes it.
+  - Another culture's separators are refused: `1234.5` under de-DE, `1.234` under fr-FR.
+  - A text that reads two ways is refused, naming both readings: `1.234` under a culture that
+    groups with a dot.
+  - The answer is an `OperandReading`, either a value or an `OperandRefusal`.
+- **Both Chromes read the same way.** The built-in panel shows the refusal and applies nothing.
+  The MudBlazor panel shows it as the field's error and makes Apply unavailable (`CanApply`).
+- **Reading a typed date** follows the same rule (ticket 97): the ISO forms exactly, and anything
+  else in the culture alone, never invariant first. Under en-GB `05/01/2026` is 5 January.
