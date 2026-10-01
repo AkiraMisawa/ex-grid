@@ -715,7 +715,8 @@
         @* data-ex-list marks a list of candidates, as against a hint alone: the key gate reads
            it, so ← and → are the editor's from the render that paints the list, not from the
            later message that tells the gate (ADR-0051, ADR-0010). data-ex-over-point marks a
-           list open over Point, where ← and → point instead, from the same render (ADR-0058). *@
+           list open over Point, where ←, →, Home, End and the Shift+arrows point instead, from
+           the same render (ADR-0058). *@
         <div class="ex-completion" style="@CompletionStyle()" role="presentation" data-ex-list="@(completion.Candidates.Count > 0)"
              data-ex-over-point="@CompletionListOverPoint"
              @onmousedown:preventDefault @onmousedown:stopPropagation>

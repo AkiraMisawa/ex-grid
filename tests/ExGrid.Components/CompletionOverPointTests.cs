@@ -14,7 +14,9 @@ namespace ExGrid.Components.Tests;
 /// ADR-0051's correction of 2026-09-30; SH-36), on the grid's side: Tab closes the list, and the
 /// text it wrote is asked about for its hint alone; a list takes only ↑, ↓, Tab and Escape, so
 /// where a Reference can go at the caret ← and → point past it and close it, and the gate is told
-/// so from the render that paints the list. The Consumer here stands in for ExSheet: a name after
+/// so from the render that paints the list. As Part B of the ninth Windows run saw it (Q51), Home,
+/// End and the Shift+arrows do the same there, and stay the editor's in a list of names and in
+/// Caret. The Consumer here stands in for ExSheet: a name after
 /// <c>=</c>, completed to itself and listed again once written whole, as a table's name is; an
 /// argument's values after <c>,,</c>; a hint inside <c>F(</c>. 50 rows of 20px under a 20px
 /// header; A, B and C edit.
@@ -55,7 +57,11 @@ public class CompletionOverPointTests : GridTestContext
         => text.StartsWith('=') && caret > 0 && caret <= text.Length && "=+-*/(,".Contains(text[caret - 1]);
 
     private static string ReferenceText(SelectionRange range)
-        => FormattableString.Invariant($"{(char)('A' + range.LeftColumn)}{range.TopRow + 1}");
+    {
+        static string Cell(int row, int column) => FormattableString.Invariant($"{(char)('A' + column)}{row + 1}");
+        var first = Cell(range.TopRow, range.LeftColumn);
+        return range.CellCount == 1 ? first : first + ":" + Cell(range.BottomRow, range.RightColumn);
+    }
 
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
         List<(string, int)>? asked = null, List<GridEditIntent<TestRow>>? intents = null, bool bar = false)
@@ -76,10 +82,11 @@ public class CompletionOverPointTests : GridTestContext
             .Add(g => g.PointAt, PointAt)
             .Add(g => g.ReferenceText, ReferenceText));
 
-    /// <summary>Opens Overwrite on B1 with <c>=</c>, then types the rest into the Cell Editor.</summary>
-    private static async Task TypeFormulaAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text)
+    /// <summary>Opens Overwrite on B1 (on B<paramref name="row"/> + 1) with <c>=</c>, then types the
+    /// rest into the Cell Editor.</summary>
+    private static async Task TypeFormulaAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text, int row = 0)
     {
-        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = 10 });
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = 10 + 20 * row });
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("=", false, false, false, false, false));
         await TypeAsync(cut, text);
     }
@@ -91,10 +98,14 @@ public class CompletionOverPointTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync(text, text.Length));
     }
 
-    /// <summary>A key as the gate forwards it while editing: with the editor's text and caret.</summary>
+    /// <summary>A key as the gate forwards it while editing: with the editor's text and caret.
+    /// <c>Shift+</c> before the key presses Shift with it.</summary>
     private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, string text, int? caret = null)
-        => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(
-            key, false, false, false, false, false, editorText: text, editorCaret: caret ?? text.Length));
+    {
+        var shift = key.StartsWith("Shift+", StringComparison.Ordinal);
+        return cut.InvokeAsync(() => cut.Instance.OnKeyAsync(
+            shift ? key["Shift+".Length..] : key, false, shift, false, false, false, editorText: text, editorCaret: caret ?? text.Length));
+    }
 
     private static string EditorText(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.Find(".ex-viewport .ex-editor").GetAttribute("value") ?? "";
@@ -239,6 +250,100 @@ public class CompletionOverPointTests : GridTestContext
         Assert.Empty(Labels(cut));
         Assert.NotEmpty(cut.FindAll(".ex-point"));
         Assert.Equal("point", GateModesTold()[^1]);
+        Assert.Empty(intents);
+    }
+
+    [Theory] // ADR-0058 (Part B of the ninth Windows run, x6; Q51) / SH-36: a Shift+arrow at a list open over Point closes it and does what Point does with it — the outline starts on the edited cell and reaches the next one
+    [InlineData("Shift+ArrowRight", "B2:C2")]
+    [InlineData("Shift+ArrowLeft", "A2:B2")]
+    [InlineData("Shift+ArrowDown", "B2:B3")]
+    [InlineData("Shift+ArrowUp", "B1:B2")]
+    public async Task ADR0058_a_shift_arrow_at_a_list_over_point_points_at_a_range_and_closes_it(string key, string pointed)
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents: intents);
+        await TypeFormulaAsync(cut, "=F(1,,", row: 1);
+        Assert.Equal("completionOverPoint", GateModesTold()[^1]);
+
+        await PressAsync(cut, key, "=F(1,,");
+
+        Assert.Equal("=F(1,," + pointed, EditorText(cut));
+        Assert.Empty(Labels(cut));
+        Assert.NotEmpty(cut.FindAll(".ex-point"));
+        Assert.Equal("point", GateModesTold()[^1]);
+        Assert.Empty(intents);
+    }
+
+    [Fact] // ADR-0058 (Part B of the ninth Windows run, x4; Q51, Q53) / SH-36: Home at a list open over Point closes it and points at the row's first column
+    public async Task ADR0058_home_at_a_list_over_point_points_at_the_rows_first_column_and_closes_it()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents: intents);
+        await TypeFormulaAsync(cut, "=F(1,,", row: 1);
+
+        await PressAsync(cut, "Home", "=F(1,,");
+
+        Assert.Equal("=F(1,,A2", EditorText(cut));
+        Assert.Empty(Labels(cut));
+        Assert.NotEmpty(cut.FindAll(".ex-point"));
+        Assert.Equal("point", GateModesTold()[^1]);
+        Assert.Empty(intents);
+    }
+
+    [Fact] // ADR-0058 (x5; Q51, Q53) / SH-36: End at a list open over Point closes it and does nothing more — it writes nothing and asks for no commit
+    public async Task ADR0058_end_at_a_list_over_point_closes_it_and_writes_nothing()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents: intents);
+        await TypeFormulaAsync(cut, "=F(1,,", row: 1);
+
+        await PressAsync(cut, "End", "=F(1,,");
+
+        Assert.Equal("=F(1,,", EditorText(cut));
+        Assert.Empty(cut.FindAll(".ex-completion"));
+        Assert.Empty(cut.FindAll(".ex-point"));
+        Assert.Equal("overwrite", GateModesTold()[^1]);
+        Assert.Empty(intents);
+        Assert.NotEmpty(cut.FindAll(".ex-viewport .ex-editor"));
+    }
+
+    [Theory] // ADR-0058 (Q51) / ADR-0051 second round / SH-36: in a list of names, where no Reference can go, Home, End and the Shift+arrows are not claimed; one that arrives all the same, claimed by a gate not yet told, neither points nor commits
+    [InlineData("Home")]
+    [InlineData("End")]
+    [InlineData("Shift+ArrowRight")]
+    [InlineData("Shift+ArrowDown")]
+    public async Task ADR0058_in_a_list_of_names_home_end_and_the_shift_arrows_stay_the_editors(string key)
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents: intents);
+        await TypeFormulaAsync(cut, "=Pos");
+        Assert.Equal("completion", GateModesTold()[^1]);
+
+        await PressAsync(cut, key, "=Pos");
+
+        Assert.Equal("=Pos", EditorText(cut));
+        Assert.Empty(cut.FindAll(".ex-point"));
+        Assert.Empty(intents);
+    }
+
+    [Theory] // ADR-0058 (Q51) / ADR-0051 third round / SH-36: in Caret, a list open where a Reference can go is not over Point, and Home, End and the Shift+arrows stay the editor's there too
+    [InlineData("Home")]
+    [InlineData("End")]
+    [InlineData("Shift+ArrowRight")]
+    public async Task ADR0058_in_caret_home_end_and_the_shift_arrows_stay_the_editors(string key)
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents: intents, bar: true);
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = 30 });
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "=F(1,," });
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("=F(1,,", 6));
+        Assert.Equal("completion", GateModesTold()[^1]);
+
+        await PressAsync(cut, key, "=F(1,,");
+
+        Assert.Equal("=F(1,,", EditorText(cut));
+        Assert.Empty(cut.FindAll(".ex-point"));
         Assert.Empty(intents);
     }
 
