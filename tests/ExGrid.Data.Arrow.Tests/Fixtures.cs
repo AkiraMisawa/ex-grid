@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -169,6 +170,71 @@ internal static class Fixtures
                 builder.Append(value);
         }
         return builder.Build();
+    }
+
+    /// <summary>A <c>utf8_view</c> array, as Apache.Arrow's builder writes one: text of twelve bytes or
+    /// fewer in its view, longer text in one data buffer.</summary>
+    public static StringViewArray Utf8View(params string?[] values)
+    {
+        var builder = new StringViewArray.Builder();
+        foreach (var value in values)
+        {
+            if (value is null)
+                builder.AppendNull();
+            else
+                builder.Append(value);
+        }
+        return builder.Build();
+    }
+
+    /// <summary>
+    /// A <c>utf8_view</c> array made by hand from its views — each <see cref="InlineView"/> or
+    /// <see cref="BufferView"/>, a null for each null — over <paramref name="buffers"/>, its data
+    /// buffers: as a producer that spreads its text over several buffers writes one, or a malformed
+    /// stream might.
+    /// </summary>
+    public static IArrowArray Utf8Views(byte[][] buffers, params byte[]?[] views)
+    {
+        var bytes = new byte[views.Length * 16];
+        var validity = new byte[Math.Max(8, (views.Length + 7) / 8)];
+        var nulls = 0;
+        for (var i = 0; i < views.Length; i++)
+        {
+            if (views[i] is { } view)
+            {
+                view.CopyTo(bytes, i * 16);
+                validity[i >> 3] |= (byte)(1 << (i & 7));
+            }
+            else
+            {
+                nulls++;
+            }
+        }
+        return ArrowArrayFactory.BuildArray(new ArrayData(StringViewType.Default, views.Length, nulls, 0,
+            [nulls == 0 ? ArrowBuffer.Empty : new ArrowBuffer(validity), new ArrowBuffer(bytes), .. buffers.Select(b => new ArrowBuffer(b))]));
+    }
+
+    /// <summary>A view of text held in the view itself, twelve bytes or fewer.</summary>
+    public static byte[] InlineView(byte[] text)
+    {
+        var view = new byte[16];
+        BinaryPrimitives.WriteInt32LittleEndian(view, text.Length);
+        text.CopyTo(view, 4);
+        return view;
+    }
+
+    /// <summary>A view of <paramref name="length"/> bytes at <paramref name="offset"/> in data buffer
+    /// <paramref name="buffer"/> of <paramref name="buffers"/>, its prefix the first bytes there — none
+    /// where it points outside them.</summary>
+    public static byte[] BufferView(byte[][] buffers, int buffer, int offset, int length)
+    {
+        var view = new byte[16];
+        BinaryPrimitives.WriteInt32LittleEndian(view, length);
+        if (buffer >= 0 && buffer < buffers.Length && offset >= 0 && offset < buffers[buffer].Length)
+            buffers[buffer].AsSpan(offset, Math.Min(4, buffers[buffer].Length - offset)).CopyTo(view.AsSpan(4));
+        BinaryPrimitives.WriteInt32LittleEndian(view.AsSpan(8), buffer);
+        BinaryPrimitives.WriteInt32LittleEndian(view.AsSpan(12), offset);
+        return view;
     }
 
     /// <summary>A dictionary-encoded text column as another producer may write one: its entries in any

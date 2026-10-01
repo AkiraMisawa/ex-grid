@@ -96,19 +96,20 @@ Snapshot snapshot = await SnapshotArrow.ReadAsync(payload, codecs: new Compressi
 
 | Arrow | Snapshot |
 |---|---|
-| `utf8`, `large_utf8`, or a dictionary of either (any integer indices) | Text |
-| `decimal128`, `decimal256` | Decimal; a value beyond `decimal`'s range or its 28 places is refused |
+| `utf8`, `large_utf8`, `utf8_view` (Polars' default), or a dictionary of any of them (any integer indices) | Text |
+| `decimal32`, `decimal64`, `decimal128`, `decimal256` | Decimal; a value beyond `decimal`'s range or its 28 places is refused |
 | `float64`, `float32` | Double, as it came, non-finite values included |
 | `int8` to `int64`, `uint8` to `uint32`, `uint64` up to `long.MaxValue` | Integer |
 | `date32`, `date64`, `timestamp` without a time zone | Date, as the clock value written |
-| `timestamp` in UTC (`UTC`, `Etc/UTC`, `+00:00`, `Z`) | Date, as the UTC clock value |
+| `timestamp` in UTC — `UTC`, `GMT`, `UCT`, `Universal` or `Zulu`, each also under `Etc/`, or `+00:00`, `-00:00` or `Z`, in any case | Date, as the UTC clock value |
+| `time32`, `time64` | Date, the clock time on the first day, 0001-01-01, as a database's `TimeOnly` is read |
 | `bool` | Boolean |
 | a null slot in any of these | a Blank |
 
-Any other type is refused by name: lists, structs, maps, binary, durations, times, intervals,
-`float16`, `utf8_view`, and a `timestamp` in another time zone (converting one would need a time
-zone database). A date outside 0001–9999, or a nanosecond timestamp finer than the 100 ns a date
-holds, is refused by row and column.
+Any other type is refused by name: lists, structs, maps, binary, durations, intervals, `float16`,
+and a `timestamp` in another time zone (converting one would need a time zone database). A date
+outside 0001–9999, a time outside a day, or a nanosecond timestamp or time finer than the 100 ns a
+date holds, is refused by row and column.
 
 Writing gives Text `dictionary<int32, utf8>` (the Snapshot's own dictionary, its codes the
 indices), Decimal `decimal128(38, scale)` at the largest scale its slices hold, Double `float64`,

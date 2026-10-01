@@ -22,11 +22,11 @@ public class RefusalTests
     public static TheoryData<string> Outside =>
     [
         "list<int64>", "large_list<int64>", "struct<a: int64>", "map<utf8, int64>", "binary", "large_binary",
-        "fixed_size_binary[16]", "duration[ms]", "time32[ms]", "time64[us]", "month_interval", "float16", "null",
-        "decimal32(9, 2)", "decimal64(18, 2)", "dictionary<values=int64, indices=int32>", "utf8_view",
+        "binary_view", "fixed_size_binary[16]", "duration[ms]", "month_interval", "float16", "null",
+        "dictionary<values=int64, indices=int32>",
     ];
 
-    [Theory] // ADR-0064: a type outside the table — lists, structs, maps, binary, durations, times and the rest — is refused, naming the column and the type
+    [Theory] // ADR-0064: a type outside the table — lists, structs, maps, binary, durations, intervals and the rest — is refused, naming the column and the type
     [MemberData(nameof(Outside))]
     public async Task A_type_outside_the_table_is_refused_by_name(string type)
     {
@@ -36,13 +36,12 @@ public class RefusalTests
 
         Assert.Equal("Value", refusal.Column);
         Assert.Null(refusal.Row);
-        var hint = type == "utf8_view" ? "; write the text as utf8 or large_utf8, or a dictionary of either" : "";
-        Assert.Equal($"Column 'Value': the Arrow type {type} is not one a Snapshot reads{hint}.", refusal.Message);
+        Assert.Equal($"Column 'Value': the Arrow type {type} is not one a Snapshot reads.", refusal.Message);
     }
 
-    public static TheoryData<string> OtherZones => ["Asia/Tokyo", "+09:00", "Europe/London", "GMT", "-00:00"];
+    public static TheoryData<string> OtherZones => ["Asia/Tokyo", "+09:00", "Europe/London", "America/New_York", "-05:00", "Etc/GMT+5"];
 
-    [Theory] // ADR-0064: a timestamp in a time zone other than UTC is refused, naming the column and the zone
+    [Theory] // ADR-0064: a timestamp in a time zone other than UTC — one that is UTC's clock only in winter, or an offset of its own under Etc/ — is refused, naming the column and the zone
     [MemberData(nameof(OtherZones))]
     public async Task A_timestamp_in_another_zone_is_refused(string zone)
     {
@@ -98,6 +97,33 @@ public class RefusalTests
         Assert.Equal("Row 2, column 'Wide': the decimal256(76, 2) value 100000000000000000000000000000000000000.00 lies beyond the range of a decimal.", refusal.Message);
     }
 
+    public static TheoryData<string, string> NarrowDecimalsNoDecimalHolds => new()
+    {
+        { "decimal32(9, -25)", "the decimal32(9, -25) value 9999999990000000000000000000000000 lies beyond the range of a decimal." },
+        { "decimal64(18, -15)", "the decimal64(18, -15) value -100000000000000000000000000000000 lies beyond the range of a decimal." },
+        { "decimal32(9, 30)", "the decimal32(9, 30) value 0.000000000000000000000000000015 has more decimal places than the 28 a decimal holds." },
+        { "decimal64(18, 29)", "the decimal64(18, 29) value -0.00000000000000000000000000123 has more decimal places than the 28 a decimal holds." },
+    };
+
+    [Theory] // ADR-0064: a decimal32 or decimal64 beyond decimal's range, or with more places than its 28, is refused by row and column, not rounded
+    [MemberData(nameof(NarrowDecimalsNoDecimalHolds))]
+    public async Task A_decimal32_or_decimal64_no_decimal_holds_is_refused_by_row_and_column(string type, string reason)
+    {
+        IArrowArray array = type switch
+        {
+            "decimal32(9, -25)" => Raw<int>(new Decimal32Type(9, -25), 1, null, 999_999_999),
+            "decimal64(18, -15)" => Raw<long>(new Decimal64Type(18, -15), 1L, null, -100_000_000_000_000_000L),
+            "decimal32(9, 30)" => Raw<int>(new Decimal32Type(9, 30), 1_000, null, 15),
+            _ => Raw<long>(new Decimal64Type(18, 29), 10L, null, -123L),
+        };
+
+        var refusal = await RefusalAsync(Stream(Batch(("Notional", array))));
+
+        Assert.Equal(3, refusal.Row);
+        Assert.Equal("Notional", refusal.Column);
+        Assert.Equal($"Row 3, column 'Notional': {reason}", refusal.Message);
+    }
+
     [Fact] // ADR-0064: a uint64 above long's range is refused by row and column
     public async Task A_uint64_beyond_longs_range_is_refused()
     {
@@ -143,6 +169,43 @@ public class RefusalTests
         Assert.Equal("Row 2, column 'When': the timestamp[ns] value 150 is finer than the 100 nanoseconds a date holds.", refusal.Message);
     }
 
+    public static TheoryData<string, string> TimesOutsideADay => new()
+    {
+        { "time32[s]", "the time32[s] value 86400 (seconds since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999." },
+        { "time32[ms]", "the time32[ms] value -1 (milliseconds since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999." },
+        { "time64[us]", "the time64[us] value 86400000000 (microseconds since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999." },
+        { "time64[ns]", "the time64[ns] value -100 (nanoseconds since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999." },
+    };
+
+    [Theory] // ADR-0064: a time outside a day — a whole day, a leap second, or before midnight — is refused by row and column, not moved to another day
+    [MemberData(nameof(TimesOutsideADay))]
+    public async Task A_time_outside_a_day_is_refused_by_row_and_column(string type, string reason)
+    {
+        IArrowArray array = type switch
+        {
+            "time32[s]" => new Time32Array.Builder(new Time32Type(TimeUnit.Second)).Append(86_399).AppendNull().Append(86_400).Build(),
+            "time32[ms]" => new Time32Array.Builder(new Time32Type(TimeUnit.Millisecond)).Append(0).AppendNull().Append(-1).Build(),
+            "time64[us]" => new Time64Array.Builder(new Time64Type(TimeUnit.Microsecond)).Append(86_399_999_999L).AppendNull().Append(86_400_000_000L).Build(),
+            _ => new Time64Array.Builder(new Time64Type(TimeUnit.Nanosecond)).Append(0L).AppendNull().Append(-100L).Build(),
+        };
+
+        var refusal = await RefusalAsync(Stream(Batch(("At", array))));
+
+        Assert.Equal(3, refusal.Row);
+        Assert.Equal("At", refusal.Column);
+        Assert.Equal($"Row 3, column 'At': {reason}", refusal.Message);
+    }
+
+    [Fact] // ADR-0064: a time64[ns] finer than a date's 100 nanoseconds is refused, not truncated
+    public async Task A_time_finer_than_100_nanoseconds_is_refused()
+    {
+        var payload = Stream(Batch(("At", new Time64Array.Builder(new Time64Type(TimeUnit.Nanosecond)).Append(100L).Append(45_015_000_000_150L).Build())));
+
+        var refusal = await RefusalAsync(payload);
+
+        Assert.Equal("Row 2, column 'At': the time64[ns] value 45015000000150 is finer than the 100 nanoseconds a date holds.", refusal.Message);
+    }
+
     [Theory] // ADR-0064: a dictionary index outside its dictionary — past its end, or negative — is refused by row and column
     [InlineData(3)]
     [InlineData(-1)]
@@ -174,6 +237,46 @@ public class RefusalTests
         var refusal = await RefusalAsync(Stream(Batch(("Region", region))));
 
         Assert.Equal("Row 3, column 'Region': the dictionary's entry 1 is not valid UTF-8.", refusal.Message);
+    }
+
+    public static TheoryData<string, string> ViewsThatAreNotText => new()
+    {
+        { "not UTF-8, in its view", "the text is not valid UTF-8." },
+        { "not UTF-8, in a data buffer", "the text is not valid UTF-8." },
+        { "pointing past its data buffer's end", "the Arrow stream is malformed: the value's view points outside its data." },
+        { "naming a data buffer the array does not have", "the Arrow stream is malformed: the value's view points outside its data." },
+        { "of a negative length", "the Arrow stream is malformed: the value's view points outside its data." },
+    };
+
+    [Theory] // ADR-0064: utf8_view that is not valid UTF-8, or whose view points outside its data, is refused by row and column
+    [MemberData(nameof(ViewsThatAreNotText))]
+    public async Task A_utf8_view_that_is_not_text_is_refused_by_row_and_column(string what, string reason)
+    {
+        byte[][] buffers = [[.. "a text longer than a view"u8, 0xC3, 0x28, .. " and more after it"u8]];
+        var bad = what switch
+        {
+            "not UTF-8, in its view" => InlineView([0xC3, 0x28]),
+            "not UTF-8, in a data buffer" => BufferView(buffers, 0, 2, 30),
+            "pointing past its data buffer's end" => BufferView(buffers, 0, 2, buffers[0].Length),
+            "naming a data buffer the array does not have" => BufferView(buffers, 1, 0, 13),
+            _ => BufferView(buffers, 0, 0, -1),
+        };
+
+        var refusal = await RefusalAsync(Stream(Batch(("Name", Utf8Views(buffers, InlineView([.. "fine"u8]), BufferView(buffers, 0, 0, 13), bad)))));
+
+        Assert.Equal($"Row 3, column 'Name': {reason}", refusal.Message);
+    }
+
+    [Fact] // ADR-0064: a dictionary of utf8_view whose entry's view points outside its data is refused by the first row that uses the entry
+    public async Task A_dictionary_entry_whose_view_points_outside_its_data_is_refused()
+    {
+        byte[][] buffers = [[.. "a text longer than a view"u8]];
+        var entries = Utf8Views(buffers, InlineView([.. "fine"u8]), BufferView(buffers, 0, 5, 40));
+        var region = new DictionaryArray(new DictionaryType(Int32Type.Default, StringViewType.Default, ordered: false), Raw<int>(Int32Type.Default, 0, 0, 1), entries);
+
+        var refusal = await RefusalAsync(Stream(Batch(("Region", region))));
+
+        Assert.Equal("Row 3, column 'Region': the Arrow stream is malformed: the dictionary's entry 1's view points outside its data.", refusal.Message);
     }
 
     // ---- the schema and its metadata -----------------------------------------------------------
@@ -409,28 +512,20 @@ public class RefusalTests
                 return new BinaryArray.Builder().Append([1, 2]).AppendNull().Build();
             case "large_binary":
                 return new LargeBinaryArray.Builder().Append([1, 2]).AppendNull().Build();
+            case "binary_view":
+                return new BinaryViewArray.Builder().Append([1, 2]).AppendNull().Build();
             case "fixed_size_binary[16]":
                 return new Apache.Arrow.Arrays.FixedSizeBinaryArray(new ArrayData(new FixedSizeBinaryType(16), 2, 0, 0, [ArrowBuffer.Empty, new ArrowBuffer(new byte[32])]));
             case "duration[ms]":
                 return Raw<long>(DurationType.Millisecond, 1L, null);
-            case "time32[ms]":
-                return Raw<int>(new Time32Type(TimeUnit.Millisecond), 1, null);
-            case "time64[us]":
-                return Raw<long>(new Time64Type(TimeUnit.Microsecond), 1L, null);
             case "month_interval":
                 return Raw<int>(IntervalType.YearMonth, 1, null);
             case "float16":
                 return Raw<Half>(HalfFloatType.Default, (Half)1.5f, null);
             case "null":
                 return new NullArray(2);
-            case "decimal32(9, 2)":
-                return Raw<int>(new Decimal32Type(9, 2), 150, null);
-            case "decimal64(18, 2)":
-                return Raw<long>(new Decimal64Type(18, 2), 150L, null);
             case "dictionary<values=int64, indices=int32>":
                 return new DictionaryArray(new DictionaryType(Int32Type.Default, Int64Type.Default, ordered: false), Raw<int>(Int32Type.Default, 0, null), Raw<long>(Int64Type.Default, 5L));
-            case "utf8_view":
-                return new StringViewArray.Builder().Append("a").AppendNull().Build();
             default:
                 throw new ArgumentOutOfRangeException(nameof(type), type, "No such array here.");
         }

@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -28,7 +29,13 @@ internal sealed class ReadScratch
 /// </summary>
 internal abstract class ColumnReader(ColumnBuilder column)
 {
-    private static readonly string[] UtcZones = ["UTC", "Etc/UTC", "+00:00", "Z"];
+    /// <summary>UTC's names, any case: the IANA names of UTC, each also under <c>Etc/</c>, and the
+    /// offsets and designator that say UTC (ADR-0064).</summary>
+    private static readonly string[] UtcZones =
+    [
+        "UTC", "Etc/UTC", "GMT", "Etc/GMT", "UCT", "Etc/UCT", "Universal", "Etc/Universal", "Zulu", "Etc/Zulu",
+        "+00:00", "-00:00", "Z",
+    ];
 
     /// <summary>The column's name.</summary>
     public string Name => column.Name;
@@ -52,14 +59,20 @@ internal abstract class ColumnReader(ColumnBuilder column)
                 return new Utf8Reader(builder.Text(name, caption), large: false);
             case ArrowTypeId.LargeString:
                 return new Utf8Reader(builder.Text(name, caption), large: true);
+            case ArrowTypeId.StringView:
+                return new Utf8ViewReader(builder.Text(name, caption));
             case ArrowTypeId.Dictionary when type is DictionaryType dictionary
-                && dictionary.ValueType.TypeId is ArrowTypeId.String or ArrowTypeId.LargeString
+                && dictionary.ValueType.TypeId is ArrowTypeId.String or ArrowTypeId.LargeString or ArrowTypeId.StringView
                 && IsIndex(dictionary.IndexType.TypeId):
-                return new DictionaryReader(builder.Text(name, caption), dictionary.IndexType.TypeId, dictionary.ValueType.TypeId == ArrowTypeId.LargeString);
+                return new DictionaryReader(builder.Text(name, caption), dictionary.IndexType.TypeId, dictionary.ValueType.TypeId);
+            case ArrowTypeId.Decimal32:
+                return new DecimalReader(builder.Decimal(name, caption), width: 4, ((Decimal32Type)type).Scale, ArrowTypeNames.Of(type));
+            case ArrowTypeId.Decimal64:
+                return new DecimalReader(builder.Decimal(name, caption), width: 8, ((Decimal64Type)type).Scale, ArrowTypeNames.Of(type));
             case ArrowTypeId.Decimal128:
-                return new DecimalReader(builder.Decimal(name, caption), lanes: 2, ((Decimal128Type)type).Scale, ArrowTypeNames.Of(type));
+                return new DecimalReader(builder.Decimal(name, caption), width: 16, ((Decimal128Type)type).Scale, ArrowTypeNames.Of(type));
             case ArrowTypeId.Decimal256:
-                return new DecimalReader(builder.Decimal(name, caption), lanes: 4, ((Decimal256Type)type).Scale, ArrowTypeNames.Of(type));
+                return new DecimalReader(builder.Decimal(name, caption), width: 32, ((Decimal256Type)type).Scale, ArrowTypeNames.Of(type));
             case ArrowTypeId.Double:
                 return new DoubleReader(builder.Double(name, caption), single: false);
             case ArrowTypeId.Float:
@@ -81,10 +94,14 @@ internal abstract class ColumnReader(ColumnBuilder column)
                         + "converting it would need a time zone database. Write it in UTC, or as clock values without a time zone.");
                 }
                 return new DateReader(builder.Date(name, caption), UnitOf(timestamp.Unit), ArrowTypeNames.Of(type));
+            case ArrowTypeId.Time32:
+                return new TimeReader(builder.Date(name, caption), wide: false, UnitOf(((Time32Type)type).Unit), ArrowTypeNames.Of(type));
+            case ArrowTypeId.Time64:
+                return new TimeReader(builder.Date(name, caption), wide: true, UnitOf(((Time64Type)type).Unit), ArrowTypeNames.Of(type));
             case ArrowTypeId.Boolean:
                 return new BooleanReader(builder.Boolean(name, caption));
             default:
-                throw new SnapshotException(null, name, $"the Arrow type {ArrowTypeNames.Of(type)} is not one a Snapshot reads{Hint(type)}.");
+                throw new SnapshotException(null, name, $"the Arrow type {ArrowTypeNames.Of(type)} is not one a Snapshot reads.");
         }
     }
 
@@ -127,14 +144,6 @@ internal abstract class ColumnReader(ColumnBuilder column)
             throw Malformed("its value buffer holds fewer values than its rows");
         return all.Slice((int)first, (int)count);
     }
-
-    /// <summary>What a producer can write instead, for a type that holds what a Snapshot reads in
-    /// another form: text held as views is text a producer can write as <c>utf8</c>.</summary>
-    private static string Hint(IArrowType type)
-        => type.TypeId == ArrowTypeId.StringView
-            || (type is DictionaryType { ValueType.TypeId: ArrowTypeId.StringView })
-            ? "; write the text as utf8 or large_utf8, or a dictionary of either"
-            : string.Empty;
 
     private static bool IsIndex(ArrowTypeId type) => type is ArrowTypeId.Int8 or ArrowTypeId.Int16 or ArrowTypeId.Int32 or ArrowTypeId.Int64
         or ArrowTypeId.UInt8 or ArrowTypeId.UInt16 or ArrowTypeId.UInt32 or ArrowTypeId.UInt64;
@@ -192,10 +201,88 @@ internal sealed class Utf8Reader(TextColumnBuilder text, bool large) : ColumnRea
 }
 
 /// <summary>
-/// A dictionary of <c>utf8</c> or <c>large_utf8</c>, with indices of any integer type, taken under the
-/// Snapshot's rules whatever order, case or nulls the producer's dictionary has (ADR-0063/0064): the
-/// Snapshot's dictionary is in the order values first appear in the rows, one entry per exact text,
-/// and a null index or a null entry is a Blank.
+/// Arrow's views of text, <c>utf8_view</c>: sixteen bytes a value, the first four its length in bytes.
+/// Text of twelve bytes or fewer follows in the view itself. Longer text lies in one of the array's
+/// data buffers, which follow its validity bitmap and its views; the view goes on with the text's
+/// first four bytes, which data buffer holds it, and where in that buffer it starts.
+/// </summary>
+internal static class TextViews
+{
+    /// <summary>The bytes of one view.</summary>
+    public const int Size = 16;
+
+    /// <summary>The most bytes of text a view holds itself.</summary>
+    private const int Inline = 12;
+
+    /// <summary>
+    /// <paramref name="data"/>'s views, and whether they reach as far as view <paramref name="end"/>,
+    /// counted from the buffer's start — the array's offset included, as a view's index is.
+    /// </summary>
+    public static bool TryViews(ArrayData data, long end, out ReadOnlySpan<byte> views)
+    {
+        views = data.Buffers.Length > 1 ? data.Buffers[1].Span : default;
+        return end * Size <= views.Length;
+    }
+
+    /// <summary>
+    /// The UTF-8 bytes view <paramref name="index"/> of <paramref name="views"/> holds or points to —
+    /// <paramref name="index"/> counted from the buffer's start, within what <see cref="TryViews"/>
+    /// checked — or false when the view's length is negative or it points outside the array's data.
+    /// </summary>
+    public static bool TryText(ArrayData data, ReadOnlySpan<byte> views, int index, out ReadOnlySpan<byte> text)
+    {
+        var view = views.Slice(index * Size, Size);
+        var length = BinaryPrimitives.ReadInt32LittleEndian(view);
+        text = default;
+        if (length < 0)
+            return false;
+        if (length <= Inline)
+        {
+            text = view.Slice(4, length);
+            return true;
+        }
+        var buffer = BinaryPrimitives.ReadInt32LittleEndian(view[8..]);
+        var offset = BinaryPrimitives.ReadInt32LittleEndian(view[12..]);
+        if (buffer < 0 || buffer >= data.Buffers.Length - 2 || offset < 0)
+            return false;
+        var bytes = data.Buffers[2 + buffer].Span;
+        if (length > bytes.Length - offset)
+            return false;
+        text = bytes.Slice(offset, length);
+        return true;
+    }
+}
+
+/// <summary><c>utf8_view</c>, as Polars writes text by default: each value's UTF-8 bytes, in its view or
+/// in the data buffer the view points into, go straight to the column, which makes a string only for
+/// text its dictionary does not hold yet.</summary>
+internal sealed class Utf8ViewReader(TextColumnBuilder text) : ColumnReader(text)
+{
+    public override void Read(ArrayData data, int start, int length, long rowBase, ReadScratch scratch)
+    {
+        var blanks = BlanksOf(data, start, length, scratch);
+        var first = data.Offset + start;
+        if (!TextViews.TryViews(data, (long)first + length, out var views))
+            throw Malformed("its views are fewer than its rows");
+        for (var i = 0; i < length; i++)
+        {
+            if (Bitmaps.Get(blanks, i))
+            {
+                text.AppendBlank();
+                continue;
+            }
+            if (!TextViews.TryText(data, views, first + i, out var bytes))
+                throw Refuse(rowBase, i, "the Arrow stream is malformed: the value's view points outside its data.");
+            text.AppendUtf8(bytes);
+        }
+    }
+}
+
+/// <summary>
+/// A dictionary of <c>utf8</c>, <c>large_utf8</c> or <c>utf8_view</c>, with indices of any integer type,
+/// taken under the Snapshot's rules whatever order, case or nulls the producer's dictionary has
+/// (ADR-0063/0064): the Snapshot's dictionary is in the order values first appear in the rows, one
+/// entry per exact text, and a null index or a null entry is a Blank.
 /// <para>
 /// Each chunk's indices are first turned into codes into a small list of the entries the chunk uses,
 /// which the column then interns. Each entry is decoded once for each dictionary the stream sends,
@@ -203,7 +290,7 @@ internal sealed class Utf8Reader(TextColumnBuilder text, bool large) : ColumnRea
 /// dictionary batches — costs what the rows use of it, never its whole size again.
 /// </para>
 /// </summary>
-internal sealed class DictionaryReader(TextColumnBuilder text, ArrowTypeId indexType, bool large) : ColumnReader(text)
+internal sealed class DictionaryReader(TextColumnBuilder text, ArrowTypeId indexType, ArrowTypeId valueType) : ColumnReader(text)
 {
     private static readonly UTF8Encoding Strict = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
@@ -258,9 +345,17 @@ internal sealed class DictionaryReader(TextColumnBuilder text, ArrowTypeId index
 
     private void Adopt(ArrayData dictionary)
     {
-        var offsets = dictionary.Buffers.Length > 1 ? dictionary.Buffers[1].Length / (large ? 8 : 4) : 0;
-        if (dictionary.Length > 0 && (long)dictionary.Offset + dictionary.Length + 1 > offsets)
-            throw Malformed("its dictionary's offsets are fewer than its entries");
+        if (valueType == ArrowTypeId.StringView)
+        {
+            if (!TextViews.TryViews(dictionary, (long)dictionary.Offset + dictionary.Length, out _))
+                throw Malformed("its dictionary's views are fewer than its entries");
+        }
+        else
+        {
+            var offsets = dictionary.Buffers.Length > 1 ? dictionary.Buffers[1].Length / (valueType == ArrowTypeId.LargeString ? 8 : 4) : 0;
+            if (dictionary.Length > 0 && (long)dictionary.Offset + dictionary.Length + 1 > offsets)
+                throw Malformed("its dictionary's offsets are fewer than its entries");
+        }
         entries = dictionary;
         entryCount = dictionary.Length;
         dictionaryGeneration++;
@@ -317,23 +412,14 @@ internal sealed class DictionaryReader(TextColumnBuilder text, ArrowTypeId index
         var isNull = dictionary.NullCount != 0 && !validity.IsEmpty && !Bitmaps.GetByte(validity.Span, at);
         if (!isNull)
         {
-            long from, to;
-            if (large)
+            if (!TryBytes(dictionary, at, out var bytes))
             {
-                var offsets = MemoryMarshal.Cast<byte, long>(dictionary.Buffers[1].Span);
-                (from, to) = (offsets[at], offsets[at + 1]);
+                var where = valueType == ArrowTypeId.StringView ? "view points" : "offsets lie";
+                throw Refuse(rowBase, i, string.Create(CultureInfo.InvariantCulture, $"the Arrow stream is malformed: the dictionary's entry {k}'s {where} outside its data."));
             }
-            else
-            {
-                var offsets = MemoryMarshal.Cast<byte, int>(dictionary.Buffers[1].Span);
-                (from, to) = (offsets[at], offsets[at + 1]);
-            }
-            var bytes = dictionary.Buffers.Length > 2 ? dictionary.Buffers[2].Span : default;
-            if (from < 0 || to < from || to > bytes.Length)
-                throw Refuse(rowBase, i, string.Create(CultureInfo.InvariantCulture, $"the Arrow stream is malformed: the dictionary's entry {k}'s offsets lie outside its data."));
             try
             {
-                value = Strict.GetString(bytes.Slice((int)from, (int)(to - from)));
+                value = Strict.GetString(bytes);
             }
             catch (DecoderFallbackException)
             {
@@ -344,25 +430,60 @@ internal sealed class DictionaryReader(TextColumnBuilder text, ArrowTypeId index
         decodedIn[k] = dictionaryGeneration;
         return value;
     }
+
+    /// <summary>The UTF-8 bytes of the dictionary's entry at <paramref name="at"/>, its offset included,
+    /// by its offsets or its view; false when they lie outside its data.</summary>
+    private bool TryBytes(ArrayData dictionary, int at, out ReadOnlySpan<byte> bytes)
+    {
+        if (valueType == ArrowTypeId.StringView)
+            return TextViews.TryText(dictionary, dictionary.Buffers[1].Span, at, out bytes);
+        long from, to;
+        if (valueType == ArrowTypeId.LargeString)
+        {
+            var offsets = MemoryMarshal.Cast<byte, long>(dictionary.Buffers[1].Span);
+            (from, to) = (offsets[at], offsets[at + 1]);
+        }
+        else
+        {
+            var offsets = MemoryMarshal.Cast<byte, int>(dictionary.Buffers[1].Span);
+            (from, to) = (offsets[at], offsets[at + 1]);
+        }
+        var data = dictionary.Buffers.Length > 2 ? dictionary.Buffers[2].Span : default;
+        bytes = default;
+        if (from < 0 || to < from || to > data.Length)
+            return false;
+        bytes = data.Slice((int)from, (int)(to - from));
+        return true;
+    }
 }
 
 /// <summary>
-/// <c>decimal128</c> and <c>decimal256</c>, held exactly (ADR-0063). A chunk whose values all fit a
-/// 64-bit integer — the high words only the low word's sign — at a scale a decimal holds goes in as
-/// scaled integers in one bulk append; otherwise each value is made a <see cref="decimal"/> exactly, or
-/// refused by row and column when no decimal holds it.
+/// <c>decimal32</c>, <c>decimal64</c>, <c>decimal128</c> and <c>decimal256</c> — a value
+/// <paramref name="width"/> bytes wide — held exactly (ADR-0063). A chunk whose values all fit a
+/// 64-bit integer — every <c>decimal32</c> and <c>decimal64</c> does; of the wider ones, those whose
+/// high words are only the low word's sign — at a scale a decimal holds goes in as scaled integers in
+/// one bulk append; otherwise each value is made a <see cref="decimal"/> exactly, or refused by row
+/// and column when no decimal holds it.
 /// </summary>
-internal sealed class DecimalReader(DecimalColumnBuilder number, int lanes, int scale, string typeName) : ColumnReader(number)
+internal sealed class DecimalReader(DecimalColumnBuilder number, int width, int scale, string typeName) : ColumnReader(number)
 {
     private static readonly UInt128 DecimalLimit = UInt128.One << 96;
     private static readonly BigInteger BigLimit = BigInteger.One << 96;
 
+    /// <summary>The 64-bit words of a value: one for <c>decimal32</c>, widened, and <c>decimal64</c>.</summary>
+    private readonly int lanes = Math.Max(1, width / 8);
+
     public override void Read(ArrayData data, int start, int length, long rowBase, ReadScratch scratch)
     {
         var blanks = BlanksOf(data, start, length, scratch);
-        var words = ValuesOf<long>(data, start, length, lanes);
-        if (scale is >= 0 and <= 28 && FitLongs(words, blanks, length))
+        var words = width == 4 ? Widen(ValuesOf<int>(data, start, length), scratch.Longs.AsSpan(0, length)) : ValuesOf<long>(data, start, length, lanes);
+        if (scale is >= 0 and <= 28 && (lanes == 1 || FitLongs(words, blanks, length)))
         {
+            if (lanes == 1)
+            {
+                number.AppendScaled(words, scale, blanks);
+                return;
+            }
             var longs = scratch.Longs.AsSpan(0, length);
             for (var i = 0; i < length; i++)
                 longs[i] = words[i * lanes];
@@ -376,6 +497,14 @@ internal sealed class DecimalReader(DecimalColumnBuilder number, int lanes, int 
             else
                 number.Append(ToDecimal(words.Slice(i * lanes, lanes), rowBase, i));
         }
+    }
+
+    /// <summary><c>decimal32</c>'s values as 64-bit words, in <paramref name="longs"/>.</summary>
+    private static ReadOnlySpan<long> Widen(ReadOnlySpan<int> values, Span<long> longs)
+    {
+        for (var i = 0; i < values.Length; i++)
+            longs[i] = values[i];
+        return longs;
     }
 
     /// <summary>Whether every value that is not a Blank is its low word, sign-extended.</summary>
@@ -398,11 +527,13 @@ internal sealed class DecimalReader(DecimalColumnBuilder number, int lanes, int 
 
     private decimal ToDecimal(ReadOnlySpan<long> value, long rowBase, int i)
     {
-        var sign = value[1] >> 63;
-        var fits128 = lanes == 2 || (value[2] == sign && value[3] == sign);
+        // A one-word value's high word is its sign.
+        var high = lanes == 1 ? value[0] >> 63 : value[1];
+        var sign = high >> 63;
+        var fits128 = lanes <= 2 || (value[2] == sign && value[3] == sign);
         if (fits128)
         {
-            var whole = new Int128((ulong)value[1], (ulong)value[0]);
+            var whole = new Int128((ulong)high, (ulong)value[0]);
             var negative = Int128.IsNegative(whole);
             var magnitude = negative ? (UInt128)(-(whole + 1)) + 1 : (UInt128)whole;
             if (TryToDecimal(magnitude, negative, scale, out var result, out var places))
@@ -567,7 +698,8 @@ internal sealed class IntegerReader(IntegerColumnBuilder number, ArrowTypeId typ
     }
 }
 
-/// <summary>How a date column's Arrow values count from 1970-01-01.</summary>
+/// <summary>How a date column's Arrow values count: from 1970-01-01 for a date or a timestamp, from
+/// midnight for a time.</summary>
 internal enum DateUnit
 {
     Days,
@@ -575,6 +707,35 @@ internal enum DateUnit
     Milliseconds,
     Microseconds,
     Nanoseconds,
+}
+
+/// <summary>A <see cref="DateUnit"/>'s ticks and name.</summary>
+internal static class DateUnits
+{
+    /// <summary>The ticks in one unit. A nanosecond is a hundredth of a tick, so 1 stands for it, and a
+    /// reader divides nanoseconds by 100 instead of multiplying.</summary>
+    public static long TicksPer(DateUnit unit) => unit switch
+    {
+        DateUnit.Days => TimeSpan.TicksPerDay,
+        DateUnit.Seconds => TimeSpan.TicksPerSecond,
+        DateUnit.Milliseconds => TimeSpan.TicksPerMillisecond,
+        DateUnit.Microseconds => TimeSpan.TicksPerMicrosecond,
+        _ => 1,
+    };
+
+    /// <summary>The unit's name, counted: <c>days</c>, <c>seconds</c>, and so on.</summary>
+    public static string Counted(DateUnit unit) => unit switch
+    {
+        DateUnit.Days => "days",
+        DateUnit.Seconds => "seconds",
+        DateUnit.Milliseconds => "milliseconds",
+        DateUnit.Microseconds => "microseconds",
+        _ => "nanoseconds",
+    };
+
+    /// <summary>Why a nanosecond value that is not a whole number of ticks is refused.</summary>
+    public static string Finer(string typeName, long nanoseconds)
+        => string.Create(CultureInfo.InvariantCulture, $"the {typeName} value {nanoseconds} is finer than the 100 nanoseconds a date holds.");
 }
 
 /// <summary>
@@ -586,14 +747,7 @@ internal sealed class DateReader(DateColumnBuilder date, DateUnit unit, string t
 {
     private static readonly long EpochTicks = DateTime.UnixEpoch.Ticks;
 
-    private readonly long ticksPerUnit = unit switch
-    {
-        DateUnit.Days => TimeSpan.TicksPerDay,
-        DateUnit.Seconds => TimeSpan.TicksPerSecond,
-        DateUnit.Milliseconds => TimeSpan.TicksPerMillisecond,
-        DateUnit.Microseconds => TimeSpan.TicksPerMicrosecond,
-        _ => 1,
-    };
+    private readonly long ticksPerUnit = DateUnits.TicksPer(unit);
 
     public override void Read(ArrayData data, int start, int length, long rowBase, ReadScratch scratch)
     {
@@ -627,7 +781,7 @@ internal sealed class DateReader(DateColumnBuilder date, DateUnit unit, string t
         if (value < min || value > max)
         {
             throw Refuse(rowBase, i, string.Create(CultureInfo.InvariantCulture,
-                $"the {typeName} value {value} ({Counted()} since 1970-01-01) lies outside the range of a date, 0001-01-01 to 9999-12-31."));
+                $"the {typeName} value {value} ({DateUnits.Counted(unit)} since 1970-01-01) lies outside the range of a date, 0001-01-01 to 9999-12-31."));
         }
         return (value * ticksPerUnit) + EpochTicks;
     }
@@ -635,21 +789,63 @@ internal sealed class DateReader(DateColumnBuilder date, DateUnit unit, string t
     private long FromNanoseconds(long nanoseconds, long rowBase, int i)
     {
         if (nanoseconds % 100 != 0)
-        {
-            throw Refuse(rowBase, i, string.Create(CultureInfo.InvariantCulture,
-                $"the {typeName} value {nanoseconds} is finer than the 100 nanoseconds a date holds."));
-        }
+            throw Refuse(rowBase, i, DateUnits.Finer(typeName, nanoseconds));
         return (nanoseconds / 100) + EpochTicks;
     }
+}
 
-    private string Counted() => unit switch
+/// <summary>
+/// <c>time32</c> and <c>time64</c>, a time of day, as the clock time on the first day a date holds,
+/// 0001-01-01 — as a database's <see cref="TimeOnly"/> is read (ADR-0063/0064). Each is read by its
+/// own width (<paramref name="wide"/> for <c>time64</c>) and unit. A value outside a day, or a
+/// nanosecond value finer than the 100 nanoseconds a date holds, is refused by row and column rather
+/// than moved.
+/// </summary>
+internal sealed class TimeReader(DateColumnBuilder date, bool wide, DateUnit unit, string typeName) : ColumnReader(date)
+{
+    private readonly long ticksPerUnit = DateUnits.TicksPer(unit);
+
+    /// <summary>The units in a day: a time of day is at least 0 and fewer than these.</summary>
+    private readonly long perDay = unit == DateUnit.Nanoseconds ? TimeSpan.TicksPerDay * 100 : TimeSpan.TicksPerDay / DateUnits.TicksPer(unit);
+
+    public override void Read(ArrayData data, int start, int length, long rowBase, ReadScratch scratch)
     {
-        DateUnit.Days => "days",
-        DateUnit.Seconds => "seconds",
-        DateUnit.Milliseconds => "milliseconds",
-        DateUnit.Microseconds => "microseconds",
-        _ => "nanoseconds",
-    };
+        var blanks = BlanksOf(data, start, length, scratch);
+        var ticks = scratch.Longs.AsSpan(0, length);
+        if (wide)
+        {
+            var values = ValuesOf<long>(data, start, length);
+            for (var i = 0; i < length; i++)
+            {
+                if (!Bitmaps.Get(blanks, i))
+                    ticks[i] = Ticks(values[i], rowBase, i);
+            }
+        }
+        else
+        {
+            var values = ValuesOf<int>(data, start, length);
+            for (var i = 0; i < length; i++)
+            {
+                if (!Bitmaps.Get(blanks, i))
+                    ticks[i] = Ticks(values[i], rowBase, i);
+            }
+        }
+        date.AppendTicks(ticks, blanks);
+    }
+
+    private long Ticks(long value, long rowBase, int i)
+    {
+        if (value < 0 || value >= perDay)
+        {
+            throw Refuse(rowBase, i, string.Create(CultureInfo.InvariantCulture,
+                $"the {typeName} value {value} ({DateUnits.Counted(unit)} since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999."));
+        }
+        if (unit != DateUnit.Nanoseconds)
+            return value * ticksPerUnit;
+        if (value % 100 != 0)
+            throw Refuse(rowBase, i, DateUnits.Finer(typeName, value));
+        return value / 100;
+    }
 }
 
 /// <summary><c>bool</c>: Arrow's bits, unpacked.</summary>

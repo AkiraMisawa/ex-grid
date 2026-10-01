@@ -109,7 +109,7 @@ sink = io.BytesIO()
 frame.write_ipc_stream(sink, compat_level=pl.CompatLevel.oldest())
 save("polars-oldest.arrows", sink.getvalue())
 
-# Polars, as it writes by default: text as utf8_view, which ADR-0064's table does not read.
+# Polars, as it writes by default: text as utf8_view.
 sink = io.BytesIO()
 frame.select("region").write_ipc_stream(sink)
 save("polars-default.arrows", sink.getvalue())

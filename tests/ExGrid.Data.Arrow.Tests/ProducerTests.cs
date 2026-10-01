@@ -73,14 +73,16 @@ public class ProducerTests
         Assert.Equal(SnapshotKind.Date, snapshot["utc"].Kind);
     }
 
-    [Fact] // ADR-0064: Polars' default stream writes text as utf8_view, which ADR-0064's table does not hold, and it is refused by name
-    public async Task Polars_default_stream_is_refused_for_its_utf8_view()
+    [Fact] // ADR-0064: Polars' default stream, its text as utf8_view, is read as Text — the same values Polars writes for older readers as large_utf8
+    public async Task Polars_default_stream_is_read_with_its_utf8_view()
     {
-        var refusal = await RefusalAsync(Produced("polars-default.arrows"));
+        var snapshot = await ReadEveryWayAsync(Produced("polars-default.arrows"));
+        var oldest = await ReadEveryWayAsync(Produced("polars-oldest.arrows"));
 
-        Assert.Equal("region", refusal.Column);
-        Assert.Null(refusal.Row);
-        Assert.StartsWith("Column 'region': the Arrow type utf8_view is not one a Snapshot reads", refusal.Message, StringComparison.Ordinal);
+        Assert.Equal(SnapshotKind.Text, snapshot["region"].Kind);
+        Assert.Equal(Shown("amer", "AMER", null, "emea"), Values(snapshot, "region"));
+        Assert.Equal(["amer", "AMER", "emea"], Dictionary(snapshot, "region"));
+        Assert.Equal(Values(oldest, "region"), Values(snapshot, "region"));
     }
 
     [Fact] // ADR-0064: DuckDB's stream — an ENUM as a dictionary with uint8 indices, decimals, a TIMESTAMPTZ in Etc/UTC, every TIMESTAMP unit, a HUGEINT and a UBIGINT within range — is read whole
