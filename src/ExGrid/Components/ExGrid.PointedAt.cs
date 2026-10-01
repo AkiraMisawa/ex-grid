@@ -15,8 +15,8 @@ namespace ExGrid.Components;
 // before it have been handed on, and that grid holds the keys typed after it until it has been
 // answered (ADR-0058, "On a circuit"). The grid also draws the dashes and the column outlines the
 // declaration asks for, and answers it where one step from a cell or a column lands and scrolls a
-// cell into view, for arrow keys pressed elsewhere (ADR-0058, "The keyboard"; DC-55). What a press means is
-// the Consumer's: the grid knows no Formula.
+// cell into view, or a column across only, for arrow keys pressed elsewhere (ADR-0058, "The
+// keyboard"; DC-55). What a press means is the Consumer's: the grid knows no Formula.
 public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
 {
     /// <summary>
@@ -50,6 +50,11 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
     private Func<MouseEventArgs, Task>? _onPointedRowsPress;
     private Func<MouseEventArgs, Task>? _onHeaderPress;
     private Func<MouseEventArgs, Task>? _onPointedHeaderPress;
+
+    // A column to reveal across only, in the Focus's place (StageReveal): the one arrow keys pressed
+    // elsewhere reached from another column (ADR-0058, 2026-10-01; DC-55). Set alongside _revealFocus,
+    // and cleared with it. Of a cell and a column asked for before the render, the later is revealed.
+    private int? _revealColumnAcross;
 
     // Whether the last press on the rows or the header was handed over: the click, the double click
     // and the context menu that follow it are the same gesture, and keep no meaning of their own.
@@ -507,6 +512,14 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
         return revealed;
     }
 
+    /// <inheritdoc />
+    async Task<bool> IPointedAtGrid<TRow>.RevealColumnAsync(string column)
+    {
+        var revealed = false;
+        await InvokeAsync(() => revealed = RevealPointedColumn(column));
+        return revealed;
+    }
+
     /// <summary>
     /// The cell one step from the named one (ADR-0058, "The keyboard"; DC-55): a row up or down in
     /// the current order, in the same column, or the nearest column the Consumer names left or right,
@@ -583,11 +596,31 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
             return false;
         var cell = new CellPosition(row, c);
         _revealTarget = new ExtentReveal(cell, new SelectionRange(row, c, 1, 1));
+        _revealColumnAcross = null;
         if (PageSize is { } pageSize && row / pageSize != _pageIndex)
         {
             _pageIndex = row / pageSize;
             PrepareRender();
         }
+        _revealFocus = true;
+        // Not a UI event of this grid's: an armed suppression would swallow this render.
+        _suppressRender = false;
+        StateHasChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// Scrolls the named column into view across only (ADR-0058, 2026-10-01; DC-55): its body is what
+    /// is dashed, and no row of it is the one pointed at, so the rows stay where they are. The reveal
+    /// runs at the top of the render, as every reveal does. The Selection and the Focus do not move.
+    /// </summary>
+    /// <returns>Whether the grid shows the column.</returns>
+    private bool RevealPointedColumn(string column)
+    {
+        if (_disposed || ColumnNamed(column) is not { } c)
+            return false;
+        _revealColumnAcross = c;
+        _revealTarget = null;
         _revealFocus = true;
         // Not a UI event of this grid's: an armed suppression would swallow this render.
         _suppressRender = false;

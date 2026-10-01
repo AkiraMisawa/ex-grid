@@ -176,7 +176,8 @@ table column, nothing moves. Shift and an arrow, which would point at a range, C
 which would go to the edge of the data the grid does not hold, and a row not yet arrived write
 nothing, and `OnPointingRefused` says why. After a press on a column's header, ↓ points at the
 column's first row in the order the grid shows, ← and → at the next column the table has, as a
-column (`Positions[Id]`), and ↑ moves nothing.
+column (`Positions[Id]`), and ↑ moves nothing. The grid scrolls a column reached into view across,
+and leaves its rows where they are.
 
 The Scope draws in its grids too. While a Formula is edited in one of its Sheets, the table columns
 the Formula reads are outlined in the grids registered for that table, in the colours their

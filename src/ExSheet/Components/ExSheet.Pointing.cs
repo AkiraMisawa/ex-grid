@@ -30,10 +30,10 @@ public partial class ExSheet : IPointingSheet, IDisposable
     /// inside the grid pressed: ↑ and ↓ one row further in its current order, ← and → to the next
     /// column its table has, rewriting what this Point wrote, and the grid scrolls the cell into view.
     /// After a press on a column header, ↓ points at the column's first row, and ← and → at the next
-    /// column its table has, as a column; ↑ moves nothing. At an edge nothing moves; a row that has not
-    /// arrived, Shift and an arrow, and Ctrl and an arrow write nothing and are told through
-    /// <see cref="OnPointingRefused"/>. Give several Sheets the same Scope and each points in turn,
-    /// while it holds the keyboard; a Sheet is never pointed at.</para>
+    /// column its table has, as a column, which the grid scrolls into view across; ↑ moves nothing. At
+    /// an edge nothing moves; a row that has not arrived, Shift and an arrow, and Ctrl and an arrow
+    /// write nothing and are told through <see cref="OnPointingRefused"/>. Give several Sheets the same
+    /// Scope and each points in turn, while it holds the keyboard; a Sheet is never pointed at.</para>
     ///
     /// <para>The Scope also draws in its grids (ADR-0058, "What is drawn"): while a Formula is edited
     /// here, the Linked Table columns it reads are outlined in the grids registered for their table,

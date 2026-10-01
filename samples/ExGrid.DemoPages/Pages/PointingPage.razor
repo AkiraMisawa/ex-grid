@@ -16,7 +16,7 @@
     point inside the positions grid: ↑ and ↓ one row further in the order it shows, ← and → to the next
     column the table has, and the grid scrolls to keep the pointed cell in view. After a press on a
     column's header, <code>Positions[PV]</code>, ↓ points at the column's first row, and ← and → at the
-    next column the table has, as a column.
+    next column the table has, as a column, scrolled into view across.
 </p>
 
 @if (Narrow is not null)
@@ -24,7 +24,8 @@
     <p id="pointing-narrow">
         Narrow: the positions grid is laid out narrower than its columns, so it shows both of its own
         scrollbars, and PV runs under the vertical one until the grid is scrolled right. What the Scope
-        draws in it stops where the scrollbars begin (ADR-0013, ADR-0058).
+        draws in it stops where the scrollbars begin (ADR-0013, ADR-0058). After a press on Id's header,
+        → brings PV whole into view, and leaves the rows where they are.
     </p>
 }
 

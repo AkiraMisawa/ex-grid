@@ -294,6 +294,46 @@ public partial class PointingScopeTests
         Assert.Equal("=SUM(" + LookupR1, EditorText(page.Left));
     }
 
+    /// <summary>Every offset a grid on the page has asked the browser to scroll to, in the order asked.</summary>
+    private List<(double Top, double Left)> ScrollOffsetsAsked()
+        => [.. JSInterop.Invocations
+            .Where(invocation => invocation.Identifier == "setScrollOffset")
+            .Select(invocation => ((double)invocation.Arguments[0]!, (double)invocation.Arguments[1]!))];
+
+    [Fact] // ADR-0058 (2026-10-01) / SH-35 / DC-55: after a header press, the column ← or → reaches is scrolled into view across only, the vertical offset left as it is; one whole in view moves nothing
+    public async Task After_a_header_press_the_column_reached_is_scrolled_into_view_across_only()
+    {
+        var page = await RenderAsync();
+        // 250px wide: Id and Book whole in view, Value cut off at 250px, Note out of view.
+        await page.Cut.Instance.NarrowAsync(250);
+        await ScrollToAsync(page.Positions, 40, 0);
+        await StartTypingAsync(page.Left, "D2", "=");
+        await PressHeaderAsync(page.Positions, IdX);
+        Assert.Equal("=Positions[Id]", EditorText(page.Left));
+        var asked = ScrollOffsetsAsked().Count;
+
+        // Book is whole in view: nothing moves.
+        await ArrowAsync(page.Left, "ArrowRight");
+        Assert.Equal("=Positions[Book]", EditorText(page.Left));
+        Assert.Empty(ScrollOffsetsAsked()[asked..]);
+
+        // Value (200 to 300px) is brought to the view's right edge, 40px down as before.
+        await ArrowAsync(page.Left, "ArrowRight");
+        Assert.Equal("=Positions[PV]", EditorText(page.Left));
+        // Down Value's body, cut to the rows painted 40px down.
+        Assert.StartsWith("left: 200px; ", Assert.Single(DashesOf(page.Positions)));
+        Assert.Equal([(40d, 50d)], ScrollOffsetsAsked()[asked..]);
+
+        // Book is whole in view again from there; Id is brought back to the left edge.
+        await ArrowAsync(page.Left, "ArrowLeft");
+        Assert.Equal("=Positions[Book]", EditorText(page.Left));
+        await ArrowAsync(page.Left, "ArrowLeft");
+        Assert.Equal("=Positions[Id]", EditorText(page.Left));
+        Assert.Equal([(40d, 50d), (40d, 0d)], ScrollOffsetsAsked()[asked..]);
+        Assert.Empty(page.Positions.FindAll(".ex-focus, .ex-range"));
+        Assert.Empty(page.Cut.Instance.LeftRefusals);
+    }
+
     [Fact] // ADR-0058 (Part B of the ninth run, Q52) / SH-35: after a press on a column's header ↑ is an edge, and Shift and Ctrl with an arrow are refused as from a cell; ↓ still points
     public async Task After_a_header_press_up_is_an_edge_and_shift_and_ctrl_are_refused_as_from_a_cell()
     {

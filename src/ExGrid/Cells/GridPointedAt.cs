@@ -240,6 +240,28 @@ public sealed class GridPointedAt<TRow>
         ArgumentException.ThrowIfNullOrEmpty(column);
         return Grid is { } grid ? grid.RevealAsync(isRow, column) : Task.FromResult(false);
     }
+
+    /// <summary>
+    /// Asks the grid this declaration is passed to to scroll a column into view across only (ADR-0058,
+    /// "What Part B of the ninth Windows run settled", 2026-10-01; DC-55): the column arrow keys
+    /// pressed elsewhere have just moved to from another column, with its body dashed. The column is
+    /// brought whole inside the client area, beside the vertical Scrollbar Gutter, moving as little
+    /// as it can; one wider than the client area shows its start. The vertical offset stays as it is,
+    /// since no row of the column is the one pointed at. A column already whole in view, or pinned,
+    /// moves nothing. It moves the grid's view only — not its Selection, and not DOM focus. The offset
+    /// comes from the grid's own column widths: nothing is measured, and only the scroll offset is set
+    /// (ADR-0021).
+    /// </summary>
+    /// <param name="column">The name of the column, as <see cref="GridColumn{TRow}.Name"/> names it.</param>
+    /// <returns>Whether the grid shows the column, and so brought it into view: false when it shows no
+    /// column of that name, or it is not given this declaration.</returns>
+    /// <exception cref="ArgumentNullException">The name is null.</exception>
+    /// <exception cref="ArgumentException">The name is empty.</exception>
+    public Task<bool> RevealColumnAsync(string column)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(column);
+        return Grid is { } grid ? grid.RevealColumnAsync(column) : Task.FromResult(false);
+    }
 }
 
 /// <summary>What a grid given a <see cref="GridPointedAt{TRow}"/> answers for it (DC-55).</summary>
@@ -254,4 +276,7 @@ internal interface IPointedAtGrid<TRow>
 
     /// <summary>See <see cref="GridPointedAt{TRow}.RevealAsync"/>.</summary>
     Task<bool> RevealAsync(Func<TRow, bool> isRow, string column);
+
+    /// <summary>See <see cref="GridPointedAt{TRow}.RevealColumnAsync"/>.</summary>
+    Task<bool> RevealColumnAsync(string column);
 }
